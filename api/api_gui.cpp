@@ -1427,9 +1427,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       bool do_sequencer_clipping = _widget==SEQUENCER_WIDGET_get_widget();
       
       if (do_sequencer_clipping){
-        // Hack to avoid vamps to be painted on top of the "+A a" button.
+        // Hack to avoid vamps to be painted on top of the "+A a" button, and the dragger.
+        float y1 = SEQTIMELINE_get_y2() - SEQUENCER_get_y1();
         float y2 = SEQNAV_get_y1() - SEQUENCER_get_y1();
-        p.setClipRect(QRectF(0, 0, _widget->width(), y2));
+        p.setClipRect(QRectF(0, y1, _widget->width(), y2-y1));
         p.setClipping(true);
       }
         

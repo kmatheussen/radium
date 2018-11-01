@@ -385,21 +385,27 @@
      (define (mouse-callback-internal button state x y)
        (cond (*current-mouse-cycle*
               #f) ;; i.e. mouse.scm is handling mouse now.
-             ((= state *is-pressing*)
-              (mouse-press-internal button x y))
+             ((= state *is-leaving*)
+              (if curr-nonpress-mouse-cycle
+                  (end-nonpress-mouse-cycle!)
+                  #f))
              ((= state *is-moving*)
               (mouse-move-internal button x y))
              ((= state *is-releasing*)
               (mouse-release-internal button x y))
-             ((= state *is-leaving*)
-              (if curr-nonpress-mouse-cycle
-                  (end-nonpress-mouse-cycle!)))))
+             ((not (inside? x y))
+              #f)
+             ((= state *is-pressing*)
+              (mouse-press-internal button x y))
+             (else
+              (assert #f)
+              #f)))
 
 
      
      ;; Status bar
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+     
      (define statusbar-text-id -1)
      
      (define (set-statusbar-text! text)

@@ -925,14 +925,22 @@
 
   (add-nonpress-mouse-cycle!
    :enter-func (lambda (x* y)
+                 ;;(c-display "ENTER DRAGGER")
                  (set-mouse-pointer ra:set-vertical-resize-mouse-pointer gui)
+                 #t)
+   :leave-func (lambda ()
+                 ;;(c-display "LEAVE DRAGGER")
+                 (set-mouse-pointer ra:set-normal-mouse-pointer gui)
                  #f))
 
   (add-statusbar-text-handler "Change sequencer height")
   
   (add-delta-mouse-cycle!
+   :press-func (lambda (button x* y*)
+                 (set-mouse-pointer ra:set-vertical-resize-mouse-pointer gui))                      
    :drag-func
    (lambda (button x* y* dx dy)
+     
      (define size0 ((<gui> :get-splitter-sizes *ysplitter*) 0))
      (define size1 ((<gui> :get-splitter-sizes *ysplitter*) 1))
      
@@ -1085,12 +1093,14 @@
                                                            :callback-release (lambda ()
                                                                                (callback type))))))
 
-  (define background-color (<gui> :get-background-color gui))
-  
-  (define-override (paint)
-    ;;(c-display "   Scheme: Painting left part")
-    (<gui> :filled-box gui background-color x1 y1 x2 y2)  ;; To avoid the last visible seqtrack header gui to be visible between the buttons.
-    ))
+  ;;(define background-color (<gui> :get-background-color gui))
+  ;;
+  ;;(define-override (paint)
+  ;;  ;;(c-display "   Scheme: Painting left part")
+  ;;  (<gui> :filled-box gui background-color x1 y1 x2 y2)  ;; To avoid the last visible seqtrack header gui to be visible between the buttons.
+  ;;  )
+
+  )
 
 
 
@@ -1107,7 +1117,7 @@
                                          0
                                          ((<ra> :get-box seqtempo-area) :height)))))
   
-  (define ty1-height (myfloor (- (<ra> :get-seqtrack-y1 0)
+  (define ty1-height (myfloor (- (<ra> :get-seqtrack-y1 0) ;; noe rart her.
                                  (<ra> :get-seqtimeline-area-y1))))
   
   (define ty1 (+ y1 ty1-height))    
@@ -1115,15 +1125,20 @@
 
   ;;(c-display "       ___:" x1 y1 x2 y2 ty1 ty2)
 
-  (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 x2 (+ y1 dragger-height)))
+  (define dragger-y2 (+ y1 dragger-height))
 
+  (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 x2 dragger-y2))
+
+  (define header-area (<new> :area gui x1 dragger-y2 x2 ty2))
+  (add-sub-area-plain! header-area)
+  
   (let loop ((seqtracknum 0))
     (when (< seqtracknum num-seqtracks)
       (define seqtrack-box (<ra> :get-box seqtrack seqtracknum))
       (define sy1 (+ ty1 (- (seqtrack-box :y1) seqtrack0-y1)))
       (define sy2 (+ ty1 (- (seqtrack-box :y2) seqtrack0-y1)))
 
-      (if (< sy2 ty1)
+      (if (< sy2 dragger-y2)
           (loop (1+ seqtracknum))
           (when (< sy1 ty2)
             ;;(set! sy1 (scale seqtracknum 0 num-seqtracks ty1 ty2))
@@ -1146,9 +1161,10 @@
             
             (if (or (not (<ra> :seqtrack-for-audiofiles seqtracknum))
                     (>= (<ra> :get-seqtrack-instrument seqtracknum) 0))
-                (add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 use-two-rows show-panner seqtracknum)))
+                (header-area :add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 use-two-rows show-panner seqtracknum)))
             
             (loop (1+ seqtracknum))))))
+
 
   (add-sub-area-plain! (<new> :sequencer-left-part-buttons gui x1 ty2 x2 y2))
 
