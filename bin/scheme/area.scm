@@ -110,6 +110,7 @@
      (define ismoved #f)
 
      (define (move-internal! dx dy)
+       (set! i-x1 #f)
        (inc! x1 dx)
        (inc! y1 dy)
        (inc! x2 dx)
@@ -153,6 +154,7 @@
 	 (move! dx dy)))     
 
      (define (set-position2! x1* y1* x2* y2*)
+       (set! i-x1 #f)
        (define new-width (- x2* x1*))
        (define new-height (- y2* y1*))
        (let ((old-x1 x1)
