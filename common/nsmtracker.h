@@ -3036,6 +3036,7 @@ struct Song{
         struct LoopingOrPunching looping;
         struct LoopingOrPunching punching;
         DEFINE_ATOMIC(int, curr_seqtracknum);
+        int topmost_visible_seqtrack;
         vector_t seqtracks; // New playlist. Player must both be stopped and locked when modifying this variable, or any of the contents.
 
 	NInt num_blocks;

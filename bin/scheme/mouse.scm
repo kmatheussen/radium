@@ -1170,7 +1170,7 @@
 (define (get-seqblock-info X Y)
   (let ((seqtracknum *current-seqtrack-num*))
     (and seqtracknum
-         (inside-box (<ra> :get-box sequencer) X Y)
+         (inside-box (<ra> :get-box seqtracks) X Y)
          ;;(begin (c-display "seqtracknum:" seqtracknum X Y (inside-box (ra:get-box2 seqtrack 1) X Y)) #t)
          (get-seqblock-info2 seqtracknum X Y))))
 
@@ -4484,7 +4484,7 @@
 
 (define (get-seqtracknum X Y)
   (define num-seqtracks (<ra> :get-num-seqtracks))
-  (and (inside-box (<ra> :get-box sequencer) X Y)
+  (and (inside-box (<ra> :get-box seqtracks) X Y)
        (let loop ((seqtracknum 0))
          (cond ((= seqtracknum num-seqtracks)
                 #f) ;;seqtracknum)
@@ -5988,7 +5988,7 @@
 
 ;; Move single seqblock
 (add-node-mouse-handler :Get-area-box (lambda()
-                                        (<ra> :get-box sequencer))
+                                        (<ra> :get-box seqtracks))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (let ((seqtracknum *current-seqtrack-num*))
                                                     ;;(c-display "seqtracknum" seqtracknum)
@@ -6089,7 +6089,7 @@
 
 ;; Move multiple seqblocks
 (add-node-mouse-handler :Get-area-box (lambda()
-                                        (<ra> :get-box sequencer))
+                                        (<ra> :get-box seqtracks))
                         :Get-existing-node-info (lambda (X Y callback)                                                  
                                                   (let ((seqtracknum *current-seqtrack-num*))
                                                     (and (not *current-seqautomation/distance*)
@@ -6235,9 +6235,9 @@
    
    (make-mouse-cycle
     :press-func (lambda ($button $x $y)
-                  ;;(c-display "in-sequencer: " (inside-box (<ra> :get-box sequencer) $x $y) (< $y (<ra> :get-seqnav-y1)))
+                  ;;(c-display "in-sequencer: " (inside-box (<ra> :get-box seqtracks) $x $y) (< $y (<ra> :get-seqnav-y1)))
                   (and (= $button *left-button*)
-                       (inside-box (<ra> :get-box sequencer) $x $y)
+                       (inside-box (<ra> :get-box seqtracks) $x $y)
                        (< $y (<ra> :get-seqnav-y1))
                        (begin
                          (set! *selection-rectangle-start-x* $x)
@@ -6520,7 +6520,7 @@
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-seqautomation/distance*
                                              (not (*current-seqautomation/distance* :seqblock))
-                                             (<ra> :get-box sequencer)))
+                                             (<ra> :get-box seqtracks)))
 
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (let ((automationnum (*current-seqautomation/distance* :automation-num))
@@ -6625,7 +6625,7 @@
                         :Mouse-pointer-func ra:set-normal-mouse-pointer
                         :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         :Get-pixels-per-value-unit (lambda (seqmove)
-                                                     (/ ((<ra> :get-box sequencer) :width)
+                                                     (/ ((<ra> :get-box seqtracks) :width)
                                                         (- (<ra> :get-sequencer-visible-end-time)
                                                            (<ra> :get-sequencer-visible-start-time))))
                         )         
@@ -6901,7 +6901,7 @@
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-seqautomation/distance*
                                              (*current-seqautomation/distance* :seqblock)
-                                             (<ra> :get-box sequencer)))
+                                             (<ra> :get-box seqtracks)))
 
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
@@ -7023,7 +7023,7 @@
                         :Mouse-pointer-func ra:set-normal-mouse-pointer
                         :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         :Get-pixels-per-value-unit (lambda (seqmove)
-                                                     (/ ((<ra> :get-box sequencer) :width)
+                                                     (/ ((<ra> :get-box seqtracks) :width)
                                                         (- (<ra> :get-sequencer-visible-end-time)
                                                            (<ra> :get-sequencer-visible-start-time))))
                         )         
