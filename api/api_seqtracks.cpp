@@ -85,7 +85,7 @@ float getSeqtracksY1(void){
 }
 
 float getSeqtracksY2(void){
-  return SEQTRACKS_get_y2(); 
+  return SEQTRACKS_get_y2();
 }
 
 float getSequencerLeftPartX1(void){
