@@ -130,6 +130,11 @@ extern LANGSPEC float SEQUENCER_get_x2(void);
 extern LANGSPEC float SEQUENCER_get_y1(void);
 extern LANGSPEC float SEQUENCER_get_y2(void);
 
+extern LANGSPEC float SEQTRACKS_get_x1(void);
+extern LANGSPEC float SEQTRACKS_get_x2(void);
+extern LANGSPEC float SEQTRACKS_get_y1(void);
+extern LANGSPEC float SEQTRACKS_get_y2(void);
+
 extern LANGSPEC float SEQUENCER_get_left_part_x1(void);
 extern LANGSPEC float SEQUENCER_get_left_part_x2(void);
 extern LANGSPEC float SEQUENCER_get_left_part_y1(void);
@@ -177,6 +182,9 @@ extern LANGSPEC float SEQTRACK_get_x1(int seqtracknum);
 extern LANGSPEC float SEQTRACK_get_x2(int seqtracknum);
 extern LANGSPEC float SEQTRACK_get_y1(int seqtracknum);
 extern LANGSPEC float SEQTRACK_get_y2(int seqtracknum);
+
+extern LANGSPEC int SEQUENCER_get_lowest_reasonable_topmost_seqtracknum(void);
+extern LANGSPEC bool SEQUENCER_last_seqtrack_is_visible(void);
 
 #ifdef __cplusplus
 extern void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack, int64_t start_time, int64_t end_time);

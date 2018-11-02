@@ -630,7 +630,7 @@ static double get_visible_song_length(void){
   return SONG_get_length() + SEQUENCER_EXTRA_SONG_LENGTH;
 }
 
-static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play_time, double end_play_time) {
+static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, double start_play_time, double end_play_time) {
 
   double pos = R_MAX(0, scale_double(e->x(), x1, x2, start_play_time, end_play_time));
   //printf("pos: %f, _start/end: %f / %f. x: %d\n", (double)pos/48000.0, (double)start_play_time / 48000.0, (double)end_play_time / 48000.0, e->x());
@@ -716,17 +716,37 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
 
   } else {
 
-    if (e->delta() > 0)
-      PlaySong(pos);
-    else {
-      if (is_playing_song())
-        PlayStop();
-      ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
-      SEQUENCER_update(SEQUPDATE_TIME);
-      if (useJackTransport())
-        MIXER_TRANSPORT_set_pos(pos);
+    int vu_width = root->song->tracker_windows->systemfontheight;
+    if (mapToEditorX(widget, e->x()) < SEQTRACK_get_x1(0)-vu_width) {
+        
+      int lowest_reasonable_topmost_seqtracknum = root->song->seqtracks.num_elements-1;
+      int seqtracknum = root->song->topmost_visible_seqtrack;
+      
+      if (e->delta() > 0){
+        seqtracknum--; 
+      } else {
+        seqtracknum++;
+        lowest_reasonable_topmost_seqtracknum = SEQUENCER_get_lowest_reasonable_topmost_seqtracknum();
+        //printf("seqtracknum: %d. lowest: %d. num: %d. \n", seqtracknum, lowest_reasonable_topmost_seqtracknum, root->song->seqtracks.num_elements);
+      }
+      
+      if (seqtracknum >= 0 && seqtracknum <= lowest_reasonable_topmost_seqtracknum)
+        setTopmostVisibleSeqtrack(seqtracknum);
+
+    } else {
+      
+      if (e->delta() > 0)
+        PlaySong(pos);
+      else {
+        if (is_playing_song())
+          PlayStop();
+        ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
+        SEQUENCER_update(SEQUPDATE_TIME);
+        if (useJackTransport())
+          MIXER_TRANSPORT_set_pos(pos);
+      }
+      
     }
-    
   }
 }
 
@@ -1854,7 +1874,8 @@ public:
   
   void paint_current_seqblock_border(QPainter &p, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool paint_float) const {
     //printf("Seqblock: ");
-    paintCurrBorder(p, get_current_seqblock_rect(seqblock, false), QColor(0,0x60,0x90,0xb0), paint_float, 0, 0);
+    if(get_seqtracknum(seqtrack) >= root->song->topmost_visible_seqtrack)
+      paintCurrBorder(p, get_current_seqblock_rect(seqblock, false), QColor(0,0x60,0x90,0xb0), paint_float, 0, 0);
   }
   
   bool paintSeqBlock(QPainter &p, const QRegion &update_region, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int seqtracknum, int seqblocknum, Seqblock_Type type){
@@ -2174,7 +2195,7 @@ public:
     }END_VECTOR_FOR_EACH;
   }
   
-  void calculate_heights(double heights[], const int num_seqtracks, double available_space) const {    
+  void calculate_heights(double heights[], const int num_seqtracks, double available_space) const {
     double max_heights[num_seqtracks];
 
     get_heights(heights, true); // first set heigths to min size.
@@ -2283,22 +2304,75 @@ public:
 
     double seqtracks_y1 = get_seqtracks_y1();
     double seqtracks_y2 = get_seqtracks_y2();
-    
+
     double heights[num_seqtracks];
     calculate_heights(heights, num_seqtracks, seqtracks_y2 - seqtracks_y1);
 
-    VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
-      int seqtracknum = iterator666;
-      
-      const double y1 = seqtracks_y1 + get_y1_from_heights(heights, seqtracknum);
-      const double y2 = y1 + heights[seqtracknum];
+    // Above topmost visible seqtrack
+    {
+      double prev_y1 = seqtracks_y1;
 
-      seqtrack->y1 = y1;
-      seqtrack->y2 = y2;
-      
-    }END_VECTOR_FOR_EACH;
+      for(int seqtracknum=root->song->topmost_visible_seqtrack-1;seqtracknum>=0;seqtracknum--){
+        struct SeqTrack *seqtrack=(struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
+        seqtrack->y2 = prev_y1;
+        seqtrack->y1 = seqtrack->y2 - heights[seqtracknum];
+        prev_y1 = seqtrack->y1;
+      }
+    }
+
+    // Below topmost visible seqtrack
+    {
+      double next_y1 = seqtracks_y1;
+    
+      for(int seqtracknum=root->song->topmost_visible_seqtrack;seqtracknum<num_seqtracks;seqtracknum++){
+        struct SeqTrack *seqtrack=(struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
+        seqtrack->y1 = next_y1;
+        seqtrack->y2 = seqtrack->y1 + heights[seqtracknum];
+        next_y1 = seqtrack->y2;
+      }
+    }
   }
 
+  int get_lowest_reasonable_topmost_seqtracknum(void){
+    const int num_seqtracks = root->song->seqtracks.num_elements;
+    if (num_seqtracks==0)
+      return 0;
+    
+    double heights[num_seqtracks];
+    
+    double seqtracks_y1 = get_seqtracks_y1();
+    double seqtracks_y2 = get_seqtracks_y2();
+    double available_space = seqtracks_y2 - seqtracks_y1;
+      
+    calculate_heights(heights, num_seqtracks, available_space);
+
+    available_space += get_seqtrack_border_width()/2.0;
+    
+    double height = 0;
+    
+    for(int seqtracknum=num_seqtracks-1;seqtracknum>=0;seqtracknum--){
+      height += heights[seqtracknum];
+      //printf("%d: height %f. sum: %f. available_space: %f\n",seqtracknum,height,heights[seqtracknum], available_space);
+      if(height > available_space)
+        return R_MIN(num_seqtracks-1, seqtracknum+1);
+    }
+    
+    return num_seqtracks-1;
+  }
+
+  bool last_seqtrack_is_visible(void){
+    const int num_seqtracks = root->song->seqtracks.num_elements;
+    if (num_seqtracks==0)
+      return false;
+    
+    double seqtracks_y2 = get_seqtracks_y2();
+    
+    const struct SeqTrack *last_seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[num_seqtracks-1];
+
+    double gap = (seqtracks_y2+get_seqtrack_border_width()/2.0) - last_seqtrack->y2;
+    
+    return gap >= 0;
+  }
   
   Seqblocks_widget get_seqblocks_widget(int seqtracknum, bool include_border) {
     double border_width =  get_seqtrack_border_width() / 2.0;
@@ -2885,7 +2959,7 @@ struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
   }
 
   void wheelEvent(QWheelEvent *e) override {
-    handle_wheel_event(e, 0, width(), 0, get_visible_song_length()*MIXER_get_sample_rate());
+    handle_wheel_event(this, e, 0, width(), 0, get_visible_song_length()*MIXER_get_sample_rate());
     e->accept();
   }
 
@@ -2929,17 +3003,25 @@ public:
     if (num_seqtracks==0)
       return;
 
+    double seqtrack0_y1 = getSeqtrackFromNum(0)->y1;
+    double seqtrackN_y2 = getSeqtrackFromNum(num_seqtracks-1)->y2;
+      
     // Seqblocks
     {
 
       //QColor block_color = QColor(140,140,140,180);
-      QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
-      
-      VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
-        int seqtracknum = iterator666;
+      //QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
 
+      VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
+        //int seqtracknum = iterator666;
+
+        /*
         double y1 = scale_double(seqtracknum,   0, num_seqtracks, 3, height()-3);
         double y2 = scale_double(seqtracknum+1, 0, num_seqtracks, 3, height()-3);
+        */
+        
+        double y1 = scale_double(seqtrack->y1, seqtrack0_y1, seqtrackN_y2, 3, height()-3);
+        double y2 = scale_double(seqtrack->y2, seqtrack0_y1, seqtrackN_y2, 3, height()-3);
 
         /*
         SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
@@ -2960,16 +3042,19 @@ public:
           QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
           myFillRect(p, rect, seqblock_color);
 
+          /*
           if(rect.height() > root->song->tracker_windows->systemfontheight*1.3){
             p.setPen(text_color);
 
-            // This is the navigator. We don't need to use myDrawText here.
-            //myDrawText(p, rect.adjusted(2,1,-1,-1), QString::number(block->l.num) + ": " + block->name);
-            
-            p.drawText(rect.adjusted(2,1,-1,-1), get_seqblock_name(seqtrack, seqblock), QTextOption(Qt::AlignLeft | Qt::AlignTop));
+            myDrawText(rect.adjusted(2,1,-1,-1), get_seqblock_name(seqtrack, seqblock), QTextOption(Qt::AlignLeft | Qt::AlignTop));
           }
+          */
+
+          if(rect.height() > 2)
+            p.setPen(border_color);
+          else
+            p.setPen(seqblock_color);
           
-          p.setPen(border_color);
           p.drawRect(rect);
           
         }END_VECTOR_FOR_EACH;
@@ -2989,9 +3074,6 @@ public:
       double x1 = get_x1(total);
       double x2 = get_x2(total);
 
-      double seqtrack0_y1 = getSeqtrackFromNum(0)->y1;
-      double seqtrackN_y2 = getSeqtrackFromNum(num_seqtracks-1)->y2;
-      
       double y1 = scale_double(seqtracks_y1,
                                seqtrack0_y1, seqtrackN_y2,
                                0, height()
@@ -3233,7 +3315,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
 
   void wheelEvent(QWheelEvent *e) override {
-    handle_wheel_event(e, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2, _start_time, _end_time);
+    handle_wheel_event(this, e, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2, _start_time, _end_time);
   }
 
   void resizeEvent( QResizeEvent *qresizeevent) override {
@@ -3241,11 +3323,25 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     
     RETURN_IF_DATA_IS_INACCESSIBLE();
 
+    int num_seqtracks = root->song->seqtracks.num_elements;
+
+    if (num_seqtracks==0)
+      return;
+
+    bool last_seqtrack_was_visible = SEQUENCER_last_seqtrack_is_visible();
+    
+    //int lowest_topmost_seqtracknum = SEQUENCER_get_lowest_seqtracknum_after_resizing(dy);
+
     //  set_end_time();
     // _samples_per_pixel = (_end_time-_start_time) / width();
     position_widgets();
     
     API_run_resize_event_for_custom_widget(this, qresizeevent);
+
+    if (last_seqtrack_was_visible){
+      int lowest_reasonable_topmost_seqtracknum = SEQUENCER_get_lowest_reasonable_topmost_seqtracknum();
+      setTopmostVisibleSeqtrack(lowest_reasonable_topmost_seqtracknum);
+    }
   }
 
   int get_sequencer_left_part_width(void) const {
@@ -3269,7 +3365,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     double systemfontheight = fm.height();
 
     const int min_bottom_height = systemfontheight*2;
-    const int max_bottom_height = height() / 3;
+    const int max_bottom_height = systemfontheight*6;//height() / 3;
     if(max_bottom_height <= min_bottom_height)
       return;
     
@@ -3671,6 +3767,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     if (curr_seqtracknum < 0 || curr_seqtracknum >= root->song->seqtracks.num_elements)
       return;
 
+    if(curr_seqtracknum < root->song->topmost_visible_seqtrack)
+      return;
+          
     //const SeqTrack *seqtrack = (const struct SeqTrack*)root->song->seqtracks.elements[curr_seqtracknum];
 
     {
@@ -3861,6 +3960,22 @@ float SEQUENCER_get_y1(void){
 
 float SEQUENCER_get_y2(void){
   return mapToEditorY2(g_sequencer_widget);
+}
+
+float SEQTRACKS_get_x1(void){
+  return mapToEditorX(g_sequencer_widget, g_sequencer_widget->_seqtracks_widget.t_x1);
+}
+
+float SEQTRACKS_get_x2(void){
+  return mapToEditorX(g_sequencer_widget, g_sequencer_widget->_seqtracks_widget.t_x2);
+}
+
+float SEQTRACKS_get_y1(void){
+  return mapToEditorY(g_sequencer_widget, g_sequencer_widget->_seqtracks_widget.t_y1);
+}
+
+float SEQTRACKS_get_y2(void){
+  return mapToEditorY(g_sequencer_widget, g_sequencer_widget->_seqtracks_widget.t_y2);
 }
 
 float SEQUENCER_get_left_part_x1(void){
@@ -4318,6 +4433,13 @@ float SEQTRACK_get_y2(int seqtracknum){
   const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, true);
 
   return mapToEditorY(g_sequencer_widget, w.t_y2);
+}
+
+int SEQUENCER_get_lowest_reasonable_topmost_seqtracknum(void){
+  return g_sequencer_widget->_seqtracks_widget.get_lowest_reasonable_topmost_seqtracknum();
+}
+bool SEQUENCER_last_seqtrack_is_visible(void){
+  return g_sequencer_widget->_seqtracks_widget.last_seqtrack_is_visible();
 }
 
 static void update(const struct SeqTrack *seqtrack, bool also_update_borders, bool also_update_nodes, int64_t start_time, int64_t end_time){

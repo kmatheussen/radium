@@ -1107,7 +1107,9 @@
 (def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2)
   (define num-seqtracks (<ra> :get-num-seqtracks))
 
-  (define seqtrack0-y1 (<ra> :get-seqtrack-y1 0))
+  (define topmost-seqtrack (<ra> :get-topmost-visible-seqtrack))
+  
+  (define seqtrack0-y1 (<ra> :get-seqtrack-y1 topmost-seqtrack))
   
   (define b 0)
   (define b/2 (/ b 2))
@@ -1117,7 +1119,7 @@
                                          0
                                          ((<ra> :get-box seqtempo-area) :height)))))
   
-  (define ty1-height (myfloor (- (<ra> :get-seqtrack-y1 0) ;; noe rart her.
+  (define ty1-height (myfloor (- seqtrack0-y1
                                  (<ra> :get-seqtimeline-area-y1))))
   
   (define ty1 (+ y1 ty1-height))    
@@ -1132,7 +1134,7 @@
   (define header-area (<new> :area gui x1 dragger-y2 x2 ty2))
   (add-sub-area-plain! header-area)
   
-  (let loop ((seqtracknum 0))
+  (let loop ((seqtracknum topmost-seqtrack))
     (when (< seqtracknum num-seqtracks)
       (define seqtrack-box (<ra> :get-box seqtrack seqtracknum))
       (define sy1 (+ ty1 (- (seqtrack-box :y1) seqtrack0-y1)))
@@ -1145,7 +1147,7 @@
             ;;(set! sy2 (scale (1+ seqtracknum) 0 num-seqtracks ty1 ty2))
             
             (set! sy1 (+ sy1
-                         (if (= 0 seqtracknum)
+                         (if (= topmost-seqtrack seqtracknum)
                              0
                              b/2)))
             (set! sy2 (1+ (ceiling (- sy2

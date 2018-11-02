@@ -72,6 +72,22 @@ float getSequencerY2(void){
   return SEQUENCER_get_y2();
 }
 
+float getSeqtracksX1(void){
+  return SEQTRACKS_get_x1();
+}
+
+float getSeqtracksX2(void){
+  return SEQTRACKS_get_x2();
+}
+
+float getSeqtracksY1(void){
+  return SEQTRACKS_get_y1();
+}
+
+float getSeqtracksY2(void){
+  return SEQTRACKS_get_y2();
+}
+
 float getSequencerLeftPartX1(void){
   return SEQUENCER_get_left_part_x1();
 }
@@ -293,6 +309,23 @@ int getCurrSeqtrack(void){
 
 int getNumSeqtracks(void){
   return root->song->seqtracks.num_elements;
+}
+
+int getTopmostVisibleSeqtrack(void){
+  return root->song->topmost_visible_seqtrack;
+}
+
+void setTopmostVisibleSeqtrack(int new_topmost){
+  if (new_topmost < 0 || new_topmost >= root->song->seqtracks.num_elements){
+    handleError("setTopmostVisibleSeqtrack: Illegal seqtracknum: %d", new_topmost);
+    return;
+  }
+        
+  if(new_topmost==getTopmostVisibleSeqtrack())
+    return;
+
+  root->song->topmost_visible_seqtrack = new_topmost;
+  SEQUENCER_update(SEQUPDATE_TRACKCOORDINATES);
 }
 
 void swapSeqtracks(int seqtracknum1, int seqtracknum2){
