@@ -1464,7 +1464,7 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_sa
   struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
   //memset(seqtrack, 0, sizeof(struct SeqTrack));
 
-  seqtrack->min_height_type = SHT_1ROW;
+  seqtrack->min_height_type = SHT_2ROWS;
   seqtrack->max_height_type = SHT_UNLIMITED;
   
   seqtrack->for_audiofiles = for_audiofiles;
