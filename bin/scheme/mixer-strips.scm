@@ -1725,17 +1725,22 @@
                          :border 2
                          :implicit-border 0)
 
-  (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
-
   (define (get-muted)
+    (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
     (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
   (define (get-soloed)
     (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
   (define (get-recording)
-    (<ra> :seqtrack-is-recording seqtracknum))
+    ;;(<ra> :seqtrack-is-recording seqtracknum)) We don't have seqtracknum here.
+    (if (not (<ra> :release-mode))
+        (assert #f))
+    #f)
   
   (if (eq? is-selected 'undefined)
-      (set! is-selected (cond ((eq? type 'record)
+      (set! is-selected (cond ((eq? type 'height)
+                               (if (not (<ra> :release-mode))
+                                   (assert #f)))
+                              ((eq? type 'record)
                                (get-recording))
                               ((eq? type 'solo)
                                (get-soloed))
@@ -1743,8 +1748,12 @@
                                (get-muted))
                               (else
                                (assert #f)))))
-
-  (define text (cond ((eq? type 'record)
+  
+  (define text (cond ((eq? type 'height)
+                      (if use-single-letters
+                          "H"
+                          "Height"))
+                     ((eq? type 'record)
                       (if use-single-letters
                           "R"
                           "Record"))                      
@@ -1759,7 +1768,9 @@
                      (else
                       (assert #f))))
   
-  (define color (cond ((eq? type 'record)
+  (define color (cond ((eq? type 'height)
+                       "blue")
+                      ((eq? type 'record)
                        "red")
                       ((eq? type 'mute)
                        "green")
@@ -2231,10 +2242,13 @@
          (<gui> :get-background-color gui)
          0.3))
 
+(define (get-instrument-background-color gui instrument-id)
+  (if (>= instrument-id 0)
+      (get-mixer-strip-background-color gui instrument-id)
+      "#666660"))
+
 (define (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id)
-  (define background-color (if (>= instrument-id 0)
-                               (get-mixer-strip-background-color gui instrument-id)
-                               "grey"))
+  (define background-color (get-instrument-background-color gui instrument-id))
   (<gui> :filled-box gui background-color x1 y1 x2 y2))
 
 

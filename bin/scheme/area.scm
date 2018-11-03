@@ -519,7 +519,7 @@
      :get-position x (apply get-position x)
      :get-i-position x (apply get-i-position x)
      :inside? x (apply inside? x)
-     :repaint-me! x (apply repaint-me! x)
+     :update-me! x (apply update-me! x)
      :set-position! x (apply set-position! x)
      :move! x (apply move! x)
      :move-internal! x (apply move-internal! x)
@@ -641,7 +641,7 @@
                              (set! is-selected (not is-selected))
                              (value-changed-callback is-selected)
                              (update-me!)
-                             #t)
+                             #f)
                             (else
                              #f)))
                     (lambda (button x* y*)

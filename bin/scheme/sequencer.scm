@@ -12,7 +12,7 @@
          (c-display "************** boxname:" boxname)
          (assert #f))))
 
-(define (get-select-seqtrack-size-type-gui seqtracknum is-min)
+(define (get-select-seqtrack-size-type-gui seqtracknum is-min gotit-callback)
   (define getter (if is-min ra:get-seqtrack-min-height-type ra:get-seqtrack-max-height-type))
   (define setter (if is-min ra:set-seqtrack-min-height-type ra:set-seqtrack-max-height-type))
   (define has-started #f)
@@ -24,11 +24,15 @@
       (if #t
           (begin
             (setter seqtracknum type)
-            (show-select-both-seqtrack-size-types-gui seqtracknum))
+            (if gotit-callback
+                (gotit-callback)
+                (show-select-both-seqtrack-size-types-gui seqtracknum)))
           (<ra> :schedule 30
                 (lambda ()
                   (try-finally :try (lambda ()
-                                      (setter seqtracknum type))
+                                      (setter seqtracknum type)
+                                      (if gotit-callback
+                                          (gotit-callback)))
                                :finally (lambda ()
                                           (<ra> :schedule 100
                                                 (lambda ()
@@ -82,40 +86,103 @@
               1-row
               2-rows
               3-rows
-              custom
-              unlimited2)
+              ;;custom
+              ;;unlimited2
+              )
             '("Unlimited"
               "1 row"
               "2 rows"
               "3 rows"
-              "Current size"
-              "Unlimited"))
+              ;;"Current size"
+              ;;"Unlimited"
+              ))
   
   (set! has-started #t)
 
   gui)
   
 
+(define *seqtrack-size-gui-uses-popup #f)
+
+(define *seqtrack-size-gui-seqtracknum* -1)
+(define (seqtrack-size-gui-open? seqtracknum)
+  (= seqtracknum *seqtrack-size-gui-seqtracknum*))
+
+(define (show-seqtrack-height-gui seqtracknum use-popup)
+
+  (set! *seqtrack-size-gui-seqtracknum* seqtracknum)
+  
+  (define gui #f)
+  
+  (if (and (not use-popup)
+           (not *seqtrack-size-gui-uses-popup))
+
+      (begin
+        (show-select-both-seqtrack-size-types-gui seqtracknum)
+        ;;(<gui> :set-pos *curr-seqtrack-size-type-gui* (floor (<ra> :get-global-mouse-pointer-x)) (floor (<ra> :get-global-mouse-pointer-y)))
+        (set! gui *curr-seqtrack-size-type-gui*)
+        )
+        
+      (begin
+
+        (set! gui (<gui> :popup))
+        
+        (define (gotit-callback)
+          (<gui> :close gui)
+          )
+        
+        (<gui> :add gui (get-select-seqtrack-size-type-gui seqtracknum #t gotit-callback))
+        
+        ;;(<gui> :set-modal gui #t)
+        ;;(<gui> :set-pos gui (floor (<ra> :get-global-mouse-pointer-x)) (floor (<ra> :get-global-mouse-pointer-y)))
+        
+        ;;(<ra> :schedule 0 ;;100 ;; Add some delay to avoid mouse click not working the first time after closing the popup menu. (don't know what's happening)
+          ;;    (lambda ()
+                (<gui> :show gui)
+                ;;    #f)))))
+                ))
+
+  (<gui> :add-deleted-callback gui
+         (lambda (radium-runs-custom-exec)
+           (c-display "DELETED")
+           (set! *seqtrack-size-gui-seqtracknum* -1)
+           (*sequencer-left-part-area* :update-me!)
+           )))
+        
+
+
+
 (define *curr-seqtrack-size-type-gui* #f) ;; only show one at a time.
 (define *curr-seqtrack-size-type-content* #f)
 
 (define (show-select-both-seqtrack-size-types-gui seqtracknum)
-  (define min-gui (get-select-seqtrack-size-type-gui seqtracknum #t))
-  (define max-gui (get-select-seqtrack-size-type-gui seqtracknum #f))
+  (set! *seqtrack-size-gui-seqtracknum* seqtracknum)
+  (define min-gui (get-select-seqtrack-size-type-gui seqtracknum #t #f))
+  (define max-gui (get-select-seqtrack-size-type-gui seqtracknum #f #f))
+  (define header-text (<-> "               Seqtrack height for \"" (<ra> :get-seqtrack-name seqtracknum) "\" (#" seqtracknum ")               "))
   (define content (<gui> :vertical-layout
-                     (mid-horizontal-layout (<gui> :text (<-> "               Seqtrack height limits for \"" (<ra> :get-seqtrack-name seqtracknum) "\" (#" seqtracknum ")               ")))
-                     (<gui> :horizontal-layout)
-                     (<gui> :horizontal-layout
-                            (<gui> :group "Minimium size"
-                                   min-gui)
-                            (<gui> :group "Maximum size"
-                                   max-gui))))
+                         ;;(mid-horizontal-layout (<gui> :text header-text))
+                         ;;(<gui> :horizontal-layout)
+                         (if #t 
+                             (<gui> :group header-text
+                                    min-gui)
+                             (<gui> :horizontal-layout
+                                    (<gui> :group "Minimium size"
+                                           min-gui)
+                                    (<gui> :group "Maximum size"
+                                           max-gui)))
+                         ;;(<gui> :horizontal-layout)
+                         ;;(mid-horizontal-layout (<gui> :text (<-> "(Note that this GUI operates on current seqtrack)")))
+                         ))
+
   
   (<gui> :set-layout-spacing content 5 2 2 2 2)
   
   (<gui> :add content (<gui> :button "Close"
-                         (lambda ()
-                           (<gui> :hide *curr-seqtrack-size-type-gui*))))
+                             (lambda ()
+                               (when *curr-seqtrack-size-type-gui*
+                                 (<gui> :hide *curr-seqtrack-size-type-gui*)
+                                 (set! *seqtrack-size-gui-seqtracknum* -1)))))
 
   (if (or (not *curr-seqtrack-size-type-gui*)
           (not (<gui> :is-open *curr-seqtrack-size-type-gui*)))
@@ -321,6 +388,6 @@
                   (if doit
                       (swapit))))
                (swapit))))
-   (list "Set height limits"
+   (list "Set height"
          (lambda ()
            (show-select-both-seqtrack-size-types-gui seqtracknum)))))
