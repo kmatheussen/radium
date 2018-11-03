@@ -536,6 +536,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       else
         button_cursor_moving->setChecked(true);
 
+      autoscroll_cursor->setChecked(autoscrollSequencerToMakePlaycursorVisible());
+        
+      
       if (showBarsInTimeline())
         show_bars_in_timeline->setChecked(true);
       else
@@ -978,6 +981,11 @@ public slots:
   void on_button_everything_else_moving_toggled(bool val){
     if (_initing==false)
       setSmoothSequencerScrollingEnabled(val);
+  }
+
+  void on_autoscroll_cursor_toggled(bool val){
+    if (_initing==false)
+      setAutoscrollSequencerToMakePlaycursorVisible(val);
   }
 
   void on_show_bars_in_timeline_toggled(bool val){

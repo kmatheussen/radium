@@ -1649,6 +1649,29 @@ void setSmoothSequencerScrollingEnabled(bool doit){
   }
 }
 
+
+static bool g_autoscroll_sequencer_to_make_playcursor_visible = false;
+
+bool autoscrollSequencerToMakePlaycursorVisible(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_autoscroll_sequencer_to_make_playcursor_visible = SETTINGS_read_bool("autoscroll_sequencer_to_make_playcursor_visible", g_autoscroll_sequencer_to_make_playcursor_visible);
+    has_inited = true;
+  }
+
+  return g_autoscroll_sequencer_to_make_playcursor_visible;
+}
+
+void setAutoscrollSequencerToMakePlaycursorVisible(bool doit){
+  if (doit != g_autoscroll_sequencer_to_make_playcursor_visible){
+    g_autoscroll_sequencer_to_make_playcursor_visible = doit;
+    SETTINGS_write_bool("autoscroll_sequencer_to_make_playcursor_visible", doit);
+    PREFERENCES_update(); // ??
+  }
+}
+
+
 static bool g_show_bars_in_timeline = true;
 
 bool showBarsInTimeline(void){

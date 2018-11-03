@@ -3387,7 +3387,14 @@ by mixing sound for all the buses.
             <item>
              <widget class="QRadioButton" name="button_everything_else_moving">
               <property name="text">
-               <string>Fixed position. Everything else moves instead</string>
+               <string>Fixed position. Everything else moves instead. (experimental)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="autoscroll_cursor">
+              <property name="text">
+               <string>Automatically scroll timeline so that cursor is always visible when playing</string>
               </property>
              </widget>
             </item>
@@ -9937,8 +9944,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

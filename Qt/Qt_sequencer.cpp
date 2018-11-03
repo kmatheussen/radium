@@ -3012,22 +3012,27 @@ struct CursorPainter {
         double y2 = t_y2; //height(); //t_y2; //get_cursor_y2() + 1;
         
         parent->update(x_min, y1, 1+x_max-x_min, y2-y1);
-        
-        if (song_abstime < _start_time) {
-          int64_t diff = _start_time - song_abstime;
-          _start_time -= diff;
-          _end_time -= diff;
-          parent->update();
-        } else if (song_abstime > _end_time){
 
-          double onefourth = (_start_time+_end_time) / 4.0;
+        if (autoscrollSequencerToMakePlaycursorVisible()) {
           
-          double diff = song_abstime - onefourth;
-          _start_time += diff;
-          _end_time += diff;
-          parent->update();
+          if (song_abstime < _start_time) {
+            
+            int64_t diff = _start_time - song_abstime;
+            _start_time -= diff;
+            _end_time -= diff;
+            parent->update();
+            
+          } else if (song_abstime > _end_time){
+            
+            double onefourth = (_start_time+_end_time) / 4.0;
+            
+            double diff = song_abstime - onefourth;
+            _start_time += diff;
+            _end_time += diff;
+            parent->update();
+          }
+
         }
-        
 
       }
     }
