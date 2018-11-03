@@ -25,12 +25,20 @@ $UIC $UIFILE | sed s/protected/public/ | sed s/QComboBox/FocusSnifferQComboBox/|
 
 #$UIC $UIFILE | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQLineEdit\>://\ \ qlineedit.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: >Qt_$3.h
 
-[ -s Qt_$3.h ] || exit -1
+if ! [[ -s Qt_$3.h ]] ; then
+    echo "Failed creating Qt_$3.h"
+    rm Qt_$3.h
+    exit -1
+fi
 
 
 $MOC Qt_$3_callbacks.h >mQt_$3_callbacks.h
 
-[ -s mQt_$3_callbacks.h ] || exit -2
+if ! [[ -s mQt_$3_callbacks.h ]] ; then
+    echo "Failed creating mQt_$3_callbacks.h"
+    rm mQt_$3_callbacks.h
+    exit -2
+fi
 
 
 #echo "class 
