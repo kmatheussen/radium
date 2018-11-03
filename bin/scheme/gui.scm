@@ -696,7 +696,23 @@
               (scale (1+ i) 0 num-tabs 0 height))))
 
 
-  (define (paint-tab-bar gui width height)
+  (define (paint-tab-bar gui)
+    
+    ;; vertical: The height we get from the paint callback is wrong
+    ;; When resizing, the paint callback is callled with the old height,
+    ;; and then, a few ms later, we get the correct height, causing jumpiness.
+    ;; (this is caused by resizing the tab-bar from the tabs resize callback
+    ;; to work around non-working QTabBar::setExpanded function.)
+    ;;
+    ;; horizontal: Same thing, but for width.
+    
+    (define width (if horizontal
+                      (<gui> :width tabs)
+                      (<gui> :width tab-bar)))
+    (define height (if horizontal
+                       (<gui> :height tab-bar)
+                       (<gui> :height tabs)))
+    
     (define num-tabs (<gui> :num-tabs tabs))
     (<gui> :filled-box gui background-color 0 0 width height)
     (for-each (lambda (i)
@@ -711,10 +727,7 @@
 
   (<gui> :add-paint-callback tab-bar
          (lambda (width height)
-           (paint-tab-bar tab-bar
-                          width
-                          (<gui> :height tabs) ;; The height we get from the paint callback is wrong. When resizing, the paint callback is callled with the old height, and then, a few ms later, we get the correct height, causing jumpiness. (this is caused by resizing the tab-bar from the tabs resize callback to work around non-working QTabBar::setExpanded function.)
-                          )))
+           (paint-tab-bar tab-bar)))
                           
   (<gui> :add-mouse-callback tab-bar
          (lambda (button state x y)
@@ -734,20 +747,25 @@
            (define tab-bar-height (<gui> :height tab-bar))
            
            (define tabs-background-color (<gui> :mix-colors "color11" "color9" 0.8))
-           (<gui> :filled-box tabs tabs-background-color tab-bar-width 0 (- width tab-bar-width) height)
 
+           ;;(<gui> :filled-box tabs tabs-background-color 0 0 width height)
+           
            ;; To avoid flicker when tab-bar height is less than tabs height.
-           (when (< tab-bar-height
-                    height)
-             (<gui> :set-clip-rect
-                    tabs
-                    0 tab-bar-height
-                    tab-bar-width height)
-             (paint-tab-bar tabs
-                            tab-bar-width
-                            height))
-
-           #t))
+           (if horizontal
+               (begin
+                 (<gui> :filled-box tabs tabs-background-color
+                        0 tab-bar-height
+                        width height)
+                 (when (< tab-bar-width
+                          width)
+                   (paint-tab-bar tabs)))
+               (begin
+                 (<gui> :filled-box tabs tabs-background-color
+                        tab-bar-width 0
+                        width height)
+                 (when (< tab-bar-height
+                          height)
+                   (paint-tab-bar tabs))))))
 
   (define (resize-tabs tabs horizontal width height)
     (define tab-bar (<gui> :get-tab-bar tabs))
