@@ -2984,9 +2984,24 @@ struct CursorPainter {
     if (is_playing() && pc->playtype==PLAYSONG) {
 
       double song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
-      double middle = (_start_time+_end_time) / 2.0;
       
-      if (!smooth_scrolling()){
+      if (smooth_scrolling()){
+
+        _was_playing_smooth_song = true;
+        
+        double middle = (_start_time+_end_time) / 2.0;
+
+        if (song_abstime != middle){
+          double diff = song_abstime - middle;
+          _start_time += diff;
+          _end_time += diff;
+          parent->update();
+          }
+        
+        return;
+        
+      } else {
+
         double x = get_curr_cursor_x(1 + MIXER_get_sample_rate() * 60.0 / 1000.0);
         
         double x_min = R_MIN(x-cursor_width/2.0, _last_painted_cursor_x-cursor_width/2.0) - 2;
@@ -3004,27 +3019,16 @@ struct CursorPainter {
           _end_time -= diff;
           parent->update();
         } else if (song_abstime > _end_time){
-          double diff = song_abstime - middle;
+
+          double onefourth = (_start_time+_end_time) / 4.0;
+          
+          double diff = song_abstime - onefourth;
           _start_time += diff;
           _end_time += diff;
           parent->update();
         }
         
-      } else {
-        
-        // Smooth scrolling
-        
-        _was_playing_smooth_song = true;
-        
-        if (song_abstime != middle){
-          double diff = song_abstime - middle;
-          _start_time += diff;
-          _end_time += diff;
-          parent->update();
-          }
-        
-        return;
-        
+
       }
     }
     
