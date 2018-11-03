@@ -2357,7 +2357,7 @@ public:
         return R_MIN(num_seqtracks-1, seqtracknum+1);
     }
     
-    return num_seqtracks-1;
+    return 0;
   }
 
   bool last_seqtrack_is_visible(void){
@@ -3093,24 +3093,17 @@ struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
   }
   
   void wheelEvent(QWheelEvent *e) override {
-    handle_wheel_event(this, e, 0, width(), 0, get_visible_song_length()*MIXER_get_sample_rate());
+    handle_wheel_event(this, e, 0, width(), 0, _cursor_end_time);
     e->accept();
   }
 
-private:
-  double get_x1(double total){
-    return scale_double(_start_time, 0, total, 0, width());
-  }
-  double get_x2(double total){
-    return scale_double(_end_time, 0, total, 0, width());
-  }
 public:
-
+  
   double get_x1(void){
-    return get_x1(get_visible_song_length()*MIXER_get_sample_rate());
+    return scale_double(_start_time, 0, _cursor_end_time, 0, width());
   }
   double get_x2(void){
-    return get_x2(get_visible_song_length()*MIXER_get_sample_rate());
+    return scale_double(_end_time, 0, _cursor_end_time, 0, width());
   }
 
   void paintEvent ( QPaintEvent * ev ) override {
@@ -3120,9 +3113,6 @@ public:
     
     QPainter p(this);
 
-    double total_seconds = get_visible_song_length();
-    double total = total_seconds*MIXER_get_sample_rate();
-    
     p.setRenderHints(QPainter::Antialiasing,true);
 
     QColor border_color = get_qcolor(SEQUENCER_BORDER_COLOR_NUM);      
@@ -3170,8 +3160,8 @@ public:
           
           //printf("\n\n\n Start/end: %f / %f. Seqtrack/seqblock %p / %p\n\n", seqblock->start_time, seqblock->end_time, seqtrack, seqblock);
           
-          double x1 = scale_double(seqblock->t.time, 0, total, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x1(seqblock, start_time, end_time);
-          double x2 = scale_double(seqblock->t.time2, 0, total, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x2(seqblock, start_time, end_time);
+          double x1 = scale_double(seqblock->t.time, 0, _cursor_end_time, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x1(seqblock, start_time, end_time);
+          double x2 = scale_double(seqblock->t.time2, 0, _cursor_end_time, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x2(seqblock, start_time, end_time);
           
           QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
           myFillRect(p, rect, seqblock_color);
@@ -3205,8 +3195,8 @@ public:
       //int total_seqtracks_height = get_seqtracks_total_height();
       //int visible_seqtracks_height = seqtracks_y2 - seqtracks_y1;
 
-      double x1 = get_x1(total);
-      double x2 = get_x2(total);
+      double x1 = get_x1();
+      double x2 = get_x2();
 
       double y1 = scale_double(seqtracks_y1,
                                seqtrack0_y1, seqtrackN_y2,
@@ -3253,7 +3243,6 @@ public:
       p.drawRect(handle2_rect);
     }
 
-    _cursor_end_time = get_visible_song_length()*MIXER_get_sample_rate();    
     _cursor_painter.paintCursor(ev->region(), p);
 
     
