@@ -2573,10 +2573,14 @@ void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos){
 }
 
 void SEQUENCER_delete_seqtrack(int pos){
+  int num_seqtracks = root->song->seqtracks.num_elements;
+  
   R_ASSERT_RETURN_IF_FALSE(pos >= 0);
-  R_ASSERT_RETURN_IF_FALSE(root->song->seqtracks.num_elements > 1); // There must always be a seqtrack
+  R_ASSERT_RETURN_IF_FALSE(num_seqtracks > 1); // There must always be a seqtrack
   R_ASSERT_RETURN_IF_FALSE(pos < root->song->seqtracks.num_elements);
 
+  bool last_seqtrack_was_visible = SEQUENCER_last_seqtrack_is_visible();
+  
   struct SeqTrack *old_seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[pos];
 
   int new_seqtracknum = -1;
@@ -2585,7 +2589,8 @@ void SEQUENCER_delete_seqtrack(int pos){
     radium::PlayerLock lock;
     
     VECTOR_delete(&root->song->seqtracks, pos);
-
+    num_seqtracks--;
+    
     int curr_seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);    
     if (curr_seqtracknum >= root->song->seqtracks.num_elements){
       new_seqtracknum = root->song->seqtracks.num_elements -1;
@@ -2593,6 +2598,11 @@ void SEQUENCER_delete_seqtrack(int pos){
     }      
   }
 
+  if (last_seqtrack_was_visible)
+    setTopmostVisibleSeqtrack(SEQUENCER_get_lowest_reasonable_topmost_seqtracknum());
+  else if (getTopmostVisibleSeqtrack() >= num_seqtracks)
+    setTopmostVisibleSeqtrack(num_seqtracks-1);    
+  
   if (new_seqtracknum >= 0)
     setCurrSeqtrack(new_seqtracknum);
 
