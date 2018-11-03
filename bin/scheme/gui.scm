@@ -676,7 +676,6 @@
   (define background-color (<gui> :get-background-color tabs))
   (define curr-tab-background (<gui> :mix-colors "green" background-color 0.47))
 
-  
   (define (get-index-from-x-y x y)
     (define num-tabs (<gui> :num-tabs tabs))
     (between 0
@@ -697,20 +696,26 @@
               (scale (1+ i) 0 num-tabs 0 height))))
 
 
+  (define (paint-tab-bar gui width height)
+    (define num-tabs (<gui> :num-tabs tabs))
+    (<gui> :filled-box gui background-color 0 0 width height)
+    (for-each (lambda (i)
+                (get-tab-coords i num-tabs width height
+                                (lambda (x1 y1 x2 y2)
+                                  ;;(c-display i (floor y1) (floor y2) "x1/x2" (floor x1) (floor x2) width)
+                                  (if (= i (<gui> :current-tab tabs))
+                                      (<gui> :filled-box gui curr-tab-background x1 y1 x2 y2))
+                                  ;;(<gui> :draw-box gui "#202020" x1 y1 x2 y2 1.0 2 2)
+                                  (<gui> :draw-text gui *text-color* (<gui> :tab-name tabs i) x1 y1 x2 y2 #t #f #f (if horizontal 0 270)))))
+              (iota num-tabs)))
+
   (<gui> :add-paint-callback tab-bar
          (lambda (width height)
-           (define num-tabs (<gui> :num-tabs tabs))
-           (<gui> :filled-box tab-bar background-color 0 0 width height)
-           (for-each (lambda (i)
-                       (get-tab-coords i num-tabs width height
-                                       (lambda (x1 y1 x2 y2)
-                                         ;;(c-display i (floor y1) (floor y2) "x1/x2" (floor x1) (floor x2) width)
-                                         (if (= i (<gui> :current-tab tabs))
-                                             (<gui> :filled-box tab-bar curr-tab-background x1 y1 x2 y2))
-                                         ;;(<gui> :draw-box tab-bar "#202020" x1 y1 x2 y2 1.0 2 2)
-                                         (<gui> :draw-text tab-bar *text-color* (<gui> :tab-name tabs i) x1 y1 x2 y2 #t #f #f (if horizontal 0 270)))))
-                     (iota num-tabs))))
-  
+           (paint-tab-bar tab-bar
+                          width
+                          (<gui> :height tabs) ;; The height we get from the paint callback is wrong. When resizing, the paint callback is callled with the old height, and then, a few ms later, we get the correct height, causing jumpiness. (this is caused by resizing the tab-bar from the tabs resize callback to work around non-working QTabBar::setExpanded function.)
+                          )))
+                          
   (<gui> :add-mouse-callback tab-bar
          (lambda (button state x y)
            (if (and (= state *is-pressing*)
@@ -724,8 +729,24 @@
   (<gui> :add-paint-callback tabs
          (lambda (width height)
            ;;(c-display "paint" width height)
-           (define background-color (<gui> :mix-colors "color11" "color9" 0.8))
-           (<gui> :filled-box tabs background-color 0 0 width height)
+
+           (define tab-bar-width (<gui> :width tab-bar))
+           (define tab-bar-height (<gui> :height tab-bar))
+           
+           (define tabs-background-color (<gui> :mix-colors "color11" "color9" 0.8))
+           (<gui> :filled-box tabs tabs-background-color tab-bar-width 0 (- width tab-bar-width) height)
+
+           ;; To avoid flicker when tab-bar height is less than tabs height.
+           (when (< tab-bar-height
+                    height)
+             (<gui> :set-clip-rect
+                    tabs
+                    0 tab-bar-height
+                    tab-bar-width height)
+             (paint-tab-bar tabs
+                            tab-bar-width
+                            height))
+
            #t))
 
   (define (resize-tabs tabs horizontal width height)
@@ -735,7 +756,9 @@
         (set-fixed-height tab-bar height)))
   
   (define (resize-callback width height)
-    (resize-tabs tabs horizontal width height))
+    ;;(c-display "resize-callback" width height)
+    (resize-tabs tabs horizontal width height)
+    )
   
   (<gui> :add-resize-callback tabs resize-callback)
                
