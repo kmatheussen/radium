@@ -1022,13 +1022,21 @@
                                           (string=? yes-dont-show-again res)))))))
 
 (define (delete-seqtrack-and-maybe-ask seqtracknum)
+  (define (deleteit)
+    (<ra> :delete-seqtrack seqtracknum)
+    (if *current-seqtrack-num*
+        (set! *current-seqtrack-num* (min (- (<ra> :get-num-seqtracks) 1)
+                                          *current-seqtrack-num*)))
+    )
+
   (if (and (= 0 seqtracknum)
+           (not (<ra> :seqtrack-for-audiofiles 0))
            (<ra> :seqtrack-for-audiofiles 1))
       (ask-user-about-first-audio-seqtrack
        (lambda (doit)
          (if doit
-             (<ra> :delete-seqtrack seqtracknum))))
-      (<ra> :delete-seqtrack seqtracknum)))
+             (deleteit))))
+      (deleteit)))
 
 (def-area-subclass (<sequencer-left-part-buttons> :gui :x1 :y1 :x2 :y2)
 
@@ -1103,6 +1111,10 @@
   )
 
 
+#!!
+(<ra> :get-topmost-visible-seqtrack)
+(<ra> :get-num-seqtracks)
+!!#
 
 (def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2)
   (define num-seqtracks (<ra> :get-num-seqtracks))
