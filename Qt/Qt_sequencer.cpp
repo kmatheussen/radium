@@ -751,6 +751,18 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
 }
 
 
+static QColor half_alpha(QColor c, Seqblock_Type type) {
+  if (type==Seqblock_Type::GFX_GFX)
+      c.setAlpha(c.alpha() / 4);      
+  return c;
+}
+
+static QColor get_block_qcolor(enum ColorNums colornum, Seqblock_Type type) {
+  QColor c = get_qcolor(colornum);
+  return half_alpha(c, type);
+}
+
+
 class Seqblocks_widget {
 public:
 
@@ -1074,17 +1086,6 @@ public:
       
   }
   
-  QColor half_alpha(QColor c, Seqblock_Type type) const {
-    if (type==Seqblock_Type::GFX_GFX)
-      c.setAlpha(c.alpha() / 4);      
-    return c;
-  }
-
-  QColor get_block_qcolor(enum ColorNums colornum, Seqblock_Type type) const {
-    QColor c = get_qcolor(colornum);
-    return half_alpha(c, type);
-  }
-
   void drawWaveform(QPainter &p, const QRegion &update_region, const SoundPlugin *plugin, radium::Peaks **peaks, const struct SeqBlock *seqblock, Seqblock_Type type, const QColor &color, int64_t time1, int64_t time2, double x1, double x2, double w_y1, double w_y2) const {
 
     if (false==workingQRegionIntersects(update_region, QRectF(x1, w_y1, x2-x1, w_y2-w_y1))){
@@ -3108,10 +3109,10 @@ struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
 
 public:
   
-  double get_x1(void){
+  double get_x1(void) const {
     return scale_double(_start_time, 0, _cursor_end_time, 0, width());
   }
-  double get_x2(void){
+  double get_x2(void) const {
     return scale_double(_end_time, 0, _cursor_end_time, 0, width());
   }
 
@@ -3161,36 +3162,55 @@ public:
         //double start_time = _start_time / MIXER_get_sample_rate();
         //double end_time = _end_time / MIXER_get_sample_rate();
         */
+
+        for(int i=0;i<3;i++){
+          Seqblock_Type type
+            = i==0 ? Seqblock_Type::REGULAR
+            : i==1 ? Seqblock_Type::GFX_GFX
+            : Seqblock_Type::RECORDING;
+
+          const vector_t *seqblocks
+            = type==Seqblock_Type::REGULAR ? gfx_seqblocks(seqtrack)
+            : type==Seqblock_Type::GFX_GFX ? &seqtrack->gfx_gfx_seqblocks
+            : &seqtrack->recording_seqblocks;
+
+          VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, seqblocks){
+
+            QColor seqblock_color = get_seqblock_color(seqtrack, seqblock).lighter(150);
+            
+            seqblock_color.setAlpha(128);
+          
+            //printf("\n\n\n Start/end: %f / %f. Seqtrack/seqblock %p / %p\n\n", seqblock->start_time, seqblock->end_time, seqtrack, seqblock);
+            
+            double x1 = scale_double(seqblock->t.time, 0, _cursor_end_time, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x1(seqblock, start_time, end_time);
+            double x2 = scale_double(seqblock->t.time2, 0, _cursor_end_time, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x2(seqblock, start_time, end_time);
+            
+            QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
+            myFillRect(p, rect, seqblock_color);
+            
+            /*
+              if(rect.height() > root->song->tracker_windows->systemfontheight*1.3){
+              p.setPen(text_color);
+              
+              myDrawText(rect.adjusted(2,1,-1,-1), get_seqblock_name(seqtrack, seqblock), QTextOption(Qt::AlignLeft | Qt::AlignTop));
+              }
+            */
+
+            if (type==Seqblock_Type::RECORDING)
+              p.setPen(QColor("red"));
+            else if (type==Seqblock_Type::GFX_GFX)
+              p.setPen(get_qcolor(SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM).lighter(150));
+            else if(rect.height() > 2)
+              p.setPen(border_color);
+            else
+              p.setPen(seqblock_color);
+            
+            p.drawRect(rect);
+            
+          }END_VECTOR_FOR_EACH;
+
+        }
         
-        VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
-
-          QColor seqblock_color = get_seqblock_color(seqtrack, seqblock).lighter(150);
-          seqblock_color.setAlpha(128);
-          
-          //printf("\n\n\n Start/end: %f / %f. Seqtrack/seqblock %p / %p\n\n", seqblock->start_time, seqblock->end_time, seqtrack, seqblock);
-          
-          double x1 = scale_double(seqblock->t.time, 0, _cursor_end_time, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x1(seqblock, start_time, end_time);
-          double x2 = scale_double(seqblock->t.time2, 0, _cursor_end_time, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x2(seqblock, start_time, end_time);
-          
-          QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
-          myFillRect(p, rect, seqblock_color);
-
-          /*
-          if(rect.height() > root->song->tracker_windows->systemfontheight*1.3){
-            p.setPen(text_color);
-
-            myDrawText(rect.adjusted(2,1,-1,-1), get_seqblock_name(seqtrack, seqblock), QTextOption(Qt::AlignLeft | Qt::AlignTop));
-          }
-          */
-
-          if(rect.height() > 2)
-            p.setPen(border_color);
-          else
-            p.setPen(seqblock_color);
-          
-          p.drawRect(rect);
-          
-        }END_VECTOR_FOR_EACH;
       }END_VECTOR_FOR_EACH;
       
     }
