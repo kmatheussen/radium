@@ -21,7 +21,9 @@
 
 (define (get-seqtrack-background-color gui seqtracknum)
   (if (not (<ra> :seqtrack-for-audiofiles seqtracknum))
-      *curr-seqtrack-color*
+      (if (= seqtracknum (<ra> :get-curr-seqtrack))
+          *curr-seqtrack-color*
+          (get-instrument-background-color gui -1))
       (begin
         (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
         (let ((background-color (get-mixer-strip-background-color gui instrument-id)))
@@ -78,7 +80,7 @@
                                                 ;;    (<gui> :close popup))
                                                 #t)))
          (map 1+ (iota 8))))
-
+  
   (define (create-options)
     (let ((options
            (<gui> :vertical-layout
@@ -129,7 +131,7 @@
       options))
   
   (define options #f)
-
+  
   (define (recreate-options)
     (define new-options (create-options))
     (when options
@@ -191,8 +193,12 @@
                                         :use-single-letters 
                                         :stack-horizontally
                                         :seqtracknum)
-
-  (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
+  
+  (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+  (define for-blocks (not for-audiofiles))
+  
+  (define volume-on-off-name (and for-audiofiles
+                                  (get-instrument-volume-on/off-effect-name instrument-id)))
 
   (define (get-muted)
     (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
@@ -200,7 +206,7 @@
     (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
   (define (get-recording)
     (<ra> :seqtrack-is-recording seqtracknum))
-
+  
   (define (turn-off-all-mute except)
     (for-each (lambda (instrument-id)
                 (when (and (not (= instrument-id except))
@@ -218,28 +224,32 @@
                   (set-instrument-solo! instrument-id #f)
                   ))
               (get-all-audio-instruments)))
-
-  (define last-drawn-implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
   
-  (<ra> :schedule (random 1000) (lambda ()
-                                   (and is-alive (<gui> :is-open gui) (<ra> :instrument-is-open-and-audio instrument-id)
-                                        (begin
-                                          (if (not (eq? last-drawn-implicitly-muted
-                                                        (<ra> :instrument-is-implicitly-muted instrument-id)))
-                                              (update-me!))
-                                          100))))
+  (define last-drawn-implicitly-muted (and for-audiofiles
+                                           (<ra> :instrument-is-implicitly-muted instrument-id)))
   
-  (add-area-effect-monitor! instrument-id volume-on-off-name #t #t
-                            (lambda (on/off automation)
-                              (update-me!)))
-  
-  (add-area-effect-monitor! instrument-id "System Solo On/Off" #t #t
-                            (lambda (on/off automation)
-                              ;;(c-display "Solo changed for" instrument-id)
-                              (update-me!)))
+  (when for-audiofiles
+    (<ra> :schedule (random 1000) (lambda ()
+                                    (and is-alive (<gui> :is-open gui) (<ra> :instrument-is-open-and-audio instrument-id)
+                                         (begin
+                                           (if (not (eq? last-drawn-implicitly-muted
+                                                         (<ra> :instrument-is-implicitly-muted instrument-id)))
+                                               (update-me!))
+                                           100))))
+    
+    (add-area-effect-monitor! instrument-id volume-on-off-name #t #t
+                              (lambda (on/off automation)
+                                (update-me!)))
+    
+    (add-area-effect-monitor! instrument-id "System Solo On/Off" #t #t
+                              (lambda (on/off automation)
+                                ;;(c-display "Solo changed for" instrument-id)
+                                (update-me!))))
   
   (define (get-selected type)
-    (cond ((eq? type 'record)
+    (cond ((eq? type 'height)
+           (seqtrack-size-gui-open? seqtracknum))
+          ((eq? type 'record)
            (get-recording))
           ((eq? type 'solo)
            (get-soloed))
@@ -247,15 +257,18 @@
            (get-muted))
           (else
            (assert #f))))
-
+  
   (define layout-func (if stack-horizontally
                           horizontally-layout-areas
                           vertically-layout-areas))
-
+  
   (layout-func x1 y1 x2 y2
-               (list 'record 'mute 'solo)
+               (if for-audiofiles
+                   '(height record mute solo)
+                   '(height))
                :callback
                (lambda (type x1 y1 x2 y2)
+                 ;;(c-display "   BOX:" type x1 y1 x2 y2)
                  (define box (<new> :checkbox gui x1 y1 x2 y2
                                     #t
                                     (lambda (_)
@@ -276,7 +289,9 @@
                                       (define is-selected (not (get-selected type)))
                                       (undo-block
                                        (lambda ()
-                                         (cond ((eq? type 'record)
+                                         (cond ((eq? type 'height)
+                                                (show-seqtrack-height-gui seqtracknum #t))
+                                               ((eq? type 'record)
                                                 (if (and (not (get-recording))
                                                          (not (*open-record-config-windows* seqtracknum)))
                                                     (maybe-show-record-message))
@@ -300,7 +315,9 @@
                                                (else
                                                 (assert #f))))))
                                     :right-mouse-clicked-callback (lambda ()
-                                                                    (cond ((eq? type 'record)
+                                                                    (cond ((eq? type 'height)
+                                                                           (show-seqtrack-height-gui seqtracknum #f))
+                                                                          ((eq? type 'record)
                                                                            (show-record-popup-menu seqtracknum))
                                                                           ((eq? type 'solo)
                                                                            (show-sequencer-header-popup-menu seqtracknum instrument-id "System Solo On/Off" gui))
@@ -764,8 +781,12 @@
   (define fontheight (get-fontheight))
   (define fontheight-and-borders (+ 4 fontheight))
 
-  (define mutesolo-width (myfloor (* 1.8 (<gui> :text-width "R M S "))))
-  (define meter-width (max 4 (myfloor (/ fontheight 2))))
+  (define mutesolo-width (myfloor (* 1.8 (<gui> :text-width (if for-audiofiles
+                                                                "H R M S "
+                                                                "H ")))))
+  (define meter-width (if for-audiofiles
+                          (max 4 (myfloor (/ fontheight 2)))
+                          0))
 
   (define name-height (if use-two-rows
                           (* fontheight 1.3)
@@ -781,9 +802,7 @@
           for-blocks)
       (add-sub-area-plain! (<new> :seqtrack-name gui
                                   x1 y1
-                                  (if for-audiofiles
-                                      x1-split
-                                      x2)
+                                  x1-split
                                   y-split
                                   instrument-id
                                   seqtracknum)))
@@ -802,11 +821,12 @@
                      panner-y1))
   (define vol-y2 y2)
     
+  (add-sub-area-plain! (<new> :mute-solo-buttons gui
+                              (+ b x1-split) y1
+                              x-meter-split y-split
+                              instrument-id #t #t seqtracknum))
+  
   (when for-audiofiles
-    (add-sub-area-plain! (<new> :mute-solo-buttons gui
-                                (+ b x1-split) y1
-                                x-meter-split y-split
-                                instrument-id #t #t seqtracknum))
 
     (if show-panner
         (add-sub-area-plain! (<new> :instrument-pan-slider gui
@@ -1171,7 +1191,7 @@
                                     (* 2.5 (get-fontheight))))
             
             (define show-panner (> (seqtrack-box :height)
-                                   (* 3.5 (get-fontheight))))
+                                   (* 4.0 (get-fontheight))))
             
             (if (or (not (<ra> :seqtrack-for-audiofiles seqtracknum))
                     (>= (<ra> :get-seqtrack-instrument seqtracknum) 0))

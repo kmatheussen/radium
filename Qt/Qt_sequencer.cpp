@@ -2177,13 +2177,13 @@ public:
         heights[iterator666] = 2*border_width + root->song->tracker_windows->systemfontheight * (get_min ? seqtrack->custom_min_height : seqtrack->custom_max_height);
         break;
       case SHT_1ROW:
-        heights[iterator666] = 2*border_width + 1.5*font_height;
+        heights[iterator666] = 2*border_width + 2.0*font_height;
         break;
       case SHT_2ROWS:
-        heights[iterator666] = 2*border_width + 2.6*font_height; // If changing 2.6, also change 2.5 in seqtrack-headers.scm
+        heights[iterator666] = 2*border_width + 4.0*font_height; // If changing 2.6, also change 2.5 in seqtrack-headers.scm
         break;
       case SHT_3ROWS:
-        heights[iterator666] = 2*border_width + 4.0*font_height; // If changing 4.0, also change 3.5 in seqtrack-headers.scm
+        heights[iterator666] = 2*border_width + 8.0*font_height; // If changing 4.0, also change 3.5 in seqtrack-headers.scm
         break;
       case SHT_UNLIMITED:
         heights[iterator666] = get_min ? (2*border_width + 0.5*font_height) : -1;
