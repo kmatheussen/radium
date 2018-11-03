@@ -324,6 +324,11 @@ void setTopmostVisibleSeqtrack(int new_topmost){
   if(new_topmost==getTopmostVisibleSeqtrack())
     return;
 
+  new_topmost = R_MIN(SEQUENCER_get_lowest_reasonable_topmost_seqtracknum(), new_topmost);
+                                                       
+  if(new_topmost==getTopmostVisibleSeqtrack())
+    return;
+  
   root->song->topmost_visible_seqtrack = new_topmost;
   SEQUENCER_update(SEQUPDATE_TRACKCOORDINATES);
 }

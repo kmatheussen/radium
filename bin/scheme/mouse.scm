@@ -868,7 +868,8 @@
          (Get-existing-node-info X
                                  Y
                                  (lambda (Node-info Value Node-y)
-                                   (Make-undo Node-info)
+                                   (if Make-undo
+                                       (Make-undo Node-info))
                                    (Publicize Node-info)
                                    (if Mouse-pointer-func
                                        (set! *mouse-pointer-is-currently-hidden* #f)
@@ -8110,62 +8111,123 @@
                         (<ra> :get-seqnav-x1)))
   (define space-right (- (<ra> :get-seqnav-x2)
                          (<ra> :get-seqnav-right-size-handle-x2)))
+  ;;(c-display "left/right:" space-left space-right)
   (+ space-left space-right))
 
 (define (get-seqnav-move-box)
   (make-box2 (<ra> :get-seqnav-left-size-handle-x2) (<ra> :get-seqnav-left-size-handle-y1)
              (<ra> :get-seqnav-right-size-handle-x1) (<ra> :get-seqnav-right-size-handle-y2)))
 
+(define (set-topmost-seqtrack-from-navigator org-topmost dy)
+  (define num-seqtracks (<ra> :get-num-seqtracks))
+  (define org-y (<ra> :get-seqtracks-y1))
+  
+  (define (get-height seqtracknum)
+    (- (<ra> :get-seqtrack-y2 seqtracknum)
+       (<ra> :get-seqtrack-y1 seqtracknum)))
+  
+  (define new-topmost
+    (if (> dy 0)
+        
+        (let loop ((dy dy)
+                   (mindiff dy)
+                   (minseqtracknum org-topmost)
+                   (seqtracknum org-topmost))
+          ;;(c-display "dy>0: " dy ". mindiff:" mindiff)
+          (if (or (< dy 0)
+                  (= seqtracknum num-seqtracks))
+              minseqtracknum
+              (let* ((seqtrack-height (get-height seqtracknum))
+                     (next-dy (- dy seqtrack-height))
+                     (maybe-mindiff (abs next-dy)))
+                (if (< maybe-mindiff
+                       mindiff)
+                    (loop next-dy
+                          maybe-mindiff
+                          seqtracknum
+                          (+ 1 seqtracknum))
+                    (loop next-dy
+                          mindiff
+                          minseqtracknum
+                          (+ 1 seqtracknum))))))
 
-;; move navigator left/right
-(add-horizontal-handler :Get-handler-data (lambda (X Y)
-                                            (if (> (get-seqnav-width) 0)
-                                                (let ((box (get-seqnav-move-box)))
-                                                  (and (inside-box box X Y)
-                                                       (<ra> :get-seqnav-left-size-handle-x1)))
-                                                #f))
-                        :Get-x1 (lambda (_)
-                                  0)
-                        :Get-x2 (lambda (_)
-                                  (get-seqnav-width))
-                        :Get-min-value (lambda (_)
-                                         (<ra> :get-seqnav-x1))
-                        :Get-max-value (lambda (_)
-                                         (+ (<ra> :get-seqnav-x1) (get-seqnav-width)))
-                        ;;:Get-x (lambda (_)
-                        ;;         (+ org-x (- (<ra> :get-seqnav-left-size-handle-x1)
-                        ;;                     org-seqnav-left)))
-;                                 (/ (+ (<ra> :get-seqnav-left-size-handle-x1)
-;                                       (<ra> :get-seqnav-right-size-handle-x2))
-;                                    2))
-                        :Get-value (lambda (Value)
-                                     Value)
-                        :Make-undo (lambda (_)
-                                     50)
-                        :Move (lambda (_ Value)
-                                (define old-start-time (<ra> :get-sequencer-visible-start-time))
-                                (define song-length (<ra> :get-sequencer-song-length-in-frames))
-                                (define new-start-time (floor (scale Value
-                                                                     (<ra> :get-seqnav-x1) (<ra> :get-seqnav-x2);; (<ra> :get-seqnav-right-size-handle-x1)
-                                                                     0 song-length)))
-                                ;;(c-display "       Move" Value (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
-                                (define end-time (<ra> :get-sequencer-visible-end-time))
-                                (define new-start-time2 (max 0 (min (1- end-time) new-start-time)))
-                                
-                                (define diff (- new-start-time2 old-start-time))
-                                (define new-end-time (+ end-time diff))
-                                (define new-end-time2 (min song-length (max (1+ new-start-time2) new-end-time)))
+        (let loop ((dy dy)
+                   (mindiff (abs dy))
+                   (minseqtracknum org-topmost)
+                   (seqtracknum org-topmost))
+          ;;(c-display "dy<0: " dy ". mindiff:" mindiff "seqtracknum:" seqtracknum "minseqtracknum:" minseqtracknum)
+          (if (or (> dy 0)
+                  (= seqtracknum -1))
+              minseqtracknum
+              (let* ((seqtrack-height (get-height seqtracknum))
+                     (next-dy (+ dy seqtrack-height))
+                     (maybe-mindiff (abs next-dy)))
+                (if (< maybe-mindiff
+                       mindiff)
+                    (loop next-dy
+                          maybe-mindiff
+                          seqtracknum
+                          (- seqtracknum 1))
+                    (loop next-dy
+                          mindiff
+                          minseqtracknum
+                          (- seqtracknum 1))))))))
 
-                                (<ra> :set-sequencer-visible-start-time new-start-time2)
-                                (<ra> :set-sequencer-visible-end-time new-end-time2))
+  ;;(c-display "org-topmost:" org-topmost "new-topmost:" new-topmost "dy:" dy)
+  (<ra> :set-topmost-visible-seqtrack new-topmost))
+  
+  
+
+;; move navigator left/right and up/down
+(add-node-mouse-handler :Get-area-box (lambda ()
+                                        (get-seqnav-move-box))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  (define topmost (<ra> :get-topmost-visible-seqtrack))
+                                                  (callback topmost
+                                                            (<ra> :get-seqnav-left-size-handle-x1)
+                                                            0))
+                        :Move-node (lambda (org-topmost X delta-Y)
+                                     (when (> (get-seqnav-width) 0)
+                                       (set! X (max X (<ra> :get-seqnav-x1)))
+                                       (set! X (min X (+ (<ra> :get-seqnav-x1) (get-seqnav-width))))
+                                       (define old-start-time (<ra> :get-sequencer-visible-start-time))
+                                       (define song-length (<ra> :get-sequencer-song-length-in-frames))
+                                       (define new-start-time (floor (scale X
+                                                                            (<ra> :get-seqnav-x1) (<ra> :get-seqnav-x2);; (<ra> :get-seqnav-right-size-handle-x1)
+                                                                            0 song-length)))
+                                       ;;(c-display "       Move" X (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
+                                       (define end-time (<ra> :get-sequencer-visible-end-time))
+                                       (define new-start-time2 (max 0 (min (1- end-time) new-start-time)))
+                                       
+                                       (define diff (- new-start-time2 old-start-time))
+                                       (define new-end-time (+ end-time diff))
+                                       (define new-end-time2 (min song-length (max (1+ new-start-time2) new-end-time)))
+                                       
+                                       (<ra> :set-sequencer-visible-start-time new-start-time2)
+                                       (<ra> :set-sequencer-visible-end-time new-end-time2)
+                                       )
+                                     
+                                     (set-topmost-seqtrack-from-navigator org-topmost
+                                                                          (* delta-Y
+                                                                             (/ (- (<ra> :get-seqtrack-y2 (- (<ra> :get-num-seqtracks) 1))
+                                                                                   (<ra> :get-seqtrack-y1 0))
+                                                                                (- (<ra> :get-seqnav-left-size-handle-y2)
+                                                                                   (<ra> :get-seqnav-left-size-handle-y1)))))
+                                                                                 
+                                     
+                                     org-topmost)
                                 
                         :Publicize (lambda (_)
                                      (set-editor-statusbar (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
                                                                     " -> "
                                                                     (two-decimal-string (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate))))))
                         
+                        :Get-pixels-per-value-unit (lambda (_)
+                                                     1)
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
+                        :Use-Place #f
                         :Get-guinum (lambda () (<gui> :get-sequencer-gui))
+                        :Forgiving-box #f
                         )
 
 
