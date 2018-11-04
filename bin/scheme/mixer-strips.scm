@@ -1781,48 +1781,12 @@
 
   (define is-implicitly-muted (and (eq? type 'mute) (<ra> :instrument-is-implicitly-muted instrument-id)))
 
-  (if background-color
-      (<gui> :filled-box
-             gui
-             background-color
-             x1 y1 x2 y2))
-
-  (define b (if use-single-letters 2 5))
-
-  (if is-selected
-      (<gui> :filled-box
-             gui
-             color
-             (+ border x1) (+ border y1) (- x2 border) (- y2 border)
-             b b))
-
-  (<gui> :draw-text
-         gui
-         "black"
-         text
-         (+ x1 3) (+ y1 2) (- x2 3) (- y2 2)
-         #f
-         #f
-         #f
-         0
-         #f
-         #t
-         )
-
-  (define box-border (+ border
-                        (if is-implicitly-muted
-                            implicit-border
-                            0)))
-  (<gui> :draw-box
-         gui
-         (if is-implicitly-muted
-             color
-             "#404040")
-         (+ x1 box-border) (+ y1 box-border) (- x2 box-border) (- y2 box-border)
-         (if is-implicitly-muted
-             2.0
-             1.0)
-         b b)
+  (draw-checkbox gui text is-selected x1 y1 x2 y2 color
+                 :x-border border
+                 :y-border border
+                 :background-color background-color                 
+                 :paint-implicit-border is-implicitly-muted
+                 :implicit-border-width implicit-border)
   )
 
 (delafina (create-mixer-strip-mutesolo :instrument-id 

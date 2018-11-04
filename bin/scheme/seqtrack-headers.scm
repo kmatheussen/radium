@@ -792,7 +792,7 @@
                           (* fontheight 1.3)
                           height))
 
-  (define b (max 1 (myfloor (/ fontheight 6)))) ;; border between areas.
+  (define b (max 1 (myfloor (/ fontheight 10)))) ;; border between areas.
   
   (define x-meter-split (- x2 (+ b meter-width)))
   (define x1-split (- x-meter-split (+ b mutesolo-width)))
@@ -1136,6 +1136,11 @@
 (<ra> :get-num-seqtracks)
 !!#
 
+(def-area-subclass (<sequencer-left-part-top-bar> :gui :x1 :y1 :x2 :y2)
+  (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 x2 y2))
+  )
+  
+
 (def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2)
   (define num-seqtracks (<ra> :get-num-seqtracks))
 
@@ -1146,7 +1151,7 @@
   (define b 0)
   (define b/2 (/ b 2))
 
-  (define dragger-height (myfloor (+ ((<ra> :get-box seqtimeline-area) :height)
+  (define topbar-height (myfloor (+ ((<ra> :get-box seqtimeline-area) :height)
                                      (if (not (<ra> :seqtempo-visible))
                                          0
                                          ((<ra> :get-box seqtempo-area) :height)))))
@@ -1159,11 +1164,11 @@
 
   ;;(c-display "       ___:" x1 y1 x2 y2 ty1 ty2)
 
-  (define dragger-y2 (+ y1 dragger-height))
+  (define topbar-y2 (+ y1 topbar-height))
 
-  (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 x2 dragger-y2))
+  (add-sub-area-plain! (<new> :sequencer-left-part-top-bar gui x1 y1 x2 topbar-y2))
 
-  (define header-area (<new> :area gui x1 dragger-y2 x2 ty2))
+  (define header-area (<new> :area gui x1 topbar-y2 x2 ty2))
   (add-sub-area-plain! header-area)
   
   (let loop ((seqtracknum topmost-seqtrack))
@@ -1172,7 +1177,7 @@
       (define sy1 (+ ty1 (- (seqtrack-box :y1) seqtrack0-y1)))
       (define sy2 (+ ty1 (- (seqtrack-box :y2) seqtrack0-y1)))
 
-      (if (< sy2 dragger-y2)
+      (if (< sy2 topbar-y2)
           (loop (1+ seqtracknum))
           (when (< sy1 ty2)
             ;;(set! sy1 (scale seqtracknum 0 num-seqtracks ty1 ty2))

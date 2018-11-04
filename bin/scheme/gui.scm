@@ -419,6 +419,65 @@
   )
   
 
+(delafina (draw-checkbox :gui :text :is-selected
+                         :x1 :y1 :x2 :y2
+                         :selected-color
+                         :unselected-color "#404040"
+                         :background-color #f ;; if #f, background will not be painted.
+                         :text-color "black"
+                         :y-border 0
+                         :x-border 0
+                         :paint-implicit-border #f ;; used by the mute buttons (when implicitly muted by someone else solo-ing)
+                         :implicit-border-width 2
+                         :box-rounding #f) ;; if #f, rounding will be set automatically based on checkbox size.
+
+  (if (not box-rounding)
+      (set! box-rounding (if (> (string-length text) 1)
+                             5
+                             2)))
+  
+  (if background-color
+      (<gui> :filled-box
+             gui
+             background-color
+             x1 y1 x2 y2))
+
+  (if is-selected
+      (<gui> :filled-box
+             gui
+             selected-color
+             (+ x-border x1) (+ y-border y1) (- x2 x-border) (- y2 y-border)
+             box-rounding box-rounding))
+
+  (<gui> :draw-text
+         gui
+         text-color
+         text
+         (+ x1 2) (+ y1 2) (- x2 2) (- y2 2)
+         #f
+         #f
+         #f
+         0
+         #f
+         #t
+         )
+
+  (define box-border (if paint-implicit-border
+                         implicit-border-width
+                         0))
+  (<gui> :draw-box
+         gui
+         (if paint-implicit-border
+             selected-color
+             unselected-color)
+         (+ x1 x-border box-border) (+ y1 y-border box-border) (- x2 (+ x-border box-border)) (- y2 (+ y-border box-border))
+         (if paint-implicit-border
+             2.0
+             1.0)
+         box-rounding box-rounding)
+  )
+  
+
 (define (ra:gui_do-alpha gui alpha func)
   (<gui> :set-paint-opacity gui alpha)
   (try-finally :try func

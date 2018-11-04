@@ -3526,7 +3526,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   int get_sequencer_left_part_width(void) const {
-    return 1.5 * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... And M+S|");
+    return 1.5 * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... H+R+M+S|");
   }
 
   void position_widgets(void){
