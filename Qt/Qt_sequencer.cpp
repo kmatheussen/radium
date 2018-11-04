@@ -910,7 +910,7 @@ public:
         rect.setWidth(x2 - rect.x());                                 
       }
 
-      if (seqblock->id==g_curr_seqblock_id_under_mouse && !is_current_seqblock(seqblock)){
+      if (seqblock->id==g_curr_seqblock_id_under_mouse){ // && !is_current_seqblock(seqblock)){
         float min_node_size = get_min_node_size();
         rect.adjust(-min_node_size,0,min_node_size,min_node_size); // Seqblock nodes can be painted outside the seqblock rectangle.
       }
