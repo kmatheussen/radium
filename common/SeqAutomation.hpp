@@ -196,36 +196,43 @@ struct SeqAutomationPainter : AutomationPainter{
   }
 
   void paint_node(QPainter *p, float x, float y, int nodenum, QColor color) const {
-    float minnodesize = get_min_node_size();
-    float x1 = x-minnodesize;
-    float x2 = x+minnodesize;
-    float y1 = y-minnodesize;
-    float y2 = y+minnodesize;
-    const float width = 1.2;
+    static float penwidth_d2 = 1.2;
     
     static QPen pen1,pen2,pen3,pen4;
     static QBrush fill_brush;
     static bool has_inited = false;
-    
+
     if(has_inited==false){
-      
+
+      const float penwidth = (float)root->song->tracker_windows->systemfontheight / 10.0f;
+      penwidth_d2 = penwidth/2.01;
+
       fill_brush = QBrush(get_color(color, Qt::white, 300, 0.7));
       
       pen1 = QPen(get_color(color, Qt::white, 100, 0.3));
-      pen1.setWidthF(width);
+      pen1.setWidthF(penwidth);
       
       pen2 = QPen(get_color(color, Qt::black, 300, 0.3));
-      pen2.setWidthF(width);
+      pen2.setWidthF(penwidth);
       
       pen3 = QPen(get_color(color, Qt::black, 400, 0.3));
-      pen3.setWidthF(width);
+      pen3.setWidthF(penwidth);
       
       pen4 = QPen(get_color(color, Qt::white, 300, 0.3));
-      pen4.setWidthF(width);
+      pen4.setWidthF(penwidth);
       
       has_inited=true;
     }
+
+    float minnodesize = get_min_node_size() - 1;
+
+    //printf("penwidth: %f\n", penwidth);
     
+    float x1 = x-minnodesize+penwidth_d2;
+    float x2 = x+minnodesize-penwidth_d2;
+    float y1 = y-minnodesize+penwidth_d2;
+    float y2 = y+minnodesize-penwidth_d2;
+
     if (nodenum == _curr_nodenum) {
       p->setBrush(fill_brush);
       p->setPen(Qt::NoPen);
@@ -746,12 +753,15 @@ public:
         } else {
           
           node2 = node;
-          break;
+          goto gotit;
           
         }
         
       }
 
+      R_ASSERT(false);
+      
+    gotit:
       T node = node1;
       node.time = time;
       

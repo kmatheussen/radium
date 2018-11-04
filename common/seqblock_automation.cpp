@@ -366,15 +366,21 @@ public:
   }
 
   void update_seqblock(int nodenum) const {
-    if (nodenum < 0 || _sat==SAT_STRETCH || _sat==SAT_SPEED) {
-      
+    int num_nodes = _automation.size();
+
+    if (nodenum <= 0 || nodenum >= num_nodes-1 || _sat==SAT_STRETCH || _sat==SAT_SPEED) {
+
+      // also update everything if changing first or last node to repaint the transparent area under the graph. This area spans the whole block.
       SEQBLOCK_update(_seqtrack, _seqblock);
       
     } else {
 
+
+      int64_t start_time = floor(get_time(R_MAX(0, nodenum-1)));
+      int64_t end_time = ceil(get_time(R_MIN(num_nodes-1, nodenum+1)));
+
       SEQBLOCK_update2(_seqtrack, _seqblock,
-                       floor(get_time(R_MAX(0, nodenum-1))),
-                       ceil(get_time(R_MIN(_automation.size()-1, nodenum+1)))
+                       start_time, end_time
                        );
     }
   }
