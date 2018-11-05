@@ -1,3 +1,52 @@
+Changes 5.9.10 -> 5.9.12:
+* Sequencer: Fix gfx garbage when moving first or last
+  seqblock automation node.
+* Sequencer/Navigator: Paint seqblocks being recorded.
+* Sequencer/Navigator: Paint multiple seqblocks being
+  moved (i.e. orange color) in navigator
+* Sequencer: Mark the "fixed position for play cursor"
+  option as experimental.
+* Sequencer: Turn off automatically scroll timeline so
+  that cursor is always visible when playing. The feature
+  can be enabled again under Preferences.
+* Build: Handle better situation when UIC or MOC failed.
+* Sequencer: Scroll horizontally so that the cursor is
+  placed 1/4 into the visible area, and not 1/2, when
+  play cursor falls outside the visible area when playing.
+* Main GUI: Fix jumpy graphics when drawing the main
+  window lower tab names ("Edit" / "Instrument" /
+  "Sequencer") while resizing.
+* Sequencer: Paint play-cursor in navigator as well.
+* Sequencer: The height of all seqtracks can now be
+  taller than the height of the sequencer:
+  * Option to set height of a seqtrack. (Use the
+    new "H" button or the "Set size" entry in the popup
+    menu. The default seqtrack height is wet to
+    "2 rows".
+  * Ways to scroll the sequencer vertically:  
+    * Use the mouse scroll wheel while pointer is
+      positioned in the seqtrack headers
+    * In the seqblock parts of the sequencer, hold one
+      of the Windows keys (OSX: Alt key) while scrolling
+      the mouse wheel.
+    * Move the navigator up or down.
+* Sequencer: Include the seqtrack popup menu entries in
+  the header popup menu.
+* Sequencer: Ask user for confirmation when deleting
+  first seqtrack and the second seqtrack is for audio
+  files.
+* Sequencer: Add "Swap with next seqtrack" entry to the
+  seqtrack section of the popup menu.
+* API: swapSeqtracks, getSeqtrackMinHeightType,
+  setSeqtrackMinHeightType, getSeqtrackMaxHeightType,
+  setSeqtrackMaxHeightType, getSeqtracksX1,
+  getSeqtracksX2, getSeqtracksY1, getSeqtracksY2,
+  getTopmostVisibleSeqtrack, setTopmostVisibleSeqtrack,
+  autoscrollSequencerToMakePlaycursorVisible,
+  setAutoscrollSequencerToMakePlaycursorVisible.
+
+
+
 Changes 5.9.9 -> 5.9.10:
 * Sequencer: Fix graphics update when editing stretch or
   speed automation.
@@ -39,6 +88,7 @@ Changes 5.9.9 -> 5.9.10:
   category anymore.)
 * Sequencer: Remove gap between last seqtrack and
   navigator.
+
 
 
 Changes 5.9.8 -> 5.9.9:
