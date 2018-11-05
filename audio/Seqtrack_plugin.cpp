@@ -1203,7 +1203,9 @@ struct Recorder : public radium::SampleRecorderInstance{
     int seqtracknum = get_seqtracknum(seqtrack);
     if (seqtracknum < 0){
       printf(" Recorder::is_finished: Seqtrack not in song. Deleted?\n");
-      R_ASSERT_NON_RELEASE(false);
+      
+      //R_ASSERT_NON_RELEASE(false); // Happens if deleting seqtrack while recording.
+      
       return;
     }
 
