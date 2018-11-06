@@ -186,6 +186,23 @@ const char *EVENTLOG_get(void){
 #include <QGroupBox>
 #include <QStyle>
 
+static QString get_legalized_mail_message(QString message){
+  message = message.replace("&", "_amp_");  // replace all '&' with _amp_ since we don't receive anything after '&'.
+  
+  QString ret;
+
+  const int max_line_size = 400;  // The server doesn't send out the mail at all if it contains a very long line. (somewhere between 800 and 900 characters)
+  
+  for(QString line : message.split("\n")){
+    while(line.size() > max_line_size){
+      ret += line.left(max_line_size) + "\n";
+      line = "    " + line.right(line.size()-max_line_size);
+    }
+    ret += line + "\n";
+  }
+  
+  return ret;
+}
 
 static void send_crash_message_to_server(QString message, QString plugin_names, QString emergency_save_filename, Crash_Type crash_type){
 
@@ -394,10 +411,10 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
 #if USE_QT5
       QUrlQuery query;
-      query.addQueryItem("data", details.toPlainText().replace("&", "_amp_")); // replace all '&' with _amp_ since we don't receive anything after '&'.
+      query.addQueryItem("data", get_legalized_mail_message(details.toPlainText()));
       params.setQuery(query);
 #else
-      params.addQueryItem("data", details.toPlainText().replace("&", "_amp_")); // replace all '&' with _amp_ since we don't receive anything after '&'.
+      params.addQueryItem("data", get_legalized_mail_message(details.toPlainText()));
 #endif
       
       const char *s = strdup(params.toString().toUtf8().constData());
@@ -406,7 +423,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       data.remove(0,1);
       data.append("\n");
       data.append(text_edit.toPlainText());
-
+      
       QNetworkAccessManager nam;
       QNetworkRequest request(QUrl("http://users.notam02.no/~kjetism/radium/crashreport.php"));
       request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded" );
@@ -485,7 +502,7 @@ int main(int argc, char **argv){
   }
 #endif
 
-  printf("  main. filename: -%s-. From base64: -%s-\n", argv[1], local::fromBase64(argv[1]).toUtf8().constData());
+  //printf("  main. filename: -%s-. From base64: -%s-\n", argv[1], local::fromBase64(argv[1]).toUtf8().constData());
   
   QString filename = local::fromBase64(argv[1]);
 
