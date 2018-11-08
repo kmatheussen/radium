@@ -5816,40 +5816,58 @@
          
   (define (change-seqtrack! new-seqtracknum new-pos)
     (maybe-make-undo)
-    
-    ;; remove from old seqtrack
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    
-    (set! seqblocks (list-remove (to-list seqblocks) seqblocknum))
-    (try-finally :try (lambda ()
-                        (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
-                        (<ra> :apply-gfx-seqblocks seqtracknum))
-                 :failure (lambda ()
-                            (<ra> :cancel-gfx-seqblocks seqtracknum)))
 
+    (set! seqblocks (to-list seqblocks))
     
-    ;; add to new seqtrack
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    
-    (set! seqtracknum new-seqtracknum)
-    (set! seqblock (copy-hash seqblock
-                              :start-time new-pos
-                              :end-time (+ new-pos seqblock-length)))
-    ;;(pretty-print seqblock)(newline)
-    (set! seqblocks (sort-seqblocks-state (cons seqblock
-                                                (to-list (<ra> :get-seqblocks-state seqtracknum)))))
-    (set! num-seqblocks (length seqblocks))
-    (set! seqblocknum (list-position seqblocks
-                                     (lambda (maybe)
-                                       (equal? seqblock maybe))))
-    
-    (try-finally :try (lambda ()
-                        (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
-                        (<ra> :set-curr-seqblock-under-mouse (seqblock :id))
-                        (<ra> :apply-gfx-seqblocks seqtracknum)) ;; To avoid displaying block-seqblocks overlapping. :select-seqblock also fails if it isn't there
-                 :failure (lambda ()
-                            (<ra> :cancel-gfx-seqblocks seqtracknum)))
+    (define marked-as-available seqblocks)
 
+    ;; To prevent deleted-callbacks from being called on temporarily removed seqblocks.
+    (for-each (lambda (seqblock)
+                (<ra> :mark-seqblock-available (seqblock :id)))
+              marked-as-available)
+
+    (try-finally
+     :try
+     (lambda ()
+                        
+       ;; remove from old seqtrack
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+       
+       (set! seqblocks (list-remove (to-list seqblocks) seqblocknum))
+       (try-finally :try (lambda ()
+                           (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
+                           (<ra> :apply-gfx-seqblocks seqtracknum))
+                    :failure (lambda ()
+                               (<ra> :cancel-gfx-seqblocks seqtracknum)))
+       
+       
+       ;; add to new seqtrack
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+       
+       (set! seqtracknum new-seqtracknum)
+       (set! seqblock (copy-hash seqblock
+                                 :start-time new-pos
+                                 :end-time (+ new-pos seqblock-length)))
+       ;;(pretty-print seqblock)(newline)
+       (set! seqblocks (sort-seqblocks-state (cons seqblock
+                                                   (to-list (<ra> :get-seqblocks-state seqtracknum)))))
+       (set! num-seqblocks (length seqblocks))
+       (set! seqblocknum (list-position seqblocks
+                                        (lambda (maybe)
+                                          (equal? seqblock maybe))))
+       
+       (try-finally :try (lambda ()
+                           (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
+                           (<ra> :set-curr-seqblock-under-mouse (seqblock :id))
+                           (<ra> :apply-gfx-seqblocks seqtracknum)) ;; To avoid displaying block-seqblocks overlapping. :select-seqblock also fails if it isn't there
+                    :failure (lambda ()
+                               (<ra> :cancel-gfx-seqblocks seqtracknum))))
+     :finally
+     (lambda ()
+       (for-each (lambda (seqblock)
+                   (<ra> :unmark-seqblock-available (seqblock :id)))
+                 marked-as-available)))
+    
     ;; Keep *current-seqblock-info* up to date since it is used to auto-call :cancel-gfx-seqblocks if anything goes wrong.
     (set! *current-seqblock-info* (copy-seqblock-info *current-seqblock-info*
                                                       :seqtracknum seqtracknum

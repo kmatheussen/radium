@@ -2915,9 +2915,14 @@ void removeSeqblockDeletedCallback(int64_t seqblockid, func_t *callback){
   handleError("removeSeqblockDeletedCallback: Could not find deleted callback for id #%d and callback %p\n", (int)seqblockid, callback);
 }
 
+static QSet<int64_t> g_available_seqblocks;
+
 void API_seqblock_has_been_deleted(int64_t seqblockid){
   QVector<SDC> to_remove;
 
+  if(g_available_seqblocks.contains(seqblockid))
+    return;
+  
   if(g_curr_seqblock_id==seqblockid)
     g_curr_seqblock_id = -1;
 
@@ -2943,6 +2948,15 @@ void API_all_seqblocks_have_been_deleted(void){
     API_seqblock_has_been_deleted(g_seqblock_deleted_callbacks[0].id);
 }
   
+void markSeqblockAvailable(int64_t seqblockid){
+  g_available_seqblocks << seqblockid;
+}
+
+void unmarkSeqblockAvailable(int64_t seqblockid){
+  if(g_available_seqblocks.remove(seqblockid)==false)
+    handleError("unmarkSeqblockAvailable: %d not marked as deletable", (int)seqblockid);
+}
+
 static void remove_unused_seqblocks_from_seqblocks_z_order(struct SeqTrack *seqtrack){
 
   QSet<int64_t> used;

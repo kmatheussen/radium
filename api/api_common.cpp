@@ -834,8 +834,8 @@ void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note,
   }
 
   
-  const Place *last_pitch = ListLastPlace3(&note->pitches->l);
-  const Place *last_velocity = ListLastPlace3(&note->velocities->l);
+  const Place *last_pitch = ListLastPlace3((struct ListHeader3*)note->pitches);
+  const Place *last_velocity = ListLastPlace3((struct ListHeader3*)note->velocities);
   const Place *startPlace = &note->l.p;
 
   if (last_pitch==NULL)

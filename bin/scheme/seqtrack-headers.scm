@@ -945,7 +945,7 @@
 
   (add-nonpress-mouse-cycle!
    :enter-func (lambda (x* y)
-                 ;;(c-display "ENTER DRAGGER")
+                 ;;(c-display "ENTER DRAGGER" class-name)
                  (set-mouse-pointer ra:set-vertical-resize-mouse-pointer gui)
                  #t)
    :leave-func (lambda ()
