@@ -675,7 +675,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   }
 
   if (tr2.is_end_pitch) {
-    struct Pitches *pitch = (struct Pitches*)ListLast3(&tr2.note->pitches->l);
+    struct Pitches *pitch = (struct Pitches*)ListLast3((struct ListHeader3*)tr2.note->pitches);
     if (pitch!=NULL)
       tr2.note->pitch_end = pitch->note;
     else
