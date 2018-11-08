@@ -3437,6 +3437,14 @@ void setVerticalResizeMousePointer(int64_t guinum){
     SetVerticalResizePointer(guinum);
 }
 
+void setVerticalSplitMousePointer(int64_t guinum){
+  if (guinum<0){
+    handleError("guinum for cursor must be 0 or larger");
+    return;
+  }
+    SetVerticalSplitPointer(guinum);
+}
+
 void moveMousePointer(float x, float y, int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if (window!=NULL)

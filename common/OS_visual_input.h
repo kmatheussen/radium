@@ -62,6 +62,7 @@ extern LANGSPEC void SetDiagResizePointer(int64_t guinum);
 extern LANGSPEC void SetHorizResizePointer(int64_t guinum);
 extern LANGSPEC void SetHorizSplitPointer(int64_t guinum);
 extern LANGSPEC void SetVerticalResizePointer(int64_t guinum);
+extern LANGSPEC void SetVerticalSplitPointer(int64_t guinum);
 extern LANGSPEC void MovePointer(struct Tracker_Windows *tvisual, float x, float y);
 extern LANGSPEC void MoveAbsPointer(struct Tracker_Windows *tvisual, float x, float y);
 extern LANGSPEC WPoint GetPointerPos(struct Tracker_Windows *tvisual);
