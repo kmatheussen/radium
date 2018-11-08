@@ -6776,7 +6776,8 @@
                                           (existing-box Num Box) :> Num
                                           A                      :> #f))
                        (if (<ra> :shift-pressed)
-                           (cond ((<ra> :alt2-pressed)
+                           (cond ((or (not Num)
+                                      (<ra> :alt2-pressed))
                                   (undo-block
                                    (lambda ()
                                      (remove-seqtrack-automation seqtracknum automationnum))))
