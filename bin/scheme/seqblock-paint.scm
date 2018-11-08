@@ -118,7 +118,7 @@
 
   ;;(c-display seqblockid (<ra> :get-curr-seqblock-id-under-mouse))
   (define is-current-seqblock (= seqblockid (<ra> :get-curr-seqblock-id-under-mouse)))
-  
+
   (define is-sample (<ra> :seqblock-holds-sample seqblocknum seqtracknum #t))
 
   (call-maybe-paint-box)

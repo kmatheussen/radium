@@ -1621,6 +1621,9 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
 
   if (seqtrack->patch != NULL && seqtrack->patch->patchdata!=NULL)
     plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+
+  const vector_t old_seqblocks = seqtrack->seqblocks;
+
   
   {
     radium::PlayerPause pause(seqtrack_is_live && is_playing_song());
@@ -1652,6 +1655,20 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
 
   SEQTRACKPLUGIN_assert_samples2(seqtrack);
 
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock_old, &old_seqblocks){
+    printf("            Finding seqblock %d\n",(int)seqblock_old->id);
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock_new, &seqtrack->seqblocks){
+      printf("                  Equal to %d? Answer: %d\n", (int)seqblock_new->id, seqblock_old->id==seqblock_new->id);
+      if (seqblock_old->id==seqblock_new->id)
+        goto gotit;
+    }END_VECTOR_FOR_EACH;
+
+    API_seqblock_has_been_deleted(seqblock_old->id);
+    
+  gotit:
+    continue;
+  }END_VECTOR_FOR_EACH;
+  
   R_ASSERT(len1==seqtrack->seqblocks.num_elements);
   SEQTRACK_update(seqtrack);
   SEQUENCER_update(SEQUPDATE_PLAYLIST|SEQUPDATE_NAVIGATOR);
@@ -2931,7 +2948,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       song->default_recording_config = get_recording_config_from_state(HASH_get_hash(state, "default_recording_config"));
     else
       reset_recording_config(&song->default_recording_config);
-    
+
     vector_t seqtracks = {};
 
     {
@@ -2951,6 +2968,8 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     }
     
     int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;
+
+    auto old_seqtracks = song->seqtracks;
     
     {
       radium::PlayerPause pause(is_playing_song());
@@ -2965,6 +2984,26 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       }END_VECTOR_FOR_EACH;
     }
 
+    
+    // notify deleted seqblocks.
+    {
+      QSet<int64_t> new_seqblockids;
+      
+      VECTOR_FOR_EACH(struct SeqTrack *, new_seqtrack, &seqtracks){
+        VECTOR_FOR_EACH(struct SeqBlock *, new_seqblock, &new_seqtrack->seqblocks){
+          new_seqblockids << new_seqblock->id;
+        }END_VECTOR_FOR_EACH;
+      }END_VECTOR_FOR_EACH;
+      
+      VECTOR_FOR_EACH(struct SeqTrack *, old_seqtrack, &old_seqtracks){
+        VECTOR_FOR_EACH(struct SeqBlock *, old_seqblock, &old_seqtrack->seqblocks){
+          if(false==new_seqblockids.contains(old_seqblock->id))
+            API_seqblock_has_been_deleted(old_seqblock->id);
+        }END_VECTOR_FOR_EACH;
+      }END_VECTOR_FOR_EACH;      
+    }
+
+    
     if (root->song==song)
       evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", song->seqtracks.num_elements));
 
