@@ -185,22 +185,87 @@ const char *EVENTLOG_get(void){
 #include <QButtonGroup>
 #include <QGroupBox>
 #include <QStyle>
+#include <QDir>
 
-static QString get_legalized_mail_message(QString message){
-  message = message.replace("&", "_amp_");  // replace all '&' with _amp_ since we don't receive anything after '&'.
-  
-  QString ret;
+static QString get_legalized_message_before_displaying(QString message){
 
-  const int max_line_size = 400;  // The server doesn't send out the mail at all if it contains a very long line. (somewhere between 800 and 900 characters)
+  const QString home_path = QDir::homePath();
+  const QString program_path = QCoreApplication::applicationDirPath();
   
-  for(QString line : message.split("\n")){
-    while(line.size() > max_line_size){
-      ret += line.left(max_line_size) + "\n";
-      line = "    " + line.right(line.size()-max_line_size);
-    }
-    ret += line + "\n";
+  
+  // Include home path and program path:
+  message += QString("HOMEPATH: -") + home_path + "-\n";
+  message += QString("PROGRAMPATH: -") + program_path + "-\n\n";
+  
+
+  // Remove user name. Ensure some anonymity.
+  //
+  {
+    QString user_name = QDir::home().dirName();
+    message = message.replace(user_name, "$USERNAME");
   }
   
+  message += "\n\n";
+  
+  // Check if home_path contains non-standard characters
+  //
+  for(QChar c : home_path){
+    if (c.unicode() > 127){
+      message += QString("\nHome path contains non-ascii character: -") + c + "-\n";
+    } else if (false==c.isLetterOrNumber()) {
+      if(
+#if FOR_WINDOWS
+         c!='\\'
+#else
+         c!='/'
+#endif
+         )
+        message += QString("\nHome path contains character not letter or number: -") + c + "-\n";
+    }
+  }
+  
+  // Check if program_path contains non-standard characters
+  //
+  for(QChar c : program_path){
+    if (c.unicode() > 127){
+      message += QString("\nProgram path contains non-ascii character: -") + c + "-\n";
+    } else if (false==c.isLetterOrNumber()) {
+      if(
+#if FOR_WINDOWS
+         c!='\\'
+#else
+         c!='/'
+#endif
+         )
+        message += QString("\nProgram path contains character not letter or number: -") + c + "-\n";
+    }
+  }
+
+  return message;
+}
+
+static QString get_legalized_mail_message(QString message){
+
+  // replace all '&' with _amp_ since we don't receive anything after '&'.
+  //
+  message = message.replace("&", "_amp_");
+
+  QString ret;
+  
+  // The server doesn't send out the mail at all if it contains a very long line. (somewhere between 800 and 900 characters)
+  //
+  {
+    const int max_line_size = 400;
+    
+    for(QString line : message.split("\n")){
+      while(line.size() > max_line_size){
+        ret += line.left(max_line_size) + "\n";
+        line = "    " + line.right(line.size()-max_line_size);
+      }
+      ret += line + "\n";
+    }
+  }
+
   return ret;
 }
 
@@ -310,7 +375,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     layout.addWidget(&buttons);
     */
 
-    QPlainTextEdit details(message);
+    QPlainTextEdit details(get_legalized_message_before_displaying(message));
     layout.addWidget(&details);
     details.hide();
     
@@ -795,7 +860,8 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 #endif
 
   tosend += "Qt environment variables: \n" + get_qt_environment_variables();
-
+  tosend += "\n\n";
+  
   // start process
   {
 #ifdef FOR_WINDOWS
