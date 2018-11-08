@@ -1847,7 +1847,7 @@ void deletePitchnum(int pitchnum, int tracknum, int blocknum){
 
     if (notes->pitch_end > 0) {
       if (pitchnum==num){
-        struct Pitches *pitch = ListLast3(&notes->pitches->l);
+        struct Pitches *pitch = ListLast3((struct ListHeader3*)notes->pitches);
         if (pitch!=NULL)
           notes->pitch_end = pitch->note;
         else

@@ -303,7 +303,7 @@ void deleteVelocity(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, 
     }
 
   } else if (velocitynum==nodes->num_elements-1) {
-    struct Velocities *last = (struct Velocities*)ListLast3(&note->velocities->l);
+    struct Velocities *last = (struct Velocities*)ListLast3((struct ListHeader3*)note->velocities);
     {
       SCOPED_PLAYER_LOCK_IF_PLAYING();
       note->end = last->l.p;
