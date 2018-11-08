@@ -2379,6 +2379,9 @@ void SetHorizSplitPointer(int64_t guinum){
 void SetVerticalResizePointer(int64_t guinum){
   setCursor(guinum, Qt::SizeVerCursor);
 }
+void SetVerticalSplitPointer(int64_t guinum){
+  setCursor(guinum, Qt::SplitVCursor);
+}
 
 
 double g_last_time_mouse_pointer_was_moved_by_the_program = 0;
