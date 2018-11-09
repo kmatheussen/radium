@@ -254,7 +254,7 @@ bool sequencerInWindow(void){
 }
 
 void showHideSequencerInWindow(void){
-  setSequencerInWindoiw(!sequencerInWindow());    
+  setSequencerInWindow(!sequencerInWindow());    
 }
 
 void switchSequencerPlaylistConfiguration(void){
