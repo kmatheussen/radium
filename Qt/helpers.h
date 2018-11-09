@@ -13,6 +13,7 @@
 #include <QGuiApplication>
 #include <QPointer>
 #include <QDesktopWidget>
+#include <QMouseEvent>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
@@ -445,6 +446,95 @@ static inline void set_widget_takes_care_of_painting_everything(QWidget *widget)
 #endif
   
 }
+
+
+// Call these these three functions in the top of mousePressEvent/mouseMoveEvent/mouseReleaseEvent to ensure mouseReleaseEvent is always called. (workaround for qt design flaw)
+bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event);
+bool MOUSE_CYCLE_move(QWidget *widget, QMouseEvent *event);
+bool MOUSE_CYCLE_unregister(QWidget *widget);
+
+namespace radium{
+
+struct MouseCycleEvent{
+private:
+  
+  QMouseEvent *_event;
+  bool _is_real_event;
+  
+public:
+
+  MouseCycleEvent(QMouseEvent *event, bool is_real_event = true)
+  : _event(event)
+  , _is_real_event(is_real_event)
+  {
+  }
+
+  QPoint pos(void) const {
+    return _event->pos();
+  }
+
+  QPointF localPos(void) const {
+    return _event->localPos();
+  }
+
+  int 	x(void) const {
+    return _event->x();
+  }
+  
+  int 	y(void) const {
+    return _event->y();
+  }
+
+  Qt::MouseButton button() const {
+    return _event->button();
+  }
+
+  Qt::KeyboardModifiers 	modifiers() const {
+    return _event->modifiers();
+  }
+  
+  void accept(void){
+    if(_is_real_event)
+      _event->accept();
+  }
+
+  bool is_real_event(void) const {
+    return _is_real_event;
+  }
+  
+  QMouseEvent *get_qtevent(void) const{
+    if (_is_real_event)
+      return _event;
+    else
+      return NULL;
+  }
+  
+};
+  
+struct MouseCycleFix{
+  virtual void fix_mousePressEvent(QMouseEvent *event) = 0;
+  virtual void fix_mouseMoveEvent(QMouseEvent *event) = 0;
+  virtual void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) = 0;
+};
+}
+
+#define MOUSE_CYCLE_CALLBACKS_FOR_QT                            \
+  void	mousePressEvent(QMouseEvent *event) override{           \
+    if(MOUSE_CYCLE_register(this, event))                       \
+      fix_mousePressEvent(event);                               \
+  }                                                             \
+  void	mouseMoveEvent(QMouseEvent *event) override{            \
+    if(MOUSE_CYCLE_move(this, event))                           \
+      fix_mouseMoveEvent(event);                                \
+  }                                                             \
+  void	mouseReleaseEvent(QMouseEvent *event) override{         \
+    if(MOUSE_CYCLE_unregister(this)){                           \
+      radium::MouseCycleEvent event2(event);                    \
+      fix_mouseReleaseEvent(event2);                            \
+    }                                                           \
+  }
+
+
 
 
 namespace radium{

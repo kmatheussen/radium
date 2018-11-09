@@ -89,6 +89,7 @@ struct FaustResultWebView
 #else
   : public QWebView
 #endif
+  , public radium::MouseCycleFix
 {
 
   bool is_dragging;
@@ -107,20 +108,20 @@ struct FaustResultWebView
   QPoint start;
   QPoint start_scrollPos;
 
-  void setPointer(QMouseEvent * event) {
+  void setPointer(QPoint pos){
 #if !USE_QWEBENGINE
     QWebFrame *frame = page()->mainFrame();
     
-    bool is_in_scrollbar = frame->scrollBarGeometry(Qt::Vertical).contains(event->pos());
+    bool is_in_scrollbar = frame->scrollBarGeometry(Qt::Vertical).contains(pos);
 
-    is_in_scrollbar = is_in_scrollbar || frame->scrollBarGeometry(Qt::Horizontal).contains(event->pos());
+    is_in_scrollbar = is_in_scrollbar || frame->scrollBarGeometry(Qt::Horizontal).contains(pos);
     
     if (!is_in_scrollbar)
 #endif
       setCursor(Qt::OpenHandCursor);
   }
   
-  void mouseMoveEvent(QMouseEvent * event) override {
+  void fix_mouseMoveEvent(QMouseEvent * event) override {
     if (is_dragging){
 #if !USE_QWEBENGINE
       QPoint pos = event->pos();
@@ -141,11 +142,11 @@ struct FaustResultWebView
 #endif
       
       if (cursor().shape() == Qt::ArrowCursor)
-        setPointer(event);      
+        setPointer(event->pos());
     }
   }
   
-  void mousePressEvent(QMouseEvent * event) override {
+  void fix_mousePressEvent(QMouseEvent * event) override {
 #if !USE_QWEBENGINE
     QWebFrame *frame = page()->mainFrame();
 
@@ -187,22 +188,26 @@ struct FaustResultWebView
 #endif
   }
 
-  void mouseReleaseEvent(QMouseEvent * event) override {
+  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override {
     is_dragging = false;
     
     if (was_dragging) {
       event->accept();
     } else {
 #if USE_QWEBENGINE
-      QWebEngineView::mouseReleaseEvent(event);
+      if(event.is_real_event())
+        QWebEngineView::mouseReleaseEvent(event.get_qtevent());
 #else
-      QWebView::mouseReleaseEvent(event);
+      if(event.is_real_event())
+        QWebView::mouseReleaseEvent(event.get_qtevent());
 #endif
     }
 
-    setPointer(event);
+    setPointer(event.pos());
   }
 
+  MOUSE_CYCLE_CALLBACKS_FOR_QT;
+    
   // Seems like QWebView tries to find a smart sizeHint by default. We don't want that.
   QSize sizeHint() const override {
     return QSize(-1,-1);

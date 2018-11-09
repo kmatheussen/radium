@@ -481,7 +481,7 @@ static int getMouseButtonEventID( QMouseEvent *qmouseevent){
 
 static bool g_is_mousing_editor = false;
 
-void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent) {
+void EditorWidget::fix_mousePressEvent( QMouseEvent *qmouseevent) {
   g_is_mousing_editor = true;
   
   if(g_is_starting_up==true)
@@ -519,7 +519,7 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent) {
   qmouseevent->accept();
 }
 
-
+#if FOR_WINDOWS
 void MouseMoveRelative(float x, float y, float dx, float dy) {
 #if 1
   
@@ -558,10 +558,11 @@ void MouseMoveRelative(float x, float y, float dx, float dy) {
   g_editor->updateEditor();
 #endif
 }
+#endif
 
 
 
-void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent) {  
+void EditorWidget::fix_mouseMoveEvent( QMouseEvent *qmouseevent) {  
   if(g_is_starting_up==true)
     return;
 
@@ -591,27 +592,27 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent) {
 }
 
 
-void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent) {
+void EditorWidget::fix_mouseReleaseEvent(radium::MouseCycleEvent &event) {
   g_is_mousing_editor = false;
 
   if(g_is_starting_up==true)
     return;
 
-  if(qmouseevent->button()==Qt::LeftButton){
+  if(event.button()==Qt::LeftButton){
     tevent.ID=TR_LEFTMOUSEUP;
   }else{
-    if(qmouseevent->button()==Qt::RightButton){
+    if(event.button()==Qt::RightButton){
       tevent.ID=TR_RIGHTMOUSEUP;
     }else{
       tevent.ID=TR_MIDDLEMOUSEUP;
     }
   }
 #if USE_QT5
-  tevent.x  = qmouseevent->localPos().x();
-  tevent.y  = qmouseevent->localPos().y();
+  tevent.x  = event.localPos().x();
+  tevent.y  = event.localPos().y();
 #else
-  tevent.x  = qmouseevent->posF().x();
-  tevent.y  = qmouseevent->posF().y();
+  tevent.x  = event.posF().x();
+  tevent.y  = event.posF().y();
 #endif
 
   //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
@@ -624,7 +625,7 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent) {
 
   updateEditor();
 
-  qmouseevent->accept();
+  event.accept();
 }
 
 #endif // USE_QT_VISUAL

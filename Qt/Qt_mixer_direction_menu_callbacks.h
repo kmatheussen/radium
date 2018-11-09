@@ -49,11 +49,6 @@ class Mixer_Direction_Menu : public QDialog, public Ui::Mixer_Direction_Menu{
     QDialog::keyPressEvent(event);
   }                                                                     
 
-  void mouseReleaseEvent(QMouseEvent * event) override {
-    printf("Mouse Released\n");
-    QDialog::mouseReleaseEvent(event);
-  }
-
   void myExec(void){
     update_widget();
     move(QCursor::pos());

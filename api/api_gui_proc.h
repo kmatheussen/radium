@@ -38,12 +38,13 @@ void API_run_paint_event_for_custom_widget(QWidget *widget, QPaintEvent *ev, con
 bool API_run_custom_gui_paint_function(QWidget *widget, QPainter *p, const QRegion *region, std::function<void(void)> func);
 #endif
 
-
+#ifdef RADIUM_QT_HELPERS
 bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
 bool API_run_mouse_move_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
-bool API_run_mouse_release_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
+bool API_run_mouse_release_event_for_custom_widget(QWidget *widget, radium::MouseCycleEvent &event);
 bool API_run_mouse_leave_event_for_custom_widget(QWidget *widget, QEvent *ev);
 void API_run_resize_event_for_custom_widget(QWidget *widget, QResizeEvent *ev);
+#endif
 
 QWidget *API_get_main_ysplitter(void);
 QWidget *API_get_lowertabs(void);

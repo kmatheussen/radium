@@ -63,7 +63,7 @@ extern struct TEvent tevent;
 
 static int g_minimum_height = 0;
 
-struct MyQSlider : public QSlider {
+struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 
  public:
   radium::GcHolder<struct Patch> _patch;
@@ -160,17 +160,17 @@ struct MyQSlider : public QSlider {
   float last_pos;
   bool _has_mouse;
 
-  void handle_mouse_event ( QMouseEvent * event_ ){
-    //printf("Got mouse press event_ %d / %d\n",(int)event_->x(),(int)event_->y());
+  void handle_mouse_event (radium::MouseCycleEvent &event_){
+    //printf("Got mouse press event_ %d / %d\n",(int)event_.x(),(int)event_.y());
 
     float slider_length;
     float new_pos;
 
     if (orientation() == Qt::Vertical) {
-      new_pos = event_->y();
+      new_pos = event_.y();
       slider_length = height();
     } else {
-      new_pos = event_->x();
+      new_pos = event_.x();
       slider_length = width();
     }
 
@@ -179,7 +179,7 @@ struct MyQSlider : public QSlider {
 
     //printf("***** last_pos: %d, new_pos: %d, dx: %d\n",(int)last_pos,(int)new_pos,(int)dx);
     
-    if ((event_->modifiers() & Qt::ControlModifier))
+    if ((event_.modifiers() & Qt::ControlModifier))
       per_pixel /= 10.0f;
 
     last_pos = new_pos;
@@ -194,9 +194,17 @@ struct MyQSlider : public QSlider {
 
     //printf("dx: %f, per_pixel: %f, min/max: %f / %f, value: %f\n",dx,per_pixel,(float)minimum(),(float)maximum(),(float)value());
 
-    event_->accept();
+    event_.accept();
   }
 
+  void handle_mouse_event ( QMouseEvent * event_ ){
+    if (event_==NULL)
+      return;
+
+    radium::MouseCycleEvent event2(event_);
+    handle_mouse_event(event2);
+  }
+  
   void show_slider_popup_menu(void){
     bool is_audio_instrument = _patch->instrument==get_audio_instrument() ;
 
@@ -376,7 +384,7 @@ struct MyQSlider : public QSlider {
   }
   
   // mousePressEvent 
-  void mousePressEvent ( QMouseEvent * event_ ) override
+  void fix_mousePressEvent ( QMouseEvent * event_ ) override
   {
     if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
       return;
@@ -412,7 +420,7 @@ struct MyQSlider : public QSlider {
     }
   }
 
-  void mouseMoveEvent ( QMouseEvent * event_ ) override
+  void fix_mouseMoveEvent ( QMouseEvent * event_ ) override
   {
     if (_has_mouse){
       handle_mouse_event(event_);
@@ -420,7 +428,7 @@ struct MyQSlider : public QSlider {
       QSlider::mouseMoveEvent(event_);
   }
 
-  void mouseReleaseEvent ( QMouseEvent * event_ ) override
+  void fix_mouseReleaseEvent (radium::MouseCycleEvent &event_ ) override
   {
     //printf("Got mouse release event %d / %d\n",(int)event_->x(),(int)event_->y());
     if (_has_mouse){
@@ -431,10 +439,18 @@ struct MyQSlider : public QSlider {
 #endif
       handle_mouse_event(event_);
       _has_mouse=false;
-    }else
-      QSlider::mouseReleaseEvent(event_);
+    }else {
+
+      if (event_.is_real_event()){
+        QSlider::mouseReleaseEvent(event_.get_qtevent());
+      } else {
+        //R_ASSERT_NON_RELEASE(false);
+      }
+    }
   }
 
+  MOUSE_CYCLE_CALLBACKS_FOR_QT;
+    
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
     

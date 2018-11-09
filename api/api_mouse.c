@@ -3420,21 +3420,21 @@ void setHorizontalResizeMousePointer(int64_t guinum){
     handleError("guinum for cursor must be 0 or larger");
     return;
   }
-    SetHorizResizePointer(guinum);
+  SetHorizResizePointer(guinum);
 }
 void setHorizontalSplitMousePointer(int64_t guinum){
   if (guinum<0){
     handleError("guinum for cursor must be 0 or larger");
     return;
   }
-    SetHorizSplitPointer(guinum);
+  SetHorizSplitPointer(guinum);
 }
 void setVerticalResizeMousePointer(int64_t guinum){
   if (guinum<0){
     handleError("guinum for cursor must be 0 or larger");
     return;
   }
-    SetVerticalResizePointer(guinum);
+  SetVerticalResizePointer(guinum);
 }
 
 void setVerticalSplitMousePointer(int64_t guinum){
@@ -3442,7 +3442,7 @@ void setVerticalSplitMousePointer(int64_t guinum){
     handleError("guinum for cursor must be 0 or larger");
     return;
   }
-    SetVerticalSplitPointer(guinum);
+  SetVerticalSplitPointer(guinum);
 }
 
 void moveMousePointer(float x, float y, int windownum){

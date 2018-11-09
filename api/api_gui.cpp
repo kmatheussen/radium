@@ -123,35 +123,59 @@ static bool safe_to_close_widget(void){
 static QPointer<QWidget> g_last_pressed_widget = NULL;
 static QPointer<QWidget> g_last_released_widget = NULL;
 
+#define CALL1_PARENT_MOUSEPRESS(classname) classname::mousePressEvent(event)
+#define CALL1_PARENT_MOUSEMOVE(classname) classname::mouseMoveEvent(event)
+#define CALL1_PARENT_MOUSERELEASE(classname) {if(event.is_real_event()) classname::mouseReleaseEvent(event.get_qtevent());}
+
+#define CALL2_PARENT_MOUSEPRESS(classname) classname::fix_mousePressEvent(event)
+#define CALL2_PARENT_MOUSEMOVE(classname) classname::fix_mouseMoveEvent(event)
+#define CALL2_PARENT_MOUSERELEASE(classname) classname::fix_mouseReleaseEvent(event)
+
+#define CALL_PARENT_MOUSEPRESS(classname) CALL1_PARENT_MOUSEPRESS(classname)
+#define CALL_PARENT_MOUSEMOVE(classname) CALL1_PARENT_MOUSEMOVE(classname)
+#define CALL_PARENT_MOUSERELEASE(classname) CALL1_PARENT_MOUSERELEASE(classname)
+
+
 #define MOUSE_OVERRIDERS(classname)                                     \
-  void mousePressEvent(QMouseEvent *event) override{                    \
+  void fix_mousePressEvent(QMouseEvent *event) override{                \
     ScopedEventHandlerTracker event_handler_tracker;                    \
     g_last_pressed_widget = this;                                       \
     if (_mouse_callback==NULL){                                         \
-      classname::mousePressEvent(event); return;}                       \
+      CALL_PARENT_MOUSEPRESS(classname);                                \
+      return;                                                           \
+    }                                                                   \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (!Gui::mousePressEvent(event))                                   \
-      classname::mousePressEvent(event);                                \
+    if (!Gui::mousePressEvent(event)){                                  \
+      CALL_PARENT_MOUSEPRESS(classname);                                \
+    }                                                                   \
   }                                                                     \
                                                                         \
-  void mouseReleaseEvent(QMouseEvent *event) override {                 \
+  void fix_mouseMoveEvent(QMouseEvent *event) override{                 \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
+    if (_mouse_callback==NULL){                                         \
+      CALL_PARENT_MOUSEMOVE(classname);                                 \
+      return;                                                           \
+    }                                                                   \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
+    if (!Gui::mouseMoveEvent(event)){                                   \
+      CALL_PARENT_MOUSEMOVE(classname);                                 \
+    }                                                                   \
+  }                                                                     \
+                                                                        \
+  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override { \
     ScopedEventHandlerTracker event_handler_tracker;                    \
     g_last_released_widget = this;                                      \
     if (_mouse_callback==NULL){                                         \
-      classname::mouseReleaseEvent(event); return;}                     \
+      CALL_PARENT_MOUSERELEASE(classname);                              \
+      return;                                                           \
+    }                                                                   \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (!Gui::mouseReleaseEvent(event))                                 \
-      classname::mouseReleaseEvent(event);                              \
+    if (!Gui::mouseReleaseEvent(event)){                                \
+      CALL_PARENT_MOUSERELEASE(classname);                              \
+    }                                                                   \
   }                                                                     \
                                                                         \
-  void mouseMoveEvent(QMouseEvent *event) override{                     \
-    ScopedEventHandlerTracker event_handler_tracker;                    \
-    if (_mouse_callback==NULL){                                         \
-      classname::mouseMoveEvent(event); return;}                        \
-    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (!Gui::mouseMoveEvent(event))                                    \
-      classname::mouseMoveEvent(event);                                 \
-  }                                                                     \
+  MOUSE_CYCLE_CALLBACKS_FOR_QT;                                         \
                                                                         \
   void leaveEvent(QEvent *event) override{                              \
     ScopedEventHandlerTracker event_handler_tracker;                    \
@@ -186,6 +210,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
     if (!Gui::keyReleaseEvent(event))                                   \
       classname::keyReleaseEvent(event);                                \
   }
+
 
 #define FOCUSIN_OVERRIDER(classname)                    \
   void focusInEvent ( QFocusEvent *event ) override {   \
@@ -787,7 +812,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     Q_OBJECT;
 
     QWidget *_widget;
-
+      
     QString _last_string_value = "__________________________________"; // Workaround for https://bugreports.qt.io/browse/QTBUG-40
     int64_t _last_int_value = INT64_MIN; // an int normally can't (or at least won't) hold this value.
     double _last_double_value = -DBL_MAX;
@@ -1489,7 +1514,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
 
-    bool mouseReleaseEvent(QMouseEvent *event) {
+    bool mouseReleaseEvent(radium::MouseCycleEvent &event) {
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
       if ((_mouse_event_failed - TIME_get_ms()) > 0){
@@ -1497,11 +1522,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return false;
       }
       
-      event->accept();
+      event.accept();
 
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
-      const QPoint &point = event->pos();
+      const QPoint &point = event.pos();
       bool ret = S7CALL(bool_int_int_float_float, _mouse_callback, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
@@ -1658,6 +1683,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       s7extra_protect(_focus_in_callback);
     }
 
+    
     /************ DOUBLECLICK *******************/
 
     func_t *_doubleclick_callback = NULL;
@@ -2587,7 +2613,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
   
 
-  struct Widget : QWidget, Gui{
+  struct Widget : QWidget, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
 
   public:
@@ -2617,7 +2643,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QWidget);
   };
 
-  struct Popup : QWidget, Gui{
+  struct Popup : QWidget, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
 
   public:
@@ -2661,7 +2687,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   */
 
     
-  struct VerticalAudioMeter : QWidget, public Gui{
+  struct VerticalAudioMeter : QWidget, public Gui, public radium::MouseCycleFix {
     Q_OBJECT;
 
   public:
@@ -2685,7 +2711,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
 
   
-  struct PushButton : QPushButton, Gui{
+  struct PushButton : QPushButton, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -2700,7 +2726,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
 
   
-  struct CheckBox : QCheckBox, Gui{
+  struct CheckBox : QCheckBox, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -2715,7 +2741,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QCheckBox);
   };
 
-  struct RadiumCheckBox : MyQCheckBox_OnlyCustomPainting, Gui{
+  struct RadiumCheckBox : MyQCheckBox_OnlyCustomPainting, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -2730,7 +2756,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(MyQCheckBox_OnlyCustomPainting);
   };
   
-  struct RadioButton : QRadioButton, Gui{
+  struct RadioButton : QRadioButton, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -2745,7 +2771,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QRadioButton);
   };
 
-  struct VerticalLayout : QWidget, Gui{
+  struct VerticalLayout : QWidget, Gui, public radium::MouseCycleFix {
     VerticalLayout()
       : Gui(this)
     {
@@ -2758,7 +2784,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QWidget);
   };
   
-  struct HorizontalLayout : QWidget, Gui{
+  struct HorizontalLayout : QWidget, Gui, public radium::MouseCycleFix {
     HorizontalLayout()
       : Gui(this)
     {
@@ -2791,7 +2817,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
   };
   
-  struct TableLayout : QWidget, Gui{
+  struct TableLayout : QWidget, Gui, public radium::MouseCycleFix {
     TableLayout(int num_columns)
       : Gui(this)
     {
@@ -2802,7 +2828,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QWidget);
   };
   
-  struct MyFlowLayout : QWidget, Gui{
+  struct MyFlowLayout : QWidget, Gui, public radium::MouseCycleFix {
     MyFlowLayout()
       : Gui(this)
     {
@@ -2813,7 +2839,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QWidget);
   };
   
-  struct GroupBox : QGroupBox, Gui{
+  struct GroupBox : QGroupBox, Gui, public radium::MouseCycleFix {
     GroupBox(const char *title)
       : QGroupBox(title)
       , Gui(this)        
@@ -2826,7 +2852,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QGroupBox);
   };
   
-  struct ScrollArea : radium::ScrollArea, Gui{
+  struct ScrollArea : radium::ScrollArea, Gui, public radium::MouseCycleFix {
     QWidget *contents;
     const char *magic = "magic";
 
@@ -2868,7 +2894,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(radium::ScrollArea);
   };
 
-  struct VerticalScroll : radium::ScrollArea, Gui{
+  struct VerticalScroll : radium::ScrollArea, Gui, public radium::MouseCycleFix {
     QWidget *contents;
     const char *magic = "magic2";
     QLayout *mylayout;
@@ -2904,7 +2930,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(radium::ScrollArea);
   };
 
-  struct HorizontalScroll : QScrollArea, Gui{
+  struct HorizontalScroll : QScrollArea, Gui, public radium::MouseCycleFix {
     QWidget *contents;
     const char *magic = "magic3";
     QLayout *mylayout;
@@ -2937,7 +2963,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QScrollArea);
   };
 
-  struct Slider : MyQSlider, Gui{
+  struct Slider : MyQSlider, Gui {
     Q_OBJECT;
 
     bool _is_int;
@@ -2994,7 +3020,24 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         s7extra_unprotect(_get_text);
     }
 
+#undef CALL_PARENT_MOUSEPRESS
+#undef CALL_PARENT_MOUSEMOVE
+#undef CALL_PARENT_MOUSERELEASE
+
+#define CALL_PARENT_MOUSEPRESS(classname) CALL2_PARENT_MOUSEPRESS(classname)
+#define CALL_PARENT_MOUSEMOVE(classname) CALL2_PARENT_MOUSEMOVE(classname)
+#define CALL_PARENT_MOUSERELEASE(classname) CALL2_PARENT_MOUSERELEASE(classname)
+
     OVERRIDERS(MyQSlider);
+
+#undef CALL_PARENT_MOUSEPRESS
+#undef CALL_PARENT_MOUSEMOVE
+#undef CALL_PARENT_MOUSERELEASE
+
+#define CALL_PARENT_MOUSEPRESS(classname) CALL1_PARENT_MOUSEPRESS(classname)
+#define CALL_PARENT_MOUSEMOVE(classname) CALL1_PARENT_MOUSEMOVE(classname)
+#define CALL_PARENT_MOUSERELEASE(classname) CALL1_PARENT_MOUSERELEASE(classname)
+
 
     void set_get_text_func(func_t *get_text){
       _get_text = get_text;
@@ -3053,7 +3096,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
   };
 
-  struct Text : QLabel, Gui{
+  struct Text : QLabel, Gui, public radium::MouseCycleFix {
     Text(QString text, const_char* colorname, bool align_top, bool align_left)
       : Gui(this)
     {
@@ -3119,7 +3162,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
   MakeFocusSnifferClass(QTextBrowser);
   
-  struct Line : MyFocusSnifferQLineEdit, Gui{
+  struct Line : MyFocusSnifferQLineEdit, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
 
   public:
@@ -3135,7 +3178,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(MyFocusSnifferQLineEdit);
   };
 
-  struct MyRatioSnifferQLineEdit : RatioSnifferQLineEdit, Gui{
+  struct MyRatioSnifferQLineEdit : RatioSnifferQLineEdit, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
   public:
     
@@ -3159,7 +3202,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
   
   //  struct TextEdit : FocusSnifferQTextEdit, Gui{
-  struct TextBrowser : FocusSnifferQTextBrowser, Gui{
+  struct TextBrowser : FocusSnifferQTextBrowser, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
 
   public:
@@ -3175,7 +3218,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
 
 
-  struct TextEdit : FocusSnifferQTextEdit, Gui{
+  struct TextEdit : FocusSnifferQTextEdit, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
 
   public:
@@ -3210,7 +3253,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
   
 
-  struct IntText : MyFocusSnifferQSpinBox, Gui{
+  struct IntText : MyFocusSnifferQSpinBox, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -3253,7 +3296,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
   
 
-  struct FloatText : MyFocusSnifferQDoubleSpinBox, Gui{
+  struct FloatText : MyFocusSnifferQDoubleSpinBox, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -3295,7 +3338,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       return QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
   }
   
-  struct Web : FocusSnifferQWebView, Gui{
+  struct Web : FocusSnifferQWebView, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -3496,7 +3539,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
 
 
-  struct FileRequester : QFileDialog, Gui{
+  struct FileRequester : QFileDialog, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -3542,7 +3585,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
 
   
-  struct FontRequester : QFontDialog, Gui{
+  struct FontRequester : QFontDialog, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -3575,7 +3618,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QFontDialog);
   };
 
-  struct TabBar : QTabBar, Gui{
+  struct TabBar : QTabBar, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
 
   public:
@@ -3595,7 +3638,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
 
 
-  struct Tabs : QTabWidget, Gui{
+  struct Tabs : QTabWidget, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
 
   public:
@@ -3626,7 +3669,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
 
 
-  struct Splitter : radium::Splitter, Gui{
+  struct Splitter : radium::Splitter, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -3676,7 +3719,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
   */
 
-  struct Table : QTableWidget, Gui{
+  struct Table : QTableWidget, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
 
   public:
@@ -4053,7 +4096,7 @@ bool API_run_mouse_move_event_for_custom_widget(QWidget *widget, QMouseEvent *ev
     return false;
 }
 
-bool API_run_mouse_release_event_for_custom_widget(QWidget *widget, QMouseEvent *ev){
+bool API_run_mouse_release_event_for_custom_widget(QWidget *widget, radium::MouseCycleEvent &event){
   ScopedEventHandlerTracker event_handler_tracker;
 
   Gui *gui = g_gui_from_widgets.value(widget);
@@ -4064,7 +4107,7 @@ bool API_run_mouse_release_event_for_custom_widget(QWidget *widget, QMouseEvent 
   }
 
   if (gui->_mouse_callback != NULL)
-    return gui->mouseReleaseEvent(ev);
+    return gui->mouseReleaseEvent(event);
   else
     return false;
 }
