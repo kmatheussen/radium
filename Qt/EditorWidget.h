@@ -85,8 +85,7 @@ typedef QPixmap PaintBuffer;
 #include "Qt_colors_proc.h"
 
 
-class EditorWidget : public QWidget //QFrame
-//class EditorWidget : public QtXEmbedContainer //QWidget //QFrame
+class EditorWidget : public QWidget, public radium::MouseCycleFix
 {
 
 public:
@@ -260,9 +259,10 @@ protected:
 
  public:
 #if USE_QT_VISUAL
-    void	mousePressEvent( QMouseEvent *) override;
-    void	mouseReleaseEvent( QMouseEvent *) override;
-    void	mouseMoveEvent( QMouseEvent *) override;
+    void	fix_mousePressEvent( QMouseEvent *) override;
+    void	fix_mouseMoveEvent( QMouseEvent *) override;
+    void	fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override;
+    MOUSE_CYCLE_CALLBACKS_FOR_QT;
 #endif
     void        resizeEvent( QResizeEvent *) override ;
     void        closeEvent(QCloseEvent *) override ;

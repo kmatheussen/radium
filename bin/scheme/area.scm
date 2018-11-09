@@ -393,11 +393,16 @@
                                   #f)))))
 
      (define (mouse-press-internal button x* y*)
-       (c-display "_____________________________________mouse-press" curr-mouse-cycle)
+       ;;(c-display "_____________________________________mouse-press" curr-mouse-cycle)
        (if curr-nonpress-mouse-cycle
            (end-nonpress-mouse-cycle!))
-       ;;(assert (not curr-mouse-cycle)) Unfortunately, we can't trust Qt to send release events.
-       (set! curr-mouse-cycle (get-mouse-cycle button x* y*)))
+       (if (not (<ra> :release-mode))
+           (assert (not curr-mouse-cycle))) ;; Unfortunately, we can't trust Qt to send release events. (fixed now)
+       (set! curr-mouse-cycle (get-mouse-cycle button x* y*))
+       ;;(c-display "====-------Setting curr-mouse-cycle to:" curr-mouse-cycle)
+       ;;(<ra> :show-warning "gakk")
+       curr-mouse-cycle)
+     
      (define (mouse-move-internal button x* y*)
        (cond (curr-mouse-cycle
               (curr-mouse-cycle :drag-func button x* y*))
@@ -412,12 +417,19 @@
        ;;(c-display "mouse-release enter" curr-mouse-cycle)
        (let ((mouse-cycle curr-mouse-cycle))
          (set! curr-mouse-cycle #f)
+         ;;(c-display "===------ Unsetting curr-mouse-cycle");
          (if mouse-cycle
              (mouse-cycle :release-func button x* y*)))
        ;;(c-display "mouse-release leave" curr-mouse-cycle)
        )
 
      (define (mouse-callback-internal button state x y)
+
+       ;; make sure release is always called when releasing, no matter other states.
+       (when (= state *is-releasing*)
+         ;;(c-display "     MOUSE-CALLBACK-INTERNAL called for" class-name)
+         (mouse-release-internal button x y))
+       
        (cond (*current-mouse-cycle*
               #f) ;; i.e. mouse.scm is handling mouse now.
              ((= state *is-leaving*)
@@ -426,12 +438,12 @@
                   #f))
              ((= state *is-moving*)
               (mouse-move-internal button x y))
-             ((= state *is-releasing*)
-              (mouse-release-internal button x y))
              ((not (inside? x y))
               #f)
              ((= state *is-pressing*)
               (mouse-press-internal button x y))
+             ((= state *is-releasing*)
+              #f)
              (else
               (assert #f)
               #f)))
@@ -542,7 +554,9 @@
      :overlaps? x (apply overlaps? x)
      :paint-internal x (apply paint-internal x)
      :mouse-callback-internal x (apply mouse-callback-internal x)
-     :has-mouse () (or curr-mouse-cycle curr-nonpress-mouse-cycle)
+     :has-mouse () (begin
+                     ;;(c-display "has-mouse:" class-name curr-mouse-cycle curr-nonpress-mouse-cycle)
+                     (or curr-mouse-cycle curr-nonpress-mouse-cycle))
      :reset! x (apply reset! x)
      :i-am-removed! x (apply i-am-removed! x)
      :add-statusbar-text-handler x (apply add-statusbar-text-handler x)
@@ -591,7 +605,7 @@
     (<gui> :close *testgui*))
 
 (define *testgui* (and *use-testgui*
-                     (<gui> :widget 500 500)))
+                       (<gui> :widget 500 500)))
 
 
 ;; Save some cycles by not painting background color if only vertical audio meters are updated (meters are repainted continously)
@@ -638,12 +652,11 @@
                              (right-mouse-clicked-callback)
                              #t)
                             ((= button *left-button*)                        
-                             (set! is-selected (not is-selected))
-                             (value-changed-callback is-selected)
+                             (value-changed-callback (not (is-selected-func)))
                              (update-me!)
-                             #f)
+                             #t)
                             (else
-                             #f)))
+                             #t)))
                     (lambda (button x* y*)
                       #f)
                     (lambda (button x* y*)

@@ -125,7 +125,7 @@ void StopAllInstruments(void){
           
         while(instrument!=NULL){              
           VECTOR_FOR_EACH(struct Patch *, patch, &instrument->patches){
-            PLAYER_maybe_pause_lock_a_little_bit(iterator666);
+            //PLAYER_maybe_pause_lock_a_little_bit(iterator666); // PATCH_stop_all_notes calls this function too.
             PATCH_stop_all_notes(patch);
           }END_VECTOR_FOR_EACH;
           

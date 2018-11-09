@@ -1246,6 +1246,8 @@
 
 (add-mouse-move-handler
  :move (lambda ($button X Y)
+         ;;(c-display "x/y/sequencer:" X Y (box-to-string (<ra> :get-box sequencer)))
+
          ;;(c-display X Y (box-to-string (get-seqnav-move-box)))
          (cond ((and *current-track-num*
                      (inside-box (<ra> :get-box track-pan-slider *current-track-num*) X Y))

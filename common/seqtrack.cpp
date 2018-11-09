@@ -1656,9 +1656,9 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
   SEQTRACKPLUGIN_assert_samples2(seqtrack);
 
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock_old, &old_seqblocks){
-    printf("            Finding seqblock %d\n",(int)seqblock_old->id);
+    //printf("            Finding seqblock %d\n",(int)seqblock_old->id);
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock_new, &seqtrack->seqblocks){
-      printf("                  Equal to %d? Answer: %d\n", (int)seqblock_new->id, seqblock_old->id==seqblock_new->id);
+      //printf("                  Equal to %d? Answer: %d\n", (int)seqblock_new->id, seqblock_old->id==seqblock_new->id);
       if (seqblock_old->id==seqblock_new->id)
         goto gotit;
     }END_VECTOR_FOR_EACH;

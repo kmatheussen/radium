@@ -545,6 +545,126 @@ static void schedule_set_editor_focus(int ms){
   QTimer::singleShot(ms, set_editor_focus);
 }
 
+namespace{
+  struct MouseCycle{    
+    QPointer<QWidget> widget;
+    int64_t id;
+    QPointF local_pos;
+    Qt::MouseButton button;
+    Qt::MouseButtons buttons;
+    Qt::KeyboardModifiers modifiers;
+  };
+}
+
+
+static MouseCycle g_curr_mouse_cycle;
+
+static void MOUSE_CYCLE_unregister_all(int64_t id);
+
+static void set_curr_mouse_cycle(QMouseEvent *event){
+  g_curr_mouse_cycle.local_pos = event->localPos();
+  g_curr_mouse_cycle.button = event->button();
+  g_curr_mouse_cycle.buttons = event->buttons();
+  g_curr_mouse_cycle.modifiers = event->modifiers();
+}
+
+bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event){
+  
+  R_ASSERT(widget!=NULL);
+  
+  R_ASSERT_NON_RELEASE2(dynamic_cast<radium::MouseCycleFix*>(widget) != NULL, true);
+
+  if (event->buttons()==Qt::NoButton)
+    return true;
+
+#if !defined(RELEASE)
+  printf("CYCLE: registering %p\n", widget);
+#endif
+  
+  if(widget != g_curr_mouse_cycle.widget.data()) {  // widget==g_curr_mouse_cycle.widget.data() when subclass::mousePressEvent calls parent::mousePressEvent.
+
+    MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id); // The main call to MOUSE_CYCLE_unregister_all is delayed a little bit, so we could have an alive cycle.
+    
+    g_curr_mouse_cycle.widget = widget;
+  }
+  
+  static int64_t g_mouse_cycle_id = 0;
+  g_curr_mouse_cycle.id = g_mouse_cycle_id++;
+  
+  set_curr_mouse_cycle(event);
+
+  return true;
+}
+
+
+bool MOUSE_CYCLE_move(QWidget *widget, QMouseEvent *event){
+  if (g_curr_mouse_cycle.widget.data() != widget){
+
+    /*
+    // even this can happen. Sigh.
+    R_ASSERT_NON_RELEASE(event->buttons()==Qt::NoButton);
+    R_ASSERT_NON_RELEASE(event->button()==Qt::NoButton);
+    */
+
+    if(event->buttons() != Qt::NoButton){
+      MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id);
+    }
+    
+    return g_curr_mouse_cycle.widget.data() == NULL;    
+  }
+
+  if(event->buttons() == Qt::NoButton){
+    MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id);
+  }
+    
+  //printf("CYCLE: moving %p\n", widget);
+  
+  set_curr_mouse_cycle(event);
+
+  return true;
+}
+
+bool MOUSE_CYCLE_unregister(QWidget *widget){
+#if !defined(RELEASE)
+  printf("CYCLE: unregistering %p\n", widget);
+#endif
+  
+  if(g_curr_mouse_cycle.widget.data() != widget)
+    MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id);
+  
+  g_curr_mouse_cycle.widget.clear();
+  return true;
+}
+
+static void MOUSE_CYCLE_unregister_all(int64_t id){
+  QWidget *w = g_curr_mouse_cycle.widget.data();
+  if(w==NULL)
+    return;
+
+  if (g_curr_mouse_cycle.id != id){
+    R_ASSERT(g_curr_mouse_cycle.id > id);
+    return;
+  }
+  
+  QMouseEvent e(QEvent::MouseButtonRelease,
+                g_curr_mouse_cycle.local_pos,
+                g_curr_mouse_cycle.button,
+                g_curr_mouse_cycle.buttons,
+                g_curr_mouse_cycle.modifiers);
+                                             
+  g_curr_mouse_cycle.widget.clear();
+                                            
+  auto *mouse_cycle_fix = dynamic_cast<radium::MouseCycleFix*>(w);  
+  R_ASSERT_RETURN_IF_FALSE(mouse_cycle_fix != NULL);
+
+#if !defined(RELEASE)
+  printf("   CYCLE: Unregistering all. Calling %p\n", w);
+#endif
+  
+  radium::MouseCycleEvent e2(&e, false);
+  mouse_cycle_fix->fix_mouseReleaseEvent(e2);
+}
+
 class MyApplication
   : public QApplication
 #if USE_QT5
@@ -994,8 +1114,27 @@ protected:
     // TODO: Check if getting this event:
     // QEvent::ApplicationFontChange
     // could be used for something. For instance to fix OpenGL widget position.
+
+    bool activation_changed = event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate;
+    auto ret = QApplication::eventFilter(obj, event);
+
+    if (activation_changed){
+      static int64_t last_id = -1;
+      int64_t id = g_curr_mouse_cycle.id;
+      
+      if (id > last_id){
+        
+        last_id = id;
+        
+        QTimer::singleShot(30, [id]{ // delay it a little bit since we might be called from a mouse event.
+            MOUSE_CYCLE_unregister_all(id);
+          });
+        
+      }
+      
+    }
     
-    return QApplication::eventFilter(obj, event);
+    return ret;
   }
   
   /*
@@ -2344,6 +2483,8 @@ static void setCursor(int64_t guinum, const QCursor &cursor){
   if (widget==NULL)
     return;
 
+  //printf("============Setting cursor to %d\n", cursor.shape());
+  
 #if !defined(RELEASE)
   if (g_user_interaction_enabled==true)
     R_ASSERT(!widget->isWindow()); // Can have this assertion since we currently have no such calls. If it happens, it will cause the mouse cursor to be stuck in this mode for the whole window.

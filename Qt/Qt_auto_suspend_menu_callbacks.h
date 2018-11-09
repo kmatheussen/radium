@@ -48,12 +48,7 @@ class Auto_Suspend_Menu : public QDialog, public Ui::Auto_Suspend_Menu{
       hide();
     QDialog::keyPressEvent(event);
   }                                                                     
-
-  void mouseReleaseEvent(QMouseEvent * event) override {
-    printf("Mouse Released\n");
-    QDialog::mouseReleaseEvent(event);
-  }
-
+  
   void myExec(void){
     update_widget();
     move(QCursor::pos());

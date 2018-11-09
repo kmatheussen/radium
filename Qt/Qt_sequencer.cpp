@@ -468,8 +468,12 @@ static void paintCurrBorder(QPainter &p, const QRectF &rect, const QColor &color
   //p.setRenderHints(QPainter::Antialiasing,true);
 }
 
+static bool in_editor_window(QWidget *widget){
+  return g_editor->isVisible() && widget->window()==g_editor->QWidget::window();
+}
+
 QPoint mapFromEditor(QWidget *widget, QPoint point){
-  QPoint global = g_editor->isVisible()
+  QPoint global = in_editor_window(widget)
     ? g_editor->mapToGlobal(point)
     : QPoint(point.x()-10000, point.y()-10000);
 
@@ -478,7 +482,7 @@ QPoint mapFromEditor(QWidget *widget, QPoint point){
 }
 
 QPoint mapToEditor(QWidget *widget, QPoint point){
-  if (!g_editor->isVisible())
+  if (!in_editor_window(widget))
     return skewedPoint(widget, point, 10000, 10000);
   
   //return widget->mapTo(g_editor, point); (g_editor must be a parent, for some reason)
@@ -561,7 +565,7 @@ static QColor get_seqblock_color(const SeqTrack *seqtrack, const SeqBlock *seqbl
     return get_block_color(seqblock->block);
 }
 
-class MouseTrackerQWidget : public QWidget {
+class MouseTrackerQWidget : public QWidget, public radium::MouseCycleFix {
 public:
 
   bool _is_sequencer_widget;
@@ -586,9 +590,9 @@ public:
       return 0;
   }
 
-  void	mousePressEvent( QMouseEvent *event) override{
+  void	fix_mousePressEvent(QMouseEvent *event) override{
     event->accept();
-
+    
     if (_is_sequencer_widget)
       if (API_run_mouse_press_event_for_custom_widget(SEQUENCER_getWidget(), event))
         return;
@@ -598,21 +602,11 @@ public:
     SCHEME_mousepress(_currentButton, point.x(), point.y());
     //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
   }
-  void	mouseReleaseEvent( QMouseEvent *event) override{
+  void	fix_mouseMoveEvent(QMouseEvent *event) override{
+    //printf("sequencer. mouseMove: %d,%d\n", event->x(), event->y());
+
     event->accept();
-
-    if (_is_sequencer_widget)
-      if (API_run_mouse_release_event_for_custom_widget(SEQUENCER_getWidget(), event))
-        return;
-
-    QPoint point = mapToEditor(this, event->pos());
-    SCHEME_mouserelease(_currentButton, point.x(), point.y());
-    _currentButton = 0;
-    //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
-  }
-  void	mouseMoveEvent( QMouseEvent *event) override{
-    event->accept();
-
+    
     if (_is_sequencer_widget)
       if (API_run_mouse_move_event_for_custom_widget(SEQUENCER_getWidget(), event))
         return;
@@ -621,6 +615,21 @@ public:
     SCHEME_mousemove(_currentButton, point.x(), point.y());
     //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
   }
+  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{    
+    event.accept();
+    
+    if (_is_sequencer_widget)
+      if (API_run_mouse_release_event_for_custom_widget(SEQUENCER_getWidget(), event))
+        return;
+
+    QPoint point = mapToEditor(this, event.pos());
+    SCHEME_mouserelease(_currentButton, point.x(), point.y());
+    _currentButton = 0;
+    //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+  }
+
+  MOUSE_CYCLE_CALLBACKS_FOR_QT;
+  
   void leaveEvent(QEvent *event) override{
     API_run_mouse_leave_event_for_custom_widget(SEQUENCER_getWidget(), event);
   }
