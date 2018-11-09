@@ -180,6 +180,14 @@
 (define (FROM-C-hide-instrument-gui)
   (hide-lowertab-gui (<gui> :get-instrument-gui)))
 
+(define (FROM-C-sequencer-set-gui-in-window! doit)
+  (cond ((and doit
+              (not *sequencer-window-gui-active*))
+         (move-sequencer-to-window))
+        ((and (not doit)
+              *sequencer-window-gui-active*)
+         (move-sequencer-to-main-tabs))))
+      
 (define (FROM-C-sequencer-gui-in-window)
   *sequencer-window-gui-active*)
 
