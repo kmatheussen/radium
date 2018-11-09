@@ -4277,14 +4277,18 @@ void SEQUENCER_unset_selection_rectangle(void){
   g_sequencer_widget->_has_selection_rectangle = false;
 
   const QRect &old_rect = g_sequencer_widget->_selection_rectangle;
-  
-  int seqtrack1 = getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y()));
-  int seqtrack2 = getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y()+old_rect.height()));
-  
-  for(int seqtracknum=seqtrack1 ; seqtracknum < seqtrack2+1 ; seqtracknum++)
-    SEQTRACK_update((struct SeqTrack*)root->song->seqtracks.elements[seqtracknum]);
 
-  //g_sequencer_widget->update(g_sequencer_widget->_selection_rectangle);
+  // Not sure why this is necessary. Forgot to comment.
+  {
+    int seqtrack1 = getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y()));
+    int seqtrack2 = getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y()+old_rect.height()));
+    
+    for(int seqtracknum=seqtrack1 ; seqtracknum < seqtrack2+1 ; seqtracknum++)
+      SEQTRACK_update((struct SeqTrack*)root->song->seqtracks.elements[seqtracknum]);
+  }
+  
+  // This one is needed (after the above updates of seqtracks) to update seqtrack borders.
+  g_sequencer_widget->update(old_rect);
 }
 
 
