@@ -245,8 +245,16 @@ void showHideSequencer(void){
     showSequencer();
 }
 
+void setSequencerInWindow(bool doit){
+  S7CALL2(void_bool, "FROM-C-sequencer-set-gui-in-window!", doit);
+}
+
 bool sequencerInWindow(void){
   return S7CALL2(bool_void, "FROM-C-sequencer-gui-in-window");
+}
+
+void showHideSequencerInWindow(void){
+  setSequencerInWindoiw(!sequencerInWindow());    
 }
 
 void switchSequencerPlaylistConfiguration(void){

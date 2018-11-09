@@ -56,7 +56,7 @@
                                           #f))
 
 ;; Remove from main tabs, and open in new window
-(define (move-sequencer-to-window)    
+(define (move-sequencer-to-window)
   (assert (not *sequencer-window-gui-active*))
   (set! *sequencer-window-gui-active* #t)
   
@@ -1239,9 +1239,7 @@
                                        is-full))
                                  (lambda (new-value)
                                    (if (eq? type 'window)
-                                       (if new-value
-                                           (move-sequencer-to-window)
-                                           (move-sequencer-to-main-tabs))
+                                       (FROM-C-sequencer-set-gui-in-window! new-value)
                                        (set! is-full new-value)))
                                  :text (if (eq? type 'window) "W" "F"))))
    )
