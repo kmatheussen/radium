@@ -3837,7 +3837,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       bool is_last = seqtracknum==num_elements;
       const Seqblocks_widget w = get_seqblocks_widget(R_MIN(num_elements-1,seqtracknum), false);
       double y = floor(is_last ? w.t_y2 : w.t_y1) - 1;
-      float x1 = w.t_x1; //get_seqtrack_border_width()+3;//w.t_x1; //;
+      float x1 = SEQUENCER_get_left_part_x1();//w.t_x1; //get_seqtrack_border_width()+3;//w.t_x1; //;
       float x2 = w.t_x2; //width();
 
       {
