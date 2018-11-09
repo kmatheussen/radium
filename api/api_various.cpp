@@ -226,11 +226,27 @@ void showHideEditor(int windownum){
   GFX_showHideEditor();
 }
 
+void showSequencer(void){
+  GFX_ShowSequencer();
+}
+
+void hideSequencer(void){
+  GFX_HideSequencer();
+}
+
+bool sequencerIsVisible(void){
+  return GFX_SequencerIsVisible();
+}
+
 void showHideSequencer(void){
-  if(GFX_SequencerIsVisible())
-    GFX_HideSequencer();
+  if(sequencerIsVisible())
+    hideSequencer();
   else
-    GFX_ShowSequencer();
+    showSequencer();
+}
+
+bool sequencerInWindow(void){
+  return S7CALL2(bool_void, "FROM-C-sequencer-gui-in-window");
 }
 
 void switchSequencerPlaylistConfiguration(void){

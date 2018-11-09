@@ -4734,16 +4734,7 @@ void RT_SEQUENCER_update_sequencer_and_playlist(void){
 }
 */
 
-static bool g_sequencer_visible = true;
 static bool g_sequencer_hidden_because_instrument_widget_is_large = false;
-
-static void init_sequencer_visible(void){
-  static bool g_sequencer_visible_inited = false;
-  if (g_sequencer_visible_inited==false){
-    g_sequencer_visible = g_sequencer_widget->isVisible();
-    g_sequencer_visible_inited=true;
-  }
-}
 
 /*
 bool GFX_SequencerIsVisible(void){
@@ -4753,38 +4744,34 @@ bool GFX_SequencerIsVisible(void){
 */
 
 void GFX_ShowSequencer(void){
-  init_sequencer_visible();
-  
   //set_widget_height(30);
   if (g_sequencer_hidden_because_instrument_widget_is_large == false){
     API_showSequencerGui();
-    g_sequencer_visible = true;
   }
 
   set_editor_focus();
 }
 
 void GFX_HideSequencer(void){
-  init_sequencer_visible();
-
   API_hideSequencerGui();
-  g_sequencer_visible = false;
   //set_widget_height(0);
 
   set_editor_focus();
 }
 
 void SEQUENCER_hide_because_instrument_widget_is_large(void){
-  init_sequencer_visible();
-
+  if (sequencerInWindow())
+    return;
+  
   g_sequencer_widget->hide();
   g_sequencer_hidden_because_instrument_widget_is_large = true;
 }
 
 void SEQUENCER_show_because_instrument_widget_is_large(void){
-  init_sequencer_visible();
+  if (sequencerInWindow())
+    return;
   
-  if (g_sequencer_visible == true){
+  if (GFX_SequencerIsVisible()){
     GL_lock(); {
       g_sequencer_widget->show();
     }GL_unlock();

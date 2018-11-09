@@ -634,16 +634,34 @@
              #f)))
 ||#
 
-
+(define (get-default-button-color gui)
+  (define gui-background-color (<gui> :get-background-color gui))
+  (<gui> :mix-colors "#010101" gui-background-color 0.5))
 
 (def-area-subclass (<checkbox> :gui :x1 :y1 :x2 :y2
-                               :is-selected
-                               :paint-func
+                               :is-selected-func
                                :value-changed-callback
+                               :paint-func #f
+                               :text "" ;; Only used if paint-func is #f
+                               :text-color *text-color* ;; Only used if paint-func is #f
+                               :selected-color #f ;; only used if paint-func is #f. If #f, use get-default-button-color
                                :right-mouse-clicked-callback #f)
 
+  (if (not selected-color)
+      (set! selected-color (get-default-button-color gui)))
+
   (define-override (paint)
-    (paint-func is-selected))
+    (if paint-func
+        (paint-func (is-selected-func))
+        (draw-checkbox gui
+                       text
+                       (is-selected-func)
+                       x1 y1 x2 y2
+                       selected-color
+                       :text-color text-color
+                       :paint-implicit-border #t
+                       :implicit-border-width 0.25
+                       )))
 
   (add-mouse-cycle! (lambda (button x* y*)
                       (cond ((and right-mouse-clicked-callback
@@ -677,35 +695,34 @@
 
   (define is-pressing #f)
 
-  (define gui-background-color (<gui> :get-background-color gui))
   (define fontheight (get-fontheight))
   (define b (max 1 (myfloor (/ fontheight 2.5)))) ;; border
   
   (define r 3) ;;rounding
   (define r/2 2)
+
+  (if (not background-color)
+      (set! background-color (get-default-button-color gui)))
   
   (define (mypaint)
-    (let ((background-color (if background-color
-                                background-color
-                                (<gui> :mix-colors "#010101" gui-background-color 0.5))))
-      (if (not is-pressing)
-          (<gui> :filled-box gui background-color (+ x1 0) (+ y1 0) (- x2 0) (- y2 0) r r))
-          
-      (if (not (string=? "" text))
-          (<gui> :draw-text
-                 gui
-                 *text-color*
-                 text
-                 (+ x1 3) (+ y1 2) (- x2 3) (- y2 2)
-                 #t ; wrap lines
-                 #f ; align left
-                 #f ; align top
-                 0  ; rotate
-                 #f ; cut text to fit
-                 #t ; scale font size
-                 ))
-      (if is-pressing
-          (<gui> :draw-box gui background-color (+ x1 r/2) (+ y1 r/2) (- x2 r/2) (- y2 r/2) b r r))))
+    (if (not is-pressing)
+        (<gui> :filled-box gui background-color (+ x1 0) (+ y1 0) (- x2 0) (- y2 0) r r))
+    
+    (if (not (string=? "" text))
+        (<gui> :draw-text
+               gui
+               *text-color*
+               text
+               (+ x1 3) (+ y1 2) (- x2 3) (- y2 2)
+               #t ; wrap lines
+               #f ; align left
+               #f ; align top
+               0  ; rotate
+               #f ; cut text to fit
+               #t ; scale font size
+               ))
+    (if is-pressing
+        (<gui> :draw-box gui background-color (+ x1 r/2) (+ y1 r/2) (- x2 r/2) (- y2 r/2) b r r)))
     
   (define-override (paint)
     (if paint-func

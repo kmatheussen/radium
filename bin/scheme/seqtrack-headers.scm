@@ -48,6 +48,76 @@
    (get-seqtrack-popup-menu-entries seqtracknum)))
 
 
+(define *sequencer-window-gui* (if (defined? '*sequencer-window-gui*)
+                                   *sequencer-window-gui*
+                                   #f))
+(define *sequencer-window-gui-active* (if (defined? '*sequencer-window-gui-active*)
+                                          *sequencer-window-gui-active*
+                                          #f))
+
+;; Remove from main tabs, and open in new window
+(define (move-sequencer-to-window)    
+  (assert (not *sequencer-window-gui-active*))
+  (set! *sequencer-window-gui-active* #t)
+  
+  (let* ((sequencer-gui (<gui> :get-sequencer-gui))
+         (has-window *sequencer-window-gui*)
+         (window (if has-window
+                     *sequencer-window-gui*
+                     (let ((window (<gui> :vertical-layout)))
+                       (<gui> :set-size
+                              window
+                              (<gui> :width (<gui> :get-parent-window sequencer-gui))
+                              (+ (floor (* (get-fontheight) 1.5))
+                                 (<gui> :height sequencer-gui)))
+                       (<gui> :set-takes-keyboard-focus window #f)
+                       window))))
+    
+    (<gui> :remove-parent sequencer-gui)
+    
+    (define bottom-bar (if has-window
+                           (let ((bottom-bar (<gui> :child window "bottom-bar")))
+                             (<gui> :remove-parent bottom-bar)
+                             bottom-bar)
+                           (let ((bottom-bar (<gui> :bottom-bar)))
+                             (<gui> :set-name bottom-bar "bottom-bar")
+                             bottom-bar)))
+    
+    (<gui> :add window sequencer-gui)
+    (<gui> :add window bottom-bar)
+    
+    (<gui> :set-as-window window -1)
+    (<gui> :show sequencer-gui)
+    (<gui> :show window)
+    
+    (when (not has-window)
+
+      (<gui> :add-close-callback window
+             (lambda (radium-runs-custom-exec)
+               ;;(move-sequencer-to-main-tabs)
+               (<gui> :hide window)
+               #f))
+      
+      (set! *sequencer-window-gui* window))
+    
+    ))
+
+
+;; Remove from sequencer window, add to main tabs, hide sequencer window gui.
+(define (move-sequencer-to-main-tabs)
+  (assert *sequencer-window-gui-active*)    
+  (set! *sequencer-window-gui-active* #f)
+    
+  (let ((sequencer-gui (<gui> :get-sequencer-gui))
+        (window *sequencer-window-gui*))
+    (<gui> :remove-parent sequencer-gui)
+    (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-gui 0)
+    (<gui> :set-current-tab *lowertab-gui* 0)
+    (<gui> :hide window)))
+
+
+
+
 (define *has-shown-record-message* #t)
 (define (maybe-show-record-message)
   (when (not *has-shown-record-message*)
@@ -264,29 +334,15 @@
   
   (layout-func x1 y1 x2 y2
                (if for-audiofiles
-                   '(height record mute solo)
+                   '(record mute solo height)
                    '(height))
                :callback
                (lambda (type x1 y1 x2 y2)
                  ;;(c-display "   BOX:" type x1 y1 x2 y2)
                  (define box (<new> :checkbox gui x1 y1 x2 y2
-                                    #t
-                                    (lambda (_)
-                                      (define is-selected (get-selected type))
-                                      (if (eq? type 'solo)
-                                          (set! last-drawn-implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id)))
-                                      (draw-mutesolo gui
-                                                     type
-                                                     instrument-id
-                                                     x1 y1 x2 y2
-                                                     is-selected
-                                                     use-single-letters
-                                                     :background-color (get-seqtrack-background-color gui seqtracknum)
-                                                     :border 0
-                                                     :implicit-border 1
-                                                     ))
-                                    (lambda (_)
-                                      (define is-selected (not (get-selected type)))
+                                    (lambda ()
+                                      (get-selected type))
+                                    (lambda (is-selected)
                                       (undo-block
                                        (lambda ()
                                          (cond ((eq? type 'height)
@@ -314,6 +370,20 @@
                                                     (turn-off-all-mute instrument-id)))
                                                (else
                                                 (assert #f))))))
+                                    :paint-func
+                                    (lambda (is-selected)
+                                      (if (eq? type 'solo)
+                                          (set! last-drawn-implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id)))
+                                      (draw-mutesolo gui
+                                                     type
+                                                     instrument-id
+                                                     x1 y1 x2 y2
+                                                     is-selected
+                                                     use-single-letters
+                                                     :background-color (get-seqtrack-background-color gui seqtracknum)
+                                                     :border 0
+                                                     :implicit-border 1
+                                                     ))
                                     :right-mouse-clicked-callback (lambda ()
                                                                     (cond ((eq? type 'height)
                                                                            (show-seqtrack-height-gui seqtracknum #f))
@@ -482,7 +552,9 @@
      (update-me!)
      )
    (lambda (button x* y*)
-     (c-display "release button/x/y" x* y*)))
+     ;;(c-display "release button/x/y" x* y*)
+     #f
+     ))
   
   (define (get-statusbar-text)
     (get-volume-slider-text (get-radium-normalized)))
@@ -603,7 +675,6 @@
 
   )
 ||#
-
 
 (def-area-subclass (<instrument-pan-slider> :gui :x1 :y1 :x2 :y2
                                             :instrument-id
@@ -927,34 +998,48 @@
 
 (def-area-subclass (<sequencer-height-dragger> :gui :x1 :y1 :x2 :y2)
   (define background-color (<gui> :get-background-color gui))
-  (define border-color (<gui> :mix-colors background-color "black" 0.5))
+  (define border-color (get-default-button-color gui))
 
+  (define (is-active)
+    (not *sequencer-window-gui-active*))
+  
   (define-override (paint)
     ;;(<gui> :filled-box gui background-color 0 0 width height)
-    (<gui> :draw-text gui *text-color* "=" x1 y1 x2 y2
-           #f ;; wrap-lines
-           #f ;; align top
-           #f)
-    (<gui> :draw-box gui border-color
-           (1+ x1) (1+ y1)
-           (1- x2) (1- y2)
-           1.3 0 0)) ;; align left
-
+    (when (is-active)
+      (<gui> :draw-text gui *text-color* "=" x1 y1 x2 y2
+             #f ;; wrap-lines
+             #f ;; align top
+             #f)
+      (<gui> :draw-box gui border-color
+             (1+ x1) (1+ y1)
+             (1- x2) (1- y2)
+             1.3 0 0))) ;; align left
+      
   (add-nonpress-mouse-cycle!
    :enter-func (lambda (x* y)
                  ;;(c-display "ENTER DRAGGER" class-name)
-                 (set-mouse-pointer ra:set-vertical-split-mouse-pointer gui)
-                 #t)
+                 (if (is-active)
+                     (begin
+                       (set-mouse-pointer ra:set-vertical-split-mouse-pointer gui)
+                       #t)
+                     #f))
    :leave-func (lambda ()
                  ;;(c-display "LEAVE DRAGGER")
                  (set-mouse-pointer ra:set-normal-mouse-pointer gui)
                  #f))
 
-  (add-statusbar-text-handler "Change sequencer height")
+  (add-statusbar-text-handler (lambda ()
+                                (if (is-active)
+                                    "Change sequencer height"
+                                    "")))
   
   (add-delta-mouse-cycle!
    :press-func (lambda (button x* y*)
-                 (set-mouse-pointer ra:set-vertical-split-mouse-pointer gui))
+                 (if (is-active)
+                     (begin
+                       (set-mouse-pointer ra:set-vertical-split-mouse-pointer gui)
+                       #t)
+                     #f))
    :drag-func
    (lambda (button x* y* dx dy)
      
@@ -1134,7 +1219,32 @@
 !!#
 
 (def-area-subclass (<sequencer-left-part-top-bar> :gui :x1 :y1 :x2 :y2)
-  (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 x2 y2))
+  (define buttons-width (myfloor (* 1.8 (<gui> :text-width "| W | F |"))))
+  (define buttons-x1 (- x2 buttons-width))
+  
+  (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 buttons-x1 y2))
+
+  (define is-window #f)
+  (define is-full #f)
+
+  (horizontally-layout-areas
+   buttons-x1 y1 x2 y2
+   '(window full)
+   :callback
+   (lambda (type x1 y1 x2 y2)
+     (add-sub-area-plain! (<new> :checkbox gui x1 y1 x2 y2
+                                 (lambda ()
+                                   (if (eq? type 'window)
+                                       *sequencer-window-gui-active*
+                                       is-full))
+                                 (lambda (new-value)
+                                   (if (eq? type 'window)
+                                       (if new-value
+                                           (move-sequencer-to-window)
+                                           (move-sequencer-to-main-tabs))
+                                       (set! is-full new-value)))
+                                 :text (if (eq? type 'window) "W" "F"))))
+   )
   )
   
 

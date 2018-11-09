@@ -76,6 +76,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Timer.hpp"
 #include "../Qt/MySplitter.hpp"
 #include "../Qt/Qt_sequencer_proc.h"
+#include "../Qt/Qt_bottom_bar_widget_proc.h"
 
 #include "../common/visual_proc.h"
 #include "../common/seqtrack_proc.h"
@@ -3898,6 +3899,15 @@ int64_t gui_child(int64_t guinum, const_char* childname){
   return API_get_gui_from_widget(child);
 }
 
+void gui_setName(int64_t guinum, const_char* guiname){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setObjectName(guiname);
+}
+
 static void perhaps_collect_a_little_bit_of_gui_garbage(int num_guis_to_check){
   static int pos = 0;
 
@@ -4562,6 +4572,12 @@ int64_t gui_fontRequester(const_char* fontdescr){
   QFont font;
   font.fromString(fontdescr);
   return (new FontRequester(font))->get_gui_num();
+}
+
+int64_t gui_bottomBar(void){
+  QWidget *bottom_bar = BottomBar_create(NULL);
+
+  return API_get_gui_from_existing_widget(bottom_bar);
 }
 
 
