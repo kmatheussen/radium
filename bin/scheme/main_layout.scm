@@ -200,6 +200,7 @@
       (<gui> :hide *sequencer-window-gui*)
       (hide-lowertab-gui (<gui> :get-sequencer-gui))))
 
+
 #!!
 (FROM-C-show-instrument-gui)
 (FROM-C-hide-instrument-gui)
