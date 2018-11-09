@@ -180,16 +180,33 @@
 (define (FROM-C-hide-instrument-gui)
   (hide-lowertab-gui (<gui> :get-instrument-gui)))
 
-
+(define (FROM-C-sequencer-gui-in-window)
+  *sequencer-window-gui-active*)
 
 (define (FROM-C-sequencer-gui-is-visible)
-  (lowertab-gui-is-visible (<gui> :get-sequencer-gui)))
-    
+  (let ((ret (or (and *sequencer-window-gui-active*
+                      (<gui> :is-visible *sequencer-window-gui*))
+                 (lowertab-gui-is-visible (<gui> :get-sequencer-gui)))))
+    (c-display "sequencer visible:" ret)
+    ret))
+
 (define (FROM-C-show-sequencer-gui)
-  (show-lowertab-gui (<gui> :get-sequencer-gui)))
+  (if *sequencer-window-gui-active*
+      (<gui> :show *sequencer-window-gui*)
+      (show-lowertab-gui (<gui> :get-sequencer-gui))))
 
 (define (FROM-C-hide-sequencer-gui)
-  (hide-lowertab-gui (<gui> :get-sequencer-gui)))
+  (if *sequencer-window-gui-active*
+      (<gui> :hide *sequencer-window-gui*)
+      (hide-lowertab-gui (<gui> :get-sequencer-gui))))
+
+#!!
+(FROM-C-show-instrument-gui)
+(FROM-C-hide-instrument-gui)
+(begin *sequencer-window-gui-active*)
+(<ra> :sequencer-is-visible)
+(<ra> :hide-sequencer)
+!!#
 
 
 (define (FROM-C-edit-gui-is-visible)

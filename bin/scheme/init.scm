@@ -500,6 +500,7 @@
     show-note-duplicator-popup-menu
     FROM_C-set-current-seqblock!
     FROM_C-call-me-when-curr-seqtrack-has-changed
+    FROM-C-sequencer-gui-in-window
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
