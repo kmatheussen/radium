@@ -349,10 +349,13 @@
           
           (set! prev-x $x)
           (set! prev-y $y)
-          
+
+          ;;(c-display "y/seq-y1:" (<ra> :get-mouse-pointer-y) (<ra> :get-sequencer-y1))
+                     
           ;; dirty tricks to avoid the screen edges
           ;;
-          (when (<ra> :can-move-pointer)
+          (when (and (not (<ra> :sequencer-in-window))
+                     (<ra> :can-move-pointer))
             
             (define (set-mouse x y)
               ;;(c-display " ... SET MOUSE " x y)
