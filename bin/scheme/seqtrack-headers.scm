@@ -1283,7 +1283,7 @@
                                  :text (if (eq? type 'window) "W" "F"))))
    )
   )
-  
+   
 
 (def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2)
   (define num-seqtracks (<ra> :get-num-seqtracks))
