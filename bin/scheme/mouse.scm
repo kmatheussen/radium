@@ -7228,8 +7228,8 @@
                          (push-back! infos (make-seqblock-info2 seqtracknum seqblocknum)))))
 
   (when (null? infos)
-    (define x (<ra> :get-mouse-pointer-x))
-    (define y (<ra> :get-mouse-pointer-y))
+    (define x (<ra> :get-mouse-pointer-x -2))
+    (define y (<ra> :get-mouse-pointer-y -2))
     (for-each-seqblock (lambda (seqtracknum seqblocknum)
                          ;;(c-display seqtracknum seqblocknum "x/y:" x y "seqblockbox:" (box-to-string (<ra> :get-box seqblock seqblocknum seqtracknum)))
                          (if (inside-box (<ra> :get-box seqblock seqblocknum seqtracknum) x y)
@@ -7267,8 +7267,8 @@
               (loop (1+ seqblocknum) seqtracknum))))
      
      (when (not deleted-something)
-       (define x (<ra> :get-mouse-pointer-x))
-       (define y (<ra> :get-mouse-pointer-y))
+       (define x (<ra> :get-mouse-pointer-x -2))
+       (define y (<ra> :get-mouse-pointer-y -2))
        (let loop ((seqblocknum 0)
                   (seqtracknum 0))
          (cond ((= seqtracknum (<ra> :get-num-seqtracks))
@@ -7577,7 +7577,7 @@
            (and seqblock-info          
                 (let ((seqblocknum (seqblock-info :seqblocknum)))
                   (and (not (<ra> :seqblock-holds-block seqblocknum seqtracknum))
-                       (let* ((X (<ra> :get-mouse-pointer-x))
+                       (let* ((X (<ra> :get-mouse-pointer-x -2))
                               (seqpos (round (get-sequencer-time X)))
                               (pos (if use-grid
                                        (<ra> :get-seq-gridded-time seqpos (<ra> :get-seq-block-grid-type))

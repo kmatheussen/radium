@@ -1258,18 +1258,17 @@
                                  (lambda (new-value)
                                    ;;(c-display type "new-value:" new-value)
                                    (if (eq? type 'window)
-                                       (let ((upper-parts-were-visible (<ra> :upper-part-of-main-window-is-visible)))
-                                         (if new-value
-                                             (begin                                               
-                                               ;; show sequencer in new window
-                                               (if (not upper-parts-were-visible)
-                                                   (<ra> :show-upper-part-of-main-window)
-                                                   (remember-lower-tabs-height))
-                                               (FROM-C-sequencer-set-gui-in-window! #t))
-                                             (begin
-                                               ;; put back sequencer into main tabs
-                                               (FROM-C-sequencer-set-gui-in-window! #f)
-                                               (recall-lower-tabs-height))))
+                                       (if new-value
+                                           (begin                                               
+                                             ;; show sequencer in new window
+                                             (if (not (<ra> :upper-part-of-main-window-is-visible))
+                                                 (<ra> :show-upper-part-of-main-window)
+                                                 (remember-lower-tabs-height))
+                                             (FROM-C-sequencer-set-gui-in-window! #t))
+                                           (begin
+                                             ;; put back sequencer into main tabs
+                                             (FROM-C-sequencer-set-gui-in-window! #f)
+                                             (recall-lower-tabs-height)))
                                        (if new-value
                                            (begin
                                              ;; show sequencer full
