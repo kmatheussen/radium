@@ -2967,7 +2967,8 @@ int radium_main(const char *arg){
         XSplitter(bool strip_on_left_side)
           : radium::Splitter(Qt::Horizontal)
           , _strip_on_left_side(strip_on_left_side)
-        {}
+        {
+        }
 
         struct MixerStripParentLayout : public QHBoxLayout {
 
@@ -3026,6 +3027,7 @@ int radium_main(const char *arg){
 
       radium::Splitter *ysplitter = dynamic_cast<radium::Splitter*>(API_get_main_ysplitter()); //new radium::Splitter(Qt::Vertical, main_window);
       ysplitter->setHandleWidth(0);
+      ysplitter->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
       
       main_window->setCentralWidget(ysplitter);
 
@@ -3036,6 +3038,19 @@ int radium_main(const char *arg){
       if(!xsplitter->_strip_on_left_side)
         xsplitter->add_mixer_strip();
 
+      // To fix y-splitter not growing horizontally, causing the lower tabs to be minimized when neither the editor nor mixer were visible.
+      {
+        struct Gakk : public QWidget{
+          virtual QSize 	sizeHint() const override{
+            return QSize(0,0);
+          }
+        };
+        auto *grow_widget = new Gakk;
+        grow_widget->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+        xsplitter->addWidget(grow_widget);
+      }
+      
+      
       //QWidget *gakk = new MixerWidget(mixerwidgetandmixerstrip);
       //g_mixerstriplayout->addWidget(gakk);
       
