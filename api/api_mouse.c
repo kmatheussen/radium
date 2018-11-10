@@ -3472,18 +3472,36 @@ double getDoubleClickInterval(void){
 }
 
 float getMousePointerX(int windownum){
+  
+  if (windownum==-2){
+
+    if (sequencerInWindow())
+      return GetPointerPos(NULL).x + 10000;
+    else
+      windownum=-1;
+  }
+  
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if (window==NULL)
     return 0;
-
-  WPoint ret = GetPointerPos(window);
-  return ret.x;
+  
+  return GetPointerPos(window).x;
 }
+
 float getMousePointerY(int windownum){
+  if (windownum==-2){
+
+    if (sequencerInWindow())
+      return GetPointerPos(NULL).y + 10000;
+    else
+      windownum=-1;
+    
+  }
+
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if (window==NULL)
     return 0;
-
+  
   WPoint ret = GetPointerPos(window);
   return ret.y;
 }
