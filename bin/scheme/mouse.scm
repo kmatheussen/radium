@@ -4490,7 +4490,8 @@
 
 (define (get-seqtracknum X Y)
   (define num-seqtracks (<ra> :get-num-seqtracks))
-  (and (inside-box (<ra> :get-box seqtracks) X Y)
+  (and (>= X (<ra> :get-seqtracks-x1))
+       (< X (<ra> :get-seqtracks-x2))
        (let loop ((seqtracknum 0))
          (cond ((= seqtracknum num-seqtracks)
                 #f) ;;seqtracknum)
