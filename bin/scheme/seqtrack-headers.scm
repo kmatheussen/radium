@@ -54,6 +54,16 @@
 (define *sequencer-window-gui-active* (if (defined? '*sequencer-window-gui-active*)
                                           *sequencer-window-gui-active*
                                           #f))
+(define *lower-tabs-height-before-full-or-active* 10)
+
+(define (remember-lower-tabs-height)
+  ;;(c-display "|||||||||||||| ========REMEMBER lower tabs height:" (<gui> :height *lowertab-gui*))
+  (set! *lower-tabs-height-before-full-or-active* (<gui> :height *lowertab-gui*)))
+
+(define (recall-lower-tabs-height)
+  ;;(c-display "|||||||||||||| ========recall lower tabs height:" *lower-tabs-height-before-full-or-active*)
+  (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) *lower-tabs-height-before-full-or-active*))
+  
 
 ;; Remove from main tabs, and open in new window
 (define (move-sequencer-to-window)
@@ -116,6 +126,10 @@
     (<gui> :hide window)))
 
 
+#!!
+(<ra> :show-upper-part-of-main-window)
+(<ra> :hide-upper-part-of-main-window)
+!!#
 
 
 (define *has-shown-record-message* #t)
@@ -1001,7 +1015,8 @@
   (define border-color (get-default-button-color gui))
 
   (define (is-active)
-    (not *sequencer-window-gui-active*))
+    (and (<ra> :upper-part-of-main-window-is-visible)
+         (not *sequencer-window-gui-active*)))
   
   (define-override (paint)
     ;;(<gui> :filled-box gui background-color 0 0 width height)
@@ -1219,28 +1234,52 @@
 !!#
 
 (def-area-subclass (<sequencer-left-part-top-bar> :gui :x1 :y1 :x2 :y2)
+  (define in-window *sequencer-window-gui-active*)
   (define buttons-width (myfloor (* 1.8 (<gui> :text-width "| W | F |"))))
-  (define buttons-x1 (- x2 buttons-width))
-  
-  (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 buttons-x1 y2))
+  (define buttons-x1 (if in-window
+                         x1
+                         (- x2 buttons-width)))
 
-  (define is-window #f)
-  (define is-full #f)
+  (if (not in-window)
+      (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 buttons-x1 y2)))
 
   (horizontally-layout-areas
    buttons-x1 y1 x2 y2
-   '(window full)
+   (if in-window
+       '(window)
+       '(window full))
    :callback
    (lambda (type x1 y1 x2 y2)
      (add-sub-area-plain! (<new> :checkbox gui x1 y1 x2 y2
                                  (lambda ()
                                    (if (eq? type 'window)
                                        *sequencer-window-gui-active*
-                                       is-full))
+                                       (not (<ra> :upper-part-of-main-window-is-visible))))
                                  (lambda (new-value)
+                                   ;;(c-display type "new-value:" new-value)
                                    (if (eq? type 'window)
-                                       (FROM-C-sequencer-set-gui-in-window! new-value)
-                                       (set! is-full new-value)))
+                                       (let ((upper-parts-were-visible (<ra> :upper-part-of-main-window-is-visible)))
+                                         (if new-value
+                                             (begin                                               
+                                               ;; show sequencer in new window
+                                               (if (not upper-parts-were-visible)
+                                                   (<ra> :show-upper-part-of-main-window)
+                                                   (remember-lower-tabs-height))
+                                               (FROM-C-sequencer-set-gui-in-window! #t))
+                                             (begin
+                                               ;; put back sequencer into main tabs
+                                               (FROM-C-sequencer-set-gui-in-window! #f)
+                                               (recall-lower-tabs-height))))
+                                       (if new-value
+                                           (begin
+                                             ;; show sequencer full
+                                             (remember-lower-tabs-height)
+                                             (<ra> :hide-upper-part-of-main-window))
+                                           (begin
+                                             ;; don't show sequencer full
+                                             (recall-lower-tabs-height)
+                                             (<ra> :show-upper-part-of-main-window))))
+                                   (<gui> :update gui)) ;; Necessary if the dragger is at topmost position. Then the dragger gfx won't be updated.
                                  :text (if (eq? type 'window) "W" "F"))))
    )
   )

@@ -873,9 +873,7 @@ private:
     if (instrumentWidgetIsInMixer()){
       MW_hide_non_instrument_widgets();
     } else {
-      struct Tracker_Windows *window = root->song->tracker_windows;
-      EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
-      editor->xsplitter->hide();
+      hideUpperPartOfMainWindow();
     }
 
     MW_disable_include_instrument_checkbox();
@@ -886,9 +884,7 @@ private:
     if (instrumentWidgetIsInMixer()){
       MW_show_non_instrument_widgets();
     } else {
-      struct Tracker_Windows *window = root->song->tracker_windows;
-      EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
-      editor->xsplitter->show();
+      showUpperPartOfMainWindow();
     }
 
     MW_enable_include_instrument_checkbox();
