@@ -3347,7 +3347,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     _timeline_widget.show();
     _navigator_widget.show();
 
-    setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+    setSizePolicy(QSizePolicy::Expanding,QSizePolicy::MinimumExpanding);
 
     set_widget_takes_care_of_painting_everything(this);
 
@@ -3677,6 +3677,18 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
 
+  bool _sequencer_was_full_before_hidden = false;
+  
+  void hideEvent(QHideEvent * event) override {
+    _sequencer_was_full_before_hidden = !upperPartOfMainWindowIsVisible();
+    showUpperPartOfMainWindow();
+  }
+  
+  void showEvent(QShowEvent * event) override {
+    if (_sequencer_was_full_before_hidden)
+      hideUpperPartOfMainWindow();
+  }
+  
 #if 0
   void paintGrid_old(const QRegion &update_region, QPainter &p, enum GridType grid_type) const {
     if (grid_type==NO_GRID)

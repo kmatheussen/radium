@@ -78,6 +78,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../embedded_scheme/s7extra_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 #include "../Qt/Qt_comment_dialog_proc.h"
+#include "../Qt/EditorWidget.h"
 
 #include "../common/PriorityQueue.hpp"
 
@@ -304,6 +305,32 @@ void showHideEditWidget(void){
     showEditGui();
   }
 }
+
+void hideUpperPartOfMainWindow(void){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+  editor->xsplitter->hide();
+}
+
+void showUpperPartOfMainWindow(void){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+  editor->xsplitter->show();
+}
+
+bool upperPartOfMainWindowIsVisible(void){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+  return editor->xsplitter->isVisible();
+}
+
+void showHideUpperPartOfMainWindow(void){
+  if (upperPartOfMainWindowIsVisible())
+    hideUpperPartOfMainWindow();
+  else
+    showUpperPartOfMainWindow();
+}
+
 
 static int g_max_submenues = 200;
 
