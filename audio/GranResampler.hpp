@@ -325,13 +325,12 @@ public:
                                                 hop,
                                                 ramp,
                                                 jitter,
-                                                64, //RADIUM_BLOCKSIZE * 2,  // [1]
+                                                (max_grain_size_in_seconds + max_grain_frequency_in_seconds) * pc->pfreq, // [1]
                                                 NULL,
                                                 &_buffers[ch]);
       /*
-        [1] We get lag in speed automation if this value is too high.
-        Another problem with a too high value here is cluttered CPU usage since we read a lot of data less often rather than reading less data often.
-        Earlier we used: (max_grain_size_in_seconds + max_grain_frequency_in_seconds) * pc->pfreq
+        [1] FIX: A too high value here is cluttered CPU usage since we read a lot of data less often rather than reading less data often.
+        (it's really cluttered now)
        */
       mus_set_location(_clm_granulators[ch], seed); // Set all granulators to use the same seed (for random operations) so the channels don't get out of sync.
     }
