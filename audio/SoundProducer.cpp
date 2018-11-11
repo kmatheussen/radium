@@ -510,6 +510,8 @@ static void RT_fade_out2(float *sound, int pos, int num_frames){
 }
 
 static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_frames, float **outputs){
+  R_ASSERT_NON_RELEASE(num_frames==RADIUM_BLOCKSIZE);
+
   const int num_channels = plugin->type->num_outputs;
   float sum=0.0f;
   
