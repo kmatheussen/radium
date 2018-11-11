@@ -60,8 +60,8 @@ static void InsertPlace_notes_extra(
 	if(endplace >= place){
           if (endplace+toplace > 0){
             PlaceAddfloat(&note->end,toplace);
-            List_InsertPlaceLen3(block,&note->velocities,&note->velocities->l,place,toplace,NULL);
-            List_InsertPlaceLen3(block,&note->pitches,&note->pitches->l,place,toplace,NULL);
+            List_InsertPlaceLen3(block,&note->velocities,(struct ListHeader3*)note->velocities,place,toplace,NULL);
+            List_InsertPlaceLen3(block,&note->pitches,(struct ListHeader3*)note->pitches,place,toplace,NULL);
           }
 	}
 }
@@ -76,7 +76,7 @@ static void InsertPlace_notes(
 	List_InsertPlaceLen3(
 		block,
 		&track->notes,
-		&track->notes->l,
+		(struct ListHeader3*)track->notes,
 		place,
 		toplace,
 		InsertPlace_notes_extra
@@ -95,7 +95,7 @@ static void InsertPlace_fxs(
     List_InsertPlaceLen3(
                          block,
                          &fxs->fxnodelines,
-                         &fxs->fxnodelines->l,
+                         (struct ListHeader3*)fxs->fxnodelines,
                          place,
                          toplace,
                          NULL
@@ -122,7 +122,7 @@ static void InsertPlace_tempos(
 	float place,
 	float toplace
 ){
-	List_InsertPlaceLen3(block,&block->tempos,&block->tempos->l,place,toplace,NULL);
+	List_InsertPlaceLen3(block,&block->tempos,(struct ListHeader3*)block->tempos,place,toplace,NULL);
 }
 
 static void InsertPlace_lpbs(
@@ -130,7 +130,7 @@ static void InsertPlace_lpbs(
 	float place,
 	float toplace
 ){
-	List_InsertPlaceLen3(block,&block->lpbs,&block->lpbs->l,place,toplace,NULL);
+	List_InsertPlaceLen3(block,&block->lpbs,(struct ListHeader3*)block->lpbs,place,toplace,NULL);
 }
 
 static void InsertPlace_swings(
@@ -138,7 +138,7 @@ static void InsertPlace_swings(
 	float place,
 	float toplace
 ){
-	List_InsertPlaceLen3(block,&block->swings,&block->swings->l,place,toplace,NULL);
+	List_InsertPlaceLen3(block,&block->swings,(struct ListHeader3*)block->swings,place,toplace,NULL);
 }
 
 static void InsertPlace_signatures(
@@ -146,7 +146,7 @@ static void InsertPlace_signatures(
 	float place,
 	float toplace
 ){
-  List_InsertPlaceLen3(block,&block->signatures,&block->signatures->l,place,toplace,NULL);
+  List_InsertPlaceLen3(block,&block->signatures,(struct ListHeader3*)block->signatures,place,toplace,NULL);
 }
 
 static void InsertPlace_stops(
@@ -155,7 +155,7 @@ static void InsertPlace_stops(
 	float place,
 	float toplace
 ){
-	List_InsertPlaceLen3(block,&track->stops,&track->stops->l,place,toplace,NULL);
+	List_InsertPlaceLen3(block,&track->stops,(struct ListHeader3*)track->stops,place,toplace,NULL);
 }
 
 
