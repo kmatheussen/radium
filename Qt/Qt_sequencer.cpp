@@ -4629,6 +4629,9 @@ static void my_update_sequencer_widget(const QRect &rect){
 
 void SEQBLOCK_update(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
   int seqtracknum = get_seqtracknum(seqtrack);
+
+  if (seqtracknum < 0)
+    return;
   
   const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, seqblock->id==g_curr_seqblock_id);
   w.update_seqblock(seqblock);
