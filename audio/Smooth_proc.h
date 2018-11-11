@@ -101,6 +101,11 @@ static inline Panvals get_pan_vals_vector(float pan, int num_source_channels){
 }
 
 
+// NOTE: Only used by the SMOOTH functions. Placed here since the SMOOTH_* functions are placed in two files.
+static inline bool is_smoothing_necessary(const Smooth *smooth){
+  return smooth->smoothing_is_necessary;
+}
+
 extern LANGSPEC void SMOOTH_init(Smooth *smooth, float value, int blocksize); // smooth_length = DEFAULT_SMOOTH_LENGTH
 extern LANGSPEC void SMOOTH_init_immediate_smoothing(Smooth *smooth, float value, int blocksize); // smooth_length = RADIUM_BLOCKSIZE
 

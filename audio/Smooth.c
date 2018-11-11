@@ -56,9 +56,6 @@ void SMOOTH_release(Smooth *smooth){
   V_free(smooth->values);
 }
 
-static bool is_smoothing_necessary(const Smooth *smooth){
-  return smooth->smoothing_is_necessary;
-}
 
 // Can be called at any time
 void SMOOTH_set_target_value(Smooth *smooth, float value){
@@ -154,27 +151,11 @@ void SMOOTH_apply_volume(const Smooth *smooth, float *sound, int num_frames){
   }
 }
 
-void SMOOTH_copy_sound(const Smooth *smooth, float *dst, const float *src, int num_frames){
-  R_ASSERT(smooth->target_audio_will_be_modified==true);
-  
-  int i;
-  if(is_smoothing_necessary(smooth)==true){
-    float *values = smooth->values;
-    for(i=0;i<num_frames;i++){
-      //if(smooth->last_target_value==0.0f || smooth->target_value==0.0f)
-      //  printf("val %d: %f\n",i,values[i]);
-      dst[i] = src[i] * values[i];
-    }
-  }else{
-    float volume = smooth->value; // might be a click here if volume is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen.
-    if(volume > 0.0f)
-      for(i=0;i<num_frames;i++)
-        dst[i] = src[i] * volume;
-    else
-      memset(dst,0,sizeof(float)*num_frames);
-  }
-}
 
+// Note: SMOOTH_copy_sound has been moved to Juce_plugins.cpp in order to use the optimized vector functions in Juce.
+// (SMOOTH_copy_sound uses a significant amount of CPU when there's many instruments.)
+
+  
 #if 0
 void SMOOTH_apply_volume_using_inverted_values(const Smooth *smooth, float *sound, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
