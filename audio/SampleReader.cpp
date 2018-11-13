@@ -1299,7 +1299,6 @@ public:
     const int slice_frame_pos = int(_pos - (slice_num * SLICE_SIZE));
 
     const int ret = R_MIN(SLICE_SIZE - slice_frame_pos, num_frames);
-    const int frames_left = num_frames - ret;
 
     SliceBuffer *sb = slicebuffers;
     
@@ -1308,10 +1307,7 @@ public:
       R_ASSERT_RETURN_IF_FALSE2(sb!=NULL, num_frames);
 
       memcpy(samples[ch], &sb->samples[slice_frame_pos], ret * sizeof(float));
-      
-      if (frames_left > 0)
-        memset(&samples[ch][ret], 0, frames_left * sizeof(float));
-      
+
       sb = sb->next;
       if (ch==_num_ch-1)
         R_ASSERT(sb==NULL);
@@ -1323,7 +1319,6 @@ public:
   }
 
 };
-
 }
 
 using namespace radium;
@@ -1605,7 +1600,7 @@ void RT_SAMPLEREADER_called_per_block(SampleReader *reader, const int64_t how_mu
 float *RT_SAMPLEREADER_get_buffer(SampleReader *reader, const int ch, int &num_frames){
   return reader->RT_get_buffer(ch, num_frames);
 }
-    
+
 int RT_SAMPLEREADER_read(SampleReader *reader, float **samples, int num_frames){
   return reader->RT_read(samples, num_frames);
 }
