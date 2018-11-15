@@ -692,7 +692,8 @@
 
 (def-area-subclass (<instrument-pan-slider> :gui :x1 :y1 :x2 :y2
                                             :instrument-id
-                                            :get-color)
+                                            :get-color
+                                            :seqtracknum)
 
   (define (pan-enabled?)
     (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))
@@ -919,6 +920,7 @@
                                                  (if (= seqtracknum (<ra> :get-curr-seqtrack))
                                                      (get-seqtrack-background-color gui seqtracknum)
                                                      (<ra> :get-instrument-color instrument-id)))
+                                    seqtracknum
                                     )))
 
     (add-sub-area-plain! (<new> :instrument-volume-slider gui
