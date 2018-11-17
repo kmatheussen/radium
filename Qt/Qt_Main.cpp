@@ -574,23 +574,32 @@ bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event){
   
   R_ASSERT_NON_RELEASE2(dynamic_cast<radium::MouseCycleFix*>(widget) != NULL, true);
 
-  if (event->buttons()==Qt::NoButton)
+  if (event->buttons()==Qt::NoButton){
+    R_ASSERT_NON_RELEASE(false);
     return true;
+  }
 
 #if !defined(RELEASE)
   printf("CYCLE: registering %p\n", widget);
 #endif
-  
-  if(widget != g_curr_mouse_cycle.widget.data()) {  // widget==g_curr_mouse_cycle.widget.data() when subclass::mousePressEvent calls parent::mousePressEvent.
 
-    MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id); // The main call to MOUSE_CYCLE_unregister_all is delayed a little bit, so we could have an alive cycle.
-    
-    g_curr_mouse_cycle.widget = widget;
+  bool same_widget = widget == g_curr_mouse_cycle.widget.data();
+
+  bool same_widget_and_buttons = same_widget && g_curr_mouse_cycle.buttons==event->buttons();
+
+  if(same_widget_and_buttons){
+    R_ASSERT_NON_RELEASE(false); // Out of curiousity, want to know if this can happen.
   }
   
+  MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id); // The main call to MOUSE_CYCLE_unregister_all is delayed a little bit, so we could have an alive cycle.
+    
+  if(!same_widget) {  // widget==g_curr_mouse_cycle.widget.data() when subclass::mousePressEvent calls parent::mousePressEvent.
+    g_curr_mouse_cycle.widget = widget;
+  }
+
   static int64_t g_mouse_cycle_id = 0;
   g_curr_mouse_cycle.id = g_mouse_cycle_id++;
-  
+
   set_curr_mouse_cycle(event);
 
   return true;
@@ -641,6 +650,8 @@ static void MOUSE_CYCLE_unregister_all(int64_t id){
   if(w==NULL)
     return;
 
+  //printf("   unregister all: %d vs. %d (%d)\n", (int)g_curr_mouse_cycle.id, (int)id, g_curr_mouse_cycle.id != id);
+  
   if (g_curr_mouse_cycle.id != id){
     R_ASSERT(g_curr_mouse_cycle.id > id);
     return;
@@ -665,6 +676,31 @@ static void MOUSE_CYCLE_unregister_all(int64_t id){
   mouse_cycle_fix->fix_mouseReleaseEvent(e2);
 }
 
+
+void MOUSE_CYCLE_schedule_unregister_all(void){
+  QWidget *w = g_curr_mouse_cycle.widget.data();
+  if(w==NULL)
+    return;
+    
+  static int64_t last_id = -1;  
+  int64_t id = g_curr_mouse_cycle.id;
+  
+  if (id > last_id){
+
+    last_id = id;
+
+#if !defined(RELEASE)
+    printf("   CYCLE: Scheduling unregistering all to run in 3ms for %p.\n", w);
+#endif
+
+    QTimer::singleShot(3, [id]{ // delay it a little bit since we might be called from a mouse event. (need to wait enough to make the callback be called in the next event, but not so long that the event is not unregistered soon enough)
+        MOUSE_CYCLE_unregister_all(id);
+      });
+    
+  }    
+}
+
+  
 class MyApplication
   : public QApplication
 #if USE_QT5
@@ -1118,21 +1154,8 @@ protected:
     bool activation_changed = event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate;
     auto ret = QApplication::eventFilter(obj, event);
 
-    if (activation_changed){
-      static int64_t last_id = -1;
-      int64_t id = g_curr_mouse_cycle.id;
-      
-      if (id > last_id){
-        
-        last_id = id;
-        
-        QTimer::singleShot(30, [id]{ // delay it a little bit since we might be called from a mouse event.
-            MOUSE_CYCLE_unregister_all(id);
-          });
-        
-      }
-      
-    }
+    if (activation_changed)
+      MOUSE_CYCLE_schedule_unregister_all();
     
     return ret;
   }
