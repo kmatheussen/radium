@@ -104,9 +104,10 @@
 
   (define gain-group (<gui> :group "Gain"))
 
-  (define gain-slider (<gui> :horizontal-slider "Gain (Db): " -35 (<ra> :get-seqblock-gain seqblockid) 35
+  (define gain-slider (<gui> :horizontal-slider "Gain (Db): " -35 (<ra> :gain-to-db (<ra> :get-seqblock-gain seqblockid)) 35
                              (lambda (db)
                                (when has-started
+                                 ;;(c-display "setting gain to db:" db ". gain:" (<ra> :db-to-gain db))
                                  (<ra> :set-seqblock-gain (<ra> :db-to-gain db) seqblockid)))))
   
   (<gui> :add gain-group (<gui> :horizontal-layout
@@ -114,7 +115,7 @@
                                 (<gui> :button "Normalize!"
                                        (lambda ()
                                          (when has-started
-                                           (<gui> :set-value gain-slider (get-normalized-seqblock-gain seqblockid)))))))
+                                           (<gui> :set-value gain-slider (<ra> :gain-to-db (get-normalized-seqblock-gain seqblockid))))))))
 ;                                                
 ;                                                <ra> :set-seqblock-gain (get-normalized-seqblock-gain seqblockid) seqblockid)
 ;                                         (
