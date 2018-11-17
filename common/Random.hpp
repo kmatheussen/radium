@@ -74,24 +74,45 @@ struct Random {
   
 private:
 
-  uint32_t _randx = 1;
 
-#define INVERSE_MAX_RAND2 0.000030517579
+  /***************************************************************************************************
+   *                                                                                                 *
+   * 'next_random' is from the s7 source code written by Bill Schottstaedt.                          *
+   * The only changes I've done is 'random_seed(r); -> '_seed', and 'random_curry(r)' -> '_curry'.   *
+   *                                                                                                 *
+   ***************************************************************************************************/
   
-  double next_random(void){
+  
+  uint64_t _seed = 1;
+  uint64_t _carry = 1675393560;                          /* should this be dependent on the seed? */
+  
+  double next_random(void)
+  {
+    /* The multiply-with-carry generator for 32-bit integers:
+     *        x(n)=a*x(n-1) + carry mod 2^32
+     * Choose multiplier a from this list:
+     *   1791398085 1929682203 1683268614 1965537969 1675393560
+     *   1967773755 1517746329 1447497129 1655692410 1606218150
+     *   2051013963 1075433238 1557985959 1781943330 1893513180
+     *   1631296680 2131995753 2083801278 1873196400 1554115554
+     * ( or any 'a' for which both a*2^32-1 and a*2^31-1 are prime)
+     */
+    double result;
+    uint64_t temp;
+#define RAN_MULT 2131995753UL
     
-    // This code is copied from sndlib made by Bill Schottstaedt (free license)
-    // Comment from sndlib: "rand taken from the ANSI C standard (essentially the same as the Cmix form used earlier)"
+    temp = _seed * RAN_MULT + _carry;
+    _seed = (temp & 0xffffffffUL);
+    _carry = (temp >> 32);
+    result = (double)((uint32_t)(_seed)) / 4294967295.5;
+    /* divisor was 2^32-1 = 4294967295.0, but somehow this can round up once in a billion tries?
+     *   do we want the double just less than 2^32?
+     */
     
-    _randx = _randx * 1103515245 + 12345;
-    
-    double a = ((double)((uint32_t)(_randx >> 16) & 32767)) * INVERSE_MAX_RAND2;
-
-    R_ASSERT_NON_RELEASE(a>=0);
-    R_ASSERT_NON_RELEASE(a<=1);
-    
-    return a;
+    /* (let ((mx 0) (mn 1000)) (do ((i 0 (+ i 1))) ((= i 10000)) (let ((val (random 123))) (set! mx (max mx val)) (set! mn (min mn val)))) (list mn mx)) */
+    return(result);
   }
+
   
 public:
   
