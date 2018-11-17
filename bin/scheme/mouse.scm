@@ -4925,7 +4925,7 @@
                         :Get-y (lambda (info) #f)
 
                         :Make-undo (lambda (_)
-                                     #f)
+                                     (<ra> :undo-sequencer))
                         
                         :Create-new-node (lambda (X seqtracknum callback)
                                            (assert #f)
@@ -4935,7 +4935,6 @@
                                         (when gakkgakk-has-moved-left-interior
                                           (define seqtracknum (seqblock-info :seqtracknum))
                                           ;;(apply-seqblock-interior-start seqblock-info #t))
-                                          (<ra> :undo-sequencer)
                                           (<ra> :apply-gfx-seqblocks seqtracknum)))
                         
                         :Move-node (lambda (seqblock-info mousex Y)
@@ -5471,6 +5470,8 @@
 
   (define curr-pos (seqblock :start-time))
   (define curr-speed (seqblock :speed))
+
+  (define has-moved #f)
   
   (define is-sample (seqblock :sample))
   (define is-block (seqblock :blocknum))
@@ -5527,6 +5528,8 @@
   
   :move (Value Y)
   (begin
+    (maybe-make-undo)
+    (set! has-moved #t)
     ;;(c-display "Value:" Value)
     (let ((gakk (move-seqblock-speedstretch Value seqtracknum seqblocknum seqblock seqblocks is-stretch is-left (this->min-right-value) (this->max-left-value) curr-pos)))
       (set! curr-pos (car gakk))
@@ -5534,8 +5537,7 @@
       #t))
 
   :release ()
-  (begin
-    (maybe-make-undo)
+  (when has-moved
     (<ra> :apply-gfx-seqblocks seqtracknum)))
 
 (define (create-seqblock-speedstretch-handler is-stretch is-left)
