@@ -857,7 +857,8 @@
   (define-struct node
     :node-info
     :value    
-    :y)
+    :y
+    :need-to-make-undo #f)
 
   (define (press-existing-node Button X Y)
     (set! *check-mouse-shift-key* Check-shift)
@@ -871,8 +872,6 @@
          (Get-existing-node-info X
                                  Y
                                  (lambda (Node-info Value Node-y)
-                                   (if Make-undo
-                                       (Make-undo Node-info))
                                    (Publicize Node-info)
                                    (if Mouse-pointer-func
                                        (set! *mouse-pointer-is-currently-hidden* #f)
@@ -881,8 +880,9 @@
                                    (make-node :node-info Node-info
                                               :value Value
                                               :y Node-y
+                                              :need-to-make-undo Make-undo
                                               )))))
-
+  
   (define (can-create Button X Y)
     (and (or (and Create-button (= Button Create-button))
              (and (not Create-button) (select-button Button)))
@@ -905,10 +905,15 @@
                             (set-mouse-pointer (or Mouse-pointer-func ra:set-blank-mouse-pointer) (Get-guinum))
                             (make-node :node-info Node-info
                                        :value Value
-                                       :y Y)))))
+                                       :y Y)
+                            ))))
 
   (define (move-or-release Button Dx Dy Node)
     (define node-info (Node :node-info))
+
+    (if (Node :need-to-make-undo)
+        (Make-undo node-info))
+
     (define min-value (and Get-min-value (Get-min-value node-info)))
     (define max-value (and Get-max-value (Get-max-value node-info)))
     (if (or (not min-value)
