@@ -67,7 +67,7 @@ mkdir -p "$TARGET/packages"
 # s7
 cp -a packages/s7 "$TARGET/packages/"
 rm -f "$TARGET/packages/s7/*.o"
-rm -fr "$TARGET/packages/s7/sndlib"
+# rm -fr "$TARGET/packages/s7/sndlib"
 
 # faust
 mkdir -p "$TARGET/packages/faust2"

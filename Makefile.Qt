@@ -411,8 +411,11 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 OBJ_VL=GfxElements.o T2.o Render.o Widget.o
 # Qt${RADIUM_QT_VERSION}Widget.o moc_Qt${RADIUM_QT_VERSION}Widget.o
 
-SNDLIBFILES=sndlib_objectfiles/headers.o sndlib_objectfiles/audio.o sndlib_objectfiles/io.o sndlib_objectfiles/sound.o sndlib_objectfiles/xen.o sndlib_objectfiles/vct.o sndlib_objectfiles/clm.o sndlib_objectfiles/sndlib2xen.o sndlib_objectfiles/clm2xen.o
-
+# Not using sndlib anymore, but will perhaps in the future.
+#
+#SNDLIBFILES=sndlib_objectfiles/headers.o sndlib_objectfiles/audio.o sndlib_objectfiles/io.o sndlib_objectfiles/sound.o sndlib_objectfiles/xen.o sndlib_objectfiles/vct.o sndlib_objectfiles/clm.o sndlib_objectfiles/sndlib2xen.o sndlib_objectfiles/clm2xen.o
+#
+SNDLIBFILES=
 
 #Embedded scheme
 OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o $(SNDLIBFILES) s7webserver.o radium_s7_wrap.o qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o http_parser.o
@@ -1816,7 +1819,7 @@ SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS
 SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
 	$(CCC) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
 
-Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h
+Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp common/Random.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h
 	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) # $(CPUOPT) 
 
 FluidSynth_plugin.o: audio/FluidSynth_plugin.c
