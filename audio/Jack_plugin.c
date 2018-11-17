@@ -118,7 +118,9 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
   return data;
 }
 
-extern jack_time_t jackblock_delta_time;
+
+extern jack_time_t g_jackblock_delta_time;
+
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   const SoundPluginType *type = plugin->type;
@@ -143,14 +145,14 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     
     for(ch=0;ch<type->num_inputs;ch++)
       if (data->output_ports[ch]!=NULL)
-        memcpy(((float*)jack_port_get_buffer(data->output_ports[ch],g_jackblock_size))+jackblock_delta_time,
+        memcpy(((float*)jack_port_get_buffer(data->output_ports[ch],g_jackblock_size))+g_jackblock_delta_time,
                inputs[ch],
                sizeof(float)*num_frames);
     
     for(ch=0;ch<type->num_outputs;ch++)
       if (data->input_ports[ch]!=NULL)
         memcpy(outputs[ch],
-               ((float*)jack_port_get_buffer(data->input_ports[ch],g_jackblock_size))+jackblock_delta_time,
+               ((float*)jack_port_get_buffer(data->input_ports[ch],g_jackblock_size))+g_jackblock_delta_time,
                sizeof(float)*num_frames);
     
   }

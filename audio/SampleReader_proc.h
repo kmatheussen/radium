@@ -74,7 +74,7 @@ extern const wchar_t *SAMPLEREADER_get_sample_name(radium::SampleReader *reader)
 extern const wchar_t *SAMPLEREADER_get_filename(radium::SampleReader *reader);
 
 extern bool RT_SAMPLEREADER_release_all_cached_data(radium::SampleReader *reader);
-extern float *RT_SAMPLEREADER_get_buffer(radium::SampleReader *reader, const int ch, int &num_frames);
+extern float *RT_SAMPLEREADER_get_buffer(radium::SampleReader *reader, const int ch, int &num_frames); // NOTE! num_frames can be set to a higher value than requested.
 extern void RT_SAMPLEREADER_called_per_block(radium::SampleReader *reader, const int64_t how_much_to_prepare_for_next_time);
 extern int RT_SAMPLEREADER_read(radium::SampleReader *reader, float **samples, int num_frames);
 extern void SAMPLEREADER_shut_down(void);

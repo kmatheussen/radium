@@ -514,7 +514,12 @@ run-valgrind:
 # --tool=memcheck --read-var-info=yes --track-origins=yes
 
 profile:
-	perf top -p `pidof radium_linux.bin` -K #--sort comm,dso
+	@echo
+	@echo
+	@echo "=== NOTE: If 'make profile' fails, two radium instances might be running. ==="
+	@echo
+	perf top -p `pidof radium_linux.bin` -K
+#--sort comm,dso
 #	operf $(RADIUM_BIN) && opreport -ca |more
 
 
@@ -1811,8 +1816,8 @@ SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS
 SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
 	$(CCC) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
 
-Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h
-	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT)
+Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h
+	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) # $(CPUOPT) 
 
 FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 	$(CC) $(OPT) $(CPUOPT) audio/FluidSynth_plugin.c

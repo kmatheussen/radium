@@ -1203,6 +1203,7 @@ public:
 
   // Returns a buffer that is legal to use until the next call to RT_get_buffer with the same 'ch' argument or a call to prepare_to_play().
   // Can probably not be used at the same time as RT_read
+  // Note: Currently not used, but it was used for a long time.
   float *RT_get_buffer(const int ch, int &num_frames){
     int64_t slice_num = _ch_pos[ch] / SLICE_SIZE;
 

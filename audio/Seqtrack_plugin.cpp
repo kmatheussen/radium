@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
 #include "../common/nsmtracker.h"
+#include "../common/disk.h"
 #include "../common/SeqAutomation.hpp"
 #include "../common/Array.hpp"
 #include "../common/undo_sequencer_proc.h"
@@ -38,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Peaks.hpp"
 #include "SampleReader_proc.h"
 #include "GranResampler.hpp"
+#include "Granulator.hpp"
 #include "Resampler_proc.h"
 #include "SampleRecorder_proc.h"
 #include "SoundPluginRegistry_proc.h"
@@ -62,6 +64,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define MAX_GRAIN_LENGTH_IN_SECONDS 1.0
 #define MAX_GRAIN_FREQUENCY_IN_SECONDS 2.0
+#define MAX_OVERLAP 50
 
 //#define HOW_MUCH_NONSTRETCHED_TO_PREPARE (0.05 * 0.015
 //#define HOW_MUCH_NONSTRETCHED_TO_PREPARE_BEFORE_STARTING 0.2
@@ -126,7 +129,7 @@ namespace{
 
 static int64_t g_id = INITIAL_RECORDER_ID+1;
 
-struct MyReader {
+struct MyReader : radium::AudioPickuper {
   
   radium::LockAsserter lockAsserter;
 
@@ -163,7 +166,8 @@ public:
     , _num_ch(SAMPLEREADER_get_num_channels(reader))
 
     , _sample_reader_callback(reader)
-    , _granulator(_num_ch, MAX_GRAIN_LENGTH_IN_SECONDS, MAX_GRAIN_FREQUENCY_IN_SECONDS, NULL)
+      //, _granulator(_num_ch, MAX_GRAIN_LENGTH_IN_SECONDS, MAX_GRAIN_FREQUENCY_IN_SECONDS, NULL)
+    , _granulator(MAX_GRAIN_LENGTH_IN_SECONDS * pc->pfreq, MAX_GRAIN_FREQUENCY_IN_SECONDS * pc->pfreq, MAX_OVERLAP, _num_ch, this)
     , _resampler2(_num_ch, resampler_type, NULL)
   {
     
@@ -191,7 +195,7 @@ public:
   }
     
 
-  ~MyReader(){
+  virtual ~MyReader(){
     {      
       SAMPLEREADER_delete(_reader);
       //printf("     =========SAMPLE c/d: Deleted 1: %p\n", _reader);
@@ -202,6 +206,12 @@ public:
   }
 
 private:
+
+  int pick_up_data_for_granulator(float **samples, int max_num_frames) override {
+    return RT_SAMPLEREADER_read(_reader, samples, max_num_frames);
+    //RT_get_samples_from_disk(samples, max_num_frames);
+    //return max_num_frames;
+  }
   
   void RT_get_samples_from_disk(float **outputs, int num_frames) const {
     R_ASSERT_RETURN_IF_FALSE(_reader != NULL);
@@ -449,7 +459,8 @@ public:
   }
 
   int get_fadeout_duration(){
-    double stretch = mus_increment(_granulator._clm_granulators[0]);
+    //double stretch = mus_increment(_granulator._clm_granulators[0]);
+    double stretch = _granulator.get_stretch();
     return (_fadeout_countdown / stretch);
   }
 
@@ -498,9 +509,13 @@ public:
     // TODO: This number should be dynamically calculated somehow depending on how long time it takes to read from disk.
     int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE_BEFORE_STARTING) * (double)pc->pfreq / (seqblock->t.stretch * seqblock->t.speed * _resampler_ratio);
 
-    for(int ch=0;ch<_num_ch;ch++)
-      how_much_to_prepare = R_MAX(how_much_to_prepare,
-                                  2 * mus_granulate_grain_max_length(_granulator._clm_granulators[ch]));
+    how_much_to_prepare = R_MAX(how_much_to_prepare,
+                                2 * pc->pfreq * (MAX_GRAIN_LENGTH_IN_SECONDS + MAX_GRAIN_FREQUENCY_IN_SECONDS)
+                                );
+    
+    //for(int ch=0;ch<_num_ch;ch++)
+    //how_much_to_prepare = R_MAX(how_much_to_prepare,
+    //                              2 * mus_granulate_grain_max_length(_granulator._clm_granulators[ch]));
                                         
 
     {
@@ -549,6 +564,7 @@ struct Sample{
   
   float _pitch = 1.0;
 
+  bool _grain_strict_no_jitter = false;
   double _grain_overlap = 2;
   double _grain_length = 50; // in ms
   double _grain_jitter = 0.0;
@@ -989,7 +1005,7 @@ struct Sample{
         grain_length = ms_to_frames(grain_length);
         double grain_frequency = (grain_length / grain_overlap);
 
-        grain_ramp *= grain_length;
+        //grain_ramp *= grain_length;
 
         //printf("length: %f (%f). frequency: %f. jitter: %f. ramp: %f. Stretch: %f\n", grain_length, grain_length*1000.0/pc->pfreq, grain_frequency, grain_jitter, grain_ramp, stretch);
 
@@ -1006,7 +1022,16 @@ struct Sample{
 #endif
           grain_frequency = MAX_GRAIN_FREQUENCY_IN_SECONDS*pc->pfreq;
         }
+
+        _curr_reader->_granulator.set_strict_no_jitter(_grain_strict_no_jitter);
+        _curr_reader->_granulator.set_overlap(grain_overlap);
+        _curr_reader->_granulator.set_stretch(stretch);
+        _curr_reader->_granulator.set_jitter(grain_jitter);
+        _curr_reader->_granulator.set_ramp(grain_ramp);
+        _curr_reader->_granulator.set_grain_length(grain_length);
         
+        
+        /*
         for(int ch=0;ch<_num_ch;ch++){
           mus_set_hop(_curr_reader->_granulator._clm_granulators[ch], grain_frequency);
           mus_set_length(_curr_reader->_granulator._clm_granulators[ch], grain_length);
@@ -1014,7 +1039,8 @@ struct Sample{
           mus_set_ramp(_curr_reader->_granulator._clm_granulators[ch], grain_ramp);
           mus_set_increment(_curr_reader->_granulator._clm_granulators[ch], stretch);
         }
-
+        */
+        
         _curr_reader->set_final_resampler_ratio(automation_resampler_ratio, _seqblock->t.speed);
           
         /*
@@ -1051,9 +1077,9 @@ struct Sample{
     if (is_playing && _curr_reader){ // Note: Must check 'is_playing' before '_curr_reader' to avoid tsan hit.
       int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE) * (double)pc->pfreq / (_seqblock->t.stretch*_seqblock->t.speed);
 
-      for(int ch=0;ch<_num_ch;ch++)
-        how_much_to_prepare = R_MAX(how_much_to_prepare,
-                                    2 * mus_granulate_grain_max_length(_curr_reader->_granulator._clm_granulators[ch]));
+      how_much_to_prepare = R_MAX(how_much_to_prepare,
+                                  2 * pc->pfreq * (MAX_GRAIN_LENGTH_IN_SECONDS + MAX_GRAIN_FREQUENCY_IN_SECONDS)
+                                  );
       
       RT_SAMPLEREADER_called_per_block(_curr_reader->_reader, how_much_to_prepare);
     }
@@ -1103,6 +1129,49 @@ struct Sample{
     return _is_playing || _seqblock->t.time > curr_start_time;
   }
 
+  void convert_old_granular_parameters(struct SeqBlock *seqblock){
+
+    bool show_warning = false;
+    
+    // 1. Reduce gain if granulating
+    {
+      if (RT_seqblock_automation_is_enabled(seqblock->automations[SAT_STRETCH]) || seqblock_is_stretched(seqblock)){
+        seqblock->gain *= 0.6; // Not quite the same though. This value is applied after granulation, while 0.6 in the granulator in clm applied this to the raw samples used to granulate.
+        show_warning = true;
+      }
+    }
+    
+    
+    // 2. Adjust overlap when grain length is over 100ms.
+    {
+      if (_grain_length > 100) {
+      
+        double old_grain_length = _grain_length;
+        
+        _grain_length = 100.0;
+        
+        _grain_overlap = R_MIN(50, _grain_overlap / (old_grain_length-100) / 100.0);
+
+        show_warning = true;
+      }
+    }
+
+    // 3. The clm granulator only has strict no jitter.
+    {
+      safe_bool_write(&_grain_strict_no_jitter, true);
+    }
+
+    // 4. Maybe show warning
+    {
+      if (show_warning && dc.has_warned_about_different_granulator==false){
+        evalScheme("(ra:schedule 100 (lambda () (ra:add-message "
+                   "\"This song was created with a different granulator. Beware that it might not sound exactly the same. Overall volume can be sligthy different, and automation of grain length will sound different when grain length is > 100ms.\""
+                   ") #f))");
+        dc.has_warned_about_different_granulator = true;
+      }
+    }
+  }
+  
 };
 
  
@@ -1988,6 +2057,29 @@ double SEQTRACKPLUGIN_get_resampler_ratio(const SoundPlugin *plugin, int64_t id)
   return sample->_resampler_ratio;
 }
 
+void SEQTRACKPLUGIN_set_grain_strict_no_jitter(SoundPlugin *plugin, int64_t id, bool new_strict_no_jitter){
+  R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return;
+  
+  safe_bool_write(&sample->_grain_strict_no_jitter, new_strict_no_jitter); //R_MAX(0.000001, new_gf / 1000.0f));
+  ATOMIC_SET(sample->_has_updates, true);
+  
+  //printf("  SETTING it to %f\n", sample->_strict_no_jitter);
+}
+
+bool SEQTRACKPLUGIN_get_grain_strict_no_jitter(const struct SoundPlugin *plugin, int64_t id){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 50);
+
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return false;
+  
+  return safe_bool_read(&sample->_grain_strict_no_jitter);
+}
+    
 void SEQTRACKPLUGIN_set_grain_overlap(SoundPlugin *plugin, int64_t id, double new_gf){
   R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
 
@@ -2085,7 +2177,16 @@ enum ResamplerType SEQTRACKPLUGIN_get_resampler_type(const struct SoundPlugin *p
 
   return sample->_resampler_type;
 }
-    
+
+// Called when loading a song saved with radium 9.9.12 or older.
+void SEQTRACKPLUGIN_convert_old_granular_parameters(const struct SoundPlugin *plugin, struct SeqBlock *seqblock){
+  Sample *sample = get_sample(plugin, seqblock->sample_id, true, true, true);
+  if (sample==NULL)
+    return;
+
+  sample->convert_old_granular_parameters(seqblock);
+}
+  
 /*
 void SEQTRACKPLUGIN_set_interior_start(struct SoundPlugin *plugin, int64_t id, int64_t interior_start){
   R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));

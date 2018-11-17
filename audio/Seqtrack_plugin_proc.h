@@ -69,6 +69,8 @@ extern LANGSPEC unsigned int SEQTRACKPLUGIN_get_sample_color(const struct SoundP
 //extern LANGSPEC void SEQTRACKPLUGIN_set_sample_color(const SoundPlugin *plugin, int64_t id, unsigned int new_color);
 extern LANGSPEC double SEQTRACKPLUGIN_get_resampler_ratio(const struct SoundPlugin *plugin, int64_t id);
 
+extern LANGSPEC void SEQTRACKPLUGIN_set_grain_strict_no_jitter(struct SoundPlugin *plugin, int64_t id, bool new_strict_no_jitter);
+extern LANGSPEC bool SEQTRACKPLUGIN_get_grain_strict_no_jitter(const struct SoundPlugin *plugin, int64_t id);
 extern LANGSPEC void SEQTRACKPLUGIN_set_grain_overlap(struct SoundPlugin *plugin, int64_t id, double new_gf);
 extern LANGSPEC double SEQTRACKPLUGIN_get_grain_overlap(const struct SoundPlugin *plugin, int64_t id);
 extern LANGSPEC void SEQTRACKPLUGIN_set_grain_length(struct SoundPlugin *plugin, int64_t id, double new_gf);
@@ -77,6 +79,9 @@ extern LANGSPEC void SEQTRACKPLUGIN_set_grain_jitter(struct SoundPlugin *plugin,
 extern LANGSPEC double SEQTRACKPLUGIN_get_grain_jitter(const struct SoundPlugin *plugin, int64_t id);
 extern LANGSPEC void SEQTRACKPLUGIN_set_grain_ramp(struct SoundPlugin *plugin, int64_t id, double new_ramp);
 extern LANGSPEC double SEQTRACKPLUGIN_get_grain_ramp(const struct SoundPlugin *plugin, int64_t id);
+
+// Called when loading a song saved with radium 9.9.12 or older.
+extern LANGSPEC void SEQTRACKPLUGIN_convert_old_granular_parameters(const struct SoundPlugin *plugin, struct SeqBlock *seqblock);
 
 extern LANGSPEC enum ResamplerType SEQTRACKPLUGIN_get_resampler_type(const struct SoundPlugin *plugin, int64_t id);
 

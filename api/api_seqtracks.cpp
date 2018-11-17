@@ -934,6 +934,31 @@ float getMaxSeqblockSampleGain(int64_t seqblockid){
   return SEQBLOCK_get_max_sample_gain(seqtrack, seqblock);
 }
 
+void setSeqblockGrainStrictNoJitter(bool new_gf, int64_t seqblockid){ //int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+  maybe_make_seqblock_undo(seqblockid);
+  SEQTRACKPLUGIN_set_grain_strict_no_jitter(plugin, seqblock->sample_id, new_gf);
+}
+
+bool getSeqblockGrainStrictNoJitter(int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, false);
+
+  return SEQTRACKPLUGIN_get_grain_strict_no_jitter(plugin, seqblock->sample_id);
+}
+
 void setSeqblockGrainOverlap(double new_gf, int64_t seqblockid){ //int64_t seqblockid){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);

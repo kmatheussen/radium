@@ -76,6 +76,7 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
         dc.success=true;
         
         dc.has_warned_about_acc_rit = false;
+        dc.has_warned_about_different_granulator = false;
         
         g_curr_disk_line = 0;
 

@@ -328,10 +328,10 @@
                               ))))
   
   (add-parameter 2 (<gui> :horizontal-layout
-                          (<gui> :horizontal-slider "Grain length (ms): " 0.1 grain-length 1000
+                          (<gui> :horizontal-slider "Grain length (ms): " 0.001 grain-length 1000
                                  (lambda (val)
                                    (when has-started
-                                     (c-display "  Grain Frequency LENGTH (ms):" val)
+                                     ;;(c-display "  Grain Frequency LENGTH (ms):" val)
                                      ;;(set! grain-length val)
                                      ;;(set! grain-frequency (get-grain-frequency grain-overlap))
                                      (<ra> :set-seqblock-grain-length val seqblockid))))))
@@ -364,7 +364,25 @@
                               (set! val (/ val 100.0))
                               (c-display "  Grain RAMP (%):" (* 100 val))
                               (<ra> :set-seqblock-grain-ramp val seqblockid)))))
-  
+
+  (let ()
+    (define checkbox (<gui> :checkbox "Strict no jitter when jitter is 0.00%" (<ra> :get-seqblock-grain-strict-no-jitter seqblockid) #f
+                            (lambda (ison)
+                              (when has-started
+                                (<ra> :set-seqblock-grain-strict-no-jitter ison seqblockid)))))
+    (<gui> :set-tool-tip checkbox
+           (<-> "If set, the distance between the start of all grains will always be the same when jitter is 0.00%.\n"
+                "\n"
+                "The duration of the generated sound will be slightly wrong if this mode is set,\n"
+                "but the sound will contain a purer comb filter effect, if you are looking for that effect.\n"
+                "\n"
+                "If this mode is not set, the distances will differ in size by at most 1 frame in such a way\n"
+                "that the total duration of the generated sound will be correct, at the cost of a less pure\n"
+                "comb filter effect.\n"
+                "\n"
+                "If overlap is set high, and grain length is set low, it's easier to hear the difference."))
+    (<gui> :add grain-group checkbox))
+
   (<gui> :add main-layout grain-group)
 
 

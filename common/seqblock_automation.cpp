@@ -999,7 +999,7 @@ dyn_t SEQBLOCK_AUTOMATION_get_state(const struct SeqblockAutomation *seqblockenv
   return seqblockenvelope->get_state();
 }
 
-// only used for undo/redo
+// only used for undo/redo, and when loading song that has ":envelope" in state instead of seqblock automation.
 void SEQBLOCK_AUTOMATION_apply_state(struct SeqblockAutomation *seqblockenvelope, const dyn_t envelope_state, double state_samplerate){
   R_ASSERT(state_samplerate != 0);
   seqblockenvelope->create_from_state(envelope_state, state_samplerate);
