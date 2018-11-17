@@ -2589,6 +2589,10 @@ void SMOOTH_copy_sound(const Smooth *__restrict__ smooth, float *__restrict__ ds
   }
 }
 
+void JUCE_add_sound(float *dst, const float *src, int num_frames){
+  juce::FloatVectorOperations::add(dst, src, num_frames);  
+}
+
 void JUCE_get_min_max_val(const float *array, const int num_elements, float *min_val, float *max_val){
   auto both = juce::FloatVectorOperations::findMinAndMax(array,num_elements);
   *min_val = both.getStart();

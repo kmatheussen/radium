@@ -51,6 +51,7 @@ typedef struct{
 	int startcolor;
 
         bool has_warned_about_acc_rit;
+        bool has_warned_about_different_granulator;
 }DiskClass;
 
 //Types for ls:
@@ -109,6 +110,28 @@ extern int g_disk_load_radium_version_major;
 extern int g_disk_load_radium_version_minor;
 extern int g_disk_load_radium_version_revision;
 extern int g_curr_disk_line;
+
+static inline bool disk_load_radium_version_is_older_than_or_equal_to(int major, int minor, int revision){
+
+  R_ASSERT_NON_RELEASE(g_is_loading);
+  
+  if (g_disk_load_radium_version_major < major)
+    return true;
+  else if (g_disk_load_radium_version_major > major)
+    return false;
+  
+  if (g_disk_load_radium_version_minor < minor)
+    return true;
+  else if (g_disk_load_radium_version_minor > minor)
+    return false;
+
+  if (g_disk_load_radium_version_revision < revision)
+    return true;
+  else if (g_disk_load_radium_version_revision > revision)
+    return false;
+
+  return true;
+}
 
 #include "list_proc.h"
 

@@ -526,7 +526,7 @@ static void init_player_lock(void){
 static void RT_MIXER_check_if_someone_has_solo(void);
 static void RT_MIXER_check_if_at_least_two_soundproducers_are_selected(void);
 
-jack_time_t jackblock_delta_time = 0;
+jack_time_t g_jackblock_delta_time = 0;
 
 int g_jackblock_size = 0; // Should only be accessed from player thread
 static DEFINE_ATOMIC(int, g_jackblock_size2) = 0;
@@ -1014,9 +1014,10 @@ struct Mixer{
         
         MULTICORE_start_block(); {
 
-          jackblock_delta_time = 0;
-          while(jackblock_delta_time < num_frames){
+          g_jackblock_delta_time = 0;
+          while(g_jackblock_delta_time < num_frames){
             
+
             double curr_song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
             ATOMIC_DOUBLE_SET(g_curr_song_tempo_automation_tempo, curr_song_tempo_automation_tempo);
 
@@ -1037,20 +1038,22 @@ struct Mixer{
 
             float start_time;
 
-            if (jackblock_delta_time==0) start_time = MIXER_get_curr_audio_block_cycle_fraction(); else start_time = 0; // else clause added to silence compiler warning.
+            if (g_jackblock_delta_time==0) start_time = MIXER_get_curr_audio_block_cycle_fraction(); else start_time = 0; // else clause added to silence compiler warning.
 
             {
               MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
             }
-            if (jackblock_delta_time==0){
+            if (g_jackblock_delta_time==0){
               float curr_audio_fraction = MIXER_get_curr_audio_block_cycle_fraction() - start_time;
               curr_audio_fraction *= (num_frames / RADIUM_BLOCKSIZE);
               max_playertask_audio_cycle_fraction = (1.0 - curr_audio_fraction) / 2;
               //printf("   max fract: %f\n", max_playertask_audio_cycle_fraction);
             }
             
+            //static int bufs = 0; printf("Buf: %d\n", (int)bufs++);
+
             _time += RADIUM_BLOCKSIZE;
-            jackblock_delta_time += RADIUM_BLOCKSIZE;
+            g_jackblock_delta_time += RADIUM_BLOCKSIZE;
           }
 
         } MULTICORE_end_block();
@@ -1578,7 +1581,7 @@ STime MIXER_get_block_delta_time(STime time){
 int MIXER_get_main_inputs(const float **audio, int max_num_ch){
   int num_ch = R_MIN(NUM_SYSTEM_INPUT_JACK_PORTS, max_num_ch);
   for(int i=0;i<num_ch;i++)
-    audio[i] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[i],g_jackblock_size)) + jackblock_delta_time;
+    audio[i] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[i],g_jackblock_size)) + g_jackblock_delta_time;
   return num_ch;
 }
 
@@ -1777,8 +1780,8 @@ float MIXER_get_sample_rate(void){
   return g_mixer->_sample_rate;
 }
 
-int MIXER_get_buffer_size(void){
-  return RADIUM_BLOCKSIZE; //g_mixer->_buffer_size;
+int MIXER_get_remaining_num_jackblock_frames(void){
+  return g_jackblock_size - g_jackblock_delta_time;
 }
 
 // Returns first sound plugin in mixer that matches type_name and name. name can be NULL.

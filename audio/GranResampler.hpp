@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../bin/packages/sndlib/clm.h"
 #include "Resampler_proc.h"
 
-
+      
 namespace radium{
   
 
@@ -31,7 +31,7 @@ namespace radium{
   
 class GranResamplerCallback{
 public:
-  virtual float *get_next_granresampler_sample_block(const int ch, int &num_frames) = 0;
+  virtual float *get_next_granresampler_sample_block(const int ch, int &num_frames) = 0; // NOTE: The function can return more frames than num_frames, but never bigger than R_MAX(64, SLICE_SIZE).
 
   virtual ~GranResamplerCallback() = default; // Crazy c++ stuff.
 };
@@ -68,14 +68,14 @@ class GranResampler : public GranResamplerCallback{
 
 protected:
   
-  int _num_ch;
+  const int _num_ch;
 
 private:
   
   GranResamplerCallback *_callback;
   float** _buffer;
   
-  virtual void RT_process(float *output, const int ch, int num_frames) const = 0;
+  virtual void RT_process(float *output, const int ch, int num_frames) = 0;
 
 protected:
   
@@ -95,13 +95,13 @@ protected:
       
     }
   }
-  
+
 public:
   
-  void RT_process(float **output, int num_frames) const {
+  void RT_process(float **output, int num_frames) {
     for(int ch=0;ch<_num_ch;ch++)
       RT_process(output[ch], ch, num_frames);
-  } 
+  }
 
   void set_callback(GranResamplerCallback *callback){
     _callback = callback;
@@ -110,14 +110,14 @@ public:
 private:
   
   // Used when instance is supplied as a callback to another GranResampler.
-  float *get_next_granresampler_sample_block(const int ch, int &num_frames) override {
+  float *get_next_granresampler_sample_block(const int ch, int &num_frames) override {    
     RT_process(_buffer[ch], ch, GRANRESAMPLER_BUFFER_SIZE);
     num_frames = GRANRESAMPLER_BUFFER_SIZE;
     return _buffer[ch];
   }
 
 public:
-  
+
   GranResampler(int num_ch, GranResamplerCallback *callback)
     : _num_ch(num_ch)
     , _callback(callback)
@@ -135,6 +135,7 @@ public:
   }
 };
 
+  
 
 /*
 class SampleReader2 : public GranResampler{
@@ -221,7 +222,7 @@ public:
     return num_frames;
   }
 
-  void RT_process(float *output, const int ch, int num_frames) const override {
+  void RT_process(float *output, const int ch, int num_frames) override {
     _curr_ch = ch;
       
     int samples_left = num_frames;
@@ -249,7 +250,10 @@ public:
 
 // Granulator
 ////////////////////////
- 
+
+#if 0
+  // Using granulator in Granulator.hpp instead.
+  
 class Granulator : public GranResampler{
 
 public:
@@ -276,6 +280,31 @@ private:
       _pos = 0;
     }
 
+    void fill_block(float *dst, int num_frames){
+
+      //printf("   %d\n", num_frames);
+      
+      int dst_frames_left = num_frames;
+
+      while(dst_frames_left > 0){
+
+        if (_pos==_num_frames){
+          _samples = _granulator->call_callback(_ch, _num_frames);
+          _pos = 0;          
+        }
+
+        int src_frames_left = _num_frames - _pos;
+        
+        int num_frames_to_copy = R_MIN(dst_frames_left, src_frames_left);
+                                       
+        memcpy(dst, _samples + _pos, num_frames_to_copy*sizeof(float));
+        
+        dst_frames_left -= num_frames_to_copy;
+        dst += num_frames_to_copy;
+        _pos += num_frames_to_copy;
+      }
+    }
+    
     float get_sample(void){
       if (_pos==_num_frames){
         _samples = _granulator->call_callback(_ch, _num_frames);
@@ -318,7 +347,7 @@ public:
     mus_set_srate(pc->pfreq);
 
     for(int ch=0;ch<num_ch;ch++) {
-      _clm_granulators[ch] = mus_make_granulate(Granulator::static_get_next_raw_sample,
+      _clm_granulators[ch] = mus_make_granulate(NULL, 
                                                 expansion,
                                                 grain_length,
                                                 scaler,
@@ -333,8 +362,12 @@ public:
         (it's really cluttered now)
        */
       mus_set_location(_clm_granulators[ch], seed); // Set all granulators to use the same seed (for random operations) so the channels don't get out of sync.
+
+      // mus_src requires that 'feed' is always set (see clm.c/mus_granulate_with_editor).
+      // 'block_feed' can be NULL though.
+      mus_generator_set_feeders(_clm_granulators[ch], Granulator::static_get_next_raw_sample, Granulator::static_get_audio_block_for_granulation);
+      //mus_generator_set_feeders(_clm_granulators[ch], Granulator::static_get_next_raw_sample, NULL);
     }
-    
   }
 
   ~Granulator(){
@@ -346,6 +379,20 @@ public:
     delete[] _buffers;
   }
 
+  static mus_float_t static_get_audio_block_for_granulation(void *arg, int direction, mus_float_t *block, mus_long_t start, mus_long_t end){
+    R_ASSERT_NON_RELEASE(direction==1);
+
+#if 1
+    Buffer *buffer = static_cast<Buffer*>(arg);
+    buffer->fill_block(block + start, end-start);
+#else    
+    for(int i=start;i<end;i++)
+      block[i] = Granulator::static_get_next_raw_sample(arg, direction);
+#endif
+    
+    return 0.0;
+  }
+    
   static mus_float_t static_get_next_raw_sample(void *arg, int direction){
     R_ASSERT_NON_RELEASE(direction==1);
     
@@ -359,16 +406,16 @@ public:
       mus_reset(_clm_granulators[ch]);
   }
 
-  void RT_process(float *output, const int ch, int num_frames) const override {
+  void RT_process(float *output, const int ch, int num_frames) override {
     for(int i=0;i<num_frames;i++)
       output[i] = mus_granulate(_clm_granulators[ch], NULL);
   }
   
 };
-
+#endif
+  
 
 }
 
 
 #endif
-

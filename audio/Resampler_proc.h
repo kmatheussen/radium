@@ -1,3 +1,7 @@
+
+#ifndef _RADIUM_AUDIO_RESAMPER_PROC_H
+#define _RADIUM_AUDIO_RESAMPER_PROC_H
+
 #include <samplerate.h>
 
 namespace radium{
@@ -12,4 +16,4 @@ extern int RESAMPLER_read(struct radium::Resampler *res,double ratio,int num_fra
 
 extern void RESAMPLER_reset(struct radium::Resampler *res);
 
-
+#endif

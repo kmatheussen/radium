@@ -969,6 +969,7 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
 
     HASH_put_int(state, ":resampler-type", (int)SEQTRACKPLUGIN_get_resampler_type(plugin, seqblock->sample_id));
     
+    HASH_put_bool(state, ":grain-strict-no-jitter", SEQTRACKPLUGIN_get_grain_strict_no_jitter(plugin, seqblock->sample_id));
     HASH_put_float(state, ":grain-overlap", SEQTRACKPLUGIN_get_grain_overlap(plugin, seqblock->sample_id));
     HASH_put_float(state, ":grain-length", SEQTRACKPLUGIN_get_grain_length(plugin, seqblock->sample_id));
     HASH_put_float(state, ":grain-jitter", SEQTRACKPLUGIN_get_grain_jitter(plugin, seqblock->sample_id));
@@ -1303,11 +1304,14 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
     R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
 
-    if (HASH_has_key(state, ":grain-overlap")){      
+    if (HASH_has_key(state, ":grain-overlap")){
+      if (HASH_has_key(state, ":grain-strict-no-jitter"))
+        SEQTRACKPLUGIN_set_grain_strict_no_jitter(plugin, seqblock->sample_id, HASH_get_bool(state, ":grain-strict-no-jitter"));
       SEQTRACKPLUGIN_set_grain_overlap(plugin, seqblock->sample_id, HASH_get_float(state, ":grain-overlap"));
       SEQTRACKPLUGIN_set_grain_length(plugin, seqblock->sample_id, HASH_get_float(state, ":grain-length"));
       SEQTRACKPLUGIN_set_grain_jitter(plugin, seqblock->sample_id, HASH_get_float(state, ":grain-jitter"));
       SEQTRACKPLUGIN_set_grain_ramp(plugin, seqblock->sample_id, HASH_get_float(state, ":grain-ramp"));
+
     }
     
     if (HASH_has_key(state, ":name"))
@@ -1427,6 +1431,13 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     seqblock->fade_in_envelope = new radium::Envelope(inshape, 1.0, true);
     seqblock->fade_out_envelope = new radium::Envelope(outshape, 1.0, false);
   }
+
+  if (g_is_loading)
+    if (seqblock->block==NULL)
+      if (disk_load_radium_version_is_older_than_or_equal_to(9,9,12)){
+        SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+        SEQTRACKPLUGIN_convert_old_granular_parameters(plugin, seqblock);
+      }
 
   SEQBLOCK_calculate_time_conversion_table(seqblock, false);
 
