@@ -99,6 +99,7 @@
   (define funcs (<new> :seqblock-gui-functions))
   
   (define seqblockid (<ra> :get-seqblock-id seqblocknum seqtracknum))
+  (define seqblock-is-alive #t)
   (define has-started #f)
   (define main-layout (<gui> :vertical-layout));flow-layout))
 
@@ -255,7 +256,8 @@
 
       (<ra> :schedule 100
             (lambda ()
-              (and (<gui> :is-open pitch-slider)
+              (and seqblock-is-alive
+                   (<gui> :is-open pitch-slider)
                    (<gui> :is-open pitch-text-input)
                    (let ((those-things (get-those-things)))
                      (set-new-pitch! (those-things :pitch))
@@ -423,17 +425,16 @@
   
   (set! (*seqblock-guis* seqblockid) main-layout)
 
-  (define seqblock-deleted-callback-called #f)
-  
   (define (seqblock-deleted-callback)
-    (set! seqblock-deleted-callback-called #t)
+    (set! seqblock-is-alive #f) ;; Can"t test whether any of the gui elements are open to check if seqblock is alive, since the delete callback isn't always called directly from gui_close.
+    ;;(assert (not (<ra> :seqblock-is-alive seqblockid)))
     (<gui> :close main-layout))
   
   (<ra> :add-seqblock-deleted-callback seqblockid seqblock-deleted-callback)
   
   (<gui> :add-deleted-callback main-layout
          (lambda (runs-custom-exec)
-           (if (not seqblock-deleted-callback-called)
+           (if seqblock-is-alive
                (<ra> :remove-seqblock-deleted-callback seqblockid seqblock-deleted-callback))
            (set! (*seqblock-guis* seqblockid) #f)))
 

@@ -5619,7 +5619,7 @@ void gui_close(int64_t guinum){
     return;
 
   /*
-  // Removed this limitation. It makes sense to do this when removing a child widget from an ui.
+  // Removed this limitation. It makes sense to do this when removing a child widget from a ui.
   //
   if (gui->_created_from_existing_widget){ //g_gui_from_existing_widgets.contains(gui->_widget)){
     handleError("Can not close Gui #%d since it was not created via the API");

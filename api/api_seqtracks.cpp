@@ -2333,6 +2333,12 @@ void cancelCurrSeqblockUnderMouse(void){
 
 }
 
+bool seqblockIsAlive(int64_t seqblockid){
+  int seqblocknum, seqtracknum;
+  struct SeqTrack *seqtrack;
+  return getSeqblockFromIdB(seqblockid, &seqtrack, seqblocknum, seqtracknum, false)!=NULL;
+}
+
 dyn_t getBlockUsageInSequencer(void){
   int num_blocks = root->song->num_blocks;
   int ret[num_blocks];
