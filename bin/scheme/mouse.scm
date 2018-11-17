@@ -911,11 +911,6 @@
   (define (move-or-release Button Dx Dy Node)
     (define node-info (Node :node-info))
 
-    (if (and (Node :need-to-make-undo)
-             (or (not (= 0 Dx))
-                 (not (= 0 Dy))))
-        (Make-undo node-info))
-
     (define min-value (and Get-min-value (Get-min-value node-info)))
     (define max-value (and Get-max-value (Get-max-value node-info)))
     (if (or (not min-value)
@@ -943,8 +938,11 @@
                            (+ (Node :y) Dy))
                       (+ Dy (Node :y))))
 
-    (define same-pos (and (morally-equal? new-y (Node :y))
-                          (morally-equal? new-value (Node :value))))
+    (define same-pos (or (and (= Dx 0)
+                              (= Dy 0))
+                         (and (or (not new-y)
+                                  (morally-equal? new-y (Node :y)))
+                              (morally-equal? new-value (Node :value)))))
     
     ;;(c-display "Dx:" Dx ", Dy:" Dy ", same-pos:" same-pos "new-y:" new-y ". Place:" (and new-y (get-place-from-y Button new-y)) "(Node :y):" (Node :y) "new-value:" new-value "(Node :value):" (Node :value))
 
@@ -952,17 +950,20 @@
         (begin
           (Publicize node-info)
           Node)
-        (let ((node-info (Move-node node-info new-value
-                                    (if Use-Place
-                                        (if new-y
-                                            (get-place-from-y Button new-y)
-                                            'same-place)
-                                        new-y))))
-          (Publicize node-info)
-          (make-node :node-info node-info
-                     :value new-value
-                     :y (or new-y (Node :y))))))
-  
+        (begin
+          (if (Node :need-to-make-undo)
+              (Make-undo node-info))
+          (let ((node-info (Move-node node-info new-value
+                                      (if Use-Place
+                                          (if new-y
+                                              (get-place-from-y Button new-y)
+                                              'same-place)
+                                          new-y))))
+            (Publicize node-info)
+            (make-node :node-info node-info
+                       :value new-value
+                       :y (or new-y (Node :y)))))))
+    
   (define (move-and-release Button Dx Dy Node)
     (move-or-release Button Dx Dy Node))
   
