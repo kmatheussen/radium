@@ -5793,6 +5793,8 @@
   (define start-pos (seqblock :start-time))
   (define curr-pos start-pos)
 
+  (define has-moved #f)
+  
   (define is-sample (seqblock :sample))
   (define is-block (seqblock :blocknum))
 
@@ -5911,6 +5913,8 @@
     (define moving-left (< new-pos start-pos))
     (define moving-right (not moving-left))
 
+    (set! has-moved (not (= new-pos start-pos)))
+    
     (set-grid-type (<ra> :get-seq-block-grid-type))
     
     ;; changing track
@@ -6005,7 +6009,7 @@
     #t)
 
   :release ()
-  (begin
+  (when has-moved
     (maybe-make-undo)
     (<ra> :apply-gfx-seqblocks seqtracknum)))
 
