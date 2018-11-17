@@ -425,8 +425,12 @@
 
      (define (mouse-callback-internal button state x y)
 
+       ;;(c-display "   mouse-callback-internal" "has:" (if curr-mouse-cycle #t #f) ". button/state:" button state
+       ;;           (if (= state *is-releasing*) "releasing" (if (= state *is-leaving*) "leaving" (if (= state *is-pressing*) "pressing" "unknown"))))
+       
        ;; make sure release is always called when releasing, no matter other states.
-       (when (= state *is-releasing*)
+       (when (or (= state *is-releasing*)
+                 (= state *is-leaving*))
          ;;(c-display "     MOUSE-CALLBACK-INTERNAL called for" class-name)
          (mouse-release-internal button x y))
        

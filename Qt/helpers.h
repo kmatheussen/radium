@@ -452,6 +452,7 @@ static inline void set_widget_takes_care_of_painting_everything(QWidget *widget)
 bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event);
 bool MOUSE_CYCLE_move(QWidget *widget, QMouseEvent *event);
 bool MOUSE_CYCLE_unregister(QWidget *widget);
+void MOUSE_CYCLE_schedule_unregister_all(void); // Can safely be called at any moment when we know that the current mouse cycle should not run (schedules a call to mouseReleaseEvent if there is a mouse event).
 
 namespace radium{
 
@@ -1043,6 +1044,8 @@ struct ScopedExec{
 static inline void closePopup(void){
   R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
 
+  MOUSE_CYCLE_schedule_unregister_all();
+  
   if (!g_curr_popup_qmenu.isNull()){
     g_curr_popup_qmenu->hide(); // safer.
   //g_curr_popup_qmenu->deleteLater(); // We might be called from the "triggered" callback of the menu.
@@ -1140,7 +1143,7 @@ static inline QAction *safeMenuExec(QMenu *widget, bool program_state_is_valid){
 
 static inline void safeMenuPopup(QMenu *menu){
   R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
-  
+
   closePopup();
   set_those_menu_variables_when_starting_a_popup_menu(menu);
 
@@ -1149,7 +1152,7 @@ static inline void safeMenuPopup(QMenu *menu){
 
 static inline void safeShowPopup(QWidget *popup){
   R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
-  
+
   closePopup();
   popup->show();
 }
