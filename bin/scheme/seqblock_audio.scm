@@ -445,6 +445,8 @@
   (<gui> :set-size main-layout (<gui> :width main-layout) (+ 40 (<gui> :height main-layout)))
   (<gui> :minimize-as-much-as-possible main-layout)
   ||#
+
+  (<gui> :set-window-title main-layout (<ra> :get-seqblock-name seqblocknum seqtracknum))
   
   ;; There's a slight flicker when opening the window. I've tried to delay opening, minimize, etc. but this Qt bug is probably almost impossible to workaround.
   (<gui> :show main-layout)
