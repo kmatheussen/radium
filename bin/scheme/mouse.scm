@@ -911,7 +911,9 @@
   (define (move-or-release Button Dx Dy Node)
     (define node-info (Node :node-info))
 
-    (if (Node :need-to-make-undo)
+    (if (and (Node :need-to-make-undo)
+             (or (not (= 0 Dx))
+                 (not (= 0 Dy))))
         (Make-undo node-info))
 
     (define min-value (and Get-min-value (Get-min-value node-info)))
@@ -4637,7 +4639,6 @@
 ;; Change seqblock fade in / out
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (define (create-fade-handler is-left)
   (add-node-mouse-handler :Get-area-box (lambda()
                                           (and *current-seqblock-info* ;;(get-current-seqblock-info)
@@ -4650,7 +4651,7 @@
                                                  box)))
                           :Get-existing-node-info (lambda (X Y callback)
                                                     ;;(c-display "Y:" Y)
-                                                    
+
                                                     (define seqblock-info *current-seqblock-info*)
                                                     (define seqtracknum (seqblock-info :seqtracknum))
                                                     (define seqblocknum (seqblock-info :seqblocknum))
@@ -4658,10 +4659,11 @@
                                                                           (<ra> :get-seqblock-fade-in seqblocknum seqtracknum)
                                                                           (<ra> :get-seqblock-fade-out seqblocknum seqtracknum)))
                                                     (set-current-seqblock! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
+                                                    ;;(c-display "START-POS: " start-pos)
                                                     (if is-left                                                        
                                                         (callback seqblock-info start-pos Y)
                                                         (callback seqblock-info (- 1 start-pos) Y)))
-
+                          
                           :Get-min-value (lambda (seqblock-info)
                                            0
                                            )
@@ -4690,8 +4692,6 @@
 
                                        (set-grid-type #t)
 
-                                       ;;(c-display "Value:" Value)
-                                       
                                        (if is-left
                                            (<ra> :set-seqblock-fade-in Value seqblocknum seqtracknum)
                                            (<ra> :set-seqblock-fade-out (- 1 Value) seqblocknum seqtracknum))
