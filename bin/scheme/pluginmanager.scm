@@ -167,8 +167,8 @@
 (if #f
     (<gui> :hide *pmg-scan-all-remaining-button*)    
     (<gui> :add-callback *pmg-scan-all-remaining-button* (lambda ()
-                                                 (when (pmg-finished-scanning?)
-                                                   (pmg-ask-are-you-sure pmg-scan-all-remaining)))))
+                                                           (when (pmg-finished-scanning?)
+                                                             (pmg-ask-are-you-sure pmg-scan-all-remaining)))))
 
 
 

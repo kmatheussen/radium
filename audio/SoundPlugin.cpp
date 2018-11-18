@@ -1861,7 +1861,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
           if (plugin->delay != NULL){
             int val = 0;
             if (ATOMIC_GET(plugin->delay_is_on))
-            val = plugin->delay_time*MIXER_get_sample_rate()/1000;
+              val = plugin->delay_time*MIXER_get_sample_rate()/1000;
             static_cast<radium::SmoothDelay*>(plugin->delay)->setSize(val);
           }
         }

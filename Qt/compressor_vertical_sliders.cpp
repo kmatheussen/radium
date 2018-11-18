@@ -555,9 +555,9 @@ struct Comp
 #endif
 
   double get_threshold(){
-    return scale(in_val2,
-                 in_val1,1,
-                 max_db,min_db);
+    return scale_double(in_val2,
+                        in_val1,1,
+                        max_db,min_db);
   }
 
   void set_threshold_gui(){
@@ -734,7 +734,7 @@ struct Comp
   void handle_mouse_event (int x, int y){
     //printf("Got mouse press event %d / %d\n",(int)event->x(),(int)event->y());
 
-    double delta = scale(y-y_startpos,0,height(),0,1);
+    double delta = scale_double(y-y_startpos,0,height(),0,1);
 
     if (ctrlPressed())
       delta = delta/10.0;
@@ -786,7 +786,7 @@ struct Comp
 
       curr_slider = RATIO_SLIDER;
       if(in_box.p1>0){
-        p_startpos = scale(in_box.p1,0,in_box.p2,0,-height());
+        p_startpos = scale_double(in_box.p1,0,in_box.p2,0,-height());
       }else{
         p_startpos = out_box.p1;
       }
@@ -804,7 +804,7 @@ struct Comp
       return false;
     }
 
-    p_startpos = scale(p_startpos,0,height(),0,1);
+    p_startpos = scale_double(p_startpos,0,height(),0,1);
     y_startpos = y;
 
     switch(curr_slider){
@@ -971,7 +971,7 @@ struct Comp
       paint_gradient_rectangle(p, vol.x1,p2, vol.x2,p3, col, col2);
 
       //QColor col3=col2.light(scale(p3,vol.y2,vol.y1,100,40));
-      MyColor col3=mix_mycolors(col2,MyColor(1,1,1),R_BOUNDARIES(0.0f, scale(p3,vol.y2,vol.y1,1.0f,0.0f), 1.0f));
+      MyColor col3=mix_mycolors(col2,MyColor(1,1,1),R_BOUNDARIES(0.0f, scale_double(p3,vol.y2,vol.y1,1.0f,0.0f), 1.0f));
 
       // bot.
       paint_gradient_rectangle(p, vol.x1,p3, vol.x2,vol.y2, col2, col3);
