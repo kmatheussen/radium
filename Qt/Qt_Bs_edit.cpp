@@ -792,7 +792,7 @@ public slots:
         radium::PlayerPause pause; // Not necessary for correct operation, but to avoid restart the player more than once.
 
         int64_t seqblock1_time = seqblock1->t.time;
-        SEQTRACK_delete_seqblock(seqtrack, seqblock1);
+        SEQTRACK_delete_seqblock(seqtrack, seqblock1, false);
         SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock1_time);
         SEQBLOCK_insert_seqblock_from_state(seqblock1_state, SHOW_ASSERTION);
         //SEQTRACK_insert_seqblock(seqtrack, seqblock1, SEQBLOCK_get_seq_endtime(seqblock2), -1);

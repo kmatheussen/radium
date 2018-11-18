@@ -315,7 +315,7 @@ extern LANGSPEC void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack, radi
 #endif
 
 extern LANGSPEC void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int seqblocknum, int64_t how_much);
-extern LANGSPEC void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
+extern LANGSPEC void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool notify_listeners);
 extern LANGSPEC void SEQTRACK_delete_gfx_gfx_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 extern LANGSPEC void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording);
 

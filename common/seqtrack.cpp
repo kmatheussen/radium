@@ -1887,7 +1887,7 @@ struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
   return seqtrack;
 }
 
-void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool notify_listeners){
   int pos = VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
   R_ASSERT_RETURN_IF_FALSE(pos>=0);
 
@@ -1920,7 +1920,8 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
     RT_legalize_seqtrack_timing(seqtrack, NULL);  // Shouldn't be necessary, but we call it just in case.
   }
 
-  API_seqblock_has_been_deleted(seqblock->id);
+  if (notify_listeners)
+    API_seqblock_has_been_deleted(seqblock->id);
   
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 
