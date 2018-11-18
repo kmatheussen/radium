@@ -67,11 +67,13 @@ struct SmoothDelay {
   }
   
   void setSize(int size){
-    size = R_MAX(0, R_MIN(buffer_size-1, size));
     if (size != iHslider0) {
-      iHslider0 = size;
-      if (can_pipe_instead == true && iHslider0 > 0)
-        can_pipe_instead = false;
+      size = R_MAX(0, R_MIN(buffer_size-1, size));
+      if (size != iHslider0) {
+        iHslider0 = size;
+        if (can_pipe_instead == true && iHslider0 > 0)
+          can_pipe_instead = false;
+      }
     }
   }
 

@@ -343,7 +343,7 @@ static inline bool int_to_bool(int value){
             )                            \
   )   
 
-static inline int64_t scale_int64(int64_t x, int64_t x1, int64_t x2, int64_t y1, int64_t y2){
+static inline int64_t scale_int64(const int64_t x, const int64_t x1, const int64_t x2, const int64_t y1, const int64_t y2){
   int64_t diff = x2-x1;
   
 #if !defined(RELEASE)
@@ -359,7 +359,7 @@ static inline int64_t scale_int64(int64_t x, int64_t x1, int64_t x2, int64_t y1,
                   );
 }
 
-static inline double scale_double(double x, double x1, double x2, double y1, double y2){
+static inline double scale_double(const double x, const double x1, const double x2, const double y1, const double y2){
 #if !defined(RELEASE)
   R_ASSERT_RETURN_IF_FALSE2(x2!=x1,(y1+y2)/2);
 #endif
@@ -369,7 +369,7 @@ static inline double scale_double(double x, double x1, double x2, double y1, dou
                 );
 }
 
-static inline float scale(float x, float x1, float x2, float y1, float y2){
+static inline float scale(const float x, const float x1, const float x2, const float y1, const float y2){
 #if !defined(RELEASE)
   R_ASSERT_RETURN_IF_FALSE2(x2!=x1,(y1+y2)/2);
 #endif

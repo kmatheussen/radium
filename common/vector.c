@@ -56,7 +56,7 @@ vector_t *VECTOR_move(vector_t *from){
   return to;
 }
 
-vector_t *VECTOR_copy(vector_t *from){
+vector_t *VECTOR_copy(const vector_t *from){
   vector_t *to=talloc(sizeof(vector_t));
 
   to->num_elements_allocated = from->num_elements_allocated;
@@ -70,7 +70,7 @@ vector_t *VECTOR_copy(vector_t *from){
   return to;
 }
 
-void VECTOR_copy_elements(vector_t *from, int from_pos, int num_elements_to_copy, vector_t *to){
+void VECTOR_copy_elements(const vector_t *from, int from_pos, int num_elements_to_copy, vector_t *to){
   R_ASSERT(to->num_elements==0); // A more advanced VECTOR_copy_elements function is not needed yet.
   
   R_ASSERT(from_pos + num_elements_to_copy <= from->num_elements);

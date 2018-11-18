@@ -3029,7 +3029,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     
     int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;
 
-    auto old_seqtracks = song->seqtracks;
+    const vector_t old_seqtracks = song->seqtracks;
     
     {
       radium::PlayerPause pause(is_playing_song());
