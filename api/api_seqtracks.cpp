@@ -120,6 +120,13 @@ void undoSeqtrackAutomations(void){
   ADD_UNDO(SeqtrackAutomations());
 }
 
+void undoSeqblock(int seqblocknum, int seqtracknum){
+  ADD_UNDO(Seqblock(seqtracknum, seqblocknum));
+}
+static void undoSeqblock2(int64_t seqblockid){
+  undoSeqblock(getSeqblockSeqblockNum(seqblockid), getSeqblockSeqtrackNum(seqblockid));
+}
+
 void undoSequencer(void){
   ADD_UNDO(Sequencer());
 }
@@ -342,7 +349,7 @@ void swapSeqtracks(int seqtracknum1, int seqtracknum2){
   if (seqtrack2==NULL)
     return;
 
-  ADD_UNDO(Sequencer());
+  undoSequencer();
   
   root->song->seqtracks.elements[seqtracknum1] = seqtrack2;
   root->song->seqtracks.elements[seqtracknum2] = seqtrack1;
@@ -900,7 +907,7 @@ static void maybe_make_seqblock_undo(int64_t seqblockid){
   return;
   
  do_undo:  
-  undoSequencer();
+  undoSeqblock2(seqblockid);
   last_undo_num = curr_undo_num + 1;
   last_undo_time = curr_time;
   last_seqblockid = seqblockid;
@@ -1152,7 +1159,7 @@ void setSeqblockAutomationEnabled(bool is_enabled, int automationnum, int64_t se
   if (RT_seqblock_automation_is_enabled(seqblock->automations[automationnum])==is_enabled)
     return;
 
-  undoSequencer();
+  undoSeqblock2(seqblockid);
 
   SEQBLOCK_AUTOMATION_set_enabled(seqblock->automations[automationnum], is_enabled);
 }
@@ -1943,7 +1950,7 @@ void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
   if (seqtrack==NULL)
     return;
 
-  ADD_UNDO(Sequencer());
+  undoSequencer();
 
   SEQTRACK_insert_silence(seqtrack, pos, duration);
 }
@@ -2028,7 +2035,7 @@ int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
   if (block==NULL)
     return -1;
 
-  ADD_UNDO(Sequencer());
+  undoSequencer();
 
   int64_t start_seqtime;
   int64_t end_seqtime;
@@ -2045,7 +2052,7 @@ int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, i
   if (seqtrack==NULL)
     return -1;
 
-  ADD_UNDO(Sequencer());
+  undoSequencer();
 
   {
     radium::ScopedIgnoreUndo ignore_undo;
@@ -2367,7 +2374,7 @@ void setSeqblockName(const_char* new_name, int seqblocknum, int seqtracknum){
 
   if (seqblock->block==NULL) {
     
-    undoSequencer();
+    undoSeqblock(seqblocknum, seqtracknum);
     seqblock->name = STRING_create(new_name);
     
   } else {

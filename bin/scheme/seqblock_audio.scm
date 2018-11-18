@@ -200,7 +200,7 @@
           (define time (<ra> :get-ms))
           (when (> time
                    (+ last-change-time 1000))
-            (<ra> :undo-sequencer)
+            (<ra> :undo-seqblock seqblocknum seqtracknum)
             (set! last-change-time time))
           
           (set! curr-pitch new-pitch)

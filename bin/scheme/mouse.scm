@@ -4742,7 +4742,7 @@
                                                        :enabled (not (string=? shape-name (<ra> :get-seqblock-fade-shape is-fade-in seqblocknum seqtracknum)))
                                                        :icon (<ra> :get-fade-shape-icon-filename shape-name is-fade-in)
                                                        (lambda ()
-                                                         (<ra> :undo-sequencer)
+                                                         (<ra> :undo-seqblock seqblocknum seqtracknum)
                                                          (<ra> :set-seqblock-fade-shape shape-name is-fade-in seqblocknum seqtracknum))))
                                                (<ra> :get-fade-shapes)))
                               #t)))))))
@@ -4925,8 +4925,8 @@
                         :Get-y (lambda (info) #f)
 
                         :Make-undo (lambda (_)
-                                     (<ra> :undo-sequencer))
-                        
+                                     (<ra> :undo-sequencer)) ;; Can't use undo-seqblock since we move start position)
+                                     
                         :Create-new-node (lambda (X seqtracknum callback)
                                            (assert #f)
                                            #f)
@@ -5036,17 +5036,19 @@
                         :Get-x (lambda (info) #f)
                         :Get-y (lambda (info) #f)
 
-                        :Make-undo (lambda (_)
-                                     #f)
+                        :Make-undo (lambda (seqblock-info)
+                                     (define seqtracknum (seqblock-info :seqtracknum))
+                                     (define seqblocknum (seqblock-info :seqblocknum))
+                                     (<ra> :undo-seqblock seqblocknum seqtracknum))
                         
                         :Create-new-node (lambda (X seqtracknum callback)
-                                           (assert #f)
-                                           #f)
-
+                                           (define seqtracknum (seqblock-info :seqtracknum))
+                                           (define seqblocknum (seqblock-info :seqblocknum))
+                                           (<ra> :undo-seqblock seqblocknum seqtracknum))
+                        
                         :Release-node (lambda (seqblock-info)
                                         (when gakkgakk-has-moved-right-interior
                                           (define seqtracknum (seqblock-info :seqtracknum))
-                                          (<ra> :undo-sequencer)
                                           (<ra> :apply-gfx-seqblocks seqtracknum)))
                         
                         :Move-node (lambda (seqblock-info mousex Y)
@@ -5481,17 +5483,16 @@
   (define seqblock-length (- (seqblock :end-time)
                              (seqblock :start-time)))
                              
-  (define has-made-undo #f)
-  (define (maybe-make-undo)
-    (when (not has-made-undo)
-      (<ra> :undo-sequencer)
-      (set! has-made-undo #t)))
-
   (define (set-new-seqblocks! new-seqblocks new-seqblocknum)
     (set! seqblocks new-seqblocks)
     (set! seqblocknum new-seqblocknum)
     (set! seqblock (seqblocks seqblocknum)))
-       
+
+  :make-undo ()
+  (if is-left
+      (<ra> :undo-sequencer) ;; because we move start position
+      (<ra> :undo-seqblock seqblocknum seqtracknum))
+  
   :seqtracknum ()
   seqtracknum
 
@@ -5528,7 +5529,6 @@
   
   :move (Value Y)
   (begin
-    (maybe-make-undo)
     (set! has-moved #t)
     ;;(c-display "Value:" Value)
     (let ((gakk (move-seqblock-speedstretch Value seqtracknum seqblocknum seqblock seqblocks is-stretch is-left (this->min-right-value) (this->max-left-value) curr-pos)))
@@ -5579,8 +5579,8 @@
                           :Get-x (lambda (info) #f)
                           :Get-y (lambda (info) #f)
                           
-                          :Make-undo (lambda (_)
-                                       #f)
+                          :Make-undo (lambda (set-speedstretch)
+                                       (set-speedstretch :make-undo))
                           
                           :Create-new-node (lambda (X seqtracknum callback)
                                              (assert #f)

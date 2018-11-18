@@ -69,6 +69,80 @@ static void *Undo_Do_Sequencer(
 
 
 
+/////////////////////////////////////////////////////////////////////
+// 1.5. A seqblock                                                 //
+/////////////////////////////////////////////////////////////////////
+
+static void *Undo_Do_Seqblock(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+);
+
+
+static hash_t *get_seqblock_state(int seqtracknum, int seqblocknum){
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum >= 0, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum < root->song->seqtracks.num_elements, NULL);
+  
+  struct SeqTrack *seqtrack = root->song->seqtracks.elements[seqtracknum];
+
+  R_ASSERT_RETURN_IF_FALSE2(seqblocknum >= 0, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(seqblocknum < seqtrack->seqblocks.num_elements, NULL);
+
+  struct SeqBlock *seqblock = seqtrack->seqblocks.elements[seqblocknum];
+  
+  hash_t *state = SEQBLOCK_get_state(seqtrack, seqblock, true);
+  
+  HASH_put_int(state, ":seqtracknum", seqtracknum);
+  HASH_put_int(state, ":seqblocknum", seqblocknum);
+  
+  return state;
+}
+
+void ADD_UNDO_FUNC(Seqblock(int seqtracknum, int seqblocknum)){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
+  hash_t *state = get_seqblock_state(seqtracknum, seqblocknum);
+  if (state==NULL)
+    return;
+  
+  Undo_Add(
+           window->l.num,
+           window->wblock->l.num,
+           window->curr_track,
+           window->wblock->curr_realline,
+           state, 
+           Undo_Do_Seqblock,
+           "Seqblock"
+           );
+}
+
+static void *Undo_Do_Seqblock(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+){
+  hash_t *state = (hash_t*)pointer;
+
+  int seqtracknum = HASH_get_int32(state, ":seqtracknum");
+  int seqblocknum = HASH_get_int32(state, ":seqblocknum");
+
+  hash_t *ret = get_seqblock_state(seqtracknum, seqblocknum);
+  if (ret==NULL) // not supposed to happen.
+    return state;
+  
+  SEQBLOCK_replace_seqblock(state, true, SHOW_ASSERTION);
+    
+  return ret;
+}
+
+
+
+
 /////////////////////////////////////////////////////////////////////////
 // 2. Just automation. (doesn't require player to pause when modified) //
 /////////////////////////////////////////////////////////////////////////

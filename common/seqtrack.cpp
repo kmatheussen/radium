@@ -1471,6 +1471,55 @@ int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowA
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqblock->t.time, seqblock->t.time2);
 }
 
+void SEQBLOCK_replace_seqblock(hash_t *hash, bool must_replace_same_id, enum ShowAssertionOrThrowAPIException error_type){
+  R_ASSERT_RETURN_IF_FALSE(must_replace_same_id==true); // must_replace_same_id==false is not implemented (could have implemented it quickly though, but then it wouldn't have been tested)
+  
+  int seqtracknum = HASH_get_int32(hash, ":seqtracknum");
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
+    SHOW_ERROR(0, "No seqtrack #%d", seqtracknum);
+    return;
+  }
+  
+  struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+
+  int seqblocknum = HASH_get_int32(hash, ":seqblocknum");
+  if (seqblocknum < 0 || seqblocknum >= seqtrack->seqblocks.num_elements){
+    SHOW_ERROR(0, "No seqblock #%d", seqblocknum);
+    return;
+  }
+
+  const struct SeqBlock *old_seqblock = (const struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
+  
+  struct SeqBlock *new_seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, error_type, Seqblock_Type::REGULAR);
+  if (new_seqblock==NULL)
+    return;
+
+  if (old_seqblock->id != new_seqblock->id){
+    SHOW_ERROR(0, "When replacing seqblock #%d in seqtrack #%d, different id for seqblocks. Old id: %d. New id: %d.", seqblocknum, seqtracknum, (int)old_seqblock->id, (int)new_seqblock->id);
+    return;
+  }
+
+  prepare_remove_sample_from_seqblock(seqtrack, old_seqblock, Seqblock_Type::REGULAR);
+  
+  {
+    radium::PlayerPause pause(is_playing_song());
+    radium::PlayerLock lock;
+
+    move_seqblock(new_seqblock, old_seqblock->t.time);
+    set_seqblock_stretch(seqtrack, new_seqblock);
+    
+    seqtrack->seqblocks.elements[seqblocknum] = new_seqblock;
+
+    SEQTRACKPLUGIN_assert_samples2(seqtrack);
+       
+    RT_legalize_seqtrack_timing(seqtrack, NULL);
+  }
+
+  SEQBLOCK_update_with_borders(seqtrack, new_seqblock);
+  SEQUENCER_update(SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST); // in case seqblock name is changed
+}
+
+
 struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_samplerate, bool for_audiofiles){
   struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
   //memset(seqtrack, 0, sizeof(struct SeqTrack));

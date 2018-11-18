@@ -638,7 +638,7 @@ private:
       int write_dx = (int)_global_write_pos_of_next_frame - (int)_last_global_write_pos;
       int read_dx = (int)_global_read_pos_of_next_frame - (int)_last_global_read_pos;
 
-      if (!using_jitter)
+      if (!_using_jitter)
         if (write_dx != last_write_dx || read_dx != last_read_dx){
           if (_strict_no_jitter || abs(write_dx-last_write_dx)>1 || abs(read_dx-last_read_dx)>1)
             printf("    dx differs: Read:%d %d. Write: %d %d\n", read_dx, last_read_dx, write_dx, last_write_dx);
