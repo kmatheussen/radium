@@ -3172,7 +3172,7 @@ int64_t getSeqblockInteriorEnd(int seqblocknum, int seqtracknum, bool use_gfx_if
   return seqblock->t.interior_end;
 }
 
-void deleteSeqblock(int seqblocknum, int seqtracknum){
+void deleteSeqblock(int seqblocknum, int seqtracknum, bool notify_listeners){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, false);
   if (seqblock==NULL)
@@ -3180,7 +3180,7 @@ void deleteSeqblock(int seqblocknum, int seqtracknum){
 
   undoSequencer();
   
-  SEQTRACK_delete_seqblock(seqtrack, seqblock);
+  SEQTRACK_delete_seqblock(seqtrack, seqblock, notify_listeners);
 
   BS_UpdatePlayList();
 }
