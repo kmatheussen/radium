@@ -1193,9 +1193,29 @@ static void prepare_remove_sample_from_seqblock(struct SeqTrack *seqtrack, const
     atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, NULL);
 }
 
+/*
+static QSet<int64_t> get_all_seqblock_ids_in_seqtrack(const struct SeqTrack *seqtrack){
+  QSet<int64_t> ret;
+
+  return ret;
+}
+*/
+
+static QSet<int64_t> get_all_seqblock_ids(void){
+  QSet<int64_t> ret;
+  
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+      R_ASSERT_NON_RELEASE(ret.contains(seqblock->id)==false);
+      ret << seqblock->id;
+    }END_VECTOR_FOR_EACH;    
+  }END_VECTOR_FOR_EACH;
+
+  return ret;
+}
 
 // Is static since seqblocks should only be created in this file.
-static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type, Seqblock_Type type){
+static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, const QSet<int64_t> &unavailable_ids, enum ShowAssertionOrThrowAPIException error_type, Seqblock_Type type){
   //R_ASSERT(is_gfx==true);
   
   double adjust_for_samplerate = 1.0;
@@ -1384,13 +1404,15 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
 
   R_ASSERT(seqblock->t.stretch > 0);
 
-  if (HASH_has_key(state, ":id") && false==HASH_has_key(state, ":new-block")){
+  if (HASH_has_key(state, ":id")) {
     int64_t id = HASH_get_int(state, ":id");
     if(id >= 0){
-      seqblock->id = id;
-      g_seqblock_id = R_MAX(g_seqblock_id, seqblock->id); // When loading song. (id is 64 bit, so we will never run out of ids)
+      if (unavailable_ids.contains(id) == false) {
+        seqblock->id = id;
+        g_seqblock_id = R_MAX(g_seqblock_id, seqblock->id); // When loading song. (id is 64 bit, so we will never run out of ids)
+      }
     }else{
-      R_ASSERT(id==-1);
+      R_ASSERT(id==-1); // I.e. unassigned id. Used when creating a state by copying an existing state and setting id to the new state to -1.
     }
   }
 
@@ -1461,10 +1483,7 @@ int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowA
 
   struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
 
-  if (false==HASH_has_key(hash, ":new-block"))
-    HASH_put_bool(hash, ":new-block", true); // To avoid two seqblocks with the same id.
-  
-  struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, error_type, Seqblock_Type::REGULAR);
+  struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, get_all_seqblock_ids(), error_type, Seqblock_Type::REGULAR);
   if (seqblock==NULL)
     return -1;
 
@@ -1490,7 +1509,7 @@ void SEQBLOCK_replace_seqblock(hash_t *hash, bool must_replace_same_id, enum Sho
 
   const struct SeqBlock *old_seqblock = (const struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
   
-  struct SeqBlock *new_seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, error_type, Seqblock_Type::REGULAR);
+  struct SeqBlock *new_seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, QSet<int64_t>(), error_type, Seqblock_Type::REGULAR);
   if (new_seqblock==NULL)
     return;
 
@@ -1614,7 +1633,7 @@ void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struc
 
   for(const dyn_t dyn : seqblocks_state.array){    
     R_ASSERT_RETURN_IF_FALSE(dyn.type==HASH_TYPE);
-    struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, dyn.hash, error_type, Seqblock_Type::GFX);
+    struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, dyn.hash, QSet<int64_t>(), error_type, Seqblock_Type::GFX);
     if (seqblock != NULL){
 
       if(used.contains(seqblock->id)){        
@@ -1736,7 +1755,7 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
 }
 
   
-static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double state_samplerate, int seqtracknum, enum ShowAssertionOrThrowAPIException error_type, struct Song *song){
+static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<int64_t> &unavailable_seqblock_ids, double state_samplerate, int seqtracknum, enum ShowAssertionOrThrowAPIException error_type, const struct Song *song){
  const hash_t *automation_state = NULL;
   if (HASH_has_key(state, "automation"))
     automation_state = HASH_get_hash(state, "automation");
@@ -1801,16 +1820,15 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
     if(HASH_has_key(seqblock_state, "time"))
       seqblock_state = get_new_seqblock_state_from_old(HASH_get_hash_at(state, "seqblock", i), song);
 
-    if (false==HASH_has_key(seqblock_state, ":new-block"))
-      HASH_put_bool(seqblock_state, ":new-block", true);  // To avoid two seqblocks with the same id.
-
     bool seqblock_for_audiofiles = HASH_has_key(seqblock_state, ":blocknum")==false;
 
     if (seqblock_for_audiofiles == for_audiofiles){
       
-      struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, seqblock_state, error_type, Seqblock_Type::GFX);
-      if (seqblock != NULL)
+      struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, seqblock_state, unavailable_seqblock_ids, error_type, Seqblock_Type::GFX);
+      if (seqblock != NULL) {
         VECTOR_push_back(seqtrack->gfx_seqblocks, seqblock);
+        unavailable_seqblock_ids << seqblock->id;
+      }
       
     } else {
     
@@ -1826,7 +1844,7 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
         seqtrack_extra->patch = patch;
       }
       
-      struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack_extra, seqtracknum+1, seqblock_state, error_type, Seqblock_Type::GFX);
+      struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack_extra, seqtracknum+1, seqblock_state, unavailable_seqblock_ids, error_type, Seqblock_Type::GFX);
       if (seqblock != NULL)
         VECTOR_push_back(seqtrack_extra->gfx_seqblocks, seqblock);
 
@@ -2372,7 +2390,7 @@ static int insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct SeqBlock *seqb
 }
 
 int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type){
-  struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, state, error_type, Seqblock_Type::GFX_GFX);
+  struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, state, QSet<int64_t>(), error_type, Seqblock_Type::GFX_GFX);
   if (seqblock==NULL)
     return -1;
 
@@ -3010,6 +3028,8 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     else
       reset_recording_config(&song->default_recording_config);
 
+    QSet<int64_t> unavailable_seqblock_ids;
+    
     vector_t seqtracks = {};
 
     {
@@ -3019,7 +3039,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       int seqtracknum = 0;
       
       for(int i = 0 ; i < num_seqtracks ; i++){
-        auto seqtracks_for_seqtrack = SEQTRACK_create_from_state(HASH_get_hash_at(state, "seqtracks", i), state_samplerate, seqtracknum, SHOW_ASSERTION, song);
+        auto seqtracks_for_seqtrack = SEQTRACK_create_from_state(HASH_get_hash_at(state, "seqtracks", i), unavailable_seqblock_ids, state_samplerate, seqtracknum, SHOW_ASSERTION, song);
         
         for(auto *seqtrack : seqtracks_for_seqtrack)
           VECTOR_push_back(&seqtracks, seqtrack);
