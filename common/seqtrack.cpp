@@ -1513,12 +1513,17 @@ void SEQBLOCK_replace_seqblock(hash_t *hash, bool must_replace_same_id, enum Sho
   if (new_seqblock==NULL)
     return;
 
+  if (seqtrack->for_audiofiles)
+    R_ASSERT_RETURN_IF_FALSE(new_seqblock->block==NULL);
+
+
   if (old_seqblock->id != new_seqblock->id){
     SHOW_ERROR(0, "When replacing seqblock #%d in seqtrack #%d, different id for seqblocks. Old id: %d. New id: %d.", seqblocknum, seqtracknum, (int)old_seqblock->id, (int)new_seqblock->id);
     return;
   }
 
-  prepare_remove_sample_from_seqblock(seqtrack, old_seqblock, Seqblock_Type::REGULAR);
+  if (seqtrack->for_audiofiles)
+    prepare_remove_sample_from_seqblock(seqtrack, old_seqblock, Seqblock_Type::REGULAR);
   
   {
     radium::PlayerPause pause(is_playing_song());
@@ -1529,7 +1534,8 @@ void SEQBLOCK_replace_seqblock(hash_t *hash, bool must_replace_same_id, enum Sho
     
     seqtrack->seqblocks.elements[seqblocknum] = new_seqblock;
 
-    SEQTRACKPLUGIN_assert_samples2(seqtrack);
+    if (seqtrack->for_audiofiles)
+      SEQTRACKPLUGIN_assert_samples2(seqtrack);
        
     RT_legalize_seqtrack_timing(seqtrack, NULL);
   }
