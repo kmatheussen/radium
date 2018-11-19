@@ -1456,7 +1456,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
 
   if (g_is_loading)
     if (seqblock->block==NULL)
-      if (disk_load_radium_version_is_older_than_or_equal_to(9,9,12)){
+      if (disk_load_radium_version_is_older_than_or_equal_to(5,9,12)){
         SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
         SEQTRACKPLUGIN_convert_old_granular_parameters(plugin, seqblock);
       }
