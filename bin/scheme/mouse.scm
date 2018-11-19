@@ -4621,10 +4621,10 @@
 
   (undo-block
    (lambda ()     
-     (FROM_C-delete-all-selected-seqblocks) ;; Hack. This will only work if seqblock-infos contains the current set of selected blocks. (deleting from seqblock-infos is a little bit tricky since the seqblock indexes changes)
      (for-each (lambda (seqblock)
-                 (if seqblock
-                     (<ra> :create-seqblock-from-state seqblock)))
+                 (when seqblock
+                   (<ra> :delete-seqblock (seqblock :id) #f)
+                   (<ra> :create-seqblock-from-state seqblock)))
                ;;(apply-seqblock seqblock)))
                seqblocks))))
 
@@ -7180,7 +7180,7 @@
                        (and seqblock-info
                             (begin
                               (set! *current-seqblock-info* #f)
-                              (<ra> :delete-seqblock (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
+                              (<ra> :delete-seqblock (seqblock-info :id))
                               (set! *current-seqblock-info* #f)
                               #t)))))))
 
