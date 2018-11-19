@@ -1130,10 +1130,15 @@ protected:
 
   virtual bool eventFilter(QObject *obj, QEvent *event) override {
 
+    bool activation_changed = event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate;
+
 #if FOR_LINUX
 
-    if (event->type()==QEvent::FocusAboutToChange){
-      //printf("EventFilter called\n");    
+    if (activation_changed){ //event->type()==QEvent::FocusAboutToChange){
+      /*
+      QFocusEvent *fevent = static_cast<QFocusEvent*>(event);
+      printf("QEvent::FocusAboutToChange: EventFilter called: %d/%d %d\n", fevent->gotFocus(), fevent->lostFocus(), fevent->reason());
+      */
       OS_SYSTEM_ResetKeysUpDowns();
     }
 
@@ -1151,11 +1156,12 @@ protected:
     // QEvent::ApplicationFontChange
     // could be used for something. For instance to fix OpenGL widget position.
 
-    bool activation_changed = event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate;
     auto ret = QApplication::eventFilter(obj, event);
 
-    if (activation_changed)
+    if (activation_changed){
+      //static int counter = 0;  printf("   %d: Activation changed: activate: %d deactivate: %d\n", counter++, event->type() == QEvent::WindowActivate, event->type() == QEvent::WindowDeactivate);
       MOUSE_CYCLE_schedule_unregister_all();
+    }
     
     return ret;
   }
