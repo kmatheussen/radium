@@ -428,37 +428,45 @@
     (<gui> :add main-layout apply-button))
 
   (define window (*seqblock-guis* seqblockid))
+
+  (define window-was-opened-here (not window))
+  
   (if window
       (begin
         (define old-layout (<gui> :child window "main-layout"))
         (c-display "    OLD_LAYOUT: " old-layout)
         (<gui> :replace window old-layout main-layout) ;; Some flicker here. I have no idea how to fix it. It's probably impossible since all Qt programs have widget flickering.
         (<gui> :set-name old-layout "gakk") ;; stupid Qt. QWidget::close() doesn't necessarily remove the widget right away, so if this function is called two times quite quickly, there might be two childs wht the name "main-layout")
+        ;;(c-display "    CLOSE 2" window old-layout)
         (<gui> :close old-layout))
       (begin
         (set! window (<gui> :vertical-layout))
         (set! (*seqblock-guis* seqblockid) window)
         (<gui> :add window main-layout)))
-
+  
   (<gui> :add main-layout (<gui> :button "Close"
                                  (lambda ()
+                                   ;;(c-display "    CLOSE 3" window)
                                    (<gui> :close window))))
   
   (define (seqblock-deleted-callback)
     (set! seqblock-is-alive #f)
     ;;(assert (not (<ra> :seqblock-is-alive seqblockid)))
+    ;;(c-display "    CLOSE 1" window seqblockid)
     (<gui> :close window))
-  
-  (<ra> :add-seqblock-deleted-callback seqblockid seqblock-deleted-callback)
-  
-  (<gui> :add-deleted-callback window
-         (lambda (runs-custom-exec)
-           (if seqblock-is-alive
-               (<ra> :remove-seqblock-deleted-callback seqblockid seqblock-deleted-callback))
-           (set! (*seqblock-guis* seqblockid) #f)))
 
-  (<gui> :set-takes-keyboard-focus window #f)
-  (<gui> :set-parent window (<gui> :get-sequencer-gui))
+  (when window-was-opened-here
+    (<ra> :add-seqblock-deleted-callback seqblockid seqblock-deleted-callback)
+    
+    (<gui> :add-deleted-callback window
+           (lambda (runs-custom-exec)
+             (if seqblock-is-alive
+                 (<ra> :remove-seqblock-deleted-callback seqblockid seqblock-deleted-callback))
+             (set! (*seqblock-guis* seqblockid) #f)))
+
+    (<gui> :set-takes-keyboard-focus window #f)
+    (<gui> :set-parent window (<gui> :get-sequencer-gui)))
+  
 
   #||
   (<gui> :minimize-as-much-as-possible main-layout)
@@ -471,8 +479,6 @@
   (if (not (<gui> :is-visible window))
       (<gui> :show window)) ;; There's a slight flicker when opening the window. I've tried to delay opening, minimize, etc. but this Qt bug is probably almost impossible to workaround.
 
-  (<gui> :set-takes-keyboard-focus window #f)
-  
   (set! has-started #t)
   )
 
