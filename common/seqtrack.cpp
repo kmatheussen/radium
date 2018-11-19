@@ -394,9 +394,9 @@ static void default_duration_changed(struct SeqBlock *seqblock, int64_t default_
 
 
 
-static int64_t g_seqblock_id = 0;
+static int64_t g_next_seqblock_id = 0;
 static int64_t new_seqblock_id(void){
-  return g_seqblock_id++;
+  return g_next_seqblock_id++;
 }
 
 void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const hash_t *seqblock_state, double state_samplerate, bool *track_is_disabled, int64_t time){
@@ -1409,7 +1409,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     if(id >= 0){
       if (unavailable_ids.contains(id) == false) {
         seqblock->id = id;
-        g_seqblock_id = R_MAX(g_seqblock_id, seqblock->id); // When loading song. (id is 64 bit, so we will never run out of ids)
+        g_next_seqblock_id = R_MAX(g_next_seqblock_id, id + 1); // When loading song. (id is 64 bit, so we will never run out of ids)
       }
     }else{
       R_ASSERT(id==-1); // I.e. unassigned id. Used when creating a state by copying an existing state and setting id to the new state to -1.
