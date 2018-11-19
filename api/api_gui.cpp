@@ -3888,11 +3888,11 @@ int64_t gui_child(int64_t guinum, const_char* childname){
 
   if (gui==NULL)
     return -1;
-  
+
   QWidget *child = gui->_widget->findChild<QWidget*>(childname);
 
   if (child==NULL){
-    handleError("Could not find child \"%s\" in gui #%d.", childname, (int)guinum);
+    handleError("gui_child: Could not find child \"%s\" in gui #%d.", childname, (int)guinum);
     return -1;
   }
 
@@ -5511,7 +5511,7 @@ void gui_replace(int64_t parentnum, int64_t oldchildnum, int64_t newchildnum){
   
   QLayout *layout = parent->getLayout();
   if(layout==NULL){
-    handleError("Gui #%d does not have a layout", (int)parentnum);
+    handleError("gui_replace: Gui #%d does not have a layout", (int)parentnum);
     return;
   }
 
@@ -5523,7 +5523,7 @@ void gui_replace(int64_t parentnum, int64_t oldchildnum, int64_t newchildnum){
   QLayoutItem *old_item = layout->replaceWidget(oldchild->_widget, newchild->_widget, Qt::FindDirectChildrenOnly);
 
   if(old_item==NULL){
-    handleError("Gui #%d not found in #%d", (int)oldchildnum, (int)parentnum);
+    handleError("gui_replace: Gui #%d not found in #%d", (int)oldchildnum, (int)parentnum);
     return;
   }
 

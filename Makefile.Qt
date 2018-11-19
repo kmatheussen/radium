@@ -1628,8 +1628,8 @@ api_play.o:  $(BUILD_DEPENDENCIES)  $(API)api_play.c $(API)radium_proc.h
 api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c $(API)radium_proc.h
 	$(CC)  $(API)api_clipboard.c $(OPT)
 
-api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.c $(API)radium_proc.h
-	$(CC)  $(API)api_undo.c $(OPT)
+api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp $(API)radium_proc.h
+	$(CCC)  $(API)api_undo.cpp $(QTOPT)
 
 api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp $(API)radium_proc.h bin/packages/s7/s7.c $(P)EditorWidget.h
 	$(CCC)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"

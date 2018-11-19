@@ -93,7 +93,19 @@
   * Grain jitter (%). 100: Very random position of grains. 0: Same distance between each grain.
 ||#
 
+(if (not (defined? '*seqblock-guis*))
+    (<ra> :add-undo-redo-callback
+          (lambda ()
+            (for-each (lambda (x)
+                        (define seqblockid (car x))
+                        (create-audio-seqblock-gui (<ra> :get-seqblock-seqblock-num seqblockid) (<ra> :get-seqblock-seqtrack-num seqblockid)))
+                      *seqblock-guis*)
+            #t)))
+
+
+
 (define *seqblock-guis* (make-hash-table 32 =))
+
 
 (define (create-audio-seqblock-gui seqblocknum seqtracknum)
   (define funcs (<new> :seqblock-gui-functions))
@@ -102,7 +114,9 @@
   (define seqblock-is-alive #t)
   (define has-started #f)
   (define main-layout (<gui> :vertical-layout));flow-layout))
-
+  
+  (<gui> :set-name main-layout "main-layout")
+  
   (define gain-group (<gui> :group "Gain"))
 
   (define gain-slider (<gui> :horizontal-slider "Gain (Db): " -35 (<ra> :gain-to-db (<ra> :get-seqblock-gain seqblockid)) 35
@@ -413,33 +427,38 @@
     
     (<gui> :add main-layout apply-button))
 
+  (define window (*seqblock-guis* seqblockid))
+  (if window
+      (begin
+        (define old-layout (<gui> :child window "main-layout"))
+        (c-display "    OLD_LAYOUT: " old-layout)
+        (<gui> :replace window old-layout main-layout) ;; Some flicker here. I have no idea how to fix it. It's probably impossible since all Qt programs have widget flickering.
+        (<gui> :set-name old-layout "gakk") ;; stupid Qt. QWidget::close() doesn't necessarily remove the widget right away, so if this function is called two times quite quickly, there might be two childs wht the name "main-layout")
+        (<gui> :close old-layout))
+      (begin
+        (set! window (<gui> :vertical-layout))
+        (set! (*seqblock-guis* seqblockid) window)
+        (<gui> :add window main-layout)))
+
   (<gui> :add main-layout (<gui> :button "Close"
                                  (lambda ()
-                                   (<gui> :close main-layout))))
+                                   (<gui> :close window))))
   
-  (set! has-started #t)
-
-  (define old-gui (*seqblock-guis* seqblockid))
-  (if old-gui
-      (<gui> :close old-gui))
-  
-  (set! (*seqblock-guis* seqblockid) main-layout)
-
   (define (seqblock-deleted-callback)
     (set! seqblock-is-alive #f)
     ;;(assert (not (<ra> :seqblock-is-alive seqblockid)))
-    (<gui> :close main-layout))
+    (<gui> :close window))
   
   (<ra> :add-seqblock-deleted-callback seqblockid seqblock-deleted-callback)
   
-  (<gui> :add-deleted-callback main-layout
+  (<gui> :add-deleted-callback window
          (lambda (runs-custom-exec)
            (if seqblock-is-alive
                (<ra> :remove-seqblock-deleted-callback seqblockid seqblock-deleted-callback))
            (set! (*seqblock-guis* seqblockid) #f)))
 
-  (<gui> :set-takes-keyboard-focus main-layout #f)
-  (<gui> :set-parent main-layout (<gui> :get-sequencer-gui))
+  (<gui> :set-takes-keyboard-focus window #f)
+  (<gui> :set-parent window (<gui> :get-sequencer-gui))
 
   #||
   (<gui> :minimize-as-much-as-possible main-layout)
@@ -447,10 +466,14 @@
   (<gui> :minimize-as-much-as-possible main-layout)
   ||#
 
-  (<gui> :set-window-title main-layout (<ra> :get-seqblock-name seqblocknum seqtracknum))
+  (<gui> :set-window-title window (<ra> :get-seqblock-name seqblocknum seqtracknum))
+
+  (if (not (<gui> :is-visible window))
+      (<gui> :show window)) ;; There's a slight flicker when opening the window. I've tried to delay opening, minimize, etc. but this Qt bug is probably almost impossible to workaround.
+
+  (<gui> :set-takes-keyboard-focus window #f)
   
-  ;; There's a slight flicker when opening the window. I've tried to delay opening, minimize, etc. but this Qt bug is probably almost impossible to workaround.
-  (<gui> :show main-layout)
+  (set! has-started #t)
   )
 
 
