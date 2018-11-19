@@ -2934,6 +2934,13 @@ namespace{
 static QVector<SDC> g_seqblock_deleted_callbacks;
 
 void addSeqblockDeletedCallback(int64_t seqblockid, func_t *callback){
+  for(auto &sdc : g_seqblock_deleted_callbacks){
+    if (sdc.id==seqblockid && sdc.callback==callback){
+      handleError("addSeqblockDeletedCallback: Callback %p already added for seqblock %d\n", callback, (int)seqblockid);
+      return;
+    }
+  }
+  
   s7extra_protect(callback);
   SDC sdc = {seqblockid, callback};
   g_seqblock_deleted_callbacks.push_back(sdc);
@@ -2969,6 +2976,7 @@ void API_seqblock_has_been_deleted(int64_t seqblockid){
   
   for(auto &sdc : g_seqblock_deleted_callbacks){
     if(seqblockid==sdc.id){
+      //printf("         Calling deleted callbacks for %d (%p)\n", (int)sdc.id, sdc.callback);
       S7CALL(void_void, sdc.callback);
       to_remove.push_back(sdc);
     }

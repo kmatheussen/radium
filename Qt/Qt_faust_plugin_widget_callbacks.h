@@ -192,7 +192,7 @@ struct FaustResultWebView
     is_dragging = false;
     
     if (was_dragging) {
-      event->accept();
+      event.accept();
     } else {
 #if USE_QWEBENGINE
       if(event.is_real_event())
