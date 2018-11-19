@@ -7366,6 +7366,7 @@
                                 (let ((seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
                                       (seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid)))
                                   (c-display "clicked" tracknum enabled)
+                                  (<ra> :undo-seqblock seqblocknum seqtracknum)
                                   (<ra> :set-seqblock-track-enabled enabled tracknum seqblocknum seqtracknum)
                                   ))))))
             (iota (<ra> :get-num-tracks blocknum)))
