@@ -1163,9 +1163,9 @@ struct Sample{
 
     // 4. Maybe show warning
     {
-      if (show_warning && dc.has_warned_about_different_granulator==false){
+      if (true || show_warning){//show_warning && dc.has_warned_about_different_granulator==false){
         evalScheme("(ra:schedule 100 (lambda () (ra:add-message "
-                   "\"This song was created with a different granulator. Beware that it might not sound exactly the same. Overall volume can be sligthy different, and automation of grain length will sound different when grain length is > 100ms.\""
+                   "\"This song was created with an older version of Radium that used a different granulator. Beware that the new granulator might not sound exactly the same. In addition, overall volume can be sligthy different, and automation of grain length will sound different when grain length is > 100ms.\""
                    ") #f))");
         dc.has_warned_about_different_granulator = true;
       }

@@ -256,7 +256,7 @@
 
       (<ra> :schedule 100
             (lambda ()
-              (and seqblock-is-alive
+              (and seqblock-is-alive ;; The delete callback isn't always called directly from gui_close.
                    (<gui> :is-open pitch-slider)
                    (<gui> :is-open pitch-text-input)
                    (let ((those-things (get-those-things)))
@@ -426,7 +426,7 @@
   (set! (*seqblock-guis* seqblockid) main-layout)
 
   (define (seqblock-deleted-callback)
-    (set! seqblock-is-alive #f) ;; Can"t test whether any of the gui elements are open to check if seqblock is alive, since the delete callback isn't always called directly from gui_close.
+    (set! seqblock-is-alive #f)
     ;;(assert (not (<ra> :seqblock-is-alive seqblockid)))
     (<gui> :close main-layout))
   
