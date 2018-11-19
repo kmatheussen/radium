@@ -1845,8 +1845,10 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
       }
       
       struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack_extra, seqtracknum+1, seqblock_state, unavailable_seqblock_ids, error_type, Seqblock_Type::GFX);
-      if (seqblock != NULL)
+      if (seqblock != NULL){
         VECTOR_push_back(seqtrack_extra->gfx_seqblocks, seqblock);
+        unavailable_seqblock_ids << seqblock->id;
+      }
 
     }
   }
