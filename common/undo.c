@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/SampleReader_proc.h"
 
+#include "../api/api_undo_proc.h"
 #include "../api/api_proc.h"
 
 
@@ -640,7 +641,7 @@ void Undo_stop_ignoring_undo_operations(void){
   ignore_undo_operations_level--;
 }
 
-void Undo(void){
+static void undo_internal(void){
   R_ASSERT(ignore()==false);
 
 	struct Undo *undo=CurrUndo;
@@ -771,6 +772,10 @@ currently_undoing = false;
  update_gfx();
 }
 
+void Undo(void){
+  undo_internal();
+  API_call_me_right_after_undoing_or_redoing();
+}
 
 void Redo(void){
   //printf("CurrUndo: %p, CurrUndo->next: %p, UndoRoot: %p, UndoRoot->next: %p\n",CurrUndo,CurrUndo->next,&UndoRoot,UndoRoot.next);
@@ -791,6 +796,8 @@ void Redo(void){
         //printf("        UNDO Redo(). num_undos--: %d\n", num_undos);
 
         update_gfx();
+
+        API_call_me_right_after_undoing_or_redoing();
 }
 
 void SetMaxUndos(struct Tracker_Windows *window){
