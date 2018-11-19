@@ -3174,7 +3174,7 @@ int64_t getSeqblockInteriorEnd(int seqblocknum, int seqtracknum, bool use_gfx_if
 
 void deleteSeqblock(int64_t seqblockid, bool notify_listeners){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
   if (seqblock==NULL)
     return;
 
