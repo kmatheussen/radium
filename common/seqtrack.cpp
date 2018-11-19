@@ -2580,7 +2580,7 @@ void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
     //radium::PlayerLock lock; Commented out since SEQTRACK_delete_seqblock does lots of things.
 
     for(auto pair : to_remove)
-      SEQTRACK_delete_seqblock(pair.first, pair.second);
+      SEQTRACK_delete_seqblock(pair.first, pair.second, true);
   }
 
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
