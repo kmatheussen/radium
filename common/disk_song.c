@@ -271,7 +271,6 @@ void DLoadSong(struct Root *newroot,struct Song *song){
 
         if (disk_load_version>=0.875){
           GFX_ShowProgressMessage("Setting up sequencer");
-          API_all_seqblocks_have_been_deleted();
           SEQUENCER_create_from_state(g_sequencer_state, song);
           g_sequencer_state = NULL;
           GFX_ShowProgressMessage("Creating instruments");

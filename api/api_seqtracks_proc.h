@@ -4,6 +4,5 @@
 
 extern LANGSPEC void API_curr_seqtrack_has_changed(void);
 extern LANGSPEC void API_seqblock_has_been_deleted(int64_t seqblockid);
-extern LANGSPEC void API_all_seqblocks_have_been_deleted(void);
 
 #endif

@@ -551,7 +551,9 @@ static s7_pointer catch_call(s7_scheme *sc, const s7_pointer args){
     
   g_scheme_nested_level++;
 
-  int curr_level =   g_scheme_nested_level;
+#if !defined(RELEASE)
+  int curr_level = g_scheme_nested_level;
+#endif
   
   s7_pointer ret = s7_call(sc, g_catchallerrors_func, args);
 
@@ -993,6 +995,30 @@ bool s7extra_callFunc_bool_int_charpointer(const func_t *func, int64_t arg1, con
 
 bool s7extra_callFunc2_bool_int_charpointer(const char *funcname, int64_t arg1, const char* arg2){
   return s7extra_callFunc_bool_int_charpointer((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
+}
+
+bool s7extra_callFunc_bool_int(const func_t *func, int64_t arg1){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list_nl(s7,
+                                         2,
+                                         (s7_pointer)func,
+                                         s7_make_integer(s7, arg1),
+                                         NULL
+                                         )
+                              );
+  
+  if(!s7_is_boolean(ret)){
+    handleError("Callback did not return a boolean");
+    return false;
+  }else{
+    return s7_boolean(s7, ret);
+  }
+}
+
+bool s7extra_callFunc2_bool_int(const char *funcname, int64_t arg1){
+  return s7extra_callFunc_bool_int((const func_t*)find_scheme_value(s7, funcname), arg1);
 }
 
 void s7extra_callFunc_void_int_charpointer_bool_bool(const func_t *func, int64_t arg1, const char* arg2, bool arg3, bool arg4){
