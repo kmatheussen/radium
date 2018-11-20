@@ -49,7 +49,6 @@
            (newline)
            (fallback))))
 
-
 (define (safe-display-txt-as-displayable-as-possible txt)
   (display txt)
   (if (defined? 'safe-add-message-window-txt)

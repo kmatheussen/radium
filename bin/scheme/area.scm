@@ -21,9 +21,15 @@
 ;;    :custom-method ()
 ;;    (c-display "this text was printed from a custom method!"))
 ;; i.e. just like you normally would; methods go at the end of the class.
-;;
+;; EDIT: That doesn't work anymore. The body of the subclasses was later put into their own scope to avoid accidentally
+;; overriding symbols in the superclass. Instead you need to use :add-method! manually, after an instance has been created.
+;; That's very inconvenient though, so maybe this should be improved.
+
 
 (provide 'area.scm)
+
+(my-require 'gui.scm)
+
 
 #!!
 (gc #t)
@@ -46,6 +52,11 @@
 
 (define-expansion (def-area-subclass def . body)
 
+  (define body-methods '())
+  (let ((temp (split-list body keyword?)))
+    (set! body (car temp))
+    (set! body-methods (cadr temp)))
+                     
   `(define-class ,def
 
      ;; To avoid overlapping paint updates, we convert all coordinates to integers.
@@ -206,7 +217,8 @@
      (define (add-sub-area-plain! sub-area)
        (push-back! sub-areas sub-area)
        (set! top-area sub-area)
-       (sub-area :set-parent-area! this))
+       (sub-area :set-parent-area! this)
+       (sub-area :update-me!))
 
      (define (add-sub-area! sub-area x y)
        ;;(c-display " THIS10:" this x y ". sub-area:" sub-area)
@@ -452,7 +464,9 @@
               (assert #f)
               #f)))
 
-
+     (define (has-mouse)
+       ;;(c-display "has-mouse:" class-name curr-mouse-cycle curr-nonpress-mouse-cycle)
+       (get-bool (or curr-mouse-cycle curr-nonpress-mouse-cycle)))
      
      ;; Status bar
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -532,6 +546,8 @@
        #t ;; Added to silence "let has no body" error messages.
        ,@body)
 
+     ,@body-methods
+     
      :get-position x (apply get-position x)
      :get-i-position x (apply get-i-position x)
      :inside? x (apply inside? x)
@@ -558,9 +574,7 @@
      :overlaps? x (apply overlaps? x)
      :paint-internal x (apply paint-internal x)
      :mouse-callback-internal x (apply mouse-callback-internal x)
-     :has-mouse () (begin
-                     ;;(c-display "has-mouse:" class-name curr-mouse-cycle curr-nonpress-mouse-cycle)
-                     (or curr-mouse-cycle curr-nonpress-mouse-cycle))
+     :has-mouse () (has-mouse)
      :reset! x (apply reset! x)
      :i-am-removed! x (apply i-am-removed! x)
      :add-statusbar-text-handler x (apply add-statusbar-text-handler x)
@@ -570,6 +584,38 @@
 
 (def-area-subclass (<area> :gui :x1 :y1 :x2 :y2)  
   )
+
+
+(delafina (make-qtarea :width 100 :height 100)
+  (define gui (<gui> :widget width height))  
+  (define x1 0)
+  (define y1 0)
+  (define x2 width)
+  (define y2 height)
+  (def-area-subclass (<qtarea>)
+    (<gui> :add-paint-callback gui
+           (lambda (width height)
+             (paint-internal 0 0 width height)))
+    
+    (<gui> :add-mouse-callback gui
+           (lambda (button state x y)
+             (mouse-callback-internal button state x y)
+             ;;(c-display "has-mouse:" (and (defined? 'has-mouse) (has-mouse)))
+             ;;50))
+             (has-mouse)))
+    :get-gui () gui)
+
+  (define area (<new> :qtarea))
+
+  (area :add-method! :get-gui (lambda ()
+                                gui))
+
+  area)
+
+
+
+(define *use-testgui* #f)
+
 
 #!!
 (def-area-subclass (<testarea> :gui :x1 :y1 :x2 :y2)  
@@ -598,10 +644,23 @@
                       (update X Y x2 y2)
                       (c-display "release button/x/y" x* y*)))
   )
-!!#
 
 
-(define *use-testgui* #f)
+(pretty-print (macroexpand (def-area-subclass (<area-with-custom-method> :gui :x1 :y1 :x2 :y2)
+                             (this :add-method 'custom-method (lambda ()
+                                                                (c-display "this text was printed from a custom method!"))))
+                           )
+              )
+
+
+
+(define testarea2 (<new> :area-with-custom-method *testarea* 0 0 100 100))))
+
+(pretty-print (macroexpand (<new> :area-with-custom-method *testarea* 0 0 100 100)))
+(testarea2 :add-method! :ai (lambda () (c-display "hello")))
+
+(testarea2 :custom-method)
+(testarea2 :ai)
 
 (if (and (defined? '*testgui*)
          *testgui*
@@ -617,6 +676,8 @@
   (<gui> :dont-autofill-background *testgui*)
   (<gui> :set-background-color *testgui* (<gui> :get-background-color *testgui*)))
 
+
+!!#
 
 #||
 (define testarea (<new> :testarea *testgui* 100 200 1100 1200))
@@ -810,8 +871,9 @@
                     (if (< n (- num-areas 1))
                         half-spacing
                         0))))
-        (apply sub-area-creation-callback (append (if (list? arg) arg (list arg))
-                                                  (list (+ x1 x1-border) y1* (- x2 x2-border) x2*))))
+        (apply callback (append (if (list? arg) arg (list arg))
+                                (list (+ x1 x1-border) y1*
+                                      (- x2 x2-border) y2*))))
       (loop (cdr args)
             (1+ n)))))
 

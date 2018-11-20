@@ -153,7 +153,8 @@ void handleError_internal(const char *fmt,...){
 #endif
 
   const char *backtrace = SCHEME_get_history();
-    
+  puts(backtrace);
+  
   static double last_time = 0;
 
   if (safe_to_run_exec() && (TIME_get_ms() - last_time) > 0) {
