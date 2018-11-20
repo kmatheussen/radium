@@ -7389,19 +7389,23 @@
   
   (let ((do-close-window (not *curr-seqblock-track-on-off-window*)))
 
-    (define (seqblock-deleted-callback)
-      (set! seqblock-deleted-callback-called #t)
-      ;;(c-display "         CLOSE 3: " seqblockid)
-      (if do-close-window
-          (<gui> :close window)))
+    (define (seqblock-deleted-callback id)
+      (if (not (= id seqblockid))
+          #t
+          (begin
+            (set! seqblock-deleted-callback-called #t)
+            ;;(c-display "         CLOSE 3: " seqblockid)
+            (if do-close-window
+                (<gui> :close window))
+            #f)))
     
-    (<ra> :add-seqblock-deleted-callback seqblockid seqblock-deleted-callback)
+    (<ra> :add-seqblock-deleted-callback seqblock-deleted-callback)
 
     (<gui> :add-deleted-callback window
            (lambda (runs-custom-exec)
              (when (not seqblock-deleted-callback-called)
                ;;(c-display "        REMOVING SEQBLOCK-DELETED-CALLBACK FOR:" seqblockid)
-               (<ra> :remove-seqblock-deleted-callback seqblockid seqblock-deleted-callback)))))
+               (<ra> :remove-seqblock-deleted-callback seqblock-deleted-callback)))))
 
   (begin
     (define num-tracks (<ra> :get-num-tracks blocknum))
@@ -7448,7 +7452,7 @@
       (<gui> :raise window)
       (begin      
         (<gui> :set-takes-keyboard-focus window #f)
-        (<gui> :set-parent window -1)
+        (<gui> :set-parent window (<gui> :get-sequencer-gui))
         (<gui> :show window)
         (set! *curr-seqblock-track-on-off-window* window)))
 
