@@ -1,6 +1,7 @@
 (provide 'mouse.scm)
 
 (my-require 'sequencer.scm)
+(my-require 'seqblock_editor.scm)
 
 (define-constant *left-button* 1) ;; TR_LEFTMOUSE
 (define-constant *middle-button* 3) ;; TR_MIDDLEMOUSE
@@ -7341,131 +7342,6 @@
            instrument-id
            seqtracknum))))
 
-(define *curr-seqblock-track-on-off-window* #f)
-(define *curr-seqblock-track-on-off-gui* #f)
-
-(define (show-seqblock-track-on-off-configuration seqblockid blocknum)
-  (define starting #t)
-  (define gui (<gui> :vertical-layout))
-
-  (for-each (lambda (tracknum)
-              (<gui> :add gui
-                     (<gui> :checkbox
-                            (let ((instrument (<ra> :get-instrument-for-track tracknum blocknum)))
-                              (<-> tracknum ": " 
-                                   (if (< instrument 0)
-                                       ""
-                                       (<ra> :get-instrument-name instrument))))
-                            (let ((seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
-                                  (seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid)))
-                              (<ra> :is-seqblock-track-enabled tracknum seqblocknum seqtracknum))
-                            #t
-                            (lambda (enabled)
-                              (when (not starting)
-                                (let ((seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
-                                      (seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid)))
-                                  (c-display "clicked" tracknum enabled)
-                                  (<ra> :undo-seqblock seqblocknum seqtracknum)
-                                  (<ra> :set-seqblock-track-enabled enabled tracknum seqblocknum seqtracknum)
-                                  ))))))
-            (iota (<ra> :get-num-tracks blocknum)))
-  
-  (define window (or *curr-seqblock-track-on-off-window*
-                     (let ((window (<gui> :horizontal-layout)))
-                       (<gui> :add-deleted-callback window (lambda x
-                                                             (c-display " Deleted")
-                                                             ;;(<gui> :close window)
-                                                             (set! *curr-seqblock-track-on-off-window* #f)
-                                                             (set! *curr-seqblock-track-on-off-gui* #f)))
-                       window)))
-
-  (define close-button (<gui> :button "Close" (lambda ()
-                                                ;;(c-display "         CLOSE 2")
-                                                (<gui> :close window))))
-
-  (<gui> :add gui close-button)
-
-  (define seqblock-deleted-callback-called #f)
-  
-  (let ((do-close-window (not *curr-seqblock-track-on-off-window*)))
-
-    (define (seqblock-deleted-callback id)
-      (if (not (= id seqblockid))
-          #t
-          (begin
-            (set! seqblock-deleted-callback-called #t)
-            ;;(c-display "         CLOSE 3: " seqblockid)
-            (if do-close-window
-                (<gui> :close window))
-            #f)))
-    
-    (<ra> :add-seqblock-deleted-callback seqblock-deleted-callback)
-
-    (<gui> :add-deleted-callback window
-           (lambda (runs-custom-exec)
-             (when (not seqblock-deleted-callback-called)
-               ;;(c-display "        REMOVING SEQBLOCK-DELETED-CALLBACK FOR:" seqblockid)
-               (<ra> :remove-seqblock-deleted-callback seqblock-deleted-callback)))))
-
-  (begin
-    (define num-tracks (<ra> :get-num-tracks blocknum))
-    (<ra> :schedule 100
-          (lambda ()
-            (if (or (not (<gui> :is-open window))
-                    seqblock-deleted-callback-called)
-                #f
-                (begin
-                  (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
-                  (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
-                  (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
-                  (cond ((not (<gui> :is-open window))
-                         #f)
-                        ((not (= num-tracks (<ra> :get-num-tracks blocknum)))
-                         (show-seqblock-track-on-off-configuration seqblockid blocknum)
-                         #f)
-                        (else
-                         100)))))))
-  
-  (if *curr-seqblock-track-on-off-gui*
-      (begin
-        (<gui> :replace window *curr-seqblock-track-on-off-gui* gui)
-        (<gui> :close *curr-seqblock-track-on-off-gui*))
-      (<gui> :add window gui))
-
-  (set! *curr-seqblock-track-on-off-gui* gui)
-
-  (define (undo-redo-callback)
-    (if (or (not (<gui> :is-open window))
-            seqblock-deleted-callback-called)
-        #f
-        (begin
-          (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
-          (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
-          (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
-          (show-seqblock-track-on-off-configuration seqblockid blocknum)
-          #t)))
-    
-  (if (not *curr-seqblock-track-on-off-window*)
-      (<ra> :add-undo-redo-callback undo-redo-callback))
-  
-  (if *curr-seqblock-track-on-off-window*
-      (<gui> :raise window)
-      (begin      
-        (<gui> :set-takes-keyboard-focus window #f)
-        (<gui> :set-parent window (<gui> :get-sequencer-gui))
-        (<gui> :show window)
-        (set! *curr-seqblock-track-on-off-window* window)))
-
-  (set! starting #f)
-
-  (<gui> :set-window-title window (<ra> :get-block-name blocknum))
-  
-  window
-  )
-
-#!!
-(show-seqblock-track-on-off-configuration 0 0 0)
-!!#
 
 (define (FROM_C-update-seqblock-track-on-off-configuration seqtracknum seqblocknum)
   (if (and *curr-seqblock-track-on-off-window*

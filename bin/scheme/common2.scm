@@ -1302,7 +1302,9 @@ for .emacs:
 
   `(,@this-methods
     (set! ,hash-table-name
-          (hash-table* ,@(apply append hash-method-content)))
+          (hash-table* :add-method! (lambda (name func)
+                                      (hash-table-set! ,hash-table-name name func))
+                       ,@(apply append hash-method-content)))
     this))
 
 (***assert*** (define-class-helper 'list-and-set 'methods_of_list-and-set
@@ -1320,9 +1322,11 @@ for .emacs:
                   alist)
                 (define (this->set)
                   hash)
-                
+
                 (set! methods_of_list-and-set
-                      (hash-table* :contains this->contains
+                      (hash-table* :add-method! (lambda (name func)
+                                                  (hash-table-set! methods_of_list-and-set name func))
+                                   :contains this->contains
                                    :list this->list
                                    :set this->set))
                 this))
@@ -1352,10 +1356,12 @@ for .emacs:
   (append (cons definer (list (cons new-class-name args)))
           `((define ,hash-table-name #f)
             (define (this methodname . rest)
+              ;;(c-display "   CALLING THIS" methodname ,hash-table-name)
               (let ((func (,hash-table-name methodname)))
+                ;;(c-display "   CALLING THIS2" methodname func)
                 (if func
                     (apply func rest)
-                    (error (<-> "Method \"" methodname ,(<-> "\" not found in class " class-name)))))))
+                    (error (<-> "Method \"" methodname ,(<-> "\" not found in class " class-name ". methods: ") (map car ,hash-table-name)))))))
           body
           (define-class-helper class-name hash-table-name methods)))
 

@@ -449,14 +449,18 @@
                                    ;;(c-display "    CLOSE 3" window)
                                    (<gui> :close window))))
   
-  (define (seqblock-deleted-callback)
-    (set! seqblock-is-alive #f)
-    ;;(assert (not (<ra> :seqblock-is-alive seqblockid)))
-    ;;(c-display "    CLOSE 1" window seqblockid)
-    (<gui> :close window))
+  (define (seqblock-deleted-callback id)
+    (if (not (= id seqblockid))
+        #t
+        (begin
+          (set! seqblock-is-alive #f)
+          ;;(assert (not (<ra> :seqblock-is-alive seqblockid)))
+          ;;(c-display "    CLOSE 1" window seqblockid)
+          (<gui> :close window)
+          #f)))
 
   (when window-was-opened-here
-    (<ra> :add-seqblock-deleted-callback seqblockid seqblock-deleted-callback)
+    (<ra> :add-seqblock-deleted-callback seqblock-deleted-callback)
     
     (<gui> :add-deleted-callback window
            (lambda (runs-custom-exec)
