@@ -152,27 +152,12 @@ void handleError_internal(const char *fmt,...){
   //printf("HISTORY:\n%s\n",SCHEME_get_history());
 #endif
 
-  if(g_scheme_nested_level <= 0 || g_is_going_to_call_throwExceptionIfError==false) {
-    //   handleError was called from one of the s7extra functions, and the scheme code was called from a mouse event, for instance.
-
-    GFX_addMessage(message);    
-      
-    R_ASSERT(g_scheme_nested_level == 0);
-
-#if 1
-    const char *backtrace = SCHEME_get_history();
-    GFX_addMessage(backtrace);
-#else        
-    SCHEME_throw_catch("radium-api", message); // Insert backtrace into message log.
-#endif
+  const char *backtrace = SCHEME_get_history();
     
-    return;
-  }
-
   static double last_time = 0;
 
   if (safe_to_run_exec() && (TIME_get_ms() - last_time) > 0) {
-    
+
     vector_t v = {};
     
     int ok = VECTOR_push_back(&v, "Stop");
@@ -183,13 +168,8 @@ void handleError_internal(const char *fmt,...){
     int ret = GFX_Message(&v, "%s", message);
     
     // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above, which is called when exiting an api call.
-    if (ret==ok){
-      
-      //const char *old = g_error_message;
+    if (ret==ok)
       g_error_message = talloc_strdup(message);
-      //printf("handleError_internal: g: %p. Content: -%s-.\n    Old g: %p. Content: -%s-.\n", g_error_message, g_error_message, old, old);
-
-    }
 
     last_time = TIME_get_ms();
     
@@ -197,12 +177,20 @@ void handleError_internal(const char *fmt,...){
       last_time += 10000;
     
   } else {
-
-    GFX_addMessage(message);
-    g_error_message = talloc_strdup(message);
     
+    g_error_message = talloc_strdup(message);
+
   }
+
   
+  GFX_addMessage(message);
+ 
+#if 1
+  GFX_addMessage(backtrace);
+#else        
+  SCHEME_throw_catch("radium-api", message); // Insert backtrace into message log.
+#endif
+
 }
 
 struct Tracker_Windows *getWindowFromNum(int windownum){
