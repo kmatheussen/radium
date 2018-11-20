@@ -7387,21 +7387,21 @@
 
   (define seqblock-deleted-callback-called #f)
   
-  (begin    
+  (let ((do-close-window (not *curr-seqblock-track-on-off-window*)))
+
     (define (seqblock-deleted-callback)
       (set! seqblock-deleted-callback-called #t)
       ;;(c-display "         CLOSE 3: " seqblockid)
-      (<gui> :close window))
-
-    (when (not *curr-seqblock-track-on-off-window*)
-      ;;(c-display "     ADDING SEQBLOCK-DELETED-CALLBACK FOR:" seqblockid)
-      (<ra> :add-seqblock-deleted-callback seqblockid seqblock-deleted-callback)
+      (if do-close-window
+          (<gui> :close window)))
     
-      (<gui> :add-deleted-callback window
-             (lambda (runs-custom-exec)
-               (when (not seqblock-deleted-callback-called)
-                 ;;(c-display "        REMOVING SEQBLOCK-DELETED-CALLBACK FOR:" seqblockid)
-                 (<ra> :remove-seqblock-deleted-callback seqblockid seqblock-deleted-callback))))))
+    (<ra> :add-seqblock-deleted-callback seqblockid seqblock-deleted-callback)
+
+    (<gui> :add-deleted-callback window
+           (lambda (runs-custom-exec)
+             (when (not seqblock-deleted-callback-called)
+               ;;(c-display "        REMOVING SEQBLOCK-DELETED-CALLBACK FOR:" seqblockid)
+               (<ra> :remove-seqblock-deleted-callback seqblockid seqblock-deleted-callback)))))
 
   (begin
     (define num-tracks (<ra> :get-num-tracks blocknum))

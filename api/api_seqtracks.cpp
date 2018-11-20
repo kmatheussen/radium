@@ -2946,18 +2946,25 @@ void addSeqblockDeletedCallback(int64_t seqblockid, func_t *callback){
   g_seqblock_deleted_callbacks.push_back(sdc);
 }
                                 
-void removeSeqblockDeletedCallback(int64_t seqblockid, func_t *callback){
+static bool removeSeqblockDeletedCallback2(int64_t seqblockid, func_t *callback){
   int i = 0;
   for(auto &sdc : g_seqblock_deleted_callbacks){
     if(seqblockid==sdc.id && callback==sdc.callback){
       s7extra_unprotect(callback);
       g_seqblock_deleted_callbacks.remove(i);
-      return;
+      return true;
     }
     i++;
   }
 
-  handleError("removeSeqblockDeletedCallback: Could not find deleted callback for id #%d and callback %p\n", (int)seqblockid, callback);
+  return false;
+}
+
+void removeSeqblockDeletedCallback(int64_t seqblockid, func_t *callback){
+  printf("   removeSeqblockDeletedCallback. Removing %d / %p\n", (int)seqblockid, callback);
+  
+  if (!removeSeqblockDeletedCallback2(seqblockid, callback))
+    handleError("removeSeqblockDeletedCallback: Could not find deleted callback for id #%d and callback %p\n", (int)seqblockid, callback);
 }
 
 static QSet<int64_t> g_available_seqblocks;
@@ -2976,14 +2983,15 @@ void API_seqblock_has_been_deleted(int64_t seqblockid){
   
   for(auto &sdc : g_seqblock_deleted_callbacks){
     if(seqblockid==sdc.id){
-      //printf("         Calling deleted callbacks for %d (%p)\n", (int)sdc.id, sdc.callback);
       S7CALL(void_void, sdc.callback);
       to_remove.push_back(sdc);
     }
   }
 
-  for(auto &sdc : to_remove)
-    removeSeqblockDeletedCallback(sdc.id, sdc.callback);
+  for(auto &sdc : to_remove){
+    printf("   API_seqblock_has_been_deleted: Calling removeSeqblockDeletedCallback for %d / %p\n", (int)sdc.id, sdc.callback);
+    removeSeqblockDeletedCallback2(sdc.id, sdc.callback);
+  }
 }
 
 void API_all_seqblocks_have_been_deleted(void){
