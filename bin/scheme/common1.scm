@@ -276,12 +276,21 @@
 (<-displayable-> :'ga)
 ||#
 
+(define-expansion (with-history-disabled . code)
+  `(begin
+     (ra:disable-scheme-history)
+     (try-finally :try (lambda ()
+                         ,@code)
+                  :finally ra:enable-scheme-history)))
+
 (define (c-display . args)
-  (for-each (lambda (arg)
-              (display (to-displayable-string arg))
-              (display " "))
-            args)
-  (newline))
+  (with-history-disabled
+   (for-each (lambda (arg)
+               (display (to-displayable-string arg))
+               (display " "))
+             args)
+   (newline)))
+
 
 (define *my-gensym-N* 0)
 
@@ -573,6 +582,20 @@
 
 (***assert*** (string-join (list "a" "bb" "ccc") " + ")
               "a + bb + ccc")
+
+(define (is-whitespace? char)
+  (or (char=? char #\newline)
+      (char=? char #\space)
+      (char=? char #\tab)))
+
+(define (string-strip-right string)
+  (list->string
+   (reverse
+    (remove-while (reverse (string->list string))
+                  is-whitespace?))))
+
+(***assert*** (string-strip-right "   as dfasdf \n\n ")
+              "   as dfasdf")
 
 (define (get-python-ra-funcname funcname)
   (let ((parts (string-split (string-drop funcname 3) #\-)))

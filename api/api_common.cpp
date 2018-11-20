@@ -90,6 +90,8 @@ void init_radium(const char *arg,PyObject *gkf){
 
 static const char *g_error_message = NULL;
 
+bool g_is_going_to_call_throwExceptionIfError = false;
+
 const char *pullErrorMessage(void){
   //const char *old = g_error_message;
   const char *message = g_error_message;
@@ -111,11 +113,17 @@ void printExceptionIfError(void){
 
 // Warning, is likely to cause a longjmp!
 void throwExceptionIfError(void){
+  R_ASSERT_NON_RELEASE(g_scheme_nested_level > 0);
+
+  R_ASSERT_NON_RELEASE(g_is_going_to_call_throwExceptionIfError==true);
+
   const char *message = pullErrorMessage();
   if (message != NULL){
     printException(message);
     SCHEME_throw("radium-api", message);
   }
+
+  g_is_going_to_call_throwExceptionIfError = false;
 }
 
 void clearErrorMessage(void){
@@ -144,26 +152,49 @@ void handleError_internal(const char *fmt,...){
   //printf("HISTORY:\n%s\n",SCHEME_get_history());
 #endif
 
+  if(g_scheme_nested_level <= 0 || g_is_going_to_call_throwExceptionIfError==false) {
+    //   handleError was called from one of the s7extra functions, and the scheme code was called from a mouse event, for instance.
+
+    GFX_addMessage(message);    
+      
+    R_ASSERT(g_scheme_nested_level == 0);
+
+#if 1
+    const char *backtrace = SCHEME_get_history();
+    GFX_addMessage(backtrace);
+#else        
+    SCHEME_throw_catch("radium-api", message); // Insert backtrace into message log.
+#endif
+    
+    return;
+  }
+
   static double last_time = 0;
 
-  if (safe_to_run_exec() && (TIME_get_ms() - last_time) > 4000) {
+  if (safe_to_run_exec() && (TIME_get_ms() - last_time) > 0) {
     
     vector_t v = {};
     
-    int ok = VECTOR_push_back(&v, "Ok");
-    (void)ok;
+    int ok = VECTOR_push_back(&v, "Stop");
     int continue_ = VECTOR_push_back(&v, "Continue");
+    (void)continue_;
+    int silent = VECTOR_push_back(&v, "Silent! (continue for 10 seconds)");
     
     int ret = GFX_Message(&v, "%s", message);
     
     // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above, which is called when exiting an api call.
-    if (ret!=continue_){
+    if (ret==ok){
+      
       //const char *old = g_error_message;
       g_error_message = talloc_strdup(message);
       //printf("handleError_internal: g: %p. Content: -%s-.\n    Old g: %p. Content: -%s-.\n", g_error_message, g_error_message, old, old);
+
     }
-    
+
     last_time = TIME_get_ms();
+    
+    if (ret==silent)
+      last_time += 10000;
     
   } else {
 

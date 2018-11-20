@@ -558,7 +558,10 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
             oh.write("  EVENTLOG_add_event(\"" + self.proc.varname + " [sc]\"); ")
         else:
             oh.write("  ");
-        callstring = self.proc.varname+"("+self.get_arg_list(self.args)+")"
+            
+        oh.write("g_is_going_to_call_throwExceptionIfError = true;\n  ");
+        
+        callstring = "  " + self.proc.varname+"("+self.get_arg_list(self.args)+")"
         #sys.stderr.write("CASLLTSTITN: "+callstring+"\n")
         if self.proc.type_string=="void":
             oh.write(callstring+"; throwExceptionIfError() ; return s7_undefined(radiums7_sc);\n")

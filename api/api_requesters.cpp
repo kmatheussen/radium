@@ -341,7 +341,7 @@ void addMessage(const char *html){
   
   static bool gotit = false;
   if (g_qtgui_has_stopped==false && (gotit || s7extra_is_defined(funcname))){
-    S7CALL2(void_charpointer,funcname, html);
+    S7CALL2_NO_HISTORY(void_charpointer,funcname, html);
     gotit = true;
   } else {
     showMessage(html, g_uninitialized_dyn);
