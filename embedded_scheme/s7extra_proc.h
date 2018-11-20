@@ -27,9 +27,24 @@ extern "C" {
 
   #endif
 
-  extern int g_num_scheme_calls; // If this number > 0, then some scheme code is currently running.
+  extern int g_scheme_nested_level; // If this number > 0, then some scheme code is currently running. (i.e. we are inside s7_eval)
   extern bool g_scheme_failed;
-  
+  extern bool g_is_going_to_call_throwExceptionIfError; // If true, it means that 'handleError' doesn't have to display backtrace directly since throwExceptionIfError is soon going to be called and throw exception at a safe moment if necessary. It's better to throw exception since we stop running scheme code, and there's also (currently) less noise in the backtrace when throwing.
+
+#define S7CALL_NO_HISTORY(Type,Func,...)                                \
+  do{                                                                   \
+    s7extra_disable_history();                                          \
+    s7extra_callFunc_ ## Type (Func,##__VA_ARGS__);                     \
+    s7extra_enable_history();                                           \
+  }while(0)
+
+#define S7CALL2_NO_HISTORY(Type,Func,...)                                \
+  do{                                                                   \
+    s7extra_disable_history();                                          \
+    s7extra_callFunc2_ ## Type (Func,##__VA_ARGS__);                     \
+    s7extra_enable_history();                                           \
+  }while(0)
+
 #define S7CALL(Type,Func,...)                                           \
   (s7extra_add_history(__func__, CR_FORMATEVENT("========== s7call_" # Type, "\n\n")), \
    s7extra_callFunc_ ## Type (Func,##__VA_ARGS__))
@@ -156,6 +171,9 @@ extern "C" {
   void s7extra_protect(void *v);
   void s7extra_unprotect(void *v);
 
+  void s7extra_disable_history(void);  
+  void s7extra_enable_history(void);
+  
   bool s7extra_is_defined(const char* funcname);
 #ifdef __cplusplus
 }

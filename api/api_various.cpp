@@ -2592,6 +2592,13 @@ bool isInAutotestingMode(void){
   return g_user_interaction_enabled==false;
 }
 
+void disableSchemeHistory(void){
+  s7extra_disable_history();
+}
+void enableSchemeHistory(void){
+  s7extra_enable_history();
+}
+
 
 // FAUST
 

@@ -52,6 +52,8 @@ static s7webserver_t *s7webserver;
 static s7_pointer g_catchallerrors_func = NULL;
 static s7_pointer g_try_finally_failed;
 bool g_scheme_failed = false;
+int g_s7_history_disabled = 0;
+  
 
 bool g_scheme_has_inited1 = false;
 bool g_scheme_has_inited2 = false;
@@ -536,19 +538,29 @@ func_t *s7extra_get_func_from_funcname(const char *funcname){
 }
 
 
-//int g_num_scheme_calls = 0;
+int g_scheme_nested_level = 0;
 
 static s7_pointer catch_call(s7_scheme *sc, const s7_pointer args){
   g_scheme_failed=false;
 
   R_ASSERT(PLAYER_current_thread_has_lock()==false);
-   
-  //g_num_scheme_calls++;
 
+  bool old_is_going_to_call_throwExceptionIfError = g_is_going_to_call_throwExceptionIfError; // save old value. Necesarry if a C function called from C evaluates some other scheme code.
+  if (g_scheme_nested_level==0){ R_ASSERT_NON_RELEASE(old_is_going_to_call_throwExceptionIfError==false); }
+  g_is_going_to_call_throwExceptionIfError = false;
+    
+  g_scheme_nested_level++;
+
+  int curr_level =   g_scheme_nested_level;
+  
   s7_pointer ret = s7_call(sc, g_catchallerrors_func, args);
-   
-  //g_num_scheme_calls--;
 
+  R_ASSERT_NON_RELEASE(curr_level==g_scheme_nested_level); // Assert that g_catchallerros_func is working. (we don't want any longjmp in the C part)
+  
+  g_scheme_nested_level--;
+
+  g_is_going_to_call_throwExceptionIfError = old_is_going_to_call_throwExceptionIfError; // put back old value
+  
   if (s7_is_symbol(ret) && s7_symbol_name(ret)==s7_symbol_name(g_try_finally_failed)){
     g_scheme_failed = true;
     R_ASSERT(g_is_starting_up==false);
@@ -1112,6 +1124,7 @@ bool s7extra_callFunc_bool_int_int_float_float(const func_t *func, int64_t arg1,
                                          )
                               );
   if(!s7_is_boolean(ret)){
+    //SCHEME_eval("(gakkagkakags)");
     handleError("Callback did not return a boolean");
     return false;
   }else{
@@ -1322,6 +1335,27 @@ void s7extra_unprotect(void *v){
   s7_gc_unprotect(s7, (s7_pointer)v);  
 }
 
+void s7extra_disable_history(void){
+  g_s7_history_disabled++;
+
+  if(g_s7_history_disabled==1){
+    R_ASSERT_NON_RELEASE(s7_history_enabled(s7)==true);
+    s7_disable_history(s7);
+  }else{
+    R_ASSERT_NON_RELEASE(s7_history_enabled(s7)==false);
+  }
+}
+  
+void s7extra_enable_history(void){
+  R_ASSERT_RETURN_IF_FALSE(g_s7_history_disabled > 0);
+  g_s7_history_disabled--;
+
+  R_ASSERT_NON_RELEASE(s7_history_enabled(s7)==false);
+
+  if(g_s7_history_disabled == 0)
+    s7_enable_history(s7);
+}
+
 bool s7extra_is_defined(const char* funcname){
   return s7_is_defined(s7, funcname);
 }
@@ -1525,17 +1559,49 @@ Place p_Quantitize(const Place p, const Place q){
 }
 
 
+void SCHEME_throw_catch(const char *symbol, const char *message){
+  //SCHEME_eval("(safe-display-history-ow!)");
+  //return;
+    
+  static s7_pointer scheme_func = find_and_protect_scheme_value("error");
+
+  s7extra_disable_history();
+  
+  catch_call(s7,
+             s7_list_nl(s7,
+                        3,
+                        scheme_func,
+                        s7_make_symbol(s7, symbol),
+                        s7_list_nl(s7,
+                                   1,
+                                   Protect(s7_make_string(s7, message)).v,
+                                   NULL
+                                   ),
+                        NULL)
+             );
+
+  s7extra_enable_history();
+}
+
 void SCHEME_throw(const char *symbol, const char *message){
+
+  if (g_scheme_nested_level<=0){
+    printf("   ERROR: g_scheme_nested_level<=0: %d\n", g_scheme_nested_level);
+    R_ASSERT(g_scheme_nested_level==0);
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+                       
   //printf("SCHEME_THROW. Message: \"%s\"\n", message);
   //if(g_evals>0){
-    s7_error(s7,
-             s7_make_symbol(s7, symbol),
-             s7_list_nl(s7,
-                        1,
-                        s7_make_string(s7, message),
-                        NULL
-                        )
-             );
+  s7_error(s7,
+           s7_make_symbol(s7, symbol),
+           s7_list_nl(s7,
+                      1,
+                      Protect(s7_make_string(s7, message)).v,
+                      NULL
+                      )
+           );
     //}
 }
 
@@ -1552,12 +1618,17 @@ const char *SCHEME_get_history(void){
   
   if (!s7_is_defined(s7, funcname))
     return "";
-  
-  s7_pointer s7s = s7_call(s7,
-                           find_scheme_value(s7, funcname),
-                           s7_nil(s7)
-                           );
 
+  s7extra_disable_history();
+
+  s7_pointer s7s = catch_call(s7,
+                              s7_list_nl(s7, 1,
+                                         find_scheme_value(s7, funcname),
+                                         NULL)
+                              );
+
+  s7extra_enable_history();
+  
   return s7_string(s7s);
 }
 
@@ -1667,8 +1738,11 @@ void SCHEME_init1(void){
 
   init_radium_s7(s7);
 
+  g_scheme_nested_level++;
   s7_load(s7,"init.scm");
-
+  g_scheme_nested_level--;
+  R_ASSERT(g_scheme_nested_level==0);
+  
   g_catchallerrors_func = find_and_protect_scheme_value("FROM-C-catch-all-errors-and-display-backtrace-automatically");
   g_try_finally_failed = find_and_protect_scheme_value("*try-finally-failed-return-value*");
      

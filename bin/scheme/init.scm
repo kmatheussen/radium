@@ -74,7 +74,7 @@
                                8))
                        (or (equal? (car x) '(history-ow!))
                            (equal? (car x) '(safe-history-ow!)))))
-              (format p "~%history:~%    ~S" (if (pair? x) (car x) (car start)))
+              (format p "~%history:~%<br>    ~S" (if (pair? x) (car x) (car start)))
               (do ((x history (cdr x))
                    (line lines (cdr line))
                    (f files (cdr f)))
