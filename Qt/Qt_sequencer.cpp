@@ -1979,7 +1979,7 @@ public:
                                             //printf("new seqpaintfunc\n");
                                             s_seqpaint_func = s7extra_get_func_from_funcname("FROM_C-paint-seqblock-stuff");
                                           }
-                                          R_ASSERT_NON_RELEASE(getSeqblockFromId(seqblockid) != NULL);
+                                          R_ASSERT_NON_RELEASE(getGfxSeqblockFromId(seqblockid) != NULL);
                                           S7CALL(void_int_int_int, s_seqpaint_func, seqtracknum, seqblocknum, seqblockid);
                                         });
     }else

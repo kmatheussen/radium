@@ -2199,7 +2199,9 @@ void setCurrSeqblock(int64_t seqblockid){
 
   if(seqblock->block != NULL){
     static func_t *func = NULL;
+#if defined(RELEASE)
     if (func==NULL)
+#endif
       func = s7extra_get_func_from_funcname_for_storing("FROM_C-update-seqblock-track-on-off-configuration");
     
     S7CALL(void_int_int, func, seqtracknum, seqblocknum);

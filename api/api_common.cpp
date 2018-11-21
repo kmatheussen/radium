@@ -178,6 +178,12 @@ void handleError_internal(const char *fmt,...){
       last_time += 10000;
     
   } else {
+
+#if !defined(RELEASE)
+    printf("\n Message: \"%s\"\n", message);
+    printf("      PRESS return to continue\n");
+    getchar();
+#endif
     
     g_error_message = talloc_strdup(message);
 

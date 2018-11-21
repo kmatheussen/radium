@@ -710,7 +710,10 @@
                                :text "" ;; Only used if paint-func is #f
                                :text-color *text-color* ;; Only used if paint-func is #f
                                :selected-color #f ;; only used if paint-func is #f. If #f, use get-default-button-color
-                               :right-mouse-clicked-callback #f)
+                               :right-mouse-clicked-callback #f
+                               :border-width 0.25
+                               :box-rounding #f
+                               )
 
   (if (not selected-color)
       (set! selected-color (get-default-button-color gui)))
@@ -725,7 +728,8 @@
                        selected-color
                        :text-color text-color
                        :paint-implicit-border #t
-                       :implicit-border-width 0.25
+                       :implicit-border-width border-width
+                       :box-rounding box-rounding
                        )))
 
   (add-mouse-cycle! (lambda (button x* y*)

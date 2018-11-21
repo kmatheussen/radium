@@ -4075,7 +4075,7 @@
                                                                         (<ra> :seqblock-holds-block seqblocknum seqtracknum)
                                                                         (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
                                                   (if blocknum
-                                                      (show-seqblock-track-on-off-configuration (<ra> :get-seqblock-id seqblocknum seqtracknum) blocknum)
+                                                      (show-seqblock-track-on-off-configuration (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                       (create-audio-seqblock-gui seqblocknum seqtracknum)))
                                                 (set! *clicked-seqblock* (make-clicked-seqblock :seqtracknum seqtracknum
                                                                                                 :seqblocknum seqblocknum
@@ -7344,11 +7344,11 @@
 
 
 (define (FROM_C-update-seqblock-track-on-off-configuration seqtracknum seqblocknum)
-  (if (and *curr-seqblock-track-on-off-window*
+  (if (and (seqblock-track-on-off-configuration-visible?)
            (>= seqtracknum 0)
            (>= seqblocknum 0)
            (<ra> :seqblock-holds-block seqblocknum seqtracknum))
-      (show-seqblock-track-on-off-configuration (<ra> :get-seqblock-id seqblocknum seqtracknum) (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))))
+      (show-seqblock-track-on-off-configuration (<ra> :get-seqblock-id seqblocknum seqtracknum))))
   
 ;; seqblock stretch handle menu
 (add-mouse-cycle
@@ -7839,7 +7839,7 @@
                                                          (list "Enable/disable editor tracks (double click)"
                                                                :enabled (and blocknum seqblocknum)
                                                                (lambda ()
-                                                                 (show-seqblock-track-on-off-configuration seqblockid blocknum)))))
+                                                                 (show-seqblock-track-on-off-configuration seqblockid)))))
                                                     
                                                     ;;(list "Reset stretch"
                                                     ;;      :enabled (and seqblocknum
