@@ -36,6 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "patch_proc.h"
 
+#include "../api/api_seqtracks_proc.h"
+
 #include "../mmd2loader/mmd2load_proc.h"
 
 #include "../OpenGL/Widget_proc.h"
@@ -258,6 +260,8 @@ static bool Load(const wchar_t *filename){
         GL_lock();{
           GL_pause_gl_thread_a_short_while();
         }GL_unlock();
+
+        API_all_seqblocks_will_be_deleted();
 
         //GL_draw_lock();{
         PLAYER_lock();{ //<-- Locks within locks are dangerous. But it doesn't matter since the player isn't playing now anyway.
