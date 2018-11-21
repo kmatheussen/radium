@@ -256,10 +256,11 @@
         
         (<gui> :add-paint-callback pitch-slider
                (lambda (width height)
-                 (let ((those-things (get-those-things)))
-                   (paint-horizontal-slider :widget pitch-slider
-                                            :value (those-things :slider-value)
-                                            :text (two-decimal-string (those-things :pitch))))))
+                 (if seqblock-is-alive
+                     (let ((those-things (get-those-things)))
+                       (paint-horizontal-slider :widget pitch-slider
+                                                :value (those-things :slider-value)
+                                                :text (two-decimal-string (those-things :pitch)))))))
 
         (set! pitch-text-input (<gui> :float-text -48 (those-things :pitch) 48
                                       (lambda (new-pitch)
@@ -456,7 +457,8 @@
           (set! seqblock-is-alive #f)
           ;;(assert (not (<ra> :seqblock-is-alive seqblockid)))
           ;;(c-display "    CLOSE 1" window seqblockid)
-          (<gui> :close window)
+          (if (<gui> :is-open window)
+              (<gui> :close window))
           #f)))
 
   (when window-was-opened-here
@@ -464,8 +466,6 @@
     
     (<gui> :add-deleted-callback window
            (lambda (runs-custom-exec)
-             (if seqblock-is-alive
-                 (<ra> :remove-seqblock-deleted-callback seqblockid seqblock-deleted-callback))
              (set! (*seqblock-guis* seqblockid) #f)))
 
     (<gui> :set-takes-keyboard-focus window #f)
@@ -489,10 +489,3 @@
 
 ;;(if (not *is-initializing*)
 ;;    (create-audio-seqblock-gui 0 1))
-
-
-
-  
-                                 
-                                 
-         

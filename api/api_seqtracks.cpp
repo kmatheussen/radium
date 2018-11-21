@@ -2984,6 +2984,14 @@ void API_seqblock_has_been_deleted(int64_t seqblockid){
   }
 }
 
+void API_all_seqblocks_will_be_deleted(void){
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+      API_seqblock_has_been_deleted(seqblock->id);
+    }END_VECTOR_FOR_EACH;
+  }END_VECTOR_FOR_EACH;
+}
+  
 void markSeqblockAvailable(int64_t seqblockid){
   g_available_seqblocks << seqblockid;
 }
