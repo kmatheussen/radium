@@ -3774,7 +3774,8 @@
                            (undo-block
                             (lambda ()
                               (delete-all-fxnodes fxnum *current-track-num*)))
-                           (<ra> :request-fx *current-track-num*))
+                           (<ra> :request-fx *current-track-num*)
+                           )
                        #t)))))
 
 (define (get-full-fx-name fxnum tracknum)

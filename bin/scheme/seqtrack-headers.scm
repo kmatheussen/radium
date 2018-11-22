@@ -458,14 +458,17 @@
   
   (add-mouse-cycle! :press-func (lambda (button x* y*)
                                   (and (= button *left-button*)
-                                       (let* ((old-name (<ra> :get-seqtrack-name seqtracknum))
-                                              (new-name (<ra> :request-string "New name:" #t old-name)))
-                                         (c-display "GAKKKGAKK_________ NEWNAME" (<-> "-" new-name "-"))
-                                         (when (and (not (string=? new-name ""))
-                                                    (not (string=? new-name old-name)))
-                                           (<ra> :set-seqtrack-name new-name seqtracknum)
-                                           (update-me!))
-                                         #t))))
+                                       (<ra> :schedule 0
+                                             (lambda ()
+                                               (let* ((old-name (<ra> :get-seqtrack-name seqtracknum))
+                                                      (new-name (<ra> :request-string "New name:" #t old-name)))
+                                                 (c-display "GAKKKGAKK_________ NEWNAME" (<-> "-" new-name "-"))
+                                                 (when (and (not (string=? new-name ""))
+                                                            (not (string=? new-name old-name)))
+                                                   (<ra> :set-seqtrack-name new-name seqtracknum)
+                                                   (update-me!))
+                                                 #f)))
+                                       #t)))
   )
 
 

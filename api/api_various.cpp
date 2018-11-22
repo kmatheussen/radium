@@ -2926,6 +2926,13 @@ void API_call_very_often(void){
       if (DYN_is_number(ret)){
         new_ms = DYN_get_double_from_number(ret);
         has_new_ms = true;
+      } else {
+#if !defined(RELEASE)
+        if(ret.type != DynType::BOOL_TYPE)
+          abort();
+        if(ret.bool_number != false)
+          abort();
+#endif        
       }
       
 #if STDFUNC      
