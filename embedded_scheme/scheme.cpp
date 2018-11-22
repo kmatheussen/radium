@@ -1366,7 +1366,7 @@ void s7extra_disable_history(void){
 
   if(g_s7_history_disabled==1){
     R_ASSERT_NON_RELEASE(s7_history_enabled(s7)==true);
-    s7_disable_history(s7);
+    s7_set_history_enabled(s7, false);
   }else{
     R_ASSERT_NON_RELEASE(s7_history_enabled(s7)==false);
   }
@@ -1379,7 +1379,7 @@ void s7extra_enable_history(void){
   R_ASSERT_NON_RELEASE(s7_history_enabled(s7)==false);
 
   if(g_s7_history_disabled == 0)
-    s7_enable_history(s7);
+    s7_set_history_enabled(s7, true);
 }
 
 bool s7extra_is_defined(const char* funcname){
