@@ -1,3 +1,121 @@
+Changes 5.9.12 -> 5.9.15:
+* Sequencer: New GUI for the seqblock track on/off
+  window (i.e. the editor seqblock GUI). It
+  basically looks the same, but uses the internal
+  widget system instead of the Qt widget system,
+  so the code is cleaner and is more stable. The
+  new GUI also have colorized buttons using the
+  instrument colors.
+* Internal: Improved scheme backtrace.
+* Fix for editor tracks on/off GUI.
+* Sequencer: Fix updating content of seqblock GUIs
+  after undoing/redoing.
+* Linux: Fix keyboard modifiers being resetted when
+  reconfiguring widget contents.
+* Sequencer: Add undo entries when editing editor
+  track on/off in editor seqblock GUIs.
+* Sequencer: Fix situations where seqblock GUI was
+  closed automatically unnecessarily.
+* Sequencer: Optimized undo handling in various
+  situations.
+* Mouse: When clicking on an existing object, wait
+  until mouse pointer has started moving before
+  creating undo entry.
+* Sequencer: Fix error message sometimes popping
+  up after an audio seqblock GUI had been
+  automatically closed after a seqblock was
+  deleted.
+* Sequencer: Set sample name as window title for
+  the audio seqblock GUI.
+* Sequencer: Replaced granulator from sndlib with
+  a custom made granulator. The new granulator uses
+  less CPU (especially for realtime usage), and
+  behaves a bit differently. The new granulator
+  also provides a new "strict no jitter" option.
+* Sequencer: Display correct dB value in the Gain
+  slider in the audio seqblock GUI.
+* Sequencer: Fix the "Normalize!" button in the
+  audio seqblock GUI.
+* Mouse: Fix possible strange behaviors when first
+  pressing left button and then pressing right
+  button without releasing left button first.
+* Sequencer: Fix error message when right-clicking
+  a pan slider.
+* DSP: Some minor optimizations.
+* Sequencer: Fix moving seqblock above the first
+  visible seqtrack and below the last visible
+  seqtrack.
+* GUI: Fix lower tabs not using all horizontal space
+  when neither the editor northe  mixer were visible
+  in the main window.
+* Sequencer: Add a "W" button to the top left area.
+  The "W" button move the sequencer into it's own
+  window, similar to the "W" button in the mixer.
+* Sequencer Add an "F" button next to the "W" button.
+  The "F" button let the sequencer take up all space
+  in the main window. The "F" button works the same
+  way as the "Full" button in the instrument widget.
+* Sequencer: Change seqtrack header button order from
+  "H R M S" to "R M S H"
+* Sequencer: Fix graphics update when releasing mouse
+  button after selecting rectangle area.
+* Sequencer: Start editing seqtrack name when pressing
+  mouse button on the name, not when releasing the
+  mouse button.
+* GUI: Ensure code that is supposed to run when
+  releasing a mouse button is always executed.
+  (Workaround for Qt design flaw.)
+* Sequencer: Extend the horizontal borders between
+  seqtracks to begin at the leftmost part of the
+  seqtrack header.
+* Sequencer: Fix delete seqtrack automation when
+  shift+rightclicking.
+* Sequencer: Use SplitVCursor as mouse cursor shape for
+  the dragger.
+* Sequencer: Fix error messages popping up when undoing
+  a split audio seqblock operation. Other things may
+  have been fixed too.
+* Crashreporter: Replace any occurence of the users
+  user name with "$USERNAME" (literarily) to ensure
+  some more anonymity.
+* Crashreporter: Include all non-standard characters
+  found in home path and program path.
+* Crashreporter: Include both home path and program
+  path.
+* Crashreporter: Fix some crashreports from linux users
+  and some assertion messages not being delivered to me
+  by the server (turns out that exim4 will silently not
+  deliver an email if at least one line is around 800
+  characters long or more).
+* API:
+  * New functions: markSeqblockAvailable,
+    unmarkSeqblockAvailable,
+    setVerticalSplitMousePointer,
+    setSequencerInWindow, showHideSequencerInWindow,
+    showSequencer, hideSequencer, sequencerIsVisible,
+    sequencerInWindow, gui_setName, gui_bottomBar,
+    hideUpperPartOfMainWindow,
+    showUpperPartOfMainWindow,
+    upperPartOfMainWindowIsVisible,
+    showHideUpperPartOfMainWindow,
+    setSeqblockGrainStrictNoJitter,
+    getSeqblockGrainStrictNoJitter, undoSeqblock,
+    enableSchemeHistory, disableSchemeHistory.
+  * deleteSeqblock: add optional argument
+    'notify_listeners'.
+  * deleteSeqblock: take seqblockid as
+    argument instead of seqblocknum+seqtracknum.
+  * Don't show error message if a
+    seqblock-deleted callback have called
+    directly, or triggered a call to,
+    removeSeqblockDeletedCallback.
+  * Let addSeqblockDeletedCallback and
+    removeSeqblockDeletedCallback take
+    callback as the only argument, plus
+    automatically remove the callback if it
+    returned false.
+
+
 Changes 5.9.10 -> 5.9.12:
 * Sequencer: Fix gfx garbage when moving first or last
   seqblock automation node.
