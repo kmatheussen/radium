@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define _RADIUM_AUDIO_GRANRESAMPLER_HPP
 
 
-#include "../bin/packages/sndlib/clm.h"
 #include "Resampler_proc.h"
 
       
@@ -251,9 +250,11 @@ public:
 // Granulator
 ////////////////////////
 
-#if 0
-  // Using granulator in Granulator.hpp instead.
+#if 0  // Using granulator in Granulator.hpp instead.
   
+#include "../bin/packages/sndlib/clm.h"
+
+
 class Granulator : public GranResampler{
 
 public:
