@@ -105,7 +105,9 @@ public:
     setupUi(this);    
 
     time_of_last_minheight_inc.start();
-    
+
+    solo_button->_add_undo_when_clicked = false;
+
     /*
     {
       //QFontMetrics fm(font());
