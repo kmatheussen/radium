@@ -585,11 +585,13 @@ struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum){
 
 struct SeqBlock *getSeqblockFromNumA_R0(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack, bool use_gfx_if_possible){
   (*seqtrack) = getSeqtrackFromNum_R0(seqtracknum);
-  if ((*seqtrack)==NULL)
+  if ((*seqtrack)==NULL){
     return NULL;
+  }
 
-  if (seqblocknum < 0 || seqblocknum >= gfx_seqblocks2(*seqtrack, use_gfx_if_possible)->num_elements)
+  if (seqblocknum < 0 || seqblocknum >= gfx_seqblocks2(*seqtrack, use_gfx_if_possible)->num_elements){
     return NULL;
+  }
 
   return (struct SeqBlock *)gfx_seqblocks2(*seqtrack, use_gfx_if_possible)->elements[seqblocknum];
 }
