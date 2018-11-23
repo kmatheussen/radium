@@ -73,6 +73,26 @@ extern volatile float g_scroll_pos;
 // various
 ///////////////////////////////////////////////////
 
+void ensureCleanStateOutsideMouseCycle(void){
+  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+    if(seqtrack->gfx_seqblocks != NULL){
+      printf("  seqtrack->gfx_seqblocks != NULL. seqtracknum: %d\n", iterator666);
+#if !defined(RELEASE)
+      getchar();
+#endif
+      seqtrack->gfx_seqblocks = NULL;
+    }
+    if(seqtrack->gfx_gfx_seqblocks.num_elements != 0){
+      printf("  seqtrack->gfx_gfx_seqblocks != NULL. seqtracknum: %d\n", iterator666);
+#if !defined(RELEASE)
+      getchar();
+#endif
+      VECTOR_clean(&seqtrack->gfx_gfx_seqblocks);
+    }
+  }END_VECTOR_FOR_EACH;
+}
+
+
 void setCurrentNode(struct ListHeader3 *new_current_node){
   if (current_node != new_current_node){
     current_node = new_current_node;

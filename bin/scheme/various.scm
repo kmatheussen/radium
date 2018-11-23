@@ -784,9 +784,14 @@
                              :end-time new-end)
                   (loop (cdr seqblocks)
                         new-end))))))
-  (<ra> :create-gfx-seqblocks-from-state new-seqblocks seqtracknum)
-  (<ra> :undo-sequencer)
-  (<ra> :apply-gfx-seqblocks seqtracknum))
+  (try-finally
+   :try (lambda ()
+          (<ra> :create-gfx-seqblocks-from-state new-seqblocks seqtracknum)
+          (<ra> :undo-sequencer)
+          (<ra> :apply-gfx-seqblocks seqtracknum))
+   :failure (lambda ()
+              (<ra> :cancel-gfx-seqblocks seqtracknum)))
+  )
 
 #!
 (pp (delete-all-pauses-in-seqtrack 1))

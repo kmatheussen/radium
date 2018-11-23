@@ -154,8 +154,15 @@ A: Right-click the name of the mixer strip, and select "Delete". Or shift+right 
             <LI> <a onclick="showHide('sequencer')" href="#!">Sequencer</a>
               <div id="sequencer" style="display: none">
                 <UL>
-                  <LI> The sequencer lets you select when a block starts playing. Initially there is only one sequencer track ("seqtrack"),
-                    but more seqtracks can be added by clicking one of the "+ ..." buttons in the lower left corner.
+                  <LI> The sequencer lets you select when a block starts playing.
+                  <LI> Add a new sequencer track ("seqtrack") by clicking one of the "+ ..." buttons in the lower left corner.
+                  <LI> Seqblocks:
+                    <UL> 
+                      <LI> Move a seqblock with the mouse.
+                      <LI> To move several seqblocks, either mark a rectangle, or press Ctrl and click on the seqblocks you want to move.
+                      <LI> To quickly copy a seqblock, hold the <b>Alt</b> key and drag a seqblock. On macOS: Hold the <b>Ctrl</b> key.
+                      <LI> Double-click a seqblock to open a GUI for it.
+                    </UL> 
                   <LI> Use the popup menu to add effect automations, tempo automations, loop start and end positions, and other operations.
                   <LI> To quickly start playing at the position of the mouse cursor, scroll the mouse wheel <b>up</b>, and stop by scrolling <b>down</b>.
                   <LI> To record audio, click the "R" button in the seqtrack header of audio seqtracks, and start playing. To configure number of audio channels and where to get audio from, right-click the "R" button. You might also want to select beforehand when to start and stop recording, and you can do this by by right-clicking in the seqblock area and select the "Punch in/out" option under "Sequencer timeline".
@@ -276,7 +283,7 @@ A: Right-click the name of the mixer strip, and select "Delete". Or shift+right 
           <LI><small>(Note that the editor works differently. In the editor, the mouse scroll wheel does the same as Arrow Down and Arrow Up. By default the Arrow Down and Arrow Up keys are not assigned to any keybinding while holding a Windows key, while on macOS, the alt key is assigned to scroll to the previous or next event on the current track. Note that you can configure the keybindings.)</small>
         </UL>
       <LI> <b>Play song</b>
-         <UL>
+        <UL>
           <LI> All systems: Use the <b>Mouse scroll wheel</b> inside the sequencer. Scroll up to play, scroll down to stop.
         </UL>
     </UL>
@@ -285,7 +292,11 @@ A: Right-click the name of the mixer strip, and select "Delete". Or shift+right 
     <UL>
       <LI><i>Block</i> - What is known as a "pattern" in trackers. Another term for this is <i>Editor Block</i>.
       <LI><i>Seqtrack</i> - A sequencer track.
-      <LI><i>Seqblock</i> - An object in a seqtrack, for instance an editor block or an audio file.
+      <LI><i>Seqblock</i> - The blocks in seqtrack.
+        <UL>
+          <LI> For editor seqtracks: A seqblock contains an editor block.
+          <LI> For audio seqtracks: A seqblock contains an audio files.
+        </UL>
       <LI><i>Velocity</i> - The volume of a single note.
     </UL>
 

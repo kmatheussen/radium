@@ -543,6 +543,8 @@
 
   (assert-functions-called-from-evalScheme)
 
+  (common1-finished-loading)
+  
   (set! *is-initializing* #f))
 
 

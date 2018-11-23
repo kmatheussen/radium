@@ -84,6 +84,7 @@ static inline bool safe_to_run_exec(void){
     || !g_curr_popup_qmenu.isNull()
     || QApplication::activePopupWidget()!=NULL
     || a_modal_widget_is_open()
+    //|| g_scheme_nested_level > 0 // Probably a good idea...
     ;
   
   return !not_safe;  
