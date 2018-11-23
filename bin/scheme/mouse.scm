@@ -264,12 +264,12 @@
 
 (define (only-y-direction)
   (and *check-mouse-shift-key*
-       (not (<ra> :control2-pressed))
-       (<ra> :shift-pressed)))
+       (not (<ra> :horizontal-modifier-pressed))
+       (<ra> :vertical-modifier-pressed)))
 
 (define (only-x-direction)
-  (and (not (<ra> :shift-pressed))
-       (<ra> :control2-pressed)))
+  (and (not (<ra> :vertical-modifier-pressed))
+       (<ra> :horizontal-modifier-pressed)))
 
 (delafina (add-delta-mouse-handler :press :move-and-release :release #f :mouse-pointer-is-hidden-func #f)
   (define prev-x #f)

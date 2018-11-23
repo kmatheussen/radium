@@ -70,8 +70,8 @@ public:
   }
 
   void wheelEvent(QWheelEvent *qwheelevent) override {
-    if (qwheelevent->modifiers() & Qt::ShiftModifier)
-      horizontalScrollBar()->setValue(horizontalScrollBar()->value() - qwheelevent->delta()/5);
+    if (HorizontalModifierPressed(qwheelevent->modifiers()))
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value() + qwheelevent->delta()/5);
     else
       verticalScrollBar()->setValue(verticalScrollBar()->value() - qwheelevent->delta()/5);
   }
@@ -235,13 +235,18 @@ struct FaustResultWebView
     } else {
 #if !USE_QWEBENGINE
       Qt::Orientation orientation;
-      
-      if (qwheelevent->modifiers() & Qt::ShiftModifier)
-        orientation = Qt::Horizontal;
-      else
-        orientation = Qt::Vertical;
 
-      page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) - qwheelevent->delta()/5);
+      double direction;
+      
+      if (HorizontalModifierPressed(qwheelevent->modifiers())){
+        orientation = Qt::Horizontal;
+        direction = 1.0;
+      } else {
+        orientation = Qt::Vertical;
+        direction = -1.0;
+      }
+    
+      page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) + (direction*qwheelevent->delta()/5));
       //scroll_area->wheelEvent(qwheelevent);
 #endif
     }

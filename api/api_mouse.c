@@ -3321,11 +3321,15 @@ bool controlPressed(void){
 }
 
 bool control2Pressed(void){
-#if FOR_MACOSX
-  return AltPressed();
-#else
-  return MetaPressed();
-#endif
+  return Control2Pressed();
+}
+
+bool horizontalModifierPressed(void){
+  return HorizontalModifierPressed();
+}
+
+bool verticalModifierPressed(void){
+  return VerticalModifierPressed();
 }
 
 bool shiftPressed(void){
