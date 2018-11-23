@@ -260,18 +260,7 @@
               "left:" (<ra> :is-left-mouse-pressed)
               "right:" (<ra> :is-right-mouse-pressed)
               "middle:" (<ra> :is-middle-mouse-pressed))
-  
-  (if #t
-      (if #t
-          (if (or #t (<ra> :release-mode))
-              (<ra> :alt2-pressed)
-              (<ra> :control-pressed))
-          (or (<ra> :is-middle-mouse-pressed)
-              (and (<ra> :is-left-mouse-pressed)
-                   (<ra> :is-right-mouse-pressed))))
-      (and *check-mouse-shift-key*
-           (<ra> :shift-pressed)
-           (<ra> :control2-pressed))))
+  (<ra> :alt2-pressed))
 
 (define (only-y-direction)
   (and *check-mouse-shift-key*

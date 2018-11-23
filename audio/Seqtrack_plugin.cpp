@@ -1003,7 +1003,6 @@ struct Sample{
         }
         
         grain_length = ms_to_frames(grain_length);
-        double grain_frequency = (grain_length / grain_overlap);
 
         //grain_ramp *= grain_length;
 
@@ -1015,14 +1014,19 @@ struct Sample{
 #endif
           grain_length = MAX_GRAIN_LENGTH_IN_SECONDS*pc->pfreq;
         }
-        
+
+#if 0
+        double grain_frequency = (grain_length / grain_overlap);
+        //printf("   freq: %f. len: %f. overlap: %f\n", grain_frequency, grain_length, grain_overlap);
+
         if (grain_frequency > MAX_GRAIN_FREQUENCY_IN_SECONDS*pc->pfreq){
 #if !defined(RELEASE)
-          printf("    RT: Illegal grain frequency: %f > %f\n", grain_length, MAX_GRAIN_FREQUENCY_IN_SECONDS*pc->pfreq);
+          //  printf("    RT: Illegal grain frequency: %f > %f\n", grain_frequency, MAX_GRAIN_FREQUENCY_IN_SECONDS*pc->pfreq);
 #endif
           grain_frequency = MAX_GRAIN_FREQUENCY_IN_SECONDS*pc->pfreq;
         }
-
+#endif
+        
         _curr_reader->_granulator.set_strict_no_jitter(_grain_strict_no_jitter);
         _curr_reader->_granulator.set_overlap(grain_overlap);
         _curr_reader->_granulator.set_stretch(stretch);

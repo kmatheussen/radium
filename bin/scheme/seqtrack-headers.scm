@@ -350,6 +350,7 @@
                (if for-audiofiles
                    '(record mute solo height)
                    '(height))
+               :spacing -1
                :callback
                (lambda (type x1 y1 x2 y2)
                  ;;(c-display "   BOX:" type x1 y1 x2 y2)
@@ -416,35 +417,28 @@
 
   )
 
+
 (def-area-subclass (<seqtrack-name> :gui :x1 :y1 :x2 :y2
                                     :instrument-id
                                     :seqtracknum)
   
   (define last-painted-name "")
 
-  (define-override (paint)
-    ;;(<gui> :set-clip-rect gui x1 y1 x2 y2)
-    (let* ((b 0)
-           (x1 (+ x1 b))
-           (y1 (+ y1 b))
-           (x2 (- x2 b))
-           (y2 (- y2 b)))
-      
-      (if (= seqtracknum (<ra> :get-curr-seqtrack))
-          (<gui> :filled-box gui (get-seqtrack-background-color gui seqtracknum) x1 y1 x2 y2)
-          (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id))
-      
-      (define seqtrack-name (<ra> :get-seqtrack-name seqtracknum))
-      (set! last-painted-name seqtrack-name)
-      (<gui> :draw-text gui *text-color* (<-> seqtracknum ": " seqtrack-name)
-             (+ 4 x1) y1 x2 y2
-             #f ;; wrap-lines
-             #f ;; align top
-             #t) ;; align left
-      (define background-color (<gui> :get-background-color gui))
-      (<gui> :draw-box gui background-color (+ 0 x1) (+ 0 y1) (- x2 0) (- y2 0) 2 0 0)
-      (<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 5 5))
-    ;;(<gui> :cancel-clip-rect gui)
+  (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 y2
+                              :text (lambda ()
+                                      (set! last-painted-name (<ra> :get-seqtrack-name seqtracknum))
+                                      last-painted-name)
+                              :background-color
+                              (lambda ()
+                                (if (= seqtracknum (<ra> :get-curr-seqtrack))
+                                    (get-seqtrack-background-color gui seqtracknum)
+                                    (get-instrument-background-color gui instrument-id)))
+                              :align-left #t))
+  
+  '(define-override (post-paint)
+    (define background-color (<gui> :get-background-color gui))
+    (<gui> :draw-box gui background-color (+ 0 x1) (+ 0 y1) (- x2 0) (- y2 0) 2 0 0)
+    (<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 5 5)
     )
 
   (if (>= instrument-id 0)
@@ -878,19 +872,37 @@
   (define b (max 1 (myfloor (/ fontheight 10)))) ;; border between areas.
   
   (define x-meter-split (- x2 (+ b meter-width)))
-  (define x1-split (- x-meter-split (+ b mutesolo-width)))
+  (define x1-split (+ x1 (myfloor (* 1.8 (<gui> :text-width "9:")))))
+  (define x2-split (- x-meter-split (+ b mutesolo-width)))
   (define y-split (myfloor (+ y1 name-height)))
-  
+
+  (delafina (get-background-color :gakk #f)
+    (if (= seqtracknum (<ra> :get-curr-seqtrack))
+        (get-seqtrack-background-color gui seqtracknum)
+        (if gakk
+            (get-instrument-background-color gui instrument-id)
+            (<ra> :get-instrument-color instrument-id)))
+    )
+
   (if (or use-two-rows
           for-blocks)
       (add-sub-area-plain! (<new> :seqtrack-name gui
-                                  x1 y1
-                                  x1-split
+                                  (- x1-split 1) y1
+                                  x2-split
                                   y-split
                                   instrument-id
                                   seqtracknum)))
 
-  (define panner-x2 (if use-two-rows x-meter-split x1-split))
+  (add-sub-area-plain! (<new> :text-area gui
+                              x1 y1
+                              x1-split y-split
+                              (<-> seqtracknum)
+                              :text-color "black"
+                              :background-color (lambda () (<gui> :mix-colors "white" (get-background-color #t) 0.02))
+                              :border-rounding 100 ;;(if use-two-rows 1 8)
+                              ))
+  
+  (define panner-x2 (if use-two-rows x-meter-split x2-split))
   (define panner-y1 (if use-two-rows
                         (+ b y-split)
                         y1))
@@ -905,7 +917,7 @@
   (define vol-y2 y2)
     
   (add-sub-area-plain! (<new> :mute-solo-buttons gui
-                              (+ b x1-split) y1
+                              (+ b x2-split) y1
                               x-meter-split y-split
                               instrument-id #t #t seqtracknum))
   
@@ -916,23 +928,17 @@
                                     x1 panner-y1
                                     panner-x2 panner-y2
                                     instrument-id
-                                    :get-color (lambda ()
-                                                 (if (= seqtracknum (<ra> :get-curr-seqtrack))
-                                                     (get-seqtrack-background-color gui seqtracknum)
-                                                     (<ra> :get-instrument-color instrument-id)))
+                                    :get-color get-background-color
                                     seqtracknum
                                     )))
 
     (add-sub-area-plain! (<new> :instrument-volume-slider gui
-                                x1 vol-y1
+                                (if (not use-two-rows) x1-split x1) vol-y1
                                 vol-x2 vol-y2
                                 instrument-id
                                 :effect-name "System Volume"
                                 :display-instrument-name (not use-two-rows)
-                                :get-color (lambda ()
-                                             (if (= seqtracknum (<ra> :get-curr-seqtrack))
-                                                 (get-seqtrack-background-color gui seqtracknum)
-                                                 (<ra> :get-instrument-color instrument-id)))
+                                :get-color get-background-color
                                 ))
     
     (<gui> :add-vertical-audio-meter gui instrument-id (+ b x-meter-split) y1 x2 y2))

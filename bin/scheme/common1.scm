@@ -311,6 +311,10 @@
 (define (yppla l c)
   (apply c l))
 
+(define (maybe-thunk-value m)
+  (if (procedure? m)
+      (m)
+      m))
 
 (define (last das-list) ;; Wouldn't be surprised if this version is slower than '(car (reverse das-list))' though... (but no, this one is much faster with the test below)
   ;;(c-display "last//// " das-list)
