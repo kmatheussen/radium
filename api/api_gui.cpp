@@ -3509,9 +3509,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
         Qt::Orientation orientation;
           
-        if (qwheelevent->modifiers() & Qt::ShiftModifier) {
+        if (HorizontalModifierPressed(qwheelevent->modifiers())) {
           orientation = Qt::Horizontal;
-          page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) - qwheelevent->delta()/2);
+          page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) + qwheelevent->delta()/2);
         } else {
           //orientation = Qt::Vertical;
           FocusSnifferQWebView::wheelEvent(qwheelevent);
