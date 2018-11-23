@@ -24,6 +24,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_sequencer_proc.h"
 
 
+static struct SeqBlock *get_seqblock(int seqtracknum, int seqblocknum, struct SeqTrack **seqtrack_to){
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum>=0, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum<root->song->seqtracks.num_elements, NULL);
+  
+  struct SeqTrack *seqtrack = root->song->seqtracks.elements[seqtracknum];
+
+  if (seqtrack_to != NULL)
+    *seqtrack_to = seqtrack;
+  
+  R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(seqblocknum<seqtrack->seqblocks.num_elements, NULL);
+
+  return seqtrack->seqblocks.elements[seqblocknum];
+}
+
+
 
 /////////////////////////////////////////////////////////////////////
 // 1. Everything.                                                  //
@@ -83,15 +99,10 @@ static void *Undo_Do_Seqblock(
 
 
 static hash_t *get_seqblock_state(int seqtracknum, int seqblocknum){
-  R_ASSERT_RETURN_IF_FALSE2(seqtracknum >= 0, NULL);
-  R_ASSERT_RETURN_IF_FALSE2(seqtracknum < root->song->seqtracks.num_elements, NULL);
-  
-  struct SeqTrack *seqtrack = root->song->seqtracks.elements[seqtracknum];
-
-  R_ASSERT_RETURN_IF_FALSE2(seqblocknum >= 0, NULL);
-  R_ASSERT_RETURN_IF_FALSE2(seqblocknum < seqtrack->seqblocks.num_elements, NULL);
-
-  struct SeqBlock *seqblock = seqtrack->seqblocks.elements[seqblocknum];
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = get_seqblock(seqtracknum, seqblocknum, &seqtrack);
+  if (seqblock==NULL)
+    return NULL;
   
   hash_t *state = SEQBLOCK_get_state(seqtrack, seqblock, true);
   
@@ -242,20 +253,8 @@ struct SeqFades{
   double fadeout;
 };
 
-static struct SeqBlock *get_seqblock(int seqtracknum, int seqblocknum){
-  R_ASSERT_RETURN_IF_FALSE2(seqtracknum>=0, NULL);
-  R_ASSERT_RETURN_IF_FALSE2(seqtracknum<root->song->seqtracks.num_elements, NULL);
-  
-  struct SeqTrack *seqtrack = root->song->seqtracks.elements[seqtracknum];
-  
-  R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, NULL);
-  R_ASSERT_RETURN_IF_FALSE2(seqblocknum<seqtrack->seqblocks.num_elements, NULL);
-
-  return seqtrack->seqblocks.elements[seqblocknum];
-}
-
 static struct SeqFades *get_seqfades(int seqtracknum, int seqblocknum){
-  struct SeqBlock *seqblock = get_seqblock(seqtracknum, seqblocknum);
+  struct SeqBlock *seqblock = get_seqblock(seqtracknum, seqblocknum, NULL);
   if (seqblock==NULL)
     return NULL;
   
@@ -303,7 +302,10 @@ static void *Undo_Do_SeqblockFades(
   if (ret==NULL)
     return seq_fades; // Something is seriously wrong (assertion window was shown above), but I'm not sure if we can return NULL from this function so we return seq_fades instead.
 
-  struct SeqBlock *seqblock = get_seqblock(seqtracknum, seqblocknum);
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = get_seqblock(seqtracknum, seqblocknum, &seqtrack);
+  if (seqblock==NULL)
+    return seq_fades;
   
   bool needlock = is_playing_song();
   
@@ -314,6 +316,8 @@ static void *Undo_Do_SeqblockFades(
   }
   if(needlock) PLAYER_unlock();
 
+  SEQBLOCK_update(seqtrack, seqblock);
+  
   return ret;
 }
 
