@@ -1771,7 +1771,7 @@ void SCHEME_init1(void){
   
   g_catchallerrors_func = find_and_protect_scheme_value("FROM-C-catch-all-errors-and-display-backtrace-automatically");
   g_try_finally_failed = find_and_protect_scheme_value("*try-finally-failed-return-value*");
-     
+
   s7webserver = s7webserver_create(s7, 5080, true);  
   s7webserver_set_verbose(s7webserver, true);
 #if !defined(RELEASE)
