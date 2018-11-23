@@ -142,6 +142,24 @@ void setAutobypassDelay(int val){
 }
 
 
+static bool g_undo_solo = false;
+
+bool doUndoSolo(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_undo_solo = SETTINGS_read_bool("undo_solo", g_undo_solo);
+    has_inited = true;
+  }
+
+  return g_undo_solo;
+}
+
+void setUndoSolo(bool doit){
+  g_undo_solo = doit;
+  SETTINGS_write_bool("undo_solo", doit);
+}
+
 
 // Warning, All these functions (except selectPatchForTrack) must be called via python (does not update graphics, or handle undo/redo))
 // (TODO: detect this automatically.)
@@ -1082,7 +1100,7 @@ bool addAutomationToCurrentSequencerTrack(int64_t instrument_id, const_char* eff
   return true;
 }
   
-
+              
 void setInstrumentSolo(int64_t instrument_id, bool do_solo){
   S7CALL2(void_int_bool,"FROM-C-set-solo!", instrument_id, do_solo);
 }

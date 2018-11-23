@@ -480,6 +480,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       buzy_looping->setChecked(doAudioBuzyLoop());
       enable_autobypass->setChecked(autobypassEnabled());
       autobypass_delay->setValue(getAutoBypassDelay());
+      undo_solo->setChecked(doUndoSolo());
       recalculate_bus_latency_onoff->setChecked(doAlwaysRunBuses());
     }
 
@@ -858,7 +859,12 @@ public slots:
     if (_initing==false)
       setAutobypassDelay(val);
   }
-      
+
+  void on_undo_solo_toggled(bool val){
+    if (_initing==false)
+      setUndoSolo(val);
+  }
+
   void on_autobypass_delay_editingFinished(){
     set_editor_focus();
     GL_lock();{
