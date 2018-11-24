@@ -1151,7 +1151,13 @@ protected:
     }
     
 #endif
-      
+
+    /*
+    if(event->type() != 1 && event->type() != 43 && event->type() != 12 && event->type() != 52 && event->type() != 71 && event->type() != 76 && event->type() != 68 && event->type() != 77)
+      if(event->type()==QEvent::Show || event->type()==QEvent::Hide)
+        printf("Event: %d\n",event->type());
+    */
+
     // TODO: Check if getting this event:
     // QEvent::ApplicationFontChange
     // could be used for something. For instance to fix OpenGL widget position.
