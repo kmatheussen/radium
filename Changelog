@@ -1,3 +1,35 @@
+Changes 5.9.15 -> 5.9.16:
+* Updated the manual somewhat.
+* Sequencer: Update graphics after undoing or redoing
+  fade length.
+* Instrument widget: Don't create undo entry for the Solo
+  button unless undo for solo is enabled in preferences.
+* Audio: Add option to create undo entries when clicking
+  a solo button.
+* Sequencer: Fix error messages popping up after just
+  clicking a seqblock, without moving it.
+* Sequencer: Make keyboard modifiers consistent by
+  changing the modifier for copying seqblock from Shift
+  to Alt (macosx: Ctrl). This way, Shift can be used to
+  move a seqblock vertically.
+* Mouse: Use the same keyboard modifier to scroll
+  horizontally as used to limit mouse movement in the
+  x direction. (Windows/Linux: windows key. macOS: Alt)
+* Mixer/Manual/Faust: When using the mouse scroll wheel
+  to scroll vertically, scroll to the left when
+  scrolling the mouse wheel up, and to the right
+  when scrolling the mouse wheel down. Not the other
+  way around.
+* Sequencer: Draw seqtrack number in a separeate box,
+  not as part of the seqtrack name.
+* Sequencer: Fix having to press mouse button two
+  times to make mouse button work right after
+  changing seqtrack name.
+* Update s7
+* API: ensureCleanStateOutsideMouseCycle
+
+
+
 Changes 5.9.12 -> 5.9.15:
 * Sequencer: New GUI for the seqblock track on/off
   window (i.e. the editor seqblock GUI). It
@@ -46,7 +78,7 @@ Changes 5.9.12 -> 5.9.15:
   visible seqtrack and below the last visible
   seqtrack.
 * GUI: Fix lower tabs not using all horizontal space
-  when neither the editor northe  mixer were visible
+  when neither the editor nor the mixer were visible
   in the main window.
 * Sequencer: Add a "W" button to the top left area.
   The "W" button move the sequencer into it's own

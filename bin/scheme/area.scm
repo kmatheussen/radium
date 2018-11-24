@@ -699,6 +699,61 @@
              #f)))
 ||#
 
+                     
+(def-area-subclass (<text-area> :gui :x1 :y1 :x2 :y2
+                                :text ;; can also be function
+                                :background-color #f ;; If #f, background will not be painted. can also be function
+                                :text-color *text-color* ;; can also be function
+                                :wrap-lines #f
+                                :align-top #f
+                                :align-left #f
+                                :paint-border #t
+                                :border-rounding 2
+                                )
+
+  (define (get-text)
+    (if (procedure? text)
+        (text)
+        text))
+
+  (define (get-text-color)
+    (if (procedure? text-color)
+        (text)
+        text-color))
+
+  (define (get-background-color)
+    (and background-color
+         (maybe-thunk-value background-color)))
+        
+  (define-override (paint)
+    (let ((background-color (get-background-color)))
+      (if background-color
+          (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding)))
+    
+    (<gui> :draw-text gui (maybe-thunk-value text-color) (maybe-thunk-value text)
+           (+ (if align-left
+                  (+ 2 x1)
+                  x1)
+              1)
+           y1
+           (- x2 1)
+           y2
+           wrap-lines
+           align-top
+           align-left
+           0 ;; rotate
+           #f ;; cut text to fit
+           #t ;; scale font size
+           )
+
+    (when paint-border
+      (define background-color (<gui> :get-background-color gui))
+      (<gui> :draw-box gui background-color (+ 0 x1) (+ 0 y1) (- x2 0) (- y2 0) 2 0 0)
+      (<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 border-rounding border-rounding))
+    
+    )
+  )
+
 (define (get-default-button-color gui)
   (define gui-background-color (<gui> :get-background-color gui))
   (<gui> :mix-colors "#010101" gui-background-color 0.5))

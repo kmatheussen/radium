@@ -2541,6 +2541,7 @@ const char *JUCE_get_backtrace(void){
   return g_backtrace.toUTF8();
 }
 
+
 #include "Smooth_proc.h"
 
 static inline void copy_sound2(const Smooth *__restrict__ smooth, float *__restrict__ dst, const float *__restrict src, const int num_frames){
