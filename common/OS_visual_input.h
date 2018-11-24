@@ -47,6 +47,15 @@ extern LANGSPEC bool ControlPressed(void); // linux/windows: Ctrl, osx: Cmd
 extern LANGSPEC bool ShiftPressed(void);
 extern LANGSPEC bool AltPressed(void);
 extern LANGSPEC bool MetaPressed(void);
+extern LANGSPEC bool Control2Pressed(void);
+extern LANGSPEC bool HorizontalModifierPressed(void);
+extern LANGSPEC bool VerticalModifierPressed(void);
+
+#ifdef USE_QT4
+bool Control2Pressed(Qt::KeyboardModifiers modifiers);
+bool HorizontalModifierPressed(Qt::KeyboardModifiers modifiers);
+#endif
+
 
 #ifdef USE_QT4
 class QDropEvent;

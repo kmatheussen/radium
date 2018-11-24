@@ -1,6 +1,51 @@
 
 (provide 'sequencer.scm)
 
+(define (for-each-seqtracknum func)
+  (let loop ((seqtracknum 0))
+    (when (< seqtracknum (<ra> :get-num-seqtracks))
+      (func seqtracknum)
+      (loop (1+ seqtracknum)))))
+
+  
+(define (for-each-seqblocknum func)
+  (define (for-each-seqblocknum2 seqtracknum func)
+    (let loop ((seqblocknum 0))
+      (when (< seqblocknum (<ra> :get-num-seqblocks seqtracknum))
+        (func seqblocknum)
+        (loop (1+ seqblocknum)))))
+  
+  (call-with-exit
+   (lambda (return)
+     (for-each-seqtracknum
+      (lambda (seqtracknum)
+        (for-each-seqblocknum2
+         seqtracknum
+         (lambda (seqblocknum)
+           (define ret (func seqtracknum seqblocknum))
+           (if (and (pair? ret) (pair? (cdr ret)) (eq? 'stop (car ret)) (null? (cddr ret)))
+               (return (cadr ret)))))))
+     (return #t))))
+
+(define (map-all-seqblocks func)
+  (let loop ((seqblocknum 0)
+             (seqtracknum 0))
+    (cond ((= seqtracknum (<ra> :get-num-seqtracks))
+           '())
+          ((= seqblocknum (<ra> :get-num-seqblocks seqtracknum)) ;; use-gfx))
+           (loop 0 (1+ seqtracknum)))
+          (else
+           (cons (func seqtracknum seqblocknum)
+                 (loop (1+ seqblocknum) seqtracknum))))))               
+
+(define (for-each-selected-seqblock func)
+  (for-each-seqblocknum (lambda (seqtracknum seqblocknum)
+                          (when (<ra> :is-seqblock-selected seqblocknum seqtracknum)
+                            ;;(c-display "funcing" seqtracknum seqblocknum)
+                            (func seqtracknum seqblocknum)))))
+  
+
+
 ;; see enum SeqtrackHeightType in nsmtracker.h
 (define (get-seqtrack-height-type boxname)
   (cond ((eq? boxname 'custom) 0)

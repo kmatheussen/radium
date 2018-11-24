@@ -2064,7 +2064,6 @@ void evalPython(const_char *code){
   PyRun_SimpleString(code);
 }
 
-
 static dyn_t g_keybindings_from_keys = g_uninitialized_dyn;
 static dyn_t g_keybindings_from_commands = g_uninitialized_dyn;
 

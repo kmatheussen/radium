@@ -1483,6 +1483,11 @@ int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowA
 
   struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
 
+#if !defined(RELEASE)
+  if(seqtrack->gfx_seqblocks != NULL)
+    abort();
+#endif
+  
   struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, get_all_seqblock_ids(), error_type, Seqblock_Type::REGULAR);
   if (seqblock==NULL)
     return -1;

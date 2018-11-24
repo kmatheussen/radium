@@ -645,7 +645,7 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
   //printf("pos: %f, _start/end: %f / %f. x: %d\n", (double)pos/48000.0, (double)start_play_time / 48000.0, (double)end_play_time / 48000.0, e->x());
 
 
-  if (  (e->modifiers() & Qt::ControlModifier) || (e->modifiers() & Qt::ShiftModifier)) {
+  if (  (e->modifiers() & Qt::ControlModifier) || (HorizontalModifierPressed(e->modifiers()))) {
 
     double nav_start_time = SEQUENCER_get_visible_start_time();
     double nav_end_time = SEQUENCER_get_visible_end_time();
@@ -694,7 +694,7 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
       
     } else {
 
-      // SHIFT. Scroll left /right
+      // Scroll horizontally (meta/osx:alt). Scroll left /right
       
       if (e->delta() > 0) {
         

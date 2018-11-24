@@ -721,6 +721,8 @@
 
 (define (set-instrument-solo! id is-on)
   ;;(c-display "     Setting" (<ra> :get-instrument-name id) "solo to" is-on)
+  (if (<ra> :do-undo-solo)
+      (<ra> :undo-instrument-effect id "System Solo On/Off"))
   (<ra> :set-instrument-effect id "System Solo On/Off" (if is-on 1.0 0.0)))
 
 (define (set-solo-for-connected-output-instruments! instrument-id is-on)
@@ -741,9 +743,10 @@
          
   
 (define (FROM-C-set-solo! instrument-id is-on)
-  (set-instrument-solo! instrument-id is-on)
-  (set-solo-for-connected-output-instruments! instrument-id is-on)
-  (set-solo-for-connected-input-instruments! instrument-id is-on))
+  (undo-block (lambda ()
+                (set-instrument-solo! instrument-id is-on)
+                (set-solo-for-connected-output-instruments! instrument-id is-on)
+                (set-solo-for-connected-input-instruments! instrument-id is-on))))
 
               
 

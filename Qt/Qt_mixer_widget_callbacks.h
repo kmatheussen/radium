@@ -79,16 +79,16 @@ public:
         else
           widget_zoom_slider->setValue(widget_zoom_slider->value() - 6);
         
-      } else if (e->modifiers() & Qt::ShiftModifier) {
+      } else if (HorizontalModifierPressed(e->modifiers())) {
 
         // Scrolling left / right
         
         QScrollBar *scrollbar = horizontalScrollBar();
         if(scrollbar!=NULL){
           if (e->delta() > 0)
-            scrollbar->setValue(scrollbar->value()-70);
-          else
             scrollbar->setValue(scrollbar->value()+70);
+          else
+            scrollbar->setValue(scrollbar->value()-70);
         }
         
       } else {

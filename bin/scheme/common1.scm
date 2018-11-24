@@ -249,13 +249,23 @@
 (c-display "args:" x)
 !!#
 
-(define (<-> . args) (apply string-append (map to-string args)))
+(define-expansion (with-history-disabled . code)
+  `(begin
+     (ra:disable-scheme-history)
+     (try-finally :try (lambda ()
+                         ,@code)
+                  :finally ra:enable-scheme-history)))
+
+(define (<-> . args)
+  (apply string-append (map to-string args)))
+
 (define (<_> . args)
   (let ((s (apply <-> args)))
     (if (string=? "" s)
         *empty-symbol*
         (string->symbol s))))
 
+               
 (define (<-displayable-> . args) (apply string-append (map to-displayable-string args)))
 
 #||
@@ -276,21 +286,27 @@
 (<-displayable-> :'ga)
 ||#
 
-(define-expansion (with-history-disabled . code)
-  `(begin
-     (ra:disable-scheme-history)
-     (try-finally :try (lambda ()
-                         ,@code)
-                  :finally ra:enable-scheme-history)))
-
 (define (c-display . args)
-  (with-history-disabled
-   (for-each (lambda (arg)
-               (display (to-displayable-string arg))
-               (display " "))
-             args)
-   (newline)))
+  (for-each (lambda (arg)
+              (display (to-displayable-string arg))
+              (display " "))
+            args)
+  (newline))
 
+
+(define (common1-finished-loading)
+  (let ((old-<-> <->))
+    (set! <-> (lambda x
+                (with-history-disabled
+                 (apply old-<-> x)))))
+  (let ((old-<_> <_>))
+    (set! <_> (lambda x
+                (with-history-disabled
+                 (apply old-<_> x)))))
+  (let ((old-c-display c-display))
+    (set! c-display (lambda x
+                      (with-history-disabled
+                       (apply old-c-display x))))))
 
 (define *my-gensym-N* 0)
 
@@ -311,6 +327,10 @@
 (define (yppla l c)
   (apply c l))
 
+(define (maybe-thunk-value m)
+  (if (procedure? m)
+      (m)
+      m))
 
 (define (last das-list) ;; Wouldn't be surprised if this version is slower than '(car (reverse das-list))' though... (but no, this one is much faster with the test below)
   ;;(c-display "last//// " das-list)

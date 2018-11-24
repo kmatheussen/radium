@@ -2144,6 +2144,11 @@ void createGfxSeqblocksFromState(dyn_t seqblocks_state, int seqtracknum){
     return;
   }
 
+#if 0 //!defined(RELEASE)
+  if (seqtrack->gfx_seqblocks!=NULL)
+    abort();
+#endif
+    
   //printf("\n\n============= Creating gfxseqblocks from state\n");
   SEQTRACK_create_gfx_seqblocks_from_state(seqblocks_state, seqtrack, seqtracknum, THROW_API_EXCEPTION);
 }
@@ -2161,6 +2166,8 @@ void cancelGfxSeqblocks(int seqtracknum){
   }
   
   SEQTRACK_cancel_gfx_seqblocks(seqtrack);
+
+  R_ASSERT(seqtrack->gfx_seqblocks==NULL);
 }
 
 void applyGfxSeqblocks(int seqtracknum){
@@ -2176,6 +2183,8 @@ void applyGfxSeqblocks(int seqtracknum){
   }
 
   SEQTRACK_apply_gfx_seqblocks(seqtrack, seqtracknum, true);
+  
+  R_ASSERT_NON_RELEASE(seqtrack->gfx_seqblocks==NULL);
 }
 
 
@@ -2411,7 +2420,7 @@ int getNumSeqblocks(int seqtracknum){
   if (seqtrack==NULL)
     return 0;
   else
-    return seqtrack->seqblocks.num_elements;
+    return gfx_seqblocks2(seqtrack, false)->num_elements;
 }
 
 int getNumGfxGfxSeqblocks(int seqtracknum){
@@ -2455,28 +2464,28 @@ int64_t getSeqblockDefaultDuration(int seqblocknum, int seqtracknum){
 
 // seqblock area
 float getSeqblockX1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_x1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockY1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_y1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockX2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_x2(seqblocknum, seqtracknum);
 }
 
 float getSeqblockY2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_y2(seqblocknum, seqtracknum);
@@ -2490,28 +2499,28 @@ float getSeqblockHeaderY2(int seqblocknum, int seqtracknum){
 // seqblock left fade area
 
 float getSeqblockLeftFadeX1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_fade_x1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftFadeY1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_fade_y1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftFadeX2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_fade_x2(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftFadeY2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_fade_y2(seqblocknum, seqtracknum);
@@ -2520,28 +2529,28 @@ float getSeqblockLeftFadeY2(int seqblocknum, int seqtracknum){
 // seqblock right fade area
 
 float getSeqblockRightFadeX1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_fade_x1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightFadeY1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_fade_y1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightFadeX2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_fade_x2(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightFadeY2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_fade_y2(seqblocknum, seqtracknum);
@@ -2550,28 +2559,28 @@ float getSeqblockRightFadeY2(int seqblocknum, int seqtracknum){
 // seqblock left interior area
 
 float getSeqblockLeftInteriorX1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_interior_x1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftInteriorY1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_interior_y1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftInteriorX2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_interior_x2(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftInteriorY2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_interior_y2(seqblocknum, seqtracknum);
@@ -2580,28 +2589,28 @@ float getSeqblockLeftInteriorY2(int seqblocknum, int seqtracknum){
 // seqblock right interior area
 
 float getSeqblockRightInteriorX1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_interior_x1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightInteriorY1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_interior_y1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightInteriorX2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_interior_x2(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightInteriorY2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_interior_y2(seqblocknum, seqtracknum);
@@ -2610,28 +2619,28 @@ float getSeqblockRightInteriorY2(int seqblocknum, int seqtracknum){
 // seqblock left speed area
 
 float getSeqblockLeftSpeedX1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_speed_x1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftSpeedY1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_speed_y1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftSpeedX2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_speed_x2(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftSpeedY2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_speed_y2(seqblocknum, seqtracknum);
@@ -2640,28 +2649,28 @@ float getSeqblockLeftSpeedY2(int seqblocknum, int seqtracknum){
 // seqblock right speed area
 
 float getSeqblockRightSpeedX1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_speed_x1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightSpeedY1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_speed_y1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightSpeedX2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_speed_x2(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightSpeedY2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_speed_y2(seqblocknum, seqtracknum);
@@ -2670,28 +2679,28 @@ float getSeqblockRightSpeedY2(int seqblocknum, int seqtracknum){
 // seqblock left stretch area
 
 float getSeqblockLeftStretchX1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_stretch_x1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftStretchY1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_stretch_y1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftStretchX2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_stretch_x2(seqblocknum, seqtracknum);
 }
 
 float getSeqblockLeftStretchY2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_left_stretch_y2(seqblocknum, seqtracknum);
@@ -2700,28 +2709,28 @@ float getSeqblockLeftStretchY2(int seqblocknum, int seqtracknum){
 // seqblock right stretch area
 
 float getSeqblockRightStretchX1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_stretch_x1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightStretchY1(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_stretch_y1(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightStretchX2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_stretch_x2(seqblocknum, seqtracknum);
 }
 
 float getSeqblockRightStretchY2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+  if (getGfxSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_right_stretch_y2(seqblocknum, seqtracknum);
