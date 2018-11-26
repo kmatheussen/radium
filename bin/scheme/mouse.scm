@@ -2551,7 +2551,11 @@
                         :Create-new-node (lambda (X Place callback)
                                            (define Value (get-pianoroll-key X))
                                            (define Next-Place (get-next-place-from-y *left-button* (<ra> :get-mouse-pointer-y)))
-                                           (define noteid (<ra> :add-pianonote Value Place Next-Place *current-track-num*))
+                                           (define noteid (<ra> :add-pianonote
+                                                                (if (<ra> :control-pressed)
+                                                                    Value
+                                                                    (round Value))
+                                                                Place Next-Place *current-track-num*))
                                            (if (and (number? noteid) (= -1 noteid))
                                                #f
                                                (callback (make-pianonote-info :tracknum *current-track-num*
