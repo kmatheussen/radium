@@ -1172,10 +1172,10 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
     if (pianonotenum==0)
       return note->note;
 
-    struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+    struct Pitches *pitch = ListFindElement3_num_r0((void*)note->pitches, pianonotenum-1);
     if (pitch==NULL){
 
-      if (ListFindNumElements3(&note->pitches->l)+1==pianonotenum){
+      if (ListFindNumElements3((struct ListHeader3*)note->pitches)+1==pianonotenum){
         if (pianonotenum==1 && note->pitch_end == 0)
           return note->note;
         else
@@ -1272,7 +1272,7 @@ static void setPianoNoteValues(float value, int pianonotenum, struct Notes *note
     
   } else {
   
-    struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+    struct Pitches *pitch = ListFindElement3_num_r0((void*)note->pitches, pianonotenum-1);
     if (pitch==NULL){
       handleError("There is no pianonote %d",pianonotenum);
       return;
@@ -1305,7 +1305,7 @@ static Place get_pianonote_place(int pianonotenum, struct Notes *note){
   if (pianonotenum==0)
     return note->l.p;
 
-  struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+  struct Pitches *pitch = ListFindElement3_num((void*)note->pitches, pianonotenum-1);
   if (pitch==NULL){
     handleError("There is no pianonote %d",pianonotenum);
     return note->l.p;
@@ -1322,7 +1322,7 @@ Place getPianonotePlace(int pianonotenum, dyn_t dynnote, int tracknum, int block
   if (note==NULL)
     return p_Create(0,0,1);
 
-  if (ListFindNumElements3(&note->pitches->l)+1==pianonotenum)
+  if (ListFindNumElements3((void*)note->pitches)+1==pianonotenum)
     return note->end;
   
   return get_pianonote_place(pianonotenum, note);
@@ -1348,7 +1348,7 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, dyn_t dynnote, int trac
     if (note2==note) {
       
       if (pianonotenum > 0) {
-        struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
+        struct Pitches *pitch = ListFindElement3_num_r0((void*)note->pitches, pianonotenum-1);
         if (pitch==NULL){
           handleError("There is no pianonote #%d in note %d in track #%d in block #%d",pianonotenum,(int)note->id,tracknum,blocknum);
           return 0;
@@ -3145,7 +3145,7 @@ Place getFxrangenodePlace(int fxnodenum, int fxnum, int rangetracknum){
     return p_Create(0,0,1);
   }
   
-  struct FXNodeLines *fxnodeline = ListFindElement3_num_r0(&fxs->fxnodelines->l, fxnodenum);
+  struct FXNodeLines *fxnodeline = ListFindElement3_num((void*)fxs->fxnodelines, fxnodenum);
 
   if (fxnodeline==NULL){
     handleError("getFxrangenodeValue: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
@@ -3170,7 +3170,7 @@ float getFxrangenodeValue(int fxnodenum, int fxnum, int rangetracknum){
     return 0;
   }
   
-  struct FXNodeLines *fxnodeline = ListFindElement3_num_r0(&fxs->fxnodelines->l, fxnodenum);
+  struct FXNodeLines *fxnodeline = ListFindElement3_num_r0((void*)fxs->fxnodelines, fxnodenum);
 
   if (fxnodeline==NULL){
     handleError("getFxrangenodeValue: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
@@ -3197,7 +3197,7 @@ int getFxrangenodeLogtype(int fxnodenum, int fxnum, int rangetracknum){
     return 0;
   }
   
-  struct FXNodeLines *fxnodelines = ListFindElement3_num_r0(&fxs->fxnodelines->l, fxnodenum);
+  struct FXNodeLines *fxnodelines = ListFindElement3_num_r0((void*)fxs->fxnodelines, fxnodenum);
 
   if (fxnodelines==NULL){
     handleError("getFxrangenodeLogtype: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
