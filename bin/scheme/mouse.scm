@@ -3207,7 +3207,7 @@
                               (<ra> :undo-notes tracknum)
                               (if (<ra> :alt2-pressed)
                                   (begin
-                                    (while (> (<ra> :get-num-velocities tracknum) 2)
+                                    (while (> (<ra> :get-num-velocities notenum tracknum) 2)
                                       (<ra> :delete-velocity 1 notenum tracknum))
                                     (<ra> :set-velocity
                                           (<ra> :get-velocity-value 0 notenum tracknum)
