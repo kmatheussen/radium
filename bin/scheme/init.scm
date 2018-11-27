@@ -108,6 +108,7 @@
 
 #!!
 (safe-history-ow!)
+(+ a b)
 !!#
 
 (define (safe-display-history-ow!)
@@ -288,16 +289,25 @@
 (define *safe-ow-recursive-level* 0)
 
 (define (safe-ow!)
-  (inc! *safe-ow-recursive-level* 1)
-  (if (> *safe-ow-recursive-level* 1)
-      (c-display "====== detected possible infinite recursion in safe-ow! ========")
-      (catch #t
-             (lambda ()
-               (ow!))
-             (lambda args
-               (safe-display-history-ow!)
-               (get-as-displayable-string-as-possible (list "ow! failed: " args)))))
-  (inc! *safe-ow-recursive-level* -1))
+  (if (> *safe-ow-recursive-level* 0)
+      (begin
+        (display "====== detected possible infinite recursion in safe-ow! ========")
+        (newline)
+        (<ra> :schedule 1000
+              (lambda ()
+                (set! *safe-ow-recursive-level* 0)))
+        "safe-ow!-recursion-detected")
+      (let ((ret (catch #t
+                        (lambda ()
+                          (inc! *safe-ow-recursive-level* 1)
+                          (ow!))
+                        (lambda args
+                          (safe-display-history-ow!)
+                          (get-as-displayable-string-as-possible (list "ow! failed: " args))))))
+        (set! *safe-ow-recursive-level* 0)
+        ret)))
+        
+        
 
   
 (define (safe-display-ow!)
