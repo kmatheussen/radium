@@ -238,7 +238,7 @@
                 (lambda ()
                   (event-to-string a))
                 (lambda args
-                  a)))
+                  (format #t "func:~S" a))))
         ((keyword? a)
          (<-> "#:" (to-string (keyword->symbol a))))
         (else
