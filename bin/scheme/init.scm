@@ -285,12 +285,20 @@
 
 (require stuff.scm)
 
+(define *safe-ow-recursive-level* 0)
+
 (define (safe-ow!)
-  (catch #t
-         ow!
-         (lambda args
-           (safe-display-history-ow!)
-           (get-as-displayable-string-as-possible (list "ow! failed: " args)))))
+  (inc! *safe-ow-recursive-level* 1)
+  (if (> *safe-ow-recursive-level* 1)
+      (c-display "====== detected possible infinite recursion in safe-ow! ========")
+      (catch #t
+             (lambda ()
+               (ow!))
+             (lambda args
+               (safe-display-history-ow!)
+               (get-as-displayable-string-as-possible (list "ow! failed: " args)))))
+  (inc! *safe-ow-recursive-level* -1))
+
   
 (define (safe-display-ow!)
   (safe-display-txt-as-displayable-as-possible (safe-ow!)))
