@@ -644,8 +644,12 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
   (catch #t
          thunk
          (lambda args
+           (display "(catch-all-errors-and-display-backtrace-automatically thunk) failed. args:")(newline)
            (display args)(newline)
-           (safe-display-ow!)
+           (catch #t
+                  safe-display-ow!
+                  (lambda args
+                    (error 'safe-display-ow!-failed)))
            *try-finally-failed-return-value*)))
 
 (define (catch-all-errors-failed? ret)
