@@ -626,14 +626,20 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
   (catch #t
          (lambda ()
            (apply func args))
-         (lambda args
+         (lambda args 
+           (display "    FROM_C_catch2")(newline)
+           (display "FROM-C-catch-all-errors-and-display-backtrace-automatically: func failed. Args:")(newline)(display args)(newline)
            (catch #t
                   safe-display-ow!
                   (lambda args
-                    (display "safe-display-ow! failed:")
+                    (display "    FROM_C_catch3")(newline)
+                    (display "safe-display-ow! failed:")(newline)
                     (display args)
                     (newline)))
            *try-finally-failed-return-value*)))
+#!!
+(+ notanumber1 notanumber2)
+!!#
 
 ;;
 ;;
