@@ -42,7 +42,7 @@
                  ((defined? 'pp)
                   (pp info))
                  (else
-                  (fallback))))
+                  (format #t "~S" info))))
          (lambda args
            (display "(get-as-displayable-string-as-possible info) failed. info:")
            (display info)
