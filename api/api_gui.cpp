@@ -183,9 +183,17 @@ static QPointer<QWidget> g_last_released_widget = NULL;
     if (_mouse_callback==NULL){                                         \
       classname::leaveEvent(event); return;}                            \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (!Gui::mouseLeaveEvent(event))                                   \
-      classname::leaveEvent(event);                                     \
-  }
+    Gui::mouseLeaveEvent(event);                                        \
+    classname::leaveEvent(event);                                       \
+  }                                                                     \
+  void enterEvent(QEvent *event) override{                              \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
+    if (_mouse_callback==NULL){                                         \
+      classname::enterEvent(event); return;}                            \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
+    Gui::mouseEnterEvent(event);                                        \
+    classname::enterEvent(event);                                       \
+  }    
 
 
 #define DOUBLECLICK_OVERRIDER(classname)                                \
@@ -1575,6 +1583,29 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
       bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_LEAVING, point.x(), point.y());
+      if (g_scheme_failed==true && gui_isOpen(guinum))
+        _mouse_event_failed = TIME_get_ms() + 5000;
+      
+      return ret;
+      
+      //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+    }
+
+    bool mouseEnterEvent(QEvent *event){
+      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
+
+      if ((_mouse_event_failed - TIME_get_ms()) > 0){
+        printf("mouse_event failed last time. Won't try again\n");
+        return false;
+      }
+      
+      event->accept();
+
+      const QPoint point(0,0);
+
+      int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
+      
+      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_ENTERING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
       
@@ -6288,6 +6319,14 @@ void gui_setEnabled(int64_t guinum, bool is_enabled){
     return;
 
   gui->_widget->setEnabled(is_enabled);
+}
+
+bool gui_isEnabled(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return false;
+
+  return gui->_widget->isEnabled();
 }
 
 void gui_setStaticToplevelWidget(int64_t guinum, bool add){

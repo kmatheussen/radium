@@ -42,7 +42,7 @@
                  ((defined? 'pp)
                   (pp info))
                  (else
-                  (fallback))))
+                  (format #t "~S" info))))
          (lambda args
            (display "(get-as-displayable-string-as-possible info) failed. info:")
            (display info)
@@ -108,6 +108,7 @@
 
 #!!
 (safe-history-ow!)
+(+ a b)
 !!#
 
 (define (safe-display-history-ow!)
@@ -285,12 +286,29 @@
 
 (require stuff.scm)
 
+(define *safe-ow-recursive-level* 0)
+
 (define (safe-ow!)
-  (catch #t
-         ow!
-         (lambda args
-           (safe-display-history-ow!)
-           (get-as-displayable-string-as-possible (list "ow! failed: " args)))))
+  (if (> *safe-ow-recursive-level* 0)
+      (begin
+        (display "====== detected possible infinite recursion in safe-ow! ========")
+        (newline)
+        (<ra> :schedule 1000
+              (lambda ()
+                (set! *safe-ow-recursive-level* 0)))
+        "safe-ow!-recursion-detected")
+      (let ((ret (catch #t
+                        (lambda ()
+                          (inc! *safe-ow-recursive-level* 1)
+                          (ow!))
+                        (lambda args
+                          (safe-display-history-ow!)
+                          (get-as-displayable-string-as-possible (list "ow! failed: " args))))))
+        (set! *safe-ow-recursive-level* 0)
+        ret)))
+        
+        
+
   
 (define (safe-display-ow!)
   (safe-display-txt-as-displayable-as-possible (safe-ow!)))
@@ -500,6 +518,7 @@
     FROM_C-set-current-seqblock!
     FROM_C-call-me-when-curr-seqtrack-has-changed
     FROM-C-sequencer-gui-in-window
+    FROM_C-create-menu-entry-widget
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

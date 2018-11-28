@@ -238,7 +238,7 @@
                 (lambda ()
                   (event-to-string a))
                 (lambda args
-                  a)))
+                  (format #t "func:~S" a))))
         ((keyword? a)
          (<-> "#:" (to-string (keyword->symbol a))))
         (else
@@ -497,6 +497,12 @@
                (cons (list->string (car splitted))
                      (string-split (list->string (cdr (cadr splitted))) ch)))))))
 
+(define (string-take string pos)
+  (substring string 0 pos))
+
+(***assert*** (string-take "1234" 2)
+              "12")
+
 ;; Other variants (not implemented): string-take, string-drop-right, string-take-right
 (define (string-drop string pos)
   (substring string pos))
@@ -617,6 +623,50 @@
 (***assert*** (string-strip-right "   as dfasdf \n\n ")
               "   as dfasdf")
 
+(define (string-rightjustify string1 string2pos string2)
+  (define len1 (string-length string1))
+  (define middle-length (max 1 (- string2pos len1)))
+  (<-> string1 (apply <-> (make-list middle-length " ")) string2)
+  )
+
+(***assert*** (string-rightjustify "aa" 0 "bb")
+              "aa bb")
+
+(***assert*** (string-rightjustify "aa" 1 "bb")
+              "aa bb")
+
+(***assert*** (string-rightjustify "aa" 2 "bb")
+              "aa bb")
+
+(***assert*** (string-rightjustify "aa" 3 "bb")
+              "aa bb")
+
+(***assert*** (string-rightjustify "aa" 4 "bb")
+              "aa  bb")
+
+(define (string-replace thestring before-key after-key)
+  (let loop ((processed "")
+             (remaining thestring))
+    (let ((pos (string-position before-key remaining)))
+      ;;(c-display "\n" before-key after-key ", processed:" processed ", remaining" remaining ", pos:" pos)
+      (<-> processed
+           (if (not pos)
+               remaining
+               (loop (<-> (string-take remaining pos) after-key)
+                     (string-drop remaining (+ pos (string-length before-key)))))))))
+
+(***assert*** (string-replace "" "" "")
+              "")
+
+(***assert*** (string-replace "aiai" "" "")
+              "aiai")
+
+(***assert*** (string-replace "aiai" "a" "b")
+              "bibi")
+
+(***assert*** (string-replace "ai999 2ai" "ai" "b")
+              "b999 2b")
+
 (define (get-python-ra-funcname funcname)
   (let ((parts (string-split (string-drop funcname 3) #\-)))
     (<-> "ra."
@@ -624,6 +674,10 @@
          (apply <->
                 (map capitalize-first-char-in-string
                      (cdr parts))))))
+
+#!!
+(get-python-ra-funcname "ra:w")
+!!#
 
 (***assert*** (get-python-ra-funcname "ra:transpose-block")
               "ra.transposeBlock")

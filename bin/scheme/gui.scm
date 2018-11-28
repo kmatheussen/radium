@@ -1053,8 +1053,143 @@
 
 !!#
 
-              
 
+;; Menu entries
+
+(define (FROM_C-create-menu-entry-widget name shortcut is-checkbox is-checked is-radiobutton is-first is-last)
+  (if is-radiobutton
+      (assert is-checkbox))
+  
+  (define fontheight (get-fontheight))
+  
+  (define b (max 1 (round (/ fontheight 20))))
+
+  (define height (+ fontheight (* 2 b)))
+
+  (define before-width (<gui> :text-width " FoP"))
+  (define name-width (<gui> :text-width name))
+  (define shortcut-width (<gui> :text-width shortcut))
+  (define between-width (<gui> :text-width " - "))
+  
+  (define width (round (+ b
+                          before-width
+                          (max (+ name-width
+                                  between-width
+                                  shortcut-width)
+                               (* (/ 300 19.0) fontheight))
+                          before-width
+                          b)))
+
+  (define widget (<gui> :widget width height))
+  
+  (<gui> :set-min-width widget width)
+  (<gui> :set-min-height widget height)
+
+  (when is-checkbox
+    (define checkbox (if is-radiobutton
+                         (<gui> :radiobutton "" is-checked)
+                         (<gui> :checkbox "" is-checked)))
+    
+    (<gui> :set-name checkbox "checkbox") ;; The checkbox is picked up in "MyQAction".
+    
+    (define checkbox-x1 (+ b
+                           (max 0
+                                (round (/ (- before-width
+                                             (<gui> :width checkbox))
+                                          2)))))
+    (define checkbox-y1 (max 0
+                             (round (/ (- height
+                                          (<gui> :height checkbox))
+                                       2))))
+    
+    ;;(c-display "x1/y1:" checkbox-x1 checkbox-y1 (<gui> :width checkbox) before-width)
+    (<gui> :add widget checkbox checkbox-x1 checkbox-y1))
+    
+  (define is-hovering #f)
+
+  (define nonhover-background-color (<gui> :mix-colors "color9" "#ffffff" 0.97))
+  (define hover-background-color "color11") ;;(<gui> :mix-colors (<gui> :get-background-color widget) "#010101" 0.5))
+  (define border-color (<gui> :mix-colors hover-background-color "#010101" 0.5))
+
+  (define background-color nonhover-background-color)
+  
+  (<gui> :set-background-color widget nonhover-background-color)
+
+  
+  
+  (<gui> :add-paint-callback widget
+         (lambda (width height)
+           ;;(c-display "  paint menu entry. Disabled: " name (<gui> :is-enabled widget) (<gui> :get-background-color widget))
+           
+           ;;(<gui> :filled-box widget background-color 0 0 width height)
+
+           (if is-first
+               (<gui> :draw-line widget
+                      border-color
+                      0 (/ b 2.0) width (/ b 2.0)
+                      b))
+
+           (if is-last
+               (<gui> :draw-line widget
+                      border-color
+                      0 (- height (/ b 2.0)) width (- height (/ b 2.0))
+                      b))
+               
+           (<gui> :draw-line widget
+                  border-color
+                  (/ b 2.0) 0 (/ b 2.0) height
+                  b)
+           (<gui> :draw-line widget
+                  border-color
+                  (- width (/ b 2.0)) 0 (- width (/ b 2.0)) height
+                  b)
+           
+           (<gui> :draw-text widget
+                  (if (<gui> :is-enabled widget)
+                      *text-color*
+                      (<gui> :mix-colors *text-color* nonhover-background-color 0.5))
+                  name
+                  (+ b before-width) b (- width b) (- height b)
+                  #f ;; wrap lines
+                  #f ;; align top
+                  #t ;; align left
+                  0 ;; rotate
+                  )
+
+           (define shortcut-x1 (- width (+ shortcut-width before-width b)))
+           
+           (<gui> :draw-text widget
+                  (if (<gui> :is-enabled widget)
+                      *text-color*
+                      (<gui> :mix-colors *text-color* nonhover-background-color 0.5))
+                  shortcut
+                  shortcut-x1 b (- width b) (- height b)
+                  #f ;; wrap lines
+                  #f ;; align top
+                  #t ;; align left
+                  0 ;; rotate
+                  )
+
+
+           ))
+  
+  (<gui> :add-mouse-callback widget
+         (lambda (button state x y)
+           (cond ((and (= state *is-entering*)
+                       (<gui> :is-enabled widget))
+                  (set! is-hovering #t)
+                  (set! background-color hover-background-color)
+                  (<gui> :set-background-color widget  hover-background-color)
+                  (<gui> :update widget))
+                 ((= state *is-leaving*)
+                  (set! is-hovering #f)
+                  (set! background-color nonhover-background-color)
+                  (<gui> :set-background-color widget  nonhover-background-color)
+                  (<gui> :update widget)))
+           ;;(c-display "state:" state)
+           #f))
+  
+  widget)
 
 
 
