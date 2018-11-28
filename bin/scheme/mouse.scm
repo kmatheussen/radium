@@ -11,6 +11,7 @@
 (define-constant *is-moving* 2) ;; API_MOUSE_MOVING
 (define-constant *is-releasing* 3)  ;; API_MOUSE_RELEASING
 (define-constant *is-leaving* 4)  ;; API_MOUSE_LEAVING (mouse has left the qt widget)
+(define-constant *is-entering* 5)  ;; API_MOUSE_ENTERING (mouse has entered the qt widget)
 
 (define (select-button Button)
   (= *left-button* Button))
@@ -2551,7 +2552,11 @@
                         :Create-new-node (lambda (X Place callback)
                                            (define Value (get-pianoroll-key X))
                                            (define Next-Place (get-next-place-from-y *left-button* (<ra> :get-mouse-pointer-y)))
-                                           (define noteid (<ra> :add-pianonote Value Place Next-Place *current-track-num*))
+                                           (define noteid (<ra> :add-pianonote
+                                                                (if (<ra> :control-pressed)
+                                                                    Value
+                                                                    (round Value))
+                                                                Place Next-Place *current-track-num*))
                                            (if (and (number? noteid) (= -1 noteid))
                                                #f
                                                (callback (make-pianonote-info :tracknum *current-track-num*
@@ -3203,7 +3208,7 @@
                               (<ra> :undo-notes tracknum)
                               (if (<ra> :alt2-pressed)
                                   (begin
-                                    (while (> (<ra> :get-num-velocities tracknum) 2)
+                                    (while (> (<ra> :get-num-velocities notenum tracknum) 2)
                                       (<ra> :delete-velocity 1 notenum tracknum))
                                     (<ra> :set-velocity
                                           (<ra> :get-velocity-value 0 notenum tracknum)

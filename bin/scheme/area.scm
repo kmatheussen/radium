@@ -461,7 +461,7 @@
              ((= state *is-releasing*)
               #f)
              (else
-              (assert #f)
+              (assert (= state *is-entering*))
               #f)))
 
      (define (has-mouse)

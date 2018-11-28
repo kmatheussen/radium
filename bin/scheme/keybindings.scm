@@ -33,7 +33,10 @@
        (apply <-> (map (lambda (arg)
                          (<-> " " (get-arg-string arg)))
                        args))))
-  
+#!!
+(get-keybindings-command "" '())
+!!#
+
 (define (get-keybindings-line keys rafuncname args)
   (<-> (string-join keys " ")
        " : "
@@ -54,21 +57,30 @@
                             qualifier
                             readable)))
                     (let ((keys (string-split keybinding #\ )))
-                      (c-display "keys" keys)
+                      ;;(c-display "keys" keys)
                       (append (cdr keys)
                               (list (car keys)))))
                " + "))
 
-(define (get-displayable-keybinding rafuncname args)  
-  (let* ((command (get-keybindings-command (get-python-ra-funcname rafuncname) args))
-         (keybinding (<ra> :get-keybinding-from-command command)))
-    (c-display "keybinding" keybinding (<-> "command: -" command "-"))
-    (if (string=? "" keybinding)
-        ""
-        (get-displayable-keybinding-from-keybinding keybinding))))
+(define (get-displayable-keybinding rafuncname args)
+  (if (< (string-length rafuncname) 3)
+      ""
+      (let* ((command (get-keybindings-command (get-python-ra-funcname rafuncname) args))
+             (keybinding (<ra> :get-keybinding-from-command command)))
+        (if (string=? "" keybinding)
+            ""
+            (get-displayable-keybinding-from-keybinding keybinding)))))
 
-         
+
+(***assert*** (get-displayable-keybinding "w" '())
+              "")
+(***assert*** (get-displayable-keybinding "we" '())
+              "")
+
 #!!
+(get-displayable-keybinding "e" '())
+(get-displayable-keybinding "ra:copy-tracke" '())
+
 (get-displayable-keybinding "ra:eval-scheme" '("(moduloskew-track -1)"))
   
 (let ((gakk (get-displayable-keybinding "ra:transpose-block" (list 1))))

@@ -147,14 +147,17 @@ void handleError_internal(const char *fmt,...){
 
   printException(message);
 
-#if !defined(RELEASE)
-  // WARNING! This screwes up backtrace. Instead of getting the history up to this point, we only get a lot of entries from history_ow! in init.scm.
-  //printf("HISTORY:\n%s\n",SCHEME_get_history());
-#endif
-
   const char *backtrace = SCHEME_get_history();
   puts(backtrace);
   
+#if 0 //!defined(RELEASE)
+  
+  printf("\n Message: \"%s\"\n", message);
+  printf("      PRESS return to continue\n");
+  getchar();
+  
+#else
+
   static double last_time = 0;
 
   if (safe_to_run_exec() && (TIME_get_ms() - last_time) > 0) {
@@ -188,7 +191,8 @@ void handleError_internal(const char *fmt,...){
     g_error_message = talloc_strdup(message);
 
   }
-
+#endif
+  
   
   GFX_addMessage(message);
  
