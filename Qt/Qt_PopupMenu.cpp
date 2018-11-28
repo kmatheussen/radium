@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QAction>
 #include <QWidgetAction>
 #include <QCheckBox>
+#include <QButtonGroup>
+#include <QRadioButton>
 #include <QMenu>
 #include <QProxyStyle>
 #include <QStyleFactory>
@@ -244,11 +246,11 @@ namespace{
     bool checked = false;
 
     bool run_have_run = false;
-    
+
     void run_and_delete(bool checked){
       R_ASSERT_RETURN_IF_FALSE(run_have_run==false);
       run_have_run = true;
-      
+
       this->checked = checked;
       
       qmenu->close();
@@ -267,7 +269,25 @@ namespace{
       }
     }
 
+    void run_callbacks(void){
+      if (callback != NULL){
+        if (is_checkable)
+          S7CALL(void_int_bool, callback, num, checked);
+        else
+          S7CALL(void_int, callback, num);
+      }
+        
+      if (callback3)
+        callback3(num, checked);
+    }
+
   public:
+    
+    void run_checked(bool checked){
+      R_ASSERT(is_checkable);
+      this->checked = checked;
+      run_callbacks();
+    }
     
     void run_and_delete_checked(bool checked){
       R_ASSERT(is_checkable);
@@ -298,17 +318,8 @@ namespace{
           R_ASSERT(false); // After 5 seconds we give up.
 
       } else {
-                               
-        if (callback != NULL){
-          
-          if (is_checkable)
-            S7CALL(void_int_bool, callback, num, checked);
-          else
-            S7CALL(void_int, callback, num);
-        }
-        
-        if (callback3)
-          callback3(num, checked);
+
+        run_callbacks();
         
         delete this;
       }
@@ -325,8 +336,62 @@ namespace{
       schedule_call_callback_and_delete(1);  // Must wait a little bit since Qt seems to be in a state right now where calling g_curr_popup_qmenu->hide() will crash the program (or do other bad things) (5.10).
     }
   };
+
+  class MyQAction : public QWidgetAction {
+    Q_OBJECT
+
+    Callbacker *_callbacker;
+    
+    const QIcon _icon;
+    const QString _text;
+
+  public:
+
+    QAbstractButton *_checkbox = NULL;
+    
+    bool _success = true;
+
+    MyQAction(const QIcon &icon, const QString &text, Callbacker *callbacker, bool is_checkbox, bool is_checked, bool is_radiobutton, bool is_first, bool is_last, QObject *parent = NULL)
+      : QWidgetAction(parent)
+      , _callbacker(callbacker)
+    {
+      static func_t *s_func = NULL;
+
+#if defined(RELEASE)
+      if (s_func==NULL)
+#endif
+        s_func = s7extra_get_func_from_funcname("FROM_C-create-menu-entry-widget");
+
+      const char *shortcut = ""; //"Left Ctrl + Home"
+      int64_t guinum = S7CALL(int_charpointer_charpointer_bool_bool_bool_bool_bool, s_func, text.toUtf8().constData(), shortcut, is_checkbox, is_checked, is_radiobutton, is_first, is_last);
+
+      QWidget *widget = NULL;
+      
+      if (guinum > 0){
+        widget = API_gui_get_widget(guinum);
+        setDefaultWidget(widget);        
+      } else
+        _success = false;
+
+      if (widget!=NULL && is_checkbox){
+        _checkbox = widget->findChild<QAbstractButton*>("checkbox");
+        if(_checkbox==NULL)
+          R_ASSERT(false);
+        else
+          connect(_checkbox, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));        
+      }
+    }
+
+  public slots:
+
+    // This one is called when toggling the checkbox itself, not just the whole widget (outside the checkbox)
+    void toggled(bool checked){
+      printf("   TOGGLED: %d\n", checked);
+      _callbacker->run_checked(checked);
+    }
+  };
   
-  class CheckableAction : public QAction {
+  class CheckableAction : public MyQAction {
     Q_OBJECT
 
     Callbacker *callbacker;
@@ -336,9 +401,9 @@ namespace{
     ~CheckableAction(){
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
-    
-    CheckableAction(QIcon icon, const QString & text_b, bool is_on, Callbacker *callbacker)
-      : QAction(icon, text_b, callbacker->qmenu)
+
+    CheckableAction(QIcon icon, const QString & text_b, bool is_on, bool is_radiobutton, bool is_first, bool is_last, Callbacker *callbacker)
+      : MyQAction(icon, text_b, callbacker, true, is_on, is_radiobutton, is_first, is_last, callbacker->qmenu)
       , callbacker(callbacker)
     {
       setCheckable(true);
@@ -352,7 +417,7 @@ namespace{
     }
   };
 
-  class ClickableAction : public QAction
+  class ClickableAction : public MyQAction
   {
     Q_OBJECT;
     
@@ -364,7 +429,32 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    ClickableAction(QIcon icon, const QString & text, Callbacker *callbacker)
+    ClickableAction(QIcon icon, const QString & text, bool is_first, bool is_last, Callbacker *callbacker)
+      : MyQAction(icon, text, callbacker, false, false, false, is_first, is_last, callbacker->qmenu)
+      , callbacker(callbacker)
+    {
+      connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
+    }
+
+  public slots:
+    void triggered(){
+      callbacker->run_and_delete_clicked();
+    }
+  };
+
+  class ClickableIconAction : public QAction
+  {
+    Q_OBJECT;
+    
+    Callbacker *callbacker;
+    
+  public:
+
+    ~ClickableIconAction(){
+      //printf("I was deleted: %s\n",text.toUtf8().constData());
+    }
+    
+    ClickableIconAction(QIcon icon, const QString & text, Callbacker *callbacker)
       : QAction(icon, text, callbacker->qmenu)
       , callbacker(callbacker)
     {
@@ -409,6 +499,7 @@ static QMenu *create_qmenu(
   int n_submenues=0;
 
   QActionGroup *radio_buttons = NULL;
+  QButtonGroup *radio_buttons2 = NULL;
   
   for(int i=0;i<v.num_elements;i++) {
     
@@ -497,15 +588,24 @@ static QMenu *create_qmenu(
       } else if (text.startsWith("[radiobuttons start]")){
         
         radio_buttons = new QActionGroup(curr_menu);
+        radio_buttons2 = new QButtonGroup(curr_menu);
         
       } else if (text.startsWith("[radiobuttons end]")){
         
         R_ASSERT_NON_RELEASE(radio_buttons!=NULL);
+        R_ASSERT_NON_RELEASE(radio_buttons2!=NULL);
         
-        if (radio_buttons!=NULL && radio_buttons->actions().size()==0)
+        if (radio_buttons!=NULL && radio_buttons->actions().size()==0){
           delete radio_buttons;
+          if (radio_buttons2!=NULL){
+            R_ASSERT(radio_buttons2->buttons().size()==0);
+            delete radio_buttons2;
+          } else
+            R_ASSERT(false);
+        }
         
         radio_buttons = NULL;
+        radio_buttons2 = NULL;
         
       } else {
 
@@ -538,16 +638,41 @@ static QMenu *create_qmenu(
           }
         }
 
-        if (is_checkable) {
+        bool is_first = n_submenues==0;
+        bool is_last = n_submenues==v.num_elements-1 || n_submenues==getMaxSubmenuEntries()-1;
 
-          action = new CheckableAction(icon, text, is_checked, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
-          if (radio_buttons != NULL)
+        if (!icon.isNull()) {
+
+          action = new ClickableIconAction(icon, text, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
+                    
+        } else if (is_checkable) {
+
+          auto *hepp = new CheckableAction(icon, text, is_checked, radio_buttons != NULL, is_first, is_last, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
+          if (hepp->_success==false){
+            radio_buttons=NULL;
+            goto finished_parsing;
+          }
+          
+          action = hepp;
+          if (radio_buttons != NULL){
             radio_buttons->addAction(action);
+            if (radio_buttons2 != NULL){
+              if (hepp->_checkbox != NULL)
+                radio_buttons2->addButton(hepp->_checkbox);
+            }else{
+              R_ASSERT(false);
+            }              
+          }else{
+            R_ASSERT(radio_buttons2==NULL);
+          }
           
         } else {
 
-          action = new ClickableAction(icon, text, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
+          auto *hepp = new ClickableAction(icon, text, is_first, is_last, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
+          if (hepp->_success==false)
+            goto finished_parsing;
           
+          action = hepp;
         }
       }
       
@@ -557,20 +682,28 @@ static QMenu *create_qmenu(
       }
       
       if (disabled)
-        action->setDisabled(true);
-      
-      n_submenues++;
+        action->setDisabled(true);      
     }
+
+    n_submenues++;
   }
 
+ finished_parsing:
+  
   if (menu->actions().size() > 0)
     menu->setActiveAction(menu->actions().at(0));
 
   R_ASSERT_NON_RELEASE(radio_buttons==NULL);
+  R_ASSERT_NON_RELEASE(radio_buttons2==NULL);
   
   if (radio_buttons!=NULL && radio_buttons->actions().size()==0){
     R_ASSERT_NON_RELEASE(false);
     delete radio_buttons;
+  }
+
+  if (radio_buttons2!=NULL && radio_buttons2->buttons().size()==0){
+    R_ASSERT_NON_RELEASE(false);
+    delete radio_buttons2;
   }
 
   /*

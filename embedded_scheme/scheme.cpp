@@ -1330,6 +1330,59 @@ int64_t s7extra_callFunc2_int_int_dyn(const char *funcname, int64_t arg1, const 
   return s7extra_callFunc_int_int_dyn((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
 }
 
+int64_t s7extra_callFunc_int_charpointer_charpointer(const func_t *func, const char *arg1, const char *arg2){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list_nl(s7,
+                                         3,
+                                         (s7_pointer)func,
+                                         s7_make_string(s7, arg1),
+                                         s7_make_string(s7, arg2),
+                                         NULL
+                                         )
+                              );
+  if(!s7_is_integer(ret)){
+    handleError("Callback did not return an integer");
+    return -1;
+  }else{
+    return s7_integer(ret);
+  }
+}
+
+int64_t s7extra_callFunc2_int_charpointer_charpointer(const char *funcname, const char *arg1, const char *arg2){
+  return s7extra_callFunc_int_charpointer_charpointer((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
+}
+
+int64_t s7extra_callFunc_int_charpointer_charpointer_bool_bool_bool_bool_bool(const func_t *func, const char *arg1, const char *arg2, bool arg3, bool arg4, bool arg5, bool arg6, bool arg7){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list_nl(s7,
+                                         8,
+                                         (s7_pointer)func,
+                                         s7_make_string(s7, arg1),
+                                         s7_make_string(s7, arg2),
+                                         s7_make_boolean(s7, arg3),
+                                         s7_make_boolean(s7, arg4),
+                                         s7_make_boolean(s7, arg5),
+                                         s7_make_boolean(s7, arg6),
+                                         s7_make_boolean(s7, arg7),
+                                         NULL
+                                         )
+                              );
+  if(!s7_is_integer(ret)){
+    handleError("Callback did not return an integer");
+    return -1;
+  }else{
+    return s7_integer(ret);
+  }
+}
+
+int64_t s7extra_callFunc2_int_charpointer_charpointer_bool_bool_bool_bool_bool(const char *funcname, const char *arg1, const char *arg2, bool arg3, bool arg4, bool arg5, bool arg6, bool arg7){
+  return s7extra_callFunc_int_charpointer_charpointer_bool_bool_bool_bool_bool((const func_t*)find_scheme_value(s7, funcname), arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+
 const char *s7extra_callFunc_charpointer_dyn(const func_t *func, const dyn_t arg1){
   ScopedEvalTracker eval_tracker;
   

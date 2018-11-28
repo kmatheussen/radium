@@ -11,6 +11,7 @@
 (define-constant *is-moving* 2) ;; API_MOUSE_MOVING
 (define-constant *is-releasing* 3)  ;; API_MOUSE_RELEASING
 (define-constant *is-leaving* 4)  ;; API_MOUSE_LEAVING (mouse has left the qt widget)
+(define-constant *is-entering* 5)  ;; API_MOUSE_ENTERING (mouse has entered the qt widget)
 
 (define (select-button Button)
   (= *left-button* Button))
