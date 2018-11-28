@@ -306,6 +306,17 @@
 ||#
 
 
+(define (get-procedure-name procedure)
+  ;;(c-display "doc:" (documentation procedure))
+  (let ((doclist (string-split (documentation procedure) #\space)))
+    ;;(c-display "DOCLIST: -" doclist "-")
+    (if (null? doclist)
+        ""
+        (if (string=? "" (car doclist))
+            ""
+            (string-drop (car doclist) 1)))))
+
+
 
 ;; force and delay are missing from s7. Simple implementation below.
 (define-expansion (delay . body)
@@ -1710,16 +1721,15 @@ for .emacs:
                                                       (c-display "hepp3")))
                                 "hello4" (lambda ()
                                            (c-display "hepp4"))))
+
 !!#
 
 (define (get-popup-menu-args args)
-  ;;(c-display "aaa")
   (define options (parse-popup-menu-options args))
   ;;(c-display "bbb")
   ;;(c-display "optinos:" options)
   
   (define relations (make-assoc-from-flat-list options))
-  ;;(c-display "ccc")
   (define strings (map car relations))
   ;;(define strings (list->vector (map car relations)))
   ;;
@@ -1750,8 +1760,8 @@ for .emacs:
               ((get-func n) (car checkboxval))))))
 
 (define (popup-menu-from-args popup-menu-args)
-  ;;(c-display (<-> "ARGS: -" (car popup-menu-args) "-"))
-  (apply ra:popup-menu popup-menu-args))
+  (apply ra:popup-menu popup-menu-args)  
+  )
         
 ;; Async only. Use ra:simple-popup-menu for sync.
 (define (popup-menu . args)
