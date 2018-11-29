@@ -1666,14 +1666,17 @@ for .emacs:
                                                         (cdddr args)))))
                      ((eq? :shortcut arg2)
                       (let ((shortcut (caddr args)))
-                        (if (procedure? shortcut)
-                            (let ((keybinding (get-displayable-keybinding (get-procedure-name shortcut) '())))
-                              (if (not (string=? keybinding ""))                                  
+                        (if (or (list? shortcut)
+                                (procedure? shortcut))
+                            (let ((keybinding (if (list? shortcut)
+                                                  (get-displayable-keybinding (get-procedure-name (car shortcut)) (cdr shortcut))
+                                                  (get-displayable-keybinding (get-procedure-name shortcut) '()))))
+                              (if (not (string=? keybinding ""))
                                   (parse-popup-menu-options (cons (<-> "[shortcut]" keybinding "[/shortcut]" text)
                                                                   (cdddr args)))
                                   (begin
-                                    (c-display "Error: No keybinding found for procedure \"" (get-procedure-name shortcut) "\"")
-                                    (c-display "REST:" (cddr args))
+                                    (c-display "Note: No keybinding found for procedure \"" (get-procedure-name shortcut) "\"")
+                                    ;;(c-display "REST:" (cddr args))
                                     (parse-popup-menu-options (cons text
                                                                     (cdddr args))))))
                             (begin
@@ -1728,6 +1731,10 @@ for .emacs:
             (list "?copytrack?2aewfas"
                   ra:copy-track))
 
+(popup-menu (list "hello"
+                  :shortcut (list ra:eval-scheme "(FROM_C-split-sample-seqblock-under-mouse #f)")
+                  (lambda ()
+                    2)))
 
 (get-displayable-keybinding "" '())
 
