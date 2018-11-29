@@ -1603,8 +1603,11 @@
                     instrument-ids))))
 
 (define (swingtext-popup-elements)
-  (list (list "Swing text" :check (<ra> :swingtext-visible *current-track-num*) (lambda (onoff)
-                                                                                  (<ra> :show-swingtext onoff *current-track-num*)))
+  (list (list "Swing text"
+              :check (<ra> :swingtext-visible *current-track-num*)
+              :shortcut ra:show-hide-swingtext
+              (lambda (onoff)
+                (<ra> :show-swingtext onoff *current-track-num*)))
         (list "Swing help" (lambda ()
                              (<ra> :show-swing-help-window)))))
 
@@ -1612,25 +1615,35 @@
   (list (list "Cents text"
               :check (<ra> :centtext-visible *current-track-num*)
               :enabled (<ra> :centtext-can-be-turned-off *current-track-num*)
+              :shortcut ra:show-hide-centtext
               (lambda (onoff)
                 (<ra> :show-centtext  onoff *current-track-num*)))
         '()))
 
 (define (chancetext-popup-elements)
-  (list (list "Chance text" :check (<ra> :chancetext-visible *current-track-num*) (lambda (onoff)
-                                                                                    (<ra> :show-chancetext onoff *current-track-num*)))
+  (list (list "Chance text"
+              :check (<ra> :chancetext-visible *current-track-num*)
+              :shortcut ra:show-hide-chancetext
+              (lambda (onoff)
+                (<ra> :show-chancetext onoff *current-track-num*)))
         (list "Help Chance text" (lambda ()
                                    (<ra> :show-chance-help-window)))))
 
 (define (velocitytext-popup-elements)
-  (list (list "Velocity text (left alt + y)" :check (<ra> :veltext-visible *current-track-num*) (lambda (onoff)
-                                                                                                  (<ra> :show-veltext onoff *current-track-num*)))
+  (list (list "Velocity text"
+              :check (<ra> :veltext-visible *current-track-num*)
+              :shortcut ra:show-hide-veltext
+              (lambda (onoff)
+                (<ra> :show-veltext onoff *current-track-num*)))
         (list "Help Velocity text" (lambda ()
                                      (<ra> :show-velocity-help-window)))))
         
 (define (fxtext-popup-elements)
-  (list (list "FX text" :check (<ra> :fxtext-visible *current-track-num*)   (lambda (onoff)
-                                                                              (<ra> :show-fxtext onoff *current-track-num*)))
+  (list (list "FX text"
+              :check (<ra> :fxtext-visible *current-track-num*)
+              :shortcut ra:show-hide-fxtext
+              (lambda (onoff)
+                (<ra> :show-fxtext onoff *current-track-num*)))
         (list "Help FX text" (lambda ()
                                (<ra> :show-fx-help-window)))))
 
@@ -1673,44 +1686,50 @@
 (define (track-configuration-popup-async X Y)
   (c-display "TRACK " *current-track-num*)
   (popup-menu (car (swingtext-popup-elements))
-              "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*) (lambda (onoff)
-                                                                                                    (<ra> :show-pianoroll onoff *current-track-num*))
-              "Note text     (left alt + n)" :check (<ra> :note-track-visible *current-track-num*) (lambda (onoff)
-                                                                                                     (<ra> :show-note-track onoff *current-track-num*))
+              (list "Pianoroll"
+                    :check (<ra> :pianoroll-visible *current-track-num*)
+                    :shortcut ra:show-hide-pianoroll
+                    (lambda (onoff)
+                      (<ra> :show-pianoroll onoff *current-track-num*)))
+              (list "Note text"
+                    :check (<ra> :note-track-visible *current-track-num*)
+                    :shortcut ra:show-hide-note-track
+                    (lambda (onoff)
+                      (<ra> :show-note-track onoff *current-track-num*)))
               (car (centtext-popup-elements))
               (car (chancetext-popup-elements))
               (car (velocitytext-popup-elements))
               (car (fxtext-popup-elements))
 
               "-------"
-              "Copy Track     (left alt + c)" (lambda ()
-                                                (<ra> :copy-track *current-track-num*))
-              "Cut Track      (left alt + x)"     (lambda ()
-                                                    (<ra> :cut-track *current-track-num*))
-              "Paste Track    (left alt + v)" (lambda ()
-                                                (<ra> :paste-track *current-track-num*))
+              "Copy Track" :shortcut ra:copy-track (lambda ()
+                                                     (<ra> :copy-track *current-track-num*))
+              "Cut Track" :shortcut ra:cut-track (lambda ()
+                                                   (<ra> :cut-track *current-track-num*))
+              "Paste Track" :shortcut ra:paste-track (lambda ()
+                                                       (<ra> :paste-track *current-track-num*))
               "-------"
-              "Insert Track     (left alt + i)" (lambda ()
-                                                  (<ra> :insert-track *current-track-num*)
-                                                  (set-current-track-num! X Y))
-              "Delete Track     (left alt + r)" (lambda ()
-                                                  (<ra> :delete-track *current-track-num*)
-                                                  (set-current-track-num! X Y))
+              "Insert Track" :shortcut (list ra:insert-tracks 1) (lambda ()
+                                                                   (<ra> :insert-track *current-track-num*)
+                                                                   (set-current-track-num! X Y))
+              "Delete Track" :shortcut (list ra:delete-tracks 1) (lambda ()
+                                                                    (<ra> :delete-track *current-track-num*)
+                                                                    (set-current-track-num! X Y))
               "----------"
-              "Load Track (BETA!)" (lambda ()
-                                     (<ra> :load-track "" *current-track-num*))
-              "Save Track" (lambda ()
-                             (<ra> :save-track "" *current-track-num*))       
+              "Load Track (BETA!)" :shortcut ra:load-track (lambda ()
+                                                             (<ra> :load-track "" *current-track-num*))
+              "Save Track" :shortcut ra:save-track (lambda ()
+                                                     (<ra> :save-track "" *current-track-num*))       
               "-------"
-              "Set Instrument     (F12)" (lambda ()
-                                           (select-track-instrument *current-track-num*))
+              "Set Instrument" :shortcut ra:select-instrument-for-track (lambda ()
+                                                                          (<ra> :select-instrument-for-track *current-track-num*))
               (let* ((tracknum *current-track-num*)
                      (curr-midi-channel (<ra> :get-track-midi-channel tracknum))
                      (instrument-id (<ra> :get-instrument-for-track tracknum))
                      (is-midi-instrument (and (>= instrument-id 0)
                                               (string=? (<ra> :get-instrument-type-name instrument-id)
                                                         "MIDI"))))
-                (list (<-> "Set MIDI channel" (if is-midi-instrument "" (<-> "(now: " (1+ curr-midi-channel) ")")))
+                (list (<-> "Set MIDI channel" (if is-midi-instrument "" (<-> " (now: " (1+ curr-midi-channel) ")")))
                       :enabled (not is-midi-instrument)
                       (lambda ()
                         (c-display "CURETNTE TRSCKN NUM: " tracknum)
@@ -7664,6 +7683,7 @@
                                                            "Copy sequencer blocks"
                                                            "Copy sequencer block")
                                                        :enabled (> num-selected-with-current 0)
+                                                       :shortcut ra:copy-selected-seqblocks
                                                        (lambda ()
                                                          (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
                                                              (<ra> :select-seqblock #t seqblocknum seqtracknum))
@@ -7674,6 +7694,7 @@
                                                            "Cut sequencer blocks"
                                                            "Cut sequencer block")
                                                        :enabled (> num-selected-with-current 0)
+                                                       :shortcut ra:cut-selected-seqblocks
                                                        (lambda ()
                                                          (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
                                                              (<ra> :select-seqblock #t seqblocknum seqtracknum))
@@ -7683,6 +7704,7 @@
                                                            "Delete sequencer blocks"
                                                            "Delete sequencer block")
                                                        :enabled (> num-selected-with-current 0)
+                                                       :shortcut ra:delete-selected-seqblocks
                                                        (lambda ()
                                                          (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
                                                              (<ra> :select-seqblock #t seqblocknum seqtracknum))
@@ -7692,6 +7714,7 @@
                                                            "Paste sequencer blocks"
                                                            "Paste sequencer block")
                                                        :enabled (not (empty? *seqblock-clipboard*))
+                                                       :shortcut ra:paste-seqblocks
                                                        (lambda ()
                                                          (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
                                                            (<ra> :paste-seqblocks seqtracknum pos))))
@@ -7883,9 +7906,10 @@
                                                          "---------------------"
 
                                                          (list
-                                                          "Split audio file (S)"
+                                                          "Split audio file"
                                                           :enabled (and seqblocknum
                                                                         (not blocknum))
+                                                          :shortcut (list ra:eval-scheme "(FROM_C-split-sample-seqblock-under-mouse #f)")
                                                           (lambda ()
                                                             (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
                                                               (split-sample-seqblock pos seqtracknum seqblocknum))))                                               

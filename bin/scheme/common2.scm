@@ -1664,10 +1664,32 @@ for .emacs:
                         ;;(c-display (<-> "stext: -" text "-" " rest:" (cdddr args)))
                         (parse-popup-menu-options (cons (<-> "[icon]" filename " " text)
                                                         (cdddr args)))))
+                     ((eq? :shortcut arg2)
+                      (let ((shortcut (caddr args)))
+                        (if (or (list? shortcut)
+                                (procedure? shortcut))
+                            (let ((keybinding (if (list? shortcut)
+                                                  (get-displayable-keybinding (get-procedure-name (car shortcut)) (cdr shortcut))
+                                                  (get-displayable-keybinding (get-procedure-name shortcut) '()))))
+                              (if (not (string=? keybinding ""))
+                                  (parse-popup-menu-options (cons (<-> "[shortcut]" keybinding "[/shortcut]" text)
+                                                                  (cdddr args)))
+                                  (begin
+                                    (c-display "Note: No keybinding found for procedure \"" (get-procedure-name shortcut) "\"")
+                                    ;;(c-display "REST:" (cddr args))
+                                    (parse-popup-menu-options (cons text
+                                                                    (cdddr args))))))
+                            (begin
+                              ;;(c-display "SHORTCUT:" shortcut)
+                              (parse-popup-menu-options (cons (<-> "[shortcut]" shortcut "[/shortcut]" text)
+                                                              (cdddr args)))))))
                      ((procedure? arg2)
-                      (cons text
-                            (cons arg2
-                                  (parse-popup-menu-options (cddr args)))))
+                      (let ((keybinding (get-displayable-keybinding (get-procedure-name arg2) '())))
+                        (cons (if (not (string=? keybinding ""))
+                                  (<-> "[shortcut]" keybinding "[/shortcut]" text)
+                                  text)
+                              (cons arg2
+                                    (parse-popup-menu-options (cddr args))))))
                      ((list? arg2)
                       (append (list (<-> "[submenu start]" text)
                                     (lambda () #t))
@@ -1677,6 +1699,57 @@ for .emacs:
                               (parse-popup-menu-options (cddr args))))))))))
 
 #!!
+
+(parse-popup-menu-options (list                           
+                           "?copytrack?"
+                           :shortcut "aiai"
+                           :enabled #f
+                           (lambda () (c-display "clicked"))))
+
+(parse-popup-menu-options (list                           
+                           "?copytrack?"
+                           :shortcut (lambda () 50)
+                           (lambda () (c-display "clicked"))))
+
+(parse-popup-menu-options (list                           
+                           "?copytrack?"
+                           :shortcut ra:copy-block
+                           (lambda () (c-display "clicked"))))
+
+(parse-popup-menu-options (list
+                           (list
+                            "?copytrack?"
+                            :enabled #f
+                            ra:copy-track)
+                           (list
+                            "?copytrack?2wefwefawefawefawef"
+                            ra:copy-track)))
+
+(popup-menu (list "?copytrack?"
+                  :enabled #f
+                  ra:copy-track)
+            (list "?copytrack?2aewfas"
+                  ra:copy-track))
+
+(popup-menu (list "hello"
+                  :shortcut (list ra:eval-scheme "(FROM_C-split-sample-seqblock-under-mouse #f)")
+                  (lambda ()
+                    2)))
+
+(get-displayable-keybinding "" '())
+
+(get-procedure-name ra:copy-track)
+
+(documentation c-display)
+
+(<ra> :get-html-from-text "<-rightjustify>")
+
+
+(documentation ra:copy-track)
+(documentation (lambda ()
+                 (ra:copy-track)))
+
+
 (parse-popup-menu-options (list 
                            "hello6"
                            :icon (<ra> :to-base64 "<<<<<<<<<<envelope_icon^Constant Power^fadein")
@@ -1769,15 +1842,30 @@ for .emacs:
 
 
 #!!
-(popup-menu (list "Select preset from a different directory"
+(popup-menu (list "Select"
+                  :shortcut "Alt + B"
                   (lambda x
                     x))
             "------------"
-            (map (lambda (base64-name)
-                   (list (<ra> :from-base64 base64-name)
-                         (lambda ()
-                           (callback (<-> "2" base64-name)))))
-                 (list "asdf" "bzcv")))
+            (list "Select2"
+                  :shortcut ra:copy-block
+                  (lambda x
+                    x))
+            "------------"
+            (list "Select2"
+                  :shortcut ra:copy-block
+                  ra:copy-track)
+            "------------"
+            (list "Select2"
+                  :shortcut "Alt + 7"
+                  ra:copy-track)
+            "------------"
+            (list "Select2"
+                  ra:copy-track)
+            "------------"
+            (list "Test2"
+                  :shortcut (lambda () (c-display "hello"))
+                  ra:copy-block))
 
 (popup-menu (list (list "aaa" (lambda ()
                                 5))
