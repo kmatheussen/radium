@@ -1068,7 +1068,8 @@
 
   (define before-width (<gui> :text-width " FoP"))
   (define name-width (<gui> :text-width name))
-  (define shortcut-width (<gui> :text-width shortcut))
+  (define shortcut-width (max (<gui> :text-width "Right Ctrl + H")
+                              (<gui> :text-width shortcut)))
   (define between-width (<gui> :text-width " - "))
   
   (define width (round (+ b
@@ -1156,19 +1157,20 @@
                   0 ;; rotate
                   )
 
-           (define shortcut-x1 (- width (+ shortcut-width before-width b)))
-           
-           (<gui> :draw-text widget
-                  (if (<gui> :is-enabled widget)
-                      *text-color*
-                      (<gui> :mix-colors *text-color* nonhover-background-color 0.5))
-                  shortcut
-                  shortcut-x1 b (- width b) (- height b)
-                  #f ;; wrap lines
-                  #f ;; align top
-                  #t ;; align left
-                  0 ;; rotate
-                  )
+           (when (not (string=? "" shortcut))
+             (define shortcut-x1 (- width (+ shortcut-width before-width b)))
+             
+             (<gui> :draw-text widget
+                    (if (<gui> :is-enabled widget)
+                        *text-color*
+                        (<gui> :mix-colors *text-color* nonhover-background-color 0.5))
+                    shortcut
+                    shortcut-x1 b (- width b) (- height b)
+                    #f ;; wrap lines
+                    #f ;; align top
+                    #t ;; align left
+                    0 ;; rotate
+                    ))
 
 
            ))

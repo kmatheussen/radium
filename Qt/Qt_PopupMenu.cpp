@@ -342,16 +342,13 @@ namespace{
 
     Callbacker *_callbacker;
     
-    const QIcon _icon;
-    const QString _text;
-
   public:
 
-    QAbstractButton *_checkbox = NULL;
+    QAbstractButton *_checkbox = NULL; // can be either QCheckBox or QRadioButton
     
     bool _success = true;
 
-    MyQAction(const QIcon &icon, const QString &text, Callbacker *callbacker, bool is_checkbox, bool is_checked, bool is_radiobutton, bool is_first, bool is_last, QObject *parent = NULL)
+    MyQAction(const QIcon &icon, const QString &text, const QString &shortcut, Callbacker *callbacker, bool is_checkbox, bool is_checked, bool is_radiobutton, bool is_first, bool is_last, QObject *parent = NULL)
       : QWidgetAction(parent)
       , _callbacker(callbacker)
     {
@@ -362,8 +359,7 @@ namespace{
 #endif
         s_func = s7extra_get_func_from_funcname("FROM_C-create-menu-entry-widget");
 
-      const char *shortcut = ""; //"Left Ctrl + Home"
-      int64_t guinum = S7CALL(int_charpointer_charpointer_bool_bool_bool_bool_bool, s_func, text.toUtf8().constData(), shortcut, is_checkbox, is_checked, is_radiobutton, is_first, is_last);
+      int64_t guinum = S7CALL(int_charpointer_charpointer_bool_bool_bool_bool_bool, s_func, text.toUtf8().constData(), shortcut.toUtf8().constData(), is_checkbox, is_checked, is_radiobutton, is_first, is_last);
 
       QWidget *widget = NULL;
       
@@ -402,8 +398,8 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
 
-    CheckableAction(QIcon icon, const QString & text_b, bool is_on, bool is_radiobutton, bool is_first, bool is_last, Callbacker *callbacker)
-      : MyQAction(icon, text_b, callbacker, true, is_on, is_radiobutton, is_first, is_last, callbacker->qmenu)
+    CheckableAction(QIcon icon, const QString & text_b, const QString &shortcut, bool is_on, bool is_radiobutton, bool is_first, bool is_last, Callbacker *callbacker)
+      : MyQAction(icon, text_b, shortcut, callbacker, true, is_on, is_radiobutton, is_first, is_last, callbacker->qmenu)
       , callbacker(callbacker)
     {
       setCheckable(true);
@@ -429,8 +425,8 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    ClickableAction(QIcon icon, const QString & text, bool is_first, bool is_last, Callbacker *callbacker)
-      : MyQAction(icon, text, callbacker, false, false, false, is_first, is_last, callbacker->qmenu)
+    ClickableAction(QIcon icon, const QString & text, const QString &shortcut, bool is_first, bool is_last, Callbacker *callbacker)
+      : MyQAction(icon, text, shortcut, callbacker, false, false, false, is_first, is_last, callbacker->qmenu)
       , callbacker(callbacker)
     {
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
@@ -531,7 +527,8 @@ static QMenu *create_qmenu(
       bool is_checked = false;
 
       QString icon_filename;
-
+      QString shortcut;
+      
     parse_next:
 
       if (text.startsWith("[disabled]")){
@@ -568,6 +565,19 @@ static QMenu *create_qmenu(
         goto parse_next;
       }
 
+      if (text.startsWith("[shortcut]")){
+        text = text.right(text.size() - 10);
+        int pos = text.indexOf("[/shortcut]");
+        if (pos <= 0){
+          R_ASSERT(false);
+        } else {
+          shortcut = text.left(pos);
+          text = text.right(text.size() - pos - 11);
+          //printf("shortcut: -%s-. text: -%s-\n", shortcut.toUtf8().constData(), text.toUtf8().constData());
+        }
+        goto parse_next;
+      }
+      
       if (text.startsWith("[submenu start]")){
         
         n_submenuess.push(n_submenues);
@@ -647,7 +657,7 @@ static QMenu *create_qmenu(
                     
         } else if (is_checkable) {
 
-          auto *hepp = new CheckableAction(icon, text, is_checked, radio_buttons != NULL, is_first, is_last, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
+          auto *hepp = new CheckableAction(icon, text, shortcut, is_checked, radio_buttons != NULL, is_first, is_last, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
           if (hepp->_success==false){
             radio_buttons=NULL;
             goto finished_parsing;
@@ -668,7 +678,7 @@ static QMenu *create_qmenu(
           
         } else {
 
-          auto *hepp = new ClickableAction(icon, text, is_first, is_last, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
+          auto *hepp = new ClickableAction(icon, text, shortcut, is_first, is_last, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
           if (hepp->_success==false)
             goto finished_parsing;
           
