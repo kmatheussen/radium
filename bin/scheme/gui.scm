@@ -1068,7 +1068,8 @@
 
   (define before-width (<gui> :text-width " FoP"))
   (define name-width (<gui> :text-width name))
-  (define shortcut-width (<gui> :text-width shortcut))
+  (define shortcut-width (max (<gui> :text-width "Right Ctrl + H")
+                              (<gui> :text-width shortcut)))
   (define between-width (<gui> :text-width " - "))
   
   (define width (round (+ b
