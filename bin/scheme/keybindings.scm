@@ -51,15 +51,19 @@
 
 
 (define (get-displayable-keybinding-from-keybinding keybinding)
+  ;;(c-display "KEYBINDING" keybinding)
   (string-join (map (lambda (qualifier)
                       (let ((readable (<ra> :get-qualifier-name qualifier)))
                         (if (string=? "" readable)
                             qualifier
                             readable)))
-                    (let ((keys (string-split keybinding #\ )))
-                      ;;(c-display "keys" keys)
-                      (append (cdr keys)
-                              (list (car keys)))))
+                    (let* ((keys (string-split keybinding #\ ))
+                           (qualifiers (cdr keys))
+                           (key (car keys)))
+                      (append (remove (lambda (qualifier)
+                                        (string-starts-with? qualifier "MOUSE"))
+                                      qualifiers)
+                              (list key))))
                " + "))
 
 (define (get-displayable-keybinding rafuncname args)
@@ -80,6 +84,7 @@
 #!!
 (get-displayable-keybinding "e" '())
 (get-displayable-keybinding "ra:copy-tracke" '())
+(get-displayable-keybinding "ra:paste-seqblocks" '())
 
 (get-displayable-keybinding "ra:eval-scheme" '("(moduloskew-track -1)"))
   

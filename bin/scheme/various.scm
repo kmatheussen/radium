@@ -700,39 +700,28 @@
   (define (get-block-entries)
     (list 
      "Insert new block"
-     (lambda ()
-       (<ra> :insert-block -1)
-       )
+     ra:insert-block
      
      "Append new block"
-     (lambda ()
-       (<ra> :append-block)
-       )
+     ra:append-block
      
      "Delete block"
-     (lambda ()
-       (<ra> :delete-block -1 -1)
-       )
+     ra:delete-block
 
      "---------------"
      
      "Load Block (BETA!)"
-     (lambda ()
-       (<ra> :load-block "")
-       )
+     ra:load-block
      
      "Save Block"
-     (lambda ()
-       (<ra> :save-block "" -1 -1)
-       )
+     ra:save-block
 
      "---------------"
      
      "Show block list"
-     (lambda ()
-       (<ra> :show-blocklist-gui)
-       )))
-
+     ra:show-blocklist-gui
+     ))
+  
   (define (get-audiofile-entries)
     (list
      "Add new audio file"

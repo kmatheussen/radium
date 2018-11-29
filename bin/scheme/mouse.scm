@@ -7664,6 +7664,7 @@
                                                            "Copy sequencer blocks"
                                                            "Copy sequencer block")
                                                        :enabled (> num-selected-with-current 0)
+                                                       :shortcut ra:copy-selected-seqblocks
                                                        (lambda ()
                                                          (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
                                                              (<ra> :select-seqblock #t seqblocknum seqtracknum))
@@ -7674,6 +7675,7 @@
                                                            "Cut sequencer blocks"
                                                            "Cut sequencer block")
                                                        :enabled (> num-selected-with-current 0)
+                                                       :shortcut ra:cut-selected-seqblocks
                                                        (lambda ()
                                                          (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
                                                              (<ra> :select-seqblock #t seqblocknum seqtracknum))
@@ -7683,6 +7685,7 @@
                                                            "Delete sequencer blocks"
                                                            "Delete sequencer block")
                                                        :enabled (> num-selected-with-current 0)
+                                                       :shortcut ra:delete-selected-seqblocks
                                                        (lambda ()
                                                          (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
                                                              (<ra> :select-seqblock #t seqblocknum seqtracknum))
@@ -7692,6 +7695,7 @@
                                                            "Paste sequencer blocks"
                                                            "Paste sequencer block")
                                                        :enabled (not (empty? *seqblock-clipboard*))
+                                                       :shortcut ra:paste-seqblocks
                                                        (lambda ()
                                                          (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
                                                            (<ra> :paste-seqblocks seqtracknum pos))))
@@ -7883,9 +7887,10 @@
                                                          "---------------------"
 
                                                          (list
-                                                          "Split audio file (S)"
+                                                          "Split audio file"
                                                           :enabled (and seqblocknum
                                                                         (not blocknum))
+                                                          :shortcut (list ra:eval-scheme "(FROM_C-split-sample-seqblock-under-mouse #f)")
                                                           (lambda ()
                                                             (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
                                                               (split-sample-seqblock pos seqtracknum seqblocknum))))                                               
