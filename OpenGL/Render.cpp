@@ -1232,9 +1232,11 @@ static void create_track_borders(const struct Tracker_Windows *window, const str
   int first_polyphony_subtrack = WTRACK_num_non_polyphonic_subtracks(wtrack);
 
   bool has_fx = wtrack->track->fxs.num_elements > 0;
-
+  
+  bool has_fxtext = wtrack->fxtext_on && FXTEXT_has(wtrack->track);
+  
   if (wtrack->swingtext_on){
-    if (wtrack->centtext_on || wtrack->veltext_on || wtrack->chancetext_on || (wtrack->fxtext_on && has_fx))
+    if (wtrack->centtext_on || wtrack->veltext_on || wtrack->chancetext_on || (has_fxtext && has_fx))
       create_single_border(
                            wtrack->swingtextarea.x2+1,
                            y1,
@@ -1243,7 +1245,7 @@ static void create_track_borders(const struct Tracker_Windows *window, const str
   }
   
   if (wtrack->centtext_on){
-    if (wtrack->veltext_on || wtrack->chancetext_on || (wtrack->fxtext_on && has_fx))
+    if (wtrack->veltext_on || wtrack->chancetext_on || (has_fxtext && has_fx))
       create_single_border(
                            wtrack->centtextarea.x2+1,
                            y1,
@@ -1252,7 +1254,7 @@ static void create_track_borders(const struct Tracker_Windows *window, const str
   }
   
   if (wtrack->chancetext_on){
-    if (wtrack->veltext_on || (wtrack->fxtext_on && has_fx))
+    if (wtrack->veltext_on || (has_fxtext && has_fx))
       create_single_border(
                            wtrack->chancetextarea.x2+1,
                            y1,
@@ -1260,7 +1262,7 @@ static void create_track_borders(const struct Tracker_Windows *window, const str
                            USE_SCISSORS);
   }
   
-  if (wtrack->fxtext_on){
+  if (has_fxtext){
     
     if (wtrack->veltext_on && has_fx)
       create_single_border(
@@ -1269,13 +1271,21 @@ static void create_track_borders(const struct Tracker_Windows *window, const str
                            y2,
                            USE_SCISSORS);
 
-    for(int i = 0 ; i < wtrack->track->fxs.num_elements-1 ; i++)
-      create_single_border(                           
-                           wtrack->fxtextarea.x + (1+i)*WTRACK_fxtrack_width(window->fontwidth) - 1,
-                           y1,
-                           y2,
-                           USE_SCISSORS);
-
+    int num_fx = FXTEXT_num(wtrack->track);
+    
+    int i = 0;
+    VECTOR_FOR_EACH(const struct FXs *, fxs, &wtrack->track->fxs){
+      if(i>=num_fx-1)
+        break;
+      if(fxs->fx->is_enabled){
+        create_single_border(                           
+                             wtrack->fxtextarea.x + (1+i)*WTRACK_fxtext_track_width(window->fontwidth) - 1,
+                             y1,
+                             y2,
+                             USE_SCISSORS);
+        i++;
+      }
+    }END_VECTOR_FOR_EACH;
   }
   
   for(int lokke=R_MAX(1, first_polyphony_subtrack) ; lokke < num_subtracks ; lokke++){
@@ -2458,7 +2468,7 @@ static void create_track_fxtext2(const struct Tracker_Windows *window, const str
 
   char text[]={v1, v2, v3, '\0'};
 
-  float x = wtrack->fxtextarea.x + (column * WTRACK_fxtrack_width(window->fontwidth));
+  float x = wtrack->fxtextarea.x + (column * WTRACK_fxtext_track_width(window->fontwidth));
   int y1 = get_realline_y1(window, realline);
 
   GE_Context *c = GE_textcolor(colornum, y1);
@@ -2547,20 +2557,23 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   if (wtrack->fxtext_on){
     int column = 0;
     VECTOR_FOR_EACH(const struct FXs *, fxs, &wtrack->track->fxs){
-      const FXText_trss &fxtexts = FXTEXTS_get(wblock, wtrack, fxs);
-      auto i = fxtexts.constBegin();
-      while (i != fxtexts.constEnd()){
-        create_track_fxtext(window, wblock, wtrack, i.value(), i.key(), column);
-        ++i;
+      if (fxs->fx->is_enabled){
+        const FXText_trss &fxtexts = FXTEXTS_get(wblock, wtrack, fxs);
+        auto i = fxtexts.constBegin();
+        while (i != fxtexts.constEnd()){
+          create_track_fxtext(window, wblock, wtrack, i.value(), i.key(), column);
+          ++i;
+        }
+        column++;
       }
-      column++;
     }END_VECTOR_FOR_EACH;
 
   }
   
   // fxs
   VECTOR_FOR_EACH(const struct FXs *, fxs, &wtrack->track->fxs){
-    create_track_fxs(window, wblock, wtrack, fxs);
+    if(fxs->fx->is_enabled)
+      create_track_fxs(window, wblock, wtrack, fxs);
   }END_VECTOR_FOR_EACH;
 
   // stop lines

@@ -236,7 +236,7 @@ void CopyRange_fxs(
         
 	struct FXs *fxs=talloc(sizeof(struct FXs));
 
-	fxs->fx=tcopy(fromfxs->fx, sizeof(struct FX)); // Why not just reference the existing fx? (fx is modified)
+	fxs->fx=tcopy(fromfxs->fx, sizeof(struct FX)); // Why not just reference the existing fx? (because fx is modified)
 
 	VECTOR_push_back(tofxs,fxs);
 

@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_tempos_proc.h"
 #include "../common/seqtrack_proc.h"
 #include "../common/sliders_proc.h"
+#include "../common/fxtext_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -1014,18 +1015,20 @@ int getFxtextEffectNumFromX(float x, int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return -1;
 
-  if (fxtextVisible(tracknum, blocknum, windownum)==false)
+  if (wtrack->fxtext_on==false)
     return -1;
 
-  if (wtrack->track->fxs.num_elements==0)
+  if (FXTEXT_has(wtrack->track)==false)
     return -1;
 
   int column = 0;
   VECTOR_FOR_EACH(const struct FXs *fxs, &wtrack->track->fxs){
-    float x2 = wtrack->fxtextarea.x + ((column+1) * WTRACK_fxtrack_width(window->fontwidth));
-    if (x < x2)
-      return fxs->fx->effect_num;
-    column++;
+    if(fxs->fx->is_enabled){
+      float x2 = wtrack->fxtextarea.x + ((column+1) * WTRACK_fxtext_track_width(window->fontwidth));
+      if (x < x2)
+        return fxs->fx->effect_num;
+      column++;
+    }
   }END_VECTOR_FOR_EACH;
 
   struct FXs *fxs = VECTOR_last(&wtrack->track->fxs);
@@ -2753,6 +2756,33 @@ int getFxnodeLogtype(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
   struct FXNodeLines *fxnodeline = (struct FXNodeLines*)node->element;
 
   return fxnodeline->logtype;
+}
+
+bool getFxEnabled(int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return false;
+
+  return fxs->fx->is_enabled;
+}
+
+void setFxEnabled(bool is_enabled, int fxnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
+  if (fxs==NULL)
+    return;
+
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
+    fxs->fx->is_enabled = is_enabled;
+  }
+
+  window->must_redraw = true;
 }
 
 const char* getFxName(int fxnum, int tracknum, int blocknum, int windownum){

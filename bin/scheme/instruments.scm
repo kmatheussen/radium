@@ -1148,8 +1148,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 (delete-all-unused-MIDI-instruments)
 !#
 
-;; async
-(define (select-track-instrument tracknum)
+(define (get-select-track-instrument-popup-entries tracknum)
   (define midi-instruments (get-all-midi-instruments))
   (define instruments-before (get-all-audio-instruments))
   
@@ -1194,7 +1193,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
           (iota (length instruments-before))
           instruments-before)))
     
-  (popup-menu
+  (list
    "<New MIDI Instrument>" (lambda ()
                              (load (<ra> :create-midi-instrument "Unnamed")))
    "<New Sample Player>" (lambda ()
@@ -1227,6 +1226,10 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    "All instruments" (get-instrument-entries #f)
    (get-instrument-entries #t))
   )
+
+;; async
+(define (select-track-instrument tracknum)
+  (popup-menu (get-select-track-instrument-popup-entries tracknum)))
      
 #||
 (select-track-instrument 0)

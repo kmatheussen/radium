@@ -743,6 +743,7 @@ static void init_fx(struct FX *fx, int effect_num, const char *name, struct Soun
   fx->name    = (const char*)talloc_strdup(name);
   fx->min     = 0;
   fx->max     = MAX_FX_VAL;
+  fx->is_enabled = true;
   fx->closeFX = AUDIO_close_FX;
   fx->SaveFX  = AUDIO_save_FX;
   fx->treatFX = AUDIO_treat_FX;

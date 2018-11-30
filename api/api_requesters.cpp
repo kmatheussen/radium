@@ -383,6 +383,9 @@ void showVelocityHelpWindow(void){
   evalScheme("(FROM-C-show-help-window \"help/velocitytext.html\")");
 }
 void showFXHelpWindow(void){
+  evalScheme("(FROM-C-show-help-window \"help/fx.html\")");
+}
+void showFXTextHelpWindow(void){
   evalScheme("(FROM-C-show-help-window \"help/fxtext.html\")");
 }
 void showSwingHelpWindow(void){
