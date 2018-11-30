@@ -76,6 +76,12 @@ extern LANGSPEC void UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 );
 
 
+extern LANGSPEC void SetNoteLength(
+                                   struct Tracker_Windows *window,
+                                   struct WTracks *wtrack,
+                                   int size
+                                   );
+
 extern LANGSPEC void ChangeNoteLength_CurrPos(
 	struct Tracker_Windows *window
 );

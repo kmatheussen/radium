@@ -1744,7 +1744,18 @@
               "Load Track (BETA!)" :shortcut ra:load-track (lambda ()
                                                              (<ra> :load-track "" tracknum))
               "Save Track" :shortcut ra:save-track (lambda ()
-                                                     (<ra> :save-track "" tracknum))       
+                                                     (<ra> :save-track "" tracknum))
+              "----------"
+              (list "Wide note name"
+                    :check (<ra> :track-note-area-width-is-wide tracknum)
+                    :shortcut ra:change-track-note-area-width
+                    (lambda (doit)
+                      (<ra> :set-track-note-area-width doit tracknum)))
+              (list "2 char note name"
+                    :check (= 2 (<ra> :get-track-note-length tracknum))
+                    :shortcut ra:change-track-note-length
+                    (lambda (doit)
+                      (<ra> :set-track-note-length (if doit 2 3) tracknum)))
               "-------Instrument"
               (list (if has-instrument
                         "Change instrument"
@@ -1800,6 +1811,7 @@
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
                                             (>= X (<ra> :get-track-x1 0))
+                                            ;;(>= X (<ra> :get-track-notes-x1 *current-track-num*))
                                             (< Y (<ra> :get-track-pan-on-off-y1)))
                                        (if (= Button *right-button*)
                                            (if (<ra> :shift-pressed)
@@ -3452,7 +3464,8 @@
                 (and (= Button *right-button*)
                      *current-track-num*
                      (inside-box (<ra> :get-box track-notes *current-track-num*) X Y)
-                     (<ra> :change-track-note-area-width *current-track-num*)
+                     (track-configuration-popup-async X Y)
+                     ;;(<ra> :change-track-note-area-width *current-track-num*)
                      (<ra> :select-track *current-track-num*)
                      #f))))
 

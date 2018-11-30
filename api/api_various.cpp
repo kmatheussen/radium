@@ -584,9 +584,56 @@ void setNumLines(int numlines, int blocknum, int windownum){
   wblock->block->is_dirty = true;
 }
 
-void changeTrackNoteLength(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  ChangeNoteLength_CurrPos(window);
+void changeTrackNoteLength(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack=getWTrackFromNumA(
+                                           windownum,
+                                           &window,
+                                           blocknum,
+                                           &wblock,
+                                           tracknum
+                                           );
+  if(wtrack==NULL) return;
+
+  SetNoteLength(window,wtrack,wtrack->notelength=wtrack->notelength==3?2:3);
+  window->must_redraw = true;
+}
+
+void setTrackNoteLength(int notelength, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack=getWTrackFromNumA(
+                                           windownum,
+                                           &window,
+                                           blocknum,
+                                           &wblock,
+                                           tracknum
+                                           );
+  if(wtrack==NULL) return;
+
+  if (notelength!=2 && notelength!=3){
+    handleError("setTrackNoteLength: notelength must be 2 or 3. (%d)", notelength);
+    return;
+  }
+
+  SetNoteLength(window,wtrack,notelength);
+  window->must_redraw = true;
+}
+
+int getTrackNoteLength(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack=getWTrackFromNumA(
+                                           windownum,
+                                           &window,
+                                           blocknum,
+                                           &wblock,
+                                           tracknum
+                                           );
+  if(wtrack==NULL) return 3;
+
+  return wtrack->notelength;
 }
 
 void changeBlockNoteLength(int windownum){
@@ -619,6 +666,28 @@ void changeTrackNoteAreaWidth(int tracknum, int blocknum, int windownum){
   
     
   window->must_redraw = true;
+}
+
+bool trackNoteAreaWidthIsWide(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack=getWTrackFromNumA(
+                                           windownum,
+                                           &window,
+                                           blocknum,
+                                           &wblock,
+                                           tracknum
+                                           );
+  if(wtrack==NULL) return false;
+
+  return wtrack->is_wide;
+    
+  window->must_redraw = true;
+}
+
+void setTrackNoteAreaWidth(bool is_wide, int tracknum, int blocknum, int windownum){
+  if (is_wide != trackNoteAreaWidthIsWide(tracknum, blocknum, windownum))
+    changeTrackNoteAreaWidth(tracknum, blocknum, windownum);
 }
 
 void changeBlockNoteAreaWidth(int windownum){
