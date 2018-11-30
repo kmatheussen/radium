@@ -7417,7 +7417,7 @@
                                                                 (<ra> :cancel-gfx-seqblocks seqtracknum))))))
 
                                           (list "Granulation parameters"
-                                                :enabled #t ;;(not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum)))
+                                                :enabled (<ra> :seqblock-holds-sample seqblocknum seqtracknum)
                                                 (lambda ()
                                                   (create-audio-seqblock-gui seqblocknum seqtracknum))))
                               #t)))))))
