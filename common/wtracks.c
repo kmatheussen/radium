@@ -472,11 +472,12 @@ void UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 }
 
 
-static void SetNoteLength(
-	struct Tracker_Windows *window,
-	struct WTracks *wtrack,
-	int size
-){
+void SetNoteLength(
+                   struct Tracker_Windows *window,
+                   struct WTracks *wtrack,
+                   int size
+                   )
+{
 	wtrack->notelength=size;
 }
 
