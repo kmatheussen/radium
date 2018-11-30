@@ -17,7 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_COMMON_WTRACKS_PROC_H
 #define _RADIUM_COMMON_WTRACKS_PROC_H
 
-static inline int WTRACK_fxtrack_width(const int fontwidth){
+static inline int WTRACK_fxtext_track_width(const int fontwidth){
   return (3 * fontwidth) + 2;
 }
 

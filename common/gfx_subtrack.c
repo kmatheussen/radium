@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "notes_proc.h"
 #include "wtracks_proc.h"
+#include "fxtext_proc.h"
 
 #include "gfx_subtrack_proc.h"
 
@@ -102,16 +103,15 @@ int GetXSubTrack1(
   }
 
   if (wtrack->fxtext_on){
-    int numfxs = wtrack->track->fxs.num_elements;
-    int fxnum;
-    for(fxnum=0 ; fxnum < numfxs ; fxnum++){
+    int numfxs = FXTEXT_num(wtrack->track);
+    for(int fxnum=0 ; fxnum < numfxs ; fxnum++){
       
       if (subtrack == sn)
-        return wtrack->fxtextarea.x + fxnum*WTRACK_fxtrack_width(fontwidth);
+        return wtrack->fxtextarea.x + fxnum*WTRACK_fxtext_track_width(fontwidth);
       if (subtrack == sn+1)
-        return wtrack->fxtextarea.x + fxnum*WTRACK_fxtrack_width(fontwidth) + fontwidth;
+        return wtrack->fxtextarea.x + fxnum*WTRACK_fxtext_track_width(fontwidth) + fontwidth;
       if (subtrack == sn+2)
-        return wtrack->fxtextarea.x + fxnum*WTRACK_fxtrack_width(fontwidth) + (fontwidth*2);
+        return wtrack->fxtextarea.x + fxnum*WTRACK_fxtext_track_width(fontwidth) + (fontwidth*2);
       
       sn += 3;
     }
@@ -201,16 +201,15 @@ int GetXSubTrack2(
     }
 
     if (wtrack->fxtext_on){
-      int numfxs = wtrack->track->fxs.num_elements;
-      int fxnum;
-      for(fxnum=0 ; fxnum < numfxs ; fxnum++){
+      int numfxs = FXTEXT_num(wtrack->track);
+      for(int fxnum=0 ; fxnum < numfxs ; fxnum++){
         
         if (subtrack == sn)
-          return wtrack->fxtextarea.x + fxnum*WTRACK_fxtrack_width(fontwidth) + fontwidth;
+          return wtrack->fxtextarea.x + fxnum*WTRACK_fxtext_track_width(fontwidth) + fontwidth;
         if (subtrack == sn+1)
-          return wtrack->fxtextarea.x + fxnum*WTRACK_fxtrack_width(fontwidth) + fontwidth*2;
+          return wtrack->fxtextarea.x + fxnum*WTRACK_fxtext_track_width(fontwidth) + fontwidth*2;
         if (subtrack == sn+2)
-          return wtrack->fxtextarea.x + fxnum*WTRACK_fxtrack_width(fontwidth) + (fontwidth*3);
+          return wtrack->fxtextarea.x + fxnum*WTRACK_fxtext_track_width(fontwidth) + (fontwidth*3);
       
         sn += 3;
       }

@@ -157,26 +157,30 @@ void RT_schedule_fxs_newblock(struct SeqTrack *seqtrack,
     if (doit){
       
       VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
-        
-        struct FXNodeLines *fxnodeline1 = fxs->fxnodelines;
-        
-        if (PlaceGreaterOrEqual(&fxnodeline1->l.p, &start_place)){
+
+        if (fxs->fx->is_enabled) {
           
-          RT_schedule_fxnodeline(seqtrack, seqblock, track, fxs->fx, fxnodeline1, fxnodeline1->l.p);
+          struct FXNodeLines *fxnodeline1 = fxs->fxnodelines;
           
-        } else {
-          
-          struct FXNodeLines *fxnodeline2 = NextFXNodeLine(fxnodeline1);
-          
-          while(fxnodeline2 != NULL){
-            if (PlaceGreaterOrEqual(&start_place, &fxnodeline1->l.p) && PlaceLessThan(&start_place, &fxnodeline2->l.p)) {
-              RT_schedule_fxnodeline(seqtrack, seqblock, track, fxs->fx, fxnodeline1, start_place);
-              break;
+          if (PlaceGreaterOrEqual(&fxnodeline1->l.p, &start_place)){
+            
+            RT_schedule_fxnodeline(seqtrack, seqblock, track, fxs->fx, fxnodeline1, fxnodeline1->l.p);
+            
+          } else {
+            
+            struct FXNodeLines *fxnodeline2 = NextFXNodeLine(fxnodeline1);
+            
+            while(fxnodeline2 != NULL){
+              if (PlaceGreaterOrEqual(&start_place, &fxnodeline1->l.p) && PlaceLessThan(&start_place, &fxnodeline2->l.p)) {
+                RT_schedule_fxnodeline(seqtrack, seqblock, track, fxs->fx, fxnodeline1, start_place);
+                break;
+              }
+              fxnodeline1 = fxnodeline2;
+              fxnodeline2 = NextFXNodeLine(fxnodeline2);
             }
-            fxnodeline1 = fxnodeline2;
-            fxnodeline2 = NextFXNodeLine(fxnodeline2);
+            
           }
-          
+
         }
         
       }END_VECTOR_FOR_EACH;

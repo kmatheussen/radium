@@ -36,6 +36,7 @@ DC_start("FX");
 	DC_SSI("color",fx->color);
 	DC_SSI("min",fx->min);
 	DC_SSI("max",fx->max);
+        DC_SSB("is_enabled",fx->is_enabled);
 	DC_SSI("effect_num",fx->effect_num);
         DC_SSN("patchnum",fx->patch->id);
 
@@ -51,21 +52,23 @@ struct FX *LoadFX(struct Tracks *track){
 	static char *objs[1]={
 		"FXDATA"
 	};
-	static char *vars[6]={
+	static char *vars[7]={
 		"name",
 		"color",
 		"min",
 		"max",
+                "is_enabled",
                 "effect_num",
                 "patchnum"
 	};
 	struct FX *fx=DC_alloc(sizeof(struct FX));
 	DC_LoadN(); // ignore. Earlier, there was a field called fx->num, which was just a number containing fx->effect_num.
-        
+
+        fx->is_enabled = true;
         fx->patch = PATCH_alloc(); // temporary object used during loading.
         fx->patch->id = -1; // for loading older songs.
-        
-	GENERAL_LOAD(0,6)
+                
+	GENERAL_LOAD(0,7)
 
 
 var0:
@@ -88,10 +91,14 @@ var3:
 	fx->max=DC_LoadI();
 	goto start;
 var4:
+	fx->is_enabled=DC_LoadB();
+	goto start;
+        
+var5:
         fx->effect_num=DC_LoadI();
 	goto start;
 
-var5:
+var6:
         fx->patch->id = DC_LoadN();
         goto start;
         
@@ -100,7 +107,6 @@ obj0:
 	goto start;
 
 
-var6:
 var7:
 var8:
 var9:

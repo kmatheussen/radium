@@ -266,7 +266,8 @@
               "left:" (<ra> :is-left-mouse-pressed)
               "right:" (<ra> :is-right-mouse-pressed)
               "middle:" (<ra> :is-middle-mouse-pressed))
-  (if #t
+  (if (or #t
+          (<ra> :release-mode))
       (<ra> :alt2-pressed)
       (<ra> :control-pressed)))
       
@@ -1645,9 +1646,8 @@
               (lambda (onoff)
                 (<ra> :show-fxtext onoff *current-track-num*)))
         (list "Help FX text" (lambda ()
-                               (<ra> :show-fx-help-window)))))
+                               (<ra> :show-fx-text-help-window)))))
 
-        
 (define (request-midi-channel now callback)
   (define ready #f)
   (define main-layout (<gui> :vertical-layout))
@@ -1685,47 +1685,84 @@
 
 (define (track-configuration-popup-async X Y)
   (c-display "TRACK " *current-track-num*)
-  (popup-menu (car (swingtext-popup-elements))
+  (define tracknum *current-track-num*)
+  (define instrument-id (<ra> :get-instrument-for-track tracknum))
+  (define has-instrument (>= instrument-id 0))
+  (popup-menu 
+              "---------FX"
+              (list "New FX"
+                    :enabled has-instrument
+                    :shortcut ra:request-fx
+                    (lambda ()
+                      (<ra> :request-fx tracknum)))
+              (map (lambda (fxnum)
+                     (define fx-instrument-id (<ra> :get-fx-instrument fxnum tracknum))
+                     (define fxname (<ra> :get-fx-name fxnum tracknum))
+                     (list (if (= fx-instrument-id
+                                  instrument-id)
+                               fxname
+                               (<-> (<ra> :get-instrument-name fx-instrument-id)
+                                    ": "
+                                    fxname))
+                           :check (<ra> :get-fx-enabled fxnum tracknum)
+                           (lambda (onoff)
+                             (<ra> :undo-fxs tracknum)
+                             (<ra> :set-fx-enabled onoff fxnum tracknum))))
+                   (iota (<ra> :get-num-fxs)))
+              "---------Subtracks"
+              (car (swingtext-popup-elements))
               (list "Pianoroll"
-                    :check (<ra> :pianoroll-visible *current-track-num*)
+                    :check (<ra> :pianoroll-visible tracknum)
                     :shortcut ra:show-hide-pianoroll
                     (lambda (onoff)
-                      (<ra> :show-pianoroll onoff *current-track-num*)))
+                      (<ra> :show-pianoroll onoff tracknum)))
               (list "Note text"
-                    :check (<ra> :note-track-visible *current-track-num*)
+                    :check (<ra> :note-track-visible tracknum)
                     :shortcut ra:show-hide-note-track
                     (lambda (onoff)
-                      (<ra> :show-note-track onoff *current-track-num*)))
+                      (<ra> :show-note-track onoff tracknum)))
               (car (centtext-popup-elements))
               (car (chancetext-popup-elements))
               (car (velocitytext-popup-elements))
               (car (fxtext-popup-elements))
 
-              "-------"
+              "-------Misc"
               "Copy Track" :shortcut ra:copy-track (lambda ()
-                                                     (<ra> :copy-track *current-track-num*))
+                                                     (<ra> :copy-track tracknum))
               "Cut Track" :shortcut ra:cut-track (lambda ()
-                                                   (<ra> :cut-track *current-track-num*))
+                                                   (<ra> :cut-track tracknum))
               "Paste Track" :shortcut ra:paste-track (lambda ()
-                                                       (<ra> :paste-track *current-track-num*))
+                                                       (<ra> :paste-track tracknum))
               "-------"
               "Insert Track" :shortcut (list ra:insert-tracks 1) (lambda ()
-                                                                   (<ra> :insert-track *current-track-num*)
+                                                                   (<ra> :insert-track tracknum)
                                                                    (set-current-track-num! X Y))
               "Delete Track" :shortcut (list ra:delete-tracks 1) (lambda ()
-                                                                    (<ra> :delete-track *current-track-num*)
+                                                                    (<ra> :delete-track tracknum)
                                                                     (set-current-track-num! X Y))
               "----------"
               "Load Track (BETA!)" :shortcut ra:load-track (lambda ()
-                                                             (<ra> :load-track "" *current-track-num*))
+                                                             (<ra> :load-track "" tracknum))
               "Save Track" :shortcut ra:save-track (lambda ()
-                                                     (<ra> :save-track "" *current-track-num*))       
-              "-------"
-              "Set Instrument" :shortcut ra:select-instrument-for-track (lambda ()
-                                                                          (<ra> :select-instrument-for-track *current-track-num*))
-              (let* ((tracknum *current-track-num*)
-                     (curr-midi-channel (<ra> :get-track-midi-channel tracknum))
-                     (instrument-id (<ra> :get-instrument-for-track tracknum))
+                                                     (<ra> :save-track "" tracknum))       
+              "-------Instrument"
+              (list (if has-instrument
+                        "Change instrument"
+                        "Set instrument")
+                    :shortcut ra:select-instrument-for-track
+                    (lambda ()
+                      (select-track-instrument tracknum)))
+              (list "Configure instrument color"
+                    :enabled (>= instrument-id 0)
+                    (lambda ()
+                      (show-instrument-color-dialog -1 instrument-id)))
+              (list "Generate new instrument color"
+                    :enabled (>= instrument-id 0)
+                    (lambda ()
+                      (<ra> :set-instrument-color (<ra> :generate-new-color 0.9) instrument-id)))
+
+              "-------MIDI"
+              (let* ((curr-midi-channel (<ra> :get-track-midi-channel tracknum))
                      (is-midi-instrument (and (>= instrument-id 0)
                                               (string=? (<ra> :get-instrument-type-name instrument-id)
                                                         "MIDI"))))
@@ -1736,23 +1773,13 @@
                         (request-midi-channel curr-midi-channel
                                               (lambda (channelnum)
                                                 (c-display "channelnum2:" channelnum tracknum)
-                                                (<ra> :set-track-midi-channel channelnum tracknum))))))
-              (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
-                (list
-                 (list "Configure instrument color"
-                       :enabled (>= instrument-id 0)
-                       (lambda ()
-                         (show-instrument-color-dialog -1 instrument-id)))
-                 (list "Generate new instrument color"
-                       :enabled (>= instrument-id 0)
-                       (lambda ()
-                         (<ra> :set-instrument-color (<ra> :generate-new-color 0.9) instrument-id)))))
-
-              "-------"
+                                                (<ra> :set-track-midi-channel channelnum tracknum))))))              
+              "-------Help"
               (cadr (swingtext-popup-elements))
               (cadr (centtext-popup-elements))
               (cadr (chancetext-popup-elements))
               (cadr (velocitytext-popup-elements))
+              (list "Help FX" ra:show-fx-help-window)
               (cadr (fxtext-popup-elements))
               ))
 
@@ -3509,6 +3536,8 @@
 
 (define-match get-fxnode-1
   X Y Tracknum Fxnum Fxnum     :> #f
+  X Y Tracknum Fxnum Total-Fxs :> (get-fxnode-1 X Y Tracknum (1+ Fxnum) Total-Fxs)
+                                  :where (not (<ra> :get-fx-enabled Fxnum Tracknum))
   X Y Tracknum Fxnum Total-Fxs :> (highest-rated-fxnode-info Y
                                                              (list (get-fxnode-1 X Y Tracknum (1+ Fxnum) Total-Fxs)
                                                                    (get-fxnode-2 X Y Tracknum Fxnum 0 (<ra> :get-num-fxnodes Fxnum Tracknum)))))
@@ -3579,6 +3608,11 @@
 
 (define-match get-closest-fx-0
   Fx Fx        _ _ :> #f
+  Fx Total-Fxs X Y :> (get-closest-fx-0 (1+ Fx)
+                                        Total-Fxs
+                                        X
+                                        Y)
+                      :where (not (<ra> :get-fx-enabled Fx *current-track-num*))
   Fx Total-Fxs X Y :> (min-fx/distance (get-closest-fx-1 2
                                                          (<ra> :get-num-fxnodes Fx *current-track-num*)
                                                          Fx
@@ -3612,7 +3646,6 @@
                                              (<ra> :get-box track-fx *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (let ((fxnode-info (get-fxnode-info X Y *current-track-num*)))
-                                                    ;; bruk (get-current-fxnum) for å finne current fxnum
                                                     (if fxnode-info
                                                         (callback (make-editorautomation-move :Num (fxnode-info :fxnodenum)
                                                                                               :nodes (get-fxnode-infos (fxnode-info :fxnum)
@@ -3803,7 +3836,7 @@
                            (undo-block
                             (lambda ()
                               (delete-all-fxnodes fxnum *current-track-num*)))
-                           (<ra> :request-fx *current-track-num*)
+                           (track-configuration-popup-async X Y)                           
                            )
                        #t)))))
 
@@ -3858,7 +3891,6 @@
                 (lazy
                   (define-lazy velocity-info (get-velocity-info X Y *current-track-num*))
                   (define-lazy fxnode-info (get-fxnode-info X Y *current-track-num*))
-                  
                   (define-lazy velocity-dist (get-shortest-velocity-distance X Y))
                   (define-lazy fx-dist (get-closest-fx X Y))
                   

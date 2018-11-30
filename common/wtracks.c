@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "tracks_proc.h"
 #include "notes_proc.h"
 #include "swingtext_proc.h"
+#include "fxtext_proc.h"
 
 #include "wtracks_proc.h"
 
@@ -56,7 +57,7 @@ int WTRACK_num_non_polyphonic_subtracks(const struct WTracks *wtrack){
     ret+=3;
 
   if (wtrack->fxtext_on)
-    ret += wtrack->track->fxs.num_elements * 3;
+    ret += FXTEXT_num(wtrack->track) * 3;
   
   return ret;
 }
@@ -137,8 +138,8 @@ void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock){
 }
 
 static int get_fxtextarea_width(const struct Tracker_Windows *window, const struct WTracks *wtrack){
-  int num_fxs = wtrack->track->fxs.num_elements;
-  return num_fxs * WTRACK_fxtrack_width(window->fontwidth);
+  int num_fxs = FXTEXT_num(wtrack->track);
+  return num_fxs * WTRACK_fxtext_track_width(window->fontwidth);
 }
 
 static int WTRACKS_get_non_polyphonic_subtracks_width(const struct Tracker_Windows *window, const struct WTracks *wtrack){
@@ -271,7 +272,7 @@ static void UpdateWTrackCoordinates(
         wtrack->fxtextarea.x = x;
         wtrack->fxtextarea.x2 = wtrack->fxtextarea.x + get_fxtextarea_width(window, wtrack);
 
-        if (wtrack->fxtext_on)
+        if (wtrack->fxtext_on && FXTEXT_has(wtrack->track))
           x = wtrack->fxtextarea.x2 + 2;
 
         // fx area
