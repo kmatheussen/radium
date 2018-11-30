@@ -1077,7 +1077,7 @@
                           (max (+ name-width
                                   between-width
                                   shortcut-width)
-                               (* (/ 300 19.0) fontheight))
+                               0) ;;(* (/ 300 19.0) fontheight))
                           before-width
                           b)))
 
