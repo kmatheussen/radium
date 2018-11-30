@@ -266,7 +266,7 @@
               "left:" (<ra> :is-left-mouse-pressed)
               "right:" (<ra> :is-right-mouse-pressed)
               "middle:" (<ra> :is-middle-mouse-pressed))
-  (if #f
+  (if #t
       (<ra> :alt2-pressed)
       (<ra> :control-pressed)))
       
