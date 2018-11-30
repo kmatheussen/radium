@@ -581,7 +581,7 @@ static QMenu *create_qmenu(
       if (text.startsWith("[submenu start]")){
         
         n_submenuess.push(n_submenues);
-        n_submenues = 0;
+        n_submenues = -1;
         parents.push(curr_menu);
         curr_menu = curr_menu->addMenu(text.right(text.size() - 15));
         //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
@@ -651,6 +651,14 @@ static QMenu *create_qmenu(
         bool is_first = n_submenues==0;
         bool is_last = n_submenues==v.num_elements-1 || n_submenues==getMaxSubmenuEntries()-1;
 
+        if (!is_last){
+          if (i < v.num_elements-1){
+            QString text = (const char*)v.elements[i+1];
+            if(text.startsWith("[submenu end]"))
+              is_last=true;
+          }
+        }
+        
         if (!icon.isNull()) {
 
           action = new ClickableIconAction(icon, text, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
