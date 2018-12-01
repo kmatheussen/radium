@@ -350,10 +350,8 @@ namespace{
       : QMenu(title, parent)
     {
     }
-    
-    void keyPressEvent(QKeyEvent *event) override{
-      //printf("KEY press event. Num actions: %d\n", actions().size());
-      
+
+    void keyPressEvent(QKeyEvent *event) {
       bool custom_treat
         = ((event->modifiers() & Qt::ShiftModifier) && (event->key()==Qt::Key_Up || event->key()==Qt::Key_Down))
         || (event->key()==Qt::Key_PageUp || event->key()==Qt::Key_PageDown)
@@ -361,87 +359,84 @@ namespace{
 
       if (custom_treat && actions().size() > 0) {
 
-        bool is_down = event->key()==Qt::Key_Down || event->key()==Qt::Key_PageDown;
-        int inc = is_down ? 1 : -1;
-        
+        bool key_down = event->key()==Qt::Key_Down || event->key()==Qt::Key_PageDown;
+        bool key_up = !key_down;
+        int inc = key_down ? 1 : -1;
+
         auto *curr_action = activeAction();
-        QAction *new_action = NULL;
 
-        if (event->key()==Qt::Key_Home) {
-          
-          new_action = actions().first();
-          
-        } else if (event->key()==Qt::Key_End) {
-          
-          new_action = actions().last();
-          
-        } else if (is_down && curr_action==actions().last()) {
+        bool is_at_top = curr_action==actions().first();
+        bool is_at_bot = curr_action==actions().last();
 
-          new_action = actions().first();
+        int min_num_steps = 4;
+        if (event->key()==Qt::Key_PageUp || event->key()==Qt::Key_PageDown)
+          min_num_steps = 10;
+        else if (event->key()==Qt::Key_Home || event->key()==Qt::Key_End)
+          min_num_steps = 1000000;
+        
+        if (is_at_top && key_up){
+          
+          send_key_up(this, 1);
+          
+        } else if (is_at_bot && key_down){
 
-        } else if (!is_down && curr_action==actions().first()) {
+          send_key_down(this, 1);
 
-          new_action = actions().last();
-            
         } else {
-            
-          int pos = 0;
+
+          int curr_pos = 0;
             
           if (curr_action!=NULL) {
-              
+            
             for(auto *action : actions()){
-              //printf("%d: %p (%p)\n", pos, action, curr_action);
-                
+              //printf("%d: %p (%p)\n", curr_pos, action, curr_action);
+              
               if (curr_action==action)
                 break;
-                
-              pos++;
+              
+              curr_pos++;
             }
+            
+            if (curr_pos>=actions().size())
+              curr_pos = actions().size()-1;
           }
 
-          int new_pos = pos + inc*10;
-          //printf("new_pos: %d. size: %d\n", new_pos, actions().size());
-
-          int safety = 0;
-          do{
-            
-            if (new_pos >= actions().size())
-              new_action = actions().last();
-              
-            else if (new_pos < 0)
-              new_action = actions().first();
-            
-            else
-              new_action = actions().at(new_pos);
-
-            //printf("new_pos: %d. is_enabled: %d (%p). Curr enabled: %d\n", new_pos, new_action!=NULL && new_action->isEnabled(), new_action, curr_action->isEnabled());
-            
-            new_pos += inc;
-            
-            if (new_pos > actions().size())
-              new_pos = 0;
-            if (new_pos < 0)
-              new_pos = actions().size();
-            
-            safety++;
-            if (safety > 1000)
-              break;
-            
-          }while(new_action==NULL || new_action->isVisible()==false || new_action->isSeparator()==true || new_action->isEnabled()==false);
+          int i = curr_pos;
+          int num_steps = 0;
           
+          while(num_steps < min_num_steps){
+
+            if (key_down)
+              send_key_down(this, 1);
+            else
+              send_key_up(this, 1);
+            
+            while(true){
+              i += inc;
+              num_steps++;
+              
+              if (i <= 0 || i >= actions().size()-1)
+                goto finished;
+
+              bool is_selectable = actions().at(i)->isVisible()==true && actions().at(i)->isSeparator()==false && actions().at(i)->isEnabled()==true;
+
+              if(is_selectable)
+                break;
+            }
+
+            //printf("    i: %d. at: %p. Curr: %p. Size: %d\n", i, NULL /*actions().at(i)*/, curr_action, actions().size());
+          }
         }
 
-        if (new_action!=NULL)
-          setActiveAction(new_action);
+      finished:
         
         event->accept();
-
         return;
       }
-      
+
       QMenu::keyPressEvent(event);
     }
-
+    
   };
   
   struct MyMainQMenu : public MyQMenu{

@@ -523,24 +523,6 @@ static bool handle_qt_keyboard(QKeyEvent *event, bool is_key_down){
 #include <QAbstractNativeEventFilter>
 #endif
 
-static void send_key_up(QObject *where, int how_many){
-  if (where==NULL)
-    return;
-  for(int i=0;i<how_many;i++){
-    QKeyEvent *eve1 = new QKeyEvent((enum QEvent::Type)6, Qt::Key_Up, Qt::NoModifier);
-    qApp->postEvent(where,eve1);
-  }
-}
-
-static void send_key_down(QObject *where, int how_many){
-  if (where==NULL)
-    return;
-  for(int i=0;i<how_many;i++){
-    QKeyEvent *eve1 = new QKeyEvent((enum QEvent::Type)6, Qt::Key_Down, Qt::NoModifier);
-    qApp->postEvent(where,eve1);
-  }
-}
-
 static void schedule_set_editor_focus(int ms){
   QTimer::singleShot(ms, set_editor_focus);
 }
