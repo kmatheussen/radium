@@ -345,59 +345,12 @@ namespace{
     }
   };
 
-    struct MyQMenu : public QMenu{
-    Q_OBJECT
-
-  public:
-    
-    func_t *_callback;
-
-    MyQMenu(QWidget *parent, bool is_async, func_t *callback)
-      : QMenu(parent)
-      , _callback(callback)
+  struct MyQMenu : public QMenu{
+    MyQMenu(QWidget *parent, QString title)
+      : QMenu(title, parent)
     {
-      
-      R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
-      
-      if(_callback!=NULL)
-        s7extra_protect(_callback);
-
-      connect(this, SIGNAL(hovered(QAction*)), this, SLOT(hovered(QAction*)));
     }
     
-    ~MyQMenu(){
-      if(_callback!=NULL)
-        s7extra_unprotect(_callback);      
-    }
-
-    void showEvent(QShowEvent *event) override {
-      if (_has_keyboard_focus==false){
-        obtain_keyboard_focus_counting();
-        _has_keyboard_focus = true;
-      }
-    }
-
-    void hideEvent(QHideEvent *event) override {
-      if (_has_keyboard_focus==true){
-        release_keyboard_focus_counting();
-        _has_keyboard_focus = false;
-      }
-    }
-
-    void closeEvent(QCloseEvent *event) override{
-      if (_has_keyboard_focus==true){
-        release_keyboard_focus_counting();
-        _has_keyboard_focus = false;
-      }
-    }
-  
-
-    /*
-    void actionEvent(QActionEvent *e) override{
-      printf("   ACTION EVENT called: %p\n", e);
-      QMenu::actionEvent(e);
-    }
-    */
     void keyPressEvent(QKeyEvent *event) override{
       //printf("KEY press event. Num actions: %d\n", actions().size());
       
@@ -405,7 +358,7 @@ namespace{
         = ((event->modifiers() & Qt::ShiftModifier) && (event->key()==Qt::Key_Up || event->key()==Qt::Key_Down))
         || (event->key()==Qt::Key_PageUp || event->key()==Qt::Key_PageDown)
         || (event->key()==Qt::Key_Home || event->key()==Qt::Key_End);
-      
+
       if (custom_treat && actions().size() > 0) {
 
         bool is_down = event->key()==Qt::Key_Down || event->key()==Qt::Key_PageDown;
@@ -489,6 +442,62 @@ namespace{
       QMenu::keyPressEvent(event);
     }
 
+  };
+  
+  struct MyMainQMenu : public MyQMenu{
+    Q_OBJECT
+
+  public:
+    
+    func_t *_callback;
+
+    MyMainQMenu(QWidget *parent, QString title, bool is_async, func_t *callback)
+      : MyQMenu(parent, title)
+      , _callback(callback)
+    {
+      
+      R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
+      
+      if(_callback!=NULL)
+        s7extra_protect(_callback);
+
+      connect(this, SIGNAL(hovered(QAction*)), this, SLOT(hovered(QAction*)));
+    }
+    
+    ~MyMainQMenu(){
+      if(_callback!=NULL)
+        s7extra_unprotect(_callback);      
+    }
+
+    void showEvent(QShowEvent *event) override {
+      if (_has_keyboard_focus==false){
+        obtain_keyboard_focus_counting();
+        _has_keyboard_focus = true;
+      }
+    }
+
+    void hideEvent(QHideEvent *event) override {
+      if (_has_keyboard_focus==true){
+        release_keyboard_focus_counting();
+        _has_keyboard_focus = false;
+      }
+    }
+
+    void closeEvent(QCloseEvent *event) override{
+      if (_has_keyboard_focus==true){
+        release_keyboard_focus_counting();
+        _has_keyboard_focus = false;
+      }
+    }
+  
+
+    /*
+    void actionEvent(QActionEvent *e) override{
+      printf("   ACTION EVENT called: %p\n", e);
+      QMenu::actionEvent(e);
+    }
+    */
+
   public slots:
     
     void hovered(QAction *action){
@@ -511,7 +520,7 @@ namespace{
         
       }
       
-      printf("  QMENU::HOVERED action: %p. myaction: %p\n", action, myaction);
+      //printf("  QMENU::HOVERED action: %p. myaction: %p\n", action, myaction);
     }
       
 
@@ -543,12 +552,12 @@ static QMenu *create_qmenu(
   g_myactions_counter = 0;
   g_curr_visible_actions.clear();
   
-  MyQMenu *menu = new MyQMenu(NULL, is_async, callback2);
+  MyMainQMenu *menu = new MyMainQMenu(NULL, "", is_async, callback2);
   menu->setAttribute(Qt::WA_DeleteOnClose);
 
-  QMenu *curr_menu = menu;
+  MyQMenu *curr_menu = menu;
   
-  QStack<QMenu*> parents;
+  QStack<MyQMenu*> parents;
   QStack<int> n_submenuess;
   int n_submenues=0;
 
@@ -572,7 +581,9 @@ static QMenu *create_qmenu(
     } else {
       
       if (n_submenues==getMaxSubmenuEntries()){
-        curr_menu = curr_menu->addMenu("Next");
+        auto *new_menu = new MyQMenu(curr_menu, "Next");
+        curr_menu->addMenu(new_menu);
+        curr_menu = new_menu;
         //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
         n_submenues=0;
       }
@@ -641,12 +652,14 @@ static QMenu *create_qmenu(
         n_submenuess.push(n_submenues);
         n_submenues = -1;
         parents.push(curr_menu);
-        curr_menu = curr_menu->addMenu(text.right(text.size() - 15));
+        auto *new_menu = new MyQMenu(curr_menu, text.right(text.size() - 15));
+        curr_menu->addMenu(new_menu);
+        curr_menu = new_menu;
         //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
         
       } else if (text.startsWith("[submenu end]")){
         
-        QMenu *parent = parents.pop();
+        MyQMenu *parent = parents.pop();
         if (parent==NULL)
           handleError("parent of [submenu end] is not a QMenu");
         else
