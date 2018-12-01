@@ -1750,8 +1750,10 @@ void showPianorollEraser(float pitch1, float pitch2, Place place1, Place place2,
 }
 
 void hidePianorollEraser(int windownum){
-  g_current_pianobar_rubber.blocknum = -2;
-  root->song->tracker_windows->must_redraw_editor = true;
+  if (g_current_pianobar_rubber.blocknum != -2){
+    g_current_pianobar_rubber.blocknum = -2;
+    root->song->tracker_windows->must_redraw_editor = true;
+  }
 }
 
 // pitchnums
