@@ -290,6 +290,14 @@ int64_t popupMenu(dyn_t strings, func_t* callback){
 }
 
 
+int64_t getLastHoveredPopupMenuEntry(void){
+  return g_last_hovered_menu_entry_guinum;
+}
+
+void hoverPopupMenuEntry(int entryid){
+  GFX_HoverMenuEntry(entryid);
+}
+
 void colorDialog(const char *initial_color, int64_t parentguinum, func_t* callback){
   GFX_color_dialog(initial_color, parentguinum, callback);
 }

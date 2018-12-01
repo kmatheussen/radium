@@ -124,6 +124,8 @@ static inline int64_t GFX_SimpleMenu(const char *texts, std::function<void(int,b
 
 #endif
 
+extern int64_t g_last_hovered_menu_entry_guinum;
+extern LANGSPEC void GFX_HoverMenuEntry(int entryid);
 
 // is_async: returns guinum. !is_async: returns selection.
 extern LANGSPEC int64_t GFX_Menu2(

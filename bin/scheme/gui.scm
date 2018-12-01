@@ -1056,7 +1056,7 @@
 
 ;; Menu entries
 
-(define (FROM_C-create-menu-entry-widget name shortcut is-checkbox is-checked is-radiobutton is-first is-last)
+(define (FROM_C-create-menu-entry-widget entry-id name shortcut is-checkbox is-checked is-radiobutton is-first is-last)
   (if is-radiobutton
       (assert is-checkbox))
   
@@ -1082,10 +1082,12 @@
                           b)))
 
   (define widget (<gui> :widget width height))
-  
+
   (<gui> :set-min-width widget width)
   (<gui> :set-min-height widget height)
 
+  (<gui> :dont-autofill-background widget)
+  
   (when is-checkbox
     (define checkbox (if is-radiobutton
                          (<gui> :radiobutton "" is-checked)
@@ -1106,24 +1108,20 @@
     ;;(c-display "x1/y1:" checkbox-x1 checkbox-y1 (<gui> :width checkbox) before-width)
     (<gui> :add widget checkbox checkbox-x1 checkbox-y1))
     
-  (define is-hovering #f)
-
   (define nonhover-background-color (<gui> :mix-colors "color9" "#ffffff" 0.97))
   (define hover-background-color "color11") ;;(<gui> :mix-colors (<gui> :get-background-color widget) "#010101" 0.5))
   (define border-color (<gui> :mix-colors hover-background-color "#010101" 0.5))
-
-  (define background-color nonhover-background-color)
-  
-  (<gui> :set-background-color widget nonhover-background-color)
-
-  
   
   (<gui> :add-paint-callback widget
          (lambda (width height)
            ;;(c-display "  paint menu entry. Disabled: " name (<gui> :is-enabled widget) (<gui> :get-background-color widget))
            
-           ;;(<gui> :filled-box widget background-color 0 0 width height)
-
+           (let ((background-color (if (and (= widget (<ra> :get-last-hovered-popup-menu-entry))
+                                            (<gui> :is-enabled widget))
+                                       hover-background-color
+                                       nonhover-background-color)))
+             (<gui> :filled-box widget background-color 0 0 width height))
+           
            (if is-first
                (<gui> :draw-line widget
                       border-color
@@ -1174,21 +1172,12 @@
 
 
            ))
-  
+
   (<gui> :add-mouse-callback widget
          (lambda (button state x y)
-           (cond ((and (= state *is-entering*)
-                       (<gui> :is-enabled widget))
-                  (set! is-hovering #t)
-                  (set! background-color hover-background-color)
-                  (<gui> :set-background-color widget  hover-background-color)
-                  (<gui> :update widget))
-                 ((= state *is-leaving*)
-                  (set! is-hovering #f)
-                  (set! background-color nonhover-background-color)
-                  (<gui> :set-background-color widget  nonhover-background-color)
-                  (<gui> :update widget)))
-           ;;(c-display "state:" state)
+           (if (and (= state *is-entering*)
+                    );(<gui> :is-enabled widget))
+               (<ra> :hover-popup-menu-entry entry-id))
            #f))
   
   widget)

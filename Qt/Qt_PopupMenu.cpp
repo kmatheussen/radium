@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QProxyStyle>
 #include <QStyleFactory>
 
+
 #define RADIUM_ACCESS_SEQBLOCK_AUTOMATION 1
 
 #include "../common/nsmtracker.h"
@@ -44,8 +45,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if g_curr_popup_qmenu != NULL
 QPointer<QMenu> g_curr_popup_qmenu;
 
+int64_t g_last_hovered_menu_entry_guinum = -1;
+
+
 
 namespace{
+
+  class MyQAction;
+  static int g_myactions_counter = 0;
+  static QHash<int, QPointer<MyQAction>> g_curr_visible_actions;
 
   static bool _has_keyboard_focus = false; // Must be global since more than one QMenu may open simultaneously. (not supposed to happen, but it does happen)
 
@@ -82,139 +90,6 @@ namespace{
   static MyProxyStyle g_my_proxy_style;
 
 
-
-  struct MyQMenu : public QMenu{
-
-    func_t *_callback;
-
-    MyQMenu(QWidget *parent, bool is_async, func_t *callback)
-      : QMenu(parent)
-      , _callback(callback)
-    {
-      
-      R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
-      
-      if(_callback!=NULL)
-        s7extra_protect(_callback);
-    }
-    
-    ~MyQMenu(){
-      if(_callback!=NULL)
-        s7extra_unprotect(_callback);      
-    }
-
-    void showEvent(QShowEvent *event) override {
-      if (_has_keyboard_focus==false){
-        obtain_keyboard_focus_counting();
-        _has_keyboard_focus = true;
-      }
-    }
-
-    void hideEvent(QHideEvent *event) override {
-      if (_has_keyboard_focus==true){
-        release_keyboard_focus_counting();
-        _has_keyboard_focus = false;
-      }
-    }
-
-    void closeEvent(QCloseEvent *event) override{
-      if (_has_keyboard_focus==true){
-        release_keyboard_focus_counting();
-        _has_keyboard_focus = false;
-      }
-    }
-
-    void keyPressEvent(QKeyEvent *event) override{
-      //printf("KEY press event. Num actions: %d\n", actions().size());
-      
-      bool custom_treat
-        = ((event->modifiers() & Qt::ShiftModifier) && (event->key()==Qt::Key_Up || event->key()==Qt::Key_Down))
-        || (event->key()==Qt::Key_PageUp || event->key()==Qt::Key_PageDown)
-        || (event->key()==Qt::Key_Home || event->key()==Qt::Key_End);
-      
-      if (custom_treat && actions().size() > 0) {
-
-        bool is_down = event->key()==Qt::Key_Down || event->key()==Qt::Key_PageDown;
-        int inc = is_down ? 1 : -1;
-        
-        auto *curr_action = activeAction();
-        QAction *new_action = NULL;
-
-        if (event->key()==Qt::Key_Home) {
-          
-          new_action = actions().first();
-          
-        } else if (event->key()==Qt::Key_End) {
-          
-          new_action = actions().last();
-          
-        } else if (is_down && curr_action==actions().last()) {
-
-          new_action = actions().first();
-
-        } else if (!is_down && curr_action==actions().first()) {
-
-          new_action = actions().last();
-            
-        } else {
-            
-          int pos = 0;
-            
-          if (curr_action!=NULL) {
-              
-            for(auto *action : actions()){
-              //printf("%d: %p (%p)\n", pos, action, curr_action);
-                
-              if (curr_action==action)
-                break;
-                
-              pos++;
-            }
-          }
-
-          int new_pos = pos + inc*10;
-          //printf("new_pos: %d. size: %d\n", new_pos, actions().size());
-
-          int safety = 0;
-          do{
-            
-            if (new_pos >= actions().size())
-              new_action = actions().last();
-              
-            else if (new_pos < 0)
-              new_action = actions().first();
-            
-            else
-              new_action = actions().at(new_pos);
-
-            //printf("new_pos: %d. is_enabled: %d (%p). Curr enabled: %d\n", new_pos, new_action!=NULL && new_action->isEnabled(), new_action, curr_action->isEnabled());
-            
-            new_pos += inc;
-            
-            if (new_pos > actions().size())
-              new_pos = 0;
-            if (new_pos < 0)
-              new_pos = actions().size();
-            
-            safety++;
-            if (safety > 1000)
-              break;
-            
-          }while(new_action==NULL || new_action->isVisible()==false || new_action->isSeparator()==true || new_action->isEnabled()==false);
-          
-        }
-
-        if (new_action!=NULL)
-          setActiveAction(new_action);
-        
-        event->accept();
-
-        return;
-      }
-      
-      QMenu::keyPressEvent(event);
-    }
-  };
 
   
   struct Callbacker : public QObject{
@@ -337,6 +212,8 @@ namespace{
     }
   };
 
+  static QPointer<QWidget> g_last_hovered_widget;
+  
   class MyQAction : public QWidgetAction {
     Q_OBJECT
 
@@ -344,6 +221,9 @@ namespace{
     
   public:
 
+    int64_t _guinum;
+    QWidget *_widget = NULL;
+    
     QAbstractButton *_checkbox = NULL; // can be either QCheckBox or QRadioButton
     
     bool _success = true;
@@ -352,25 +232,27 @@ namespace{
       : QWidgetAction(parent)
       , _callbacker(callbacker)
     {
+      int entryid = g_myactions_counter++;
+      
+      g_curr_visible_actions[entryid] = this;
+      
       static func_t *s_func = NULL;
-
+      
 #if defined(RELEASE)
       if (s_func==NULL)
 #endif
         s_func = s7extra_get_func_from_funcname("FROM_C-create-menu-entry-widget");
 
-      int64_t guinum = S7CALL(int_charpointer_charpointer_bool_bool_bool_bool_bool, s_func, text.toUtf8().constData(), shortcut.toUtf8().constData(), is_checkbox, is_checked, is_radiobutton, is_first, is_last);
+      _guinum = S7CALL(int_int_charpointer_charpointer_bool_bool_bool_bool_bool, s_func, entryid, text.toUtf8().constData(), shortcut.toUtf8().constData(), is_checkbox, is_checked, is_radiobutton, is_first, is_last);
 
-      QWidget *widget = NULL;
-      
-      if (guinum > 0){
-        widget = API_gui_get_widget(guinum);
-        setDefaultWidget(widget);        
+      if (_guinum > 0){
+        _widget = API_gui_get_widget(_guinum);
+        setDefaultWidget(_widget);        
       } else
         _success = false;
 
-      if (widget!=NULL && is_checkbox){
-        _checkbox = widget->findChild<QAbstractButton*>("checkbox");
+      if (_widget!=NULL && is_checkbox){
+        _checkbox = _widget->findChild<QAbstractButton*>("checkbox");
         if(_checkbox==NULL)
           R_ASSERT(false);
         else
@@ -462,8 +344,181 @@ namespace{
       callbacker->run_and_delete_clicked();
     }
   };
-}
 
+    struct MyQMenu : public QMenu{
+    Q_OBJECT
+
+  public:
+    
+    func_t *_callback;
+
+    MyQMenu(QWidget *parent, bool is_async, func_t *callback)
+      : QMenu(parent)
+      , _callback(callback)
+    {
+      
+      R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
+      
+      if(_callback!=NULL)
+        s7extra_protect(_callback);
+
+      connect(this, SIGNAL(hovered(QAction*)), this, SLOT(hovered(QAction*)));
+    }
+    
+    ~MyQMenu(){
+      if(_callback!=NULL)
+        s7extra_unprotect(_callback);      
+    }
+
+    void showEvent(QShowEvent *event) override {
+      if (_has_keyboard_focus==false){
+        obtain_keyboard_focus_counting();
+        _has_keyboard_focus = true;
+      }
+    }
+
+    void hideEvent(QHideEvent *event) override {
+      if (_has_keyboard_focus==true){
+        release_keyboard_focus_counting();
+        _has_keyboard_focus = false;
+      }
+    }
+
+    void closeEvent(QCloseEvent *event) override{
+      if (_has_keyboard_focus==true){
+        release_keyboard_focus_counting();
+        _has_keyboard_focus = false;
+      }
+    }
+  
+
+    /*
+    void actionEvent(QActionEvent *e) override{
+      printf("   ACTION EVENT called: %p\n", e);
+      QMenu::actionEvent(e);
+    }
+    */
+    void keyPressEvent(QKeyEvent *event) override{
+      //printf("KEY press event. Num actions: %d\n", actions().size());
+      
+      bool custom_treat
+        = ((event->modifiers() & Qt::ShiftModifier) && (event->key()==Qt::Key_Up || event->key()==Qt::Key_Down))
+        || (event->key()==Qt::Key_PageUp || event->key()==Qt::Key_PageDown)
+        || (event->key()==Qt::Key_Home || event->key()==Qt::Key_End);
+      
+      if (custom_treat && actions().size() > 0) {
+
+        bool is_down = event->key()==Qt::Key_Down || event->key()==Qt::Key_PageDown;
+        int inc = is_down ? 1 : -1;
+        
+        auto *curr_action = activeAction();
+        QAction *new_action = NULL;
+
+        if (event->key()==Qt::Key_Home) {
+          
+          new_action = actions().first();
+          
+        } else if (event->key()==Qt::Key_End) {
+          
+          new_action = actions().last();
+          
+        } else if (is_down && curr_action==actions().last()) {
+
+          new_action = actions().first();
+
+        } else if (!is_down && curr_action==actions().first()) {
+
+          new_action = actions().last();
+            
+        } else {
+            
+          int pos = 0;
+            
+          if (curr_action!=NULL) {
+              
+            for(auto *action : actions()){
+              //printf("%d: %p (%p)\n", pos, action, curr_action);
+                
+              if (curr_action==action)
+                break;
+                
+              pos++;
+            }
+          }
+
+          int new_pos = pos + inc*10;
+          //printf("new_pos: %d. size: %d\n", new_pos, actions().size());
+
+          int safety = 0;
+          do{
+            
+            if (new_pos >= actions().size())
+              new_action = actions().last();
+              
+            else if (new_pos < 0)
+              new_action = actions().first();
+            
+            else
+              new_action = actions().at(new_pos);
+
+            //printf("new_pos: %d. is_enabled: %d (%p). Curr enabled: %d\n", new_pos, new_action!=NULL && new_action->isEnabled(), new_action, curr_action->isEnabled());
+            
+            new_pos += inc;
+            
+            if (new_pos > actions().size())
+              new_pos = 0;
+            if (new_pos < 0)
+              new_pos = actions().size();
+            
+            safety++;
+            if (safety > 1000)
+              break;
+            
+          }while(new_action==NULL || new_action->isVisible()==false || new_action->isSeparator()==true || new_action->isEnabled()==false);
+          
+        }
+
+        if (new_action!=NULL)
+          setActiveAction(new_action);
+        
+        event->accept();
+
+        return;
+      }
+      
+      QMenu::keyPressEvent(event);
+    }
+
+  public slots:
+    
+    void hovered(QAction *action){
+      MyQAction *myaction = dynamic_cast<MyQAction*>(action);
+      
+      if (g_last_hovered_widget.data() != NULL)
+        g_last_hovered_widget->update();
+      
+      if (myaction!=NULL){
+        
+        myaction->_widget->update();
+        
+        g_last_hovered_menu_entry_guinum = myaction->_guinum;
+        g_last_hovered_widget = myaction->_widget;
+                    
+      } else {
+
+        g_last_hovered_menu_entry_guinum = -1;
+        g_last_hovered_widget = NULL;
+        
+      }
+      
+      printf("  QMENU::HOVERED action: %p. myaction: %p\n", action, myaction);
+    }
+      
+
+  };
+
+
+}
 
 
 static void setStyleRecursively(QWidget *widget, QStyle *style){
@@ -484,7 +539,10 @@ static QMenu *create_qmenu(
                            )
 {
   R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
-    
+
+  g_myactions_counter = 0;
+  g_curr_visible_actions.clear();
+  
   MyQMenu *menu = new MyQMenu(NULL, is_async, callback2);
   menu->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -739,6 +797,23 @@ static QMenu *create_qmenu(
   return menu;
 }
 
+void GFX_HoverMenuEntry(int entryid){
+  if (g_curr_visible_actions.contains(entryid)){
+    
+    MyQAction *action = g_curr_visible_actions[entryid].data();
+    if(action==NULL){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+    
+    action->activate(QAction::Hover);
+    
+  } else {
+
+    g_last_hovered_menu_entry_guinum = -1;
+    
+  }
+}
 
 static int64_t GFX_QtMenu(
                           const vector_t &v,

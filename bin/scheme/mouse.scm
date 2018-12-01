@@ -1780,7 +1780,7 @@
                 (list (<-> "Set MIDI channel" (if is-midi-instrument "" (<-> " (now: " (1+ curr-midi-channel) ")")))
                       :enabled (not is-midi-instrument)
                       (lambda ()
-                        (c-display "CURETNTE TRSCKN NUM: " tracknum)
+                        ;;(c-display "CURETNTE TRSCKN NUM: " tracknum)
                         (request-midi-channel curr-midi-channel
                                               (lambda (channelnum)
                                                 (c-display "channelnum2:" channelnum tracknum)
