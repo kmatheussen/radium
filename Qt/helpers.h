@@ -14,6 +14,7 @@
 #include <QPointer>
 #include <QDesktopWidget>
 #include <QMouseEvent>
+#include <QKeyEvent>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
@@ -63,6 +64,25 @@ typedef QPointer<QObject> IsAlive;
 
 extern QPoint mapFromEditor(QWidget *widget, QPoint point); // Defined in Qt_sequencer.cpp
 extern QPoint mapToEditor(QWidget *widget, QPoint point); // Defined in Qt_sequencer.cpp
+
+
+static inline void send_key_up(QObject *where, int how_many){
+  if (where==NULL)
+    return;
+  for(int i=0;i<how_many;i++){
+    QKeyEvent *eve1 = new QKeyEvent((enum QEvent::Type)6, Qt::Key_Up, Qt::NoModifier);
+    qApp->postEvent(where,eve1);
+  }
+}
+
+static inline void send_key_down(QObject *where, int how_many){
+  if (where==NULL)
+    return;
+  for(int i=0;i<how_many;i++){
+    QKeyEvent *eve1 = new QKeyEvent((enum QEvent::Type)6, Qt::Key_Down, Qt::NoModifier);
+    qApp->postEvent(where,eve1);
+  }
+}
 
 static inline bool safe_to_run_exec(void){
 
