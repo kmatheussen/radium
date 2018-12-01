@@ -502,7 +502,7 @@
   )
 
 
-(define (handling-nodes thunk)
+(define (handling-nodes state thunk)
   (set! mouse-fx-has-been-set #f)
   (set! mouse-track-has-been-set #f)
   (set! mouse-note-has-been-set #f)
@@ -553,6 +553,10 @@
                               (<ra> :cancel-current-pianonote))
                           ;;(if (not mouse-pointer-has-been-set)
                           ;;    (<ra> :set-normal-mouse-pointer))
+
+                          (if (= state *is-releasing*)
+                              (<ra> :hide-pianoroll-eraser))
+
                           )))
 
 
@@ -561,6 +565,7 @@
   
   (radium-mouse-move $button $x $y) ;; Workaround for radium-mouse-move not being called while a popup menu is open. (without this line, try to left click + right click another seqblock while showing a popup menu)
   (handling-nodes
+   *is-pressing*
    (lambda()
      ;;(c-display "%%%%%%%%%%%%%%%%% >> mouse press" $button $x $y *current-mouse-cycle*)
      ;;(cancel-current-stuff)
@@ -574,6 +579,7 @@
 (define (radium-mouse-move $button $x $y)
   ;;(c-display "X:" $x ". seq_x1/x2:" (<ra> :get-sequencer-x1) (<ra> :get-sequencer-x2))
   (handling-nodes
+   *is-moving*
    (lambda()
      ;;(c-display "mouse move2" $button $x $y (<ra> :control-pressed) (<ra> :shift-pressed))
      ;;(cancel-current-stuff)
@@ -591,6 +597,7 @@
 (define (radium-mouse-release $button $x $y)
   ;;(c-display "   MOUSE RELEASE 1")
   (let ((ret (handling-nodes
+              *is-releasing*
               (lambda()
                 ;;(c-display "%%%%%%%%%%%%%%%%% << mouse release" $button $x $y ". cycle:" *current-mouse-cycle*)
                 (if *current-mouse-cycle*
