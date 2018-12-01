@@ -1354,13 +1354,14 @@ int64_t s7extra_callFunc2_int_charpointer_charpointer(const char *funcname, cons
   return s7extra_callFunc_int_charpointer_charpointer((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
 }
 
-int64_t s7extra_callFunc_int_charpointer_charpointer_bool_bool_bool_bool_bool(const func_t *func, const char *arg1, const char *arg2, bool arg3, bool arg4, bool arg5, bool arg6, bool arg7){
+int64_t s7extra_callFunc_int_int_charpointer_charpointer_bool_bool_bool_bool_bool(const func_t *func, int64_t arg0, const char *arg1, const char *arg2, bool arg3, bool arg4, bool arg5, bool arg6, bool arg7){
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
                               s7_list_nl(s7,
-                                         8,
+                                         9,
                                          (s7_pointer)func,
+                                         s7_make_integer(s7, arg0),
                                          s7_make_string(s7, arg1),
                                          s7_make_string(s7, arg2),
                                          s7_make_boolean(s7, arg3),
@@ -1379,8 +1380,8 @@ int64_t s7extra_callFunc_int_charpointer_charpointer_bool_bool_bool_bool_bool(co
   }
 }
 
-int64_t s7extra_callFunc2_int_charpointer_charpointer_bool_bool_bool_bool_bool(const char *funcname, const char *arg1, const char *arg2, bool arg3, bool arg4, bool arg5, bool arg6, bool arg7){
-  return s7extra_callFunc_int_charpointer_charpointer_bool_bool_bool_bool_bool((const func_t*)find_scheme_value(s7, funcname), arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+int64_t s7extra_callFunc2_int_int_charpointer_charpointer_bool_bool_bool_bool_bool(const char *funcname, int64_t arg0, const char *arg1, const char *arg2, bool arg3, bool arg4, bool arg5, bool arg6, bool arg7){
+  return s7extra_callFunc_int_int_charpointer_charpointer_bool_bool_bool_bool_bool((const func_t*)find_scheme_value(s7, funcname), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
 const char *s7extra_callFunc_charpointer_dyn(const func_t *func, const dyn_t arg1){
