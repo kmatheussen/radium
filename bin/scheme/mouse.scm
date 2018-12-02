@@ -5997,10 +5997,11 @@
     
     ;;(pretty-print seqblocks)
     
-
+    ;;(c-display "allowed/only-y:" allowed-to-swap (only-y-direction))
+    
     (define has-swapped
       (and allowed-to-swap
-           (only-y-direction)
+           (not (only-y-direction))
            (let ((swapped-forward 
                   ;;
                   ;; maybe swap forward
@@ -6185,7 +6186,7 @@
                                                      (get-sequencer-pixels-per-value-unit))
 
                         :Forgiving-box #f
-                        :Check-horizontal-modifier #f
+                        :Check-horizontal-modifier #t
                         )
 
 
