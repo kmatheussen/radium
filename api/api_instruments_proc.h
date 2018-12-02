@@ -21,3 +21,6 @@ enum class DiskOpReturn{
   
 //DiskOpReturn API_add_disk_entries_from_populated_container(const SoundPluginTypeContainer *container, const QString path);
 #endif
+
+
+extern LANGSPEC void API_remove_effect_monitors_for_instrument(struct Patch *patch);

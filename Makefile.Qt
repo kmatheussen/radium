@@ -1281,7 +1281,7 @@ Qt_Player.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Player.c $(P)EditorWidget.h
 Qt_EventReceiver.o:  $(BUILD_DEPENDENCIES) $(P)Qt_EventReceiver.cpp $(P)EditorWidget.h
 	$(CCC) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
-Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp common/visual_proc.h
+Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp common/visual_proc.h  embedded_scheme/s7extra_proc.h
 	$(CCC) $(P)Qt_colors.cpp $(QTOPT) -Ibin/packages/faust2/architecture
 
 $(P)mQt_colors.cpp: $(P)Qt_colors.cpp $(BUILD_DEPENDENCIES)
@@ -1299,7 +1299,7 @@ Qt_Fonts.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Fonts.cpp
 Qt_ReqType.o:  $(BUILD_DEPENDENCIES) $(P)Qt_ReqType.cpp
 	$(CCC) $(P)Qt_ReqType.cpp $(QTOPT)
 
-Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cpp audio/Envelope.hpp
+Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cpp audio/Envelope.hpp embedded_scheme/s7extra_proc.h
 	$(CCC) $(P)Qt_PopupMenu.cpp $(QTOPT)
 
 $(P)mQt_PopupMenu.cpp: $(P)Qt_PopupMenu.cpp $(BUILD_DEPENDENCIES)
@@ -1628,13 +1628,13 @@ api_play.o:  $(BUILD_DEPENDENCIES)  $(API)api_play.c $(API)radium_proc.h
 api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c $(API)radium_proc.h
 	$(CC)  $(API)api_clipboard.c $(OPT)
 
-api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp $(API)radium_proc.h
+api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp $(API)radium_proc.h embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_undo.cpp $(QTOPT)
 
-api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp $(API)radium_proc.h bin/packages/s7/s7.c $(P)EditorWidget.h
+api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp $(API)radium_proc.h bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
 
-api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp $(API)radium_proc.h $(API)api_instruments_proc.h
+api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp $(API)radium_proc.h $(API)api_instruments_proc.h embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_instruments.cpp $(QTOPT)
 
 api_soundpluginregistry.o:  $(BUILD_DEPENDENCIES) $(API)api_soundpluginregistry.cpp $(API)radium_proc.h $(API)api_instruments_proc.h
@@ -1647,10 +1647,10 @@ api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.cpp $(API)radium_
 api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.c $(API)radium_proc.h
 	$(CC)  $(API)api_mouse.c $(OPT)
 
-api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.cpp $(API)radium_proc.h audio/Envelope.hpp common/seqblock_automation_proc.h
+api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.cpp $(API)radium_proc.h audio/Envelope.hpp common/seqblock_automation_proc.h embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_seqtracks.cpp $(QTOPT)
 
-api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp $(API)radium_proc.h Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h
+api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp $(API)radium_proc.h Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS)
 
@@ -2337,7 +2337,7 @@ s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp
 
-scheme.o: embedded_scheme/scheme.cpp $(API)radium_proc.h bin/packages/s7/s7.c
+scheme.o: embedded_scheme/scheme.cpp $(API)radium_proc.h bin/packages/s7/s7.c embedded_scheme/s7extra_proc.h
 	$(CCC) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
 
 QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT #-fno-sanitize=undefined

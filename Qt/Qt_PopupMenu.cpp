@@ -16,6 +16,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if USE_QT_MENU
 
+#include <memory>
+
 #include <QStack>
 #include <QAction>
 #include <QWidgetAction>
@@ -91,13 +93,16 @@ namespace{
 
 
 
+  static int g_alive_callbackers = 0;
   
   struct Callbacker : public QObject{
     Q_OBJECT;
-  public:
+
+    public:
+      
     QPointer<QMenu> qmenu;    
     int num;
-    func_t *callback; // TODO: Investige if this is gc-safe. (and if it is, it should be changed, because this seems messy. Probably cleaner to gc-protect/unprotect here.)
+    radium::ProtectedS7Extra<func_t*> callback;
     std::function<void(int,bool)> callback3;
     int *result;
 
@@ -115,41 +120,63 @@ namespace{
       
       if(is_async)
         R_ASSERT(result==NULL);
+
+      g_alive_callbackers++;
+      //printf("    Created Callbacker. callbackers: %d. pos: %d\n", g_alive_callbackers, (int)this->callback._pos);
     }
 
+    ~Callbacker(){
+      R_ASSERT(_waiting_for_callback==false);
+      R_ASSERT_NON_RELEASE(g_alive_callbackers > 0);
+      g_alive_callbackers--;
+      //printf("            CALLBACKER deleted 2. Alive now: %d. pos: %d. This: %p\n", g_alive_callbackers, (int)callback._pos, this);
+    }
+    
   private:
     bool checked = false;
 
     bool run_have_run = false;
 
-    void run_and_delete(bool checked){
+    std::shared_ptr<Callbacker> _extra_destroyed_slot_argument; // Temporarily store it in the object since you can't post custom data to signals handlers in a less inelegant way, I think. The use of smart pointers here is a mess BTW, as it always is, for everyone, in all possible situations, without exception.
+    
+    void run_and_delete(bool checked, std::shared_ptr<Callbacker> &callbacker){
       R_ASSERT_RETURN_IF_FALSE(run_have_run==false);
       run_have_run = true;
 
+      R_ASSERT_NON_RELEASE(qmenu.data() != NULL); // Not sure if anything is wrong, just curious whether it happens.
+      
       this->checked = checked;
-      
-      qmenu->close();
-      
+
       if (result != NULL)
         *result = num;
 
-      if (callback!=NULL || callback3!=NULL) {
-        
-        connect(qmenu.data(), SIGNAL(destroyed(QObject*)), this, SLOT(menu_destroyed(QObject*)) );
+      if (callback.v!=NULL || callback3!=NULL) {
 
-      } else {
+        if (qmenu.data() != NULL){
+          _extra_destroyed_slot_argument = callbacker;
+          connect(qmenu.data(), SIGNAL(destroyed(QObject*)), this, SLOT(menu_destroyed(QObject*)) );
+        }
 
-        delete this;
-        
+      }
+      
+      if (qmenu.data() != NULL)
+        qmenu->close();
+      
+      //if (callback.v==NULL && callback3==NULL)
+      //  delete this;
+
+      if (g_alive_callbackers > 1){
+        R_ASSERT_NON_RELEASE(false);
+        printf("  Warning: popup menu seems to leak.\n");
       }
     }
 
     void run_callbacks(void){
-      if (callback != NULL){
+      if (callback.v != NULL){
         if (is_checkable)
-          S7CALL(void_int_bool, callback, num, checked);
+          S7CALL(void_int_bool, callback.v, num, checked);
         else
-          S7CALL(void_int, callback, num);
+          S7CALL(void_int, callback.v, num);
       }
         
       if (callback3)
@@ -164,31 +191,31 @@ namespace{
       run_callbacks();
     }
     
-    void run_and_delete_checked(bool checked){
+    void run_and_delete_checked(bool checked, std::shared_ptr<Callbacker> &callbacker){
       R_ASSERT(is_checkable);
-      run_and_delete(checked);
+      run_and_delete(checked, callbacker);
     }
     
-    void run_and_delete_clicked(void){
+    void run_and_delete_clicked( std::shared_ptr<Callbacker> &callbacker){
       R_ASSERT(false==is_checkable);
-      run_and_delete(false);
+      run_and_delete(false, callbacker);
     }
 
   private:
 
     int num_callback_tries = 0;
     
-    void call_callback_and_delete(void){
+    void call_callback_and_delete(std::shared_ptr<Callbacker> callbacker){ // don't know why, but we get compilation error if referencing callbacker.
       num_callback_tries++;
       
       if (false==qmenu.isNull()){
 
-        printf("Num callback tries: %d\n", num_callback_tries);
+        //printf("Num callback tries: %d\n", num_callback_tries);
         
         R_ASSERT_NON_RELEASE(false); // This line can probably be commented away. If Qt hasn't deleted the menu right after calling the menu_destroyed slot, that's an issue in qt and probably nothing we can do anything about here.
 
         if (num_callback_tries < 100)
-          schedule_call_callback_and_delete(50); // try again. Wait a little bit more this time to avoid clogging up CPU in case we never succeed.
+          schedule_call_callback_and_delete(50, callbacker); // try again. Wait a little bit more this time to avoid clogging up CPU in case we never succeed.
         else
           R_ASSERT(false); // After 5 seconds we give up.
 
@@ -196,28 +223,49 @@ namespace{
 
         run_callbacks();
         
-        delete this;
+        //delete this;
       }
     }
 
-    void schedule_call_callback_and_delete(int ms){
-      QTimer::singleShot(ms, [this] {
-          this->call_callback_and_delete();
+  public:
+
+    bool _waiting_for_callback = false;
+    
+    void schedule_call_callback_and_delete(int ms, std::shared_ptr<Callbacker> callbacker){ // Can't use reference for callbacker since lambdas doesn't support unreferencing arguments in c++11.
+      IsAlive is_alive(this);
+
+      _waiting_for_callback = true;
+
+      QTimer::singleShot(ms, [is_alive, this, callbacker] { // in c++17, it seems like we could have used *callbacker here so that &callbacker could be used as argument for 'schedule_call_callback_and_delete'.
+          if (is_alive){
+            //printf("Hello3: %d %p. This: %p\n", (int)callbacker.use_count(), &callbacker, this);
+            this->_waiting_for_callback = false;
+            this->call_callback_and_delete(callbacker);
+            // Note: At this point, we might have been deleted. (probably not since callbacker still exists)
+          }else{
+            printf("   It was deleted. ThIS: %p\n", this);
+            R_ASSERT(false);
+          }          
         });
     }
 
   private slots:
+    
     void menu_destroyed(QObject*){
-      schedule_call_callback_and_delete(1);  // Must wait a little bit since Qt seems to be in a state right now where calling g_curr_popup_qmenu->hide() will crash the program (or do other bad things) (5.10).
+      // Must wait a little bit since Qt seems to be in a state right now where calling g_curr_popup_qmenu->hide() will crash the program (or do other bad things) (5.10).
+      schedule_call_callback_and_delete(1, _extra_destroyed_slot_argument);
+      _extra_destroyed_slot_argument = NULL;
     }
+    
   };
+
 
   static QPointer<QWidget> g_last_hovered_widget;
   
   class MyQAction : public QWidgetAction {
     Q_OBJECT
 
-    Callbacker *_callbacker;
+    std::shared_ptr<Callbacker> _callbacker;
     
   public:
 
@@ -228,7 +276,7 @@ namespace{
     
     bool _success = true;
 
-    MyQAction(const QIcon &icon, const QString &text, const QString &shortcut, Callbacker *callbacker, bool is_checkbox, bool is_checked, bool is_radiobutton, bool is_first, bool is_last, QObject *parent = NULL)
+    MyQAction(const QIcon &icon, const QString &text, const QString &shortcut, std::shared_ptr<Callbacker> &callbacker, bool is_checkbox, bool is_checked, bool is_radiobutton, bool is_first, bool is_last, QObject *parent = NULL)
       : QWidgetAction(parent)
       , _callbacker(callbacker)
     {
@@ -264,7 +312,7 @@ namespace{
 
     // This one is called when toggling the checkbox itself, not just the whole widget (outside the checkbox)
     void toggled(bool checked){
-      printf("   TOGGLED: %d\n", checked);
+      //printf("   TOGGLED: %d\n", checked);
       _callbacker->run_checked(checked);
     }
   };
@@ -272,7 +320,7 @@ namespace{
   class CheckableAction : public MyQAction {
     Q_OBJECT
 
-    Callbacker *callbacker;
+    std::shared_ptr<Callbacker> callbacker;
     
   public:
 
@@ -280,7 +328,7 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
 
-    CheckableAction(QIcon icon, const QString & text_b, const QString &shortcut, bool is_on, bool is_radiobutton, bool is_first, bool is_last, Callbacker *callbacker)
+    CheckableAction(QIcon icon, const QString & text_b, const QString &shortcut, bool is_on, bool is_radiobutton, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
       : MyQAction(icon, text_b, shortcut, callbacker, true, is_on, is_radiobutton, is_first, is_last, callbacker->qmenu)
       , callbacker(callbacker)
     {
@@ -291,7 +339,7 @@ namespace{
 
   public slots:
     void toggled(bool checked){
-      callbacker->run_and_delete_checked(checked);
+      callbacker->run_and_delete_checked(checked, callbacker);
     }
   };
 
@@ -299,7 +347,7 @@ namespace{
   {
     Q_OBJECT;
     
-    Callbacker *callbacker;
+    std::shared_ptr<Callbacker> callbacker;
     
   public:
 
@@ -307,7 +355,7 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    ClickableAction(QIcon icon, const QString & text, const QString &shortcut, bool is_first, bool is_last, Callbacker *callbacker)
+    ClickableAction(QIcon icon, const QString & text, const QString &shortcut, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
       : MyQAction(icon, text, shortcut, callbacker, false, false, false, is_first, is_last, callbacker->qmenu)
       , callbacker(callbacker)
     {
@@ -316,7 +364,7 @@ namespace{
 
   public slots:
     void triggered(){
-      callbacker->run_and_delete_clicked();
+      callbacker->run_and_delete_clicked(callbacker);
     }
   };
 
@@ -324,7 +372,7 @@ namespace{
   {
     Q_OBJECT;
     
-    Callbacker *callbacker;
+    std::shared_ptr<Callbacker> callbacker;
     
   public:
 
@@ -332,7 +380,7 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    ClickableIconAction(QIcon icon, const QString & text, Callbacker *callbacker)
+    ClickableIconAction(QIcon icon, const QString & text, std::shared_ptr<Callbacker> &callbacker)
       : QAction(icon, text, callbacker->qmenu)
       , callbacker(callbacker)
     {
@@ -341,7 +389,7 @@ namespace{
 
   public slots:
     void triggered(){
-      callbacker->run_and_delete_clicked();
+      callbacker->run_and_delete_clicked(callbacker);
     }
   };
 
@@ -444,24 +492,24 @@ namespace{
 
   public:
     
-    func_t *_callback;
+    //func_t *_callback;
 
     MyMainQMenu(QWidget *parent, QString title, bool is_async, func_t *callback)
       : MyQMenu(parent, title)
-      , _callback(callback)
+        //, _callback(callback)
     {
       
       R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
       
-      if(_callback!=NULL)
-        s7extra_protect(_callback);
+      //if(_callback!=NULL)
+      //  s7extra_protect(_callback);
 
       connect(this, SIGNAL(hovered(QAction*)), this, SLOT(hovered(QAction*)));
     }
     
     ~MyMainQMenu(){
-      if(_callback!=NULL)
-        s7extra_unprotect(_callback);      
+      //if(_callback!=NULL)
+      //  s7extra_unprotect(_callback);      
     }
 
     void showEvent(QShowEvent *event) override {
@@ -724,14 +772,16 @@ static QMenu *create_qmenu(
               is_last=true;
           }
         }
-        
+
+        auto callbacker = std::shared_ptr<Callbacker>(new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
+          
         if (!icon.isNull()) {
 
-          action = new ClickableIconAction(icon, text, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
+          action = new ClickableIconAction(icon, text, callbacker);
                     
         } else if (is_checkable) {
 
-          auto *hepp = new CheckableAction(icon, text, shortcut, is_checked, radio_buttons != NULL, is_first, is_last, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
+          auto *hepp = new CheckableAction(icon, text, shortcut, is_checked, radio_buttons != NULL, is_first, is_last, callbacker);
           if (hepp->_success==false){
             radio_buttons=NULL;
             goto finished_parsing;
@@ -752,7 +802,7 @@ static QMenu *create_qmenu(
           
         } else {
 
-          auto *hepp = new ClickableAction(icon, text, shortcut, is_first, is_last, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
+          auto *hepp = new ClickableAction(icon, text, shortcut, is_first, is_last, callbacker);
           if (hepp->_success==false)
             goto finished_parsing;
           

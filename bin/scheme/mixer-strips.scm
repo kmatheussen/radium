@@ -199,7 +199,7 @@
   (let ((effect-monitor (<ra> :add-effect-monitor effect-name instrument-id monitor-stored monitor-automation callback)))
     (<gui> :add-deleted-callback gui
            (lambda (radium-runs-custom-exec)
-             (<ra> :remove-effect-monitor effect-monitor))))) ;; This function should be safe to call also when 'radium-runs-custom-exec' is true.
+             (<ra> :remove-effect-monitor effect-monitor #f))))) ;; This function should be safe to call also when 'radium-runs-custom-exec' is true.
 
 
 (define (get-mixer-strip-name instrument-id strips-config)

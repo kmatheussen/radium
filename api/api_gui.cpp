@@ -141,7 +141,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   void fix_mousePressEvent(QMouseEvent *event) override{                \
     ScopedEventHandlerTracker event_handler_tracker;                    \
     g_last_pressed_widget = this;                                       \
-    if (_mouse_callback==NULL){                                         \
+    if (_mouse_callback.v==NULL){                                         \
       CALL_PARENT_MOUSEPRESS(classname);                                \
       return;                                                           \
     }                                                                   \
@@ -153,7 +153,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
                                                                         \
   void fix_mouseMoveEvent(QMouseEvent *event) override{                 \
     ScopedEventHandlerTracker event_handler_tracker;                    \
-    if (_mouse_callback==NULL){                                         \
+    if (_mouse_callback.v==NULL){                                         \
       CALL_PARENT_MOUSEMOVE(classname);                                 \
       return;                                                           \
     }                                                                   \
@@ -166,7 +166,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override { \
     ScopedEventHandlerTracker event_handler_tracker;                    \
     g_last_released_widget = this;                                      \
-    if (_mouse_callback==NULL){                                         \
+    if (_mouse_callback.v==NULL){                                         \
       CALL_PARENT_MOUSERELEASE(classname);                              \
       return;                                                           \
     }                                                                   \
@@ -180,7 +180,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
                                                                         \
   void leaveEvent(QEvent *event) override{                              \
     ScopedEventHandlerTracker event_handler_tracker;                    \
-    if (_mouse_callback==NULL){                                         \
+    if (_mouse_callback.v==NULL){                                         \
       classname::leaveEvent(event); return;}                            \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     Gui::mouseLeaveEvent(event);                                        \
@@ -188,7 +188,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   }                                                                     \
   void enterEvent(QEvent *event) override{                              \
     ScopedEventHandlerTracker event_handler_tracker;                    \
-    if (_mouse_callback==NULL){                                         \
+    if (_mouse_callback.v==NULL){                                         \
       classname::enterEvent(event); return;}                            \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     Gui::mouseEnterEvent(event);                                        \
@@ -199,7 +199,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 #define DOUBLECLICK_OVERRIDER(classname)                                \
   void mouseDoubleClickEvent(QMouseEvent *event) override{              \
     ScopedEventHandlerTracker event_handler_tracker;                    \
-    if (_doubleclick_callback==NULL){                                   \
+    if (_doubleclick_callback.v==NULL){                                   \
       classname::mouseDoubleClickEvent(event);return;}                  \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     if(this==g_last_pressed_widget && this==g_last_released_widget)     \
@@ -243,7 +243,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
     radium::ScopedResizeEventTracker resize_event_tracker;              \
     if (_image!=NULL)                                                   \
       setNewImage(event->size().width(), event->size().height());       \
-    if (_resize_callback!=NULL)                                         \
+    if (_resize_callback.v!=NULL)                                         \
       Gui::resizeEvent(event);                                          \
     resizeEvent2(event);                                                \
     classname::resizeEvent(event);                                      \
@@ -387,7 +387,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     bool _is_output = false;
 
     float _last_peak = -100.0f;
-    func_t *_peak_callback = NULL;
+    radium::ProtectedS7Extra<func_t*> _peak_callback;
 
   public:
     int64_t _guinum;
@@ -456,9 +456,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     ~VerticalAudioMeterPainter(){
       R_ASSERT(g_active_vertical_audio_meters.removeOne(this));
       
-      if (_peak_callback!=NULL)
-        s7extra_unprotect(_peak_callback);
-
       free(_pos);
       free(_falloff_pos);
     }
@@ -466,14 +463,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   public:
     
     void addPeakCallback(func_t *func, int64_t guinum){
-      if (_peak_callback != NULL){
+      if (_peak_callback.v != NULL){
         handleError("Audio Meter #%d already have a peak callback", (int)guinum);
         return;
       }
 
-      _peak_callback = func;
-
-      s7extra_protect(_peak_callback);
+      _peak_callback.set(func);
 
       callPeakCallback();
     }
@@ -509,11 +504,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     void callPeakCallback(void){
 
-      if (_peak_callback != NULL){
+      if (_peak_callback.v != NULL){
         if (_last_peak<=-100.0)
-          S7CALL(void_charpointer,_peak_callback, "-inf");
+          S7CALL(void_charpointer,_peak_callback.v, "-inf");
         else
-          S7CALL(void_charpointer,_peak_callback, talloc_format("%.1f", _last_peak));
+          S7CALL(void_charpointer,_peak_callback.v, talloc_format("%.1f", _last_peak));
       }
     }
 
@@ -828,28 +823,23 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
   public:
 
-    func_t *_func;
-
+    radium::ProtectedS7Extra<func_t*> _func;
+    
     Callback(func_t *func, QWidget *widget)
       : _widget(widget)
       , _func(func)
     {
-      s7extra_protect(_func);
-    }
-
-    ~Callback(){
-      s7extra_unprotect(_func);
     }
 
   public slots:
     void clicked(bool checked){
       ScopedEventHandlerTracker event_handler_tracker;
-      S7CALL(void_void,_func);
+      S7CALL(void_void,_func.v);
     }
     
     void toggled(bool checked){
       ScopedEventHandlerTracker event_handler_tracker;
-      S7CALL(void_bool, _func, checked);
+      S7CALL(void_bool, _func.v, checked);
     }
 
     void editingFinished(){
@@ -868,7 +858,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       if (value != _last_string_value){
         _last_string_value = value;
-        S7CALL(void_charpointer,_func, value.toUtf8().constData());
+        S7CALL(void_charpointer, _func.v, value.toUtf8().constData());
       }
     }
 
@@ -889,7 +879,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       if (value != _last_int_value){
         QPointer<Callback> mythis(this);
         
-        S7CALL(void_int, _func, value);
+        S7CALL(void_int, _func.v, value);
         if (mythis.isNull()==false)
           _last_int_value = value;
       }
@@ -911,7 +901,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       if (value != _last_int_value){
         QPointer<Callback> mythis(this);
-        S7CALL(void_double, _func, value);
+        S7CALL(void_double, _func.v, value);
         if (mythis.isNull()==false)
           _last_double_value = value;
       }
@@ -920,55 +910,55 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     void textChanged(QString text){
       ScopedEventHandlerTracker event_handler_tracker;
-      S7CALL(void_charpointer,_func, text.toUtf8().constData());
+      S7CALL(void_charpointer, _func.v, text.toUtf8().constData());
     }
     
     void currentFontChanged(const QFont &font){
       ScopedEventHandlerTracker event_handler_tracker;
-      S7CALL(void_dyn,_func, DYN_create_string(font.toString()));//.toUtf8().constData()));
+      S7CALL(void_dyn, _func.v, DYN_create_string(font.toString()));//.toUtf8().constData()));
     }
 
     void intValueChanged(int val){
       ScopedEventHandlerTracker event_handler_tracker;
-      S7CALL(void_int,_func, val);
+      S7CALL(void_int,_func.v, val);
     }
 
     void doubleValueChanged(double val){
       ScopedEventHandlerTracker event_handler_tracker;
-      S7CALL(void_double,_func, val);
+      S7CALL(void_double,_func.v, val);
     }
 
     void textChanged(){
       ScopedEventHandlerTracker event_handler_tracker;
       QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget);
-      S7CALL(void_charpointer,_func, text_edit->toPlainText().toUtf8().constData());
+      S7CALL(void_charpointer,_func.v, text_edit->toPlainText().toUtf8().constData());
     }
     
     void plainTextChanged(){
       ScopedEventHandlerTracker event_handler_tracker;
       QPlainTextEdit *text_edit = dynamic_cast<QPlainTextEdit*>(_widget);
-      S7CALL(void_charpointer,_func, text_edit->toPlainText().toUtf8().constData());
+      S7CALL(void_charpointer,_func.v, text_edit->toPlainText().toUtf8().constData());
     }
     
     void itemSelectionChanged(){
       ScopedEventHandlerTracker event_handler_tracker;
       //QTableWidget *table = dynamic_cast<QTableWidget*>(_widget);
-      S7CALL(void_void,_func);
+      S7CALL(void_void,_func.v);
     }
     
     void cellDoubleClicked(int row, int column){
       ScopedEventHandlerTracker event_handler_tracker;
-      S7CALL(void_int_int,_func, column, row);
+      S7CALL(void_int_int,_func.v, column, row);
     }
     
     void fileSelected(const QString &file){
       ScopedEventHandlerTracker event_handler_tracker;
-      S7CALL(void_charpointer,_func, path_to_w_path(STRING_create(file)));
+      S7CALL(void_charpointer,_func.v, path_to_w_path(STRING_create(file)));
     }
 
     void currentChanged(int index){
       ScopedEventHandlerTracker event_handler_tracker;
-      S7CALL(void_int,_func, index);
+      S7CALL(void_int,_func.v, index);
     }
   };
 
@@ -1137,8 +1127,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     bool _take_keyboard_focus;
     bool _has_keyboard_focus = false;
 
-    QVector<func_t*> _deleted_callbacks;
-
+    radium::ProtectedS7FuncVector _deleted_callbacks;
+    
     RememberGeometry remember_geometry;
 
     QSet<int64_t> _child_plugin_gui_patch_ids; // Plugins that have been opened with this GUI as parent. We identify the plugin by using Patch::id since Patch::id requires less bookkeeping (no need to do anything when patch or plugin is deleted).
@@ -1177,6 +1167,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       , _widget(widget)
       , _created_from_existing_widget(created_from_existing_widget)
       , _take_keyboard_focus(created_from_existing_widget==false)
+#if defined(RELEASE)
+      , _deleted_callbacks(false)
+#else
+      , _deleted_callbacks(true)
+#endif
       , _class_name(widget->metaObject()->className())
     {
       _is_pure_qwidget = _class_name=="QWidget";
@@ -1255,27 +1250,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       delete _image_painter;
       delete _image;
 
-      if (_mouse_callback!=NULL)
-        s7extra_unprotect(_mouse_callback);
-
-      if (_key_callback!=NULL)
-        s7extra_unprotect(_key_callback);
-
-      if (_focus_in_callback!=NULL)
-        s7extra_unprotect(_focus_in_callback);
-
-      if (_doubleclick_callback!=NULL)
-        s7extra_unprotect(_doubleclick_callback);
-
-      if (_close_callback!=NULL)
-        s7extra_unprotect(_close_callback);
-
-      if (_resize_callback!=NULL)
-        s7extra_unprotect(_resize_callback);
-
-      if (_paint_callback!=NULL)
-        s7extra_unprotect(_paint_callback);
-
       g_guis_can_not_be_closed.remove(_gui_num); // Can call QHash::remove() even when the table doesn't contain the key.
         
       g_gui_from_widgets.remove(_widget_as_key); // Can't use _widget since it might have been set to NULL.
@@ -1296,10 +1270,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void apply_deleted_callbacks(void){
-      for(func_t *func : _deleted_callbacks){
-        S7CALL(void_bool,func, g_radium_runs_custom_exec);
-        s7extra_unprotect(func);
-      }
+
+      _deleted_callbacks.safe_for_all(false, [](func_t *func){
+          S7CALL(void_bool,func, g_radium_runs_custom_exec);
+          return true;
+        });
 
       _deleted_callbacks.clear();
     }
@@ -1484,7 +1459,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
     /************ MOUSE *******************/
     
-    func_t *_mouse_callback = NULL;
+    radium::ProtectedS7Extra<func_t*> _mouse_callback;
     int _currentButton = 0;
     double _mouse_event_failed = -1;
     
@@ -1500,7 +1475,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     bool mousePressEvent(QMouseEvent *event){
-      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
+      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback.v!=NULL, false);
 
       if ((_mouse_event_failed - TIME_get_ms()) > 0){
         printf("mouse_event failed last time. Won't try again for a couple of seconds\n");
@@ -1514,7 +1489,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
             
-      int ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
+      int ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
       
@@ -1524,7 +1499,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     bool mouseReleaseEvent(radium::MouseCycleEvent &event) {
-      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
+      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback.v!=NULL, false);
 
       if ((_mouse_event_failed - TIME_get_ms()) > 0){
         printf("mouse_event failed last time. Won't try again\n");
@@ -1536,7 +1511,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
       const QPoint &point = event.pos();
-      bool ret = S7CALL(bool_int_int_float_float, _mouse_callback, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
+      bool ret = S7CALL(bool_int_int_float_float, _mouse_callback.v, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
       
@@ -1546,7 +1521,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     bool mouseMoveEvent(QMouseEvent *event){
-      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
+      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback.v!=NULL, false);
 
       if ((_mouse_event_failed - TIME_get_ms()) > 0){
         printf("mouse_event failed last time. Won't try again\n");
@@ -1559,17 +1534,20 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
-      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
+      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
-      
+
+      //hmm.
+      //throwExceptionIfError();
+        
       return ret;
       
       //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
 
     bool mouseLeaveEvent(QEvent *event){
-      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
+      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback.v!=NULL, false);
 
       if ((_mouse_event_failed - TIME_get_ms()) > 0){
         printf("mouse_event failed last time. Won't try again\n");
@@ -1582,7 +1560,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
-      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_LEAVING, point.x(), point.y());
+      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_LEAVING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
       
@@ -1592,7 +1570,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     bool mouseEnterEvent(QEvent *event){
-      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
+      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback.v!=NULL, false);
 
       if ((_mouse_event_failed - TIME_get_ms()) > 0){
         printf("mouse_event failed last time. Won't try again\n");
@@ -1605,7 +1583,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
-      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_ENTERING, point.x(), point.y());
+      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_ENTERING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
       
@@ -1615,26 +1593,25 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void addMouseCallback(func_t* func){      
-      if (_mouse_callback!=NULL){
+      if (_mouse_callback.v!=NULL){
         handleError("Gui %d already has a mouse callback.", (int)_gui_num);
         return;
       }
 
-      _mouse_callback = func;
-      s7extra_protect(_mouse_callback);
+      _mouse_callback.set(func);
       _widget->setMouseTracking(true);
     }
 
 
     /************ KEY *******************/
 
-    func_t *_key_callback = NULL;
+    radium::ProtectedS7Extra<func_t*> _key_callback;
 
     bool keyEvent(QKeyEvent *event, int keytype){
       if(can_internal_data_be_accessed_questionmark_safer()==false)
         return false;
 
-      if (_key_callback==NULL)
+      if (_key_callback.v==NULL)
         return false;
 
       QString s = false ? ""
@@ -1649,7 +1626,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       event->accept();
       
-      return S7CALL(bool_int_charpointer,_key_callback, keytype, talloc_strdup(s.toUtf8().constData()));
+      return S7CALL(bool_int_charpointer,_key_callback.v, keytype, talloc_strdup(s.toUtf8().constData()));
     }
     
     bool keyPressEvent(QKeyEvent *event){
@@ -1683,50 +1660,48 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void addKeyCallback(func_t* func){      
-      if (_key_callback!=NULL){
+      if (_key_callback.v!=NULL){
         handleError("Gui %d already has a key callback.", (int)_gui_num);
         return;
       }
 
-      _key_callback = func;
-      s7extra_protect(_key_callback);
+      _key_callback.set(func);
     }
 
     
     /************ FOCUS IN *******************/
 
-    func_t *_focus_in_callback = NULL;
+    radium::ProtectedS7Extra<func_t*> _focus_in_callback;
     
     void focusInEvent(QFocusEvent *event){
-      if (_focus_in_callback==NULL)
+      if (_focus_in_callback.v==NULL)
         return;
 
-      S7CALL(void_void, _focus_in_callback);
+      S7CALL(void_void, _focus_in_callback.v);
     }
 
 
     void addFocusInCallback(func_t* func){      
-      if (_focus_in_callback!=NULL){
+      if (_focus_in_callback.v!=NULL){
         handleError("Gui %d already has a focus in callback.", (int)_gui_num);
         return;
       }
 
-      _focus_in_callback = func;
-      s7extra_protect(_focus_in_callback);
+      _focus_in_callback.set(func);
     }
 
     
     /************ DOUBLECLICK *******************/
 
-    func_t *_doubleclick_callback = NULL;
+    radium::ProtectedS7Extra<func_t*> _doubleclick_callback;
 
     void mouseDoubleClickEvent(QMouseEvent *event){
-      R_ASSERT_RETURN_IF_FALSE(_doubleclick_callback!=NULL);
+      R_ASSERT_RETURN_IF_FALSE(_doubleclick_callback.v!=NULL);
       event->accept();
 
       const QPoint &point = event->pos();
 
-      S7CALL(void_int_float_float,_doubleclick_callback, getMouseButtonEventID(event), point.x(), point.y());
+      S7CALL(void_int_float_float,_doubleclick_callback.v, getMouseButtonEventID(event), point.x(), point.y());
     }
 
     // Returns true if it uses signal system.
@@ -1744,11 +1719,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         
       } else {
         
-        if (_doubleclick_callback!=NULL){
+        if (_doubleclick_callback.v!=NULL){
           handleError("Gui %d already has a doubleclick callback.", (int)_gui_num);
         } else {
-          _doubleclick_callback = func;
-          s7extra_protect(_doubleclick_callback);
+          _doubleclick_callback.set(func);
         }
         
         return false;
@@ -1758,7 +1732,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
     /************ CLOSE *******************/
 
-    func_t *_close_callback = NULL;
+    radium::ProtectedS7Extra<func_t*> _close_callback;
 
     // Some scheme code is running (which might be run from an event handler), so we let the garbage collector delete us instead to avoid memory corruption in those event handlers.
     void setDelayedDeletion(QCloseEvent *event){
@@ -1777,7 +1751,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
     bool closeEvent(QCloseEvent *event){
 
-      if (_close_callback==NULL || Gui::_has_been_closed){
+      if (_close_callback.v==NULL || Gui::_has_been_closed){
 
         apply_deleted_callbacks(); // Do this as early as possible
       
@@ -1804,7 +1778,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
         {
           ScopedEventHandlerTracker event_handler_tracker;
-          closeresult = S7CALL(bool_bool,_close_callback, g_radium_runs_custom_exec);
+          closeresult = S7CALL(bool_bool,_close_callback.v, g_radium_runs_custom_exec);
         }
 
         if (false==closeresult) {
@@ -1842,25 +1816,24 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void addCloseCallback(func_t* func){      
-      if (_close_callback!=NULL){
+      if (_close_callback.v!=NULL){
         handleError("Gui %d already has a close callback.", (int)_gui_num);
         return;
       }
 
-      _close_callback = func;
-      s7extra_protect(_close_callback);
+      _close_callback.set(func);
     }
 
     
     /************ RESIZE *******************/
     
-    func_t *_resize_callback = NULL;
+    radium::ProtectedS7Extra<func_t*> _resize_callback = NULL;
     double _resize_callback_failed = -1;
 
     void do_the_resize(int width, int height){
       if(gui_isOpen(_gui_num)){ // && _widget->isVisible()){ //  && _widget->width()>0 && _widget->height()>0)
         int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
-        S7CALL(void_int_int,_resize_callback, width, height);
+        S7CALL(void_int_int,_resize_callback.v, width, height);
         if (g_scheme_failed==true && gui_isOpen(guinum))
           _resize_callback_failed = TIME_get_ms() + 5000;
       }
@@ -1891,7 +1864,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void resizeEvent(QResizeEvent *event){
-      R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
+      R_ASSERT_RETURN_IF_FALSE(_resize_callback.v!=NULL);
 
       if ((_resize_callback_failed - TIME_get_ms()) > 0){
         printf("resize_event failed last time. Won't try again to avoid a debug output bonanza (%s).\n", _class_name.toUtf8().constData());
@@ -1917,19 +1890,18 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void addResizeCallback(func_t* func){
-      if (_resize_callback!=NULL){
+      if (_resize_callback.v!=NULL){
         handleError("Gui %d already has a resize callback.", (int)_gui_num);
         return;
       }
 
-      _resize_callback = func;
-      s7extra_protect(_resize_callback);
+      _resize_callback.set(func);
     }
 
 
     /************ DRAWING *******************/
 
-    func_t *_paint_callback = NULL;
+    radium::ProtectedS7Extra<func_t*> _paint_callback;
 
     QImage *_image = NULL;
     QPainter *_image_painter = NULL;
@@ -1986,7 +1958,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       bool ret = true;
       
-      R_ASSERT_RETURN_IF_FALSE2(_paint_callback!=NULL || _background_color.isValid(), ret);
+      R_ASSERT_RETURN_IF_FALSE2(_paint_callback.v!=NULL || _background_color.isValid(), ret);
 
       if(!can_internal_data_be_accessed_questionmark()){
         maybePaintBackgroundColor(event);
@@ -2004,13 +1976,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       if(maybePaintBackgroundColor(event, p)==false)
         event->accept();
 
-      if (_paint_callback != NULL) {
+      if (_paint_callback.v != NULL) {
 
         p.setRenderHints(QPainter::Antialiasing,true);
       
         ret = paintEvent3(&p, &event->region(),
                           [this](){
-                            S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
+                            S7CALL(void_int_int,_paint_callback.v, _widget->width(), _widget->height());
                           });
         
       }
@@ -2051,7 +2023,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
         } else {
 
-          if (_paint_callback!=NULL || _background_color.isValid())
+          if (_paint_callback.v!=NULL || _background_color.isValid())
             paintEvent2(event, vamps_to_paint);
           else
             ret = false;
@@ -2065,13 +2037,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
 
     void addPaintCallback(func_t* func){
-      if (_paint_callback!=NULL){
+      if (_paint_callback.v!=NULL){
         handleError("Gui %d already has a paint callback.", (int)_gui_num);
         return;
       }
 
-      _paint_callback = func;
-      s7extra_protect(_paint_callback);
+      _paint_callback.set(func);
     }
 
 
@@ -3003,9 +2974,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     bool _is_int;
     QString _text;
-    func_t *_get_text;
+    radium::ProtectedS7Extra<func_t*> _get_text;
     double _min,_max;
-    QVector<func_t*> _funcs;
+    radium::ProtectedS7FuncVector _funcs;
     
   public:
     
@@ -3017,12 +2988,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       , _get_text(get_text)
       , _min(min)
       , _max(max)
+#if defined(RELEASE)
+      , _funcs(false)
+#else
+      , _funcs(true)
+#endif
     {
 
       R_ASSERT(min!=max);
-
-      if (_get_text != NULL)
-        s7extra_protect(_get_text);
 
       if (orientation==Qt::Vertical){ // Weird Qt vertical slider behavor.
         double temp = max;
@@ -3047,14 +3020,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       value_setted(value()); // In case value wasn't changed when calling setValue above.
     }
 
-    ~Slider(){
-      for(func_t *func : _funcs)
-        s7extra_unprotect(func);
-
-      if (_get_text != NULL)
-        s7extra_unprotect(_get_text);
-    }
-
 #undef CALL_PARENT_MOUSEPRESS
 #undef CALL_PARENT_MOUSEMOVE
 #undef CALL_PARENT_MOUSERELEASE
@@ -3075,7 +3040,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
 
     void set_get_text_func(func_t *get_text){
-      _get_text = get_text;
+      _get_text.set(get_text);
     }
     
     void value_setted(int value){
@@ -3083,24 +3048,32 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       double scaled_value = scale_double(value, minimum(), maximum(), _min, _max);
 
-      if (_get_text != NULL)
-        SLIDERPAINTER_set_string(_painter, S7CALL(charpointer_dyn, _get_text, DYN_create_float(scaled_value)));
+      if (_get_text.v != NULL)
+        SLIDERPAINTER_set_string(_painter, S7CALL(charpointer_dyn, _get_text.v, DYN_create_float(scaled_value)));
       
       if (_is_int) {
-        if (_get_text == NULL)
+        if (_get_text.v == NULL)
           SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value));
-        for(func_t *func : _funcs)
-          S7CALL(void_int,func, scaled_value);
+        
+        _funcs.safe_for_all(false, [scaled_value](func_t *func){
+            S7CALL(void_int,func, scaled_value);
+            return true;
+          });
+        
       } else {
-        if (_get_text == NULL)
+                              
+        if (_get_text.v == NULL)
           SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value, 'f', 2));
-        for(func_t *func : _funcs)
-          S7CALL(void_double,func, scaled_value);
+
+        _funcs.safe_for_all(false, [scaled_value](func_t *func){
+            S7CALL(void_double,func, scaled_value);
+            return true;
+          });
+        
       }
     }
 
     virtual void addGuiCallback(func_t* func) override {
-      s7extra_protect(func);
       _funcs.push_back(func);
       value_setted(value());
     }
@@ -3645,7 +3618,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       printf("  DONE: %d\n", result);
       for (auto *callback : _callbacks)
-        S7CALL(void_dyn, callback->_func, DYN_create_bool(result==0 ? false : 1));
+        S7CALL(void_dyn, callback->_func.v, DYN_create_bool(result==0 ? false : 1));
       
       deleteLater(); // Must do this to close the dialog. Qt does something strange here. Seems like QFontDialog overrides the close callback.
     }
@@ -4118,7 +4091,7 @@ bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, QMouseEvent *e
     return false;
   }
 
-  if (gui->_mouse_callback != NULL)
+  if (gui->_mouse_callback.v != NULL)
     return gui->mousePressEvent(ev);
   else
     return false;
@@ -4134,7 +4107,7 @@ bool API_run_mouse_move_event_for_custom_widget(QWidget *widget, QMouseEvent *ev
     return false;
   }
 
-  if (gui->_mouse_callback != NULL)
+  if (gui->_mouse_callback.v != NULL)
     return gui->mouseMoveEvent(ev);
   else
     return false;
@@ -4150,7 +4123,7 @@ bool API_run_mouse_release_event_for_custom_widget(QWidget *widget, radium::Mous
     return false;
   }
 
-  if (gui->_mouse_callback != NULL)
+  if (gui->_mouse_callback.v != NULL)
     return gui->mouseReleaseEvent(event);
   else
     return false;
@@ -4166,7 +4139,7 @@ bool API_run_mouse_leave_event_for_custom_widget(QWidget *widget, QEvent *ev){
     return false;
   }
 
-  if (gui->_mouse_callback != NULL)
+  if (gui->_mouse_callback.v != NULL)
     return gui->mouseLeaveEvent(ev);
   else
     return false;
@@ -4182,7 +4155,7 @@ void API_run_resize_event_for_custom_widget(QWidget *widget, QResizeEvent *ev){
     return;
   }
 
-  if (gui->_resize_callback != NULL)
+  if (gui->_resize_callback.v != NULL)
     gui->resizeEvent(ev);
 }
 
@@ -4261,7 +4234,6 @@ void gui_addDeletedCallback(int64_t guinum, func_t* func){
   if(check_existing(gui)==false)
     return;
   
-  s7extra_protect(func);
   gui->_deleted_callbacks.push_back(func);
 }
                       

@@ -2936,29 +2936,19 @@ int getSeqblockSeqblockNum(int64_t seqblockid){
   return get_seqblocknum(seqtrack, seqblock);
 }
 
-static QVector<func_t*> g_seqblock_deleted_callbacks;
+
+static radium::ProtectedS7FuncVector g_seqblock_deleted_callbacks(true);
 
 void addSeqblockDeletedCallback(func_t *callback){
-  if (g_seqblock_deleted_callbacks.contains(callback)){
+  if (g_seqblock_deleted_callbacks.push_back(callback)==false)
     handleError("addSeqblockDeletedCallback: Callback %p already added\n", callback);
-    return;
-  }
-  
-  s7extra_protect(callback);
-  g_seqblock_deleted_callbacks.push_back(callback);
 }
                                 
 static bool removeSeqblockDeletedCallback2(func_t *callback){
   int num_removed = g_seqblock_deleted_callbacks.removeAll(callback);
   R_ASSERT_NON_RELEASE(num_removed==0 || num_removed==1);
   
-  if (num_removed == 0)
-    return false;
-  
-  if (num_removed > 0)
-    s7extra_unprotect(callback);
-  
-  return true;
+  return num_removed > 0;
 }
 
 void removeSeqblockDeletedCallback(func_t *callback){
@@ -2982,12 +2972,16 @@ void API_seqblock_has_been_deleted(int64_t seqblockid){
   if(g_curr_seqblock_id_under_mouse==seqblockid)
     g_curr_seqblock_id_under_mouse = -1;
   
-  for(auto callback : g_seqblock_deleted_callbacks){
-    if (S7CALL(bool_int, callback, seqblockid)==false)
-      to_remove.push_back(callback);
-  }
+  g_seqblock_deleted_callbacks.safe_for_all(true, [&to_remove, seqblockid](func_t *callback){
 
-  for(auto callback : to_remove){
+      if (S7CALL(bool_int, callback, seqblockid)==false)
+        to_remove.push_back(callback);
+
+      return true;
+      
+    });
+
+  for(auto *callback : to_remove){
     printf("   API_seqblock_has_been_deleted: Calling removeSeqblockDeletedCallback for %p\n", callback);
     removeSeqblockDeletedCallback2(callback);
   }

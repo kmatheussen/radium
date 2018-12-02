@@ -851,7 +851,7 @@ float getTrackPianorollX1(int tracknum, int blocknum, int windownum){
 }
 
 float getTrackPianorollY1(int tracknum, int blocknum, int windownum){
-  return getBlockHeaderY2(blocknum, windownum);
+  return getTopVisibleY(blocknum, windownum); //getBlockHeaderY2(blocknum, windownum);
 }
 
 float getTrackPianorollX2(int tracknum, int blocknum, int windownum){

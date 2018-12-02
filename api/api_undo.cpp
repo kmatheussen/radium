@@ -100,37 +100,41 @@ void closeUndo(void){
   UNDO_CLOSE();
 }
 
-static QVector<func_t*> g_undo_callbacks;
+static radium::ProtectedS7FuncVector g_undo_callbacks(true);
+
+static int64_t g_undoredo_generation = 0;
 
 void addUndoRedoCallback(func_t* callback){
-  if (g_undo_callbacks.contains(callback)){
-    handleError("addUndoRedoCallback: Callback is already registered");
-    return;
-  }
 
-  s7extra_protect(callback);
+  g_undoredo_generation++;
   
-  g_undo_callbacks.push_back(callback);
+  if(g_undo_callbacks.push_back(callback)==false)
+    handleError("addUndoRedoCallback: Callback is already registered");
 }
 
 void removeUndoRedoCallback(func_t* callback){
+
+  g_undoredo_generation++;
+
   int num_removed = g_undo_callbacks.removeAll(callback);
-  if (num_removed != 1){
-    R_ASSERT_NON_RELEASE(num_removed==0);
-    handleError("removeUndoRedoCallback: Callback not found. (%d)", num_removed);
-  }
   
-  if (num_removed > 0)
-    s7extra_unprotect(callback);
+  if (num_removed == 0)
+    handleError("removeUndoRedoCallback: Callback not found.");
 }
 
 void API_call_me_right_after_undoing_or_redoing(void){
-  QVector<func_t*> to_remove;
-  
-  for(func_t *callback : g_undo_callbacks)
-    if (S7CALL(bool_void, callback)==false)
-      to_remove.push_back(callback);
+  QVector<func_t*> to_remove; // Need to do it like this since the callback could both remove and add undoredo callbacks.
 
+  g_undo_callbacks.safe_for_all(true, [&to_remove](func_t *callback){
+      
+      if (S7CALL(bool_void, callback)==false)
+        to_remove.push_back(callback);
+      
+      return true;
+      
+    });
+  
+  // Don't want to call removeUndoRedoCallback for the entries since a callback could have removed a previous callback, and we don't want to show error if that happens.
   for(func_t *callback : to_remove)
-    removeUndoRedoCallback(callback);
+    g_undo_callbacks.removeAll(callback);
 }

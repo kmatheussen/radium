@@ -2409,29 +2409,32 @@ int64_t getAudioInstrumentDeletionGeneration(void){
 
 /******** Effect monitors ************/
 
-struct EffectMonitor{
-  int64_t id;
-
-  struct Patch *patch;
+namespace{
   
-  int64_t instrument_id;
-  bool monitor_stored;
-  bool monitor_automation;
-  int effect_num;
-  func_t *func;
+  struct EffectMonitor{
+    int64_t id = 0;
+    
+    radium::GcHolder<struct Patch> patch;
+    
+    int64_t instrument_id = 0;
+    bool monitor_stored = 0;
+    bool monitor_automation = 0;
+    int effect_num = 0;
+    radium::ProtectedS7Extra<func_t*> func;
+    
+    float last_stored_value = 0;
+    float last_automation_value = 0;
+  };
 
-  float last_stored_value;
-  float last_automation_value;
-};
-
-static int64_t g_effect_monitor_id = 0;
-static vector_t g_effect_monitors = {};
+ static int64_t g_effect_monitor_id = 0;
+ static QVector<EffectMonitor*> g_effect_monitors;
+ 
+}
 
 static struct EffectMonitor *find_effect_monitor_from_id(int64_t id){
-  VECTOR_FOR_EACH(struct EffectMonitor *, effect_monitor, &g_effect_monitors){
-    if (effect_monitor->id==id)
-      return effect_monitor;
-  }END_VECTOR_FOR_EACH;
+  for(auto *monitor : g_effect_monitors)
+    if (monitor->id==id)
+      return monitor;
 
   return NULL;
 }
@@ -2474,45 +2477,82 @@ int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, bool mo
   }
     */
     
-  struct EffectMonitor *effect_monitor = (struct EffectMonitor *)talloc(sizeof(struct EffectMonitor));
+  struct EffectMonitor *effect_monitor = new EffectMonitor;
 
   effect_monitor->id = g_effect_monitor_id++;
-  effect_monitor->patch = patch;
+  effect_monitor->patch.set(patch);
   
   effect_monitor->effect_num = effect_num;
   effect_monitor->instrument_id = instrument_id;
   effect_monitor->monitor_stored = monitor_stored;
   effect_monitor->monitor_automation = monitor_automation;
-  effect_monitor->func = func;
+  effect_monitor->func.set(func);
 
   effect_monitor->last_stored_value = 0;
   effect_monitor->last_automation_value = -10;
 
-  VECTOR_push_back(&g_effect_monitors, effect_monitor);
-
-  s7extra_protect(effect_monitor->func);  
+  g_effect_monitors.push_back(effect_monitor);
 
   return effect_monitor->id;
 }
 
-void removeEffectMonitor(int64_t effect_monitor_id){
+void removeEffectMonitor(int64_t effect_monitor_id, bool throw_exception_if_not_found){
   struct EffectMonitor *effect_monitor = find_effect_monitor_from_id(effect_monitor_id);
+  
   if (effect_monitor==NULL){
-    handleError("No effect monitor #%d", (int)effect_monitor_id);
+    
+    if (throw_exception_if_not_found)
+      handleError("No effect monitor #%d", (int)effect_monitor_id);
+    
     return;
   }
 
-  s7extra_unprotect(effect_monitor->func);
-    
-  VECTOR_remove(&g_effect_monitors, effect_monitor);
+  int num = g_effect_monitors.removeAll(effect_monitor);
+  R_ASSERT(num==1);
+
+  delete effect_monitor;
 }
 
+void API_remove_effect_monitors_for_instrument(struct Patch *patch){
+ again:
+  for(auto *monitor : g_effect_monitors){
+    if (monitor->patch.data()==patch){
+      int num = g_effect_monitors.removeAll(monitor);
+      R_ASSERT(num==1);
+      goto again;
+    }
+  }  
+}
 
 void API_instruments_call_regularly(void){
-  VECTOR_FOR_EACH(struct EffectMonitor *, effect_monitor, &g_effect_monitors){
-    struct Patch *patch = effect_monitor->patch;
+  int i = 0;
+  
+  while(i < g_effect_monitors.size()){
+    
+    EffectMonitor *effect_monitor = g_effect_monitors.at(i);
+    
+    struct Patch *patch = effect_monitor->patch.data();
+
+    {
+      struct Patch *patch2 = PATCH_get_from_id(patch->id);
+      if (patch2 != patch) {      
+        R_ASSERT_NON_RELEASE(patch2==NULL);
+        R_ASSERT_NON_RELEASE(false);
+        g_effect_monitors.removeAt(i);
+        printf("    WARNING: removeEffectMonitor not called for deleted instrument \"%s\". Removing automatically.\n", patch->name);
+        continue;
+      }
+    }
+    
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
-    if(plugin!=NULL){
+    
+    if(plugin==NULL){
+
+#if !defined(RELEASE)
+      printf("   API_instruments_call_regularly: SoundPlugin for instrument \"%s\" is NULL\n", patch->name);
+#endif
+      
+    } else {
 
       bool send_stored=false, send_automation = false;
       
@@ -2537,13 +2577,15 @@ void API_instruments_call_regularly(void){
       
       if (send_stored || send_automation){
         S7CALL(void_dyn_dyn,
-               effect_monitor->func,
+               effect_monitor->func.v,
                send_stored ? DYN_create_float(stored_now) : g_dyn_false,
                send_automation ? DYN_create_float(automation_now) : g_dyn_false
                );
       }
     }
-  }END_VECTOR_FOR_EACH;
+
+    i++;
+  }
 }
 
 

@@ -387,7 +387,7 @@ namespace{
     
 public:
 
-    func_t *_callback;
+    radium::ProtectedS7Extra<func_t*> _callback;
     QColor _initial_color;
     
     MyColorDialog(QWidget *parent, func_t *callback, const char *initial_color)
@@ -405,14 +405,11 @@ public:
       
       connect(this, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(color_changed(const QColor &)));
 
-      s7extra_protect(_callback);
-
       updateGeometry();
       moveWindowToCentre(this);
     }
     
     ~MyColorDialog(){
-      s7extra_unprotect(_callback);
       printf("  MyColorDialog deleted\n");
     }
 
@@ -430,7 +427,7 @@ public:
         
     void done(int result) override{
       if (result==QDialog::Rejected)
-        S7CALL(void_charpointer, _callback, _initial_color.name().toUtf8().constData());
+        S7CALL(void_charpointer, _callback.v, _initial_color.name().toUtf8().constData());
 
       release_keyboard_focus();
 
@@ -441,7 +438,7 @@ public:
   public slots:
     void color_changed(const QColor &col){
       printf("Color changed\n");
-      S7CALL(void_charpointer,_callback, col.name().toUtf8().constData());
+      S7CALL(void_charpointer,_callback.v, col.name().toUtf8().constData());
     }
   };
 }
