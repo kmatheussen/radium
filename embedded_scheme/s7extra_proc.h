@@ -177,14 +177,280 @@ extern "C" {
   func_t *s7extra_get_func_from_funcname_for_storing(const char *funcname); // Must be used when storing the pointer. (gc-protected) Must NOT be used if the function is called again and again. (leaks memory)
   func_t *s7extra_get_func_from_funcname(const char *funcname); // Must NOT be used if the pointer is stored.
   
-  void s7extra_protect(void *v);
-  void s7extra_unprotect(void *v);
+  int64_t s7extra_protect(void *v) __attribute__((warn_unused_result)); // returns pos
+  //void s7extra_unprotect(void *v); // Slower than s7extra_unprotect2, but don't have to remember pos. (dangerous)
+  void s7extra_unprotect(void *v, int64_t pos); // Might use this one instead of s7extra_unprotect if unprotecting a lot of objects.
 
   void s7extra_disable_history(void);  
   void s7extra_enable_history(void);
   
   bool s7extra_is_defined(const char* funcname);
+  
 #ifdef __cplusplus
 }
+
+
+namespace radium{
+
+  template <typename T> struct ProtectedS7Extra{
+    T v;
+    int64_t _pos;
+
+#if !defined(RELEASE)
+    bool _do_unprotect = true;
+#endif
+
+    ProtectedS7Extra(const ProtectedS7Extra &another)
+      : ProtectedS7Extra(another.v)
+    {
+    }
+    
+    ProtectedS7Extra& operator=(const ProtectedS7Extra&) = delete;
+
+    ProtectedS7Extra(T val)
+    {
+      protect(val);
+    }
+    
+    ProtectedS7Extra()
+      : ProtectedS7Extra(NULL)
+    {
+    }
+    
+    ~ProtectedS7Extra(){
+      unprotect();
+    }
+
+  private:
+
+    void protect(T val){
+      v = val;
+      
+      if (v==NULL)
+        _pos = -1;
+      else
+        _pos = s7extra_protect(v);
+    }
+    
+    void unprotect(void){
+#if !defined(RELEASE)
+      if(_do_unprotect==true)
+#endif
+        if (v != NULL){
+          R_ASSERT_NON_RELEASE(_pos >= 0);
+          s7extra_unprotect(v, _pos);
+          v = NULL;
+          _pos = -1;
+        }else{
+          R_ASSERT_NON_RELEASE(_pos == -1);
+        }
+    }
+    
+  public:
+    
+    
+    void set(T new_val){
+      unprotect();
+      protect(new_val);
+    }
+    
+    // Or just use ".v".
+    T get(void){
+      return v;
+    }
+  };
+
+#if defined(QVECTOR_H)
+  
+  struct ProtectedS7FuncVector{
+    
+  private:
+    QVector<radium::ProtectedS7Extra<func_t*>> _elements;
+    
+    int64_t _generation = 0;
+    bool _changes_allowed = true;
+
+  public:
+
+#if !defined(RELEASE)
+    bool _do_unprotect = true;
+#endif
+
+    bool _only_unique_elements;
+    
+    ProtectedS7FuncVector(const ProtectedS7FuncVector&) = delete;
+    ProtectedS7FuncVector& operator=(const ProtectedS7FuncVector&) = delete;
+
+    ProtectedS7FuncVector(bool only_unique_elements)
+      : _only_unique_elements(only_unique_elements)
+    {
+    }
+    
+    /*
+    // use safe_for_all instead.
+    const func_t* begin() const {
+      return _elements.begin();
+    }
+
+    // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
+    const func_t* end() const {      
+      return _elements.end();
+    }
+    */
+    
+    // Very safe function to iterate all elements. The callback is allowed to both add and remove elements.
+    // If allow_changes==false, assertion will be thrown if the 'for_all_callback' tries to change the vector.
+    void safe_for_all(bool allow_changes, std::function<bool(func_t*)> for_all_callback){
+      bool old_allowed = _changes_allowed;
+      
+      if (old_allowed==true && allow_changes == false)
+        _changes_allowed = false;
+      
+      {
+        QSet<const func_t*> called_funcs;
+        
+        int64_t generation;
+        
+        do{
+          
+          generation = _generation;
+          
+          int i = 0;
+          
+          while(i < _elements.size()){
+            
+            func_t *callback = _elements.at(i).v;
+            
+            if (called_funcs.contains(callback)==false){
+              
+              called_funcs << callback;
+              
+              if (for_all_callback(callback)==false)
+                goto finished;
+            }
+            
+            i++;
+          }
+          
+        }while(generation != _generation);
+        
+      }
+      
+    finished:
+      _changes_allowed = old_allowed;
+    }
+      
+    int find_pos(func_t *callback) const {
+      int i = 0;
+      for(const auto &callback2 : _elements){
+        if (callback2.v == callback)
+          return i;
+        i++;
+      }
+      
+      return -1;
+    }
+
+    int removeAll(func_t *callback){
+      if (_changes_allowed==false){
+        R_ASSERT(false);
+        return 0;
+      }
+      
+      int num_removed = 0;
+
+      {
+      again:
+        int i = 0;
+        for(auto &callback2 : _elements){
+          if(callback2.v == callback){
+            _generation++;
+            _elements.removeAt(i);
+            num_removed++;
+#if defined(RELEASE)
+            if (_only_unique_elements)              
+              return 1;
+#endif
+            goto again; // It's not documented how QVector might change order after removing an element, so we just start again from the beginning.
+          }
+          i++;
+        }
+      }
+
+#if !defined(RELEASE)
+      R_ASSERT(num_removed==0 || num_removed==1);
+#endif
+      
+      return num_removed;
+    }
+
+    void clear(void){
+      if (_changes_allowed==false){
+        R_ASSERT(false);
+        return;
+      }
+      
+      _elements.clear();
+    }
+    
+    bool removeOne(func_t *callback){
+      if (_changes_allowed==false){
+        R_ASSERT(false);
+        return false;
+      }
+      
+      int pos = find_pos(callback);
+      if (pos == -1)
+        return false;
+
+      _generation++;
+      _elements.removeAt(pos);
+      
+      return true;
+    }
+    
+    void removeAt(int pos){
+      if (_changes_allowed==false){
+        R_ASSERT(false);
+        return;
+      }
+      
+      R_ASSERT_RETURN_IF_FALSE(pos >= 0);
+      R_ASSERT_RETURN_IF_FALSE(pos < _elements.size());
+
+      _generation++;
+      _elements.removeAt(pos);
+    }
+    
+    bool contains(func_t *callback) const{
+      return find_pos(callback) >= 0;
+    }
+    
+    bool push_back(func_t *callback){
+      if (_changes_allowed==false){
+        R_ASSERT(false);
+        return false;
+      }
+
+      if (_only_unique_elements && contains(callback))
+        return false;
+
+      _generation++;
+      _elements.push_back(ProtectedS7Extra<func_t*>(callback));
+      
+#if !defined(RELEASE)
+      if (_do_unprotect==false)
+        _elements.last()._do_unprotect = false;
+#endif
+
+      return true;
+    }
+
+  };
+
+#endif // QVECTOR_H
+  
+}
+
 #endif
 

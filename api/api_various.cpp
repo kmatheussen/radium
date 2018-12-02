@@ -2382,34 +2382,32 @@ static const_char* getKeyName(int keynum){
 }
 
 
-static func_t *g_grab_callback;
+static radium::ProtectedS7Extra<func_t*> g_grab_callback;
 
 void API_has_grabbed_keybinding(int key, int *qualifiers, int len_qualifiers){
-  R_ASSERT_RETURN_IF_FALSE(g_grab_callback != NULL);
+  R_ASSERT_RETURN_IF_FALSE(g_grab_callback.v != NULL);
 
   const char *keybinding = getKeyName(key);
 
   for(int i=0;i<len_qualifiers;i++)
     keybinding = talloc_format("%s %s", keybinding, getKeyName(qualifiers[i]));
 
-  S7CALL(void_charpointer,g_grab_callback,keybinding);
+  S7CALL(void_charpointer,g_grab_callback.v,keybinding);
 
-  s7extra_unprotect(g_grab_callback);
-  g_grab_callback = NULL;
+  g_grab_callback.set(NULL);
 }
 
 void grabKeybinding(func_t *callback){
   if (g_grab_next_eventreceiver_key==true){
+    R_ASSERT(g_grab_callback.v != NULL);
     handleError("grabKeybinding: Already grabbing keybinding");
     return;
   }
 
-  R_ASSERT(g_grab_callback == NULL);
+  R_ASSERT(g_grab_callback.v == NULL);
 
-  g_grab_callback = callback;
+  g_grab_callback.set(callback);
   g_grab_next_eventreceiver_key = true;
-
-  s7extra_protect(g_grab_callback);
 }
 
 const_char* getQualifierName(const_char *qualifier){
@@ -2856,7 +2854,7 @@ namespace{
     ScheduledEvent *next = NULL;
 
     double priority = 0.0;
-    func_t *_callback = NULL;
+    radium::ProtectedS7Extra<func_t*> _callback;
 #if STDFUNC
     std::function<void(void)> _callback3;
 #endif
@@ -2871,18 +2869,16 @@ namespace{
 #else
       void call_before_usage(double daspriority, func_t *callback){
 #endif
-      R_ASSERT(_callback==NULL);
+      R_ASSERT(_callback.v==NULL);
       priority = daspriority;
-      _callback = callback;
+      _callback.set(callback);
 #if STDFUNC
       _callback3 = callback3;
 #endif
-      s7extra_protect(_callback);
     }
 
     void call_after_usage(void){
-      s7extra_unprotect(_callback);
-      _callback = NULL;
+      _callback.set(NULL);
 #if STDFUNC
       _callback3 = g_empty_callback3;
 #endif
@@ -2957,7 +2953,7 @@ void schedule(double ms, func_t *callback){
 void removeSchedule(func_t *callback){
   for(int i = 0 ; i<g_scheduled_events.size(); i++){
     auto *event = g_scheduled_events.get_event_n(i);
-    if (event->_callback==callback){
+    if (event->_callback.v==callback){
       event->stop_me = true;
       return;
     }
@@ -2988,9 +2984,9 @@ void API_call_very_often(void){
     bool has_new_ms = false;
     double new_ms = 0;
     
-    if (event->_callback != NULL) {
+    if (event->_callback.v != NULL) {
       
-      dyn_t ret = S7CALL(dyn_void, event->_callback);
+      dyn_t ret = S7CALL(dyn_void, event->_callback.v);
       if (DYN_is_number(ret)){
         new_ms = DYN_get_double_from_number(ret);
         has_new_ms = true;

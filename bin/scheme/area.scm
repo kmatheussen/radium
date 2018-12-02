@@ -188,7 +188,7 @@
 
      (define (remove-sub-areas!)
        (for-each (lambda (effect-monitor)
-                   (<ra> :remove-effect-monitor effect-monitor))
+                   (<ra> :remove-effect-monitor effect-monitor #f))
                  effect-monitors)
        (set! effect-monitors '())
 

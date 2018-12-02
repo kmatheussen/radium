@@ -90,28 +90,7 @@ namespace{
     }
   };
 
-  struct ProtectedS7Pointer{
-    s7_pointer v;
-    s7_int pos;
-    
-    ProtectedS7Pointer(s7_pointer val)
-      : v(val)
-      , pos(s7_gc_protect(s7, v))
-    {      
-    }
-    
-    ~ProtectedS7Pointer(){
-      R_ASSERT_NON_RELEASE(s7_gc_protected_at(s7, pos)==v);
-      s7_gc_unprotect_at(s7, pos);
-    }
-    
-    // Or just use ".v".
-    s7_pointer get(void){
-      return v;
-    }
-  };
-
-  typedef ProtectedS7Pointer Protect;
+  typedef radium::ProtectedS7Extra<s7_pointer> Protect;
 }
 
 static s7_pointer find_scheme_value(s7_scheme *s7, const char *funcname){
@@ -262,9 +241,9 @@ static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
 
   R_ASSERT_RETURN_IF_FALSE2(s7_is_hash_table(s_hash), r_hash);
 
-  ProtectedS7Pointer protect(s_hash); // Not sure if this is necessary. (doesn't the iterator below hold a pointer to the vector?)
+  Protect protect(s_hash); // Not sure if this is necessary. (doesn't the iterator below hold a pointer to the vector?)
     
-  ProtectedS7Pointer iterator(s7_make_iterator(s7, s_hash));
+  Protect iterator(s7_make_iterator(s7, s_hash));
 
   int num_elements = 0;
   while(true){
@@ -305,11 +284,11 @@ static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
 }
 
 static dynvec_t s7extra_array(s7_scheme *s7, s7_pointer vector){
-  ProtectedS7Pointer protect(vector); // Not sure if this is necessary. (doesn't the iterator below hold a pointer to the vector?)
+  Protect protect(vector); // Not sure if this is necessary. (doesn't the iterator below hold a pointer to the vector?)
   
   dynvec_t dynvec = {};
 
-  ProtectedS7Pointer iterator(s7_make_iterator(s7, vector));
+  Protect iterator(s7_make_iterator(s7, vector));
 
   while(true){
     s7_pointer val = s7_iterate(s7, iterator.v);
@@ -469,7 +448,7 @@ dyn_t s7extra_get_dyn(s7_scheme *s7, s7_pointer s, const char **error){
 
 static s7_pointer hash_to_s7(s7_scheme *sc, const hash_t *r_hash){
   
-  ProtectedS7Pointer s_hash(s7_make_hash_table(sc, HASH_get_num_elements(r_hash)));
+  Protect s_hash(s7_make_hash_table(sc, HASH_get_num_elements(r_hash)));
 
   dynvec_t dynvec = HASH_get_values(r_hash);
   vector_t keys = HASH_get_keys(r_hash);
@@ -486,7 +465,7 @@ static s7_pointer hash_to_s7(s7_scheme *sc, const hash_t *r_hash){
 
 static s7_pointer dynvec_to_s7(s7_scheme *sc, const dynvec_t &dynvec){
   
-  ProtectedS7Pointer s_vec(s7_make_vector(sc, dynvec.num_elements));
+  Protect s_vec(s7_make_vector(sc, dynvec.num_elements));
 
   for(int i = 0 ; i < dynvec.num_elements ; i++){
     s7_vector_set(sc,
@@ -1407,12 +1386,45 @@ const char *s7extra_callFunc2_charpointer_dyn(const char *funcname, const dyn_t 
   return s7extra_callFunc_charpointer_dyn((const func_t*)find_scheme_value(s7, funcname), arg1);
 }
 
-void s7extra_protect(void *v){
-  s7_gc_protect(s7, (s7_pointer)v);  
+#if !defined(RELEASE)
+static QHash<int64_t, void*> g_used_pos;
+#endif
+
+int64_t s7extra_protect(void *v){
+  int64_t ret = s7_gc_protect(s7, (s7_pointer)v);
+
+#if !defined(RELEASE)
+  R_ASSERT(g_used_pos.contains(ret)==false);
+  g_used_pos[ret] = v;
+#endif
+  
+  //printf("           s7extra_protect %p. pos: %d\n", v, (int)ret);
+  return ret;
 }
 
+/*
+It's dangerous to mix s7_gc_unprotect and s7_g_unprotect_at
 void s7extra_unprotect(void *v){
+  printf("             1. s7extra unprotecting %p\n", v);
   s7_gc_unprotect(s7, (s7_pointer)v);  
+}
+*/
+
+void s7extra_unprotect(void *v, int64_t pos){
+#if !defined(RELEASE)
+  //printf("             2. s7extra unprotecting2 %p. pos: %d\n", v, (int)pos);
+  R_ASSERT(g_used_pos.contains(pos)==true);
+  if (g_used_pos[pos] !=v ){
+    printf("   POS: %d. Actual: %p. Supposed: %p\n", (int)pos, g_used_pos[pos], v);
+    abort();
+  }
+  
+  g_used_pos.remove(pos);
+#endif
+  
+  R_ASSERT_RETURN_IF_FALSE(s7_gc_protected_at(s7, pos)==v);
+  //s7_gc_unprotect_at(s7, pos);
+  s7_gc_safe_unprotect_at(s7, (s7_pointer)v, pos);
 }
 
 void s7extra_disable_history(void){

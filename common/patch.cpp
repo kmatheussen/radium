@@ -720,6 +720,8 @@ static void make_inactive(struct Patch *patch, bool force_removal){
 
   PATCH_remove_from_instrument(patch);
 
+  API_remove_effect_monitors_for_instrument(patch);
+  
   printf("       PATCH make inactive\n");
 }
 
