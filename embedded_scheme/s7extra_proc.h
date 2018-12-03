@@ -263,10 +263,8 @@ namespace radium{
     }
   };
 
-#if defined(QVECTOR_H)
+#if defined(QVECTOR_H) && defined(QSET_H)
 
-#include <QSet>
-  
   struct ProtectedS7FuncVector{
     
   private:
