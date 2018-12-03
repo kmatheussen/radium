@@ -165,9 +165,9 @@ namespace{
       //if (callback.v==NULL && callback3==NULL)
       //  delete this;
 
-      if (g_alive_callbackers > 1){
-        R_ASSERT_NON_RELEASE(false);
-        printf("  Warning: popup menu seems to leak.\n");
+      if (g_alive_callbackers > 1000){
+        //R_ASSERT_NON_RELEASE(false);
+        printf("  Warning: popup menu might leak: %d.\n", g_alive_callbackers);
       }
     }
 
