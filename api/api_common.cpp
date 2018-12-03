@@ -134,6 +134,10 @@ void clearErrorMessage(void){
   }
 }
 
+#define SHOW_DIALOG_WHEN_ERROR 0 // Turned out to be useless. Gives the user an option to select "Continue" instead of throwing a scheme exception, but I can't remember any time where that option would be useful. In addition, while the dialog was open, other scheme code could run in the mean time, which could cause very complex bugs (the same code that caused the bug could be called again for instance).
+
+// We don't throw scheme exception here since the api code is not written with that in mind.
+// Instead, we set the variable "g_error_message" and then the function 'throwExceptionIfError', which is called from a safe point, throws exception instead.
 void handleError_internal(const char *fmt,...){
   if (g_error_message != NULL)
     return;
@@ -145,63 +149,44 @@ void handleError_internal(const char *fmt,...){
   vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
+  g_error_message = talloc_strdup(message); // Set this value before calling SCHEME_get_history nad GFX_Message, so that we won't get into an infinite loop.
+    
   printException(message);
 
   const char *backtrace = SCHEME_get_history();
   puts(backtrace);
-  
-#if 0 //!defined(RELEASE)
-  
-  printf("\n Message: \"%s\"\n", message);
-  printf("      PRESS return to continue\n");
-  getchar();
-  
-#else
 
+  GFX_addMessage(message);
+  GFX_addMessage(backtrace);
+
+#if SHOW_DIALOG_WHEN_ERROR
+  
   static double last_time = 0;
 
   if (safe_to_run_exec() && (TIME_get_ms() - last_time) > 0) {
 
     vector_t v = {};
     
-    int ok = VECTOR_push_back(&v, "Stop");
+    int stop = VECTOR_push_back(&v, "Stop");
+    (void)stop;
     int continue_ = VECTOR_push_back(&v, "Continue");
-    (void)continue_;
     int silent = VECTOR_push_back(&v, "Silent! (continue for 10 seconds)");
-    
+
     int ret = GFX_Message(&v, "%s", message);
-    
-    // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above, which is called when exiting an api call.
-    if (ret==ok)
-      g_error_message = talloc_strdup(message);
+
+    g_error_message = NULL;
+  
+    if (ret==continue_ || ret==silent)
+      g_error_message = NULL;
 
     last_time = TIME_get_ms();
     
     if (ret==silent)
       last_time += 10000;
     
-  } else {
-
-#if !defined(RELEASE)
-    printf("\n Message: \"%s\"\n", message);
-    printf("      PRESS return to continue\n");
-    getchar();
-#endif
-    
-    g_error_message = talloc_strdup(message);
-
   }
 #endif
   
-  
-  GFX_addMessage(message);
- 
-#if 1
-  GFX_addMessage(backtrace);
-#else        
-  SCHEME_throw_catch("radium-api", message); // Insert backtrace into message log.
-#endif
-
 }
 
 struct Tracker_Windows *getWindowFromNum(int windownum){
