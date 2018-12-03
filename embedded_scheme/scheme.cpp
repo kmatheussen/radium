@@ -1423,8 +1423,8 @@ void s7extra_unprotect(void *v, int64_t pos){
 #endif
   
   R_ASSERT_RETURN_IF_FALSE(s7_gc_protected_at(s7, pos)==v);
-  //s7_gc_unprotect_at(s7, pos);
-  s7_gc_safe_unprotect_at(s7, (s7_pointer)v, pos);
+  s7_gc_unprotect_at(s7, pos);
+  //s7_gc_safe_unprotect_at(s7, (s7_pointer)v, pos);
 }
 
 void s7extra_disable_history(void){
