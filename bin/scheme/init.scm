@@ -31,10 +31,10 @@
   (eq? a b))
 
 
+;; Note! This function is called from the error handler.
 (define (get-as-displayable-string-as-possible info)
   (define (fallback)
-    (with-output-to-string (lambda ()
-                             (display info))))
+    (object->string info))
   (catch #t
          (lambda ()
            (cond ((defined? 'to-displayable-string)
@@ -42,7 +42,7 @@
                  ((defined? 'pp)
                   (pp info))
                  (else
-                  (format #t "~S" info))))
+                  (object->string info))))
          (lambda args
            (display "(get-as-displayable-string-as-possible info) failed. info:")
            (display info)
@@ -54,6 +54,7 @@
   (if (defined? 'safe-add-message-window-txt)
       (safe-add-message-window-txt txt)))
 
+;; Note! This function is called from the error handler.
 (define (history-ow!)
   (define history (copy (s7:get-history)))
   (call-with-output-string
@@ -73,7 +74,7 @@
                                8))
                        (or (equal? (car x) '(history-ow!))
                            (equal? (car x) '(safe-history-ow!)))))
-              (format p "~%history:~%<br>    ~S" (if (pair? x) (car x) (car start)))
+              (format p "~%<br>history:~%<br>    ~S" (if (pair? x) (car x) (car start)))
               (do ((x history (cdr x))
                    (line lines (cdr line))
                    (f files (cdr f)))
@@ -81,21 +82,24 @@
                 (format p (if (and (integer? (car line))
                                    (string? (car f))
                                    (not (string=? (car f) "*stdout*")))
-                              (values "~%    ~S~40T;~A[~A]" (car x) (car f) (car line))
-                              (values "~%    ~S" (car x)))))
-              (format p "~%"))
+                              (values "~%<br>    ~S~40T;<font color='red'>~A</font>[~A]" (car x) (car f) (car line))
+                              (values "~%<br>    ~S<br>" (car x)))))
+              (format p "~%<br>"))
            (set! history (cons (car x) history))
            (set! lines (cons (and (pair? (car x)) (pair-line-number (car x))) lines))
+           ;;(for-each c-display lines)
            (set! files (cons (and (pair? (car x)) (pair-filename (car x))) files))))))))
 
+;; Note! This function is called from the error handler.
 (define (safe-history-ow!)
   (string-append (catch #t
                         (lambda ()
                           (let ((ow (owlet)))
-                            (string-append (format #f "~%;error-code: ~S~%" (ow 'error-code))
+                            (display "ERROR_CODE:") (display (ow 'error-code)) (newline)
+                            (string-append (format #f "~%<br>;error-code: ~S~%<br>" (ow 'error-code))
                                            (if (ow 'error-line)
-                                               (format #f "~%;error-file/line: ~S[~A]~%" (ow 'error-file) (ow 'error-line))
-                                               (format #f "~%;error-file/line: ; no file/linenum")))))
+                                               (format #f "~%;error-file/line: <font color='red'>~S</font>[~A]~%<br>" (ow 'error-file) (ow 'error-line))
+                                               (format #f "~%;error-file/line: ; <font color='red'>no file/linenum</font><br>")))))
                         (lambda args
                           (display "ARGS1:")(display args)(newline)
                           (get-as-displayable-string-as-possible (list "s7 error-code/error-file/line failed: " args))))
@@ -158,7 +162,7 @@
 (set! (hook-functions *rootlet-redefinition-hook*)
       (list (lambda (hook)
               (let ((message (string-append "Warning: Redefining "
-                                            (format #t "~A ~A~%" (hook 'name) (hook 'value))
+                                            (format #f "~A ~A~%" (hook 'name) (hook 'value))
                                             ;;(symbol->string (hook 'symbol))
                                             (if *currently-loading-file*
                                                 (string-append " while loading " *currently-loading-file*)
@@ -170,13 +174,13 @@
                          (newline)
                          (catch #t
                                 (lambda ()
-                                  (ra:add-message (ra:get-html-from-text message)))
+                                  (ra:add-message message));(ra:get-html-from-text message)))
                                 (lambda args
                                   #t))
                          (handle-assertion-failure-during-startup message)))
                       ((and *currently-loading-file*
                             (not *currently-reloading-file*))
-                       (ra:add-message (ra:get-html-from-text message)))
+                       (ra:add-message message));(ra:get-html-from-text message)))
                       ((defined? 'c-display (rootlet))
                        (c-display message))
                       (else

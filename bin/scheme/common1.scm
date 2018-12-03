@@ -127,6 +127,7 @@
              (or ((car funcs) _)
                  (loop (cdr funcs)))))))
 
+;; Note! This function is called from the error handler.
 (define (to-displayable-string a)
   ;;(display "____ a: ")(display a)(newline)
   (cond ((keyword? a)
@@ -152,17 +153,13 @@
         ;;((hash-table? a)
         ;; (<-> 
         ((procedure? a)
-         (with-output-to-string
-           (lambda ()
-             (display a))))
+         (format #f "func:~S" a))
         ((hash-table? a)
-         (with-output-to-string
-           (lambda ()
-             (display a))))
+         (format #f "hash-table: ~S" a))
         ;;(<-> "{ " (to-displayable-string (map values a)) " }"))
         ;;(<-> "function [ " (to-displayable-string (procedure-source a)) " ]"))))))
         (else
-         "#unknown type")))
+         (format #f "unknown type: ~S" a))))
 
 
 #||
@@ -220,6 +217,7 @@
 
 (define-constant *empty-symbol* '___empty_symbol) ;; s7 doesn't allow converting empty string to symbol
 
+;; Note! This function is called from the error handler.
 (define (to-string a)
   (cond ((symbol? a)
          (if (eq? *empty-symbol* a)
@@ -238,13 +236,12 @@
                 (lambda ()
                   (event-to-string a))
                 (lambda args
-                  (format #t "func:~S" a))))
+                  (format #f "func:~S" a))))
         ((keyword? a)
          (<-> "#:" (to-string (keyword->symbol a))))
         (else
-         (with-output-to-string
-           (lambda ()
-             (display a))))))
+         (object->string a))))
+
 #!!
 (c-display "args:" x)
 !!#
@@ -256,6 +253,7 @@
                          ,@code)
                   :finally ra:enable-scheme-history)))
 
+;; Note! This function is called from the error handler.
 (define (<-> . args)
   (apply string-append (map to-string args)))
 

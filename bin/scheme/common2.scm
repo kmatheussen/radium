@@ -639,7 +639,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
            (apply func args))
          (lambda args 
            (display "    FROM_C_catch2")(newline)
-           (display "FROM-C-catch-all-errors-and-display-backtrace-automatically: func failed. Args:")(newline)(display args)(newline)
+           (display "FROM-C-catch-all-errors-and-display-backtrace-automatically: func failed. Args:")(newline)(display "    ")(display args)(newline)
            (catch #t
                   safe-display-ow!
                   (lambda args

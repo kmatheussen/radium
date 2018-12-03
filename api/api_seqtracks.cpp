@@ -2164,7 +2164,7 @@ void cancelGfxSeqblocks(int seqtracknum){
     //handleError("cancelGfxSeqblocks: No gfx seqtracks in sequencer track %d\n", seqtracknum); // Might happen for good reasons. Also, calling cancelGfxSeqblocks is only done inside an error catcher, and throwing exception inside an exception handler just leads to confusion.
     return;
   }
-  
+
   SEQTRACK_cancel_gfx_seqblocks(seqtrack);
 
   R_ASSERT(seqtrack->gfx_seqblocks==NULL);
