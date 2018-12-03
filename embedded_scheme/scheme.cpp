@@ -1731,6 +1731,13 @@ bool SCHEME_mousepress(int button, float x, float y){
   tevent.x  = x;
   tevent.y  = y;
 
+  if (g_scheme_nested_level > 0){
+#if !defined(RELEASE)
+    printf("cancel call to \"radium-mouse-press\" since other scheme code is running\n");
+#endif
+    return false;
+  }
+  
   return S7CALL2(bool_int_float_float,"radium-mouse-press", // [1]
                  button,x,y);
   /*
@@ -1754,8 +1761,15 @@ bool SCHEME_mousemove(int button, float x, float y){
   
   tevent.x  = x;
   tevent.y  = y;
-
-  return S7CALL2(bool_int_float_float,"radium-mouse-move", // [1]
+ 
+  if (g_scheme_nested_level > 0){
+#if !defined(RELEASE)
+    printf("cancel call to \"radium-mouse-move\" since other scheme code is running\n");
+#endif
+    return false;
+  }
+  
+ return S7CALL2(bool_int_float_float,"radium-mouse-move", // [1]
                  button,x,y);
   
   // [1] Not storing/reusing this value since 'find_scheme_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
@@ -1766,6 +1780,13 @@ bool SCHEME_mouserelease(int button, float x, float y){
   
   tevent.x  = x;
   tevent.y  = y;
+
+  if (g_scheme_nested_level > 0){
+#if !defined(RELEASE)
+    printf("cancel call to \"radium-mouse-release\" since other scheme code is running\n");
+#endif
+    return false;
+  }
 
   return S7CALL2(bool_int_float_float,"radium-mouse-release", // [1]
                  button,x,y);
