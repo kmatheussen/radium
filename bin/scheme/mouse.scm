@@ -2789,128 +2789,127 @@
                      (<ra> :pianoroll-visible *current-track-num*)
                      (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
                      (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
-                       (if pianonote-info
-                           (begin
-                             (define (delete-note)
-                               (<ra> :undo-notes (pianonote-info :tracknum))
-                               (<ra> :delete-pianonote
-                                     0
-                                     (pianonote-info :notenum)
-                                     (pianonote-info :tracknum))
-                               #f)
-                             (define (cut-note)
-                               (<ra> :undo-notes (pianonote-info :tracknum))
-                               (define Place (get-place-from-y $button $y))
-                               (<ra> :cut-note Place
-                                               (pianonote-info :notenum)
-                                               (pianonote-info :tracknum))
-                               #f)
-                             (define (delete-pitch)
-                               (<ra> :undo-notes (pianonote-info :tracknum))
-                               (<ra> :delete-pianonote (if (= 0 (pianonote-info :pianonotenum))
-                                                        1
-                                                        (pianonote-info :pianonotenum))
-                                                    (pianonote-info :notenum)
-                                                    (pianonote-info :tracknum))
-                               #f)
-                             (define (enable-portamento)
-                               (<ra> :undo-notes (pianonote-info :tracknum))
-                               (<ra> :enable-portamento (pianonote-info :notenum)
-                                                     (pianonote-info :tracknum))
-                               #f)
-                             (define (disable-portamento)
-                               (<ra> :undo-notes (pianonote-info :tracknum))
-                               (<ra> :disable-portamento (pianonote-info :notenum)
-                                                      (pianonote-info :tracknum))
-                               #f)
-                             (define (set-linear!)
-                               (<ra> :set-pianonote-logtype *logtype-linear*
-                                                            (pianonote-info :pianonotenum)
-                                                            (pianonote-info :notenum)
-                                                            (pianonote-info :tracknum))
-                               #f
-                               )
-                             (define (set-hold!)
-                               (<ra> :set-pianonote-logtype *logtype-hold*
-                                                            (pianonote-info :pianonotenum)
-                                                            (pianonote-info :notenum)
-                                                            (pianonote-info :tracknum))
-                               #f
-                               )
-                             (define (add-pitch)
-                               (<ra> :undo-notes (pianonote-info :tracknum))
-                               (define Place (get-place-from-y $button $y))
-                               (define Value (<ra> :get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
-                               (<ra> :add-pianonote-pitch Value Place (pianonote-info :notenum) (pianonote-info :tracknum))
-                               #f)
+                       (and pianonote-info
+                            (begin
+                              (define (delete-note)
+                                (<ra> :undo-notes (pianonote-info :tracknum))
+                                (<ra> :delete-pianonote
+                                      0
+                                      (pianonote-info :notenum)
+                                      (pianonote-info :tracknum))
+                                #f)
+                              (define (cut-note)
+                                (<ra> :undo-notes (pianonote-info :tracknum))
+                                (define Place (get-place-from-y $button $y))
+                                (<ra> :cut-note Place
+                                      (pianonote-info :notenum)
+                                      (pianonote-info :tracknum))
+                                #f)
+                              (define (delete-pitch)
+                                (<ra> :undo-notes (pianonote-info :tracknum))
+                                (<ra> :delete-pianonote (if (= 0 (pianonote-info :pianonotenum))
+                                                            1
+                                                            (pianonote-info :pianonotenum))
+                                      (pianonote-info :notenum)
+                                      (pianonote-info :tracknum))
+                                #f)
+                              (define (enable-portamento)
+                                (<ra> :undo-notes (pianonote-info :tracknum))
+                                (<ra> :enable-portamento (pianonote-info :notenum)
+                                      (pianonote-info :tracknum))
+                                #f)
+                              (define (disable-portamento)
+                                (<ra> :undo-notes (pianonote-info :tracknum))
+                                (<ra> :disable-portamento (pianonote-info :notenum)
+                                      (pianonote-info :tracknum))
+                                #f)
+                              (define (set-linear!)
+                                (<ra> :set-pianonote-logtype *logtype-linear*
+                                      (pianonote-info :pianonotenum)
+                                      (pianonote-info :notenum)
+                                      (pianonote-info :tracknum))
+                                #f
+                                )
+                              (define (set-hold!)
+                                (<ra> :set-pianonote-logtype *logtype-hold*
+                                      (pianonote-info :pianonotenum)
+                                      (pianonote-info :notenum)
+                                      (pianonote-info :tracknum))
+                                #f
+                                )
+                              (define (add-pitch)
+                                (<ra> :undo-notes (pianonote-info :tracknum))
+                                (define Place (get-place-from-y $button $y))
+                                (define Value (<ra> :get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
+                                (<ra> :add-pianonote-pitch Value Place (pianonote-info :notenum) (pianonote-info :tracknum))
+                                #f)
 
-                             (define (glide-from-here-to-next-note)
-                               (<ra> :undo-notes (pianonote-info :tracknum))
-                               (define Place (get-place-from-y $button $y))
-                               (define Value (<ra> :get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
-                               (define next-pitch (<ra> :get-note-value (1+ (pianonote-info :notenum)) (pianonote-info :tracknum)))                                 
-                               (<ra> :add-pianonote-pitch Value Place (pianonote-info :notenum) (pianonote-info :tracknum))
-                               (<ra> :set-note-end-pitch next-pitch (pianonote-info :notenum) (pianonote-info :tracknum))
-                               #f)
-                             
-                             (define (can-glide-from-here-to-next-note?)
-                               (and (< (pianonote-info :notenum)
-                                       (1- (<ra> :get-num-notes (pianonote-info :tracknum))))
-                                    (= (pianonote-info :pianonotenum)
-                                       (1- (<ra> :get-num-pianonotes (pianonote-info :notenum)
-                                                                     (pianonote-info :tracknum))))))
-                               
-                             (define num-pianonotes (<ra> :get-num-pianonotes (pianonote-info :notenum)
-                                                                           (pianonote-info :tracknum)))
-                             (let ((portamento-enabled (<ra> :portamento-enabled
-                                                             (pianonote-info :notenum)
-                                                             (pianonote-info :tracknum)))
-                                   (is-holding (= *logtype-hold* (<ra> :get-pianonote-logtype
-                                                                       (pianonote-info :pianonotenum)
-                                                                       (pianonote-info :notenum)
-                                                                       (pianonote-info :tracknum)))))
-                               
-                               (popup-menu "Cut Note at mouse position" cut-note
-                                           "Glide to next note at mouse position" :enabled (can-glide-from-here-to-next-note?) glide-from-here-to-next-note
-                                           "Delete Note" delete-note
-                                           "--------"
-                                           "Delete node" :enabled (> num-pianonotes 1) delete-pitch
-                                           "Add node at mouse position" add-pitch
-                                           (list "Glide to next node"
-                                                 :check (if (< num-pianonotes 2)
-                                                            portamento-enabled
-                                                            (not is-holding))
-                                                 ;;:enabled (> num-pianonotes 1)
-                                                 (lambda (maybe)
-                                                   (c-display "   ______________________________   Glide1 called " maybe)
-                                                   (if (< num-pianonotes 2)
-                                                       (if maybe
-                                                           (enable-portamento)
-                                                           (disable-portamento))
-                                                       (if maybe
-                                                           (set-linear!)
-                                                           (set-hold!)))))
-                                           (let ((note-spans-last-place (note-spans-last-place (pianonote-info :notenum)
-                                                                                               (pianonote-info :tracknum))))
-                                             (list "continue playing note into next block"
-                                                   :check (and note-spans-last-place
-                                                               (<ra> :note-continues-next-block (pianonote-info :notenum) (pianonote-info :tracknum)))
-                                                   :enabled note-spans-last-place
-                                                   (lambda (maybe)
-                                                     (<ra> :set-note-continue-next-block maybe (pianonote-info :notenum) (pianonote-info :tracknum)))))
+                              (define (glide-from-here-to-next-note)
+                                (<ra> :undo-notes (pianonote-info :tracknum))
+                                (define Place (get-place-from-y $button $y))
+                                (define Value (<ra> :get-note-value (pianonote-info :notenum) (pianonote-info :tracknum)))
+                                (define next-pitch (<ra> :get-note-value (1+ (pianonote-info :notenum)) (pianonote-info :tracknum)))                                 
+                                (<ra> :add-pianonote-pitch Value Place (pianonote-info :notenum) (pianonote-info :tracknum))
+                                (<ra> :set-note-end-pitch next-pitch (pianonote-info :notenum) (pianonote-info :tracknum))
+                                #f)
+                              
+                              (define (can-glide-from-here-to-next-note?)
+                                (and (< (pianonote-info :notenum)
+                                        (1- (<ra> :get-num-notes (pianonote-info :tracknum))))
+                                     (= (pianonote-info :pianonotenum)
+                                        (1- (<ra> :get-num-pianonotes (pianonote-info :notenum)
+                                                  (pianonote-info :tracknum))))))
+                              
+                              (define num-pianonotes (<ra> :get-num-pianonotes (pianonote-info :notenum)
+                                                           (pianonote-info :tracknum)))
+                              (let ((portamento-enabled (<ra> :portamento-enabled
+                                                              (pianonote-info :notenum)
+                                                              (pianonote-info :tracknum)))
+                                    (is-holding (= *logtype-hold* (<ra> :get-pianonote-logtype
+                                                                        (pianonote-info :pianonotenum)
+                                                                        (pianonote-info :notenum)
+                                                                        (pianonote-info :tracknum)))))
+                                
+                                (popup-menu "Cut Note at mouse position" cut-note
+                                            "Glide to next note at mouse position" :enabled (can-glide-from-here-to-next-note?) glide-from-here-to-next-note
+                                            "Delete Note" delete-note
+                                            "--------"
+                                            "Delete node" :enabled (> num-pianonotes 1) delete-pitch
+                                            "Add node at mouse position" add-pitch
+                                            (list "Glide to next node"
+                                                  :check (if (< num-pianonotes 2)
+                                                             portamento-enabled
+                                                             (not is-holding))
+                                                  ;;:enabled (> num-pianonotes 1)
+                                                  (lambda (maybe)
+                                                    (c-display "   ______________________________   Glide1 called " maybe)
+                                                    (if (< num-pianonotes 2)
+                                                        (if maybe
+                                                            (enable-portamento)
+                                                            (disable-portamento))
+                                                        (if maybe
+                                                            (set-linear!)
+                                                            (set-hold!)))))
+                                            (let ((note-spans-last-place (note-spans-last-place (pianonote-info :notenum)
+                                                                                                (pianonote-info :tracknum))))
+                                              (list "continue playing note into next block"
+                                                    :check (and note-spans-last-place
+                                                                (<ra> :note-continues-next-block (pianonote-info :notenum) (pianonote-info :tracknum)))
+                                                    :enabled note-spans-last-place
+                                                    (lambda (maybe)
+                                                      (<ra> :set-note-continue-next-block maybe (pianonote-info :notenum) (pianonote-info :tracknum)))))
 
 
-                                           ;;"--------"
-                                           ;;"Glide to end position" :check portamento-enabled :enabled (< num-pianonotes 2) (lambda (ison)
-                                           ;;                                                                                  (c-display "   ______________________________   Glide2 called " ison)
-                                           ;;                                                                                  (if ison
-                                           ;;                                                                                      (enable-portamento)
-                                           ;;                                                                                      (disable-portamento)))
-                                           
-                                           ;; "Stop note here" stop-note
-                                           ))
-                             #t)
-                           #f))))))
+                                            ;;"--------"
+                                            ;;"Glide to end position" :check portamento-enabled :enabled (< num-pianonotes 2) (lambda (ison)
+                                            ;;                                                                                  (c-display "   ______________________________   Glide2 called " ison)
+                                            ;;                                                                                  (if ison
+                                            ;;                                                                                      (enable-portamento)
+                                            ;;                                                                                      (disable-portamento)))
+                                            
+                                            ;; "Stop note here" stop-note
+                                            ))
+                              #t)))))))
 
 
 ;; Eraser
