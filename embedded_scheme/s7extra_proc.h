@@ -234,7 +234,7 @@ namespace radium{
     
     void unprotect(void){
 #if !defined(RELEASE)
-      if(_do_unprotect==true)
+      if(_do_unprotect==true){
 #endif
         if (v != NULL){
           R_ASSERT_NON_RELEASE(_pos >= 0);
@@ -244,6 +244,9 @@ namespace radium{
         }else{
           R_ASSERT_NON_RELEASE(_pos == -1);
         }
+#if !defined(RELEASE)
+      }
+#endif
     }
     
   public:
