@@ -1816,18 +1816,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
-                                (cond ((and *current-track-num*
-                                            (>= X (<ra> :get-track-x1 0))
-                                            ;;(>= X (<ra> :get-track-notes-x1 *current-track-num*))
-                                            (< Y (<ra> :get-track-pan-on-off-y1)))
-                                       (if (= Button *right-button*)
-                                           (if (<ra> :shift-pressed)
-                                               (<ra> :delete-track *current-track-num*)
-                                               (track-configuration-popup-async X Y))
-                                           (select-track-instrument *current-track-num*))
-                                       #t)
-                                      (else
-                                       #f)))))
+                                (and *current-track-num*
+                                     (>= X (<ra> :get-track-x1 0))
+                                     ;;(>= X (<ra> :get-track-notes-x1 *current-track-num*))
+                                     (< Y (<ra> :get-track-pan-on-off-y1))
+                                     (= Button *left-button*)
+                                     (select-track-instrument *current-track-num*)
+                                     #t))))
 
 
 ;; track pan on/off
@@ -3464,18 +3459,6 @@
                         
                         
 
-;; switch track note area width
-(add-mouse-cycle
- (make-mouse-cycle
-  :press-func (lambda (Button X Y)
-                (and (= Button *right-button*)
-                     *current-track-num*
-                     (inside-box (<ra> :get-box track-notes *current-track-num*) X Y)
-                     (track-configuration-popup-async X Y)
-                     ;;(<ra> :change-track-note-area-width *current-track-num*)
-                     (<ra> :select-track *current-track-num*)
-                     #f))))
-
 
 ;; fxnodes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -3840,25 +3823,25 @@
                              #t)
                            #f))))))
 
-;; add fx
+;; delete all fxs if alt2 and shift are pressed.
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      *current-track-num*
-                     (inside-box (<ra> :get-box track-fx *current-track-num*) X Y)
-                     (<ra> :select-track *current-track-num*)
+                     (<ra> :alt2-pressed)
+                     (<ra> :shift-pressed)
+                     (inside-box (<ra> :get-box track-fx *current-track-num*) X Y)                     
                      (let ((fxnum (<ra> :get-mouse-fx *current-track-num*)))
-                       (if (and ;;*current-fx/distance*
-                                (>= fxnum 0)
-                                (<ra> :alt2-pressed)
-                                (<ra> :shift-pressed))
-                           (undo-block
-                            (lambda ()
-                              (delete-all-fxnodes fxnum *current-track-num*)))
-                           (track-configuration-popup-async X Y)                           
-                           )
-                       #t)))))
+                       (and ;;*current-fx/distance*
+                        (>= fxnum 0)
+                        (begin
+                          (undo-block
+                           (lambda ()
+                             (delete-all-fxnodes fxnum *current-track-num*)))
+                          (<ra> :select-track *current-track-num*)
+                          #t)))))))
+                         
 
 (define (get-full-fx-name fxnum tracknum)
   (define fxname (<ra> :get-fx-name fxnum tracknum))
@@ -4005,6 +3988,22 @@
                    ;;(c-display "normal3")
                    (<ra> :set-normal-mouse-pointer (<gui> :get-editor-gui)))))
          result))
+
+
+;; Show main popup menu for editor track, or delete track if shift is pressed.
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                ;;(c-display "HEPP X Y")
+                (and (= Button *right-button*)
+                     *current-track-num*
+                     (inside-box (<ra> :get-box track *current-track-num*) X Y)
+                     (if (<ra> :shift-pressed)
+                         (<ra> :delete-track *current-track-num*)
+                         (track-configuration-popup-async X Y))
+                     ;;(<ra> :change-track-note-area-width *current-track-num*)
+                     (<ra> :select-track *current-track-num*)
+                     #f))))
 
 
 
