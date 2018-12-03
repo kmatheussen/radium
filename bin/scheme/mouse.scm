@@ -2908,8 +2908,9 @@
                                            ;;                                                                                      (disable-portamento)))
                                            
                                            ;; "Stop note here" stop-note
-                                           ))))
-                       #f)))))
+                                           ))
+                             #t)
+                           #f))))))
 
 
 ;; Eraser
