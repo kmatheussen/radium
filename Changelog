@@ -1,3 +1,76 @@
+Changes 5.9.16 -> 5.9.18:
+* Sequencer: Fix error message popping up if moving a
+  seqblock to another seqblock and there isn't enough
+  space between start of song and another seqblock
+  already positioned in the new seqtrack.
+* Editor: Show editor track popup menu when
+  right-clicking below last line.
+* Editor: Show editor track popup menu when
+  right-clicking above line 0.
+* Internal: Improve error message handling.
+* Internal: Don't show the "stop/continue/etc." dialog
+  when something went wrong. There was never any
+  reason to press any other button than "Stop", and
+  sometimes this dialog itself caused a lot more
+  problems than the error.
+* Internal: Don't treat mouse events in scheme when
+  another scheme code is running.
+* Editor: Fix crash/hang in 5.9.16 when moving a
+  seqblock to another seqtrack in some rare
+  situations.
+* Internal: Delete effect monitors immediately when
+  deleting instrument.
+* Internal: Made various code that stored several
+  scheme callbacks safer.
+* GUI: Fix memory leak in popup menus.
+* Internal: Make gc-protecting s7 objects faster.
+* Internal: Assert that gc-protecting works correctly.
+* Editor: Fix shift key not forcing vertical movement
+  when moving blocks.
+* Editor: Ensure piano roll rubber is hidden if an
+  exception is thrown.
+* GUI: Make keyboard navigation of popup menus behave
+  same way as the main menus.
+* GUI: Fix keyboard navigation in sub menus of popup
+  menus.
+* Editor: Right-clicking inside the note name subtrack
+  will show the track popup menu, not switch between
+  wide and narrow mode.
+* Editor: Add a "wide/narrow mode" checkbox to the track
+  popup menu.
+* Add a "2 char note name" checkbox to the track popup
+  menu. 
+* Add help page for editor track FX.
+* Options to enable/disable individual editor track FX.
+* Mouse: Fix using Alt to move all nodes (and not Ctrl).
+  Bug introduced in 5.9.16.
+* Sequencer: Disable the "Granulation parameters" popup
+  menu option when seqblock doesn't hold sample. Error
+  messages were displayed if this option was selected.
+* GUI: Automatically isplay keybinding for various popup
+  menu entries.
+* Menus: Add Seqblock functions to the "Clipboard" menu.
+* Internal: Fix displaying function names in error
+  handler.
+* Internal: Prevent rare program freeze in error handler.
+* Editor: Fix bug when pressing alt+shift+right mouse
+  button on a velocity. Could lock up the program when
+  doing that.
+* Editor: Don't create microtonal notes in the piano roll
+  unless ctrl is pressed.
+* API:
+  * New functions: showFXTextHelpWindow, getFxEnabled,
+    setFxEnabled, gui_isEnabled, setTrackNoteLength,
+    getTrackNoteLength, trackNoteAreaWidthIsWide,
+    setTrackNoteAreaWidth, getLastHoveredPopupMenuEntry,
+    hoverPopupMenuEntry
+  * Let changeTrackNoteLength take tracknum / blocknum /
+    windownum as arguments instead of just windownum.
+  * Add argument "throw_exception_if_not_found" to
+    removeEffectMonitor
+
+
+
 Changes 5.9.15 -> 5.9.16:
 * Updated the manual somewhat.
 * Sequencer: Update graphics after undoing or redoing
