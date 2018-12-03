@@ -862,8 +862,11 @@ float getTrackPianorollX2(int tracknum, int blocknum, int windownum){
 }
 
 float getTrackPianorollY2(int tracknum, int blocknum, int windownum){
+  return getBotVisibleY(blocknum, windownum);
+  /*
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   return wtrack==NULL ? 0 : wtrack->y2;
+  */
 }
 
 float getTrackNotesX1(int tracknum, int blocknum, int windownum){
