@@ -5981,6 +5981,8 @@
                           (else
                            (<ra> :get-seq-gridded-time (floor Value) (<ra> :get-seq-block-grid-type)))))
 
+    ;;(c-display "\n\nnew-pos/nongridded/curr-pos:" new-pos new-pos-nongridded curr-pos)
+    
     (define moving-left (< new-pos start-pos))
     (define moving-right (not moving-left))
 
@@ -6051,9 +6053,11 @@
                                prev-end)))
           
           (let ((next-start (get-next-seqblock-start (1+ start-pos) seqblocks seqblocknum)))
+            ;;(c-display "   next-start:" next-start ". seqbglock-length/result:" seqblock-length (and next-start (- next-start seqblock-length)))
             (if next-start
-                (set! new-pos (min new-pos
-                                   (- next-start seqblock-length)))))))
+                (set! new-pos (max 0
+                                   (min new-pos
+                                        (- next-start seqblock-length))))))))
 
     
     (when (or #t ;; We took care of overlapping right above
@@ -6073,6 +6077,7 @@
         ;;                                   (< (a :start-time)
         ;;                                      (b :start-time)))))
         ;;(assert-seqblocks-state new-seqblocks-state)
+        ;;(c-display "state:" (pp new-seqblocks-state))
         (set! curr-pos new-pos)
         (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
         ;;(c-display "---Setting curr to" seqblocknum)

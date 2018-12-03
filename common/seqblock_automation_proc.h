@@ -50,7 +50,7 @@ extern LANGSPEC void RT_SEQBLOCK_AUTOMATION_called_when_player_stopped(void);
 
 #ifdef __cplusplus
 
-struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t automation_state, double state_samplerate);
+struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t automation_state, double state_samplerate);
 void SEQBLOCK_AUTOMATION_free(struct SeqblockAutomation *seqblockenvelope);
 double SEQBLOCK_AUTOMATION_get_min_value(struct SeqblockAutomation *seqblockenvelope);
 double SEQBLOCK_AUTOMATION_get_default_value(struct SeqblockAutomation *seqblockenvelope);

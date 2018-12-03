@@ -2958,13 +2958,14 @@ void removeSeqblockDeletedCallback(func_t *callback){
     handleError("removeSeqblockDeletedCallback: Could not find deleted callback %p\n", callback);
 }
 
-static QSet<int64_t> g_available_seqblocks;
+static QSet<int64_t> g_seqblocks_marked_as_available;
 
 void API_seqblock_has_been_deleted(int64_t seqblockid){
   QVector<func_t*> to_remove;
 
-  if(g_available_seqblocks.contains(seqblockid))
+  if(g_seqblocks_marked_as_available.contains(seqblockid)){
     return;
+  }
   
   if(g_curr_seqblock_id==seqblockid)
     g_curr_seqblock_id = -1;
@@ -2996,11 +2997,11 @@ void API_all_seqblocks_will_be_deleted(void){
 }
   
 void markSeqblockAvailable(int64_t seqblockid){
-  g_available_seqblocks << seqblockid;
+  g_seqblocks_marked_as_available << seqblockid;
 }
 
 void unmarkSeqblockAvailable(int64_t seqblockid){
-  if(g_available_seqblocks.remove(seqblockid)==false)
+  if(g_seqblocks_marked_as_available.remove(seqblockid)==false)
     handleError("unmarkSeqblockAvailable: %d not marked as deletable", (int)seqblockid);
 }
 

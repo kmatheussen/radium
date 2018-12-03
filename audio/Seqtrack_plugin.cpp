@@ -1657,7 +1657,7 @@ static int64_t add_sample(Data *data, const wchar_t *filename, enum ResamplerTyp
   return sample->_id;
 }
 
-int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type){
+int64_t SEQTRACKPLUGIN_add_sample(const struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type){
   R_ASSERT(THREADING_is_main_thread());
   
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);

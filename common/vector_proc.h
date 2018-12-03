@@ -54,10 +54,8 @@ static inline vector_t VECTOR_create(int size){
 
 
 static inline int VECTOR_push_back(vector_t *v, const void *element){
-#if 0 //ifndef RELEASE
-  R_ASSERT(element!=NULL);
-#endif
-
+  R_ASSERT_RETURN_IF_FALSE2(v!=NULL, 0);
+  
   VECTOR_ensure_space_for_one_more_element(v);
   
   const int num_elements = v->num_elements;

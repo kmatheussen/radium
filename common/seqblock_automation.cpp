@@ -132,7 +132,7 @@ static radium::AutomationNode create_node_from_state(hash_t *state, double state
 
 struct SeqblockAutomation : public radium::NodeFromStateProvider<radium::AutomationNode>{
 
-  struct SeqTrack *_seqtrack; // not necessary to gc-protect. seqblockautomation is freed from the seqblock finalizer.
+  const struct SeqTrack *_seqtrack; // not necessary to gc-protect. seqblockautomation is freed from the seqblock finalizer.
   struct SeqBlock *_seqblock; // not necessary to gc-protect. seqblockautomation is freed from the seqblock finalizer.
 
   enum Seqblock_Automation_Type _sat;
@@ -155,7 +155,7 @@ private:
 
 public:
   
-  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t state, double state_samplerate, bool is_temporary = false)
+  SeqblockAutomation(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t state, double state_samplerate, bool is_temporary = false)
     : _seqtrack(seqtrack)
     , _seqblock(seqblock)
     , _sat(sat)
@@ -538,7 +538,7 @@ public:
 
 
 
-struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t automation_state, double state_samplerate){
+struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t automation_state, double state_samplerate){
   return new SeqblockAutomation(seqtrack, seqblock, sat, automation_state, state_samplerate);
 }
 

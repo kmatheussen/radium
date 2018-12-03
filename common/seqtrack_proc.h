@@ -116,7 +116,7 @@ extern LANGSPEC void SEQTRACK_call_me_very_often(void);
 extern LANGSPEC void SONG_call_me_before_starting_to_play_song(int64_t abstime);
 
 // 'seqblock' must be nulled out before calling.
-extern LANGSPEC void SEQBLOCK_init(struct SeqTrack *from_seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const hash_t *seqblock_state, double state_samplerate, bool *track_is_disabled, int64_t time);
+extern LANGSPEC void SEQBLOCK_init(const struct SeqTrack *from_seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const hash_t *seqblock_state, double state_samplerate, bool *track_is_disabled, int64_t time);
   
 // sequencer gfx
 #ifdef USE_QT4

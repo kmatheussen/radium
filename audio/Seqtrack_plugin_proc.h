@@ -45,7 +45,7 @@ extern LANGSPEC vector_t SEQTRACKPLUGIN_get_all_used_audio_filenames(struct Soun
   
 extern LANGSPEC void SEQTRACKPLUGIN_clear_resampler_warning_hashmap(void);
 #if __cplusplus
-extern int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type);
+extern int64_t SEQTRACKPLUGIN_add_sample(const struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type);
 #endif
 
 extern LANGSPEC void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *path); // Called when user enables the "R" checkbox.
