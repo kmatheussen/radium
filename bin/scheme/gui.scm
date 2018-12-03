@@ -594,8 +594,9 @@
 (define *message-gui* #f)
 (define *message-gui-text-edit* #f)
 
+;; Note! This function is called from the error handler.
 (define (show-message-gui message)
-  (<ra> :schedule 0 ;; In case we are called from a paint callback. Not only isn't the message displayed if we call directly, we also end up in an infinite loop since this function is called from various error handlers.
+  (<ra> :schedule 0 ;; In case we are called from a paint callback (or other qt event handlers) or error handler. Not only isn't the message displayed if we call directly, we could also end up in an infinite loop since this function is called from various error handlers.
         (lambda ()
           (when (or (not *message-gui*)
                     (not (<gui> :is-open *message-gui*)))
@@ -663,17 +664,20 @@
 ;;||#
 
 ;; Called from ra:add-message
+;; Note! This function is called from the error handler.
 (define (add-message-window-message message)
   ;;(maybe-start-debug-pulse)
-  (define html-message (<-> "<h4>" (<ra> :get-date-string) " " (<ra> :get-time-string) ":</h4>"
-                            "<blockquote>" message "</blockquote>"))
-  (show-message-gui (<-> "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd\">"
-                         "<html><head>" 
-                         "</head><body>"                                                 
-                         html-message
-                         "<br>"                 
-                         "</body></html>\n"
-                         )))
+  (define html-message (string-append "<h4>" (<ra> :get-date-string) " " (<ra> :get-time-string) ":</h4>"
+                                      "<blockquote>"
+                                      (format #f "~S" message)
+                                      "</blockquote>"))
+  (show-message-gui (string-append "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd\">"
+                                   "<html><head>" 
+                                   "</head><body>"                                                 
+                                   html-message
+                                   "<br>"                 
+                                   "</body></html>\n"
+                                   )))
 
 #!!
 (add-message-window-message "hello")
@@ -681,15 +685,20 @@
 !!#
 
 (define (safe-add-message-window-txt txt)
+  (c-display "    SAFE_ADD_MESSAGE_WINDOW_TXT 1")
   (catch #t
          (lambda ()
-           (add-message-window-message (<ra> :get-html-from-text txt)))
+           (c-display "    SAFE_ADD_MESSAGE_WINDOW_TXT 2")
+           (add-message-window-message txt)) ;;(<ra> :get-html-from-text txt)))
          (lambda args
+           (c-display "    SAFE_ADD_MESSAGE_WINDOW_TXT 3")
            ;; Don't want to call safe-ow! here since we might have been called from safe-ow!.
            (define txt (catch #t
                               ow!
                               (lambda args
-                                (get-as-displayable-string-as-possible (list "safe-add-message-window-message failed very hard: " args)))))           
+                                (c-display "    SAFE_ADD_MESSAGE_WINDOW_TXT 3")
+                                (get-as-displayable-string-as-possible (list "safe-add-message-window-message failed very hard: " args)))))
+           (c-display "    SAFE_ADD_MESSAGE_WINDOW_TXT 4")
            (display txt))))
 
 #||

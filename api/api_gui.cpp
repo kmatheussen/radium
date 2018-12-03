@@ -6334,10 +6334,12 @@ void gui_setStaticToplevelWidget(int64_t guinum, bool add){
   
 }
 
+// Note! This function is called from the error handler.
 const_char *getDateString(const_char* date_format){
   return talloc_strdup(QDate::currentDate().toString(date_format).toUtf8().constData());
 }
 
+// Note! This function is called from the error handler.
 const_char *getTimeString(const_char* time_format){
   return talloc_strdup(QTime::currentTime().toString(time_format).toUtf8().constData());
 }

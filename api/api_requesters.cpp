@@ -344,6 +344,7 @@ const_char* showMessage2(const char *text){
   
 extern bool g_qtgui_has_stopped;
 
+// Note! This function is called from the error handler.
 void addMessage(const char *html){
   const char *funcname = "add-message-window-message";
   
