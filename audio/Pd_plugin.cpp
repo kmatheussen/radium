@@ -1192,11 +1192,8 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state
 
     controller->display_name = NULL;
     if (HASH_has_key_at(state, "name", i)){
-      dyn_t dyn = HASH_get_dyn_at(state, "name", i);
-      if(dyn.type != STRING_TYPE) // Got a crash report were it could seem like this happened.
-        RError("  Error in PD controller state. \"name\"[%d] should be STRING, but is \"%s\\n", i, DYN_type_name(dyn.type));
-      else
-        controller->display_name = wcsdup(dyn.string);
+      const wchar_t *name = HASH_get_string_at(state, "name", i);
+      controller->display_name = wcsdup(name);
     }
     
     {
