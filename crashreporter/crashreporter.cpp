@@ -269,7 +269,7 @@ static QString get_legalized_mail_message(QString message){
   return ret;
 }
 
-static void send_crash_message_to_server(QString message, QString plugin_names, QString emergency_save_filename, Crash_Type crash_type){
+static void send_crash_message_to_server(QString message, QString plugin_names, QString emergency_save_filename, Crash_Type crash_type, bool caused_by_nouveau){
 
   bool is_crash = crash_type==CT_CRASH;
 
@@ -318,23 +318,39 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     layout.addWidget(&space0);
 
     QLabel text1;
-    
-    if (crash_type==CT_CRASH)
-      text1.setText("Radium Crashed. :((");
-    else if (crash_type==CT_ERROR)
-      text1.setText("Error! Radium is in a state it should not be in.\n(Note that Radium has NOT crashed)\n");
-    else
-      text1.setText("Warning! Radium is in a state it should not be in.\n(Note that Radium has NOT crashed, you can continue working)\n");
 
+    if (caused_by_nouveau){
+      
+      text1.setText("A buggy GFX driver caused Radium to crash."
+                    "<p>"
+                    "Go here to get a working GFX driver:<br><a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
+                    "<p>"
+                    "Thanks for trying Radium!"
+                    );
+
+    } else {
+  
+
+      if (crash_type==CT_CRASH)
+        text1.setText("Radium Crashed. :((");
+      else if (crash_type==CT_ERROR)
+        text1.setText("Error! Radium is in a state it should not be in.\n(Note that Radium has NOT crashed)\n");
+      else
+        text1.setText("Warning! Radium is in a state it should not be in.\n(Note that Radium has NOT crashed, you can continue working)\n");
+      
+    }
+    
     layout.addWidget(&text1);
     
-
     QLabel text2;
-    text2.setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-    
-    bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
-    
-    text2.setText(QString(
+
+    if (!caused_by_nouveau){
+      
+      text2.setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+      
+      bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
+      
+      text2.setText(QString(
                                    #if FOR_LINUX
                                    "Linux users: Please don't report bugs caused by a non-properly compiled, or old, version of Radium (usually distributed by Arch linux). "
                                    "If you have compiled Radium yourself, or you are using a version of Radium "
@@ -358,13 +374,14 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
                            + "\n"
                            );
     
-    text2.setWordWrap(true);
-    //text2.setMaximumWidth(600);
-        
-    //box.setDetailedText(message);
-    layout.addWidget(&text2);
-    text2.adjustSize();
-    text2.updateGeometry();
+      text2.setWordWrap(true);
+      //text2.setMaximumWidth(600);
+      
+      //box.setDetailedText(message);
+      layout.addWidget(&text2);
+      text2.adjustSize();
+      text2.updateGeometry();
+    }
     
     /*
     QButtonGroup buttons;
@@ -383,10 +400,16 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     auto *b1 = new QCheckBox("Show details");
     auto *b2 = new QPushButton("SEND");
     auto *b3 = new QPushButton("DON'T SEND");
+    auto *b4 = new QPushButton("Ok");
     
     button_layout.addWidget(b1);
-    button_layout.addWidget(b2);
-    button_layout.addWidget(b3);
+
+    if (caused_by_nouveau){
+      button_layout.addWidget(b4);
+    } else {
+      button_layout.addWidget(b2);
+      button_layout.addWidget(b3);
+    }
 
     layout.addLayout(&button_layout);
 
@@ -395,16 +418,19 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     
     QButtonGroup buttons;
     //buttons.addButton(b1, 1);
-    buttons.addButton(b2, 2);
-    buttons.addButton(b3, 3);
+
+    if (caused_by_nouveau){
+      buttons.addButton(b4, 2);
+    } else {
+      buttons.addButton(b2, 2);
+      buttons.addButton(b3, 3);
+    }
     
     box.connect(&buttons, SIGNAL(buttonClicked(int)), &box, SLOT(done(int)));
 
-    
-
     QLabel space(" ");
-    layout.addWidget(&space);
-
+    QLabel space2(" ");
+    
     QLabel text_edit_label("<br><br>"
                            "Please also include additional information below.<br>"
                            "<br>"
@@ -420,20 +446,27 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
                            "Also remember that the report is sent anonymously. If you want feedback or want to help further to track down the<br>"
                            "bug, please include an email address below."
                            );
-    text_edit_label.setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
- 
-    //text_edit.setMinimumWidth(1000000);
-    //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
-    layout.addWidget(&text_edit_label);
-
-    QLabel space2(" ");
-    layout.addWidget(&space2);
-
     QTextEdit text_edit;
-    text_edit.setText("<Please add recipe and/or email address here>\n");
-    //text_edit.setMinimumWidth(1000000);
-    //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
-    layout.addWidget(&text_edit);
+
+    if (!caused_by_nouveau) {
+      
+      layout.addWidget(&space);
+      
+      text_edit_label.setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+      
+      //text_edit.setMinimumWidth(1000000);
+      //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
+      layout.addWidget(&text_edit_label);
+      
+      layout.addWidget(&space2);
+      
+      text_edit.setText("<Please add recipe and/or email address here>\n");
+      //text_edit.setMinimumWidth(1000000);
+      //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
+      layout.addWidget(&text_edit);
+      
+    }
+    
 
     if (crash_type==CT_CRASH)
       box.setWindowTitle("Report crash");
@@ -469,7 +502,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     int ret = box.exec();
     //int ret = 2;
 
-    if(ret==2){ //QMessageBox::AcceptRole){
+    if(!caused_by_nouveau && ret==2){ //QMessageBox::AcceptRole){
 
       QByteArray data;
       QUrl params;
@@ -565,6 +598,7 @@ int main(int argc, char **argv){
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.exec();
   }
+
 #endif
 
   //printf("  main. filename: -%s-. From base64: -%s-\n", argv[1], local::fromBase64(argv[1]).toUtf8().constData());
@@ -574,10 +608,11 @@ int main(int argc, char **argv){
   QString running_plugin_names = local::fromBase64(argv[2]);
   
   QString emergency_save_filename = local::fromBase64(argv[3]);
-    
-  Crash_Type crash_type = QString(argv[4])=="is_crash" ? CT_CRASH : QString(argv[4])=="is_error" ? CT_ERROR : CT_WARNING;
 
-  send_crash_message_to_server("-"+QString(argv[4])+"-"+file_to_string(filename), running_plugin_names, emergency_save_filename, crash_type);
+  bool caused_by_nouveau = QString(argv[4])=="crash_caused_by_nouveau";
+  Crash_Type crash_type = (QString(argv[4])=="is_crash" || caused_by_nouveau) ? CT_CRASH : QString(argv[4])=="is_error" ? CT_ERROR : CT_WARNING;
+
+  send_crash_message_to_server("-"+QString(argv[4])+"-"+file_to_string(filename), running_plugin_names, emergency_save_filename, crash_type, caused_by_nouveau);
 
   if (crash_type==CT_CRASH)
     delete_file(filename);
@@ -800,6 +835,8 @@ static QString get_qt_environment_variables(void){
   return ret;
 }
 
+#define TEST_NOUVEAU 0
+
 void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, Crash_Type crash_type, double time){
   if (ATOMIC_GET(g_dont_report))
     return;
@@ -810,9 +847,19 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   
   tosend += RADIUM_VERSION "\n\n";
 
+  QString opengl_vendor = QString((ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_vendor_string) ));
+
+  bool using_nouveau_driver = false;
+  
+#if defined(FOR_LINUX)
+  if (TEST_NOUVEAU || opengl_vendor.contains("nouveau", Qt::CaseInsensitive))
+    using_nouveau_driver = true;
+#endif
+
+  
   tosend += "OS version: " + QSysInfo::productVersion() + "\n\n";
     
-  tosend += "OpenGL vendor: " + QString((ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_vendor_string) )) + "\n";
+  tosend += "OpenGL vendor: " + opengl_vendor + "\n";
   tosend += "OpenGL renderer: " + QString((ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_renderer_string))) + "\n";
   tosend += "OpenGL version: " + QString((ATOMIC_GET(GE_version_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_version_string))) + "\n";
   tosend += QString("OpenGL flags: %1").arg(ATOMIC_GET(GE_opengl_version_flags), 0, 16) + "\n\n";
@@ -827,9 +874,20 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "Time since last received MIDI message: " + QString::number(time - g_last_midi_receive_time) + "ms\n\n";
   tosend += "\n\n";
 
-  for(int i=0;i<num_messages;i++)
-    tosend += QString::number(i) + ": "+messages[i] + "\n";
+  bool crash_most_likely_caused_by_nouveau = false;
 
+  for(int i=0;i<num_messages;i++){
+    QString line = QString::number(i) + ": "+messages[i] + "\n";
+    
+    if (crash_type==CT_CRASH && using_nouveau_driver && crash_most_likely_caused_by_nouveau==false){
+      if (TEST_NOUVEAU || line.contains("nouveau")){
+        crash_most_likely_caused_by_nouveau = true;
+      }
+    }
+
+    tosend += line;
+  }
+  
   tosend += "\n\n";
 
   int event_pos = ATOMIC_GET(g_event_pos)  % NUM_EVENTS;
@@ -861,7 +919,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
   tosend += "Qt environment variables: \n" + get_qt_environment_variables();
   tosend += "\n\n";
-  
+
   // start process
   {
 #ifdef FOR_WINDOWS
@@ -949,7 +1007,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
                 local::toBase64(file->fileName()),
                 local::toBase64(plugin_names),
                 local::toBase64(dosave ? emergency_save_file.fileName() : NOEMERGENCYSAVE),
-                crash_type==CT_CRASH ? "is_crash" : crash_type==CT_ERROR ? "is_error" : "is_warning",
+                crash_most_likely_caused_by_nouveau ? "crash_caused_by_nouveau" : crash_type==CT_CRASH ? "is_crash" : crash_type==CT_ERROR ? "is_error" : "is_warning",
                 do_block
                 );
 
@@ -1011,7 +1069,7 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
 
     if (!g_crashreporter_file->open()){
       SYSTEM_show_error_message("Unable to create temprary file. Disk may be full");
-      send_crash_message_to_server(message, get_plugin_names(), NOEMERGENCYSAVE, crash_type);
+      send_crash_message_to_server(message, get_plugin_names(), NOEMERGENCYSAVE, crash_type, false);
       goto exit;
     }
 
