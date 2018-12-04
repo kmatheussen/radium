@@ -50,7 +50,7 @@ static s7_scheme *s7 = NULL;
 static s7webserver_t *s7webserver;
 
 static s7_pointer g_catchallerrors_func = NULL;
-static s7_pointer g_try_finally_failed;
+static s7_pointer g_eat_errors_failed;
 bool g_scheme_failed = false;
 int g_s7_history_disabled = 0;
   
@@ -542,7 +542,7 @@ static s7_pointer catch_call(s7_scheme *sc, const s7_pointer args){
 
   g_is_going_to_call_throwExceptionIfError = old_is_going_to_call_throwExceptionIfError; // put back old value
   
-  if (s7_is_symbol(ret) && s7_symbol_name(ret)==s7_symbol_name(g_try_finally_failed)){
+  if (s7_is_symbol(ret) && s7_symbol_name(ret)==s7_symbol_name(g_eat_errors_failed)){
     g_scheme_failed = true;
     R_ASSERT(g_is_starting_up==false);
   }
@@ -1857,7 +1857,7 @@ void SCHEME_init1(void){
   R_ASSERT(g_scheme_nested_level==0);
   
   g_catchallerrors_func = find_and_protect_scheme_value("FROM-C-catch-all-errors-and-display-backtrace-automatically");
-  g_try_finally_failed = find_and_protect_scheme_value("*try-finally-failed-return-value*");
+  g_eat_errors_failed = find_and_protect_scheme_value("*eat-errors-failed-return-value*");
 
   s7webserver = s7webserver_create(s7, 5080, true);  
   s7webserver_set_verbose(s7webserver, true);

@@ -605,23 +605,19 @@
 ;;
 ;;
 #||
-"try-finally" is NOT the same as dynamic-wind. It doesn't rethrow. I.e. the code following a call to "try-finally" should always run [1].
-
-It would be more accurate to name the function something like "safe-try", "eat-errors", or "catch-all-errors-and-display-backtrace-automatically" etc.,
-but I think the name "try-finally" is faster for the brain to understand when reading code.
-
+"eat-errors" is NOT the same as dynamic-wind. It doesn't rethrow. I.e. the code following a call to "eat-errors" should always run [1].
 
 Also note that the :finally thunk doesn't have an important purpose. It's just syntactic sugar. This:
 
 
-(try-finally :try (lambda () 5)
+(eat-errors :try (lambda () 5)
              :finally newline)
 
 
 ...is the same as this:
 
 
-(let ((ret (try-finally :try (lambda () 5))))
+(let ((ret (eat-errors :try (lambda () 5))))
   (newline)
   ret)
 
@@ -631,7 +627,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 ||#
 
 
-(define-constant *try-finally-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
+(define-constant *eat-errors-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
 
 (define (FROM-C-catch-all-errors-and-display-backtrace-automatically func . args)
   (catch #t
@@ -647,7 +643,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
                     (display "safe-display-ow! failed:")(newline)
                     (display args)
                     (newline)))
-           *try-finally-failed-return-value*)))
+           *eat-errors-failed-return-value*)))
 #!!
 (+ notanumber1 notanumber2)
 !!#
@@ -667,25 +663,25 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
                   safe-display-ow!
                   (lambda args
                     (error 'safe-display-ow!-failed)))
-           *try-finally-failed-return-value*)))
+           *eat-errors-failed-return-value*)))
 
 (define (catch-all-errors-failed? ret)
-  (eq? ret *try-finally-failed-return-value*))
+  (eq? ret *eat-errors-failed-return-value*))
 
 ;; Then the function we want to use everywhere:
 
-(define-constant *try-finally-failure-thunk-failed* 'try-finally-failure-thunk-failed)
-(define-constant *try-finally-false-unless-failure-is-overridden* 'false-unless-failure-is-overridden)
+(define-constant *eat-errors-failure-thunk-failed* 'eat-errors-failure-thunk-failed)
+(define-constant *eat-errors-false-unless-failure-is-overridden* 'false-unless-failure-is-overridden)
 
-(delafina (try-finally :try
+(delafina (eat-errors :try
                        
                        :rethrow #f
                        
                        ;; If overridden, :failure will always return this value. If not overridden, the default :failure implementation will return #f.
-                       :failure-return-value *try-finally-false-unless-failure-is-overridden*
+                       :failure-return-value *eat-errors-false-unless-failure-is-overridden*
                        
                        :failure (lambda ()
-                                  (if (eq? failure-return-value *try-finally-false-unless-failure-is-overridden*)
+                                  (if (eq? failure-return-value *eat-errors-false-unless-failure-is-overridden*)
                                       #f
                                       failure-return-value))
                        
@@ -704,8 +700,8 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
       (begin                    
         (define failed-ret (catch-all-errors-and-display-backtrace-automatically failure))
         (cond ((catch-all-errors-failed? failed-ret)
-               (return *try-finally-failure-thunk-failed*))
-              ((eq? failure-return-value *try-finally-false-unless-failure-is-overridden*)
+               (return *eat-errors-failure-thunk-failed*))
+              ((eq? failure-return-value *eat-errors-false-unless-failure-is-overridden*)
                (return failed-ret))
               (else
                (return failure-return-value))))
@@ -719,7 +715,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 
 
 ;; Test all fine.
-(***assert*** (try-finally :try (lambda ()
+(***assert*** (eat-errors :try (lambda ()
                                   (c-display "returning 5")
                                   (+ 2 3))
                            :rethrow #f)
@@ -727,7 +723,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 
 ;; Test all fine with finalizer
 (let ((is-finalized #f))
-  (***assert*** (try-finally :try (lambda ()
+  (***assert*** (eat-errors :try (lambda ()
                                     (c-display "returning 5")
                                     (+ 2 3))
                              :finally (lambda ()
@@ -739,7 +735,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 ;; Test all fine and catch not called.
 (let ((is-finalized #f)
       (is-catched #f))
-  (***assert*** (try-finally :try (lambda ()
+  (***assert*** (eat-errors :try (lambda ()
                                     (c-display "returning 5")
                                     (***assert*** is-finalized #f)
                                     (+ 2 3))
@@ -758,7 +754,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 
 ;; Test failure in 'try'. Returns #f by default.
 (let ((is-finalized #f))
-  (define result (try-finally :try (lambda ()
+  (define result (eat-errors :try (lambda ()
                                      (c-display "returning 5")
                                      (***assert*** is-finalized #f)
                                      (+ a 3))
@@ -772,7 +768,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 
 ;; Test failure in 'try'. Custom failure function.
 (let ((is-finalized #f))
-  (define result (try-finally :try (lambda ()
+  (define result (eat-errors :try (lambda ()
                                      (c-display "returning 5")
                                      (***assert*** is-finalized #f)
                                      (+ a 3))
@@ -787,7 +783,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 (let ((is-finalized #f)
       (is-catched #f))
 
-  (define result (try-finally :try (lambda ()
+  (define result (eat-errors :try (lambda ()
                                      (c-display "returning 5")
                                      (***assert*** is-finalized #f)
                                      (+ a 3))
@@ -808,7 +804,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 ;; Test failure in 'try'. Custom failure function and custom failure return value.
 (let ((is-finalized #f)
       (is-catched #f))
-  (define result (try-finally :try (lambda ()
+  (define result (eat-errors :try (lambda ()
                                      (c-display "returning 5")
                                      (***assert*** is-finalized #f)
                                      (+ a 3))
@@ -830,7 +826,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 ;; Test failure in 'failure'. (a lot of backtrace is supposed to be printed now, but the important thing is that the last three asserts are correct.)
 (let ((is-finalized #f)
       (is-catched #f))
-  (define result (try-finally :try (lambda ()
+  (define result (eat-errors :try (lambda ()
                                      (c-display "returning 5")
                                      (***assert*** is-finalized #f)
                                      (+ a 3))
@@ -844,7 +840,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
                                          (c-display "finally")
                                          (***assert*** is-catched #t)
                                          (set! is-finalized #t))))
-  (***assert*** result *try-finally-failure-thunk-failed*)
+  (***assert*** result *eat-errors-failure-thunk-failed*)
   (***assert*** is-finalized #t)
   (***assert*** is-catched #t))
 
@@ -854,7 +850,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
       (finally-failed #f))
   (define result (catch #t
                         (lambda ()
-                          (try-finally :try (lambda ()
+                          (eat-errors :try (lambda ()
                                               (c-display "returning 5")
                                               (***assert*** is-finalized #f)
                                               (+ a 3))
@@ -1951,13 +1947,13 @@ for .emacs:
 
 (define (undo-block block)
   (<ra> :open-undo)
-  (try-finally :try block
+  (eat-errors :try block
                :finally (lambda ()
                           (<ra> :close-undo))))
 
 (define (ignore-undo-block block)
   (<ra> :start-ignoring-undo)
-  (try-finally :try block
+  (eat-errors :try block
                :finally (lambda ()
                           (<ra> :stop-ignoring-undo))))
 
@@ -1968,7 +1964,7 @@ for .emacs:
       (block)
       (begin
         (set! *currently-in-update-notes-after-block-block* #t)
-        (try-finally :try block
+        (eat-errors :try block
                      :finally (lambda ()
                                 (set! *currently-in-update-notes-after-block-block* #f)
                                 (<ra> :update-notes-in-player))))))
@@ -2030,7 +2026,7 @@ for .emacs:
     (when (not (coroutine :please-stop-me))
       (let loop ((args args))
         (set! (coroutine :is-running) #t)
-        (let ((pausetime-and-args (try-finally :try (lambda ()
+        (let ((pausetime-and-args (eat-errors :try (lambda ()
                                                       (apply func args))
                                                :failure-return-value #f)))
           (set! (coroutine :is-running) #f)

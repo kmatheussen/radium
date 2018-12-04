@@ -119,7 +119,7 @@
 (<gui> :add-close-callback *pluginmanager-gui*
        (lambda (radium-runs-custom-exec)
          (if (not radium-runs-custom-exec)
-             (try-finally :try pmg-hide)) ;; We don't want to risk not returning #f. If that happens, the plugin manager can't be opened again.
+             (eat-errors :try pmg-hide)) ;; We don't want to risk not returning #f. If that happens, the plugin manager can't be opened again.
          #f))
 
 ;; init table stuff
@@ -500,7 +500,7 @@
   (when (not (string=? (<gui> :get-value *pmg-search-text-field*)
                        search-string))
     (set! *do-search* #f)
-    (try-finally :try (lambda ()
+    (eat-errors :try (lambda ()
                         (<gui> :set-value *pmg-search-text-field* search-string))
                  :finally (lambda ()
                             (set! *do-search* #t))))

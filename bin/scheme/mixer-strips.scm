@@ -431,7 +431,7 @@
          (lambda (radium-runs-custom-exec)
            (if (<gui> :is-open parentgui)
                (begin
-                 (try-finally :try (lambda ()
+                 (eat-errors :try (lambda ()
                                      (<gui> :hide config-gui)))
                  #f)
                #t)))

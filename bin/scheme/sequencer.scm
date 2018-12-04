@@ -74,7 +74,7 @@
                 (show-select-both-seqtrack-size-types-gui seqtracknum)))
           (<ra> :schedule 30
                 (lambda ()
-                  (try-finally :try (lambda ()
+                  (eat-errors :try (lambda ()
                                       (setter seqtracknum type)
                                       (if gotit-callback
                                           (gotit-callback)))

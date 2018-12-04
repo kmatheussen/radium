@@ -21,7 +21,7 @@
 (define *use-instrument-memoization* #f)
 
 (define (run-instrument-data-memoized func)
-  (try-finally :try (lambda ()
+  (eat-errors :try (lambda ()
                       (set! *use-instrument-memoization* #t)
                       (inc! *instrument-memoized-generation* 1)
                       (func))

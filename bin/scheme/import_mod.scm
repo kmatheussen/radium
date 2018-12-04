@@ -5768,7 +5768,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
   (<ra> :open-progress-window (<-> "Please wait, loading " (<ra> :from-base64 filename)))
   
-  (try-finally :try (lambda ()
+  (eat-errors :try (lambda ()
                       (<ra> :start-ignoring-undo)
                             
                       (<ra> :eval-python "import import_mod2")
