@@ -1266,7 +1266,7 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
   for(i=0;i<NUM_PD_CONTROLLERS-1;i++) {
     int s = i>=controller_num ? i+1 : i;
     Pd_Controller *controller = &data->controllers[s];
-    HASH_put_string_at(state, "name", i, controller->display_name);
+    HASH_put_string_at(state, "name", i, controller->display_name == NULL ? L"" : controller->display_name);
     HASH_put_int_at(state, "type", i, controller->type);
     HASH_put_float_at(state, "min_value", i, controller->min_value);
     HASH_put_float_at(state, "value", i, controller->value);
