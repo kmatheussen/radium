@@ -972,6 +972,10 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
 static inline dyn_t DYN_create_string_dont_copy(const wchar_t *string){
   dyn_t a;
   a.type = STRING_TYPE;
+  if(string==NULL){
+    R_ASSERT(false);
+    string = L"";
+  }
   a.string = string;
   return a;
 }

@@ -298,10 +298,18 @@ static void put_dyn(hash_t *hash, const char *key, int i, const dyn_t dyn){
 }
 
 static void put_string(hash_t *hash, const char *key, int i, const wchar_t *val){
+  if(val==NULL){
+    R_ASSERT(false);
+    val = L"";
+  }
   put_dyn(hash, key, i, DYN_create_string(val));
 }
 
 static void put_chars(hash_t *hash, const char *key, int i, const char *val){
+  if(val==NULL){
+    R_ASSERT(false);
+    val = "";
+  }
   put_dyn(hash, key, i, DYN_create_string_from_chars(val));
 }
 

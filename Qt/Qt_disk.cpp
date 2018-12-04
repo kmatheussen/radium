@@ -470,11 +470,19 @@ int DISK_write_qstring(disk_t *disk, QString s){
 }
 
 int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
+  if(wdata==NULL){
+    R_ASSERT(false);
+    wdata = L"";
+  }
   QString data = STRING_get_qstring(wdata);
   return DISK_write_qstring(disk, data);
 }
 
 int DISK_write(disk_t *disk, const char *cdata){
+  if(cdata==NULL){
+    R_ASSERT(false);
+    cdata = "";
+  }
   QString data = QString::fromUtf8(cdata);
   return DISK_write_qstring(disk, data);
 }
