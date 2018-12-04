@@ -1379,7 +1379,7 @@
 (if *use-testgui*
     (<gui> :add-paint-callback *testgui*
            (lambda (width height)
-             (try-finally :try (lambda ()
+             (eat-errors :try (lambda ()
                                  (*testarea* :paint-internal 0 0 width height))))))
 
 (if *use-testgui*
@@ -1423,7 +1423,7 @@
       (<gui> :add-paint-callback (<gui> :get-sequencer-gui)
              (lambda (width height)
                (get-sequencer-left-part-area)
-               (try-finally :try (lambda ()
+               (eat-errors :try (lambda ()
                                    (if (not *sequencer-left-part-area*)
                                        (c-display "*sequencer-left-part-area* is false")
                                        (*sequencer-left-part-area* :paint-internal 0 0 width height))))))
@@ -1437,7 +1437,7 @@
                    #f)))
       ;(<gui> :add-resize-callback (<gui> :get-sequencer-gui) ;; TODO: I think this resize callback can be removed.
       ;       (lambda (width height)
-      ;         (try-finally :try FROM_C-reconfigure-sequencer-left-part)))
+      ;         (eat-errors :try FROM_C-reconfigure-sequencer-left-part)))
 
       ))
   
@@ -1477,7 +1477,7 @@
 (when *use-testgui*
   (<gui> :add-resize-callback *testgui*
          (lambda (width height)
-           (try-finally :try FROM_C-reconfigure-sequencer-left-part)))
+           (eat-errors :try FROM_C-reconfigure-sequencer-left-part)))
 
   (FROM_C-reconfigure-sequencer-left-part))
 

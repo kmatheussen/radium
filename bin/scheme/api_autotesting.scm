@@ -268,7 +268,7 @@
                                                                                                  (to-displayable-string funcarg)))))
                                                                                    funcargs))
                                                          ")"))
-                            (try-finally (lambda ()
+                            (eat-errors (lambda ()
                                            (apply func funcargs)))))
                         (remove (lambda (api-proto)
                                   (memq (cadr api-proto) blacklisted-api-protos))
@@ -291,7 +291,7 @@
         (begin
           (define func (test-funcs (integer-myrand 0 (1- num-funcs))))
           (func gui (1- i))
-          (try-finally (lambda ()
+          (eat-errors (lambda ()
                          (let loop ((i (integer-myrand 0 15)))
                            (when (> i 0)
                              (if (= 0 (integer-myrand 0 2))
