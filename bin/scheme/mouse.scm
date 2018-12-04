@@ -852,8 +852,8 @@
                                   :Get-existing-node-info
                                   :Get-min-value
                                   :Get-max-value
-                                  :Get-x #f ;; Only used when releasing mouse button
-                                  :Get-y #f ;; Only used when releasing mouse button
+                                  :Get-release-x #f ;; Only used when releasing mouse button
+                                  :Get-release-y #f ;; Only used when releasing mouse button
                                   :Make-undo 
                                   :Create-new-node
                                   :Move-node
@@ -986,9 +986,9 @@
     (when Release-node
       (Release-node node-info))
     (if (and (not Mouse-pointer-func)
-             Get-x Get-y)
-        (let ((x (Get-x node-info))
-              (y (Get-y node-info)))
+             Get-release-x Get-release-y)
+        (let ((x (Get-release-x node-info))
+              (y (Get-release-y node-info)))
           (and x y
                (<ra> :move-mouse-pointer x y)))))
 
@@ -1020,7 +1020,7 @@
                                   :Get-x2
                                   :Get-min-value
                                   :Get-max-value
-                                  :Get-x #f
+                                  :Get-release-x #f
                                   :Get-value
                                   :Make-undo
                                   :Release #f
@@ -1047,11 +1047,11 @@
                                            (Get-min-value (Info :handler-data)))
                           :Get-max-value (lambda (Info)
                                            (Get-max-value (Info :handler-data)))
-                          :Get-x (lambda (Info)
-                                   (and Get-x
-                                        (Get-x (Info :handler-data))))
-                          :Get-y (lambda (Info)
-                                   (and Get-x
+                          :Get-release-x (lambda (Info)
+                                   (and Get-release-x
+                                        (Get-release-x (Info :handler-data))))
+                          :Get-release-y (lambda (Info)
+                                   (and Get-release-x ;; TODO/FIX/Investiage. Typo? Get-release-y ?
                                         (Info :y)))
                           :Make-undo (lambda (Info)
                                        (Make-undo (Info :handler-data)))
@@ -1082,7 +1082,7 @@
                                 :Get-y2
                                 :Get-min-value
                                 :Get-max-value
-                                :Get-y #f
+                                :Get-release-y #f
                                 :Get-value
                                 :Make-undo #f
                                 :Release #f
@@ -1109,13 +1109,13 @@
                                            (Get-min-value (Info :handler-data)))
                           :Get-max-value (lambda (Info)
                                            (Get-max-value (Info :handler-data)))
-                          :Get-x (lambda (Info)
-                                   (and Get-y
-                                        (Info :y)
-                                        (Get-y (Info :handler-data))))
-                          :Get-y (lambda (Info)
-                                   (and Get-y
-                                        (Get-y (Info :handler-data))))
+                          :Get-release-x (lambda (Info)
+                                   (and Get-release-y
+                                        (Info :y) ;; TODO/FIX/Investigate: Is this correct?
+                                        (Get-release-y (Info :handler-data))))
+                          :Get-release-y (lambda (Info)
+                                   (and Get-release-y
+                                        (Get-release-y (Info :handler-data))))
                           :Make-undo (lambda (Info)
                                        (if Make-undo
                                            (Make-undo (Info :handler-data))))
@@ -1487,7 +1487,7 @@
                                          (<ra> :get-min-reltempo))
                         :Get-max-value (lambda (_)
                                          (<ra> :get-max-reltempo))
-                        :Get-x (lambda (_)
+                        :Get-release-x (lambda (_)
                                  (get-reltemposlider-x))
                         :Get-value (lambda (Value)
                                      Value)
@@ -1532,8 +1532,8 @@
                                                             0))
                         :Get-min-value (lambda (_) 0)
                         :Get-max-value (lambda (_) 1)
-                                        ;:Get-x (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-x1) (<ra> :get-editor-scrollbar-scroller-x2)))
-                                        ;:Get-y (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-y1) (<ra> :get-editor-scrollbar-scroller-y2)))
+                                        ;:Get-release-x (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-x1) (<ra> :get-editor-scrollbar-scroller-x2)))
+                                        ;:Get-release-y (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-y1) (<ra> :get-editor-scrollbar-scroller-y2)))
                         :Make-undo (lambda (_) 50)
                         :Create-new-node (lambda (X Place callback)
                                            #f)
@@ -1573,8 +1573,8 @@
                                                             0))
                         :Get-min-value (lambda (_) 0)
                         :Get-max-value (lambda (_) 1)
-                        ;:Get-x (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-x1) (<ra> :get-editor-scrollbar-scroller-x2)))
-                                        ;:Get-y (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-y1) (<ra> :get-editor-scrollbar-scroller-y2)))
+                        ;:Get-release-x (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-x1) (<ra> :get-editor-scrollbar-scroller-x2)))
+                                        ;:Get-release-y (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-y1) (<ra> :get-editor-scrollbar-scroller-y2)))
                         :Make-undo (lambda (_) 50)
                         :Create-new-node (lambda (X Place callback)
                                            #f)
@@ -1879,7 +1879,7 @@
                                          -1.0)
                         :Get-max-value (lambda (_)
                                          1.0)
-                        :Get-x (lambda (Tracknum)
+                        :Get-release-x (lambda (Tracknum)
                                  (get-trackpan-x Tracknum))
                         :Get-value ra:get-track-pan
                         :Make-undo ra:undo-track-pan
@@ -1927,7 +1927,7 @@
                                          0.0)
                         :Get-max-value (lambda (_)
                                          1.0)
-                        :Get-x (lambda (Tracknum)
+                        :Get-release-x (lambda (Tracknum)
                                  (get-trackvolume-x Tracknum))
                         :Get-value ra:get-track-volume
                         :Make-undo ra:undo-track-volume
@@ -2019,9 +2019,9 @@
                                          -1);(- (1- (<ra> :get-temponode-max))))
                         :Get-max-value (lambda (_)
                                          1);(1- (<ra> :get-temponode-max)))
-                        :Get-x (lambda (editormove)
+                        :Get-release-x (lambda (editormove)
                                  (<ra> :get-temponode-x (editormove :Num)))
-                        :Get-y (lambda (editormove)
+                        :Get-release-y (lambda (editormove)
                                  (<ra> :get-temponode-y (editormove :Num)))
                         :Make-undo (lambda (_)
                                      (ra:undo-temponodes))
@@ -2267,11 +2267,11 @@
                         :Get-max-value (lambda (_)
                                          128)
                         ;;(get-max-pitch-in-current-track))
-                        :Get-x (lambda (editormove)
+                        :Get-release-x (lambda (editormove)
                                  ;;(c-display "    NUM----> " Num)
                                  (define pitchnum-info (editormove :nodes (editormove :Num)))
                                  (<ra> :get-pitchnum-x (pitchnum-info :Num) *current-track-num*))
-                        :Get-y (lambda (editormove)
+                        :Get-release-y (lambda (editormove)
                                  (define pitchnum-info (editormove :nodes (editormove :Num)))
                                  (<ra> :get-pitchnum-y (pitchnum-info :Num) *current-track-num*))
                         :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
@@ -2595,14 +2595,14 @@
                                                                 (call-get-existing-node-info-callbacks callback info))))))
                         :Get-min-value (lambda (_) 1)
                         :Get-max-value (lambda (_) 127)
-                        :Get-x (lambda (info) (/ (+ (<ra> :get-pianonote-x1 (info :pianonotenum)
+                        :Get-release-x (lambda (info) (/ (+ (<ra> :get-pianonote-x1 (info :pianonotenum)
                                                                          (info :notenum)
                                                                          (info :tracknum))
                                                     (<ra> :get-pianonote-x2 (info :pianonotenum)
                                                                          (info :notenum)
                                                                          (info :tracknum)))
                                                  2))
-                        :Get-y (lambda (info)
+                        :Get-release-y (lambda (info)
                                  (+ (info :mouse-delta)
                                     (get-pianonote-y (info :pianonotenum)
                                                      (info :notenum)
@@ -2963,6 +2963,7 @@
                                                                                        :pitch2 -100000
                                                                                        :place1 1000000
                                                                                        :place2 -10000000))))
+                         
                          :move-and-release move-pianoroll-eraser
 
                          :release (lambda ($button $x $y x-and-y)
@@ -3178,13 +3179,13 @@
                         :Get-pixels-per-value-unit (lambda (editormove)
                                                      (- (<ra> :get-track-fx-x2)
                                                         (<ra> :get-track-fx-x1)))
-                        :Get-x (lambda (editormove)
+                        :Get-release-x (lambda (editormove)
                                  (define info (editormove :nodes (editormove :Num)))
                                  (<ra> :get-velocity-x
                                        (info :velocitynum)
                                        (editormove :notenum)
                                        (info :tracknum)))
-                        :Get-y (lambda (editormove)
+                        :Get-release-y (lambda (editormove)
                                  (define info (editormove :nodes (editormove :Num)))
                                  (<ra> :get-velocity-y
                                        (info :velocitynum)
@@ -3442,7 +3443,7 @@
                                          0)
                         :Get-max-value (lambda (_)
                                          10000)
-                        :Get-x (lambda (Trackwidth-info)
+                        :Get-release-x (lambda (Trackwidth-info)
                                  (define tracknum (Trackwidth-info :tracknum))
                                  (if (= tracknum (1- (<ra> :get-num-tracks)))
                                      (<ra> :get-track-fx-x2 tracknum)
@@ -3682,12 +3683,12 @@
                                              range
                                              (- maxval
                                                 (fxnode-info :value))))
-                        :Get-x (lambda (editormove)
+                        :Get-release-x (lambda (editormove)
                                  (define info (editormove :nodes (editormove :Num)))
                                  (<ra> :get-fxnode-x (info :fxnodenum)
                                        (info :fxnum)
                                        (info :tracknum)))
-                        :Get-y (lambda (editormove)
+                        :Get-release-y (lambda (editormove)
                                  (define info (editormove :nodes (editormove :Num)))
                                  (<ra> :get-fxnode-y (info :fxnodenum)
                                        (info :fxnum)
@@ -4200,8 +4201,8 @@
                         ;;                 (<ra> :get-sequencer-visible-start-time))
                         ;;:Get-max-value (lambda (_)
                         ;;                 (<ra> :get-sequencer-visible-end-time))
-                        :Get-x (lambda (Num) (<ra> :get-seqtemponode-x Num))
-                        :Get-y (lambda (Num) (<ra> :get-seqtemponode-y Num))
+                        :Get-release-x (lambda (Num) (<ra> :get-seqtemponode-x Num))
+                        :Get-release-y (lambda (Num) (<ra> :get-seqtemponode-y Num))
                         :Make-undo (lambda (_)              
                                      (<ra> :undo-seqtempo))
                         :Create-new-node (lambda (X Y callback)
@@ -4722,8 +4723,8 @@
                           :Get-max-value (lambda (seqblock-info)
                                            1)
 
-                          :Get-x (lambda (info) #f)
-                          :Get-y (lambda (info) #f)
+                          :Get-release-x (lambda (info) #f)
+                          :Get-release-y (lambda (info) #f)
 
                           :Make-undo (lambda (seqblock-info)
                                        (<ra> :undo-seqblock-fades (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))
@@ -4971,8 +4972,8 @@
                                          (define seqblocknum (seqblock-info :seqblocknum))
                                          (<ra> :get-seqblock-default-duration seqblocknum seqtracknum))                                         
                         
-                        :Get-x (lambda (info) #f)
-                        :Get-y (lambda (info) #f)
+                        :Get-release-x (lambda (info) #f)
+                        :Get-release-y (lambda (info) #f)
 
                         :Make-undo (lambda (_)
                                      (<ra> :undo-sequencer)) ;; Can't use undo-seqblock since we move start position)
@@ -5087,8 +5088,8 @@
                         ;                 )
 
                         
-                        :Get-x (lambda (info) #f)
-                        :Get-y (lambda (info) #f)
+                        :Get-release-x (lambda (info) #f)
+                        :Get-release-y (lambda (info) #f)
 
                         :Make-undo (lambda (seqblock-info)
                                      (define seqtracknum (seqblock-info :seqtracknum))
@@ -5499,7 +5500,7 @@
       ;;(assert-seqblocks-state new-seqblocks-state)
       (set! curr-pos new-pos)
       ;;(if (= 0 seqtracknum)
-      ;;(c-display "state:" (pp new-seqblocks-state)))
+      ;;(c-display "state:" (pp new-seqblocks-state))
       (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)        
       (set-seqblock-selected-box (if is-speed
                                      (if is-left 'speed-left 'speed-right)
@@ -5636,8 +5637,8 @@
                                                (set-speedstretch :max-left-value)
                                                #f))
                           
-                          :Get-x (lambda (info) #f)
-                          :Get-y (lambda (info) #f)
+                          :Get-release-x (lambda (info) #f)
+                          :Get-release-y (lambda (info) #f)
                           
                           :Make-undo (lambda (set-speedstretch)
                                        (set-speedstretch :make-undo))
@@ -6154,12 +6155,12 @@
                         ;;                 (define seqtracknum (move-single :seqtracknum))
                         ;;                 (define seqblocknum (move-single :seqblocknum))
                         ;;                 (+ 10000000000 ((move-single :seqblock) :end-time)))
-                        :Get-x (lambda (info) #f) ;;(/ (+ (<ra> :get-seqblock-x1 (info :seqblocknum)
+                        :Get-release-x (lambda (info) #f) ;;(/ (+ (<ra> :get-seqblock-x1 (info :seqblocknum)
                                                   ;;        (info :seqtracknum))
                                                   ;;  (<ra> :get-seqblock-x2 (info :seqblocknum)
                                                   ;;        (info :seqtracknum)))
                                                   ;;2))
-                        :Get-y (lambda (info) #f) ;;(/ (+ (<ra> :get-seqblock-y1 (info :seqblocknum)
+                        :Get-release-y (lambda (info) #f) ;;(/ (+ (<ra> :get-seqblock-y1 (info :seqblocknum)
                                                   ;;        (info :seqtracknum))
                                                   ;;  (<ra> :get-seqblock-y2 (info :seqblocknum)
                                                   ;;        (info :seqtracknum)))
@@ -6269,12 +6270,12 @@
                                          ;;(if (or #t (= (1- num-seqblocks) seqblocknum))
                                          ;;    (+ 10000000000 (<ra> :get-seqblock-end-time (seqblock-info :seqblocknum) seqtracknum))
                                          ;;    (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum)))
-                        :Get-x (lambda (info) #f) ;;(/ (+ (<ra> :get-seqblock-x1 (info :seqblocknum)
+                        :Get-release-x (lambda (info) #f) ;;(/ (+ (<ra> :get-seqblock-x1 (info :seqblocknum)
                                                   ;;        (info :seqtracknum))
                                                   ;;  (<ra> :get-seqblock-x2 (info :seqblocknum)
                                                   ;;        (info :seqtracknum)))
                                                   ;;2))
-                        :Get-y (lambda (info) #f) ;;(/ (+ (<ra> :get-seqblock-y1 (info :seqblocknum)
+                        :Get-release-y (lambda (info) #f) ;;(/ (+ (<ra> :get-seqblock-y1 (info :seqblocknum)
                                                   ;;        (info :seqtracknum))
                                                   ;;  (<ra> :get-seqblock-y2 (info :seqblocknum)
                                                   ;;        (info :seqtracknum)))
@@ -6673,11 +6674,11 @@
                         ;;                 (if (pair? Num)
                         ;;                     #f
                         ;;                     (<ra> :get-sequencer-visible-end-time)))
-                        ;;:Get-x (lambda (Num)
+                        ;;:Get-release-x (lambda (Num)
                         ;;         (let ((automationnum (*current-seqautomation/distance* :automation-num))
                         ;;               (seqtracknum (*current-seqautomation/distance* :seqtrack)))
                         ;;           (<ra> :get-seq-automation-node-x Num automationnum seqtracknum)))
-                        ;;:Get-y (lambda (Num)
+                        ;;:Get-release-y (lambda (Num)
                         ;;         (let ((automationnum (*current-seqautomation/distance* :automation-num))
                         ;;               (seqtracknum (*current-seqautomation/distance* :seqtrack)))
                         ;;           (<ra> :get-seq-automation-node-y Num automationnum seqtracknum)))
@@ -7052,12 +7053,12 @@
                         ;;:Get-max-value (lambda (_)
                         ;;                 (<ra> :get-sequencer-visible-end-time))
                         
-                        :Get-x (lambda (Num)
+                        :Get-release-x (lambda (Num)
                                  (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
                                        (seqtracknum (*current-seqautomation/distance* :seqtrack))
                                        (automationnum (*current-seqautomation/distance* :automation-num)))
                                    (<ra> :get-seqblock-automation-node-x Num automationnum seqblocknum seqtracknum)))
-                        :Get-y (lambda (Num)
+                        :Get-release-y (lambda (Num)
                                  (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
                                        (seqtracknum (*current-seqautomation/distance* :seqtrack))
                                        (automationnum (*current-seqautomation/distance* :automation-num)))
@@ -8062,7 +8063,7 @@
                         :Get-max-value (lambda (_)
                                          (<ra> :get-seqnav-x2))
                         ;;(<ra> :get-seqnav-x2))
-                        ;;:Get-x (lambda (_)                                 
+                        ;;:Get-release-x (lambda (_)                                 
                         ;;         (/ (+ (<ra> :get-seqnav-right-size-handle-x1)
                         ;;               (<ra> :get-seqnav-right-size-handle-x2))
                         ;;            2))
@@ -8104,7 +8105,7 @@
                         :Get-max-value (lambda (_)
                                          (1- (<ra> :get-seqnav-right-size-handle-x2)))
                         ;;(<ra> :get-seqnav-x2))
-                        ;;:Get-x (lambda (_)                                 
+                        ;;:Get-release-x (lambda (_)                                 
                         ;;         (/ (+ (<ra> :get-seqnav-left-size-handle-x1)
                         ;;               (<ra> :get-seqnav-left-size-handle-x2))
                         ;;            2))
