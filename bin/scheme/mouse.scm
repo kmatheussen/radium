@@ -13,10 +13,13 @@
 (define-constant *is-leaving* 4)  ;; API_MOUSE_LEAVING (mouse has left the qt widget)
 (define-constant *is-entering* 5)  ;; API_MOUSE_ENTERING (mouse has entered the qt widget)
 
-(define (select-button Button)
+(define (select-button? Button)
   (= *left-button* Button))
 
-(define (left-or-right-button Button)
+(define (menu-button? Button)
+  (= *right-button* Button))
+
+(define (left-or-right-button? Button)
   (or (= *left-button* Button)
       (= *right-button* Button)))
 
@@ -861,6 +864,7 @@
                                   :Publicize
                                   :Get-pixels-per-value-unit #f
                                   :Create-button #f
+                                  :Existing-button? select-button?
                                   :Use-Place #t
                                   :Mouse-pointer-func #f
                                   :Get-guinum (lambda () (<gui> :get-editor-gui))
@@ -876,7 +880,7 @@
 
   (define (press-existing-node Button X Y)
     (set! *check-mouse-horizontal-modifier* Check-horizontal-modifier)
-    (and (select-button Button)
+    (and (Existing-button? Button)
          (let ((area-box (Get-area-box)))
            ;;(c-display X Y "area-box" (and area-box (box-to-string area-box)) (and area-box (inside-box-forgiving area-box X Y)) (box-to-string (<ra> :get-box reltempo-slider)))
            (and area-box
@@ -899,7 +903,7 @@
   
   (define (can-create Button X Y)
     (and (or (and Create-button (= Button Create-button))
-             (and (not Create-button) (select-button Button)))
+             (and (not Create-button) (Existing-button? Button)))
          (let ((area-box (Get-area-box)))
            (and area-box
                 (inside-box area-box X Y)))))
@@ -2949,6 +2953,7 @@
                                                           :place1 place1
                                                           :place2 place2))))
 
+
 (add-delta-mouse-handler :press (lambda ($button $x $y)
                                   (and (= $button *right-button*)
                                        *current-track-num*
@@ -2966,14 +2971,13 @@
                          
                          :move-and-release move-pianoroll-eraser
 
-                         :release (lambda ($button $x $y x-and-y)
-                                    (set-mouse-pointer ra:set-normal-mouse-pointer (<gui> :get-editor-gui))
+                         :release (lambda ($button $x $y $instance)
                                     (<ra> :hide-pianoroll-eraser)
-                                    ;;(c-display "RELEASING")
+                                    (<ra> :move-mouse-pointer ($instance :x) ($instance :y))                                          
+                                    (set-mouse-pointer ra:set-normal-mouse-pointer (<gui> :get-editor-gui))
                                     )
                          :mouse-pointer-is-hidden-func (lambda () #t)
                          )
-
 
 
 ;; velocities
