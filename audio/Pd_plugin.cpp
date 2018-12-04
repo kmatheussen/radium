@@ -1190,14 +1190,23 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state
       controller->pd_binding = NULL;
     }
 
-    controller->display_name = HASH_has_key_at(state, "name", i) ? wcsdup(HASH_get_string_at(state, "name", i)) : NULL;
+    controller->display_name = NULL;
+    if (HASH_has_key_at(state, "name", i)){
+      dyn_t dyn = HASH_get_dyn_at(state, "name", i);
+      if(dyn.type != STRING_TYPE) // Got a crash report were it could seem like this happened.
+        RError("  Error in PD controller state. \"name\"[%d] should be STRING, but is \"%s\\n", i, DYN_type_name(dyn.type));
+      else
+        controller->display_name = wcsdup(dyn.string);
+    }
     
-    const char *name = controller->display_name == NULL ? NULL : STRING_get_chars(controller->display_name);
-    if(name==NULL || !strcmp(name,""))
-      controller->name[0] = 0;
-    else
-      strncpy(controller->name, name, PD_NAME_LENGTH-1);
-
+    {
+      const char *name = controller->display_name == NULL ? NULL : STRING_get_chars(controller->display_name);
+      if(name==NULL || !strcmp(name,""))
+        controller->name[0] = 0;
+      else
+        strncpy(controller->name, name, PD_NAME_LENGTH-1);
+    }
+    
     controller->type      = HASH_get_int_at(state, "type", i);
     controller->min_value = HASH_get_float_at(state, "min_value", i);
     controller->value = HASH_get_float_at(state, "value", i);
