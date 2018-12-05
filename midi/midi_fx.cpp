@@ -521,6 +521,7 @@ static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *mid
 	fx->name    = midi_fx->name;
 	fx->min     = midi_fx->min;
 	fx->max     = midi_fx->max;
+        fx->is_enabled = true;
 	fx->closeFX = &MIDI_closeFX;
 	fx->SaveFX  = MIDISaveFX;
 
