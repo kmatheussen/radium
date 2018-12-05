@@ -1,3 +1,33 @@
+Changes 5.9.18 -> 5.9.19:
+* Linux: Build JUCE library optimized for SSE2 and
+  SSE math. Should speed up audio processing, and
+  possibly avoid denomals. (This is probably a
+  regression, but I don't know when it happened.)
+* Mixer: Don't stutter graphics when changing a
+  "Main Pipe" send-slider value and other non-bus
+  send-sliders values.
+* Editor: Make MIDI FX enabled by default after
+  creation. Bug introduced in 5.9.18.
+* Editor: Fix selecting new FX when right-clicking on
+  a different track than the current track, in some
+  situations.
+* Internal: Make sure execution is stopped when
+  hitting an error, not continued, in various
+  situations.
+* Editor: Fix error message popping up when hovering
+  mouse over fxtext in a track with MIDI instrument.
+* Crashreporter: When Radium crashed because of the
+  Nouveau driver, we tell this in the crashreporter,
+  and remove the "SEND" button.
+* Pd: Fix crash when deleting a controller in some
+  situations.
+* Mouse: Make sure mouse pointer is always placed at
+  correct position after erasing in the piano roll.
+* API: Replaced getFxtextEffectNumFromX with
+  getFxtextFxnumFromX.
+ 
+
+
 Changes 5.9.16 -> 5.9.18:
 * Sequencer: Fix error message popping up if moving a
   seqblock to another seqblock and there isn't enough
