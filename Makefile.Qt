@@ -43,11 +43,6 @@ OPTIMIZE ?= -O2
 #----------------END USER SETTINGS---------------------------
 
 
-GCC_VERSION:=$(shell gcc -dumpversion)
-GCC_MAJOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f1)
-GCC_MINOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f2)
-GCC_SUB:=$(shell echo $(GCC_VERSION) | cut -d'.' -f3)
-
 
 
 
@@ -104,6 +99,13 @@ PYPATH ?=
 QT_SYSTEM_CFLAGS ?=
 
 QSCINTILLA_PATH ?= $(shell pwd)/bin/packages/QScintilla_gpl-2.10.1
+
+GCC_VERSION:=$(shell $(GCC) -dumpversion)
+GCC_MAJOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f1)
+GCC_MINOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f2)
+GCC_SUB:=$(shell echo $(GCC_VERSION) | cut -d'.' -f3)
+
+
 
 # qt4
 ifeq ($(RADIUM_QT_VERSION),4)
