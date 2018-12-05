@@ -1632,7 +1632,8 @@ struct Instruments{
 
         //int (*getMaxVelocity)(const struct Patch *patch);
 
-        vector_t *(*getFxNames)(const struct Patch *patch);
+        int (*getNumFxs)(const struct Patch *patch);
+        const char *(*getFxName)(const struct Patch *patch, int fxnum);
         struct FX *(*createFX)(const struct Tracks *track, struct Patch *patch, int effect_num);
 
 #ifdef __cplusplus

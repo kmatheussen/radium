@@ -533,7 +533,7 @@ int getNumInstrumentEffects(int64_t instrument_id){
   if(patch==NULL)
     return 0;
 
-  return patch->instrument->getFxNames(patch)->num_elements;
+  return patch->instrument->getNumFxs(patch);
 }
 
 const_char* getInstrumentEffectName(int effect_num, int64_t instrument_id){
@@ -541,14 +541,13 @@ const_char* getInstrumentEffectName(int effect_num, int64_t instrument_id){
   if(patch==NULL)
     return "";
 
-  vector_t *elements = patch->instrument->getFxNames(patch);
-
-  if (effect_num >= elements->num_elements){
-    handleError("getInstrumentEffectName: effect_num >= num_effects: %d >= %d",effect_num, elements->num_elements);
+  int num_fxs = patch->instrument->getNumFxs(patch);
+  if (effect_num < 0 || effect_num >= num_fxs){
+    handleError("getInstrumentEffectName: effect_num >= num_effects: %d >= %d", effect_num, num_fxs);
     return "";
   }
-    
-  return talloc_strdup((const char*)elements->elements[effect_num]);
+  
+  return talloc_strdup(patch->instrument->getFxName(patch, effect_num));
 }
 
 bool instrumentHasBeenUsed(int64_t instrument_id){

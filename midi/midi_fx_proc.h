@@ -29,7 +29,8 @@ extern LANGSPEC int MIDI_get_effect_num(const struct Patch *patch, const char *e
 extern LANGSPEC bool MIDISetTreatFX(struct FX *fx,struct MIDI_FX *midi_fx);
 
 extern LANGSPEC struct FX *MIDI_createFX(const struct Tracks *track, struct Patch *patch, int effect_num);
-extern LANGSPEC vector_t *MIDI_getFxNames(const struct Patch *patch);
+extern LANGSPEC int MIDI_getNumFxs(const struct Patch *patch);
+extern LANGSPEC const char *MIDI_getFxName(const struct Patch *patch, int fxnum);
 
 #ifdef __cplusplus
 void MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track, std::function<void(struct FX*)> callback);

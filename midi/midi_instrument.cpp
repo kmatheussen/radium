@@ -758,7 +758,8 @@ int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
 
   instrument->instrumentname   = "MIDI instrument";
   //instrument->getMaxVelocity = &MIDIgetMaxVelocity;
-  instrument->getFxNames       = MIDI_getFxNames;
+  instrument->getNumFxs        = MIDI_getNumFxs;
+  instrument->getFxName        = MIDI_getFxName;
   instrument->createFX         = MIDI_createFX;
   instrument->getFX            = &MIDIgetFX;
   //instrument->getPatch         = &MIDIgetPatch;
