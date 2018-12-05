@@ -542,9 +542,9 @@ const_char* getInstrumentEffectName(int effect_num, int64_t instrument_id){
     return "";
 
   vector_t *elements = patch->instrument->getFxNames(patch);
-  
+
   if (effect_num >= elements->num_elements){
-    handleError("effect_num >= num_effects: %d >= %d",effect_num, elements->num_elements);
+    handleError("getInstrumentEffectName: effect_num >= num_effects: %d >= %d",effect_num, elements->num_elements);
     return "";
   }
     

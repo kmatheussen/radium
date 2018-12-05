@@ -3945,9 +3945,9 @@
                               (inside-box (<ra> :get-box fxtext *current-track-num*) X Y))
                          (define instrument-id (<ra> :get-instrument-for-track  *current-track-num*))
                          (when (>= instrument-id 0)
-                           (define effect-num (<ra> :get-fxtext-effect-num-from-x X *current-track-num*))
-                           (when (>= effect-num 0)
-                             (define effect-name (<ra> :get-instrument-effect-name effect-num instrument-id))
+                           (define fxnum (<ra> :get-fxtext-fxnum-from-x X *current-track-num*))
+                           (when (>= fxnum 0)
+                             (define effect-name (get-full-fx-name fxnum *current-track-num*))
                              (set-editor-statusbar (<-> "FX text \"" effect-name "\", track #" *current-track-num*)))))
                         (velocity-info
                          (set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
