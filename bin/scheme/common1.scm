@@ -249,7 +249,7 @@
 (define-expansion (with-history-disabled . code)
   `(begin
      (ra:disable-scheme-history)
-     (eat-errors :try (lambda ()
+     (try-finally :try (lambda ()
                          ,@code)
                   :finally ra:enable-scheme-history)))
 

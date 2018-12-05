@@ -627,25 +627,36 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 ||#
 
 
+(define-constant *try-finally-rethrown* (gensym "try-finally-rethrown"))
 (define-constant *eat-errors-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
+
+(define (catch-args-are-from-try-finally args)
+  (and (not (null? args))
+       (symbol? (car args))
+       (eq? *try-finally-rethrown* (car args))))
 
 (define (FROM-C-catch-all-errors-and-display-backtrace-automatically func . args)
   (catch #t
          (lambda ()
            (apply func args))
-         (lambda args 
-           (display "    FROM_C_catch2")(newline)
-           (display "FROM-C-catch-all-errors-and-display-backtrace-automatically: func failed. Args:")(newline)(display "    ")(display args)(newline)
-           (catch #t
-                  safe-display-ow!
-                  (lambda args
-                    (display "    FROM_C_catch3")(newline)
-                    (display "safe-display-ow! failed:")(newline)
-                    (display args)
-                    (newline)))
+         (lambda args
+           ;;(display "    FROM_C_catch2. args:") (display args) (newline)
+           (when (not (catch-args-are-from-try-finally args)) ;; if it is from try-finally, we don't need to display backtrace.
+             (display "FROM-C-catch-all-errors-and-display-backtrace-automatically: func failed. Args:")(newline)(display "    ")(display args)(newline)
+             (catch #t
+                    safe-display-ow!
+                    (lambda args
+                      (display "    FROM_C_catch3")(newline)
+                      (display "safe-display-ow! failed:")(newline)
+                      (display args)
+                      (newline))))
            *eat-errors-failed-return-value*)))
 #!!
 (+ notanumber1 notanumber2)
+(error *try-finally-rethrown*)
+(begin
+  (error *try-finally-rethrown*)
+  (awefoaijweogijareg))
 !!#
 
 ;;
@@ -659,10 +670,11 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
          (lambda args
            (display "(catch-all-errors-and-display-backtrace-automatically thunk) failed. args:")(newline)
            (display args)(newline)
-           (catch #t
-                  safe-display-ow!
-                  (lambda args
-                    (error 'safe-display-ow!-failed)))
+           (when (not (catch-args-are-from-try-finally args))
+             (catch #t
+                    safe-display-ow!
+                    (lambda args
+                      (error 'safe-display-ow!-failed))))
            *eat-errors-failed-return-value*)))
 
 (define (catch-all-errors-failed? ret)
@@ -687,12 +699,12 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
                        
                        :finally (lambda ()
                                   #f))
-  (if rethrow
-      (assert "rethrow not implemented"))
   
-  (define (return ret)
+  (define (return ret maybe-rethrow)
     (finally)
-    ret)
+    (if (and rethrow maybe-rethrow)
+        (throw *try-finally-rethrown*)
+        ret))
   
   (define try-ret (catch-all-errors-and-display-backtrace-automatically try))
 
@@ -700,12 +712,27 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
       (begin                    
         (define failed-ret (catch-all-errors-and-display-backtrace-automatically failure))
         (cond ((catch-all-errors-failed? failed-ret)
-               (return *eat-errors-failure-thunk-failed*))
+               (return *eat-errors-failure-thunk-failed* #t))
               ((eq? failure-return-value *eat-errors-false-unless-failure-is-overridden*)
-               (return failed-ret))
+               (return failed-ret #t))
               (else
-               (return failure-return-value))))
-      (return try-ret)))
+               (return failure-return-value #t))))
+      (return try-ret #f)))
+
+
+(delafina (try-finally :try
+                       :failure
+                       :failure-return-value *eat-errors-false-unless-failure-is-overridden*
+                       :finally (lambda ()
+                                  #f))
+  (if failure
+      (eat-errors :try try
+                  :rethrow #t
+                  :failure failure
+                  :finally finally)
+      (eat-errors :try try
+                  :rethrow #t
+                  :finally finally)))
 
 
 
@@ -713,13 +740,28 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 (c-display "    START testing try-catch-failure. Lots of backtrace will be printed, but nothing is wrong, hopefully.")
 (c-display "=======================================================================================================\n\n\n\n")
 
+;; Test try-finally
+(let* ((somethingspecial (gensym "somethingspecial")))
+  (***assert*** (let ((should-be-somethingspecial somethingspecial))
+                  (eat-errors :try (lambda ()
+                                     (try-finally :try (lambda ()
+                                                         (+ weofij oiwgrjoewrgi)))
+                                     (ra:play-block-from-start)
+                                     (set! should-be-somethingspecial 'not-so-special)
+                                     (+ aoregijoaija aeorgijaoirgje))
+                              :finally (lambda ()
+                                         50))
+                  (assert (not (ra:is-playing-block)))
+                  should-be-somethingspecial)
+                somethingspecial))
+
 
 ;; Test all fine.
 (***assert*** (eat-errors :try (lambda ()
-                                  (c-display "returning 5")
-                                  (+ 2 3))
+                                  (c-display "returning 4")
+                                  (+ 1 3))
                            :rethrow #f)
-              5)
+              4)
 
 ;; Test all fine with finalizer
 (let ((is-finalized #f))
@@ -1947,13 +1989,13 @@ for .emacs:
 
 (define (undo-block block)
   (<ra> :open-undo)
-  (eat-errors :try block
+  (try-finally :try block
                :finally (lambda ()
                           (<ra> :close-undo))))
 
 (define (ignore-undo-block block)
   (<ra> :start-ignoring-undo)
-  (eat-errors :try block
+  (try-finally :try block
                :finally (lambda ()
                           (<ra> :stop-ignoring-undo))))
 
@@ -1964,7 +2006,7 @@ for .emacs:
       (block)
       (begin
         (set! *currently-in-update-notes-after-block-block* #t)
-        (eat-errors :try block
+        (try-finally :try block
                      :finally (lambda ()
                                 (set! *currently-in-update-notes-after-block-block* #f)
                                 (<ra> :update-notes-in-player))))))

@@ -5768,7 +5768,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
   (<ra> :open-progress-window (<-> "Please wait, loading " (<ra> :from-base64 filename)))
   
-  (eat-errors :try (lambda ()
+  (try-finally :try (lambda ()
                       (<ra> :start-ignoring-undo)
                             
                       (<ra> :eval-python "import import_mod2")
@@ -5797,10 +5797,10 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                
                :finally (lambda ()
                           (<ra> :stop-ignoring-undo)                          
+                          (<ra> :reset-undo)
                           (<ra> :close-progress-window)))
                           
 
-  (<ra> :reset-undo)
   (<ra> :internal_update-all-block-graphics)
   )
   

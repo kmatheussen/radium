@@ -480,14 +480,14 @@
 
 (define (ra:gui_do-alpha gui alpha func)
   (<gui> :set-paint-opacity gui alpha)
-  (eat-errors :try func
+  (try-finally :try func
                :finally (lambda ()
                           (<gui> :set-paint-opacity gui 1))))
 
 (define (ra:gui_requester-operations text block)
   (c-display "OPEN REQ")
   (<ra> :open-requester text)
-  (eat-errors :try block
+  (try-finally :try block
                :finally (lambda ()
                           (let ((safe-to-close (<ra> :safe-to-call-close-requester)))
                             (c-display "CLOSING REQ. Safe: " safe-to-close)
@@ -503,7 +503,7 @@
         (assert #f))
       (begin
         (<gui> :disable-updates gui)
-        (eat-errors :try block
+        (try-finally :try block
                      :finally (lambda ()
                                 (<gui> :enable-updates gui)
                                 )))))
