@@ -49,7 +49,6 @@ extern struct TEvent tevent;
 static s7_scheme *s7 = NULL;
 static s7webserver_t *s7webserver;
 
-static s7_pointer g_catchallerrors_func = NULL;
 static s7_pointer g_eat_errors_failed;
 bool g_scheme_failed = false;
 int g_s7_history_disabled = 0;
@@ -94,6 +93,7 @@ namespace{
 }
 
 static s7_pointer find_scheme_value(s7_scheme *s7, const char *funcname){
+  R_ASSERT_NON_RELEASE(s7_is_defined(s7, funcname));
   s7_pointer symbol = s7_make_symbol(s7, funcname);
   s7_pointer scheme_func = s7_symbol_local_value(s7, symbol, s7_rootlet(s7));
      
@@ -108,11 +108,14 @@ static s7_pointer find_and_protect_scheme_value(const char *funcname){
 }
 
 static s7_pointer place_to_ratio(const Place *p){
-  R_ASSERT(p->dividor != 0);
-
+  
   s7_Int temp = p->line*p->dividor; // use temp variable (of type s7_Int, which is at least 64 bit) to make sure it doesn't overflow.
   s7_Int a = temp + p->counter;
   s7_Int b = p->dividor;
+  if (b==0){
+    R_ASSERT(false);
+    b = 1;
+  }
   s7_pointer ratio = s7_make_ratio(s7, a, b);
   
   //fprintf(stderr,"\n\n          a: %d, b: %d. is_number: %d, is_integer: %d, is_ratio: %d, is_real: %d\n\n\n", (int)a, (int)b, s7_is_number(ratio),s7_is_integer(ratio),s7_is_ratio(ratio),s7_is_real(ratio));  
@@ -533,8 +536,18 @@ static s7_pointer catch_call(s7_scheme *sc, const s7_pointer args){
 #if !defined(RELEASE)
   int curr_level = g_scheme_nested_level;
 #endif
+
+  static s7_pointer s_catchallerrors_func = NULL;
+
+#if !defined(RELEASE)
+  if (s_catchallerrors_func==NULL)
+    s_catchallerrors_func = find_and_protect_scheme_value("FROM-C-catch-all-errors-and-display-backtrace-automatically");
+#else
+  s_catchallerrors_func = find_scheme_value("FROM-C-catch-all-errors-and-display-backtrace-automatically");
+#endif
+
   
-  s7_pointer ret = s7_call(sc, g_catchallerrors_func, args);
+  s7_pointer ret = s7_call(sc, s_catchallerrors_func, args);
 
   R_ASSERT_NON_RELEASE(curr_level==g_scheme_nested_level); // Assert that g_catchallerros_func is working. (we don't want any longjmp in the C part)
   
@@ -1853,10 +1866,10 @@ void SCHEME_init1(void){
 
   g_scheme_nested_level++;
   s7_load(s7,"init.scm");
+  //s7_eval_c_string(s7, "(catch #t (lambda () (load \"init.scm\")) (lambda args (error 'ERROR-in-radium-init)))");
   g_scheme_nested_level--;
   R_ASSERT(g_scheme_nested_level==0);
   
-  g_catchallerrors_func = find_and_protect_scheme_value("FROM-C-catch-all-errors-and-display-backtrace-automatically");
   g_eat_errors_failed = find_and_protect_scheme_value("*eat-errors-failed-return-value*");
 
   s7webserver = s7webserver_create(s7, 5080, true);  

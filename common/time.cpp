@@ -1241,16 +1241,16 @@ static struct STimes *create_stimes(const struct Blocks *block,
 }
 
 static dyn_t create_filledout_swings(const dyn_t global_swings, const dyn_t track_swings, int num_lines, dyn_t beats){
-  static func_t *create_filledout_swings2 = NULL;
+  static func_t *s_create_filledout_swings2 = NULL;
 
 #if defined(RELEASE)
-  if (create_filledout_swings2==NULL)
-    create_filledout_swings2=s7extra_get_func_from_funcname_for_storing("create-filledout-swings2"); 
+  if (s_create_filledout_swings2==NULL)
+    s_create_filledout_swings2=s7extra_get_func_from_funcname_for_storing("create-filledout-swings2"); 
 #else
-  create_filledout_swings2=s7extra_get_func_from_funcname("create-filledout-swings2"); 
+  s_create_filledout_swings2=s7extra_get_func_from_funcname("create-filledout-swings2"); 
 #endif
  
-  return S7CALL(dyn_dyn_dyn_dyn_int,create_filledout_swings2,
+  return S7CALL(dyn_dyn_dyn_dyn_int,s_create_filledout_swings2,
                 beats,
                 global_swings,
                 track_swings,

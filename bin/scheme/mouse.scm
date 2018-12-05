@@ -518,7 +518,7 @@
   ;;(c-display "   LAST_ID:" *last-statusbar-id*)
   (<ra> :remove-statusbar-text *last-statusbar-id*)
   
-  (eat-errors :try thunk
+  (eat-errors  :try thunk
                :failure (lambda ()
                           
                           (set! *current-mouse-cycle* #f)
@@ -4990,11 +4990,11 @@
                                         (when gakkgakk-has-moved-left-interior
                                           (define seqtracknum (seqblock-info :seqtracknum))
                                           ;;(apply-seqblock-interior-start seqblock-info #t))
-                                          (eat-errors :try (lambda ()
+                                          (try-finally :try (lambda ()
                                                               (<ra> :apply-gfx-seqblocks seqtracknum))
                                                        :failure (lambda ()
                                                                   (<ra> :cancel-gfx-seqblocks seqtracknum)))))
-
+                        
                         
                         :Move-node (lambda (seqblock-info mousex Y)
                                      (define seqtracknum (seqblock-info :seqtracknum))
@@ -5108,7 +5108,7 @@
                         :Release-node (lambda (seqblock-info)
                                         (when gakkgakk-has-moved-right-interior
                                           (define seqtracknum (seqblock-info :seqtracknum))
-                                          (eat-errors :try (lambda ()
+                                          (try-finally :try (lambda ()
                                                               (<ra> :apply-gfx-seqblocks seqtracknum))
                                                        :failure (lambda ()
                                                                   (<ra> :cancel-gfx-seqblocks seqtracknum)))))
@@ -5599,7 +5599,7 @@
 
   :release ()
   (when has-moved
-    (eat-errors :try (lambda ()
+    (eat-finally :try (lambda ()
                         (<ra> :apply-gfx-seqblocks seqtracknum))
                  :failure (lambda ()
                             (<ra> :cancel-gfx-seqblocks seqtracknum))))
@@ -5906,7 +5906,7 @@
                 (<ra> :mark-seqblock-available (seqblock :id)))
               marked-as-available)
 
-    (eat-errors
+    (try-finally
      :try
      (lambda ()
                         
@@ -5914,7 +5914,7 @@
        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
        
        (set! seqblocks (list-remove (to-list seqblocks) seqblocknum))
-       (eat-errors :try (lambda ()
+       (try-finally :try (lambda ()
                            (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
                            (<ra> :apply-gfx-seqblocks seqtracknum))
                     :failure (lambda ()
@@ -5936,7 +5936,7 @@
                                         (lambda (maybe)
                                           (equal? seqblock maybe))))
        
-       (eat-errors :try (lambda ()
+       (try-finally :try (lambda ()
                            (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
                            (<ra> :set-curr-seqblock-under-mouse (seqblock :id)) ;; To avoid displaying block-seqblocks overlapping. :select-seqblock also fails if it isn't there
                            (<ra> :apply-gfx-seqblocks seqtracknum))
@@ -5946,13 +5946,13 @@
      (lambda ()
        (for-each (lambda (seqblock)
                    (<ra> :unmark-seqblock-available (seqblock :id)))
-                 marked-as-available)))
+                 marked-as-available)
     
-    ;; Keep *current-seqblock-info* up to date since it is used to auto-call :cancel-gfx-seqblocks if anything goes wrong.
-    (set! *current-seqblock-info* (copy-seqblock-info *current-seqblock-info*
-                                                      :seqtracknum seqtracknum
-                                                      :seqblocknum seqblocknum))
-
+       ;; Keep *current-seqblock-info* up to date since it is used to auto-call :cancel-gfx-seqblocks if anything goes wrong.
+       (set! *current-seqblock-info* (copy-seqblock-info *current-seqblock-info*
+                                                         :seqtracknum seqtracknum
+                                                         :seqblocknum seqblocknum))))
+       
     (<ra> :set-curr-seqtrack seqtracknum)
     )
 
@@ -6095,7 +6095,7 @@
   :release ()
   (begin
     (if has-moved
-        (eat-errors :try (lambda ()
+        (try-finally :try (lambda ()
                             (maybe-make-undo)
                             (<ra> :apply-gfx-seqblocks seqtracknum))
                      :failure (lambda ()
@@ -7471,7 +7471,7 @@
                                                   (set! (new-seqblocks-state seqblocknum) new-seqblock)
                                                   (set! new-seqblocks-state (maybe-add-autofades new-seqblocks-state seqblocknum))
                                                   (when new-seqblocks-state
-                                                    (eat-errors
+                                                    (try-finally
                                                      :try (lambda ()
                                                             (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
                                                             (<ra> :apply-gfx-seqblocks seqtracknum))
@@ -7523,7 +7523,7 @@
                                                   (set! (new-seqblocks-state seqblocknum) new-seqblock)
                                                   (set! new-seqblocks-state (maybe-add-autofades new-seqblocks-state seqblocknum))
                                                   (when new-seqblocks-state
-                                                    (eat-errors
+                                                    (try-finally
                                                      :try (lambda ()
                                                             (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
                                                             (<ra> :apply-gfx-seqblocks seqtracknum))
@@ -7572,7 +7572,7 @@
                                              '()
                                              (sublist seqblocks-state (1+ seqblocknum) (length seqblocks-state)))))
      
-     (eat-errors :try (lambda ()                   
+     (try-finally :try (lambda ()                   
                          (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
                          (<ra> :undo-sequencer)
                          (<ra> :apply-gfx-seqblocks seqtracknum))

@@ -268,6 +268,7 @@
             (define old-loading-filename *currently-loading-file*)
             (define old-reloading *currently-reloading-file*)
             (set! *currently-loading-file* filename)
+            (define do-rethrow #f)
             (let ((ret (catch #t
                               (lambda ()
                                 (set! *currently-reloading-file* (loaded-names filename))
@@ -276,6 +277,7 @@
                                     (org-load filename env)
                                     (org-load filename)))
                               (lambda args
+                                (set! do-rethrow #t)
                                 (cond ((defined? 'safe-display-ow!)
                                        (safe-display-ow!))
                                       ((defined? 'safe-ow!)
@@ -284,7 +286,9 @@
                                        (display (ow!))))))))
               (set! *currently-reloading-file* old-reloading)
               (set! *currently-loading-file* old-loading-filename)
-              ret)))))
+              (if do-rethrow
+                  (error 'loading-failed)
+                  ret))))))
 
 
 

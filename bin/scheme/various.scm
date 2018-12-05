@@ -773,7 +773,7 @@
                              :end-time new-end)
                   (loop (cdr seqblocks)
                         new-end))))))
-  (eat-errors
+  (try-finally
    :try (lambda ()
           (<ra> :create-gfx-seqblocks-from-state new-seqblocks seqtracknum)
           (<ra> :undo-sequencer)
