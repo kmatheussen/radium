@@ -543,7 +543,7 @@ static s7_pointer catch_call(s7_scheme *sc, const s7_pointer args){
   if (s_catchallerrors_func==NULL)
     s_catchallerrors_func = find_and_protect_scheme_value("FROM-C-catch-all-errors-and-display-backtrace-automatically");
 #else
-  s_catchallerrors_func = find_scheme_value("FROM-C-catch-all-errors-and-display-backtrace-automatically");
+  s_catchallerrors_func = find_scheme_value(s7, "FROM-C-catch-all-errors-and-display-backtrace-automatically");
 #endif
 
   
