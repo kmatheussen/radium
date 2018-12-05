@@ -321,7 +321,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
     if (caused_by_nouveau){
       
-      text1.setText("A buggy GFX driver caused Radium to crash."
+      text1.setText("The Nouveau GFX driver, which is installed on your system, crashed."
                     "<p>"
                     "Go here to get a working GFX driver:<br><a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
                     "<p>"
