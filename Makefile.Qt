@@ -427,7 +427,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 #-------------------KARSJK-------------------------------
 
-BUILD_DEPENDENCIES = $(API)radium_proc.h buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
+BUILD_DEPENDENCIES = buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
 PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so bin/scheme/api_protos.scm
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
@@ -615,7 +615,7 @@ PLUGINHOSTOPTS = CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE
 LIBPLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\" " TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
 
 
-pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h common/Vector.hpp
+pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer common/Vector.hpp
 	rm -f pluginhost/Builds/Linux/build/*/*/Juce_plugins_*.o pluginhost/Builds/Linux/build/*/*/Juce_plugin_scanner.o
 # dryrun
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
@@ -728,7 +728,7 @@ $(CD)gfx_op_queue_generated.c: $(CD)gfx_op_queue.scm $(CD)gfx_op_queue.c
 $(CD)visual_op_queue_proc.h: $(CD)gfx_op_queue.scm 
 	cd $(CD) && ./gfx_op_queue.scm protos >visual_op_queue_proc.h
 
-eventreciever.o:  $(BUILD_DEPENDENCIES) $(CD)eventreciever.c $(API)radium_proc.h
+eventreciever.o:  $(BUILD_DEPENDENCIES) $(CD)eventreciever.c
 	$(CC) $(CD)eventreciever.c $(OPT)
 
 scancodes.o:  $(BUILD_DEPENDENCIES) $(CD)scancodes.c
@@ -1440,7 +1440,7 @@ Qt_song_properties.o: $(BUILD_DEPENDENCIES) $(P)Qt_song_properties_callbacks.h $
 
 
 
-Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h $(API)radium_proc.h common/visual_proc.h Qt/mQt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h Qt/helpers.h
+Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h common/visual_proc.h Qt/mQt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h Qt/helpers.h
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
 		$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT) -O0 ; \
 	else \
@@ -1546,7 +1546,7 @@ posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
 settings.o:  $(BUILD_DEPENDENCIES) $(CD)settings.cpp
 	$(CCC) $(CD)settings.cpp $(QTOPT)
 
-mmd2load.o:  $(BUILD_DEPENDENCIES) mmd2loader/mmd2load.c bin/protos.conf
+mmd2load.o:  $(BUILD_DEPENDENCIES) mmd2loader/mmd2load.c
 	$(CC) mmd2loader/mmd2load.c $(OPT)
 
 scroll.o:  $(BUILD_DEPENDENCIES) $(CD)scroll.c
@@ -1587,70 +1587,72 @@ expand.o:  $(BUILD_DEPENDENCIES)  $(CD)expand.c
 	$(CC)  $(CD)expand.c $(OPT)
 
 api_common.o:  $(BUILD_DEPENDENCIES)  $(API)api_common.cpp
+	@echo "Changed (api_common.o):"
+	@echo $?
 	$(CCC)  $(API)api_common.cpp $(QTOPT)
 
-api_keyplay.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplay.c $(API)radium_proc.h
+api_keyplay.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplay.c
 	$(CC)  $(API)api_keyplay.c $(OPT)
 
-api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.c $(API)radium_proc.h
+api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.c 
 	$(CC)  $(API)api_keyplayedit.c $(OPT)
 
-api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.c $(API)radium_proc.h
+api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.c 
 	$(CC)  $(API)api_navigate.c $(OPT)
 
-api_disk.o:  $(BUILD_DEPENDENCIES)  $(API)api_disk.cpp $(API)radium_proc.h
+api_disk.o:  $(BUILD_DEPENDENCIES)  $(API)api_disk.cpp 
 	$(CCC)  $(API)api_disk.cpp $(QTOPT)
 
-api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp $(API)radium_proc.h
+api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp 
 	$(CCC)  $(API)api_noteedit.cpp $(QTOPT)
 
-api_velocities.o:  $(BUILD_DEPENDENCIES)  $(API)api_velocities.c $(API)radium_proc.h
+api_velocities.o:  $(BUILD_DEPENDENCIES)  $(API)api_velocities.c 
 	$(CC)  $(API)api_velocities.c $(OPT)
 
-api_pitches.o:  $(BUILD_DEPENDENCIES)  $(API)api_pitches.c $(API)radium_proc.h
+api_pitches.o:  $(BUILD_DEPENDENCIES)  $(API)api_pitches.c 
 	$(CC)  $(API)api_pitches.c $(OPT)
 
-api_timing.o:  $(BUILD_DEPENDENCIES)  $(API)api_timing.c $(API)radium_proc.h
+api_timing.o:  $(BUILD_DEPENDENCIES)  $(API)api_timing.c 
 	$(CC)  $(API)api_timing.c $(OPT)
 
-api_trackonoff.o:  $(BUILD_DEPENDENCIES)  $(API)api_trackonoff.c $(API)radium_proc.h
+api_trackonoff.o:  $(BUILD_DEPENDENCIES)  $(API)api_trackonoff.c 
 	$(CC)  $(API)api_trackonoff.c $(OPT)
 
-api_zoom.o:  $(BUILD_DEPENDENCIES)  $(API)api_zoom.c $(API)radium_proc.h
+api_zoom.o:  $(BUILD_DEPENDENCIES)  $(API)api_zoom.c 
 	$(CC)  $(API)api_zoom.c $(OPT)
 
-api_notemanipulate.o:  $(BUILD_DEPENDENCIES)  $(API)api_notemanipulate.c $(API)radium_proc.h
+api_notemanipulate.o:  $(BUILD_DEPENDENCIES)  $(API)api_notemanipulate.c 
 	$(CC)  $(API)api_notemanipulate.c $(OPT)
 
-api_play.o:  $(BUILD_DEPENDENCIES)  $(API)api_play.c $(API)radium_proc.h
+api_play.o:  $(BUILD_DEPENDENCIES)  $(API)api_play.c 
 	$(CC)  $(API)api_play.c $(OPT)
 
-api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c $(API)radium_proc.h
+api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c 
 	$(CC)  $(API)api_clipboard.c $(OPT)
 
-api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp $(API)radium_proc.h embedded_scheme/s7extra_proc.h
+api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp  embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_undo.cpp $(QTOPT)
 
-api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp $(API)radium_proc.h bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h
+api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp  bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
 
-api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp $(API)radium_proc.h $(API)api_instruments_proc.h embedded_scheme/s7extra_proc.h
+api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp  $(API)api_instruments_proc.h embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_instruments.cpp $(QTOPT)
 
-api_soundpluginregistry.o:  $(BUILD_DEPENDENCIES) $(API)api_soundpluginregistry.cpp $(API)radium_proc.h $(API)api_instruments_proc.h
+api_soundpluginregistry.o:  $(BUILD_DEPENDENCIES) $(API)api_soundpluginregistry.cpp  $(API)api_instruments_proc.h
 #	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC)  $(API)api_soundpluginregistry.cpp $(QTOPT)
 
-api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.cpp $(API)radium_proc.h
+api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.cpp 
 	$(CCC)  $(API)api_requesters.cpp $(QTOPT)
 
-api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.c $(API)radium_proc.h
+api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.c 
 	$(CC)  $(API)api_mouse.c $(OPT)
 
-api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.cpp $(API)radium_proc.h audio/Envelope.hpp common/seqblock_automation_proc.h embedded_scheme/s7extra_proc.h
+api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.cpp  audio/Envelope.hpp common/seqblock_automation_proc.h embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_seqtracks.cpp $(QTOPT)
 
-api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp $(API)radium_proc.h Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h
+api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS)
 
@@ -1660,7 +1662,7 @@ ifeq (,$(findstring clang,$(CC)))
 	NOUNUSEDBUTSETVARIABLEWARNING += -Wno-unused-but-set-variable -Wno-cast-function-type
 endif
 
-radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c $(API)radium_proc.h
+radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c 
 	$(CC) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING) -Wno-missing-field-initializers
 
 $(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
@@ -2220,7 +2222,7 @@ system_compressor_wrapper.o: audio/system_compressor_wrapper.cpp audio/system_co
 audio/system_compressor.cpp: audio/system_compressor.dsp
 	$(FAUST) -I `pwd`/audio -vec -cn Faust_system_compressor audio/system_compressor.dsp -o audio/system_compressor.cpp
 
-bin/radium_crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
+bin/radium_crashreporter: crashreporter/crashreporter.cpp 
 	@echo
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
@@ -2337,7 +2339,7 @@ s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp
 
-scheme.o: embedded_scheme/scheme.cpp $(API)radium_proc.h bin/packages/s7/s7.c embedded_scheme/s7extra_proc.h
+scheme.o: embedded_scheme/scheme.cpp  bin/packages/s7/s7.c embedded_scheme/s7extra_proc.h
 	$(CCC) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
 
 QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT #-fno-sanitize=undefined
@@ -2376,7 +2378,7 @@ moc_qhttpserver.o: bin/packages/qhttpserver-master/build/moc_qhttpserver.cpp
 http_parser.o: bin/packages/qhttpserver-master/http-parser/http_parser.c
 	$(CC) -c bin/packages/qhttpserver-master/http-parser/http_parser.c $(OPT) $(HTTPPARSERFLAGS)
 
-radium_s7_wrap.o: api/radium_s7_wrap.c $(API)radium_proc.h
+radium_s7_wrap.o: api/radium_s7_wrap.c 
 	$(CC) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
 
 api/radium_s7_wrap.c: bin/protoconfparser.py api/protos.conf bin/packages/s7/s7.c
