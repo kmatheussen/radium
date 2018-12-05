@@ -5599,7 +5599,7 @@
 
   :release ()
   (when has-moved
-    (eat-finally :try (lambda ()
+    (try-finally :try (lambda ()
                         (<ra> :apply-gfx-seqblocks seqtracknum))
                  :failure (lambda ()
                             (<ra> :cancel-gfx-seqblocks seqtracknum))))

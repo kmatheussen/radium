@@ -897,8 +897,7 @@ static void add_event_to_play_buffer(const symbol_t *port_name, uint32_t msg){
     RT_message("Midi play buffer full.\nMost likely the player can not keep up because it uses too much CPU.\nIf that is not the case, please report this incident.");
 }
 
-
-// This is safe. A patch is never deleted. (But that changed later, the content of all patches are cleared when loading a song, and usage of g_through_patch has caused at least one crash)
+// This function is called with NULL as argument when the current trought-patch instrument is made inactive, and when loading song.
 void MIDI_SetThroughPatch(struct Patch *patch){
   //printf("Sat new patch %p\n",patch);
   ATOMIC_SET(g_through_patch, patch);
