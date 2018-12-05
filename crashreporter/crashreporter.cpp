@@ -270,7 +270,7 @@ static QString get_legalized_mail_message(QString message){
 }
 
 static void send_crash_message_to_server(QString message, QString plugin_names, QString emergency_save_filename, Crash_Type crash_type, bool caused_by_nouveau){
-
+  //caused_by_nouveau= true;
   bool is_crash = crash_type==CT_CRASH;
 
   QString premessage;
@@ -321,9 +321,11 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
     if (caused_by_nouveau){
       
-      text1.setText("The Nouveau GFX driver, which is installed on your system, crashed."
+      text1.setText("The Nouveau GFX driver crashed, and brought Radium with it."
                     "<p>"
-                    "Go here to get a working GFX driver:<br><a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
+                    "The Nouveau GFX driver is often installed instead of the Nvidia driver, but it is unstable and has significantly worse performance."
+                    "<p>"
+                    "Get a working GFX driver <a href=\"http://www.nvidia.com/object/unix.html\">here</A> (http://www.nvidia.com/object/unix.html)."
                     "<p>"
                     "Thanks for trying Radium!"
                     );
