@@ -1013,7 +1013,7 @@ float getFxtextY2(int tracknum, int blocknum, int windownum){
   return wtrack==NULL ? 0 : wtrack->y2;
 }
 
-int getFxtextEffectNumFromX(float x, int tracknum, int blocknum, int windownum){
+int getFxtextFxnumFromX(float x, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -1031,13 +1031,14 @@ int getFxtextEffectNumFromX(float x, int tracknum, int blocknum, int windownum){
     if(fxs->fx->is_enabled){
       float x2 = wtrack->fxtextarea.x + ((column+1) * WTRACK_fxtext_track_width(window->fontwidth));
       if (x < x2)
-        return fxs->fx->effect_num;
+        return iterator666; //fxs->fx->effect_num;
       column++;
     }
   }END_VECTOR_FOR_EACH;
 
-  struct FXs *fxs = VECTOR_last(&wtrack->track->fxs);
-  return fxs->fx->effect_num;
+  return wtrack->track->fxs.num_elements-1;
+  //struct FXs *fxs = VECTOR_last(&wtrack->track->fxs);
+  //return fxs->fx->effect_num;
 }
 
 ///
