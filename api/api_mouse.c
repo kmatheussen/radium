@@ -2536,13 +2536,10 @@ void requestFXMousePos(int windownum){
 */
 
 static int get_effect_num(struct Patch *patch, const char *fx_name){
-  int effect_num = 0;
-  VECTOR_FOR_EACH(const char *name,patch->instrument->getFxNames(patch)){
-    if (!strcmp(name, fx_name))
-      return effect_num;
-    else
-      effect_num++;
-  }END_VECTOR_FOR_EACH;
+  int num_fxs = patch->instrument->getNumFxs(patch);
+  for(int fxnum=0;fxnum<num_fxs;fxnum++)
+    if (!strcmp(fx_name, patch->instrument->getFxName(patch, fxnum)))
+      return fxnum;
 
   return -1;
 }

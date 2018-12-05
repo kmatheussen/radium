@@ -565,16 +565,14 @@ struct FX *MIDI_createFX(const struct Tracks *track, struct Patch *patch, int ef
 }
 
 
-vector_t *MIDI_getFxNames(const struct Patch *patch){
-  vector_t *v=(vector_t*)talloc(sizeof(vector_t));
-  //RError("MIDI_getFxNames is not implemented");
+int MIDI_getNumFxs(const struct Patch *patch){
+  return MIDI_NUM_FX;
+}
 
-  int lokke;
-  
-  for(lokke=0;lokke<MIDI_NUM_FX;lokke++)
-    VECTOR_push_back(v,midi_fxs_fullnames[lokke]);
-
-  return v;
+const char *MIDI_getFxName(const struct Patch *patch, int fxnum){
+  R_ASSERT_RETURN_IF_FALSE2(fxnum<0 || fxnum >= MIDI_NUM_FX, "");
+    
+  return midi_fxs_fullnames[fxnum];
 }
 
 void MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track, std::function<void(struct FX*)> callback){

@@ -757,22 +757,23 @@ static void init_fx(struct FX *fx, int effect_num, const char *name, struct Soun
     fx->color = get_effect_color(plugin, effect_num);
 }
 
-static vector_t *AUDIO_getFxNames(const struct Patch *patch){
+static int AUDIO_getNumFxs(const struct Patch *patch){
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+  const SoundPluginType *plugin_type = plugin->type;
+  return plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
+}
+
+static const char *AUDIO_getFxName(const struct Patch *patch, int fxnum){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   const SoundPluginType *plugin_type = plugin->type;
 
   //PLUGIN_touch(plugin);
   
   int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
-  vector_t *v=(vector_t *)talloc(sizeof(vector_t));
 
-  int i;
-  for(i=0;i<num_effects;i++) {
-    const char *name = PLUGIN_get_effect_name(plugin, i);
-    VECTOR_push_back(v, name);
-  }
+  R_ASSERT_RETURN_IF_FALSE2(fxnum<0 || fxnum >= num_effects, "");
 
-  return v;
+  return PLUGIN_get_effect_name(plugin, fxnum);
 }
 
 static struct FX *AUDIO_createFX(const struct Tracks *track, struct Patch *patch, int effect_num){
@@ -1341,7 +1342,8 @@ int AUDIO_initInstrumentPlugIn(struct Instruments *instrument){
   instrument->instrumentname = "Audio instrument";
 
   //instrument->getMaxVelocity      = AUDIO_getMaxVelocity;
-  instrument->getFxNames          = AUDIO_getFxNames;
+  instrument->getNumFxs           = AUDIO_getNumFxs;
+  instrument->getFxName           = AUDIO_getFxName;
   instrument->createFX            = AUDIO_createFX;
   instrument->getFX               = AUDIO_getFX;
   //instrument->getPatch            = AUDIO_getPatch;
