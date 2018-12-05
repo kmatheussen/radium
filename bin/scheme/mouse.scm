@@ -1719,7 +1719,7 @@
                            (lambda (onoff)
                              (<ra> :undo-fxs tracknum)
                              (<ra> :set-fx-enabled onoff fxnum tracknum))))
-                   (iota (<ra> :get-num-fxs)))
+                   (iota (<ra> :get-num-fxs tracknum)))
               "---------Subtracks"
               (car (swingtext-popup-elements))
               (list "Pianoroll"
