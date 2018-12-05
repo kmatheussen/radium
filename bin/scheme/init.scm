@@ -452,7 +452,7 @@
   '(show-global-swing-track-popup-menu
     minimize-lowertab
     remake-mixer-strips
-    redraw-mixer-strips
+    FROM_C-redraw-mixer-strips
     toggle-current-mixer-strips-fullscreen
     set-random-sample-for-all-selected-sampler-instruments
     show-async-message
