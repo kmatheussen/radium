@@ -570,7 +570,10 @@ int MIDI_getNumFxs(const struct Patch *patch){
 }
 
 const char *MIDI_getFxName(const struct Patch *patch, int fxnum){
-  R_ASSERT_RETURN_IF_FALSE2(fxnum<0 || fxnum >= MIDI_NUM_FX, "");
+  if(fxnum<0 || fxnum >= MIDI_NUM_FX){
+    RError("MIDI_getFxName %s - %d\n", patch->name, fxnum);
+    return "";
+  }
     
   return midi_fxs_fullnames[fxnum];
 }
