@@ -173,6 +173,8 @@ fi
 
 make buildtype.opt --stop
 make flagopts.opt --stop
+make api/radium_proc.h --stop
+make common/keyboard_sub_ids.h --stop
 make radium $@ --stop
 #make pluginhost/Builds/Linux/build/libMyPluginHost.a
 
