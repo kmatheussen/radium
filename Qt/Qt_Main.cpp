@@ -188,6 +188,7 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
 
 
@@ -2366,7 +2367,7 @@ protected:
       // Redraw
       if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){ // 
         //printf("          (redraw called from qt main)\n");
-        evalScheme("(redraw-mixer-strips)");
+        S7CALL2(void_void, "FROM_C-redraw-mixer-strips");
       }
     }
 

@@ -2594,7 +2594,7 @@ void API_instruments_call_regularly(void){
 
 void redrawMixerStrips(bool immediately){
   if (immediately)
-    evalScheme("(redraw-mixer-strips)");
+    S7CALL2(void_void, "FROM_C-redraw-mixer-strips");
   else
     RT_schedule_mixer_strips_redraw(); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
 }

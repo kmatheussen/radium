@@ -984,7 +984,8 @@
                                           (let ((status-text (get-slider-text (get-scaled-value))))
                                             (if is-changing-value
                                                 (set-tooltip-and-statusbar status-text)
-                                                (<ra> :set-statusbar-text status-text)))
+                                                (<ra> :set-statusbar-text status-text)
+                                                ))
                                           (when (and (= button *right-button*)
                                                      (= state *is-pressing*))
                                             (if (<ra> :shift-pressed)
@@ -1450,10 +1451,13 @@
 
   (define (set-db-value db)
     ;;(c-display "setting db to" db (<ra> :db-to-gain db))
-    (<ra> :set-audio-connection-gain source-id target-id (<ra> :db-to-gain db) #t)
+
+    (<ra> :set-audio-connection-gain source-id target-id (<ra> :db-to-gain db) #f) ;; 2018-12-05: Changed the last argument for set-audio-connection-gain to #f. Seems like the *send-callbacks* updates all that's necessary.
+
     (for-each (lambda (send-callback)
                 (send-callback gui source-id target-id db))
-              *send-callbacks*))
+              *send-callbacks*)
+    )
   
   (define (add-monitor slider callback)
     (define send-callback
@@ -2827,7 +2831,7 @@
                 ((a-mixer-strips-object :remake) list-of-modified-instrument-ids))
               *mixer-strips-objects*)))
 
-(define (redraw-mixer-strips . list-of-modified-instrument-ids)
+(define (FROM_C-redraw-mixer-strips . list-of-modified-instrument-ids)
   (set-minimum-mixer-strip-widths!)
   ;;(c-display "\n\n\n             REDRAW MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
   (for-each (lambda (a-mixer-strips-object)
