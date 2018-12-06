@@ -853,19 +853,71 @@ void radium::MidiLearn::RT_maybe_use_forall(int64_t instrument_id, const symbol_
 
 // Called from the player thread
 void RT_MIDI_handle_play_buffer(void){
-  struct Patch *through_patch = ATOMIC_GET(g_through_patch);
 
   play_buffer_event_t event;
 
   bool has_set_midi_receive_time = false;
+
+  struct Instruments *midi_instrument = get_MIDI_instrument();
+  struct Instruments *audio_instrument = get_audio_instrument();
+
+  if (midi_instrument==NULL || audio_instrument==NULL){ // happens during init
+    R_ASSERT(midi_instrument==NULL && audio_instrument==NULL);
+    return;
+  }
+  
+  struct Patch *playing_patches[midi_instrument->patches.num_elements + audio_instrument->patches.num_elements + 1]; // add 1 to avoid ubsan hit if there are no instruments.
+
+  bool has_inited = false;
+  int num_playing_patches;
+
+  struct SeqTrack *seqtrack;
+  struct Patch *through_patch;
+  double seqtrack_starttime;
   
   while(g_play_buffer.pop(event)==true){
 
     uint32_t msg = event.msg;
 
     radium::MidiLearn::RT_maybe_use_forall(-1, event.port_name, msg);
+
+    if (has_inited == false){
+      
+      seqtrack = RT_get_curr_seqtrack();
+      seqtrack_starttime = seqtrack->start_time;
+
+      if(ATOMIC_GET(g_send_midi_input_to_current_instrument))
+        through_patch = ATOMIC_GET(g_through_patch);
+      else
+        through_patch = NULL;
+
+      num_playing_patches = 0;
+      
+      VECTOR_FOR_EACH(struct Patch *, patch, &midi_instrument->patches){
+        if(ATOMIC_GET(patch->always_receive_midi_input)){
+          playing_patches[num_playing_patches] = patch;
+          num_playing_patches++;
+        }
+      }END_VECTOR_FOR_EACH;
+
+      VECTOR_FOR_EACH(struct Patch *, patch, &audio_instrument->patches){
+        if(ATOMIC_GET(patch->always_receive_midi_input)){
+          playing_patches[num_playing_patches] = patch;
+          num_playing_patches++;
+          
+          struct SoundPlugin *plugin = static_cast<struct SoundPlugin*>(patch->patchdata);
+          if (plugin==NULL){
+            R_ASSERT_NON_RELEASE(false);
+          } else {
+            PLUGIN_touch(plugin);
+          }
+        }
+      }END_VECTOR_FOR_EACH;
+
+      has_inited = true;
+    }
     
-    if(through_patch!=NULL){
+    if(through_patch!=NULL ||  num_playing_patches > 0){
 
       uint8_t byte1 = MIDI_msg_byte1(msg);
       if (ATOMIC_GET(g_use_track_channel_for_midi_input)){
@@ -878,8 +930,12 @@ void RT_MIDI_handle_play_buffer(void){
         g_last_midi_receive_time = TIME_get_ms();
         has_set_midi_receive_time = true;
       }
-      
-      RT_MIDI_send_msg_to_patch(RT_get_curr_seqtrack(), (struct Patch*)through_patch, byte, 3, RT_get_curr_seqtrack()->start_time);
+
+      if (through_patch != NULL)
+        RT_MIDI_send_msg_to_patch(seqtrack, (struct Patch*)through_patch, byte, 3, seqtrack_starttime);
+
+      for(int i=0;i<num_playing_patches;i++)
+        RT_MIDI_send_msg_to_patch(seqtrack, playing_patches[i], byte, 3, seqtrack_starttime);
     }
     
   }
@@ -1000,12 +1056,21 @@ void MIDI_HandleInputMessage(void){
  *************************************************************/
 
 void MIDI_input_init(void){
-  radium::ScopedMutex lock(g_midi_event_mutex); // Should have a comment here why we need to lock this mutex, if it is really necessary to lock it.
-
-  g_midi_event_queue = new radium::Queue<midi_event_t, 8000>;
-
-  MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
-  MIDI_set_record_velocity(SETTINGS_read_bool("always_record_midi_velocity", false));
-
-  g_recording_queue_pull_thread.start();
+  
+  // Load config from disk
+  {
+    doUseTrackChannelForMidiInput();
+    isSendingMidiInputToCurrentInstrument();
+  }
+  
+  {
+    radium::ScopedMutex lock(g_midi_event_mutex); // Should have a comment here why we need to lock this mutex, if it is really necessary to lock it.
+    
+    g_midi_event_queue = new radium::Queue<midi_event_t, 8000>;
+    
+    MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
+    MIDI_set_record_velocity(SETTINGS_read_bool("always_record_midi_velocity", false));
+    
+    g_recording_queue_pull_thread.start();
+  }
 }

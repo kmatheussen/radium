@@ -632,6 +632,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       split_into_monophonic_tracks_after_recording->setChecked(doSplitIntoMonophonicTracksAfterRecordingFromMidi());
 
       use_current_track_midi_channel->setChecked(doUseTrackChannelForMidiInput());
+      send_midi_input_to_current_instrument->setChecked(isSendingMidiInputToCurrentInstrument());
         
       while(midi_input_layout->count() > 0)
         delete midi_input_layout->itemAt(0)->widget();
@@ -1234,6 +1235,11 @@ public slots:
   void on_use_current_track_midi_channel_toggled(bool val){
     if (_initing==false)
       setUseTrackChannelForMidiInput(val);
+  }
+  
+  void on_send_midi_input_to_current_instrument_toggled(bool val){
+    if (_initing==false)
+      setSendMidiInputToCurrentInstrument(val);
   }
   
   // Faust

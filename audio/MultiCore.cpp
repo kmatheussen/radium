@@ -126,13 +126,13 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   
   bool autosuspend = RT_PLUGIN_can_autosuspend(sp->_plugin, time);
 
-  // We don't autosuspend current patch when not playing.
+  // We don't autosuspend current patch, when not playing.
   if (autosuspend && !is_playing()){
     struct Patch *current_patch = ATOMIC_GET(g_through_patch);
     if (sp->_plugin->patch == current_patch)
       autosuspend = false;
   }
-      
+  
   sp->_autosuspending_this_cycle = autosuspend;
   ATOMIC_SET_RELAXED(sp->_is_autosuspending, sp->_autosuspending_this_cycle);
   

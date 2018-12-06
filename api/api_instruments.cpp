@@ -331,11 +331,11 @@ void setSplitIntoMonophonicTracksAfterRecordingFromMidi(bool doit){
 DEFINE_ATOMIC(bool, g_use_track_channel_for_midi_input) = true;
 
 bool doUseTrackChannelForMidiInput(void){
-  static DEFINE_ATOMIC(bool, has_inited) = false;
+  static bool s_has_inited = false;
 
-  if (ATOMIC_GET(has_inited)==false){
+  if (s_has_inited==false){
     ATOMIC_SET(g_use_track_channel_for_midi_input, SETTINGS_read_bool("use_track_channel_for_midi_input", true));
-    ATOMIC_SET(has_inited, true);
+    s_has_inited = true;
   }
 
   return ATOMIC_GET(g_use_track_channel_for_midi_input);
@@ -344,6 +344,25 @@ bool doUseTrackChannelForMidiInput(void){
 void setUseTrackChannelForMidiInput(bool doit){
   ATOMIC_SET(g_use_track_channel_for_midi_input, doit);
   SETTINGS_write_bool("use_track_channel_for_midi_input", doit);
+}
+
+
+DEFINE_ATOMIC(bool, g_send_midi_input_to_current_instrument) = true;
+
+bool isSendingMidiInputToCurrentInstrument(void){
+  static bool s_has_inited = false;
+
+  if (s_has_inited==false){
+    ATOMIC_SET(g_send_midi_input_to_current_instrument, SETTINGS_read_bool("send_midi_input_to_current_instrument", true));
+    s_has_inited = true;
+  }
+
+  return ATOMIC_GET(g_send_midi_input_to_current_instrument);
+}
+
+void setSendMidiInputToCurrentInstrument(bool doit){
+  ATOMIC_SET(g_send_midi_input_to_current_instrument, doit);
+  SETTINGS_write_bool("send_midi_input_to_current_instrument", doit);
 }
 
 
@@ -855,8 +874,6 @@ void resetInstrumentEffect(int64_t instrument_id, const char *effect_name){
   post_set_effect(patch, plugin, effect_name);
 }
 
-
-
 const_char* getInstrumentEffectColor(int64_t instrument_id, const_char* effect_name){
   const struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -873,6 +890,22 @@ const_char* getInstrumentEffectColor(int64_t instrument_id, const_char* effect_n
     return "";
 
   return GFX_get_colorname_from_color(GFX_get_color(get_effect_color(plugin, effect_num)));
+}
+
+bool instrumentAlwaysReceiveMidiInput(int64_t instrument_id){
+  const struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+  
+  return ATOMIC_GET(patch->always_receive_midi_input);
+}
+
+void setInstrumentAlwaysReceiveMidiInput(int64_t instrument_id, bool always_receive_midi_input){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+  
+  ATOMIC_SET(patch->always_receive_midi_input, always_receive_midi_input);
 }
 
 bool getNoteDuplicatorSetNewValueImmediately(int64_t instrument_id, const_char* effect_name){

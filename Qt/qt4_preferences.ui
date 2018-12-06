@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>8</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -7144,8 +7144,8 @@ you should check this box.
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>566</width>
-            <height>551</height>
+            <width>583</width>
+            <height>536</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -7733,7 +7733,7 @@ you should check this box.
        <item>
         <widget class="QRadioButton" name="record_sequencer_style">
          <property name="text">
-          <string>Record time-accurately and polyphonic while playing (sequencer style)</string>
+          <string>Record time-accurately and polyphonic while playing (sequencer style) (restart required)</string>
          </property>
          <attribute name="buttonGroup">
           <string notr="true">buttonGroup</string>
@@ -7743,7 +7743,7 @@ you should check this box.
        <item>
         <widget class="QRadioButton" name="record_tracker_style">
          <property name="text">
-          <string>Record line by line and monophonic while playing (tracker style)</string>
+          <string>Record line by line and monophonic while playing (tracker style) (restart required)</string>
          </property>
          <attribute name="buttonGroup">
           <string notr="true">buttonGroup</string>
@@ -8238,7 +8238,7 @@ you should check this box.
        <item>
         <widget class="QRadioButton" name="record_velocity_on">
          <property name="text">
-          <string>Always use velocity from MIDI input. Also when editing.</string>
+          <string>Always use velocity from MIDI input. Also when editing. (restart required)</string>
          </property>
          <attribute name="buttonGroup">
           <string notr="true">buttonGroup_2</string>
@@ -8248,7 +8248,7 @@ you should check this box.
        <item>
         <widget class="QRadioButton" name="record_velocity_off">
          <property name="text">
-          <string>Only use velocity when recording accurately (sequencer style)</string>
+          <string>Only use velocity when recording accurately (sequencer style) (restart required)</string>
          </property>
          <attribute name="buttonGroup">
           <string notr="true">buttonGroup_2</string>
@@ -9238,10 +9238,17 @@ you should check this box.
           <bool>true</bool>
          </property>
          <property name="text">
-          <string>Use MIDI channel in current track when sending MIDI message from MIDI input to current instrument</string>
+          <string>MIDI input: Use the MIDI channel which is set in the current editor track. I.e. override MIDI channel of incoming messages.</string>
          </property>
          <property name="checked">
           <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="send_midi_input_to_current_instrument">
+         <property name="text">
+          <string>MIDI input: Send MIDI input to current instrument.</string>
          </property>
         </widget>
        </item>
@@ -9758,8 +9765,8 @@ you should check this box.
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>935</width>
-               <height>285</height>
+               <width>952</width>
+               <height>244</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">

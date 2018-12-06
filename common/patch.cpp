@@ -404,6 +404,8 @@ hash_t *PATCH_get_state(const struct Patch *patch){
   HASH_put_chars(state, "uuid", patch->uuid);  
   HASH_put_chars(state, "instrument", patch->instrument==get_audio_instrument() ? "audio" : "MIDI");
 
+  HASH_put_bool(state, "always_receive_MIDI_input", ATOMIC_GET(patch->always_receive_midi_input));
+  
   return state;
 }
 
@@ -458,6 +460,9 @@ struct Patch *PATCH_create_from_state(hash_t *state){
 
   if (HASH_has_key(state, "wide_mixer_strip"))
     patch->wide_mixer_strip = HASH_get_bool(state, "wide_mixer_strip");  
+  
+  if (HASH_has_key(state, "always_receive_MIDI_input"))
+    ATOMIC_SET(patch->always_receive_midi_input, HASH_get_bool(state, "always_receive_MIDI_input"));
 
   if (STRING_equals(HASH_get_string(state, "instrument"), "audio")){
     

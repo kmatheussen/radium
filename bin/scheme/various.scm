@@ -470,10 +470,11 @@
                                         (make-table-row "# in" "# in" #f)
                                         (make-table-row "# out" "# out" #f)
                                         (make-table-row "Type" "GAkk gkkakkg kakkg / asdf" #t)
+                                        (make-table-row "Recv. ext. MIDI" "Recv. ext. MIDI" #f)
                                         (make-table-row "GUI" "GUI" #f)
                                         (make-table-row "Delete" #f #f))
                                   :hide-callback (lambda (table)
-                                                   (<gui> :close gui))
+                                                    (<gui> :close gui))
                                   :curr-selected-row-changed-callback (lambda (table row-num row-content)
                                                                         (when doit
                                                                           ;;(c-display "ROW_CONTENT:" row-content row-num)
@@ -561,14 +562,20 @@
     
     (<gui> :add-table-string-cell table type 5 rownum)
 
+    (define midienabledgui (<gui> :checkbox "" (<ra> :instrument-always-receive-midi-input instrument-id)
+                                  (lambda (onoff)
+                                    (<ra> :set-instrument-always-receive-midi-input instrument-id onoff))))
+    (<gui> :set-tool-tip midienabledgui "Receive MIDI from external input")
+    (<gui> :add-table-gui-cell table (mid-horizontal-layout midienabledgui) 6 rownum)
+
     (define onoffgui (create-gui-onoff instrument-id))
     (if onoffgui
-        (<gui> :add-table-gui-cell table onoffgui 6 rownum)
-        (<gui> :add-table-string-cell table "" 6 rownum)) ;; clear the cell. TODO: create a clear-cell function.
+        (<gui> :add-table-gui-cell table onoffgui 7 rownum)
+        (<gui> :add-table-string-cell table "" 7 rownum)) ;; clear the cell. TODO: create a clear-cell function.
 
     (define delete (create-delete instrument-id))
     (define time6 (time))
-    (<gui> :add-table-gui-cell table delete 7 rownum)
+    (<gui> :add-table-gui-cell table delete 8 rownum)
     (define time7 (time))
 
     (if (= instrument-id curr-instrument-id)

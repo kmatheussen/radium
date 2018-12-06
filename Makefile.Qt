@@ -627,9 +627,9 @@ pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/l
 	fi
 # real thing
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)   -j 4; \
+		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)   -j `expr $(nproc) - 1`; \
 	else \
-		cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGINHOSTOPTS) $(MAKE)  -j 4 ; \
+		cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGINHOSTOPTS) $(MAKE)  -j `expr $(nproc) - 1` ; \
 	fi
 
 
