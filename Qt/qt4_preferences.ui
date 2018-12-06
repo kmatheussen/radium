@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1085</width>
-    <height>643</height>
+    <width>1102</width>
+    <height>630</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -671,14 +671,14 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
           <item row="1" column="3">
            <widget class="QLabel" name="label_4">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that a higher number of CPUs causes a higher CPU usage overall.&lt;br/&gt;If you have slow graphical performance, or low interactivity, it might help&lt;br/&gt;to reduce this number. If not, it should be set to the number of CPU&lt;br/&gt;cores on your computer for best audio performance.&lt;/span&gt;  (No need for restart)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that a higher number of CPUs causes a higher CPU usage overall. If you have slow graphical performance,&lt;br&gt; or low interactivity, it might help to reduce this number. If not, it should be set to the number of CPU cores on&lt;br&gt; your computer for best audio performance.&lt;/span&gt;  (No need for restart)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item row="2" column="3">
            <widget class="QLabel" name="label_16">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;May make audio performance scale better if using several CPUs. But it can also&lt;br&gt;cause CPU spikes if there are plugins doing multi-threaded audio processing.&lt;/span&gt;&lt;br&gt;Restart required&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;May make audio performance scale better if using several CPUs. But it can also cause CPU spikes if there are&lt;br&gt; plugins doing multi-threaded audio processing.&lt;/span&gt;Restart required&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -694,13 +694,13 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_8">
             <property name="leftMargin">
-             <number>0</number>
+             <number>9</number>
             </property>
             <property name="topMargin">
              <number>0</number>
             </property>
             <property name="rightMargin">
-             <number>0</number>
+             <number>9</number>
             </property>
             <property name="bottomMargin">
              <number>0</number>
@@ -7144,8 +7144,8 @@ you should check this box.
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>398</width>
-            <height>16</height>
+            <width>566</width>
+            <height>551</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -9758,8 +9758,8 @@ you should check this box.
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>26</width>
-               <height>16</height>
+               <width>935</width>
+               <height>285</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -9976,8 +9976,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>
