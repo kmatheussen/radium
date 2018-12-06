@@ -1235,6 +1235,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int mute_all = -1;
   int unmute_all = -1;
   int show_gui = -1;
+  int receive_external_midi = -1;
   
   int64_t parentguinum = API_get_gui_from_existing_widget(g_mixer_widget->window());
   
@@ -1330,15 +1331,27 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
     VECTOR_push_back(&v, "--------");
 
-    bool is_enabled = hasNativeInstrumentGui(patch->id);
-    bool is_visible = is_enabled && instrumentGuiIsVisible(patch->id, parentguinum);
+    {
+      bool is_enabled = hasNativeInstrumentGui(patch->id);
+      bool is_visible = is_enabled && instrumentGuiIsVisible(patch->id, parentguinum);
+      
+      if (!is_enabled)
+        show_gui = VECTOR_push_back(&v, "[disabled][check off]Show GUI");
+      else if (is_visible)
+        show_gui = VECTOR_push_back(&v, "[check on]Show GUI");
+      else
+        show_gui = VECTOR_push_back(&v, "[check off]Show GUI");
+    }
 
-    if (!is_enabled)
-      show_gui = VECTOR_push_back(&v, "[disabled][check off]Show GUI");
-    else if (is_visible)
-      show_gui = VECTOR_push_back(&v, "[check on]Show GUI");
-    else
-      show_gui = VECTOR_push_back(&v, "[check off]Show GUI");
+    {
+      bool is_enabled = instrumentAlwaysReceiveMidiInput(patch->id);
+      if (is_enabled)
+        receive_external_midi = VECTOR_push_back(&v,"[check on]Recv. external MIDI");
+      else
+        receive_external_midi = VECTOR_push_back(&v,"[check off]Recv. exteranl MIDI");
+    }
+      
+    VECTOR_push_back(&v, "--------");
     
     instrument_info = VECTOR_push_back(&v, "Show info");
   }
@@ -1352,7 +1365,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     patch_ids.push_back(patch->id);
   }END_VECTOR_FOR_EACH;
 
-#define sels connect_to_main_pipe,insert,replace,solo,unsolo,mute,unmute,unsolo_all,mute_all,unmute_all,copy,cut,delete_,save,show_mixer_strips,config_color,generate_new_color,show_gui,random,instrument_info
+#define sels connect_to_main_pipe,insert,replace,solo,unsolo,mute,unmute,unsolo_all,mute_all,unmute_all,copy,cut,delete_,save,show_mixer_strips,config_color,generate_new_color,show_gui,receive_external_midi,random,instrument_info
   
   GFX_Menu3(v,[is_alive, chip_under, scene, patch_ids, sels, mouse_x, mouse_y, parentguinum](int sel, bool onoff){
       
@@ -1478,6 +1491,12 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
           PLUGIN_close_gui(plugin);
         else
           PLUGIN_open_gui(plugin, parentguinum);
+        
+      } else if (sel==receive_external_midi) {
+        
+        struct Patch *patch = CHIP_get_patch(chip_under);
+        
+        setInstrumentAlwaysReceiveMidiInput(patch->id, onoff);
         
       } else if (sel==random) {
         

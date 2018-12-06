@@ -112,7 +112,12 @@
          (lambda (enabled)
            (if enabled
                (<ra> :show-instrument-gui instrument-id parentgui #f)
-               (<ra> :hide-instrument-gui instrument-id))))))
+               (<ra> :hide-instrument-gui instrument-id))))
+   (list "Recv. external MIDI"
+         :check (<ra> :instrument-always-receive-midi-input instrument-id)
+         (lambda (onoff)
+           (<ra> :set-instrument-always-receive-midi-input instrument-id onoff)))
+   ))
               
 
 (define (get-global-mixer-strips-popup-entries instrument-id strips-config)
