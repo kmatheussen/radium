@@ -208,12 +208,6 @@ end:
   return;
 }
 
-// This is messy, but MIDI patchdata is loaded/saved here.
-// Audio patchdata is loaded/saved later. (don't know where yet when writing this comment)
-
-
-// TODO: Save patch as hash_t. Now there are two different ways to serialize struct Patch.
-
 void SavePatches(vector_t *v){
   int i;
 

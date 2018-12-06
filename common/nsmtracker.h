@@ -1533,6 +1533,8 @@ struct Patch{
   DEFINE_ATOMIC(bool, widget_needs_to_be_updated);
 
   DEFINE_ATOMIC(bool, is_recording);
+
+  DEFINE_ATOMIC(bool, always_receive_midi_input);
 };
 #define PATCH_FAILED 0
 #define PATCH_SUCCESS 1
@@ -2313,6 +2315,7 @@ struct Blocks{
 
 
 extern DEFINE_ATOMIC(bool, g_use_track_channel_for_midi_input);
+extern DEFINE_ATOMIC(bool, g_send_midi_input_to_current_instrument);
 extern DEFINE_ATOMIC(int, g_curr_midi_channel);
 extern DEFINE_ATOMIC(struct Blocks *, g_curr_block);
 
