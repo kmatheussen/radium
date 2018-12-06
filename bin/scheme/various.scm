@@ -603,7 +603,14 @@
                                      (<ra> :get-num-in-event-connections instrument-id)
                                      (<ra> :get-num-out-event-connections instrument-id))
                                   instrumentname
-                                  type)))
+                                  type
+                                  (<ra> :instrument-always-receive-midi-input instrument-id)
+
+                                  ;; Commented out since instrument-gui-is-visible only returns true if the supplied gui argument is the same as the parent of the instrument gui. Should probably make an is-visible-on-any-gui function.
+                                  ;;(and (<ra> :has-native-instrument-gui instrument-id)
+                                  ;;     (<ra> :instrument-gui-is-visible instrument-id table))
+
+                                  )))
                      (append ;;(get-all-midi-instruments)
                              (get-all-audio-instruments))))))
   
