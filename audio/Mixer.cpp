@@ -119,7 +119,7 @@ void THREADING_acquire_player_thread_priority(void){
     printf("jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(), g_jack_client_priority); failed: %d\n", err);
 #endif
     has_shown_warning=true;
-    RT_message("Unable to set real time priority. Error code: %d.\n"
+    RT_message("Unable to set real time priority. Error code: %d. (EPERM: %d) (errno: %d) (strerror: \"%s\")\n"
                "\n"
                "You should:\n"
                "\n"
@@ -132,7 +132,11 @@ void THREADING_acquire_player_thread_priority(void){
                "On Linux, you might also want to check your system configuration."
 #endif
                "\n\n"
-               , err);
+               , err,
+               EPERM,
+               errno,
+               strerror(errno)
+               );
     
   }
 #endif

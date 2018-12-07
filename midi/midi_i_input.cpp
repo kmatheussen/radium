@@ -160,7 +160,9 @@ bool MIDI_get_record_accurately(void){
 
 void MIDI_set_record_accurately(bool accurately){
   {
-    radium::PlayerLock lock;
+    // Very interesting! We get an error about not being able to acquire realtime priority with the line below in Macos. I guess it's a problem during startup only. Uncommented for now then, as it's not very important.
+    //radium::PlayerLock lock;
+    
     g_record_accurately_while_playing = accurately;
   }
   SETTINGS_write_bool("record_midi_accurately", accurately);
@@ -174,7 +176,9 @@ bool MIDI_get_record_velocity(void){
 
 void MIDI_set_record_velocity(bool doit){
   {
-    radium::PlayerLock lock;
+    // Very interesting! We get an error about not being able to acquire realtime priority with the line below in Macos.
+    //radium::PlayerLock lock;
+    
     g_record_velocity = doit;
   }
   printf("doit: %d\n",doit);
