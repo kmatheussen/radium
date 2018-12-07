@@ -1915,6 +1915,17 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
     R_ASSERT(seqtrack->patch==NULL);    
   }
 
+  // legalize timing since rounding errors can cause overlaps of block-seqtracks.
+  {
+    if (seqtrack->for_audiofiles == false)
+      legalize_seqtrack_timing(seqtrack, NULL);
+    
+    if(seqtrack_extra != NULL){
+      R_ASSERT(seqtrack->for_audiofiles==false);
+      legalize_seqtrack_timing(seqtrack_extra, NULL);
+    }
+  }
+  
   {
     QVector<SeqTrack*> ret;
     
