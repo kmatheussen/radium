@@ -1737,7 +1737,7 @@
               (car (velocitytext-popup-elements))
               (car (fxtext-popup-elements))
 
-              "-------Misc"
+              "-------Clipboard"
               "Copy Track" :shortcut ra:copy-track (lambda ()
                                                      (<ra> :copy-track tracknum))
               "Cut Track" :shortcut ra:cut-track (lambda ()
@@ -1756,7 +1756,7 @@
                                                              (<ra> :load-track "" tracknum))
               "Save Track" :shortcut ra:save-track (lambda ()
                                                      (<ra> :save-track "" tracknum))
-              "----------"
+              "----------Misc"
               (list "Wide note name"
                     :check (<ra> :track-note-area-width-is-wide tracknum)
                     :shortcut ra:change-track-note-area-width
@@ -1767,6 +1767,7 @@
                     :shortcut ra:change-track-note-length
                     (lambda (doit)
                       (<ra> :set-track-note-length (if doit 2 3) tracknum)))
+              "Minimize track" ra:minimize-track
               "-------Instrument"
               (list (if has-instrument
                         "Change instrument"
