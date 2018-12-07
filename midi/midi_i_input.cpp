@@ -159,8 +159,11 @@ bool MIDI_get_record_accurately(void){
 }
 
 void MIDI_set_record_accurately(bool accurately){
+  {
+    radium::PlayerLock lock;
+    g_record_accurately_while_playing = accurately;
+  }
   SETTINGS_write_bool("record_midi_accurately", accurately);
-  g_record_accurately_while_playing = accurately;
 }
 
 static bool g_record_velocity = true;
@@ -170,9 +173,12 @@ bool MIDI_get_record_velocity(void){
 }
 
 void MIDI_set_record_velocity(bool doit){
+  {
+    radium::PlayerLock lock;
+    g_record_velocity = doit;
+  }
   printf("doit: %d\n",doit);
   SETTINGS_write_bool("always_record_midi_velocity", doit);
-  g_record_velocity = doit;
 }
 
 
@@ -1061,15 +1067,15 @@ void MIDI_input_init(void){
   {
     doUseTrackChannelForMidiInput();
     isSendingMidiInputToCurrentInstrument();
+
+    MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
+    MIDI_set_record_velocity(SETTINGS_read_bool("always_record_midi_velocity", false));
   }
-  
+
   {
     radium::ScopedMutex lock(g_midi_event_mutex); // Should have a comment here why we need to lock this mutex, if it is really necessary to lock it.
     
     g_midi_event_queue = new radium::Queue<midi_event_t, 8000>;
-    
-    MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
-    MIDI_set_record_velocity(SETTINGS_read_bool("always_record_midi_velocity", false));
     
     g_recording_queue_pull_thread.start();
   }

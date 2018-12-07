@@ -7733,7 +7733,7 @@ you should check this box.
        <item>
         <widget class="QRadioButton" name="record_sequencer_style">
          <property name="text">
-          <string>Record time-accurately and polyphonic while playing (sequencer style) (restart required)</string>
+          <string>Record time-accurately and polyphonic while playing (sequencer style)</string>
          </property>
          <attribute name="buttonGroup">
           <string notr="true">buttonGroup</string>
@@ -7743,7 +7743,7 @@ you should check this box.
        <item>
         <widget class="QRadioButton" name="record_tracker_style">
          <property name="text">
-          <string>Record line by line and monophonic while playing (tracker style) (restart required)</string>
+          <string>Record line by line and monophonic while playing (tracker style)</string>
          </property>
          <attribute name="buttonGroup">
           <string notr="true">buttonGroup</string>
@@ -8238,7 +8238,7 @@ you should check this box.
        <item>
         <widget class="QRadioButton" name="record_velocity_on">
          <property name="text">
-          <string>Always use velocity from MIDI input. Also when editing. (restart required)</string>
+          <string>Always use velocity from MIDI input. Also when editing.</string>
          </property>
          <attribute name="buttonGroup">
           <string notr="true">buttonGroup_2</string>
@@ -8248,7 +8248,7 @@ you should check this box.
        <item>
         <widget class="QRadioButton" name="record_velocity_off">
          <property name="text">
-          <string>Only use velocity when recording accurately (sequencer style) (restart required)</string>
+          <string>Only use velocity when recording accurately (sequencer style)</string>
          </property>
          <attribute name="buttonGroup">
           <string notr="true">buttonGroup_2</string>
