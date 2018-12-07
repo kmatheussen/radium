@@ -1,3 +1,32 @@
+Changes 5.9.19 -> 5.9.20:
+* Menus: Cleaned up a little bit. A lot more
+  remains.
+* Demo song: Remove all pauses and adjust system
+  volume
+* Sequencer: Ensure editor seqblocks never overlaps
+  after loading song. This fixes assertion error
+  sometimes popping up when reaching the end of
+  a seqblock after loading a song with samplerate
+  mismatch (and possibly other situations).
+* Sequencer: Fix editor seqblock length when loading
+  old songs where samplerates mismatch. (Most
+  demo songs are saved in the older song format.)
+* Instruments: Add "Recv. external MIDI" checkboxes
+  to the instrument popup menu.
+* Instrument list: Option to select whether
+  instruments should receive MIDI from external
+  input.
+* Preferences: Add option to disable sending
+  MIDI input to current instrument.
+* MIDI: Make sure the option "use track channel for
+  midi input" is remembered between sessions.
+* GUI: Adjust preferences layout a little bit.
+* API: instrumentAlwaysReceiveMidiInput,
+  setInstrumentAlwaysReceiveMidiInput,
+  isSendingMidiInputToCurrentInstrument,
+  setSendMidiInputToCurrentInstrument
+
+
 Changes 5.9.18 -> 5.9.19:
 * Linux: Build JUCE library optimized for SSE2 and
   SSE math. Should speed up audio processing, and
