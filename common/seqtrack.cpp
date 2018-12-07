@@ -1033,8 +1033,11 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
 static hash_t *get_new_seqblock_state_from_old(const hash_t *old, const struct Song *song){
   hash_t *new_state = HASH_create(10);
 
-  if (HASH_has_key(old, "samplerate"))
-    HASH_put_float(new_state, ":samplerate", HASH_get_float(old, "samplerate"));
+  double samplerate = -1;
+  if (HASH_has_key(old, "samplerate")){
+    samplerate = HASH_get_float(old, "samplerate");
+    HASH_put_float(new_state, ":samplerate", samplerate);
+  }
 
   HASH_put_int(new_state, ":start-time", HASH_get_int(old, "time"));
 
@@ -1057,6 +1060,7 @@ static hash_t *get_new_seqblock_state_from_old(const hash_t *old, const struct S
     HASH_put_string(new_state, ":sample", sample);
   }
 
+  
   HASH_put_int(new_state, ":interior-start", 0);
   
   if (blocknum==-1){
@@ -1064,7 +1068,13 @@ static hash_t *get_new_seqblock_state_from_old(const hash_t *old, const struct S
     HASH_put_int(new_state, ":interior-end", 192345);
   }else{
     struct Blocks *block = (struct Blocks*)ListFindElement1(&song->blocks->l, blocknum);
-    HASH_put_int(new_state, ":interior-end", getBlockSTimeLength(block));
+    STime time = getBlockSTimeLength(block);
+    bool unadjust_for_samplerate = samplerate > 0 && fabs((double)pc->pfreq-samplerate) > 1;
+    if (unadjust_for_samplerate)
+      // Un-adjust for samplerate here since SEQBLOCK_create_from_state adjusts for samplerate.
+      HASH_put_int(new_state, ":interior-end", round((double)time * samplerate / pc->pfreq) + 1); // Add one frame to ensure rounding error doesn't cause gap to the next seqblock.
+    else
+      HASH_put_int(new_state, ":interior-end", time);      
   }
   
   dynvec_t track_disabled = {};
@@ -1271,7 +1281,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
 
   if (adjust_for_samplerate != 1.0){
     interior_start = round(double(interior_start) * adjust_for_samplerate);
-    interior_end   = round(double(interior_end) * adjust_for_samplerate);
+    interior_end   = round(double(interior_end) * adjust_for_samplerate) + 1;  // Add one frame to ensure rounding error doesn't cause gap to the next seqblock.
   }
 
   double speed;

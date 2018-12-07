@@ -244,7 +244,7 @@ static QVector<PlaylistElement> get_playlist_elements(void){
         
     int64_t pause_time = seqblock->t.time - last_end_seq_time;
 
-    if (pause_time > 0) {
+    if (pause_time > 0){
       bool is_current = current_seq_time >= last_end_seq_time && current_seq_time < seqblock->t.time;
       PlaylistElement pe = PlaylistElement::pause(iterator666, seqblock, pause_time, is_current);
       ret.push_back(pe);
