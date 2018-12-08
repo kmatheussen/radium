@@ -203,16 +203,39 @@
   (quantitize place (<ra> :get-quantitize)))
 ||#
 
-(define (get-place-from-y Button Y)
-  (if (<ra> :control-pressed)
-      (<ra> :get-place-from-y Y)
-      (<ra> :get-place-in-grid-from-y Y)))
+(define (get-gridded-place place)
+  (if (eq? 'same-place place)
+      place           
+      (* (round (/ place (<ra> :get-grid)))
+         (<ra> :get-grid))))
 
+(define (get-maybe-gridded-place place)
+  (if (eq? 'same-place place)
+      place           
+      (max 0
+           (if (<ra> :control-pressed)
+               place
+               (get-gridded-place place)))))
+
+(define (get-maybe-gridded-delta-place place delta-place)
+  (cond ((eq? 'same-place delta-place)
+         'same-place)
+        ((eq? 'same-place place)
+         (assert #f))
+        (else
+         (get-maybe-gridded-place (+ place delta-place)))))
+  
+(define (get-place-from-y Button Y)
+  (define place (<ra> :get-place-from-y Y))
+  (if (<ra> :control-pressed)
+      place
+      (get-gridded-place place)))
 
 (define (get-next-place-from-y Button Y)
+  (define place (<ra> :get-place-from-y (+ Y 1)))
   (if (<ra> :control-pressed)
-      (<ra> :get-place-from-y (+ Y 1))
-      (<ra> :get-next-place-in-grid-from-y Y)))
+      place
+      (get-gridded-place place)))
 
 
 ;; Mouse move handlers
@@ -866,6 +889,7 @@
                                   :Create-button #f
                                   :Existing-button? select-button?
                                   :Use-Place #t
+                                  :Use-Grid-Place #f ;; makes no difference if Use-Place is #f.
                                   :Mouse-pointer-func #f
                                   :Get-guinum (lambda () (<gui> :get-editor-gui))
                                   :Forgiving-box #t
@@ -974,7 +998,9 @@
           (let ((node-info (Move-node node-info new-value
                                       (if Use-Place
                                           (if new-y
-                                              (get-place-from-y Button new-y)
+                                              (if Use-Grid-Place
+                                                  (get-place-from-y Button new-y)
+                                                  (<ra> :get-place-from-y new-y))
                                               'same-place)
                                           new-y))))
             (Publicize node-info)
@@ -2052,11 +2078,7 @@
                                        (define Value (between 0
                                                               (+ delta-Value (temponodeval->01 (temponode-info :value)))
                                                               1))
-                                       ;;(c-display "delta-place:" delta-Place ". vel-place:" (velocity-info :place))
-                                       (define Place (if (eq? 'same-place delta-Place)
-                                                         'same-place
-                                                         (max 0 (+ delta-Place (temponode-info :place)))))
-
+                                       (define Place (get-maybe-gridded-delta-place (temponode-info :place) delta-Place))
                                        (<ra> :set-temponode temponodenum (01->temponodeval Value) Place))
 
                                      (if (move-all-nodes?)
@@ -2303,6 +2325,7 @@
                                                                  0))))))
                         
                         :Move-node (lambda (editormove delta-Value Place)
+                                     ;;(c-display "PLACE:" Place)
                                      (define-constant delta-Place (if (eq? 'same-place Place)
                                                                       Place
                                                                       (- Place (editormove :start-Place))))
@@ -2339,9 +2362,7 @@
                                                             (+ delta-Value (pitchnum-info :value))
                                                             128))
                                      
-                                     (define Place (if (eq? 'same-place delta-Place)
-                                                       'same-place
-                                                       (max 0 (+ delta-Place (pitchnum-info :place)))))
+                                     (define Place (get-maybe-gridded-delta-place (pitchnum-info :place) delta-Place))
 
                                      ;;(c-display "Value/delta-Value/pitchnumvalue:" Value delta-Value (pitchnum-info :value))
                                      ;;(c-display "pianonotenum:" pianonotenum ". Place/delta-Place/pitchnumplace:" (map place-to-string (list Place delta-Place (pitchnum-info :place))))
@@ -2728,7 +2749,9 @@
                                                   (<ra> :stop-note (pianonote-info :note-id)
                                                                    (<ra> :get-track-midi-channel *current-track-num*)
                                                                    instrument-id)))))
-                                     
+
+                        :Use-Grid-Place #t
+                        
                         :Get-pixels-per-value-unit (lambda (_)
                                                      (<ra> :get-pianoroll-low-key *current-track-num*)
                                                      (<ra> :get-pianoroll-high-key *current-track-num*)
@@ -3248,10 +3271,11 @@
                                        (define velocitynum (velocity-info :velocitynum))
                                        (define Value (+ delta-Value (velocity-info :value)))
                                        ;;(c-display "delta-place:" delta-Place ". vel-place:" (velocity-info :place))
-                                       (define Place (if (eq? 'same-place delta-Place)
-                                                         'same-place
-                                                         (max 0 (+ delta-Place (velocity-info :place)))))
+                                       (define Place (get-maybe-gridded-delta-place (velocity-info :place) delta-Place))
                                        ;;(c-display "velocitynum:" velocitynum "val/place:" Value Place "delta-Place:" delta-Place)
+                                       ;;(if (not (symbol? delta-Place))
+                                       ;;    (c-display "Place:" (* 1.0 (+ (velocity-info :place) delta-Place)) Place (velocity-info :place) delta-Place)
+                                       ;;    (c-display "Place:" Place (velocity-info :place) delta-Place))
                                        (set! notenum (<ra> :set-velocity Value Place velocitynum notenum (velocity-info :tracknum))))
 
                                      (if (move-all-nodes?)
@@ -3744,9 +3768,7 @@
                                                               (+ delta-Value (fxnode-info :value))
                                                               (<ra> :get-fx-max-value (fxnode-info :fxnum))))                                                              
                                        ;;(c-display "delta-place:" delta-Place ". vel-place:" (velocity-info :place))
-                                       (define Place (if (eq? 'same-place delta-Place)
-                                                         'same-place
-                                                         (max 0 (+ delta-Place (fxnode-info :place)))))
+                                       (define Place (get-maybe-gridded-delta-place (fxnode-info :place) delta-Place))
                                        (<ra> :set-fxnode fxnodenum Value Place fxnum tracknum))
 
                                      (if (move-all-nodes?)
