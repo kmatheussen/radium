@@ -758,7 +758,7 @@ public slots:
   }
 
   void on_show_mixer_strip_on_the_left_toggled(bool val){
-    if (_initing==false)
+    if (_initing==false) 
       setShowMixerStripOnLeftSide(val);
   }
 
