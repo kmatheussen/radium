@@ -202,6 +202,45 @@ void setShowMixerStripOnLeftSide(bool val){
   SETTINGS_write_bool("show_mixer_strip_on_left_side", val);
 }
 
+
+static bool g_sequencerWindowIsChildOfMainWindow = true;
+
+bool sequencerWindowIsChildOfMainWindow(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_sequencerWindowIsChildOfMainWindow = SETTINGS_read_bool("sequencer_window_is_child_of_main_window", g_sequencerWindowIsChildOfMainWindow);
+    has_inited = true;
+  }
+
+  return g_sequencerWindowIsChildOfMainWindow;
+}
+
+void setSequencerWindowIsChildOfMainWindow(bool val){
+  g_sequencerWindowIsChildOfMainWindow = val;
+  SETTINGS_write_bool("sequencer_window_is_child_of_main_window", val);
+}
+
+
+static bool g_mixerWindowIsChildOfMainWindow = true;
+
+bool mixerWindowIsChildOfMainWindow(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_mixerWindowIsChildOfMainWindow = SETTINGS_read_bool("mixer_window_is_child_of_main_window", g_mixerWindowIsChildOfMainWindow);
+    has_inited = true;
+  }
+
+  return g_mixerWindowIsChildOfMainWindow;
+}
+
+void setMixerWindowIsChildOfMainWindow(bool val){
+  g_mixerWindowIsChildOfMainWindow = val;
+  SETTINGS_write_bool("mixer_window_is_child_of_main_window", val);
+}
+
+
 void toggleCurrWindowFullScreen(void){
   GFX_toggleCurrWindowFullScreen();
 }

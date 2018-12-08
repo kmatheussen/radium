@@ -598,7 +598,10 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       show_playlist_during_startup->setChecked(showPlaylistDuringStartup());
       show_mixer_strip_during_startup->setChecked(showMixerStripDuringStartup());
       show_mixer_strip_on_the_left->setChecked(showMixerStripOnLeftSide());
-        
+
+      sequencer_window_is_child_of_main_window->setChecked(sequencerWindowIsChildOfMainWindow());
+      mixer_window_is_child_of_main_window->setChecked(mixerWindowIsChildOfMainWindow());
+      
       max_num_menu_elements->setValue(getMaxSubmenuEntries());
       
       modal_windows->setChecked(doModalWindows());
@@ -759,6 +762,16 @@ public slots:
       setShowMixerStripOnLeftSide(val);
   }
 
+  void on_sequencer_window_is_child_of_main_window_toggled(bool val){
+    if (_initing==false)
+      setSequencerWindowIsChildOfMainWindow(val);
+  }
+  
+  void on_mixer_window_is_child_of_main_window_toggled(bool val){
+    if (_initing==false)
+      setMixerWindowIsChildOfMainWindow(val);
+  }
+  
   void on_gcOnOff_toggled(bool val){
     if (_initing==false){
       if (val) {

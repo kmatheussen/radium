@@ -476,7 +476,7 @@ public slots:
             
       w->hide();
       _bottom_bar->show();
-      convert_widget_to_window(w, g_main_window, radium::NOT_MODAL);
+      convert_widget_to_window(w, mixerWindowIsChildOfMainWindow() ? g_main_window : NULL, radium::NOT_MODAL);
 
       w->adjustSize();
 

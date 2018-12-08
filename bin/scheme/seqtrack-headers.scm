@@ -96,7 +96,10 @@
     (<gui> :add window sequencer-gui)
     (<gui> :add window bottom-bar)
     
-    (<gui> :set-as-window window -1)
+    (<gui> :set-as-window window (if (<ra> :sequencer-window-is-child-of-main-window)
+                                     -1
+                                     -3
+                                     ))
     (<gui> :show sequencer-gui)
     (<gui> :show window)
     
