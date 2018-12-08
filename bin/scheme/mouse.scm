@@ -2260,6 +2260,7 @@
                                                     (and Num
                                                          (let* ((notenum (<ra> :get-notenum-for-pitchnum Num *current-track-num*))
                                                                 (pitchnum-infos (get-pitchnum-infos notenum *current-track-num*)))
+                                                           ;;(c-display "infos:" (pp pitchnum-infos))
                                                            (callback (make-editorautomation-move :Num (- Num
                                                                                                          ((car pitchnum-infos) :Num))
                                                                                                  :nodes pitchnum-infos
@@ -2313,19 +2314,26 @@
                                      (define move-func-and-pianonotenum
                                        (cond ((move-all-nodes?)
                                               (list ra:move-pianonote
-                                                    0))
+                                                    0
+                                                    0
+                                                    ))
                                              ((= pianonotenum (- (<ra> :get-num-pitches notenum *current-track-num*)
                                                                  1))
                                               (list ra:move-pianonote-end
-                                                    (- pianonotenum 1)))
+                                                    (- pianonotenum 1)
+                                                    pianonotenum
+                                                    ))
                                              (else
                                               (list ra:move-pianonote-start
-                                                    pianonotenum))))
+                                                    pianonotenum
+                                                    pianonotenum
+                                                    ))))
 
                                      (define move-func (car move-func-and-pianonotenum))
                                      (set! pianonotenum (cadr move-func-and-pianonotenum))
-
-                                     (define pitchnum-info (nodes pianonotenum))
+                                     (define pitchinfonum (caddr move-func-and-pianonotenum))
+                                     
+                                     (define pitchnum-info (nodes pitchinfonum))
 
                                      (define Value (between 0
                                                             (+ delta-Value (pitchnum-info :value))
@@ -2336,7 +2344,7 @@
                                                        (max 0 (+ delta-Place (pitchnum-info :place)))))
 
                                      ;;(c-display "Value/delta-Value/pitchnumvalue:" Value delta-Value (pitchnum-info :value))
-                                     ;;(c-display "Place/delta-Place/pitchnumplace:" (map place-to-string (list Place delta-Place (pitchnum-info :place))))
+                                     ;;(c-display "pianonotenum:" pianonotenum ". Place/delta-Place/pitchnumplace:" (map place-to-string (list Place delta-Place (pitchnum-info :place))))
                                      
                                      (define new-notenum
                                        (move-func pianonotenum
@@ -2672,12 +2680,12 @@
                                                              (eq? diff-Place 'same-place))
                                                          Place
                                                          (- Place diff-Place)))
-                                         '(c-display pianonotenum2 ":diff-Place:" diff-Place
-                                                     ". 1:" (* 1.0 (<ra> :get-pianonote-place 0 notenum tracknum))
-                                                     ". 2:" (* 1.0 (<ra> :get-pianonote-place pianonotenum2 notenum tracknum)))
-                                         '(c-display pianonotenum2 ":diff-Value:" diff-Value
-                                                     ". 1:" (* 1.0 (<ra> :get-pianonote-value 0 notenum tracknum))
-                                                     ". 2:" (* 1.0 (<ra> :get-pianonote-value pianonotenum2 notenum tracknum)))
+                                         ;;(c-display pianonotenum2 ":diff-Place:" diff-Place
+                                         ;;            ". 1:" (* 1.0 (<ra> :get-pianonote-place 0 notenum tracknum))
+                                         ;;            ". 2:" (* 1.0 (<ra> :get-pianonote-place pianonotenum2 notenum tracknum)))
+                                         ;;(c-display pianonotenum2 ":diff-Value:" diff-Value
+                                         ;;            ". 1:" (* 1.0 (<ra> :get-pianonote-value 0 notenum tracknum))
+                                         ;;            ". 2:" (* 1.0 (<ra> :get-pianonote-value pianonotenum2 notenum tracknum)))
                                          (set! pianonotenum 0)
                                          (set! func ra:move-pianonote)))
                                              
