@@ -3070,7 +3070,7 @@ int radium_main(const char *arg){
 
       radium::Splitter *ysplitter = dynamic_cast<radium::Splitter*>(API_get_main_ysplitter()); //new radium::Splitter(Qt::Vertical, main_window);
       ysplitter->setHandleWidth(0);
-      ysplitter->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
+      //ysplitter->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding); // NOTE: Causes main window height to grow and grow when adding/removing widget. Strange.
       
       main_window->setCentralWidget(ysplitter);
 
