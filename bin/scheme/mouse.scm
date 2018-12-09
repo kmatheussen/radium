@@ -1793,6 +1793,20 @@
                     :shortcut ra:change-track-note-length
                     (lambda (doit)
                       (<ra> :set-track-note-length (if doit 2 3) tracknum)))
+              (list "Muted"
+                    :check (not (<ra> :track-on tracknum))
+                    :shortcut ra:switch-track-on
+                    (lambda (doit)
+                      (<ra> :switch-track-on tracknum)))
+              (list "Soloed"
+                    :check (and (<ra> :track-on tracknum)
+                                (true-for-all? (lambda (tracknum2)
+                                                 (or (= tracknum tracknum2)
+                                                     (not (<ra> :track-on tracknum2))))
+                                               (iota (<ra> :get-num-tracks))))
+                    :shortcut ra:switch-solo-track
+                    (lambda (doit)
+                      (<ra> :switch-solo-track tracknum)))
               "Minimize track" ra:minimize-track
               "-------Instrument"
               (list (if has-instrument
