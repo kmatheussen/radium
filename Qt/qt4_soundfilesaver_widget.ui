@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>744</width>
+    <width>795</width>
     <height>385</height>
    </rect>
   </property>
@@ -149,7 +149,7 @@ changing resampler type.</string>
           <item>
            <widget class="QRadioButton" name="save_range_button">
             <property name="text">
-             <string>Current Range</string>
+             <string>Range in current block</string>
             </property>
            </widget>
           </item>

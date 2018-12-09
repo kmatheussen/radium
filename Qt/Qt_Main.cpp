@@ -571,7 +571,7 @@ bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event){
   bool same_widget_and_buttons = same_widget && g_curr_mouse_cycle.buttons==event->buttons();
 
   if(same_widget_and_buttons){
-    R_ASSERT_NON_RELEASE(false); // Out of curiousity, want to know if this can happen.
+    //R_ASSERT_NON_RELEASE(false); // Out of curiousity, want to know if this can happen. Yes, happens when double-right-clicking in a help window.
   }
   
   MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id); // The main call to MOUSE_CYCLE_unregister_all is delayed a little bit, so we could have an alive cycle.
