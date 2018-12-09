@@ -466,7 +466,10 @@ public slots:
       return;
 
     QWidget *w = get_qwidget(g_mixer_widget);
-    
+
+    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+    QSplitter *xsplitter = editor->xsplitter;
+          
     //static QWidget *xsplitter = NULL;
     if(show_window){
       //if(xsplitter!=NULL)
@@ -491,7 +494,7 @@ public slots:
         pos--;
 
       /*
-      if (splitter->count() > 0){
+      if (xsplitter->count() > 0){
         
         int64_t curr_mixerstrip_guinum = MIXERSTRIP_get_curr_mixerstrip_guinum();
         
@@ -499,15 +502,17 @@ public slots:
 
           QWidget *mixerstrip_widget = API_gui_get_widget(curr_mixerstrip_guinum);
 
-          printf("pos: %d, count: %d. strip: %p, w-2: %p, w-1: %p.\n", pos, splitter->count(), mixerstrip_widget, splitter->widget(pos-2), splitter->widget(pos-1));
+          printf("pos: %d, count: %d. strip: %p, w-2: %p, w-1: %p.\n", pos, xsplitter->count(), mixerstrip_widget, xsplitter->widget(pos-2), xsplitter->widget(pos-1));
         }
       }
       */
       
-      splitter->insertWidget(pos, w);
+      xsplitter->insertWidget(pos, w);
 
       _bottom_bar->hide();
 
+      //printf("  NUM: %d / %d. MIN: %d %d %d %d %d %d\n", pos, xsplitter->count(), g_editor->minimumHeight(), w->minimumHeight(), xsplitter->minimumHeight(), g_main_window->minimumHeight(), API_get_main_ysplitter()->minimumHeight(), this->minimumHeight());
+      
 #if defined(FOR_WINDOWS)
       OS_WINDOWS_set_key_window((void*)g_main_window->winId()); // Don't know why.
 #endif
