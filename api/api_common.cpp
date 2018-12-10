@@ -139,11 +139,15 @@ void clearErrorMessage(void){
 // We don't throw scheme exception here since the api code is not written with that in mind.
 // Instead, we set the variable "g_error_message" and then the function 'throwExceptionIfError', which is called from a safe point, throws exception instead.
 void handleError_internal(const char *fmt,...){
-  if (g_is_going_to_call_throwExceptionIfError==false){
-    R_ASSERT(false); // Should not happen. A function has probably been called with the wrong 'error_type' argument.
-    return;
-  }
-
+  /*
+    It does happen when called from one of the s7extra_callFunc* functions, and the return value is wrong type.
+    
+    if (g_is_going_to_call_throwExceptionIfError==false){
+      R_ASSERT(false); // Should not happen. A function has probably been called with the wrong 'error_type' argument.
+      return;
+    }
+  */
+  
   if (g_error_message != NULL)
     return;
 
@@ -164,7 +168,11 @@ void handleError_internal(const char *fmt,...){
   GFX_addMessage(message);
   GFX_addMessage(backtrace);
 
+  if (g_is_going_to_call_throwExceptionIfError==false)
+    g_error_message = NULL; // If not, the next scheme function to run, whatever it might be, will throw exception.
   
+  
+    
 #if SHOW_DIALOG_WHEN_ERROR
   
   static double last_time = 0;
