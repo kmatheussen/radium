@@ -147,10 +147,12 @@ void handleError_internal(const char *fmt,...){
       return;
     }
   */
-  
+
   if (g_error_message != NULL)
     return;
 
+  bool is_going_to_call_throwExceptionIfError = g_is_going_to_call_throwExceptionIfError;
+    
   char message[1000];
   va_list argp;
   
@@ -168,9 +170,10 @@ void handleError_internal(const char *fmt,...){
   GFX_addMessage(message);
   GFX_addMessage(backtrace);
 
-  if (g_is_going_to_call_throwExceptionIfError==false)
+  if (is_going_to_call_throwExceptionIfError==false)
     g_error_message = NULL; // If not, the next scheme function to run, whatever it might be, will throw exception.
   
+  R_ASSERT_NON_RELEASE(is_going_to_call_throwExceptionIfError == g_is_going_to_call_throwExceptionIfError);
   
     
 #if SHOW_DIALOG_WHEN_ERROR
