@@ -194,6 +194,19 @@ Place getPlaceFromY(float y, int blocknum, int windownum) {
                        );
 }
 
+float getYFromPlace(Place place, int blocknum, int windownum) {
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return 0;
+
+  float reallineF = FindReallineForF(wblock, 0, &place);
+  float abs_y = get_realline_y(window, reallineF);
+
+  int top_realline = wblock->top_realline;
+  float y = abs_y - ((float)top_realline*(float)window->fontheight) + wblock->t.y1;
+  return y;
+}
 
 static double get_gridded_abs_y(struct Tracker_Windows *window, float abs_y){
   double grid = (double)root->grid_numerator / (double)root->grid_denominator;
