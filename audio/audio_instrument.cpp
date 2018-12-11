@@ -771,7 +771,7 @@ static const char *AUDIO_getFxName(const struct Patch *patch, int fxnum){
   
   int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
 
-  R_ASSERT_RETURN_IF_FALSE2(fxnum<0 || fxnum >= num_effects, "");
+  R_ASSERT_RETURN_IF_FALSE2(fxnum>=0 && fxnum < num_effects, "");
 
   return PLUGIN_get_effect_name(plugin, fxnum);
 }
