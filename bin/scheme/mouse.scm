@@ -7700,7 +7700,7 @@
                                            (get-delete-all-pauses-menu-entry seqtracknum)
                                            (get-seqtrack-popup-menu-entries seqtracknum)
 
-                                           "-------------------"
+                                           "-------------------Automation"
                                            
                                            "New automation" (lambda ()
                                                    (create-sequencer-automation seqtracknum X Y))
