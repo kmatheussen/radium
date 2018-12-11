@@ -34,6 +34,8 @@
 (define (set-velocity-statusbar-text value)
   (set-editor-statusbar (<-> "Velocity: " (one-decimal-percentage-string value) "%")))
 
+(define-constant *shift-right-mouse* "Shift + Right Mouse")
+
 
 ;; Quantitize
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2444,7 +2446,9 @@
                                                           (<ra> :undo-notes *current-track-num*)
                                                           (<ra> :delete-pitchnum Num *current-track-num*))
 
-                                                        (popup-menu "Delete pitch" delete-pitch)
+                                                        (popup-menu "Delete pitch"
+                                                                    :shortcut *shift-right-mouse*
+                                                                    delete-pitch)
                                                         (list "Glide to next pitch"
                                                               :check )
                                                         #t)
@@ -2922,9 +2926,9 @@
                                 
                                 (popup-menu "Cut Note at mouse position" cut-note
                                             "Glide to next note at mouse position" :enabled (can-glide-from-here-to-next-note?) glide-from-here-to-next-note
-                                            "Delete Note" delete-note
+                                            "Delete Note" :shortcut *shift-right-mouse* delete-note
                                             "--------"
-                                            "Delete node" :enabled (> num-pianonotes 1) delete-pitch
+                                            "Delete node" :enabled (> num-pianonotes 1) :shortcut *shift-right-mouse* delete-pitch
                                             "Add node at mouse position" add-pitch
                                             (list "Glide to next node"
                                                   :check (if (< num-pianonotes 2)
@@ -3381,7 +3385,7 @@
                                                         (velocity-info :notenum)
                                                         (velocity-info :tracknum))
                                           (-line (<ra> :get-num-lines)))
-                               (popup-menu "Delete Velocity" delete-velocity!
+                               (popup-menu "Delete Velocity" :shortcut *shift-right-mouse* delete-velocity!
                                            (list "glide"
                                                  :check (and (not is-holding)
                                                              (not is-last-node))
@@ -3861,7 +3865,7 @@
                                     (num-nodes (<ra> :get-num-fxnodes (fxnode-info :fxnum) (fxnode-info :tracknum)))
                                     (is-last (= (fxnode-info :fxnodenum)
                                                 (1- num-nodes))))
-                               (popup-menu "Delete Node" delete-node!
+                               (popup-menu "Delete Node" :shortcut *shift-right-mouse* delete-node!
                                            (list "glide"
                                                  :check (and (not is-holding) (not is-last))
                                                  :enabled (not is-last)
@@ -4352,6 +4356,7 @@
                                  (<ra> :delete-seqtemponode Num))
                                (popup-menu (list "Delete"
                                                  :enabled (and Num (> Num 0) (< Num (1- (<ra> :get-num-seqtemponodes))))
+                                                 :shortcut *shift-right-mouse*
                                                  (lambda ()
                                                    (<ra> :undo-seqtempo)
                                                    (<ra> :delete-seqtemponode Num)))
@@ -6931,6 +6936,7 @@
                                  (Num
                                   (<ra> :delete-seq-automation-node Num automationnum seqtracknum)))
                            (popup-menu (list "Delete" ;; (Shift + right mouse)"
+                                             :shortcut *shift-right-mouse*
                                              :enabled Num
                                              (lambda ()
                                                (<ra> :delete-seq-automation-node Num automationnum seqtracknum)))
@@ -7234,6 +7240,7 @@
                                  (Num
                                   (<ra> :delete-seqblock-automation-node Num automationnum seqblocknum seqtracknum)))
                            (popup-menu (list "Delete"
+                                             :shortcut *shift-right-mouse*
                                              :enabled Num
                                              (lambda ()
                                                (<ra> :delete-seqblock-automation-node Num automationnum seqblocknum seqtracknum)))
@@ -7861,6 +7868,13 @@
                                                                (<ra> :set-block-color color blocknum)
                                                                (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
                                                                  (<ra> :set-audiofile-color color filename))))))
+
+                                                 (list "Delete"
+                                                       :shortcut *shift-right-mouse*
+                                                       (lambda ()
+                                                         (set! *current-seqblock-info* #f)
+                                                         (<ra> :delete-seqblock seqblockid)
+                                                         (set! *current-seqblock-info* #f)))
                                                  
                                                  (let ((create-automation-entry (lambda (automationnum)
                                                                                   (list (<-> (<ra> :get-seqblock-automation-name automationnum) " automation")
