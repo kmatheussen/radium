@@ -234,10 +234,11 @@
       (get-gridded-place place)))
 
 (define (get-next-place-from-y Button Y)
-  (define place (<ra> :get-place-from-y (+ Y 1)))
   (if (<ra> :control-pressed)
-      place
-      (get-gridded-place place)))
+      (<ra> :get-place-from-y (+ Y 1))
+      (+ (get-gridded-place (<ra> :get-place-from-y Y))
+         (<ra> :get-grid))))
+       
 
 
 ;; Mouse move handlers
@@ -595,13 +596,13 @@
   (handling-nodes
    *is-pressing*
    (lambda()
-     ;;(c-display "%%%%%%%%%%%%%%%%% >> mouse press" $button $x $y *current-mouse-cycle*)
      ;;(cancel-current-stuff)
      (if (not *current-mouse-cycle*)
          (let ((new-mouse-cycle (get-mouse-cycle $button $x $y)))
            (if (and new-mouse-cycle
                     (new-mouse-cycle :drag-func))
                (set! *current-mouse-cycle* new-mouse-cycle))))
+     ;;(c-display "%%%%%%%%%%%%%%%%% >> mouse press" $button $x $y *current-mouse-cycle*)
      (get-bool *current-mouse-cycle*))))
 
 (define (radium-mouse-move $button $x $y)
@@ -941,7 +942,7 @@
                           (if Use-Place
                               (get-place-from-y Button Y)
                               Y)
-                          (lambda (Node-info Value)
+                          (lambda* (Node-info Value (new-Y Y))
                             (Publicize Node-info)
                             (if Mouse-pointer-func
                                 (set! *mouse-pointer-is-currently-hidden* #f)
@@ -949,7 +950,7 @@
                             (set-mouse-pointer (or Mouse-pointer-func ra:set-blank-mouse-pointer) (Get-guinum))
                             (make-node :node-info Node-info
                                        :value Value
-                                       :y Y)
+                                       :y new-Y)
                             ))))
 
   (define (move-or-release Button Dx Dy Node)
@@ -2485,6 +2486,7 @@
   :move-type     ;; A "*pianonote-move-<...>*" value
   :mouse-delta
   :note-id
+  :new-note #f
   )
 
 
@@ -2662,12 +2664,13 @@
                                                      (info :move-type))))
                         :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
-                                           (define Value (get-pianoroll-key X))
+                                           (define raw-Value (get-pianoroll-key X))
+                                           (define Value (if (<ra> :control-pressed)
+                                                             raw-Value
+                                                             (round raw-Value)))
                                            (define Next-Place (get-next-place-from-y *left-button* (<ra> :get-mouse-pointer-y)))
                                            (define noteid (<ra> :add-pianonote
-                                                                (if (<ra> :control-pressed)
-                                                                    Value
-                                                                    (round Value))
+                                                                Value
                                                                 Place Next-Place *current-track-num*))
                                            (if (and (number? noteid) (= -1 noteid))
                                                #f
@@ -2676,8 +2679,11 @@
                                                                               :pianonotenum 0
                                                                               :move-type *pianonote-move-end*
                                                                               :mouse-delta 0
-                                                                              :note-id (create-play-pianonote noteid 0))
-                                                         Value)))
+                                                                              :note-id (create-play-pianonote noteid 0)
+                                                                              :new-note #t
+                                                                              )
+                                                         Value
+                                                         (<ra> :get-y-from-place Next-Place))))
                         :Publicize (lambda (pianonote-info)
                                      (set-current-pianonote (pianonote-info :pianonotenum)
                                                             (pianonote-info :notenum)
@@ -2713,7 +2719,8 @@
                                               (diff-Place (if (eq? Place 'same-place)
                                                               Place
                                                               (- (<ra> :get-pianonote-place pianonotenum2 notenum tracknum)
-                                                                 (<ra> :get-pianonote-place 0 notenum tracknum)))))                                                                       
+                                                                 (<ra> :get-pianonote-place 0 notenum tracknum)))))
+
                                          (set! Value (- Value diff-Value))
                                          (set! Place (if (or (eq? Place 'same-place)
                                                              (eq? diff-Place 'same-place))
@@ -2727,7 +2734,18 @@
                                          ;;            ". 2:" (* 1.0 (<ra> :get-pianonote-value pianonotenum2 notenum tracknum)))
                                          (set! pianonotenum 0)
                                          (set! func ra:move-pianonote)))
-                                             
+
+
+                                     ;; New notes can also be moved upwards.
+                                     (if (and (pianonote-info :new-note)
+                                              (not (symbol? Place)))
+                                         (let ((note-place (<ra> :get-pianonote-place 0 notenum tracknum)))
+                                           ;;(c-display "diff-place:" (- Place note-place ) (pianonote-info :new-note) (<= Place note-place) Place note-place)
+                                           (if (<= Place
+                                                   note-place)
+                                               (set! func ra:move-pianonote))))
+                                         
+
                                      ;(c-display "value:" (<ra> :control-pressed) (if (<ra> :control-pressed)
                                      ;                                             Value
                                      ;                                             (round Value))
@@ -2751,13 +2769,9 @@
                                                      (<ra> :get-track-midi-channel *current-track-num*)
                                                      instrument-id))))
                                            
-                                     (make-pianonote-info :tracknum (pianonote-info :tracknum)
-                                                          :notenum new-notenum
-                                                          :pianonotenum (pianonote-info :pianonotenum)
-                                                          :move-type (pianonote-info :move-type)
-                                                          :mouse-delta (pianonote-info :mouse-delta)
-                                                          :note-id (pianonote-info :note-id)
-                                                          ))
+                                     (<copy-pianonote-info> pianonote-info
+                                                            :notenum new-notenum)
+                                     )
 
                         :Release-node (lambda (pianonote-info)
                                         (if (not (and (number? (pianonote-info :note-id))
