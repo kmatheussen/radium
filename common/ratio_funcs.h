@@ -132,11 +132,15 @@ static inline Ratio RATIO_mul(const Ratio r1, const Ratio r2){
   R_ASSERT_NON_RELEASE(r2.den > 0);
 
   int64_t a,b;
-  if (ov_mul(r1.num, r2.num, &a))
+  if (ov_mul(r1.num, r2.num, &a)){
+    R_ASSERT_NON_RELEASE(false);
     return make_ratio_from_double(make_double_from_ratio(r1) * make_double_from_ratio(r2));
+  }
   
-  if (ov_mul(r1.den, r2.den, &b))
+  if (ov_mul(r1.den, r2.den, &b)){
+    R_ASSERT_NON_RELEASE(false);
     return make_ratio_from_double(make_double_from_ratio(r1) * make_double_from_ratio(r2));
+  }
   
   return make_ratio(a, b);
 }
@@ -183,6 +187,7 @@ static inline Ratio RATIO_add(const Ratio r1, const Ratio r2){
   return make_ratio(a, b);
 
  overflow_fallback:
+  R_ASSERT_NON_RELEASE(false);
   return make_ratio_from_double(make_double_from_ratio(r1) + make_double_from_ratio(r2));
 }
 
