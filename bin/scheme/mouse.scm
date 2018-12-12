@@ -37,34 +37,6 @@
 (define-constant *shift-right-mouse* "Shift + Right Mouse")
 
 
-;; Quantitize
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define (quantitize Place Q)
-  (* (roundup (/ Place Q))
-     Q))
-
-#||
-(quantitize 18341/2134 1/3)
-
-(begin
-  (test (quantitize 0 0.5)
-        0.5)
-  (test (quantitize 0.5 0.5)
-        0.5)
-  (test (quantitize 1.0 0.5)
-        1.0)
-  (test (quantitize 10.0 0.5)
-        10)
-  (test (quantitize 10.3 0.5)
-        10.5)
-  (test (quantitize 10.5 0.5)
-        10.5)
-  (test (quantitize 10.6 0.5)
-        10.5)
-  (test (quantitize 10.9 0.5)
-        11))
-||#
 
 
 ;;; Distance
