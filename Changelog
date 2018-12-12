@@ -23,7 +23,6 @@ Changes 5.9.20 -> 5.9.21:
   Bug introduced in 5.9.19
 * GUI: Display "Shift + Right Mouse" as keybinding to
   various popup menu entries used for deleting things.
-* add an assertion to prev. commit
 * Scripting: Don't show assertion reporter if a
   callback returns the wrong type.
 * Soundfile saver: "Range" -> "Range in current block".
