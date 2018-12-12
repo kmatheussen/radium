@@ -1,3 +1,68 @@
+Changes 5.9.20 -> 5.9.21:
+* Quantitize: Fix crash happening sometimes. Bug
+  introduced in 5.9.8.
+* Editor: Make changing pianonote end position
+  frame-accurate.
+* Editor: Make moving pianonote and changing pianonote
+  start position frame-accurate.
+* Editor/pianoroll: Fix assertion error sometimes
+  popping up when trying to move note below end of
+  block.
+* S7: Build s7 with debug symbols.
+* Sequencer: Name the automation entries ("Automation")
+  in the popup menu.
+* Editor/pianoroll: Make sure mouse pointer is placed
+  in the middle of the newly created note in the x
+  direction, and at the bottom of the newly created
+  note in the y direction. This feels much more
+  natural.
+* Editor/pianoroll: Make it possible to move new
+  notes upwards, not just change end note position.
+* Sequencer: Fix assertion window popping up when
+  creating automation and possibly other situations.
+  Bug introduced in 5.9.19
+* GUI: Display "Shift + Right Mouse" as keybinding to
+  various popup menu entries used for deleting things.
+* add an assertion to prev. commit
+* Scripting: Don't show assertion reporter if a
+  callback returns the wrong type.
+* Soundfile saver: "Range" -> "Range in current block".
+* Manual: Some minor fixes.
+* Menus: Rename "Solo/Mute" to "Editor Solo/Mute".
+* Menus: Moved "Turn off Solo for all instruments"
+  from the Solo/Mute menu to the "Play menu".
+* Menus: "Glissando" -> "Glissando between two notes".
+* Menus: Rename "Block view" to "Editor View" and
+  "Block edit" to "Editor Edit".
+* Editor: Add "Muted" and "Soloed" to the track popup
+  menu.
+* GUI: Fix mixer strip for current instrument moving
+  to the left side of the mixer when pressing the "W"
+  button. Bug introduced in 5.9.15.
+* GUI: Fix minimum height of the main window to grow
+  and grow in size when pressing the "W" button in
+  the mixer. Bug introduced in 5.9.15.
+* Preferences: Options to let mixer window and
+  sequencer window be independent windows. I.e. that
+  they are not children of the main window, meaning
+  that the main window can be put in front of the
+  mixer or sequencer, the windows possibly get other
+  bar buttons (depending on the OS and window
+  manager), and so forth.
+* Mouse: Fix gridding working the wrong way in the
+  editor if the object we were moving wasn't
+  already placed on the grid. Bug introduced
+  around 5.9.5.
+* Mouse: Make gridding frame-accurate.
+* Editor: Fix moving note end in the note text
+  subtrack.
+* API: sequencerWindowIsChildOfMainWindow,
+  setSequencerWindowIsChildOfMainWindow,
+  mixerWindowIsChildOfMainWindow,
+  setMixerWindowIsChildOfMainWindow.
+
+
+
 Changes 5.9.19 -> 5.9.20:
 * Menus: Cleaned up a little bit. A lot more
   remains.
@@ -25,6 +90,7 @@ Changes 5.9.19 -> 5.9.20:
   setInstrumentAlwaysReceiveMidiInput,
   isSendingMidiInputToCurrentInstrument,
   setSendMidiInputToCurrentInstrument
+
 
 
 Changes 5.9.18 -> 5.9.19:
