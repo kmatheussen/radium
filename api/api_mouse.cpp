@@ -76,7 +76,7 @@ extern volatile float g_scroll_pos;
 ///////////////////////////////////////////////////
 
 void ensureCleanStateOutsideMouseCycle(void){
-  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
     if(seqtrack->gfx_seqblocks != NULL){
       printf("\n\n\n  seqtrack->gfx_seqblocks != NULL. seqtracknum: %d\n\n\n", iterator666);
 #if 0 //!defined(RELEASE)
@@ -1041,7 +1041,7 @@ int getFxtextFxnumFromX(float x, int tracknum, int blocknum, int windownum){
     return -1;
 
   int column = 0;
-  VECTOR_FOR_EACH(const struct FXs *fxs, &wtrack->track->fxs){
+  VECTOR_FOR_EACH(const struct FXs *, fxs, &wtrack->track->fxs){
     if(fxs->fx->is_enabled){
       float x2 = wtrack->fxtextarea.x + ((column+1) * WTRACK_fxtext_track_width(window->fontwidth));
       if (x < x2)
@@ -1111,10 +1111,10 @@ float getTemponodeMax(int blocknum, int windownum){
 
 static const struct Node *get_temponode(int boxnum){
   const vector_t *nodes = GetTempoNodes(root->song->tracker_windows, root->song->tracker_windows->wblock);
-  return VECTOR_get2(nodes,
-                     boxnum,
-                     "temponode"
-                     );
+  return (const struct Node*)VECTOR_get2(nodes,
+                                         boxnum,
+                                         "temponode"
+                                         );
 }
 
 float getTemponodeX(int num){
@@ -1134,7 +1134,7 @@ void setCurrentTemponode(int num, int blocknum){
     return;
   }
   
-  struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
+  struct TempoNodes *temponode = (struct TempoNodes *)ListFindElement3_num(&block->temponodes->l, num);
 
   setCurrentNode(&temponode->l);
 }
@@ -1146,7 +1146,7 @@ void setIndicatorTemponode(int num, int blocknum){
     return;
   }
   
-  struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
+  struct TempoNodes *temponode = (struct TempoNodes *)ListFindElement3_num(&block->temponodes->l, num);
 
   setIndicatorNode(&temponode->l);
 }
@@ -1195,7 +1195,7 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
     if (pianonotenum==0)
       return note->note;
 
-    struct Pitches *pitch = ListFindElement3_num_r0((void*)note->pitches, pianonotenum-1);
+    struct Pitches *pitch = (struct Pitches*)ListFindElement3_num_r0((ListHeader3*)note->pitches, pianonotenum-1);
     if (pitch==NULL){
 
       if (ListFindNumElements3((struct ListHeader3*)note->pitches)+1==pianonotenum){
@@ -1295,7 +1295,7 @@ static void setPianoNoteValues(float value, int pianonotenum, struct Notes *note
     
   } else {
   
-    struct Pitches *pitch = ListFindElement3_num_r0((void*)note->pitches, pianonotenum-1);
+    struct Pitches *pitch = (struct Pitches*)ListFindElement3_num_r0((ListHeader3*)note->pitches, pianonotenum-1);
     if (pitch==NULL){
       handleError("There is no pianonote %d",pianonotenum);
       return;
@@ -1328,7 +1328,7 @@ static Place get_pianonote_place(int pianonotenum, struct Notes *note){
   if (pianonotenum==0)
     return note->l.p;
 
-  struct Pitches *pitch = ListFindElement3_num((void*)note->pitches, pianonotenum-1);
+  struct Pitches *pitch = (struct Pitches*)ListFindElement3_num((ListHeader3*)note->pitches, pianonotenum-1);
   if (pitch==NULL){
     handleError("There is no pianonote %d",pianonotenum);
     return note->l.p;
@@ -1345,7 +1345,7 @@ Place getPianonotePlace(int pianonotenum, dyn_t dynnote, int tracknum, int block
   if (note==NULL)
     return p_Create(0,0,1);
 
-  if (ListFindNumElements3((void*)note->pitches)+1==pianonotenum)
+  if (ListFindNumElements3((ListHeader3*)note->pitches)+1==pianonotenum)
     return note->end;
   
   return get_pianonote_place(pianonotenum, note);
@@ -1371,7 +1371,7 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, dyn_t dynnote, int trac
     if (note2==note) {
       
       if (pianonotenum > 0) {
-        struct Pitches *pitch = ListFindElement3_num_r0((void*)note->pitches, pianonotenum-1);
+        struct Pitches *pitch = (struct Pitches*)ListFindElement3_num_r0((ListHeader3*)note->pitches, pianonotenum-1);
         if (pitch==NULL){
           handleError("There is no pianonote #%d in note %d in track #%d in block #%d",pianonotenum,(int)note->id,tracknum,blocknum);
           return 0;
@@ -2593,7 +2593,7 @@ int getFx(const char* fx_name, int tracknum, int64_t instrument_id, int blocknum
 
   int num = 0;
 
-  VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
+  VECTOR_FOR_EACH(struct FXs *, fxs, &wtrack->track->fxs){
     if (fxs->fx->effect_num == effect_num && fxs->fx->patch==patch)
       return num;    
     num++;
@@ -2644,7 +2644,7 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
     return -1;
   }
 
-  VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
+  VECTOR_FOR_EACH(struct FXs *, fxs, &wtrack->track->fxs){
     if (fxs->fx->effect_num == effect_num && fxs->fx->patch==patch){
       GFX_Message2(NULL, true, "addFX: Effect \"%s\" has already been added to track %d", fx_name, track->l.num);
       return -1;
@@ -2668,7 +2668,7 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
         
     int num = 0;
 
-    VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
+    VECTOR_FOR_EACH(struct FXs *, fxs, &wtrack->track->fxs){
       if (fxs->fx == fx)
         return num;
 
@@ -2706,7 +2706,7 @@ static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int block
     return NULL;
   
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
-  return VECTOR_get2(nodes, fxnodenum, "fx node");
+  return (struct Node *)VECTOR_get2(nodes, fxnodenum, "fx node");
 }
 
 
@@ -2729,7 +2729,7 @@ Place getFxnodePlace(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
     return p_Create(0,0,1);
   
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
-  struct Node *node = VECTOR_get2(nodes, fxnodenum, "fx node");
+  struct Node *node = (struct Node *)VECTOR_get2(nodes, fxnodenum, "fx node");
   if (node==NULL)
     return p_Create(0,0,1);
 
@@ -2747,7 +2747,7 @@ float getFxnodeValue(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
     return 0.0f;
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
-  struct Node *node = VECTOR_get2(nodes, fxnodenum, "fx node");
+  struct Node *node = (struct Node *)VECTOR_get2(nodes, fxnodenum, "fx node");
   if (node==NULL)
     return 0.0f;
 
@@ -2768,7 +2768,7 @@ int getFxnodeLogtype(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
     return 0.0f;
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
-  struct Node *node = VECTOR_get2(nodes, fxnodenum, "fx node");
+  struct Node *node = (struct Node *)VECTOR_get2(nodes, fxnodenum, "fx node");
   if (node==NULL)
     return 0.0f;
 
@@ -2843,7 +2843,7 @@ const_char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, in
     return NULL;
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
-  struct Node *node = VECTOR_get2(nodes, fxnodenum, "fx node");
+  struct Node *node = (struct Node *)VECTOR_get2(nodes, fxnodenum, "fx node");
   if (node==NULL)
     return "<fxnode not found>";
 
@@ -2995,7 +2995,7 @@ void setFxnode(int fxnodenum, float value, Place place, int fxnum, int tracknum,
     return;
   }
 
-  struct Node *node = nodes->elements[fxnodenum];
+  struct Node *node = (struct Node*)nodes->elements[fxnodenum];
   struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
   
   if (!p_is_same_place(place)){
@@ -3047,7 +3047,7 @@ void setFxnodeLogtype(int logtype, int fxnodenum, int fxnum, int tracknum, int b
 
   ADD_UNDO(FXs(window, wblock->block, wtrack->track, wblock->curr_realline));
 
-  struct Node *node = nodes->elements[fxnodenum];
+  struct Node *node = (struct Node *)nodes->elements[fxnodenum];
   struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
 
   fxnodeline->logtype = logtype;
@@ -3071,7 +3071,7 @@ void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
 
   ADD_UNDO(FXs(window, wblock->block, wtrack->track, wblock->curr_realline));
 
-  struct Node *node = nodes->elements[fxnodenum];
+  struct Node *node = (struct Node *)nodes->elements[fxnodenum];
   struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
   
   DeleteFxNodeLine(window, wtrack, fxs, fxnodeline); // DeleteFxNodeLine locks player / stops playing
@@ -3094,7 +3094,7 @@ void setCurrentFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int 
     return;
   }
 
-  struct Node *node = nodes->elements[fxnodenum];
+  struct Node *node = (struct Node *)nodes->elements[fxnodenum];
   struct FXNodeLines *current = (struct FXNodeLines*)node->element;
 
   setCurrentNode(&current->l);
@@ -3114,7 +3114,7 @@ void setIndicatorFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, in
     return;
   }
 
-  struct Node *node = nodes->elements[fxnodenum];
+  struct Node *node = (struct Node *)nodes->elements[fxnodenum];
   setIndicatorNode(node->element);
 }
 
@@ -3154,7 +3154,7 @@ int getMouseFx(int tracknum, int blocknum, int windownum){
 
   struct FXs *fxs = wblock->mouse_fxs;
 
-  VECTOR_FOR_EACH(struct FXs *fxs2, &wtrack->track->fxs){
+  VECTOR_FOR_EACH(struct FXs *, fxs2, &wtrack->track->fxs){
     if(fxs==fxs2)
       return iterator666;
   }END_VECTOR_FOR_EACH;
@@ -3189,12 +3189,12 @@ Place getFxrangenodePlace(int fxnodenum, int fxnum, int rangetracknum){
     return p_Create(0,0,1);
   }
   
-  struct FXs *fxs = VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = (struct FXs *)VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     return p_Create(0,0,1);
   }
   
-  struct FXNodeLines *fxnodeline = ListFindElement3_num((void*)fxs->fxnodelines, fxnodenum);
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines *)ListFindElement3_num((ListHeader3*)fxs->fxnodelines, fxnodenum);
 
   if (fxnodeline==NULL){
     handleError("getFxrangenodeValue: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
@@ -3214,12 +3214,12 @@ float getFxrangenodeValue(int fxnodenum, int fxnum, int rangetracknum){
     return 0;
   }
   
-  struct FXs *fxs = VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = (struct FXs *)VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     return 0;
   }
   
-  struct FXNodeLines *fxnodeline = ListFindElement3_num_r0((void*)fxs->fxnodelines, fxnodenum);
+  struct FXNodeLines *fxnodeline = (struct FXNodeLines *)ListFindElement3_num_r0((ListHeader3*)fxs->fxnodelines, fxnodenum);
 
   if (fxnodeline==NULL){
     handleError("getFxrangenodeValue: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
@@ -3241,12 +3241,12 @@ int getFxrangenodeLogtype(int fxnodenum, int fxnum, int rangetracknum){
     return 0;
   }
   
-  struct FXs *fxs = VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = (struct FXs *)VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     return 0;
   }
   
-  struct FXNodeLines *fxnodelines = ListFindElement3_num_r0((void*)fxs->fxnodelines, fxnodenum);
+  struct FXNodeLines *fxnodelines = (struct FXNodeLines *)ListFindElement3_num_r0((ListHeader3*)fxs->fxnodelines, fxnodenum);
 
   if (fxnodelines==NULL){
     handleError("getFxrangenodeLogtype: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
@@ -3265,7 +3265,7 @@ const char* getFxrangeName(int fxnum, int rangetracknum){
     return 0;
   }
 
-  struct FXs *fxs = VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = (struct FXs *)VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     return "";
   }
@@ -3282,7 +3282,7 @@ int getNumFxrangenodes(int fxnum, int rangetracknum){
     return 0;
   }
 
-  struct FXs *fxs = VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = (struct FXs *)VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     return 0;
   }
