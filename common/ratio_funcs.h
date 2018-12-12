@@ -5,7 +5,7 @@
 
 #include "placement_proc.h"
 
-
+#if !__MINGW32__
 typedef struct {
   __int128_t num;
   __int128_t den;
@@ -16,6 +16,7 @@ static inline Ratio128 make_ratio128(Ratio ratio){
   Ratio128 ratio128 = {ratio.num, ratio.den};
   return ratio128;
 }
+#endif
 
 static inline Ratio make_ratio_from_double(double val){
 
@@ -41,9 +42,11 @@ static inline double make_double_from_ratio(Ratio r){
   return (double)r.num / (double)r.den;
 }
 
-// the ov_ macros are copied from the s7 source (slightly changed)
+// the ov_ macros are copied from the s7 source (macros are slightly renamed)
 #if (defined(__clang__) && ((__clang_major__ > 3) || (__clang_major__ == 3 && __clang_minor__ >= 4)))
-  static_assert(sizeof(void*) == 8
+#ifdef __cplusplus
+  static_assert(sizeof(void*) == 8, "sizeof(void*) is not 8");
+#endif
   #define ov_sub(A, B, C)       __builtin_ssubll_overflow((long long)A, (long long)B, (long long *)C)
   #define ov_add(A, B, C)       __builtin_saddll_overflow((long long)A, (long long)B, (long long *)C)
   #define ov_mul(A, B, C)       __builtin_smulll_overflow((long long)A, (long long)B, (long long *)C)
@@ -222,10 +225,14 @@ static inline bool RATIO_greater_than(const Ratio r1, const Ratio r2){
  overflow_fallback:
 
   R_ASSERT_NON_RELEASE(false);
-  
+
+#if !__MINGW32__
   Ratio128 ra = make_ratio128(r1);
   Ratio128 rb = make_ratio128(r2);
   return (ra.num * rb.den) > (rb.num * ra.den);
+#else
+  return make_double_from_ratio(r1) > make_double_from_ratio(r2);
+#endif
 }
 
 static inline bool RATIO_less_than(const Ratio r1, const Ratio r2){
