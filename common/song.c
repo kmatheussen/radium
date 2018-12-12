@@ -41,7 +41,7 @@ bool NewSong(void){
 
 	root->tempo=128;
 	root->lpb=4;
-        root->signature = make_ratio(4,4);
+        root->signature = make_static_ratio(4,4);
 
         init_player_state();
         

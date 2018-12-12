@@ -515,7 +515,7 @@ void EditorWidget::fix_mousePressEvent( QMouseEvent *qmouseevent) {
   }GL_unlock();
 
   updateEditor();
-
+    
   qmouseevent->accept();
 }
 

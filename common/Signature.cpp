@@ -119,7 +119,7 @@ const WSignature_trss WSignatures_get(
 struct Signatures *SetSignature(
 	struct Blocks *block,
 	const Place *place,
-        Ratio ratio
+        StaticRatio ratio
 ){
 
   if(is_playing()==true){
@@ -158,7 +158,7 @@ void SetSignatureCurrPos(struct Tracker_Windows *window){
 	ADD_UNDO(Signatures_CurrPos(window));
 
         PC_Pause();{
-          SetSignature(wblock->block,place,rational.get_ratio());
+          SetSignature(wblock->block,place,rational.get_static_ratio());
         }PC_StopPause(window);
         
         UpdateWBlockCoordinates(window, wblock);

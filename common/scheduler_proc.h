@@ -163,7 +163,7 @@ extern void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
 extern LANGSPEC void RT_Beats_set_new_last_bar_start_value(struct SeqTrack *seqtrack, double beat_position, bool just_started_playing);
   
 // scheduler_Signature_proc.h
-extern LANGSPEC Ratio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack);
+extern LANGSPEC StaticRatio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack);
 extern LANGSPEC void RT_schedule_Signature_newblock(struct SeqTrack *seqtrack,
                                                     const struct SeqBlock *seqblock,
                                                     const Place start_place);

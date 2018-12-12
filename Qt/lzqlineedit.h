@@ -82,8 +82,8 @@ public:
     setText("1/1");
   }
 
-  Ratio get_ratio(void){
-    return RATIO_from_string(text());
+  StaticRatio get_ratio(void){
+    return STATIC_RATIO_from_string(text());
   }
     
   void wheelEvent(QWheelEvent *qwheelevent) override {

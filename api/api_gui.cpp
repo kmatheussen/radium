@@ -2347,7 +2347,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         RatioSnifferQLineEdit *ratioedit = dynamic_cast<RatioSnifferQLineEdit*>(_widget.data());
         if (ratioedit != NULL){
           if (DYN_is_liberal_ratio(val))
-            ratioedit->setText(RATIO_as_qstring(DYN_get_liberal_ratio(val)));
+            ratioedit->setText(STATIC_RATIO_as_qstring(DYN_get_static_ratio(val)));
           else
             handleError("Ratio->setValue received %s, expected a number or a string", DYN_type_name(val.type));
           return;
@@ -3190,7 +3190,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     Q_OBJECT;
   public:
     
-    MyRatioSnifferQLineEdit(QWidget *parent, Ratio ratio, bool wheelMainlyChangesNumerator = true, bool wheelDecrasesDenominatorIfNumeratorIsOne = true)
+    MyRatioSnifferQLineEdit(QWidget *parent, StaticRatio ratio, bool wheelMainlyChangesNumerator = true, bool wheelDecrasesDenominatorIfNumeratorIsOne = true)
       : RatioSnifferQLineEdit(parent, wheelMainlyChangesNumerator, wheelDecrasesDenominatorIfNumeratorIsOne)
       , Gui(this)
     {
@@ -3772,7 +3772,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       else if (className=="QLineEdit")
         ret = new MyFocusSnifferQLineEdit(parent);
       else if (className=="RatioQLineEdit")
-        ret = new MyRatioSnifferQLineEdit(parent, make_ratio(1,1));
+        ret = new MyRatioSnifferQLineEdit(parent, make_static_ratio(1,1));
       else if (className=="QSpinBox")
         ret = new MyFocusSnifferQSpinBox(parent);
       else if (className=="QDoubleSpinBox")
@@ -4531,7 +4531,7 @@ int64_t gui_ratio(dyn_t ratio, bool wheelMainlyChangesNumerator, bool wheelDecra
     return -1;
   }
 
-  return (new MyRatioSnifferQLineEdit(NULL, DYN_get_liberal_ratio(ratio), wheelMainlyChangesNumerator, wheelDecrasesDenominatorIfNumeratorIsOne))->get_gui_num();
+  return (new MyRatioSnifferQLineEdit(NULL, DYN_get_static_ratio(ratio), wheelMainlyChangesNumerator, wheelDecrasesDenominatorIfNumeratorIsOne))->get_gui_num();
 }
 
 int64_t gui_line(const_char* content){

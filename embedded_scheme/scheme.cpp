@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../common/placement_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/ratio_funcs.h"
 
 #include "../api/api_common_proc.h"
 #include "../api/api_proc.h"
@@ -496,7 +497,7 @@ s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
     case ARRAY_TYPE:
       return dynvec_to_s7(radiums7_sc, *dyn.array);
     case RATIO_TYPE:
-      return s7_make_ratio(radiums7_sc, dyn.ratio->numerator, dyn.ratio->denominator);
+      return s7_make_ratio(radiums7_sc, dyn.ratio->num, dyn.ratio->den);
     case FUNC_TYPE:
       return (s7_pointer)dyn.func;
     case BOOL_TYPE:
@@ -1517,15 +1518,18 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note) {
 
   s7extra_add_history(__func__, CR_FORMATEVENT("========== s7callling quantitize-note"));
 
-  Ratio quant = RATIO_divide(root->quantitize_options.quant, DYN_get_ratio(getLineZoomBlockRatio(block->l.num, -1)));
-                           
+  Ratio quant =
+    make_ratio_from_static_ratio(root->quantitize_options.quant)
+    /
+    DYN_get_ratio(getLineZoomBlockRatio(block->l.num, -1));
+
   s7_pointer result = catch_call(s7,
                                  s7_list_nl(s7,
                                             6,
                                             scheme_func,
                                             place_to_ratio(&note->l.p),
                                             place_to_ratio(&note->end),
-                                            s7_make_ratio(s7, quant.numerator, quant.denominator),
+                                            s7_make_ratio(s7, quant.num, quant.den),
                                             place_to_ratio(&last_place),
                                             s7_make_integer(s7, root->quantitize_options.type),
                                             NULL

@@ -2819,7 +2819,7 @@ int getHighestLegalPlaceDenominator(void){
 }
 
 dyn_t getRatioFromString(const_char* s){
-  return DYN_create_ratio(RATIO_from_string(STRING_create(s)));
+  return DYN_create_ratio(make_ratio_from_static_ratio(STATIC_RATIO_from_string(STRING_create(s))));
 }
 
 const_char* getStringFromRatio(dyn_t ratio){
@@ -2828,7 +2828,7 @@ const_char* getStringFromRatio(dyn_t ratio){
     return "";
   }
 
-  return STRING_get_chars(RATIO_as_string(DYN_get_liberal_ratio(ratio)));
+  return STRING_get_chars(STATIC_RATIO_as_string(DYN_get_static_ratio(ratio)));
 }
 
 

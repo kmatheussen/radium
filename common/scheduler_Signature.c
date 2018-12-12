@@ -9,7 +9,7 @@
 
 // Called from ../audio/Juce_plugins.cpp and ../audio/Mixer.cpp
 //
-Ratio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack){
+StaticRatio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack){
   if (is_playing())
     return seqtrack->signature_iterator.signature_value;
   else {
@@ -17,11 +17,11 @@ Ratio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack){
 #if !defined(RELEASE)
       abort();
 #endif
-      return make_ratio(4,4);
+      return make_static_ratio(4,4);
     }else {
-      Ratio signature = root->signature;
+      StaticRatio signature = root->signature;
       if (signature.denominator<=0 || signature.denominator<=0)
-        signature = make_ratio(4,4); // Happens during startup, and maybe when loading song.
+        signature = make_static_ratio(4,4); // Happens during startup, and maybe when loading song.
       return signature;
     }
   }

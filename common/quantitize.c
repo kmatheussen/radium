@@ -17,13 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-
-
-
-
-
-
+#include <unistd.h>
+#include <inttypes.h>
 
 #include "nsmtracker.h"
 #include "placement_proc.h"
@@ -41,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Rational.h"
 #include "../embedded_scheme/scheme_proc.h"
 #include "settings_proc.h"
+#include "ratio_funcs.h"
 
 #include "../api/api_proc.h"
 
@@ -75,14 +71,14 @@ void Quantitize_fxs(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
     int fxnum = getFx(fxs->fx->name, wtrack->l.num, fxs->fx->patch->id, wblock->l.num, window->l.num);
 
-    Ratio quant = RATIO_divide(root->quantitize_options.quant, DYN_get_ratio(getLineZoomBlockRatio(wblock->l.num, -1)));
+    Ratio quant = RATIO_div(make_ratio_from_static_ratio(root->quantitize_options.quant), DYN_get_ratio(getLineZoomBlockRatio(wblock->l.num, -1)));
     
     SCHEME_eval(
-                talloc_format("(simple-quantitize-fxs! %d %d %d %d/%d)",
+                talloc_format("(simple-quantitize-fxs! %d %d %d %" PRId64 "/%" PRId64 ")",
                               wblock->block->l.num,
                               wtrack->track->l.num,
                               fxnum,
-                              (int)quant.numerator, (int)quant.denominator
+                              quant.num, quant.den
                               )
                 );
 
@@ -93,7 +89,7 @@ void Quantitize_fxs(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
 quantitize_options_t Quantitize_get_default_options(void){
   quantitize_options_t options;
-  options.quant = make_ratio(1,1);
+  options.quant = make_static_ratio(1,1);
   /*
   options.quantitize_start = true;
   options.quantitize_end = false;
@@ -263,14 +259,14 @@ void SetQuantitize_CurrPos(
                            struct Tracker_Windows *window
 ){
     
-        Ratio before = root->quantitize_options.quant;
-        Ratio after;
+        StaticRatio before = root->quantitize_options.quant;
+        StaticRatio after;
                   
         ReqType reqtype = GFX_OpenReq(window, 100, 100, "");
 
         do{
           GFX_WriteString(reqtype, "Quantitize Value : ");
-          GFX_SetString(reqtype, STRING_get_chars(RATIO_as_string(before)));
+          GFX_SetString(reqtype, STRING_get_chars(STATIC_RATIO_as_string(before)));
           
           char temp[1024];
           GFX_ReadString(reqtype, temp, 1010, true);
@@ -281,12 +277,12 @@ void SetQuantitize_CurrPos(
             return;
           }
           
-          after = RATIO_from_string(STRING_create(temp));
+          after = STATIC_RATIO_from_string(STRING_create(temp));
         } while (after.denominator==0);
         
         GFX_CloseReq(window, reqtype);
 
-        if (RATIO_literary_equal(root->quantitize_options.quant, after))
+        if (STATIC_RATIO_literary_equal(root->quantitize_options.quant, after))
           return;
 
         ADD_UNDO(MainTempo(window, window->wblock));

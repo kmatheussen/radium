@@ -24,7 +24,7 @@ const WSignature_trss WSignatures_get(
 extern LANGSPEC struct Signatures *SetSignature(
                                                 struct Blocks *block,
                                                 const Place *place,
-                                                Ratio ratio
+                                                StaticRatio ratio
                                                 );
 extern LANGSPEC void SetSignatureCurrPos(struct Tracker_Windows *window);
 

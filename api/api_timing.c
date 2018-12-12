@@ -60,7 +60,7 @@ void setMainSignature(int numerator, int denominator){
   ADD_UNDO(MainTempo(window,wblock));
 
   PC_Pause();{
-    root->signature = make_ratio(numerator, denominator);
+    root->signature = make_static_ratio(numerator, denominator);
     TIME_global_signature_has_changed();
   }PC_StopPause(window);
   
@@ -103,7 +103,7 @@ int addSignature(int numerator, int denominator,
   struct Signatures *signature;
 
   PC_Pause();{
-    signature = SetSignature(wblock->block,&place,make_ratio(numerator, denominator));
+    signature = SetSignature(wblock->block,&place,make_static_ratio(numerator, denominator));
   }PC_StopPause(window);
   
   window->must_redraw=true;

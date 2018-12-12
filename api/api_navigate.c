@@ -324,7 +324,7 @@ void requestCursorMove(void){
       
     } else {
       
-      Ratio ratio = RATIO_from_string(STRING_create(line));
+      StaticRatio ratio = STATIC_RATIO_from_string(STRING_create(line));
       if (ratio.denominator==0)
         goto exit;
       
