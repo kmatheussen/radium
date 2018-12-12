@@ -1585,14 +1585,17 @@ void setPianonoteLogtype(int logtype, int pianonotenum, dyn_t dynnote, int track
   setPitchnumLogtype2(logtype, pitchnum, track);
 }
   
-dyn_t movePianonoteEnd(int pianonotenum, float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+dyn_t movePianonoteEnd(int pianonotenum, float value, Place place_arg, dyn_t dynnote_arg, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote_arg);
   if (note==NULL)
-    return dynnote;
+    return dynnote_arg;
 
+  const Place place = place_arg;
+  const dyn_t dynnote = dynnote_arg;
+  
   struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
 
@@ -1630,28 +1633,48 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place, dyn_t dynnote
     
     if (validate_place(place)==false)
       return dynnote;
-    
+
+    bool floatplace_changed = false;
     float floatplace = GetfloatFromPlace(&place);
       
     const float mindiff = 0.001;
   
     float firstplacefloat = GetfloatFromPlace(&note->l.p);
-    if (floatplace-mindiff <= firstplacefloat)
+    if (floatplace-mindiff <= firstplacefloat){
       floatplace = firstplacefloat + mindiff;
+      floatplace_changed = true;
+    }
 
     if (note->velocities != NULL) {
       float lastvelplace = GetfloatFromPlace(ListLastPlace3(&note->velocities->l));
-      if (floatplace-mindiff <= lastvelplace)
+      if (floatplace-mindiff <= lastvelplace){
         floatplace = lastvelplace + mindiff;
+        floatplace_changed = true;
+      }
+
     }
 
     // (there are no pitches here)
-    
+
     {
-      SCOPED_PLAYER_LOCK_IF_PLAYING();
+      Place new_place = place;
+
+      if (floatplace_changed)
+        Float2Placement(floatplace, &new_place);
+
+      Place endplace;
+      PlaceSetLastPos(block,&endplace);
       
-      Float2Placement(floatplace, &note->end);
-      NOTE_validate(block, track, note);
+      if(PlaceGreaterThan(&new_place,&endplace))
+        new_place = endplace;
+
+      {
+        SCOPED_PLAYER_LOCK_IF_PLAYING();
+
+        note->end = new_place;
+      
+        NOTE_validate(block, track, note);
+      }
     }
 
   }

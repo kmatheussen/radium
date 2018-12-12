@@ -83,13 +83,13 @@ extern LANGSPEC void ListMoveElement3_ns(
                                 const Place *lastlegalpos
                                 );
 
-struct ListHeader3 *ListMoveElement3_FromNum_ns(
-                                                const void *voidlistroot,
-                                                int num,
-                                                const Place *newplace,
-                                                const Place *firstlegalpos,
-                                                const Place *lastlegalpos
-                                                );
+extern LANGSPEC struct ListHeader3 *ListMoveElement3_FromNum_ns(
+                                                                const void *voidlistroot,
+                                                                int num,
+                                                                const Place *newplace,
+                                                                const Place *firstlegalpos,
+                                                                const Place *lastlegalpos
+                                                                );
 
 extern LANGSPEC int ListAddElement3_ns(
 	void *listroot,
