@@ -50,7 +50,7 @@ namespace{
   };
 }
 
-static Place get_measure_length_in_quarters(Ratio signature, int lpb){
+static Place get_measure_length_in_quarters(StaticRatio signature, int lpb){
   Place ratio = p_Create(0,(int)signature.numerator,(int)signature.denominator);
   Place four_lpb = p_Create(4*lpb, 0, 1);
 
@@ -59,14 +59,14 @@ static Place get_measure_length_in_quarters(Ratio signature, int lpb){
                );
 }
 
-static Place get_beat_length_in_measurement(Ratio signature, int lpb){
+static Place get_beat_length_in_measurement(StaticRatio signature, int lpb){
   return p_Div(get_measure_length_in_quarters(signature, lpb),
                p_Create((int)signature.numerator,0,1)
                );
 }
 
 
-struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, int default_lpb){
+struct Beats *Beats_get(struct Blocks *block, StaticRatio default_signature, int default_lpb){
   Beats *beats = NULL;
 
   int bar_num = 1;

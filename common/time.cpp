@@ -1260,7 +1260,7 @@ static dyn_t create_filledout_swings(const dyn_t global_swings, const dyn_t trac
 
 
 static void update_stuff2(struct Blocks *blocks[], int num_blocks,
-                          int default_bpm, int default_lpb, Ratio default_signature, bool plugins_should_receive_swing_tempo,
+                          int default_bpm, int default_lpb, StaticRatio default_signature, bool plugins_should_receive_swing_tempo,
                           bool only_signature_has_changed, bool update_beats, bool update_swings)
 {
   struct STimes *stimes_without_global_swings[num_blocks];
@@ -1435,7 +1435,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
 }
 
 static void update_all(struct Song *song,
-                       int default_bpm, int default_lpb, Ratio default_signature, bool plugins_should_receive_swing_tempo,
+                       int default_bpm, int default_lpb, StaticRatio default_signature, bool plugins_should_receive_swing_tempo,
                        bool only_signature_has_changed, bool update_beats, bool update_swings)
 {
   int num_blocks = ListFindNumElements1(&song->blocks->l);
@@ -1458,7 +1458,7 @@ static void update_all(struct Song *song,
 }
 
 static void update_block(struct Blocks *block,
-                         int default_bpm, int default_lpb, Ratio default_signature, bool plugins_should_receive_swing_tempo,
+                         int default_bpm, int default_lpb, StaticRatio default_signature, bool plugins_should_receive_swing_tempo,
                          bool only_signature_has_changed, bool update_beats, bool update_swings)
 {
   struct Blocks *blocks[1] = {block};

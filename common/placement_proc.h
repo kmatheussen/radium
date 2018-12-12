@@ -117,7 +117,7 @@ static inline Place place_from_64b(int64_t num, int64_t den){
 
 static inline Place DYN_get_place(const dyn_t dyn){
   Ratio ratio = DYN_get_ratio(dyn);
-  return place_from_64b(ratio.numerator, ratio.denominator);
+  return place_from_64b(ratio.num, ratio.den);
 }
 
 static inline Ratio ratio_from_place(const Place place){

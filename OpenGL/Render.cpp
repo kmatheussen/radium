@@ -821,10 +821,10 @@ static void create_signature(const struct Tracker_Windows *window, const struct 
     int x = wblock->signaturearea.x;
     int y = get_realline_y1(window, realline);
   
-    const Ratio &signature = wsignature.signature;
+    const StaticRatio &signature = wsignature.signature;
     
     char temp[50];
-    sprintf(temp, "%d/%d", (int)signature.numerator, (int)signature.denominator);
+    sprintf(temp, "%d/%d", signature.numerator, signature.denominator);
     
     GE_text(GE_textcolor_z(TEXT_COLOR_NUM, GE_Conf(Z_ZERO, y, NO_SCISSORS)),
             temp,

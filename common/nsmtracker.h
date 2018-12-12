@@ -865,7 +865,7 @@ static inline void *replace_gc_root(const void *old_root, void *new_root){
 
 #include "ratio_type.h"
 
-static inline char *ratio_to_string(const Ratio ratio){
+static inline char *static_ratio_to_string(const StaticRatio ratio){
   return talloc_format("%d/%d", (int)ratio.numerator, (int)ratio.denominator);
 }
 
@@ -1067,7 +1067,7 @@ static inline double DYN_get_double_from_number(const dyn_t a){
   if (a.type==FLOAT_TYPE)
     return a.float_number;
   if (a.type==RATIO_TYPE)
-    return (double)a.ratio->numerator / (double)a.ratio->denominator;
+    return (double)a.ratio->num / (double)a.ratio->den;
 
   RError("DYN_get_double_from_number: 'a' is not a number, but a %s", DYN_type_name(a.type));
   return 0;
@@ -1080,7 +1080,7 @@ static inline int64_t DYN_get_int64_from_number(const dyn_t a){
   if (a.type==FLOAT_TYPE)
     return a.float_number;
   if (a.type==RATIO_TYPE)
-    return (double)a.ratio->numerator / (double)a.ratio->denominator;
+    return (double)a.ratio->num / (double)a.ratio->den;
 
   RError("DYN_get_double_from_number: 'a' is not a number, but a %s", DYN_type_name(a.type));
   return 0;
@@ -1120,22 +1120,22 @@ static inline bool DYN_is_ratio(const dyn_t a){
 }
 
 // Also allows strings and floats.
-static inline Ratio DYN_get_liberal_ratio(const dyn_t dyn){
+static inline StaticRatio DYN_get_static_ratio(const dyn_t dyn){
   if (dyn.type==INT_TYPE)
-    return make_ratio(dyn.int_number, 1);
+    return make_static_ratio(dyn.int_number, 1);
 
   if (dyn.type==RATIO_TYPE)
-    return *dyn.ratio;
+    return make_static_ratio_from_ratio(*dyn.ratio);
 
   else if (dyn.type==FLOAT_TYPE)
-    return make_ratio(dyn.float_number*1000, 1000);
+    return make_static_ratio(dyn.float_number*1000, 1000);
 
   else if (dyn.type==STRING_TYPE)
-    return RATIO_from_string(dyn.string);
+    return STATIC_RATIO_from_string(dyn.string);
     
   RError("DYN_Get_ratio: dyn (type: %d) can not be converted to a ratio", dyn.type);
 
-  return make_ratio(0,1);      
+  return make_static_ratio(0,1);      
 }
 
 static inline bool DYN_is_liberal_ratio(const dyn_t a){
@@ -1149,7 +1149,7 @@ static inline bool DYN_is_liberal_ratio(const dyn_t a){
 Must include placement_proc.h to get this function.
 static inline Place DYN_get_place(const dyn_t dyn){
   Ratio ratio = DYN_get_ratio(dyn);
-  return place_from_64b(ratio.numerator, ratio.denominator);
+  return place_from_64b(ratio.num, ratio.den);
 }
 */
 
@@ -1206,7 +1206,7 @@ static inline void set_symbol_name(const symbol_t *symbol, const char *new_name)
 *********************************************************************/
 
 typedef struct{
-  Ratio quant;
+  StaticRatio quant;
   /*
     // In scheme, we read these three variables directly from the gui now.
   bool quantitize_start;
@@ -2113,7 +2113,7 @@ extern struct PianorollRubber g_current_pianobar_rubber;
 
 struct Signatures{
   struct ListHeader3 l;
-  Ratio signature;
+  StaticRatio signature;
 };
 #define NextSignature(a) (struct Signatures *)((a)->l.next)
 
@@ -2129,7 +2129,7 @@ struct Signatures{
 #define SIGNATURE_MUL 2
 
 struct WSignature{
-  Ratio signature;
+  StaticRatio signature;
   int bar_num;
   int beat_num;   // In a 4/4 measure, this value is either 0, 1, 2 or 3, or 4. (0 means that there is no beat placed on this realline)
   int type;	  /* 0=normal, 1=below positioned, 2=mul. */
@@ -2137,7 +2137,7 @@ struct WSignature{
   //vector_t how_much_below;
 
   WSignature()
-    : signature(make_ratio(0,0))
+    : signature(make_empty_static_ratio())
     , bar_num(0)
     , beat_num(0)
     , type(SIGNATURE_NORMAL)
@@ -2165,11 +2165,11 @@ static inline bool WSIGNATURE_is_first_beat(const WSignature &signature){
 
 struct Beats{
   struct ListHeader3 l;
-  Ratio signature; // Current signature for this beat.
+  StaticRatio signature; // Current signature for this beat.
   int bar_num;   // Starts counting from 1.
   int beat_num;  // For instance, in a 4/4 measure, this value is either 1, 2 or 3, or 4. Starts counting from 1.
 
-  Ratio valid_signature; // signature is 0/0 if there isn't a signature change at this beat.
+  StaticRatio valid_signature; // signature is 0/0 if there isn't a signature change at this beat.
 };
 #define NextBeat(a) (struct Beats *)((a)->l.next)
   
@@ -2655,7 +2655,7 @@ typedef struct {
 
   double beat_position_of_last_bar_start; // = 0.0;
 
-  Ratio last_valid_signature; // = {4,4};
+  StaticRatio last_valid_signature; // = {4,4};
 
   int last_played_metronome_note_num; // = -1;
 
@@ -2670,7 +2670,7 @@ typedef struct {
 
 typedef struct {
   const struct Signatures *next_signature;
-  Ratio signature_value; // = {4,4};
+  StaticRatio signature_value; // = {4,4};
 } Signature_Iterator;
 
 #define MAX_SEQBLOCK_VOLUME_ENVELOPE_DB 6
@@ -3072,7 +3072,7 @@ struct Root{
 
 	int tempo;			/* Standard tempo. Player must be stopped when modifying. */
 	int lpb;			/* Standard lpb. Player must be stopped when modifying. */
-	Ratio signature;		/* Standard signature. Player must be stopped when modifying. */
+	StaticRatio signature;		/* Standard signature. Player must be stopped when modifying. */
 
         quantitize_options_t quantitize_options;
   

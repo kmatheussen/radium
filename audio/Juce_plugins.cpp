@@ -343,7 +343,7 @@ namespace{
         result.bpm = 1; // Never set bpm to 0. At least one vst plugin crashes if bpm is 0.
       }
       
-      Ratio signature = RT_Signature_get_current_Signature(seqtrack);
+      StaticRatio signature = RT_Signature_get_current_Signature(seqtrack);
       result.timeSigNumerator = signature.numerator;
       result.timeSigDenominator = signature.denominator;
       //printf("%d/%d\n",signature.numerator,signature.denominator);

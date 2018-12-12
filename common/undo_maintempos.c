@@ -13,7 +13,7 @@ extern struct Root *root;
 struct Undo_MainTempo{
 	int tempo;
 	int lpb;
-        Ratio signature;
+        StaticRatio signature;
         quantitize_options_t quantitize_options;
 };
 
@@ -58,7 +58,7 @@ static void *Undo_Do_MainTempo(
 	void *pointer
 ){
 	struct Undo_MainTempo *u_rt=(struct Undo_MainTempo *)pointer;
-	Ratio signature = root->signature;
+	StaticRatio signature = root->signature;
         int lpb=root->lpb;
 	int tempo=root->tempo;
         quantitize_options_t quantitize_options = root->quantitize_options;

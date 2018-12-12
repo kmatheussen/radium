@@ -11,7 +11,7 @@
 
 
 
-Ratio RATIO_from_string(QString string){
+StaticRatio STATIC_RATIO_from_string(QString string){
   
   QStringList splitted = string.split("/", QString::SkipEmptyParts);
 
@@ -37,7 +37,7 @@ Ratio RATIO_from_string(QString string){
     if (denominator==0)
       denominator=1;
     
-    return make_ratio(numerator, denominator);
+    return make_static_ratio(numerator, denominator);
     
   } else {
     
@@ -47,7 +47,7 @@ Ratio RATIO_from_string(QString string){
 
       if (ok && floor(value)!=value){
         printf("B  string: %s. value: %f. Ok: %d\n", string.toUtf8().constData(), value, ok);
-        return make_ratio(value*1000, 1000);
+        return make_static_ratio(value*1000, 1000);
       }
     }
     
@@ -57,22 +57,22 @@ Ratio RATIO_from_string(QString string){
 
     printf("B  string: %s. value: %d. Ok: %d\n", string.toUtf8().constData(), value, ok);
 
-    return make_ratio(value,1);
+    return make_static_ratio(value,1);
   }
 
   
 }
 
 
-QString RATIO_as_qstring(const Ratio ratio){
+QString STATIC_RATIO_as_qstring(const StaticRatio ratio){
   return Rational(ratio).toString();
 }
 
-wchar_t *RATIO_as_string(const Ratio ratio){
-  return STRING_create(RATIO_as_qstring(ratio));
+wchar_t *STATIC_RATIO_as_string(const StaticRatio ratio){
+  return STRING_create(STATIC_RATIO_as_qstring(ratio));
 }
 
 
-Ratio RATIO_from_string(const wchar_t *wstring){
-  return RATIO_from_string(STRING_get_qstring(wstring));
+StaticRatio STATIC_RATIO_from_string(const wchar_t *wstring){
+  return STATIC_RATIO_from_string(STRING_get_qstring(wstring));
 }

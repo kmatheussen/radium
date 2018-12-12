@@ -7,7 +7,7 @@
 #include <QString>
 #include <QStringList>
 
-extern Ratio RATIO_from_string(QString string);
+extern StaticRatio STATIC_RATIO_from_string(QString string);
   
 namespace{
   
@@ -21,18 +21,18 @@ struct Rational {
     , _denominator(denominator)
   {}
 
-  Rational(const Ratio ratio)
+  Rational(const StaticRatio ratio)
     : _numerator((int)ratio.numerator)
     , _denominator((int)ratio.denominator)
   {}
   
   Rational(QString string)
-    : Rational(RATIO_from_string(string)) // C++11 FTW!
+    : Rational(STATIC_RATIO_from_string(string)) // C++11 FTW!
   {             
   }
   
-  Ratio get_ratio(void) const {
-    return make_ratio(_numerator, _denominator);
+  StaticRatio get_static_ratio(void) const {
+    return make_static_ratio(_numerator, _denominator);
   }
 
   bool is_valid(void) const {

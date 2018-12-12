@@ -1309,7 +1309,7 @@ struct Mixer{
       
     //printf("bar_tick: %f. beat_tick: %f\n", (float)pos->bar_start_tick / (float)ticks_per_beat, (float)pos->tick/(float)ticks_per_beat);
       
-    Ratio signature = RT_Signature_get_current_Signature(seqtrack);
+    StaticRatio signature = RT_Signature_get_current_Signature(seqtrack);
     pos->beats_per_bar = signature.numerator;
     pos->beat_type = signature.denominator;
 
