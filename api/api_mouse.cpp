@@ -1276,11 +1276,17 @@ int getNumPianonotes(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   return 1 + ListFindNumElements3((struct ListHeader3*)note->pitches);
 }
 
+/*
 static void MOVE_PLACE(Place *place, float diff){
   if (diff < 0)
     *place = p_Sub(*place, p_FromFloat(-diff));
   else
     *place = p_Add(*place, p_FromFloat(diff));
+}
+*/
+
+static void MOVE_PLACE2(Place *place, const Ratio diff){
+  *place = make_place_from_ratio(make_ratio_from_place(*place) + diff);
 }
 
 static void setPianoNoteValues(float value, int pianonotenum, struct Notes *note){
@@ -1395,22 +1401,20 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, dyn_t dynnote, int trac
   return 0;
 }
 
-static dyn_t moveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, float diff){
-  float old_start = GetfloatFromPlace(&note->l.p);
+static dyn_t moveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Ratio diff){
+  Ratio old_start = make_ratio_from_place(note->l.p);
 
-  if (old_start + diff < 0)
+  if (RATIO_less_than_zero(old_start + diff))
     diff = -old_start;
 
   //printf("new_start 1: %f\n",old_start+diff);
 
-  float old_end   = GetfloatFromPlace(&note->end);
+  Ratio old_end = make_ratio_from_place(note->end);
 
-  Place lastplace;
-  PlaceSetLastPos(block, &lastplace);
-  float lastplacefloat = GetfloatFromPlace(&lastplace);
+  Ratio lastplace = make_ratio_from_place(p_Last_Pos(block));
 
-  if (old_end + diff > lastplacefloat)
-    diff = lastplacefloat - old_end;
+  if ((old_end + diff) > lastplace)
+    diff = lastplace - old_end;
 
   //printf("new_start 2: %f\n",old_start+diff);
 
@@ -1421,18 +1425,18 @@ static dyn_t moveNote(struct Blocks *block, struct Tracks *track, struct Notes *
     
     //Float2Placement(new_start, &note->l.p);
     //Float2Placement(new_end, &note->end);
-    MOVE_PLACE(&note->l.p, diff);
-    MOVE_PLACE(&note->end, diff);
+    MOVE_PLACE2(&note->l.p, diff);
+    MOVE_PLACE2(&note->end, diff);
     
     struct Velocities *velocity = note->velocities;
     while(velocity != NULL){
-      MOVE_PLACE(&velocity->l.p, diff);
+      MOVE_PLACE2(&velocity->l.p, diff);
       velocity = NextVelocity(velocity);
     }
 
     struct Pitches *pitch = note->pitches;
     while(pitch != NULL){
-      MOVE_PLACE(&pitch->l.p, diff);
+      MOVE_PLACE2(&pitch->l.p, diff);
       pitch = NextPitch(pitch);
     }
     
@@ -1464,20 +1468,24 @@ dyn_t movePianonote(int pianonotenum, float value, Place place, dyn_t dynnote, i
   if (validate_place(place)==false)
     return dynnote;
 
-  float floatplace = GetfloatFromPlace(&place);
+  //float floatplace = GetfloatFromPlace(&place);
   
   struct Tracks *track = wtrack->track;
 
+  /*
   Place old_place = get_pianonote_place(pianonotenum, note);
   float old_floatplace = GetfloatFromPlace(&old_place);
   float diff      = floatplace - old_floatplace;
-
+  */
+  
+  Ratio diff = make_ratio_from_place(place) - make_ratio_from_place(get_pianonote_place(pianonotenum, note));
+  
   return moveNote(block, track, note, diff);
 }
 
 static int setPitchnum2(int num, float value, Place place, int tracknum, int blocknum, int windownum, bool replace_note_ends);
   
-dyn_t movePianonoteStart(int pianonotenum, float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+dyn_t movePianonoteStart(int pianonotenum, float value, Place place_arg, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -1490,7 +1498,7 @@ dyn_t movePianonoteStart(int pianonotenum, float value, Place place, dyn_t dynno
 
   if (note->pitches!=NULL) {
     setPitchnum2(getPitchNumFromPianonoteNum(pianonotenum, dynnote, tracknum, blocknum, windownum),
-                 value, place,
+                 value, place_arg,
                  tracknum, blocknum, windownum,
                  false
                  );
@@ -1501,34 +1509,39 @@ dyn_t movePianonoteStart(int pianonotenum, float value, Place place, dyn_t dynno
     
   window->must_redraw_editor = true;
 
-  if (p_is_same_place(place))
+  if (p_is_same_place(place_arg))
     return dynnote;
 
-  if (validate_place(place)==false)
+  if (validate_place(place_arg)==false)
     return dynnote;
 
-  float floatplace = GetfloatFromPlace(&place);
+  //float floatplace = GetfloatFromPlace(&place);
+  Ratio place = make_ratio_from_place(place_arg);
   
-  const float mindiff = 0.001;
-    
-  float lastplacefloat = GetfloatFromPlace(&note->end);
-  if (floatplace+mindiff >= lastplacefloat)
-    floatplace = lastplacefloat - mindiff;
+  //const float mindiff = 0.001;
+  const Ratio mindiff = make_ratio(1, 1024);
+  
+  //float lastplacefloat = GetfloatFromPlace(&note->end);
+  const Ratio lastplace = make_ratio_from_place(note->end);
+  if ( (place+mindiff) >= lastplace)
+    place = lastplace - mindiff;
 
   if (note->velocities != NULL) {
-    float firstvelplace = GetfloatFromPlace(&note->velocities->l.p);
-    if (floatplace+mindiff >= firstvelplace)
-      floatplace = firstvelplace - mindiff;
+    const Ratio firstvelplace = make_ratio_from_place(note->velocities->l.p);
+    if ( (place+mindiff) >= firstvelplace)
+      place = firstvelplace - mindiff;
   }
 
   // (there are no pitches here)
-    
+
+  const Place new_place = make_place_from_ratio(place);
+  
   {
     SCOPED_PLAYER_LOCK_IF_PLAYING();
     
     ListRemoveElement3(&track->notes, &note->l);
     
-    Float2Placement(floatplace, &note->l.p);
+    note->l.p = new_place;
     
     ListAddElement3_a(&track->notes, &note->l);
 
@@ -1892,7 +1905,7 @@ void deletePitchnum(int pitchnum, int tracknum, int blocknum){
 
     if (notes->pitch_end > 0) {
       if (pitchnum==num){
-        struct Pitches *pitch = ListLast3((struct ListHeader3*)notes->pitches);
+        struct Pitches *pitch = (struct Pitches *)ListLast3((struct ListHeader3*)notes->pitches);
         if (pitch!=NULL)
           notes->pitch_end = pitch->note;
         else
@@ -2159,7 +2172,7 @@ static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, 
 
   const vector_t *nodes = GetPitchNodes(window, wblock, wtrack, note);
 
-  return nodes->elements[note_pitchnum];
+  return (struct Node*)nodes->elements[note_pitchnum];
 }
 
 
