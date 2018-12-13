@@ -1,4 +1,4 @@
-
+#||
 ;; Standard binary search. Used in common/SeqAutomation.hpp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -153,6 +153,197 @@
 (***assert*** (arraysum-sum testarraysum
                             1 11)
               (list 2 7 26 19 11))
+
+
+||#
+
+
+;; Algorithm to find constant value to multiply stretch with when a seqblock is automating stretch values
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+(define-struct granresampler
+  :pos 0
+  :read-pos 0
+  :curr-sample 0
+  :compensation 1
+  :get-next-sample)
+
+#!!
+(define granulator (make-granulator))
+(set! (granulator :pos) 5)
+(granulator :pos)
+!!#
+
+(define (granresample granresampler get-ratio outsample-pos)
+  (define ratio (* (granresampler :compensation)
+                   (get-ratio outsample-pos))) ;;(granresampler :read-pos)))
+  (set! (granresampler :read-pos) (+ 1 (granresampler :read-pos)))
+  
+  (while (>= (granresampler :pos) 0)
+    (let* ((value ((granresampler :get-next-sample) outsample-pos)))
+      (set! (granresampler :curr-sample) value)
+      (set! (granresampler :pos) (- (granresampler :pos) 1))))
+  
+  (set! (granresampler :pos) (+ (granresampler :pos) ratio))
+  (granresampler :curr-sample))
+
+(define (make-get-ratio nodes)
+  (lambda (time)
+    (let loop ((nodes nodes))
+      (define node1 (car nodes))
+      (define node2 (cl-cadr nodes))
+      (define time1 (car node1))
+      (define time2 (cl-car node2))
+      (define value1 (cadr node1))
+      (define value2 (cl-cadr node2))
+      (cond ((<= time time1)
+             value1) ;; before start
+            ((not time2)
+             value1) ;; after end
+            ((> time time2)
+             (loop (cdr nodes)))
+            (else
+             (scale time time1 time2 value1 value2))))))
+
+(define (make-get-sample-for-resampler)
+  (define insample-pos -1)
+  (lambda (outsample-pos)
+    (set! insample-pos (1+ insample-pos))
+    insample-pos))
+;;    (list "insample" insample-pos)))
+
+(define (make-get-sample-for-granulator resampler get-resampler-ratio)
+  (lambda (n)
+    (granresample resampler get-resampler-ratio n)))
+
+(define (calculate-duration1 input-duration resampler-nodes granulate-nodes)
+  (define get-resampler-ratio (make-get-ratio resampler-nodes))
+  (define get-granulator-ratio (make-get-ratio granulate-nodes))
+  (let loop ((in-time 0)
+             (granulation-time 0)
+             (resampler-time 0)
+             (out-time 0))
+    (if (>= in-time input-duration)
+        (list out-time
+              granulation-time
+              resampler-time)
+        (begin
+          (define granulation-ratio (get-granulator-ratio in-time))
+          (define resampler-ratio (get-resampler-ratio in-time))
+          (loop (+ 1 in-time)
+                (+ granulation-time (/ 1
+                                       granulation-ratio))
+                (+ resampler-time (/ 1
+                                     resampler-ratio))
+                (+ out-time (/ 1
+                               (* granulation-ratio
+                                  resampler-ratio))))))))
+        
+(define (calculate-duration2 input-duration resampler-nodes granulate-nodes)
+  (define get-resampler-ratio (make-get-ratio resampler-nodes))
+  (define get-granulator-ratio (make-get-ratio granulate-nodes))
+  (let loop ((in-time 0)
+             (out-time 0))
+    (if (>= in-time input-duration)
+        out-time
+        (begin
+          (define granulation-ratio (get-granulator-ratio in-time))
+          (define resampler-ratio (get-resampler-ratio in-time))
+          (loop (+ 1 in-time)
+                (+ out-time (/ 1
+                               (* granulation-ratio
+                                  resampler-ratio))))))))
+        
+(define (calculate-duration3 input-duration resampler-nodes granulate-nodes)
+  (define get-resampler-ratio (make-get-ratio resampler-nodes))
+  (define get-granulator-ratio (make-get-ratio granulate-nodes))
+
+  (define gran-pos 0)
+  (define resample-pos 0)
+  
+  (define sample-read-pos 0)
+
+  (define out-pos 0)
+  
+  (while (< out-pos input-duration)
+    (define ratio-pos out-pos)
+    (define granulation-ratio (get-granulator-ratio ratio-pos))
+    (define resampler-ratio (get-resampler-ratio ratio-pos))
+
+    (while (>= gran-pos 0)
+    
+      (while (>= resample-pos 0)
+        ;;(c-display gran-pos resample-pos granulation-ratio resampler-ratio)
+        (inc! resample-pos (- resampler-ratio))
+        (inc! sample-read-pos 1))
+      
+      (inc! resample-pos 1)
+      
+      (inc! gran-pos (- granulation-ratio)))
+  
+    (inc! gran-pos 1)
+    
+    (inc! out-pos 1))
+
+  sample-read-pos)
+        
+
+(let* ((len 500)
+       ;(resampler-nodes `((0 15)(,len 1.5)))  ;`((0 1.1)
+       ;                  ; (,(/ len 2) 100)
+       ;                  ; (,len 10.8)))
+       ;(granulate-nodes `((0 0.8)
+       ;                   (,(/ len 2) 0.1)
+       ;                   (,len 0.2)))
+       ;;(resampler-nodes `((0 1.0)
+       ;;                   (,(/ len 3) 0.02)
+       ;;                   (,len 1.0)))
+       ;;(granulate-nodes `((0 50.0)
+       ;;                   (,(/ len 4) 1.0)
+       ;;                   (,len 50.0)))
+       (resampler-nodes `((0 50.0)
+                          (,len 1.0)))
+       (granulate-nodes `((0 1.0)
+                          (,len 0.02)))
+       (get-resampler-ratio (make-get-ratio resampler-nodes))
+       (get-granulator-ratio (make-get-ratio granulate-nodes))
+       (resampler (make-granresampler :get-next-sample (make-get-sample-for-resampler)))
+       (granulator (make-granresampler :get-next-sample (make-get-sample-for-granulator resampler get-resampler-ratio))))
+
+  (define temp (calculate-duration1 len resampler-nodes granulate-nodes))
+  (define output-duration1 (car temp))
+  (define granulation-time (cadr temp))
+  (define resampler-time (caddr temp))
+  (define granulation-compensation (/ granulation-time len))
+  (define resampler-compensation (/ output-duration1 granulation-time)) ;;(/ resampler-time len))
+  (define output-duration2 (calculate-duration2 len resampler-nodes granulate-nodes))
+  (define output-duration3 (calculate-duration3 len resampler-nodes granulate-nodes))
+
+  ;;(set! (granulator :compensation) granulation-compensation)
+  ;;(set! (resampler :compensation) resampler-compensation)
+  
+  (define (calculate resampler granulator)
+    (newline)
+    (let loop ((n 0)
+               (insample-pos 0))
+      (set! insample-pos (granresample granulator get-granulator-ratio insample-pos))
+      (c-display "Calculated duration:" (two-decimal-string output-duration1)
+                 ;;"Gr c:" (two-decimal-string granulation-compensation)
+                 ;;"Re c:" (two-decimal-string resampler-compensation)
+                 "Dur3:" (two-decimal-string output-duration3)
+                 "Counted duration:" n (list "insample" insample-pos)
+                 granulator
+                 )
+      (if (< insample-pos len)
+          (loop (+ n 1)
+                insample-pos))))
+  
+  (calculate resampler granulator))
+
+
+  
 
 
   
