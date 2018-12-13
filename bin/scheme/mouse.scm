@@ -7763,7 +7763,13 @@
                                                   (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
                                                     (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
                                                                            (lambda (filename)
-                                                                             (<ra> :create-sample-seqblock seqtracknum filename pos))))))))
+                                                                             (<ra> :create-sample-seqblock seqtracknum filename pos))))))
+
+                                               (list
+                                                "Recording options"
+                                                (lambda ()
+                                                  (show-record-popup-menu seqtracknum)))
+                                               ))
                                           
                                           (if (and #f (not seqblock-info))
                                               #f
