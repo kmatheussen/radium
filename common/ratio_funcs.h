@@ -3,7 +3,15 @@
 
 #include <math.h>
 
+#ifdef TEST_MAIN
+#include <inttypes.h>
+#include <stdio.h>
+#define R_ASSERT_NON_RELEASE(a) //if(!(a))abort()
+#define R_ASSERT(a) if(!(a))abort()
+#include "ratio_type.h"
+#else
 #include "placement_proc.h"
+#endif
 
 #if !__MINGW32__
 typedef struct {
@@ -20,10 +28,13 @@ static inline Ratio128 make_ratio128(Ratio ratio){
 
 static inline Ratio make_ratio_from_double(double val){
 
+#ifndef TEST_MAIN
   R_ASSERT_NON_RELEASE(false);
-  
+#endif
+
   int64_t den = (2L << 60L) / (1 + (int64_t)val);
   int64_t num = round((double)den * val);
+  //printf("num: %d\n",(int)num);
 
   if (den == 0){
     den = 1;
@@ -57,6 +68,7 @@ static inline double make_double_from_ratio(Ratio r){
 #endif
 
 
+#ifndef TEST_MAIN
 static inline Ratio make_ratio_from_place(const Place p){
   R_ASSERT_NON_RELEASE(p.dividor > 0);
 
@@ -127,6 +139,7 @@ static inline Place make_place_from_ratio(const Ratio ratio){
     return p_FromDouble(r);
   }
 }
+#endif
 #endif
 #endif
 
@@ -289,6 +302,9 @@ static inline Ratio operator-(const Ratio &r){
 static inline bool operator==(const Ratio &r1, const Ratio &r2){
   return RATIO_equal(r1, r2);
 }
+static inline bool operator!=(const Ratio &r1, const Ratio &r2){
+  return !RATIO_equal(r1, r2);
+}
 
 static inline bool operator>(const Ratio &r1, const Ratio &r2){
   return RATIO_greater_than(r1, r2);
@@ -304,7 +320,50 @@ static inline bool operator<=(const Ratio &r1, const Ratio &r2){
 }
 
 #endif
-                
 
+#endif
+
+
+#ifdef TEST_MAIN                
+
+//ln -sf ratio_funcs.h test_ratio.cpp
+//g++ test_ratio.cpp -DTEST_MAIN -Wall -Werror -g -o a.out && gdb ./a.out
+
+static void comp(double a,double b){
+  if (fabs(a-b) > 0.000001)
+    abort();
+}
+
+static void comp(Ratio a, Ratio b){
+  if (a != b)
+    abort();
+}
+
+static void comp(double a, Ratio b){
+  comp(a, make_double_from_ratio(b));
+}
+
+int main(){
+  double org1 = 34444223998701.213452909233423423434523452345;
+  double org2 = 8456.4545245624561;
+  Ratio r1 = make_ratio_from_double(org1);
+  Ratio r2 = make_ratio_from_double(org2);
+  double org3 = make_double_from_ratio(r1);
+  double org4 = make_double_from_ratio(r2);
+
+  comp(org1, org3);
+  comp(org1, r1);
+  comp(org2, org4);
+  comp(org2, r2);
+  comp(org1+org2, r1+r2);
+  comp(org1-org2, r1-r2);
+  comp(org1*org2, r1*r2);
+  comp(org1/org2, r1/r2);
+
+  comp(r1+r2-r2, r1);
+
+  printf("org: %f. org3: %f. Diff: %f. r: %" PRId64 "/%" PRId64 "\n",org1,org3,fabs(org1-org3),r1.num,r1.den);
+  return 0;
+}
 
 #endif
