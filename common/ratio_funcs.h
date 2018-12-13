@@ -35,7 +35,7 @@ static inline Ratio make_ratio_from_double(double val){
     den = -den;
   }
 
-  return make_ratio(den, num);
+  return make_ratio(num, den);
 }
 
 static inline double make_double_from_ratio(Ratio r){
