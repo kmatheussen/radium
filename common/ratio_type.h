@@ -38,6 +38,7 @@ static inline int64_t ratio_gcd(int64_t u, int64_t v){
   
   while (b != 0)
     {
+      //printf("a: %" PRId64 ". b: %" PRId64 "\n",a, b);
       int64_t temp;
       temp = a % b;
       a = b;
