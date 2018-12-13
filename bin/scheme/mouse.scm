@@ -7529,12 +7529,13 @@
                 (and (= Button *right-button*)
                      (not (<ra> :shift-pressed))
                      *current-seqblock-info*
-                     (let* ((seqtracknum (*current-seqblock-info* :seqtracknum))
+                     (let* ((seqtracknum (*current-seqblock-info* :seqtracknum))                            
                             (seqblocknum (*current-seqblock-info* :seqblocknum))
                             (seqblockid (*current-seqblock-info* :id))
                             (is-left (inside-box (<ra> :get-box seqblock-left-speed seqblocknum seqtracknum) X Y))
                             (is-right (not is-left)))
-                       (and (or is-left
+                       (and (<ra> :seqtrack-for-audiofiles seqtracknum)
+                            (or is-left
                                 (inside-box (<ra> :get-box seqblock-right-speed seqblocknum seqtracknum) X Y))
                             (begin
                               (popup-menu (list "Reset speed"
