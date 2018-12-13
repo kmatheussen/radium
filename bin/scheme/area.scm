@@ -165,17 +165,11 @@
 	 (move! dx dy)))     
 
      (define (set-position2! x1* y1* x2* y2*)
-       (set! i-x1 #f)
        (define new-width (- x2* x1*))
        (define new-height (- y2* y1*))
-       (let ((old-x1 x1)
-             (old-x2 x2)
-             (old-y1 y1)
-             (old-y2 y2))
-         (set! x1 x1*)
-         (set! y1 y1*)
-         (set! x2 x2*)
-         (set! y2 y2*)))
+       (set! x2 (+ x1 new-width))
+       (set! y2 (+ y1 new-height))
+       (set-position! x1* y1*))
 
      (define effect-monitors '())
 
@@ -553,6 +547,7 @@
      :inside? x (apply inside? x)
      :update-me! x (apply update-me! x)
      :set-position! x (apply set-position! x)
+     :set-position2! x (apply set-position2! x)
      :move! x (apply move! x)
      :move-internal! x (apply move-internal! x)
      :set-parent-area! (new-parent-area) (begin
@@ -879,7 +874,256 @@
                              (callback-release)))
                       (update-me!))))
 
-                                  
+
+(def-area-subclass (<scrollbar> :gui :x1 :y1 :x2 :y2
+                                :callback
+                                :slider-length ;; between 0 and 1. E.g. for 0.5; slider length = scrollbar length * 0.5
+                                :vertical
+                                :background-color #f
+                                :paint-border #t
+                                :border-color "black"
+                                :border-rounding 2
+                                :slider-color "#400010"
+                                :slider-pressed-color #f
+                                )
+
+  (if (not slider-pressed-color)
+      (set! slider-pressed-color (<gui> :mix-colors "#fefefe" slider-color 0.1)))
+
+  (define b (/ (get-fontheight) 5.0))
+
+  (define slider-pos 0) ;; goes between 0 and 1.0 - slider-length
+
+  (add-method! :set-slider-pos!
+               (lambda (new-slider-pos call-callback?)
+                 (set! slider-pos new-slider-pos)
+                 (if call-callback?
+                     (report!))
+                 (update-me!)))
+  
+  (define is-moving #f)
+  
+  (define-override (paint)
+    (if background-color
+        (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding))
+    
+    (define sx1 (+ b x1))
+    (define sy1 (+ b y1))
+    (define sx2 (- x2 b))
+    (define sy2 (- y2 b))
+    (define sheight (- sy2 sy1))
+    (define swidth (- sx2 sx1))
+    
+    (if vertical
+        (begin
+          (set! sy1 (scale slider-pos 0 1 sy1 sy2))
+          (set! sy2 (+ sy1 (scale slider-length 0 1 0 sheight))))
+        (begin
+          (set! sx1 (scale slider-pos 0 1 sx1 sx2))
+          (set! sx2 (+ sx1 (scale slider-length 0 1 0 swidth)))))
+
+    (<gui> :filled-box gui
+           (if is-moving
+               slider-pressed-color
+               slider-color)
+           sx1 sy1 sx2 sy2 border-rounding border-rounding)
+    
+    (if paint-border
+        (<gui> :draw-box gui slider-color x1 y1 x2 y2 b (* 2 border-rounding) (* 2 border-rounding)))
+        
+    #t)
+
+  (define (report!)
+    (callback slider-pos
+	      (+ slider-pos slider-length)))
+
+  (define start-mouse-pos 0)
+  
+  (add-delta-mouse-cycle!
+   (lambda (button x* y*)
+     (and (= button *left-button*)
+          (begin
+            ;;(c-display "start:" slider-pos)
+            (set! start-mouse-pos slider-pos)
+            (set! is-moving #t)
+            (update-me!)
+            #t)))
+   (lambda (button x* y* dx dy)
+     (set! slider-pos (between 0
+                               (+ start-mouse-pos
+                                  (scale (if vertical dy dx)
+                                         0 (if vertical
+                                               (- height (* b 2))
+                                               (- width (* b 2)))
+                                         0 1))
+                               (- 1.0 slider-length)))
+     ;;(c-display "move"
+     ;;           :slider-pos slider-pos
+     ;;           :start-mouse-pos start-mouse-pos
+     ;;           :scale (scale (if vertical dy dx)
+     ;;                         0 (if vertical height width)
+     ;;                         0 1))
+     (report!)
+     (update-me!)
+     )
+   (lambda (button x* y*)
+     (set! is-moving #f)
+     (update-me!)
+     ;;(c-display "release button/x/y" x* y*)
+     #f
+     ))
+  )
+
+#!!
+(begin
+  (define testarea (make-qtarea))
+  (define scrollbar (<new> :scrollbar (testarea :get-gui)
+                           10 10 100 100
+                           (lambda x (c-display "callback:" x))
+                           0.2
+                           #f
+                           :background-color "white"
+                           ))
+  (testarea :add-sub-area-plain! scrollbar)
+  (<gui> :show (testarea :get-gui)))
+!!#
+
+(def-area-subclass (<vertical-list-area> :gui :x1 :y1 :x2 :y2
+                                         :areas
+                                         :scrollbar-color "#400010"
+                                         :background-color #f
+                                         :expand-area-widths #t
+                                         )
+
+  (define scrollbar-width (between 1
+                                   (/ width 10)
+                                   (get-fontheight)))
+
+  (define scrollbar-x1 (- x2 scrollbar-width))
+
+  (define total-area-height (apply + (map (lambda (area)
+                                            (area :get-position (lambda (x1 y1 x2 y2 width height)
+                                                                  height)))
+                                          areas)))
+  
+  (define slider-length (if (= 0 total-area-height)
+                            1
+                            (min 1 (/ height total-area-height))))
+  
+  (define (position-areas! start-y1)
+    (let loop ((areas areas)
+               (area-y1 start-y1))
+      (when (not (null? areas))
+        (define area (car areas))
+        (area :get-position
+              (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                (if expand-area-widths
+                    (area :set-position2! x1 area-y1 scrollbar-x1 (+ area-y1 a-height))
+                    (area :set-position! x1 area-y1))
+                (loop (cdr areas)
+                      (+ area-y1 a-height))))))
+    )
+
+  (define (scrollbar-callback pos1 pos2)
+    (define pos1 (scale pos1
+                        0 1
+                        0 total-area-height))
+    (position-areas! (+ y1 (- pos1))))
+
+  (define scrollbar (<new> :scrollbar
+                           gui
+                           scrollbar-x1 y1
+                           x2 y2
+                           scrollbar-callback
+                           :slider-length slider-length
+                           :vertical #t
+                           :background-color background-color))
+  
+  (add-sub-area-plain! scrollbar)
+
+  (for-each (lambda (area)
+              (add-sub-area! area 0 0))
+            areas)
+
+  (position-areas! y1)
+
+  (<gui> :add-mouse-wheel-callback gui
+         (lambda (is-up x* y*)
+           (define is-down (not is-up))
+           (define first-y1 (and (not (null? areas))
+                                 ((car areas) :get-position
+                                  (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                                    a-y1))))
+
+           (define last-y2 (and (not (null? areas))
+                                ((last areas) :get-position
+                                 (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                                   a-y2))))
+
+           (c-display "is-up:" is-up x* y* first-y1 last-y2)
+
+           (call-with-exit
+            (lambda (exit)
+              (let loop ((areas areas)
+                         (n 0))
+                (when (not (null? areas))
+                  (define area (car areas))
+                  (area :get-position
+                        (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                          (define (doit dy)
+                            (define new-first-y1 (+ first-y1 dy))
+                            (define new-last-y2 (+ last-y2 dy))
+                            (position-areas! new-first-y1)
+                            (scrollbar :set-slider-pos!
+                                       (scale y1
+                                              new-first-y1
+                                              new-last-y2
+                                              0 1)
+                                       #f)
+                            (exit))
+                          (if is-up
+                              (when (>= a-y2 y1)
+                                ;;(c-display "  " n " how-much1:" (- y1 a-y1))
+                                (doit (- y1 a-y1)))
+                              (when (< y1 a-y2)
+                                ;;(c-display "  " n " how-much2:" (- a-y2 y1))
+                                (define dy (- last-y2 y2))                                                
+                                (when (> dy 0)
+                                  (set! dy (min dy (- a-y2 y1)))
+                                  (doit (- dy)))))))
+                  (loop (cdr areas)
+                        (1+ n)
+                        )))))
+                              
+           #t))  
+  )
+
+#!!
+(begin
+  ;(def-area-subclass (<text-area> :gui :x1 :y1 :x2 :y2 :text)
+  ;  (define-override (paint)
+  ;    (<gui> :draw-text gui *text-color* text (+ x1 (get-fontheight)) y1 x2 y2
+  ;           #f ;wrap-lines 
+  ;           #f ;align-top 
+  ;           #t ;align-left
+  ;           )
+  ;    (<gui> :draw-box gui "black" x1 y1 x2 y2 1.5 2 2)))
+      
+  (define testarea (make-qtarea :width 150 :height 450))
+  (define list-area (<new> :vertical-list-area (testarea :get-gui) 10 20 150 400
+                           (map (lambda (i)
+                                  (<new> :text-area (testarea :get-gui)
+                                         10 0 100 (* 1.2 (get-fontheight))
+                                         (<-> i ": hello")
+                                         :align-left #t))
+                                (iota 20))
+                           ))
+  (testarea :add-sub-area-plain! list-area)
+  (<gui> :show (testarea :get-gui))
+  )
+!!#
+
+
 (delafina (horizontally-layout-areas :x1 :y1 :x2 :y2
                                      :args
                                      :x1-border 0
