@@ -1354,16 +1354,11 @@ for .emacs:
                             this-method-names
                             methods))
 
-  (define hash-method-content (map (lambda (this-method-name method)
-                                     (list (car method) this-method-name))
-                                   this-method-names
-                                   methods))
-
   `(,@this-methods
-    (set! ,hash-table-name
-          (hash-table* :add-method! (lambda (name func)
-                                      (hash-table-set! ,hash-table-name name func))
-                       ,@(apply append hash-method-content)))
+    ,@(map (lambda (method-name method)             
+             `(hash-table-set! ,hash-table-name ,(car method) ,method-name))
+           this-method-names
+           methods)
     this))
 
 (***assert*** (define-class-helper 'list-and-set 'methods_of_list-and-set
@@ -1381,15 +1376,10 @@ for .emacs:
                   alist)
                 (define (this->set)
                   hash)
-
-                (set! methods_of_list-and-set
-                      (hash-table* :add-method! (lambda (name func)
-                                                  (hash-table-set! methods_of_list-and-set name func))
-                                   :contains this->contains
-                                   :list this->list
-                                   :set this->set))
+                (hash-table-set! methods_of_list-and-set :contains this->contains)
+                (hash-table-set! methods_of_list-and-set :list this->list)
+                (hash-table-set! methods_of_list-and-set :set this->set)
                 this))
-
 
 (define-expansion (<define-class-with-custom-definer> definer signature . rest)
   (define class-name (string->symbol (list->string (butlast (cdr (string->list (symbol->string (car signature))))))))
@@ -1397,8 +1387,10 @@ for .emacs:
   (define args (cdr signature))
 
   (define body '())
-  (define methods '())
-  
+  (define methods '((:add-method! (name func) (add-method! name func))))
+
+  (define hash-table-name (<_> 'methods_of_ class-name))
+
   (let loop ((rest rest)
              (has-methods #f))
     (when (not (null? rest))
@@ -1410,17 +1402,17 @@ for .emacs:
              (push-back! body (car rest))
              (loop (cdr rest) #f)))))
   
-  (define hash-table-name (<_> 'methods_of_ class-name))
-
   (append (cons definer (list (cons new-class-name args)))
-          `((define ,hash-table-name #f)
+          `((define ,hash-table-name (make-hash-table ,(+ 2 (length methods)) eq?))
             (define (this methodname . rest)
               ;;(c-display "   CALLING THIS" methodname ,hash-table-name)
               (let ((func (,hash-table-name methodname)))
                 ;;(c-display "   CALLING THIS2" methodname func)
                 (if func
                     (apply func rest)
-                    (error (<-> "Method \"" methodname ,(<-> "\" not found in class " class-name ". methods: ") (map car ,hash-table-name)))))))
+                    (error (<-> "Method \"" methodname ,(<-> "\" not found in class " class-name ". methods: ") (map car ,hash-table-name))))))
+            (define (add-method! name func)
+              (hash-table-set! ,hash-table-name name func)))
           body
           (define-class-helper class-name hash-table-name methods)))
 
@@ -1449,6 +1441,17 @@ for .emacs:
     :dosomething x
     (apply dosomething x))))
 
+(pretty-print
+ (macroexpand
+  (<define-class-with-custom-definer>
+   delafina
+   (<test-class>)
+   (define (dosomething a b) 
+     50)
+   :dosomething x
+   (apply dosomething x))))
+
+
 (define-class (<test-class>)
   (define (dosomething a b)
     (+ a b))
@@ -1458,7 +1461,9 @@ for .emacs:
 (define testinstance (<new> :test-class))
 
 (testinstance :dosomething 5 9)
-
+(testinstance :add-method! :ai (lambda ()
+                                 (c-display "ai called")))
+(testinstance :ai)
 
 (begin
   (newline)
@@ -1477,7 +1482,7 @@ for .emacs:
 
 (define-class (<test-class>)
   (define (dosomething a b)
-    (c-display a b (this))
+    (c-display a b this)
     50
     )
   :dosomething x
