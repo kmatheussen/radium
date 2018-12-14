@@ -11,10 +11,37 @@
 #include <QScrollArea>
 #include <QResizeEvent>
 #include <QTimer>
+#include <QTime>
 
 #if TEST_MAIN
 #include <QMouseEvent>
 #include <QPushButton>
+namespace radium{
+  static bool g_pause_scroll_area_updates_when_resizing = false;
+  static int g_num_running_resize_events;
+  struct ScopedResizeEventTracker{
+    ScopedResizeEventTracker(){
+      g_num_running_resize_events++;
+    }
+    ~ScopedResizeEventTracker(){
+      --g_num_running_resize_events;
+    }
+  };
+}
+bool Control2Pressed(Qt::KeyboardModifiers modifiers){
+  printf("%x - %x\n", (int)modifiers, (int)Qt::MetaModifier);
+  return modifiers & Qt::MetaModifier;
+}
+
+static bool HorizontalModifierPressed(Qt::KeyboardModifiers modifiers){
+  return Control2Pressed(modifiers);
+}
+
+/*
+static bool HorizontalModifierPressed(void){
+  return HorizontalModifierPressed(QApplication::keyboardModifiers());
+}
+*/
 #endif
 
 extern bool g_pause_scroll_area_updates_when_resizing;
@@ -35,6 +62,8 @@ class ScrollArea : public QWidget {
 
   MyQScrollBar *_vertical_scroll_bar;
   MyQScrollBar *_horizontal_scroll_bar;
+
+  bool _listen_to_mouse_wheel;
 
   struct InnerScrollArea : public QScrollArea {
 
@@ -101,6 +130,37 @@ class ScrollArea : public QWidget {
         _widget->layout()->update(); // If not, content don't always update.
     }
 
+    void wheelEvent(QWheelEvent *e) override
+    {
+
+      if (_scroll_area->_listen_to_mouse_wheel) {
+        
+        if (HorizontalModifierPressed(e->modifiers())) {
+          
+          auto *scrollbar = _scroll_area->_horizontal_scroll_bar; //_inner_scroll_area->verticalScrollBar();
+          //printf("HOR. Wheel event called. Value: %d.\n", scrollbar->value());// _vertical_scroll_bar, _inner_scroll_area->verticalScrollBar());
+          
+          if (e->delta() > 0)
+            scrollbar->setValue(scrollbar->value()+70);
+          else
+            scrollbar->setValue(scrollbar->value()-70);
+          
+        } else {
+          
+          auto *scrollbar = _scroll_area->_vertical_scroll_bar; //_inner_scroll_area->verticalScrollBar();
+          //printf("VER. Wheel event called. Value: %d.\n", scrollbar->value());// _vertical_scroll_bar, _inner_scroll_area->verticalScrollBar());
+          
+          if (e->delta() > 0)
+            scrollbar->setValue(scrollbar->value() - 70);
+          else
+            scrollbar->setValue(scrollbar->value() + 70);
+          
+        }        
+      
+        e->accept();
+
+      }
+    }
   };
 
   InnerScrollArea *_inner_scroll_area;
@@ -235,9 +295,9 @@ public:
     pauseUpdatesALittleBit();
   }
 
-
-  ScrollArea(QWidget *parent = NULL)
+  ScrollArea(QWidget *parent = NULL, bool listen_to_mouse_wheel = true)
     : QWidget(parent)
+    , _listen_to_mouse_wheel(listen_to_mouse_wheel)
     , _mytimer(this)
   {
     _inner_scroll_area = new InnerScrollArea(this);
@@ -314,7 +374,7 @@ public:
 
 /*
 echo '#include "ScrollArea.hpp"' >gakk.cpp
-g++ `pkg-config --cflags --libs Qt5Gui Qt5Widgets` gakk.cpp -Wall -fPIC -DTEST_MAIN -std=gnu++11 && ./a.out
+g++ `pkg-config --cflags --libs Qt5Gui Qt5Widgets` gakk.cpp -Wall -Werror -Wno-class-memaccess -fPIC -DTEST_MAIN -std=gnu++11 && ./a.out
 */
 
 #include <QApplication>

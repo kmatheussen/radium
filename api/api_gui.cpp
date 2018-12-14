@@ -207,6 +207,14 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   }                                                                     
 
 
+#define MOUSE_WHEEL_OVERRIDER(classname)                                \
+  void wheelEvent(QWheelEvent *event) override{                         \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
+    if (!Gui::wheelEvent(event))                                        \
+      classname::wheelEvent(event);                                     \
+  }                                                                     
+
+
 #define KEY_OVERRIDERS(classname)                                       \
   void keyPressEvent(QKeyEvent *event) override{                        \
     ScopedEventHandlerTracker event_handler_tracker;                    \
@@ -287,7 +295,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   }
 
 
-#define OVERRIDERS_WITHOUT_KEY(classname)                               \
+#define OVERRIDERS_WITHOUT_KEY_AND_MOUSE_WHEEL(classname)               \
   MOUSE_OVERRIDERS(classname)                                           \
   SETVISIBLE_OVERRIDER(classname)                                       \
   HIDE_OVERRIDER(classname)                                             \
@@ -299,8 +307,9 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   FOCUSIN_OVERRIDER(classname)                                          \
 
   
-#define OVERRIDERS(classname)                           \
-  OVERRIDERS_WITHOUT_KEY(classname)                     \
+#define OVERRIDERS(classname)                                           \
+  OVERRIDERS_WITHOUT_KEY_AND_MOUSE_WHEEL(classname)                     \
+  MOUSE_WHEEL_OVERRIDER(classname)                                      \
   KEY_OVERRIDERS(classname)
   
 
@@ -1603,6 +1612,54 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
 
+    /************ MOUSE Wheel *******************/
+
+    radium::ProtectedS7Extra<func_t*> _mouse_wheel_callback;
+
+    bool is_child_of_scroll_area(QObject *object){
+      if (object==NULL)
+        return false;
+      
+      QWidget *widget = qobject_cast<QWidget*>(object);
+      
+      if (widget != NULL){
+
+        if (widget->isWindow())
+          return false;
+        
+        if (qobject_cast<QScrollArea*>(widget) != NULL)
+          return true;
+      }
+      
+      if (is_child_of_scroll_area(object->parent()))
+        return true;
+      else
+        return false;
+    }
+    
+    bool wheelEvent(QWheelEvent *event) {
+      if(can_internal_data_be_accessed_questionmark_safer()==false)
+        return is_child_of_scroll_area(_widget.data());
+
+      if (_mouse_wheel_callback.v==NULL)
+        return is_child_of_scroll_area(_widget.data());
+
+      event->accept();
+
+      const QPoint &point = event->pos();
+
+      return S7CALL(bool_bool_float_float,_mouse_wheel_callback.v, event->delta() > 0, point.x(), point.y());
+    }
+    
+    void addMouseWheelCallback(func_t* func){      
+      if (_mouse_wheel_callback.v!=NULL){
+        handleError("Gui %d already has a key callback.", (int)_gui_num);
+        return;
+      }
+
+      _mouse_wheel_callback.set(func);
+    }
+
     /************ KEY *******************/
 
     radium::ProtectedS7Extra<func_t*> _key_callback;
@@ -2862,8 +2919,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     QWidget *contents;
     const char *magic = "magic";
 
-    ScrollArea(bool scroll_horizontal, bool scroll_vertical)
-      : Gui(this)        
+    ScrollArea(bool scroll_horizontal, bool scroll_vertical, bool listen_to_mouse_wheel)
+      : radium::ScrollArea(NULL, listen_to_mouse_wheel)
+      , Gui(this)        
     {
       horizontalScrollBar()->setObjectName("horizontalScrollBar");
       verticalScrollBar()->setObjectName("verticalScrollBar");
@@ -2905,8 +2963,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     const char *magic = "magic2";
     QLayout *mylayout;
 
-    VerticalScroll(void)
-      : Gui(this)        
+    VerticalScroll(bool listen_to_mouse_wheel)
+      : radium::ScrollArea(NULL, listen_to_mouse_wheel)
+      , Gui(this)        
     {
       horizontalScrollBar()->setObjectName("horizontalScrollBar");
       verticalScrollBar()->setObjectName("verticalScrollBar");
@@ -2936,21 +2995,23 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(radium::ScrollArea);
   };
 
-  struct HorizontalScroll : QScrollArea, Gui, public radium::MouseCycleFix {
+  struct HorizontalScroll : radium::ScrollArea, Gui, public radium::MouseCycleFix {
     QWidget *contents;
     const char *magic = "magic3";
     QLayout *mylayout;
 
-    HorizontalScroll(void)
-      : Gui(this)        
+    HorizontalScroll(bool listen_to_mouse_wheel)
+      : radium::ScrollArea(NULL, listen_to_mouse_wheel)
+      , Gui(this)        
     {
       horizontalScrollBar()->setObjectName("horizontalScrollBar");
       verticalScrollBar()->setObjectName("verticalScrollBar");
 
       //setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-      setWidgetResizable(true);
+      //setWidgetResizable(true);
 
-      QWidget *contents = new QWidget(this);
+      contents = getWidget();
+      //QWidget *contents = new QWidget(this);
 
       mylayout = new QHBoxLayout(contents);
       setDefaultSpacing(mylayout);
@@ -2959,14 +3020,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       contents->setLayout(mylayout);
       
-      setWidget(contents);    
+      //setWidget(contents);    
     }
 
     QLayout *getLayout(void) const override {
       return mylayout;
     }
 
-    OVERRIDERS(QScrollArea);
+    OVERRIDERS(radium::ScrollArea);
   };
 
   struct Slider : MyQSlider, Gui {
@@ -3530,7 +3591,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       return ret;
     }
                      
-    OVERRIDERS_WITHOUT_KEY(FocusSnifferQWebView);
+    OVERRIDERS_WITHOUT_KEY_AND_MOUSE_WHEEL(FocusSnifferQWebView);
 
   public slots:
     
@@ -4276,6 +4337,18 @@ void gui_addMouseCallback(int64_t guinum, func_t* func){
   gui->addMouseCallback(func);
 }
 
+void gui_addMouseWheelCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  if(check_existing(gui)==false)
+    return;
+  
+  gui->addMouseWheelCallback(func);
+}
+
 void gui_addKeyCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
 
@@ -4501,16 +4574,16 @@ int64_t gui_group(const_char* title){
   return (new GroupBox(title))->get_gui_num();
 }
 
-int64_t gui_scrollArea(bool scroll_horizontal, bool scroll_vertical){
-  return (new ScrollArea(scroll_horizontal, scroll_vertical))->get_gui_num();
+int64_t gui_scrollArea(bool scroll_horizontal, bool scroll_vertical, bool listen_to_mouse_wheel){
+  return (new ScrollArea(scroll_horizontal, scroll_vertical, listen_to_mouse_wheel))->get_gui_num();
 }
 
-int64_t gui_verticalScroll(void){
-  return (new VerticalScroll())->get_gui_num();
+int64_t gui_verticalScroll(bool listen_to_mouse_wheel){
+  return (new VerticalScroll(listen_to_mouse_wheel))->get_gui_num();
 }
 
-int64_t gui_horizontalScroll(void){
-  return (new HorizontalScroll())->get_gui_num();
+int64_t gui_horizontalScroll(bool listen_to_mouse_wheel){
+  return (new HorizontalScroll(listen_to_mouse_wheel))->get_gui_num();
 }
 
 int64_t gui_text(const_char* text, const_char* color, bool align_top, bool align_left){
