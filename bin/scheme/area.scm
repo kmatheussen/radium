@@ -972,6 +972,17 @@
      ;;(c-display "release button/x/y" x* y*)
      #f
      ))
+
+  (add-nonpress-mouse-cycle!
+   :enter-func (lambda (x* y)
+                 (c-display "ENTER DRAGGER" class-name)
+                 (set-mouse-pointer ra:set-open-hand-mouse-pointer gui)
+                 #t)
+   :leave-func (lambda ()
+                 (c-display "LEAVE DRAGGER")
+                 (set-mouse-pointer ra:set-normal-mouse-pointer gui)
+                 #f))
+
   )
 
 #!!
