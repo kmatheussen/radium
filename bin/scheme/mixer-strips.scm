@@ -2382,7 +2382,7 @@
 
   (<gui> :add gui name)
 
-  (define mixer-strip-path-gui (<gui> :vertical-scroll))
+  (define mixer-strip-path-gui (<gui> :vertical-scroll #f))
   (<gui> :set-layout-spacing mixer-strip-path-gui 5 5 5 5 5)
   (<gui> :set-style-sheet mixer-strip-path-gui
          (<-> "QScrollArea {"

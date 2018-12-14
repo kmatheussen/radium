@@ -51,7 +51,7 @@ OPTIMIZE ?= -O2
 # Packagers: Don't change anything below here unless things don't work.
 
 
-GCDIR ?= bin/packages/gc-7.2
+GCDIR ?= bin/packages/gc-7.4.4
 
 #MIDIINC=-Imidi/rtmidi
 #MIDIINC=-Imidi/alsaseq
