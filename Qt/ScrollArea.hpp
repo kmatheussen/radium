@@ -227,6 +227,7 @@ class ScrollArea : public QWidget {
       : QScrollBar(orientation, scroll_area)
       , _scroll_area(scroll_area)
     {
+      setCursor(Qt::OpenHandCursor);
     }
 
     void sliderChange(SliderChange change) override {

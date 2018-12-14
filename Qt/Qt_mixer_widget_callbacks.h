@@ -46,6 +46,8 @@ public:
     : QGraphicsView(parent)
   {
     //g_view = this;
+    horizontalScrollBar()->setCursor(Qt::OpenHandCursor);
+    verticalScrollBar()->setCursor(Qt::OpenHandCursor);
   }
 
   // http://stackoverflow.com/questions/1355446/get-visible-rectangle-of-qgraphicsview
