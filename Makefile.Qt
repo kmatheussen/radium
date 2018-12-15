@@ -1445,7 +1445,7 @@ Qt_song_properties.o: $(BUILD_DEPENDENCIES) $(P)Qt_song_properties_callbacks.h $
 
 
 
-Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h common/visual_proc.h Qt/mQt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h Qt/helpers.h
+Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h common/visual_proc.h Qt/mQt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h Qt/helpers.h Qt/Qt_MyQScrollBar.hpp
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
 		$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT) -O0 ; \
 	else \
