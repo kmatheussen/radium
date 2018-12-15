@@ -1228,7 +1228,7 @@ cocoa_Keyboard.o:  $(BUILD_DEPENDENCIES) macosx/cocoa_Keyboard.m
 X11_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) X11/X11_Ptask2Mtask.c 
 	$(CC) X11/X11_Ptask2Mtask.c $(OPT)
 
-X11_Bs_edit.o:  $(BUILD_DEPENDENCIES) X11/X11_Bs_edit.c 
+X11_Bs_edit.o:  $(BUILD_DEPENDENCIES) X11/X11_Bs_edit.c
 	$(CC) X11/X11_Bs_edit.c $(OPT)
 
 X11_endprogram.o:  $(BUILD_DEPENDENCIES) $(P)X11_endprogram.c 
@@ -1322,7 +1322,7 @@ Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/E
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
 
-Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp
+Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp Qt/Qt_MyQScrollBar.hpp
 	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT) #-fno-sanitize=undefined
 
 $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
@@ -1479,7 +1479,7 @@ Qt_pianorollheader_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_pianorollheader_cal
 $(P)Qt_pianorollheader.h: $(BUILD_DEPENDENCIES) $(P)qt4_pianorollheader.ui $(P)Qt_pianorollheader_callbacks.h $(P)lzqlineedit.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pianorollheader
 
-Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h common/Vector.hpp
+Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp
 	$(CCC) $(P)Qt_PluginWidget.cpp $(QTOPT)
 
 $(P)mQt_PluginWidget.cpp: $(P)Qt_PluginWidget.h
@@ -1657,7 +1657,7 @@ api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.cpp
 api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.cpp  audio/Envelope.hpp common/seqblock_automation_proc.h embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_seqtracks.cpp $(QTOPT)
 
-api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h
+api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS)
 
@@ -1769,7 +1769,7 @@ $(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h $(QM)QM_MixerWidget.cpp $(P)Qt_M
 #	$(RCC) $(QM)images.qrc -name images -o $(QM)images.cpp
 #	$(CCC) $(QM)images.cpp  `$(PKG) --libs --cflags QtGui` -c
 
-QM_MixerWidget.o: $(QM)mQM_MixerWidget.cpp $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp Qt/helpers.h common/Vector.hpp
+QM_MixerWidget.o: $(QM)mQM_MixerWidget.cpp $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp Qt/helpers.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp
 	$(CCC) $(QM)QM_MixerWidget.cpp $(QTOPT)
 
 QM_view.o: $(QM)QM_view.cpp $(QM)QM_view.h $(QM)QM_chip.h $(QM)mQM_view.cpp $(QM)QM_MixerWidget.h

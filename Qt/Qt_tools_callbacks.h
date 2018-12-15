@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <QScrollArea>
 #include <QCheckBox>
 #include <QTimer>
 #include <QDialogButtonBox>
+#include <QPainter>
 
 #include "../common/nsmtracker.h"
 
@@ -24,6 +24,8 @@
 #include "../api/api_proc.h"
 
 #include "Qt_MyQButton.h"
+
+#include "ScrollArea.hpp"
 
 #include "Qt_tools.h"
 

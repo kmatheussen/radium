@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundPluginRegistry_proc.h"
 
+#include "Qt_MyQScrollBar.hpp"
+
 /*
 class Pd_Plugin_widget;
 class Audio_instrument_wigdet;
@@ -103,6 +105,9 @@ public:
   {
 
     setupUi(this);    
+
+    scrollArea->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
+    scrollArea->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
 
     time_of_last_minheight_inc.start();
 

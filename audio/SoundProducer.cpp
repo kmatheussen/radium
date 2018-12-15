@@ -1064,7 +1064,7 @@ public:
     return false;
   }
   
-  // The actualy links to to_remove are not removed until after this function has returned.
+  // The actual links to to_remove are not removed until after this function has returned.
   // In step 3 in 'add_and_remove_links', we are just requesting the engine to make it safe to remove the links, not actually remove the links.
   // (this way we can fade out / fade in several links simultaneously.)
   //

@@ -12,6 +12,10 @@
 #include <QResizeEvent>
 #include <QTimer>
 #include <QTime>
+#include <QPainter>
+
+#include "Qt_MyQScrollBar.hpp"
+
 
 #if TEST_MAIN
 #include <QMouseEvent>
@@ -107,6 +111,7 @@ class ScrollArea : public QWidget {
       setWidgetResizable(true);
       setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
       setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      setCornerWidget(NULL);
     }
 
     void resizeEvent(QResizeEvent * event) override {
@@ -219,12 +224,12 @@ class ScrollArea : public QWidget {
     //printf("   x: %d, y: %d, width: %d, height: %d\n", widget->x(), widget->y(), widget->width(), widget->height());
   }
 
-  struct MyQScrollBar : public QScrollBar {
+  struct MyQScrollBar : public Qt_MyQScrollBar {
 
     ScrollArea *_scroll_area;
 
     MyQScrollBar(Qt::Orientation orientation, ScrollArea *scroll_area)
-      : QScrollBar(orientation, scroll_area)
+      : Qt_MyQScrollBar(orientation, scroll_area)
       , _scroll_area(scroll_area)
     {
       setCursor(Qt::OpenHandCursor);
@@ -364,6 +369,43 @@ public:
   }
 #endif
 
+};
+
+
+  
+class VerticalScroll : public ScrollArea {
+    
+  public:
+
+    QVBoxLayout *layout;    
+    
+    VerticalScroll(QWidget *parent_)
+      :ScrollArea(parent_)
+    {
+      //setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
+      //setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
+      //setCornerWidget(NULL);
+      
+      setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+      //setWidgetResizable(true);
+      
+      QWidget *contents = getWidget(); //new QWidget(this);
+      
+      layout = new QVBoxLayout(contents);
+      layout->setSpacing(1);
+
+      contents->setLayout(layout);
+      
+      //setWidget(contents);    
+    }
+    
+    void addWidget(QWidget *widget_){
+      layout->addWidget(widget_);
+    }
+    
+    void removeWidget(QWidget *widget_){
+      layout->removeWidget(widget_);
+    }
 };
 
 

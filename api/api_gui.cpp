@@ -77,6 +77,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/MySplitter.hpp"
 #include "../Qt/Qt_sequencer_proc.h"
 #include "../Qt/Qt_bottom_bar_widget_proc.h"
+#include "../Qt/Qt_MyQScrollBar.hpp"
 
 #include "../common/visual_proc.h"
 #include "../common/seqtrack_proc.h"
@@ -1624,11 +1625,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       if (widget != NULL){
 
-        if (widget->isWindow())
-          return false;
-        
         if (qobject_cast<QScrollArea*>(widget) != NULL)
           return true;
+        
+        if (widget->isWindow())
+          return false;
       }
       
       if (is_child_of_scroll_area(object->parent()))
@@ -3813,6 +3814,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       //horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
                           
       //horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
+
+      setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
+      setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
+      setCornerWidget(NULL);
+      
+      //horizontalScrollBar()->setCursor(Qt::OpenHandCursor);
+      //verticalScrollBar()->setCursor(Qt::OpenHandCursor);
     }
 
     OVERRIDERS(QTableWidget);

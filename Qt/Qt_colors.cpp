@@ -109,6 +109,7 @@ static const ColorConfig g_colorconfig[] = {
   {VELOCITY_TEXT_COLOR_NUM,     "velocity_text", "Velocity text"},
    
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM,                  "color15", "High Editor background"},
+  {SCROLLBAR_COLOR_NUM,                  "scroll_bar", "Scroll bar color"},
 
   {SOUNDFONT_COLOR_NUM,         "soundfont",          "Browser: Soundfont"},
   {SOUNDFILE_COLOR_NUM,         "soundfile",          "Browser: Sound file"},
@@ -254,6 +255,8 @@ static ReplacementColorNum g_replacement_color_num[] = {
 };
 
 static ReplacementColor g_replacement_color[] = {
+  {SCROLLBAR_COLOR_NUM, QColor("#b8b8b8")},
+
   {SLIDER1_COLOR_NUM, QColor(108,65,36)},
   {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},
   {SLIDER_RECORDING_COLOR_NUM, QColor(197,0,3)},

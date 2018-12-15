@@ -18,12 +18,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qmath.h>
 #include <assert.h>
 
+#include <QSplitter>
+
 #include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
 
-#include <QSplitter>
-
 #include "Qt_bottom_bar_widget_proc.h"
+#include "Qt_MyQScrollBar.hpp"
 #include "Timer.hpp"
 
 
@@ -46,8 +47,11 @@ public:
     : QGraphicsView(parent)
   {
     //g_view = this;
-    horizontalScrollBar()->setCursor(Qt::OpenHandCursor);
-    verticalScrollBar()->setCursor(Qt::OpenHandCursor);
+    setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
+    setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
+    //horizontalScrollBar()->setCursor(Qt::OpenHandCursor);
+    //verticalScrollBar()->setCursor(Qt::OpenHandCursor);
+    setCornerWidget(NULL);
   }
 
   // http://stackoverflow.com/questions/1355446/get-visible-rectangle-of-qgraphicsview
