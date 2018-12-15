@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 
+#include "Qt_MyQScrollBar.hpp"
 #include "Qt_MyQButton.h"
 
 #include "../common/OS_Bs_edit_proc.h"
@@ -75,6 +76,8 @@ public:
     : QListWidget(parent)
     , is_blocklist(is_blocklist)
   {
+    setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
+    setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
   }
   void insertItem(QString text){
     QListWidget::addItem(text);
@@ -440,6 +443,9 @@ struct ScopedVisitors{
   if (daswidth>0 && dasheight>0) widget.setFixedSize(daswidth,dasheight); \
   }while(0);
 
+
+int g_default_slider_height = 20;
+
 namespace{
 class BlockSelector : public QWidget
 {
@@ -474,10 +480,12 @@ public:
     move_down_button.setFont(sansFont);
     move_up_button.setFont(sansFont);
 
-    add_button.setMaximumHeight(sansFont.pointSize()+5);
-    remove_button.setMaximumHeight(sansFont.pointSize()+5);
-    move_down_button.setMaximumHeight(sansFont.pointSize()+5);
-    move_up_button.setMaximumHeight(sansFont.pointSize()+5);
+    g_default_slider_height = sansFont.pointSize()+5;
+    
+    add_button.setMaximumHeight(g_default_slider_height);
+    remove_button.setMaximumHeight(g_default_slider_height);
+    move_down_button.setMaximumHeight(g_default_slider_height);
+    move_up_button.setMaximumHeight(g_default_slider_height);
 
     button_width = add_button.width();
     button_height = add_button.height();

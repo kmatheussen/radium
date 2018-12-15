@@ -603,39 +603,6 @@ namespace radium{
     }
   };
 
-  class VerticalScroll : public QScrollArea {
-    //    Q_OBJECT;
-    
-  public:
-
-    QVBoxLayout *layout;    
-    
-    VerticalScroll(QWidget *parent_)
-      :QScrollArea(parent_)
-    {
-      setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-      setWidgetResizable(true);
-      
-      QWidget *contents = new QWidget(this);
-      
-      layout = new QVBoxLayout(contents);
-      layout->setSpacing(1);
-
-      contents->setLayout(layout);
-      
-      setWidget(contents);    
-    }
-    
-    void addWidget(QWidget *widget_){
-      layout->addWidget(widget_);
-    }
-    
-    void removeWidget(QWidget *widget_){
-      layout->removeWidget(widget_);
-    }
-  };
-
-
 }
 
 extern const char *g_qt_is_painting_where;
@@ -991,6 +958,18 @@ public:
 };
 
 }
+
+#ifdef QPAINTER_H
+static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color){
+  QPen pen = p.pen();
+  p.setPen(Qt::NoPen);
+  p.setBrush(color);
+  p.drawRect(rect);
+  p.setBrush(Qt::NoBrush);
+  p.setPen(pen);
+}
+#endif
+
 
 struct GL_PauseCaller{
   GL_PauseCaller(){

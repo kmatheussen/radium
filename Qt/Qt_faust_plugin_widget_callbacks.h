@@ -53,7 +53,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin_proc.h"
 
 #include "Qt_plugin_widget_callbacks_proc.h"
-
+#include "Qt_MyQScrollBar.hpp"
 
 static void ADD_UNDO_FUNC(FaustDev_CurrPos(struct Patch *patch, const QString &code, int cursor_line, int cursor_index));
 
@@ -67,6 +67,8 @@ public:
  FaustResultScrollArea(QWidget *parent)
    : QScrollArea(parent)
   {
+    setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
+    setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
   }
 
   void wheelEvent(QWheelEvent *qwheelevent) override {

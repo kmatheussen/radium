@@ -318,15 +318,6 @@ bool myDrawText(QPainter *painter, QRectF rect, QString text, int flags, bool wr
   return org_text==draw_text;
 }
 
-static void myFillRect(QPainter &p, QRectF rect, const QColor &color){
-  QPen pen = p.pen();
-  p.setPen(Qt::NoPen);
-  p.setBrush(color);
-  p.drawRect(rect);
-  p.setBrush(Qt::NoBrush);
-  p.setPen(pen);
-}
-
 static void myFilledPolygon(QPainter &p, QPointF *points, int num_points, const QColor &color){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);

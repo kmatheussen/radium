@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCloseEvent>
 #include <QHideEvent>
 #include <QMainWindow>
+#include <QPainter>
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
@@ -41,7 +42,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_proc.h"
 
-#include "../Qt/Qt_MyQSpinBox.h"
+#include "Qt_MyQSpinBox.h"
+#include "Qt_MyQScrollBar.hpp"
 #include <FocusSniffers.h>
 #include "helpers.h"
 
@@ -268,6 +270,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     _initing = true;
 
     setupUi(this);
+
+    scrollArea->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
+    scrollArea->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
+    scrollArea_2->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
+    scrollArea_2->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
 
     updateWidgets();
 
