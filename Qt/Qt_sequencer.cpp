@@ -2873,20 +2873,20 @@ struct Timeline_widget : public MouseTrackerQWidget {
 
       // Ensure inc_time is aligned in seconds, 5 seconds, or 30 seconds.
       {
-      if (inc_time%2 != 0)
-        inc_time++;
-      
-      if (inc_time%5 != 0)
-        inc_time += 5-(inc_time%5);
-      
-      if ((end_time-start_time) > 110)
-        if (inc_time%30 != 0)
-          inc_time += 30-(inc_time%30);
-      
-      // Another time? (might be a copy and paste error)
-      if ((end_time-start_time) > 110)
-        if (inc_time%30 != 0)
-          inc_time += 30-(inc_time%30);
+        if (inc_time%2 != 0)
+          inc_time++;
+        
+        if (inc_time%5 != 0)
+          inc_time += 5-(inc_time%5);
+        
+        if ((end_time-start_time) > 110)
+          if (inc_time%30 != 0)
+            inc_time += 30-(inc_time%30);
+        
+        // Again? (might be a copy and paste error)
+        if ((end_time-start_time) > 110)
+          if (inc_time%30 != 0)
+            inc_time += 30-(inc_time%30);
       }
       //inc_time = 1;
 

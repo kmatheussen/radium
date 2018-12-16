@@ -255,7 +255,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
 };
 
 static ReplacementColor g_replacement_color[] = {
-  {SCROLLBAR_COLOR_NUM, QColor("#69b8b8b8");
+  {SCROLLBAR_COLOR_NUM, QColor("#69b8b8b8")};
 
   {SLIDER1_COLOR_NUM, QColor(108,65,36)},
   {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},
