@@ -20,7 +20,7 @@ StaticRatio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack){
       return make_static_ratio(4,4);
     }else {
       StaticRatio signature = root->signature;
-      if (signature.denominator<=0 || signature.denominator<=0)
+      if (signature.numerator<=0 || signature.denominator<=0)
         signature = make_static_ratio(4,4); // Happens during startup, and maybe when loading song.
       return signature;
     }

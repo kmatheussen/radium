@@ -115,38 +115,40 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
     goto stop_scheduling;
   }
 
-  const struct Beats *beat = iterator->next_beat;
-  if (beat==NULL){
-    R_ASSERT(false);
-    goto stop_scheduling;
-  }
+  {
+    const struct Beats *beat = iterator->next_beat;
+    if (beat==NULL){
+      R_ASSERT(false);
+      goto stop_scheduling;
+    }
   
-  iterator->last_valid_signature = beat->valid_signature;
+    iterator->last_valid_signature = beat->valid_signature;
 #if !defined(RELEASE)
-  if (iterator->last_valid_signature.denominator<=0)
-    abort();
+    if (iterator->last_valid_signature.denominator<=0)
+      abort();
 #endif
   
-  if (beat->beat_num==1)
-    iterator->new_beat_bar_set = true;
-  //iterator->beat_position_of_last_bar_start = RT_LPB_get_beat_position();
-  
-  //printf("%d %d. last bar: %f. signature: %d/%d\n", beat->bar_num, beat->beat_num, iterator->beat_position_of_last_bar_start,iterator->last_valid_signature.numerator, iterator->last_valid_signature.denominator);
-
-  // Schedule metronome sound
-  {
-    const int num_args = 1;
-        
-    union SuperType args[num_args];
-    args[0].pointer = iterator;
-
     if (beat->beat_num==1)
-      SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_bar_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
-    else
-      SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_beat_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
-  }
+      iterator->new_beat_bar_set = true;
+    //iterator->beat_position_of_last_bar_start = RT_LPB_get_beat_position();
+  
+    //printf("%d %d. last bar: %f. signature: %d/%d\n", beat->bar_num, beat->beat_num, iterator->beat_position_of_last_bar_start,iterator->last_valid_signature.numerator, iterator->last_valid_signature.denominator);
 
-  iterator->next_beat = NextBeat(beat);
+    // Schedule metronome sound
+    {
+      const int num_args = 1;
+        
+      union SuperType args[num_args];
+      args[0].pointer = iterator;
+
+      if (beat->beat_num==1)
+        SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_bar_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
+      else
+        SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_beat_note, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
+    }
+
+    iterator->next_beat = NextBeat(beat);
+  }
   
   // Schedule next beat
   if (iterator->next_beat != NULL)

@@ -2089,9 +2089,9 @@ static inline NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const st
 
   NodelineBox nodelineBox;
 
-  nodelineBox.x1 = x_min-note_width/2.0;
+  nodelineBox.x1 = x_min-note_width/2.0f;
   nodelineBox.y1 = y_min;
-  nodelineBox.x2 = x_max+note_width/2.0;
+  nodelineBox.x2 = x_max+note_width/2.0f;
   nodelineBox.y2 = y_max;
 
   return nodelineBox;
