@@ -37,7 +37,7 @@ PYTHONEXE ?= `which python2`
 
 
 # 6. Opimization options. Only enabled in RELEASE build
-OPTIMIZE ?= -O2
+OPTIMIZE ?= -O2 -flto
 
 
 #----------------END USER SETTINGS---------------------------
