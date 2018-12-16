@@ -748,18 +748,18 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
 static void set_effect_value2(Data *data, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   float scaled_value;
 
-  if(value_format==EFFECT_FORMAT_SCALED){
 #ifdef FAUST_SYSTEM_EFFECT
-    scaled_value = value;
+  scaled_value = value;
 #else
+  if(value_format==EFFECT_FORMAT_SCALED){
     MyUI::Controller *controller = &data->voices[0].myUI._controllers.at(effect_num);
     float min = controller->min_value;
     float max = controller->max_value;
     scaled_value = scale(value,0,1,min,max);
-#endif
   }else{
     scaled_value = value;
   }
+#endif
 
   if (when==FX_start || when==FX_middle || when==FX_end)
     data->automation_values[effect_num] = scaled_value;
@@ -787,19 +787,20 @@ static float get_effect_value2(Data *data, int effect_num, enum ValueFormat valu
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
 
   //printf("   Getting effect from controller %p\n", controller);
-  
-  if(value_format==EFFECT_FORMAT_SCALED){
+   
 #ifdef FAUST_SYSTEM_EFFECT
-    return safe_float_read(controller->control_port);
+  return safe_float_read(controller->control_port);
 #else
+  if(value_format==EFFECT_FORMAT_SCALED){
     float min = controller->min_value;
     float max = controller->max_value;
     return scale(safe_float_read(controller->control_port),min,max,0.0f,1.0f);
-#endif
   }else{
     return safe_float_read(controller->control_port);
   }
+#endif
 }
+
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
   return get_effect_value2(data, effect_num, value_format);

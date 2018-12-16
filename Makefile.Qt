@@ -242,7 +242,8 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_63_0 -I${HOME}/boost_1_67_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers
+COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_63_0 -I${HOME}/boost_1_67_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict -Wnull-dereference
+
 #-Wstrict-overflow=4 -Wsuggest-attribute=format -Wstringop-overflow=4
 #-Wsuggest-final-types -Wsuggest-final-methods
 
@@ -1008,7 +1009,7 @@ disk_windows.o:  $(BUILD_DEPENDENCIES) $(CD)disk_windows.c $(CD)disk.h
 	$(CC) $(CD)disk_windows.c $(OPT)
 
 disk_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxs.c $(CD)disk.h
-	$(CC) $(CD)disk_fxs.c $(OPT)
+	$(CC) $(CD)disk_fxs.c $(OPT) -Wno-jump-misses-init
 
 disk.o:  $(BUILD_DEPENDENCIES) $(CD)disk.c $(CD)disk.h
 	$(CC) $(CD)disk.c $(OPT)
@@ -1317,7 +1318,7 @@ Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
 	$(CCC) $(P)Qt_Time.cpp $(QTOPT)
 
 Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp common/seqblock_automation_proc.h
-	$(CCC) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT)
+	$(CCC) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) -Wno-duplicated-branches
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
