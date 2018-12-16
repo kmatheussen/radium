@@ -2730,10 +2730,6 @@ enum SeqblockBoxSelected{
 
 static inline int get_system_fontheight(void);
 
-#ifdef RADIUM_ACCESS_SEQBLOCK_AUTOMATION
-#include "../audio/Envelope.hpp"
-#endif
-
 #ifdef __cplusplus
 enum class Seqblock_Type{
   REGULAR,
@@ -2813,6 +2809,12 @@ struct AutomationPainter{
 }
 #endif
 
+#if __cplusplus
+namespace radium{
+  class Envelope;
+}
+#endif
+
 struct SeqBlock{
   int64_t id;
 
@@ -2834,7 +2836,7 @@ struct SeqBlock{
   double fadein; // value between 0 and 1
   double fadeout; // value between 0 and 1
 
-#if RADIUM_ACCESS_SEQBLOCK_AUTOMATION
+#if __cplusplus
   radium::Envelope *fade_in_envelope;
   radium::Envelope *fade_out_envelope;
 #else
