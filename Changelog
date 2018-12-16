@@ -1,3 +1,25 @@
+Changes 5.9.21 -> 5.9.22:
+* GUI: Replace all Qt scroll bars with Radium scroll
+  bars.
+* GUI: Fix scrollbar positions not being updated when
+  using mouse wheel inside a scroll area.
+* GUI: Fix mouse wheel for scrolling the mixer area.
+  If mouse pointer was on top of a slider, the slider
+  value would change value instead, and other similar
+  things, which was quite confusing.
+* Sequencer: Don't show the resampler seqblock
+  interface popup menu for editor seqblocks.
+* Sequencer: Add "Recording options" entry to the
+  audio seqtrack section
+* General: Reduce gc pause times.
+* API:
+  * New function: gui_addMouseWheelCallback
+  * Add optional argument "listen_to_mouse_wheel"
+    to gui_scrollArea, gui_verticalScroll, and
+    gui_horizontalScroll.
+
+
+
 Changes 5.9.20 -> 5.9.21:
 * Quantitize: Fix crash happening sometimes. Bug
   introduced in 5.9.8.
