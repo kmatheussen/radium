@@ -543,6 +543,8 @@
                               :buttons '("OK")
                               :is-modal #t
                               :callback #f)
+  (if (pair? text)
+      (set! text (<ra> :from-base64 (car text))))
   (define can-be-closed (null? buttons))
   (define buttonlayout (<gui> :horizontal-layout))
   (<gui> :add-layout-space buttonlayout 0 0 #t #f)
