@@ -358,7 +358,7 @@ void addMessage(const char *html){
 }
 
 void showAsyncMessage(const_char* text){
-  evalScheme(talloc_format("(show-async-message :text \"%s\")", text));
+  evalScheme(talloc_format("(show-async-message :text (list \"%s\"))", toBase64(text)));
 }
 
 void showWarning(const_char *text){
