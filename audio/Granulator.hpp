@@ -378,7 +378,7 @@ class Granulator : public GranResampler{
   Grain *_grains;
 
   radium::Vector<Grain*> _free_grains;
-  radium::Vector<Grain*> _playing_grains[2];
+  radium::Vector<Grain*> *_playing_grains;
   
   double _jitter = 0.5; // 0 -> 1
   bool _using_jitter = true;
@@ -418,6 +418,7 @@ public:
     int num_grains = max_overlap*num_ch*2;
 
     _grains = new Grain[num_grains];
+    _playing_grains = new radium::Vector<Grain*>[num_ch];
 
     for(int i=0;i<num_grains;i++)
       _free_grains.push_back(&_grains[i]);
@@ -430,6 +431,7 @@ public:
 
   ~Granulator(){
     delete[] _grains;
+    delete[] _playing_grains;
   }
 
 private:
