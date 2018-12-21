@@ -547,50 +547,7 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
           }
 #endif
 
-          if(true){ //zoomlineareawidth!=wblock->zoomlinearea.width){
-
-            UpdateReallinesDependens(window,wblock);
-
-          }else{
-
-#if !USE_OPENGL
-            PixMap_reset(window);
-#endif
-	  //	  GFX_FilledBox(window,0,0,0,window->width-1,window->height-1,PAINT_BUFFEr);
-	  
-            UpdateReallinesDependens(window,wblock);
-#if !USE_OPENGL
-            DrawUpAllWTracks(window,wblock,NULL);
-            UpdateLeftSlider(window);
-
-            EraseAllLines(window,wblock,
-                          wblock->linenumarea.x,
-                          wblock->temponodearea.x2
-                        );
-          /*
-	  GFX_FilledBox(
-                        window,0,
-                        wblock->linenumarea.x,
-                        wblock->t.y1,
-                        wblock->temponodearea.x2,
-                        wblock->t.y2,
-                        PAINT_BUFFER
-                        );
-          */
-
-            DrawWBlockSpesific(
-                               window,
-                               wblock,
-                               wblock->top_realline,
-                               wblock->bot_realline
-                               );
-
-	  
-	  //UpdateAllWTracks(window,wblock,wblock->top_realline,wblock->bot_realline);
-	  //	  DrawWBlock(window,wblock);
-#endif
-          }
-
+          UpdateReallinesDependens(window,wblock);
         }
 
         window->must_redraw = true;

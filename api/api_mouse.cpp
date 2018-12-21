@@ -2214,10 +2214,14 @@ float getPitchnumY(int num, int tracknum, int blocknum, int windownum){
   if (nodeline==NULL)
     return 0;
 
-  if (is_end_pitch)
+  return nodeline->y-get_scroll_pos();
+
+  /*
+  if (is_end_pitch) 
     return nodeline->y-get_scroll_pos();
   else
     return nodeline->y-get_scroll_pos();
+  */
 }
 
 
