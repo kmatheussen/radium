@@ -180,6 +180,7 @@ extern LANGSPEC void GFX_remove_patch_gui(struct Patch *patch); // Also deletes 
 struct SoundPlugin;
 extern LANGSPEC void GFX_OS_set_system_volume_plugin(struct SoundPlugin *plugin);
 extern LANGSPEC bool GFX_OS_patch_is_system_out(struct Patch *patch);
+extern LANGSPEC struct Patch *GFX_OS_get_system_out(void);
 //extern LANGSPEC void GFX_OS_set_system_volume_peak_pointers(float *pointers, int num_channels);
 
 extern LANGSPEC void GFX_update_all_instrument_widgets(void);
