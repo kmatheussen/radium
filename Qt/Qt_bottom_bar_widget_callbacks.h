@@ -538,6 +538,18 @@ bool GFX_OS_patch_is_system_out(struct Patch *patch){
   return patch==g_system_out_patch;
 }
 
+struct Patch *GFX_OS_get_system_out(void){
+  if (g_system_out_patch==NULL)
+    return NULL;
+  
+  if (PATCH_get_from_id(g_system_out_patch->id)==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return NULL;
+  }
+
+  return g_system_out_patch;
+}
+
 QWidget *BottomBar_create(QWidget *parent){
   return new Bottom_bar_widget(parent);
 }

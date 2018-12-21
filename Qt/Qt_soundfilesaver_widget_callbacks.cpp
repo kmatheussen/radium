@@ -256,7 +256,7 @@ public slots:
 
 #else // FULL_VERSION==0
 
-      if (MIXER_get_soundplugin("Jack", "System Out")==NULL) {
+      if (GFX_OS_get_system_out() == NULL) {
         GFX_Message2(NULL, true, "No \"System Out\" instrument found in the mixer.");
         return;
       }
