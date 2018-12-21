@@ -419,12 +419,11 @@ public:
 
     _grains = new Grain[num_grains];
 
-    for(int i=0;i<num_grains;i++){
+    for(int i=0;i<num_grains;i++)
       _free_grains.push_back(&_grains[i]);
-    }
     
     for(int ch=0;ch<num_ch;ch++)
-      _playing_grains[ch].reserve(1 + _free_grains.size()/2);
+      _playing_grains[ch].reserve(num_grains); // It's a bit unclear how many grains there will be per channel, so we just reserve num_grains to be sure it's enough. (got error when using 1+num_grains/2).
 
     reset();
   }
