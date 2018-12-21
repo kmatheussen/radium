@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
-#define RADIUM_ACCESS_SEQBLOCK_AUTOMATION 1
 #include "../common/nsmtracker.h"
 
 #include "Qt_MyQCheckBox.h"
@@ -48,7 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 
 #include "../audio/Peaks.hpp"
-//#include "../audio/Envelope.hpp"
+#include "../audio/Envelope.hpp"
 #include "../audio/SampleReader_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
@@ -2873,20 +2872,20 @@ struct Timeline_widget : public MouseTrackerQWidget {
 
       // Ensure inc_time is aligned in seconds, 5 seconds, or 30 seconds.
       {
-      if (inc_time%2 != 0)
-        inc_time++;
-      
-      if (inc_time%5 != 0)
-        inc_time += 5-(inc_time%5);
-      
-      if ((end_time-start_time) > 110)
-        if (inc_time%30 != 0)
-          inc_time += 30-(inc_time%30);
-      
-      // Another time? (might be a copy and paste error)
-      if ((end_time-start_time) > 110)
-        if (inc_time%30 != 0)
-          inc_time += 30-(inc_time%30);
+        if (inc_time%2 != 0)
+          inc_time++;
+        
+        if (inc_time%5 != 0)
+          inc_time += 5-(inc_time%5);
+        
+        if ((end_time-start_time) > 110)
+          if (inc_time%30 != 0)
+            inc_time += 30-(inc_time%30);
+        
+        // Again? (might be a copy and paste error)
+        if ((end_time-start_time) > 110)
+          if (inc_time%30 != 0)
+            inc_time += 30-(inc_time%30);
       }
       //inc_time = 1;
 

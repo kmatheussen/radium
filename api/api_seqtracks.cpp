@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QSet>
 
-#define RADIUM_ACCESS_SEQBLOCK_AUTOMATION 1
 
 #include "../common/nsmtracker.h"
 #include "../common/seqtrack_proc.h"
@@ -44,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../audio/SoundPlugin.h"
 #include "../audio/SampleReader_proc.h"
+#include "../audio/Envelope.hpp"
 
 #include "api_common_proc.h"
 

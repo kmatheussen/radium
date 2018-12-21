@@ -24,8 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileInfo>
 #include <QSet>
 
-#define RADIUM_ACCESS_SEQBLOCK_AUTOMATION 1
-
 #include "nsmtracker.h"
 #include "player_proc.h"
 #include "vector_proc.h"
@@ -57,6 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Juce_plugins_proc.h"
 #include "../audio/SampleReader_proc.h"
 #include "../audio/Peaks.hpp"
+#include "../audio/Envelope.hpp"
 
 #include "../api/api_seqtracks_proc.h"
 

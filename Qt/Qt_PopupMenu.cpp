@@ -29,10 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QStyleFactory>
 
 
-#define RADIUM_ACCESS_SEQBLOCK_AUTOMATION 1
-
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
+#include "../audio/Envelope.hpp"
 
 #include "../embedded_scheme/s7extra_proc.h"
 

@@ -77,7 +77,7 @@ extern LANGSPEC float MIXER_get_sample_rate(void);
 #include <QString>
 namespace radium{
   static inline QString get_time_string(int64_t frames, bool include_centiseconds = true){
-    return get_time_string((double)frames / MIXER_get_sample_rate(), include_centiseconds);
+    return get_time_string((double)frames / (double)MIXER_get_sample_rate(), include_centiseconds);
   }
 }
 #endif
