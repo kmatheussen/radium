@@ -146,7 +146,7 @@ namespace cvs{
     }
 
 
-    void fillRect(const float x1,const float y1,const float x2,const float y2, const MyColor &col){
+    void fillRect(const double x1,const double y1,const double x2,const double y2, const MyColor &col){
       QRectF rect(x1,y1,x2-x1,y2-y1);
 
 
@@ -173,7 +173,7 @@ namespace cvs{
     }
 
     void fillRect(const MyRect &rect,const MyColor &col){
-      fillRect(rect.x1,rect.y1,rect.x2,rect.y2,col);
+      fillRect((double)rect.x1,(double)rect.y1,(double)rect.x2,(double)rect.y2,col);
     }
 
     void setThickness(int thickness){
@@ -181,7 +181,7 @@ namespace cvs{
       pen.setWidth(thickness);
     }
 
-    void drawLine(const float x1,const float y1,const float x2,const float y2, const MyColor &col){
+    void drawLine(const double x1,const double y1,const double x2,const double y2, const MyColor &col){
       if(use_gradient==false){
         pen.setColor(col.col);
         p->setPen(pen);
@@ -199,7 +199,7 @@ namespace cvs{
     }
 
     void drawLine(const MyLine &l, const MyColor &col){
-      drawLine(l.x1,l.y1,l.x2,l.y2, col);
+      drawLine((double)l.x1,(double)l.y1,(double)l.x2,(double)l.y2, col);
     }
 
     int getTextWidth(std::string text){

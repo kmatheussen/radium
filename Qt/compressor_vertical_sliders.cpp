@@ -177,14 +177,14 @@ struct Comp
 #else
 
     void set_min_max(const Box &box){
-      min_peak = scale(get_min_peak(),min_db,max_db, box.y2, box.y1);
-      max_peak = scale(get_max_peak(),min_db,max_db, box.y2, box.y1);
+      min_peak = scale_double(get_min_peak(),min_db,max_db, box.y2, box.y1);
+      max_peak = scale_double(get_max_peak(),min_db,max_db, box.y2, box.y1);
     }
 
 #endif
 
     int get_y_pixel(const Box &box) const {
-      return scale(last_peak,min_db,max_db, box.y2, box.y1);
+      return (int)scale_double(last_peak,min_db,max_db, box.y2, box.y1);
     }
 
     MyLine get_line_line(const Box &box) const {
@@ -194,18 +194,18 @@ struct Comp
 
     MyLine get_line_to_next_box(const Box &box1, Peaks *peaks2, const Box &box2) const{
       const Peaks *peaks1 = this;
-      int x1=box1.x2;
-      int y1=peaks1->get_y_pixel(box1);
-      int x2=box2.x1;
-      int y2=peaks2->get_y_pixel(box2);
+      double x1=box1.x2;
+      double y1=peaks1->get_y_pixel(box1);
+      double x2=box2.x1;
+      double y2=peaks2->get_y_pixel(box2);
 
       if(y1 < box1.y1){
-        x1=scale(box1.y1, y1,y2, x1,x2);
+        x1=scale_double(box1.y1, y1,y2, x1,x2);
         y1=box1.y1 - 10; // FIX. why is - 10 needed?
       }
 
       if(y2 < box2.y1){
-        x2=scale(box2.y1, y1,y2, x1,x2);
+        x2=scale_double(box2.y1, y1,y2, x1,x2);
         y2=box2.y1 - 10;
       }
 
@@ -213,7 +213,7 @@ struct Comp
         if (y1==y2)
           x1 = 10000; // I.e. not visible
         else
-          x1=scale(box1.y2, y1,y2, x1,x2);
+          x1=scale_double(box1.y2, y1,y2, x1,x2);
         y1=box1.y2 + 10;
       }
 
@@ -221,7 +221,7 @@ struct Comp
         if (y1==y2)
           x1 = 10000; // I.e. not visible
         else
-          x2=scale(box2.y2, y1,y2, x1,x2);
+          x2=scale_double(box2.y2, y1,y2, x1,x2);
         y2=box2.y2 + 10;
       }
 
@@ -289,14 +289,14 @@ struct Comp
 
       if(y1_1 < y2_1)
         for(int x=x1;x<x2;x+=dx){
-          int y1=scale(x,x1,x2,y1_1,y2_1);
-          int y2=scale(x+dx,x1,x2,y1_2,y2_2)+1;
+          int y1=(int)scale_double(x,x1,x2,y1_1,y2_1);
+          int y2=(int)scale_double(x+dx,x1,x2,y1_2,y2_2)+1;
           widget->update(x,y1,x+dx,y2);
         }
       else
         for(int x=x1;x<x2;x+=dx){
-          int y1=scale(x+dx,x1,x2,y1_1,y2_1);
-          int y2=scale(x,x1,x2,y1_2,y2_2)+1;
+          int y1=(int)scale_double(x+dx,x1,x2,y1_1,y2_1);
+          int y2=(int)scale_double(x,x1,x2,y1_2,y2_2)+1;
           widget->update(x,y1,x+dx,y2);
         }
     }
@@ -902,9 +902,9 @@ struct Comp
         p->drawLine(x1,y1,x2,y2);
       }
 #else
-    for(float x=x1;x<x2;x+=0.2){
-      float y1=scale(x,x1,x2,y1_1,y2_1) + 0.1;
-      float y2=scale(x,x1,x2,y1_2,y2_2);
+    for(float x=(float)x1;x<(float)x2;x+=0.2){
+      float y1=(float)scale_double(x,x1,x2,y1_1,y2_1) + 0.1;
+      float y2=(float)scale_double(x,x1,x2,y1_2,y2_2);
 
       p->setGradient(x,y1,x,y2,c1,c2);
       //p->drawLine(x,R_BOUNDARIES(min_y,y1,max_y),x,R_BOUNDARIES(min_y,y2,max_y),c1);
@@ -1228,7 +1228,7 @@ struct Comp
                   out_box.x1,out_box.p1,
                   black);
 
-      if(out_box.p1!=vol_box.p1)
+      if(out_box.p1 != vol_box.p1)
         p->setThickness(1);
       else
         p->setThickness(1);
