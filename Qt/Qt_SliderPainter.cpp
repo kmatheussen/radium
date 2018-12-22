@@ -118,7 +118,7 @@ static float DATA_get_y1(AutomationOrPeakData *data, int height, int num_channel
   else
     num_channels = R_MIN(num_channels, data->num_ch);
   
-  return scale(data->ch,0,num_channels,1,height-1);
+  return (float)scale_double(data->ch,0,num_channels,1,height-1);
 }
 
 static float DATA_get_y2(AutomationOrPeakData *data, int height, int num_channels){
@@ -127,7 +127,7 @@ static float DATA_get_y2(AutomationOrPeakData *data, int height, int num_channel
   else
     num_channels = R_MIN(num_channels, data->num_ch);
 
-  return scale(data->ch+1,0,num_channels,1,height-1);
+  return (float)scale_double(data->ch+1,0,num_channels,1,height-1);
 }
 
 struct SliderPainter{
@@ -489,7 +489,7 @@ struct SliderPainter{
 
     SLIDERPAINTERPAINTER_paint(&mp,0,0,width(),height(),
                                isEnabled(), 
-                               scale(value(),minimum(),maximum(),0.0f,1.0f),
+                               scale_double(value(),minimum(),maximum(),0.0f,1.0f),
                                _display_string.toStdString(),
                                _alternative_color
                                );

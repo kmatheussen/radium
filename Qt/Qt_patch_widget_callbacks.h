@@ -294,9 +294,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
 
-  template <class SpinBox>
-  void update_spinbox_value(SpinBox *spinbox, float new_value){
-    if (spinbox->value() != new_value && false==spinbox->hasFocus())
+  template <class SpinBox, typename T>
+  void update_spinbox_value(SpinBox *spinbox, T new_value){
+    if ((T)spinbox->value() != new_value && false==spinbox->hasFocus())
       spinbox->setValue(new_value);
   }
   
