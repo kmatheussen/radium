@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileInfo>
 #include <QThread>
 
+#define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
 
 #include "../common/OS_disk_proc.h"
@@ -111,6 +112,9 @@ dyn_t getFileInfo(const_char* w_path){
   }
   */
 
+  SF_INFO sf_info = {};
+  SNDFILE *sndfile = radium_sf_open(path, SFM_READ, &sf_info);
+
   hash_t *ret = HASH_create(10);
 
   HASH_put_chars(ret, ":path", qstring_to_w(path));
@@ -121,6 +125,50 @@ dyn_t getFileInfo(const_char* w_path){
   HASH_put_bool(ret, ":is-hidden", info.isHidden());
   HASH_put_int(ret, ":size", info.size());
   HASH_put_string(ret, ":suffix", STRING_create(info.suffix()));
+
+  HASH_put_bool(ret, ":is-audiofile", sndfile != NULL);
+  if (sndfile != NULL){
+    HASH_put_bool(ret, ":num-ch", sf_info.channels);
+    HASH_put_int(ret, ":num-frames", sf_info.frames);
+    HASH_put_float(ret, ":samplerate", sf_info.samplerate);
+    const char *format;
+    switch(sf_info.format & 0xffff){
+      case SF_FORMAT_PCM_S8       : format = "8bit" ; break;
+      case SF_FORMAT_PCM_16       : format = "16bit" ; break;
+      case SF_FORMAT_PCM_24       : format = "24bit" ; break;
+      case SF_FORMAT_PCM_32       : format = "32bit" ; break;
+        
+      case SF_FORMAT_PCM_U8       : format = "8bit" ; break;
+        
+      case SF_FORMAT_FLOAT        : format = "Float" ; break;
+      case SF_FORMAT_DOUBLE       : format = "Double" ; break;
+        
+      case SF_FORMAT_ULAW         : format = "U-Law" ; break;
+      case SF_FORMAT_ALAW         : format = "A-Law" ; break;
+      case SF_FORMAT_IMA_ADPCM    : format = "ADPCM" ; break;
+      case SF_FORMAT_MS_ADPCM     : format = "ADPCM" ; break;
+        
+      case SF_FORMAT_GSM610       : format = "GSM" ; break;
+      case SF_FORMAT_VOX_ADPCM    : format = "ADPCM" ; break;
+        
+      case SF_FORMAT_G721_32      : format = "ADPCM" ; break;
+      case SF_FORMAT_G723_24      : format = "ADPCM" ; break;
+      case SF_FORMAT_G723_40      : format = "ADPCM" ; break;
+        
+      case SF_FORMAT_DWVW_12      : format = "12bit" ; break;
+      case SF_FORMAT_DWVW_16      : format = "16bit" ; break;
+      case SF_FORMAT_DWVW_24      : format = "24bit" ; break;
+      case SF_FORMAT_DWVW_N       : format = "Nbit" ; break;
+        
+      case SF_FORMAT_DPCM_8       : format = "8bit" ; break;
+      case SF_FORMAT_DPCM_16      : format = "16bit" ; break;
+        
+      case SF_FORMAT_VORBIS       : format = "Vorbis" ; break;
+      default                     : format = "Unknown" ; break;
+    }
+    HASH_put_chars(ret, ":format", format);
+    sf_close(sndfile);
+  }
   
   return DYN_create_hash(ret);
 }
