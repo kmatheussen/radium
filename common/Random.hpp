@@ -78,7 +78,7 @@ private:
   /***************************************************************************************************
    *                                                                                                 *
    * 'next_random' is from the s7 source code written by Bill Schottstaedt.                          *
-   * The only changes I've done is 'random_seed(r); -> '_seed', and 'random_curry(r)' -> '_curry'.   *
+   * The only changes I've done is 'random_seed(r); -> '_seed', and 'random_carry(r)' -> '_carry'.   *
    *                                                                                                 *
    ***************************************************************************************************/
   

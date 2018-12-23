@@ -541,7 +541,9 @@
        ,@body)
 
      ,@body-methods
-     
+
+     :get-width () width
+     :get-height () height
      :get-position x (apply get-position x)
      :get-i-position x (apply get-i-position x)
      :inside? x (apply inside? x)

@@ -106,6 +106,78 @@
 
 (define *seqblock-guis* (make-hash-table 32 =))
 
+(define (visualize-granulation-parameters gui x1 y1 x2 y2 seqblockid)
+  (define grain-length (<ra> :get-seqblock-grain-length seqblockid))
+  (define grain-overlap (<ra> :get-seqblock-grain-overlap seqblockid))
+  (define grain-jitter (<ra> :get-seqblock-grain-jitter seqblockid))
+  (define grain-ramp (<ra> :get-seqblock-grain-ramp seqblockid))
+  (define stretch (<ra> :get-seqblock-stretch seqblockid))
+
+  (define write-frames-between-grains (/ grain-length grain-overlap))
+
+  (define jittered (* write-frames-between-grains grain-jitter))
+  (define random-min (- write-frames-between-grains jittered))
+  (define random-max (+ write-frames-between-grains jittered))
+
+  (define random-state (random-state seqblockid))
+
+  (define (get-next-random)
+    (max 1
+         (scale (random 1.0 random-state)
+                0 1
+                random-min random-max)))
+
+  (define color "#dedfff")
+  
+  ;;(<gui> :filled-box gui background x1 y1 x2 y2)
+
+  (define (paint-grain grain-x1 grain-x2)
+    (define xr1 (scale grain-ramp 0 1 grain-x1 grain-x2))
+    (define xr2 (scale grain-ramp 0 1 grain-x2 grain-x1))    
+    (<gui> :filled-polygon gui color
+           (vector grain-x1 y2
+                   xr1 y1
+                   xr2 y1
+                   grain-x2 y2))
+    )
+
+  (define (sample-pos->x write-pos)
+    (scale write-pos 0 1000 x1 x2))
+
+-  (let loop ((sample-pos 0))
+    (define grain-x1 (sample-pos->x sample-pos))
+    (when (< grain-x1 x2)
+      (let ((grain-x2 (sample-pos->x (+ sample-pos grain-length))))
+        (paint-grain grain-x1 grain-x2)
+        (loop (+ sample-pos
+                 (get-next-random))))))
+  )
+
+(define (create-granular-vizualization-gui seqblockid height)
+  (define gui (<gui> :widget 100 height))
+  (<gui> :set-min-height gui height)
+  (<gui> :set-size-policy gui #t #t)
+  (define background "#000000")
+  (<gui> :set-background-color gui background)
+  (<gui> :add-paint-callback gui
+         (lambda (width height)
+           (when (<ra> :seqblock-is-alive seqblockid)
+             (<gui> :do-alpha gui 0.2
+                    (lambda ()
+                      (visualize-granulation-parameters gui 0 0 width height seqblockid)))
+             (<gui> :draw-text gui
+                    "green"
+                    "1s"
+                    (- width (<gui> :text-width "1s  "))
+                    (- height (* 1.0 (get-fontheight)))
+                    width height
+                    #f ;;wrap
+                    #t ;;align top
+                    #t ;; align left
+                    ))))
+  gui)
+
+
 
 (define (create-audio-seqblock-gui seqblocknum seqtracknum)
   (define funcs (<new> :seqblock-gui-functions))
@@ -252,7 +324,8 @@
                                     (when has-started
                                       (set-new-pitch! (funcs :get-pitch-from-slider slider))))))
         
-        (<gui> :set-size-policy pitch-slider #t #t)
+        (<gui> :set-min-height pitch-slider (round (* 1.2 (get-fontheight))))
+        ;;(<gui> :set-size-policy pitch-slider #t #t)
         
         (<gui> :add-paint-callback pitch-slider
                (lambda (width height)
@@ -322,6 +395,10 @@
 
   (define grain-group (<gui> :group "Granular synthesis"))
 
+  (define grain-visualizer (create-granular-vizualization-gui seqblockid (* 4 (get-fontheight))))
+
+  (<gui> :add grain-group grain-visualizer)
+
   (define (add-parameter automationnum slider)
     (define is-enabled (<ra> :get-seqblock-automation-enabled automationnum seqblockid))
     (<gui> :set-enabled slider (not is-enabled))
@@ -342,6 +419,7 @@
                               ;;(c-display "  Grain OVERLAP (X):" grain- ". overlap:" val)
                               ;;(<ra> :set-seqblock-grain-frequency grain-frequency seqblockid)
                               (<ra> :set-seqblock-grain-overlap val seqblockid)
+                              (<gui> :update grain-visualizer)
                               ))))
   
   (add-parameter 2 (<gui> :horizontal-layout
@@ -351,7 +429,9 @@
                                      ;;(c-display "  Grain Frequency LENGTH (ms):" val)
                                      ;;(set! grain-length val)
                                      ;;(set! grain-frequency (get-grain-frequency grain-overlap))
-                                     (<ra> :set-seqblock-grain-length val seqblockid))))))
+                                     (<ra> :set-seqblock-grain-length val seqblockid)
+                                     (<gui> :update grain-visualizer)
+                                     )))))
 
   (define (slider->jitter slider-value)
     (set! slider-value (/ slider-value 100.0))
@@ -371,7 +451,9 @@
                                  (when has-started
                                    (set! val (slider->jitter val))
                                    (c-display "  Grain Frequency JITTER (%):" (* 100 val))
-                                   (<ra> :set-seqblock-grain-jitter val seqblockid)))))
+                                   (<ra> :set-seqblock-grain-jitter val seqblockid)
+                                   (<gui> :update grain-visualizer)
+                                   ))))
 
   (add-parameter 3 jitter-slider)
 
@@ -380,7 +462,9 @@
                             (when has-started
                               (set! val (/ val 100.0))
                               (c-display "  Grain RAMP (%):" (* 100 val))
-                              (<ra> :set-seqblock-grain-ramp val seqblockid)))))
+                              (<ra> :set-seqblock-grain-ramp val seqblockid)
+                              (<gui> :update grain-visualizer)
+                              ))))
 
   (let ()
     (define checkbox (<gui> :checkbox "Strict no jitter when jitter is 0.00%" (<ra> :get-seqblock-grain-strict-no-jitter seqblockid) #f
@@ -397,9 +481,9 @@
                 "that the total duration of the generated sound will be correct, at the cost of a less pure\n"
                 "comb filter effect.\n"
                 "\n"
-                "If overlap is set high, and grain length is set low, it's easier to hear the difference."))
+                "It's easier to hear the difference if overlap is set high, and grain length is set low."))
     (<gui> :add grain-group checkbox))
-
+  
   (<gui> :add main-layout grain-group)
 
 

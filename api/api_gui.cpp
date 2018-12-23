@@ -2226,6 +2226,68 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         myupdate(x1, y1, x2, y2);
     }
 
+    void drawPolygon(const_char* color, const dynvec_t *points, bool do_fill, float width = 1.0){
+      QPainter *painter = get_painter();
+
+      QColor qcolor = getQColor(color);
+
+      QPen pen;
+
+      if (do_fill){
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(qcolor);
+      } else {
+        pen = QPen(qcolor);
+        pen.setWidthF(width);
+        painter->setPen(pen);
+      }
+
+      QPointF qpoints[points->num_elements];
+
+      bool is_first = true;
+      float min_x,max_x,min_y,max_y;
+      for(int i=0;i<points->num_elements;i+=2){
+
+        const dyn_t &x_point = points->elements[i];
+        const dyn_t &y_point = points->elements[i+1];
+        
+        if (DYN_is_number(x_point)==false || DYN_is_number(y_point)==false){  
+          handleError("gui_%sPolygon: Expected a number for points[%d] and points[%d], found %s and %s", do_fill ? "filled" : "draw", i, i+1, DYN_type_name(x_point.type), DYN_type_name(y_point.type));
+          return;
+        }
+
+        double x = DYN_get_double_from_number(x_point);
+        double y = DYN_get_double_from_number(y_point);
+
+        qpoints[i/2].setX(x);
+        qpoints[i/2].setY(y);
+        
+        if (is_first==false){
+          min_x = x;
+          max_x = x;
+          min_y = y;
+          max_y = y;
+        }else{
+          min_x = R_MIN(x, min_x);
+          max_x = R_MIN(x, max_x);
+          min_y = R_MAX(y, min_y);
+          max_y = R_MAX(y, max_y);
+        }
+
+        is_first = false;
+      }
+
+      painter->drawPolygon(qpoints, points->num_elements/2);
+
+      if(do_fill)
+        painter->setBrush(Qt::NoBrush);
+
+      if (_current_painter==NULL){
+        float halfwidth = 2*width/3;
+        myupdate(min_x-halfwidth, min_y-halfwidth, max_x+halfwidth, max_y+halfwidth);
+      }
+    }
+
     void filledEllipse(const_char* color, float x1, float y1, float x2, float y2) {
       QPainter *painter = get_painter();
 
@@ -6694,6 +6756,54 @@ void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float 
     return;
 
   gui->filledBox(color, x1, y1, x2, y2, round_x, round_y);
+}
+
+void gui_filledPolygon(int64_t guinum, const_char* color, dyn_t points){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  if (points.type != ARRAY_TYPE){
+    handleError("gui_filledPolygon: Argument 'points' must be a list or a vector, found %s", DYN_type_name(points.type));
+    return;
+  }
+
+  const dynvec_t *array = points.array;
+
+  if (array->num_elements == 0){
+    return;
+  }
+
+  if (array->num_elements % 2 == 1){
+    handleError("gui_filledPolygon: Number of points must be an even number, found %d", array->num_elements);
+    return;
+  }
+
+  gui->drawPolygon(color, array, true);
+}
+
+void gui_drawPolygon(int64_t guinum, const_char* color, dyn_t points, float width) {
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  if (points.type != ARRAY_TYPE){
+    handleError("gui_drawPolygon: Argument 'points' must be a list or a vector, found %s", DYN_type_name(points.type));
+    return;
+  }
+
+  const dynvec_t *array = points.array;
+
+  if (array->num_elements == 0){
+    return;
+  }
+
+  if (array->num_elements % 2 == 1){
+    handleError("gui_drawPolygon: Number of points must be an even number, found %d", array->num_elements);
+    return;
+  }
+
+  gui->drawPolygon(color, array, false, width);
 }
 
 void gui_filledEllipse(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2){

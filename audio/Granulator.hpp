@@ -430,6 +430,12 @@ public:
   }
 
   ~Granulator(){
+    /*
+    for(int ch=0;ch<_num_ch;ch++){
+      R_ASSERT_NON_RELEASE(_playing_grains[ch].size() == 0);
+    }
+    */
+
     delete[] _grains;
     delete[] _playing_grains;
   }
