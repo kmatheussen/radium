@@ -1654,11 +1654,20 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
     void addMouseWheelCallback(func_t* func){      
       if (_mouse_wheel_callback.v!=NULL){
-        handleError("Gui %d already has a key callback.", (int)_gui_num);
+        handleError("Gui %d already has a mouse wheel callback.", (int)_gui_num);
         return;
       }
 
       _mouse_wheel_callback.set(func);
+    }
+
+    void removeMouseWheelCallback(void){
+      if (_mouse_wheel_callback.v==NULL){
+        handleError("Gui %d doesn't have a mouse wheel callback.", (int)_gui_num);
+        return;
+      }
+      
+      _mouse_wheel_callback.set(NULL);
     }
 
     /************ KEY *******************/
@@ -4417,6 +4426,18 @@ void gui_addMouseWheelCallback(int64_t guinum, func_t* func){
     return;
   
   gui->addMouseWheelCallback(func);
+}
+
+void gui_removeMouseWheelCallback(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  if(check_existing(gui)==false)
+    return;
+  
+  gui->removeMouseWheelCallback();
 }
 
 void gui_addKeyCallback(int64_t guinum, func_t* func){

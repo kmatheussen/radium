@@ -2527,8 +2527,9 @@ static void setCursor(int64_t guinum, const QCursor &cursor){
     return;
 
   //printf("============Setting cursor to %d\n", cursor.shape());
-  
-#if !defined(RELEASE)
+
+#if 0 // !defined(RELEASE)
+  // We have one such call now, when setting open hand cursor in a file requester.
   if (g_user_interaction_enabled==true)
     R_ASSERT(!widget->isWindow()); // Can have this assertion since we currently have no such calls. If it happens, it will cause the mouse cursor to be stuck in this mode for the whole window.
 #endif

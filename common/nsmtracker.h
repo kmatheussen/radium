@@ -314,6 +314,7 @@ static inline int donothing(int input){
   return input;
 }
 
+extern int64_t g_num_calls_to_handleError;
 
 extern LANGSPEC void handleError_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2);
 #define handleError(...) ((void)donothing(0 && printf(__VA_ARGS__)), handleError_internal(__VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.

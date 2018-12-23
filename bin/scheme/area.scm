@@ -187,12 +187,16 @@
        (set! effect-monitors '())
 
        (for-each (lambda (sub-area)
-                   (sub-area :i-am-removed!))
+                   (sub-area :i-am-removed-internal!))
                  sub-areas)
        (set! sub-areas '())
        (set! top-area #f))
 
-     (define (i-am-removed!)
+     (define i-am-removed! #f)
+
+     (define (i-am-removed-internal!)
+       (if i-am-removed!
+           (i-am-removed!))
        (remove-sub-areas!)
        (set! is-alive #f))
 
@@ -239,7 +243,7 @@
                          (add-sub-area! sub-area x1 y2))))
      
      (define (remove-sub-area! sub-area)
-       (sub-area :i-am-removed!)
+       (sub-area :i-am-removed-internal!)
        (set! sub-areas (delete sub-area sub-areas eq?))
        (set! top-area
 	     (if (null? sub-areas)
@@ -559,7 +563,8 @@
      :add-sub-area! x (apply add-sub-area! x)
      :add-sub-area-above! x (apply add-sub-area-above! x)
      :add-sub-area-below! x (apply add-sub-area-below! x)
-     :remove-sub-area-below! x (apply remove-sub-area! x)
+     :remove-sub-area! x (apply remove-sub! x)
+     :remove-sub-areas! x (apply remove-sub-areas! x)
      :lift-sub-area! x (apply lift-sub-area! x)
      :lift-me! x (apply lift-me! x)
      :key-pressed-internal! x (apply key-pressed-internal! x)
@@ -573,7 +578,7 @@
      :mouse-callback-internal x (apply mouse-callback-internal x)
      :has-mouse () (has-mouse)
      :reset! x (apply reset! x)
-     :i-am-removed! x (apply i-am-removed! x)
+     :i-am-removed-internal! x (apply i-am-removed-internal! x)
      :add-statusbar-text-handler x (apply add-statusbar-text-handler x)
      ))
  
@@ -1003,6 +1008,12 @@
   (<gui> :show (testarea :get-gui)))
 !!#
 
+(define (get-vertical-list-scrollbar-width scrollbar-width)
+  (between 1
+           (/ scrollbar-width 10)
+           (min (get-fontheight)
+                (/ scrollbar-width 2))))
+
 (def-area-subclass (<vertical-list-area> :gui :x1 :y1 :x2 :y2
                                          :areas
                                          :scrollbar-color "#400010"
@@ -1010,9 +1021,7 @@
                                          :expand-area-widths #t
                                          )
 
-  (define scrollbar-width (between 1
-                                   (/ width 10)
-                                   (get-fontheight)))
+  (define scrollbar-width (get-vertical-list-scrollbar-width width))
 
   (define scrollbar-x1 (- x2 scrollbar-width))
 
@@ -1025,19 +1034,6 @@
                             1
                             (min 1 (/ height total-area-height))))
   
-  (define (position-areas! start-y1)
-    (let loop ((areas areas)
-               (area-y1 start-y1))
-      (when (not (null? areas))
-        (define area (car areas))
-        (area :get-position
-              (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
-                (if expand-area-widths
-                    (area :set-position2! x1 area-y1 scrollbar-x1 (+ area-y1 a-height))
-                    (area :set-position! x1 area-y1))
-                (loop (cdr areas)
-                      (+ area-y1 a-height))))))
-    )
 
   (define (scrollbar-callback pos1 pos2)
     (define pos1 (scale pos1
@@ -1054,13 +1050,31 @@
                            :vertical #t
                            :background-color background-color))
   
-  (add-sub-area-plain! scrollbar)
+  ;(for-each (lambda (area)
+  ;            (add-sub-area! area 0 0))
+  ;          areas)
 
-  (for-each (lambda (area)
-              (add-sub-area! area 0 0))
-            areas)
+  (define (position-areas! start-y1)
+    (remove-sub-areas!)
+    (add-sub-area-plain! scrollbar)
+    (let loop ((areas areas)
+               (area-y1 start-y1))
+      (when (not (null? areas))
+        (define area (car areas))
+        (define area-y2 (+ area-y1 (area :get-height)))
+        (if expand-area-widths
+            (area :set-position2! x1 area-y1 (- scrollbar-x1 1) area-y2)
+            (area :set-position! x1 area-y1))
+        (if (and (>= area-y2 y1)
+                 (< area-y1 y2))
+            (add-sub-area-plain! area))
+        (loop (cdr areas)
+              area-y2))))
 
   (position-areas! y1)
+
+  (define-override (i-am-removed!)
+    (<gui> :remove-mouse-wheel-callback gui))
 
   (<gui> :add-mouse-wheel-callback gui
          (lambda (is-up x* y*)
@@ -1110,7 +1124,7 @@
                         (1+ n)
                         )))))
                               
-           #t))  
+           #t))
   )
 
 #!!
@@ -1136,8 +1150,81 @@
   (testarea :add-sub-area-plain! list-area)
   (<gui> :show (testarea :get-gui))
   )
+(show-async-message :text "hello")
+
+(<ra> :get-path "/tmpwef")
+
+(<ra> :iterate-directory (<ra> :get-path "/home/kjetil") #t
+      (lambda args
+        (c-display "args:" args)
+        #t))
+(<ra> :iterate-directory "L3RtcA==" #f c-display)
 !!#
 
+(def-area-subclass (<file-browser> :gui :x1 :y1 :x2 :y2
+                                   :path "")
+  
+  (define entries '())
+
+  (define (update-areas!)
+    (c-display "\n\n\n---------------------- num entries:" (length entries) "-----------------------\n\n\n")
+    (remove-sub-areas!)
+
+    (define list-area (<new> :vertical-list-area gui x1 y1 x2 y2
+                             (map (lambda (entry)
+                                    (<new> :text-area (testarea :get-gui)
+                                           0 0 10 (* 1.2 (get-fontheight))
+                                           (entry :filename)
+                                           :align-left #t
+                                           :scale-font-size #f
+                                           :cut-text-to-fit #t
+                                           ))
+                                  entries)))
+    (add-sub-area-plain! list-area)
+    )
+
+  (update-areas!)
+
+  ( ;;<ra> :schedule 5 ;; wait a little bit so that the main area as enough time to be displayed properly. (in RELEASE mode, this didn't make a difference)
+        (lambda ()
+          (let ((last-time 0)
+                (temp '()))
+            (<ra> :iterate-directory path #t
+                  (lambda (is-finished file-info)
+                    ;;(c-display "file-info:" file-info)
+                    (if (not is-finished)
+                        (set! temp (cons file-info temp)))
+                    (when (or is-finished
+                              (> (time) (+ last-time 0.05)))
+                      (set! entries (sort (append temp entries)
+                                          (lambda (a b)
+                                            (string<? (a :filename) (b :filename)))))
+                      (set! temp '())
+                      (update-areas!)
+                      (set! last-time (time))
+                      )
+                    #t)))
+          #f))
+  )
+
+#!!
+(begin
+  ;(def-area-subclass (<text-area> :gui :x1 :y1 :x2 :y2 :text)
+  ;  (define-override (paint)
+  ;    (<gui> :draw-text gui *text-color* text (+ x1 (get-fontheight)) y1 x2 y2
+  ;           #f ;wrap-lines 
+  ;           #f ;align-top 
+  ;           #t ;align-left
+  ;           )
+  ;    (<gui> :draw-box gui "black" x1 y1 x2 y2 1.5 2 2)))
+      
+  (define testarea (make-qtarea :width 450 :height 750))
+  (define list-area (<new> :file-browser (testarea :get-gui) 10 20 400 700
+                           :path (<ra> :get-home-path)))
+  (testarea :add-sub-area-plain! list-area)
+  (<gui> :show (testarea :get-gui))
+  )
+!!#
 
 (delafina (horizontally-layout-areas :x1 :y1 :x2 :y2
                                      :args
