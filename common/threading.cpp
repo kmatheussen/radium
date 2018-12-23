@@ -116,7 +116,7 @@ namespace{
   
 static int64_t g_on_main_thread_id = 0;
 
-static QHash<int64_t, OnMainThread*> g_on_main_threads;
+static QMap<int64_t, OnMainThread*> g_on_main_threads; // Using QMap instead of QHash to run in same order.
 
 void THREADING_call_very_often(void){
 
@@ -185,8 +185,11 @@ void THREADING_wait_for_async_function(int64_t id){
         return;
       
       OnMainThread *on_main_thread = g_on_main_threads[id];
-      
-      on_main_thread->semaphore = &semaphore;
+
+      if(on_main_thread->semaphore != NULL)
+        R_ASSERT(false);
+      else
+        on_main_thread->semaphore = &semaphore;
     }
     
     semaphore.wait();

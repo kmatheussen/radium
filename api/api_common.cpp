@@ -136,6 +136,8 @@ void clearErrorMessage(void){
 
 #define SHOW_DIALOG_WHEN_ERROR 0 // Turned out to be useless. Gives the user an option to select "Continue" instead of throwing a scheme exception, but I can't remember any time where that option would be useful. In addition, while the dialog was open, other scheme code could run in the mean time, which could cause very complex bugs (the same code that caused the bug could be called again for instance).
 
+int64_t g_num_calls_to_handleError = 0;
+
 // We don't throw scheme exception here since the api code is not written with that in mind.
 // Instead, we set the variable "g_error_message" and then the function 'throwExceptionIfError', which is called from a safe point, throws exception instead.
 void handleError_internal(const char *fmt,...){
@@ -147,6 +149,8 @@ void handleError_internal(const char *fmt,...){
       return;
     }
   */
+
+  g_num_calls_to_handleError++;
 
   if (g_error_message != NULL)
     return;

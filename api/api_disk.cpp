@@ -37,6 +37,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QStack>
 #include <QSet>
 #include <QCoreApplication>
+#include <QDirIterator>
+#include <QFileInfo>
+#include <QThread>
 
 #include "../common/nsmtracker.h"
 
@@ -79,6 +82,189 @@ const_char* appendFilePaths(const_char* w_path1, const_char* w_path2){
 bool fileExists(const_char* w_path){
   QString filename = w_to_qstring(w_path);
   return QFileInfo::exists(filename);
+}
+
+dyn_t getFileInfo(const_char* w_path){
+  QString path = w_to_qstring(w_path);
+
+  QFileInfo info(path);
+
+  if (!info.exists()){
+    showAsyncMessage(talloc_format("Directory \"%S\" does not exist.", STRING_create(path)));
+    return g_uninitialized_dyn;
+  }
+
+#if FOR_WINDOWS
+  qt_ntfs_permission_lookup++;
+#endif
+
+  /*
+  bool is_readable =  info.isReadable();
+
+#if FOR_WINDOWS
+  qt_ntfs_permission_lookup--;
+#endif
+
+  if (!is_readable){
+    showAsyncMessage(talloc_format("Directory \"%S\" is not readable", STRING_create(path)));
+    return g_uninitialized_dyn;
+  }
+  */
+
+  hash_t *ret = HASH_create(10);
+
+  HASH_put_chars(ret, ":path", qstring_to_w(path));
+  HASH_put_string(ret, ":filename", STRING_create(info.fileName()));
+  HASH_put_bool(ret, ":is-dir", info.isDir());
+  HASH_put_bool(ret, ":is-sym-link", info.isSymLink());
+  HASH_put_int(ret, ":last-modified", info.lastModified().toSecsSinceEpoch());
+  HASH_put_bool(ret, ":is-hidden", info.isHidden());
+  HASH_put_int(ret, ":size", info.size());
+  HASH_put_string(ret, ":suffix", STRING_create(info.suffix()));
+  
+  return DYN_create_hash(ret);
+}
+
+static bool call_callback(func_t* callback, bool in_main_thread, bool is_finished, const_char* path){
+  int64_t num_calls = g_num_calls_to_handleError;
+
+  bool ret = S7CALL(bool_bool_dyn,
+                    callback,
+                    is_finished,                
+                    !strcmp(path,"") ? g_uninitialized_dyn : getFileInfo(path)
+                    );
+
+
+  if (num_calls != g_num_calls_to_handleError)
+    return false;
+
+  return ret;
+}
+
+static void traverse(QString path, func_t* callback, bool in_main_thread, int64_t gc_protect_pos){
+  R_ASSERT(in_main_thread || gc_protect_pos >= 0);
+
+  DEFINE_ATOMIC(bool, callback_has_returned_false) = false;
+  int64_t last_id = -1;
+
+  QDirIterator it(path);
+
+  while (it.hasNext() && ATOMIC_GET(callback_has_returned_false)==false) {
+    
+    QString path = it.next();
+    QFileInfo info(path);
+
+    if (in_main_thread){
+
+      if (!call_callback(callback,
+                         true, 
+                         false,
+                         qstring_to_w(path)
+                         ))
+        ATOMIC_SET(callback_has_returned_false, true);
+
+    } else {
+
+      // Note: There's no hard limit on the number of simultaneous callbacks in THREADING_run_on_main_thread_async.
+      // It just allocate new memory when needed.
+
+      last_id = THREADING_run_on_main_thread_async([callback, path, info, &ATOMIC_NAME(callback_has_returned_false)](){
+          if(!call_callback(callback,
+                            true, 
+                            false,
+                            qstring_to_w(path)
+                            ))
+            ATOMIC_SET(callback_has_returned_false, true);
+        });
+
+    }
+
+  }
+
+  if (in_main_thread){
+
+    if (ATOMIC_GET(callback_has_returned_false)==false)
+      call_callback(callback, true, true, "");
+
+  } else {
+
+    if (last_id >= 0)
+      THREADING_wait_for_async_function(last_id);
+
+    THREADING_run_on_main_thread_async([callback, &ATOMIC_NAME(callback_has_returned_false), gc_protect_pos](){
+
+        if (ATOMIC_GET(callback_has_returned_false)==false)
+          call_callback(callback, false, true, "");
+
+        s7extra_unprotect(callback, gc_protect_pos);
+
+      });
+
+  }
+}
+
+#if FOR_WINDOWS
+extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
+#endif
+
+bool iterateDirectory(const_char* w_path, bool async, func_t* callback){  
+  QString path = w_to_qstring(w_path);
+
+  QFileInfo info(path);
+
+  if (!info.exists()){
+    showAsyncMessage(talloc_format("Directory \"%S\" does not exist.", STRING_create(path)));
+    return false;
+  }
+
+#if FOR_WINDOWS
+  qt_ntfs_permission_lookup++;
+#endif
+
+  bool is_readable =  info.isReadable();
+
+#if FOR_WINDOWS
+  qt_ntfs_permission_lookup--;
+#endif
+
+  if (!is_readable){
+    showAsyncMessage(talloc_format("Directory \"%S\" is not readable", STRING_create(path)));
+    return false;
+  }
+ 
+  if(async){
+
+    class MyThread : QThread{
+      QString _path;
+      func_t *_callback;
+      int64_t _gc_protect_pos;
+
+    public:
+      MyThread(QString path, func_t *callback, int64_t gc_protect_pos)
+        : _path(path)
+        , _callback(callback)
+        , _gc_protect_pos(gc_protect_pos)
+      {
+        start();
+      }
+
+      void run() override {
+        traverse(_path, _callback, false, _gc_protect_pos);
+
+        deleteLater();
+      }
+    };
+
+    int64_t gc_protect_pos = s7extra_protect(callback); // unprotected in traverse.
+    new MyThread(path, callback, gc_protect_pos);
+
+  } else {
+
+    traverse(path, callback, true, -1);
+
+  }
+
+  return true;
 }
 
 int64_t openFileForReading(const_char* w_path){
