@@ -1317,6 +1317,7 @@ for .emacs:
 (procedure-source remove-duplicates3)
 (gakk)
 
+(string<? "ab" "bb")
 !!#
 
 

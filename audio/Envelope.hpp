@@ -243,7 +243,7 @@ public:
       case FADE_CONSTANT_POWER:
         env.push_back(Point(0.0, GAIN_COEFF_SMALL));
         for (int i = 1; i < num_steps; ++i) {
-          const float dist = i / (num_steps + 1.f);
+          const float dist = (float)i / (num_steps + 1.f);
           env.push_back(Point(length * dist, sin (dist * M_PI / 2.0)));
         }
         env.push_back(Point(length, GAIN_COEFF_UNITY));

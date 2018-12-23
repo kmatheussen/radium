@@ -704,6 +704,8 @@
                                 :align-left #f
                                 :paint-border #t
                                 :border-rounding 2
+                                :scale-font-size #t
+                                :cut-text-to-fit #f
                                 )
 
   (define (get-text)
@@ -737,8 +739,8 @@
            align-top
            align-left
            0 ;; rotate
-           #f ;; cut text to fit
-           #t ;; scale font size
+           cut-text-to-fit
+           scale-font-size
            )
 
     (when paint-border

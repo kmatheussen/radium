@@ -300,7 +300,7 @@
                                                       unselected-color)
                                                   x1 y1 x2 y2)
 
-                                           (<gui> :draw-text
+                                           (<gui> :my-draw-text
                                                   button
                                                   (if is-enabled
                                                       *text-color*
@@ -577,7 +577,7 @@
            (<gui> :filled-box label color 0 0 width height)
            (if is-minimized
                (<gui> :draw-vertical-text label *text-color* name 2 7 (+ width 0) height #t #f #t)
-               (if (not (<gui> :draw-text label *text-color* name 5 0 width height #f #f #f 0 #t #t))
+               (if (not (<gui> :my-draw-text label *text-color* name 5 0 width height #f #f #f 0 #t #t))
                    (show-name-tool-tip)
                    (<gui> :set-tool-tip label "")))
            (<gui> :draw-box label "#202020" 0 0 width height 1.0 2 2)))
@@ -884,11 +884,10 @@
   
   (define (paint-slider x1-on/off width height)
     (define value (get-scaled-value))
-    (define text (get-slider-text value))
     (paint-horizontal-instrument-slider widget
                                         instrument-id
                                         value
-                                        text
+                                        (get-slider-text value)
                                         (is-enabled?)
                                         (= (<ra> :get-current-instrument) instrument-id)
                                         get-automation-data
@@ -1149,7 +1148,7 @@
                                                          gui
                                                          background-color
                                                          0 0 width height)
-                                                  (<gui> :draw-text gui *text-color* *arrow-text* 0 0 width height #f))
+                                                  (<gui> :my-draw-text gui *text-color* *arrow-text* 0 0 width height #f))
                                                 (lambda (is-selected)
                                                   #t)
                                                 (lambda ()
@@ -1636,7 +1635,7 @@
           (<gui> :filled-box slider col1 (- middle inner-width/2) 2 (+ middle inner-width/2) (- height 3))
           (<gui> :filled-box slider col2 (- middle inner-width/2 outer-width/2) 2 (- middle inner-width/2) (- height 3))
           (<gui> :filled-box slider col2 (+ middle inner-width/2) 2 (+ middle inner-width/2 outer-width/2) (- height 3))
-          ;;(<gui> :draw-text slider "white" (<-> value "o") 0 0 width height #t)
+          ;;(<gui> :my-draw-text slider "white" (<-> value "o") 0 0 width height #t)
 
           (when (> automation-slider-value -100)
             (define middle (scale automation-slider-value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
@@ -1646,7 +1645,7 @@
 
           (when (<ra> :instrument-effect-has-midi-learn instrument-id "System Pan")
             (define midi-learn-color (<gui> :mix-colors *text-color* background 0.2))
-            (<gui> :draw-text slider midi-learn-color "[M]" 2 2 (- width 2) (- height 2)
+            (<gui> :my-draw-text slider midi-learn-color "[M]" 2 2 (- width 2) (- height 2)
                    #f ;; wrap text
                    #f ;; align left
                    #f ;; align top
@@ -1981,7 +1980,7 @@
         (<gui> :filled-box gui col1 0 0 width height 5 5))
     
     ;; text
-    (<gui> :draw-text gui *text-color* text 2 2 (- width 2) (- height 2) #t #f #f 0 #f #t))
+    (<gui> :my-draw-text gui *text-color* text 2 2 (- width 2) (- height 2) #t #f #f 0 #f #t))
 
     
   (when show-voltext
@@ -2049,7 +2048,7 @@
 
           (when (<ra> :instrument-effect-has-midi-learn instrument-id effect-name)
             (define midi-learn-color (<gui> :mix-colors *text-color* background-color 0.2))
-            (<gui> :draw-text volslider midi-learn-color "[M]" 2 2 (- width 2) (- height 2)
+            (<gui> :my-draw-text volslider midi-learn-color "[M]" 2 2 (- width 2) (- height 2)
                    #f ;; wrap text
                    #f ;; align left
                    #f ;; align top
