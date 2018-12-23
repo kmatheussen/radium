@@ -1155,8 +1155,10 @@
 (<ra> :get-path "/tmpwef")
 
 (<ra> :iterate-directory (<ra> :get-path "/home/kjetil") #t
-      (lambda args
-        (c-display "args:" args)
+      (lambda (is-final file-info)
+        (if (and (not is-final)
+                 (file-info :is-audiofile))
+            (c-display "file-info:" file-info))
         #t))
 (<ra> :iterate-directory "L3RtcA==" #f c-display)
 !!#
