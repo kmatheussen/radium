@@ -508,6 +508,13 @@
 (***assert*** (string-drop "abcd" 1)
               "bcd")
 
+(define (string-drop-right string num)
+  (string-take string (- (string-length string) num)))
+
+(***assert*** (string-drop-right "abcd" 1)
+              "abc")
+
+
 (define (string-starts-with? string startswith)
   (define (loop string startswith)
     (cond ((null? startswith)
@@ -620,6 +627,17 @@
 
 (***assert*** (string-strip-right "   as dfasdf \n\n ")
               "   as dfasdf")
+
+(define (string-strip-left string)
+  (list->string
+   (remove-while (string->list string)
+                  is-whitespace?)))
+
+(***assert*** (string-strip-left "   as dfasdf \n\n ")
+              "as dfasdf \n\n ")
+
+(define (string-strip string)
+  (string-strip-left (string-strip-right string)))
 
 (define (string-rightjustify string1 string2pos string2)
   (define len1 (string-length string1))

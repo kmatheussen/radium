@@ -126,7 +126,7 @@
                                         button
                                         pressed-color
                                         2 1 (- width 2) (- height 1)))
-                             (<gui> :draw-text
+                             (<gui> :my-draw-text
                                     button
                                     text-color
                                     text
@@ -158,6 +158,105 @@
                   rows)
         table)))
 
+(define (split-text-at-first-best-space text width callback)
+  (define (return-result before after)
+    (callback (string-strip before) (string-strip after)))
+  (if (<= (<gui> :text-width text)
+          width)
+      (apply return-result (list text ""))
+      (let loop ((before-chars '())
+                 (after-chars (string->list text))
+                 (result (list "" text)))
+        (define char (cl-car after-chars))
+        (define next-before-chars (append before-chars 
+                                          (list char)))
+        (cond ((null? after-chars)
+               (apply return-result result))
+              ((or (not (char=? #\space char))
+                   (string=? (list->string (take after-chars 3))
+                             " dB"))
+               (loop next-before-chars
+                     (cdr after-chars)
+                     result))
+              (else
+               (let ((before (list->string before-chars)))
+                 ;;(c-display "bef:" before (<gui> :text-width before) width)
+                 (if (<= (<gui> :text-width before)
+                         width)
+                     (loop next-before-chars
+                           (cdr after-chars)
+                           (list before (list->string (cdr after-chars))))
+                     (loop next-before-chars
+                           (cdr after-chars)
+                           result))))))))
+
+#!!
+(split-text-at-first-best-space "sdf erio gaerg" 2000 list)
+=>
+("" "sdf erio gaerg")
+
+(split-text-at-first-best-space "sdf erio gaerg" 20 list)
+=>
+("sdf" "erio gaerg")
+!!#
+
+(define (fit-text-by-adding-dots width text)
+  ;;(c-display "text:" text)
+  (if (= 0 (string-length text))
+      ".."
+      (let* ((dot-text (<-> text ".."))
+             (dot-text-width (<gui> :text-width dot-text)))
+        (if (<= dot-text-width width)
+            dot-text
+            (fit-text-by-adding-dots width (string-drop-right text 1))))))
+
+#!!
+(fit-text-by-adding-dots 50 "hello1234")
+!##
+
+;; Returns a version of 'text' with added line shifts so that it fits width and heigh.
+;; If that is not possible, it will stop adding line shifts before it doesn't fit vertically anymore.
+(define (fit-text text width height)
+  (let loop ((text text)
+             (num-lines (max 1 (floor (/ height (get-fontheight))))))
+    (define text-width (<gui> :text-width text))
+    (cond ((or (string=? "" text)
+               (<= text-width width))
+           text)
+          ((= num-lines 1)
+           (fit-text-by-adding-dots width text))
+          (else
+           (split-text-at-first-best-space 
+            text width
+            (lambda (before after)
+              ;;(assert (not (string=? "" before)))
+              (if (string=? after "")
+                  before
+                  (<-> (if (string=? before "")
+                           ""
+                           (<-> before "\n")) ;;".n."
+                       (loop after
+                             (- num-lines 1))))))))))
+
+#!!
+(fit-text "ab abab    9 d9d9d  " 30 (* (get-fontheight) 3))
+=>
+"ababab\n9d9d9d"
+!!#
+
+(delafina (my-gui_draw-text :gui :color :text :x1 :y1 :x2 :y2
+                            :wrap-lines #t
+                            :align-top #f
+                            :align-left #f
+                            :rotate 0
+                            :cut-text-to-fit #t
+                            :scale-font-size #t)
+  (<gui> :draw-text gui color
+         (if wrap-lines
+             (fit-text text (- x2 x1) (- y2 y1)) ;; Replacement code. Wrapping lines in gui_draw-text has been disabled since it didn't work very well.
+             text)
+         x1 y1 x2 y2 wrap-lines align-top align-left rotate cut-text-to-fit scale-font-size))
+
 (define *last-tooltip-and-statusbar-text* "")
 (define (set-tooltip-and-statusbar text)
   (when (not (string=? text *last-tooltip-and-statusbar-text*))
@@ -184,6 +283,9 @@
         
         ((eq? command :table-layout)
          (my-gui_tablelayout args))
+
+        ((eq? command :my-draw-text)
+         (my-gui_draw-text args))
 
         ((eq? command :add-callback)
          (<ra> :gui_add-callback (car args) (cadr args)))
@@ -272,6 +374,9 @@
         
         ((eq? command :table-layout)
          `(my-gui_tablelayout ,@args))
+
+        ((eq? command :my-draw-text)
+         `(my-gui_draw-text ,@args))
 
         ((eq? command :add-callback)
          `(<ra> :gui_add-callback ,(car args) ,(cadr args)))
@@ -406,7 +511,7 @@
                          (<gui> :mix-colors *text-color* "#ff000000" 0.5)
                          *text-color*))
   
-  (<gui> :draw-text widget text-color text
+  (<gui> :my-draw-text widget text-color text
          (floor (+ (/ (get-fontheight) 4) text-x1)) y1 (- x2 4) y2
          #t ;; wrap-lines
          #f ;; align top
@@ -449,7 +554,7 @@
              (+ x-border x1) (+ y-border y1) (- x2 x-border) (- y2 y-border)
              box-rounding box-rounding))
 
-  (<gui> :draw-text
+  (<gui> :my-draw-text
          gui
          text-color
          text
@@ -792,7 +897,7 @@
                                   (if (= i (<gui> :current-tab tabs))
                                       (<gui> :filled-box gui curr-tab-background x1 y1 x2 y2))
                                   ;;(<gui> :draw-box gui "#202020" x1 y1 x2 y2 1.0 2 2)
-                                  (<gui> :draw-text gui *text-color* (<gui> :tab-name tabs i) x1 y1 x2 y2 #t #f #f (if horizontal 0 270)))))
+                                  (<gui> :my-draw-text gui *text-color* (<gui> :tab-name tabs i) x1 y1 x2 y2 #t #f #f (if horizontal 0 270)))))
               (iota num-tabs)))
 
   (<gui> :add-paint-callback tab-bar
@@ -1154,7 +1259,7 @@
                   (- width (/ b 2.0)) 0 (- width (/ b 2.0)) height
                   b)
            
-           (<gui> :draw-text widget
+           (<gui> :my-draw-text widget
                   (if (<gui> :is-enabled widget)
                       *text-color*
                       (<gui> :mix-colors *text-color* nonhover-background-color 0.5))
@@ -1169,7 +1274,7 @@
            (when (not (string=? "" shortcut))
              (define shortcut-x1 (- width (+ shortcut-width before-width b)))
              
-             (<gui> :draw-text widget
+             (<gui> :my-draw-text widget
                     (if (<gui> :is-enabled widget)
                         *text-color*
                         (<gui> :mix-colors *text-color* nonhover-background-color 0.5))

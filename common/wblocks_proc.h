@@ -45,9 +45,9 @@ static inline float get_scrollbar_scroller_y1(float realline, float num_realline
 }
 
 static inline float get_scrollbar_scroller_height(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  return  (wblock->t.y2 - wblock->t.y1 - 4)
-    * wblock->num_visiblelines
-    / (wblock->num_reallines + wblock->num_visiblelines - 2);
+  return  (float)(wblock->t.y2 - wblock->t.y1 - 4)
+    * (float)wblock->num_visiblelines
+    / (float)(wblock->num_reallines + wblock->num_visiblelines - 2);
 }
 
 
