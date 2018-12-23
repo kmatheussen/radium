@@ -4,6 +4,7 @@
 #include <math.h>
 
 #ifdef TEST_MAIN
+#include <algorithm>
 #include <inttypes.h>
 #include <stdio.h>
 #define R_ASSERT_NON_RELEASE(a) //if(!(a))abort()
@@ -330,7 +331,8 @@ static inline bool operator<=(const Ratio &r1, const Ratio &r2){
 //g++ test_ratio.cpp -DTEST_MAIN -Wall -Werror -g -o a.out && gdb ./a.out
 
 static void comp(double a,double b){
-  if (fabs(a-b) > 0.000001)
+  //printf("%f %f\n", fabs(a-b), std::max(a,b) / 10000000.0);
+  if (fabs(a-b) > fabs(std::min(a,b) / 10000000000000.0))
     abort();
 }
 
@@ -345,7 +347,7 @@ static void comp(double a, Ratio b){
 
 int main(){
   double org1 = 34444223998701.213452909233423423434523452345;
-  double org2 = 8456.4545245624561;
+  double org2 = -8456.4545245624561;
   Ratio r1 = make_ratio_from_double(org1);
   Ratio r2 = make_ratio_from_double(org2);
   double org3 = make_double_from_ratio(r1);
