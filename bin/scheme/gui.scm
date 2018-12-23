@@ -255,7 +255,13 @@
          (if wrap-lines
              (fit-text text (- x2 x1) (- y2 y1)) ;; Replacement code. Wrapping lines in gui_draw-text has been disabled since it didn't work very well.
              text)
-         x1 y1 x2 y2 wrap-lines align-top align-left rotate cut-text-to-fit scale-font-size))
+         x1 y1 x2 y2
+         #f ;;wrap-lines
+         align-top
+         align-left
+         rotate
+         cut-text-to-fit
+         scale-font-size))
 
 (define *last-tooltip-and-statusbar-text* "")
 (define (set-tooltip-and-statusbar text)

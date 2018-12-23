@@ -44,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_string_proc.h"
 #include "../common/visual_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "api_common_proc.h"
 
 #include "radium_proc.h"

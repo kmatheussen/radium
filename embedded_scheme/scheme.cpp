@@ -460,8 +460,9 @@ static s7_pointer hash_to_s7(s7_scheme *sc, const hash_t *r_hash){
   for(int i = 0 ; i < dynvec.num_elements ; i++){
     s7_hash_table_set(sc,
                       s_hash.v,
-                      s7_make_symbol(sc, (char*)keys.elements[i]),
-                      s7extra_make_dyn(sc, dynvec.elements[i]));
+                      Protect(s7_make_symbol(sc, (char*)keys.elements[i])).v,
+                      Protect(s7extra_make_dyn(sc, dynvec.elements[i])).v
+                      );
   }
 
   return s_hash.v;
@@ -1078,7 +1079,7 @@ void s7extra_callFunc_void_int_dyn(const func_t *func, int64_t arg1, const dyn_t
              s7_list_nl(s7,
                         3,
                         (s7_pointer)func,
-                        s7_make_integer(s7, arg1),
+                        Protect(s7_make_integer(s7, arg1)).v,
                         Protect(s7extra_make_dyn(s7, arg2)).v,
                         NULL
                         )
@@ -1218,7 +1219,7 @@ bool s7extra_callFunc_bool_bool_float_float(const func_t *func, bool arg1, float
                               );
   if(!s7_is_boolean(ret)){
     handleError("Callback did not return a boolean");
-    return -1;
+    return false;
   }else{
     return s7_boolean(s7, ret);
   }
@@ -1226,6 +1227,57 @@ bool s7extra_callFunc_bool_bool_float_float(const func_t *func, bool arg1, float
 
 bool s7extra_callFunc2_bool_bool_float_float(const char *funcname, bool arg1, float arg2, float arg3){
   return s7extra_callFunc_bool_bool_float_float((const func_t*)find_scheme_value(s7, funcname), arg1, arg2, arg3);
+}
+
+bool s7extra_callFunc_bool_bool_dyn(const func_t *func, bool arg1, dyn_t arg2){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list_nl(s7,
+                                         3,
+                                         (s7_pointer)func,
+                                         Protect(s7_make_boolean(s7, arg1)).v,
+                                         Protect(s7extra_make_dyn(s7, arg2)).v,
+                                         NULL
+                                         )
+                              );
+  if(!s7_is_boolean(ret)){
+    handleError("Callback did not return a boolean");
+    return false;
+  }else{
+    return s7_boolean(s7, ret);
+  }
+}
+
+bool s7extra_callFunc2_bool_bool_dyn(const char *funcname, bool arg1, dyn_t arg2){
+  return s7extra_callFunc_bool_bool_dyn((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
+}
+
+
+bool s7extra_callFunc_bool_bool_charpointer_charpointer_dyn(const func_t *func, bool arg1, const char* arg2, const char* arg3, dyn_t arg4){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list_nl(s7,
+                                         5,
+                                         (s7_pointer)func,
+                                         Protect(s7_make_boolean(s7, arg1)).v,
+                                         Protect(s7_make_string(s7, arg2)).v,
+                                         Protect(s7_make_string(s7, arg3)).v,
+                                         Protect(s7extra_make_dyn(s7, arg4)).v,
+                                         NULL
+                                         )
+                              );
+  if(!s7_is_boolean(ret)){
+    handleError("Callback did not return a boolean");
+    return false;
+  }else{
+    return s7_boolean(s7, ret);
+  }
+}
+
+bool s7extra_callFunc2_bool_bool_charpointer_charpointer_dyn(const char *funcname, bool arg1, const char* arg2, const char* arg3, dyn_t arg4){
+  return s7extra_callFunc_bool_bool_charpointer_charpointer_dyn((const func_t*)find_scheme_value(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
 int64_t s7extra_callFunc_int_void(const func_t *func){
@@ -1331,7 +1383,7 @@ int64_t s7extra_callFunc_int_int_dyn(const func_t *func, int64_t arg1, const dyn
                               s7_list_nl(s7,
                                          3,
                                          (s7_pointer)func,
-                                         s7_make_integer(s7, arg1),
+                                         Protect(s7_make_integer(s7, arg1)).v,
                                          Protect(s7extra_make_dyn(s7, arg2)).v,
                                          NULL
                                          )
