@@ -52,6 +52,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/vector_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/threading.h"
+#include "../common/settings_proc.h"
+#include "../common/disk.h"
 
 #include "../crashreporter/crashreporter_proc.h"
 
@@ -253,6 +255,31 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
   if (add_type_data_reference(type_data)==false)
     return NULL;
+
+  if (QString(plugin_type->name).startsWith("TAP ")){
+
+    bool doit = true;
+
+    if(g_is_loading && is_radium_internal_file(dc.filename_with_full_path)){
+      doit = false;
+    }
+
+    if (doit && SETTINGS_read_bool("show_tap_plugins_warning", true)) {
+
+      vector_t v = {};
+      VECTOR_push_back(&v,"Ok");
+      VECTOR_push_back(&v,"Don't show this message again");
+      
+      int result = GFX_Message(&v,
+                               "Warning!"
+                               "<p>"
+                               "TAP plugins might be be unstable. Use at your own risk."
+                               );
+      
+      if (result==1)
+        SETTINGS_write_bool("show_tap_plugins_warning", false);
+    }
+  }
   
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
   if (type_data->descriptor==NULL){
