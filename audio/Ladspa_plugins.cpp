@@ -1132,7 +1132,7 @@ void create_ladspa_plugins(void){
     ladspa_path << "/usr/local/lib/ladspa";
 
   } else 
-    ladspa_path << getenv("LADSPA_PATH");
+    ladspa_path << QString(getenv("LADSPA_PATH")).split(":");
 
 #else
   
