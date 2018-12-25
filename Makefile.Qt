@@ -1858,8 +1858,13 @@ audio/mfaustqt2.cpp: bin/packages/faust2/architecture/faust/gui/faustqt.h
 zita_rev.o: audio/zita_rev.cpp
 	$(CCC) audio/zita_rev.cpp $(FAUST_OPTS) -DCLASSNAME=Zita_dsp  -DDSP_NAME=\"Zita\ Reverb\" -DCREATE_NAME=create_zita_rev_plugin
 
+# Compiling zita_rev.dsp with -vec results in faster exection on average, but there appears to be much more CPU spikes
+# than without the -vec option.
+# I guess it's because of cache misses caused by a significantly higher memory usage in -vec mode (959kb vs. 479kb).
+# Non-vec touches a lot of memory too tough, so there seems to be room for improvement in the faust compiler here.
 audio/zita_rev.cpp: audio/zita_rev.dsp $(FAUST_DEPENDENCIES)
-	cd audio && $(FAUST) -vec -cn Zita_dsp -a Faust_plugins_template.cpp zita_rev.dsp -o zita_rev.cpp
+#	cd audio && $(FAUST) -vec -cn Zita_dsp -a Faust_plugins_template.cpp zita_rev.dsp -o zita_rev.cpp
+	cd audio && $(FAUST) -cn Zita_dsp -a Faust_plugins_template.cpp zita_rev.dsp -o zita_rev.cpp
 	./fix_faust_code.sh Zita_dsp $@
 
 
