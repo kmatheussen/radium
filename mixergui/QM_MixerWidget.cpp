@@ -1797,7 +1797,7 @@ namespace{
             
             if(plugin != NULL){
 
-              bool show_cpu_update = ATOMIC_GET(g_show_cpu_usage_in_mixer);
+              bool show_cpu_update = ATOMIC_GET_RELAXED(g_show_cpu_usage_in_mixer);
               
               if (show_cpu_update){
                 CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);

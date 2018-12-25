@@ -2104,8 +2104,8 @@ void CpuUsage_delete(void *cpu_usage){
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
   SoundPlugin *plugin = producer->_plugin;
   
-  bool is_visible = ATOMIC_GET(g_show_cpu_usage_in_mixer) || ATOMIC_GET(plugin->is_visible);
-  CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
+  bool is_visible = ATOMIC_GET_RELAXED(g_show_cpu_usage_in_mixer) || ATOMIC_GET_RELAXED(plugin->is_visible);
+  CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET_RELAXED(plugin->cpu_usage);
   
   bool add_cpu_data = is_visible && cpu_usage!=NULL;
 
@@ -2126,10 +2126,14 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
     jack_time_t end_time = jack_get_time();
     
     //float new_cpu_usage = 100.0 * (end_time-start_time) / ((double)num_frames / MIXER_get_sample_rate());
-    float new_cpu_usage = (double)(end_time-start_time) * 0.0001 * MIXER_get_sample_rate() / num_frames;
 
     //printf("Adding cpu usage for %s\n",plugin->patch->name);
-    cpu_usage->addUsage(new_cpu_usage);
+    if (MIXER_get_remaining_num_jackblock_frames()==num_frames){//g_jackblock_delta_time==0){
+      float new_cpu_usage = plugin->processing_time_so_far_in_jack_block * 0.0001 * MIXER_get_sample_rate() / g_jackblock_size; //num_frames;
+      cpu_usage->addUsage(new_cpu_usage);
+      plugin->processing_time_so_far_in_jack_block = 0;
+    }else
+      plugin->processing_time_so_far_in_jack_block += (end_time-start_time);
   }
 }
 
