@@ -2133,7 +2133,9 @@
                                                                          "0.00"
                                                                          v)))
                                                 (let ((maybe (<gui> :requester-operations
-                                                                    (<-> "Set new volume for " (<ra> :get-instrument-name instrument-id))
+                                                                    (<-> "Set new volume for "
+                                                                         (<ra> :get-instrument-name instrument-id)
+                                                                         "\n[" (one-decimal-string *min-db*) " -> " (one-decimal-string *max-db*) "]")
                                                                     (lambda ()
                                                                       (<ra> :request-float "dB: " *min-db* *max-db* #f old-volume)))))
                                                   (when (>= maybe *min-db*)
