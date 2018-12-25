@@ -251,12 +251,24 @@
                             :rotate 0
                             :cut-text-to-fit #t
                             :scale-font-size #t)
+
+  (define vertical-text (= 0 (modulo (+ 90 rotate) 180)))
+  (define horizontal-text (= 0 (modulo rotate 180)))
+  
   (<gui> :draw-text gui color
-         (if wrap-lines
-             (fit-text text (- x2 x1) (- y2 y1)) ;; Replacement code. Wrapping lines in gui_draw-text has been disabled since it didn't work very well.
+         (if (and wrap-lines
+                  (or vertical-text horizontal-text)
+                  )
+             (fit-text text  ;; Replacement code. Wrapping lines in gui_draw-text has been disabled since it didn't work very well.
+                       (if horizontal-text
+                           (- x2 x1)
+                           (- y2 y1))
+                       (if horizontal-text
+                           (- y2 y1)
+                           (- x2 x1)))
              text)
          x1 y1 x2 y2
-         #f ;;wrap-lines
+         #f ;; wrap-lines
          align-top
          align-left
          rotate

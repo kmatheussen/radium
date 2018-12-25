@@ -1008,12 +1008,6 @@
   (<gui> :show (testarea :get-gui)))
 !!#
 
-(define (get-vertical-list-scrollbar-width scrollbar-width)
-  (between 1
-           (/ scrollbar-width 10)
-           (min (get-fontheight)
-                (/ scrollbar-width 2))))
-
 (def-area-subclass (<vertical-list-area> :gui :x1 :y1 :x2 :y2
                                          :areas
                                          :scrollbar-color "#400010"
@@ -1021,7 +1015,10 @@
                                          :expand-area-widths #t
                                          )
 
-  (define scrollbar-width (get-vertical-list-scrollbar-width width))
+  (define scrollbar-width (between 1
+                                   (/ width 10)
+                                   (min (get-fontheight)
+                                        (/ width 2))))
 
   (define scrollbar-x1 (- x2 scrollbar-width))
 
@@ -1187,7 +1184,7 @@
 
   (update-areas!)
 
-  ( ;;<ra> :schedule 5 ;; wait a little bit so that the main area as enough time to be displayed properly. (in RELEASE mode, this didn't make a difference)
+  ( ;;<ra> :schedule 5 ;; wait a little bit so that the main area has enough time to be displayed properly. (in RELEASE mode, this didn't make a difference)
         (lambda ()
           (let ((last-time 0)
                 (temp '()))
@@ -1198,7 +1195,7 @@
                         (set! temp (cons file-info temp)))
                     (when (or is-finished
                               (> (time) (+ last-time 0.05)))
-                      (set! entries (sort (append temp entries)
+                      (set! entries (sort (append! entries temp)
                                           (lambda (a b)
                                             (string<? (a :filename) (b :filename)))))
                       (set! temp '())
