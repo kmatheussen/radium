@@ -143,9 +143,9 @@ void statistic(const char* name, double* timing)
     double lo, hi, tot;
     double mega =  double(VSIZE*ITER)/MEGABYTE; // mega samples
     // skip first 10 values to avoid cache bias ???
-    lo = hi = tot = mega/(timing[11] - timing[10]);
+    lo = hi = tot = mega/(timing[10]);/// - timing[10]);
     for (int i = 11; i<COUNT; i++) {
-        double delta = mega/(timing[i] - timing[i-1]);
+      double delta = mega/(timing[i]);// - timing[i-1]);
         if (delta < lo) {
             lo = delta;
         } else if (delta > hi) {
@@ -154,11 +154,12 @@ void statistic(const char* name, double* timing)
         tot += delta;
     }
 
-    cout << '\t' << hi
-         << '\t' << hi*4*DSP.getNumInputs() << '\t' << "MB/s inputs"
-         << '\t' << hi*4*DSP.getNumOutputs() << '\t' << "MB/s outputs"
-         << '\t' << tot/(COUNT-11)
-         << '\t' << lo
+    cout << "\tLow: " << lo
+         << "\tAvg: " << tot/(COUNT-11)
+         << "\tHi: " << hi
+         << "\tHi: " << hi*4*DSP.getNumInputs() << "MB/s inputs"
+         << "\tHi: " << hi*4*DSP.getNumOutputs() << "MB/s outputs"
+         << "\tClass size:" << sizeof(DSP)
          << endl; 
 } 
 
@@ -203,12 +204,14 @@ void bench(const char* name)
     double* timing = (double*) calloc (COUNT, sizeof(double));
 
     for (int i = 0; i<COUNT; i++) {
-        timing[i] = mysecond();
+      double start = mysecond();
         for (int k = 0; k<ITER; k++) {
             // allocate new input buffers to avoid L2 cache
             for (int c=0; c<numInChan; c++) { inChannel[c] = nextVect(); }
             DSP.compute(VSIZE,inChannel,outChannel);
         }
+        timing[i] = mysecond() - start;
+        usleep(1000*5);
     }
 
     statistic(name, timing);
@@ -236,9 +239,12 @@ int main(int argc, char *argv[] )
     NV = lopt(argc, argv, "--num-vector", "-n", 20000);
     COUNT = lopt(argc, argv, "--count", "-c", 1000);
     ITER = lopt(argc, argv, "--iteration", "-i", 10);
-    //setRealtimePriority();
-  	bench(argv[0]);
-  	return 0;
+    if(setRealtimePriority()==false)
+      printf("  Failed to set realtime\n");
+    else
+      printf("fine\n");
+    bench(argv[0]);
+    return 0;
 }
 
 /********************END ARCHITECTURE SECTION (part 2/2)****************/

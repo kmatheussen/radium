@@ -61,33 +61,23 @@ extern int default_scrolls_per_second;
 class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   Q_OBJECT
 
-  struct Timer : public QTimer{
-    
-    void timerEvent(QTimerEvent * e) override {
-      QString usage;
+  static void maybe_update_cpu(void) {
 
-      float mincpu = g_cpu_usage.min();
-      float maxcpu = g_cpu_usage.max();
-      float avgcpu = g_cpu_usage.avg();
+    QString cpu_string;
+
+    if (g_cpu_usage.maybe_update(cpu_string)){
       
-      usage.sprintf("%s%.1f / %s%.1f / %s%.1f",
-                    mincpu < 10 ? " " : "", mincpu,
-                    avgcpu<10?" ":"", avgcpu,
-                    maxcpu < 10?" ":"", maxcpu
-                    );
-
-      g_cpu_usage.reset();
-
       for(auto *bottom_bar_widget : g_bottom_bars){
         if(bottom_bar_widget==NULL)
           RError("bottom_bar_widget==NULL");
         else if (bottom_bar_widget->cpu_label==NULL)
           RError("bottom_bar_widget->cpu_label==NULL");
         else
-          bottom_bar_widget->cpu_label->setText(usage);
+          bottom_bar_widget->cpu_label->setText(cpu_string);
       }
+
     }
-  };
+  }
 
   bool has_midi_learn = false;
 
@@ -151,12 +141,13 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     
       for(auto *bottom_bar_widget : g_bottom_bars)
         bottom_bar_widget->frequent_timer_callback();
+
+      Bottom_bar_widget::maybe_update_cpu();
     }
   };
 
  public:
   bool _initing;
-  Timer _timer;
   Timer2 _timer2;
 
   bool _triggered_by_user;
@@ -198,7 +189,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     sps_line->hide();
 
     // Adjust cpu label width
-    set_cpu_usage_font_and_width(cpu_label, false, false);
+    set_cpu_usage_font_and_width(cpu_label, true, false);
 
     // Adjust velocity slider widths
     {
@@ -214,9 +205,6 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     // set up timers, but only in the first created bottom bar.
     if (g_bottom_bars.size() == 0){
 
-      _timer.setInterval(1000);
-      _timer.start();
-      
       _timer2.setInterval(50);
       _timer2.start();
     }

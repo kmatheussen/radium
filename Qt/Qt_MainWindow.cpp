@@ -812,8 +812,9 @@ static void remove_null_and_nonmodal_widgets(void){
   QVector<QPointer<QWidget>> new_modal_widgets;
 
   for(QPointer<QWidget> &w : g_modal_widgets){
-    if (w.data() != NULL){
-      if (w.data()->isModal()==true){
+    QWidget *widget = w.data();
+    if (widget != NULL){
+      if (widget->isModal()==true){
         new_modal_widgets.push_back(w);
       }
     }

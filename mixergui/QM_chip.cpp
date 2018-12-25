@@ -1627,12 +1627,14 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     
     if (ATOMIC_GET(g_show_cpu_usage_in_mixer)){
       
-      CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
+      CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET_RELAXED(plugin->cpu_usage);
 
-      if (cpu_usage==NULL)
-        ATOMIC_SET(plugin->cpu_usage, new CpuUsage);
-      else
-        _name_text = cpu_usage->update_and_get_string();
+      if (cpu_usage==NULL){
+        cpu_usage = new CpuUsage;
+        ATOMIC_SET(plugin->cpu_usage, cpu_usage);
+      }
+
+      cpu_usage->maybe_update(_name_text);
       
     } else  {
       

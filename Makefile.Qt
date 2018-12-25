@@ -1311,7 +1311,7 @@ Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cp
 $(P)mQt_PopupMenu.cpp: $(P)Qt_PopupMenu.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_PopupMenu.cpp -DUSE_QT_MENU >$(P)mQt_PopupMenu.cpp
 
-Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar_widget_callbacks.h $(P)mQt_upperleft_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h
+Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar_widget_callbacks.h $(P)mQt_upperleft_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h audio/CpuUsage.hpp
 	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
 
 Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
@@ -1357,7 +1357,7 @@ $(P)mQt_instruments_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_instrument
 $(P)mQt_midi_instrument_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_midi_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_midi_instrument_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) midi_instrument_widget
 
-$(P)mQt_audio_instrument_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_audio_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_audio_instrument_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)mQt_patch_widget_callbacks.h
+$(P)mQt_audio_instrument_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_audio_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_audio_instrument_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)mQt_patch_widget_callbacks.h audio/CpuUsage.hpp
 	@echo
 	@echo "Changed (mQt_audio_instrument_widget_callbacks.h):"
 	@echo $?
@@ -2154,7 +2154,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 #audio/faust-examples/faust-stk/flute.cpp: audio/faust-examples/faust-stk/flute.dsp
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp -o flute.cpp
 
-SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/Queue.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h
+SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/Queue.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
 	$(CCC) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT)  # -O3 # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
@@ -2179,7 +2179,7 @@ AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp
 Peaks.o: audio/Peaks.cpp audio/Peaks.hpp
 	$(CCC) audio/Peaks.cpp $(SNDFILEOPT) $(QTOPT)
 
-Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h audio/SampleRecorder_proc.h
+Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h audio/SampleRecorder_proc.h audio/CpuUsage.hpp
 	$(CCC) audio/Mixer.cpp $(QTOPT) $(JACKOPT)  $(CPUOPT)
 
 get_windows_commandlines.o: audio/get_windows_commandlines.c

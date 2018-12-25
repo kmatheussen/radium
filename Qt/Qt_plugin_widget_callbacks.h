@@ -292,7 +292,7 @@ public:
     
     if (plugin != NULL) {
 
-      CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
+      CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET_RELAXED(plugin->cpu_usage);
       
       if (cpu_usage==NULL){
         
@@ -303,8 +303,10 @@ public:
         if (SP_is_autosuspending(plugin->sp)) {
           if (cpu_usage->should_update())
             plugin_info->setText(AUTOSUSPENDING_STRING);
-        } else {
-          QString new_text = cpu_usage->update_and_get_string();
+        } else {          
+          QString new_text;
+          cpu_usage->maybe_update(new_text);
+          //static int num=0;printf("hepp: %d: %s\n", num++, new_text.toUtf8().constData());
           if (new_text != plugin_info->text())
             plugin_info->setText(new_text);
         }
