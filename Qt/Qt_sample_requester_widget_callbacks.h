@@ -386,10 +386,14 @@ class Sample_requester_widget : public QWidget
       soundfile_font.setBold(true);
       soundfile_font.setStyleName("Bold");
       
+      soundfile_font.setPointSize(QApplication::font().pointSize());
+
+      /*
       if(soundfile_font.pixelSize()>0)
         soundfile_font.setPixelSize(8);//font.pixelSize()*4/3);
       else
         soundfile_font.setPointSize(8);//font.pointSize()*4/3);
+      */
     }
 
 
