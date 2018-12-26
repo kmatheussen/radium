@@ -128,7 +128,7 @@ dyn_t getFileInfo(const_char* w_path){
 
   HASH_put_bool(ret, ":is-audiofile", sndfile != NULL);
   if (sndfile != NULL){
-    HASH_put_bool(ret, ":num-ch", sf_info.channels);
+    HASH_put_int(ret, ":num-ch", sf_info.channels);
     HASH_put_int(ret, ":num-frames", sf_info.frames);
     HASH_put_float(ret, ":samplerate", sf_info.samplerate);
     const char *format;
@@ -294,12 +294,11 @@ bool iterateDirectory(const_char* w_path, bool async, func_t* callback){
         , _gc_protect_pos(gc_protect_pos)
       {
         start();
+        connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
       }
 
       void run() override {
         traverse(_path, _callback, false, _gc_protect_pos);
-
-        deleteLater();
       }
     };
 
