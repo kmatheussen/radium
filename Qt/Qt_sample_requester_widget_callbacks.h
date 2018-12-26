@@ -237,6 +237,10 @@ class Sample_requester_widget : public QWidget
   {
     setupUi(this);
 
+    file_list->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
+    file_list->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
+
+
     // set _dir
     {
       bool use_saved_path = true;
