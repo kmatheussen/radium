@@ -1610,6 +1610,9 @@ static void set_num_visible_outputs(SoundPlugin *plugin){
   for(auto *sample : data->_samples)
     new_visible_channels = R_MAX(new_visible_channels, sample->_num_ch);
 
+  if (new_visible_channels > NUM_OUTPUTS)
+    new_visible_channels = NUM_OUTPUTS;
+
   plugin->num_visible_outputs = new_visible_channels;
 }
 
@@ -2393,17 +2396,49 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   //printf("Num samples: %d\n", data->_samples.size());
 
+  int max_ch = 0;
+  for(Sample *sample : data->_samples)
+    max_ch = R_MAX(max_ch, sample->_num_ch);
+
+  // change outputs in case there are more channels in the audio file than NUM_OUTPUTS
+  int extra_num_ch = max_ch - NUM_OUTPUTS;
+  float *extra_outputs[R_MAX(1, max_ch)];
+  float extra[R_MAX(1, num_frames * extra_num_ch)];
+
+  if (extra_num_ch > 0){
+
+    memset(extra, 0, num_frames*sizeof(float)*extra_num_ch); // This data is not used for anything, but since we add data to it, we null it out first avoid nominalization/inf/nan/etc. problems.
+
+    for(int ch=0;ch<NUM_OUTPUTS;ch++)
+      extra_outputs[ch] = outputs[ch];
+
+    for(int ch=NUM_OUTPUTS;ch<max_ch;ch++){
+      extra_outputs[ch] = &extra[ (ch-NUM_OUTPUTS) * num_frames];
+    }
+
+    outputs = extra_outputs;
+  }
+  
+
   // Read samples
   for(Sample *sample : data->_samples)
 #if 1
+
     sample->RT_process(num_frames, outputs);
+
 #else
+
+  // for debugging
+
+  warning, not tested for a while.
+
     for(int i=0;i<num_frames;i++){
       float *outputs2[NUM_OUTPUTS];
       for(int ch=0;ch<NUM_OUTPUTS;ch++)
         outputs2[ch] = outputs[ch]+i;
       sample->RT_process(1, outputs2);
     }
+
 #endif
 }
 
