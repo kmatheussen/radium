@@ -2814,6 +2814,37 @@ struct AutomationPainter{
 namespace radium{
   class Envelope;
 }
+
+namespace radium{
+class AudioBuffer{
+  float **_samples;
+  int _num_ch;
+  int _num_frames;
+  AudioBuffer(float **samples, int num_ch, int num_frames)
+    : _samples(samples)
+    , _num_ch(num_ch)
+    , _num_frames(num_frames)
+  {
+  }
+  void make_clean(void) const {
+    for(int ch=0;ch<_num_ch;ch++)
+      memset(_samples[ch], 0, sizeof(float)*_num_frames);
+  }
+  void skew(int dx){
+    if (dx > _num_frames){
+      R_ASSERT(false);
+      dx = _num_frames;
+    } else {
+      R_ASSERT_NON_RELEASE(dx < _num_frames);
+    }
+
+    for(int ch=0;ch<_num_ch;ch++){
+      _samples[ch] += dx;
+    }
+    _num_frames -= dx;
+  }
+};
+}
 #endif
 
 struct SeqBlock{
