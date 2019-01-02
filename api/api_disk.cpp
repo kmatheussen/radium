@@ -216,14 +216,16 @@ static void traverse(QString path, func_t* callback, bool in_main_thread, int64_
       // Note: There's no hard limit on the number of simultaneous callbacks in THREADING_run_on_main_thread_async.
       // It just allocate new memory when needed.
 
-      last_id = THREADING_run_on_main_thread_async([callback, path, info, &ATOMIC_NAME(callback_has_returned_false)](){
+      last_id = THREADING_run_on_main_thread_async([callback, path, &ATOMIC_NAME(callback_has_returned_false)](){
           if(!call_callback(callback,
                             true, 
                             false,
                             qstring_to_w(path)
                             ))
             ATOMIC_SET(callback_has_returned_false, true);
-        });
+        },
+        true
+        );
 
     }
 
@@ -239,7 +241,7 @@ static void traverse(QString path, func_t* callback, bool in_main_thread, int64_
     if (last_id >= 0)
       THREADING_wait_for_async_function(last_id);
 
-    THREADING_run_on_main_thread_async([callback, &ATOMIC_NAME(callback_has_returned_false), gc_protect_pos](){
+    THREADING_run_on_main_thread_and_wait([callback, &ATOMIC_NAME(callback_has_returned_false), gc_protect_pos](){
 
         if (ATOMIC_GET(callback_has_returned_false)==false)
           call_callback(callback, false, true, "");
@@ -262,6 +264,7 @@ bool iterateDirectory(const_char* w_path, bool async, func_t* callback){
 
   if (!info.exists()){
     showAsyncMessage(talloc_format("Directory \"%S\" does not exist.", STRING_create(path)));
+    call_callback(callback, true, true, "");
     return false;
   }
 
@@ -277,6 +280,7 @@ bool iterateDirectory(const_char* w_path, bool async, func_t* callback){
 
   if (!is_readable){
     showAsyncMessage(talloc_format("Directory \"%S\" is not readable", STRING_create(path)));
+    call_callback(callback, true, true, "");
     return false;
   }
  

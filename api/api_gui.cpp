@@ -55,6 +55,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QHideEvent>
 #include <QWindow>
 #include <QScreen>
+#include <QMimeData>
+#include <QDrag>
 
 #include <QDesktopServices>
 #include <QtWebKitWidgets/QWebView>
@@ -1164,6 +1166,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     bool _is_pure_qwidget;
 
     QColor _background_color;
+
+    //QFont _paintfont;
+    QHash<QString,QFont> _cached_fonts;
+    QString _fontstring;
 
 #if !defined(RELEASE)
     // for debugging. Use "call puts(gui->scheme_backtrace)" in gdb to print.
@@ -3952,10 +3958,6 @@ const_char* gui_mixColors(const_char* color1, const_char* color2, float how_much
   return talloc_strdup(mix_colors(col1, col2, how_much_color1).name().toUtf8().constData());
 }
 
-float gui_textWidth(const_char* text){
-  return GFX_get_text_width(root->song->tracker_windows, text);
-}
-
 static Gui *get_gui_maybeclosed(int64_t guinum){
   if (guinum < 0 || guinum > g_highest_guinum){
     handleError("There has never been a Gui #%d", (int)guinum);
@@ -3998,6 +4000,28 @@ static Gui *get_gui(int64_t guinum){
   }
 
   return gui;
+}
+
+float gui_textWidth(const_char* text, int64_t guinum){
+  QFont font;
+
+  if (guinum >= 0){
+    Gui *gui = get_gui(guinum);
+    if (gui != NULL) {
+      QPainter *painter = gui->get_painter();
+      if (painter == NULL)
+        font = gui->_widget->font();
+      else
+        font = painter->font();
+    } else {
+      font = QApplication::font();
+    }
+  } else {
+    font = QApplication::font();
+  }
+
+  const QFontMetrics fn = QFontMetrics(font);
+  return fn.width(text);
 }
 
 int64_t gui_ui(const_char *filename){
@@ -6294,6 +6318,55 @@ const_char* generateNewBlockColor(float mix_background){
                                       );
 }
 
+const_char* gui_getFont(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return "";
+
+  QPainter *painter = gui->get_painter();
+
+  if (painter != NULL)
+    return talloc_strdup(painter->font().toString().toUtf8().constData());
+
+  QFont font = gui->_widget->font();
+  QString fontstring = font.toString();
+
+  if(!gui->_cached_fonts.contains(fontstring))
+    gui->_cached_fonts[fontstring] = font;
+
+  return talloc_strdup(fontstring.toUtf8().constData());
+}
+
+void gui_setFont(int64_t guinum, const_char* char_fontdescr){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  QString fontdescr(char_fontdescr);
+
+  QFont font;
+
+  if (gui->_cached_fonts.contains(fontdescr))
+    font = gui->_cached_fonts[fontdescr];
+  else{    
+    font.fromString(fontdescr);
+    gui->_cached_fonts[fontdescr] = font;
+  }
+
+  QPainter *painter = gui->get_painter();
+
+  if(painter==NULL) {
+    gui->_widget->setFont(font);
+    return;
+  }
+
+  if(fontdescr==gui->_fontstring)
+    return;
+  
+  gui->_fontstring = fontdescr;
+  painter->setFont(font);
+}
+
 static inline void setStyleSheetRecursively(QWidget *widget, const_char* stylesheet){
   if (widget != NULL){
     widget->setStyleSheet(stylesheet);
@@ -6890,7 +6963,104 @@ bool gui_areaNeedsPainting(int64_t guinum, float x1, float y1, float x2, float y
   return region->intersects(rect);
 }
 
-/////////////
+
+///////////// drag and drop
+
+namespace{
+  struct DragTempWidget : QWidget, Gui{
+
+    func_t *_paint_icon_callback;
+
+    DragTempWidget(func_t* paint_icon_callback, int width, int height)
+      : Gui(this)
+      , _paint_icon_callback(paint_icon_callback)
+    {
+      setMinimumSize(width, height);
+      resize(width,height);
+    }
+
+    void paintEvent(QPaintEvent *ev) override{
+      TRACK_PAINT();
+      QPainter p(this);
+      _current_painter = &p;
+      S7CALL(void_int_int_int, _paint_icon_callback, get_gui_num(), width(), height());
+      _current_painter = NULL;
+    }
+  };
+}
+
+
+static void create_drag_icon(int64_t parent, int width, int height, float hotspot_x, float hotspot_y, const_char* w_path, int blocknum, func_t *paint_icon_callback){
+
+  Gui *gui = get_gui(parent);
+  
+  if (gui==NULL)
+    return;
+
+  QMimeData *mimeData = new QMimeData;
+
+  if (w_path != NULL){
+    R_ASSERT(blocknum==-1);
+    printf("   w_path: -%s-.   path: -%s-\n", w_path, w_to_qstring(w_path).toUtf8().constData());
+    QUrl url = QUrl::fromLocalFile(w_to_qstring(w_path));
+    QList<QUrl> urls;
+    urls << url;
+    mimeData->setUrls(urls);
+  } else {
+    mimeData->setText("block:" + QString::number(blocknum));
+  }
+
+  mimeData->setData(QStringLiteral("application/x-hotspot"),
+                    QByteArray::number((int)hotspot_x) + ' ' + QByteArray::number((int)hotspot_y)
+                    );
+  //mimeData->setText(mime_data); //child->text());
+  //mimeData->setData(hotSpotMimeDataKey(),
+  //                  QByteArray::number(hotSpot.x()) + ' ' + QByteArray::number(hotSpot.y()));
+
+  qreal dpr = gui->_widget->window()->windowHandle()->devicePixelRatio();
+  QPixmap pixmap(width * dpr, height * dpr);
+  //pixmap.fill("yellow");
+  pixmap.setDevicePixelRatio(dpr);
+
+  {
+    DragTempWidget temp_widget(paint_icon_callback, width, height);
+    temp_widget.render(&pixmap);
+  }
+
+  QDrag *drag = new QDrag(gui->_widget);
+  drag->setMimeData(mimeData);
+  drag->setPixmap(pixmap);
+  drag->setHotSpot(QPoint(hotspot_x, hotspot_y));
+
+  IsAlive is_alive(drag);
+
+  // schedule drag->exec to run in the next qt cycle to avoid nested calls to scheme eval. Want to avoid that complication.
+  THREADING_run_on_main_thread_async([is_alive, drag](){    
+      if (is_alive){
+        printf("\n\n\n  ------------- CALLING EXEC\n\n\n");
+        drag->exec(Qt::CopyAction | Qt::MoveAction | Qt::LinkAction);
+        printf("----- EXEC finished\n\n\n");
+      } else {
+        R_ASSERT_NON_RELEASE(false);
+      }
+    },
+    true
+    );
+
+  //if (dropAction == Qt::MoveAction)
+  //  child->close();
+  
+}
+
+void gui_createBlockDragIcon(int64_t parent, int width, int height, float hotspot_x, float hotspot_y, int blocknum, func_t *paint_icon_callback){
+  create_drag_icon(parent, width, height, hotspot_x, hotspot_y, NULL, blocknum, paint_icon_callback);
+}
+
+void gui_createFileDragIcon(int64_t parent, int width, int height, float hotspot_x, float hotspot_y, const_char* w_path, func_t *paint_icon_callback){
+  create_drag_icon(parent, width, height, hotspot_x, hotspot_y, w_path, -1, paint_icon_callback);
+}
+
+///////////// keyboard
 
 void obtainKeyboardFocus(int64_t guinum){
   obtain_keyboard_focus_counting();
