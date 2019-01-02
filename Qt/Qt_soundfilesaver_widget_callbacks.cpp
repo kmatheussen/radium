@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
 
+#include "Qt_MyQSpinBox.h"
 #include <FocusSniffers.h>
 
 
@@ -342,13 +343,18 @@ public slots:
   }
 
   void on_post_silence_spin_editingFinished(){
-    post_silence_spin->clearFocus();
     set_editor_focus();
+
+    GL_lock();{
+      post_silence_spin->clearFocus();
+    }GL_unlock();
   }
 
   void on_num_channels_editingFinished(){
-    num_channels->clearFocus();
     set_editor_focus();
+    GL_lock();{
+      num_channels->clearFocus();
+    }GL_unlock();
   }
 
   void on_filename_edit_returnPressed(){
