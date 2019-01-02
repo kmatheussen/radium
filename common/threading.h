@@ -43,7 +43,7 @@ extern LANGSPEC bool THREADING_is_juce_thread(void);
 #ifdef __cplusplus
 #include <functional>
 void THREADING_call_very_often(void);
-int64_t THREADING_run_on_main_thread_async(std::function<void(void)> callback); // returns id
+int64_t THREADING_run_on_main_thread_async(std::function<void(void)> callback, bool called_from_main_thread = false); // returns id
 bool THREADING_async_function_has_run(int64_t id);
 void THREADING_wait_for_async_function(int64_t id);
 void THREADING_run_on_main_thread_and_wait(std::function<void(void)> callback);
