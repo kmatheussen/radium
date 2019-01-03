@@ -148,7 +148,7 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #if defined(__clang__)
   #define FORMAT_ATTRIBUTE(A,B)
 #else
-  #define FORMAT_ATTRIBUTE(A,B) __attribute__((format(gnu_printf, A, B)));;
+  #define FORMAT_ATTRIBUTE(A,B) __attribute__((format(gnu_printf, A, B)))
 #endif
 
 

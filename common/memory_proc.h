@@ -32,29 +32,29 @@ extern LANGSPEC void tfree(void *element);
 
 //extern LANGSPEC void *tracker_alloc_clean(int size,void *(*AllocFunction)(int size2));
 
-extern LANGSPEC void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber);
+extern LANGSPEC void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber) __attribute__((malloc));
 
-extern LANGSPEC void *tralloc__(int size, const char *filename, int linenumber);
+extern LANGSPEC void *tralloc__(int size, const char *filename, int linenumber) __attribute__((malloc));
 
-extern LANGSPEC void *tralloc_atomic__(int size, const char *filename, int linenumber);
+extern LANGSPEC void *tralloc_atomic__(int size, const char *filename, int linenumber) __attribute__((malloc));
 
-extern LANGSPEC void *talloc__(int size, const char *filename, int linenumber);
+extern LANGSPEC void *talloc__(int size, const char *filename, int linenumber) __attribute__((malloc));
 
-extern LANGSPEC void *talloc_atomic__(int size, const char *filename, int linenumber);
+extern LANGSPEC void *talloc_atomic__(int size, const char *filename, int linenumber) __attribute__((malloc));
 
-extern LANGSPEC void *talloc_atomic_uncollectable__(int size, const char *filename, int linenumber);
+extern LANGSPEC void *talloc_atomic_uncollectable__(int size, const char *filename, int linenumber) __attribute__((malloc));
 
-extern LANGSPEC void *talloc_realloc__(void *v, int new_size, const char *filename, int linenumber);
+extern LANGSPEC void *talloc_realloc__(void *v, int new_size, const char *filename, int linenumber) __attribute__((malloc));
 
-extern LANGSPEC void *talloc_atomic_clean__(int size, const char *filename, int linenumber);
+extern LANGSPEC void *talloc_atomic_clean__(int size, const char *filename, int linenumber) __attribute__((malloc));
 
-extern LANGSPEC char *talloc_strdup__(const char *input, const char *filename, int linenumber);
+extern LANGSPEC char *talloc_strdup__(const char *input, const char *filename, int linenumber) __attribute__((malloc));
 
-extern LANGSPEC wchar_t *talloc_wcsdup__(const wchar_t *input, const char *filename, int linenumber);
+extern LANGSPEC wchar_t *talloc_wcsdup__(const wchar_t *input, const char *filename, int linenumber) __attribute__((malloc));
 
-extern LANGSPEC char *talloc_numberstring__(int number, const char *filename, int linenumber);
+extern LANGSPEC char *talloc_numberstring__(int number, const char *filename, int linenumber) __attribute__((malloc));
 
-extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, int linenumber);
+extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, int linenumber) __attribute__((malloc));
 
 
 
@@ -85,7 +85,7 @@ extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, i
 #define tcopy(mem, size) memcpy(talloc(size), (void*)mem, size)
 #define tcopy_atomic(mem, size) memcpy(talloc_atomic(size), (void*)mem, size)
 
-extern LANGSPEC char *talloc_format_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2);
+extern LANGSPEC char *talloc_format_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2) __attribute__((malloc));
 
 #define talloc_format(FMT, ...) ((void)donothing(0 && printf(FMT,  __VA_ARGS__)), talloc_format_internal(FMT,   __VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT. (the printf call will never be called, or even compiled into the program, but the error runs on it)
 

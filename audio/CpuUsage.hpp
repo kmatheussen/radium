@@ -71,9 +71,9 @@ private:
   }
 
   QString get_string(void){
-    int mincpu = min();
-    int maxcpu = max();
-    int avgcpu = avg();
+    int mincpu = round(min());
+    int maxcpu = round(max());
+    int avgcpu = round(avg());
 
     reset();
 
