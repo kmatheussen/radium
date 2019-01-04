@@ -50,6 +50,8 @@
                          ,@body)))))
 
 
+(define *area-id-counter* 0)
+
 (define-expansion (def-area-subclass def . body)
 
   (define body-methods '())
@@ -69,8 +71,12 @@
      (define width (- x2 x1))
      (define height (- y2 y1))
 
+     (define font #f)
+     
      (define (paint?)
        #t)
+
+     (define id (inc! *area-id-counter* 1))
 
      (define is-alive #t)
 
@@ -164,12 +170,15 @@
 	     (dy (- y* y1)))
 	 (move! dx dy)))     
 
-     (define (set-position2! x1* y1* x2* y2*)
-       (define new-width (- x2* x1*))
-       (define new-height (- y2* y1*))
-       (set! x2 (+ x1 new-width))
-       (set! y2 (+ y1 new-height))
+     (define (set-position-and-size! x1* y1* x2* y2*)
+       (set! width (- x2* x1*))
+       (set! height (- y2* y1*))
+       (set! x2 (+ x1 width))
+       (set! y2 (+ y1 height))
        (set-position! x1* y1*))
+
+     (define (resize! width height)
+       (set-position-and-size! x1 y1 (+ x1 width) (+ y1 height)))
 
      (define effect-monitors '())
 
@@ -201,7 +210,7 @@
        (set! is-alive #f))
 
      (define (reset! x1* y1* x2* y2*)
-       (set-position2! x1* y1* x2* y2*)
+       (set-position-and-size! x1* y1* x2* y2*)
        (remove-sub-areas!)
        (set! parent-area #f)
        (update-me!))
@@ -264,8 +273,16 @@
      (define (lift-me!)
        (if parent-area
            (parent-area :lift-sub-area! this)))
-     
+
+     ;; State
+     (define (get-state)
+       #f)
+
+     (define (apply-state! hash-table)
+       #t)
+
      ;; Keyboard listener
+     ;;;;;;;;;;;;;;;;;;;;;;;;
      (define key-pressed #f)
      (define (key-pressed-internal key-event)
        (call-with-exit
@@ -285,6 +302,23 @@
        #t
        )
 
+     
+     ;; Mouse wheel
+     ;;;;;;;;;;;;;;;;;;;;;;;;
+     (define mouse-wheel-moved #f)
+     (define (mouse-wheel-moved-internal! is-up x* y*)
+       (and (inside? x* y*)
+            (call-with-exit
+             (lambda (return)
+               (if mouse-wheel-moved
+                   (let ((ret (mouse-wheel-moved is-up x* y*)))
+                     (if ret
+                         (return #t)))
+                   (for-each (lambda (sub-area)
+                               (if (sub-area :mouse-wheel-moved-internal! is-up x* y*)
+                                   (return #t)))
+                             sub-areas))
+               #f))))
      
      ;; Mouse cycles
      ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -508,10 +542,6 @@
      (define (paint-internal px1 py1 px2 py2) ;; px1, py1, etc. is the clip area of the parent area.
 
        ;;(c-display "\n\npaint-internal called" ',(car def) "(" x1 y1 x2 y2 "). p: (" px1 py1 px2 py2 ")")
-                  
-       
-       '(c-display (paint?)
-                   (<gui> :area-needs-painting gui x1 y1 x2 y2));;overlaps? x1* y1* x2* y2*))
 
        (when (and (paint?)
                   (<gui> :area-needs-painting gui x1 y1 x2 y2));;overlaps? x1* y1* x2* y2*))
@@ -526,12 +556,17 @@
                       (> cy2 cy1))
 
              (<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
-             (paint)
-             
-             (for-each (lambda (sub-area)
-                         (sub-area :paint-internal cx1 cy1 cx2 cy2))
-                       sub-areas)
-             
+
+             (define (paintit)
+                (paint)                
+                (for-each (lambda (sub-area)
+                            (sub-area :paint-internal cx1 cy1 cx2 cy2))
+                          sub-areas))
+
+             (if font
+                 (<gui> :do-font gui font paintit)
+                 (paintit))
+
              (<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
              (post-paint)))
            
@@ -552,8 +587,10 @@
      :get-i-position x (apply get-i-position x)
      :inside? x (apply inside? x)
      :update-me! x (apply update-me! x)
+     :set-font! dasfont (set! font dasfont)
      :set-position! x (apply set-position! x)
-     :set-position2! x (apply set-position2! x)
+     :set-position-and-size! x (apply set-position-and-size! x)
+     :resize! x (apply resize! x)
      :move! x (apply move! x)
      :move-internal! x (apply move-internal! x)
      :set-parent-area! (new-parent-area) (begin
@@ -567,16 +604,23 @@
      :remove-sub-areas! x (apply remove-sub-areas! x)
      :lift-sub-area! x (apply lift-sub-area! x)
      :lift-me! x (apply lift-me! x)
+     :get-sub-areas () sub-areas
+     :get-state  x (apply get-state x)
+     :apply-state! x (apply apply-state! x)
+
      :key-pressed-internal! x (apply key-pressed-internal! x)
      :key-released-internal! x (apply key-released-internal! x)
+     :mouse-wheel-moved-internal! x (apply mouse-wheel-moved-internal! x)
      :add-mouse-cycle! x (apply add-mouse-cycle! x)
      :get-mouse-cycle x (apply get-mouse-cycle x)
      :add-nonpress-mouse-cycle! x (apply add-nonpress-mouse-cycle! x)
      :get-nonpress-mouse-cycle x (apply get-nonpress-mouse-cycle x)
      :overlaps? x (apply overlaps? x)
+     ;;:paint x (apply paint x)
      :paint-internal x (apply paint-internal x)
      :mouse-callback-internal x (apply mouse-callback-internal x)
      :has-mouse () (has-mouse)
+     :is-alive () is-alive
      :reset! x (apply reset! x)
      :i-am-removed-internal! x (apply i-am-removed-internal! x)
      :add-statusbar-text-handler x (apply add-statusbar-text-handler x)
@@ -588,7 +632,32 @@
   )
 
 
-(delafina (make-qtarea :width 100 :height 100)
+;; Warning: Does not check if the states are compatible.
+(def-area-subclass (<keep-states-area> :gui :x1 :y1 :x2 :y2)    
+  
+  (define-override (get-state)
+    (hash-table* :sub-states (map (lambda (area)
+                                    (area :get-state))
+                                  sub-areas)))
+  
+  (define-override (apply-state! state)
+    (define sub-states (state :sub-states))
+    (if (= (length sub-states)
+           (length sub-areas))
+        (for-each (lambda (state sub-area)
+                    (sub-area :apply-state! state))
+                  sub-states
+                  sub-areas)))
+  )
+
+(def-area-subclass (<use-first-subarea-state-as-state-area> :gui :x1 :y1 :x2 :y2)
+  (define-override (get-state)
+    ((car sub-areas) :get-state))
+  (define-override (apply-state! state)
+    ((car sub-areas) :apply-state! state)))
+
+
+(delafina (make-qtarea :width 100 :height 100 :sub-area-creation-callback #f)
   (define gui (<gui> :widget width height))  
   (define x1 0)
   (define y1 0)
@@ -605,7 +674,24 @@
              ;;(c-display "has-mouse:" (and (defined? 'has-mouse) (has-mouse)))
              ;;50))
              (has-mouse)))
-    :get-gui () gui)
+
+    (<gui> :add-mouse-wheel-callback gui mouse-wheel-moved-internal!)
+
+    (define the-sub-area #f)
+    
+    (when sub-area-creation-callback
+      (define (recreate width* height*)
+        (resize! width* height*)
+        (define state (and the-sub-area (the-sub-area :get-state)))
+        (remove-sub-areas!)
+        (set! the-sub-area (sub-area-creation-callback gui width height state))
+        (if state
+            (the-sub-area :apply-state! state))
+        (add-sub-area-plain! the-sub-area))
+      
+      (<gui> :add-resize-callback gui recreate)
+      (recreate width height))
+    )
 
   (define area (<new> :qtarea))
 
@@ -728,8 +814,8 @@
   (define (get-background-color)
     (and background-color
          (maybe-thunk-value background-color)))
-        
-  (define-override (paint)
+
+  (define (paint-text-area gui x1 y1 x2 y2)
     (let ((background-color (get-background-color)))
       (if background-color
           (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding)))
@@ -754,9 +840,45 @@
       (define background-color (<gui> :get-background-color gui))
       (<gui> :draw-box gui background-color (+ 0 x1) (+ 0 y1) (- x2 0) (- y2 0) 2 0 0)
       (<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 border-rounding border-rounding))
-    
     )
+
+  (add-method! :paint-text-area paint-text-area)
+
+  (define-override (paint)
+    (paint-text-area gui x1 y1 x2 y2))
+
   )
+
+
+(def-area-subclass (<line-input> :gui :x1 :y1 :x2 :y2
+                                 :prompt ""
+                                 :text ""
+                                 :background-color "color9"
+                                 :get-wide-string #f
+                                 :callback)
+  (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 y2
+                              :text (lambda ()
+                                      (if get-wide-string
+                                          (<ra> :from-base64 text)
+                                          text))
+                              :background-color background-color
+                              :align-left #t))
+  
+  (add-mouse-cycle! :press-func (lambda (button x* y*)
+                                  (and (= button *left-button*)
+                                       (<ra> :schedule 0
+                                             (lambda ()
+                                               (let ((new-name (if get-wide-string
+                                                                   (<ra> :request-w-string prompt #t text)
+                                                                   (<ra> :request-string prompt #t text))))
+                                                 (c-display "GAKKKGAKK_________ NEWNAME" (<-> "-" new-name "-"))
+                                                 (when (not (string=? new-name text))
+                                                   (set! new-name (callback new-name))
+                                                   (if new-name
+                                                       (set! text new-name))
+                                                   (update-me!))
+                                                 #f)))
+                                       #t))))
 
 (define (get-default-button-color gui)
   (define gui-background-color (<gui> :get-background-color gui))
@@ -809,7 +931,55 @@
                       #f)))
                           
                             
-                      
+(def-area-subclass (<radiobuttons> :gui :x1 :y1 :x2 :y2
+                                   :num-buttons
+                                   :curr-button-num
+                                   :value-changed-callback
+                                   :layout-horizontally #t
+                                   :paint-func #f
+                                   :text-func (lambda (num) "") ;; Only used if paint-func is #f
+                                   :text-color *text-color* ;; Only used if paint-func is #f
+                                   :selected-color #f ;; only used if paint-func is #f. If #f, use get-default-button-color
+                                   :right-mouse-clicked-callback #f
+                                   :border-width 0.25
+                                   :box-rounding #f
+                                   )
+
+  (define layout-func (if layout-horizontally
+                          horizontally-layout-areas
+                          vertically-layout-areas))
+  
+  (layout-func x1 y1 x2 y2
+               (iota num-buttons)
+               :callback
+               (lambda (num x1 y1 x2 y2)
+                 (add-sub-area-plain!
+                  (<new> :checkbox gui x1 y1 x2 y2
+                         (lambda ()
+                           (= num curr-button-num))
+                         (lambda (is-on)
+                           (if is-on
+                               (set! curr-button-num num))
+                           (for-each (lambda (num)
+                                       (value-changed-callback num (= curr-button-num num)))
+                                     (iota num-buttons))
+                           (update-me!)
+                           )
+                         :paint-func (and paint-func
+                                          (lambda ()
+                                            (paint-func num)))
+                         :text (if text-func
+                                   (text-func num)
+                                   "o")
+                         :text-color text-color
+                         :selected-color #f
+                         :right-mouse-clicked-callback (and right-mouse-clicked-callback
+                                                            (lambda ()
+                                                              (right-mouse-clicked-callback num)))
+                         :border-width border-width
+                         :box-rounding box-rounding))))
+
+  )
 
 (def-area-subclass (<button> :gui :x1 :y1 :x2 :y2
                              :paint-func #f
@@ -902,6 +1072,8 @@
   (define b (/ (get-fontheight) 5.0))
 
   (define slider-pos 0) ;; goes between 0 and 1.0 - slider-length
+
+  (add-method! :get-slider-pos (lambda () slider-pos))
 
   (add-method! :set-slider-pos!
                (lambda (new-slider-pos call-callback?)
@@ -1008,6 +1180,36 @@
   (<gui> :show (testarea :get-gui)))
 !!#
 
+#!!
+(def-area-subclass (<scroll-area> :gui :x1 :y1 :x2 :y2
+                                  :child-area
+                                  :dx 0
+                                  :dy 0)
+
+  (define vertical-scrollbar ...)
+  (define horizontal-scrollbar ...)
+
+  (define (update-areas!)
+    (remove-sub-areas!)
+    (add-sub-area! child-area (+ x1 dx) (+ y1 dy))
+    (child-area :get-position
+                (lambda (x1* y1* x2* y2* width* height*)
+                  (if (> width* width)
+                      (add-vertical-scrollbar))
+                  (if (> height* height)
+                      (add-horizontal-scrollbar))
+                  ...))
+
+    (update-me!)
+    )
+
+  (update-areas!)
+
+  )
+!!#
+
+     
+
 (def-area-subclass (<vertical-list-area> :gui :x1 :y1 :x2 :y2
                                          :areas
                                          :scrollbar-color "#400010"
@@ -1022,10 +1224,15 @@
 
   (define scrollbar-x1 (- x2 scrollbar-width))
 
+  (define (get-areas)
+    (if (list? areas)
+        areas
+        (areas)))
+    
   (define total-area-height (apply + (map (lambda (area)
                                             (area :get-position (lambda (x1 y1 x2 y2 width height)
                                                                   height)))
-                                          areas)))
+                                          (get-areas))))
   
   (define slider-length (if (= 0 total-area-height)
                             1
@@ -1047,20 +1254,34 @@
                            :vertical #t
                            :background-color background-color))
   
-  ;(for-each (lambda (area)
-  ;            (add-sub-area! area 0 0))
-  ;          areas)
+  (define-override (get-state)
+    (define areas (get-areas))
+    (hash-table* :areas areas
+                 :y1 y1
+                 :start-y1 (if (null? areas)
+                               0
+                               ((car areas) :get-position
+                                (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                                  a-y1)))
+                 :slider-pos (scrollbar :get-slider-pos)))
+
+  (define-override (apply-state! state)
+    (set! areas (state :areas))
+    (define dy (+ (state :start-y1) (- y1 (state :y1))))
+    ;;(c-display "     apply-state!. Position dy:" dy)
+    (scrollbar :set-slider-pos! (state :slider-pos) #f)
+    (position-areas! dy))
 
   (define (position-areas! start-y1)
     (remove-sub-areas!)
     (add-sub-area-plain! scrollbar)
-    (let loop ((areas areas)
+    (let loop ((areas (get-areas))
                (area-y1 start-y1))
       (when (not (null? areas))
         (define area (car areas))
         (define area-y2 (+ area-y1 (area :get-height)))
         (if expand-area-widths
-            (area :set-position2! x1 area-y1 (- scrollbar-x1 1) area-y2)
+            (area :set-position-and-size! x1 area-y1 (- scrollbar-x1 1) area-y2)
             (area :set-position! x1 area-y1))
         (if (and (>= area-y2 y1)
                  (< area-y1 y2))
@@ -1070,59 +1291,152 @@
 
   (position-areas! y1)
 
-  (define-override (i-am-removed!)
-    (<gui> :remove-mouse-wheel-callback gui))
+  (define-override (mouse-wheel-moved-internal! is-up x* y*)
+    (define areas (get-areas))
+    (define is-down (not is-up))
+    (define first-y1 (and (not (null? areas))
+                          ((car areas) :get-position
+                           (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                             a-y1))))
+    
+    (define last-y2 (and (not (null? areas))
+                         ((last areas) :get-position
+                          (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                            a-y2))))
 
-  (<gui> :add-mouse-wheel-callback gui
-         (lambda (is-up x* y*)
-           (define is-down (not is-up))
-           (define first-y1 (and (not (null? areas))
-                                 ((car areas) :get-position
-                                  (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
-                                    a-y1))))
-
-           (define last-y2 (and (not (null? areas))
-                                ((last areas) :get-position
-                                 (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
-                                   a-y2))))
-
-           (c-display "is-up:" is-up x* y* first-y1 last-y2)
-
-           (call-with-exit
-            (lambda (exit)
-              (let loop ((areas areas)
-                         (n 0))
-                (when (not (null? areas))
-                  (define area (car areas))
-                  (area :get-position
-                        (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
-                          (define (doit dy)
-                            (define new-first-y1 (+ first-y1 dy))
-                            (define new-last-y2 (+ last-y2 dy))
-                            (position-areas! new-first-y1)
-                            (scrollbar :set-slider-pos!
-                                       (scale y1
-                                              new-first-y1
-                                              new-last-y2
-                                              0 1)
-                                       #f)
-                            (exit))
-                          (if is-up
-                              (when (>= a-y2 y1)
-                                ;;(c-display "  " n " how-much1:" (- y1 a-y1))
-                                (doit (- y1 a-y1)))
-                              (when (< y1 a-y2)
-                                ;;(c-display "  " n " how-much2:" (- a-y2 y1))
-                                (define dy (- last-y2 y2))                                                
-                                (when (> dy 0)
-                                  (set! dy (min dy (- a-y2 y1)))
-                                  (doit (- dy)))))))
-                  (loop (cdr areas)
-                        (1+ n)
-                        )))))
-                              
-           #t))
+    ;;(c-display "is-up:" is-up x* y* first-y1 last-y2)
+    
+    (call-with-exit
+     (lambda (exit)
+       (let loop ((areas areas)
+                  (n 0))
+         (when (not (null? areas))
+           (define area (car areas))
+           (area :get-position
+                 (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                   (define (doit dy)
+                     (define new-first-y1 (+ first-y1 dy))
+                     (define new-last-y2 (+ last-y2 dy))
+                     (position-areas! new-first-y1)
+                     (scrollbar :set-slider-pos!
+                                (scale y1
+                                       new-first-y1
+                                       new-last-y2
+                                       0 1)
+                                #f)
+                     (exit))
+                   (if is-up
+                       (when (>= a-y2 (- y1 0.0001)) ;; subtracting 0.0001 to eliminate rounding error
+                         ;;(c-display "  " n " how-much1:" (- y1 a-y1))
+                         (doit (- y1 a-y1)))
+                       (when (< y1 (- a-y2 0.0001)) ;; subtracting 0.0001 to eliminate rounding error
+                         ;;(c-display "  " n " how-much2:" (- a-y2 y1))
+                         (define dy (- last-y2 y2))                                                
+                         (when (> (+ dy 0.0001) 0)
+                           (set! dy (min dy (- a-y2 y1)))
+                           (doit (- dy)))))))
+           (loop (cdr areas)
+                 (1+ n)
+                 )))))
+    #t)
   )
+
+#!!
+(when (defined? 'horizontally-layout-areas)
+  (define (recreate gui width height state)
+    (define area
+      (<new> :vertical-list-area gui 0 0 width height
+           (map (lambda (i)
+                  (define blocknum i)
+                  (define color ;;(<ra> :get-block-color blocknum))
+                    (<gui> :mix-colors
+                           (<ra> :get-block-color blocknum)
+                           "white" ;;(<gui> :get-background-color -1)
+                           0.95))
+                  (define line
+                    (<new> :text-area gui
+                           10 0 100 (* 1.2 (get-fontheight))
+                           (lambda ()
+                             (if (< i (<ra> :get-num-blocks))
+                                 (<-> i ": " (<ra> :get-block-name i))
+                                 ""))
+                           :text-color "sequencer_text_color"
+                           :background-color (lambda ()
+                                               (if (= (<ra> :current-block) i)
+                                                   (<gui> :mix-colors color "green" 0.1)
+                                                   color))
+                           :align-left #t))
+                  (line :add-mouse-cycle!
+                        (lambda (button x* y*)
+                          ;;(c-display "hepp" i)
+                          (line :get-position
+                                (lambda (x1 y1 x2 y2 width height)
+                                  (<gui> :create-block-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) i
+                                         (lambda (gui width height)
+                                           ;;(c-display "-------w2: " width height)
+                                           (line :paint-text-area gui 0 0 width height)
+                                           ;;(<gui> :draw-line gui "black" 5 3 10 5 20)
+                                           ))))
+                          #t)
+                        (lambda (button x* y*)
+                          #t)
+                        (lambda (button x* y*)
+                          #t))
+                  line)
+                (iota (<ra> :get-num-blocks)))))
+    (if state
+        (area :apply-state! state))
+    area)
+
+  (define testarea (make-qtarea :width 450 :height 750
+                                :sub-area-creation-callback recreate))
+  (<gui> :show (testarea :get-gui))
+  )
+!!#
+#!!
+(when (defined? 'horizontally-layout-areas)
+  (define (recreate gui width height state)
+    (define audiofiles (to-list (<ra> :get-audio-files)))
+    (<new> :vertical-list-area gui 0 0 width height
+           (map (lambda (i audiofile)
+                  (define color (<gui> :mix-colors
+                                       (<ra> :get-audiofile-color audiofile)
+                                       "white"
+                                       0.65))
+                  (define line
+                    (<new> :text-area gui
+                           10 0 100 (* 1.2 (get-fontheight))
+                           (lambda ()
+                             (<-> i ": " (<ra> :get-path-string audiofile)))
+                           :text-color "sequencer_text_color"
+                           :background-color color
+                           :align-left #t))
+                  (line :add-mouse-cycle!
+                        (lambda (button x* y*)
+                          ;;(c-display "hepp" i)
+                          (line :get-position
+                                (lambda (x1 y1 x2 y2 width height)
+                                  (<gui> :create-file-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) audiofile
+                                         (lambda (gui width height)
+                                           ;;(c-display "-------w2: " width height)
+                                           (line :paint-text-area gui 0 0 width height)
+                                           ;;(<gui> :draw-line gui "black" 5 3 10 5 20)
+                                           ))))
+                          #t)
+                        (lambda (button x* y*)
+                          #t)
+                        (lambda (button x* y*)
+                          #t))
+                  line)
+                (iota (length audiofiles))
+                audiofiles)))
+
+  (define testarea (make-qtarea :width 450 :height 750
+                                :sub-area-creation-callback recreate))
+  (<gui> :show (testarea :get-gui))
+  )
+!!#
+
 
 #!!
 (begin
@@ -1160,70 +1474,522 @@
 (<ra> :iterate-directory "L3RtcA==" #f c-display)
 !!#
 
+(def-area-subclass (<file-browser-entry> :gui :x1 :y1 :x2 :y2
+                                         :is-current
+                                         :entry-num
+                                         :file-info
+                                         :allow-dragging #f
+                                         :background-color #f
+                                         :callback #f)
+  (define text-color (if (file-info :is-dir)
+                         *text-color*
+                         "soundfile"))
+  (define ch-color "black")
+  (define size-color (if background-color
+                         "black"
+                         *text-color*)) ;;"#081040")
+
+  (define is-dir (file-info :is-dir))
+  (define is-soundfile (file-info :is-audiofile))
+
+  (define name-text (let ((filename (file-info :filename)))
+                      (if (and is-dir
+                               ;;(not (string=? "." filename))
+                               ;;(not (string=? ".." filename))
+                               )
+                          (<-> filename "/")
+                          filename)))
+                        
+  (define ch-text (if is-soundfile 
+                      (<-> (file-info :num-ch) "ch")
+                      ""))
+
+  (define size-text (cond (is-soundfile
+                           (let ((s (/ (file-info :num-frames)
+                                       (file-info :samplerate))))
+                             (if (< s 60)
+                                 (<-> (if (< s 10)
+                                          " "
+                                          "")
+                                      (two-decimal-string s)
+                                      "s")
+                                 (let* ((minutes (floor (/ s 60)))
+                                        (seconds (floor (- s (* minutes 60)))))
+                                   (<-> (if (< minutes 10)
+                                            (<-> " " minutes)
+                                            minutes)
+                                        ":"
+                                        (if (< seconds 10)
+                                            (<-> "0" seconds)
+                                            seconds)
+                                        "m")))))
+                          (is-dir
+                           "")
+                          (else
+                           (<-> (one-decimal-string (/ (file-info :size)
+                                                       (* 1024 1024)))
+                                "MB"))))
+
+  (add-method! :set-current! (lambda (doit)
+                               (set! is-current doit)
+                               (update-me!)))
+
+  (add-mouse-cycle! (lambda (button x* y*)
+                      (if callback
+                          (callback entry-num))
+                      ;;(set! dragging-entry (make-dragging-entry))
+                      ;;(<gui> :show dragging-entry)
+                      ;;(move-dragging-entry!)
+                      (c-display "w: " width height)
+                      (c-display "file-info:" file-info)
+                      (if (and (not (file-info :is-dir))
+                               allow-dragging)
+                          (<gui> :create-file-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) (file-info :path)
+                                 (lambda (gui width height)
+                                   (c-display "-------w2: " width height)
+                                   (paint2 gui 0 0 width height)
+                                   )))
+                      #t)
+                    (lambda (button x* y*)
+                      ;;(move-dragging-entry!)
+                      #t)
+                    (lambda (button x* y*)
+                      ;;(<gui> :close dragging-entry)
+                      ;;(<gui> :hide dragging-entry)
+                      ;;(set! dragging-entry #f)
+                      ;;(drop-callback (<ra> :get-mouse-pointer-x) (<ra> :get-mouse-pointer-y))
+                      #t))
+
+  (define (paint2 gui x1 y1 x2 y2)
+    (define default-size-x1 (- x2 (<gui> :text-width "2.99m" gui)))
+    (define ch-x1 (- default-size-x1 (<gui> :text-width "2ch" gui)))
+    (define name-x2 (- ch-x1 (<gui> :text-width " " gui)))
+    (define ch-x2 (- default-size-x1 (<gui> :text-width " " gui)))
+
+    (define size-x1 (- x2 (<gui> :text-width size-text gui)))
+
+    (define entry-background-color (if background-color
+                                       background-color
+                                       "color9"))
+    
+    (if is-current
+        (set! entry-background-color (<gui> :mix-colors entry-background-color "green" 0.1)))
+
+    (<gui> :filled-box gui entry-background-color x1 y1 x2 y2 0 0)
+
+    ;; name
+    (<gui> :draw-text gui text-color name-text
+           x1 y1
+           (if is-dir x2 name-x2) y2
+           #f ;; wrap lines
+           #f ;; align-top
+           #t ;; align-left
+           0 ;; rotate
+           #t ;; cut-text-to-fit
+           #f ;; scale-font-size
+           )
+
+    (cond (is-soundfile
+           ;; ch
+           (<gui> :draw-text gui ch-color ch-text
+                  ch-x1 y1
+                  ch-x2 y2
+                  #f ;; wrap lines
+                  #f ;; align-top
+                  #t ;; align-left
+                  0 ;; rotate
+                  #f ;; cut-text-to-fit
+                  #t ;; scale-font-size
+                  )
+           
+           ;; duration
+           (<gui> :draw-text gui size-color size-text
+                  size-x1 y1
+                  x2 y2
+                  #f ;; wrap lines
+                  #f ;; align-top
+                  #t ;; align-left
+                  0 ;; rotate
+                  #f ;; cut-text-to-fit
+                  #t ;; scale-font-size
+                  ))
+
+          ((not is-dir)
+           ;; size
+           (<gui> :draw-text gui size-color size-text
+                  ch-x1 y1
+                  x2 y2
+                  #f ;; wrap lines
+                  #f ;; align-top
+                  #f ;; align-left
+                  0 ;; rotate
+                  #t ;; cut-text-to-fit
+                  #f ;; scale-font-size
+                  )))
+    )
+  
+  (define-override (paint)
+    (paint2 gui x1 y1 x2 y2))
+  )
+
+;; TODO: Right-click options/double click: "Insert/append new audio seqtrack for this audio file".  
 (def-area-subclass (<file-browser> :gui :x1 :y1 :x2 :y2
-                                   :path "")
+                                   :path
+                                   :id-text
+                                   :only-audio-files #f
+                                   :state #f)
+
+  (define curr-settings-num (string->number (<ra> :get-settings (<-> "filebrowser_" id-text "_curr-settings-num") "0")))
+  (define curr-entry-num 0)
+
+  (set! path (<ra> :get-settings-w (<-> "filebrowser_" id-text "_" curr-settings-num) path))
   
   (define entries '())
+  (define file-browser-entries '())
 
-  (define (update-areas!)
-    (c-display "\n\n\n---------------------- num entries:" (length entries) "-----------------------\n\n\n")
-    (remove-sub-areas!)
+  (define vertical-list-area #f)
 
-    (define list-area (<new> :vertical-list-area gui x1 y1 x2 y2
-                             (map (lambda (entry)
-                                    (<new> :text-area (testarea :get-gui)
-                                           0 0 10 (* 1.2 (get-fontheight))
-                                           (entry :filename)
-                                           :align-left #t
-                                           :scale-font-size #f
-                                           :cut-text-to-fit #t
-                                           ))
-                                  entries)))
-    (add-sub-area-plain! list-area)
+  (set! font (<ra> :get-sample-browser-font #f))
+
+  (define-override (get-state)
+    (hash-table* :curr-entry-num curr-entry-num
+                 :path path
+                 :entries entries
+                 :entries-is-complete entries-is-complete
+                 :vertical-list-area-state (and vertical-list-area
+                                                (vertical-list-area :get-state))
+                 )
     )
 
-  (update-areas!)
+  (define-override (apply-state! state)
+    ;;(c-display "apply-state:" state)
+    (set! curr-entry-num (state :curr-entry-num))
+    (set! path (state :path))
+    ;;(c-display "          Apply state. Complete state:" (state :entries-is-complete))
+    (if (state :entries-is-complete)
+        (begin
+          (set! entries (state :entries))
+          (set! entries-is-complete #t)
+          (inc! update-num 1)
+          (update-areas!)
+          (let ((vla-state (state :vertical-list-area-state)))
+            (if (and vla-state vertical-list-area)
+                (vertical-list-area :apply-state! vla-state))))
+        (update-directory!)))
 
-  ( ;;<ra> :schedule 5 ;; wait a little bit so that the main area has enough time to be displayed properly. (in RELEASE mode, this didn't make a difference)
-        (lambda ()
-          (let ((last-time 0)
-                (temp '()))
-            (<ra> :iterate-directory path #t
-                  (lambda (is-finished file-info)
-                    ;;(c-display "file-info:" file-info)
-                    (if (not is-finished)
-                        (set! temp (cons file-info temp)))
-                    (when (or is-finished
-                              (> (time) (+ last-time 0.05)))
-                      (set! entries (sort (append! entries temp)
-                                          (lambda (a b)
-                                            (string<? (a :filename) (b :filename)))))
-                      (set! temp '())
-                      (update-areas!)
-                      (set! last-time (time))
-                      )
-                    #t)))
-          #f))
+  (delafina (set-new-path! :new-path
+                           :store-setting #t)
+    (define old-path path)
+    (let loop ((new-path new-path)
+               (n 0))
+      (set! path new-path)
+      (set! curr-entry-num 0)
+      (set! entries '())
+      (set! file-browser-entries '())
+      (c-display "         Calling 2")
+      (if (not (update-directory!))
+          (if (< n 5)
+              (if (= n 0)
+                  (loop old-path 1)
+                  (loop (<ra> :get-home-path) 1)))
+          (<ra> :put-settings-w (<-> "filebrowser_" id-text "_" curr-settings-num) path))))
+    
+  (define (set-new-curr-entry! new-curr-entry-num)
+    (when (not (null? entries))
+      (c-display "selected:" new-curr-entry-num ".old:" curr-entry-num)
+      (c-display "entry:" (file-browser-entries curr-entry-num))
+      (define file-info (entries new-curr-entry-num))
+      
+      (if (file-info :is-dir)
+          (set-new-path! (file-info :path))
+          (begin
+            (file-browser-entries curr-entry-num :set-current! #f)
+            (set! curr-entry-num new-curr-entry-num)
+            (file-browser-entries curr-entry-num :set-current! #t)))
+      ))
+  
+  (define (update-areas!)
+    ;;(c-display "\n\n\n---------------------- num entries:" (length entries) "-----------------------\n\n\n")
+    (remove-sub-areas!)
+
+    (define pathline-y1 (+ y1 (get-fontheight)))
+
+    (define num-buttons 9)
+
+    (add-sub-area-plain! (<new> :radiobuttons gui x1 y1 x2 pathline-y1
+                                num-buttons
+                                curr-settings-num
+                                (lambda (num is-on)
+                                  (c-display "numison:" num is-on)
+                                  (when is-on
+                                    (set! curr-settings-num num)
+                                    (<ra> :put-settings (<-> "filebrowser_" id-text "_curr-settings-num") (<-> num))
+                                    (set-new-path! (<ra> :get-settings-w (<-> "filebrowser_" id-text "_" num) path)
+                                                   :store-setting #f))
+                                  #t)
+                                #t
+                                :text-func (lambda (num)
+                                             (<-> num))))
+    
+    (define button-width (* 2 (<gui> :text-width "R")))
+    (define reload-x1 (+ x1 button-width))
+    (define line-input-x1 (+ reload-x1 button-width))
+
+    (define browser-y1 (+ pathline-y1 (get-fontheight)))
+
+    (add-sub-area-plain! (<new> :button gui x1 pathline-y1 reload-x1 browser-y1
+                                :text "⇧"
+                                :callback-release
+                                (lambda ()
+                                  (set-new-path! (<ra> :get-parent-path path)))))
+
+    (add-sub-area-plain! (<new> :button gui reload-x1 pathline-y1 line-input-x1 browser-y1
+                                :text "↻"
+                                :callback-release
+                                (lambda ()
+                                  (set-new-path! path))))
+
+    (define line-input (<new> :line-input gui line-input-x1 pathline-y1 x2 browser-y1
+                              :prompt ""
+                              :text path
+                              :get-wide-string #t
+                              :callback
+                              (lambda (new-name)
+                                (c-display "new-name:" new-name (<ra> :from-base64 new-name))
+                                (set-new-path! new-name)
+                                new-name)))
+
+    (add-sub-area-plain! line-input)
+
+    (set! file-browser-entries
+          (map (lambda (entry entry-num)
+                 (<new> :file-browser-entry gui 
+                        0 0 10 (* 1.2 (get-fontheight))
+                        (= entry-num curr-entry-num)
+                        entry-num
+                        entry
+                        #t
+                        #f
+                        set-new-curr-entry!
+                        ))
+               entries
+               (iota (length entries))
+               ))
+
+    (set! vertical-list-area (<new> :vertical-list-area gui x1 browser-y1 x2 y2 file-browser-entries))
+    (add-sub-area-plain! vertical-list-area)
+    )
+  
+  (update-areas!) ;; necessary in case there are no entries. (fix: update-directory! probably doesn't update if there is no entries in dir)
+
+  (define entries-is-complete #f)
+  (define update-num 0) ;; Used to be able to cancel previous ra:iterate-directory iterations.
+  
+  (define (update-directory!)
+    (inc! update-num 1)
+    ;;(c-display "Updating path: -" (<ra> :get-path-string path) "-. id:" id ". update-num:" update-num)
+    (let ((last-time (time))
+          (temp '())
+          (curr-update-num update-num))
+      (<ra> :iterate-directory path #t
+            (lambda (is-finished file-info)
+              ;;(c-display "file-info:" file-info)
+              (cond ((not is-alive)
+                     ;;(c-display "   Abort: not alive. curr:" curr-update-num ". update-num:" update-num ". id:" id)
+                     #f)
+                    ((not (= curr-update-num update-num))
+                     ;;(c-display "   Abort: Not update. curr:" curr-update-num ". update-num:" update-num ". id:" id)
+                     #f)  ;; There has been a later call to ra:iterate-directory.
+                    (else
+                     (set! entries-is-complete #f)
+                     (if (and (not is-finished)
+                              (or (not only-audio-files)
+                                  (file-info :is-dir)
+                                  (file-info :is-audiofile)))
+                         (set! temp (cons file-info temp)))
+                     ;;(c-display "timeetc." time last-time (> (time) (+ last-time 50)))
+                     (when (or is-finished
+                               (and (not (null? temp))
+                                    (> (time) (+ last-time 50))))
+                       (set! entries (sort (append entries temp)
+                                           (lambda (a b)
+                                             (define is-dir-a (a :is-dir))
+                                             (define is-dir-b (b :is-dir))
+                                             (if (eq? is-dir-a is-dir-b)
+                                                 (string<? (a :filename) (b :filename))
+                                                 is-dir-a))))
+                       (if is-finished
+                           (set! entries-is-complete #t))
+                       (set! temp '())
+                       (update-areas!)
+                       (set! last-time (time))
+                       )
+                     #t))))))
+
+  (if state
+      (apply-state! state)
+      (update-directory!)
+      )
+  
   )
 
 #!!
-(begin
-  ;(def-area-subclass (<text-area> :gui :x1 :y1 :x2 :y2 :text)
-  ;  (define-override (paint)
-  ;    (<gui> :draw-text gui *text-color* text (+ x1 (get-fontheight)) y1 x2 y2
-  ;           #f ;wrap-lines 
-  ;           #f ;align-top 
-  ;           #t ;align-left
-  ;           )
-  ;    (<gui> :draw-box gui "black" x1 y1 x2 y2 1.5 2 2)))
-      
-  (define testarea (make-qtarea :width 450 :height 750))
-  (define list-area (<new> :file-browser (testarea :get-gui) 10 20 400 700
-                           :path (<ra> :get-home-path)))
-  (testarea :add-sub-area-plain! list-area)
+(when (defined? 'horizontally-layout-areas)
+  (define (recreate gui width height state)
+    (define list-area (<new> :file-browser gui 10 20 (- width 10) (- height 20)
+                             :path (<ra> :get-path "/home/kjetil/") ;;radium/bin/sounds")
+                             :id-text "test"
+                             :only-audio-files #t
+                             :state state
+                             ))
+    list-area)
+  ;;(testarea :add-sub-area-plain! list-area)
+
+  (define testarea (make-qtarea :width 450 :height 750
+                                :sub-area-creation-callback recreate))
   (<gui> :show (testarea :get-gui))
   )
 !!#
+
+
+(def-area-subclass (<tabs> :gui :x1 :y1 :x2 :y2
+                           :is-horizontal
+                           :curr-tab-num
+                           :tab-names
+                           :state
+                           :get-tab-area-func)
+
+  (define num-tabs (length tab-names))
+  (define tab-bar-height (* 1.5 (get-fontheight)))
+
+  (define tab-bar-x2 (if is-horizontal
+                       x2
+                       (+ x1 tab-bar-height)))
+  (define tab-bar-y2 (if is-horizontal
+                         (+ y1 tab-bar-height)
+                         y2))
+
+  (define sub-x1 (if is-horizontal
+                     x1
+                     (+ x1 tab-bar-height)))
+  (define sub-y1 (if is-horizontal
+                     (+ y1 tab-bar-height)
+                     y1))
+
+  (define tab-area #f)
+
+  (define tab-states (make-vector num-tabs #f))
+
+  (define-override (get-state)
+    (set! (tab-states curr-tab-num) (tab-area :get-state))
+    (hash-table* :curr-tab-num curr-tab-num
+                 :tab-states tab-states))
+
+  (define-override (apply-state! state)
+    (set! curr-tab-num (state :curr-tab-num))
+    (set! tab-states (state :tab-states))
+    (recreate-areas!))
+
+  (define-override (paint)
+    (paint-tab-bar gui x1 y1 tab-bar-x2 tab-bar-y2
+                   is-horizontal
+                   tab-names
+                   curr-tab-num
+                   ;;:background-color (<gui> :mix-colors (<gui> :get-background-color gui) "red" 0.95)
+                   ))
+
+  (define (recreate-areas!)
+    (remove-sub-areas!)
+    (set! tab-area (get-tab-area-func curr-tab-num
+                                      sub-x1 sub-y1
+                                      x2 y2
+                                      (tab-states curr-tab-num)
+                                      ))
+    (add-sub-area-plain! tab-area)
+    (update-me!))
+
+  (add-mouse-cycle! :press-func (lambda (button x* y*)
+                                  (and (= button *left-button*)
+                                       (call-with-exit
+                                        (lambda (return)
+                                          (for-each (lambda (tab-num)
+                                                      (get-tab-coords is-horizontal tab-num num-tabs x1 y1 x2 y2
+                                                                      (lambda (x1 y1 x2 y2)
+                                                                        ;;(c-display "x*/y*:" x* y* ". x1/y1/x2/y2:" x1 y1 x2 y2)
+                                                                        (when (and (>= x* x1)
+                                                                                   (< x* x2)
+                                                                                   (>= y* y1)
+                                                                                   (< y* y2))
+                                                                          (when (not (= tab-num curr-tab-num))
+                                                                            (set! (tab-states curr-tab-num) (tab-area :get-state))
+                                                                            (set! curr-tab-num tab-num)
+                                                                            (recreate-areas!))
+                                                                          (return #t)))))
+                                                    (iota num-tabs))
+                                          #f)))))
+  
+  ;;(c-display "STATE:" state)
+  (if state
+      (apply-state! state)
+      (recreate-areas!))
+  )
+
+#!!
+(when (defined? 'horizontally-layout-areas)
+  (define (recreate gui width height state)
+    (define list-area (<new> :tabs gui 10 20 (- width 10) (- height 20)
+                             :is-horizontal #f
+                             :curr-tab-num 0
+                             :tab-names '("Hide" "Blocks" "Audio files" "File Browser")
+                             :get-tab-area-func
+                             (lambda (tab-num x1 y1 x2 y2 state)
+                               (if (< tab-num 2)
+                                   (<new> :button gui x1 y1 x2 y2
+                                          :text (<-> "ai:" tab-num))
+                                   (<new> :file-browser gui x1 y1 x2 y2
+                                          :path (<ra> :get-path "/home/kjetil/") ;;radium/bin/sounds")
+                                          :id-text "test"
+                                          :only-audio-files #t
+                                          :state state
+                                          )))
+                             ))
+    list-area)
+  ;;(testarea :add-sub-area-plain! list-area)
+
+  (define testarea (make-qtarea :width 450 :height 750
+                                :sub-area-creation-callback recreate))
+  (<gui> :show (testarea :get-gui))
+  )
+!!#
+
+#!!
+(when (defined? 'horizontally-layout-areas)
+  (define (recreate gui width height state)
+    (define list-area (<new> :tabs gui 10 20 (- width 10) (- height 20)
+                             :is-horizontal #f
+                             :curr-tab-num 0
+                             :tab-names '("tab1" "tab2" "browser")
+                             :get-tab-area-func
+                             (lambda (tab-num x1 y1 x2 y2)
+                               (if (< tab-num 2)
+                                   (<new> :button gui x1 y1 x2 y2
+                                          :text (<-> "ai:" tab-num))
+                                   (<new> :file-browser gui x1 y1 x2 y2
+                                          :path (<ra> :get-path "/home/kjetil/") ;;radium/bin/sounds")
+                                          :id-text "test"
+                                          :only-audio-files #t
+                                          )))
+                             ))
+    list-area)
+  ;;(testarea :add-sub-area-plain! list-area)
+
+  (define testarea (make-qtarea :width 450 :height 750
+                                :sub-area-creation-callback recreate))
+  (<gui> :show (testarea :get-gui))
+  )
+  
+!!#
+
 
 (delafina (horizontally-layout-areas :x1 :y1 :x2 :y2
                                      :args

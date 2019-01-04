@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_disk_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/settings_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -80,10 +81,18 @@ const_char* appendFilePaths(const_char* w_path1, const_char* w_path2){
   return qstring_to_w(w_to_qstring(w_path1) + QDir::separator() + w_to_qstring(w_path2));
 }
 
+const_char* getParentPath(const_char* w_path){
+  QDir dir(w_to_qstring(w_path));
+  dir.cdUp();  
+  return qstring_to_w(dir.absolutePath());
+}
+
 bool fileExists(const_char* w_path){
   QString filename = w_to_qstring(w_path);
   return QFileInfo::exists(filename);
 }
+
+extern QStringList get_sample_name_filters(void);
 
 dyn_t getFileInfo(const_char* w_path){
   QString path = w_to_qstring(w_path);
@@ -112,10 +121,20 @@ dyn_t getFileInfo(const_char* w_path){
   }
   */
 
-  SF_INFO sf_info = {};
-  SNDFILE *sndfile = radium_sf_open(path, SFM_READ, &sf_info);
-
   hash_t *ret = HASH_create(10);
+
+  if(info.isDir()){
+    if(QDir(QDir::cleanPath(path)).isRoot()){ // check for isRoot in case the path is "/../"
+      printf("ends 2\n");
+      path = QDir::root().absolutePath();
+    } else if(path.endsWith(".")){
+      printf("ends 1\n");
+      //QDir dir = info.dir();//absoluteDir();
+      //dir.cdUp();
+      //path = dir.cleanPath(); // "/tmp/tmp/.." -> "/tmp/tmp"
+      path = QDir::cleanPath(path);
+    }
+  }
 
   HASH_put_chars(ret, ":path", qstring_to_w(path));
   HASH_put_string(ret, ":filename", STRING_create(info.fileName()));
@@ -125,6 +144,16 @@ dyn_t getFileInfo(const_char* w_path){
   HASH_put_bool(ret, ":is-hidden", info.isHidden());
   HASH_put_int(ret, ":size", info.size());
   HASH_put_string(ret, ":suffix", STRING_create(info.suffix()));
+
+  bool could_be_audiofile = false;
+  for(auto filter : get_sample_name_filters())
+    if (info.fileName().endsWith(filter.mid(1))){
+      could_be_audiofile = true;
+      break;
+    }
+
+  SF_INFO sf_info = {};
+  SNDFILE *sndfile = !could_be_audiofile ? NULL : radium_sf_open(path, SFM_READ, &sf_info);
 
   HASH_put_bool(ret, ":is-audiofile", sndfile != NULL);
   if (sndfile != NULL){
@@ -176,6 +205,8 @@ dyn_t getFileInfo(const_char* w_path){
 static bool call_callback(func_t* callback, bool in_main_thread, bool is_finished, const_char* path){
   int64_t num_calls = g_num_calls_to_handleError;
 
+  //printf("  Call callback -%S-\n", STRING_create(w_to_qstring(path)));
+
   bool ret = S7CALL(bool_bool_dyn,
                     callback,
                     is_finished,                
@@ -195,12 +226,24 @@ static void traverse(QString path, func_t* callback, bool in_main_thread, int64_
   DEFINE_ATOMIC(bool, callback_has_returned_false) = false;
   int64_t last_id = -1;
 
+  /*
+  QStringList all;
+  all << "*";
+  all << "*.*";
+  QDirIterator it(path, all, QDir(path).isRoot() ? QDir::NoDotDot : QDir::NoFilter);
+  */
+  bool is_root = QDir(path).isRoot();
   QDirIterator it(path);
 
   while (it.hasNext() && ATOMIC_GET(callback_has_returned_false)==false) {
     
     QString path = it.next();
+    if(is_root && path=="/..")
+      continue;
+
     QFileInfo info(path);
+    if (info.fileName()=="." || info.fileName()=="..")
+      continue;
 
     if (in_main_thread){
 
@@ -223,10 +266,7 @@ static void traverse(QString path, func_t* callback, bool in_main_thread, int64_
                             qstring_to_w(path)
                             ))
             ATOMIC_SET(callback_has_returned_false, true);
-        },
-        true
-        );
-
+        });
     }
 
   }
@@ -547,3 +587,15 @@ int readU8FromFile(int64_t disknum){
   return chars[0];
 }
 
+void putSettings(const_char* key, const_char* value){
+  SETTINGS_write_string(key, value);
+}
+void putSettingsW(const_char* key, const_char* w_value){
+  SETTINGS_write_string(key, w_to_qstring(w_value));
+}
+const_char* getSettings(const_char* key, const_char* default_value){
+  return SETTINGS_read_string(key, default_value);
+}
+const_char* getSettingsW(const_char* key, const_char* default_w_value){
+  return qstring_to_w(SETTINGS_read_qstring(key, w_to_qstring(default_w_value)));
+}

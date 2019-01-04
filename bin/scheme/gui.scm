@@ -405,6 +405,15 @@
         ((eq? command :do-alpha)
          `(ra:gui_do-alpha ,@args))
         
+        ((eq? command :do-font)
+         `(ra:gui_do-font ,@args))
+        
+        ((eq? command :create-block-drag-icon)
+         `(ra:gui_create-block-drag-icon ,@args))
+        
+        ((eq? command :create-file-drag-icon)
+         `(ra:gui_create-file-drag-icon ,@args))
+        
         ((let ((stringcommand (symbol->string (keyword->symbol command))))
            (and (string-starts-with? stringcommand "add-")
                 (string-ends-with? stringcommand "-callback")))
@@ -599,7 +608,16 @@
              1.0)
          box-rounding box-rounding)
   )
-  
+
+(define (ra:gui_do-font gui font func)
+  (define old-font (<gui> :get-font gui))
+  (if (string=? font old-font)
+      (func)
+      (begin
+        (<gui> :set-font gui font)
+        (try-finally :try func
+                     :finally (lambda ()
+                                (<gui> :set-font gui old-font))))))
 
 (define (ra:gui_do-alpha gui alpha func)
   (<gui> :set-paint-opacity gui alpha)
@@ -854,7 +872,60 @@
 #!!
 (FROM-C-show-help-window "help/home.html")
 !!#
+
+
+(define (get-tab-coords is-horizontal i num-tabs x1 y1 x2 y2 kont)
+  ;;(c-display "x1,x2:" x1 x2 ". y1/y2:" y1 y2 ". " is-horizontal)
+  (if is-horizontal
+      (kont (scale i 0 num-tabs x1 x2)
+            y1
+            (scale (1+ i) 0 num-tabs x1 x2)
+            y2)
+      (kont x1
+            (scale i 0 num-tabs y1 y2)
+            x2
+            (scale (1+ i) 0 num-tabs y1 y2))))
+
+
+(delafina (paint-tab-bar :gui :x1 :y1 :x2 :y2
+                         :is-horizontal
+                         :tab-names
+                         :current-tab-num
+                         :background-color #f)
+
+    ;; vertical: The height we get from the paint callback is wrong
+    ;; When resizing, the paint callback is callled with the old height,
+    ;; and then, a few ms later, we get the correct height, causing jumpiness.
+    ;; (this is caused by resizing the tab-bar from the tabs resize callback
+    ;; to work around non-working QTabBar::setExpanded function.)
+    ;;
+    ;; horizontal: Same thing, but for width.
+
+  (if (not background-color)      
+      (set! background-color (<gui> :mix-colors (<gui> :get-background-color gui) "#004000" 0.65)))
+
+  ;;(<gui> :get-background-color gui)))
+
+  (define curr-tab-background (<gui> :mix-colors "green" background-color 0.47))
+
+  (define num-tabs (length tab-names))
+
+  ;;(c-display "background-color/etc:" gui background-color x1 y1 x2 y2)
+  (<gui> :filled-box gui background-color x1 y1 x2 y2)
+
+  (for-each (lambda (tab-name i)
+              (get-tab-coords is-horizontal i num-tabs x1 y1 x2 y2
+                              (lambda (x1 y1 x2 y2)
+                                ;;(c-display i "y1/y2:" (floor y1) (floor y2) "x1/x2" (floor x1) (floor x2))
+                                (if (= i current-tab-num)
+                                    (<gui> :filled-box gui curr-tab-background x1 y1 x2 y2))
+                                ;;(<gui> :draw-box gui "#202020" x1 y1 x2 y2 1.0 2 2)
+                                (<gui> :my-draw-text gui *text-color* tab-name x1 y1 x2 y2 #t #f #f (if is-horizontal 0 270)))))
+            tab-names
+            (iota num-tabs))
+  )
   
+
 ;; ra:gui_tabs with simpler gfx. (no borders, etc.)
 ;;
 (delafina (my-tabs :horizontal
@@ -877,51 +948,23 @@
                  (floor (scale y 0 (<gui> :height tab-bar) 0 num-tabs)))
              (1- num-tabs)))
 
-  (define (get-tab-coords i num-tabs width height kont)
-    (if horizontal
-        (kont (scale i 0 num-tabs 0 width)
-              0
-              (scale (1+ i) 0 num-tabs 0 width)
-              height)
-        (kont 0
-              (scale i 0 num-tabs 0 height)
-              width
-              (scale (1+ i) 0 num-tabs 0 height))))
-
-
-  (define (paint-tab-bar gui)
-    
-    ;; vertical: The height we get from the paint callback is wrong
-    ;; When resizing, the paint callback is callled with the old height,
-    ;; and then, a few ms later, we get the correct height, causing jumpiness.
-    ;; (this is caused by resizing the tab-bar from the tabs resize callback
-    ;; to work around non-working QTabBar::setExpanded function.)
-    ;;
-    ;; horizontal: Same thing, but for width.
-    
+  (define (my-paint-tab-bar gui)
     (define width (if horizontal
                       (<gui> :width tabs)
                       (<gui> :width tab-bar)))
     (define height (if horizontal
                        (<gui> :height tab-bar)
                        (<gui> :height tabs)))
-    
-    (define num-tabs (<gui> :num-tabs tabs))
-    (<gui> :filled-box gui background-color 0 0 width height)
-    (for-each (lambda (i)
-                (get-tab-coords i num-tabs width height
-                                (lambda (x1 y1 x2 y2)
-                                  ;;(c-display i (floor y1) (floor y2) "x1/x2" (floor x1) (floor x2) width)
-                                  (if (= i (<gui> :current-tab tabs))
-                                      (<gui> :filled-box gui curr-tab-background x1 y1 x2 y2))
-                                  ;;(<gui> :draw-box gui "#202020" x1 y1 x2 y2 1.0 2 2)
-                                  (<gui> :my-draw-text gui *text-color* (<gui> :tab-name tabs i) x1 y1 x2 y2 #t #f #f (if horizontal 0 270)))))
-              (iota num-tabs)))
+    (paint-tab-bar gui 0 0 width height horizontal
+                   (map (lambda (tabnum) (<gui> :tab-name tabs tabnum))
+                        (iota (<gui> :num-tabs tabs)))
+                   (<gui> :current-tab tabs)))
+;;                   background-color))
 
   (<gui> :add-paint-callback tab-bar
-         (lambda (width height)
-           (paint-tab-bar tab-bar)))
-                          
+         (lambda (width height)           
+           (my-paint-tab-bar tab-bar)))
+
   (<gui> :add-mouse-callback tab-bar
          (lambda (button state x y)
            (if (and (= state *is-pressing*)
@@ -951,14 +994,14 @@
                         width height)
                  (when (< tab-bar-width
                           width)
-                   (paint-tab-bar tabs)))
+                   (my-paint-tab-bar tabs)))
                (begin
                  (<gui> :filled-box tabs tabs-background-color
                         tab-bar-width 0
                         width height)
                  (when (< tab-bar-height
                           height)
-                   (paint-tab-bar tabs))))))
+                   (my-paint-tab-bar tabs))))))
 
   (define (resize-tabs tabs horizontal width height)
     (define tab-bar (<gui> :get-tab-bar tabs))
@@ -983,6 +1026,7 @@
 
 (let ((tabs (my-tabs #f)))
   (<gui> :show tabs)
+  (<gui> :set-size tabs 200 100)
   (<gui> :add-tab tabs "Quantitize 1" (create-quantitize-gui-for-tab))
   (<gui> :add-tab tabs "Sequencer" (create-transpose-notem))
   (<gui> :add-tab tabs "Instrument" (create-transpose-notem))

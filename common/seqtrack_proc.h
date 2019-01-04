@@ -140,6 +140,14 @@ extern LANGSPEC float SEQUENCER_get_left_part_x2(void);
 extern LANGSPEC float SEQUENCER_get_left_part_y1(void);
 extern LANGSPEC float SEQUENCER_get_left_part_y2(void);
 
+extern LANGSPEC bool SEQUENCER_right_part_is_empty(void);
+extern LANGSPEC void SEQUENCER_set_right_part_is_empty(bool is_empty);
+
+extern LANGSPEC float SEQUENCER_get_right_part_x1(void);
+extern LANGSPEC float SEQUENCER_get_right_part_x2(void);
+extern LANGSPEC float SEQUENCER_get_right_part_y1(void);
+extern LANGSPEC float SEQUENCER_get_right_part_y2(void);
+
 extern LANGSPEC void SEQUENCER_disable_gfx_updates(void);
 extern LANGSPEC void SEQUENCER_enable_gfx_updates(void);
 

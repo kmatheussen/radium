@@ -519,6 +519,7 @@
     FROM_C-call-me-when-num-seqtracks-might-have-changed
     ra:set-instrument-color
     FROM_C-reconfigure-sequencer-left-part
+    FROM_C-reconfigure-sequencer-right-part
     FROM_C-show-blocklist-popup-menu
     FROM_C-show-playlist-popup-menu
     load

@@ -30,6 +30,7 @@ enum WhatToDoWithDeletableFileWhenLoadingOrQuitting{
   WTT_KEEP // when this is true, the user has decided that the file should NOT be deleted. (note that we might not load or delete when we read this variable, but that should be okay)
 };
 
+extern int g_sample_reader_filenames_generation;
 extern LANGSPEC vector_t SAMPLEREADER_get_all_filenames(void);
 extern LANGSPEC bool SAMPLEREADER_remove_filename_from_filenames(const wchar_t *filename); // returns true if filename was removed from filenames
 extern LANGSPEC vector_t SAMPLEREADER_get_all_deletable_filenames(void);
