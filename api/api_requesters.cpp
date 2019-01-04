@@ -18,6 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Python.h"
 #include "radium_proc.h"
 
+#include <QFont>
+#include <QApplication>
+
+
 #include "../common/nsmtracker.h"
 
 #include "../common/visual_proc.h"
@@ -71,6 +75,39 @@ const_char* getEditorFont(void){
 
 const_char* getSystemFont(void){
   return GFX_GetSystemFont();
+}
+
+const_char* getSampleBrowserFont(bool mono_font){
+  static bool s_has_inited = false;
+  static char *s_f, *s_f_mono;
+  static int s_last_point_size = -1;
+  int point_size = QApplication::font().pointSize();
+
+  if(s_has_inited==false || s_last_point_size!=point_size){
+    QFont soundfile_font_mono, soundfile_font;
+
+    soundfile_font_mono.setFamily("Bitstream Vera Sans Mono");
+    soundfile_font_mono.setBold(true);
+    soundfile_font_mono.setStyleName("Bold");
+
+    soundfile_font.fromString("Lato,10,-1,5,75,0,0,0,0,0,Bold");
+    soundfile_font.setBold(true);
+    soundfile_font.setStyleName("Bold");
+
+    soundfile_font_mono.setPointSize(point_size);
+    soundfile_font.setPointSize(point_size);
+
+    s_f_mono = strdup(soundfile_font_mono.toString().toUtf8().constData());
+    s_f = strdup(soundfile_font.toString().toUtf8().constData());
+    
+    s_has_inited = true;
+    s_last_point_size = point_size;
+  }
+
+  if(mono_font)
+    return s_f_mono;
+  else
+    return s_f;
 }
 
 void setDefaultEditorFont(void){
@@ -239,13 +276,25 @@ const_char* requestString(const_char *text, bool standalone, const_char* default
   PREREQ("");
 
   const char *ret = GFX_GetString(window, requester, text, true);
-    
-  if(ret==NULL)
-    ret="";
 
   POSTREQ();
   
+  if(ret==NULL)
+    return "";
+
   return ret;
+}
+
+const_char* requestWString(const_char *text, bool standalone, const_char* default_w_value){
+  const_char* default_value = STRING_get_chars(w_path_to_path(default_w_value));
+
+  PREREQ("");
+
+  const wchar_t *ret = GFX_ReadWString(requester, true);
+
+  POSTREQ();
+
+  return path_to_w_path(ret);
 }
 
 bool requestWasCancelled(void){

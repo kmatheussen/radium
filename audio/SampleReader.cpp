@@ -250,6 +250,7 @@ int main(){
 
 static void SAMPLEREADER_mark_ready_for_deletion(radium::SampleReader *reader);
 
+int g_sample_reader_filenames_generation = 0;
 
 namespace radium {
 
@@ -403,6 +404,7 @@ public:
     {
       radium::ScopedMutex lock(g_sample_providers_mutex);
       g_sample_providers[STRING_get_qstring(filename)] = this;
+      g_sample_reader_filenames_generation++;
     }
   }
 
@@ -428,6 +430,7 @@ public:
     {
       radium::ScopedMutex lock(g_sample_providers_mutex);
       g_sample_providers.remove(STRING_get_qstring(_filename));
+      g_sample_reader_filenames_generation++;
     }
 
     BS_UpdateBlockList();

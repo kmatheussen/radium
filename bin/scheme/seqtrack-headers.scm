@@ -421,6 +421,41 @@
   )
 
 
+(delafina (create-seqtrack-name-area :gui :x1 :y1 :x2 :y2
+                                     :instrument-id
+                                     :seqtracknum)
+
+  (define last-painted-name (<ra> :get-seqtrack-name seqtracknum))
+
+  (define line-input (<new> :line-input gui x1 y1 x2 y2 
+                            :prompt "New name:"
+                            :text last-painted-name
+                            :background-color (lambda ()
+                                                (if (= seqtracknum (<ra> :get-curr-seqtrack))
+                                                    (get-seqtrack-background-color gui seqtracknum)
+                                                    (get-instrument-background-color gui instrument-id)))
+                            :callback (lambda (new-name)
+                                        (if (string=? "" new-name)
+                                            #f
+                                            (begin
+                                              (set! last-painted-name new-name)
+                                              (<ra> :set-seqtrack-name new-name seqtracknum)
+                                              new-name)))))
+
+  (if (>= instrument-id 0)
+      (<ra> :schedule (random 1000)
+            (lambda ()
+              (and (line-input :is-alive)
+                   (<gui> :is-open gui)
+                   (<ra> :instrument-is-open-and-audio instrument-id)
+                   (begin
+                     (if (not (string=? last-painted-name (<ra> :get-instrument-name instrument-id)))
+                         (line-input :update-me!))
+                     300)))))
+  
+  line-input)
+
+#||                                        
 (def-area-subclass (<seqtrack-name> :gui :x1 :y1 :x2 :y2
                                     :instrument-id
                                     :seqtracknum)
@@ -467,7 +502,7 @@
                                                  #f)))
                                        #t)))
   )
-
+||#
 
 (def-area-subclass (<instrument-volume-slider> :gui :x1 :y1 :x2 :y2
                                                :instrument-id
@@ -892,12 +927,13 @@
 
   (if (or use-two-rows
           for-blocks)
-      (add-sub-area-plain! (<new> :seqtrack-name gui
-                                  (- x1-split 1) y1
-                                  x2-split
-                                  y-split
-                                  instrument-id
-                                  seqtracknum)))
+      (add-sub-area-plain! (create-seqtrack-name-area
+                            gui
+                            (- x1-split 0) y1
+                            x2-split
+                            y-split
+                            instrument-id
+                            seqtracknum)))
 
   (add-sub-area-plain! (<new> :text-area gui
                               x1 y1
@@ -1412,6 +1448,7 @@
 (define *had-sequencer-paint-callback* (defined? '*sequencer-left-part-area*))
 
 (define *sequencer-left-part-area* #f)
+(define *sequencer-right-part-area* #f)
 
 (define (get-sequencer-left-part-area)
   (when (not *sequencer-left-part-area*)
@@ -1423,22 +1460,43 @@
                                                    x1 y1 x2 y2)))))
     (when (and (not *use-testgui*)
                (not *had-sequencer-paint-callback*))
-      (<gui> :add-paint-callback (<gui> :get-sequencer-gui)
+
+      (define gui (<gui> :get-sequencer-gui))
+
+      (<gui> :add-paint-callback gui
              (lambda (width height)
                (get-sequencer-left-part-area)
                (eat-errors :try (lambda ()
                                    (if (not *sequencer-left-part-area*)
                                        (c-display "*sequencer-left-part-area* is false")
-                                       (*sequencer-left-part-area* :paint-internal 0 0 width height))))))
-      (<gui> :add-mouse-callback (<gui> :get-sequencer-gui)
+                                       (*sequencer-left-part-area* :paint-internal 0 0 width height))
+                                   (if *sequencer-right-part-area*
+                                       (*sequencer-right-part-area* :paint-internal 0 0 width height))
+                                   ))))
+
+      (<gui> :add-mouse-wheel-callback gui
+             (lambda (is-up x* y*)
+               (eat-errors :try (lambda ()
+                                  (or (and *sequencer-left-part-area*
+                                           (*sequencer-left-part-area* :mouse-wheel-moved-internal! is-up x* y*))
+                                      (and *sequencer-right-part-area*
+                                           (*sequencer-right-part-area* :mouse-wheel-moved-internal! is-up x* y*))))
+                           :failure (lambda ()
+                                      #f))))
+      
+      (<gui> :add-mouse-callback gui
              (lambda (button state x y)
                (get-sequencer-left-part-area)
                ;;(c-display "asd" x y)
                (*sequencer-left-part-area* :mouse-callback-internal button state x y)
-               (if (*sequencer-left-part-area* :has-mouse)
+               (if *sequencer-right-part-area*
+                   (*sequencer-right-part-area* :mouse-callback-internal button state x y))
+               (if (or (*sequencer-left-part-area* :has-mouse)
+                       (and *sequencer-right-part-area*
+                            (*sequencer-right-part-area* :has-mouse)))
                    #t
                    #f)))
-      ;(<gui> :add-resize-callback (<gui> :get-sequencer-gui) ;; TODO: I think this resize callback can be removed.
+      ;(<gui> :add-resize-callback gui ;; TODO: I think this resize callback can be removed.
       ;       (lambda (width height)
       ;         (eat-errors :try FROM_C-reconfigure-sequencer-left-part)))
 
@@ -1455,13 +1513,14 @@
                   *testgui*
                   (<gui> :get-sequencer-gui)))
 
-  (define height ((<ra> :get-box sequencer) :height))
-  ;;(define height (- (<gui> :height *testgui*) 60))
-
   (<gui> :remove-all-vertical-audio-meters gui)
 
   (if *use-testgui*
       (begin
+
+        (define height ((<ra> :get-box sequencer) :height))
+        ;;(define height (- (<gui> :height *testgui*) 60))
+
         ;;(define *testarea* (<new> :horizontal-instrument-slider *testgui* 20 30 110 120 (car (get-all-audio-instruments))))
         ;;(define *testarea* (<new> :mute-solo-buttons *testgui* 20 30 110 120 (car (get-all-audio-instruments)) #t #t))
         (*sequencer-left-part-area* :reset! 20 30 210 (+ 30 height))

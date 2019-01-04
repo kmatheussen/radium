@@ -4293,6 +4293,22 @@ bool API_run_mouse_release_event_for_custom_widget(QWidget *widget, radium::Mous
     return false;
 }
 
+bool API_run_mouse_wheel_event_for_custom_widget(QWidget *widget, QWheelEvent *event){
+  ScopedEventHandlerTracker event_handler_tracker;
+
+  Gui *gui = g_gui_from_widgets.value(widget);
+  if (gui==NULL){
+    fprintf(stderr, "     API_run_mouse_press_event_for_custom_widget: No Gui created for widget %p\n", widget);
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+
+  if (gui->_mouse_wheel_callback.v != NULL)
+    return gui->wheelEvent(event);
+  else
+    return false;
+}
+
 bool API_run_mouse_leave_event_for_custom_widget(QWidget *widget, QEvent *ev){
   ScopedEventHandlerTracker event_handler_tracker;
 
@@ -4446,8 +4462,9 @@ void gui_addMouseWheelCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
-  if(check_existing(gui)==false)
-    return;
+  if (gui->_widget!=SEQUENCER_getWidget_r0()) // we call the mouse callback manually for the sequencer gui
+    if(check_existing(gui)==false)
+      return;
   
   gui->addMouseWheelCallback(func);
 }

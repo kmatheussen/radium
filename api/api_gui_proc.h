@@ -42,6 +42,7 @@ bool API_run_custom_gui_paint_function(QWidget *widget, QPainter *p, const QRegi
 bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
 bool API_run_mouse_move_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
 bool API_run_mouse_release_event_for_custom_widget(QWidget *widget, radium::MouseCycleEvent &event);
+bool API_run_mouse_wheel_event_for_custom_widget(QWidget *widget, QWheelEvent *event);
 bool API_run_mouse_leave_event_for_custom_widget(QWidget *widget, QEvent *ev);
 void API_run_resize_event_for_custom_widget(QWidget *widget, QResizeEvent *ev);
 #endif

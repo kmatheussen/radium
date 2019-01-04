@@ -3324,6 +3324,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   CursorPainter _cursor_painter;
 
+  bool _left_part_is_empty = false;
+
   Sequencer_widget(QWidget *parent)
     : MouseTrackerQWidget(parent, true)
     , _end_time(get_visible_song_length()*MIXER_get_sample_rate())
@@ -3470,36 +3472,83 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   
 
   void dropEvent(QDropEvent *event) override {
-    printf("               GOT DOP\n");
-    if (event->mimeData()->hasUrls())
-      {
-        foreach (QUrl url, event->mimeData()->urls())
-          {
-            QPoint point = mapToEditor(this, event->pos());
-            
-            float x = point.x();
-            float y = point.y();
-            
-            printf("File: -%s-. Y: %f\n", url.toLocalFile().toUtf8().constData(), y);
-            int seqtracknum = getSeqtrackNumFromY(y);
-            //struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
-            int64_t pos = round(scale_double(x,
-                                             getSequencerX1(), getSequencerX2(),
-                                             getSequencerVisibleStartTime(), getSequencerVisibleEndTime()
-                                             )
-                                );
+    printf("               GOT DOP. Text: -%s-\n", event->mimeData()->text().toUtf8().constData());
+
+    QPoint point = mapToEditor(this, event->pos());
+    float x = point.x();
+    float y = point.y();
+    
+    QByteArrayList hotSpotPos = event->mimeData()->data(QStringLiteral("application/x-hotspot")).split(' ');
+    if (hotSpotPos.size() == 2) {
+      x -= hotSpotPos.first().toInt();
+      y -= hotSpotPos.last().toInt();
+    }
+
+    int seqtracknum = getSeqtrackNumFromY(y);
+    //struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+    int64_t pos = round(scale_double(x,
+                                     getSequencerX1(), getSequencerX2(),
+                                     getSequencerVisibleStartTime(), getSequencerVisibleEndTime()
+                                     )
+                        );
+    pos = getSeqGriddedTime(pos, getSeqBlockGridType());
+    pos = R_MAX(0, pos);
+
+    if (event->mimeData()->hasUrls()) {
+      foreach (QUrl url, event->mimeData()->urls())
+        {
+          
+          printf("File: -%s-. Y: %f\n", url.toLocalFile().toUtf8().constData(), y);
+          
+          const char *w_filename = STRING_get_chars(STRING_toBase64(STRING_create(url.toLocalFile())));
+          if (seqtrackForAudiofiles(seqtracknum)) {
             createSampleSeqblock(seqtracknum,
-                                 STRING_get_chars(STRING_toBase64(STRING_create(url.toLocalFile()))),
-                                 getSeqGriddedTime(pos, getSeqBlockGridType()),
+                                 w_filename,
+                                 pos,
                                  -1
                                  );
+          } else {
+            static bool has_shown_warning = false;
+            if (has_shown_warning==false){
+              GFX_addMessage("Seqtrack %d is not for audiofiles. (this message will only be shown once)", seqtracknum);
+              has_shown_warning = true;
+            }
+            //loadBlock(w_filename);
           }
+        }
+    } else if (event->mimeData()->hasText()) {
+
+      QString text = event->mimeData()->text();
+
+      if(text.startsWith("block:")){
+        if (!seqtrackForAudiofiles(seqtracknum)) {
+
+          int blocknum = text.mid(6).toInt();
+          if (blocknum < 0 || blocknum >= getNumBlocks()){
+            GFX_addMessage("There is no block %d", seqtracknum);
+          } else {
+            createSeqblock(seqtracknum, blocknum, pos, -1);
+          }
+
+        } else {
+
+          static bool has_shown_warning = false;
+          if (has_shown_warning==false){
+            GFX_addMessage("Seqtrack %d is not for editor blocks. (this message will only be shown once)", seqtracknum);
+            has_shown_warning = true;
+          }
+
+        }
       }
+    }
   }
 
 
   void wheelEvent(QWheelEvent *e) override {
-    handle_wheel_event(this, e, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2, _start_time, _end_time);
+    if (API_run_mouse_wheel_event_for_custom_widget(this, e))
+      return;
+    else
+      handle_wheel_event(this, e, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2, _start_time, _end_time);
   }
 
   void resizeEvent( QResizeEvent *qresizeevent) override {
@@ -3532,6 +3581,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     return 1.5 * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... H+R+M+S|");
   }
 
+  int get_sequencer_right_part_width(int systemfontheight) const {
+    int empty_width = systemfontheight * 1.5;
+    int maybe = _left_part_is_empty ? empty_width : 1.5 * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... H+R+M+S|");
+    //if (maybe > width())
+    //  maybe = empty_width;
+    return maybe;
+  }
+
   void position_widgets(void){
     //R_ASSERT_RETURN_IF_FALSE(_seqtracks_widget._seqtrack_widgets.size() > 0);
 
@@ -3542,11 +3599,13 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     const QPoint p = mute_button->mapTo(this, mute_button->pos());
 #endif
 
-    const int x1 = get_sequencer_left_part_width(); //p.x() + mute_button->width();
-    const int x1_width = width() - x1;
-
     QFontMetrics fm(QApplication::font());
     double systemfontheight = fm.height();
+
+    const int right_part_width = get_sequencer_right_part_width(systemfontheight);
+
+    const int x1 = get_sequencer_left_part_width(); //p.x() + mute_button->width();
+    const int x1_width = R_MAX(systemfontheight*1.5, width() - x1 - right_part_width);
 
     const int min_bottom_height = systemfontheight*2;
     const int max_bottom_height = systemfontheight*6;//height() / 3;
@@ -3594,14 +3653,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       */
       
       _seqtracks_widget.position_widgets(x1 + 1, y1,
-                                         width()-1, y2);
+                                         x1 + x1_width, y2);
 
       y1 = y2;
     }
 
     // cursor
     _cursor_painter.position_widgets(_seqtracks_widget.t_x1, 0, //_songtempoautomation_widget.t_y1,
-                                     _seqtracks_widget.t_x2, _seqtracks_widget.t_y2 + get_seqtrack_border_width());
+                                     x1 + x1_width, _seqtracks_widget.t_y2 + get_seqtrack_border_width());
 
     // navigator
     //
@@ -3617,6 +3676,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     _seqtracks_widget.calculate_seqtrack_coordinates();
         
     S7CALL2(void_void, "FROM_C-reconfigure-sequencer-left-part");
+    S7CALL2(void_void, "FROM_C-reconfigure-sequencer-right-part");
 
     my_update_all();
   }
@@ -3887,14 +3947,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       const Seqblocks_widget w = get_seqblocks_widget(curr_seqtracknum, false);
 
       //QRectF rect(b/2.0, w.t_y1-b/2.0, this->width()-b, w.t_y2-w.t_y1+b);
-      QRectF rect(0, w.t_y1, this->width()+200, w.t_y2-w.t_y1);
+      QRectF rect(0, w.t_y1, w.t_x2+20, w.t_y2-w.t_y1);
 
       //printf("Seqtrack: ");
       paintCurrBorder(p, rect, get_qcolor(MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM));
     }
   }
 
-  void paintEvent (QPaintEvent *ev) override {
+  void paintEvent(QPaintEvent *ev) override {
     R_ASSERT(_called_from_my_update==false); // Neven know what Qt might do. Also think I've seen Qt do this before, and if Qt calls paintEvent directly from update(), we can get graphical garbage.
     
     if (workingQRegionContains(childrenRegion(), ev->region())){ // We get a paint event with the area under the navigator widget when _navigator_widget->update() is called.
@@ -3910,18 +3970,23 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     
     RETURN_IF_DATA_IS_INACCESSIBLE();
 
-    bool seqtracks_are_painted = ev->rect().right() >= _seqtracks_widget.t_x1;
+    bool seqtracks_are_painted =
+      ev->rect().right() >= _seqtracks_widget.t_x1 && 
+      ev->rect().left() < _seqtracks_widget.t_x2;
+
+    bool right_part_is_painted = ev->rect().right() >= _seqtracks_widget.t_x2;
 
 #define ERASE_FIRST 1
     
     // Erase background
     //
 #if ERASE_FIRST
-    if(seqtracks_are_painted){ // This is strange, but if we don't do this here, some graphical artifacts are shown in the left part of the headers.
+    if(seqtracks_are_painted || right_part_is_painted){ // This is strange, but if we don't do this here, some graphical artifacts are shown in the left part of the headers.
       TRACK_PAINT();
       
       QPainter p(this);
-      p.eraseRect(ev->rect());
+      for(const QRect &rect : ev->region())
+        p.eraseRect(rect);
     }
 #endif
 
@@ -3929,10 +3994,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     // Paint seqtrack headers (left part)
     //
+    const QRegion reg(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1,
+                      _seqtracks_widget.t_width, _seqtracks_widget.t_height);
+    
     API_run_paint_event_for_custom_widget(this,
                                           ev,
-                                          QRegion(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1,
-                                                  _seqtracks_widget.t_width, _seqtracks_widget.t_height)
+                                          reg
                                           );
     
     // Paint seqblocks and seqtrack backround
@@ -3950,6 +4017,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 #if !ERASE_FIRST
       QRect erase_rect(rect());
       erase_rect.setLeft(_seqtracks_widget.t_x1);
+      erase_rect.setRight(width() - _seqtracks_widget.t_x1);
       p.eraseRect(erase_rect); // We don't paint everything.
 #endif
 
@@ -3990,7 +4058,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       QPainter p(this);
 
       {
-        p.setClipRect(QRectF(0, 0, width(), seqtracks_y_max));
+        p.setClipRect(QRectF(0, 0, _seqtracks_widget.t_x2, seqtracks_y_max));
         p.setClipping(true);
       
         paintSeqtrackBorders(p);
@@ -4016,7 +4084,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       D({
           QColor color(GFX_MakeRandomColor());
           color.setAlpha(120);
-          p.fillRect(ev->rect(), color);
+          for(const QRect &rect : ev->region())
+            p.fillRect(rect, color);
 
           /*
           p.setPen(QColor("black"));
@@ -4102,6 +4171,33 @@ float SEQUENCER_get_left_part_y1(void){
 }
 
 float SEQUENCER_get_left_part_y2(void){
+  return g_sequencer_widget->height();
+}
+
+bool SEQUENCER_right_part_is_empty(void){
+  return g_sequencer_widget->_left_part_is_empty;
+}
+
+void SEQUENCER_set_right_part_is_empty(bool is_empty){
+  if (is_empty != g_sequencer_widget->_left_part_is_empty){
+    g_sequencer_widget->_left_part_is_empty = is_empty;
+    g_sequencer_widget->position_widgets();
+  }
+}
+
+float SEQUENCER_get_right_part_x1(void){
+  return g_sequencer_widget->_seqtracks_widget.t_x2;
+}
+
+float SEQUENCER_get_right_part_x2(void){
+  return g_sequencer_widget->width();
+}
+
+float SEQUENCER_get_right_part_y1(void){
+  return 0;
+}
+
+float SEQUENCER_get_right_part_y2(void){
   return g_sequencer_widget->height();
 }
 

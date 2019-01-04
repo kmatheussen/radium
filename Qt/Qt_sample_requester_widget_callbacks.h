@@ -109,9 +109,8 @@ TRUMPET.WAV         1ch, 46kb
 */
 
 static QHash<QString, QString> g_filenames_hash;
-static const int k_filename_len = 23;
 
-static QString get_sample_filename_display_string(QFileInfo file_info){
+static QString get_sample_filename_display_string(QFileInfo file_info, int width, const QFont &font){
   int num_channels;
 
   QString full_filename = file_info.absoluteFilePath();
@@ -132,9 +131,12 @@ static QString get_sample_filename_display_string(QFileInfo file_info){
 
   int64_t num_bytes = file_info.size();
 
+  //const QFontMetrics fn = QFontMetrics(font);
+  const int k_filename_len = 23; //floor((double)width*32.0 / (double)fn.boundingRect("99999999999999999999999999999999").width());
+
   QString ret =
-    file_info.fileName().leftJustified(k_filename_len,'.')
-    + QString::number(num_channels)+"ch,";
+    file_info.fileName().leftJustified(k_filename_len-2,'.') +
+    ".." + QString::number(num_channels)+"ch,";
 
   {
     QString size_string;
@@ -384,6 +386,10 @@ class Sample_requester_widget : public QWidget
     path_edit->setText(_dir.absolutePath());
 
     QFont soundfile_font;
+
+#if 0
+    soundfile_font.fromString(getSampleBrowserFont(true));
+#else
     {
       //QFont font("Bitstream Vera Sans Mono",8);
       soundfile_font.setFamily("Bitstream Vera Sans Mono");
@@ -399,7 +405,7 @@ class Sample_requester_widget : public QWidget
         soundfile_font.setPointSize(8);//font.pointSize()*4/3);
       */
     }
-
+#endif
 
     QColor soundfile_color = get_qcolor(SOUNDFILE_COLOR_NUM);              
     soundfile_color.setAlpha(150);
@@ -467,8 +473,9 @@ class Sample_requester_widget : public QWidget
           entry.is_sf2 = true;
           entry.display = filename+"/";
         }else if(_is_sample_player){
-          if(file_could_be_a_sample(filename))
-            entry.display = get_sample_filename_display_string(file_info);
+          if(file_could_be_a_sample(filename)){
+            entry.display = get_sample_filename_display_string(file_info, file_list->width()-20, soundfile_font);
+          }
         }
         
         content.push_back(entry);

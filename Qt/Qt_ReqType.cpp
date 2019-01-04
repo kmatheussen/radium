@@ -230,8 +230,7 @@ static void legalize_pos(MyReqType *reqtype){
 }
       
       
-
-void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool program_state_is_valid){
+static QString ReadString(ReqType das_reqtype, bool program_state_is_valid){
 
   /*
     // Can not do this since the caller may require an answer, and then just ask again and again until it gets one. (it's also very unlikely that g_radium_runs_custom_exec==true
@@ -395,7 +394,16 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
   //if (lines.size()==0)
   reqtype->y = reqtype->y + edit_height + 5;
 
-  snprintf(buffer,bufferlength-1,"%s",text.toUtf8().constData());
+  return text;
+}
+
+wchar_t *GFX_ReadWString(ReqType das_reqtype, bool program_state_is_valid){
+  return STRING_create(ReadString(das_reqtype, program_state_is_valid));
+}
+
+void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool program_state_is_valid){
+  QString string = ReadString(das_reqtype, program_state_is_valid);
+  snprintf(buffer,bufferlength-1,"%s",string.toUtf8().constData());
   printf("Got: \"%s\"\n",buffer);
 }
 

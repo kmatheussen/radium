@@ -104,6 +104,30 @@ float getSequencerLeftPartY2(void){
   return SEQUENCER_get_left_part_y2();
 }
 
+bool getSequencerRightPartEmpty(void){
+  return SEQUENCER_right_part_is_empty();
+}
+
+void setSequencerRightPartEmpty(bool is_empty){
+  SEQUENCER_set_right_part_is_empty(is_empty);
+}
+
+float getSequencerRightPartX1(void){
+  return SEQUENCER_get_right_part_x1();
+}
+
+float getSequencerRightPartX2(void){
+  return SEQUENCER_get_right_part_x2();
+}
+
+float getSequencerRightPartY1(void){
+  return SEQUENCER_get_right_part_y1();
+}
+
+float getSequencerRightPartY2(void){
+  return SEQUENCER_get_right_part_y2();
+}
+
 void undoSeqblockFades(int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
@@ -2070,6 +2094,22 @@ bool addAudiofile(const_char* w_filename){
   BS_UpdateBlockList();
   return ret;
 }
+
+int64_t getAudioFilesGeneration(void){
+  return g_sample_reader_filenames_generation;
+}
+
+dyn_t getAudioFiles(void){
+  dynvec_t ret = {};
+  vector_t filenames = SAMPLEREADER_get_all_filenames();
+
+  VECTOR_FOR_EACH(wchar_t *, filename, &filenames){
+    DYNVEC_push_back(ret, DYN_create_string(path_to_w_path(filename)));
+  }END_VECTOR_FOR_EACH;
+
+  return DYN_create_array(ret);
+}
+
 
 int createGfxGfxSeqblock(dyn_t state){
   if (state.type != HASH_TYPE){
