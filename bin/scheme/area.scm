@@ -1215,6 +1215,7 @@
                                          :scrollbar-color "#400010"
                                          :background-color #f
                                          :expand-area-widths #t
+                                         :load-areas-from-state #f
                                          )
 
   (define scrollbar-width (between 1
@@ -1266,7 +1267,8 @@
                  :slider-pos (scrollbar :get-slider-pos)))
 
   (define-override (apply-state! state)
-    (set! areas (state :areas))
+    (if load-areas-from-state
+        (set! areas (state :areas)))
     (define dy (+ (state :start-y1) (- y1 (state :y1))))
     ;;(c-display "     apply-state!. Position dy:" dy)
     (scrollbar :set-slider-pos! (state :slider-pos) #f)
