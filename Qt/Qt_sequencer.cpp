@@ -279,9 +279,12 @@ bool myDrawText(QPainter *painter, QRectF rect, QString text, int flags, bool wr
 
     bool was_clipping = painter->hasClipping();
     const QRegion &old_clipregion = painter->clipRegion();
-    
-    painter->setClipRect(rect.toRect());
 
+    if (was_clipping)
+      painter->setClipRegion(old_clipregion.intersected(rect.toRect()));
+    else
+      painter->setClipRect(rect.toRect());
+    
     if(was_clipping==false)
       painter->setClipping(true);
         
