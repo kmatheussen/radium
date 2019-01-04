@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/undo_connection_enabled_proc.h"
 #include "../audio/undo_audio_connection_gain_proc.h"
 #include "../audio/Modulator_plugin_proc.h"
+#include "../audio/SampleReader_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../mixergui/QM_chip.h"

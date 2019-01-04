@@ -280,12 +280,15 @@ static void traverse(QString path, func_t* callback, bool in_main_thread){
     if (last_id >= 0)
       THREADING_wait_for_async_function(last_id);
 
-    THREADING_run_on_main_thread_and_wait([callback, &ATOMIC_NAME(callback_has_returned_false)](){
+    if (ATOMIC_GET(callback_has_returned_false)==false) {
 
-        if (ATOMIC_GET(callback_has_returned_false)==false)
+      THREADING_run_on_main_thread_and_wait([callback](){
+
           call_callback(callback, false, true, "");
 
       });
+
+    }
 
   }
 }

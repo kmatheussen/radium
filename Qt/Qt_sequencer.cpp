@@ -4810,6 +4810,10 @@ void SEQUENCER_update(uint32_t what){
     }
   }
 
+  if (what & SEQUPDATE_RIGHT_PART)
+    g_sequencer_widget->update(SEQUENCER_get_right_part_x1(), SEQUENCER_get_right_part_y1(),
+                               SEQUENCER_get_right_part_x2()-SEQUENCER_get_right_part_x1(), SEQUENCER_get_right_part_y2()-SEQUENCER_get_right_part_y1());
+  
   if (what & SEQUPDATE_PLAYLIST)
     BS_UpdatePlayList();
   

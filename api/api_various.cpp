@@ -1111,6 +1111,7 @@ void setAudiofileColor(const_char* colorname, const_char* w_audiofilename){
 
   SAMPLEREADER_set_sample_color(w_path_to_path(w_audiofilename), color);
 
+  g_sample_reader_filenames_generation++; // update audio file browser in the right part of sequencer.
   SEQUENCER_update(SEQUPDATE_TIME);
 }
 

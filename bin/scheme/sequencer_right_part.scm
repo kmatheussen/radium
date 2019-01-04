@@ -42,7 +42,7 @@
                   (area :remove-sub-areas!)
                   (area :get-position
                         (lambda (x1 y1 x2 y2 width height)
-                          (area :add-sub-area-plain! (recreate x1 y1 x2 y2)))))
+                          (area :add-sub-area-plain! (recreate x1 y1 x2 y2 #f)))))
                 200))))
   area
   )
