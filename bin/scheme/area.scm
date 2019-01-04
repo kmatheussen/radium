@@ -1639,6 +1639,8 @@
                                    :only-audio-files #f
                                    :state #f)
 
+  (define num-settings-buttons 9)
+
   (define curr-settings-num (string->number (<ra> :get-settings (<-> "filebrowser_" id-text "_curr-settings-num") "0")))
   (define curr-entry-num 0)
 
@@ -1649,21 +1651,25 @@
 
   (define vertical-list-area #f)
 
+  (define states (make-vector num-settings-buttons #f))
+
   (set! font (<ra> :get-sample-browser-font #f))
 
+  (define (store-curr-entry-state!)
+    (set! (states curr-settings-num)
+          (hash-table* :path path
+                       :entries entries
+                       :entries-is-complete entries-is-complete
+                       :vertical-list-area-state (and vertical-list-area
+                                                      (vertical-list-area :get-state))
+                       )))
+    
   (define-override (get-state)
-    (hash-table* :curr-entry-num curr-entry-num
-                 :path path
-                 :entries entries
-                 :entries-is-complete entries-is-complete
-                 :vertical-list-area-state (and vertical-list-area
-                                                (vertical-list-area :get-state))
-                 )
-    )
+    (store-curr-entry-state!)
+    (hash-table* :curr-settings-num curr-settings-num
+                 :states states))
 
-  (define-override (apply-state! state)
-    ;;(c-display "apply-state:" state)
-    (set! curr-entry-num (state :curr-entry-num))
+  (define (apply-state2! state)
     (set! path (state :path))
     ;;(c-display "          Apply state. Complete state:" (state :entries-is-complete))
     (if (state :entries-is-complete)
@@ -1676,6 +1682,12 @@
             (if (and vla-state vertical-list-area)
                 (vertical-list-area :apply-state! vla-state))))
         (update-directory!)))
+    
+  (define-override (apply-state! state)
+    ;;(c-display "apply-state:" state)
+    (set! curr-settings-num (state :curr-settings-num))
+    (set! states (state :states))
+    (apply-state2! (states curr-settings-num)))
 
   (delafina (set-new-path! :new-path
                            :store-setting #t)
@@ -1714,18 +1726,20 @@
 
     (define pathline-y1 (+ y1 (get-fontheight)))
 
-    (define num-buttons 9)
-
     (add-sub-area-plain! (<new> :radiobuttons gui x1 y1 x2 pathline-y1
-                                num-buttons
+                                num-settings-buttons
                                 curr-settings-num
                                 (lambda (num is-on)
                                   (c-display "numison:" num is-on)
                                   (when is-on
+                                    (store-curr-entry-state!)
                                     (set! curr-settings-num num)
                                     (<ra> :put-settings (<-> "filebrowser_" id-text "_curr-settings-num") (<-> num))
-                                    (set-new-path! (<ra> :get-settings-w (<-> "filebrowser_" id-text "_" num) path)
-                                                   :store-setting #f))
+                                    (let ((state (states curr-settings-num)))
+                                      (if state
+                                          (apply-state2! state)
+                                          (set-new-path! (<ra> :get-settings-w (<-> "filebrowser_" id-text "_" num) path)
+                                                         :store-setting #f))))
                                   #t)
                                 #t
                                 :text-func (lambda (num)

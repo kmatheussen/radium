@@ -220,8 +220,7 @@ static bool call_callback(func_t* callback, bool in_main_thread, bool is_finishe
   return ret;
 }
 
-static void traverse(QString path, func_t* callback, bool in_main_thread, int64_t gc_protect_pos){
-  R_ASSERT(in_main_thread || gc_protect_pos >= 0);
+static void traverse(QString path, func_t* callback, bool in_main_thread){
 
   DEFINE_ATOMIC(bool, callback_has_returned_false) = false;
   int64_t last_id = -1;
@@ -281,12 +280,10 @@ static void traverse(QString path, func_t* callback, bool in_main_thread, int64_
     if (last_id >= 0)
       THREADING_wait_for_async_function(last_id);
 
-    THREADING_run_on_main_thread_and_wait([callback, &ATOMIC_NAME(callback_has_returned_false), gc_protect_pos](){
+    THREADING_run_on_main_thread_and_wait([callback, &ATOMIC_NAME(callback_has_returned_false)](){
 
         if (ATOMIC_GET(callback_has_returned_false)==false)
           call_callback(callback, false, true, "");
-
-        s7extra_unprotect(callback, gc_protect_pos);
 
       });
 
@@ -332,26 +329,29 @@ bool iterateDirectory(const_char* w_path, bool async, func_t* callback){
       int64_t _gc_protect_pos;
 
     public:
-      MyThread(QString path, func_t *callback, int64_t gc_protect_pos)
+      MyThread(QString path, func_t *callback)
         : _path(path)
         , _callback(callback)
-        , _gc_protect_pos(gc_protect_pos)
+        , _gc_protect_pos(s7extra_protect(callback))
       {
         start();
         connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
       }
 
+      ~MyThread(){
+        s7extra_unprotect(_callback, _gc_protect_pos);
+      }
+
       void run() override {
-        traverse(_path, _callback, false, _gc_protect_pos);
+        traverse(_path, _callback, false);
       }
     };
 
-    int64_t gc_protect_pos = s7extra_protect(callback); // unprotected in traverse.
-    new MyThread(path, callback, gc_protect_pos);
+    new MyThread(path, callback);
 
   } else {
 
-    traverse(path, callback, true, -1);
+    traverse(path, callback, true);
 
   }
 

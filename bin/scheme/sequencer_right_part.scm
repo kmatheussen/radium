@@ -170,6 +170,12 @@
                                              :state state
                                              ))))
                              ))
+
+    (list-area :add-nonpress-mouse-cycle!
+               (lambda (x* y)
+                 (set-mouse-pointer ra:set-normal-mouse-pointer gui)
+                 #f))
+    
     list-area)
   (recreate gui x1 y1 x2 y2))
 
