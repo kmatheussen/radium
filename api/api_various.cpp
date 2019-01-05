@@ -387,9 +387,27 @@ int getMaxSubmenuEntries(void){
 void setMaxSubmenuEntries(int val){
   if (val != g_max_submenues){
     g_max_submenues = val;
-    ATOMIC_SET(g_autobypass_delay, val);
     SETTINGS_write_int("max_submenu_entries", val);
   }
+}
+
+
+static float g_tab_bar_height = 1.5;
+
+float getTabBarHeight(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_tab_bar_height = SETTINGS_read_double("tab_bar_height", g_tab_bar_height);
+    has_inited = true;
+  }
+
+  return g_tab_bar_height;
+}
+
+void setTabBarHeight(float new_val){
+  g_tab_bar_height = new_val;
+  SETTINGS_write_double("tab_bar_height", new_val);
 }
 
 
@@ -1084,6 +1102,7 @@ void setBlockColor(const_char *colorname, int blocknum, int windownum){
 
   unsigned int color = GFX_get_color_from_colorname(colorname);
   wblock->block->color = color;
+  g_editor_blocks_generation++;
 
   SEQUENCER_update(SEQUPDATE_TIME);
 }
@@ -2792,6 +2811,13 @@ int64_t getSongLengthInFrames(void){
 
 int getSampleRate(void){
   return MIXER_get_sample_rate();
+}
+
+int64_t g_editor_blocks_generation = 0;
+
+// This number increases every time a block is added or removed, tracks are added or removed, block is renamed, or block duration changes.
+int64_t getEditorBlocksGeneration(void){
+  return g_editor_blocks_generation;
 }
 
 int getLogtypeHold(void){

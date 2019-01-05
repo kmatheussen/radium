@@ -918,11 +918,15 @@
                               (lambda (x1 y1 x2 y2)
                                 ;;(c-display i "y1/y2:" (floor y1) (floor y2) "x1/x2" (floor x1) (floor x2))
                                 (if (= i current-tab-num)
-                                    (<gui> :filled-box gui curr-tab-background x1 y1 x2 y2))
+                                    (<gui> :filled-box gui curr-tab-background x1 y1 x2 y2 5 5))
                                 ;;(<gui> :draw-box gui "#202020" x1 y1 x2 y2 1.0 2 2)
-                                (<gui> :my-draw-text gui *text-color* tab-name x1 y1 x2 y2 #t #f #f (if is-horizontal 0 270)))))
+                                (<gui> :my-draw-text gui *text-color* tab-name x1 y1 x2 y2 #t #f #f (if is-horizontal 0 270))
+                                (<gui> :draw-box gui "black" x1 y1 x2 y2 0.5)
+                                )))
             tab-names
             (iota num-tabs))
+
+  ;;(<gui> :draw-box gui "black" x1 y1 x2 y2 0.5)
   )
   
 

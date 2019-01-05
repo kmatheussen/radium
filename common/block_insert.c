@@ -43,6 +43,7 @@ void InsertBlock_IncBlockNums(
 		block=NextBlock(block);
 	}
 	root->song->num_blocks++;
+        g_editor_blocks_generation++;
 
 	while(window!=NULL){
 		wblock=ListFindElement1_r0(&window->wblocks->l,blockpos);

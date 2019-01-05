@@ -3776,6 +3776,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     {
       setShape(shape);
       setUsesScrollButtons(false); // The "my-tabs" function scales the text.
+
+      QFontMetrics fm(QApplication::font());
+      int systemfontheight = round(fm.height()*getTabBarHeight());
+      QString pix = QString::number(systemfontheight);
+
+      setStyleSheet(QString("QTabBar::tab { height: ") + pix + "px; width: " + pix + "px; }");
       
       //setExpanding(true); // Doesn't work. Instead there is some crazy code in gui.scm/my-tabs to do this manually.
       setExpanding(false); // Setting it explicitly to false. In case setExpanding starts working, things could look strange.

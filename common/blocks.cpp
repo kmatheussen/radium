@@ -53,6 +53,7 @@ void NewBlock(
 	block->num_tracks=num_tracks;
 	block->num_lines=num_lines;
 	block->name=name;
+        g_editor_blocks_generation++;
 	ATOMIC_DOUBLE_SET(block->reltempo, 1.0);
         //ATOMIC_DOUBLE_SET(block->player_time, -200.0);
 
@@ -71,7 +72,8 @@ void NewBlock(
 
         //block->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.82f);
         block->color = GFX_MakeRandomBlockColor();
-        
+        g_editor_blocks_generation++;
+
         TIME_everything_in_block_has_changed(block); // Create timings for bars and so forth, needed when calling TIME_block_num_tracks_have_changed in AppendTrack.
 
 	for(lokke=0;lokke<block->num_tracks;lokke++){
@@ -93,6 +95,7 @@ struct Blocks *AppendBlock(void){
 	block->l.num=blocknum;
 	NewBlock(block,7,64,"NN");
 	root->song->num_blocks++;
+        g_editor_blocks_generation++;
 
         return block;
 }
@@ -104,6 +107,7 @@ void AppendBlock_spes(int num_lines,NInt num_tracks){
 	temp->l.num=blocknum;
 	NewBlock(temp,num_tracks,num_lines,"NN");
 	root->song->num_blocks++;
+        g_editor_blocks_generation++;
 }
 
 

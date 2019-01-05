@@ -245,6 +245,7 @@ void Block_Properties(
 
 void Block_set_name(struct Blocks *block, const char *new_name){
   block->name=talloc_strdup(new_name);
+  g_editor_blocks_generation++;
   BS_UpdateBlockList();
   BS_UpdatePlayList();
 }

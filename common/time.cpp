@@ -1271,6 +1271,8 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   dynvec_t filledout_trackswingss[num_blocks];
   vector_t trackstimess[num_blocks];
 
+  g_editor_blocks_generation++;
+
   R_ASSERT_RETURN_IF_FALSE(g_scheme_has_inited1);
   
   memset(filledout_trackswingss, 0, sizeof(dynvec_t)*num_blocks);

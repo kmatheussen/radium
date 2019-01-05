@@ -610,6 +610,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       mixer_window_is_child_of_main_window->setChecked(mixerWindowIsChildOfMainWindow());
       
       max_num_menu_elements->setValue(getMaxSubmenuEntries());
+      tab_bar_height->setValue(getTabBarHeight());
       
       modal_windows->setChecked(doModalWindows());
 #if FOR_WINDOWS
@@ -1212,6 +1213,18 @@ public slots:
 
     GL_lock();{
       max_num_menu_elements->clearFocus();
+    }GL_unlock();
+  }
+
+  void on_tab_bar_height_valueChanged(double val){
+    if (_initing==false)
+      setTabBarHeight(val);
+  }
+  void on_tab_bar_height_editingFinished(){
+    set_editor_focus();
+
+    GL_lock();{
+      tab_bar_height->clearFocus();
     }GL_unlock();
   }
 

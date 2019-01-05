@@ -276,6 +276,7 @@ static void LoadOctaBlock(
 	}
 
 	wblock->block->name=blockname;
+        g_editor_blocks_generation++;
 
 	for(track=0;track<numtracks;track++){
 		note=NULL;

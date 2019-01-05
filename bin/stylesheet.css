@@ -20,7 +20,6 @@ QScrollArea > QWidget > QScrollBar { background: rgba(ff, ff, ff, 50); }
 
 QTabBar::pane { border: 0; }
 
-
 /*
 QTabWidget::pane { border: 0; background: blue}
 */

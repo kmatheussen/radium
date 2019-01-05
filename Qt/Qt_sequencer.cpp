@@ -3582,7 +3582,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   int get_sequencer_right_part_width(int systemfontheight) const {
-    int empty_width = systemfontheight * 1.5;
+    int empty_width = systemfontheight * getTabBarHeight();
     int maybe = _left_part_is_empty ? empty_width : 1.5 * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... H+R+M+S|");
     //if (maybe > width())
     //  maybe = empty_width;

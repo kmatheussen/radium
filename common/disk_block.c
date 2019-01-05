@@ -115,6 +115,7 @@ var5:
         
 obj0:
 	DC_ListAdd1(&block->tracks,LoadTrack());
+        g_editor_blocks_generation++;
 	goto start;
 obj1:
 	LoadSignatures(&block->signatures);
