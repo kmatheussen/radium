@@ -2279,6 +2279,8 @@ struct STimes{									/* One element for each line. */
 	blocks.h
 *********************************************************************/
 
+extern int64_t g_editor_blocks_generation; //This number increases every time a block is added or removed, tracks are added or removed, block is renamed, block changes color, or block duration changes.
+
 struct Blocks{
 	struct ListHeader1 l;
 

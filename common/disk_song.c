@@ -179,6 +179,7 @@ obj6:
 
 var0:
 	song->num_blocks=DC_LoadI();
+        g_editor_blocks_generation++;
 	goto start;
 var1:
 	//song->length=DC_LoadI();

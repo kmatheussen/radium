@@ -156,6 +156,7 @@ void CloseTrack(struct Blocks *block, NInt tracknum){
 	struct Tracks *temp=(struct Tracks *)ListFindElement1(&block->tracks->l,tracknum);
 
 	ListRemoveElement1(&block->tracks,&temp->l);
+        g_editor_blocks_generation++;
 }
 
 bool TRACK_has_peaks(struct Tracks *track){
@@ -184,6 +185,7 @@ void InitTrack(struct Tracks *track){
 static void NewTrack(struct Blocks *block,struct Tracks *track){
   InitTrack(track);
   ListAddElement1(&block->tracks,&track->l);
+  g_editor_blocks_generation++;
 }
 
 void AppendTrack(struct Blocks *block){

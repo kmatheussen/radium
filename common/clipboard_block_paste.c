@@ -95,7 +95,7 @@ void CB_PasteBlock(
         TIME_everything_in_block_has_changed(towblock->block); // UpdateReallines requires updated time values (for whether to show swing type track or not).
         
 	toblock->name=block->name;
-
+        
 	towblock->localzooms=NULL;
 	CB_UnpackLocalZooms(&towblock->localzooms,wblock->localzooms,block->num_lines);
 	//towblock->reallines=NULL;
@@ -136,6 +136,7 @@ void CB_PasteBlock(
 		RError("Error in funtion CB_PasteBlock in file clipboard_block_paste.c; towtrack!=NULL when wtrack==NULL\n");
 	}
 
+        g_editor_blocks_generation++;
 	BS_UpdateBlockList();
 	BS_UpdatePlayList();
 }

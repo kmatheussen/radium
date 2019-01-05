@@ -10,7 +10,7 @@
       (<new> :vertical-list-area gui x1 y1 x2 y2
            (map (lambda (i audiofile)
                   (define file-info (<ra> :get-file-info audiofile))
-                  (<new> :file-browser-entry gui 10 0 100 (* 1.2 (get-fontheight))
+                  (<new> :sequencer-drag-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
                          :is-current #f
                          :entry-num i
                          :file-info file-info
@@ -39,10 +39,11 @@
                 (define new-generation (<ra> :get-audio-files-generation))
                 (when (not (= generation new-generation))
                   (set! generation new-generation)
+                  (define state (area :get-state))
                   (area :remove-sub-areas!)
                   (area :get-position
                         (lambda (x1 y1 x2 y2 width height)
-                          (area :add-sub-area-plain! (recreate x1 y1 x2 y2 #f)))))
+                          (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state)))))
                 200))))
   area
   )
@@ -58,52 +59,25 @@
 
 (define (create-blocks-browser-area gui x1 y1 x2 y2 state)
 
-  (define (get-data)
-    (hash-table* :curr-block (<ra> :current-block)
-                 :block-names (map (lambda (i)
-                                     (<ra> :get-block-name i))
-                                   (iota (<ra> :get-num-blocks)))))
-
-  (define curr-data (get-data))
-
   (define (recreate x1 y1 x2 y2 state)
-    (define area 
+    (define audiofiles (to-list (<ra> :get-audio-files)))
+    (define area
       (<new> :vertical-list-area gui x1 y1 x2 y2
-           (map (lambda (blocknum blockname)
+           (map (lambda (blocknum)
                   (define color ;;(<ra> :get-block-color blocknum))
                     (<gui> :mix-colors
                            (<ra> :get-block-color blocknum)
                            "white" ;;(<gui> :get-background-color -1)
                            0.95))
-                  (define line
-                    (<new> :text-area gui
-                           10 0 100 (* 1.2 (get-fontheight))
-                           blockname
-                           :text-color "sequencer_text_color"
-                           :background-color (lambda ()
-                                               (if (= (<ra> :current-block) blocknum)
-                                                   (<gui> :mix-colors color "green" 0.1)
-                                                   color))
-                           :align-left #t))
-                  (line :add-mouse-cycle!
-                        (lambda (button x* y*)
-                          ;;(c-display "hepp" i)
-                          (line :get-position
-                                (lambda (x1 y1 x2 y2 width height)
-                                  (<gui> :create-block-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) blocknum
-                                         (lambda (gui width height)
-                                           ;;(c-display "-------w2: " width height)
-                                           (line :paint-text-area gui 0 0 width height)
-                                           ;;(<gui> :draw-line gui "black" 5 3 10 5 20)
-                                           ))))
-                          #t)
-                        (lambda (button x* y*)
-                          #t)
-                        (lambda (button x* y*)
-                          #t))
-                  line)
-                (iota (length (curr-data :block-names)))
-                (curr-data :block-names))))
+                  (<new> :sequencer-drag-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
+                         :is-current #f
+                         :entry-num blocknum
+                         :blocknum blocknum
+                         :background-color (if (= (<ra> :current-block) blocknum)
+                                               (<gui> :mix-colors color "green" 0.1)
+                                               color)
+                         :allow-dragging #t))
+                (iota (<ra> :get-num-blocks)))))
     (if state
         (area :apply-state! state))
     area)
@@ -113,18 +87,21 @@
   
   ;;(c-display "state:" state)
 
+  (define generation (<ra> :get-editor-blocks-generation))
   (<ra> :schedule (random 1000)
         (lambda ()
           (if (or (not (<gui> :is-open gui))
                   (not (area :is-alive)))
               #f
-              (let ((new-data (get-data)))
-                (when (not (morally-equal? curr-data new-data))
-                  (set! curr-data new-data)
+              (begin
+                (define new-generation (<ra> :get-editor-blocks-generation))
+                (when (not (= generation new-generation))
+                  (set! generation new-generation)
+                  (define state (area :get-state))
                   (area :remove-sub-areas!)
                   (area :get-position
                         (lambda (x1 y1 x2 y2 width height)
-                          (area :add-sub-area-plain! (recreate x1 y1 x2 y2 #f)))))
+                          (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state)))))
                 200))))
   area
   )

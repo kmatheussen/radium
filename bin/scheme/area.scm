@@ -1476,25 +1476,37 @@
 (<ra> :iterate-directory "L3RtcA==" #f c-display)
 !!#
 
-(def-area-subclass (<file-browser-entry> :gui :x1 :y1 :x2 :y2
+(def-area-subclass (<sequencer-drag-entry-area> :gui :x1 :y1 :x2 :y2
                                          :is-current
                                          :entry-num
-                                         :file-info
+                                         :file-info #f
+                                         :blocknum #f
                                          :allow-dragging #f
                                          :background-color #f
                                          :callback #f)
-  (define text-color (if (file-info :is-dir)
-                         *text-color*
-                         "soundfile"))
+
+  (assert (or file-info blocknum))
+
+  (define text-color (cond (blocknum
+                            "black")
+                           ((file-info :is-dir)
+                            *text-color*)
+                           (background-color
+                            "black")
+                           (else
+                            "soundfile"
+                            )))
   (define ch-color "black")
   (define size-color (if background-color
                          "black"
                          *text-color*)) ;;"#081040")
 
-  (define is-dir (file-info :is-dir))
-  (define is-soundfile (file-info :is-audiofile))
+  (define is-dir (and file-info (file-info :is-dir)))
+  (define is-soundfile (and file-info (file-info :is-audiofile)))
 
-  (define name-text (let ((filename (file-info :filename)))
+  (define name-text (let ((filename (if file-info
+                                        (file-info :filename)
+                                        (<ra> :get-block-name blocknum))))
                       (if (and is-dir
                                ;;(not (string=? "." filename))
                                ;;(not (string=? ".." filename))
@@ -1502,13 +1514,20 @@
                           (<-> filename "/")
                           filename)))
                         
-  (define ch-text (if is-soundfile 
-                      (<-> (file-info :num-ch) "ch")
-                      ""))
+  (define ch-text (cond (blocknum
+                         (<-> (<ra> :get-num-tracks blocknum) "tr"))
+                        (is-soundfile 
+                         (<-> (file-info :num-ch) "ch"))
+                        (else                         
+                         "")))
 
-  (define size-text (cond (is-soundfile
-                           (let ((s (/ (file-info :num-frames)
-                                       (file-info :samplerate))))
+  (define size-text (cond ((or blocknum is-soundfile)
+                           (let ((s (if blocknum
+                                        (/ (/ (<ra> :get-block-length blocknum)
+                                              (<ra> :get-sample-rate))
+                                           (<ra> :get-reltempo blocknum))
+                                        (/ (file-info :num-frames)
+                                           (file-info :samplerate)))))
                              (if (< s 60)
                                  (<-> (if (< s 10)
                                           " "
@@ -1542,15 +1561,23 @@
                       ;;(set! dragging-entry (make-dragging-entry))
                       ;;(<gui> :show dragging-entry)
                       ;;(move-dragging-entry!)
-                      (c-display "w: " width height)
-                      (c-display "file-info:" file-info)
-                      (if (and (not (file-info :is-dir))
-                               allow-dragging)
-                          (<gui> :create-file-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) (file-info :path)
-                                 (lambda (gui width height)
-                                   (c-display "-------w2: " width height)
-                                   (paint2 gui 0 0 width height)
-                                   )))
+                      ;;(c-display "w: " width height)
+                      ;;(c-display "file-info:" file-info)
+                      (cond (blocknum
+                             (<gui> :create-block-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) blocknum
+                                    (lambda (gui width height)
+                                      ;;(c-display "-------w2: " width height)
+                                      (paint2 gui 0 0 width height)
+                                      ;;(line :paint-text-area gui 0 0 width height)
+                                      ;;(<gui> :draw-line gui "black" 5 3 10 5 20)
+                                    )))
+                            ((and (not (file-info :is-dir))
+                                  allow-dragging)
+                             (<gui> :create-file-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) (file-info :path)
+                                    (lambda (gui width height)
+                                      (c-display "-------w2: " width height)
+                                      (paint2 gui 0 0 width height)
+                                      ))))
                       #t)
                     (lambda (button x* y*)
                       ;;(move-dragging-entry!)
@@ -1568,7 +1595,7 @@
     (define name-x2 (- ch-x1 (<gui> :text-width " " gui)))
     (define ch-x2 (- default-size-x1 (<gui> :text-width " " gui)))
 
-    (define size-x1 (- x2 (<gui> :text-width size-text gui)))
+    (define size-x1 (max default-size-x1 (- x2 (<gui> :text-width size-text gui))))
 
     (define entry-background-color (if background-color
                                        background-color
@@ -1591,7 +1618,8 @@
            #f ;; scale-font-size
            )
 
-    (cond (is-soundfile
+    (cond ((or blocknum
+               is-soundfile)
            ;; ch
            (<gui> :draw-text gui ch-color ch-text
                   ch-x1 y1
@@ -1779,14 +1807,14 @@
 
     (set! file-browser-entries
           (map (lambda (entry entry-num)
-                 (<new> :file-browser-entry gui 
+                 (<new> :sequencer-drag-entry-area gui 
                         0 0 10 (* 1.2 (get-fontheight))
                         (= entry-num curr-entry-num)
                         entry-num
-                        entry
-                        #t
-                        #f
-                        set-new-curr-entry!
+                        :file-info entry
+                        :allow-dragging #t
+                        :background-color #f
+                        :callback set-new-curr-entry!
                         ))
                entries
                (iota (length entries))
@@ -1867,7 +1895,6 @@
   )
 !!#
 
-
 (def-area-subclass (<tabs> :gui :x1 :y1 :x2 :y2
                            :is-horizontal
                            :curr-tab-num
@@ -1876,7 +1903,7 @@
                            :get-tab-area-func)
 
   (define num-tabs (length tab-names))
-  (define tab-bar-height (* 1.5 (get-fontheight)))
+  (define tab-bar-height (* (<ra> :get-tab-bar-height) (get-fontheight)))
 
   (define tab-bar-x2 (if is-horizontal
                        x2
