@@ -26,30 +26,30 @@ static inline QColor mix_colors(const QColor &c1, const QColor &c2, float how_mu
   float a1 = how_much;
   float a2 = 1.0f-a1;
 
-  float red1 = c1.red();
-  float green1 = c1.green();
-  float blue1 = c1.blue();
+  float red1 = c1.redF();
+  float green1 = c1.greenF();
+  float blue1 = c1.blueF();
 
-  float red2 = c2.red();
-  float green2 = c2.green();
-  float blue2 = c2.blue();
+  float red2 = c2.redF();
+  float green2 = c2.greenF();
+  float blue2 = c2.blueF();
 
 
   if(c1.red()==0 && c1.green()==0 && c1.blue()==0){ // some of the black lines doesn't look look very good.
     
-    int r = 74*a1 + c2.red()*a2;
-    int g = 74*a1 + c2.green()*a2;
-    int b = 74*a1 + c2.blue()*a2;
+    float r = 0.3*a1 + c2.red()*a2;
+    float g = 0.3*a1 + c2.green()*a2;
+    float b = 0.3*a1 + c2.blue()*a2;
 
-    return QColor(r,g,b);
+    return QColor::fromRgbF(r,g,b);
     
   }else{
 
-    int r = sqrtf(red1*red1*a1 + red2*red2*a2);
-    int g = sqrtf(green1*green1*a1 + green2*green2*a2);
-    int b = sqrtf(blue1*blue1*a1 + blue2*blue2*a2);
+    float r = sqrtf(red1*red1*a1 + red2*red2*a2);
+    float g = sqrtf(green1*green1*a1 + green2*green2*a2);
+    float b = sqrtf(blue1*blue1*a1 + blue2*blue2*a2);
 
-    return QColor(r,g,b);
+    return QColor::fromRgbF(r,g,b);
   }
 }
 
