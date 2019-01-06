@@ -34,7 +34,10 @@
   ;;
   (<ra> :gui_draw-text gui
         "black"
+        ;;(<gui> :mix-colors "#010101" "red" 0.8)
+        ;;"yellow"
         ;;"white"
+        ;;"green"
         ;;*text-color*
         text
         (+ (box :x1) 5) (box :y1) (- (box :x2) 5) (box :y2)

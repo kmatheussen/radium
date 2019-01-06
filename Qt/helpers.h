@@ -960,10 +960,17 @@ public:
 }
 
 #ifdef QPAINTER_H
-static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color){
+static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color, float do_gradient = true){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
-  p.setBrush(color);
+  if (do_gradient){
+    QLinearGradient gradient(rect.topLeft(), rect.bottomRight());
+    gradient.setColorAt(0, color.lighter(110));
+    gradient.setColorAt(1, color.darker(110));
+    p.setBrush(gradient);
+  } else {
+    p.setBrush(color);
+  }
   p.drawRect(rect);
   p.setBrush(Qt::NoBrush);
   p.setPen(pen);
