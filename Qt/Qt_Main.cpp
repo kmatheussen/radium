@@ -334,7 +334,7 @@ uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch){
   uint32_t to_add = 0;
   static uint32_t s_last_to_add = 0; // cache result since this function is called very often.
 
-  static double s_last_time = TIME_get_ms();
+  static double s_last_time = 0;
   double time = TIME_get_ms();
 
   if( (time - s_last_time) < 10)
