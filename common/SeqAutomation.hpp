@@ -475,8 +475,8 @@ public:
     return at(size()-1);
   }
   
-  double get_value(double time, double time1, double time2, int logtype1, double value1, double value2) const {
-    if (logtype1==LOGTYPE_LINEAR) {
+  double get_value(double time, double time1, double time2, int das_logtype1_das, double value1, double value2) const {
+    if (das_logtype1_das==LOGTYPE_LINEAR) {
       if (time1==time2)        
         return (value1 + value2) / 2.0;
       else
@@ -742,17 +742,20 @@ public:
     
       T node1;
       T node2;
-      
+      bool got_node1 = false;
+      bool got_node2 = false;
+
       for(const auto &node : _automation){
         
         if (node.time <= time) {
-          
           node1 = node;
           new_automation.push_back(node);
+          got_node1 = true;
           
         } else {
-          
+          R_ASSERT(got_node1);
           node2 = node;
+          got_node2 = true;
           goto gotit;
           
         }
@@ -762,14 +765,18 @@ public:
       R_ASSERT(false);
       
     gotit:
-      T node = node1;
-      node.time = time;
-      
-      if (node.logtype == LOGTYPE_LINEAR)        
-        node.value = scale(time, node1.time, node2.time, node1.value, node2.value);
+      if(got_node1==false || got_node2==false){
+        R_ASSERT(false);        
+      } else {
 
-      new_automation.push_back(node);
-      
+        T node = node1;
+        node.time = time;
+        
+        if (node.logtype == LOGTYPE_LINEAR)        
+          node.value = scale(time, node1.time, node2.time, node1.value, node2.value);
+        
+        new_automation.push_back(node);
+      }
     }
 
     _automation = new_automation;

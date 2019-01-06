@@ -1242,7 +1242,7 @@ static int time_to_frame(Data *data, double time, float f_note_num){
     samplenum++;
     if (samplenum==note->num_samples) {
       RError("samplenum==num_samples. %f\n",f_note_num);
-      return data->p.startpos*sample->num_frames + time/30000.0f;
+      return data->p.startpos*10000 + time/30000.0f;
     }
   }
   

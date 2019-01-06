@@ -1382,9 +1382,10 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
         struct Patch *patch = PATCH_get_from_id(patch_id);
         
         if(patch==NULL || patch->patchdata==NULL){
-          if(patch->patchdata==NULL)
+          if(patch!=NULL && patch->patchdata==NULL)
             R_ASSERT(false);
-          R_ASSERT_NON_RELEASE(false);
+          else
+            R_ASSERT_NON_RELEASE(false);
           return;
         }
         

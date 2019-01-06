@@ -846,8 +846,12 @@ bool a_modal_widget_is_open(void){
   remove_null_and_nonmodal_widgets();
 
   for(auto &w : g_modal_widgets){
-    if (w.data()->isVisible())
-      return true;
+    auto *w2 = w.data();
+    if (w2==NULL)
+      R_ASSERT(false);
+    else
+      if (w2->isVisible())
+        return true;
   }
 
   return false;

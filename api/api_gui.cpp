@@ -997,14 +997,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       : radium::Timer(15, true)
       , _child(child)
     {
-      R_ASSERT(_child->isWindow());
+      R_ASSERT(child->isWindow());
 
-      _original_parent = _child->parent();
+      _original_parent = child->parent();
       
       _had_original_parent = _original_parent != NULL;
       
-      _original_flags = _child->windowFlags();
-      _original_geometry = _child->geometry();
+      _original_flags = child->windowFlags();
+      _original_geometry = child->geometry();
 
       g_gui_from_full_screen_widgets[this] = gui;
 
@@ -1014,10 +1014,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       setLayout(mainLayout);
       
-      mainLayout->addWidget(_child);
+      mainLayout->addWidget(child);
 
       showFullScreen();
-      _child->show();
+      child->show();
       show();
 
       //printf("   CREATED FULL SCREEN %p\n", this->parent());
@@ -1311,16 +1311,22 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     template<typename T>
     T *mycast(const_char* funcname, int argnum = 1) const {
-      T *ret = qobject_cast<T*>(_widget.data());
+      QWidget *widget = _widget.data();
+
+      T *ret = qobject_cast<T*>(widget);
       
       if (ret==NULL)
-        handleError("%s: argument #%d (gui #%d) is wrong type. Expected %s, got %s.", funcname, argnum, (int)get_gui_num(), T::staticMetaObject.className(), _widget.data()==NULL ? "(deleted)" : _widget->metaObject()->className());
+        handleError("%s: argument #%d (gui #%d) is wrong type. Expected %s, got %s.", funcname, argnum, (int)get_gui_num(), T::staticMetaObject.className(), widget==NULL ? "(deleted)" : widget->metaObject()->className());
       
       return ret;
     }
 
     void update_modality_attribute(void) {
-      if (_widget->isModal())
+      QWidget *widget = _widget.data();
+      if(widget==NULL)
+        return;
+
+      if (widget->isModal())
         _modality = radium::IS_MODAL;
       else
         _modality = radium::NOT_MODAL;
@@ -1449,13 +1455,19 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void paintVamps(QPainter &p, const bool *vamps_to_paint){
-      bool do_sequencer_clipping = _widget==SEQUENCER_WIDGET_get_widget();
-      
+      QWidget *widget = _widget.data();
+      if(widget==NULL){
+        R_ASSERT_NON_RELEASE(false);
+        return;
+      }
+
+      bool do_sequencer_clipping = widget==SEQUENCER_WIDGET_get_widget();
+            
       if (do_sequencer_clipping){
         // Hack to avoid vamps to be painted on top of the "+A a" button, and the dragger.
         float y1 = SEQTIMELINE_get_y2() - SEQUENCER_get_y1();
         float y2 = SEQNAV_get_y1() - SEQUENCER_get_y1();
-        p.setClipRect(QRectF(0, y1, _widget->width(), y2-y1));
+        p.setClipRect(QRectF(0, y1, widget->width(), y2-y1));
         p.setClipping(true);
       }
         
@@ -2044,18 +2056,25 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return ret;
       }
 
-      QPainter p(_widget);
+      QWidget *widget = _widget.data();
+
+      if (widget==NULL){
+        R_ASSERT_NON_RELEASE(false);
+        return false;
+      }
+
+      QPainter p(widget);
       
       if(maybePaintBackgroundColor(event, p)==false)
         event->accept();
-
+      
       if (_paint_callback.v != NULL) {
 
         p.setRenderHints(QPainter::Antialiasing,true);
-      
+        
         ret = paintEvent3(&p, &event->region(),
-                          [this](){
-                            S7CALL(void_int_int,_paint_callback.v, _widget->width(), _widget->height());
+                          [this,widget](){
+                            S7CALL(void_int_int,_paint_callback.v, widget->width(), widget->height());
                           });
         
       }
@@ -2151,7 +2170,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       _image_painter = new_image_painter;
       _image = new_image;
 
-      set_widget_takes_care_of_painting_everything(_widget);
+      if(_widget==NULL){
+        R_ASSERT_NON_RELEASE(false);
+      } else {
+        set_widget_takes_care_of_painting_everything(_widget);
+      }
     }
     
     
@@ -2160,8 +2183,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       if (painter==NULL){
 
-        if (_image==NULL)
-          setNewImage(_widget->width(), _widget->height());
+        if (_image==NULL){
+          QWidget *widget = _widget.data();
+          if (widget==NULL){
+            R_ASSERT_NON_RELEASE(false);
+            setNewImage(500,500);
+          } else {
+            setNewImage(widget->width(), widget->height());
+          }
+        }
 
         painter=_image_painter;
       }
@@ -2260,7 +2290,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       QPointF qpoints[points->num_elements];
 
       bool is_first = true;
-      float min_x,max_x,min_y,max_y;
+      float min_x=0,max_x=0,min_y=0,max_y=0;
       for(int i=0;i<points->num_elements;i+=2){
 
         const dyn_t &x_point = points->elements[i];
