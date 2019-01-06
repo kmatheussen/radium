@@ -64,7 +64,9 @@ extern "C" {
 #if !defined(VALIDATE_MEM)
 
 
-static inline void* my_calloc(size_t size1,size_t size2){
+static inline void* my_calloc(size_t size1,size_t size2) __attribute__((returns_nonnull));
+
+static inline void* my_calloc(size_t size1,size_t size2) {
   size_t size = size1*size2;
 
   // 1. allocate
@@ -74,7 +76,7 @@ static inline void* my_calloc(size_t size1,size_t size2){
   if (ret==NULL){
     R_ASSERT(false);
     msleep(10000);
-    return NULL;
+    return calloc(1,size); // return calloc(1,size) instead of NULL to avoid null-reference warning.
   }
   
   // 2. Ensure the memory is physically available.
@@ -116,6 +118,10 @@ static inline wchar_t *V_wcsdup(const wchar_t *s){
   R_ASSERT(MIXER_is_saving() || !PLAYER_current_thread_has_lock());
   return wcsdup(s);
 }
+
+
+static inline void *V_calloc(size_t n, size_t size)  __attribute__((returns_nonnull));
+
 static inline void *V_calloc(size_t n, size_t size){
   R_ASSERT(!PLAYER_current_thread_has_lock());
   return my_calloc(n,size);

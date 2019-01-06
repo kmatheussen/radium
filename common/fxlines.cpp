@@ -304,6 +304,7 @@ enum ColorNums newFXColor(void){
 }
 #endif
 
+static const char *get_track_fx_display_name(struct Tracks *track, struct FX *fx) __attribute__((returns_nonnull));
 static const char *get_track_fx_display_name(struct Tracks *track, struct FX *fx){
   if (track->patch==fx->patch)
     return fx->name;
@@ -331,9 +332,12 @@ static void selectFX(
   if(num_usedFX>0){
     int lokke;
     vector_t v={};
-    for(lokke=0;lokke<num_usedFX;lokke++)
-      VECTOR_push_back(&v,get_track_fx_display_name(wtrack->track, getTrackFX(track,lokke)));
-    
+    for(lokke=0;lokke<num_usedFX;lokke++){
+      auto *fx = getTrackFX(track,lokke);
+      if (fx != NULL)
+        VECTOR_push_back(&v,get_track_fx_display_name(wtrack->track, fx));
+    }
+
 #if 0
     for(lokke=0;lokke<10000;lokke++)
       VECTOR_push_back(&v,talloc_format("extra %d",lokke));

@@ -1228,10 +1228,10 @@ struct Comp
                   out_box.x1,out_box.p1,
                   black);
 
-      if(out_box.p1 != vol_box.p1)
+      //if(out_box.p1 != vol_box.p1)
         p->setThickness(1);
-      else
-        p->setThickness(1);
+        //else
+        // p->setThickness(1);
 
       // between out and vol
       p->drawLine(out_box.x2,out_box.p1,
