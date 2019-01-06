@@ -7109,7 +7109,7 @@ static void create_drag_icon(int64_t parent, int width, int height, float hotspo
   IsAlive is_alive(drag);
 
   // schedule drag->exec to run in the next qt cycle to avoid nested calls to scheme eval. Want to avoid that complication.
-  THREADING_run_on_main_thread_async([is_alive, drag](){    
+  QTimer::singleShot(3,[is_alive, drag]{
       if (is_alive){
         printf("\n\n\n  ------------- CALLING EXEC\n\n\n");
         drag->exec(Qt::CopyAction | Qt::MoveAction | Qt::LinkAction);
@@ -7117,13 +7117,11 @@ static void create_drag_icon(int64_t parent, int width, int height, float hotspo
       } else {
         R_ASSERT_NON_RELEASE(false);
       }
-    },
-    true
-    );
 
-  //if (dropAction == Qt::MoveAction)
-  //  child->close();
-  
+      //if (dropAction == Qt::MoveAction)
+      //  child->close();
+
+    });
 }
 
 void gui_createBlockDragIcon(int64_t parent, int width, int height, float hotspot_x, float hotspot_y, int blocknum, func_t *paint_icon_callback){
