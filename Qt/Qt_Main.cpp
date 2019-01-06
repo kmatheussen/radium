@@ -329,10 +329,21 @@ static bool g_up_downs[EVENT_DASMAX];
 static bool maybe_got_key_window(QWindow *window);
   
 uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch){
-
   bool mixer_strips_has_focus = false;
-  
+
+  uint32_t to_add = 0;
+  static uint32_t s_last_to_add = 0; // cache result since this function is called very often.
+
+  static double s_last_time = TIME_get_ms();
+  double time = TIME_get_ms();
+
+  if( (time - s_last_time) < 10)
+    return keyswitch | s_last_to_add;
+
+  //static int num_calls=0; printf("%d\n", num_calls++);
+
   QVector<QWidget*> all_windows = MIXERSTRIPS_get_all_widgets();
+
   for(auto *window : all_windows){
     if (window==QApplication::topLevelAt(QCursor::pos())){
       //if (maybe_got_key_window(window)){
@@ -343,25 +354,28 @@ uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch){
     //if (maybe_got_key_window(window))
     //  printf("        KEY. MIXER STRIP HAS KEY WINDOW.\n");
   }
-  
+
   if (mixer_strips_has_focus){
-    keyswitch |= EVENT_MOUSE_MIXERSTRIPS2;
+    to_add |= EVENT_MOUSE_MIXERSTRIPS2;
     //printf("  MOUSE: Mixerstrips\n");
   
   }else if (SEQUENCER_has_mouse_pointer()){
-    keyswitch |= EVENT_MOUSE_SEQUENCER2;
+    to_add |= EVENT_MOUSE_SEQUENCER2;
     //printf("  MOUSE: Sequencer\n");
     
   }else if (MW_has_mouse_pointer()){
-    keyswitch |= EVENT_MOUSE_MIXER2;
+    to_add |= EVENT_MOUSE_MIXER2;
     //printf("  MOUSE: Mixer\n");
     
   }else {
-    keyswitch |= EVENT_MOUSE_EDITOR2;
+    to_add |= EVENT_MOUSE_EDITOR2;
     //printf("  MOUSE: Editor\n");
   }
-    
-  return keyswitch;
+
+  s_last_to_add = to_add;
+  s_last_time = time;
+
+  return keyswitch | to_add;
 }
 
 static void set_mouse_keyswitches(void){
@@ -1118,6 +1132,7 @@ protected:
 #if FOR_LINUX
 
     if (activation_changed){ //event->type()==QEvent::FocusAboutToChange){
+      //if (event->type()==QEvent::FocusAboutToChange){
       /*
       QFocusEvent *fevent = static_cast<QFocusEvent*>(event);
       printf("QEvent::FocusAboutToChange: EventFilter called: %d/%d %d\n", fevent->gotFocus(), fevent->lostFocus(), fevent->reason());
