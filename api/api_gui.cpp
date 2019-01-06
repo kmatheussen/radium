@@ -2249,7 +2249,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         myupdate(x1-halfwidth, y1-halfwidth, x2+halfwidth, y2+halfwidth);
     }
 
-    void filledBox(const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y) {
+    void filledBox(const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y, float do_gradient) {
       QPainter *painter = get_painter();
 
       QRectF rect(x1, y1, x2-x1, y2-y1);
@@ -2259,7 +2259,16 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       //QPen pen = _image_rect.pen();
 
       painter->setPen(Qt::NoPen);
-      painter->setBrush(qcolor);
+
+      if(do_gradient){
+        QLinearGradient gradient(x1, y1, x2, y2);
+        gradient.setColorAt(0, qcolor.lighter(110));
+        gradient.setColorAt(1, qcolor.darker(110));
+        painter->setBrush(gradient);
+      } else {
+        painter->setBrush(qcolor);
+      }
+
       if (round_x>0 && round_y>0)
         painter->drawRoundedRect(rect, round_x, round_y);
       else
@@ -2277,6 +2286,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       QColor qcolor = getQColor(color);
 
       QPen pen;
+
+      if (points->num_elements<2)
+        return;
 
       if (do_fill){
         painter->setPen(Qt::NoPen);
@@ -6897,12 +6909,12 @@ void gui_drawBox(int64_t guinum, const_char* color, float x1, float y1, float x2
   gui->drawBox(color, x1, y1, x2, y2, width, round_x, round_y);
 }
 
-void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y){
+void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y, bool do_gradient){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->filledBox(color, x1, y1, x2, y2, round_x, round_y);
+  gui->filledBox(color, x1, y1, x2, y2, round_x, round_y, do_gradient);
 }
 
 void gui_filledPolygon(int64_t guinum, const_char* color, dyn_t points){
@@ -7030,12 +7042,21 @@ namespace{
     {
       setMinimumSize(width, height);
       resize(width,height);
+      QColor c = Qt::transparent;
+    QPalette pal = palette();
+    pal.setColor(QPalette::Background, c);
+    pal.setColor(QPalette::Base, c);
+    //gui->_widget->setAutoFillBackground(true);
+    setPalette(pal);
+
     }
 
     void paintEvent(QPaintEvent *ev) override{
       TRACK_PAINT();
       QPainter p(this);
       _current_painter = &p;
+      p.setRenderHints(QPainter::Antialiasing,true);    
+      p.fillRect(rect(), Qt::transparent);
       S7CALL(void_int_int_int, _paint_icon_callback, get_gui_num(), width(), height());
       _current_painter = NULL;
     }
@@ -7072,8 +7093,8 @@ static void create_drag_icon(int64_t parent, int width, int height, float hotspo
 
   qreal dpr = gui->_widget->window()->windowHandle()->devicePixelRatio();
   QPixmap pixmap(width * dpr, height * dpr);
-  //pixmap.fill("yellow");
   pixmap.setDevicePixelRatio(dpr);
+  pixmap.fill(Qt::transparent);
 
   {
     DragTempWidget temp_widget(paint_icon_callback, width, height);

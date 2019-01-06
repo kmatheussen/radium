@@ -1302,7 +1302,7 @@
                                             (<gui> :is-enabled widget))
                                        hover-background-color
                                        nonhover-background-color)))
-             (<gui> :filled-box widget background-color 0 0 width height))
+             (<gui> :filled-box widget background-color 0 0 width height -1 -1 #f))
            
            (if is-first
                (<gui> :draw-line widget
