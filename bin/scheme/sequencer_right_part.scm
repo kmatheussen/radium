@@ -68,14 +68,14 @@
                     (<gui> :mix-colors
                            (<ra> :get-block-color blocknum)
                            "white" ;;(<gui> :get-background-color -1)
-                           0.95))
+                           0.80))
                   (<new> :sequencer-drag-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
-                         :is-current #f
+                         :is-current (= (<ra> :current-block) blocknum)
                          :entry-num blocknum
                          :blocknum blocknum
-                         :background-color (if (= (<ra> :current-block) blocknum)
-                                               (<gui> :mix-colors color "green" 0.1)
-                                               color)
+                         :background-color color ;(if (= (<ra> :current-block) blocknum)
+                                               ;(<gui> :mix-colors color "green" 0.1)
+                                               ;color)
                          :allow-dragging #t))
                 (iota (<ra> :get-num-blocks)))))
     (if state
@@ -88,6 +88,7 @@
   ;;(c-display "state:" state)
 
   (define generation (<ra> :get-editor-blocks-generation))
+  (define curr-block (<ra> :current-block))
   (<ra> :schedule (random 1000)
         (lambda ()
           (if (or (not (<gui> :is-open gui))
@@ -95,8 +96,11 @@
               #f
               (begin
                 (define new-generation (<ra> :get-editor-blocks-generation))
-                (when (not (= generation new-generation))
+                (define new-curr-block (<ra> :current-block))
+                (when (or (not (= generation new-generation))
+                          (not (= curr-block new-curr-block)))
                   (set! generation new-generation)
+                  (set! curr-block new-curr-block)
                   (define state (area :get-state))
                   (area :remove-sub-areas!)
                   (area :get-position

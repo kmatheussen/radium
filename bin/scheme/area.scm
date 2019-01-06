@@ -1504,16 +1504,16 @@
   (define is-dir (and file-info (file-info :is-dir)))
   (define is-soundfile (and file-info (file-info :is-audiofile)))
 
-  (define name-text (let ((filename (if file-info
-                                        (file-info :filename)
-                                        (<ra> :get-block-name blocknum))))
-                      (if (and is-dir
-                               ;;(not (string=? "." filename))
-                               ;;(not (string=? ".." filename))
-                               )
-                          (<-> filename "/")
-                          filename)))
-                        
+  (define name-text (if blocknum
+                        (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum))
+                        (let ((filename (file-info :filename)))
+                          (if (and is-dir
+                                   ;;(not (string=? "." filename))
+                                   ;;(not (string=? ".." filename))
+                                   )
+                              (<-> filename "/")
+                              filename))))
+    
   (define ch-text (cond (blocknum
                          (<-> (<ra> :get-num-tracks blocknum) "tr"))
                         (is-soundfile 
@@ -1567,7 +1567,8 @@
                              (<gui> :create-block-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) blocknum
                                     (lambda (gui width height)
                                       ;;(c-display "-------w2: " width height)
-                                      (paint2 gui 0 0 width height)
+                                      ;;(<gui> :filled-box gui "#00000000" 0 0 width height 0 0 #f) ;; fill with transparent background
+                                      (paint2 gui -1 0 width height)
                                       ;;(line :paint-text-area gui 0 0 width height)
                                       ;;(<gui> :draw-line gui "black" 5 3 10 5 20)
                                     )))
@@ -1576,7 +1577,7 @@
                              (<gui> :create-file-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) (file-info :path)
                                     (lambda (gui width height)
                                       (c-display "-------w2: " width height)
-                                      (paint2 gui 0 0 width height)
+                                      (paint2 gui -1 0 width height)
                                       ))))
                       #t)
                     (lambda (button x* y*)
@@ -1601,14 +1602,14 @@
                                        background-color
                                        "color9"))
     
-    (if is-current
-        (set! entry-background-color (<gui> :mix-colors entry-background-color "green" 0.1)))
+    ;;(if is-current
+    ;;    (set! entry-background-color (<gui> :mix-colors entry-background-color "green" 0.1)))
 
-    (<gui> :filled-box gui entry-background-color x1 y1 x2 y2 0 0)
+    (<gui> :filled-box gui entry-background-color (+ 1 x1) y1 x2 y2 4 4)
 
     ;; name
     (<gui> :draw-text gui text-color name-text
-           x1 y1
+           (+ 2 x1) y1
            (if is-dir x2 name-x2) y2
            #f ;; wrap lines
            #f ;; align-top
@@ -1656,6 +1657,14 @@
                   #t ;; cut-text-to-fit
                   #f ;; scale-font-size
                   )))
+
+    (when is-current
+      (<gui> :set-clip-rect gui (+ x1 1) y1 x2 y2)
+      (<gui> :draw-box gui (<gui> :mix-colors "#010101" "green" 0.5) (+ 1 x1) (+ y1 0) (- x2 0) (- y2 0) (/ (get-fontheight) 2.5) 4 4)
+      ;;(<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
+      )
+
+    (<gui> :draw-box gui "black" (+ 1 x1) y1 x2 y2 0.5 4 4)
     )
   
   (define-override (paint)
