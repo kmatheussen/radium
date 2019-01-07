@@ -3786,7 +3786,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   
   void paintGrid(const QRegion &update_region, QPainter &p, enum GridType grid_type) const {
     if (grid_type==NO_GRID)
-      return;
+      grid_type=BEAT_GRID;
+    //      return;
     
     double x1 = _seqtracks_widget.t_x1;
     double x2 = _seqtracks_widget.t_x2;
@@ -3856,7 +3857,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         return true;
       };
     
-    SEQUENCER_iterate_time(_start_time, _end_time, _grid_type, callback);
+    SEQUENCER_iterate_time(_start_time, _end_time, grid_type, callback);
   }
 
   void paintSeqPunchOrLoop(const QRegion &update_region, bool is_looping, QPainter &p) const {
@@ -4028,6 +4029,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       p.setClipRect(QRectF(_seqtracks_widget.t_x1, 0, _seqtracks_widget.t_width, seqtracks_y_max));
       p.setClipping(true);
 
+      paintGrid(ev->region(), p, _grid_type);
+      
+
       {
 
         _seqtracks_widget.paint(ev->region(), p);
@@ -4036,8 +4040,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       
       if (_songtempoautomation_widget.is_visible)
         _songtempoautomation_widget.paint(ev->region(), p);
-      
-      paintGrid(ev->region(), p, _grid_type);
       
       if (SEQUENCER_is_looping())
         paintSeqPunchOrLoop(ev->region(), true, p);    
