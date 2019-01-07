@@ -3787,7 +3787,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   void paintGrid(const QRegion &update_region, QPainter &p, enum GridType grid_type) const {
     if (grid_type==NO_GRID)
       grid_type=BEAT_GRID;
-    //      return;
+     //      return;
     
     double x1 = _seqtracks_widget.t_x1;
     double x2 = _seqtracks_widget.t_x2;
