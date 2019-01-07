@@ -1020,7 +1020,9 @@
                #t ; scale font size
                ))
     (if is-pressing
-        (<gui> :draw-box gui background-color (+ x1 r/2) (+ y1 r/2) (- x2 r/2) (- y2 r/2) b r r)))
+        (<gui> :draw-box gui background-color (+ x1 r/2) (+ y1 r/2) (- x2 r/2) (- y2 r/2) b r r))
+
+    (<gui> :draw-box gui "black" x1 y1 x2 y2 1 r r))
     
   (define-override (paint)
     (if paint-func
