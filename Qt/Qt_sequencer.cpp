@@ -742,10 +742,7 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
       else {
         if (is_playing_song())
           PlayStop();
-        ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
-        SEQUENCER_update(SEQUPDATE_TIME);
-        if (useJackTransport())
-          MIXER_TRANSPORT_set_pos(pos);
+        setSongPos(pos);
       }
       
     }
@@ -2477,13 +2474,13 @@ struct SongTempoAutomation_widget {
 };
 
 // Return true if continuing.
- static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtrack,
-                                                    int &barnum,
-                                                    int64_t start_seqtime, int64_t end_seqtime,
-                                                    GridType what_to_find,
-                                                    int64_t end_blockseqtime, int64_t next_blockstarttime,
-                                                    int64_t last_barseqtime, int64_t last_beatseqtime,
-                                                    std::function<bool(int64_t,int,int,int)> callback
+static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtrack,
+                                                   int &barnum,
+                                                   int64_t start_seqtime, int64_t end_seqtime,
+                                                   GridType what_to_find,
+                                                   int64_t end_blockseqtime, int64_t next_blockstarttime,
+                                                   int64_t last_barseqtime, int64_t last_beatseqtime,
+                                                   std::function<bool(int64_t,int,int,int)> callback
                                                    )
 {
     int64_t bar_seqlength = end_blockseqtime - last_barseqtime;
@@ -2551,7 +2548,7 @@ struct SongTempoAutomation_widget {
 }
 
 // Next (or current) seqblock when ignoring audio seqblocks.
-int get_next_block_seqblocknum(const struct SeqTrack *seqtrack, int seqtracknum){
+static int get_next_block_seqblocknum(const struct SeqTrack *seqtrack, int seqtracknum){
   //printf("Seqtracknum: %d (%d)\n", seqtracknum, seqtrack->seqblocks.num_elements);
 
   if(seqtracknum >= (seqtrack->seqblocks.num_elements)){
@@ -2570,18 +2567,19 @@ int get_next_block_seqblocknum(const struct SeqTrack *seqtrack, int seqtracknum)
 } // and anon. namespace
 
 
-// If callback returns false, we stop iterating.
-void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType what_to_find, std::function<bool(int64_t,int,int,int)> callback){
-  int barnum = 0;
-  //printf("Start_seqtime: %f\n", (float)start_seqtime/pc->pfreq);
-
+void SEQUENCER_iterate_time_seqblocks(int64_t start_seqtime, int64_t end_seqtime, bool include_previous_and_next_seqblock,
+                                      std::function<radium::IterateSeqblocksCallbackReturn(const struct SeqTrack*, const struct SeqBlock *,const struct Blocks*,const struct SeqBlock *)> callback
+                                             )
+{
   R_ASSERT_NON_RELEASE(end_seqtime >= 0);
-  
+
   const struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[0];
   if (seqtrack->seqblocks.num_elements==0)
     return;
         
   int next_seqblocknum = get_next_block_seqblocknum(seqtrack, 0);
+
+  int num_seqblocks_after = 0;
 
   while(next_seqblocknum != -1){
     int seqblocknum = next_seqblocknum;
@@ -2596,25 +2594,48 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
 
       next_blockstarttime = next_seqblock->t.time;
       
-      if (next_blockstarttime <= start_seqtime){
+      if (start_seqtime >= next_blockstarttime){
         //printf("   1. SEQUENCER_iterate_time. next_blockstarttime <= start_seqtime: %f >= %f\n", (double)next_blockstarttime/pc->pfreq, (double)start_seqtime/pc->pfreq);
         continue;
       }
     }
 
     int64_t start_blockseqtime = seqblock->t.time;
-    int64_t end_blockseqtime = seqblock->t.time2;
+    //int64_t end_blockseqtime = seqblock->t.time2;
 
     if (start_blockseqtime >= end_seqtime){
       //R_ASSERT_NON_RELEASE(false);
 #if !defined(RELEASE)
       printf("   2. SEQUENCER_iterate_time. start_blockseqtime >= end_seqtime: %f >= %f\n", (double)start_blockseqtime/pc->pfreq, (double)end_seqtime/pc->pfreq);
 #endif
-      return;
+
+      if (include_previous_and_next_seqblock==false || num_seqblocks_after==1)
+        return;
+
+      num_seqblocks_after++;
     }
     
     const struct Blocks *block = seqblock->block;
 
+    if (callback(seqtrack, seqblock, block, next_seqblock)==radium::IterateSeqblocksCallbackReturn::ISCR_BREAK)
+      return;
+  }
+}
+
+// If callback returns false, we stop iterating.
+void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType what_to_find, std::function<bool(int64_t,int,int,int)> callback){
+  int barnum = 0;
+  //printf("Start_seqtime: %f\n", (float)start_seqtime/pc->pfreq);
+
+  SEQUENCER_iterate_time_seqblocks
+    (start_seqtime,end_seqtime,false,
+     [&](const struct SeqTrack *seqtrack,const struct SeqBlock *seqblock, const struct Blocks *block, const struct SeqBlock *next_seqblock){
+
+    int64_t start_blockseqtime = seqblock->t.time;
+    int64_t end_blockseqtime = seqblock->t.time2;
+
+    int64_t next_blockstarttime = next_seqblock==NULL ? -1 : next_seqblock->t.time;
+      
     if (what_to_find==GridType::BEAT_GRID || what_to_find==GridType::BAR_GRID){
       
       const struct Beats *beat = block->beats;
@@ -2642,7 +2663,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
         
         if (what_to_find==GridType::BEAT_GRID || is_bar){
           if (callback(seqtime, barnum, beat->beat_num, 0)==false)
-            return;
+            return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
         }
         
         beat = NextBeat(beat);
@@ -2651,14 +2672,14 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
       //printf("   3. SEQUENCER_iterate_time. start_seqtime: %f. end_seqtime: %f.\n", (double)start_seqtime/pc->pfreq, (double)end_seqtime/pc->pfreq);
       
       if (iterate_beats_between_seqblocks(seqtrack,
-                                         barnum,
-                                         start_seqtime, end_seqtime,
-                                         what_to_find,
-                                         end_blockseqtime, next_blockstarttime,
-                                         last_barseqtime, last_beatseqtime,
-                                         callback)
+                                          barnum,
+                                          start_seqtime, end_seqtime,
+                                          what_to_find,
+                                          end_blockseqtime, next_blockstarttime,
+                                          last_barseqtime, last_beatseqtime,
+                                          callback)
           == false)
-        return;
+        return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
      
     } else {
 
@@ -2671,7 +2692,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
         Place place = {line,0,1};
         seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime(block, &place));
         if (callback(seqtime, -1, -1, line)==false)
-          return;
+          return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
         line++;
       }
 
@@ -2682,7 +2703,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
       if(linetime<=0){ // Playing veery fast.
         //R_ASSERT_NON_RELEASE(false);
         //R_ASSERT(linetime==0);
-        return;
+        return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
       }
       
 #if 0 //!defined(RELEASE)
@@ -2704,14 +2725,15 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
       
       while(next_blockstarttime < 0 || seqtime < next_blockstarttime){
         if (callback(seqtime, -1, -1, line)==false)
-          return;
+          return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
         line++;
         seqtime += linetime;
       }
       
     }
-    
-  }
+
+    return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
+    });
 }
 
 
@@ -4031,7 +4053,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
       paintGrid(ev->region(), p, _grid_type);
       
-
       {
 
         _seqtracks_widget.paint(ev->region(), p);

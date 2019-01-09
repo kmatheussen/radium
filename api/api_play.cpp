@@ -23,7 +23,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Player_proc.h"
 #include "../common/time_proc.h"
 #include "../common/seqtrack_proc.h"
+#include "../common/realline_calc_proc.h"
+#include "../common/wblocks_proc.h"
+#include "../common/cursor_updown_proc.h"
+
 #include "../audio/Mixer_proc.h"
+
+#include "../common/seqtrack_proc.h"
+
 
 #include "api_common_proc.h"
 
@@ -75,9 +82,34 @@ void setSongPos(int64_t pos){
     PlaySong(pos);
   else{
     ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
-    SEQUENCER_update(SEQUPDATE_TIME);
     if (useJackTransport())
       MIXER_TRANSPORT_set_pos(pos);
+
+    SEQUENCER_iterate_time_seqblocks
+      (pos-1,pos+1,false,
+       [&](const struct SeqTrack *seqtrack,const struct SeqBlock *seqblock, const struct Blocks *block, const struct SeqBlock *next_seqblock){
+        if(pos >= seqblock->t.time && pos < seqblock->t.time2){
+
+          struct Tracker_Windows *window;
+          struct WBlocks *wblock = getWBlockFromNumA(-1, &window, block->l.num);
+          if(wblock==NULL){
+            R_ASSERT(false);
+            return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
+          }
+
+          const int64_t blocktime = seqtime_to_blocktime(seqblock, pos - seqblock->t.time);
+          const Place place = STime2Place(block, blocktime);
+          const int realline = FindRealLineFor(wblock, 0, &place);
+
+          SelectWBlock(window, wblock);
+          ScrollEditorToRealLine(window, wblock, realline);
+
+          return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
+        }
+        return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
+      });
+
+    SEQUENCER_update(SEQUPDATE_TIME);
   }
 }
 

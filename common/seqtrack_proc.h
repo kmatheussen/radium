@@ -398,7 +398,19 @@ static inline enum GridType string_to_grid_type(const char *what, bool *is_error
 }
 
 #if defined(__cplusplus)
-void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType what_to_find, std::function<bool(int64_t,int,int,int)> callback);
+
+namespace radium{
+enum class IterateSeqblocksCallbackReturn{
+  ISCR_BREAK,
+  ISCR_CONTINUE
+};
+}
+
+void SEQUENCER_iterate_time_seqblocks(int64_t start_seqtime, int64_t end_seqtime, bool include_previous_and_next_seqblock,
+                                      std::function<radium::IterateSeqblocksCallbackReturn(const struct SeqTrack*, const struct SeqBlock *,const struct Blocks*,const struct SeqBlock *)> callback
+                                      );
+void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType what_to_find,
+                            std::function<bool(int64_t,int,int,int)> callback);
 #endif
 
 extern LANGSPEC void SEQUENCER_set_grid_type(enum GridType grid_type);
