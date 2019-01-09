@@ -1632,8 +1632,8 @@ api_zoom.o:  $(BUILD_DEPENDENCIES)  $(API)api_zoom.c
 api_notemanipulate.o:  $(BUILD_DEPENDENCIES)  $(API)api_notemanipulate.c 
 	$(CC)  $(API)api_notemanipulate.c $(OPT)
 
-api_play.o:  $(BUILD_DEPENDENCIES)  $(API)api_play.c 
-	$(CC)  $(API)api_play.c $(OPT)
+api_play.o:  $(BUILD_DEPENDENCIES)  $(API)api_play.cpp
+	$(CCC)  $(API)api_play.cpp $(QTOPT)
 
 api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c 
 	$(CC)  $(API)api_clipboard.c $(OPT)
