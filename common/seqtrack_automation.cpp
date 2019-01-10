@@ -901,6 +901,12 @@ bool RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
           break;
             
         }
+
+        case radium::SeqAutomationReturnType::NO_VALUES:{
+          // I guess it could happen when loading full state.
+          //RError("Internal: Seqautomation error. RT_get_value returned NO_VALUES. That is not supposed to happen.\n");
+          break;
+        }
         
       }
       
