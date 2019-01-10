@@ -57,6 +57,7 @@ template <typename T> struct NodeFromStateProvider{
 enum class SeqAutomationReturnType{
   VALUE_OK,
   NO_VALUES_YET,
+  NO_VALUES,
   NO_MORE_VALUES,
 };
 
@@ -559,7 +560,7 @@ private:
 public:
 
   // Note: Value is not set if rt->num_nodes==0, even if always_set_value==true.  
-  SeqAutomationReturnType RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL, bool always_set_value = false){
+  SeqAutomationReturnType RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL, bool always_set_value = false) {
 
     R_ASSERT_NON_RELEASE(_RT_last_search_pos > 0);
 
@@ -573,7 +574,7 @@ public:
       
       if (num_nodes==0) {
         
-        return SeqAutomationReturnType::NO_MORE_VALUES;
+        return SeqAutomationReturnType::NO_VALUES;
                 
       } else if (time < rt->nodes[0].time){
         
@@ -632,7 +633,7 @@ public:
       }
     }
 
-    return SeqAutomationReturnType::NO_MORE_VALUES;
+    return SeqAutomationReturnType::NO_VALUES;
   }
 
   /*
