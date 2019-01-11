@@ -902,18 +902,49 @@ public:
     painter->paint_nodes(p);
   }
 
+  void sort_qvector(QVector<T> &ret) const {
+    std::sort(ret.begin(), ret.end(), 
+              [](const T &a, const T &b){
+                return a.time < b.time;
+              });
+  }
 
+  void sort_qvector_if_necessary(QVector<T> &ret) const {
+    double last_time = 0;
+    for(const T &node : ret){
+      if(node.time < last_time){
+        sort_qvector(ret);
+        return;
+      }
+      last_time = node.time;
+    }
+  }
+
+  // Always returns a sorted vector.
   QVector<T> make_qvector_from_state(const dyn_t &dynstate, const NodeFromStateProvider<T> *nsp, double state_samplerate) const {
     QVector<T> ret;
 
     const dynvec_t *vec = dynstate.array;
-      
+    
+    bool needs_sorting = false;
+
+    double last_time = 0;
+
     for(const dyn_t &dyn : vec){
       T node = nsp->create_node_from_state(dyn.hash, state_samplerate);
       if(node.time < 0)
         node.time = 0;
+
+      if (node.time < last_time)
+        needs_sorting = true;
+
+      last_time = node.time;
+
       ret.push_back(node);
     }
+
+    if (needs_sorting)
+      sort_qvector(ret);
 
     return ret;
   }
@@ -937,8 +968,11 @@ public:
     return make_qvector_from_state(dynstate, &myprovider, state_samplerate);
   }
 
-  void set_qvector(const QVector<T> &automation){
-    _automation = automation;    
+  void set_qvector(const QVector<T> &automation){    
+    _automation = automation;
+
+    sort_qvector_if_necessary(_automation);
+      
     create_new_rt_data();    
   }
 
