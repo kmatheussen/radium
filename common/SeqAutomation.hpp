@@ -407,10 +407,6 @@ public:
   void *new_rt_data_has_been_created_data = NULL;
   void (*new_rt_data_has_been_created)(void *data) = NULL;
 
-  const QVector<T> &get_qvector(void) const {
-    return _automation;
-  }
-  
 private:
   
   int get_size(int num_nodes) const {
@@ -907,6 +903,49 @@ public:
   }
 
 
+  QVector<T> make_qvector_from_state(const dyn_t &dynstate, const NodeFromStateProvider<T> *nsp, double state_samplerate) const {
+    QVector<T> ret;
+
+    const dynvec_t *vec = dynstate.array;
+      
+    for(const dyn_t &dyn : vec){
+      T node = nsp->create_node_from_state(dyn.hash, state_samplerate);
+      if(node.time < 0)
+        node.time = 0;
+      ret.push_back(node);
+    }
+
+    return ret;
+  }
+
+  QVector<T> make_qvector_from_state(const dyn_t &dynstate, T (*create_node_from_state_func)(hash_t *,double), double state_samplerate) const {
+
+    struct MyProvider : public NodeFromStateProvider<T> {
+      T (*_create_node_from_state_func)(hash_t *,double);
+      
+      MyProvider(T (*create_node_from_state_func)(hash_t *,double))
+        : _create_node_from_state_func(create_node_from_state_func)
+      {}
+      
+      T create_node_from_state(hash_t *state, double state_samplerate) const {
+        return _create_node_from_state_func(state, state_samplerate);
+      }      
+    };
+
+    MyProvider myprovider(create_node_from_state_func);
+    
+    return make_qvector_from_state(dynstate, &myprovider, state_samplerate);
+  }
+
+  void set_qvector(const QVector<T> &automation){
+    _automation = automation;    
+    create_new_rt_data();    
+  }
+
+  const QVector<T> &get_qvector(void) const {
+    return _automation;
+  }
+  
   void create_from_state(const dyn_t &dynstate, const NodeFromStateProvider<T> *nsp, double state_samplerate){
     _automation.clear();
 
@@ -924,10 +963,7 @@ public:
 
     } else if (dynstate.type==ARRAY_TYPE) {
 
-      const dynvec_t *vec = dynstate.array;
-      
-      for(const dyn_t &dyn : vec)
-        add_node(nsp->create_node_from_state(dyn.hash, state_samplerate));
+      set_qvector(make_qvector_from_state(dynstate, nsp, state_samplerate));
 
     } else {
       
