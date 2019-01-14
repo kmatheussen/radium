@@ -90,7 +90,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Send events through. Incoming events such as note on and note off are forwarded to the event-connected instruments (i.e. connected through the green lines).&lt;/p&gt;&lt;p&gt;Normally, this setting is convenient, but for note manipulation effects such as PD arpeggiators or VST midi effects , it should be turned off.&lt;/p&gt;&lt;p&gt;Enabling this option has no impact on the performance if no instruments are event-connected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Send events through. Incoming events such as note on and note off are forwarded to the event-connected instruments (i.e. connected through the yellow lines).&lt;/p&gt;&lt;p&gt;Normally, this setting is convenient, but for note manipulation effects such as PD arpeggiators or VST midi effects , it should be turned off.&lt;/p&gt;&lt;p&gt;Enabling this option has no impact on the performance if no instruments are event-connected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>T</string>
