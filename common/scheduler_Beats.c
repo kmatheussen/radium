@@ -39,7 +39,7 @@ void RT_Beats_set_new_last_bar_start_value(struct SeqTrack *seqtrack, double bea
   iterator->new_beat_bar_set = false;
 }
 
-static void RT_stop_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int64_t time, int note_num){
+static void RT_stop_click_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int64_t time, int note_num){
   int num_patches = 0;
   struct Patch **patches = RT_MIXER_get_all_click_patches(&num_patches);
   int i;
@@ -53,16 +53,17 @@ static void RT_stop_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int
 
 static void RT_stop_last_played_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int64_t time){
   if (iterator->last_played_metronome_note_num != -1) {
-    RT_stop_note(seqtrack, iterator, time, iterator->last_played_metronome_note_num);
+    RT_stop_click_note(seqtrack, iterator, time, iterator->last_played_metronome_note_num);
     iterator->last_played_metronome_note_num = -1;
   }
 }
 
-static void RT_play_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int64_t time, int note_num){
+static void RT_play_click_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int64_t time, int note_num){
   int num_patches = 0;
   struct Patch **patches = RT_MIXER_get_all_click_patches(&num_patches);
   int i;
   for (i=0 ; i<num_patches ; i++){
+    //printf("Playing click note. seqtrack: %p\n", seqtrack);
     RT_PATCH_play_note(seqtrack,
                        patches[i],
                        create_note_t(NULL,
@@ -86,7 +87,7 @@ static int64_t RT_scheduled_play_bar_note(struct SeqTrack *seqtrack, int64_t tim
   RT_stop_last_played_note(seqtrack, iterator, time);
   //printf("** BAR\n");
   if (ATOMIC_GET(root->clickonoff))
-    RT_play_note(seqtrack, iterator, time, bar_note_num);
+    RT_play_click_note(seqtrack, iterator, time, bar_note_num);
 
   return DONT_RESCHEDULE;
 }
@@ -97,7 +98,7 @@ static int64_t RT_scheduled_play_beat_note(struct SeqTrack *seqtrack, int64_t ti
   RT_stop_last_played_note(seqtrack, iterator, time);
   //printf("     BEAT **\n");
   if (ATOMIC_GET(root->clickonoff))
-    RT_play_note(seqtrack, iterator, time, beat_note_num);
+    RT_play_click_note(seqtrack, iterator, time, beat_note_num);
 
   return DONT_RESCHEDULE;
 }
@@ -134,8 +135,14 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
   
     //printf("%d %d. last bar: %f. signature: %d/%d\n", beat->bar_num, beat->beat_num, iterator->beat_position_of_last_bar_start,iterator->last_valid_signature.numerator, iterator->last_valid_signature.denominator);
 
+    bool schedule_metronome;
+    if (is_playing_song())
+      schedule_metronome = seqtrack==root->song->seqtracks.elements[0];
+    else
+      schedule_metronome = seqtrack==root->song->block_seqtrack;
+    
     // Schedule metronome sound
-    {
+    if(schedule_metronome){
       const int num_args = 1;
         
       union SuperType args[num_args];
