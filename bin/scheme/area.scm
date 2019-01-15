@@ -344,12 +344,12 @@
        (assert (not curr-nonpress-mouse-cycle))
        (set! curr-nonpress-mouse-cycle new-cycle))
      
-     (define (end-nonpress-mouse-cycle!)
+     (define (end-nonpress-mouse-cycle! button-was-pressed)
        (assert curr-nonpress-mouse-cycle)
        (let ((nonpress-mouse-cycle curr-nonpress-mouse-cycle))
          (set! curr-nonpress-mouse-cycle #f)
          ;;(c-display "end-nonpress-mouse-cycle called" (nonpress-mouse-cycle :release-func))
-         ((nonpress-mouse-cycle :release-func))))
+         ((nonpress-mouse-cycle :release-func) button-was-pressed)))
   
      (delafina (add-mouse-cycle! :press-func (lambda x #t)
                                  :drag-func (lambda x #f)
@@ -365,7 +365,7 @@
        (define prev-y #f)
        (define inc-x 0)
        (define inc-y 0)
-       (define (call-drag-func button x* y*)
+       (define (call-delta-func func button x* y* force-call)
          (define dx (cond ((only-y-direction)
                            0)
                           ((<ra> :control-pressed)
@@ -380,12 +380,13 @@
                               10))
                           (else
                            (- y* prev-y))))
-         (when (or (not (= 0 dx))
+         (when (or force-call
+                   (not (= 0 dx))
                    (not (= 0 dy)))
            (inc! inc-x dx)
            (inc! inc-y dy)
            ;;(c-display "dx:" dx ". inc-x:" inc-x)
-           (drag-func button x* y* inc-x inc-y))
+           (func button x* y* inc-x inc-y))
          (set! prev-x x*)
          (set! prev-y y*))
 
@@ -396,11 +397,11 @@
                                        (set! inc-x 0)
                                        (set! inc-y 0)
                                        (press-func button x* y*))
-                                     call-drag-func
                                      (lambda (button x* y*)
-                                       (call-drag-func button x* y*)
-                                       (release-func button x* y*)))))
-                         
+                                       (call-delta-func drag-func button x* y* #f))
+                                     (lambda (button x* y*)
+                                       (call-delta-func drag-func button x* y* #f)
+                                       (call-delta-func release-func button x* y* #t)))))
 
      (define (get-nonpress-mouse-cycle x* y*)
        (and (paint?)
@@ -439,7 +440,7 @@
      (define (mouse-press-internal button x* y*)
        ;;(c-display "_____________________________________mouse-press" curr-mouse-cycle)
        (if curr-nonpress-mouse-cycle
-           (end-nonpress-mouse-cycle!))
+           (end-nonpress-mouse-cycle! #t))
        (if (not (<ra> :release-mode))
            (assert (not curr-mouse-cycle))) ;; Unfortunately, we can't trust Qt to send release events. (fixed now)
        (set! curr-mouse-cycle (get-mouse-cycle button x* y*))
@@ -454,7 +455,7 @@
               ;;(c-display "inside?" class-name y1 y2 (curr-nonpress-mouse-cycle :inside? x* y*))
               (if (curr-nonpress-mouse-cycle :inside? x* y*)
                   (curr-nonpress-mouse-cycle :drag-func x* y*) ;; still inside
-                  (end-nonpress-mouse-cycle!))) ;; not inside any more
+                  (end-nonpress-mouse-cycle! #f))) ;; not inside any more
              (else
               (start-nonpress-mouse-cycle! (get-nonpress-mouse-cycle x* y*)))))
      (define (mouse-release-internal button x* y*)
@@ -482,7 +483,7 @@
               #f) ;; i.e. mouse.scm is handling mouse now.
              ((= state *is-leaving*)
               (if curr-nonpress-mouse-cycle
-                  (end-nonpress-mouse-cycle!)
+                  (end-nonpress-mouse-cycle! #f)
                   #f))
              ((= state *is-moving*)
               (mouse-move-internal button x y))
@@ -529,7 +530,8 @@
                           (<gui> :tool-tip text))
                       (set-statusbar-text! text)
                       #t)
-        :leave-func remove-statusbar-text))
+        :leave-func (lambda (button-was-pressed)
+                      remove-statusbar-text)))
        
      ;; Painting
      ;;;;;;;;;;;;;;;
@@ -818,7 +820,7 @@
   (define (paint-text-area gui x1 y1 x2 y2)
     (let ((background-color (get-background-color)))
       (if background-color
-          (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding)))
+          (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding #f)))
     
     (<gui> :draw-text gui (maybe-thunk-value text-color) (maybe-thunk-value text)
            (+ (if align-left
@@ -1149,7 +1151,7 @@
      (report!)
      (update-me!)
      )
-   (lambda (button x* y*)
+   (lambda (button x* y* dx dy)
      (set! is-moving #f)
      (update-me!)
      ;;(c-display "release button/x/y" x* y*)
@@ -1161,7 +1163,7 @@
                  (c-display "ENTER DRAGGER" class-name)
                  (set-mouse-pointer ra:set-open-hand-mouse-pointer gui)
                  #t)
-   :leave-func (lambda ()
+   :leave-func (lambda (button-was-pressed)
                  (c-display "LEAVE DRAGGER")
                  (set-mouse-pointer ra:set-normal-mouse-pointer gui)
                  #f))
@@ -1607,7 +1609,7 @@
     ;;(if is-current
     ;;    (set! entry-background-color (<gui> :mix-colors entry-background-color "green" 0.1)))
 
-    (<gui> :filled-box gui entry-background-color (+ 1 x1) y1 x2 y2 4 4)
+    (<gui> :filled-box gui entry-background-color (+ 1 x1) y1 x2 y2 4 4 (if background-color #t #f))
 
     ;; name
     (<gui> :draw-text gui text-color name-text
@@ -1967,7 +1969,7 @@
                                        (call-with-exit
                                         (lambda (return)
                                           (for-each (lambda (tab-num)
-                                                      (get-tab-coords is-horizontal tab-num num-tabs x1 y1 x2 y2
+                                                      (get-tab-coords is-horizontal tab-num num-tabs x1 y1 tab-bar-x2 tab-bar-y2
                                                                       (lambda (x1 y1 x2 y2)
                                                                         ;;(c-display "x*/y*:" x* y* ". x1/y1/x2/y2:" x1 y1 x2 y2)
                                                                         (when (and (>= x* x1)

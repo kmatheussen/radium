@@ -964,9 +964,9 @@ static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color, flo
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
   if (do_gradient){
-    QLinearGradient gradient(rect.topLeft(), rect.bottomRight());
-    gradient.setColorAt(0, color.lighter(110));
-    gradient.setColorAt(1, color.darker(110));
+    QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
+    gradient.setColorAt(0, color.lighter(125));
+    gradient.setColorAt(1, color.darker(125));
     p.setBrush(gradient);
   } else {
     p.setBrush(color);

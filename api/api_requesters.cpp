@@ -242,8 +242,8 @@ bool safeToCallCloseRequester(void){
                                                                         \
   g_num_req_requests++;                                                 \
                                                                         \
-  if (strcmp(default_value, ""))                                        \
-    GFX_SetString(requester, default_value);
+  if (strcmp(default_value, "")){                                       \
+    printf("Setting default to -%s-\n",default_value);GFX_SetString(requester, default_value);}
 
 
 #define POSTREQ(ret)                            \
@@ -265,7 +265,7 @@ int requestInteger(const_char *text, int min, int max, bool standalone, const ch
 float requestFloat(const_char *text, float min, float max, bool standalone, const_char *default_value){
   PREREQ(min-1);
 
-  float ret = GFX_GetFloat(NULL, g_requester, text, min, max, true);
+  float ret = GFX_GetFloat(NULL, requester, text, min, max, true);
   
   POSTREQ();
   

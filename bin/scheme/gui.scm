@@ -607,6 +607,8 @@
              2.0
              1.0)
          box-rounding box-rounding)
+
+  ;;(<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 box-rounding box-rounding)
   )
 
 (define (ra:gui_do-font gui font func)
