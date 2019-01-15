@@ -87,6 +87,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_system_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/threading.h"
+#include "../common/sequencer_timing_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 
@@ -369,9 +370,11 @@ namespace{
 
         //if(ATOMIC_GET(root->editonoff))
         //  printf("timeInSeconds: %f\n", result.timeInSeconds);
+
+        bool using_sequencer_timing = root->song->use_sequencer_tempos_and_signatures;
         
         result.ppqPosition               = RT_LPB_get_beat_position(seqtrack) - latency_beats;
-        result.ppqPositionOfLastBarStart = seqtrack->beat_iterator.beat_position_of_last_bar_start;
+        result.ppqPositionOfLastBarStart = (using_sequencer_timing ? g_rt_sequencer_ppq_of_last_bar_start-latency_beats : seqtrack->beat_iterator.beat_position_of_last_bar_start);
         
         if (result.ppqPosition < result.ppqPositionOfLastBarStart) {
 

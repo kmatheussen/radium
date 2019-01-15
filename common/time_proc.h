@@ -18,6 +18,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef RADIUM_COMMON_TIME_PROC_H
 #define RADIUM_COMMON_TIME_PROC_H
 
+#include <math.h>
+
+#include "placement_proc.h"
+
+static inline bool has_same_tempo(double tempo1, double tempo2){
+  return fabs(tempo1 - tempo2) < 0.003; // approx.
+}
 
 
 extern LANGSPEC double Place2STime_from_times2(
@@ -25,16 +32,25 @@ extern LANGSPEC double Place2STime_from_times2(
                                                double place_as_float
                                                );
 
-extern LANGSPEC STime Place2STime_from_times(
-                                             int num_lines,
-                                             const struct STimes *times,
-                                             const Place *p
-                                             );
+static inline STime Place2STime_from_times(int num_lines, const struct STimes *times, const Place *p){
+  if(0==p->counter)
+    return times[p->line].time;
 
-extern LANGSPEC STime Place2STime(
-                                  const struct Blocks *block,
-                                  const Place *p
-                                  );
+  if (p->line >= num_lines){
+    R_ASSERT_NON_RELEASE(false);
+    return times[num_lines].time;
+  }
+
+  double y = GetDoubleFromPlace(p);
+  return Place2STime_from_times2(times, y);
+}
+
+static inline STime Place2STime(
+	const struct Blocks *block,
+	const Place *p
+){
+  return Place2STime_from_times(block->num_lines, block->times, p);
+}
 
 extern LANGSPEC double STime2Place_f(
                                     const struct Blocks *block,

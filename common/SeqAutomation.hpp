@@ -378,7 +378,21 @@ private:
 
   struct RT{
     int num_nodes;
-    T nodes[];
+    T *nodes;
+
+    RT(const QVector<T> &automation){
+
+      num_nodes = automation.size();
+  
+      nodes = new T[num_nodes];
+    
+      for(int i=0 ; i < num_nodes ; i++)
+        nodes[i] = automation.at(i);
+    }
+
+    ~RT(){
+      delete[] nodes;
+    }
   };
 
   int _curr_nodenum = -1;
@@ -393,35 +407,34 @@ private:
   SeqAutomation& operator=(const SeqAutomation&) = delete;
 
 
+  static void free_rt(void* rt){
+    delete static_cast<RT*>(rt);
+  }
+
 public:
 
   SeqAutomation()
-    : _rt(V_free_function)
+    : _rt(free_rt)
   {
   }
 
   ~SeqAutomation(){
     delete _last_painter;
   }
-      
+
   void *new_rt_data_has_been_created_data = NULL;
   void (*new_rt_data_has_been_created)(void *data) = NULL;
 
 private:
   
+  /*
   int get_size(int num_nodes) const {
     return sizeof(struct RT) + num_nodes*sizeof(T);
   }
+  */
 
   const struct RT *create_rt(void) const {
-    struct RT *rt = (struct RT*)V_malloc(get_size(_automation.size()));
-  
-    rt->num_nodes=_automation.size();
-    
-    for(int i=0 ; i<_automation.size() ; i++)
-      rt->nodes[i] = _automation.at(i);
-    
-    return (const struct RT*)rt;
+    return new RT(_automation);
   }
 
   void create_new_rt_data(void){
@@ -472,17 +485,17 @@ public:
     return at(size()-1);
   }
   
-  double get_value(double time, double time1, double time2, int das_logtype1_das, double value1, double value2) const {
+  static double get_value(double time, double time1, double time2, int das_logtype1_das, double value1, double value2) {
     if (das_logtype1_das==LOGTYPE_LINEAR) {
       if (time1==time2)        
-        return (value1 + value2) / 2.0;
+        return value2; // (value1 + value2) / 2.0;
       else
         return scale_double(time, time1, time2, value1, value2);
     } else
       return value1;
   }
 
-  double get_value(double time, const T *node1, const T *node2, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL) const {
+  static double get_value(double time, const T *node1, const T *node2, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL) {
     const double time1 = node1->time;
     const double time2 = node2->time;
     
@@ -497,23 +510,27 @@ public:
       return get_value(time, time1, time2, logtype1, node1->value, node2->value);
   }
 
-  double get_value(double time, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL) const {
-    int size = _automation.size();
+  static double get_value(const QVector<T> &automation, double time, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL) {
+    int size = automation.size();
 
     if (size==0)
       return 0;
 
     if (size==1)
-      return _automation.at(0).value;
+      return automation.at(0).value;
 
-    int nodenum = get_node_num(time);
+    int nodenum = get_node_num(automation, time);
     if (nodenum==-1)
-      return _automation.at(0).value;
+      return automation.at(0).value;
 
     if (nodenum >= size-1)
-      return _automation.at(nodenum-1).value;
+      return automation.at(nodenum-1).value;
 
-    return get_value((double)time, &_automation.at(nodenum), &_automation.at(nodenum+1), custom_get_value);
+    return get_value((double)time, &automation.at(nodenum), &automation.at(nodenum+1), custom_get_value);
+  }
+
+  double get_value(double time, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL) const {
+    return get_value(_automation, time, custom_get_value);
   }
 
   bool get_value(double time, const T *node1, const T *node2, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2)) const {
@@ -555,8 +572,107 @@ private:
 
 public:
 
+  SeqAutomationReturnType RT_get_nodes(double time, const T **node1, const T **node2){
+    R_ASSERT_NON_RELEASE(_RT_last_search_pos > 0);
+
+    RT_AtomicPointerStorage_ScopedUsage rt_pointer(&_rt);
+      
+    const struct RT *rt = (const struct RT*)rt_pointer.get_pointer();
+
+    if (rt!=NULL) {
+
+      const int num_nodes = rt->num_nodes;
+
+      if (num_nodes==0) {
+
+        *node1 = NULL;
+        *node2 = NULL;
+        
+        return SeqAutomationReturnType::NO_VALUES;
+
+      } else if (time < rt->nodes[0].time){
+        
+        *node1 = NULL;
+        *node2 = &rt->nodes[0];
+
+        return SeqAutomationReturnType::NO_VALUES_YET;
+        
+      } else if (time >= rt->nodes[num_nodes-1].time){
+
+        *node1 = &rt->nodes[num_nodes-1];
+        *node2 = NULL;
+
+        return SeqAutomationReturnType::NO_MORE_VALUES;
+        
+      } else {
+      
+        const T *node1_;
+        const T *node2_;
+        int i = _RT_last_search_pos;
+        
+        R_ASSERT_NON_RELEASE(i >= 0);
+        
+        if (i<num_nodes){
+          node1_ = &rt->nodes[i-1];
+          node2_ = &rt->nodes[i];
+          if (time >= node1_->time && time <= node2_->time) // Same position in array as last time. No need to do binary search. This is the path we usually take.
+            goto gotit;
+        }
+        
+        i = BinarySearch_Left(rt, time, 0, num_nodes-1);
+        R_ASSERT_NON_RELEASE(i>0);
+        
+        _RT_last_search_pos = i;
+        node1_ = &rt->nodes[i-1];
+        node2_ = &rt->nodes[i];
+        
+      gotit:
+
+        *node1 = node1_;
+        *node2 = node2_;
+
+        return SeqAutomationReturnType::VALUE_OK;
+
+      }
+    }
+
+    *node1 = NULL;
+    *node2 = NULL;
+    return SeqAutomationReturnType::NO_VALUES;    
+  }
+
+
+  SeqAutomationReturnType RT_get_value(double time, double &value, bool always_set_value = false) {
+    const T *node1,*node2;
+
+    const SeqAutomationReturnType ret = RT_get_nodes(time, &node1, &node2);
+
+    if (ret==SeqAutomationReturnType::NO_VALUES){
+      if(always_set_value){
+        R_ASSERT(false);
+        value = 0.0;
+      }
+      return ret;
+    }
+
+    if (always_set_value){
+
+      if(ret==SeqAutomationReturnType::NO_VALUES_YET)
+        value = node2->value;
+
+      else if(ret==SeqAutomationReturnType::NO_MORE_VALUES)
+        value = node1->value;
+    }
+
+    if(ret==SeqAutomationReturnType::VALUE_OK)
+      value = get_value(time, node1, node2);
+    
+    return ret;
+  }
+
+#if 0
   // Note: Value is not set if rt->num_nodes==0, even if always_set_value==true.  
-  SeqAutomationReturnType RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL, bool always_set_value = false) {
+  SeqAutomationReturnType RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL, bool always_set_value = false, const T **target_node = NULL, bool we_only_need_target_node = false) {
 
     R_ASSERT_NON_RELEASE(_RT_last_search_pos > 0);
 
@@ -574,28 +690,41 @@ public:
                 
       } else if (time < rt->nodes[0].time){
         
-        if (always_set_value)
+        if (always_set_value && we_only_need_target_node==false)
           value = rt->nodes[0].value;
-        
+
+        if (target_node)
+          *target_node = &rt->nodes[0];
+
         return SeqAutomationReturnType::NO_VALUES_YET;
         
       } else if (time == rt->nodes[0].time) {
         
-        value = rt->nodes[0].value;
+        if (we_only_need_target_node==false)
+          value = rt->nodes[0].value;
+
+        if (target_node)
+          *target_node = &rt->nodes[0];
         
         return SeqAutomationReturnType::VALUE_OK;
 
       } else if (num_nodes==1) {
         
-        if (always_set_value)
+        if (always_set_value && we_only_need_target_node==false)
           value = rt->nodes[0].value;
-        
+
+        if (target_node)
+          *target_node = &rt->nodes[0];
+
         return SeqAutomationReturnType::NO_MORE_VALUES;
         
       } else if (time > rt->nodes[num_nodes-1].time){
 
-        if (always_set_value)
+        if (always_set_value && we_only_need_target_node==false)
           value = rt->nodes[num_nodes-1].value;
+
+        if (target_node)
+          *target_node = &rt->nodes[num_nodes-1];
         
         return SeqAutomationReturnType::NO_MORE_VALUES;
         
@@ -622,8 +751,13 @@ public:
         node2 = &rt->nodes[i];
         
       gotit:
+
+        if (target_node)
+          *target_node = node1;
         
-        value = get_value(time, node1, node2, custom_get_value);
+        if (we_only_need_target_node==false)
+          value = get_value(time, node1, node2, custom_get_value);
+
         return SeqAutomationReturnType::VALUE_OK;
 
       }
@@ -631,6 +765,7 @@ public:
 
     return SeqAutomationReturnType::NO_VALUES;
   }
+#endif
 
   /*
   double RT_get_value(double time, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL){
@@ -655,14 +790,18 @@ public:
     }
   }
 
-  int get_node_num(double time) const {
-    int size = _automation.size();
+  static int get_node_num(const QVector<T> &automation, double time) {
+    int size = automation.size();
 
     for(int i=0;i<size;i++)
-      if (time < at(i).time)
+      if (time < automation.at(i).time)
         return i-1;
 
     return size-1;
+  }
+
+  int get_node_num(double time) const {
+    return get_node_num(_automation, time);
   }
 
   int add_node(const T &node){
@@ -769,9 +908,19 @@ public:
         T node = node1;
         node.time = time;
         
-        if (node.logtype == LOGTYPE_LINEAR)        
-          node.value = scale(time, node1.time, node2.time, node1.value, node2.value);
-        
+        if (node.logtype == LOGTYPE_LINEAR){
+
+          if(node1.time==node2.time){
+
+            R_ASSERT_NON_RELEASE(false);
+            node.value = node2.value;
+
+          } else {
+
+            node.value = scale_double(time, node1.time, node2.time, node1.value, node2.value);
+          }
+        }
+
         new_automation.push_back(node);
       }
     }
@@ -1076,6 +1225,60 @@ public:
     } else {
       _value2 = _value1; // Used in case there is only one node.
     }
+  }
+
+  SeqAutomationReturnType return_no_more_values(const T **node1, const T **node2) const {
+    *node1 = &_automation.last();
+    *node2 = NULL;
+    return SeqAutomationReturnType::NO_MORE_VALUES;
+  }
+
+  SeqAutomationReturnType get_nodes(double time, const T **node1, const T **node2){
+#if !defined(RELEASE)
+    if(time<0)
+      abort();
+    if(time<=_prev_time)
+      abort();
+    _prev_time = time;
+#endif
+
+    if (_n==_size)
+      return return_no_more_values(node1,node2);
+
+    if (time < _time1){
+      *node1 = NULL;
+      *node2 = &_automation.at(0);
+      return SeqAutomationReturnType::NO_VALUES_YET;
+    }
+
+    if (time <= _time2){
+
+      *node1 = &_automation.at(_n-1);
+      *node2 = _node2;
+
+    } else {
+
+      do{
+        _n++;
+        
+        if (_n==_size)
+          return return_no_more_values(node1,node2);
+        
+        *node1 = _node2;
+        _time1 = _time2;
+        _value1 = _value2;
+        _logtype1 = _node2->logtype;
+        
+        _node2 = &_automation.at(_n);
+        *node2 = _node2;
+        _time2 = _node2->time;
+        _value2 = _node2->value;
+        
+      }while(time > _time2);
+
+    }
+
+    return SeqAutomationReturnType::VALUE_OK;
   }
 
   double get_value(double time){

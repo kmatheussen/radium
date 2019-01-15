@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "seqtrack_automation_proc.h"
 #include "seqblock_automation_proc.h"
 #include "seqblock_stretchspeed_proc.h"
+#include "sequencer_timing_proc.h"
 #include "patch_proc.h"
 #include "Semaphores.hpp"
 #include "Dynvec_proc.h"
@@ -2239,8 +2240,13 @@ bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
 
   //printf("  RT_seqtack called before editor %d\n", is_playing_song);
 
+  if(seqtrack==root->song->block_seqtrack)
+    if(RT_SEQUENCER_TIMING_call_before_start_of_audio_block(seqtrack, is_playing_song))
+      more_things_to_do = true;
+
   if (is_playing_song)
-    more_things_to_do = RT_SEQTRACK_AUTOMATION_called_per_block(seqtrack);
+    if(RT_SEQTRACK_AUTOMATION_called_per_block(seqtrack))
+      more_things_to_do = true;
 
   RT_SEQBLOCK_AUTOMATION_called_before_editor(seqtrack);
   
@@ -2942,6 +2948,7 @@ void SEQUENCER_init(struct Song *song){
 
 // Only called during program startup
 void SONG_init(void){
+
   struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1, false); // for editor blocks
 
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
@@ -2998,7 +3005,11 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
 
   HASH_put_int(state, "visible_start", SEQUENCER_get_visible_start_time());
   HASH_put_int(state, "visible_end", SEQUENCER_get_visible_end_time());
-  
+
+  HASH_put_dyn(state, "sequencer_tempos", SEQUENCER_TEMPO_get_state());
+  HASH_put_dyn(state, "sequencer_signatures", SEQUENCER_SIGNATURE_get_state());
+  HASH_put_dyn(state, "sequencer_markers", SEQUENCER_MARKER_get_state());
+
   return state;
 }
 
@@ -3072,7 +3083,13 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     }
 
 
-  
+    if(HASH_has_key(state, "sequencer_tempos"))
+      SEQUENCER_TEMPO_create_from_state(HASH_get_dyn(state, "sequencer_tempos"), state_samplerate);
+    if(HASH_has_key(state, "sequencer_signatures"))
+      SEQUENCER_SIGNATURE_create_from_state(HASH_get_dyn(state, "sequencer_signatures"), state_samplerate);
+    if(HASH_has_key(state, "sequencer_markers"))
+      SEQUENCER_MARKER_create_from_state(HASH_get_dyn(state, "sequencer_markers"), state_samplerate);
+    
     // Need to do this first since widgets are not positioned correctly if it's done last. Not quite sure why.
     if(HASH_has_key(state, "song_tempo_automation"))
       TEMPOAUTOMATION_create_from_state(HASH_get_hash(state, "song_tempo_automation"), state_samplerate);
@@ -3163,7 +3180,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       ATOMIC_SET(song->punching.enabled, false);
     }
   }
-  
+
   if (false==HASH_has_key(state, "contains_seqtime")){
     R_ASSERT_NON_RELEASE(g_is_loading);
     SEQUENCER_block_changes_tempo_multiplier(NULL, -1); // Remove seqtime.
@@ -3174,7 +3191,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       SEQUENCER_set_visible_start_and_end_time(HASH_get_int(state, "visible_start"),
                                                HASH_get_int(state, "visible_end")
                                                );
-  
+
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 

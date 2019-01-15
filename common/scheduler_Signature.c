@@ -1,6 +1,7 @@
 
 #include "nsmtracker.h"
 #include "placement_proc.h"
+#include "sequencer_timing_proc.h"
 
 
 #include "scheduler_proc.h"
@@ -10,9 +11,16 @@
 // Called from ../audio/Juce_plugins.cpp and ../audio/Mixer.cpp
 //
 StaticRatio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack){
-  if (is_playing())
-    return seqtrack->signature_iterator.signature_value;
-  else {
+
+  if (is_playing()){
+
+    if(root->song->use_sequencer_tempos_and_signatures && pc->playtype==PLAYSONG)
+      return g_rt_sequencer_signature;
+    else
+      return seqtrack->signature_iterator.signature_value;
+
+  } else {
+
     if (root==NULL){ // When does this happen?
 #if !defined(RELEASE)
       abort();
@@ -24,6 +32,7 @@ StaticRatio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack){
         signature = make_static_ratio(4,4); // Happens during startup, and maybe when loading song.
       return signature;
     }
+
   }
 }
 

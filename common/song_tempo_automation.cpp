@@ -154,7 +154,7 @@ static double get_optimized_custom_value(double input0, double input1, double in
 
 }
 
-static double custom_get_value(double abstime, const TempoAutomationNode *node1, const TempoAutomationNode *node2){
+static double get_custom_value(double abstime, const TempoAutomationNode *node1, const TempoAutomationNode *node2){
   const double abstime1 = node1->time;
   const double abstime2 = node2->time;
 
@@ -185,9 +185,13 @@ static double custom_get_value(double abstime, const TempoAutomationNode *node1,
 
 // Called from MIXER.cpp in the player thread.
 double RT_TEMPOAUTOMATION_get_value(double abstime){
-  double ret = 1.0;
-  g_tempo_automation.RT_get_value(abstime, ret, custom_get_value);
-  return ret;
+  const TempoAutomationNode *node1,*node2;
+  g_tempo_automation.RT_get_nodes(abstime, &node1, &node2);
+
+  if(node1 != NULL && node2 != NULL)
+    return get_custom_value(abstime, node1, node2);
+
+  return 1.0;
 }
 
 double TEMPOAUTOMATION_get_value(int nodenum){
@@ -376,7 +380,7 @@ static int64_t get_absabstime_from_abstime(double goal){
     if (i==size) {
       tempo = 1.0;
     } else {
-      if (!g_tempo_automation.get_value(abstime, node1, node2, tempo, custom_get_value)){
+      if (!g_tempo_automation.get_value(abstime, node1, node2, tempo, get_custom_value)){
         i++;
         if (i<size){          
           node1 = node2;

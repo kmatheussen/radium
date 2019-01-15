@@ -63,6 +63,29 @@ static inline int64_t blocktime_to_seqtime(const struct SeqBlock *seqblock, cons
   return blocktime_to_seqtime2(seqblock->t.stretch, blocktime);
 }
 
+#ifdef __cplusplus
+static inline int64_t blocktime_to_seqtime2(const double stretch, const double blocktime){
+  if(stretch==1.0)
+    return blocktime;
+  else
+    return round(blocktime * stretch);
+}
+
+static inline int64_t blocktime_to_seqtime(const struct SeqBlock *seqblock, const double blocktime){
+  return blocktime_to_seqtime2(seqblock->t.stretch, blocktime);
+}
+#endif
+
+static inline int64_t get_seqblock_place_time(const struct SeqBlock *seqblock, const Place p){
+  return seqblock->t.time + blocktime_to_seqtime(seqblock, Place2STime(seqblock->block, &p));
+}
+                                 
+static inline int64_t get_seqblock_place_time2(const struct SeqBlock *seqblock, const struct Tracks *track, const Place p){
+  R_ASSERT_NON_RELEASE(track->times!=NULL);
+  return seqblock->t.time + blocktime_to_seqtime(seqblock, Place2STime_from_times(seqblock->block->num_lines, track->times, &p));
+}
+                                 
+
 static inline double seqblock_is_stretched(const struct SeqBlock *seqblock){
   return fabs(seqblock->t.stretch - 1.0) > 0.00001;
 }

@@ -86,6 +86,9 @@ static inline int HASH_get_int32(const hash_t *hash, const char *key){
 static inline QString HASH_get_qstring(const hash_t *hash, const char *key){
   return STRING_get_qstring(HASH_get_string(hash, key));
 }
+static inline void HASH_put_qstring(hash_t *hash, const char *key, const QString string){
+  return HASH_put_string(hash, key, STRING_create(string));
+}
 #endif
 
 

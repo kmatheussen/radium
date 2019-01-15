@@ -775,7 +775,7 @@ static void RT_set_seqblock_volume_envelope_values(struct SeqTrack *seqtrack, st
 
   double new_db = 0.0;
   if (seqblockenvelope->_is_enabled)
-    seqblockenvelope->_automation.RT_get_value(pos, new_db, NULL, true);
+    seqblockenvelope->_automation.RT_get_value(pos, new_db, true);
 
 #if DO_DEBUG
   seqblockenvelope->_automation.print();
@@ -931,7 +931,7 @@ bool RT_maybe_get_seqblock_automation_value(struct SeqblockAutomation *automatio
   if (automation->_is_enabled==false)
     return false;
   
-  automation->_automation.RT_get_value(time, value, NULL, true);
+  automation->_automation.RT_get_value(time, value, true);
 
   if (automation->_sat==SAT_STRETCH){
     double value1 = get_stretch_from_automation(value);
