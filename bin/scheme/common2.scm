@@ -77,10 +77,22 @@
 (define (list-position list is-this-it?)
   (let loop ((n 0)
              (l list))
-    (if (is-this-it? (car l))
-        n
-        (loop (1+ n)
-              (cdr l)))))
+    (cond ((null? l)
+           -1)
+          ((is-this-it? (car l))
+           n)
+          (else
+           (loop (1+ n)
+                 (cdr l))))))
+  
+(define (vector-position list is-this-it?)
+  (let loop ((n 0))
+    (cond ((= n (vector-length list))
+           -1)
+          ((is-this-it? (list n))
+           n)
+          (else
+           (loop (1+ n))))))
   
 (define (get-bool something)
   (if something

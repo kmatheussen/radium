@@ -1623,7 +1623,7 @@
           (define background (if is-on
                                  (<gui> :mix-colors background-color "black" 0.39)
                                  (<gui> :mix-colors background-color "white" 0.95)))
-          (<gui> :filled-box slider background 0 0 width height 5 5)
+          (<gui> :filled-box slider background 0 0 width height 5 5 #f)
           (define col1 (<gui> :mix-colors "white" background 0.4))
           (define col2 (<gui> :mix-colors "#010101" background 0.5))
 
@@ -1632,9 +1632,9 @@
 
           (define middle (scale value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
 
-          (<gui> :filled-box slider col1 (- middle inner-width/2) 2 (+ middle inner-width/2) (- height 3))
-          (<gui> :filled-box slider col2 (- middle inner-width/2 outer-width/2) 2 (- middle inner-width/2) (- height 3))
-          (<gui> :filled-box slider col2 (+ middle inner-width/2) 2 (+ middle inner-width/2 outer-width/2) (- height 3))
+          (<gui> :filled-box slider col1 (- middle inner-width/2) 2 (+ middle inner-width/2) (- height 3) -1 -1 #f)
+          (<gui> :filled-box slider col2 (- middle inner-width/2 outer-width/2) 2 (- middle inner-width/2) (- height 3) -1 -1 #f)
+          (<gui> :filled-box slider col2 (+ middle inner-width/2) 2 (+ middle inner-width/2 outer-width/2) (- height 3) -1 -1 #f)
           ;;(<gui> :my-draw-text slider "white" (<-> value "o") 0 0 width height #t)
 
           (when (> automation-slider-value -100)
@@ -1972,7 +1972,7 @@
     (define col1 (<gui> :mix-colors "#010101" background-color 0.7))
     
     ;; background
-    (<gui> :filled-box gui background-color 0 0 width height)
+    (<gui> :filled-box gui background-color 0 0 width height -1 -1 #f)
     
     ;; rounded
     (if is-minimized

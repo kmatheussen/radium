@@ -600,7 +600,7 @@
      (set-statusbar-text! (get-statusbar-text))
      (update-me!)
      )
-   (lambda (button x* y*)
+   (lambda (button x* y* dx dy)
      ;;(c-display "release button/x/y" x* y*)
      #f
      ))
@@ -757,7 +757,7 @@
     (define background (if is-on
                            (<gui> :mix-colors background-color "black" 0.39)
                            (<gui> :mix-colors background-color "white" 0.95)))
-    (<gui> :filled-box gui background x1 y1 x2 y2 5 5)
+    (<gui> :filled-box gui background x1 y1 x2 y2 5 5 #f)
     (define col1 (<gui> :mix-colors "white" background 0.4))
     (define col2 (<gui> :mix-colors "#010101" background 0.5))
     
@@ -766,9 +766,9 @@
     
     (define middle (scale value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
     
-    (<gui> :filled-box gui col1 (+ x1 (- middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2)               (- y2 3))
-    (<gui> :filled-box gui col2 (+ x1 (- middle inner-width/2 outer-width/2)) (+ y1 2) (+ x1 (- middle inner-width/2))           (- y2 3))
-    (<gui> :filled-box gui col2 (+ x1 (+ middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2 outer-width/2) (- y2 3))
+    (<gui> :filled-box gui col1 (+ x1 (- middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2)               (- y2 3) -1 -1 #f)
+    (<gui> :filled-box gui col2 (+ x1 (- middle inner-width/2 outer-width/2)) (+ y1 2) (+ x1 (- middle inner-width/2))           (- y2 3) -1 -1 #f)
+    (<gui> :filled-box gui col2 (+ x1 (+ middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2 outer-width/2) (- y2 3) -1 -1 #f)
     ;;(<gui> :draw-text gui "white" (<-> value "o") 0 0 width height #t)
     
     (when (> automation-slider-value -100)
@@ -1088,7 +1088,7 @@
                        (set-mouse-pointer ra:set-vertical-split-mouse-pointer gui)
                        #t)
                      #f))
-   :leave-func (lambda ()
+   :leave-func (lambda (button-was-pressed)
                  ;;(c-display "LEAVE DRAGGER")
                  (set-mouse-pointer ra:set-normal-mouse-pointer gui)
                  #f))
@@ -1124,7 +1124,7 @@
      (<gui> :set-splitter-sizes *ysplitter* (list new-size0 new-size1)))
 
    :release-func
-   (lambda (button x* y*)
+   (lambda (button x* y* dx dy)
      (set-mouse-pointer ra:set-normal-mouse-pointer gui))
    )
   )
@@ -1353,7 +1353,7 @@
                                  (<ra> :get-seqtimeline-area-y1))))
   
   (define ty1 (+ y1 ty1-height))    
-  (define ty2 (- y2 (myfloor ((<ra> :get-box seqnav) :height))))
+  (define ty2 (- y2 (* 1.5 (get-fontheight)))) ;;20));(myfloor ((<ra> :get-box seqnav) :height))))
 
   ;;(c-display "       ___:" x1 y1 x2 y2 ty1 ty2)
 
@@ -1361,7 +1361,7 @@
 
   (add-sub-area-plain! (<new> :sequencer-left-part-top-bar gui x1 y1 x2 topbar-y2))
 
-  (define header-area (<new> :area gui x1 topbar-y2 x2 ty2))
+  (define header-area (<new> :area gui x1 topbar-y2 x2 (- ty2 1)))
   (add-sub-area-plain! header-area)
   
   (let loop ((seqtracknum topmost-seqtrack))

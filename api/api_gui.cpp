@@ -2261,9 +2261,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       painter->setPen(Qt::NoPen);
 
       if(do_gradient){
-        QLinearGradient gradient(x1, y1, x2, y2);
-        gradient.setColorAt(0, qcolor.lighter(110));
-        gradient.setColorAt(1, qcolor.darker(110));
+        QLinearGradient gradient((x1+x2)/2.0, y1, (x1+x2)/2.0, y2);
+        gradient.setColorAt(0, qcolor.lighter(125));
+        gradient.setColorAt(1, qcolor.darker(125));
         painter->setBrush(gradient);
       } else {
         painter->setBrush(qcolor);
@@ -2283,21 +2283,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     void drawPolygon(const_char* color, const dynvec_t *points, bool do_fill, float width = 1.0){
       QPainter *painter = get_painter();
 
-      QColor qcolor = getQColor(color);
-
-      QPen pen;
-
       if (points->num_elements<2)
         return;
-
-      if (do_fill){
-        painter->setPen(Qt::NoPen);
-        painter->setBrush(qcolor);
-      } else {
-        pen = QPen(qcolor);
-        pen.setWidthF(width);
-        painter->setPen(pen);
-      }
 
       QPointF qpoints[points->num_elements];
 
@@ -2319,19 +2306,41 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         qpoints[i/2].setX(x);
         qpoints[i/2].setY(y);
         
-        if (is_first==false){
+        if (is_first==true){
           min_x = x;
           max_x = x;
           min_y = y;
           max_y = y;
+          is_first = false;
         }else{
           min_x = R_MIN(x, min_x);
-          max_x = R_MIN(x, max_x);
-          min_y = R_MAX(y, min_y);
+          max_x = R_MAX(x, max_x);
+          min_y = R_MIN(y, min_y);
           max_y = R_MAX(y, max_y);
         }
 
-        is_first = false;
+      }
+
+      bool do_gradient = true;
+
+      QColor qcolor = getQColor(color);
+
+      QPen pen;
+
+      if (do_fill){
+        painter->setPen(Qt::NoPen);
+        if(do_gradient){
+          QLinearGradient gradient((min_x+max_x)/2.0, min_y, (min_x+max_x)/2.0, max_y);
+          gradient.setColorAt(0, qcolor.lighter(125));
+          gradient.setColorAt(1, qcolor.darker(125));
+          painter->setBrush(gradient);
+        } else {
+          painter->setBrush(qcolor);
+        }
+      } else {
+        pen = QPen(qcolor);
+        pen.setWidthF(width);
+        painter->setPen(pen);
       }
 
       painter->drawPolygon(qpoints, points->num_elements/2);

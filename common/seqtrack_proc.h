@@ -336,7 +336,8 @@ extern LANGSPEC float SEQBLOCK_get_right_stretch_y2(int seqblocknum, int seqtrac
 #define SEQUPDATE_NAVIGATOR 128
 #define SEQUPDATE_TRACKCOORDINATES 256
 #define SEQUPDATE_RIGHT_PART 512
-#define SEQUPDATE_EVERYTHING (1|2|4|8|16|32|64|128|256|512)
+#define SEQUPDATE_TIMING 1024 // tempos and signatures
+#define SEQUPDATE_EVERYTHING (1|2|4|8|16|32|64|128|256|512|1024)
 
 extern LANGSPEC void SEQUENCER_update(uint32_t what); // Can be called from any thread, and also while holding the player lock.
 
