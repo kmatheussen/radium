@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/seqtrack_automation_proc.h"
 #include "../common/seqblock_automation_proc.h"
 #include "../common/song_tempo_automation_proc.h"
+#include "../common/sequencer_timing_proc.h"
 #include "../common/time_proc.h"
 #include "../common/undo_sequencer_proc.h"
 #include "../common/undo_song_tempo_automation_proc.h"
@@ -1830,6 +1831,7 @@ void setDoAutoCrossfades(double default_do_auto_crossfades){
 }
 
 
+
 void setSequencerGridType(const_char *grid_type){
   bool is_error=false;
   enum GridType what = !strcmp(grid_type, "current") ? SEQUENCER_get_grid_type() : string_to_grid_type(grid_type, &is_error);
@@ -3455,6 +3457,247 @@ void copySelectedSeqblocks(void){
 
 void deleteSelectedSeqblocks(void){
   evalScheme("(FROM_C-delete-all-selected-seqblocks)");
+}
+
+
+
+/***************** Tempos (BPM) ****************/
+
+
+static void addTempo(dynvec_t &ret, int64_t time, double bpm, int logtype){
+  hash_t *element = HASH_create(2);
+
+  HASH_put_float(element, ":bpm", bpm);
+  HASH_put_int(element, ":logtype", logtype);
+  HASH_put_int(element, ":time", time);
+
+  dyn_t element2 = DYN_create_hash(element);
+
+  DYNVEC_push_back(ret, element2);
+}
+
+
+
+//extern void das_printit(struct Blocks *block);
+
+dyn_t getSequencerTempos(int64_t start_seqtime, int64_t end_seqtime, bool include_all_tempos_needed_to_paint_graph){
+
+  if (root->song->use_sequencer_tempos_and_signatures)
+    return SEQUENCER_TEMPO_get_state();
+
+  dynvec_t ret = {};
+
+  //das_printit(getWindowFromNum(-1)->wblock->block);
+  //return DYN_create_array(ret);
+
+  double prev_bpm = -1;
+  int prev_logtype = -1;
+
+  int num_after = 0;
+
+  SEQUENCER_iterate_time_seqblocks
+    (start_seqtime,end_seqtime,include_all_tempos_needed_to_paint_graph,
+     [&](const struct SeqTrack *seqtrack,const struct SeqBlock *seqblock, const struct Blocks *block, const struct SeqBlock *next_seqblock){
+
+
+      int64_t start_blockseqtime = seqblock->t.time;
+
+      /*
+        int64_t end_blockseqtime = seqblock->t.time2;
+        
+        int64_t next_blockstarttime = next_seqblock==NULL ? -1 : next_seqblock->t.time;
+      */
+
+
+      int curr_lpb = root->lpb;
+      const struct LPBs *next_lpb = block->lpbs;
+      
+      const struct STimes *times = block->times_without_global_swings;
+      const struct STimeChange *change=times[0].tchanges;
+      
+      for(;;){
+        
+        const double place1 = change->y1;
+        const double time1 = change->t1;
+        const double time2 = change->t2;
+
+        const double tempo1 = change->x1 / seqblock->t.stretch;
+        const double tempo2 = change->x2 / seqblock->t.stretch;
+        const int logtype = has_same_tempo(tempo1, tempo2) ? LOGTYPE_HOLD : LOGTYPE_LINEAR;
+
+        while(next_lpb!=NULL && p_getDouble(next_lpb->l.p) <= place1){
+          curr_lpb = next_lpb->lpb;
+          next_lpb = NextConstLPB(next_lpb);
+        }
+
+        const int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, time1);
+
+        //printf("Line: %f. bpm1: %f. bpm2: %f (%f). LPB: %d. seqtime: %d. end: %d\n", change->y1, change->x1, change->x2, change->y2, curr_lpb, (int)seqtime, (int)end_seqtime);
+
+        if (seqtime >= end_seqtime){
+          if (include_all_tempos_needed_to_paint_graph==false || num_after==1)
+            return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
+          num_after++;
+        }
+
+        double bpm = tempo1/(double)curr_lpb;
+
+        if (include_all_tempos_needed_to_paint_graph==true || seqtime >= start_seqtime)
+          if(!has_same_tempo(prev_bpm, bpm) || logtype==LOGTYPE_LINEAR) {
+            if (seqtime < start_seqtime)
+              DYNVEC_light_clean(ret);
+            addTempo(ret, seqtime, bpm, logtype);
+          }
+
+        prev_bpm = bpm;
+        prev_logtype = logtype;
+
+        if(change->y2 >= block->num_lines) {
+
+          // Add BPM at seqblock end if necessary.
+          if (logtype==LOGTYPE_LINEAR) {
+            while(next_lpb!=NULL) {
+              curr_lpb = next_lpb->lpb;
+              next_lpb = NextConstLPB(next_lpb);
+            }
+            
+            const double bpm = tempo2/(double)curr_lpb;
+
+            const int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, time2);
+            R_ASSERT_NON_RELEASE(fabs(seqtime-seqblock->t.time2) < 10);
+
+            const int logtype = LOGTYPE_HOLD;
+
+            addTempo(ret, seqtime, bpm, logtype);
+
+            prev_bpm = bpm;
+            prev_logtype = logtype;
+          }
+
+          break;
+        }
+
+        change = change + 1; // All changes in a block are allocated sequentially.        
+      }
+
+      
+      return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
+    });
+  
+  return DYN_create_array(ret);
+}
+
+dyn_t getAllSequencerTempos(void){
+  return SEQUENCER_TEMPO_get_state();
+}
+
+void setSequencerTempos(dyn_t tempos){  
+  SEQUENCER_TEMPO_create_from_state(tempos, pc->pfreq);
+}
+
+
+/***************** Signatures ****************/
+
+static void add_signature(dynvec_t &ret, int64_t time, const StaticRatio &ratio){
+  hash_t *element = HASH_create(2);
+
+  HASH_put_int(element, ":numerator", ratio.numerator);
+  HASH_put_int(element, ":denominator", ratio.denominator);
+  HASH_put_int(element, ":time", time);
+
+  dyn_t element2 = DYN_create_hash(element);
+
+  DYNVEC_push_back(ret, element2);
+}
+
+dyn_t getSequencerSignatures(int64_t start_seqtime, int64_t end_seqtime){
+
+  if (root->song->use_sequencer_tempos_and_signatures)
+    return SEQUENCER_SIGNATURE_get_state();
+
+  dynvec_t ret = {};
+
+  bool has_created_first = false;
+
+  //das_printit(getWindowFromNum(-1)->wblock->block);
+  //return DYN_create_array(ret);
+
+  SEQUENCER_iterate_time_seqblocks
+    (start_seqtime,end_seqtime,false,
+     [&](const struct SeqTrack *seqtrack,const struct SeqBlock *seqblock, const struct Blocks *block, const struct SeqBlock *next_seqblock){
+
+
+      int64_t start_blockseqtime = seqblock->t.time;
+
+      /*
+        int64_t end_blockseqtime = seqblock->t.time2;
+        
+        int64_t next_blockstarttime = next_seqblock==NULL ? -1 : next_seqblock->t.time;
+      */
+
+      const struct Signatures *signature = block->signatures;
+      while(signature != NULL){
+
+        int64_t blocktime = Place2STime(block, &signature->l.p);
+        int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, blocktime);
+
+        if (has_created_first==false){
+
+          if (seqtime > 0 && start_seqtime<=0)
+            add_signature(ret, 0, root->signature);
+
+          has_created_first = true;
+        }
+
+        add_signature(ret, seqtime, signature->signature);
+
+        signature = NextConstSignature(signature);
+      }
+      
+      return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
+    });
+  
+  if(ret.num_elements==0 && start_seqtime<=0)
+    add_signature(ret, 0, root->signature);
+
+  return DYN_create_array(ret);
+}
+
+dyn_t getAllSequencerSignatures(void){
+  return SEQUENCER_SIGNATURE_get_state();
+}
+
+void setSequencerSignatures(dyn_t signatures){
+  SEQUENCER_SIGNATURE_create_from_state(signatures, pc->pfreq);
+}
+
+
+
+/***************** Markers ****************/
+
+dyn_t getAllSequencerMarkers(void){
+  return SEQUENCER_MARKER_get_state();
+}
+
+void setSequencerMarkers(dyn_t markers){
+  SEQUENCER_MARKER_create_from_state(markers, pc->pfreq);
+}
+
+
+
+/***************** set/get using sequencer timing ****************/
+
+bool isUsingSequencerTiming(void){
+  return root->song->use_sequencer_tempos_and_signatures;
+}
+
+void setUsingSequencerTiming(bool use_sequencer){
+  if (use_sequencer==root->song->use_sequencer_tempos_and_signatures)
+    return;
+  {
+    radium::PlayerLock lock(is_playing_song());
+    root->song->use_sequencer_tempos_and_signatures = use_sequencer;
+  }
 }
 
 

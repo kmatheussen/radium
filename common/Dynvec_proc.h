@@ -49,6 +49,10 @@ static inline int DYNVEC_push_back(dynvec_t *v, const dyn_t element){
 
 #ifdef __cplusplus
 
+static inline void DYNVEC_light_clean(dynvec_t &v){
+  v.num_elements = 0;
+}
+
 static inline int DYNVEC_push_back(dynvec_t &v, const dyn_t element){
   return DYNVEC_push_back(&v, element);
 }

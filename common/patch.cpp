@@ -1273,6 +1273,46 @@ void PATCH_stop_note(struct Patch *patch, const note_t note){
 
 
 ////////////////////////////////////
+// Metronome
+
+void RT_stop_click_note(struct SeqTrack *seqtrack, int64_t time, int note_num){
+  int num_patches = 0;
+  struct Patch **patches = RT_MIXER_get_all_click_patches(&num_patches);
+  int i;
+  for (i=0 ; i<num_patches ; i++){
+    RT_PATCH_stop_note(seqtrack,
+                       patches[i],
+                       create_note_t2(NULL, -1, note_num),
+                       time);
+  }
+}
+
+void RT_play_click_note(struct SeqTrack *seqtrack, int64_t time, int note_num){
+  int num_patches = 0;
+  struct Patch **patches = RT_MIXER_get_all_click_patches(&num_patches);
+  int i;
+  for (i=0 ; i<num_patches ; i++){
+    //printf("Playing click note. seqtrack: %p\n", seqtrack);
+    RT_PATCH_play_note(seqtrack,
+                       patches[i],
+                       create_note_t(NULL,
+                                     -1,
+                                     note_num,
+                                     1.0,
+                                     0.0,
+                                     0,
+                                     0,
+                                     0
+                                     ),
+                       NULL,
+                       time);
+  }
+}
+
+
+
+
+////////////////////////////////////
 // Change velocity
 
 void RT_PATCH_send_change_velocity_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){

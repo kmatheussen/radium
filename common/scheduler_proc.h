@@ -97,16 +97,6 @@ static inline note_t create_note_from_args(const union SuperType *args){
 }
 
 
-static inline int64_t get_seqblock_place_time(const struct SeqBlock *seqblock, const Place p){
-  return seqblock->t.time + blocktime_to_seqtime(seqblock, Place2STime(seqblock->block, &p));
-}
-                                 
-static inline int64_t get_seqblock_place_time2(const struct SeqBlock *seqblock, const struct Tracks *track, const Place p){
-  R_ASSERT_NON_RELEASE(track->times!=NULL);
-  return seqblock->t.time + blocktime_to_seqtime(seqblock, Place2STime_from_times(seqblock->block->num_lines, track->times, &p));
-}
-                                 
-
 //  scheduler_notes_proc.h
 
 extern LANGSPEC void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,

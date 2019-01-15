@@ -4532,6 +4532,17 @@
               :check (<ra> :seqtempo-visible)
               (lambda (doit)
                 (<ra> :set-seqtempo-visible doit)))
+        "-------"
+        (list :radio-buttons
+              (list "Use sequencer timing"
+                    :check (<ra> :is-using-sequencer-timing)
+                    (lambda (doit)
+                      (<ra> :set-using-sequencer-timing doit)))
+              (list "Use editor timing"
+                    :check (not (<ra> :is-using-sequencer-timing))
+                    (lambda (doit)
+                      (<ra> :set-using-sequencer-timing (not doit)))))
+        "-------"
         (list "Preferences"
               (lambda ()
                 (<ra> :open-sequencer-preferences-dialog)))))

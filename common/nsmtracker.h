@@ -2119,6 +2119,7 @@ struct Signatures{
   StaticRatio signature;
 };
 #define NextSignature(a) (struct Signatures *)((a)->l.next)
+#define NextConstSignature(a) (const struct Signatures *)((a)->l.next)
 
 #if USE_QT4
 
@@ -2187,6 +2188,7 @@ struct LPBs{
 	int lpb;
 };
 #define NextLPB(a) (struct LPBs *)((a)->l.next)
+#define NextConstLPB(a) (const struct LPBs *)((a)->l.next)
 
 struct WLPBs{
 	int lpb;
@@ -2210,6 +2212,8 @@ struct Tempos{
 };
 #define NextTempo(a) (struct Tempos *)((a)->l.next)
 #define NextBPM(a) NextTempo(a)
+#define NextConstTempo(a) (const struct Tempos *)((a)->l.next)
+#define NextConstBPM(a) NextConstTempo(a)
 
 struct WTempos{
 	int tempo;
@@ -2237,6 +2241,7 @@ struct TempoNodes{
 	double reltempo;
 };
 #define NextTempoNode(a) ((struct TempoNodes *)((a)->l.next))
+#define NextConstTempoNode(a) ((const struct TempoNodes *)((a)->l.next))
 
 
 
@@ -2261,7 +2266,15 @@ struct STimeChanges{
 
 #else
 
-struct STimeChange;
+struct STimeChange{
+  double y1,x1,t1; // y=line (place as double), x = tempo at y (BPM*LPB), t = time at y (STime)
+  double y2,x2,t2; //
+
+  double logt1;   // Precalculated log(x1)     [ !!!!! NOT log(t1)    !!!!! ]
+  double logt2t1; // Precalculated log(x2/x1)  [ !!!!! NOT log(t2/t2) !!!!! ]
+
+  double glidingswing_scale_value; // hack to fix gliding swing values. Not used if it has value 0;
+};
 
 #endif
 
@@ -2899,6 +2912,7 @@ struct SeqBlock{
   */
 };
 
+
 //extern struct SeqBlock *g_curr_seqblock;
 extern int64_t g_curr_seqblock_id_under_mouse;
 extern int64_t g_curr_seqblock_id;
@@ -3064,18 +3078,19 @@ struct LoopingOrPunching{
   DEFINE_ATOMIC(int64_t, end);
 };
 
-
 struct Song{
 	struct Tracker_Windows *tracker_windows;
 	struct Blocks *blocks;
 
-        struct SeqTrack *block_seqtrack; // Used when playing block.
+        struct SeqTrack *block_seqtrack; // Used when playing block. Also used to play click sound when using sequencer timing.
 
         struct LoopingOrPunching looping;
         struct LoopingOrPunching punching;
         DEFINE_ATOMIC(int, curr_seqtracknum);
         int topmost_visible_seqtrack;
         vector_t seqtracks; // New playlist. Player must both be stopped and locked when modifying this variable, or any of the contents.
+
+        bool use_sequencer_tempos_and_signatures;
 
 	NInt num_blocks;
 	char *songname;

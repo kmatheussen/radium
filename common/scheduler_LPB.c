@@ -3,6 +3,7 @@
 
 #include "nsmtracker.h"
 #include "placement_proc.h"
+#include "sequencer_timing_proc.h"
 
 #include "scheduler_proc.h"
 
@@ -134,25 +135,33 @@ void RT_LPB_set_beat_position(struct SeqTrack *seqtrack, int audioblocksize){
 // Returns number of beats played so far. (actually returns the number of quarter notes)
 //
 double RT_LPB_get_beat_position(const struct SeqTrack *seqtrack){
+  if(root->song->use_sequencer_tempos_and_signatures && is_playing_song())
+    return g_rt_sequencer_ppq;
+
   return seqtrack->lpb_iterator.curr_num_beats;
 }
 
 double RT_LPB_get_current_BPM(const struct SeqTrack *seqtrack){
   if (ATOMIC_GET(is_starting_up))
     return 120.0;
-  
-  else if (is_playing())
-    return seqtrack->lpb_iterator.curr_bpm;
-  
-  else {
+
+  if (is_playing()){
+
+    if (pc->playtype==PLAYSONG && root->song->use_sequencer_tempos_and_signatures)
+      return g_rt_sequencer_bpm;
+    else
+      return seqtrack->lpb_iterator.curr_bpm;
+
+  } else {
+
     struct Blocks *block = ATOMIC_GET(g_curr_block);
     
     if (block==NULL)
       return (double)root->tempo;
     else
       return (double)root->tempo * ATOMIC_DOUBLE_GET(block->reltempo);
+    
   }
-
 }
 
 

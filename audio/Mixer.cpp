@@ -46,6 +46,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "../common/PEQ_LPB_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/seqtrack_proc.h"
+#include "../common/sequencer_timing_proc.h"
+
 #include "../midi/midi_i_input_proc.h"
 
 #include "Jack_plugin_proc.h"
@@ -1028,13 +1030,19 @@ struct Mixer{
             PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo, can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet, max_playertask_audio_cycle_fraction);
             
             if (is_playing()) {
-              if (pc->playtype==PLAYBLOCK)
+              if (pc->playtype==PLAYBLOCK) {
+
                 RT_LPB_set_beat_position(root->song->block_seqtrack, RADIUM_BLOCKSIZE);
-              else
+
+              } else { 
+
                 VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
                   RT_LPB_set_beat_position(seqtrack, RADIUM_BLOCKSIZE);
                 }END_VECTOR_FOR_EACH;
+            
+              }
             }
+
             
             RT_MIDI_handle_play_buffer();
 

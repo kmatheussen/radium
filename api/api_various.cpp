@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #pragma clang diagnostic pop
 #include <QLinkedList>
 #include <QThread>
+#include <QUuid>
 
 #include "../bin/packages/s7/s7.h"
 
@@ -2845,6 +2846,14 @@ int getHighestLegalPlaceDenominator(void){
   return MAX_UINT32;
 }
 
+int getNumeratorFromRatioString(const_char* s){
+  return STATIC_RATIO_from_string(STRING_create(s)).numerator;
+}
+
+int getDenominatorFromRatioString(const_char* s){
+  return STATIC_RATIO_from_string(STRING_create(s)).denominator;
+}
+
 dyn_t getRatioFromString(const_char* s){
   return DYN_create_ratio(make_ratio_from_static_ratio(STATIC_RATIO_from_string(STRING_create(s))));
 }
@@ -2865,6 +2874,10 @@ const_char *toBase64(const char *s){
 
 const_char *fromBase64(const char *s){
   return STRING_get_chars(STRING_fromBase64(STRING_create(s)));
+}
+
+const_char *createUuid(void){
+  return talloc_strdup(QUuid::createUuid().toString().toUtf8().constData()); 
 }
 
 void msleep(int ms){

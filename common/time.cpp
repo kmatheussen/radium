@@ -40,6 +40,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Bs_edit_proc.h"
 #include "Beats_proc.h"
 #include "visual_proc.h"
+#include "sequencer_timing_proc.h"
+
 
 #include "../embedded_scheme/s7extra_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
@@ -761,18 +763,6 @@ void UpdateAllSTimes(void){
 #define D(n) n
 #endif
 
-
-struct STimeChange{
-  double y1,x1,t1; // y=line (place as double), x = tempo at y, t = time at y
-  double y2,x2,t2; //
-
-  double logt1;   // Precalculated log(x1)     [ !!!!! NOT log(t1)    !!!!! ]
-  double logt2t1; // Precalculated log(x2/x1)  [ !!!!! NOT log(t2/t2) !!!!! ]
-
-  double glidingswing_scale_value; // hack to fix gliding swing values. Not used if it has value 0;
-};
-
-
 /*
   ;; For x2 >= x1:
   ;; integrate 1/(t1*((t2/t1)^(x/b))), x from 0 to c
@@ -831,7 +821,7 @@ static double get_stime_from_stimechange_linear(const struct STimeChange *c, dou
 }
 
 static inline bool tchange_has_gliding_tempo(const struct STimeChange *c){
-  return fabs(c->x2-c->x1) >= 0.003; // approx.
+  return !has_same_tempo(c->x1, c->x2); // approx.
 }
 
 static double get_stime_from_stimechange(const struct STimeChange *c, double y, const bool has_t){
@@ -857,7 +847,7 @@ static double get_stime_from_stimechange(const struct STimeChange *c, double y, 
     double speed = (c->x1 + c->x2) / 2.0;
     stime = (double)pc->pfreq * 60.0 * distance / speed;
 
-  } else if (c->x2>c->x1) {
+  } else if (c->x2 > c->x1) {
 
     // accelerando
     //////////////
@@ -919,27 +909,6 @@ double Place2STime_from_times2(
   else
     return ret;
 }
-
-STime Place2STime_from_times(int num_lines, const struct STimes *times, const Place *p){
-  if(0==p->counter)
-    return times[p->line].time; // Most common situation. Should probably inline this function.
-
-  if (p->line >= num_lines){
-    R_ASSERT_NON_RELEASE(false);
-    return times[num_lines].time;
-  }
-
-  double y = GetDoubleFromPlace(p);
-  return Place2STime_from_times2(times, y);
-}
-
-STime Place2STime(
-	const struct Blocks *block,
-	const Place *p
-){
-  return Place2STime_from_times(block->num_lines, block->times, p);
-}
-
 
 
 
@@ -1061,8 +1030,8 @@ static dyn_t get_fallback_timings(const struct Blocks *block, const dyn_t dynbea
 
 // Returns an array of STimeChange elements
 static struct STimeChange *create_time_changes_from_scheme_data(const dynvec_t *timings){
-  struct STimeChange *time_changes = (struct STimeChange*)talloc(sizeof(struct STimeChange)*(timings->num_elements+1)); // Allocate one more element so that the last element is nulled out (used for assertion).
-  
+  struct STimeChange *time_changes = (struct STimeChange*)talloc_atomic_clean(sizeof(struct STimeChange)*(timings->num_elements+1)); // Allocate one more element so that the last element is nulled out (used for assertion).
+
   for(int i=0;i<timings->num_elements;i++){
     hash_t *h = timings->elements[i].hash;
     time_changes[i].y1 = DYN_get_double_from_number(HASH_get_dyn(h, ":y1"));
@@ -1436,6 +1405,25 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   }PC_StopPause(NULL);
 }
 
+#if 0
+void das_printit(struct Blocks *block);
+
+void das_printit(struct Blocks *block){
+  const struct STimes *times = block->times_without_global_swings;
+  const struct STimeChange *change=times[0].tchanges;
+
+  for(;;){
+    printf("Line: %f. bpm1: %f. bpm2: %f (%f)\n", change->y1, change->x1, change->x2, change->y2);
+    
+    if(change->y2 >= block->num_lines)
+      break;
+
+    change = change + 1; // All changes in a block are allocated sequentially.
+
+  }
+}
+#endif
+
 static void update_all(struct Song *song,
                        int default_bpm, int default_lpb, StaticRatio default_signature, bool plugins_should_receive_swing_tempo,
                        bool only_signature_has_changed, bool update_beats, bool update_swings)
@@ -1506,6 +1494,7 @@ void TIME_everything_in_block_has_changed(struct Blocks *block){
 
 void TIME_global_tempos_have_changed(void){
   update_all(root->song, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, true);
+  SEQUENCER_TIMING_set_default_values(root->tempo, root->signature);
 }
 
 void TIME_global_LPB_has_changed(void){
@@ -1514,10 +1503,12 @@ void TIME_global_LPB_has_changed(void){
 
 void TIME_global_signature_has_changed(void){
   update_all(root->song, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, true, true, true);
+  SEQUENCER_TIMING_set_default_values(root->tempo, root->signature);
 }
 
 void TIME_everything_has_changed2(const struct Root *root, struct Song *song){
   update_all(song, root->tempo, root->lpb, root->signature, song->plugins_should_receive_swing_tempo, false, true, true);
+  SEQUENCER_TIMING_set_default_values(root->tempo, root->signature);
 }
 
 void TIME_everything_has_changed(void){

@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/seqtrack_automation_proc.h"
 #include "../common/song_tempo_automation_proc.h"
 #include "../common/seqblock_automation_proc.h"
+#include "../common/sequencer_timing_proc.h"
 #include "../common/tracks_proc.h"
 #include "../common/player_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
@@ -2624,6 +2625,12 @@ void SEQUENCER_iterate_time_seqblocks(int64_t start_seqtime, int64_t end_seqtime
 
 // If callback returns false, we stop iterating.
 void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType what_to_find, std::function<bool(int64_t,int,int,int)> callback){
+
+  if(root->song->use_sequencer_tempos_and_signatures){
+    SEQUENCER_iterate_sequencer_time(start_seqtime, end_seqtime, what_to_find, callback);
+    return;
+  }
+
   int barnum = 0;
   //printf("Start_seqtime: %f\n", (float)start_seqtime/pc->pfreq);
 

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "disk.h"
 #include "disk_song_proc.h"
+#include "sequencer_timing_proc.h"
 
 #include "disk_root_proc.h"
 
@@ -87,11 +88,17 @@ struct Root *LoadRoot(void){
         ret->grid_denominator=1;
         ret->signature.numerator=4;
         ret->signature.denominator=4;
+        ret->tempo = 128;
+
+        SEQUENCER_TIMING_init(ret->tempo, ret->signature);
         
         ATOMIC_SET(ret->play_cursor_onoff, ATOMIC_GET(root->play_cursor_onoff));
         ATOMIC_SET(ret->editor_follows_play_cursor_onoff, ATOMIC_GET(root->editor_follows_play_cursor_onoff));
         
-	GENERAL_LOAD(1,14);
+        bool has_nominator=false;
+        bool has_denominator=false;
+	
+        GENERAL_LOAD(1,14);
 
 
 
@@ -106,6 +113,7 @@ var1:
 	goto start;
 var2:
 	ret->tempo=DC_LoadI();
+        SEQUENCER_TIMING_init(ret->tempo, ret->signature);
 	goto start;
 var3:
 	ret->lpb=DC_LoadI();
@@ -133,10 +141,16 @@ var8:
 
 var9:
         ret->grid_numerator=DC_LoadI();
+        has_nominator=true;
+        if(has_denominator)
+          SEQUENCER_TIMING_init(ret->tempo, ret->signature);
         goto start;
 
 var10:
         ret->grid_denominator=DC_LoadI();
+        has_denominator=true;
+        if(has_nominator)
+          SEQUENCER_TIMING_init(ret->tempo, ret->signature);
         goto start;
 
 var11:
