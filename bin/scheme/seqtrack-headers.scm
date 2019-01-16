@@ -1075,10 +1075,11 @@
              #f ;; wrap-lines
              #f ;; align top
              #f)
-      (<gui> :draw-box gui border-color
-             (1+ x1) (1+ y1)
-             (1- x2) (1- y2)
-             1.3 0 0))) ;; align left
+      (<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 3 3)))
+;      (<gui> :draw-box gui border-color
+;             (1+ x1) (1+ y1)
+;             (1- x2) (1- y2)
+;             1.3 0 0))) ;; align left
       
   (add-nonpress-mouse-cycle!
    :enter-func (lambda (x* y)
@@ -1291,13 +1292,14 @@
                          (- x2 buttons-width)))
 
   (if (not in-window)
-      (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 buttons-x1 y2)))
+      (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 (- buttons-x1 2) y2)))
 
   (horizontally-layout-areas
    buttons-x1 y1 x2 y2
    (if in-window
        '(window)
        '(window full))
+   :spacing 2
    :callback
    (lambda (type x1 y1 x2 y2)
      (add-sub-area-plain! (<new> :checkbox gui x1 y1 x2 y2
