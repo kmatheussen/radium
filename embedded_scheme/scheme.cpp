@@ -541,7 +541,7 @@ static s7_pointer catch_call(s7_scheme *sc, const s7_pointer args){
 
   static s7_pointer s_catchallerrors_func = NULL;
 
-#if !defined(RELEASE)
+#if defined(RELEASE)
   if (s_catchallerrors_func==NULL)
     s_catchallerrors_func = find_and_protect_scheme_value("FROM-C-catch-all-errors-and-display-backtrace-automatically");
 #else
