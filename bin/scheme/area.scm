@@ -801,6 +801,7 @@
                                 :border-rounding 2
                                 :scale-font-size #t
                                 :cut-text-to-fit #f
+                                :only-show-left-part-if-text-dont-fit #t ;; only make sense to set #f if both scale-font-size and cut-text-to-fit is #f.
                                 )
 
   (define (get-text)
@@ -821,14 +822,26 @@
     (let ((background-color (get-background-color)))
       (if background-color
           (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding #f)))
-    
-    (<gui> :draw-text gui (maybe-thunk-value text-color) (maybe-thunk-value text)
-           (+ (if align-left
+
+    (define x1 (+ (if align-left
                   (+ 2 x1)
                   x1)
-              1)
+                  1))
+    (define x2 (- x2 1))
+
+    (define text (maybe-thunk-value text))
+
+    (when (and (not scale-font-size)
+               (not cut-text-to-fit)
+               (not only-show-left-part-if-text-dont-fit))
+      (define text-width (<gui> :text-width text gui))
+      (when (> text-width (- x2 x1))
+        (set! x1 (+ x1 (- (- x2 x1) text-width)))))
+                  
+    (<gui> :draw-text gui (maybe-thunk-value text-color) text
+           x1
            y1
-           (- x2 1)
+           x2
            y2
            wrap-lines
            align-top
@@ -864,7 +877,10 @@
                                           (<ra> :from-base64 text)
                                           text))
                               :background-color background-color
-                              :align-left #t))
+                              :align-left #t
+                              :scale-font-size #f
+                              :only-show-left-part-if-text-dont-fit #f
+                              ))
   
   (add-mouse-cycle! :press-func (lambda (button x* y*)
                                   (and (= button *left-button*)
@@ -1817,10 +1833,13 @@
                               :get-wide-string #t
                               :callback
                               (lambda (new-name)
-                                (c-display "new-name:" new-name (<ra> :from-base64 new-name))
-                                (set-new-path! new-name)
-                                new-name)))
-
+                                (if (not (string=? new-name ""))
+                                    (begin
+                                      (c-display "new-name: -" new-name "-" (<ra> :from-base64 new-name) "-")
+                                      (set-new-path! new-name)
+                                      new-name)
+                                    path))))
+                                
     (add-sub-area-plain! line-input)
 
     (set! file-browser-entries
