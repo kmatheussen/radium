@@ -567,15 +567,23 @@ TODO: Double-click to add entry.
                                  (popup-menu* x* curr-entry curr-pos)
                                  #t)))))
 
-  ;; set song pos
-  (add-mouse-cycle! (lambda (button x* y*)
-                      (and (= button *left-button*)
-                           (not curr-entry)
-                           (begin
-                             (c-display "HEPP")
-                             (<ra> :set-song-pos (round (get-sequencer-time-from-x x* x1 x2)))
+  ;; set song pos / double-clicking
+  (let ()
+    (define click-start-time 0)
+    (add-mouse-cycle! (lambda (button x* y*)
+                        (and (= button *left-button*)
+                             (not curr-entry)
+                             (begin
+                               (c-display "HEPP")
+                               (define time (<ra> :get-ms))
+                               (if (and double-click-callback
+                                        (< (- time click-start-time)
+                                           (<ra> :get-double-click-interval)))
+                                   (double-click-callback x* #f)
+                                   (<ra> :set-song-pos (round (get-sequencer-time-from-x x* x1 x2))))
+                               (set! click-start-time time))
                              #t))))
-
+    
   ;; move entry
   (let ()
     (define curr-mouse-pos #f)
@@ -597,7 +605,7 @@ TODO: Double-click to add entry.
                                        (define time (<ra> :get-ms))
                                        (if (< (- time click-start-time)
                                               (<ra> :get-double-click-interval))
-                                           (double-click-callback curr-entry)
+                                           (double-click-callback x* curr-entry)
                                            (set! click-start-time time)))
                                      #t)))
                             (lambda (button x* y* dx dy)
@@ -746,7 +754,7 @@ TODO: Double-click to add entry.
 
         (define text-width (<gui> :text-width text))
         (define text-x1 (+ h/2 tx))
-        (define text-x2 (+ text-x1 text-width))
+        (define text-x2 (min max-x2 (+ text-x1 text-width)))
 
         (define ty ty1) ;;(get-ty (entry :bpm)))
         (define ym (/ (+ y1 y2) 2))
@@ -761,7 +769,8 @@ TODO: Double-click to add entry.
                1.4
                ym ym)
 
-        (if (> text-x2 max-x2)
+        (if (or (<= text-x1 tx) ;;(> text-x2 max-x2)
+                (< (- text-x2 text-x1) 5))
             (loop (cdr entries)
                   triangle-x1
                   entry)
@@ -781,7 +790,7 @@ TODO: Double-click to add entry.
                      #f ; align top
                      0  ; rotate
                      #f ; cut text to fit
-                     #f ; scale font size
+                     #t ; scale font size
                      )
               (loop (cdr entries)
                     triangle-x1
@@ -859,10 +868,12 @@ TODO: Double-click to add entry.
                                   (scale percentage-first 0 100 (tempo :bpm) (next-tempo :bpm))
                                   (tempo :bpm))))
                :double-click-callback
-               (lambda (curr-tempo)
-                 (request-tempo 0 curr-tempo
+               (lambda (x* curr-tempo)
+                 (request-tempo x* curr-tempo
                                 (lambda (tempo)
-                                  (area :replace-curr-entry! tempo))))                 
+                                  (if curr-tempo
+                                      (area :replace-curr-entry! tempo)
+                                      (area :add-entry! tempo)))))
                :value->y
                (lambda (tempo y1 y2)
                  (scale (tempo :bpm) 0 200 y2 y1))
@@ -928,10 +939,12 @@ TODO: Double-click to add entry.
                   ))
                :get-entry-info-string get-entry-info-string
                :double-click-callback
-               (lambda (curr-signature)
-                 (request-signature 0 curr-signature
+               (lambda (x* curr-signature)
+                 (request-signature x* curr-signature
                                     (lambda (signature)
-                                      (area :replace-curr-entry! signature))))
+                                      (if curr-signature
+                                          (area :replace-curr-entry! signature)
+                                          (area :add-entry! signature)))))
                ))
 
   area)
@@ -986,10 +999,12 @@ TODO: Double-click to add entry.
                :get-entry-info-string get-entry-info-string
                :do-grid #t
                :double-click-callback
-               (lambda (curr-marker)
-                 (request-marker 0 curr-marker
+               (lambda (x* curr-marker)
+                 (request-marker x* curr-marker
                                     (lambda (marker)
-                                      (area :replace-curr-entry! marker))))
+                                      (if curr-marker
+                                          (area :replace-curr-entry! marker)
+                                          (area :add-entry! marker)))))
                ))
 
   area)

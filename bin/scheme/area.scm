@@ -904,16 +904,18 @@
   (define-override (paint)
     (if paint-func
         (paint-func (is-selected-func))
-        (draw-checkbox gui
-                       text
-                       (is-selected-func)
-                       x1 y1 x2 y2
-                       selected-color
-                       :text-color text-color
-                       :paint-implicit-border #t
-                       :implicit-border-width border-width
-                       :box-rounding box-rounding
-                       )))
+        (begin
+          (draw-checkbox gui
+                         text
+                         (is-selected-func)
+                         x1 y1 x2 y2
+                         selected-color
+                         :text-color text-color
+                         :paint-implicit-border #f
+                         :implicit-border-width border-width
+                         :box-rounding box-rounding
+                         )
+          (<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 3 3))))
 
   (add-mouse-cycle! (lambda (button x* y*)
                       (cond ((and right-mouse-clicked-callback
@@ -953,6 +955,7 @@
   
   (layout-func x1 y1 x2 y2
                (iota num-buttons)
+               :spacing 2
                :callback
                (lambda (num x1 y1 x2 y2)
                  (add-sub-area-plain!
@@ -1767,9 +1770,11 @@
     ;;(c-display "\n\n\n---------------------- num entries:" (length entries) "-----------------------\n\n\n")
     (remove-sub-areas!)
 
-    (define pathline-y1 (+ y1 (get-fontheight)))
+    (define border 2)
 
-    (add-sub-area-plain! (<new> :radiobuttons gui x1 y1 x2 pathline-y1
+    (define pathline-y1 (+ y1 (get-fontheight) border))
+
+    (add-sub-area-plain! (<new> :radiobuttons gui x1 y1 x2 (- pathline-y1 border)
                                 num-settings-buttons
                                 curr-settings-num
                                 (lambda (num is-on)
@@ -1789,24 +1794,24 @@
                                              (<-> num))))
     
     (define button-width (* 2 (<gui> :text-width "R")))
-    (define reload-x1 (+ x1 button-width))
-    (define line-input-x1 (+ reload-x1 button-width))
+    (define reload-x1 (+ x1 button-width border))
+    (define line-input-x1 (+ reload-x1 button-width border))
 
-    (define browser-y1 (+ pathline-y1 (get-fontheight)))
+    (define browser-y1 (+ pathline-y1 (get-fontheight) border))
 
-    (add-sub-area-plain! (<new> :button gui x1 pathline-y1 reload-x1 browser-y1
+    (add-sub-area-plain! (<new> :button gui x1 pathline-y1 (- reload-x1 border) (- browser-y1 border)
                                 :text "⇧"
                                 :callback-release
                                 (lambda ()
                                   (set-new-path! (<ra> :get-parent-path path)))))
 
-    (add-sub-area-plain! (<new> :button gui reload-x1 pathline-y1 line-input-x1 browser-y1
+    (add-sub-area-plain! (<new> :button gui reload-x1 pathline-y1 (- line-input-x1 border) (- browser-y1 border)
                                 :text "↻"
                                 :callback-release
                                 (lambda ()
                                   (set-new-path! path))))
 
-    (define line-input (<new> :line-input gui line-input-x1 pathline-y1 x2 browser-y1
+    (define line-input (<new> :line-input gui line-input-x1 pathline-y1 x2 (- browser-y1 border)
                               :prompt ""
                               :text path
                               :get-wide-string #t
