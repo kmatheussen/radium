@@ -975,6 +975,21 @@ static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color, flo
   p.setBrush(Qt::NoBrush);
   p.setPen(pen);
 }
+static inline void myFillRoundedRect(QPainter &p, QRectF rect, const QColor &color, float rounding, float do_gradient = true){
+  QPen pen = p.pen();
+  p.setPen(Qt::NoPen);
+  if (do_gradient){
+    QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
+    gradient.setColorAt(0, color.lighter(125));
+    gradient.setColorAt(1, color.darker(125));
+    p.setBrush(gradient);
+  } else {
+    p.setBrush(color);
+  }
+  p.drawRoundedRect(rect, rounding, rounding);
+  p.setBrush(Qt::NoBrush);
+  p.setPen(pen);
+}
 #endif
 
 

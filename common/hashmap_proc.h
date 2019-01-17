@@ -78,6 +78,7 @@ extern LANGSPEC int64_t HASH_get_int(const hash_t *hash, const char *key);
 extern LANGSPEC bool HASH_get_bool(const hash_t *hash, const char *key);
 extern LANGSPEC double HASH_get_float(const hash_t *hash, const char *key);
 extern LANGSPEC hash_t *HASH_get_hash(const hash_t *hash, const char *key);
+extern LANGSPEC double HASH_get_number(const hash_t *hash, const char *key); // Same as HASH_get_float, but if element is an integer, convert integer to double and return value.
 extern LANGSPEC dynvec_t HASH_get_array(const hash_t *hash, const char *key);
 static inline int HASH_get_int32(const hash_t *hash, const char *key){
   return (int)HASH_get_int(hash, key);
@@ -119,6 +120,7 @@ static inline int HASH_get_int32_at(const hash_t *hash, const char *key, int i){
 
 extern LANGSPEC bool HASH_get_bool_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC double HASH_get_float_at(const hash_t *hash, const char *key, int i);
+extern LANGSPEC double HASH_get_number_at(const hash_t *hash, const char *key, int i); // same as HASH_get_float_at, but allows element to be stored as integer.
 extern LANGSPEC hash_t *HASH_get_hash_at(const hash_t *hash, const char *key, int i);
 
 

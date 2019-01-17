@@ -530,6 +530,24 @@ static int64_t get_int(const hash_t *hash, const char *key, int i){
   return element->a.int_number;
 }
 
+static double get_number(const hash_t *hash, const char *key, int i){
+  hash_element_t *element=HASH_get_no_complaining(hash, key, i);
+
+  if(element==NULL){
+    RWarning("HASH_get_number. Element not found. key: \"%s\"/%d. hash: %p",key,i,hash);
+    return 0.0;
+  }
+
+  if(element->a.type==INT_TYPE)
+    return element->a.int_number;
+  else if (element->a.type==FLOAT_TYPE)
+    return element->a.float_number;
+
+
+  RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested a number, found %s.",key,i,DYN_type_name(element->a.type));
+  return 0.0;
+}
+
 static bool get_bool(const hash_t *hash, const char *key, int i){
   hash_element_t *element=HASH_get_no_complaining(hash, key, i);
 
@@ -616,6 +634,10 @@ double HASH_get_float(const hash_t *hash, const char *key){
   return get_float(hash, key, 0);
 }
 
+double HASH_get_number(const hash_t *hash, const char *key){
+  return get_number(hash, key, 0);
+}
+
 hash_t *HASH_get_hash(const hash_t *hash, const char *key){
   return get_hash(hash, key, 0);
 }
@@ -646,6 +668,10 @@ bool HASH_get_bool_at(const hash_t *hash, const char *key, int i){
 
 double HASH_get_float_at(const hash_t *hash, const char *key, int i){
   return get_float(hash, key, i);
+}
+
+double HASH_get_number_at(const hash_t *hash, const char *key, int i){
+  return get_number(hash, key, i);
 }
 
 hash_t *HASH_get_hash_at(const hash_t *hash, const char *key, int i){
