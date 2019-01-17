@@ -3082,7 +3082,7 @@ struct Song{
 	struct Tracker_Windows *tracker_windows;
 	struct Blocks *blocks;
 
-        struct SeqTrack *block_seqtrack; // Used when playing block. Also used to play click sound when using sequencer timing.
+        struct SeqTrack *block_seqtrack; // Used when playing block.
 
         struct LoopingOrPunching looping;
         struct LoopingOrPunching punching;
