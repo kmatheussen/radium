@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <inttypes.h>
 
 #include <QSet>
+#include <QUuid>
 
 
 #include "../common/nsmtracker.h"
@@ -3470,6 +3471,7 @@ static void addTempo(dynvec_t &ret, int64_t time, double bpm, int logtype){
   HASH_put_float(element, ":bpm", bpm);
   HASH_put_int(element, ":logtype", logtype);
   HASH_put_int(element, ":time", time);
+  HASH_put_qstring(element, ":uuid", QString::number(time)); // Quick hack to make the uuid field be a unique identifier. These are just for block editor timing, which can't be edited in the timeline anyway. Seqeuncer timing entries have real uuid values.
 
   dyn_t element2 = DYN_create_hash(element);
 
@@ -3480,10 +3482,7 @@ static void addTempo(dynvec_t &ret, int64_t time, double bpm, int logtype){
 
 //extern void das_printit(struct Blocks *block);
 
-dyn_t getSequencerTempos(int64_t start_seqtime, int64_t end_seqtime, bool include_all_tempos_needed_to_paint_graph){
-
-  if (root->song->use_sequencer_tempos_and_signatures)
-    return SEQUENCER_TEMPO_get_state();
+static dyn_t get_editor_tempos(int64_t start_seqtime, int64_t end_seqtime, bool include_all_tempos_needed_to_paint_graph){
 
   dynvec_t ret = {};
 
@@ -3587,12 +3586,27 @@ dyn_t getSequencerTempos(int64_t start_seqtime, int64_t end_seqtime, bool includ
   return DYN_create_array(ret);
 }
 
-dyn_t getAllSequencerTempos(void){
-  return SEQUENCER_TEMPO_get_state();
+dyn_t getSequencerTempos(int64_t start_seqtime, int64_t end_seqtime, bool include_all_tempos_needed_to_paint_graph){
+  if (root->song->use_sequencer_tempos_and_signatures)
+    return SEQUENCER_TEMPO_get_state();
+  else
+    return get_editor_tempos(start_seqtime, end_seqtime, include_all_tempos_needed_to_paint_graph);
 }
 
-void setSequencerTempos(dyn_t tempos){  
-  SEQUENCER_TEMPO_create_from_state(tempos, pc->pfreq);
+dyn_t getAllSequencerTempos(void){
+  if (root->song->use_sequencer_tempos_and_signatures)
+    return SEQUENCER_TEMPO_get_state();
+  else
+    return get_editor_tempos(0, SONG_get_length(), true);
+}
+
+void setSequencerTempos(dyn_t tempos){
+  if (!root->song->use_sequencer_tempos_and_signatures){
+    handleError("setSequencerTempos not supported in sequencer timing mode");
+    return;
+  }
+
+  SEQUENCER_TEMPO_create_from_state(tempos, -1);
 }
 
 
@@ -3604,16 +3618,14 @@ static void add_signature(dynvec_t &ret, int64_t time, const StaticRatio &ratio)
   HASH_put_int(element, ":numerator", ratio.numerator);
   HASH_put_int(element, ":denominator", ratio.denominator);
   HASH_put_int(element, ":time", time);
+  HASH_put_qstring(element, ":uuid", QString::number(time)); // Quick hack to make the uuid field be a unique identifier. These are just for block editor timing, which can't be edited in the timeline anyway. Seqeuncer timing entries have real uuid values.
 
   dyn_t element2 = DYN_create_hash(element);
 
   DYNVEC_push_back(ret, element2);
 }
 
-dyn_t getSequencerSignatures(int64_t start_seqtime, int64_t end_seqtime){
-
-  if (root->song->use_sequencer_tempos_and_signatures)
-    return SEQUENCER_SIGNATURE_get_state();
+static dyn_t get_editor_signatures(int64_t start_seqtime, int64_t end_seqtime){
 
   dynvec_t ret = {};
 
@@ -3663,14 +3675,42 @@ dyn_t getSequencerSignatures(int64_t start_seqtime, int64_t end_seqtime){
   return DYN_create_array(ret);
 }
 
+dyn_t getSequencerSignatures(int64_t start_seqtime, int64_t end_seqtime){
+  if (root->song->use_sequencer_tempos_and_signatures)
+    return SEQUENCER_SIGNATURE_get_state();
+  else
+    return get_editor_signatures(start_seqtime, end_seqtime);
+}
+
 dyn_t getAllSequencerSignatures(void){
-  return SEQUENCER_SIGNATURE_get_state();
+  if (root->song->use_sequencer_tempos_and_signatures)
+    return SEQUENCER_SIGNATURE_get_state();
+  else
+    return get_editor_signatures(0, SONG_get_length());
 }
 
 void setSequencerSignatures(dyn_t signatures){
-  SEQUENCER_SIGNATURE_create_from_state(signatures, pc->pfreq);
+  if (!root->song->use_sequencer_tempos_and_signatures){
+    handleError("setSequencerSignatures not supported in sequencer timing mode");
+    return;
+  }
+
+  SEQUENCER_SIGNATURE_create_from_state(signatures, -1);
 }
 
+
+/***************** Timing ****************/
+dyn_t getSequencerTiming(void){
+  return DYN_create_hash(SEQUENCER_TIMING_get_state());
+}
+
+void setSequencerTiming(dyn_t state){
+  if (state.type!=HASH_TYPE){
+    handleError("Illegal value for setSequencerTiming. Expected hash table");
+    return;
+  }
+  return SEQUENCER_TIMING_create_from_state(state.hash, -1);
+}
 
 
 /***************** Markers ****************/
@@ -3680,7 +3720,8 @@ dyn_t getAllSequencerMarkers(void){
 }
 
 void setSequencerMarkers(dyn_t markers){
-  SEQUENCER_MARKER_create_from_state(markers, pc->pfreq);
+  //undoSequencer();
+  SEQUENCER_MARKER_create_from_state(markers, -1);
 }
 
 
@@ -3694,10 +3735,40 @@ bool isUsingSequencerTiming(void){
 void setUsingSequencerTiming(bool use_sequencer){
   if (use_sequencer==root->song->use_sequencer_tempos_and_signatures)
     return;
+
+  undoSequencer();
+
   {
     radium::PlayerLock lock(is_playing_song());
     root->song->use_sequencer_tempos_and_signatures = use_sequencer;
   }
 }
+
+
+/***************** iterate time ****************/
+
+void iterateSequencerTime(int64_t start_time, int64_t end_time, const_char* grid_type, func_t* callback){
+  bool is_error=false;
+  enum GridType what = !strcmp(grid_type, "current") ? SEQUENCER_get_grid_type() : string_to_grid_type(grid_type, &is_error);
+    
+  if(is_error){
+    handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", \"bar\", or \"current\". (\"%s\")", grid_type);
+    return;
+  }
+
+  int num_calls_to_handleError = g_num_calls_to_handleError;
+
+  SEQUENCER_iterate_time(start_time, end_time, what,
+                         [callback, num_calls_to_handleError](int64_t seqtime, int barnum, int beatnum, int linenum){
+
+                           bool ret = S7CALL(bool_int_int_int_int, callback, seqtime, barnum, beatnum, linenum);
+
+                           if (g_num_calls_to_handleError != num_calls_to_handleError)
+                             return false;
+
+                           return ret;
+                         });
+}
+
 
 

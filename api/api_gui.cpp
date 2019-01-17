@@ -2273,6 +2273,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         painter->drawRoundedRect(rect, round_x, round_y);
       else
         painter->drawRect(rect);
+
       painter->setBrush(Qt::NoBrush);
       //_image_painter->setPen(pen);
 

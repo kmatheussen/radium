@@ -66,7 +66,7 @@ DC_start("SONG");
 
         DC_SSB("mixer_comments_visible", song->mixer_comments_visible);
         DC_SSB("mute_editor_automation_when_track_is_muted", song->mute_editor_automation_when_track_is_muted);
-        DC_SSB("use_sequencer_timing", song->use_sequencer_tempos_and_signatures);
+        //DC_SSB("use_sequencer_timing", song->use_sequencer_tempos_and_signatures); // saved in sequencer state instead.
                 
         DC_start("COMMENT");{
           HASH_save(COMMENT_get_state(), dc.file);
@@ -103,7 +103,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	static char *vars[11]={
+	static char *vars[10]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -113,8 +113,8 @@ struct Song *LoadSong(void){
                 "plugins_should_receive_swing_tempo",
                 "editor_should_swing_along",
                 "mixer_comments_visible",
-                "mute_editor_automation_when_track_is_muted",
-                "use_sequencer_timing"
+                "mute_editor_automation_when_track_is_muted"
+                //"use_sequencer_timing"
 	};
 	struct Song *song=SONG_create();
 
@@ -143,7 +143,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
         
-        GENERAL_LOAD(7,11)
+        GENERAL_LOAD(7,10)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -220,8 +220,8 @@ var9:
         goto start;
 
 var10:
-        song->use_sequencer_tempos_and_signatures = DC_LoadB();
-        goto start;
+        //        song->use_sequencer_tempos_and_signatures = DC_LoadB();
+        //goto start;
 
 var11:
 var12:

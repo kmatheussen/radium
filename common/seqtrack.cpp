@@ -2240,7 +2240,7 @@ bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
 
   //printf("  RT_seqtack called before editor %d\n", is_playing_song);
 
-  if(seqtrack==root->song->block_seqtrack)
+  if(seqtrack==root->song->seqtracks.elements[0]) // Can't use root->song->block_seqtrack here since timing doesn't follow sequencer.
     if(RT_SEQUENCER_TIMING_call_before_start_of_audio_block(seqtrack, is_playing_song))
       more_things_to_do = true;
 
@@ -3006,8 +3006,13 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
   HASH_put_int(state, "visible_start", SEQUENCER_get_visible_start_time());
   HASH_put_int(state, "visible_end", SEQUENCER_get_visible_end_time());
 
+  /*
   HASH_put_dyn(state, "sequencer_tempos", SEQUENCER_TEMPO_get_state());
   HASH_put_dyn(state, "sequencer_signatures", SEQUENCER_SIGNATURE_get_state());
+  */
+  HASH_put_hash(state, "sequencer_timing", SEQUENCER_TIMING_get_state());
+  HASH_put_bool(state, "use_sequencer_timing", root->song->use_sequencer_tempos_and_signatures);
+
   HASH_put_dyn(state, "sequencer_markers", SEQUENCER_MARKER_get_state());
 
   return state;
@@ -3082,14 +3087,27 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       }      
     }
 
-
+    /*
     if(HASH_has_key(state, "sequencer_tempos"))
       SEQUENCER_TEMPO_create_from_state(HASH_get_dyn(state, "sequencer_tempos"), state_samplerate);
     if(HASH_has_key(state, "sequencer_signatures"))
       SEQUENCER_SIGNATURE_create_from_state(HASH_get_dyn(state, "sequencer_signatures"), state_samplerate);
+    */
+ 
+    if(HASH_has_key(state, "use_sequencer_timing")){
+      bool useit = HASH_get_bool(state, "use_sequencer_timing");
+      {
+        radium::PlayerLock lock(song==root->song);
+        song->use_sequencer_tempos_and_signatures = useit;
+      }
+    }
+
+    if(HASH_has_key(state, "sequencer_timing"))
+      SEQUENCER_TIMING_create_from_state(HASH_get_hash(state, "sequencer_timing"), state_samplerate);
+
     if(HASH_has_key(state, "sequencer_markers"))
       SEQUENCER_MARKER_create_from_state(HASH_get_dyn(state, "sequencer_markers"), state_samplerate);
-    
+
     // Need to do this first since widgets are not positioned correctly if it's done last. Not quite sure why.
     if(HASH_has_key(state, "song_tempo_automation"))
       TEMPOAUTOMATION_create_from_state(HASH_get_hash(state, "song_tempo_automation"), state_samplerate);

@@ -444,9 +444,6 @@
 (pp (<ra> :get-all-sequencer-markers))
 
 (pp (<ra> :get-sequencer-signatures (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
-
-TODO: Double-click to add entry.
-
 !!#
 
 
@@ -480,6 +477,33 @@ TODO: Double-click to add entry.
        (>= y y1)
        (< y y2)))
 
+(define (show-sequencer-timing-help)
+  (FROM-C-show-help-window "help/sequencer_timing.html"))
+
+(define (get-sequencer-timing-popup-menu-entries)
+  (list "Help timing"
+        show-sequencer-timing-help))
+
+(define *show-editor-timing-warning* #t)
+(define *editor-timing-warning-is-visible* #f)
+
+(define (show-editor-timing-warning)
+  (define buttons '("Help" "Don't show this warning again" "OK"))
+  (when (and *show-editor-timing-warning*
+             (not *editor-timing-warning-is-visible*))
+    (set! *editor-timing-warning-is-visible* #t)
+    (show-async-message (<gui> :get-sequencer-gui)
+                        "Tempos and signatures can not be edited in the sequencer timeline\nwhen timing is in \"editor timing mode\"."
+                        :buttons buttons
+                        :callback (lambda (option)
+                                    (set! *editor-timing-warning-is-visible* #f)
+                                    (cond ((string=? option (car buttons))
+                                           (show-sequencer-timing-help))
+                                          ((string=? option (cadr buttons))
+                                           (set! *show-editor-timing-warning* #f)))))))
+#!!
+(show-editor-timing-warning)
+!!#
 
 (define (get-sequencer-time-from-x x x1 x2)
   (* 1.0 (max 0 (scale x x1 x2 (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))))
@@ -491,10 +515,13 @@ TODO: Double-click to add entry.
                                                     :set-all-entries!
                                                     :popup-menu*
                                                     :get-entry-info-string
+                                                    :entry-color"#66ff0000"
+                                                    :curr-entry-color "#660000ff"
                                                     :do-grid #f
                                                     :double-click-callback #f
                                                     :value->y #f
                                                     :is-tempo #f
+                                                    :can-be-edited-in-sequencer-timing-mode #f
                                                     )
   
   (define curr-entry #f)
@@ -506,11 +533,13 @@ TODO: Double-click to add entry.
 
   (define (remove-curr-entry!)
     (define entries (get-all-entries))
+    (<ra> :undo-sequencer)
     (if (= 1 (vector-length entries))
         (set-all-entries! '())
         (begin
           (set! (entries curr-pos) (entries 0))
           (set-all-entries! (cdr (to-list entries)))))
+    (<gui> :update (<gui> :get-sequencer-gui))
     (update-parent!))
 
   (add-method! :remove-curr-entry! remove-curr-entry!)
@@ -538,6 +567,7 @@ TODO: Double-click to add entry.
 
   (define (replace-curr-entry! new-entry)
     (define entries (get-all-entries))
+    (<ra> :undo-sequencer)
     (replace-curr-entry2! entries curr-pos new-entry))
 
   (add-method! :replace-curr-entry! replace-curr-entry!)
@@ -545,6 +575,7 @@ TODO: Double-click to add entry.
   (define (add-entry! new-entry)
     (define new-entries (sort-entries (cons new-entry
                                             (to-list (get-all-entries)))))
+    (<ra> :undo-sequencer)
     (set-all-entries! new-entries)
     (update-curr-entry-pos! new-entries new-entry)
     (update-parent!))
@@ -557,7 +588,10 @@ TODO: Double-click to add entry.
                            (<ra> :shift-pressed)
                            curr-entry
                            (begin
-                             (remove-curr-entry!)
+                             (if (and (not can-be-edited-in-sequencer-timing-mode)
+                                      (not (<ra> :is-using-sequencer-timing)))
+                                 (show-editor-timing-warning)
+                                 (remove-curr-entry!))
                              #t))))
   ;; popup menu
   (if popup-menu*
@@ -591,9 +625,10 @@ TODO: Double-click to add entry.
     (define mouse-entries #f)
     (define click-start-time 0)
     (define mouse-start-x #f)
-
+    (define has-added-undo #f)
     (add-delta-mouse-cycle! (lambda (button x* y*)
                               (set! mouse-start-x x*)
+                              (set! has-added-undo #f)
                               (c-display "Press2" x* y*)
                               (and (= button *left-button*)
                                    curr-entry
@@ -610,19 +645,26 @@ TODO: Double-click to add entry.
                                      #t)))
                             (lambda (button x* y* dx dy)
                               ;;(c-display "Move" x* y* dx dy "pos:" curr-pos)
-                              (define new-time (get-sequencer-time-from-x (+ mouse-start-x dx) x1 x2))
-                              (if do-grid
-                                  (if (not (<ra> :control-pressed))
-                                      (set! new-time (* 1.0 (<ra> :get-seq-gridded-time (round new-time) (<ra> :get-seq-block-grid-type))))))
-                              (<gui> :update (<gui> :get-sequencer-gui))
-                              (replace-curr-entry2! mouse-entries curr-mouse-pos (copy-hash curr-mouse-entry :time new-time)))
+                              (if (and (not can-be-edited-in-sequencer-timing-mode)
+                                       (not (<ra> :is-using-sequencer-timing)))
+                                  (show-editor-timing-warning)
+                                  (begin
+                                    (define new-time (get-sequencer-time-from-x (+ mouse-start-x dx) x1 x2))
+                                    (if do-grid
+                                        (if (not (<ra> :control-pressed))
+                                            (set! new-time (* 1.0 (<ra> :get-seq-gridded-time (round new-time) (<ra> :get-seq-block-grid-type))))))
+                                    (when (not has-added-undo)
+                                      (<ra> :undo-sequencer)
+                                      (set! has-added-undo #t))
+                                    (replace-curr-entry2! mouse-entries curr-mouse-pos (copy-hash curr-mouse-entry :time new-time))
+                                    (<gui> :update (<gui> :get-sequencer-gui)))))
                             (lambda (button x* y* dx dy)
                               ;;(c-display "Release" x* y* dx dy)
                               (if (and (= 0 dx)
                                        (= 0 dy))
                                   (<ra> :set-song-pos (round (curr-entry :time))))
-                              ;;(set! curr-entry #f)
-                              ;;(update-parent!)
+                              (set! curr-id #f)
+                              (update-parent!)                              
                               ;;(<gui> :tool-tip "")
                               )))
 
@@ -634,13 +676,15 @@ TODO: Double-click to add entry.
      (define had-curr-entry curr-entry)
      (set! curr-entry #f)
      (set! curr-id #f)
-     (define entries (get-all-entries));; (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+     (define entries (get-all-entries))
+     ;;(c-display "Entries:" (pp entries))
      (let loop ((n 0))
        (if (< n (length entries))
            (begin
              (define entry (entries n))
              (define triangle (get-time-triangle (entry :time) this))
              (define triangle-x (get-triangle-x triangle))
+             ;;(c-display "n:" n ". Entry:" entry "\ntriangle:" (map floor (to-list triangle)) ". Inside:" (inside-triangle? triangle x* y*) " .x/y:" x* y* "\n")
              (when (inside-triangle? triangle x* y*)
                (<gui> :tool-tip (<-> value-type-name ": " (get-entry-info-string entry #f #f)))
                (set! curr-entry entry)
@@ -680,16 +724,21 @@ TODO: Double-click to add entry.
        (<gui> :tool-tip ""))))
   
   
-  (define-override (paint)
+  (define paint-entries #f)
 
-    (define entries (to-list (get-visible-entries)))
+  (define (paint-background)
+
+    ;;(<gui> :filled-box gui "sequencer_timeline_background_color" x1 y1 x2 y2 0 0 #f)
+    ;;(<gui> :filled-box gui "sequencer_background_color" x1 y1 x2 y2 0 0 #f)
+
+    (set! paint-entries (to-list (get-visible-entries)))
 
     (define (get-ty bpm)
       (scale bpm 0 200 y2 y1))
 
     (if is-tempo
         (<gui> :filled-polygon gui "#338811"
-               (let loop ((entries entries)
+               (let loop ((entries paint-entries)
                           (last-y #f))
                  (if (null? entries)
                      (list x2 last-y
@@ -714,10 +763,13 @@ TODO: Double-click to add entry.
                            (cons tx
                                  (cons y2
                                        rest))
-                           rest))))))
+                           rest)))))))
 
+  (add-method! :paint-background paint-background)
 
-    (let loop ((entries (reverse entries))
+  (define-override (post-paint)
+
+    (let loop ((entries (reverse paint-entries))
                (max-x2 10000000000000000000000)
                (prev-entry #f))
       (when (not (null? entries))
@@ -747,8 +799,8 @@ TODO: Double-click to add entry.
 
         (if (and curr-id
                  (string=? curr-id (entry :uuid)))
-            (<gui> :filled-polygon gui "#660000ff" triangle)
-            (<gui> :filled-polygon gui "#66ff0000" triangle))
+            (<gui> :filled-polygon gui curr-entry-color triangle)
+            (<gui> :filled-polygon gui entry-color triangle))
 
         (<gui> :draw-polygon gui "black" triangle 0.7)
 
@@ -783,6 +835,7 @@ TODO: Double-click to add entry.
               (<gui> :draw-text
                      gui
                      *text-color*
+                     ;;"black"
                      text
                      text-x1 y1 text-x2 y2
                      #f ; wrap lines
@@ -831,28 +884,37 @@ TODO: Double-click to add entry.
                :value-type-name "BPM"
                :get-visible-entries (lambda ()
                                       (<ra> :get-sequencer-tempos (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
-               :get-all-entries ra:get-all-sequencer-tempos
+               :get-all-entries (lambda ()
+                                  (if (<ra> :is-using-sequencer-timing)
+                                      (<ra> :get-all-sequencer-tempos)
+                                      (<ra> :get-sequencer-tempos (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time))))
                :set-all-entries! ra:set-sequencer-tempos
                :popup-menu*
                (lambda (x* curr-tempo pos)
                  (popup-menu 
                   (list "Add tempo"
-                        :enabled (not curr-tempo)
+                        :enabled (and (not curr-tempo)
+                                      (<ra> :is-using-sequencer-timing))
                         (lambda ()
                           (request-tempo x* #f                                         
                                          (lambda (tempo)
                                            (area :add-entry! tempo)))))
                   "-------------------"
                   (list "Remove tempo"
-                        :enabled curr-tempo
+                        :enabled (and curr-tempo
+                                      (<ra> :is-using-sequencer-timing))
                         (lambda ()
                           (area :remove-curr-entry!)))
                   (list "Set new tempo"
-                        :enabled curr-tempo
+                        :enabled (and curr-tempo
+                                      (<ra> :is-using-sequencer-timing))
                         (lambda ()
                           (request-tempo x* curr-tempo
                                          (lambda (tempo)
                                            (area :replace-curr-entry! tempo)))))
+                  "-------------------"
+                  (get-sequencer-timing-popup-menu-entries)
+
                   ;;(list "Glide to next tempo"
                   ;;      :enabled curr-tempo
                   ;;      :check (and curr-tempo
@@ -869,11 +931,13 @@ TODO: Double-click to add entry.
                                   (tempo :bpm))))
                :double-click-callback
                (lambda (x* curr-tempo)
-                 (request-tempo x* curr-tempo
-                                (lambda (tempo)
-                                  (if curr-tempo
-                                      (area :replace-curr-entry! tempo)
-                                      (area :add-entry! tempo)))))
+                 (if (not (<ra> :is-using-sequencer-timing))
+                     (show-editor-timing-warning)
+                     (request-tempo x* curr-tempo
+                                    (lambda (tempo)
+                                      (if curr-tempo
+                                          (area :replace-curr-entry! tempo)
+                                          (area :add-entry! tempo))))))
                :value->y
                (lambda (tempo y1 y2)
                  (scale (tempo :bpm) 0 200 y2 y1))
@@ -920,31 +984,40 @@ TODO: Double-click to add entry.
                (lambda (x* curr-signature pos)
                  (popup-menu 
                   (list "Add Signature"
-                        :enabled (not curr-signature)
+                        :enabled (and (not curr-signature)
+                                      (<ra> :is-using-sequencer-timing))
                         (lambda ()
                           (request-signature x* #f    
                                              (lambda (signature)
                                                (area :add-entry! signature)))))
                   "-------------------"
                   (list "Remove signature"
-                        :enabled curr-signature
+                        :enabled (and curr-signature
+                                      (<ra> :is-using-sequencer-timing))
                         (lambda ()
                           (area :remove-curr-entry!)))
                   (list "Set new signature"
-                        :enabled curr-signature
+                        :enabled (and curr-signature
+                                      (<ra> :is-using-sequencer-timing))
                         (lambda ()                                      
                           (request-signature x* curr-signature
                                              (lambda (signature)
                                                (area :replace-curr-entry! signature)))))
+                  "-------------------"
+                  (get-sequencer-timing-popup-menu-entries)                  
                   ))
                :get-entry-info-string get-entry-info-string
+               :entry-color "#ccff8800"
+               :curr-entry-color "#22ffff00"
                :double-click-callback
                (lambda (x* curr-signature)
-                 (request-signature x* curr-signature
-                                    (lambda (signature)
-                                      (if curr-signature
-                                          (area :replace-curr-entry! signature)
-                                          (area :add-entry! signature)))))
+                 (if (not (<ra> :is-using-sequencer-timing))
+                     (show-editor-timing-warning)
+                     (request-signature x* curr-signature
+                                        (lambda (signature)
+                                          (if curr-signature
+                                              (area :replace-curr-entry! signature)
+                                              (area :add-entry! signature))))))
                ))
 
   area)
@@ -995,7 +1068,11 @@ TODO: Double-click to add entry.
                           (request-marker x* curr-marker
                                              (lambda (marker)
                                                (area :replace-curr-entry! marker)))))
+                  "-------------------"
+                  (get-sequencer-timing-popup-menu-entries)
                   ))
+               :entry-color "#66004488"
+               :curr-entry-color "#ff002244"
                :get-entry-info-string get-entry-info-string
                :do-grid #t
                :double-click-callback
@@ -1005,6 +1082,7 @@ TODO: Double-click to add entry.
                                       (if curr-marker
                                           (area :replace-curr-entry! marker)
                                           (area :add-entry! marker)))))
+               :can-be-edited-in-sequencer-timing-mode #t
                ))
 
   area)
@@ -1037,6 +1115,35 @@ TODO: Double-click to add entry.
   (add-sub-area-plain! (create-sequencer-tempo-area gui x1 y1 x2 tempo-y2))
   (add-sub-area-plain! (create-sequencer-signature-area gui x1 tempo-y2 x2 signature-y2))
   (add-sub-area-plain! (create-sequencer-marker-area gui x1 signature-y2 x2 y2))
+
+  (define-override (paint)
+    (<gui> :filled-box gui "sequencer_background_color" x1 y1 x2 y2 0 0 #f)
+
+    (for-each (lambda (sub-area)
+                (sub-area :paint-background))
+              sub-areas)
+  
+    (define (draw-border y)
+      (define y1 (floor y))
+      (define y2 (+ y1 0.7))
+      (<gui> :draw-line gui "black" x1 y1 x2 y1 1.2)
+      (<gui> :draw-line gui "#bbffffff" x1 y2 x2 y2 0.7)
+      )
+    (draw-border tempo-y2)
+    (draw-border signature-y2)
+
+    (<ra> :iterate-sequencer-time (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time) "beat"
+          (lambda (time barnum beatnum linenum)
+            (define x (get-sequencer-x-from-time time x1 x2))
+            (define color (if (= beatnum 1)
+                              "#a0010101"
+                              "#400101ff"))
+            (<gui> :draw-line gui color x y1 x y2 (if (= beatnum 1) 1.1 1))
+            #t
+            ))
+
+    )
+
   )
                        
 

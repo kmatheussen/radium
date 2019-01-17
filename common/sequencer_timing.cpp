@@ -177,11 +177,14 @@ static TempoAutomationNode create_node_from_state(hash_t *state, double state_sa
 
 void SEQUENCER_TEMPO_create_from_state(const dyn_t &state, double state_samplerate){
   R_ASSERT_RETURN_IF_FALSE(state.type==ARRAY_TYPE);
-  R_ASSERT_RETURN_IF_FALSE(state.array->num_elements > 0);
+  //R_ASSERT_RETURN_IF_FALSE(state.array->num_elements > 0);
 
   radium::SeqAutomation<TempoAutomationNode> tempo_automation;
 
   tempo_automation.create_from_state(state, create_node_from_state, state_samplerate);
+
+  if (tempo_automation.size()==0)
+    add_default_node0(tempo_automation, root->tempo);
 
   const TempoAutomationNode &first = tempo_automation.at(0);
   if (first.time > 0)
@@ -280,11 +283,14 @@ static SignatureAutomationNode create_signature_node_from_state(hash_t *state, d
 
 void SEQUENCER_SIGNATURE_create_from_state(const dyn_t &state, double state_samplerate){
   R_ASSERT_RETURN_IF_FALSE(state.type==ARRAY_TYPE);
-  R_ASSERT_RETURN_IF_FALSE(state.array->num_elements > 0);
+  //R_ASSERT_RETURN_IF_FALSE(state.array->num_elements > 0);
 
   radium::SeqAutomation<SignatureAutomationNode> signature_automation;
 
   signature_automation.create_from_state(state, create_signature_node_from_state, state_samplerate);
+
+  if (signature_automation.size()==0)
+    add_default_node0(signature_automation, root->signature);
 
   const SignatureAutomationNode &first = signature_automation.at(0);
   if (first.time > 0)
@@ -694,6 +700,11 @@ static QVector<SignatureAutomationNode> prepare_signature_automation(const QVect
   return ret;
 }
 
+/*
+ * Ensures signatures are put at bar grid
+ * Ensures tempos are put at beat grid
+ * Adds barnums, beatnums, and ppq to nodes.
+ */
 static void prepare_signature_and_tempo_automation(QVector<SignatureAutomationNode> signatures,
                                                    QVector<TempoAutomationNode> tempos)
 {
@@ -765,6 +776,57 @@ void SEQUENCER_MARKER_create_from_state(dyn_t markers, double state_samplerate){
 
 
 /************************************
+            Timing state
+*************************************/
+
+void SEQUENCER_TIMING_create_from_state(const hash_t *state, double state_samplerate){
+
+  radium::SeqAutomation<TempoAutomationNode> tempo_automation;
+
+  {
+    tempo_automation.create_from_state(HASH_get_dyn(state, "tempos"), create_node_from_state, state_samplerate);
+
+    if (tempo_automation.size()==0)
+      add_default_node0(tempo_automation, root->tempo);
+
+    const TempoAutomationNode &first = tempo_automation.at(0);
+    if (first.time > 0)
+      add_default_node0(tempo_automation, root->tempo);
+  }
+
+
+  radium::SeqAutomation<SignatureAutomationNode> signature_automation;
+  {
+    signature_automation.create_from_state(HASH_get_dyn(state, "signatures"), create_signature_node_from_state, state_samplerate);
+
+    if (signature_automation.size()==0)
+      add_default_node0(signature_automation, root->signature);
+
+    const SignatureAutomationNode &first = signature_automation.at(0);
+    if (first.time > 0)
+      add_default_node0(signature_automation, root->signature);
+  }
+
+
+  QVector<SignatureAutomationNode> signatures = signature_automation.get_qvector();
+  QVector<TempoAutomationNode> tempos = tempo_automation.get_qvector();
+  prepare_signature_and_tempo_automation(signatures, tempos);
+}
+
+
+hash_t *SEQUENCER_TIMING_get_state(void){
+  hash_t *state = HASH_create(2);
+
+  HASH_put_dyn(state, "tempos", g_tempo_automation.get_state(get_node_state, NULL));
+  HASH_put_dyn(state, "signatures", g_signature_automation.get_state(get_node_state, NULL));
+
+  return state;
+}
+
+
+
+
+/************************************
           Realtime
  ***********************************/
 
@@ -784,7 +846,10 @@ static void RT_play_click(struct SeqTrack *seqtrack, int beatnum){
 
 bool RT_SEQUENCER_TIMING_call_before_start_of_audio_block(struct SeqTrack *seqtrack, bool is_playing_song){
 
-  R_ASSERT_NON_RELEASE(seqtrack==root->song->block_seqtrack);
+  // Can't use root->song->block_seqtrack here since timing doesn't follow sequencer.
+  //R_ASSERT_NON_RELEASE(seqtrack==root->song->block_seqtrack);
+
+  R_ASSERT_NON_RELEASE(seqtrack==root->song->seqtracks.elements[0]);
 
   static bool s_was_playing_click = false;
 
