@@ -1071,7 +1071,7 @@
                   "-------------------"
                   (get-sequencer-timing-popup-menu-entries)
                   ))
-               :entry-color "#66004488"
+               :entry-color "sequencer_marker_color" ;;"#66004488"
                :curr-entry-color "#ff002244"
                :get-entry-info-string get-entry-info-string
                :do-grid #t

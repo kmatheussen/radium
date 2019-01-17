@@ -198,6 +198,7 @@ static const ColorConfig g_colorconfig[] = {
   {SEQUENCER_NAVIGATOR_HANDLER_COLOR_NUM, "sequencer_navigator_handler_color", "Sequencer navigator handler color"},
   {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM, "sequencer_navigator_grayout_color", "Sequencer navigator gray out color"},
   {SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM, "sequencer_tempo_automation_color", "Sequencer tempo automation color"},
+  {SEQUENCER_MARKER_COLOR_NUM, "sequencer_marker_color", "Sequencer marker color"},
   
   {END_CONFIG_COLOR_NUM, NULL, NULL}
 };
@@ -309,6 +310,7 @@ static ReplacementColor g_replacement_color[] = {
   {SEQUENCER_NAVIGATOR_HANDLER_COLOR_NUM, QColor("#5a141414")},
   {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM, QColor("#96323232")},
   {SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM, QColor("#baab88")},
+  {SEQUENCER_MARKER_COLOR_NUM, QColor("#0a0632")},
   
   {END_CONFIG_COLOR_NUM, QColor(1,2,3)}
 };

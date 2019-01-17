@@ -3308,11 +3308,19 @@ public:
     // Markers
     //
     {
+      QPen blue_pen(get_qcolor(SEQUENCER_MARKER_COLOR_NUM));
+      blue_pen.setWidth(2.9);
+
+      QPen text_pen(QColor("#b0eeeeee"));
+
+      QColor filled_color("#80222222");
+
       const dynvec_t *markers = SEQUENCER_MARKER_get_state().array;
       for(const dyn_t &marker : *markers){
         hash_t *hash = marker.hash;
         double time = HASH_get_number(hash, ":time");
         QString name = HASH_get_qstring(hash, ":name");
+
         double x = scale_double(time, 0, _cursor_end_time, 0, width());
         double y1 = 0;
         double y2 = height();
@@ -3320,16 +3328,13 @@ public:
         //float b = 1.5;
         //float text_x = x + 2;
 
-        QPen blue_pen("#0a0632");
-        blue_pen.setWidth(2.9);
-          
         {
           float text_height = root->song->tracker_windows->systemfontheight;
           float text_width = 1.2 * GFX_get_text_width(root->song->tracker_windows, name.toUtf8().constData());
           QRectF text_rect(x, y-text_height/2.0, text_width, text_height);
-          myFillRoundedRect(p, text_rect, QColor("#80222222"), 5);
+          myFillRoundedRect(p, text_rect, filled_color, 5);
           
-          p.setPen(QColor("#b0eeeeee"));
+          p.setPen(text_pen);
           myDrawText(&p, text_rect, name,
                      Qt::AlignHCenter | Qt::AlignVCenter,
                      0, // rotate
@@ -3345,7 +3350,6 @@ public:
           QLineF line(x, y1, x, y2);
           p.drawLine(line);
         }
-
 
       }
     }
@@ -3934,6 +3938,26 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       };
     
     SEQUENCER_iterate_time(_start_time, _end_time, grid_type, callback);
+
+
+    // Markers
+    //
+    QPen blue_pen(get_qcolor(SEQUENCER_MARKER_COLOR_NUM));
+    blue_pen.setWidth(2.9);
+
+    p.setPen(blue_pen);
+
+    const dynvec_t *markers = SEQUENCER_MARKER_get_state().array;
+    for(const dyn_t &marker : *markers){
+      hash_t *hash = marker.hash;
+      double time = HASH_get_number(hash, ":time");
+      //QString name = HASH_get_qstring(hash, ":name");
+
+      double x = scale_double(time, _start_time, _end_time, x1, x2);
+
+      QLineF line(x, y1+2, x, y2-2);
+      p.drawLine(line);
+    }
   }
 
   void paintSeqPunchOrLoop(const QRegion &update_region, bool is_looping, QPainter &p) const {
