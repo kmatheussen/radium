@@ -166,9 +166,9 @@ double RT_SEQUENCER_TEMPO_get_num_quarters(double seqtime){
 }
 
 static TempoAutomationNode create_node_from_state(hash_t *state, double state_samplerate){
-  double time = HASH_get_float(state, ":time");
+  double time = HASH_get_number(state, ":time");
   return create_node(state_samplerate < 0 ? time : time*(double)pc->pfreq/state_samplerate,
-                     HASH_get_float(state, ":bpm"),
+                     HASH_get_number(state, ":bpm"),
                      LOGTYPE_HOLD, //HASH_get_int32(state, ":logtype"),
                      0, //HASH_get_float(state, ":num_quarters")
                      HASH_get_qstring(state, ":uuid")
@@ -261,7 +261,7 @@ StaticRatio RT_SEQUENCER_SIGNATURE_get_value(double seqtime){
 
 
 static SignatureAutomationNode create_signature_node_from_state(hash_t *state, double state_samplerate){
-  double time = HASH_get_float(state, ":time");
+  double time = HASH_get_number(state, ":time");
   int numerator = HASH_get_int32(state, ":numerator");                  
   int denominator = HASH_get_int32(state, ":denominator");
 

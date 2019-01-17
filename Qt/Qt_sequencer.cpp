@@ -3304,6 +3304,53 @@ public:
       p.drawRect(handle2_rect);
     }
 
+
+    // Markers
+    //
+    {
+      const dynvec_t *markers = SEQUENCER_MARKER_get_state().array;
+      for(const dyn_t &marker : *markers){
+        hash_t *hash = marker.hash;
+        double time = HASH_get_number(hash, ":time");
+        QString name = HASH_get_qstring(hash, ":name");
+        double x = scale_double(time, 0, _cursor_end_time, 0, width());
+        double y1 = 0;
+        double y2 = height();
+        double y = (y1+y2)/2.0;
+        //float b = 1.5;
+        //float text_x = x + 2;
+
+        QPen blue_pen("#0a0632");
+        blue_pen.setWidth(2.9);
+          
+        {
+          float text_height = root->song->tracker_windows->systemfontheight;
+          float text_width = 1.2 * GFX_get_text_width(root->song->tracker_windows, name.toUtf8().constData());
+          QRectF text_rect(x, y-text_height/2.0, text_width, text_height);
+          myFillRoundedRect(p, text_rect, QColor("#80222222"), 5);
+          
+          p.setPen(QColor("#b0eeeeee"));
+          myDrawText(&p, text_rect, name,
+                     Qt::AlignHCenter | Qt::AlignVCenter,
+                     0, // rotate
+                     false, // wrap
+                     false, // scale
+                     false); // cut text to fit
+
+          p.setPen(blue_pen);
+          p.drawRoundedRect(text_rect, 5, 5);
+        }
+
+        {
+          QLineF line(x, y1, x, y2);
+          p.drawLine(line);
+        }
+
+
+      }
+    }
+
+
     _cursor_painter.paintCursor(ev->region(), p);
 
     
