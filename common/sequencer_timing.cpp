@@ -42,6 +42,7 @@ namespace{
 
 struct TempoAutomationNode{
   double time; // seqtime format
+  double ideal_time;
   double value; // bpm
   int logtype;
   double num_quarters; // Total number of beats in the song at time 'time'.
@@ -60,6 +61,7 @@ struct BarAutomationNode{
 
 struct SignatureAutomationNode{
   double time; // seqtime format
+  double ideal_time;
   int barnum;
   double value; // not really used, but radium::Seqautomation requires it.
   StaticRatio signature;
@@ -89,6 +91,7 @@ static void prepare_signature_and_tempo_automation(QVector<SignatureAutomationNo
 static TempoAutomationNode create_node(double seqtime, double value, int logtype, double num_quarters, QString uuid){
   TempoAutomationNode node = {
     .time = seqtime,
+    .ideal_time = seqtime,
     .value = value,
     .logtype = logtype,
     .num_quarters = num_quarters,
@@ -228,6 +231,7 @@ dyn_t SEQUENCER_TEMPO_get_state(void){
 static SignatureAutomationNode create_signature_node(double seqtime, const StaticRatio &signature, QString uuid){
   SignatureAutomationNode node = {
     .time = seqtime,
+    .ideal_time = seqtime,
     .barnum = 0,
     .value = 0,
     .signature = signature,
@@ -599,7 +603,7 @@ static QVector<TempoAutomationNode> prepare_tempo_automation(const QVector<Tempo
     iterate_sequencer_time(0, -1, BEAT_GRID, signatures, ret,
                            [&](int64_t seqtime, int barnum2, int beatnum2, int linenum)
                            {
-                             double diff = fabs(tempo.time - seqtime);
+                             double diff = fabs(tempo.ideal_time - seqtime);
                              if (least_diff < -0.5 || diff < least_diff){
                                least_diff = diff;
                                beat_seqtime = seqtime;
@@ -671,7 +675,7 @@ static QVector<SignatureAutomationNode> prepare_signature_automation(const QVect
                            {
                              R_ASSERT(beatnum==1);
 
-                             double diff = fabs(signature.time - seqtime);
+                             double diff = fabs(signature.ideal_time - seqtime);
                              if (least_diff < -0.5 || diff < least_diff){
                                least_diff = diff;
                                barnum = barnum2;
