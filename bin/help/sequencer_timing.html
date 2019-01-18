@@ -2,33 +2,73 @@
 <body bgcolor="#ffffff">
 <h1>Timing</h1>
 
-Timing in Radium means tempo (BPM) and time signature (for instance 3/4 or 4/4).<!-- From now on, we will use the word "signature" instead of "time signature". -->
+<a href="#overview">Overview</a><br>
+<a href="#usage">Usage</a><br>
+<a href="#modes">Timing modes</a><br>
+
+
+<a name="overview"></a><h2>Overview</h2>
+
+Timing is controlled by tempos (BPM) and signatures:
+<UL>
+<LI> <b>Tempos</b> (BPM) specify the duration of a quarter note. Note that BPM stands for <b>B</b>eats <b>P</b>er <b>M</b>inute, which is a misleading name unless your signature is 4/4. QPM (Quarters Per Minute) would be more correct.
+<LI> <b>Signatures</b> specify the number of beats in each bar, and the duration of a bar. Bar duration is measured in number of quarter notes.
+</UL>
 <p>
-Timing is sent in realtime to external plugins. For instance to a make a VST plugin play echo in synch with the music.
+For example, if tempo is set to 64 BPM, and the signature is set to 8/8, a new bar will be played every 16 seconds (64/4 * 8/8), and a new beat will be played every 2 seconds (64/4 * 1/8).
+If the signature is set to 2/4 instead, a new bar will be played every 8 seconds (64/4 * 2/4), and a new beat will be played every 4 seconds (64/4 * 1/4).
+<pre>
+</pre>
 <p>
-Timing is also the time source for the sequencer grid, the metronome ("Click"), and the modulators.
+
+<a name="usage"></a><h2>Usage</h2>
 
 <p>
+Timing is used by:
+<OL>
+  <LI> <b>External plugins</b>
+    (For instance to a make a VST plugin play echo sounds in sync with the music.)
+  <LI> <b>The metronome</b> (Enabled by the "Click" button in the bottom bar)
+  <LI> <b>Modulators</b>
+  <LI> <b>The sequencer grid</b>
+</OL>
+<pre>
+</pre>
+<p>
 
-There are two timing modes:
+
+<a name="modes"></a><h2>Timing modes</h2>
+
+There are two timing modes to select from. Only one of them can be enabled at the same time:
 
 <OL>
-<LI><b>Editor timing.</b> (the default)<br>
-In editor timing mode, timing and grid is provided by the editor blocks placed in the first seqtrack.
+<LI><b>Editor timing</b><br>
+<p>
+Editor timing is the default mode. In editor timing mode, tempos and signaturs are provided by the editor blocks placed in the first seqtrack.
+<p>
+Tempos are edited in the tempo tracks in the editor, and signatures are edited in the signatures tracks in the editor.
+<p>
 In this mode, the tempo and signature lanes in the sequencer are just used for visualization, and editing in any of these two lanes is disabled.
 
-<LI><b>Sequencer timing.</b><br>
-In sequencer timing node, timing and grid is provided by the tempo and signature lanes in the sequencer. If you are mainly using Radium for recording and playing back audio files,
-this mode is simpler and easier to use than editor timing. This mode can be set explicitly in the popup menu of the sequencer,
-but it will also be used automatically if the first seqtrack is for audio instead of editor blocks.
 <p>
-Note that accelerando and ritardando is not supported in this mode yet.
-Two more limitations of the sequencer timing mode is that signatures must align with bars, and tempos must align with beats. Editor timing mode doesn't have these two limitations.
+
+<LI><b>Sequencer timing</b><br>
+<p>
+In sequencer timing mode, tempos and signatures are provided by the tempo and signature lanes in the sequencer.
+This mode can be set explicitly in the popup menu of the sequencer,
+but it will also be used automatically if the first seqtrack is for audio and not for editor blocks
+<p>
+If you are using Radium mainly for recording and playing back audio files,
+this mode is both simpler, and probably easier to use, than editor timing.
+<p>
+Note that accelerando and ritardando is not currently supported in this mode.
+Two more limitations of the sequencer timing mode is that signatures must align with bars, and that tempos must align with beats.
+Editor timing mode does not have these three limitations.
 
 </OL>
 
 To select timing mode, use the popup menu in the sequencer and either select "Editor timing" or "Sequencer timing".
-Note that if the first seqtrack is for audio files, you are forced to use sequencer timing.
+Note that if the first seqtrack is for audio files, you are always forced to use sequencer timing.
 
 
 </body>
