@@ -1171,23 +1171,26 @@
 (<ra> :toggle-full-screen)
 !!#
 
-(define *show-first-seqtrack-warning* #t)
-
 (define (ask-user-about-first-audio-seqtrack callback)
-  (define yes-dont-show-again "Yes, don't show again")
-  (if (not *show-first-seqtrack-warning*)
+  (if (<ra> :is-using-sequencer-timing)
       (callback #t)
       (show-async-message (<gui> :get-sequencer-gui)
                           (<-> "Are you sure?\n"
                                "\n"
-                               "We use the first seqtrack for timing and grid, but audio seqtracks can't provide this information.\n"
+                               "We use the first seqtrack for timing and grid, but audio seqtracks don't provide this information.\n"
+                               "In order to support timing and grid, we will switch to sequencer timing mode."
                                )
-                          (list "No" "Yes" yes-dont-show-again) #t
+                          (list "No" "Yes") ;; yes-dont-show-again)
+                          :is-modal #t
+                          :callback
                           (lambda (res)
-                            (if (string=? yes-dont-show-again res)
-                                (set! *show-first-seqtrack-warning* #f))                        
-                            (callback (or (string=? "Yes" res)
-                                          (string=? yes-dont-show-again res)))))))
+                            (define arg (string=? "Yes" res))
+                            (undo-block
+                             (lambda ()                               
+                               (when arg
+                                 (<ra> :undo-sequencer)
+                                 (<ra> :set-using-sequencer-timing #t))
+                               (callback arg)))))))
 
 (define (delete-seqtrack-and-maybe-ask seqtracknum)
   (define (deleteit)

@@ -706,10 +706,8 @@
 ;;; Blocklist / Playlist 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (FROM_C-show-blocklist-popup-menu)
-  (define seqtracknum (<ra> :get-curr-seqtrack))
-  (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
-  (define for-blocks (not for-audiofiles))
+(define (get-blocklist-popup-menu-entries)
+  (define blocknum (<ra> :current-block))
 
   (define (get-block-entries)
     (list 
@@ -721,7 +719,21 @@
      
      "Delete block"
      ra:delete-block
+     
+     "---------------"
 
+     (list "Configure color"
+           (lambda ()
+             (if blocknum
+                 (<ra> :color-dialog (<ra> :get-block-color blocknum) -1
+                       (lambda (color)
+                         (<ra> :set-block-color color blocknum))))))
+     
+     (list "Generate new color"
+           (lambda ()
+             (let ((color (<ra> :generate-new-block-color 1.0)))
+               (<ra> :set-block-color color blocknum))))
+     
      "---------------"
      
      "Load Block (BETA!)"
@@ -735,21 +747,46 @@
      "Show block list"
      ra:show-blocklist-gui
      ))
+  (get-block-entries))
+
+(define (show-blocklist-popup-menu)
+  (popup-menu (get-blocklist-popup-menu-entries)))
   
-  (define (get-audiofile-entries)
-    (list
-     "Add new audio file"
-     (lambda ()
-       (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
-                              (lambda (filename)
-                                (<ra> :add-audiofile filename))))
-     ))
+(define (get-audiofile-entries filename)
+  (list
+   "Add new audio file"
+   (lambda ()
+     (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
+                            (lambda (filename)
+                              (<ra> :add-audiofile filename))))
+                                                 
+   (list "Configure color"
+         :enabled filename
+         (lambda ()
+           (<ra> :color-dialog (<ra> :get-audiofile-color filename) -1
+                 (lambda (color)
+                   (<ra> :set-audiofile-color color filename)))))
+   
+   (list "Generate new color"
+         :enabled filename
+         (lambda ()
+           (let ((color (<ra> :generate-new-block-color 1.0)))
+             (<ra> :set-audiofile-color color filename))))
+   
+   ))
+
+(define (show-audiolist-popup-menu filename)
+  (popup-menu (get-audiofile-entries filename)))
+
+(define (FROM_C-show-blocklist-popup-menu)
+  (define seqtracknum (<ra> :get-curr-seqtrack))
+  (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+  (define for-blocks (not for-audiofiles))
 
   (popup-menu
-
    (if for-blocks
-       (get-block-entries)
-       (get-audiofile-entries))
+       (get-blocklist-popup-menu-entries)
+       (get-audiofile-entries #f))
 
    "---------------"
    

@@ -493,7 +493,7 @@
              (not *editor-timing-warning-is-visible*))
     (set! *editor-timing-warning-is-visible* #t)
     (show-async-message (<gui> :get-sequencer-gui)
-                        "Tempos and signatures can not be edited in the sequencer timeline\nwhen timing is in \"editor timing mode\"."
+                        "Tempos and signatures can not be edited in the sequencer timeline\nwhen timing is set to editor timing mode."
                         :buttons buttons
                         :callback (lambda (option)
                                     (set! *editor-timing-warning-is-visible* #f)
@@ -736,7 +736,8 @@
     (define (get-ty bpm)
       (scale bpm 0 200 y2 y1))
 
-    (if is-tempo
+    (if (and is-tempo
+             (not (null? paint-entries)))
         (<gui> :filled-polygon gui "#338811"
                (let loop ((entries paint-entries)
                           (last-y #f))

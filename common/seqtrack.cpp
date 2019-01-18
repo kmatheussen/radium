@@ -2678,6 +2678,10 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_
   {
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
+
+    if(pos==0)
+      if (root->song->use_sequencer_tempos_and_signatures==false && for_audiofiles)
+        root->song->use_sequencer_tempos_and_signatures = true;
             
     VECTOR_insert(&root->song->seqtracks, new_seqtrack, pos);
   }
@@ -2744,6 +2748,10 @@ void SEQUENCER_delete_seqtrack(int pos){
   {
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
+
+    if(pos==0)
+      if (root->song->use_sequencer_tempos_and_signatures==false && ((struct SeqTrack*)root->song->seqtracks.elements[1])->for_audiofiles)
+        root->song->use_sequencer_tempos_and_signatures = true;
     
     VECTOR_delete(&root->song->seqtracks, pos);
     num_seqtracks--;
@@ -3097,6 +3105,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     if(HASH_has_key(state, "use_sequencer_timing")){
       bool useit = HASH_get_bool(state, "use_sequencer_timing");
       {
+        radium::PlayerPause pause(song==root->song && is_playing_song());
         radium::PlayerLock lock(song==root->song);
         song->use_sequencer_tempos_and_signatures = useit;
       }
@@ -3135,6 +3144,16 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
           VECTOR_push_back(&seqtracks, seqtrack);
         
         seqtracknum += seqtracks_for_seqtrack.size();
+      }
+
+
+      if (song->use_sequencer_tempos_and_signatures==false && ((struct SeqTrack*)seqtracks.elements[0])->for_audiofiles){
+        R_ASSERT_NON_RELEASE(false);
+        {
+          radium::PlayerPause pause(song==root->song && is_playing_song());
+          radium::PlayerLock lock(song==root->song);
+          song->use_sequencer_tempos_and_signatures = true;
+        }
       }
     }
     

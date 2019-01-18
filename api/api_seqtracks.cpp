@@ -376,9 +376,16 @@ void swapSeqtracks(int seqtracknum1, int seqtracknum2){
     return;
 
   undoSequencer();
-  
-  root->song->seqtracks.elements[seqtracknum1] = seqtrack2;
-  root->song->seqtracks.elements[seqtracknum2] = seqtrack1;
+
+  {
+    radium::PlayerPause pause(is_playing_song());
+    radium::PlayerLock lock;
+    root->song->seqtracks.elements[seqtracknum1] = seqtrack2;
+    root->song->seqtracks.elements[seqtracknum2] = seqtrack1;
+    if(seqtracknum1==0)
+      if (root->song->use_sequencer_tempos_and_signatures==false && seqtrack2->for_audiofiles)
+        root->song->use_sequencer_tempos_and_signatures = true;
+  }
 
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
@@ -3582,6 +3589,9 @@ static dyn_t get_editor_tempos(int64_t start_seqtime, int64_t end_seqtime, bool 
       
       return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
     });
+
+  if(ret.num_elements==0 && start_seqtime<=0)
+    addTempo(ret, 0, root->tempo, LOGTYPE_LINEAR);
   
   return DYN_create_array(ret);
 }
