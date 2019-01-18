@@ -377,7 +377,7 @@ void swapSeqtracks(int seqtracknum1, int seqtracknum2){
 
   undoSequencer();
 
-  {
+  { 
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
     root->song->seqtracks.elements[seqtracknum1] = seqtrack2;
