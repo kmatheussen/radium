@@ -1579,30 +1579,35 @@
                                (update-me!)))
 
   (add-mouse-cycle! (lambda (button x* y*)
+                      (define gotit #f)
                       (if callback
-                          (callback entry-num))
-                      ;;(set! dragging-entry (make-dragging-entry))
-                      ;;(<gui> :show dragging-entry)
-                      ;;(move-dragging-entry!)
-                      ;;(c-display "w: " width height)
-                      ;;(c-display "file-info:" file-info)
-                      (cond (blocknum
-                             (<gui> :create-block-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) blocknum
-                                    (lambda (gui width height)
-                                      ;;(c-display "-------w2: " width height)
-                                      ;;(<gui> :filled-box gui "#00000000" 0 0 width height 0 0 #f) ;; fill with transparent background
-                                      (paint2 gui -1 0 width height)
-                                      ;;(line :paint-text-area gui 0 0 width height)
-                                      ;;(<gui> :draw-line gui "black" 5 3 10 5 20)
-                                    )))
-                            ((and (not (file-info :is-dir))
-                                  allow-dragging)
-                             (<gui> :create-file-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) (file-info :path)
-                                    (lambda (gui width height)
-                                      (c-display "-------w2: " width height)
-                                      (paint2 gui -1 0 width height)
-                                      ))))
-                      #t)
+                          (set! gotit (callback button x* y* entry-num)))
+                      (if gotit
+                          #t
+                          (and (= button *left-button*)
+                               (begin
+                                 ;;(set! dragging-entry (make-dragging-entry))
+                                 ;;(<gui> :show dragging-entry)
+                                 ;;(move-dragging-entry!)
+                                 ;;(c-display "w: " width height)
+                                 ;;(c-display "file-info:" file-info)
+                                 (cond (blocknum
+                                        (<gui> :create-block-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) blocknum
+                                               (lambda (gui width height)
+                                                 ;;(c-display "-------w2: " width height)
+                                                 ;;(<gui> :filled-box gui "#00000000" 0 0 width height 0 0 #f) ;; fill with transparent background
+                                                 (paint2 gui -1 0 width height)
+                                                 ;;(line :paint-text-area gui 0 0 width height)
+                                                 ;;(<gui> :draw-line gui "black" 5 3 10 5 20)
+                                                 )))
+                                       ((and (not (file-info :is-dir))
+                                             allow-dragging)
+                                        (<gui> :create-file-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) (file-info :path)
+                                               (lambda (gui width height)
+                                                 (c-display "-------w2: " width height)
+                                                 (paint2 gui -1 0 width height)
+                                                 ))))
+                                 #t))))
                     (lambda (button x* y*)
                       ;;(move-dragging-entry!)
                       #t)

@@ -4536,12 +4536,16 @@
         (list :radio-buttons
               (list "Use sequencer timing"
                     :check (<ra> :is-using-sequencer-timing)
+                    :enabled (not (<ra> :seqtrack-for-audiofiles 0))
                     (lambda (doit)
-                      (<ra> :set-using-sequencer-timing doit)))
+                      (if doit
+                          (<ra> :set-using-sequencer-timing #t))))
               (list "Use editor timing"
                     :check (not (<ra> :is-using-sequencer-timing))
+                    :enabled (not (<ra> :seqtrack-for-audiofiles 0))
                     (lambda (doit)
-                      (<ra> :set-using-sequencer-timing (not doit)))))
+                      (when doit
+                        (<ra> :set-using-sequencer-timing #f)))))
         "-------"
         (list "Preferences"
               (lambda ()

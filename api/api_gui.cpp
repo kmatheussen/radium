@@ -2296,8 +2296,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         const dyn_t &x_point = points->elements[i];
         const dyn_t &y_point = points->elements[i+1];
         
-        if (DYN_is_number(x_point)==false || DYN_is_number(y_point)==false){  
-          handleError("gui_%sPolygon: Expected a number for points[%d] and points[%d], found %s and %s", do_fill ? "filled" : "draw", i, i+1, DYN_type_name(x_point.type), DYN_type_name(y_point.type));
+        if (DYN_is_number(x_point)==false){
+          handleError("gui_%sPolygon: Expected a number for points[%d], found %s", do_fill ? "filled" : "draw", i, DYN_type_name(x_point.type));
+          return;
+        }
+
+        if (DYN_is_number(y_point)==false){  
+          handleError("gui_%sPolygon: Expected a number for points[%d], %s", do_fill ? "filled" : "draw", i+1, DYN_type_name(y_point.type));
           return;
         }
 
