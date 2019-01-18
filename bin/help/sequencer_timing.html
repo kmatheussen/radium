@@ -2,24 +2,34 @@
 <body bgcolor="#ffffff">
 <h1>Timing</h1>
 
+Timing in Radium means tempo (BPM) and time signature (for instance 3/4 or 4/4).<!-- From now on, we will use the word "signature" instead of "time signature". -->
+<p>
+Timing is sent in realtime to external plugins. For instance to a make a VST plugin play echo in synch with the music.
+<p>
+Timing is also the time source for the sequencer grid, the metronome ("Click"), and the modulators.
+
+<p>
+
 There are two timing modes:
 
-<UL>
-<LI>Sequencer timing
-<LI>Editor timing
-</UL>
+<OL>
+<LI><b>Editor timing.</b> (the default)<br>
+In editor timing mode, timing and grid is provided by the editor blocks placed in the first seqtrack.
+In this mode, the tempo and signature lanes in the sequencer are just used for visualization, and editing in any of these two lanes is disabled.
 
-
-
-First line: BPM
-
+<LI><b>Sequencer timing.</b><br>
+In sequencer timing node, timing and grid is provided by the tempo and signature lanes in the sequencer. If you are mainly using Radium for recording and playing back audio files,
+this mode is simpler and easier to use than editor timing. This mode can be set explicitly in the popup menu of the sequencer,
+but it will also be used automatically if the first seqtrack is for audio instead of editor blocks.
 <p>
+Note that accelerando and ritardando is not supported in this mode yet.
+Two more limitations of the sequencer timing mode is that signatures must align with bars, and tempos must align with beats. Editor timing mode doesn't have these two limitations.
 
-Second line: Signature
+</OL>
 
-<p>
+To select timing mode, use the popup menu in the sequencer and either select "Editor timing" or "Sequencer timing".
+Note that if the first seqtrack is for audio files, you are forced to use sequencer timing.
 
-Third line: Markers
-  
+
 </body>
 </html>
