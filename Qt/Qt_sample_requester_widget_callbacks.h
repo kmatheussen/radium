@@ -171,7 +171,7 @@ static QString get_display_name(QString filename, int bank=-1, int preset=-1){
   QString str("<html><head/><body><p><span style=\" font-size:");
 
   str += QString::number(fontsize);
-  str += QString("pt; font-weight:600; color:'%1';\">").arg(get_qcolor(CURRENT_SOUNDFILE_COLOR_NUM).name());
+  str += QString("pt; font-weight:600; color:'%1';\">").arg(get_qcolor(CURRENT_SOUNDFILE_COLOR_NUM).name(QColor::HexArgb));
   str += filename;
     
   if (bank>=0)
@@ -349,7 +349,7 @@ class Sample_requester_widget : public QWidget
   }
   
   void update_sample_name_label(QString text, int bank=-1, int preset=-1){
-    //_sample_name_label->setText(QString("<font color='%1'>%2</font").arg(get_qcolor(CURRENT_SOUNDFILE_COLOR_NUM).name(), text));
+    //_sample_name_label->setText(QString("<font color='%1'>%2</font").arg(get_qcolor(CURRENT_SOUNDFILE_COLOR_NUM).name(QColor::HexArgb), text));
     _sample_name_label->setText(get_display_name(text, bank, preset));
   }
   

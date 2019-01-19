@@ -604,7 +604,7 @@ void SetupMainWindow(void){
 
     {
       QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
-      status_bar->setStyleSheet("#frame { border: 1px solid " + system_color.darker(150).name() + "; }");
+      status_bar->setStyleSheet("#frame { border: 1px solid " + system_color.darker(150).name(QColor::HexArgb) + "; }");
     }
   }
 #else

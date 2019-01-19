@@ -432,7 +432,7 @@ public:
         
     void done(int result) override{
       if (result==QDialog::Rejected)
-        S7CALL(void_charpointer, _callback.v, _initial_color.name().toUtf8().constData());
+        S7CALL(void_charpointer, _callback.v, _initial_color.name(QColor::HexArgb).toUtf8().constData());
 
       release_keyboard_focus();
 
@@ -443,7 +443,7 @@ public:
   public slots:
     void color_changed(const QColor &col){
       printf("Color changed\n");
-      S7CALL(void_charpointer,_callback.v, col.name().toUtf8().constData());
+      S7CALL(void_charpointer,_callback.v, col.name(QColor::HexArgb).toUtf8().constData());
     }
   };
 }
@@ -464,7 +464,7 @@ void GFX_color_dialog(const char *initial_color, int64_t parentguinum, func_t *c
     
   }
     
-  //return talloc_strdup(color_dialog.currentColor().name().toUtf8().constData());
+  //return talloc_strdup(color_dialog.currentColor().name(QColor::HexArgb).toUtf8().constData());
   #endif
 }
 
@@ -479,7 +479,7 @@ unsigned int GFX_get_color_from_colorname(const char *colorname){
 
 const char *GFX_get_colorname_from_color(unsigned int colornum){
   QColor color(colornum);
-  return talloc_strdup(color.name().toUtf8());
+  return talloc_strdup(color.name(QColor::HexArgb).toUtf8());
 }
 
 QHash<int, QColor> custom_colors;
