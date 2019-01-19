@@ -1137,7 +1137,7 @@ public slots:
 
   // colors
   void color_changed(const QColor &col){
-    //printf("HAPP! %s\n",col.name().toUtf8().constData());
+    //printf("HAPP! %s\n",col.name(QColor::HexArgb).toUtf8().constData());
     testColorInRealtime(g_current_colornum, col);
     //printf("  alpha1: %d\n",col.alpha());
     

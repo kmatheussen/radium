@@ -3323,7 +3323,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       else {
         QColor color = getQColor(colorname);
         if(color.isValid())
-          setText("<span style=\" color:" + color.name() + ";\">" + text + "</span>");
+          setText("<span style=\" color:" + color.name(QColor::HexArgb) + ";\">" + text + "</span>");
       }
     }
 
@@ -6381,7 +6381,7 @@ const_char* gui_getBackgroundColor(int64_t guinum){
   if (gui==NULL)
     return "black";
 
-  return talloc_strdup(gui->_widget->palette().color(gui->_widget->backgroundRole()).name().toUtf8().constData());
+  return talloc_strdup(gui->_widget->palette().color(gui->_widget->backgroundRole()).name(QColor::HexArgb).toUtf8().constData());
 }
 
 const_char* generateNewColor(float mix_background){
