@@ -5,6 +5,7 @@
 (my-require 'notem.scm)
 (my-require 'seqtrack-headers.scm)
 (my-require 'sequencer_right_part.scm)
+(my-require 'sequencer_upper_part.scm)
 (my-require 'seqblock-paint.scm)
 
 

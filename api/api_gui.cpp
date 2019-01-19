@@ -2260,8 +2260,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       painter->setPen(Qt::NoPen);
 
-      if(do_gradient){
-        QLinearGradient gradient((x1+x2)/2.0, y1, (x1+x2)/2.0, y2);
+      if(do_gradient){        
+        //QLinearGradient gradient((x1+x2)/2.0, y1, (x1+x2)/2.0, y2);
+        QLinearGradient gradient(x1, y1, x1, y2);
         gradient.setColorAt(0, qcolor.lighter(125));
         gradient.setColorAt(1, qcolor.darker(125));
         painter->setBrush(gradient);
@@ -4018,8 +4019,29 @@ void gui_toolTip(const_char* text){
 const_char* gui_mixColors(const_char* color1, const_char* color2, float how_much_color1){
   QColor col1 = getQColor(color1);
   QColor col2 = getQColor(color2);
-  return talloc_strdup(mix_colors(col1, col2, how_much_color1).name().toUtf8().constData());
+  return talloc_strdup(mix_colors(col1, col2, how_much_color1).name(QColor::HexArgb).toUtf8().constData());
 }
+
+const_char* gui_setAlphaForColor(const_char* color, float how_much_alpha){
+  QColor col1 = getQColor(color);
+  printf(" Before: %S\n", STRING_create(col1.name(QColor::HexArgb)));
+  col1.setAlphaF(how_much_alpha);
+  printf(" After: %S\n\n", STRING_create(col1.name(QColor::HexArgb)));
+  return talloc_strdup(col1.name(QColor::HexArgb).toUtf8().constData());
+}
+
+const_char* gui_makeColorLighter(const_char* color, float how_much){
+  QColor col1 = getQColor(color);
+  col1 = col1.lighter(how_much*100);
+  return talloc_strdup(col1.name(QColor::HexArgb).toUtf8().constData());
+}
+
+const_char* gui_makeColorDarker(const_char* color, float how_much){
+  QColor col1 = getQColor(color);
+  col1 = col1.darker(how_much*100);
+  return talloc_strdup(col1.name(QColor::HexArgb).toUtf8().constData());
+}
+
 
 static Gui *get_gui_maybeclosed(int64_t guinum){
   if (guinum < 0 || guinum > g_highest_guinum){
@@ -4279,6 +4301,15 @@ void API_run_paint_event_for_custom_widget(QWidget *widget, QPaintEvent *ev, con
   }
 
   gui->paintEvent(ev, already_painted_areas);
+}
+
+void API_gui_set_curr_painter(QWidget *widget, QPainter *p){
+  Gui *gui = g_gui_from_widgets.value(widget);
+
+  if(p==NULL)
+    R_ASSERT(gui->_current_painter!=NULL);
+
+  gui->_current_painter = p;
 }
 
 bool API_run_custom_gui_paint_function(QWidget *widget, QPainter *p, const QRegion *region, std::function<void(void)> func){

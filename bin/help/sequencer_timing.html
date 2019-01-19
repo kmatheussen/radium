@@ -2,29 +2,19 @@
 <body bgcolor="#ffffff">
 <h1>Timing</h1>
 
-<a href="#overview">Overview</a><br>
-<a href="#usage">What is timing used for?</a><br>
+<a href="#what">What is timing?</a><br>
+<a href="#usage">What does Radium use timing for?</a><br>
+<a href="#overview">How is timing controlled?</a><br>
 <a href="#modes">Timing modes</a><br>
 
+<a name="what"></a><h2>What is timing?</h2>
 
-<a name="overview"></a><h2>Overview</h2>
-
-Timing is controlled by tempos (BPM) and signatures:
-<UL>
-<LI> <b>Tempos</b> (BPM) specify the duration of a quarter note. Note that BPM stands for <b>B</b>eats <b>P</b>er <b>M</b>inute, which is a misleading name unless your signature is 4/4. QPM (Quarters Per Minute) would be more correct.
-<LI> <b>Signatures</b> specify the number of beats in each bar, and the duration of a bar. Bar duration is measured in number of quarter notes.
-</UL>
-<p>
-For example, if tempo is set to 64 BPM, and the signature is set to 8/8, a new bar will be played every 16 seconds (64/4 * 8/8), and a new beat will be played every 2 seconds (64/4 * 1/8).
-If the signature is set to 2/4 instead, a new bar will be played every 8 seconds (64/4 * 2/4), and a new beat will be played every 4 seconds (64/4 * 1/4).
-<pre>
-</pre>
-<p>
-
-<a name="usage"></a><h2>What is timing used for?</h2>
+Timing is tempo and rythm.
 
 <p>
-Timing is used by:
+
+<a name="usage"></a><h2>What does Radium use timing for?</h2>
+
 <OL>
   <LI> <b>External plugins</b>
     (For instance to a make a VST plugin play echo sounds in sync with the music.)
@@ -35,6 +25,22 @@ Timing is used by:
 <pre>
 </pre>
 <p>
+
+
+<a name="overview"></a><h2>How is timing controlled?</h2>
+
+Timing is controlled by tempo events and signature events:
+<UL>
+<LI> <b>Tempos</b> (BPM) specify the duration of a quarter note. Note that BPM stands for <b>B</b>eats <b>P</b>er <b>M</b>inute, which is a misleading name unless your signature is 4/4. QPM (Quarters Per Minute) would be more correct.
+<LI> <b>Signatures</b> specify rythm. It does so by specifying number of beats divided by bar duration (for instance 4/4). Bar duration is measured in number of quarter notes.
+</UL>
+<p>
+For example, if tempo is set to 64 BPM, and the signature is set to 8/8, a new bar will be played every 16 seconds (64/4 * 8/8), and a new beat will be played every 2 seconds (64/4 * 1/8).
+If the signature is set to 2/4, a new bar will be played every 8 seconds (64/4 * 2/4), and a new beat will be played every 4 seconds (64/4 * 1/4).
+<pre>
+</pre>
+<p>
+
 
 
 <a name="modes"></a><h2>Timing modes</h2>

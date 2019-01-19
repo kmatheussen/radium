@@ -1762,6 +1762,7 @@ void setShowBarsInTimeline(bool doit){
 }
 
 
+
 static DEFINE_ATOMIC(bool, g_use_jack_transport) = false;
 
 bool useJackTransport(void){
@@ -3734,6 +3735,16 @@ void setSequencerMarkers(dyn_t markers){
   SEQUENCER_MARKER_create_from_state(markers, -1);
 }
 
+static bool g_paint_vertical_markers_in_sequencer = false;
+
+bool doPaintVerticalMarkersInSequencer(void){
+  return g_paint_vertical_markers_in_sequencer;
+}
+
+void setPaintVerticalMarkersInSequencer(bool doit){
+  g_paint_vertical_markers_in_sequencer = doit;
+  SEQUENCER_update(SEQUPDATE_TIME);
+}
 
 
 /***************** set/get using sequencer timing ****************/
@@ -3778,6 +3789,46 @@ void iterateSequencerTime(int64_t start_time, int64_t end_time, const_char* grid
 
                            return ret;
                          });
+}
+
+
+
+/***************** sequencer lane show/hide ****************/
+
+bool showBarsAndBeatsSequencerLane(void){
+  return root->song->show_bars_and_beats_sequencer_lane;
+}
+void setShowBarsAndBeatsSequencerLane(bool doit){
+  root->song->show_bars_and_beats_sequencer_lane = doit;
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
+}
+bool showTimeSequencerLane(void){
+  return root->song->show_time_sequencer_lane;
+}
+void setShowTimeSequencerLane(bool doit){
+  root->song->show_time_sequencer_lane = doit;
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
+}
+bool showTemposSequencerLane(void){
+  return root->song->show_tempos_sequencer_lane;
+}
+void setShowTemposSequencerLane(bool doit){
+  root->song->show_tempos_sequencer_lane = doit;
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
+}
+bool showSignaturesSequencerLane(void){
+  return root->song->show_signatures_sequencer_lane;
+}
+void setShowSignaturesSequencerLane(bool doit){
+  root->song->show_signatures_sequencer_lane = doit;
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
+}
+bool showMarkersSequencerLane(void){
+  return root->song->show_markers_sequencer_lane;
+}
+void setShowMarkersSequencerLane(bool doit){
+  root->song->show_markers_sequencer_lane = doit;
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
 

@@ -4,23 +4,39 @@
 (my-require 'area.scm)
 
 (define (create-audio-files-browser-area gui x1 y1 x2 y2 state)
+
+  (define curr-audiofile #f)
+
   (define (recreate x1 y1 x2 y2 state)
     (define audiofiles (to-list (<ra> :get-audio-files)))
     (define area
       (<new> :vertical-list-area gui x1 y1 x2 y2
-           (map (lambda (i audiofile)
-                  (define file-info (<ra> :get-file-info audiofile))
-                  (<new> :sequencer-drag-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
-                         :is-current #f
-                         :entry-num i
-                         :file-info file-info
-                         :background-color (<gui> :mix-colors
-                                                  (<ra> :get-audiofile-color audiofile)
-                                                  "white"
-                                                  0.80)
-                         :allow-dragging #t))
-                (iota (length audiofiles))
-                audiofiles)))
+             (map (lambda (i audiofile)
+                    (define color (<ra> :get-audiofile-color audiofile))
+                    (define col1 color)
+                    ;;(set! color (<gui> :make-color-lighter color 1.5))
+                    (set! color (<gui> :set-alpha-for-color color 0.5))
+                    (c-display "With alpha:" col1 ". without:" color)
+                    (define file-info (<ra> :get-file-info audiofile))
+                    (<new> :sequencer-drag-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
+                           :is-current (lambda ()
+                                         ;;(c-display "curr:" curr-audiofile)
+                                         (and curr-audiofile
+                                            (string=? audiofile curr-audiofile)))
+                           :entry-num i
+                           :file-info file-info
+                           :allow-dragging #t
+                           :background-color color
+                           :callback (lambda (button x y entry-num)
+                                       (set! curr-audiofile audiofile)
+                                       (area :update-me!)
+                                       (and (= button *right-button*)
+                                            (begin
+                                              (show-audiolist-popup-menu audiofile)
+                                              #t)))
+                           ))
+                  (iota (length audiofiles))
+                  audiofiles)))
     (if state
         (area :apply-state! state))
     area)
@@ -28,6 +44,16 @@
   
   (define area (<new> :use-first-subarea-state-as-state-area gui x1 y1 x2 y2))
   (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state))
+
+  (area :add-mouse-cycle! (lambda (button x* y*)
+                            (when curr-audiofile
+                              (set! curr-audiofile #f)
+                              (area :update-me!))
+                            (and (= button *right-button*)
+                                 (begin
+                                   (show-audiolist-popup-menu #f) ;;curr-audiofile)
+                                   #t))))
+
 
   (define generation (<ra> :get-audio-files-generation))
   (<ra> :schedule (random 1000)
@@ -60,16 +86,17 @@
 (define (create-blocks-browser-area gui x1 y1 x2 y2 state)
 
   (define (recreate x1 y1 x2 y2 state)
-    (define audiofiles (to-list (<ra> :get-audio-files)))
     (define area
       (<new> :vertical-list-area gui x1 y1 x2 y2
            (map (lambda (blocknum)
-                  (define color ;;(<ra> :get-block-color blocknum))
-                    (<gui> :mix-colors
-                           (<ra> :get-block-color blocknum)
-                           "white" ;;(<gui> :get-background-color -1)
-                           0.80))
+                  (define color (<ra> :get-block-color blocknum))
+                  ;;;(set! color (<gui> :make-color-lighter color 1.5))
+                  (set! color (<gui> :set-alpha-for-color color 0.5))
                   (<new> :sequencer-drag-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
+                         :callback (lambda (button x y entry-num)
+                                     (<ra> :select-block blocknum)
+                                     (update)
+                                     #f)
                          :is-current (= (<ra> :current-block) blocknum)
                          :entry-num blocknum
                          :blocknum blocknum
@@ -84,29 +111,39 @@
 
   (define area (<new> :use-first-subarea-state-as-state-area gui x1 y1 x2 y2))
   (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state))
+
+  (area :add-mouse-cycle! (lambda (button x* y*)
+                            (and (= button *right-button*)
+                                 (begin
+                                   (show-blocklist-popup-menu)
+                                   #t))))
   
   ;;(c-display "state:" state)
 
   (define generation (<ra> :get-editor-blocks-generation))
   (define curr-block (<ra> :current-block))
+
+  (define (update)
+    (if (or (not (<gui> :is-open gui))
+            (not (area :is-alive)))
+        #f
+        (begin
+          (define new-generation (<ra> :get-editor-blocks-generation))
+          (define new-curr-block (<ra> :current-block))
+          (when (or (not (= generation new-generation))
+                    (not (= curr-block new-curr-block)))
+            (set! generation new-generation)
+            (set! curr-block new-curr-block)
+            (define state (area :get-state))
+            (area :remove-sub-areas!)
+            (area :get-position
+                  (lambda (x1 y1 x2 y2 width height)
+                    (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state)))))
+          200)))
+    
   (<ra> :schedule (random 1000)
-        (lambda ()
-          (if (or (not (<gui> :is-open gui))
-                  (not (area :is-alive)))
-              #f
-              (begin
-                (define new-generation (<ra> :get-editor-blocks-generation))
-                (define new-curr-block (<ra> :current-block))
-                (when (or (not (= generation new-generation))
-                          (not (= curr-block new-curr-block)))
-                  (set! generation new-generation)
-                  (set! curr-block new-curr-block)
-                  (define state (area :get-state))
-                  (area :remove-sub-areas!)
-                  (area :get-position
-                        (lambda (x1 y1 x2 y2 width height)
-                          (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state)))))
-                200))))
+        update)
+
   area
   )
 

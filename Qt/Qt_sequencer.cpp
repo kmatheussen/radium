@@ -1435,7 +1435,7 @@ public:
     QColor text_color = get_block_qcolor(SEQUENCER_TEXT_COLOR_NUM, type);
 
     // background
-    QColor header_color = get_seqblock_color(seqtrack, seqblock).lighter(150);
+    QColor header_color = get_seqblock_color(seqtrack, seqblock);//.lighter(150);
     header_color.setAlpha(128);
     myFillRect(p, rect, half_alpha(header_color, type));
 
@@ -2886,7 +2886,7 @@ struct Timeline_widget { //: public MouseTrackerQWidget {
 
     int inc_time = R_MAX(1, ceil(scale_double(min_pixels_between_text, 0, t_width, 0, end_time-start_time)));
 
-    bool did_draw_alpha = false;
+    //bool did_draw_alpha = false;
 
     if (false==_show_timeline){ //showBarsInTimeline()){
 
@@ -2909,7 +2909,7 @@ struct Timeline_widget { //: public MouseTrackerQWidget {
         {
                                                
           double x = scale_double(seqtime, _start_time, _end_time, t_x1, t_x2);
-          if (x >= t_width)
+          if (x >= t_x2)
             return false;
           
           
@@ -2994,7 +2994,7 @@ struct Timeline_widget { //: public MouseTrackerQWidget {
           //p.setBrush(timeline_arrow_color);
         }
 
-        did_draw_alpha = draw_alpha;
+        //did_draw_alpha = draw_alpha;
 
         //printf("%s: start_x: %f. t_x1: %f. x: %f\n",seconds_to_timestring(time).toUtf8().constData(),start_x,t_x1,x);
         if (x > start_x) {
@@ -3470,6 +3470,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   Seqtracks_navigator_widget _navigator_widget;
   //MyQSlider _main_reltempo;
 
+  int _timing_markers_y1;
+  int _timing_markers_y2;
+
   bool _has_selection_rectangle = false;
   QRect _selection_rectangle;
 
@@ -3811,6 +3814,17 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       y1 += timeline_widget_height;
     }
 
+    // timing + markers
+    {
+      int timing_markers_height = 3*systemfontheight*1.3 + 2;
+
+      _timing_markers_y1 = y1;
+      _timing_markers_y2 = y1 + timing_markers_height;
+      
+      y1 = _timing_markers_y2;
+    }
+
+
     // sequencer tracks
     //
     {
@@ -3845,6 +3859,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         
     S7CALL2(void_void, "FROM_C-reconfigure-sequencer-left-part");
     S7CALL2(void_void, "FROM_C-reconfigure-sequencer-right-part");
+    S7CALL2(void_int_int_int_int, "FROM_C-reconfigure-sequencer-timing-part", x1, _timing_markers_y1, x1 + x1_width, _timing_markers_y2);
 
     my_update_all();
   }
@@ -3956,13 +3971,25 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     if (grid_type==NO_GRID)
       grid_type=BEAT_GRID;
      //      return;
-    
+
+
     double x1 = _seqtracks_widget.t_x1;
     double x2 = _seqtracks_widget.t_x2;
     //double width = x2-x1;
     
-    double y1 = _seqtracks_widget.t_y1;
+    double y1 = _timing_markers_y1; //_seqtracks_widget.t_y1;
     double y2 = _seqtracks_widget.t_y2;
+    
+    static func_t *s_paint_sequencer_grid_func = NULL;
+    if (s_paint_sequencer_grid_func==NULL || !releaseMode()){
+      s_paint_sequencer_grid_func = s7extra_get_func_from_funcname("FROM_C-paint-sequencer-grid");
+    }
+    
+    API_gui_set_curr_painter(SEQUENCER_getWidget(), &p);
+    S7CALL(void_int_float_float_float_float, s_paint_sequencer_grid_func, gui_getSequencerGui(), x1,y1,x2,y2);
+    API_gui_set_curr_painter(SEQUENCER_getWidget(), NULL);
+
+    return;
 
     QColor beat_color(get_qcolor(SEQUENCER_GRID_COLOR_NUM));
     QColor bar_color(get_qcolor(SEQUENCER_GRID_COLOR_NUM));
@@ -4018,6 +4045,23 @@ struct Sequencer_widget : public MouseTrackerQWidget {
           
           p.setPen(pen);
           p.drawLine(line);
+
+#if 0
+          if(is_bar){
+            p.setPen("white");
+            p.drawLine(line);
+
+            QLineF line2(x-0.5, y1+2, x-0.5, y2-2);
+            p.setPen("black");
+            p.drawLine(line2);
+          }else{
+            p.setPen(pen);
+            p.drawLine(line);
+          }
+#else
+          p.setPen(pen);
+          p.drawLine(line);
+#endif
 
           last_painted_x = x;
         }        

@@ -1069,7 +1069,7 @@
          (not *sequencer-window-gui-active*)))
   
   (define-override (paint)
-    ;;(<gui> :filled-box gui background-color 0 0 width height)
+    (<gui> :filled-box gui background-color x1 y1 x2 y2)
     (when (is-active)
       (<gui> :draw-text gui *text-color* "=" x1 y1 x2 y2
              #f ;; wrap-lines
@@ -1477,6 +1477,8 @@
                                        (*sequencer-left-part-area* :paint-internal 0 0 width height))
                                    (if *sequencer-right-part-area*
                                        (*sequencer-right-part-area* :paint-internal 0 0 width height))
+                                   (if *sequencer-timing-area*
+                                       (*sequencer-timing-area* :paint-internal 0 0 width height))
                                    ))))
 
       (<gui> :add-mouse-wheel-callback gui
@@ -1485,7 +1487,10 @@
                                   (or (and *sequencer-left-part-area*
                                            (*sequencer-left-part-area* :mouse-wheel-moved-internal! is-up x* y*))
                                       (and *sequencer-right-part-area*
-                                           (*sequencer-right-part-area* :mouse-wheel-moved-internal! is-up x* y*))))
+                                           (*sequencer-right-part-area* :mouse-wheel-moved-internal! is-up x* y*))
+                                      (and *sequencer-timing-area*
+                                           (*sequencer-timing-area* :mouse-wheel-moved-internal! is-up x* y*))
+                                      ))
                            :failure (lambda ()
                                       #f))))
       
@@ -1496,9 +1501,13 @@
                (*sequencer-left-part-area* :mouse-callback-internal button state x y)
                (if *sequencer-right-part-area*
                    (*sequencer-right-part-area* :mouse-callback-internal button state x y))
+               (if *sequencer-timing-area*
+                   (*sequencer-timing-area* :mouse-callback-internal button state x y))
                (if (or (*sequencer-left-part-area* :has-mouse)
                        (and *sequencer-right-part-area*
-                            (*sequencer-right-part-area* :has-mouse)))
+                            (*sequencer-right-part-area* :has-mouse))
+                       (and *sequencer-timing-area*
+                            (*sequencer-timing-area* :has-mouse)))
                    #t
                    #f)))
       ;(<gui> :add-resize-callback gui ;; TODO: I think this resize callback can be removed.

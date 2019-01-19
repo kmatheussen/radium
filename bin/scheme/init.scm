@@ -528,6 +528,8 @@
     FROM_C-call-me-when-curr-seqtrack-has-changed
     FROM-C-sequencer-gui-in-window
     FROM_C-create-menu-entry-widget
+    FROM_C-reconfigure-sequencer-timing-part
+    FROM_C-paint-sequencer-grid
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
