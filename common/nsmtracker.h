@@ -3093,6 +3093,12 @@ struct Song{
 
         bool use_sequencer_tempos_and_signatures;
 
+        bool show_bars_and_beats_sequencer_lane;
+        bool show_time_sequencer_lane;
+        bool show_tempos_sequencer_lane;
+        bool show_signatures_sequencer_lane;
+        bool show_markers_sequencer_lane;
+
 	NInt num_blocks;
 	char *songname;
 

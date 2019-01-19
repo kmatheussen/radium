@@ -33,6 +33,8 @@ QWidget *API_gui_get_parentwidget(QWidget *child, int64_t guinum); // child can 
 int64_t API_get_gui_from_widget(QWidget *widget);
 int64_t API_get_gui_from_existing_widget(QWidget *widget);
 
+void API_gui_set_curr_painter(QWidget *widget, QPainter *p);
+
 #if defined(QREGION_H)
 void API_run_paint_event_for_custom_widget(QWidget *widget, QPaintEvent *ev, const QRegion &already_painted_areas);
 bool API_run_custom_gui_paint_function(QWidget *widget, QPainter *p, const QRegion *region, std::function<void(void)> func);

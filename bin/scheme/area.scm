@@ -921,6 +921,7 @@
     (if paint-func
         (paint-func (is-selected-func))
         (begin
+          (<gui> :filled-box gui (<gui> :get-background-color gui) x1 y1 x2 y2 3 3)
           (draw-checkbox gui
                          text
                          (is-selected-func)
@@ -1686,7 +1687,9 @@
                   #f ;; scale-font-size
                   )))
 
-    (when is-current
+    (when (if (procedure? is-current)
+              (is-current)
+              is-current)
       (<gui> :set-clip-rect gui (+ x1 1) y1 x2 y2)
       (<gui> :draw-box gui (<gui> :mix-colors "#010101" "green" 0.5) (+ 1 x1) (+ y1 0) (- x2 0) (- y2 0) (/ (get-fontheight) 2.5) 4 4)
       ;;(<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
@@ -1856,7 +1859,13 @@
                         :file-info entry
                         :allow-dragging #t
                         :background-color #f
-                        :callback set-new-curr-entry!
+                        :callback 
+                        (lambda (button x y entry-num)
+                          (if (= button *right-button*)
+                              #t
+                              (begin
+                                (set-new-curr-entry! entry-num)
+                                #f)))
                         ))
                entries
                (iota (length entries))
