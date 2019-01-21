@@ -3,7 +3,7 @@
 <h1>Timing</h1>
 
 <a href="#what">What is timing?</a><br>
-<a href="#usage">What does Radium use timing for?</a><br>
+<a href="#usage">What is timing used for in Radium?</a><br>
 <a href="#overview">How is timing controlled?</a><br>
 <a href="#modes">Timing modes</a><br>
 
@@ -13,7 +13,7 @@ Timing is tempo and rythm.
 
 <p>
 
-<a name="usage"></a><h2>What does Radium use timing for?</h2>
+<a name="usage"></a><h2>What is timing used for in Radium?</h2>
 
 <OL>
   <LI> <b>External plugins</b>
@@ -31,8 +31,11 @@ Timing is tempo and rythm.
 
 Timing is controlled by tempo events and signature events:
 <UL>
-<LI> <b>Tempos</b> (BPM) specify the duration of a quarter note. Note that BPM stands for <b>B</b>eats <b>P</b>er <b>M</b>inute, which is a misleading name unless your signature is 4/4. QPM (Quarters Per Minute) would be more correct.
-<LI> <b>Signatures</b> specify rythm. It does so by specifying number of beats divided by bar duration (for instance 4/4). Bar duration is measured in number of quarter notes.
+<LI> <b>Tempos</b> (BPM) specify the duration of a quarter note. Note that BPM stands for <b>B</b>eats <b>P</b>er <b>M</b>inute, which is a misleading name unless your signature is 4/4. <b>QPM</b> (Quarter notes Per Minute) would be more correct.
+<p>
+<LI> <b>Signatures</b> specify rythm. It does so by specifying number of beats (in a bar) above beat type.
+  For instance, a 4/4 signature means that there are 4 beats in the bar, and that each beat is a quarter.<br>
+  Other common names for signature: time signature, meter signature, meter, metre, measure, and measure signature.
 </UL>
 <p>
 For example, if tempo is set to 64 BPM, and the signature is set to 8/8, a new bar will be played every 16 seconds (64/4 * 8/8), and a new beat will be played every 2 seconds (64/4 * 1/8).
@@ -67,9 +70,9 @@ but it will also be used automatically if the first seqtrack is for audio and no
 If you are using Radium mainly for recording and playing back audio files,
 this mode is both simpler, and probably easier to use, than editor timing.
 <p>
-Note that accelerando and ritardando is not currently supported in this mode.
-Two more limitations of the sequencer timing mode is that signatures must align with bars, and that tempos must align with beats.
-Editor timing mode does not have these three limitations.
+Note that accelerando and ritardando are not currently supported in this mode.
+In addition, signatures must align with bars, and tempos must align with beats.
+Editor timing mode does not have these limitations.
 
 </OL>
 
