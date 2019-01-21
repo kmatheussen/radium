@@ -2901,7 +2901,7 @@ struct Timeline_widget { //: public MouseTrackerQWidget {
 
       //p.setPen("red");
       
-      int64_t start_seqtime = _start_time;
+      //int64_t start_seqtime = _start_time;
       int64_t end_seqtime = _end_time;
 
       auto callback = [&last_x, &p, &bar_color, &text_color, this, min_pixels_between_text]
@@ -2928,19 +2928,23 @@ struct Timeline_widget { //: public MouseTrackerQWidget {
           
           //printf("%d: %d/%d.\n", (int)seqtime, barnum, beatnum);
           
-          if (x >= 0 && x > last_x + min_pixels_between_text) {
-            p.setPen(text_color);
-            
-            QRectF rect(x + 2, t_y1 + 2, t_x2-(x+2), t_y2 - (t_y1+2));
-            myDrawText(&p, rect, QString::number(barnum), Qt::AlignVCenter);
-            
+          if (x > last_x + min_pixels_between_text) {
+
+            if (x >= 0){
+              p.setPen(text_color);
+              
+              QRectF rect(x + 2, t_y1 + 2, t_x2-(x+2), t_y2 - (t_y1+2));
+              myDrawText(&p, rect, QString::number(barnum), Qt::AlignVCenter);
+            }
+
             last_x = x;
           }
           
           return true;
         };
     
-      SEQUENCER_iterate_time(start_seqtime, end_seqtime, GridType::BEAT_GRID, callback);
+      //SEQUENCER_iterate_time(start_seqtime, end_seqtime, GridType::BEAT_GRID, callback);
+      SEQUENCER_iterate_time(0, end_seqtime, GridType::BEAT_GRID, callback);
                              
       
     } else {
