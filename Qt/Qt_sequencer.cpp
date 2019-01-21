@@ -4504,7 +4504,8 @@ void SEQUENCER_set_visible_start_time(int64_t val){
 
   g_sequencer_widget->legalize_start_end_times();
 
-  g_sequencer_widget->my_update_all();
+  SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE|SEQUPDATE_NAVIGATOR|SEQUPDATE_TIMING);
+  //g_sequencer_widget->my_update_all();
 }
 
 void SEQUENCER_set_visible_end_time(int64_t val){
@@ -4514,7 +4515,8 @@ void SEQUENCER_set_visible_end_time(int64_t val){
 
   g_sequencer_widget->legalize_start_end_times();
     
-  g_sequencer_widget->my_update_all();
+  SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE|SEQUPDATE_NAVIGATOR|SEQUPDATE_TIMING);
+  //g_sequencer_widget->my_update_all();
 }
 
 void SEQUENCER_set_grid_type(enum GridType grid_type){
