@@ -386,7 +386,7 @@
 
         (<gui> :draw-polygon gui "black" triangle 0.7)
 
-        (define text-width (<gui> :text-width text))
+        (define text-width (+ 2 (<gui> :text-width text))) ;; Add 2 to avoid scaling font size now and then.
         (define text-x1 (+ h/2 tx))
         (define text-x2 (min max-x2 (+ text-x1 text-width)))
 
@@ -692,32 +692,87 @@
 !!#
 
 
-(define (get-signature-string signature)
-  (<-> (signature :numerator) "/" (signature :denominator)))
-
-(define (FROM_C-paint-sequencer-grid gui x1 y1 x2 y2)
+(define (paint-sequencer-grid gui x1 y1 x2 y2)
   (when *sequencer-timing-area*
     ;;(c-display "ai!" gui x1 y1 x2 y2)
-    (<ra> :iterate-sequencer-time (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time) "beat"
+    (define what-to-iterate #f)
+
+    '(let ((last-x -1))
+      (<ra> :iterate-sequencer-time (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time) "beat"
+            (lambda (time barnum beatnum linenum)
+              (define x (get-sequencer-x-from-time time x1 x2))      
+              (if (>= last-x 0)
+                  (begin
+                    (define dist (- x last-x))
+                    (if (> dist 100)
+                        (set! what-to-iterate "beat")
+                        (set! what-to-iterate "bar"))
+                    #f)
+                  (begin
+                    (set! last-x x)
+                    #t)))))
+
+    (define bar-dx (<gui> :text-width "123456890abcdefg"))
+    (define beat-dx (/ bar-dx 2))
+
+    (define last-painted-x -10000)
+    (define last-bar-num -1)
+    (define last-painted-bar-num -1)
+    (define last-painted-beat-num -1)
+
+    (define visible-start-time (<ra> :get-sequencer-visible-start-time))
+
+    ;;(<ra> :iterate-sequencer-time (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time) "beat" ;;what-to-iterate
+    (<ra> :iterate-sequencer-time 0 (<ra> :get-sequencer-visible-end-time) "beat" ;;what-to-iterate
           (lambda (time barnum beatnum linenum)
             (define x (get-sequencer-x-from-time time x1 x2))
-            (define color (if (= beatnum 1)
-                              "#a0010101"
-                              "#400101ff"))
-      
-            (if (> beatnum 1)
-                (begin
-                  (<gui> :draw-line gui color x y1 x y2 0.5);;(if (= beatnum 1) 1.1 1))
-                  )
-                (begin
-                  (define x1 (floor x))
-                  (define x2 (+ x1 0.6))
-                  
-                  (<gui> :draw-line gui "#ffffffff" x2 y1 x2 y2 0.7)
-                  (<gui> :draw-line gui "black" x1 y1 x1 y2 1.2)
-                  ))
+
+            ;; In a bar, either paint all beat lines, or no beat lines.
+            (define doit (and (= barnum last-painted-bar-num)
+                              (> last-painted-beat-num 1)))
+
+            ;; Always paint bar line if all beats were painted in previous bar
+            (when (and (not doit)
+                       (= beatnum 1))
+              (if (and (> last-painted-beat-num 1)
+                       (= barnum (+ 1 last-painted-bar-num)))
+                  (set! doit #t)))
+
+            (when (and (not doit)
+                       (= beatnum 1))
+              (if (> x (+ last-painted-x bar-dx))
+                  (set! doit #t)))
+
+            (when (and (not doit)
+                       (= beatnum 2))
+              (if (and (= barnum last-painted-bar-num)
+                       (> x (+ last-painted-x beat-dx)))
+                  (set! doit #t)))
+                             
+            (when doit
+              (when (>= time visible-start-time)
+                (if (> beatnum 1)                       
+                    (begin
+                      (define color (if (= beatnum 1)
+                                        "#a0010101"
+                                        "#400101ff"))
+                      (<gui> :draw-line gui color x y1 x y2 0.5);;(if (= beatnum 1) 1.1 1))
+                      )
+                    (begin
+                      (define x1 (floor x))
+                      (define x2 (+ x1 0.6))
+                      
+                      (<gui> :draw-line gui "#ffffffff" x2 y1 x2 y2 0.7)
+                      (<gui> :draw-line gui "black" x1 y1 x1 y2 1.2)
+                      )))
+              (set! last-painted-bar-num barnum)
+              (set! last-painted-beat-num beatnum)
+              (set! last-painted-x x))
             #t
             ))))
+
+(define (FROM_C-paint-sequencer-grid gui x1 y1 x2 y2)
+  (paint-sequencer-grid gui x1 y1 x2 y2))
 
 (def-area-subclass (<sequencer-timeline-area> :gui :x1 :y1 :x2 :y2)
   (define tempo-y2 (scale 0.33 0 1 y1 y2))
@@ -743,7 +798,7 @@
     (draw-border signature-y2)
     
     ;; paint grid
-    ;;(FROM_C-paint-sequencer-grid gui x1 y1 x2 y2)
+    ;;(paint-sequencer-grid gui x1 y1 x2 y2)
     )
 
   )
