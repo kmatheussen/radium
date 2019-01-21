@@ -3143,19 +3143,22 @@ struct CursorPainter {
   
 
   void paintCursor(const QRegion &update_region, QPainter &p){
-    double y1 = t_y1; //_songtempoautomation_widget.t_y1;
-    double y2 = t_y2;
-    
-    QPen pen(get_qcolor(SEQUENCER_CURSOR_COLOR_NUM));
-    pen.setWidthF(cursor_width);
-    
     _last_painted_cursor_x = get_curr_cursor_x(0);
-    
-    QLineF line(_last_painted_cursor_x, y1, _last_painted_cursor_x, y2);
 
-    //printf("   line: %f, %f -> %f, %f\n", _last_painted_cursor_x, y1, _last_painted_cursor_x, y2);
-    p.setPen(pen);
-    p.drawLine(line);
+    if(_last_painted_cursor_x >= t_x1 && _last_painted_cursor_x < t_x2){
+
+      double y1 = t_y1; //_songtempoautomation_widget.t_y1;
+      double y2 = t_y2;
+      
+      QPen pen(get_qcolor(SEQUENCER_CURSOR_COLOR_NUM));
+      pen.setWidthF(cursor_width);
+    
+      QLineF line(_last_painted_cursor_x, y1, _last_painted_cursor_x, y2);
+      
+      //printf("   line: %f, %f -> %f, %f\n", _last_painted_cursor_x, y1, _last_painted_cursor_x, y2);
+      p.setPen(pen);
+      p.drawLine(line);
+    }
   }
   
 };
