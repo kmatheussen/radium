@@ -130,6 +130,9 @@ void clearErrorMessage(void){
   const char *message = pullErrorMessage();
   if(message != NULL){
     printf("********** Warning, the error \"%s\" was not handled by throwing an error.\n", message);
+#if !defined(RELEASE)
+    abort();
+#endif
     message = NULL;
   }
 }
@@ -164,16 +167,21 @@ void handleError_internal(const char *fmt,...){
   vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
-  g_error_message = talloc_strdup(message); // Set this value before calling SCHEME_get_history nad GFX_Message, so that we won't get into an infinite loop.
+  g_error_message = talloc_strdup(message); // Set this value before calling SCHEME_get_history and GFX_Message, so that we won't get into an infinite loop.
     
   printException(message);
 
   const char *backtrace = SCHEME_get_history();
   puts(backtrace);
 
-  GFX_addMessage(message);
-  GFX_addMessage(backtrace);
-
+  /*
+  const char *message2 = V_strdup(talloc_format("%s:%s\n", message, backtrace));
+  QTimer::singleShot(3,[message2]{
+      GFX_addMessage(message2);
+      V_free((void*)message2);
+    });
+  */
+  
   if (is_going_to_call_throwExceptionIfError==false)
     g_error_message = NULL; // If not, the next scheme function to run, whatever it might be, will throw exception.
   
