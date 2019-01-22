@@ -400,7 +400,7 @@
                                                      use-single-letters
                                                      :background-color (get-seqtrack-background-color gui seqtracknum)
                                                      :border 0
-                                                     :implicit-border 1
+                                                     :implicit-border 3
                                                      ))
                                     :right-mouse-clicked-callback (lambda ()
                                                                     (cond ((eq? type 'height)
