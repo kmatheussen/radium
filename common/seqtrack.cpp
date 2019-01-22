@@ -3021,6 +3021,12 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
   HASH_put_hash(state, "sequencer_timing", SEQUENCER_TIMING_get_state());
   HASH_put_bool(state, "use_sequencer_timing", root->song->use_sequencer_tempos_and_signatures);
 
+  HASH_put_bool(state, "show_bars_and_beats_sequencer_lane", root->song->show_bars_and_beats_sequencer_lane);
+  HASH_put_bool(state, "show_time_sequencer_lane", root->song->show_time_sequencer_lane);
+  HASH_put_bool(state, "show_tempos_sequencer_lane", root->song->show_tempos_sequencer_lane);
+  HASH_put_bool(state, "show_signatures_sequencer_lane", root->song->show_signatures_sequencer_lane);
+  HASH_put_bool(state, "show_markers_sequencer_lane", root->song->show_markers_sequencer_lane);
+
   HASH_put_dyn(state, "sequencer_markers", SEQUENCER_MARKER_get_state());
 
   return state;
@@ -3117,6 +3123,14 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     if(HASH_has_key(state, "sequencer_markers"))
       SEQUENCER_MARKER_create_from_state(HASH_get_dyn(state, "sequencer_markers"), state_samplerate);
 
+    if(HASH_has_key(state, "show_bars_and_beats_sequencer_lane")){      
+      song->show_bars_and_beats_sequencer_lane = HASH_get_bool(state, "show_bars_and_beats_sequencer_lane");
+      song->show_time_sequencer_lane = HASH_get_bool(state, "show_time_sequencer_lane");
+      song->show_tempos_sequencer_lane = HASH_get_bool(state, "show_tempos_sequencer_lane");
+      song->show_signatures_sequencer_lane = HASH_get_bool(state, "show_signatures_sequencer_lane");
+      song->show_markers_sequencer_lane = HASH_get_bool(state, "show_markers_sequencer_lane");      
+    }
+    
     // Need to do this first since widgets are not positioned correctly if it's done last. Not quite sure why.
     if(HASH_has_key(state, "song_tempo_automation"))
       TEMPOAUTOMATION_create_from_state(HASH_get_hash(state, "song_tempo_automation"), state_samplerate);

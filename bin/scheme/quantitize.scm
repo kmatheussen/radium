@@ -36,6 +36,8 @@
                            :type 3 ;; See GUI. Type 1 is "Move start position ...", type 2 is "Move end ...", etc.
                            )
 
+  (c-display "args:" start end q max-length type)
+  
   (define delete-it #f)
 
   (define quantitize-start (if *curr-quantitize-gui*
@@ -98,7 +100,6 @@
               
               ((= type 5)
                (set! delete-it #t)))))
-
 
   (define (legal-pos pos)
     (cond ((< pos 0)

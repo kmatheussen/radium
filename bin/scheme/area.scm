@@ -796,6 +796,7 @@
                                 :text-color *text-color* ;; can also be function
                                 :wrap-lines #f
                                 :align-top #f
+                                :align-right #f
                                 :align-left #f
                                 :paint-border #t
                                 :border-rounding 2
@@ -823,18 +824,23 @@
       (if background-color
           (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding #f)))
 
-    (define x1 (+ (if align-left
-                  (+ 2 x1)
-                  x1)
-                  1))
-    (define x2 (- x2 1))
-
     (define text (maybe-thunk-value text))
 
+    (define text-width (<gui> :text-width text gui))
+
+    (define x1 (+ (cond (align-right
+                         (- x2 text-width)
+                         )
+                        (align-left
+                         (+ 2 x1))
+                        (else
+                         x1))
+                  1))
+    (define x2 (- x2 1))
+    
     (when (and (not scale-font-size)
                (not cut-text-to-fit)
                (not only-show-left-part-if-text-dont-fit))
-      (define text-width (<gui> :text-width text gui))
       (when (> text-width (- x2 x1))
         (set! x1 (+ x1 (- (- x2 x1) text-width)))))
                   
@@ -845,7 +851,8 @@
            y2
            wrap-lines
            align-top
-           align-left
+           (or align-left
+               align-right)
            0 ;; rotate
            cut-text-to-fit
            scale-font-size
