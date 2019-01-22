@@ -345,7 +345,7 @@ static void paintMarkerLines(QPainter &p, int64_t start_time, int64_t end_time, 
   QColor color = get_qcolor(SEQUENCER_MARKER_COLOR_NUM);
   color.setAlphaF(0.5);
   QPen blue_pen(color);
-  blue_pen.setWidth(2.9);
+  blue_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 5.17);
   
   p.setPen(blue_pen);
   
@@ -387,11 +387,11 @@ static int get_block_header_height(void) {
 
 static double get_seqblock_xsplit1(double seqblock_x1, double seqblock_x2){
   
-  return seqblock_x1 + R_MIN(root->song->tracker_windows->systemfontheight*10, (seqblock_x2-seqblock_x1) / 4);
+  return seqblock_x1 + R_MIN((double)root->song->tracker_windows->systemfontheight*10, (seqblock_x2-seqblock_x1) / 4);
 }
 
 static double get_seqblock_xsplit2(double seqblock_x1, double seqblock_x2){
-  return seqblock_x2 - R_MIN(root->song->tracker_windows->systemfontheight*10, (seqblock_x2-seqblock_x1) / 4);
+  return seqblock_x2 - R_MIN((double)root->song->tracker_windows->systemfontheight*10, (seqblock_x2-seqblock_x1) / 4);
 }
 
 static double get_seqblock_ysplit1(double seqblock_y1, double seqblock_y2){
@@ -969,8 +969,8 @@ public:
 #if SHOW_BARS
     p.setBrush(QBrush(color));
 #else
-    const double bar_height = 2.3;
-    const double bar_header_length = 3.2;
+    const double bar_height = (double)root->song->tracker_windows->systemfontheight / 6.5;
+    const double bar_header_length = (double)root->song->tracker_windows->systemfontheight / 4.7;
     
     QPen pen1(color1);
     pen1.setWidthF(bar_height);
@@ -1095,7 +1095,7 @@ public:
     if (track->l.num < MAX_DISABLED_SEQBLOCK_TRACKS){
       if (seqblock->track_is_disabled[track->l.num]){
         QPen pen1(QColor(250,250,250));
-        pen1.setWidthF(2.3);
+        pen1.setWidthF((double)root->song->tracker_windows->systemfontheight / 6.52);
         pen1.setCapStyle(Qt::FlatCap);
         p.setPen(pen1);
         
@@ -1160,7 +1160,7 @@ public:
 
     int64_t p_time2 = get_stretch_automation_sample_pos(seqblock, type==Seqblock_Type::RECORDING ? time2 : R_MIN(seqblock->t.num_samples, time2));
 
-    const double pixels_per_peak = R_MAX(2.7, root->song->tracker_windows->systemfontheight / 6.5);
+    const double pixels_per_peak = R_MAX(2.7, (double)root->song->tracker_windows->systemfontheight / 6.5);
     double width = x2-x1;
 
     int num_ch = SEQTRACKPLUGIN_get_num_channels(plugin, seqblock->sample_id);
@@ -1364,7 +1364,7 @@ public:
 
     QPen track_border_pen(track_border_color);
 
-    track_border_pen.setWidthF(1.3);
+    track_border_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 11.54);
 
     qreal x1,y1,x2,y2;
     rect.getCoords(&x1, &y1, &x2, &y2);
@@ -1402,8 +1402,8 @@ public:
       QPen bar_pen(bar_color);
       QPen beat_pen(beat_color);
 
-      bar_pen.setWidthF(1.3);
-      beat_pen.setWidthF(1.3);
+      bar_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 11.54);
+      beat_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 11.54);
 
       if (beat!=NULL)
         beat = NextBeat(beat);
@@ -1456,7 +1456,7 @@ public:
     QColor border_color = get_block_qcolor(SEQUENCER_BLOCK_BORDER_COLOR_NUM, type);
 
     QPen header_border_pen(header_border_color);
-    header_border_pen.setWidthF(2.3);
+    header_border_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 6.52);
 
     qreal x1,y1,x2,y2;
     rect.getCoords(&x1, &y1, &x2, &y2);
@@ -1582,7 +1582,7 @@ public:
     double ysplit2 = get_seqblock_ysplit2(y1, y2);
     double ysplit3 = get_seqblock_ysplit3(y1, y2);
 
-    double width = root->song->tracker_windows->systemfontheight / 4;
+    double width = (double)root->song->tracker_windows->systemfontheight / 4;
     double sel_width = width*2;
 
     QColor color = get_qcolor(SEQUENCER_BLOCK_INTERFACE_COLOR_NUM);
@@ -1783,10 +1783,10 @@ public:
     QColor border_color(150,150,160);
 
     QPen pen(border_color);
-    pen.setWidth(root->song->tracker_windows->systemfontheight / 8);
+    pen.setWidth((double)root->song->tracker_windows->systemfontheight / 8);
 
     QPen sel_pen(border_color);
-    sel_pen.setWidthF(root->song->tracker_windows->systemfontheight / 3);
+    sel_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 3);
 
     if (seqblock->fadein > 0){
       double fade_x = scale_double(seqblock->fadein, 0, 1, rect.left(), rect.right());
@@ -3370,11 +3370,11 @@ public:
     {
       QColor blue_color = get_qcolor(SEQUENCER_MARKER_COLOR_NUM);
       QPen blue_pen(blue_color);
-      blue_pen.setWidth(2.9);
+      blue_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 5.17);
 
       blue_color.setAlphaF(0.5);
       QPen blue_round_pen(blue_color);
-      blue_pen.setWidth(2.9);
+      blue_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 5.17);
 
       QPen text_pen(QColor("#b0eeeeee"));
 
@@ -3508,7 +3508,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     set_widget_takes_care_of_painting_everything(this);
 
-    int minimum_height = root->song->tracker_windows->systemfontheight*1.3 * 2;
+    int minimum_height = (double)root->song->tracker_windows->systemfontheight*1.3 * 2;
     setMinimumHeight(minimum_height);
     //setMaximumHeight(height);
   }
@@ -4011,8 +4011,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       float alpha = beat_color.alphaF();
       beat_color.setAlphaF(alpha/2);
       
-      beat_pen.setWidthF(0.6);
-      bar_pen.setWidthF(1.0);
+      beat_pen.setWidthF(root->song->tracker_windows->systemfontheight / 25.0);
+      bar_pen.setWidthF(root->song->tracker_windows->systemfontheight / 15.0);
     }
   
     p.setPen(beat_pen);
