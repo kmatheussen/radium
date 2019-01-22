@@ -641,8 +641,13 @@ public:
 
         } else {
           
+          node1_ = &rt->nodes[0];
+          node2_ = &rt->nodes[1];
+
           R_ASSERT(false);
-          
+
+          return SeqAutomationReturnType::NO_VALUES;
+                  
         }
         
       gotit:
