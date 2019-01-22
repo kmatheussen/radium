@@ -180,6 +180,8 @@ void *talloc__(int size, const char *filename, int linenumber){ ///, const char 
 
         RWarning("Out of memory. Trying to get memory a different way. You should save and quit.");
 
+        return calloc(1,size);
+        /*
         ret=calloc(1,size);
 	if(ret!=NULL) return ret;
 
@@ -187,6 +189,7 @@ void *talloc__(int size, const char *filename, int linenumber){ ///, const char 
 	RWarning("\n\n\n Didn't succeed. OUT OF MEMORY. Have to quit\n\n\n");
 	ShutDownYepp();
 	return NULL;
+        */
 }
 
 void *talloc_atomic__(int size, const char *filename, int linenumber){
@@ -263,14 +266,16 @@ void *talloc_atomic_uncollectable__(int size, const char *filename, int linenumb
 #endif
 
         RWarning("Out of memory. I'll try to continue by allocating a different way, but you should save and quit now.\n");
-        ret = calloc(1,size);
-        
+        return calloc(1,size);
+
+        /*
 	if(ret!=NULL) return ret;
 
 
         RWarning("Didn't succeed. Out of memory. Quitting. (atomic_uncollectable allocator)\n");
 	ShutDownYepp();
 	return NULL;
+        */
 }
 
 void *talloc_atomic_clean__(int size, const char *filename, int linenumber){
@@ -304,7 +309,7 @@ void *talloc_realloc__(void *v, int new_size, const char *filename, int linenumb
 }
 
 char *talloc_strdup__(const char *input, const char *filename, int linenumber) {
-  if(input==NULL)
+  if(input==NULL) // when does this happen?
     return NULL;
   char *ret = talloc_atomic__((int)strlen(input) + 1, filename, linenumber);
   sprintf(ret,"%s",input);
@@ -312,7 +317,7 @@ char *talloc_strdup__(const char *input, const char *filename, int linenumber) {
 }
 
 wchar_t *talloc_wcsdup__(const wchar_t *input, const char *filename, int linenumber) {
-  if(input==NULL)
+  if(input==NULL) // when does this happen?
     return NULL;
   
   wchar_t *ret = talloc_atomic__(sizeof(wchar_t) * ((int)wcslen(input) + 1), filename, linenumber);
