@@ -570,6 +570,7 @@ static void add_ppq_to_tempos(QVector<TempoAutomationNode> &tempos){
 // Sets time values to nearest beat.
 static QVector<TempoAutomationNode> prepare_tempo_automation(const QVector<TempoAutomationNode> &tempos,
                                                              const QVector<SignatureAutomationNode> &signatures,
+                                                             bool use_ideal_time,
                                                              bool &is_changed){
   QVector<TempoAutomationNode> ret;
 
@@ -600,10 +601,12 @@ static QVector<TempoAutomationNode> prepare_tempo_automation(const QVector<Tempo
     double least_diff = -1;
     int beatnum,barnum;
 
+    double tempotime = use_ideal_time ? tempo.ideal_time : tempo.time;
+
     iterate_sequencer_time(0, -1, BEAT_GRID, signatures, ret,
                            [&](int64_t seqtime, int barnum2, int beatnum2, int linenum)
                            {
-                             double diff = fabs(tempo.ideal_time - seqtime);
+                             double diff = fabs(tempotime - seqtime);
                              if (least_diff < -0.5 || diff < least_diff){
                                least_diff = diff;
                                beat_seqtime = seqtime;
@@ -612,7 +615,7 @@ static QVector<TempoAutomationNode> prepare_tempo_automation(const QVector<Tempo
                              }
 
                              //printf("  %d/%d. diff: %f. Beat.time: %f. tempo.time: %f\n", barnum2, beatnum2, diff/(double)pc->pfreq, (double)seqtime/(double)pc->pfreq, tempo.time/(double)pc->pfreq);
-                             if (seqtime > tempo.time)
+                             if (seqtime > tempotime)
                                return false;
 
                              return true;
@@ -641,7 +644,10 @@ static QVector<TempoAutomationNode> prepare_tempo_automation(const QVector<Tempo
 // Adds barnums and sets time values to nearest bar.
 static QVector<SignatureAutomationNode> prepare_signature_automation(const QVector<SignatureAutomationNode> &signatures,
                                                                      const QVector<TempoAutomationNode> &tempos,
+                                                                     bool use_ideal_time,
                                                                      bool &is_changed){
+  R_ASSERT_NON_RELEASE(is_changed==false);
+  
   QVector<SignatureAutomationNode> ret;
 
   {
@@ -670,19 +676,21 @@ static QVector<SignatureAutomationNode> prepare_signature_automation(const QVect
     double bar_seqtime = 0;
     double least_diff = -1;
 
+    double signaturetime = use_ideal_time ? signature.ideal_time : signature.time;
+        
     iterate_sequencer_time(0, -1, BAR_GRID, ret, tempos,
                            [&](int64_t seqtime, int barnum2, int beatnum, int linenum)
                            {
                              R_ASSERT(beatnum==1);
 
-                             double diff = fabs(signature.ideal_time - seqtime);
+                             double diff = fabs(signaturetime - seqtime);
                              if (least_diff < -0.5 || diff < least_diff){
                                least_diff = diff;
                                barnum = barnum2;
                                bar_seqtime = seqtime;
                              }
 
-                             if (seqtime > signature.time)
+                             if (seqtime > signaturetime)
                                return false;
 
                              return true;
@@ -713,7 +721,9 @@ static void prepare_signature_and_tempo_automation(QVector<SignatureAutomationNo
                                                    QVector<TempoAutomationNode> tempos)
 {
 
-  int max_size1 = signatures.size() * tempos.size();
+  int init_signature_size = R_MAX(1, signatures.size());
+  int init_tempos_size = R_MAX(1, tempos.size());
+  int max_size1 = 1 + init_signature_size * init_tempos_size;
   int max_size2 = 10*max_size1;
 
   // Changing tempos changes signature positions, and changing signature changes tempo positions, so we just change both of them again and again until they stabilize.
@@ -722,18 +732,30 @@ static void prepare_signature_and_tempo_automation(QVector<SignatureAutomationNo
 
     bool is_changed = false;
 
-    QVector<SignatureAutomationNode> new_signatures = prepare_signature_automation(signatures, tempos, is_changed);
-    QVector<TempoAutomationNode> new_tempos = prepare_tempo_automation(tempos, signatures, is_changed);
+    QVector<SignatureAutomationNode> new_signatures = prepare_signature_automation(signatures, tempos, i==0, is_changed);
+    QVector<TempoAutomationNode> new_tempos = prepare_tempo_automation(tempos, signatures, i==0, is_changed);
 
     if (is_changed==false)
       break;
 
 #if !defined(RELEASE)
     printf("      I: %d. is_changed: %d. max1: %d. max2: %d. size1: %d. size2: %d\n", i, is_changed, max_size1, max_size2, signatures.size(), tempos.size());
+    
+    if (i > R_MAX(init_signature_size, init_tempos_size)){
+      printf("  Signatures for #%d:\n", i);
+      for(auto &signature : new_signatures){
+        printf("     %f: barnum: %d\n", signature.time, signature.barnum);
+      }
+      printf("  Tempos for #%d:\n", i);
+      for(auto &tempo : new_tempos){
+        printf("     %f: bpm: %f\n", tempo.time, tempo.value);
+      }      
+    }
 #endif
-
+    
     if (i > max_size1){
       printf("Warning:      I: %d. is_changed: %d. max1: %d. max2: %d. size1: %d. size2: %d\n", i, is_changed, max_size1, max_size2, signatures.size(), tempos.size());
+      //getchar();
       R_ASSERT_NON_RELEASE(false);
     }
 

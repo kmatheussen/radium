@@ -46,11 +46,14 @@
        (< y y2)))
 
 (define (show-sequencer-timing-help)
-  (FROM-C-show-help-window "help/sequencer_timing.html"))
+  (FROM-C-show-help-window "help/timing.html"))
 
 (define (get-sequencer-timing-popup-menu-entries)
-  (list "Help timing"
-        show-sequencer-timing-help))
+  (list "-------------------"
+        (list "Help timing"
+              show-sequencer-timing-help)
+        (get-sequencer-conf-menues)
+        ))
 
 (define *show-editor-timing-warning* #t)
 (define *editor-timing-warning-is-visible* #f)
