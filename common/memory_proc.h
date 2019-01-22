@@ -48,9 +48,9 @@ extern LANGSPEC void *talloc_realloc__(void *v, int new_size, const char *filena
 
 extern LANGSPEC void *talloc_atomic_clean__(int size, const char *filename, int linenumber) __attribute__((malloc)) __attribute__((returns_nonnull));
 
-extern LANGSPEC char *talloc_strdup__(const char *input, const char *filename, int linenumber) __attribute__((malloc)) __attribute__((returns_nonnull));
+extern LANGSPEC char *talloc_strdup__(const char *input, const char *filename, int linenumber) __attribute__((malloc)); // __attribute__((returns_nonnull));
 
-extern LANGSPEC wchar_t *talloc_wcsdup__(const wchar_t *input, const char *filename, int linenumber) __attribute__((malloc)) __attribute__((returns_nonnull));
+extern LANGSPEC wchar_t *talloc_wcsdup__(const wchar_t *input, const char *filename, int linenumber) __attribute__((malloc)); // __attribute__((returns_nonnull));
 
 extern LANGSPEC char *talloc_numberstring__(int number, const char *filename, int linenumber) __attribute__((malloc)) __attribute__((returns_nonnull));
 

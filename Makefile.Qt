@@ -144,7 +144,7 @@ GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
 
 FREETYPE_CFLAGS ?= `$(PKG) -cflags freetype2`
 
-VST_OPTS ?= -DUSE_VESTIGE=0 
+VST_OPTS ?=
 
 CRASHREPORTER_OPTS ?= 
 CRASHREPORTER_POSIX_OPTS ?= 
@@ -242,11 +242,16 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_63_0 -I${HOME}/boost_1_67_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK -I ~/SDKs/vstsdk2.4/ -fdelete-null-pointer-checks -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict -Wnull-dereference
+COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_63_0 -I${HOME}/boost_1_67_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference
+#-fdelete-null-pointer-checks 
 # -Werror
 
 #-Wstrict-overflow=4 -Wsuggest-attribute=format -Wstringop-overflow=4
 #-Wsuggest-final-types -Wsuggest-final-methods
+
+ifeq (,$(findstring clang,$(CC)))
+	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict 
+endif
 
 
 #ifeq ($(GCC_MAJOR),7)
@@ -863,8 +868,13 @@ sequencer_timing.o:  $(BUILD_DEPENDENCIES) $(CD)sequencer_timing.cpp $(CD)SeqAut
 seqblock_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h audio/Envelope.hpp common/Vector.hpp
 	$(CCC) $(CD)seqblock_automation.cpp $(QTOPT) -Wno-unknown-pragmas
 
+SEQBLOCK_STRETCHSPEED_OPT=
+ifeq (,$(findstring clang,$(CC)))
+ SEQBLOCK_STRETCHSPEED_OPT += -Wno-maybe-uninitialized
+endif
+
 seqblock_stretchspeed.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_stretchspeed.cpp $(CD)SeqAutomation.hpp 
-	$(CCC) $(CD)seqblock_stretchspeed.cpp $(QTOPT) -Wno-maybe-uninitialized
+	$(CCC) $(CD)seqblock_stretchspeed.cpp $(QTOPT) $(SEQBLOCK_STRETCHSPEED_OPT)
 
 time.o:  $(BUILD_DEPENDENCIES) $(CD)time.cpp
 	$(CCC) $(CD)time.cpp $(CPPOPT) 
@@ -1012,8 +1022,12 @@ disk_swing.o:  $(BUILD_DEPENDENCIES) $(CD)disk_swing.c $(CD)disk.h
 disk_windows.o:  $(BUILD_DEPENDENCIES) $(CD)disk_windows.c $(CD)disk.h
 	$(CC) $(CD)disk_windows.c $(OPT)
 
+DISK_FX_OPT=
+ifeq (,$(findstring clang,$(CC)))
+ DISK_FX_OPT += -Wno-jump-misses-init
+endif
 disk_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxs.c $(CD)disk.h
-	$(CC) $(CD)disk_fxs.c $(OPT) -Wno-jump-misses-init
+	$(CC) $(CD)disk_fxs.c $(OPT) $(DISK_FX_OPT)
 
 disk.o:  $(BUILD_DEPENDENCIES) $(CD)disk.c $(CD)disk.h
 	$(CC) $(CD)disk.c $(OPT)
@@ -1321,8 +1335,13 @@ Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar
 Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
 	$(CCC) $(P)Qt_Time.cpp $(QTOPT)
 
+QT_SEQUENCER_OPT=
+ifeq (,$(findstring clang,$(CC)))
+ QT_SEQUENCER_OPT += -Wno-duplicated-branches
+endif
+
 Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp common/seqblock_automation_proc.h
-	$(CCC) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) -Wno-duplicated-branches
+	$(CCC) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SEQUENCER_OPT)
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
@@ -1612,7 +1631,7 @@ api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.c
 	$(CC)  $(API)api_navigate.c $(OPT)
 
 api_disk.o:  $(BUILD_DEPENDENCIES)  $(API)api_disk.cpp 
-	$(CCC)  $(API)api_disk.cpp $(QTOPT)
+	$(CCC)  $(API)api_disk.cpp $(SNDFILEOPT) $(QTOPT)
 
 api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp 
 	$(CCC)  $(API)api_noteedit.cpp $(QTOPT)
