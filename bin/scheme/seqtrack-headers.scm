@@ -1355,7 +1355,8 @@
                                          ((<ra> :get-box seqtempo-area) :height)))))
   
   (define ty1-height (myfloor (- seqtrack0-y1
-                                 (<ra> :get-seqtimeline-area-y1))))
+                                 (<ra> :get-sequencer-y1))))
+;;                                 (<ra> :get-seqtimeline-area-y1))))
   
   (define ty1 (+ y1 ty1-height))    
   (define ty2 (- y2 (* 1.5 (get-fontheight)))) ;;20));(myfloor ((<ra> :get-box seqnav) :height))))
@@ -1366,6 +1367,19 @@
 
   (add-sub-area-plain! (<new> :sequencer-left-part-top-bar gui x1 y1 x2 topbar-y2))
 
+  (define show-tempos (<ra> :show-tempos-sequencer-lane))
+  (define show-signatures (<ra> :show-signatures-sequencer-lane))
+  (define show-markers (<ra> :show-markers-sequencer-lane))
+
+  (if (or show-tempos show-signatures show-markers)
+      (let* ((timeline-height (- (<ra> :get-seqtimeline-area-y2) (<ra> :get-sequencer-y1)))
+             (y1 (+ y1 timeline-height))
+             (header-height (- seqtrack0-y1 (<ra> :get-seqtimeline-area-y2)))
+             (y2 (- (+ y1 header-height)
+                    6))) ;; Hack. Don't know why. The value is probably scaled by font size too, so this might need to be fixed.
+        (c-display "timeline-height:" timeline-height ". header-height:" header-height)
+        (add-sub-area-plain! (<new> :sequencer-timeline-headers gui x1 y1 x2 y2))))
+  
   (define header-area (<new> :area gui x1 topbar-y2 x2 (- ty2 1)))
   (add-sub-area-plain! header-area)
   

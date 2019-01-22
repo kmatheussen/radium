@@ -62,7 +62,10 @@ struct Song *SONG_create(void){
   song->editor_should_swing_along = true;
   song->mute_editor_automation_when_track_is_muted = true;
   song->num_channels_in_main_pipe = 2;
-
+  
+  song->show_bars_and_beats_sequencer_lane = true;
+  song->show_markers_sequencer_lane = true;
+  
   reset_recording_config(&song->default_recording_config);
 
   VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL, -1, false));

@@ -478,7 +478,8 @@
                :set-all-entries! ra:set-sequencer-tempos
                :popup-menu*
                (lambda (x* curr-tempo pos)
-                 (popup-menu 
+                 (popup-menu
+                  (list "----------Tempos")
                   (list "Add tempo"
                         :enabled (and (not curr-tempo)
                                       (<ra> :is-using-sequencer-timing))
@@ -499,7 +500,6 @@
                           (request-tempo x* curr-tempo
                                          (lambda (tempo)
                                            (area :replace-curr-entry! tempo)))))
-                  "-------------------"
                   (get-sequencer-timing-popup-menu-entries)
 
                   ;;(list "Glide to next tempo"
@@ -569,7 +569,8 @@
                :set-all-entries! ra:set-sequencer-signatures
                :popup-menu*
                (lambda (x* curr-signature pos)
-                 (popup-menu 
+                 (popup-menu
+                  (list "----------Signatures")
                   (list "Add Signature"
                         :enabled (and (not curr-signature)
                                       (<ra> :is-using-sequencer-timing))
@@ -590,7 +591,6 @@
                           (request-signature x* curr-signature
                                              (lambda (signature)
                                                (area :replace-curr-entry! signature)))))
-                  "-------------------"
                   (get-sequencer-timing-popup-menu-entries)                  
                   ))
                :get-entry-info-string get-entry-info-string
@@ -639,7 +639,8 @@
                :set-all-entries! ra:set-sequencer-markers
                :popup-menu*
                (lambda (x* curr-marker pos)
-                 (popup-menu 
+                 (popup-menu
+                  (list "----------Markers")
                   (list "Add Marker"
                         :enabled (not curr-marker)
                         (lambda ()
@@ -657,7 +658,6 @@
                           (request-marker x* curr-marker
                                              (lambda (marker)
                                                (area :replace-curr-entry! marker)))))
-                  "-------------------"
                   (get-sequencer-timing-popup-menu-entries)
                   ))
                :entry-color "sequencer_marker_color" ;;"#66004488"
@@ -777,13 +777,89 @@
 (define (FROM_C-paint-sequencer-grid gui x1 y1 x2 y2)
   (paint-sequencer-grid gui x1 y1 x2 y2))
 
-(def-area-subclass (<sequencer-timeline-area> :gui :x1 :y1 :x2 :y2)
-  (define tempo-y2 (scale 0.33 0 1 y1 y2))
-  (define signature-y2 (scale 0.66 0 1 y1 y2))
-  (add-sub-area-plain! (create-sequencer-tempo-area gui x1 y1 x2 tempo-y2))
-  (add-sub-area-plain! (create-sequencer-signature-area gui x1 tempo-y2 x2 signature-y2))
-  (add-sub-area-plain! (create-sequencer-marker-area gui x1 signature-y2 x2 y2))
+(define (get-sequencer-timeline-tempo-y2 y1 y2)
+  (define show-tempos (<ra> :show-tempos-sequencer-lane))
 
+  (if (not show-tempos)
+      y1
+      (begin
+        (define show-signatures (<ra> :show-signatures-sequencer-lane))
+        (define show-markers (<ra> :show-markers-sequencer-lane))
+
+        (cond ((and show-signatures show-markers)
+               (scale 0.33 0 1 y1 y2)) ;; all three shown
+              ((or show-signatures show-markers)
+               (scale 0.5 0 1 y1 y2)) ;; two shown
+              (else
+               y2))))) ;; only tempo shown.
+
+(define (get-sequencer-timeline-signature-y2 y1 y2)
+  (define show-markers (<ra> :show-markers-sequencer-lane))
+  
+  (if (not show-markers)
+      y2
+      (begin
+        (define show-tempos (<ra> :show-tempos-sequencer-lane))
+        (define show-signatures (<ra> :show-signatures-sequencer-lane))
+
+        (cond ((and show-tempos show-signatures)
+               (scale 0.66 0 1 y1 y2)) ;; all three
+              ((and (not show-tempos) (not show-signatures))
+               y1) ;; only show markers
+              (else
+               (scale 0.5 0 1 y1 y2)))))) ;; one of tempos or signatures is shown
+
+(def-area-subclass (<sequencer-timeline-headers> :gui :x1 :y1 :x2 :y2)
+  (c-display "   TYIMELINE-HEADERS. " x1 y1 "/" x2 y2)
+  (define tempo-y2 (get-sequencer-timeline-tempo-y2 y1 y2))
+  (define signature-y2 (get-sequencer-timeline-signature-y2 y1 y2))
+
+  (if (<ra> :show-tempos-sequencer-lane)
+      (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 tempo-y2
+                                  :text "Tempos"
+                                  :background-color "sequencer_background_color"
+                                  :paint-border #f
+                                  :align-right #t
+                                  )))
+
+  (if (<ra> :show-signatures-sequencer-lane)
+      (add-sub-area-plain! (<new> :text-area gui x1 tempo-y2 x2 signature-y2
+                                  :text "Signatures"
+                                  :background-color "sequencer_background_color"
+                                  :paint-border #f
+                                  :align-right #t
+                                  )))
+
+  (if (<ra> :show-markers-sequencer-lane)
+      (add-sub-area-plain! (<new> :text-area gui x1 signature-y2 x2 y2
+                                  :text "Markers"
+                                  :background-color "sequencer_background_color"
+                                  :paint-border #f
+                                  :align-right #t
+                                  )))
+  )
+
+(def-area-subclass (<sequencer-timeline-area> :gui :x1 :y1 :x2 :y2)
+  (define tempo-y2 (get-sequencer-timeline-tempo-y2 y1 y2))
+  (define signature-y2 (get-sequencer-timeline-signature-y2 y1 y2))
+
+  (define show-tempos (<ra> :show-tempos-sequencer-lane))
+  (define show-signatures (<ra> :show-signatures-sequencer-lane))
+  (define show-markers (<ra> :show-markers-sequencer-lane))
+
+  (assert (or show-tempos show-signatures show-markers))
+  
+  (if show-tempos
+      (add-sub-area-plain! (create-sequencer-tempo-area gui x1 y1 x2 tempo-y2)))
+
+  (if show-signatures
+      (add-sub-area-plain! (create-sequencer-signature-area gui x1 tempo-y2 x2 signature-y2)))
+
+  (if show-markers
+      (add-sub-area-plain! (create-sequencer-marker-area gui x1 signature-y2 x2 y2)))
+
+  ;;(c-display "    Timeline-area y1/y2:" y1 y2)
+  
   (define-override (paint)
     (<gui> :filled-box gui "sequencer_background_color" x1 y1 x2 y2 0 0 #f)
 
@@ -797,8 +873,15 @@
       (<gui> :draw-line gui "black" x1 y1 x2 y1 1.2)
       (<gui> :draw-line gui "#bbffffff" x1 y2 x2 y2 0.7)
       )
-    (draw-border tempo-y2)
-    (draw-border signature-y2)
+
+
+    (if (and show-tempos
+             (or show-signatures show-markers))             
+        (draw-border tempo-y2))
+
+    (if (and (or show-tempos show-signatures)
+             show-markers)
+        (draw-border signature-y2))
     
     ;; paint grid
     ;;(paint-sequencer-grid gui x1 y1 x2 y2)
@@ -837,10 +920,13 @@
   (define gui (<gui> :get-sequencer-gui))
 
   (set! *sequencer-timing-area*
-        (create-sequencer-upper-part-area gui 
-                                          x1 y1
-                                          x2 y2
-                                          #f))
+        (and (or (<ra> :show-tempos-sequencer-lane)
+                 (<ra> :show-signatures-sequencer-lane)
+                 (<ra> :show-markers-sequencer-lane))
+             (create-sequencer-upper-part-area gui 
+                                               x1 y1
+                                               x2 y2
+                                               #f)))
         
   )
 

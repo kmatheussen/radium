@@ -4527,11 +4527,36 @@
                (lambda (val)
                  (<ra> :set-seqpunching val)
                  (c-display "new punch in/out:" val))))
-        "------- Sequencer configuration" ;;Various"
-        (list "Show song tempo automation"
+        ;;"------- Sequencer configuration" ;;Various"
+        "------- Sequencer lanes"
+        (list "Song tempo automation"
               :check (<ra> :seqtempo-visible)
               (lambda (doit)
                 (<ra> :set-seqtempo-visible doit)))
+        (list "Time"
+              :check (<ra> :show-time-sequencer-lane)
+              :enabled (or (not (<ra> :show-time-sequencer-lane))
+                           (<ra> :show-bars-and-beats-sequencer-lane))
+              (lambda (doit)
+                (<ra> :set-show-time-sequencer-lane doit)))
+        (list "Bars and beats"
+              :check (<ra> :show-bars-and-beats-sequencer-lane)
+              :enabled (or (not (<ra> :show-bars-and-beats-sequencer-lane))
+                           (<ra> :show-time-sequencer-lane))
+              (lambda (doit)
+                (<ra> :set-show-bars-and-beats-sequencer-lane doit)))
+        (list "Tempos"
+              :check (<ra> :show-tempos-sequencer-lane)
+              (lambda (doit)
+                (<ra> :set-show-tempos-sequencer-lane doit)))
+        (list "Signatures"
+              :check (<ra> :show-signatures-sequencer-lane)
+              (lambda (doit)
+                (<ra> :set-show-signatures-sequencer-lane doit)))
+        (list "Markers"
+              :check (<ra> :show-markers-sequencer-lane)
+              (lambda (doit)
+                (<ra> :set-show-markers-sequencer-lane doit)))
         "-------"
         (list :radio-buttons
               (list "Use sequencer timing"
@@ -4557,17 +4582,17 @@
                                          (inside-box (<ra> :get-box seqtimeline-area) X Y))
                                     (begin
                                       (popup-menu (append
-                                                   (list "-------- Time format" ;;Display bars and beats"
-                                                         (list
-                                                          :radio-buttons
-                                                          (list "Bars and beats"
-                                                                :check (<ra> :show-bars-in-timeline)
-                                                                (lambda (val)
-                                                                  (<ra> :set-show-bars-in-timeline val)))
-                                                          (list "HH:MM:SS"
-                                                                :check (not (<ra> :show-bars-in-timeline))
-                                                                (lambda (val)
-                                                                  (<ra> :set-show-bars-in-timeline (not val))))))
+                                                   ;;(list "-------- Time format" ;;Display bars and beats"
+                                                   ;;      (list
+                                                    ;;      :radio-buttons
+                                                   ;;       (list "Bars and beats"
+                                                   ;;             :check (<ra> :show-bars-in-timeline)
+                                                   ;;             (lambda (val)
+                                                   ;;               (<ra> :set-show-bars-in-timeline val)))
+                                                   ;;       (list "HH:MM:SS"
+                                                   ;;             :check (not (<ra> :show-bars-in-timeline))
+                                                   ;;             (lambda (val)
+                                                    ;;              (<ra> :set-show-bars-in-timeline (not val))))))
                                                    (get-sequencer-conf-menues)))
                                       #t)
                                     #f))))

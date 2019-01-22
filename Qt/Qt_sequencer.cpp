@@ -3800,35 +3800,42 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     // timeline
     //
     {
-#if 0
-      _timeline_widget.setGeometry(x1, y1,
-                                   x1_width, timeline_widget_height);
-      
-      _timeline_widget.position_widgets(0,0, //x1, y1,
-                                        x1_width, timeline_widget_height); //x1 + x1_width, y1+timeline_widget_height);
-#else
       _timeline_widget.position_widgets(x1, y1,
                                         x1 + x1_width, y1+timeline_widget_height);
-#endif
-      
-      y1 += timeline_widget_height;
+
+      if (showTimeSequencerLane())      
+        y1 += timeline_widget_height;
     }
 
     // bars and beats
     {
       _bars_and_beats_widget.position_widgets(x1, y1,
                                               x1 + x1_width, y1+timeline_widget_height);
-      y1 += timeline_widget_height;
+      if (showBarsAndBeatsSequencerLane())
+        y1 += timeline_widget_height;
     }
 
     // timing + markers
     {
-      int timing_markers_height = 3*systemfontheight*1.3 + 2;
-
-      _timing_markers_y1 = y1;
-      _timing_markers_y2 = y1 + timing_markers_height;
+      int num_lanes = 0;
       
-      y1 = _timing_markers_y2;
+      if (showTemposSequencerLane())
+        num_lanes++;
+      
+      if (showSignaturesSequencerLane())
+        num_lanes++;
+      
+      if (showMarkersSequencerLane())
+        num_lanes++;
+
+      if(num_lanes > 0){
+        int timing_markers_height = num_lanes*systemfontheight*1.3 + 2;
+        
+        _timing_markers_y1 = y1;
+        _timing_markers_y2 = y1 + timing_markers_height;
+        
+        y1 = _timing_markers_y2;
+      }
     }
 
 
@@ -4145,21 +4152,28 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       bool is_last = seqtracknum==num_elements;
       const Seqblocks_widget w = get_seqblocks_widget(R_MIN(num_elements-1,seqtracknum), false);
       double y = floor(is_last ? w.t_y2 : w.t_y1) - 1;
-      float x1 = SEQUENCER_get_left_part_x1();//w.t_x1; //get_seqtrack_border_width()+3;//w.t_x1; //;
-      float x2 = w.t_x2; //width();
 
-      {
-        QColor color("#000000");
-        QPen pen(color);
-        pen.setWidthF(1);
-        p.setPen(pen);
-        p.drawLine(x1, y, x2, y);
-      }
-      {
-        QPen pen(QColor("#777777"));
-        pen.setWidthF(1);
-        p.setPen(pen);
-        p.drawLine(x1, y+1, x2, y+1);
+      if (y >= _seqtracks_widget.t_y2)
+        break;
+      
+      if (y > _seqtracks_widget.t_y1) {
+      
+        float x1 = SEQUENCER_get_left_part_x1();//w.t_x1; //get_seqtrack_border_width()+3;//w.t_x1; //;
+        float x2 = w.t_x2; //width();
+        
+        {
+          QColor color("#000000");
+          QPen pen(color);
+          pen.setWidthF(1);
+          p.setPen(pen);
+          p.drawLine(x1, y, x2, y);
+        }
+        {
+          QPen pen(QColor("#777777"));
+          pen.setWidthF(1);
+          p.setPen(pen);
+          p.drawLine(x1, y+1, x2, y+1);
+        }
       }
     }
   }
@@ -4269,9 +4283,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         _seqtracks_widget.paint(ev->region(), p);
 
       }
+
+      if (showTimeSequencerLane())
+        _timeline_widget.paint(ev->region(), p);
       
-      _timeline_widget.paint(ev->region(), p);
-      _bars_and_beats_widget.paint(ev->region(), p);
+      if (showBarsAndBeatsSequencerLane())
+        _bars_and_beats_widget.paint(ev->region(), p);
 
       if (_songtempoautomation_widget.is_visible)
         _songtempoautomation_widget.paint(ev->region(), p);
@@ -4684,7 +4701,10 @@ float SEQTIMELINE_get_y1(void){
 }
 
 float SEQTIMELINE_get_y2(void){
-  return mapToEditorY(g_sequencer_widget, g_sequencer_widget->_timeline_widget.t_y2);
+  if(showBarsAndBeatsSequencerLane())
+    return mapToEditorY(g_sequencer_widget, g_sequencer_widget->_bars_and_beats_widget.t_y2);
+  else
+    return mapToEditorY(g_sequencer_widget, g_sequencer_widget->_timeline_widget.t_y2);
 }
 
 

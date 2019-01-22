@@ -336,10 +336,20 @@ static inline QColor getQColor(int64_t color){
 #endif
 
 static QColor getQColor(const_char* colorname){
+#if !defined(RELEASE)
+  if(strlen(colorname) > 9 && colorname[0]=='#')
+    abort();
+#endif
+  
   QColor color = get_config_qcolor(colorname);
-  if (!color.isValid())
+  if (!color.isValid()){
+#if !defined(RELEASE)
+    abort();
+#endif
     handleError("Color \"%s\" is not valid", colorname);
-  //return QColor(color);
+    color = Qt::blue;
+  }
+  
   return color;
 }
 
@@ -4106,7 +4116,7 @@ float gui_textWidth(const_char* text, int64_t guinum){
   }
 
   const QFontMetrics fn = QFontMetrics(font);
-  return fn.width(text);
+  return fn.boundingRect(text).width();
 }
 
 int64_t gui_ui(const_char *filename){
