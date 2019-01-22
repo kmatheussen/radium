@@ -590,19 +590,30 @@ public:
         
         return SeqAutomationReturnType::NO_VALUES;
 
-      } else if (time < rt->nodes[0].time){
-        
-        *node1 = NULL;
-        *node2 = &rt->nodes[0];
-
-        return SeqAutomationReturnType::NO_VALUES_YET;
-        
       } else if (time >= rt->nodes[num_nodes-1].time){
 
         *node1 = &rt->nodes[num_nodes-1];
         *node2 = NULL;
 
         return SeqAutomationReturnType::NO_MORE_VALUES;
+        
+      } else if (time <= rt->nodes[0].time){
+
+        if (time == rt->nodes[0].time){
+          
+          *node1 = &rt->nodes[0];
+          *node2 = &rt->nodes[1];
+
+          return SeqAutomationReturnType::VALUE_OK;
+          
+        } else {
+          
+          *node1 = NULL;
+          *node2 = &rt->nodes[0];
+
+          return SeqAutomationReturnType::NO_VALUES_YET;
+        }
+        
         
       } else {
       
@@ -611,8 +622,9 @@ public:
         int i = _RT_last_search_pos;
         
         R_ASSERT_NON_RELEASE(i >= 0);
-        
-        if (i<num_nodes){
+
+        if (i>0 && i<num_nodes){
+          
           node1_ = &rt->nodes[i-1];
           node2_ = &rt->nodes[i];
           if (time >= node1_->time && time <= node2_->time) // Same position in array as last time. No need to do binary search. This is the path we usually take.
@@ -620,11 +632,18 @@ public:
         }
         
         i = BinarySearch_Left(rt, time, 0, num_nodes-1);
-        R_ASSERT_NON_RELEASE(i>0);
+
+        if (i > 0){
         
-        _RT_last_search_pos = i;
-        node1_ = &rt->nodes[i-1];
-        node2_ = &rt->nodes[i];
+          _RT_last_search_pos = i;
+          node1_ = &rt->nodes[i-1];
+          node2_ = &rt->nodes[i];
+
+        } else {
+          
+          R_ASSERT(false);
+          
+        }
         
       gotit:
 
