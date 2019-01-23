@@ -311,6 +311,11 @@ else
 	CPPOPT += -std=gnu++11
 endif
 
+WNO_DUPLICATED_BRANCHES=
+ifeq (,$(findstring clang,$(CC)))
+ WNO_DUPLICATED_BRANCHES += -Wno-duplicated-branches
+endif
+
 
 # Can't be enabled because of 3rd party header files:
 #-Wsuggest-override
@@ -2284,16 +2289,16 @@ crashreporter_windows.o: crashreporter/crashreporter_windows.c
 #	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
 GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
-	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)  $(WNO_SUGGEST_OVERRIDE) #-Wno-error=unused-variable
+	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) #-Wno-error=unused-variable
 
 T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/Queue.hpp OpenGL/GfxElements.h 
-	$(CCC) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) #-Wno-error=unused-variable
+	$(CCC) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES)    #-Wno-error=unused-variable
 
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h
-	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT)
+	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES)
 
 Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp
-	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) #-Wno-error=unused-variable
+	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) #-Wno-error=unused-variable
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)
