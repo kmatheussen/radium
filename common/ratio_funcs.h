@@ -33,7 +33,7 @@ static inline Ratio make_ratio_from_double(double val){
   R_ASSERT_NON_RELEASE(false);
 #endif
 
-  int64_t den = (2L << 60L) / (1 + (int64_t)val);
+  int64_t den = (2LL << 60) / (1 + (int64_t)val);
   int64_t num = round((double)den * val);
   //printf("num: %d\n",(int)num);
 
