@@ -94,6 +94,11 @@ bool fileExists(const_char* w_path){
 
 extern QStringList get_sample_name_filters(void);
 
+#if FOR_WINDOWS
+extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
+#endif
+
+
 dyn_t getFileInfo(const_char* w_path){
   QString path = w_to_qstring(w_path);
 
@@ -104,11 +109,12 @@ dyn_t getFileInfo(const_char* w_path){
     return g_uninitialized_dyn;
   }
 
+  /*
+
 #if FOR_WINDOWS
   qt_ntfs_permission_lookup++;
 #endif
 
-  /*
   bool is_readable =  info.isReadable();
 
 #if FOR_WINDOWS
@@ -292,10 +298,6 @@ static void traverse(QString path, func_t* callback, bool in_main_thread){
 
   }
 }
-
-#if FOR_WINDOWS
-extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
-#endif
 
 bool iterateDirectory(const_char* w_path, bool async, func_t* callback){  
   QString path = w_to_qstring(w_path);
