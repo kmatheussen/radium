@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>6</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -3427,35 +3427,6 @@ by mixing sound for all the buses.
              <widget class="QCheckBox" name="autoscroll_cursor">
               <property name="text">
                <string>Automatically scroll timeline so that cursor is always visible when playing</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="groupBox_4">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="title">
-            <string>Timeline</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_17">
-            <item>
-             <widget class="QRadioButton" name="show_bars_in_timeline">
-              <property name="text">
-               <string>Show bar numbers</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QRadioButton" name="show_time_in_timeline">
-              <property name="text">
-               <string>Show time</string>
               </property>
              </widget>
             </item>
@@ -7697,8 +7668,8 @@ you should check this box.
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>583</width>
-            <height>536</height>
+            <width>398</width>
+            <height>28</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -10318,8 +10289,8 @@ you should check this box.
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>952</width>
-               <height>244</height>
+               <width>100</width>
+               <height>30</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -10536,8 +10507,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
-  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

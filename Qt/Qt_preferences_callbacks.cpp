@@ -547,11 +547,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       autoscroll_cursor->setChecked(autoscrollSequencerToMakePlaycursorVisible());
         
       
-      if (showBarsInTimeline())
-        show_bars_in_timeline->setChecked(true);
-      else
-        show_time_in_timeline->setChecked(true);
-
       if (useJackTransport())
         jack_transport->setChecked(true);
       else
@@ -1014,11 +1009,6 @@ public slots:
   void on_autoscroll_cursor_toggled(bool val){
     if (_initing==false)
       setAutoscrollSequencerToMakePlaycursorVisible(val);
-  }
-
-  void on_show_bars_in_timeline_toggled(bool val){
-    if (_initing==false)
-      setShowBarsInTimeline(val);
   }
 
   void on_jack_transport_toggled(bool val){
