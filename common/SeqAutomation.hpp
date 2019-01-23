@@ -15,6 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+// Run small test by executing "./build_linux.sh test"
+// See ../test/test_seqautomation.cpp
+
+
 
 #ifndef _RADIUM_COMMON_SEQAUTOMATION_HPP
 #define _RADIUM_COMMON_SEQAUTOMATION_HPP
@@ -28,7 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPainter>
 
 #include "../Qt/Qt_mix_colors.h"
-
 
 namespace radium{
 
@@ -572,6 +575,7 @@ private:
 
 public:
 
+  // This function is tested in ../test/test_seqautomation.cpp (run by calling "./build_linux test")
   SeqAutomationReturnType RT_get_nodes(double time, const T **node1, const T **node2){
     R_ASSERT_NON_RELEASE(_RT_last_search_pos > 0);
 
@@ -641,8 +645,8 @@ public:
 
         } else {
           
-          node1_ = &rt->nodes[0];
-          node2_ = &rt->nodes[1];
+          *node1 = &rt->nodes[0];
+          *node2 = &rt->nodes[1];
 
           R_ASSERT(false);
 

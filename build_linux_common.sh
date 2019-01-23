@@ -175,7 +175,13 @@ make buildtype.opt --stop
 make flagopts.opt --stop
 make api/radium_proc.h --stop
 make common/keyboard_sub_ids.h --stop
-make radium $@ --stop
+
+if [[ $1 == "test" ]] ; then
+   make test_seqautomation
+else
+    make radium $@ --stop
+fi
+   
 #make pluginhost/Builds/Linux/build/libMyPluginHost.a
 
 cp -f bin/run_radium_linux.sh bin/radium
