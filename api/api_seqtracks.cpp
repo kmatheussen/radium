@@ -1742,26 +1742,6 @@ void setAutoscrollSequencerToMakePlaycursorVisible(bool doit){
 }
 
 
-static bool g_show_bars_in_timeline = true;
-
-bool showBarsInTimeline(void){
-  static bool has_inited = false;
-
-  if (has_inited==false){
-    g_show_bars_in_timeline = SETTINGS_read_bool("show_bars_in_timeline", g_show_bars_in_timeline);
-    has_inited = true;
-  }
-
-  return g_show_bars_in_timeline;
-}
-
-void setShowBarsInTimeline(bool doit){
-  g_show_bars_in_timeline = doit;
-  SETTINGS_write_bool("show_bars_in_timeline", doit);
-  SEQUENCER_update(SEQUPDATE_TIME);
-}
-
-
 
 static DEFINE_ATOMIC(bool, g_use_jack_transport) = false;
 
