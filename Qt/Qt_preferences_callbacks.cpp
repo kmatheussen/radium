@@ -599,7 +599,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     {
       show_playlist_during_startup->setChecked(showPlaylistDuringStartup());
       show_mixer_strip_during_startup->setChecked(showMixerStripDuringStartup());
-      show_mixer_strip_on_the_left->setChecked(showMixerStripOnLeftSide());
+
+      if(showMixerStripOnLeftSide())
+        show_mixer_strip_on_the_left->setChecked(true);
+      else
+        show_mixer_strip_on_the_right->setChecked(true);
 
       sequencer_window_is_child_of_main_window->setChecked(sequencerWindowIsChildOfMainWindow());
       mixer_window_is_child_of_main_window->setChecked(mixerWindowIsChildOfMainWindow());
