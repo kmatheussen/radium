@@ -568,6 +568,13 @@ test_path_resolver:
 	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread && ./a.out
 	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
+test_seqautomation:
+	$(CCC) -g -Wall -Werror test/test_seqautomation.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined
+	$(CCC) test_seqautomation.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -fsanitize=address -fsanitize=undefined -o test_seqautomation
+	./test_seqautomation
+	@echo "=== success: test_seqautomation ==="
+	@rm test_seqautomation
+
 packages: bin/packages/deletemetorebuild
 
 bin/packages/deletemetorebuild: bin/packages/build.sh
