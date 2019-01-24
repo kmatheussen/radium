@@ -857,6 +857,9 @@ bool RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
       }
 
       double value;
+#if !defined(RELEASE) && defined(FOR_WINDOWS)
+      value = 0.0; // Workaround for compiler bug in mingw32. (I"m more than 90% sure it"s a compiler bug. In addition, neither gcc 7.2 on linux, gcc 8, nor clang 5, shows this warning).
+#endif
       switch(automation->automation.RT_get_value(seqtime+latency, value)){
 
         case radium::SeqAutomationReturnType::VALUE_OK:{
@@ -869,7 +872,7 @@ bool RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
               when = FX_middle;
             
             RT_PLUGIN_touch(plugin);
-            
+
             PLUGIN_set_effect_value(plugin,0,effect_num,value, DONT_STORE_VALUE, when, EFFECT_FORMAT_SCALED);
             automation->last_value = value;
           }

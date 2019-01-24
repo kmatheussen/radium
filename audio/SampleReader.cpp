@@ -1243,7 +1243,7 @@ public:
 
     SliceBuffer *slicebuffers = _provider->RT_get_slicebuffers(slice_num);
     if (slicebuffers==NULL){
-#if !defined(RELEASE)
+#if !defined(RELEASE) && !defined(FOR_WINDOWS) // Happens quite often in debug mode on Windows. Can probably remove this abort for all platforms too.
       abort();
 #endif
       RT_message("Couldn't read from disk fast enough. Try increasing the disk buffer.");
