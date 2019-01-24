@@ -1,18 +1,25 @@
 #ifndef _RADIUM_COMMON_RATIO_FUNCS_H
 #define _RADIUM_COMMON_RATIO_FUNCS_H
 
+#ifdef TEST_MAIN
+
+#define __STDC_FORMAT_MACROS
+# include <inttypes.h>
+# include <stdio.h>
+
+# define R_ASSERT_NON_RELEASE(a) //if(!(a))abort()
+# define R_ASSERT(a) if(!(a))abort()
+# include <algorithm>
+# include "ratio_type.h"
+
+#else
+
+# include "placement_proc.h"
+
+#endif
+
 #include <math.h>
 
-#ifdef TEST_MAIN
-#include <algorithm>
-#include <inttypes.h>
-#include <stdio.h>
-#define R_ASSERT_NON_RELEASE(a) //if(!(a))abort()
-#define R_ASSERT(a) if(!(a))abort()
-#include "ratio_type.h"
-#else
-#include "placement_proc.h"
-#endif
 
 #if !__MINGW32__
 typedef struct {
