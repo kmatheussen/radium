@@ -86,11 +86,11 @@ static inline int64_t get_seqblock_place_time2(const struct SeqBlock *seqblock, 
 }
                                  
 
-static inline double seqblock_is_stretched(const struct SeqBlock *seqblock){
+static inline bool seqblock_is_stretched(const struct SeqBlock *seqblock){
   return fabs(seqblock->t.stretch - 1.0) > 0.00001;
 }
 
-static inline double seqblock_is_speeded(const struct SeqBlock *seqblock){
+static inline bool seqblock_is_speeded(const struct SeqBlock *seqblock){
   return fabs(seqblock->t.speed - 1.0) > 0.00001;
 }
 

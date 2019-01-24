@@ -2286,8 +2286,8 @@ void SEQUENCER_timing_has_changed(radium::PlayerLockOnlyIfNeeded &lock){
         if (seqblock->t.default_duration != default_duration){
 
           lock.lock();
-            
-          if (seqblock_is_stretched(seqblock))
+
+          if (false==seqblock_is_stretched(seqblock))
             seqblock->t.time2 = seqblock->t.time + default_duration;
           else
             seqblock->t.time2 = seqblock->t.time + round(seqblock->t.stretch*(double)default_duration);
@@ -2296,6 +2296,8 @@ void SEQUENCER_timing_has_changed(radium::PlayerLockOnlyIfNeeded &lock){
           
           seqblock->t.interior_end = default_duration;
 
+          //printf("      Seqblock %d is stretched: %d (stretch: %f). Time1: %d. Time2: %d\n", iterator666, seqblock_is_stretched(seqblock), seqblock->t.stretch, (int)seqblock->t.time, (int)seqblock->t.time2);
+          
           lock.maybe_pause(iterator666);
         }
       }
