@@ -1,3 +1,38 @@
+Changes 5.9.30 -> 5.9.31:
+* Sequencer: Fix wrong seqblock duration of stretched
+  seqblocks when changing tempos of a editor block.
+* Sequencer: Don't overlap two editor seqblocks when
+  changing tempo of the first block so that the
+  length it increases.
+* GUI: Fix main window sometimes being put behind all
+  other windows right after startup.
+* Instrument: Fix patch widget label colors. Might
+  only have been a problem in debug mode.
+* Sequencer: Optimize graphics a little bit when
+  editing tempos, signatures, and markers.
+* Sequencer: Show closed-hand mouse-cursor when
+  moving a vertical scrollbar in the right side tabs.
+* Sequencer/Windows: Fix strange behavior when
+  releasing mouse button outside current widget.
+* Sequencer/Windows: Fix browsing directories on a
+  network disks in the file bropwser.
+* Internal: Fix program crashing when exiting. Have
+  only seen it happen in debug mode on Windows though.
+* Windows: Fix time positions for notes suddenly
+  jumping to 0 when edited in the piano roll.
+  Probably rare though. Bug introduced in 5.9.21.
+* Preferences: Change the checkbox for selecting left
+  or right side for current mixer strip into radio
+  buttons .
+* Preferences: Remove the "Timeline" group from the
+  "Sequencer" tab. Whether to show bars and/or time
+  in the timeline is now a property of the song and
+  not a global option.
+* API: Removed showBarsInTimeline,
+  setShowBarsInTimeline.
+
+
+
 Changes 5.9.22 -> 5.9.30:
 * Sequencer: Scale various line widths with fontsize.
 * Internal: Fix api-errors not being displayed in the
