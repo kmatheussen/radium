@@ -104,13 +104,16 @@ dyn_t getFileInfo(const_char* w_path){
 
   QFileInfo info(path);
 
+  /*
+    Happens when a symbolic link points to a non-existing file or directory.
   if (!info.exists()){
     showAsyncMessage(talloc_format("Directory \"%S\" does not exist.", STRING_create(path)));
     return g_uninitialized_dyn;
   }
-
+  */
+  
   /*
-
+    Commented out. We never want to return g_uninitialized or any other non-hashtable value.
 #if FOR_WINDOWS
   qt_ntfs_permission_lookup++;
 #endif
@@ -126,7 +129,7 @@ dyn_t getFileInfo(const_char* w_path){
     return g_uninitialized_dyn;
   }
   */
-
+  
   hash_t *ret = HASH_create(10);
 
   if(info.isDir()){
@@ -146,6 +149,7 @@ dyn_t getFileInfo(const_char* w_path){
   HASH_put_string(ret, ":filename", STRING_create(info.fileName()));
   HASH_put_bool(ret, ":is-dir", info.isDir());
   HASH_put_bool(ret, ":is-sym-link", info.isSymLink());
+  HASH_put_bool(ret, ":exists", info.exists());
   HASH_put_int(ret, ":last-modified", info.lastModified().toSecsSinceEpoch());
   HASH_put_bool(ret, ":is-hidden", info.isHidden());
   HASH_put_int(ret, ":size", info.size());
@@ -213,14 +217,16 @@ static bool call_callback(func_t* callback, bool in_main_thread, bool is_finishe
 
   //printf("  Call callback -%S-\n", STRING_create(w_to_qstring(path)));
 
+  if(!strcmp(path,""))
+    R_ASSERT(is_finished);
+  
   bool ret = S7CALL(bool_bool_dyn,
                     callback,
                     is_finished,                
                     !strcmp(path,"") ? g_uninitialized_dyn : getFileInfo(path)
                     );
 
-
-  if (num_calls != g_num_calls_to_handleError)
+  if (num_calls != g_num_calls_to_handleError) // Return false if the callback generated any errors.
     return false;
 
   return ret;
@@ -314,8 +320,12 @@ bool iterateDirectory(const_char* w_path, bool async, func_t* callback){
   qt_ntfs_permission_lookup++;
 #endif
 
-  bool is_readable =  info.isReadable();
-
+#if FOR_WINDOWS
+  bool is_readable = true; // isReadable() returns false for network disks on windows, even when the network disk is actually readable.
+#else
+  bool is_readable = info.isReadable();
+#endif
+  
 #if FOR_WINDOWS
   qt_ntfs_permission_lookup--;
 #endif
