@@ -283,10 +283,10 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void update_label_color(QLabel *l){
     QString text = l->text();
     int pos = text.indexOf("#");
-    l->setText(text.replace(pos, 7, get_qcolor(TEXT_COLOR_NUM).name(QColor::HexArgb)));
+    l->setText(text.replace(pos, 9, get_qcolor(TEXT_COLOR_NUM).name(QColor::HexArgb)));
 
     QFontMetrics fm(QApplication::font());
-    int fontsize = fm.height() / 2;
+    int fontsize = R_MAX(2, fm.height() / 2);
 
     int pos1 = text.indexOf("font-size:") + QString("font-size:").size();
     int pos2 = text.indexOf("pt;");
