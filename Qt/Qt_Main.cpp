@@ -2156,9 +2156,13 @@ protected:
           gakkbox->lower(); // doesn't work, at least on linux. Normally I struggle to keep window on top, now it's the opposite. Should probably change Radium to use QMdiArea. It should solve all of the window manager problems.
       }
       if(num_calls_at_this_point==105/interval){
-        if (gakkbox != NULL)
+        if (gakkbox != NULL){
           gakkbox->hide();
+          g_main_window->raise();
+          //g_main_window->activateWindow();
+        }
       }
+
       if(num_calls_at_this_point==150/interval){
         delete gakkbox;
         GFX_SetMenuFontsAgain();
