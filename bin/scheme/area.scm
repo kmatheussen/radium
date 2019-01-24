@@ -1159,6 +1159,7 @@
    (lambda (button x* y*)
      (and (= button *left-button*)
           (begin
+            (set-mouse-pointer ra:set-closed-hand-mouse-pointer gui)
             ;;(c-display "start:" slider-pos)
             (set! start-mouse-pos slider-pos)
             (set! is-moving #t)
@@ -1186,6 +1187,7 @@
      (update-me!)
      )
    (lambda (button x* y* dx dy)
+     (set-mouse-pointer ra:set-open-hand-mouse-pointer gui)
      (set! is-moving #f)
      (update-me!)
      ;;(c-display "release button/x/y" x* y*)
