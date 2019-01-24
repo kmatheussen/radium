@@ -449,6 +449,7 @@
        curr-mouse-cycle)
      
      (define (mouse-move-internal button x* y*)
+       ;;(c-display "..mouse-move-internal for" class-name ". y:" y*)
        (cond (curr-mouse-cycle
               (curr-mouse-cycle :drag-func button x* y*))
              (curr-nonpress-mouse-cycle
@@ -459,6 +460,8 @@
              (else
               (start-nonpress-mouse-cycle! (get-nonpress-mouse-cycle x* y*)))))
      (define (mouse-release-internal button x* y*)
+       ;;(if curr-mouse-cycle
+       ;;    (c-display "..mouse-release-internal for" class-name ". y:" y*))
        ;;(c-display "mouse-release enter" curr-mouse-cycle)
        (let ((mouse-cycle curr-mouse-cycle))
          (set! curr-mouse-cycle #f)
@@ -476,7 +479,8 @@
        ;; make sure release is always called when releasing, no matter other states.
        (when (or (= state *is-releasing*)
                  (= state *is-leaving*))
-         ;;(c-display "     MOUSE-CALLBACK-INTERNAL called for" class-name)
+         ;;(if curr-mouse-cycle
+         ;;    (c-display "     MOUSE-CALLBACK-INTERNAL called for" class-name ". y:" y ". type:" (if (= state *is-releasing*) "RELEASE" "LEAVE")))
          (mouse-release-internal button x y))
        
        (cond (*current-mouse-cycle*
@@ -1161,6 +1165,7 @@
             (update-me!)
             #t)))
    (lambda (button x* y* dx dy)
+     ;;(define bef-slider-pos slider-pos)
      (set! slider-pos (between 0
                                (+ start-mouse-pos
                                   (scale (if vertical dy dx)
@@ -1169,6 +1174,8 @@
                                                (- width (* b 2)))
                                          0 1))
                                (- 1.0 slider-length)))
+     ;;(c-display "  MOVE. y:" y* ". dy:" dy ". bef slider-pos:" bef-slider-pos ". slider-pos:" slider-pos)
+
      ;;(c-display "move"
      ;;           :slider-pos slider-pos
      ;;           :start-mouse-pos start-mouse-pos
