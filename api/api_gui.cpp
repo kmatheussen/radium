@@ -1500,6 +1500,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     radium::ProtectedS7Extra<func_t*> _mouse_callback;
     int _currentButton = 0;
     double _mouse_event_failed = -1;
+    QPoint _last_mouse_pos = QPoint(0,0);
     
     int getMouseButtonEventID(QMouseEvent *qmouseevent) const {
       if(qmouseevent->button()==Qt::LeftButton)
@@ -1523,11 +1524,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       event->accept();
 
       _currentButton = getMouseButtonEventID(event);
-      const QPoint &point = event->pos();
+      _last_mouse_pos = event->pos();
 
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
             
-      int ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
+      int ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_PRESSING, _last_mouse_pos.x(), _last_mouse_pos.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
       
@@ -1548,8 +1549,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
-      const QPoint &point = event.pos();
-      bool ret = S7CALL(bool_int_int_float_float, _mouse_callback.v, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
+      _last_mouse_pos = event.pos();
+            
+      bool ret = S7CALL(bool_int_int_float_float, _mouse_callback.v, _currentButton, API_MOUSE_RELEASING, _last_mouse_pos.x(), _last_mouse_pos.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
       
@@ -1568,11 +1570,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       event->accept();
 
-      const QPoint &point = event->pos();
-
+      _last_mouse_pos = event->pos();
+      
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
-      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
+      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_MOVING, _last_mouse_pos.x(), _last_mouse_pos.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
 
@@ -1594,11 +1596,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       event->accept();
 
-      const QPoint point(0,0);
-
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
-      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_LEAVING, point.x(), point.y());
+      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_LEAVING, _last_mouse_pos.x(), _last_mouse_pos.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
       
@@ -1617,11 +1617,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       event->accept();
 
-      const QPoint point(0,0);
-
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
-      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_ENTERING, point.x(), point.y());
+      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_ENTERING, _last_mouse_pos.x(), _last_mouse_pos.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
       
