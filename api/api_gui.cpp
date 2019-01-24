@@ -340,6 +340,10 @@ static QColor getQColor(const_char* colorname){
   if(strlen(colorname) > 9 && colorname[0]=='#')
     abort();
 #endif
+
+#if DEBUG_COLORS
+  return QColor(generateNewColor(1.0));
+#endif
   
   QColor color = get_config_qcolor(colorname);
   if (!color.isValid()){
@@ -6419,6 +6423,10 @@ const_char* gui_getBackgroundColor(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return "black";
+
+#if DEBUG_COLORS
+  return generateNewColor(1.0);
+#endif
 
   return talloc_strdup(gui->_widget->palette().color(gui->_widget->backgroundRole()).name(QColor::HexArgb).toUtf8().constData());
 }

@@ -473,11 +473,19 @@ unsigned int GFX_get_color(enum ColorNums colornum){
 }
 
 unsigned int GFX_get_color_from_colorname(const char *colorname){
+#if DEBUG_COLORS
+  return GFX_MakeRandomColor();
+#endif
+  
   QColor color(colorname);
   return color.rgb();
 }
 
 const char *GFX_get_colorname_from_color(unsigned int colornum){
+#if DEBUG_COLORS
+  return talloc_strdup(QColor(GFX_MakeRandomColor()).name().toUtf8());
+#endif
+  
   QColor color(colornum);
   return talloc_strdup(color.name(QColor::HexArgb).toUtf8());
 }
@@ -719,6 +727,10 @@ QColor get_custom_qcolor(int colornum){
 }
 
 QColor get_qcolor(enum ColorNums colornum){
+#if DEBUG_COLORS
+  return GFX_MakeRandomColor();
+#endif
+  
   return get_custom_qcolor((int)colornum);
 }
 
