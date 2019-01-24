@@ -226,6 +226,7 @@ bool g_qt_is_running = false;
 bool g_qtgui_has_started = false;
 bool g_qtgui_exec_has_started = false;
 bool g_qtgui_has_stopped = false;
+bool g_program_has_ended = false;
 
 
 static boost::lockfree::queue<int64_t, boost::lockfree::capacity<64> > g_mixer_strips_needing_remake;
@@ -4112,6 +4113,8 @@ int main(int argc, char **argv){
 #if 0 //defined(FOR_LINUX) && !defined(RELEASE)
   kill(getpid(), SIGKILL);
 #endif
+
+  g_program_has_ended = true;
   
   //RError("hepp");
   return 0;
