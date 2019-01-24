@@ -1352,7 +1352,7 @@ for .emacs:
 
 (define (define-class-helper class-name hash-table-name methods)
   (define this-method-names (map (lambda (method)
-                                   (c-display "METHOD" method)
+                                   ;;(c-display "METHOD" method)
                                    (<_> 'this-> (keyword->symbol (car method))))
                                  methods))
 

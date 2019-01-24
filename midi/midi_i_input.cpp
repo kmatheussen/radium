@@ -879,12 +879,12 @@ void RT_MIDI_handle_play_buffer(void){
   struct Patch *playing_patches[midi_instrument->patches.num_elements + audio_instrument->patches.num_elements + 1]; // add 1 to avoid ubsan hit if there are no instruments.
 
   bool has_inited = false;
-  int num_playing_patches;
+  int num_playing_patches = 0;
 
-  struct SeqTrack *seqtrack;
-  struct Patch *through_patch;
-  double seqtrack_starttime;
-  
+  struct SeqTrack *seqtrack = NULL; // set to NULL to silence false compiler warning.
+  struct Patch *through_patch = NULL; // set to NULL to silence false compiler warning.
+  double seqtrack_starttime = 0.0; // set to 0.0 to silence false compiler warning.
+
   while(g_play_buffer.pop(event)==true){
 
     uint32_t msg = event.msg;
@@ -901,8 +901,6 @@ void RT_MIDI_handle_play_buffer(void){
       else
         through_patch = NULL;
 
-      num_playing_patches = 0;
-      
       VECTOR_FOR_EACH(struct Patch *, patch, &midi_instrument->patches){
         if(ATOMIC_GET(patch->always_receive_midi_input)){
           playing_patches[num_playing_patches] = patch;
