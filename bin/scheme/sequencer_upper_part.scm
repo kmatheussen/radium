@@ -111,8 +111,9 @@
         (begin
           (set! (entries curr-pos) (entries 0))
           (set-all-entries! (cdr (to-list entries)))))
-    (<gui> :update (<gui> :get-sequencer-gui))
-    (update-parent!))
+    ;;(<gui> :update (<gui> :get-sequencer-gui))
+    ;;(update-parent!)
+    )
 
   (add-method! :remove-curr-entry! remove-curr-entry!)
 
@@ -135,7 +136,8 @@
     (set! curr-entry new-entry)
     (set! curr-id (new-entry :uuid))
     (update-curr-entry-pos! entries new-entry)    
-    (update-parent!))
+    ;;(update-parent!)
+    )
 
   (define (replace-curr-entry! new-entry)
     (define entries (get-all-entries))
@@ -150,7 +152,8 @@
     (<ra> :undo-sequencer)
     (set-all-entries! new-entries)
     (update-curr-entry-pos! new-entries new-entry)
-    (update-parent!))
+    ;;(update-parent!)
+    )
 
   (add-method! :add-entry! add-entry!)
 
@@ -231,7 +234,8 @@
                                       (<ra> :undo-sequencer)
                                       (set! has-added-undo #t))
                                     (replace-curr-entry2! mouse-entries curr-mouse-pos (copy-hash curr-mouse-entry :time new-time))
-                                    (<gui> :update (<gui> :get-sequencer-gui)))))
+                                    ;;(<gui> :update (<gui> :get-sequencer-gui))
+                                    )))
                             (lambda (button x* y* dx dy)
                               (if is-marker
                                   (<ra> :set-paint-vertical-markers-in-sequencer #f))
@@ -240,7 +244,7 @@
                                        (= 0 dy))
                                   (<ra> :set-song-pos (round (curr-entry :time))))
                               (set! curr-id #f)
-                              (update-parent!)                              
+                              ;;(update-parent!)                              
                               ;;(<gui> :tool-tip "")
                               )))
 
@@ -270,7 +274,8 @@
                (set! curr-pos n)
                (if is-marker
                    (<ra> :set-paint-vertical-markers-in-sequencer #t))
-               (update-me!))
+               ;;(update-me!)
+               )
              (if (>= x* triangle-x)
                  (begin                   
                    (define next-entry (and (< (+ n 1) (length entries))
@@ -290,7 +295,9 @@
      (when (and had-curr-entry
                 (not curr-entry))
        ;;(<gui> :tool-tip "")
-       (update-parent!))
+       ;;(update-parent!)
+       #f
+       )
      #t)
    :leave-func
    (lambda (button-was-pressed)
@@ -300,7 +307,8 @@
        (set! curr-id #f)
        (if is-marker
            (<ra> :set-paint-vertical-markers-in-sequencer #f))
-       (update-parent!))
+       ;;(update-parent!)
+       )
      (when (not button-was-pressed)
        (<ra> :set-statusbar-text "")
        ;;(<gui> :tool-tip "")

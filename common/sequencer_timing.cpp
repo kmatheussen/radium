@@ -797,6 +797,7 @@ void SEQUENCER_MARKER_create_from_state(dyn_t markers, double state_samplerate){
     R_ASSERT(fabs(state_samplerate-pc->pfreq) < 1);
 
   g_markers = markers;
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_NAVIGATOR);
 }
 
 
