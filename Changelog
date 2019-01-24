@@ -3,7 +3,7 @@ Changes 5.9.30 -> 5.9.31:
   seqblocks when changing tempos of a editor block.
 * Sequencer: Don't overlap two editor seqblocks when
   changing tempo of the first block so that the
-  length it increases.
+  length of it increases.
 * GUI: Fix main window sometimes being put behind all
   other windows right after startup.
 * Instrument: Fix patch widget label colors. Might
