@@ -5031,6 +5031,10 @@ void SEQUENCER_update(uint32_t what){
   //g_sequencer_widget->position_widgets();
   //printf("SEQUENCER_update called\n%s\n",JUCE_get_backtrace());
 
+  if (what & SEQUPDATE_TIMING){
+    what = what | SEQUPDATE_TIME;
+  }
+  
   if (what & SEQUPDATE_TRACKCOORDINATES){
     //g_sequencer_widget->_seqtracks_widget.calculate_seqtrack_coordinates(); // g_sequencer_widget->position_widgets calls calculate_seqtrack_coordinates()
     what = what | SEQUPDATE_TIME | SEQUPDATE_HEADERS | SEQUPDATE_TRACKORDER | SEQUPDATE_PLAYLIST | SEQUPDATE_BLOCKLIST | SEQUPDATE_NAVIGATOR;
