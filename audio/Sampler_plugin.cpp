@@ -2334,7 +2334,7 @@ static void set_loop_data(Data *data, int64_t start, int64_t length, bool set_lo
   }
 }
 
-void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
+void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int64_t start, int64_t length){
   R_ASSERT_RETURN_IF_FALSE(!strcmp("Sample Player", plugin->type->type_name));
   
   Data *data=(Data*)plugin->data;
@@ -2343,6 +2343,14 @@ void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
     set_loop_data(data, start, length, true);
     PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
   }PLAYER_unlock();
+
+  update_editor_graphics(plugin);
+
+  {
+    volatile struct Patch *patch = plugin->patch;
+    if(patch!=NULL)
+      GFX_update_instrument_widget((struct Patch*)patch);
+  }
 }
 
 static bool set_new_sample(struct SoundPlugin *plugin,

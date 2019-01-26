@@ -635,7 +635,7 @@ void setRandomSampleForAllSelectedInstruments(void){
   evalScheme("(set-random-sample-for-all-selected-sampler-instruments)");
 }
   
-void setInstrumentLoopData(int64_t instrument_id, int start, int length){
+void setInstrumentLoopData(int64_t instrument_id, int64_t start, int64_t length){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -653,9 +653,6 @@ void setInstrumentLoopData(int64_t instrument_id, int start, int length){
 
 
   SAMPLER_set_loop_data(plugin, start, length);
-
-  GFX_update_instrument_widget(patch);
-
 }
 
 const_char *getInstrumentName(int64_t instrument_id) {
