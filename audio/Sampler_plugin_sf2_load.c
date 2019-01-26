@@ -7,8 +7,10 @@ static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_
   EVENTLOG_add_event(talloc_format("load_sf2_instrument -%S-", filename));
     
   hash_t *info = SF2_get_info(filename);
-  if(info==NULL)
+  if(info==NULL){
+    GFX_Message(NULL, "Unable to open soundfont file \"%S\"\n", filename);
     return false;
+  }
 
   //HASH_save(info,stdout);
   hash_t *sample_infos = HASH_get_hash(info,"samples");
