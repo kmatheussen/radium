@@ -50,20 +50,18 @@ void CloseAllInstruments(void){
 
 /* Called during program init. */
 bool OpenInstruments(void){
+  struct Instruments *midi_instrument=(struct Instruments*)talloc(sizeof(struct Instruments));
+  midi_instrument->l.num=0;
+  if(MIDI_initInstrumentPlugIn(midi_instrument)==INSTRUMENT_FAILED) return false;
+
+  struct Instruments *audio_instrument=(struct Instruments*)talloc(sizeof(struct Instruments));
+  audio_instrument->l.num=1;
+  if(AUDIO_initInstrumentPlugIn(audio_instrument)==INSTRUMENT_FAILED) return false;
+  
   {
-    struct Instruments *instrument=(struct Instruments*)talloc(sizeof(struct Instruments));
-    instrument->l.num=0;
-    if(MIDI_initInstrumentPlugIn(instrument)==INSTRUMENT_FAILED) return false;
-
-    ListAddElement1(&g_instruments,&instrument->l);
-  }
-
-  {
-    struct Instruments *instrument=(struct Instruments*)talloc(sizeof(struct Instruments));
-    instrument->l.num=1;
-    if(AUDIO_initInstrumentPlugIn(instrument)==INSTRUMENT_FAILED) return false;
-
-    ListAddElement1(&g_instruments,&instrument->l);
+    radium::PlayerRecursiveLock lock;
+    ListAddElement1(&g_instruments,&midi_instrument->l);
+    ListAddElement1(&g_instruments,&audio_instrument->l);
   }
 
   return true;
@@ -120,7 +118,7 @@ void RT_StopAllInstruments(void){
 
 void StopAllInstruments(void){
         struct Instruments *instrument=g_instruments;
-
+        
         radium::PlayerRecursiveLock lock;
           
         while(instrument!=NULL){              
