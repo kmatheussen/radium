@@ -72,8 +72,10 @@ static void expand_list3(struct ListHeader3 *l, const Place start, const Place e
 static void expand_note(struct Notes *note, const Place start, const Place end, const Place new_end, const Place last_place){
   note->l.p = expand_place(note->l.p, start, end, new_end, last_place);
   note->end = expand_place(note->end, start, end, new_end, last_place);
-  expand_list3(&note->velocities->l, start, end, new_end, last_place);
-  expand_list3(&note->pitches->l, start, end, new_end, last_place);
+  if(note->velocities!=NULL)
+    expand_list3(&note->velocities->l, start, end, new_end, last_place);
+  if(note->pitches!=NULL)
+    expand_list3(&note->pitches->l, start, end, new_end, last_place);
 }
 
 static void expand_track(struct Tracks *track, const Place start, const Place end, const Place new_end, const Place last_place){
@@ -83,12 +85,16 @@ static void expand_track(struct Tracks *track, const Place start, const Place en
     expand_note(note, start, end, new_end, last_place);
     note = NextNote(note);
   }
-  
-  expand_list3(&track->swings->l, start, end, new_end, last_place);
-  expand_list3(&track->stops->l, start, end, new_end, last_place);
+
+  if(track->swings!=NULL)
+    expand_list3(&track->swings->l, start, end, new_end, last_place);
+
+  if(track->stops!=NULL)
+    expand_list3(&track->stops->l, start, end, new_end, last_place);
 
   VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
-    expand_list3(&fxs->fxnodelines->l, start, end, new_end, last_place);
+    if(fxs->fxnodelines!=NULL)
+      expand_list3(&fxs->fxnodelines->l, start, end, new_end, last_place);
   }END_VECTOR_FOR_EACH;
 }
 
@@ -118,10 +124,18 @@ static void expand_block(struct WBlocks *wblock, struct Blocks *block, const Pla
     return;
   }
 
-  expand_list3(&block->swings->l, start, end, new_end, last_place);
-  expand_list3(&block->signatures->l, start, end, new_end, last_place);
-  expand_list3(&block->lpbs->l, start, end, new_end, last_place);
-  expand_list3(&block->tempos->l, start, end, new_end, last_place);
+  if(block->swings!=NULL)
+    expand_list3(&block->swings->l, start, end, new_end, last_place);
+  
+  if(block->signatures!=NULL)
+    expand_list3(&block->signatures->l, start, end, new_end, last_place);
+  
+  if(block->lpbs!=NULL)
+    expand_list3(&block->lpbs->l, start, end, new_end, last_place);
+  
+  if(block->tempos!=NULL)
+    expand_list3(&block->tempos->l, start, end, new_end, last_place);
+  
   expand_list3(&block->temponodes->l, start, end, new_end, last_place);
 
   wblock->rangey1 = expand_place(wblock->rangey1, start, end, new_end, last_place);
