@@ -46,7 +46,7 @@ struct MyQButton : public QToolButton{
     QPainter p(this);
     //p.eraseRect(rect());
     //printf("isdown: %d. enabled: %d, width: %d, height: %d\n", isDown(),isEnabled(), width(), height());
-    CHECKBOX_paint(&p, !isDown(), isEnabled(), width(), height(), text(), false);
+    CHECKBOX_paint(&p, !isDown(), isEnabled(), width(), height(), text(), false, false);
   }
   
 };

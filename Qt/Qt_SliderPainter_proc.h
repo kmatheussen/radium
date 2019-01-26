@@ -40,6 +40,7 @@ void SLIDERPAINTER_set_automation_value_pointer(SliderPainter *painter, enum Col
 void SLIDERPAINTER_call_regularly(SliderPainter *painter, int num_channels);
 
 void SLIDERPAINTER_set_alternative_color(SliderPainter *painter, bool setit);
+void SLIDERPAINTER_set_hovered(SliderPainter *painter, bool is_hovered);
 void SLIDERPAINTER_set_recording_color(SliderPainter *painter, bool setit);
 void SLIDERPAINTER_set_string(SliderPainter *painter,QString string);
 QString SLIDERPAINTER_get_string(SliderPainter *painter);
