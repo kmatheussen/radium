@@ -148,6 +148,7 @@ struct SliderPainter{
   float _automation_value;
 
   bool _alternative_color;
+  bool _is_hovered = false;
   bool _recording_color;
   
   int _value;
@@ -481,6 +482,10 @@ struct SliderPainter{
     if (_recording_color){
       QColor c = get_qcolor(SLIDER_RECORDING_COLOR_NUM);
       p->fillRect(0,0,width(),height(),c);
+    } else if (_is_hovered && _qslider->isEnabled()){
+      QColor c = _qslider->palette().color(_qslider->backgroundRole());
+      myFillRect(*p, QRectF(0,0,width(),height()), c.lighter(110), false);
+      //myFillRect(*p, QRectF(0,0,width(),height()), c);
     }
 
     paint_automation_or_peaks(p, false); // chip peaks
@@ -562,6 +567,10 @@ void SLIDERPAINTER_call_regularly(SliderPainter *painter, int num_channels){
 // Used for chips where the slider controls input volume instead of output volume.
 void SLIDERPAINTER_set_alternative_color(SliderPainter *painter, bool setit){
   painter->_alternative_color = setit;
+}
+
+void SLIDERPAINTER_set_hovered(SliderPainter *painter, bool is_hovered){
+  painter->_is_hovered = is_hovered;
 }
 
 void SLIDERPAINTER_set_recording_color(SliderPainter *painter, bool setit){

@@ -41,6 +41,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Pd_plugin_proc.h"
 #include "../audio/Modulator_plugin_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "Qt_instruments_proc.h"
 
 #include "Qt_SliderPainter_proc.h"
@@ -133,7 +135,27 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 
     SLIDERPAINTER_call_regularly(_painter, -1);
   }
+
+  bool _popup_menu_is_visible = false;
   
+  void enterEvent(QEvent *event) override {
+    if (_patch.data() != NULL && isEnabled()){
+      SLIDERPAINTER_set_hovered(_painter, true);
+      update();
+      GFX_SetStatusBar(talloc_format("\"%s\" (right-click for options)", getInstrumentEffectName(_effect_num, _patch->id)));
+    }
+  }
+
+  void leaveEvent(QEvent *event) override {
+    if (_patch.data() != NULL && isEnabled()){
+      if(_popup_menu_is_visible==false){
+        SLIDERPAINTER_set_hovered(_painter, false);
+        update();
+      }
+      GFX_SetStatusBar("");
+    }
+  }
+
   void hideEvent ( QHideEvent * event_ ) override {
     SLIDERPAINTER_became_invisible(_painter);
   }
@@ -297,13 +319,20 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
       
     //VECTOR_push_back(&options, "Set Value");
 
-    IsAlive is_alive(this);
+    _popup_menu_is_visible = true;
     
-    GFX_Menu3(options,[is_alive, this, plugin, modulator_id, pd_delete, reset, remove_midi_learn, midi_relearn, midi_learn, remove_modulator, replace_modulator, add_modulator, record, remove_random, add_random, add_automation_to_current_editor_track, add_automation_to_current_sequencer_track](int command, bool onoff){
+    IsAlive is_alive(this);
+
+    int64_t guinum =
+      GFX_Menu3(options,[is_alive, this, plugin, modulator_id, pd_delete, reset, remove_midi_learn, midi_relearn, midi_learn, remove_modulator, replace_modulator, add_modulator, record, remove_random, add_random, add_automation_to_current_editor_track, add_automation_to_current_sequencer_track](int command, bool onoff){
 
         if (!is_alive || _patch->patchdata==NULL)
           return;
 
+        _popup_menu_is_visible=false;
+        SLIDERPAINTER_set_hovered(_painter, false);
+        update();
+        
         //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
         
         if (command==pd_delete)
@@ -381,6 +410,24 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 #endif
 
       });
+
+    set_unhovered_when_popupmenu_is_closed(guinum);
+  }
+
+  void set_unhovered_when_popupmenu_is_closed(int64_t guinum){
+    if(_popup_menu_is_visible){
+      if(false==gui_isOpen(guinum)){
+        _popup_menu_is_visible=false;
+        SLIDERPAINTER_set_hovered(_painter, false);
+        update();
+      }else{
+        IsAlive is_alive(this);
+        QTimer::singleShot(300, [is_alive, this, guinum](){
+            if (is_alive)
+              set_unhovered_when_popupmenu_is_closed(guinum);
+          });
+      }
+    }
   }
   
   // mousePressEvent 

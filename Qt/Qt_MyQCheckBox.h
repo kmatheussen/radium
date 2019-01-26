@@ -49,7 +49,7 @@ static int get_text_width(QString text){
   return fn.width(text);
 }
 
-inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height, QString text, bool _is_implicitly_on){
+inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height, QString text, bool _is_implicitly_on, bool is_hovered){
 #ifdef COMPILING_RADIUM
   //QColor *colors = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors;
 #else
@@ -101,11 +101,19 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
     //col = QColor(0, 107, 156, 255);
 
     if(is_checked==true){
-      painter->fillRect(1,1,width-2,height-1,col);
+      if(is_hovered && is_enabled)
+        painter->fillRect(1,1,width-2,height-1,col.lighter(110));
+      else
+        painter->fillRect(1,1,width-2,height-1,col);
       //painter->setPen(editor->colors[1]);
       //p.drawRect(0,0,width()-1,height()-1);
       //p.drawRect(1,1,width()-3,height()-3);
     }else{
+      if(is_hovered && is_enabled){
+        QColor c = get_qcolor(HIGH_BACKGROUND_COLOR_NUM); //.light(52); //_qslider->palette().color(_qslider->backgroundRole());
+        myFillRect(*painter, QRectF(0,0,width,height), c.lighter(110), false);
+      }
+      
       if(_is_implicitly_on)
         painter->setPen(checked_col);
       else
@@ -165,7 +173,28 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
     setChecked(!isChecked());    
   }
 
+  bool _is_hovered = false;
       
+  bool _popup_menu_is_visible = false;
+  
+  void enterEvent(QEvent *event) override {
+    if (_patch.data() != NULL){
+      _is_hovered = true;
+      update();
+      GFX_SetStatusBar(talloc_format("\"%s\" (right-click for options)", getInstrumentEffectName(_effect_num, _patch->id)));
+    }
+  }
+
+  void leaveEvent(QEvent *event) override {
+    if (_patch.data() != NULL){
+      if(_popup_menu_is_visible==false){
+        _is_hovered = false;
+        update();
+      }
+      GFX_SetStatusBar("");
+    }
+  }
+
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
     
@@ -181,7 +210,7 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
     if(_patch.data()!=NULL && _patch->patchdata != NULL && _is_patchvoice_onoff_button==false)
       text2 = get_parameter_prepend_text(_patch.data(), _effect_num) + text2;
     
-    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2, _is_implicitly_on);
+    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2, _is_implicitly_on, _is_hovered);
   }
 
   
@@ -270,12 +299,19 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
         add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
     }
 
-    IsAlive is_alive(this);
+    _popup_menu_is_visible = true;
     
-    GFX_Menu3(options,[is_alive, this, plugin, modulator_id, delete_pd, reset, remove_random, add_random, add_midi_learn, remove_midi_learn, midi_relearn, remove_modulator, replace_modulator, add_modulator](int command, bool onoff){
+    IsAlive is_alive(this);
+
+    int64_t guinum =
+      GFX_Menu3(options,[is_alive, this, plugin, modulator_id, delete_pd, reset, remove_random, add_random, add_midi_learn, remove_midi_learn, midi_relearn, remove_modulator, replace_modulator, add_modulator](int command, bool onoff){
 
         if (!is_alive || _patch->patchdata==NULL)
           return;
+        
+        _popup_menu_is_visible=false;
+        _is_hovered = false;
+        update();
 
         //printf("command: %d, _patch.data(): %p, is_audio: %d\n",command, _patch.data(), _patch.data()!=NULL && _patch->instrument==get_audio_instrument());
         
@@ -313,8 +349,26 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
 
         GFX_update_instrument_widget(_patch.data());
       });
+
+    set_unhovered_when_popupmenu_is_closed(guinum);
   }      
 
+  void set_unhovered_when_popupmenu_is_closed(int64_t guinum){
+    if(_popup_menu_is_visible){
+      if(false==gui_isOpen(guinum)){
+        _popup_menu_is_visible=false;
+        _is_hovered = false;
+        update();
+      }else{
+        IsAlive is_alive(this);
+        QTimer::singleShot(300, [is_alive, this, guinum](){
+            if (is_alive)
+              set_unhovered_when_popupmenu_is_closed(guinum);
+          });
+      }
+    }
+  }
+  
   void mousePressEvent ( QMouseEvent * event ) override
   {
 
