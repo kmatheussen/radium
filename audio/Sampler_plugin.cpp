@@ -326,7 +326,6 @@ struct Data{
   int num_different_samples = 0;  // not used for anything (important).
 
   Voice voices[POLYPHONY] = {};
-  Sample samples[MAX_NUM_SAMPLES] = {};
 
   // These two are used when switching sound on the fly
   DEFINE_ATOMIC(struct Data *, new_data) = NULL;
@@ -353,7 +352,9 @@ struct Data{
     return mem;
   }
   */
- 
+
+  Sample samples[MAX_NUM_SAMPLES] = {}; // Put last to keep data togheter. (only the first elements of "samples" are used)
+
   Data(const Data&) = delete;
   Data& operator=(const Data&) = delete;
  
