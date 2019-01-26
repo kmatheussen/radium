@@ -215,8 +215,46 @@ struct Voice{
 };
 
 struct Note{
-  int num_samples = 0;
-  const Sample *samples[MAX_NUM_SAMPLES] = {};
+  Note(const Note&) = delete;
+  Note& operator=(const Note&) = delete;
+
+  radium::Vector<const Sample*> samples;
+
+#if !defined(RELEASE)
+  int num_samples_when_sorted = -1;
+#endif
+  
+  // Must be called before calling is_equal.
+  void sort_samples(void){
+    samples.sort([](const Sample *a, const Sample *b){
+        return ((const char*)a) > ((const char*)b);   
+      });
+#if !defined(RELEASE)
+    num_samples_when_sorted = samples.size();
+#endif
+  }
+  
+  // Both this->samples and note2->sample must be sorted (sort_samples()) before calling.
+  bool is_equal(const Note *note2) const {
+    R_ASSERT_NON_RELEASE(num_samples_when_sorted == samples.size());
+    R_ASSERT_NON_RELEASE(note2->num_samples_when_sorted == note2->samples.size());
+    
+    if(samples.size() != note2->samples.size())
+      return false;
+
+    for(int i=0;i<samples.size();i++){
+      if(samples.at(i) != note2->samples.at(i))
+        return false;
+    }
+    
+    return true;
+  }
+  
+  Note(){
+  }
+
+  //int num_samples = 0;
+  //const Sample *samples[MAX_NUM_SAMPLES] = {};
 };
 
 // The part of "Data" that can be memcpy-ed when creating a new Data from old Data.
@@ -278,7 +316,8 @@ struct Data{
   
   //int num_channels; // not used for anything, I think.
 
-  const Note notes[128] = {};
+  radium::Vector<Note*> note_storage;
+  const Note *notes[128] = {};
 
   Voice *voices_playing = NULL;
   Voice *voices_not_playing = NULL;
@@ -314,13 +353,24 @@ struct Data{
     return mem;
   }
   */
-  
+ 
+  Data(const Data&) = delete;
+  Data& operator=(const Data&) = delete;
+ 
   Data(){
     R_ASSERT(voices_playing==NULL);
     R_ASSERT(voices_not_playing==NULL);
     R_ASSERT(p.crossfade_length==0);
     R_ASSERT(voices[0].next==NULL);
     R_ASSERT(samples[0].sound==NULL);
+
+    //for(int i=0;i<128;i++)
+    //  notes[i] = new Note;
+  }
+
+  ~Data(){
+    for(Note *note : note_storage)
+      delete note;
   }
 };
 
@@ -999,12 +1049,11 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING)
     return;
   
-  const Note *note = &data->notes[(int)note2.pitch];
+  const Note *note = data->notes[(int)note2.pitch];
 
   int portamento_channel = get_portamento_channel(note2.midi_channel, note2.voicenum);
   
-  int i;
-  for(i=0;i<note->num_samples;i++){
+  for(const Sample* sample : note->samples){ //i=0;i<note->num_samples;i++){
 
     if(data->voices_not_playing==NULL){
       printf("No more free voices\n");
@@ -1044,7 +1093,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
       }
     }
     
-    const Sample *sample = note->samples[i];
+    //const Sample *sample = note->samples[i];
     
     voice->sample = sample;
 
@@ -1216,36 +1265,21 @@ static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
 }
 
 static bool note_has_sample(const Note *note){
-  int samplenum;
-  
-  for(samplenum=0;samplenum<note->num_samples;samplenum++)
-    if (note->samples[samplenum]!=NULL)
-      return true;
-
-  return false;
+  return note->samples.size() > 0;
 }
 
 static int time_to_frame(Data *data, double time, float f_note_num){
 
   int i_note_num = (int)f_note_num;
   
-  const Sample *sample=NULL;
-  int samplenum = 0;
-  
-  const Note *note=&data->notes[(int)i_note_num];
-  
-  for(;;){
-    sample = note->samples[samplenum];
-    if (sample!=NULL)
-      break;
-    
-    samplenum++;
-    if (samplenum==note->num_samples) {
-      RError("samplenum==num_samples. %f\n",f_note_num);
-      return data->p.startpos*10000 + time/30000.0f;
-    }
+  const Note *note = data->notes[(int)i_note_num];
+
+  if (note->samples.is_empty()){
+    RError("note->samples is empty. %f\n",f_note_num);
+    return data->p.startpos*10000 + time/30000.0f;
   }
-  
+
+  const Sample *sample = note->samples.at(0);
 
   double src_ratio = RT_get_src_ratio2(data, sample, f_note_num);
 
@@ -1436,7 +1470,7 @@ static int get_peaks(struct SoundPlugin *plugin,
     
   radium::Peak peak;
 
-  const Note *note=&data->notes[(int)note_num];
+  const Note *note = data->notes[R_BOUNDARIES(0, (int)note_num, 127)];
 
   if (!note_has_sample(note) || start_time==end_time){
     R_ASSERT_NON_RELEASE(end_time > start_time);
@@ -1452,10 +1486,7 @@ static int get_peaks(struct SoundPlugin *plugin,
     if (start_frame==end_frame)
       goto return_empty;
   
-    int samplenum;
-
-    for(samplenum=0;samplenum<note->num_samples;samplenum++){
-      const Sample *sample=note->samples[samplenum];
+    for(const Sample *sample : note->samples){
     
       Panvals pan = get_pan_vals_vector(das_pan, sample->ch==-1 ? 1 : 2);
       int input_channel = sample->ch==-1 ? 0 : sample->ch;
@@ -2063,6 +2094,9 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, boo
       }
     }
 
+    Note *note = new Note;
+    data->note_storage.push_back(note);
+
     for(ch=0;ch<num_channels;ch++){     
       Sample &sample=data->samples[ch];
 
@@ -2082,18 +2116,26 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, boo
       else
         sample.ch = ch;
 
-      int i;
-      for(i=0;i<128;i++){
-        Note *note=(Note*)&data->notes[i];
+      note->samples.push_back(&sample);
+      
+      for(int i=0;i<128;i++){
+        //data->notes[i] = note;
+        /*
+        Note *note=(Note*)data->notes[i];
         
-        note->num_samples = num_channels;
-        note->samples[ch] = &sample;
+        note->samples.push_back(&sample);
+        */
+        //note->num_samples = num_channels;
+        //note->samples[ch] = &sample;
 
         sample.frequency_table[i] = sf_info.samplerate * midi_to_hz(i)/midi_to_hz(middle_note);
         
         //printf("%d: %f, data: %f, sample: %f, midifreq: %f\n",i,sample.samplerate,(float)data->samplerate,(float)sf_info.samplerate,midi_to_hz(i));
       }
     }
+
+    for(int i=0;i<128;i++)
+      data->notes[i] = note;
   }
 
   return true;

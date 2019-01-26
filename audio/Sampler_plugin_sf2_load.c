@@ -48,7 +48,13 @@ static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_
   }
 
   hash_t *regions = HASH_get_hash(instrument, "regions");
- 
+
+  for(int i=0;i<128;i++){
+    Note *note = new Note;
+    data->notes[i] = note;
+    data->note_storage.push_back(note);
+  }
+  
   int num_samples=0;
 
   int i;
@@ -103,15 +109,37 @@ static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_
 
       int note_num;
       for(note_num=HASH_get_int32(region,"key start");note_num<=HASH_get_int32(region,"key end");note_num++){
-        Note *note = (Note*)&data->notes[note_num];
-        note->samples[note->num_samples] = &sample;
-        
-        note->num_samples++;
+        Note *note = const_cast<Note*>(data->notes[note_num]);
+        note->samples.push_back(&sample);
         
         //printf("%d: %f. middle_note: %d, finetune: %f. Sample: %p. Frequency: %f\n",i,dest->ratio,dest->middle_note,dest->finetune,dest->interleaved_samples,get_frequency(i,dest->finetune));
       }
     }
   }
+
+  // Optimize data->notes so that as few Note objects as possible are used (better for cache)
+  for(int i=0;i<128;i++){
+
+    Note *old_note = const_cast<Note*>(data->notes[i]);
+    old_note->sort_samples();
+    
+    for(int i2=0;i2<i;i2++){
+      if(data->notes[i]->is_equal(data->notes[i2])){
+        
+        data->notes[i] = data->notes[i2];
+
+        data->note_storage.remove(old_note);
+        delete old_note;
+
+        printf("   Load SF2: Move notes %d to %d. Size of note_storage: %d\n", i, i2, data->note_storage.size());
+
+        break;
+      }
+    }
+    
+  }
+
+    
 
   return true;
 }

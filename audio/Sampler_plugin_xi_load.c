@@ -282,10 +282,18 @@ static bool load_xi_instrument(Data *data,const wchar_t *filename, bool set_loop
       if(sample.sound==NULL)
         goto exit;
 
-      int note;
-      for(note=0;note<128;note++){
-        sample.frequency_table[note] = xi_get_frequency(file, note, sample_num);
-      }      
+      {
+        int note;
+        for(note=0;note<128;note++){
+          sample.frequency_table[note] = xi_get_frequency(file, note, sample_num);
+        }
+      }
+
+      {
+        Note *note = new Note;
+        note->samples.push_back(&sample);
+        data->note_storage.push_back(note);
+      }
     }
   }
   
@@ -293,10 +301,16 @@ static bool load_xi_instrument(Data *data,const wchar_t *filename, bool set_loop
     int note_num;
     for(note_num=0;note_num<128;note_num++){
       int sample_num = xi_get_sample_number_for_note(file,note_num);
-      Note *note = (Note*)&data->notes[note_num];
+
+      if(sample_num >= data->note_storage.size()){
+        GFX_Message(NULL, "Error while loading XI instrument. (sample_num >= data->note_storage.size(): %d >= %d)\n", sample_num, data->note_storage.size());
+        goto exit;
+      }
       
-      note->num_samples = 1;
-      note->samples[0]  = &data->samples[sample_num];
+      Note *note = data->note_storage.at(sample_num); //(Note*)&data->notes[note_num];
+
+      data->notes[note_num] = note;
+      //note->samples.push_back(&data->samples[sample_num]);
     }
   }
 
