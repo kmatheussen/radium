@@ -875,6 +875,7 @@ public slots:
   void on_path_edit_editingFinished()
   {
     change_path(path_edit->text());
+    write_bookmark();
   }
 
   void on_bookmark1_toggled(bool is_on){
