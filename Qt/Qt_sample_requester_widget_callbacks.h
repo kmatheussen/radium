@@ -736,8 +736,10 @@ class Sample_requester_widget : public QWidget
         handle_file_pressed(item_text);
       else if(is_sf2_file_pressed(item_text)==true)
         handle_sf2_file_pressed(item_text);
-      else
-        printf("Couldn't handle that one: \"%s\"",item_text.toUtf8().constData());
+      else {
+        GFX_addMessage("Unable to open \"%s\"\n", item_text.toUtf8().constData());
+        //printf("Couldn't handle that one: \"%s\"",item_text.toUtf8().constData());
+      }
       break;
     default:
       RError("weird");
