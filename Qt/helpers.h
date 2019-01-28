@@ -15,6 +15,7 @@
 #include <QDesktopWidget>
 #include <QMouseEvent>
 #include <QKeyEvent>
+#include <QPainter>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
@@ -959,7 +960,6 @@ public:
 
 }
 
-#ifdef QPAINTER_H
 static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color, float do_gradient = true){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
@@ -990,7 +990,6 @@ static inline void myFillRoundedRect(QPainter &p, QRectF rect, const QColor &col
   p.setBrush(Qt::NoBrush);
   p.setPen(pen);
 }
-#endif
 
 
 struct GL_PauseCaller{
