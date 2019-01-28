@@ -467,7 +467,7 @@
                                           :time (old-tempo :time)
                                           :bpm bpm
                                           :logtype (old-tempo :logtype))
-                               (hash-table* :time (get-sequencer-time-from-x x x1 x2)
+                               (hash-table :time (get-sequencer-time-from-x x x1 x2)
                                             :bpm bpm
                                             :logtype *logtype-hold*
                                             :uuid (<ra> :create-uuid)
@@ -559,7 +559,7 @@
               (define denominator (<ra> :get-denominator-from-ratio-string ratio))
               (if (= 0 numerator)
                   (set! numerator 1))
-              (callback (hash-table* :time (if old-signature
+              (callback (hash-table :time (if old-signature
                                                (old-signature :time)
                                                time)
                                      :numerator numerator
@@ -631,7 +631,7 @@
             (define time (get-sequencer-time-from-x x x1 x2))
             (define name (<ra> :request-string "Marker:" #t (if old-marker (get-entry-info-string old-marker -1 #f #f) "")))
             (when (not (string=? "" name))
-              (callback (hash-table* :time (if old-marker
+              (callback (hash-table :time (if old-marker
                                                (old-marker :time)
                                                time)
                                      :name name

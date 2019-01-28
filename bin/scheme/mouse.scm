@@ -2980,7 +2980,7 @@
                                                                               (min place1 ($instance :place1))
                                                                               (max place2 ($instance :place2))
                                                                               (not has-made-undo)))
-                                             (hash-table* :x $x
+                                             (hash-table :x $x
                                                           :y $y
                                                           :has-made-undo (or made-undo-now
                                                                              has-made-undo)
@@ -2997,7 +2997,7 @@
                                        (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
                                        (not (get-pianonote-info $x $y *current-track-num*))
                                        (set-mouse-pointer ra:set-blank-mouse-pointer (<gui> :get-editor-gui))
-                                       (move-pianoroll-eraser $button 0 0 (hash-table* :x $x
+                                       (move-pianoroll-eraser $button 0 0 (hash-table :x $x
                                                                                        :y $y
                                                                                        :has-made-undo #f
                                                                                        :pitch1 100000

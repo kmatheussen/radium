@@ -11,6 +11,7 @@
 
 (set! (*s7* 'history-size) 80)
 
+(define-constant morally-equal? equivalent?)
 
 ;;
 ;; Important: Radium has not been initialized when this file is loaded.

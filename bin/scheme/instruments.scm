@@ -64,7 +64,7 @@
       (assert (not gain))
       (assert (or (not gain)
                   (number? gain))))  
-  (hash-table* :type type :source source :target target :gain gain))
+  (hash-table :type type :source source :target target :gain gain))
 
 (define-macro (push-audio-connection-change! changes rest)
   `(push-back! ,changes (create-audio-connection-change ,@(cdr rest))))
