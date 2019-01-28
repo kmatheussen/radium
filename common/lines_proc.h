@@ -22,14 +22,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC void InsertLines(
 	struct Blocks *block,
-	int line,
-	int toinsert
+	//int line,
+	//int toinsert
+        const Place place,
+        Ratio toinsert
 );
 
 extern LANGSPEC void InsertLines_CurrPos(
-                                struct Tracker_Windows *window,
-                                int toinsert
-);
+                                         struct Tracker_Windows *window,
+                                         Ratio toinsert
+                                         //int toinsert
+                                         );
 
 #endif
 

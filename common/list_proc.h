@@ -196,6 +196,7 @@ extern LANGSPEC NInt ListFindElementPos3(
 
 extern LANGSPEC Place *ListLastPlace3(struct ListHeader3 *list);
 extern LANGSPEC void *ListLast3(struct ListHeader3 *list);
+extern LANGSPEC void *ListSecondLast3(struct ListHeader3 *list);
 extern LANGSPEC void *ListLast1(struct ListHeader1 *list);
 
 extern LANGSPEC void List_InsertLines3(
@@ -205,6 +206,14 @@ extern LANGSPEC void List_InsertLines3(
 	int toinsert,
 	void (*Insert_Lines_extra)(void *to,struct ListHeader3 *l,int line,int toinsert)
 );
+
+extern LANGSPEC void List_InsertRatio3(
+                                       void *to,
+                                       struct ListHeader3 *l,
+                                       Place place,
+                                       const Ratio toinsert,
+                                       void (*Insert_Ratio_extra)(void *to,struct ListHeader3 *l, const Place place, const Ratio toinsert)
+                                       );
 
 extern LANGSPEC void List_InsertPlaceLen3(
 	struct Blocks *block,

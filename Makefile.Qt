@@ -1078,8 +1078,8 @@ clipboard_track_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_paste.c
 clipboard_track_cut.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_cut.c
 	$(CC) $(CD)clipboard_track_cut.c $(OPT)
 
-lines.o:  $(BUILD_DEPENDENCIES) $(CD)lines.c
-	$(CC) $(CD)lines.c $(OPT)
+lines.o:  $(BUILD_DEPENDENCIES) $(CD)lines.cpp
+	$(CCC) $(CD)lines.cpp $(CPPOPT)
 
 notes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)notes_legalize.c
 	$(CC) $(CD)notes_legalize.c $(OPT)

@@ -209,6 +209,13 @@ void EXPAND_Block(struct Tracker_Windows *window, struct WBlocks *wblock, const 
   UpdateRealLines(window,wblock);
 }
 
+void EXPAND_Block2(struct Tracker_Windows *window, struct WBlocks *wblock, int new_num_lines){
+  const Place start = p_Create(0,0,1);
+  const Place end = p_Create(wblock->block->num_lines, 0, 1);
+  const Place new_end = p_Create(new_num_lines, 0, 1);
+  EXPAND_Block(window, wblock, start, end, new_end);
+}
+
 void EXPAND_Block_full_control_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, const Place start, const Place end, const Place new_end){
 
   PC_Pause();{
