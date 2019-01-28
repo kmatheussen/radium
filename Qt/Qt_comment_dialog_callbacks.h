@@ -25,12 +25,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/OS_string_proc.h"
 
+#include "helpers.h"
+
+
 //namespace{
 #include "Qt_MyQCheckBox.h"
 //}
 
-
-#include "helpers.h"
 
 #include "Qt_comment_dialog.h"
 
