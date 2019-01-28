@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "placement_proc.h"
+#include "ratio_funcs.h"
 #include <stdarg.h>
 
 #include "list_proc.h"
@@ -964,6 +965,25 @@ void *ListLast3(struct ListHeader3 *list){
 	return list;
 }
 
+void *ListSecondLast3(struct ListHeader3 *list){
+  if(list==NULL)
+    return NULL;
+  
+  if(list->next==NULL)
+    return NULL;
+          
+  while(list->next!=NULL){
+    
+    if (list->next->next==NULL)
+      return list;
+    
+    list=list->next;
+  }
+
+  R_ASSERT(false);
+  return NULL;
+}
+
 void *ListLast1(struct ListHeader1 *list){
 	while(list!=NULL){
 		if(list->next==NULL) break;
@@ -1009,6 +1029,51 @@ void List_InsertLines3(
 		}
 
 		l=l->next;
+	}
+
+}
+
+
+void List_InsertRatio3(
+	void *to,
+	struct ListHeader3 *l,
+	const Place place,
+        const Ratio toinsert,
+	void (*Insert_Ratio_extra)(void *to,struct ListHeader3 *l, const Place place, const Ratio toinsert)
+){
+
+        const Ratio start_place = make_ratio_from_place(place);
+        const Ratio new_place = RATIO_add(start_place, toinsert);
+          
+	while(l!=NULL){
+
+          if(Insert_Ratio_extra!=NULL){
+            (*Insert_Ratio_extra)(to, l, place, toinsert);
+          }
+
+          Ratio old_place = make_ratio_from_place(l->p);
+            
+          if(RATIO_greater_or_equal_than(old_place, start_place)) {
+            
+            if(RATIO_less_than(old_place, new_place)){
+              
+              R_ASSERT_RETURN_IF_FALSE(l!=NULL);
+              
+              struct ListHeader3 *temp=l->next;
+              
+              ListRemoveElement3(to,l);
+              
+              l=temp;
+              
+              continue;
+              
+            }
+
+            l->p = make_place_from_ratio(new_place);
+            
+          }
+          
+          l=l->next;
 	}
 
 }

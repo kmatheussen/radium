@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "block_insert_proc.h"
 #include "clipboard_block_paste_proc.h"
 #include "list_proc.h"
+#include "placement_proc.h"
 #include "wblocks_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "lines_proc.h"
@@ -58,8 +59,8 @@ static void BLOCK_Split(
 
 	CB_PasteBlock(window,nwblock,wblock);
 
-	InsertLines(wblock->block,splitline,-cutreallines);
-	InsertLines(nwblock->block,0,-splitline);
+	InsertLines(wblock->block,p_Create(splitline,0,1),make_ratio(-cutreallines,1));
+	InsertLines(nwblock->block,p_Create(0,0,1),make_ratio(-splitline,1));
 
 }
 

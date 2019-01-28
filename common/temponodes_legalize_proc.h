@@ -17,12 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-#ifndef TRACKER_INCLUDE
-
-extern void LegalizeTempoNodes(struct Blocks *block);
-
-#endif
+extern LANGSPEC void LegalizeTempoNodes(struct Blocks *block);
 
 
 

@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
+#include "../common/ratio_funcs.h"
 #include "../common/placement_proc.h"
 #include "../common/velocities_proc.h"
 #include "../common/tempos_proc.h"
@@ -532,7 +533,24 @@ void generalDelete(int windownum){
 
 void insertLines(int toinsert,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  InsertLines_CurrPos(window,toinsert);
+  
+  Ratio lz_ratio;
+
+  {
+    dyn_t lz = getLineZoomBlockRatio(window->wblocks->l.num, windownum);
+    
+    if (lz.type==INT_TYPE)
+      lz_ratio = make_ratio(lz.int_number, 1);
+    else if (lz.type==RATIO_TYPE)
+      lz_ratio = *lz.ratio;
+    else {
+      R_ASSERT(false);
+      return;
+    }
+  }
+
+  Ratio toinsert_ratio = make_ratio(toinsert,1) / lz_ratio;
+  InsertLines_CurrPos(window,toinsert_ratio);
 }
 
 void generalReturn(int windownum){
