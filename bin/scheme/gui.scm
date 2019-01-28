@@ -1298,7 +1298,7 @@
   
   (<gui> :add-paint-callback widget
          (lambda (width height)
-           ;;(c-display "  paint menu entry. Disabled: " name (<gui> :is-enabled widget) (<gui> :get-background-color widget))
+           ;;(c-display "  paint menu entry. Disabled: " name (<gui> :is-enabled widget) (<gui> :get-background-color widget) ". gui:" widget ". :last-hovered" (<ra> :get-last-hovered-popup-menu-entry))
            
            (let ((background-color (if (and (= widget (<ra> :get-last-hovered-popup-menu-entry))
                                             (<gui> :is-enabled widget))
@@ -1366,5 +1366,15 @@
   
   widget)
 
-
+#!!!
+(popup-menu "Hello!"
+            (lambda ()
+              (c-display "clicked")))
+(popup-menu "Hello!"
+            (lambda ()
+              (c-display "clicked"))
+            "hello2"
+            (lambda ()
+              (c-display "clicked2")))
+!#
 

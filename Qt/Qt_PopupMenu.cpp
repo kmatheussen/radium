@@ -540,6 +540,24 @@ namespace{
     }
     */
 
+    int64_t _my_last_hovered_menu_entry_guinum = -1;
+    
+    void leaveEvent(QEvent *event) override {
+      if (g_last_hovered_menu_entry_guinum != _my_last_hovered_menu_entry_guinum){
+        QWidget *old = g_last_hovered_widget;
+        
+        //printf("  Leave event: %d\n", (int)g_last_hovered_menu_entry_guinum);
+        
+        g_last_hovered_menu_entry_guinum = -1;
+        _my_last_hovered_menu_entry_guinum = -1;
+        g_last_hovered_widget = NULL;
+
+        if(old!=NULL)
+          old->update();
+        //updateWidgetRecursively(this);
+      }
+    }
+
   public slots:
     
     void hovered(QAction *action){
@@ -553,11 +571,17 @@ namespace{
         myaction->_widget->update();
         
         g_last_hovered_menu_entry_guinum = myaction->_guinum;
+        _my_last_hovered_menu_entry_guinum = -1;
         g_last_hovered_widget = myaction->_widget;
-                    
+
+        //printf("  Hovered ON: %d\n", (int)g_last_hovered_menu_entry_guinum);
+
       } else {
 
+        //printf("  Hovered OFF: %d\n", (int)g_last_hovered_menu_entry_guinum);
+        
         g_last_hovered_menu_entry_guinum = -1;
+        _my_last_hovered_menu_entry_guinum = -1;
         g_last_hovered_widget = NULL;
         
       }
