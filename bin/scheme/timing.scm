@@ -749,39 +749,39 @@ The duration will almost double though, but not exactly.
 
 
 ;; Check that it creates tempo-multipliers for all bars. When there is swing in a block, there must be tempo multipliers aligned with all bars.
-(***assert*** (let ((bars (list (hash-table '(:barnum . 0)
-                                            '(:beats . ((0 0) (4 1) (8 2) (12 3))))
-                                (hash-table '(:barnum . 1)
-                                            '(:beats . ((16 0) (20 1))))
-                                (hash-table '(:barnum . 2)
-                                            '(:beats . ((24 0) (28 1))))))
+(***assert*** (let ((bars (list (hash-table :barnum  0
+                                            :beats  '((0 0) (4 1) (8 2) (12 3)))
+                                (hash-table :barnum  1
+                                            :beats  '((16 0) (20 1)))
+                                (hash-table :barnum  2
+                                            :beats  '((24 0) (28 1)))))
                     (bar-swings (list
-                                 (hash-table '(:num-lines . 16)
-                                             '(:swings . #(#(0 4 201 #t) #(8 1 201)))
-                                             '(:barnum . 0)
-                                             '(:auto-generated . #t)))))
+                                 (hash-table :num-lines  16
+                                             :swings  #(#(0 4 201 #t) #(8 1 201))
+                                             :barnum  0
+                                             :auto-generated  #t))))
                 (create-tempo-multipliers-from-swings bars bar-swings 32)
                 )
               (list (hash-table
-                     '(:y1 . 0)
-                     '(:x1 . 5/8)
-                     '(:y2 . 8)
-                     '(:x2 . 5/8))
+                     :y1  0
+                     :x1  5/8
+                     :y2  8
+                     :x2  5/8)
                     (hash-table
-                     '(:y1 . 8)
-                     '(:x1 . 5/2)
-                     '(:y2 . 16)
-                     '(:x2 . 5/2))
+                     :y1  8
+                     :x1  5/2
+                     :y2  16
+                     :x2  5/2)
                     (hash-table
-                     '(:y1 . 16)
-                     '(:x1 . 1)
-                     '(:y2 . 24)
-                     '(:x2 . 1))
+                     :y1  16
+                     :x1  1
+                     :y2  24
+                     :x2  1)
                     (hash-table
-                     '(:y1 . 24)
-                     '(:x1 . 1)
-                     '(:y2 . 32)
-                     '(:x2 . 1))))
+                     :y1  24
+                     :x1  1
+                     :y2  32
+                     :x2  1)))
               
 
 
@@ -892,33 +892,33 @@ The duration will almost double though, but not exactly.
                                             64)))
 
 (pp (get-bars-from-beats (<ra> :get-all-beats)))
-(pp (get-bars-from-beats (vector (hash-table* :place 0
+(pp (get-bars-from-beats (vector (hash-table :place 0
                                               :barnum 1
-                                              :beatnum 1)
-                                 (hash-table* :place 2
-                                              :barnum 1
-                                              :beatnum 2)
-                                 (hash-table* :place 4
-                                              :barnum 2
-                                              :beatnum 1)
-                                 (hash-table* :place 6
-                                              :barnum 2
-                                              :beatnum 2))))
+                                             :beatnum 1)
+                                 (hash-table :place 2
+                                             :barnum 1
+                                             :beatnum 2)
+                                 (hash-table :place 4
+                                             :barnum 2
+                                             :beatnum 1)
+                                 (hash-table :place 6
+                                             :barnum 2
+                                             :beatnum 2))))
 !!#
 
 
-(***assert*** (get-bars-from-beats (vector (hash-table* :place 0
-                                                        :barnum 1
-                                                        :beatnum 1)
-                                           (hash-table* :place 2
-                                                        :barnum 1
-                                                        :beatnum 2)
-                                           (hash-table* :place 4
-                                                        :barnum 2
-                                                        :beatnum 1)
-                                           (hash-table* :place 6
-                                                        :barnum 2
-                                                        :beatnum 2)))
+(***assert*** (get-bars-from-beats (vector (hash-table :place 0
+                                                       :barnum 1
+                                                       :beatnum 1)
+                                           (hash-table :place 2
+                                                       :barnum 1
+                                                       :beatnum 2)
+                                           (hash-table :place 4
+                                                       :barnum 2
+                                                       :beatnum 1)
+                                           (hash-table :place 6
+                                                       :barnum 2
+                                                       :beatnum 2)))
               (list (make-bar :barnum 0
                               :beats (list (create-beat 0 0)
                                            (create-beat 2 1)))
@@ -1139,28 +1139,28 @@ The duration will almost double though, but not exactly.
 
 
 (***assert*** (bpms-to-tempo-multipliers 120
-                                         (list (hash-table* :bpm 20
-                                                            :place 1
-                                                            :logtype *logtype-hold*))
+                                         (list (hash-table :bpm 20
+                                                           :place 1
+                                                           :logtype *logtype-hold*))
                                          64)
               (list (make-tempo-multiplier :y1  1 :x1 (/ 20 120)
                                            :y2  64 :x2 (/ 20 120))))
 
 (***assert*** (lpbs-to-tempo-multipliers 4
-                                         (list (hash-table* :lpb 20
-                                                            :place 1
-                                                            :logtype *logtype-hold*))
+                                         (list (hash-table :lpb 20
+                                                           :place 1
+                                                           :logtype *logtype-hold*))
                                          64)
               (list (make-tempo-multiplier :y1  1 :x1 (/ 20 4)
                                            :y2  64 :x2 (/ 20 4))))
 
 (***assert*** (bpms-to-tempo-multipliers 120
-                                         (list (hash-table* :bpm 20
-                                                            :place 1
-                                                            :logtype *logtype-hold*)
-                                               (hash-table* :bpm 50
-                                                            :place 8
-                                                            :logtype *logtype-hold*))
+                                         (list (hash-table :bpm 20
+                                                           :place 1
+                                                           :logtype *logtype-hold*)
+                                               (hash-table :bpm 50
+                                                           :place 8
+                                                           :logtype *logtype-hold*))
                                          64)
               (list (make-tempo-multiplier :y1  1 :x1 (/ 20 120)
                                            :y2  8 :x2 (/ 20 120))
@@ -1168,12 +1168,12 @@ The duration will almost double though, but not exactly.
                                            :y2 64 :x2 (/ 50 120))))
 
 (***assert*** (bpms-to-tempo-multipliers 120
-                                         (list (hash-table* :bpm 200
-                                                            :place 1
-                                                            :logtype *logtype-linear*)
-                                               (hash-table* :bpm 50
-                                                            :place 8
-                                                            :logtype *logtype-linear*)) ;; Logtype of last bpm is ignored.
+                                         (list (hash-table :bpm 200
+                                                           :place 1
+                                                           :logtype *logtype-linear*)
+                                               (hash-table :bpm 50
+                                                           :place 8
+                                                           :logtype *logtype-linear*)) ;; Logtype of last bpm is ignored.
                                          64)
               (list (make-tempo-multiplier :y1  1 :x1 (/ 200 120)
                                            :y2  8 :x2 (/ 50 120))
@@ -1199,24 +1199,24 @@ The duration will almost double though, but not exactly.
               '()
               (temponodes-to-tempo-multipliers (cdr temponodes))))))
 
-(***assert*** (temponodes-to-tempo-multipliers (list (hash-table* :place 0
-                                                                  :tempo-multiplier 1
-                                                                  :logtype *logtype-linear*)
-                                                     (hash-table* :place 64
-                                                                  :tempo-multiplier 1
-                                                                  :logtype *logtype-linear*)))
+(***assert*** (temponodes-to-tempo-multipliers (list (hash-table :place 0
+                                                                 :tempo-multiplier 1
+                                                                 :logtype *logtype-linear*)
+                                                     (hash-table :place 64
+                                                                 :tempo-multiplier 1
+                                                                 :logtype *logtype-linear*)))
               (list (make-tempo-multiplier :y1 0 :x1 1
                                            :y2 64 :x2 1)))
 
-(***assert*** (temponodes-to-tempo-multipliers (list (hash-table* :place 0
-                                                                  :tempo-multiplier 0.5
-                                                                  :logtype *logtype-linear*)
-                                                     (hash-table* :place 1
-                                                                  :tempo-multiplier 0.1
-                                                                  :logtype *logtype-linear*)
-                                                     (hash-table* :place 64
-                                                                  :tempo-multiplier 1.2
-                                                                  :logtype *logtype-linear*)))
+(***assert*** (temponodes-to-tempo-multipliers (list (hash-table :place 0
+                                                                 :tempo-multiplier 0.5
+                                                                 :logtype *logtype-linear*)
+                                                     (hash-table :place 1
+                                                                 :tempo-multiplier 0.1
+                                                                 :logtype *logtype-linear*)
+                                                     (hash-table :place 64
+                                                                 :tempo-multiplier 1.2
+                                                                 :logtype *logtype-linear*)))
               (list (make-tempo-multiplier :y1 0 :x1 0.5
                                            :y2 1 :x2 0.1)
                     (make-tempo-multiplier :y1 1 :x1 0.1

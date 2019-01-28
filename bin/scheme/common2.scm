@@ -364,10 +364,10 @@
           (hash-table-set! ret key value)
           (loop (cddr rest))))))
 
-(***assert*** (copy-hash (hash-table* :a 9 :b 10 :c 'a)
+(***assert*** (copy-hash (hash-table :a 9 :b 10 :c 'a)
                          :a 8
                          :b 11)
-              (hash-table* :a 8
+              (hash-table :a 8
                            :b 11
                            :c 'a))
 
@@ -1651,7 +1651,7 @@ for .emacs:
     hash)
 
   (define methods_of_list-and-set
-    (hash-table* :contains this->contains
+    (hash-table :contains this->contains
                  :list this->list
                  :set this->set))
 

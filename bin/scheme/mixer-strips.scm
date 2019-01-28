@@ -351,7 +351,7 @@
 
 (map (lambda (key . rest)
        (c-display "key" key ", rest" rest)) 
-     (hash-table->alist (hash-table* :a 1 :b 2)))
+     (hash-table->alist (hash-table :a 1 :b 2)))
 
 (let ((h (make-hash-table)))
   (set! (h :a) 5)
@@ -364,7 +364,7 @@
        (hash-table->alist h)))
 
 (c-display "hepp" (hash-table->alist (hash-table '(a . 5) '(b . 2))))
-(c-display "hepp" (hash-table->alist (hash-table* 'a 5 'b 2)))
+(c-display "hepp" (hash-table->alist (hash-table 'a 5 'b 2)))
 
 !!#
   
@@ -487,13 +487,13 @@
                   ((:show-config-gui) (show-config-gui))
                   ((:recreate-config-gui-content) (recreate-config-gui-content))
                   ((:num-rows) num-rows)
-                  ((:get) (hash-table* :num-rows num-rows
+                  ((:get) (hash-table :num-rows num-rows
                                        :instrument-settings (keep identity
                                                                   (map (lambda (entry)
                                                                          (define instrument-id (car entry))
                                                                          (if (<ra> :instrument-is-open-and-audio instrument-id) ;; When saving song, conf can include deleted instruments.
                                                                              (let ((conf (cdr entry)))
-                                                                               (hash-table* :instrument-id instrument-id
+                                                                               (hash-table :instrument-id instrument-id
                                                                                             :is-enabled (conf :is-enabled)))
                                                                              #f))
                                                                        confs))))

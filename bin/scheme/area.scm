@@ -642,7 +642,7 @@
 (def-area-subclass (<keep-states-area> :gui :x1 :y1 :x2 :y2)    
   
   (define-override (get-state)
-    (hash-table* :sub-states (map (lambda (area)
+    (hash-table :sub-states (map (lambda (area)
                                     (area :get-state))
                                   sub-areas)))
   
@@ -1297,7 +1297,7 @@
   
   (define-override (get-state)
     (define areas (get-areas))
-    (hash-table* :areas areas
+    (hash-table :areas areas
                  :y1 y1
                  :start-y1 (if (null? areas)
                                0
@@ -1743,7 +1743,7 @@
 
   (define (store-curr-entry-state!)
     (set! (states curr-settings-num)
-          (hash-table* :path path
+          (hash-table :path path
                        :entries entries
                        :entries-is-complete entries-is-complete
                        :vertical-list-area-state (and vertical-list-area
@@ -1752,7 +1752,7 @@
     
   (define-override (get-state)
     (store-curr-entry-state!)
-    (hash-table* :curr-settings-num curr-settings-num
+    (hash-table :curr-settings-num curr-settings-num
                  :states states))
 
   (define (apply-state2! state)
@@ -1992,7 +1992,7 @@
 
   (define-override (get-state)
     (set! (tab-states curr-tab-num) (tab-area :get-state))
-    (hash-table* :curr-tab-num curr-tab-num
+    (hash-table :curr-tab-num curr-tab-num
                  :tab-states tab-states))
 
   (define-override (apply-state! state)
