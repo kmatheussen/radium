@@ -18,9 +18,15 @@ Timing is tempo and rhythm.
 <OL>
   <LI> <b>External plugins</b>
     (For instance to a make a VST plugin play echo sounds in sync with the music.)
-  <LI> <b>The metronome</b> (Enabled by the "Click" button in the bottom bar)
-  <LI> <b>Modulators</b>
-  <LI> <b>The sequencer grid</b>
+    <p>
+  <LI> <b>The metronome</b> (Enabled by the "Click" button in the bottom bar)<br>
+      <img src="clickbutton.png">
+    <p>
+  <LI> <b>Modulators</b><br>
+    <img src="modulator.png">          
+    <p>
+  <LI> <b>The sequencer grid</b><br>
+    <img src="sequencergrid.png">          
 </OL>
 <pre>
 </pre>
@@ -34,12 +40,13 @@ Timing is controlled by tempo events and signature events:
 <LI> <b>Tempos</b> (BPM) specify the duration of a quarter note. Note that BPM stands for <b>B</b>eats <b>P</b>er <b>M</b>inute, which is a misleading name unless your signature is 4/4. <b>QPM</b> (Quarter notes Per Minute) would be more correct.
 <p>
 <LI> <b>Signatures</b> specify rhythm. It does so by specifying number of beats (in a bar) above beat type.
-  For instance, a 4/4 signature means that there are 4 beats in the bar, and that each beat is a quarter.<br>
-  Other common names for signature: time signature, meter signature, meter, metre, measure, and measure signature.
+  For instance, a 4/4 signature means that there are 4 beats in the bar, and that each beat is a quarter.
+  <p>
+    Here are some other common names for the term "signature": time signature, meter signature, meter, metre, measure, and measure signature.
 </UL>
 <p>
-For example, if tempo is set to 64 BPM, and the signature is set to 8/8, a new bar will be played every 16 seconds (64/4 * 8/8), and a new beat will be played every 2 seconds (64/4 * 1/8).
-If the signature is set to 2/4, a new bar will be played every 8 seconds (64/4 * 2/4), and a new beat will be played every 4 seconds (64/4 * 1/4).
+Example 1: If tempo is set to 64 BPM, and the signature is set to 8/8, a new bar will be played every 16 seconds (64/4 * 8/8), and a new beat will be played every 2 seconds (64/4 * 1/8).
+Example 2: If the signature is set to 2/4, a new bar will be played every 8 seconds (64/4 * 2/4), and a new beat will be played every 4 seconds (64/4 * 1/4).
 <pre>
 </pre>
 <p>
@@ -55,13 +62,13 @@ There are two timing modes to select from. Only one of them can be enabled at th
 <p>
 Editor timing is the default mode. In editor timing mode, tempos and signaturs are provided by the editor blocks placed in the first seqtrack.
 <p>
-Tempos are edited in the tempo tracks in the editor, and signatures are edited in the signature tracks in the editor.
-<p>
-In this mode, the tempo and signature lanes in the sequencer are just used for visualization, and editing in any of these two lanes is disabled.
+Tempos are edited in the tempo tracks in the editor, and signatures are edited in the signature tracks in the editor:
 <p>
   <img src="editortiming.png">
+<p> 
+In this mode, the tempo and signature lanes in the sequencer are just used for visualization, and editing in any of these two lanes is disabled.
 <p>
-  
+ 
 <LI><b>Sequencer timing</b><br>
 <p>
 In sequencer timing mode, tempos and signatures are provided by the tempo and signature lanes in the sequencer.
