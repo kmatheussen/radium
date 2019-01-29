@@ -27,12 +27,15 @@ static inline bool has_same_tempo(double tempo1, double tempo2){
 }
 
 
+// Can be called from any thread.
 extern LANGSPEC double Place2STime_from_times2(
                                                const struct STimes *stimes,
                                                double place_as_float
                                                );
 
+// Can be called from any thread.
 static inline STime Place2STime_from_times(int num_lines, const struct STimes *times, const Place *p){
+  
   if(0==p->counter)
     return times[p->line].time;
 
@@ -45,11 +48,12 @@ static inline STime Place2STime_from_times(int num_lines, const struct STimes *t
   return Place2STime_from_times2(times, y);
 }
 
+// Can be called from any thread.
 static inline STime Place2STime(
 	const struct Blocks *block,
 	const Place *p
 ){
-  return Place2STime_from_times(block->num_lines, block->times, p);
+  return Place2STime_from_times(block->num_time_lines, block->times, p);
 }
 
 extern LANGSPEC double STime2Place_f(
@@ -62,7 +66,8 @@ extern LANGSPEC Place STime2Place(
                                   STime time
                                   );
 
-static inline STime getBlockSTimeLength(const struct Blocks *block){
+// Can be called from any thread.
+static inline STime getBlockSTimeLength(const struct Blocks *block){                       
   if (block==NULL){
 #if !defined(RELEASE)
     abort();
@@ -70,10 +75,17 @@ static inline STime getBlockSTimeLength(const struct Blocks *block){
     return 48000; // This should never happen, and it has never happened.
 #endif
   }
-  if (block->num_lines != block->num_time_lines) // 'num_time_lines' is the actual allocated number of lines.
-    RWarning("block->num_lines != block->num_time_lines: %d != %d",block->num_lines, block->num_time_lines);
-    
-  return block->times[block->num_time_lines].time;
+
+#if !defined(RELEASE)
+  if (THREADING_is_main_thread()){
+    if (block->num_lines != block->num_time_lines) // 'num_time_lines' is the actual allocated number of lines.
+      RWarning("block->num_lines != block->num_time_lines: %d != %d",block->num_lines, block->num_time_lines);
+
+    R_ASSERT(block->times[block->num_time_lines].time == block->length);
+  }
+#endif
+  
+  return block->length;
 }
 
 static inline bool isSTimeInBlock(const struct Blocks *block,STime time){
