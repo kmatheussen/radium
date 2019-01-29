@@ -255,7 +255,9 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
     int add_automation_to_current_sequencer_track=-10;
     int add_random = -10;
     int remove_random = -10;
-      
+
+    int help = -10;
+    
     if (is_audio_instrument) {
 
       if(_is_a_pd_slider){
@@ -314,7 +316,10 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
           add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
       }
     }
-      
+
+    VECTOR_push_back(&options, "--------------");
+    help = VECTOR_push_back(&options, "Help");
+
     //VECTOR_push_back(&options, "");
       
     //VECTOR_push_back(&options, "Set Value");
@@ -324,7 +329,7 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
     IsAlive is_alive(this);
 
     int64_t guinum =
-      GFX_Menu3(options,[is_alive, this, plugin, modulator_id, pd_delete, reset, remove_midi_learn, midi_relearn, midi_learn, remove_modulator, replace_modulator, add_modulator, record, remove_random, add_random, add_automation_to_current_editor_track, add_automation_to_current_sequencer_track](int command, bool onoff){
+      GFX_Menu3(options,[is_alive, this, plugin, modulator_id, pd_delete, reset, remove_midi_learn, midi_relearn, midi_learn, remove_modulator, replace_modulator, add_modulator, record, remove_random, add_random, add_automation_to_current_editor_track, add_automation_to_current_sequencer_track, help](int command, bool onoff){
 
         if (!is_alive || _patch->patchdata==NULL)
           return;
@@ -379,9 +384,13 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
           
           addAutomationToCurrentSequencerTrack(_patch->id, getInstrumentEffectName(_effect_num, _patch->id));
           
+        } else if (command==help) {
+
+          evalScheme("(FROM-C-show-help-window \"help/instrument_effect_popup_menu.html\")");
+          
         }
       
-       
+        
         GFX_update_instrument_widget(_patch.data());
         
 #if 0
