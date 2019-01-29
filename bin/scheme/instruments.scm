@@ -1022,6 +1022,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                     :post-undo-block-callback (lambda () #f)
                                     )
   (list
+   ;;"-------------Automation"
    (list (or automation-error-message
              "Add automation to current editor track")
          :enabled (not automation-error-message)
@@ -1038,9 +1039,9 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                          (pre-undo-block-callback)
                          (<ra> :add-automation-to-current-sequencer-track instrument-id effect-name)
                          (post-undo-block-callback)))))
-   "-------------"
+   "-------------" ;;Midi Learn"
    (get-midi-learn-menu-elements instrument-id effect-name)
-   "------------"
+   "------------" ;;Modulators"
    (let ((has-modulator (and (not modulation-error-message)
                              (<ra> :has-modulator instrument-id effect-name))))
      (if has-modulator
@@ -1106,7 +1107,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
   (popup-menu (list "Reset"
                     (lambda ()                      
                       (<ra> :reset-instrument-effect instrument-id effect-name)))
-              "-----------"
+              "-----------Effect"
               (get-effect-popup-entries instrument-id effect-name
                                         :pre-undo-block-callback (lambda ()
                                                                    (<ra> :undo-instrument-effect instrument-id effect-name) ;; store value before assigning modulator.
