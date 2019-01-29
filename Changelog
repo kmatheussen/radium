@@ -1,3 +1,61 @@
+Changes 5.9.31 -> 5.9.32:
+* Mixer: Some minor improvements to the popup menu.
+* Instruments/Help: Add "Help" option to the bottom of
+  the effect slider/checkbox popup menu.
+* Sequencer: Fix race condition in all of automation
+  and timing. Bug introduced in 5.9.30. This fixes
+  wrong tempo values sometimes being read, wrong
+  signature values sometimes being read, wrong
+  automation values sometimes being read, wrong
+  song tempo values sometimes being read, and possibly
+  prevent crashes and strange behaviours. Wrong
+  behaviours caused by this bug should have been
+  rare though.
+* Control: Fix possible crash during shutdown.
+* Editor: Fix various race conditions when changing
+  number of lines, changing tempo, etc. while playing.
+  This should fix various assertion dialogs popping
+  up in rare circumstanses in conjunction with timing.
+* Help: Improve the documentation for timing.
+* GUI: Make sure popup menu entries are never painted in
+  "hovered" color when mouse cursor is not above the
+  entry. For instance, when there were only one entry,
+  that entry was always painted in the hovered color.
+* Editor: Make the functions to insert and delete lines
+  insert or delete the expected number of lines when
+  LZ is not 1. I.e. when LZ is 2, insert 1/2 line.
+  If LZ is 1/2, insert 2 lines, and so forth.
+* Editor: Fix cursor position after inserting or
+  removing lines when LZ is not 1.
+* Internal: Fix a race conditition during startup
+  (probably harmless). This also fixes a rare
+  assertion hit during startup.
+* Fluidsynth instrument: Update current bookmark when
+  writing directory path manually.
+* Sampler instrument: Update current bookmark when
+  writing directory path manually.
+* Sampler instrument: Show message window when a
+  soundfont or directory couldn't be opened.
+* Sampler instrument: Optimize memory usage. Besides
+  using a lot less memory, it might improve realtime
+  performance as well by causing fewer cache hits.
+* Instruments: Paint effects with lighter color when
+  mouse is above an effect slider or checkbox.
+* Instruments: Display "(right-click for options)" in
+  the status bar when mouse is above an effect slider
+  or checkbox.
+* GUI: Adjust default background color a little bit.
+  (Made it a little bit darker).
+* GUI: Change default slider colors back to a
+  red->green gradient color instead of the new
+  grayish color that was hard to distinguish from
+  the background.
+* API
+  * Change types of the "start" and "length" arguments
+    for 'setInstrumentLoopData' from int to int64_t.
+  * Update S7 scheme interpreter.
+
+
 Changes 5.9.30 -> 5.9.31:
 * Sequencer: Fix wrong seqblock duration of stretched
   seqblocks when changing tempos of a editor block.
