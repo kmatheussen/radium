@@ -457,18 +457,26 @@ class SetSeveralAtomicVariables{
 // The main thread can set, replace and free the pointer at any time. (doesn't look like it can free... that seems to be taken care of automatically)
 // A realtime thread can access the pointer at any time by using the ScopedUsage class.
 //
+template <typename T>
 class AtomicPointerStorage{
 
-  friend class RT_AtomicPointerStorage_ScopedUsage;
-  
+  template <typename T2> friend class RT_AtomicPointerStorage_ScopedUsage;
+
+#if !defined(RELEASE)
+  bool _is_used = false;
+#endif
+
+  AtomicPointerStorage(const AtomicPointerStorage&) = delete;
+  AtomicPointerStorage& operator=(const AtomicPointerStorage&) = delete;
+
 private:
   
-  DEFINE_ATOMIC(void *, _pointer) = NULL;
-  DEFINE_ATOMIC(void *, _old_pointer_to_be_freed) = NULL;
+  DEFINE_ATOMIC(T *, _pointer) = NULL;
+  DEFINE_ATOMIC(T *, _old_pointer_to_be_freed) = NULL;
 
-  void (*_free_pointer_function)(void *);
+  void (*_free_pointer_function)(T *);
 
-  void maybe_free_something(void *a, void *b){
+  void maybe_free_something(T *a, T *b){
     if (_free_pointer_function != NULL){
       if (a!=NULL)
         _free_pointer_function(a);
@@ -479,7 +487,7 @@ private:
 
 public:
 
-  AtomicPointerStorage(void (*free_pointer_function)(void *))
+  AtomicPointerStorage(void (*free_pointer_function)(T *))
     : _free_pointer_function(free_pointer_function)
   {
   }
@@ -489,10 +497,10 @@ public:
   }
 
   // May be called at any time. 'free_pointer_function' may be called 0, 1, or 2 times. (usually 1 time)
-  void set_new_pointer(void *new_pointer){
-    void *old_pointer_to_be_freed = ATOMIC_SET_RETURN_OLD(_old_pointer_to_be_freed, NULL);
+  void set_new_pointer(T *new_pointer){
+    T *old_pointer_to_be_freed = ATOMIC_SET_RETURN_OLD(_old_pointer_to_be_freed, NULL);
 
-    void *old = ATOMIC_SET_RETURN_OLD(_pointer, new_pointer);
+    T *old = ATOMIC_SET_RETURN_OLD(_pointer, new_pointer);
     //printf("Has set. new: %p, old: %p, curr: %p\n", new_pointer, old, ATOMIC_GET(_pointer));
 
     maybe_free_something(old, old_pointer_to_be_freed);
@@ -501,29 +509,44 @@ public:
 
 // Create an instance of this class to access pointer from a realtime thread.
 // I don't think it works to create more than one instance of this at the same time.
+template <typename T>
 class RT_AtomicPointerStorage_ScopedUsage{
 
-  AtomicPointerStorage *_storage;
-  void *_pointer;
+  AtomicPointerStorage<T> *_storage;
+  T *_pointer;
+
+  RT_AtomicPointerStorage_ScopedUsage(const RT_AtomicPointerStorage_ScopedUsage&) = delete;
+  RT_AtomicPointerStorage_ScopedUsage& operator=(const RT_AtomicPointerStorage_ScopedUsage&) = delete;
 
 public:
 
-  void *get_pointer(void){
+  T *get_pointer(void) const {
     return _pointer;
   }
   
-  RT_AtomicPointerStorage_ScopedUsage(AtomicPointerStorage *storage)
+  RT_AtomicPointerStorage_ScopedUsage(AtomicPointerStorage<T> *storage)
     :_storage(storage)
   {
+#if !defined(RELEASE)
+    if(storage->_is_used==true)
+      abort();
+    storage->_is_used=true;
+#endif
     _pointer = ATOMIC_SET_RETURN_OLD(storage->_pointer, NULL);
   }
     
   ~RT_AtomicPointerStorage_ScopedUsage(){
-    if (ATOMIC_COMPARE_AND_SET_POINTER(_storage->_pointer, NULL, _pointer)) {
+#if !defined(RELEASE)
+    if(_storage->_is_used==false)
+      abort();
+    _storage->_is_used = false;
+#endif
+
+    if(atomic_compare_and_set_pointer(reinterpret_cast<void**>(&ATOMIC_NAME(_storage->_pointer)), NULL, _pointer)){ // The void-cast is a workaround for compiler error. Strange.
       return;
     } else {
 #if !defined(RELEASE)
-      void *old_pointer = ATOMIC_GET(_storage->_old_pointer_to_be_freed);
+      T *old_pointer = ATOMIC_GET(_storage->_old_pointer_to_be_freed);
       if (old_pointer != NULL && old_pointer!=_pointer)
         abort();
 #endif
