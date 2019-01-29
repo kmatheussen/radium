@@ -29,6 +29,8 @@ static struct Instruments *g_instruments;
 
 // Called during program shutdown
 static void CloseInstrument(NInt instrumentnum){
+  R_ASSERT_NON_RELEASE(false);
+  #if 0
 	struct Instruments *temp=(struct Instruments *)ListFindElement1(
                 &g_instruments->l,
 		instrumentnum
@@ -38,6 +40,7 @@ static void CloseInstrument(NInt instrumentnum){
 	(*temp->CloseInstrument)(temp);
 
 	ListRemoveElement1(&g_instruments,&temp->l);
+#endif
 }
 
 // Called during program shutdown

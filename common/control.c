@@ -162,7 +162,7 @@ void EndProgram(void){
 	printf("Closing down os independent stuff...\n");
 
 	printf("...Instruments\n");
-	CloseAllInstruments();
+	//CloseAllInstruments(); // Removed since it's still used in the audio thread, which is still alive.
 
 	printf("...Song\n");
 	ClearSong();
