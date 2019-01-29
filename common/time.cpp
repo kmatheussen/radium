@@ -888,6 +888,7 @@ static const struct STimeChange *get_stimechange(const struct STimes *stimes, do
   return time_change;
 }
 
+// Can be called from any thread.
 double Place2STime_from_times2(
                                const struct STimes *stimes,
                                double place_as_float
@@ -1248,7 +1249,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   memset(trackstimess, 0, sizeof(vector_t)*num_blocks);
   
   bool only_update_beats[num_blocks];
-  bool only_update_beats_for_all_blocks = true;
+  bool only_update_beats_for_all_blocks = true; // horrible variable name.
 
   for(int i=0;i<num_blocks;i++){
     bool has_swings = blocks[i]->swing_enabled==true && blocks[i]->swings!=NULL;
@@ -1348,59 +1349,70 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
 
   // apply
   PC_Pause();{
-    for(int i=0;i<num_blocks;i++){
-      struct Blocks *block = blocks[i];
+
+    {
+      radium::PlayerLockOnlyIfNeeded lock(only_update_beats_for_all_blocks==false);
       
-      block->beats = beats[i];
+      for(int i=0;i<num_blocks;i++){
+        struct Blocks *block = blocks[i];
+        
+        block->beats = beats[i];
 
-      if (only_update_beats[i]==false) {
+        lock.maybe_pause(i);
         
-        if (filledout_swingss[i].type==ARRAY_TYPE)
-          block->filledout_swings = filledout_swingss[i];
-        
-        if (stimes_without_global_swings[i] != NULL){ // Shouldn't happen, but if it does, we keep the old timing.
-          block->times_without_global_swings = stimes_without_global_swings[i];
-          block->num_time_lines = block->num_lines;
-        }else{
-          R_ASSERT_NON_RELEASE(false);
-        }
-
-        if (stimes_with_global_swings[i] != NULL) // Shouldn't happen, but if it does, we keep the old timing.
-          block->times_with_global_swings = stimes_with_global_swings[i];
-        else{
-          R_ASSERT_NON_RELEASE(false);
-        }
-        
-        if (plugins_should_receive_swing_tempo)
-          block->times = block->times_with_global_swings;
-        else
-          block->times = block->times_without_global_swings;
-        
-        if (update_swings){
-          struct Tracks *track = block->tracks;
-          while(track!=NULL){
-            track->filledout_swings = filledout_trackswingss[i].elements[track->l.num];
-            track->times = (const STimes*)trackstimess[i].elements[track->l.num];
-            track = NextTrack(track);
+        if (only_update_beats[i]==false) {
+          
+          if (filledout_swingss[i].type==ARRAY_TYPE)
+            block->filledout_swings = filledout_swingss[i];
+          
+          if (stimes_without_global_swings[i] != NULL){ // Shouldn't happen, but if it does, we keep the old timing.
+            block->times_without_global_swings = stimes_without_global_swings[i];
+            block->num_time_lines = block->num_lines;
+          }else{
+            R_ASSERT_NON_RELEASE(false);
           }
+          
+          if (stimes_with_global_swings[i] != NULL) // Shouldn't happen, but if it does, we keep the old timing.
+            block->times_with_global_swings = stimes_with_global_swings[i];
+          else{
+            R_ASSERT_NON_RELEASE(false);
+          }
+          
+          if (plugins_should_receive_swing_tempo)
+            block->times = block->times_with_global_swings;
+          else
+            block->times = block->times_without_global_swings;
+
+          block->length = block->times[block->num_time_lines].time;
+
+          if (update_swings){
+            struct Tracks *track = block->tracks;
+            while(track!=NULL){
+              lock.maybe_pause(track->l.num);
+              track->filledout_swings = filledout_trackswingss[i].elements[track->l.num];
+              track->times = (const STimes*)trackstimess[i].elements[track->l.num];
+              track = NextTrack(track);
+            }
+          }
+          
         }
-
       }
+      
+      if (only_update_beats_for_all_blocks==false){
+        
+        SEQUENCER_timing_has_changed(lock); // Changes length of seqblock if length of editor block has changed.
+        
+        int i = 0;
+        ALL_SEQTRACKS_FOR_EACH(){
+          RT_legalize_seqtrack_timing(seqtrack, &lock);
+          lock.maybe_pause(i++);
+        }END_ALL_SEQTRACKS_FOR_EACH;    
+        
+      }
+
     }
 
-    if (only_update_beats_for_all_blocks==false){
-      radium::PlayerLockOnlyIfNeeded lock;
-
-      SEQUENCER_timing_has_changed(lock); // Changes length of seqblock if length of editor block has changed.
-
-      int i = 0;
-      ALL_SEQTRACKS_FOR_EACH(){
-        RT_legalize_seqtrack_timing(seqtrack, &lock);
-        lock.maybe_pause(i++);
-      }END_ALL_SEQTRACKS_FOR_EACH;    
-
-    }
-
+    
     SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);
     
   }PC_StopPause(NULL);

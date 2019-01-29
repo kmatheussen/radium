@@ -2316,11 +2316,13 @@ struct Blocks{
         struct Swing *swings;
         bool swing_enabled;
   
-        int num_time_lines; // Contains number of lines in 'times' minus one (same as num_lines, normally). Only for validation.
+        int num_time_lines; // Contains number of lines in 'times' minus one (same as num_lines, normally). Can be read from any thread.
         const struct STimes *times_with_global_swings; // Pointer to array. Last element (times[num_lines]) is the playtime of the block. Calculated from lpbs/tempos/temponodes/global lpb/global bpm/filledout_swings.
         const struct STimes *times_without_global_swings;
         const struct STimes *times;  //  Either points to 'times' or 'times_with_global_swings', depending on whether plugins should receive swing tempo or not.
-        
+
+        STime length; // Same as block->times[block->num_time_lines].time, but can be accessed from any thread. Must obtain player lock when writing to this variable.
+  
         DEFINE_ATOMIC(double, reltempo);					/* factor that the tempo is multiplied with when playing this block. */
 
         DEFINE_ATOMIC(double, player_time);	/* = pc->end_time - RT_curr_seqblock()->time */
