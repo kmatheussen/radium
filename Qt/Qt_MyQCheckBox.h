@@ -261,7 +261,8 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
       
     int add_random = -10;
     int remove_random = -10;
-
+    int help = -10;
+    
     if(_is_a_pd_slider){
       /*
         VECTOR_push_back(&options, "Set Symbol Name");
@@ -302,13 +303,16 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
         add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
     }
 
+    VECTOR_push_back(&options, "--------------");
+    help = VECTOR_push_back(&options, "Help");
+
     _popup_menu_is_visible = true;
     
     IsAlive is_alive(this);
 
     int64_t guinum =
-      GFX_Menu3(options,[is_alive, this, plugin, modulator_id, delete_pd, reset, remove_random, add_random, add_midi_learn, remove_midi_learn, midi_relearn, remove_modulator, replace_modulator, add_modulator](int command, bool onoff){
-
+      GFX_Menu3(options,[is_alive, this, plugin, modulator_id, delete_pd, reset, remove_random, add_random, add_midi_learn, remove_midi_learn, midi_relearn, remove_modulator, replace_modulator, add_modulator, help](int command, bool onoff){
+        
         if (!is_alive || _patch->patchdata==NULL)
           return;
         
@@ -348,8 +352,11 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
           
         }else if (command==add_modulator){
           MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, false);
-        }
 
+        } else if (command==help) {
+          evalScheme("(FROM-C-show-help-window \"help/instrument_effect_popup_menu.html\")");
+        }
+        
         GFX_update_instrument_widget(_patch.data());
       });
 
