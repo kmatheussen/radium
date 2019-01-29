@@ -88,6 +88,7 @@
 
 (define (get-instrument-popup-entries instrument-id parentgui)
   (list
+   "-----------Instrument"
    (list "Set as current instrument"
          :enabled (not (= (<ra> :get-current-instrument)
                           instrument-id))
@@ -694,7 +695,8 @@
   ;;(c-display (<-> "Effect name: -" effect-name "-"))
   ;;(c-display "ins:" instrument-id)
 
-  (popup-menu (list "Delete"
+  (popup-menu "----------Entry" ;;Slider instrument"
+              (list "Delete"
                      :enabled delete-func
                     (lambda ()
                       (delete-func)))
@@ -712,7 +714,7 @@
                     (lambda ()
                       (<ra> :save-instrument-preset (list instrument-id) parentgui)))
               "-----------"
-              (list "Insert Plugin"
+              (list "Insert Plugin (after entry)"
                     :enabled (or upper-half?
                                  (not is-sink?))
                     (lambda ()
@@ -741,7 +743,7 @@
                                                             finished)))
                       ))
                     
-              (list "Insert Send"
+              (list "Insert Send (after entry)"
                     :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
                     (lambda ()
                       (let ((instrument-id (cond (is-send?
@@ -756,12 +758,14 @@
                                                    (<ra> :set-current-instrument first-instrument-id))))))
               "----------"
 
-              (list "Reset value"
+              (list (if is-send?
+                        "Reset send value"
+                        "Reset dry/wet value")
                     :enabled reset-func
                     (lambda ()
                       (reset-func)))
               
-              "------------"
+              "------------Effect"
               (get-effect-popup-entries midi-learn-instrument-id
                                         effect-name
                                         :automation-error-message (if effect-name
@@ -774,9 +778,8 @@
               ;;"Convert to standalone strip" (lambda ()
               ;;                                #t)
 
-              "----------"
               (get-instrument-popup-entries instrument-id parentgui)
-              "----------"
+              "----------Mixer"
               (list "Wide mode"
                     :check (<ra> :has-wide-instrument-strip parent-instrument-id)
                     (lambda (enabled)
@@ -1708,7 +1711,7 @@
                               (list "Enabled"
                                     :check pan-enabled
                                     enable!)
-                              "------------"
+                              "------------Effect"
                               (get-effect-popup-entries instrument-id "System Pan"
                                                         :pre-undo-block-callback (lambda ()
                                                                                    (enable! #t)))
@@ -2101,7 +2104,7 @@
                   (popup-menu "Reset" (lambda ()
                                         (<ra> :undo-instrument-effect instrument-id effect-name)
                                         (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized 0)))
-                              "------------"
+                              "------------Effect"
                               (get-effect-popup-entries instrument-id effect-name)
                               "------------"
                               (get-global-mixer-strips-popup-entries instrument-id strips-config))))
