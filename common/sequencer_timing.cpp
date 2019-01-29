@@ -116,14 +116,14 @@ static void add_default_node0(float default_bpm){
 }
 
 double RT_SEQUENCER_TEMPO_get_value(double seqtime){
-  const TempoAutomationNode *node1=NULL,*node2=NULL;
-
-  auto res = g_tempo_automation.RT_get_nodes(seqtime, &node1, &node2);
+  radium::SeqAutomation<TempoAutomationNode>::ScopedRtAccess rt_access(g_tempo_automation);
+    
+  auto res = g_tempo_automation.RT_get_nodes(seqtime, rt_access);
   if (res==radium::SeqAutomationReturnType::NO_VALUES_YET || res==radium::SeqAutomationReturnType::NO_VALUES){
     R_ASSERT_NON_RELEASE(false);
     return root->tempo;
   }else
-    return node1->value;
+    return rt_access.node1->value;
 }
 
 static double get_num_quarters(double seqtime, radium::SeqAutomationReturnType res, const TempoAutomationNode *node1, const TempoAutomationNode *node2){
@@ -161,11 +161,11 @@ static double get_num_quarters(double seqtime, radium::SeqAutomationReturnType r
 }
 
 double RT_SEQUENCER_TEMPO_get_num_quarters(double seqtime){
-  const TempoAutomationNode *node1=NULL,*node2=NULL;
-
-  auto res = g_tempo_automation.RT_get_nodes(seqtime, &node1, &node2);
-
-  return get_num_quarters(seqtime, res, node1, node2);
+  radium::SeqAutomation<TempoAutomationNode>::ScopedRtAccess rt_access(g_tempo_automation);
+  
+  auto res = g_tempo_automation.RT_get_nodes(seqtime, rt_access);
+  
+  return get_num_quarters(seqtime, res, rt_access.node1, rt_access.node2);
 }
 
 static TempoAutomationNode create_node_from_state(hash_t *state, double state_samplerate){
@@ -253,14 +253,14 @@ static void add_default_node0(const StaticRatio &signature){
 }
 
 StaticRatio RT_SEQUENCER_SIGNATURE_get_value(double seqtime){
-  const SignatureAutomationNode *node1=NULL,*node2=NULL;
-
-  auto res = g_signature_automation.RT_get_nodes(seqtime, &node1, &node2);
+  radium::SeqAutomation<SignatureAutomationNode>::ScopedRtAccess rt_access(g_signature_automation);
+  
+  auto res = g_signature_automation.RT_get_nodes(seqtime, rt_access);
   if (res==radium::SeqAutomationReturnType::NO_VALUES_YET || res==radium::SeqAutomationReturnType::NO_VALUES){
     R_ASSERT_NON_RELEASE(false);
     return root->signature;
   }else
-    return node1->signature;
+    return rt_access.node1->signature;
 }
 
 
@@ -438,27 +438,28 @@ void SEQUENCER_iterate_sequencer_time(int64_t start_seqtime, int64_t end_seqtime
 *************************************************/
 
 static double RT_SEQUENCER_BAR_get_ppq_of_last_bar_start(double seqtime){
-  const BarAutomationNode *node1=NULL,*node2=NULL;
 
-  auto res = g_bar_automation.RT_get_nodes(seqtime, &node1, &node2);
+  radium::SeqAutomation<BarAutomationNode>::ScopedRtAccess rt_access(g_bar_automation);
+    
+  auto res = g_bar_automation.RT_get_nodes(seqtime, rt_access);
   if (res==radium::SeqAutomationReturnType::NO_VALUES_YET || res==radium::SeqAutomationReturnType::NO_VALUES){
     R_ASSERT_NON_RELEASE(false);
     return 0.0;
   }
 
   if (res==radium::SeqAutomationReturnType::NO_MORE_VALUES) {
-    double duration_in_frames = (seqtime-node1->time);
+    double duration_in_frames = (seqtime-rt_access.node1->time);
 
-    double bar_duration_in_frames = node1->bar_duration_in_frames;
+    double bar_duration_in_frames = rt_access.node1->bar_duration_in_frames;
     int num_bars = int(duration_in_frames / bar_duration_in_frames);
 
-    double ret = node1->value + node1->bar_duration_in_ppq*num_bars;
+    double ret = rt_access.node1->value + rt_access.node1->bar_duration_in_ppq*num_bars;
 
     //printf("   RET: %f. Num bars: %d\n", ret,num_bars);
     return ret;
   }
 
-  return node1->value;
+  return rt_access.node1->value;
 }
 
 static double find_ppq(radium::SeqAutomationIterator<TempoAutomationNode> &iterator, double time){

@@ -185,11 +185,12 @@ static double get_custom_value(double abstime, const TempoAutomationNode *node1,
 
 // Called from MIXER.cpp in the player thread.
 double RT_TEMPOAUTOMATION_get_value(double abstime){
-  const TempoAutomationNode *node1,*node2;
-  g_tempo_automation.RT_get_nodes(abstime, &node1, &node2);
+  radium::SeqAutomation<TempoAutomationNode>::ScopedRtAccess rt_access(g_tempo_automation);
+  
+  g_tempo_automation.RT_get_nodes(abstime, rt_access);
 
-  if(node1 != NULL && node2 != NULL)
-    return get_custom_value(abstime, node1, node2);
+  if(rt_access.node1 != NULL && rt_access.node2 != NULL)
+    return get_custom_value(abstime, rt_access.node1, rt_access.node2);
 
   return 1.0;
 }

@@ -378,10 +378,13 @@ template <typename T> class SeqAutomation{
 private:
   
   QVector<T> _automation;
-
+public:
   struct RT{
     int num_nodes;
     T *nodes;
+
+    RT(const RT&) = delete;
+    RT& operator=(const RT&) = delete;
 
     RT(const QVector<T> &automation){
 
@@ -397,21 +400,21 @@ private:
       delete[] nodes;
     }
   };
-
+private:
   int _curr_nodenum = -1;
   bool _paint_nodes = false;
 
   mutable const SeqAutomationPainter<T> *_last_painter = NULL;
   
-  AtomicPointerStorage _rt;
+  AtomicPointerStorage<RT> _rt;
 
   // Double free / using data after free, if trying to copy data.
   SeqAutomation(const SeqAutomation&) = delete;
   SeqAutomation& operator=(const SeqAutomation&) = delete;
 
 
-  static void free_rt(void* rt){
-    delete static_cast<RT*>(rt);
+  static void free_rt(RT *rt){
+    delete rt; //static_cast<RT*>(rt);
   }
 
 public:
@@ -428,6 +431,19 @@ public:
   void *new_rt_data_has_been_created_data = NULL;
   void (*new_rt_data_has_been_created)(void *data) = NULL;
 
+  struct ScopedRtAccess{
+
+    const RT_AtomicPointerStorage_ScopedUsage<RT> rt_pointer;
+
+    const T *node1=NULL;
+    const T *node2=NULL;
+
+    ScopedRtAccess(SeqAutomation<T> &instance)
+      : rt_pointer(&instance._rt)
+    {
+    }
+  };
+  
 private:
   
   /*
@@ -436,14 +452,14 @@ private:
   }
   */
 
-  const struct RT *create_rt(void) const {
+  struct RT *create_rt(void) const {
     return new RT(_automation);
   }
 
   void create_new_rt_data(void){
-    const struct RT *new_rt_tempo_automation = create_rt();
+    struct RT *new_rt = create_rt();
 
-    _rt.set_new_pointer((void*)new_rt_tempo_automation);
+    _rt.set_new_pointer(new_rt);
 
     if (new_rt_data_has_been_created != NULL)
       new_rt_data_has_been_created(new_rt_data_has_been_created_data);
@@ -576,12 +592,12 @@ private:
 public:
 
   // This function is tested in ../test/test_seqautomation.cpp (run by calling "./build_linux test")
-  SeqAutomationReturnType RT_get_nodes(double time, const T **node1, const T **node2){
+  SeqAutomationReturnType RT_get_nodes(double time, ScopedRtAccess &rt_access){
     R_ASSERT_NON_RELEASE(_RT_last_search_pos > 0);
+    R_ASSERT_NON_RELEASE(rt_access.node1==NULL);
+    R_ASSERT_NON_RELEASE(rt_access.node2==NULL);
 
-    RT_AtomicPointerStorage_ScopedUsage rt_pointer(&_rt);
-      
-    const struct RT *rt = (const struct RT*)rt_pointer.get_pointer();
+    const struct RT *rt = (const struct RT*)rt_access.rt_pointer.get_pointer();
 
     if (rt!=NULL) {
 
@@ -589,15 +605,11 @@ public:
 
       if (num_nodes==0) {
 
-        *node1 = NULL;
-        *node2 = NULL;
-        
         return SeqAutomationReturnType::NO_VALUES;
 
       } else if (time >= rt->nodes[num_nodes-1].time){
 
-        *node1 = &rt->nodes[num_nodes-1];
-        *node2 = NULL;
+        rt_access.node1 = &rt->nodes[num_nodes-1];
 
         return SeqAutomationReturnType::NO_MORE_VALUES;
         
@@ -605,15 +617,14 @@ public:
 
         if (time == rt->nodes[0].time){
           
-          *node1 = &rt->nodes[0];
-          *node2 = &rt->nodes[1];
+          rt_access.node1 = &rt->nodes[0];
+          rt_access.node2 = &rt->nodes[1];
 
           return SeqAutomationReturnType::VALUE_OK;
           
         } else {
           
-          *node1 = NULL;
-          *node2 = &rt->nodes[0];
+          rt_access.node2 = &rt->nodes[0];
 
           return SeqAutomationReturnType::NO_VALUES_YET;
         }
@@ -645,8 +656,8 @@ public:
 
         } else {
           
-          *node1 = &rt->nodes[0];
-          *node2 = &rt->nodes[1];
+          rt_access.node1 = &rt->nodes[0];
+          rt_access.node2 = &rt->nodes[1];
 
           R_ASSERT(false);
 
@@ -656,24 +667,22 @@ public:
         
       gotit:
 
-        *node1 = node1_;
-        *node2 = node2_;
+        rt_access.node1 = node1_;
+        rt_access.node2 = node2_;
 
         return SeqAutomationReturnType::VALUE_OK;
 
       }
     }
 
-    *node1 = NULL;
-    *node2 = NULL;
     return SeqAutomationReturnType::NO_VALUES;    
   }
 
 
   SeqAutomationReturnType RT_get_value(double time, double &value, bool always_set_value = false) {
-    const T *node1,*node2;
-
-    const SeqAutomationReturnType ret = RT_get_nodes(time, &node1, &node2);
+    ScopedRtAccess rt_access(*this);
+      
+    const SeqAutomationReturnType ret = RT_get_nodes(time, rt_access);
 
     if (ret==SeqAutomationReturnType::NO_VALUES){
       if(always_set_value){
@@ -686,14 +695,14 @@ public:
     if (always_set_value){
 
       if(ret==SeqAutomationReturnType::NO_VALUES_YET)
-        value = node2->value;
+        value = rt_access.node2->value;
 
       else if(ret==SeqAutomationReturnType::NO_MORE_VALUES)
-        value = node1->value;
+        value = rt_access.node1->value;
     }
 
     if(ret==SeqAutomationReturnType::VALUE_OK)
-      value = get_value(time, node1, node2);
+      value = get_value(time, rt_access.node1, rt_access.node2);
     
     return ret;
   }
