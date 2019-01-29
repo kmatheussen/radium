@@ -6,6 +6,8 @@
 <a href="#usage">What is timing used for in Radium?</a><br>
 <a href="#overview">How is timing controlled?</a><br>
 <a href="#modes">Timing modes</a><br>
+<a href="#defaulttimingvalues">Default Timing values</a><br>
+
 
 <a name="what"></a><h2>What is timing?</h2>
 
@@ -68,7 +70,7 @@ There are two timing modes to select from. Only one of them can be enabled at th
 <p>
 Editor timing is the default mode. In editor timing mode, tempos and signaturs are provided by the editor blocks placed in the first seqtrack.
 <p>
-Tempos are edited in the tempo tracks in the editor, and signatures are edited in the signature tracks in the editor:
+Tempos are edited in the tempo tracks in the editor ("BPM"), and signatures are edited in the signature tracks in the editor ("Sign."):
 <p>
   <img src="editortiming.png">
 <p> 
@@ -84,7 +86,7 @@ but it will also be used automatically if the first seqtrack is for audio and no
 If you are using Radium mainly for recording and playing back audio files,
 this mode is both simpler, and probably easier to use, than editor timing.
 <p>
-Note that accelerando and ritardando are not currently supported in this mode.
+Note that accelerando and ritardando are not supported yet in this mode.
 In addition, signatures must align with bars, and tempos must align with beats.
 Editor timing mode does not have these limitations.
 <p>
@@ -94,6 +96,19 @@ Editor timing mode does not have these limitations.
 To select timing mode, use the popup menu in the sequencer and either select "Editor timing" or "Sequencer timing".
 Note that if the first seqtrack is for audio files, you are always forced to use sequencer timing.
 
+<a name="defaulttimingvalues"></a><h2>Default Timing values</h2>
+<p>
+  If "BPM track" and "Signature track" are visible you can change the default timing values in the upper left part of the editor:
+<p>
+  <img src="defaulttiming1.png">
+<p>
+  If "BPM track" and "Signature track" are not visible you can change the default timing values in the bottom bar instead:
+<p>
+  <img src="defaulttiming2.png">
+
+<p>
+
+  You change whether "BPM track" and "Signature track" are visible in the main menus under "Editor View".
 
 </body>
 </html>
