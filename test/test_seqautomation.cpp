@@ -6,8 +6,10 @@
 
 
 
+// BUILDTYPE=DEBUG ./build_linux.sh test
 
-// g++ test_seqautomation.cpp -DTEST_MAIN -Wall -std=gnu++11 -g `pkg-config --libs --cflags QtGui` -Wunknown-pragmas && ./a.out 
+// (g++ test_seqautomation.cpp -DTEST_MAIN -Wall -std=gnu++11 -g `pkg-config --libs --cflags QtGui` -Wunknown-pragmas && ./a.out)
+
 
 #include <stdio.h>
 #include <assert.h>
@@ -41,13 +43,14 @@ int main(){
   radium::SeqAutomation<test::Node> nodes;
 
 #define ADD(time) nodes.add_node(create_node(time));
-#define TEST(Time, Type, Has1, Has2)                                    \
-  assert(nodes.RT_get_nodes(Time, &node1, &node2)==radium::SeqAutomationReturnType::Type); \
-  if(Has1) assert(node1!=NULL); else assert(node1==NULL);               \
-  if(Has2) assert(node2!=NULL); else assert(node2==NULL);
   
-  const test::Node *node1,*node2;
-
+#define TEST(Time, Type, Has1, Has2) {                                  \
+    radium::SeqAutomation<test::Node>::ScopedRtAccess rt_access(nodes); \
+    assert(nodes.RT_get_nodes(Time, rt_access)==radium::SeqAutomationReturnType::Type); \
+    if(Has1) assert(rt_access.node1!=NULL); else assert(rt_access.node1==NULL); \
+    if(Has2) assert(rt_access.node2!=NULL); else assert(rt_access.node2==NULL); \
+  }
+  
   TEST(0, NO_VALUES, false, false);
   TEST(10, NO_VALUES, false, false);
   
@@ -95,7 +98,7 @@ int main(){
     TEST(3, NO_MORE_VALUES, true, false);
   }
   
-  printf("Size: %d. node1: %p. node2: %p\n", nodes.size(), node1, node2);
+  printf("Size: %d.\n", nodes.size());
   
   return 0;
 }

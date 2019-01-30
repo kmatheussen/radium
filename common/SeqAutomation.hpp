@@ -414,7 +414,7 @@ private:
 
 
   static void free_rt(RT *rt){
-    delete rt; //static_cast<RT*>(rt);
+    delete rt;
   }
 
 public:
@@ -431,6 +431,8 @@ public:
   void *new_rt_data_has_been_created_data = NULL;
   void (*new_rt_data_has_been_created)(void *data) = NULL;
 
+  // Scope to protect node pointers that can be accessed in a realtime thread.
+  // I.e. 'node1' and 'node2' can not be used outside the scope (the array holding the nodes could be deleted immediately after the scope runs out).
   struct ScopedRtAccess{
 
     const RT_AtomicPointerStorage_ScopedUsage<RT> rt_pointer;
