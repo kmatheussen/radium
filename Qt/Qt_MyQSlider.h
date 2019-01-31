@@ -309,12 +309,12 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
         
       VECTOR_push_back(&options, "--------------");
         
-      if (_effect_num < plugin->type->num_effects){
+      //if (_effect_num < plugin->type->num_effects){
         if (doing_random_change)
           remove_random = VECTOR_push_back(&options, "Don't change value when pressing \"Random\"");
         else
           add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
-      }
+        //      }
     }
 
     VECTOR_push_back(&options, "--------------");

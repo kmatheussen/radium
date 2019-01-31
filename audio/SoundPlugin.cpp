@@ -3094,8 +3094,8 @@ void PLUGIN_random(SoundPlugin *plugin){
   volatile struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
-  if (type->num_effects==0)
-    return;
+  //if (type->num_effects==0)
+  //  return;
   
   ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1));
 
