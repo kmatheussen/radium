@@ -579,7 +579,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   }
 
   {
-    plugin->do_random_change = (bool*)V_calloc(sizeof(bool), plugin_type->num_effects);
+    plugin->do_random_change = (bool*)V_calloc(sizeof(bool), plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
     for(int i=0;i<plugin_type->num_effects;i++)
       plugin->do_random_change[i] = true;
   }
@@ -2431,7 +2431,7 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
   }
 
   // do_random
-  for(int i=0;i<type->num_effects;i++)
+  for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
     HASH_put_bool_at(state, "do_random_change", i, plugin->do_random_change[i]);
                      
   // effects
@@ -2691,7 +2691,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   */
 
   // do_random
-  for(int i=0;i<type->num_effects;i++)
+  for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
     if (HASH_has_key_at(state, "do_random_change", i))
       plugin->do_random_change[i] = HASH_get_bool_at(state, "do_random_change", i);
   
@@ -2953,10 +2953,7 @@ void PLUGIN_set_random_behavior(SoundPlugin *plugin, const int effect_num, bool 
 }
 
 bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num){
-  if (effect_num >= plugin->type->num_effects)
-    return false;
-  else
-    return plugin->do_random_change[effect_num];
+  return plugin->do_random_change[effect_num];
 }
 
 // only called from MultiCore.cpp, one time per audio block per instrument
@@ -3102,14 +3099,14 @@ void PLUGIN_random(SoundPlugin *plugin){
   
   ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1));
 
-  float values[type->num_effects];
-  for(i=0;i<type->num_effects;i++)
+  float values[type->num_effects+NUM_SYSTEM_EFFECTS];
+  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
     if (plugin->do_random_change[i])
       values[i]=get_rand();
   
   {
     radium::PlayerLockOnlyIfNeeded lock; // To avoid relocking for every effect.
-    for(i=0;i<type->num_effects;i++){
+    for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
       if (plugin->do_random_change[i]){
         lock.maybe_pause_or_lock(i);
         PLUGIN_set_effect_value(plugin, 0, i, values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
