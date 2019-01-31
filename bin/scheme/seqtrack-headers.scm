@@ -702,7 +702,7 @@
      (set-statusbar-text! (get-statusbar-text))
      (update-me!)
      )
-   (lambda (button x* y*)
+   (lambda (button x* y* dx dy)
      (c-display "release button/x/y" x* y*)))
   
   (define (get-statusbar-text)
@@ -871,7 +871,7 @@
      (set-statusbar-text! (get-pan-slider-text slider-value))
      (update-me!)
      )
-   (lambda (button x* y*)
+   (lambda (button x* y* dx dy)
      (c-display "Gakk. xrelease button/x/y" x* y*)))
 
 
