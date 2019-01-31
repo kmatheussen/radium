@@ -88,32 +88,37 @@
   (define (recreate x1 y1 x2 y2 state)
     (define area
       (<new> :vertical-list-area gui x1 y1 x2 y2
-           (map (lambda (blocknum)
-                  (define color (<ra> :get-block-color blocknum))
+             (map (lambda (blocknum)
+                    (define color (<ra> :get-block-color blocknum))
                   ;;;(set! color (<gui> :make-color-lighter color 1.5))
-                  (set! color (<gui> :set-alpha-for-color color 0.5))
-                  (<new> :sequencer-drag-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
-                         :callback (lambda (button x y entry-num)
-                                     (<ra> :select-block blocknum)
-                                     (update)
-                                     #f)
-                         :is-current (= (<ra> :current-block) blocknum)
-                         :entry-num blocknum
-                         :blocknum blocknum
-                         :background-color color ;(if (= (<ra> :current-block) blocknum)
-                                               ;(<gui> :mix-colors color "green" 0.1)
+                    (set! color (<gui> :set-alpha-for-color color 0.5))
+                    (<new> :sequencer-drag-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
+                           :callback (lambda (button x y entry-num)
+                                       (if (and (<ra> :shift-pressed)
+                                                (= button *right-button*))
+                                           (<ra> :delete-block blocknum)
+                                           (begin
+                                             (<ra> :select-block blocknum)))
+                                       (update)
+                                       #f)
+                           :is-current (= (<ra> :current-block) blocknum)
+                           :entry-num blocknum
+                           :blocknum blocknum
+                           :background-color color ;(if (= (<ra> :current-block) blocknum)
+                                        ;(<gui> :mix-colors color "green" 0.1)
                                                ;color)
-                         :allow-dragging #t))
-                (iota (<ra> :get-num-blocks)))))
+                           :allow-dragging #t))
+                  (iota (<ra> :get-num-blocks)))))
     (if state
         (area :apply-state! state))
     area)
-
+  
   (define area (<new> :use-first-subarea-state-as-state-area gui x1 y1 x2 y2))
   (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state))
 
   (area :add-mouse-cycle! (lambda (button x* y*)
-                            (and (= button *right-button*)
+                            (and (not (<ra> :shift-pressed))
+                                 (= button *right-button*)
                                  (begin
                                    (show-blocklist-popup-menu)
                                    #t))))
