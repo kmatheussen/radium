@@ -832,40 +832,42 @@
 
     (define text-width (<gui> :text-width text gui))
 
-    (define x1 (+ (cond (align-right
-                         (- x2 text-width)
-                         )
-                        (align-left
-                         (+ 2 x1))
-                        (else
-                         x1))
-                  1))
-    (define x2 (- x2 1))
-    
-    (when (and (not scale-font-size)
-               (not cut-text-to-fit)
-               (not only-show-left-part-if-text-dont-fit))
-      (when (> text-width (- x2 x1))
-        (set! x1 (+ x1 (- (- x2 x1) text-width)))))
-                  
-    (<gui> :draw-text gui (maybe-thunk-value text-color) text
-           x1
-           y1
-           x2
-           y2
-           wrap-lines
-           align-top
-           (or align-left
-               align-right)
-           0 ;; rotate
-           cut-text-to-fit
-           scale-font-size
-           )
+    (let ()
+      (define x1 (+ (cond (align-right
+                           (- x2 text-width)
+                           )
+                          (align-left
+                           (+ 2 x1))
+                          (else
+                           x1))
+                    1))
+      (define x2 (- x2 1))
+      
+      (when (and (not scale-font-size)
+                 (not cut-text-to-fit)
+                 (not only-show-left-part-if-text-dont-fit))
+        (when (> text-width (- x2 x1))
+          (set! x1 (+ x1 (- (- x2 x1) text-width)))))
+      
+      (<gui> :draw-text gui (maybe-thunk-value text-color) text
+             x1
+             y1
+             x2
+             y2
+             wrap-lines
+             align-top
+             (or align-left
+                 align-right)
+             0 ;; rotate
+             cut-text-to-fit
+             scale-font-size
+             ))
 
     (when paint-border
       (define background-color (<gui> :get-background-color gui))
       (<gui> :draw-box gui background-color (+ 0 x1) (+ 0 y1) (- x2 0) (- y2 0) 2 0 0)
-      (<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 border-rounding border-rounding))
+      (<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 border-rounding border-rounding)
+      )
     )
 
   (add-method! :paint-text-area paint-text-area)
