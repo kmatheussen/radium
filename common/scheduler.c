@@ -37,8 +37,10 @@ typedef struct _event_t{
   int64_t time;
   int64_t seq_time;
   union SuperType args[MAX_ARGS];
-  SchedulerCallback callback;
-  struct _event_t *next;
+  union{
+    SchedulerCallback callback;
+    struct _event_t *next;
+  };
 } event_t;
 
 
@@ -50,10 +52,12 @@ static event_t g_event0 = {0};
 
 static event_t *get_free_event(void){
   event_t *ret = g_free_events;
+  
   if (ret==NULL)
     return NULL;
+
   g_free_events = g_free_events->next;
-  ret->next = NULL;
+  
   return ret;
 }
 

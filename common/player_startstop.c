@@ -115,6 +115,9 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
   */
 #endif
 
+  //printf("  Stopping. Realline now: %d\n", root->song->tracker_windows->wblock->curr_realline);
+
+    
   if (PLAYER_current_thread_has_lock()){
     RError("Potential deadlock detected: Calling PlayStopReally while holding player lock.");
     return;
@@ -138,7 +141,7 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
   if (ATOMIC_GET_RELAXED(is_starting_up)){
     return;
   }
-  
+
   if(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED) {
     PLAYER_lock();
     clear_scheduler_and_stop_player_and_releases_player_lock(); // must clear, and it doesn't hurt to stop player one more time.
@@ -164,7 +167,8 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
   
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;
-  
+
+  //printf("  Setting realline to %d\n", wblock->curr_realline);
   ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
   
   R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
