@@ -1006,7 +1006,9 @@
                                                                        (< y (/ (<gui> :height widget) 2))
                                                                        delete-func
                                                                        replace-func
-                                                                       reset-func
+                                                                       (lambda ()
+                                                                         (make-undo)
+                                                                         (reset-func))
                                                                        midi-learn-instrument-id
                                                                        effect-name
                                                                        widget)))
@@ -1085,7 +1087,7 @@
   (define (das-replace-instrument)
     (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs #t :must-have-outputs #t :parentgui gui)))
 
-  (define (reset)
+  (define (reset)    
     (<ra> :set-instrument-effect instrument-id "System Dry/Wet" 1))
 
   (define automation-value #f)
@@ -1212,7 +1214,6 @@
     (<ra> :set-instrument-effect instrument-id "System In" (db-to-radium-normalized db)))
   
   (define (reset)
-    (make-undo)
     (set-db-value 0))
 
   (define (get-db-value)
@@ -1302,7 +1303,6 @@
   (define horiz (get-mixer-strip-send-horiz gui))
 
   (define (reset)
-    (make-undo)
     (set-db-value 0)
     (remake-mixer-strips))
 
