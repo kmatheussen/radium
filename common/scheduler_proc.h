@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "seqtrack_proc.h"
 
 
-
 typedef int64_t (*SchedulerCallback)(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);
 
 #define DONT_RESCHEDULE INT64_MIN
@@ -57,6 +56,8 @@ enum SchedulerPriority{
 
 
 extern struct SeqTrack *g_RT_curr_scheduling_seqtrack;
+
+extern struct SeqBlock g_block_seqtrack_seqblock; // The seqblock used when playing block.
 
 extern LANGSPEC void SCHEDULER_add_event(struct SeqTrack *seqtrack, int64_t time_into_the_future, SchedulerCallback callback, union SuperType *args, int num_args, enum SchedulerPriority priority);
 
@@ -134,8 +135,8 @@ extern LANGSPEC void start_seqtrack_block_scheduling(struct Blocks *block, const
 
 
 // scheduler_realline_proc.h
-extern LANGSPEC void RT_schedule_reallines_in_block(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const Place place);
-
+extern LANGSPEC void RT_schedule_reallines_in_block(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const Place place); // Called from main player thread.
+extern LANGSPEC void reschedule_reallines_because_num_reallines_have_changed_in_wblock(struct WBlocks *wblock); // Called from main thread.
 
 // scheduler_lpb_proc.h
 extern LANGSPEC void RT_LPB_call_when_start_playing(struct SeqTrack *seqtrack);

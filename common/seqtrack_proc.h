@@ -606,6 +606,5 @@ static inline struct SeqtrackRecordingConfig *get_seqtrack_recording_config(stru
     return &root->song->default_recording_config;
 }
 
-
 #endif
 

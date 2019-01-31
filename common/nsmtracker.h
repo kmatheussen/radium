@@ -2905,6 +2905,8 @@ struct SeqBlock{
 
   struct StretchspeedTimeConversionTable conversion_table;
 
+  int64_t curr_scheduled_realline_counter; // used by the scheduler. Only accessed from the main player thread.
+  
   /*
   double stretch_automation_compensation;
   double speed_automation_compensation;
