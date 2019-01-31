@@ -83,7 +83,7 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
     if (next_realline>=wblock->num_next_reallines) // If outside range, first try to set next_realline to rangey1
       next_realline = wblock->rangey1;
 
-    if (next_realline>=wblock->num_next_reallines) // that didnt work, set next_realline to 0
+    if (next_realline>=wblock->num_next_reallines) // that didn't work, set next_realline to 0
       next_realline = 0;
     */
   } else if (pc->playtype==PLAYBLOCK && pc->is_playing_range == true){
