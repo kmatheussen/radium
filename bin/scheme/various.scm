@@ -722,6 +722,16 @@
      
      "---------------"
 
+     (list "Rename"
+           (lambda ()
+             (define old-name (<ra> :get-block-name blocknum))
+             (define new-name (<ra> :request-string "New name:" #t old-name))
+             (c-display "NEWNAME" (<-> "-" new-name "-"))
+             (when (and (not (string=? new-name ""))
+                        (not (string=? new-name old-name)))
+               (<ra> :add-undo-block blocknum)
+               (<ra> :set-block-name new-name blocknum))))
+
      (list "Configure color"
            (lambda ()
              (if blocknum
