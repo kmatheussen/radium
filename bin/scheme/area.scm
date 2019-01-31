@@ -1708,7 +1708,10 @@
     (when (if (procedure? is-current)
               (is-current)
               is-current)
-      (<gui> :set-clip-rect gui (+ x1 1) y1 x2 y2)
+
+      ;; Why was this line here?
+      ;;(<gui> :set-clip-rect gui (+ x1 1) y1 x2 y2)
+      
       (<gui> :draw-box gui (<gui> :mix-colors "#010101" "green" 0.5) (+ 1 x1) (+ y1 0) (- x2 0) (- y2 0) (/ (get-fontheight) 2.5) 4 4)
       ;;(<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
       )
