@@ -3646,6 +3646,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       y -= hotSpotPos.last().toInt();
     }
 
+    if (x >= getSequencerX2())
+      return;
+    
     int seqtracknum = getSeqtrackNumFromY(y);
     //struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
     int64_t pos = round(scale_double(x,
