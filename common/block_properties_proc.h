@@ -24,6 +24,15 @@ extern LANGSPEC void Block_Set_num_lines(
 	int num_lines
 );
 
+#ifdef __cplusplus
+#include "player_pause_proc.h"
+void Block_Set_num_lines2(
+                          struct Blocks *block,
+                          int num_lines,
+                          radium::PlayerPauseOnlyIfNeeded &player_pause
+                          );
+#endif
+  
 extern LANGSPEC void Block_Set_num_tracks(
 	struct Blocks *block,
 	NInt num_tracks
