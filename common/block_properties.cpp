@@ -49,9 +49,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-void Block_Set_num_lines(
-	struct Blocks *block,
-	int num_lines
+void Block_Set_num_lines2(
+                          struct Blocks *block,
+                          int num_lines,
+                          radium::PlayerPauseOnlyIfNeeded &player_pause
 ){
 	Place lastplace1,lastplace;
 	struct Tracker_Windows *window=root->song->tracker_windows;
@@ -64,8 +65,10 @@ void Block_Set_num_lines(
 
 	if(org_num_lines==num_lines || num_lines<2) return;
 
-        PC_Pause();{
-              
+        {
+
+          player_pause.need_it();
+          
           PlaceSetLastPos(block,&lastplace1);
 
           block->num_lines=num_lines;
@@ -96,14 +99,14 @@ void Block_Set_num_lines(
 
               CutListAt_a(&track->stops,&lastplace);
 
-              VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+              VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
                 CutListAt_a(&fxs->fxnodelines,&lastplace);
               }END_VECTOR_FOR_EACH;
               LegalizeFXlines(block,track);
               track=NextTrack(track);
             }
             while(window!=NULL){
-              wblock=ListFindElement1(&window->wblocks->l,block->l.num);
+              wblock=(struct WBlocks*)ListFindElement1(&window->wblocks->l,block->l.num);
               CutListAt_a(&wblock->localzooms,&lastplace);
               window=NextWindow(window);
             }
@@ -123,9 +126,9 @@ void Block_Set_num_lines(
               track=NextTrack(track);
             }
             while(window!=NULL){
-              wblock=ListFindElement1(&window->wblocks->l,block->l.num);
+              wblock=(struct WBlocks*)ListFindElement1(&window->wblocks->l,block->l.num);
               for(lokke=org_num_lines;lokke<num_lines;lokke++){
-                localzoom=talloc(sizeof(struct LocalZooms));
+                localzoom=(struct LocalZooms*)talloc(sizeof(struct LocalZooms));
                 localzoom->Tline=lokke;
                 localzoom->Tdividor=1;
                 localzoom->zoomline=lokke;
@@ -138,18 +141,26 @@ void Block_Set_num_lines(
           
           TIME_block_num_lines_have_changed(block);
 
-        }PC_StopPause(NULL);
+        }
         
 	window=root->song->tracker_windows;
 
 	while(window!=NULL){
-		wblock=ListFindElement1(&window->wblocks->l,block->l.num);
-                UpdateWBlockWidths(window,wblock);
-		UpdateRealLines(window,wblock);
-		window=NextWindow(window);
+          wblock=(struct WBlocks*)ListFindElement1(&window->wblocks->l,block->l.num);
+          UpdateWBlockWidths(window,wblock);
+          UpdateRealLines(window,wblock);
+          window=NextWindow(window);
 	}
 
         
+}
+
+void Block_Set_num_lines(
+	struct Blocks *block,
+	int num_lines
+){
+  radium::PlayerPauseOnlyIfNeeded player_pause;
+  Block_Set_num_lines2(block, num_lines, player_pause);
 }
 
 
@@ -163,6 +174,8 @@ void Block_Set_num_tracks(
 	struct WBlocks *wblock;
 	NInt org_num_tracks=block->num_tracks;
 	NInt lokke;
+
+        R_ASSERT(is_playing()==false);
 
 	if(num_tracks==0){
 		RError("Error in function 'Block_Set_num_tracks' in file 'block_properties.c'. num_tracks=0.\n");
@@ -213,7 +226,9 @@ void Block_Properties(
 	NInt num_tracks,
 	int num_lines
 ){
-    PC_Pause();{
+
+  {
+        radium::PlayerPauseOnlyIfNeeded player_pause;
       
 	if(num_tracks!=block->num_tracks){
 		struct Tracker_Windows *window=root->song->tracker_windows;
@@ -222,25 +237,26 @@ void Block_Properties(
 			SetCursorPosConcrete(window,wblock,0,-1);
 			window=NextWindow(window);
 		}
+                player_pause.need_it();
 		Block_Set_num_tracks(block,num_tracks);
 	}
 
 	if(num_lines!=block->num_lines){
-		Block_Set_num_lines(block,num_lines);
+                Block_Set_num_lines2(block,num_lines, player_pause);
 	}
+  }
+  
+  struct Tracker_Windows *window=root->song->tracker_windows;
+  while(window!=NULL){
+    struct WBlocks *wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
+    if(wblock->curr_realline>=wblock->num_reallines){
+      wblock->curr_realline = wblock->num_reallines-1;
+    }
+    
+    UpdateReallinesDependens(window,wblock);
+    window=NextWindow(window);
+  }
 
-	struct Tracker_Windows *window=root->song->tracker_windows;
-	while(window!=NULL){
-		struct WBlocks *wblock=ListFindElement1(&window->wblocks->l,block->l.num);
-		if(wblock->curr_realline>=wblock->num_reallines){
-			wblock->curr_realline = wblock->num_reallines-1;
-		}
-
-		UpdateReallinesDependens(window,wblock);
-		window=NextWindow(window);
-	}
-
-    }PC_StopPause(NULL);
 }
 
 void Block_set_name(struct Blocks *block, const char *new_name){

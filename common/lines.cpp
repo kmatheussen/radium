@@ -370,14 +370,14 @@ void InsertLines(
   printf("org: %d. Num_lines: %d. expand: %d\n", org_num_lines,num_lines,expand);
   
   if (added_extra_lines){
-    Block_Set_num_lines(block, num_lines);
+    Block_Set_num_lines2(block, num_lines, player_pause);
   }
   
   EXPAND_Block2(window, wblock, num_lines / expand);
 
   if (added_extra_lines){
     if(last_line_contains_something(wblock)==false){
-      Block_Set_num_lines(block, block->num_lines-1);
+      Block_Set_num_lines2(block, block->num_lines-1, player_pause);
     }
   }
 
@@ -387,8 +387,8 @@ void InsertLines(
 
   /*
     This is just too complicated, and too much wasted time. In case, it should be done in scheme instead. But perhaps just remove localzooms from the program.
-    After introducing LZ, localzooms doesn't seem to have much purpose anymore. LZ is both simpler to understand, and faster to use, than localzooms.
-    (Also, whe localzooms were introduced, it didn't take much time to recompile and start radium. Now it probably takes 30 seconds.)
+    After introducing LZ (line zoom), localzooms doesn't seem to have much purpose anymore. LZ is both simpler to understand, and faster to use, than localzooms.
+    (Also, when localzooms were introduced, it didn't take much time to recompile and start radium. Now it takes around 40 seconds, so fixing things like this takes much longer time than before.)
 
   if(0){
     int line = place.line;
