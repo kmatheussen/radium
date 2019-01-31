@@ -3384,12 +3384,20 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
   public:
     
-    Line(QString content)
+    Line(QString content, const_char* textcolor)
       : Gui(this)
     {
       setText(content);
       setCursorPosition(0);
       setContextMenuPolicy(Qt::NoContextMenu);
+
+      if (strcmp(textcolor,"")){
+        QColor color = getQColor(textcolor);
+        QPalette palette;
+        palette.setColor(QPalette::Text, color);
+        setPalette(palette);
+      }
+
     }
 
     OVERRIDERS(MyFocusSnifferQLineEdit);
@@ -4845,9 +4853,9 @@ int64_t gui_ratio(dyn_t ratio, bool wheelMainlyChangesNumerator, bool wheelDecra
   return (new MyRatioSnifferQLineEdit(NULL, DYN_get_static_ratio(ratio), wheelMainlyChangesNumerator, wheelDecrasesDenominatorIfNumeratorIsOne))->get_gui_num();
 }
 
-int64_t gui_line(const_char* content){
+int64_t gui_line(const_char* content, const_char* textcolor){
   //return -1;
-  return (new Line(content))->get_gui_num();
+  return (new Line(content, textcolor))->get_gui_num();
 }
 
 int64_t gui_intText(int min, int curr, int max){

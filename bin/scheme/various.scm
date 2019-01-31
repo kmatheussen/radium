@@ -235,7 +235,7 @@
     (<gui> :add table-parent table))
 
   (define (create-name blocknum curr rownum)
-    (define ret (<gui> :line curr
+    (define ret (<gui> :line curr "black"
                        (lambda (value)
                          (when doit
                            ;;(c-display "BLOCKNAME. New VALUE:" value)
