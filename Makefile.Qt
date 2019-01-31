@@ -1093,8 +1093,8 @@ fxlines_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines_legalize.c
 reallines_insert.o:  $(BUILD_DEPENDENCIES) $(CD)reallines_insert.c
 	$(CC) $(CD)reallines_insert.c $(OPT)
 
-block_properties.o:  $(BUILD_DEPENDENCIES) $(CD)block_properties.c
-	$(CC) $(CD)block_properties.c $(OPT)
+block_properties.o:  $(BUILD_DEPENDENCIES) $(CD)block_properties.cpp
+	$(CCC) $(CD)block_properties.cpp $(CPPOPT)
 
 clipboard_tempos_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_tempos_copy.c
 	$(CC) $(CD)clipboard_tempos_copy.c $(OPT)
