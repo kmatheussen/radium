@@ -1069,10 +1069,10 @@ public slots:
   void on_random_button_clicked(){
     if (_is_initing)
       return;
-    
+
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     PLUGIN_random(plugin);
-
+    
     GFX_update_instrument_widget(_patch.data());
   }
 
