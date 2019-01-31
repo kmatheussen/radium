@@ -54,6 +54,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "sliders_proc.h"
 #include "OS_Player_proc.h"
 #include "realline_calc_proc.h"
+#include "scheduler_proc.h"
+
 #include "../OpenGL/Widget_proc.h"
 
 #include "reallines_proc.h"
@@ -335,6 +337,8 @@ static void UpdateRealLines_internal(struct Tracker_Windows *window,struct WBloc
   
   set_curr_realline_from_place(window, wblock, curr_place);
 
+  reschedule_reallines_because_num_reallines_have_changed_in_wblock(wblock);
+    
   UpdateWBlockCoordinates(window, wblock);
 }
 

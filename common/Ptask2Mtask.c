@@ -113,7 +113,7 @@ void P2MUpdateSongPosCallBack(void){
     int till_curr_realline = R_BOUNDARIES(0, ATOMIC_GET(wblock->till_curr_realline), wblock->num_reallines-1); // till_curr_realline can be set from any thread, at any time, to any value.
     
     if (!ATOMIC_GET(root->play_cursor_onoff)){
-      //printf("P2MUpdateSongPosCallBack: Setting to %d\n",till_curr_realline);
+      //printf("P2MUpdateSongPosCallBack: Setting curr_realline to %d\n",till_curr_realline);
       wblock->curr_realline = till_curr_realline;
       wblock->top_realline += till_curr_realline - old_curr_realline;
       wblock->bot_realline += till_curr_realline - old_curr_realline;
