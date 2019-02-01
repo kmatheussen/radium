@@ -226,68 +226,16 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
     radium::MouseCycleEvent event2(event_);
     handle_mouse_event(event2);
   }
-  
-  void show_slider_popup_menu(void){
-    bool is_audio_instrument = _patch->instrument==get_audio_instrument() ;
 
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      
-    vector_t options = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
-
-    bool has_midi_learn = is_audio_instrument && PLUGIN_has_midi_learn(plugin, _effect_num);
-    bool is_recording_automation = is_audio_instrument && PLUGIN_is_recording_automation(plugin, _effect_num);
-    bool doing_random_change = is_audio_instrument && PLUGIN_get_random_behavior(plugin, _effect_num);
-    int64_t modulator_id = MODULATOR_get_id(_patch.data(), _effect_num);
-      
-    int pd_delete=-10;
-    int reset=-10;
-      
-    int remove_midi_learn=-10;
-    int midi_relearn=-10;
-    int midi_learn=-10;
-      
+  void show_midi_slider_popup_menu(void){
     int remove_modulator=-10;
     int replace_modulator=-10;
     int add_modulator=-10;
-      
-    int record=-10;
-    int add_automation_to_current_editor_track=-10;
-    int add_automation_to_current_sequencer_track=-10;
-    int add_random = -10;
-    int remove_random = -10;
 
-    int help = -10;
+    int64_t modulator_id = MODULATOR_get_id(_patch.data(), _effect_num);
+
+    vector_t options = {};
     
-    if (is_audio_instrument) {
-
-      if(_is_a_pd_slider){
-        /*
-          VECTOR_push_back(&options, "Set Symbol Name");
-          VECTOR_push_back(&options, "Set Type");
-          VECTOR_push_back(&options, "Set Minimum Value");
-          VECTOR_push_back(&options, "Set Maximum Value");
-        */
-        pd_delete = VECTOR_push_back(&options, "Delete");
-      } else {
-          
-        reset=VECTOR_push_back(&options, "Reset");
-          
-        //VECTOR_push_back(&options, "Set Value");
-      }
-        
-      VECTOR_push_back(&options, "--------------");
-        
-      if (has_midi_learn){
-        remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
-        midi_relearn = VECTOR_push_back(&options, "MIDI relearn");
-      }else{
-        midi_learn = VECTOR_push_back(&options, "MIDI Learn");
-      }
-
-      VECTOR_push_back(&options, "--------------");
-
-    }
-
     if(modulator_id >= 0){
       remove_modulator=VECTOR_push_back(&options, talloc_format("Remove Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
       replace_modulator=VECTOR_push_back(&options, talloc_format("Replace Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
@@ -295,41 +243,12 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
       add_modulator=VECTOR_push_back(&options, "Assign Modulator");
     }
 
-    if (is_audio_instrument) {
-
-      VECTOR_push_back(&options, "--------------");
-        
-      if (!is_recording_automation)
-        record = VECTOR_push_back(&options, "Record");
-        
-      VECTOR_push_back(&options, "--------------");
-        
-      add_automation_to_current_editor_track = VECTOR_push_back(&options, "Add automation to current editor track");
-      add_automation_to_current_sequencer_track = VECTOR_push_back(&options, "Add automation to current sequencer track");
-        
-      VECTOR_push_back(&options, "--------------");
-        
-      //if (_effect_num < plugin->type->num_effects){
-        if (doing_random_change)
-          remove_random = VECTOR_push_back(&options, "Don't change value when pressing \"Random\"");
-        else
-          add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
-        //      }
-    }
-
-    VECTOR_push_back(&options, "--------------");
-    help = VECTOR_push_back(&options, "Help");
-
-    //VECTOR_push_back(&options, "");
-      
-    //VECTOR_push_back(&options, "Set Value");
-
     _popup_menu_is_visible = true;
     
     IsAlive is_alive(this);
-
+    
     int64_t guinum =
-      GFX_Menu3(options,[is_alive, this, plugin, modulator_id, pd_delete, reset, remove_midi_learn, midi_relearn, midi_learn, remove_modulator, replace_modulator, add_modulator, record, remove_random, add_random, add_automation_to_current_editor_track, add_automation_to_current_sequencer_track, help](int command, bool onoff){
+      GFX_Menu3(options,[is_alive, this, modulator_id, remove_modulator, replace_modulator, add_modulator](int command, bool onoff){
 
         if (!is_alive || _patch->patchdata==NULL)
           return;
@@ -338,27 +257,7 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
         SLIDERPAINTER_set_hovered(_painter, false);
         update();
         
-        //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
-        
-        if (command==pd_delete)
-          PD_delete_controller(plugin, _effect_num);
-        
-        else if (command==reset)
-          PLUGIN_reset_one_effect(plugin,_effect_num);
-        
-        else if (command==remove_midi_learn)
-          PLUGIN_remove_midi_learn(plugin, _effect_num, true);
-        
-        else if (command==midi_relearn)
-          {
-            PLUGIN_remove_midi_learn(plugin, _effect_num, true);
-            PLUGIN_add_midi_learn(plugin, _effect_num);
-          }
-        
-        else if (command==midi_learn)
-          PLUGIN_add_midi_learn(plugin, _effect_num);
-        
-        else if (command==remove_modulator){
+        if (command==remove_modulator){
           MODULATOR_remove_target(modulator_id, _patch.data(), _effect_num);
           
         }else if (command==replace_modulator){
@@ -366,63 +265,15 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
           
         }else if (command==add_modulator){
           MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, false);
-          
-        }else if (command==record)
-          PLUGIN_set_recording_automation(plugin, _effect_num, true);
-        
-        else if (command==remove_random)
-          PLUGIN_set_random_behavior(plugin, _effect_num, false);
-        
-        else if (command==add_random)
-          PLUGIN_set_random_behavior(plugin, _effect_num, true);
-        
-        else if (command==add_automation_to_current_editor_track) {
-          
-          addAutomationToCurrentEditorTrack(_patch->id, getInstrumentEffectName(_effect_num, _patch->id));
-          
-        } else if (command==add_automation_to_current_sequencer_track) {
-          
-          addAutomationToCurrentSequencerTrack(_patch->id, getInstrumentEffectName(_effect_num, _patch->id));
-          
-        } else if (command==help) {
 
-          evalScheme("(FROM-C-show-help-window \"help/instrument_effect_popup_menu.html\")");
-          
         }
-      
-        
+
         GFX_update_instrument_widget(_patch.data());
-        
-#if 0
-        else if(command==1){
-          char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
-          if(s!=NULL){
-            float value = OS_get_double_from_string(s);
-            printf("value: %f\n",value);
-            setValue(value);
-          }
-        }
-        
-#else
-#if 0
-        else if(command==1 && _patch.data()!=NULL && _patch->instrument==get_audio_instrument()){
-          SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-          char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
-          if(s!=NULL){
-            float value = OS_get_double_from_string(s);
-            ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num));
-            PLUGIN_set_effect_value(plugin, -1, _effect_num, value, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-            GFX_update_instrument_widget(_patch.data());
-          }
-        }
-#endif
-#endif
-
-      });
-
+        });
+          
     set_unhovered_when_popupmenu_is_closed(guinum);
   }
-
+  
   void set_unhovered_when_popupmenu_is_closed(int64_t guinum){
     if(_popup_menu_is_visible){
       if(false==gui_isOpen(guinum)){
@@ -438,6 +289,7 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
       }
     }
   }
+
   
   // mousePressEvent 
   void fix_mousePressEvent ( QMouseEvent * event_ ) override
@@ -467,11 +319,34 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 
       if(_patch.data()==NULL || _patch->patchdata == NULL) //  _patch->instrument!=get_audio_instrument() 
         return;
+
+      if (shiftPressed()){
+
+        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+        
+        PLUGIN_reset_one_effect(plugin,_effect_num);
+        GFX_update_instrument_widget(_patch.data());
+        
+      } else {
       
 #ifdef COMPILING_RADIUM
-      show_slider_popup_menu();
-#endif // COMPILING_RADIUM
 
+        if (_patch->instrument==get_MIDI_instrument()) {
+          
+          show_midi_slider_popup_menu();
+
+        } else {
+          
+          // TODO: Fix hovering. Slider is not hovered now when popup menu is showing.
+          
+          SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+          evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"%s\")", _patch->id, PLUGIN_get_effect_name(plugin, _effect_num)));
+
+        }
+        
+#endif // COMPILING_RADIUM
+      }
+      
       event_->accept();
     }
   }

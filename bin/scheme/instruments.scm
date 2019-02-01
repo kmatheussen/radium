@@ -978,6 +978,7 @@
                                  
 #!!
 ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (create-instrument (ra:create-new-instrument-conf) descr)))"
+(<ra> :get-instrument-name 29)
 !!#
 
 
@@ -1022,26 +1023,23 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                     :post-undo-block-callback (lambda () #f)
                                     )
   (list
-   ;;"-------------Automation"
-   (list (or automation-error-message
-             "Add automation to current editor track")
-         :enabled (not automation-error-message)
-         (lambda ()
-           (undo-block (lambda ()
-                         (pre-undo-block-callback)
-                         (<ra> :add-automation-to-current-editor-track instrument-id effect-name)
-                         (post-undo-block-callback)))))
-   (list (or automation-error-message
-             "Add automation to current sequencer track")
-         :enabled (not automation-error-message)
-         (lambda ()
-           (undo-block (lambda ()
-                         (pre-undo-block-callback)
-                         (<ra> :add-automation-to-current-sequencer-track instrument-id effect-name)
-                         (post-undo-block-callback)))))
+   (<-> "------------Effect: \"" effect-name "\"")
+
+   (and (string=? "Pd" (<ra> :get-instrument-type-name instrument-id))
+        (list "Delete"
+              :enabled effect-name
+              (lambda ()
+                (<ra> :delete-pd-controller instrument-id effect-name))))
+                        
+   (list "Reset"
+         :enabled effect-name
+         (lambda ()                      
+           (<ra> :reset-instrument-effect instrument-id effect-name)))
+   
    "-------------" ;;Midi Learn"
    (get-midi-learn-menu-elements instrument-id effect-name)
-   "------------" ;;Modulators"
+
+      "------------" ;;Modulators"
    (let ((has-modulator (and (not modulation-error-message)
                              (<ra> :has-modulator instrument-id effect-name))))
      (if has-modulator
@@ -1078,6 +1076,42 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                         (<ra> :add-modulator instrument-id effect-name modulator-id)
                                         (post-undo-block-callback))))))))))
 
+   "------------------------"
+   (list "Start recording automation in editor"
+         :enabled effect-name
+         (lambda ()
+           (<ra> :start-recording-instrument-automation-in-editor instrument-id effect-name)))
+
+   "------------------------"
+   ;;"-------------Automation"
+   (list (or automation-error-message
+             "Add automation to current editor track")
+         :enabled (and (not automation-error-message)
+                       effect-name)
+         (lambda ()
+           (undo-block (lambda ()
+                         (pre-undo-block-callback)
+                         (<ra> :add-automation-to-current-editor-track instrument-id effect-name)
+                         (post-undo-block-callback)))))
+   (list (or automation-error-message
+             "Add automation to current sequencer track")
+         :enabled (and (not automation-error-message)
+                       effect-name)
+         (lambda ()
+           (undo-block (lambda ()
+                         (pre-undo-block-callback)
+                         (<ra> :add-automation-to-current-sequencer-track instrument-id effect-name)
+                         (post-undo-block-callback)))))
+
+   "--------------------------"
+   (list "Change value when pressing \"Random\""
+         :check (and effect-name
+                     (<ra> :get-instrument-effect-changes-value-when-pressing-random instrument-id effect-name))
+         :enabled (and effect-name)
+;;                       (not (string-starts-with? effect-name "System ")))
+         (lambda (ison)
+           (<ra> :set-instrument-effect-changes-value-when-pressing-random instrument-id effect-name ison)))
+
    ;; Disabled transpose and volume since "Set new value when starting to play note" doesn't work when there's pitch glide or velocity glide in the editor.
    ;;
    (and effect-name
@@ -1085,7 +1119,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
             ;;(string-starts-with? effect-name "System Volume Voice ")
             (string-starts-with? effect-name "System Pan Voice "))
         (list
-         "--------------"
+         "--------------Note duplicator pan"
          (list
           :radio-buttons
           (list "Set new value immediately"
@@ -1098,21 +1132,33 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                 (lambda (ison)
                   (if ison
                       (<ra> :set-note-duplicator-set-new-value-immediately instrument-id effect-name #f)))))))
+
+   "-----------------"
+   (list "Help"
+         (lambda ()
+           (FROM-C-show-help-window "help/instrument_effect_popup_menu.html")))
    
    ))
   
 
+(define (FROM_C-show-effect-popup-menu instrument-id effect-name)
+  (if (<ra> :shift-pressed)
+      (<ra> :reset-instrument-effect instrument-id effect-name)
+      (popup-menu (get-effect-popup-entries instrument-id effect-name
+                                            ;;:pre-undo-block-callback (lambda ()
+                                            ;;                           (<ra> :undo-instrument-effect instrument-id effect-name) ;; store value before assigning modulator.
+                                            ;;                           #f
+                                            ;;                           )
+                                            )
+                  )
+      )
+  )
 
-(define (show-note-duplicator-popup-menu instrument-id effect-name)
-  (popup-menu (list "Reset"
-                    (lambda ()                      
-                      (<ra> :reset-instrument-effect instrument-id effect-name)))
-              "-----------Effect"
-              (get-effect-popup-entries instrument-id effect-name
-                                        :pre-undo-block-callback (lambda ()
-                                                                   (<ra> :undo-instrument-effect instrument-id effect-name) ;; store value before assigning modulator.
-                                                                   #f
-                                                                   ))))
+;;  Sjekk ut hva dette var godt for. Kanskje det har noe med at feil verdi blir lagra i undo om ikke denne blir kalt først.
+;                                        :pre-undo-block-callback (lambda ()
+;                                                                   (<ra> :undo-instrument-effect instrument-id effect-name) ;; store value before assigning modulator.
+;                                                                   #f
+;                                                                   ))))
 #!!
 (show-note-duplicator-popup-menu (<ra> :get-current-instrument) "System Chance Voice 1")
 !!#

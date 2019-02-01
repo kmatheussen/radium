@@ -385,8 +385,8 @@
                    (not (= 0 dy)))
            (inc! inc-x dx)
            (inc! inc-y dy)
-           ;;(c-display "dx:" dx ". inc-x:" inc-x)
-           (func button x* y* inc-x inc-y))
+           (func button x* y* inc-x inc-y)
+           )
          (set! prev-x x*)
          (set! prev-y y*))
 
@@ -950,7 +950,8 @@
   (add-mouse-cycle! (lambda (button x* y*)
                       (cond ((and right-mouse-clicked-callback
                                   (= button *right-button*)
-                                  (not (<ra> :shift-pressed)))
+                                  ;;(not (<ra> :shift-pressed))
+                                  )
                              (right-mouse-clicked-callback)
                              #t)
                             ((= button *left-button*)                        
@@ -1070,7 +1071,8 @@
   (add-mouse-cycle! (lambda (button x* y*)
                       (cond ((and right-mouse-clicked-callback
                                   (= button *right-button*)
-                                  (not (<ra> :shift-pressed)))
+                                  ;;(not (<ra> :shift-pressed))
+                                  )
                              (right-mouse-clicked-callback)
                              #t)
                             ((= button *left-button*)
