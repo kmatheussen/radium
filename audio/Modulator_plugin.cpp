@@ -842,14 +842,14 @@ void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect
 
               if (command==create_new){
 
-                struct Patch *curr_patch = g_currpatch;
+                //struct Patch *curr_patch = g_currpatch;
 
-                int64_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0);
+                int64_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0, false);
                 if (instrument_id==-1)
                   return;
 
-                if (curr_patch != NULL)
-                  GFX_PP_Update(curr_patch, false); // Set back current instrument.
+                //if (curr_patch != NULL)
+                //  GFX_PP_Update(curr_patch, false); // Set back current instrument.
 
                 const struct Patch *modulator_patch = PATCH_get_from_id(instrument_id);
 

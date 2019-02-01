@@ -114,7 +114,7 @@ static MIDI_instrument_widget *get_midi_instrument_widget(struct Patch *patch);
 static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch);
 static void updateMidiPortsWidget(MIDI_instrument_widget *instrument);
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch);
-static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch, bool is_loading);
+static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch, bool set_as_current);
 
 #ifdef WITH_FAUST_DEV
 namespace{
@@ -405,8 +405,9 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
     return instrument;
 }
 
+const int g_set_current_delay = 3;
 
-static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch, bool is_loading){
+static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch, bool set_as_current){
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   Audio_instrument_widget *instrument = new Audio_instrument_widget(editor->main_window,patch);
   R_ASSERT_RETURN_IF_FALSE2(instrument!=NULL, NULL);
@@ -417,9 +418,20 @@ static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *pat
   g_instruments_widget->tabs->insertWidget(g_instruments_widget->tabs->count(),instrument);
 
   // (forgot to take copy)
-  if (!is_loading){
-    g_instruments_widget->tabs->setCurrentWidget(instrument);  
-    MW_update_all_chips();
+  if (set_as_current){
+
+    IsAlive is_alive(instrument);
+    
+    // Schedule this happen a little bit later since setCurrentWidget triggers an eventEvent, which might not work properly before the instrument is finished initializing.
+    QTimer::singleShot(g_set_current_delay,[is_alive, instrument]{
+
+        if (!is_alive)
+          return;
+        
+        g_instruments_widget->tabs->setCurrentWidget(instrument);  
+        MW_update_all_chips();
+      });
+    
   }
 
   instrument->updateWidgets();
@@ -427,10 +439,21 @@ static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *pat
   return instrument;
 }
 
-void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch, bool is_loading){
-  create_audio_instrument_widget(patch, is_loading);
-  if (!is_loading)
-    GFX_PP_Update(patch,false);  
+void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch, bool set_as_current){
+  create_audio_instrument_widget(patch, set_as_current);
+
+  if (set_as_current){
+    
+    // Schedule this happen a little bit later since GFX_PP_Update might do all sorts of things, which might not work very well before the instrument is finished initializing.
+    
+    int64_t patch_id = patch->id;
+    QTimer::singleShot(g_set_current_delay + 3,[patch_id]{
+        struct Patch *patch = PATCH_get_from_id(patch_id);
+        if(patch != NULL)
+          GFX_PP_Update(patch,false);
+      });
+    
+  }
 }
 
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch){
@@ -802,7 +825,7 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
       Audio_instrument_widget *instrument = get_audio_instrument_widget(patch);
       if(instrument==NULL){
         fprintf(stderr,"                 WARNING: patch %s didn't have an instrument widget. Creating one now. (Might happen when loading song or starting up. Nothing is wrong if that is the case)\n",patch->name);
-        instrument = create_audio_instrument_widget(patch, false);
+        instrument = create_audio_instrument_widget(patch, true);
         //instrument = get_audio_instrument_widget(patch);
       }
       

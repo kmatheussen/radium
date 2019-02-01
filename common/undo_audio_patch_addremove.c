@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo.h"
 #include "hashmap_proc.h"
 #include "patch_proc.h"
+
 #include "../audio/audio_instrument_proc.h"
 
 #include "../api/api_proc.h"
@@ -31,7 +32,8 @@ extern struct Root *root;
 struct Undo_Audio_Patch_AddRemove{
   struct Patch *patch;
   bool is_present;
-
+  bool was_current;
+  
   hash_t *audio_patch_state;
 };
 
@@ -48,7 +50,8 @@ static void Undo_Audio_Patch_AddRemove(
 	struct WBlocks *wblock,
         struct Patch *patch,
         hash_t *state,
-        bool going_to_add
+        bool going_to_add,
+        bool is_current_patch
 ){
 
   struct Undo_Audio_Patch_AddRemove *u_rt=talloc(sizeof(struct Undo_Audio_Patch_AddRemove));
@@ -63,6 +66,8 @@ static void Undo_Audio_Patch_AddRemove(
     u_rt->is_present = false;
   }
 
+  u_rt->was_current = is_current_patch;
+  
   Undo_Add_dont_stop_playing(
                              window->l.num,
                              wblock->l.num,
@@ -74,14 +79,14 @@ static void Undo_Audio_Patch_AddRemove(
                              );
 }
 
-void ADD_UNDO_FUNC(Audio_Patch_Add_CurrPos(struct Patch *patch)){
+void ADD_UNDO_FUNC(Audio_Patch_Add_CurrPos(struct Patch *patch, bool is_current_patch)){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  Undo_Audio_Patch_AddRemove(window,window->wblock,patch, AUDIO_get_audio_patch_state(patch), true);
+  Undo_Audio_Patch_AddRemove(window,window->wblock,patch, AUDIO_get_audio_patch_state(patch), true, is_current_patch);
 }
 
-void ADD_UNDO_FUNC(Audio_Patch_Remove_CurrPos(struct Patch *patch, hash_t *state)){
+void ADD_UNDO_FUNC(Audio_Patch_Remove_CurrPos(struct Patch *patch, hash_t *state, bool is_current_patch)){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  Undo_Audio_Patch_AddRemove(window,window->wblock,patch, state, false);
+  Undo_Audio_Patch_AddRemove(window,window->wblock,patch, state, false, is_current_patch);
 }
 
 static void *Undo_Do_Audio_Patch_AddRemove(
@@ -105,9 +110,9 @@ static void *Undo_Do_Audio_Patch_AddRemove(
     
   }else{
 
-    fprintf(stderr,"         UNDO_DO_AUDIO_PATCH 3 %d\n",is_present);
+    fprintf(stderr,"         UNDO_DO_AUDIO_PATCH 3. is_present: %d. set_to_current: %d.\n",is_present, u_rt->was_current);
     
-    if (PATCH_make_active_audio(u_rt->patch, NULL, NULL, u_rt->audio_patch_state, 0, 0)==false)
+    if (PATCH_make_active_audio(u_rt->patch, NULL, NULL, u_rt->audio_patch_state, u_rt->was_current, 0, 0)==false)
       R_ASSERT(false);
 
     u_rt->is_present=true;

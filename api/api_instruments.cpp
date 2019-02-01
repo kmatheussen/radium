@@ -374,13 +374,13 @@ int64_t createMIDIInstrument(const_char *name) {
 }
 
 // There was a good reason for the 'name' parameter. Think it had something to do with replace instrument, and whether to use old name or autogenerate new one.
-int64_t createAudioInstrument(const_char *type_name, const_char *plugin_name, const_char *name, float x, float y) {
+int64_t createAudioInstrument(const_char *type_name, const_char *plugin_name, const_char *name, float x, float y, bool set_as_current) {
   printf("createAudioInstrument called\n");
   
   if (name!=NULL && strlen(name)==0)
     name = NULL;
 
-  struct Patch *patch = PATCH_create_audio(type_name, plugin_name, name, NULL, x, y);
+  struct Patch *patch = PATCH_create_audio(type_name, plugin_name, name, NULL, set_as_current, x, y);
   if (patch==NULL)
     return -1;
 
@@ -394,8 +394,8 @@ int64_t createAudioInstrument(const_char *type_name, const_char *plugin_name, co
   return patch->id;
 }
 
-int64_t createAudioInstrumentFromPreset(const char *filename, const_char *name, float x, float y) {
-  return PRESET_load(STRING_create(filename), name, false, x, y);
+int64_t createAudioInstrumentFromPreset(const char *filename, const_char *name, float x, float y, bool set_as_current) {
+  return PRESET_load(STRING_create(filename), name, false, set_as_current, x, y);
 }
 
 const char *getAudioInstrumentDescription(const_char* container_name, const_char* type_name, const_char* plugin_name){
@@ -435,7 +435,7 @@ static bool get_type_name_from_description(const char *instrument_description, c
   return false;
 }
   
-int64_t createAudioInstrumentFromDescription(const char *instrument_description, const_char *name, float x, float y){
+int64_t createAudioInstrumentFromDescription(const char *instrument_description, const_char *name, float x, float y, bool set_as_current){
   if (strlen(instrument_description)==0)
     return -1;
 
@@ -453,14 +453,14 @@ int64_t createAudioInstrumentFromDescription(const char *instrument_description,
     if (strlen(container_name) > 0)
       PR_ensure_container_is_populated(container_name, type_name); // Might fail, but we let createAudioInstrument print error message.
 
-    return createAudioInstrument(type_name, plugin_name, name, x, y);
+    return createAudioInstrument(type_name, plugin_name, name, x, y, set_as_current);
     
   } else if (instrument_description[0]=='2'){
     
     wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
     //printf("filename: %s\n",filename);
 
-    return PRESET_load(filename, name, true, x, y);
+    return PRESET_load(filename, name, true, set_as_current, x, y);
     
   } else if (instrument_description[0]=='3'){
 
@@ -474,14 +474,14 @@ int64_t createAudioInstrumentFromDescription(const char *instrument_description,
   }
 }
 
-int64_t cloneAudioInstrument(int64_t instrument_id, float x, float y){
+int64_t cloneAudioInstrument(int64_t instrument_id, float x, float y, bool set_as_current){
   struct Patch *old_patch = getAudioPatchFromNum(instrument_id);
   if(old_patch==NULL)
     return -1;
   
   hash_t *state = PATCH_get_state(old_patch);
 
-  struct Patch *new_patch = PATCH_create_audio(NULL, NULL, talloc_format("Clone of %s",old_patch->name), state, x, y);
+  struct Patch *new_patch = PATCH_create_audio(NULL, NULL, talloc_format("Clone of %s",old_patch->name), state, set_as_current, x, y);
   if (new_patch==NULL)
     return -1;
 
@@ -1779,14 +1779,17 @@ void undoAudioConnectionGain(int64_t source_id, int64_t dest_id){
 // modulators
 
 int64_t createModulator(void){
-  struct Patch *curr_patch = g_currpatch;
+  //struct Patch *curr_patch = g_currpatch;
   
-  int64_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0);
-  if (instrument_id==-1)
+  int64_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0, false);
+  if (instrument_id==-1){
+    printf("\n\n NOT FOUND\n\n");
+    getchar();
     return -1;
+  }
   
-  if (curr_patch != NULL)
-    GFX_PP_Update(curr_patch, false); // Set back current instrument.
+  //if (curr_patch != NULL)
+  //  GFX_PP_Update(curr_patch, false); // Set back current instrument.
   
   const struct Patch *modulator_patch = PATCH_get_from_id(instrument_id);
   

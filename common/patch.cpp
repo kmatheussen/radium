@@ -481,7 +481,7 @@ struct Patch *PATCH_create_from_state(hash_t *state){
 // Only called from PATCH_create_audio and undo create patch.
 //
 // x and y are ignored if audio_state!=NULL (since audio_state has its own "x" and "y")
-bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *state, float x, float y) {
+bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *state, bool set_as_current, float x, float y) {
   R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(),false);
 
   printf("PATCH_make_active_audio called\n");
@@ -498,10 +498,10 @@ bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const c
     apply_patch_state(patch, state);
   }
   
-  if (AUDIO_InitPatch2(patch, type_name, plugin_name, audio_state, false, x, y)==false)
+  if (AUDIO_InitPatch2(patch, type_name, plugin_name, audio_state, false, set_as_current, x, y)==false)
     return false;
 
-  ADD_UNDO(Audio_Patch_Add_CurrPos(patch));
+  ADD_UNDO(Audio_Patch_Add_CurrPos(patch, set_as_current));
 
   PATCH_add_to_instrument(patch);
 
@@ -509,18 +509,18 @@ bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const c
 }
 
 void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state) {
-  R_ASSERT(AUDIO_InitPatch2(patch, NULL, NULL, state, true, 0, 0)==true);
+  R_ASSERT(AUDIO_InitPatch2(patch, NULL, NULL, state, true, false, 0, 0)==true);
 }
 
 // Either type_name and plugin_name is NULL, or state==NULL
-static struct Patch *create_audio_patch(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y, bool is_main_pipe) {
+static struct Patch *create_audio_patch(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y, bool is_main_pipe, bool set_as_current) {
   printf("PATCH_create_audio called\n");
   
   struct Patch *patch = create_new_patch(name, is_main_pipe);
 
   patch->instrument=get_audio_instrument();
 
-  if (PATCH_make_active_audio(patch, type_name, plugin_name, state, x, y)==false)
+  if (PATCH_make_active_audio(patch, type_name, plugin_name, state, set_as_current, x, y)==false)
     return NULL;
 
   printf("       PATCH create audio\n");
@@ -531,11 +531,11 @@ static struct Patch *create_audio_patch(const char *type_name, const char *plugi
 
 struct Patch *PATCH_create_main_pipe(void) {
   R_ASSERT(g_is_loading);
-  return create_audio_patch(talloc_strdup("Pipe"), talloc_strdup("Pipe"), talloc_strdup("Main Pipe"), NULL, 0, 0, true);
+  return create_audio_patch(talloc_strdup("Pipe"), talloc_strdup("Pipe"), talloc_strdup("Main Pipe"), NULL, 0, 0, true, false);
 }
   
-struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y) {
-  return create_audio_patch(type_name, plugin_name, name, state, x, y, false);
+struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, bool set_as_current, float x, float y) {
+  return create_audio_patch(type_name, plugin_name, name, state, x, y, false, set_as_current);
 }
 
 struct Patch *PATCH_create_midi(const char *name){
@@ -705,8 +705,12 @@ static void make_inactive(struct Patch *patch, bool force_removal){
     return;
   }
 
-  if (patch==g_currpatch)
+  bool is_current_patch = false;
+  
+  if (patch==g_currpatch){
     g_currpatch = NULL;
+    is_current_patch = true;
+  }
   
   PATCH_stop_all_notes(patch);
 
@@ -721,7 +725,7 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   R_ASSERT(patch->patchdata==NULL);
 
   if(!is_midi_instrument)
-    ADD_UNDO(Audio_Patch_Remove_CurrPos(patch, audio_patch_state)); // Must be called last, if not the undo/redo order will be wrong.
+    ADD_UNDO(Audio_Patch_Remove_CurrPos(patch, audio_patch_state, is_current_patch)); // Must be called last, if not the undo/redo order will be wrong.
 
   PATCH_remove_from_instrument(patch);
 

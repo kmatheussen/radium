@@ -467,7 +467,7 @@ static bool state_only_contains_plugin(hash_t *state){
 
 // x and y are ignored if audio_state!=NULL (since audio state has its own "x" and "y")
 // The function can not return false if is_loading_song==true.
-bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *audio_state, bool is_loading_song, float x, float y) {
+bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *audio_state, bool is_loading_song, bool set_as_current, float x, float y) {
   printf("AUDIO_InitPatch2 called\n");
 
   R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(), false);
@@ -506,7 +506,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
         return false;
       } else {
         GFX_Message(NULL, "Audio plugin %s / %s not found. Replacing \"%s\" with a pipe.", type_name, plugin_name,  patch->name);
-        return AUDIO_InitPatch2(patch, "Pipe", "Pipe", NULL, true, x, y);
+        return AUDIO_InitPatch2(patch, "Pipe", "Pipe", NULL, true, set_as_current, x, y);
       }
     }
 
@@ -523,7 +523,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
       else
         GFX_Message(NULL, "Unable to load Audio plugin %s / %s. Replacing \"%s\" with a pipe.", type_name, plugin_name,  patch->name);
 
-      return AUDIO_InitPatch2(patch, "Pipe", "Pipe", NULL, true, x, y);
+      return AUDIO_InitPatch2(patch, "Pipe", "Pipe", NULL, true, set_as_current, x, y);
     }
   }
 
@@ -565,7 +565,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
   MW_cleanup_chip_positions();
   
   // Create instrument widget
-  InstrumentWidget_create_audio_instrument_widget(patch,is_loading_song);
+  InstrumentWidget_create_audio_instrument_widget(patch, is_loading_song ? false : set_as_current);
   
   patch->is_usable = true;
 

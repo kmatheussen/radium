@@ -37,7 +37,7 @@ extern bool file_could_be_a_sample(QString filename);
 extern QStringList get_sample_name_filters(void);
 #endif
 
-extern LANGSPEC void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch, bool is_loading);
+extern LANGSPEC void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch, bool set_as_current);
 extern LANGSPEC void InstrumentWidget_delete(struct Patch *patch);
 
 extern LANGSPEC void InstrumentWidget_prepare_for_deletion(struct Patch *patch);
