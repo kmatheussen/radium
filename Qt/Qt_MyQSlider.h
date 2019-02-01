@@ -282,7 +282,7 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
         update();
       }else{
         IsAlive is_alive(this);
-        QTimer::singleShot(300, [is_alive, this, guinum](){
+        QTimer::singleShot(50, [is_alive, this, guinum](){
             if (is_alive)
               set_unhovered_when_popupmenu_is_closed(guinum);
           });
@@ -337,10 +337,14 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 
         } else {
           
-          // TODO: Fix hovering. Slider is not hovered now when popup menu is showing.
-          
           SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-          evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"%s\")", _patch->id, PLUGIN_get_effect_name(plugin, _effect_num)));
+
+          _popup_menu_is_visible = true;
+
+          dyn_t ret = evalSchemeWithReturn(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"%s\")", _patch->id, PLUGIN_get_effect_name(plugin, _effect_num)));
+          if (ret.type==INT_TYPE){
+            set_unhovered_when_popupmenu_is_closed(ret.int_number);
+          }
 
         }
         
