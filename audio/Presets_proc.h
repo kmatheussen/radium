@@ -7,7 +7,7 @@ extern LANGSPEC vector_t PRESET_get_all_mrec_files_in_path(const wchar_t *wpath)
 
 extern LANGSPEC void PRESET_request_load_instrument_description(int64_t parentgui, func_t *callback);
 
-extern LANGSPEC int64_t PRESET_load(const wchar_t *filename, const char *name, bool inc_usage_number, float x, float y);
+extern LANGSPEC int64_t PRESET_load(const wchar_t *filename, const char *name, bool inc_usage_number, bool set_as_current, float x, float y);
 
 extern LANGSPEC void PRESET_set_last_used_filename(const wchar_t *wfilename);
 

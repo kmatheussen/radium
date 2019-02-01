@@ -36,12 +36,12 @@ extern LANGSPEC void PATCHVOICE_set_defaults(struct PatchVoice *patchvoice, int 
 extern LANGSPEC hash_t *PATCH_get_state(const struct Patch *patch);
 extern LANGSPEC hash_t *PATCHES_get_state(const vector_t *patches, bool put_in_array);
 extern LANGSPEC struct Patch *PATCH_create_from_state(hash_t *state);
-extern LANGSPEC bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *state, float x, float y);
+extern LANGSPEC bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *state, bool set_as_current, float x, float y);
 extern LANGSPEC void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state);
 extern LANGSPEC struct Patch *PATCH_alloc(void);
 extern LANGSPEC void PATCH_set_name(struct Patch *patch, const char *name);
 extern LANGSPEC struct Patch *PATCH_create_main_pipe(void);
-extern LANGSPEC struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y);
+extern LANGSPEC struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, bool set_as_current, float x, float y);
 extern LANGSPEC struct Patch *PATCH_create_midi(const char *name);
 extern LANGSPEC void PATCH_make_inactive(struct Patch *patch);
 extern LANGSPEC void PATCH_force_make_inactive(struct Patch *patch);

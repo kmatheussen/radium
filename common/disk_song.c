@@ -293,7 +293,7 @@ void DLoadSong(struct Root *newroot,struct Song *song){
           
           //PRESET_load(STRING_create("/home/kjetil/radium/bin/clean_mixer.mrec_internal"), NULL, false, 0, 0);
           for(int busnum=0;busnum<NUM_BUSES;busnum++) {            
-            createAudioInstrument(talloc_strdup("Bus"), talloc_format("Bus %d", busnum+1), talloc_format("Aux %d Bus", busnum+1), 0, 0);
+            createAudioInstrument(talloc_strdup("Bus"), talloc_format("Bus %d", busnum+1), talloc_format("Aux %d Bus", busnum+1), 0, 0, false);
           }
           PATCH_create_main_pipe();
           

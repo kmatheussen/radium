@@ -836,7 +836,7 @@ class Sample:
 
     def generate(self):
         if self.filename != "" and self.num_samples>0:
-            self.instrument_num = radium.createAudioInstrument("Sample Player","Sample Player", self.name)
+            self.instrument_num = radium.createAudioInstrument("Sample Player","Sample Player", self.name, 0, 0, False)
             radium.connectAudioInstrumentToMainPipe(self.instrument_num)
             radium.setInstrumentSample(self.instrument_num, self.filename)
             if self.loop_length>0:
@@ -909,7 +909,7 @@ class Xi:
 
     def generate(self):
         if self.filename != "": # and self.num_samples>0:
-            self.instrument_num = radium.createAudioInstrument("Sample Player","Sample Player", self.name)
+            self.instrument_num = radium.createAudioInstrument("Sample Player","Sample Player", self.name, 0, 0, False)
             radium.connectAudioInstrumentToMainPipe(self.instrument_num)
             radium.setInstrumentSample(self.instrument_num, self.filename)
 

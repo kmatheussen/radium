@@ -822,7 +822,7 @@ class Sample:
 
     def generate(self):
         if self.filename != "" and self.num_samples>0:
-            self.instrument_num = radium.createAudioInstrument("Sample Player","Sample Player", self.name)
+            self.instrument_num = radium.createAudioInstrument("Sample Player","Sample Player", self.name, 0, 0, False)
             radium.setInstrumentSample(self.instrument_num, self.filename)
             if self.loop_length>0:
                 radium.setInstrumentLoopData(self.instrument_num, self.loop_start, self.loop_length)
@@ -900,7 +900,7 @@ class Xi:
 
     def generate(self):
         if self.filename != "": # and self.num_samples>0:
-            self.instrument_num = radium.createAudioInstrument("Sample Player","Sample Player", self.name)
+            self.instrument_num = radium.createAudioInstrument("Sample Player","Sample Player", self.name, 0, 0, False)
             radium.setInstrumentSample(self.instrument_num, self.filename)
 
     def save(self, file, pos):

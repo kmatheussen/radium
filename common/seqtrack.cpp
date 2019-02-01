@@ -235,7 +235,7 @@ static bool ensure_seqtrack_has_instrument(struct SeqTrack *seqtrack){
 
     int seqtracknum = get_seqtracknum(seqtrack);
     
-    int64_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, talloc_format("Seqtrack %d", seqtracknum), 0, 0);
+    int64_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, talloc_format("Seqtrack %d", seqtracknum), 0, 0, true);
     R_ASSERT_RETURN_IF_FALSE2(patch_id >= 0, false);
     
     struct Patch *patch = PATCH_get_from_id(patch_id);

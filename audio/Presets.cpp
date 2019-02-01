@@ -200,7 +200,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
   return state;
 }
 
-static int64_t PRESET_load_multipreset(hash_t *state, const char *name, bool inc_usage_number, float x, float y){
+static int64_t PRESET_load_multipreset(hash_t *state, const char *name, bool inc_usage_number, bool set_as_current, float x, float y){
 
   struct Patch *first_patch = NULL;
   vector_t patches = {};
@@ -210,7 +210,7 @@ static int64_t PRESET_load_multipreset(hash_t *state, const char *name, bool inc
   
   for(int i = 0 ; i < num_presets ; i++) {
     hash_t *patch_state = HASH_get_hash_at(patches_state, "patch", i);
-    struct Patch *patch = PATCH_create_audio(NULL, NULL, name, patch_state, 0, 0);
+    struct Patch *patch = PATCH_create_audio(NULL, NULL, name, patch_state, set_as_current ? i==0 : false, 0, 0);
     //printf("name1: -%s-, name2: -%s-, name3: %s\n",name,patch->name,HASH_get_chars(patch_state,"name"));
     //getchar();
     VECTOR_push_back(&patches, patch); // NULL values must be pushed as well.
@@ -239,8 +239,8 @@ static int64_t PRESET_load_multipreset(hash_t *state, const char *name, bool inc
     return first_patch->id;
 }
 
-static int64_t PRESET_load_singlepreset(hash_t *state, const_char *name, bool inc_usage_number, float x, float y){
-  struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state, x, y);
+static int64_t PRESET_load_singlepreset(hash_t *state, const_char *name, bool inc_usage_number, bool set_as_current, float x, float y){
+  struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state, set_as_current, x, y);
   if (patch==NULL)
     return -1;
 
@@ -252,20 +252,20 @@ static int64_t PRESET_load_singlepreset(hash_t *state, const_char *name, bool in
   return patch->id;
 }
 
-static int64_t insert_preset_into_program(hash_t *state, const_char *name, bool inc_usage_number, float x, float y){
+static int64_t insert_preset_into_program(hash_t *state, const_char *name, bool inc_usage_number, bool set_as_current, float x, float y){
   bool is_multipreset = HASH_has_key(state, "multipreset_presets") && HASH_get_bool(state, "multipreset_presets");
   
   if (is_multipreset)
-    return PRESET_load_multipreset(state, name, inc_usage_number, x, y);
+    return PRESET_load_multipreset(state, name, inc_usage_number, set_as_current, x, y);
   else
-    return PRESET_load_singlepreset(state, name, inc_usage_number, x, y);
+    return PRESET_load_singlepreset(state, name, inc_usage_number, set_as_current, x, y);
 }
 
 // Note that this is the general preset loading function, and not the one that is directly called when pressing the "Load" button. (there we also have to delete the old instrument and reconnect connections)
 //
 // A less confusing name could perhaps be PRESET_add_instrument
 //
-int64_t PRESET_load(const wchar_t *wfilename, const_char *patchname, bool inc_usage_number, float x, float y) {
+int64_t PRESET_load(const wchar_t *wfilename, const_char *patchname, bool inc_usage_number, bool set_as_current, float x, float y) {
   if (patchname!=NULL && strlen(patchname)==0)
     patchname = NULL;
 
@@ -281,12 +281,12 @@ int64_t PRESET_load(const wchar_t *wfilename, const_char *patchname, bool inc_us
   
   PRESET_set_last_used_filename(filename);
 
-  return insert_preset_into_program(state, patchname, inc_usage_number, x, y);
+  return insert_preset_into_program(state, patchname, inc_usage_number, set_as_current, x, y);
 }
 
 int64_t PRESET_paste(float x, float y){
   if (g_preset_clipboard != NULL)
-    return insert_preset_into_program(g_preset_clipboard, NULL, true, x, y);
+    return insert_preset_into_program(g_preset_clipboard, NULL, true, true, x, y);
   else
     return -1;
 }
