@@ -86,14 +86,37 @@
 (define (add-safe-double-click-callback gui callback)
   (add-safe-callback gui ra:gui_add-double-click-callback callback))
 
-(define (get-instrument-popup-entries instrument-id parentgui)
+(delafina (get-instrument-popup-entries :instrument-id
+                                        :parentgui
+                                        :include-delete-and-replace #t
+                                        :must-have-inputs #f :must-have-outputs #f)
+
   (list
-   "-----------Instrument"
-   (list "Set as current instrument"
-         :enabled (not (= (<ra> :get-current-instrument)
-                          instrument-id))
-         (lambda ()
-           (<ra> :set-current-instrument instrument-id #f)))
+   (<-> "----------Instrument: \"" (<ra> :get-instrument-name instrument-id) "\"");; " instrument")
+   ;;"-----------Instrument"
+   (let ((is-current (= (<ra> :get-current-instrument)
+                        instrument-id)))
+     (and (not is-current)
+          (list
+           (list "Set as current instrument"
+                 :enabled (not is-current)
+                 (lambda ()
+                   (<ra> :set-current-instrument instrument-id #f)))
+           "------------------")))
+
+   (and include-delete-and-replace
+        (list
+         (list "Delete"
+               :enabled (not (<ra> :instrument-is-permanent instrument-id))
+               (lambda ()
+                 (<ra> :delete-instrument instrument-id)))
+         (list "Replace"
+               :enabled (not (<ra> :instrument-is-permanent instrument-id))
+               (lambda ()           
+                 (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs must-have-inputs :must-have-outputs must-have-outputs :parentgui parentgui)))
+               )
+         "------------------"))
+  
    "Rename" (lambda ()
               (define old-name (<ra> :get-instrument-name instrument-id))
               (define new-name (<ra> :request-string "New name:" #t old-name))
@@ -101,6 +124,9 @@
               (if (and (not (string=? new-name ""))
                        (not (string=? new-name old-name)))
                   (<ra> :set-instrument-name new-name instrument-id)))
+
+   "------------------"
+   
    "Show Info" (lambda ()
                  (<ra> :show-instrument-info instrument-id parentgui))
    "Configure color" (lambda ()
@@ -121,8 +147,25 @@
    ))
               
 
-(define (get-global-mixer-strips-popup-entries instrument-id strips-config)
+(delafina (get-global-mixer-strips-popup-entries :instrument-id
+                                                 :strips-config
+                                                 :wide-mode-instrument-id #f
+                                                 :effect-name #f)
+  (if (not wide-mode-instrument-id)
+      (set! wide-mode-instrument-id instrument-id))
+  
   (list
+   (and effect-name
+        (get-effect-popup-entries instrument-id effect-name))
+   "------------Mixer"
+   (list "Wide mode"
+         :check (and wide-mode-instrument-id
+                     (<ra> :has-wide-instrument-strip wide-mode-instrument-id))
+         :enabled wide-mode-instrument-id
+         (lambda (enabled)
+           (<ra> :set-wide-instrument-strip wide-mode-instrument-id enabled)
+           (remake-mixer-strips instrument-id)))
+   
    (list "Make all strips wide" (lambda ()
                                   (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #t)) (get-all-audio-instruments))
                                   (<ra> :remake-mixer-strips)))
@@ -132,9 +175,10 @@
    
    "----------"
    
-   (list "Hide mixer strip" :enabled (or instrument-id
-                                         (not strips-config))
-         (lambda ()
+   (list "Mixer strip visible" :enabled (or instrument-id
+                                            (not strips-config))
+         :check #t
+         (lambda (hideit)
            (if (not strips-config)
                (<ra> :show-hide-mixer-strip)
                (set! (strips-config :is-enabled instrument-id) #f))))
@@ -170,7 +214,14 @@
                                                 (get-all-audio-instruments)))))))
 
 
-(define (create-custom-checkbox instrument-id strips-config paint-func value-changed is-selected min-height)
+(delafina (create-instrument-effect-checkbox :instrument-id
+                                             :strips-config
+                                             :paint-func
+                                             :value-changed
+                                             :is-selected
+                                             :min-height
+                                             :effect-name #f)
+  
   (define checkbox (<gui> :widget))
   (if min-height
       (<gui> :set-min-height checkbox min-height))
@@ -180,9 +231,11 @@
                                         (if (and (= button *right-button*)
                                                  (= state *is-pressing*))
                                             (if (<ra> :shift-pressed)
-                                                (<ra> :delete-instrument instrument-id)
+                                                (if effect-name
+                                                    (<ra> :reset-instrument-effect instrument-id effect-name)
+                                                    (<ra> :delete-instrument instrument-id))
                                                 (if strips-config
-                                                    (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config)))))
+                                                    (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))))
                                         (when (and (= button *left-button*)
                                                    (= state *is-pressing*))
                                           (set! is-selected (not is-selected))
@@ -695,26 +748,8 @@
   ;;(c-display (<-> "Effect name: -" effect-name "-"))
   ;;(c-display "ins:" instrument-id)
 
-  (popup-menu "----------Entry" ;;Slider instrument"
-              (list "Delete"
-                     :enabled delete-func
-                    (lambda ()
-                      (delete-func)))
-              (list "Replace"
-                    :enabled replace-func
-                    (lambda ()
-                      (replace-func)))              
-              "-----------"
-              (list "Load Preset" :enabled instrument-id
-                    :enabled (not (<ra> :instrument-is-permanent instrument-id))
-                    (lambda ()
-                      (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
-              (list "Save Preset" :enabled instrument-id
-                    :enabled (not (<ra> :instrument-is-permanent instrument-id))
-                    (lambda ()
-                      (<ra> :save-instrument-preset (list instrument-id) parentgui)))
-              "-----------"
-              (list "Insert Plugin (after entry)"
+  (popup-menu (<-> "----------Insert")
+              (list (<-> "Insert Plugin" (if effect-name " (after this position)" ""))
                     :enabled (or upper-half?
                                  (not is-sink?))
                     (lambda ()
@@ -742,8 +777,8 @@
                                                             parentgui
                                                             finished)))
                       ))
-                    
-              (list "Insert Send (after entry)"
+              
+              (list (<-> "Insert Send"  (if effect-name " (after this position)" ""))
                     :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
                     (lambda ()
                       (let ((instrument-id (cond (is-send?
@@ -756,38 +791,56 @@
                                                  (lambda (create-send-func)
                                                    (create-send-func 0 '())
                                                    (<ra> :set-current-instrument first-instrument-id))))))
-              "----------"
 
-              (list (if is-send?
-                        "Reset send value"
-                        "Reset dry/wet value")
-                    :enabled reset-func
-                    (lambda ()
-                      (reset-func)))
-              
-              "------------Effect"
-              (get-effect-popup-entries midi-learn-instrument-id
-                                        effect-name
-                                        :automation-error-message (if effect-name
-                                                                      #f
-                                                                      "(Connection gain automation not supported yet)")
-                                        :modulation-error-message (if effect-name
-                                                                      #f
-                                                                      "(Connection gain modulation not supported yet)"))
+              ;;(and (not is-send?)
+              ;;     (list
+              ;;      "----------Plugin"
+
+              (if is-send?
+                  (list "------------Send-slider"
+                        (list "Delete"
+                              :enabled (and is-send? delete-func)
+                              (lambda ()
+                                (delete-func)))
+                        (list "Replace"
+                              :enabled (and is-send? replace-func)
+                              (lambda ()
+                                (replace-func)))
+                        "----------------"
+                        (list "Set to 0.0 dB"
+                              :enabled (and is-send? reset-func)
+                              (lambda ()
+                                (reset-func))))
+                  (and effect-name
+                       (get-effect-popup-entries midi-learn-instrument-id
+                                                 effect-name
+                                                 :automation-error-message (if effect-name
+                                                                               #f
+                                                                               "(Connection gain automation not supported yet)")
+                                                 :modulation-error-message (if effect-name
+                                                                               #f
+                                                                               "(Connection gain modulation not supported yet)"))))
               ;;"----------"
               ;;"Convert to standalone strip" (lambda ()
               ;;                                #t)
 
-              (get-instrument-popup-entries instrument-id parentgui)
-              "----------Mixer"
-              (list "Wide mode"
-                    :check (<ra> :has-wide-instrument-strip parent-instrument-id)
-                    (lambda (enabled)
-                      (<ra> :set-wide-instrument-strip parent-instrument-id enabled)
-                      (remake-mixer-strips parent-instrument-id)))
-              ;;(remake-mixer-strips parent-instrument-id)))
-              (get-global-mixer-strips-popup-entries first-instrument-id strips-config)
-              ))
+              (get-instrument-popup-entries instrument-id parentgui :must-have-inputs effect-name :must-have-outputs effect-name)
+              "-----------"
+              (list "Load Preset" :enabled instrument-id
+                    :enabled (not (<ra> :instrument-is-permanent instrument-id))
+                    (lambda ()
+                      (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
+              (list "Save Preset" :enabled instrument-id
+                    :enabled (not (<ra> :instrument-is-permanent instrument-id))
+                    (lambda ()
+                      (<ra> :save-instrument-preset (list instrument-id) parentgui)))
+
+              (get-global-mixer-strips-popup-entries first-instrument-id strips-config parent-instrument-id)
+              )
+
+  (<ra> :set-current-instrument instrument-id)
+  )
+    
 
 (define (create-default-mixer-path-popup instrument-id strips-config gui)
   (define is-permanent? (<ra> :instrument-is-permanent instrument-id))
@@ -1705,18 +1758,22 @@
                  ((and (= button *right-button*)
                        (= state *is-releasing*))
                   (define pan-enabled (pan-enabled?))
-                  (popup-menu (list "Reset" (lambda ()
-                                              (<ra> :undo-instrument-effect instrument-id "System Pan")
-                                              (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))
-                              (list "Enabled"
-                                    :check pan-enabled
-                                    enable!)
-                              "------------Effect"
-                              (get-effect-popup-entries instrument-id "System Pan"
-                                                        :pre-undo-block-callback (lambda ()
-                                                                                   (enable! #t)))
-                              "------------"
-                              (get-global-mixer-strips-popup-entries instrument-id strips-config))
+                  (if (<ra> :shift-pressed)
+                      (undo-block
+                       (lambda ()                  
+                         (<ra> :reset-instrument-effect instrument-id "System Pan On/Off")
+                         (<ra> :reset-instrument-effect instrument-id "System Pan")))
+                      (popup-menu ;(list "Reset" (lambda ()
+                                        ;                (<ra> :undo-instrument-effect instrument-id "System Pan")
+                                        ;                (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))
+                       (list "Pan Enabled"
+                             :check pan-enabled
+                             enable!)                              
+                       (get-effect-popup-entries instrument-id "System Pan"
+                                                 :pre-undo-block-callback (lambda ()
+                                                                            (enable! #t)))
+                       (get-instrument-popup-entries instrument-id slider)
+                       (get-global-mixer-strips-popup-entries instrument-id strips-config)))
                   #t)
                  (else
                   #f))))
@@ -1843,18 +1900,20 @@
                    use-single-letters
                    background-color))
 
-  (define mute (create-custom-checkbox instrument-id strips-config
-                                       draw-mute
-                                       (lambda (is-muted)
-                                         (undo-block
-                                          (lambda ()
-                                            (<ra> :set-instrument-mute instrument-id is-muted)
-                                            ;;(c-display "mute: " is-muted)
-                                            (if (<ra> :control-pressed)
-                                                (turn-off-all-mute instrument-id))
-                                            )))
-                                       (get-muted)
-                                       min-height))
+  (define mute (create-instrument-effect-checkbox instrument-id strips-config
+                                                  draw-mute
+                                                  (lambda (is-muted)
+                                                    (undo-block
+                                                     (lambda ()
+                                                       (<ra> :set-instrument-mute instrument-id is-muted)
+                                                       ;;(c-display "mute: " is-muted)
+                                                       (if (<ra> :control-pressed)
+                                                           (turn-off-all-mute instrument-id))
+                                                       )))
+                                                  (get-muted)
+                                                  min-height
+                                                  :effect-name "System Volume On/Off"
+                                                  ))
 
   (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
   
@@ -1870,26 +1929,28 @@
                                           100)
                                         #f))))
   
-  (define solo (create-custom-checkbox instrument-id strips-config
-                                       (lambda (solo is-soloed width height)
-                                         (draw-mutesolo solo 
-                                                        'solo
-                                                        instrument-id
-                                                        0 0 width height
-                                                        is-soloed
-                                                        use-single-letters
-                                                        background-color))
-                                       (lambda (is-selected)
-                                         (undo-block
-                                          (lambda ()
-                                            ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
+  (define solo (create-instrument-effect-checkbox instrument-id strips-config
+                                                  (lambda (solo is-soloed width height)
+                                                    (draw-mutesolo solo 
+                                                                   'solo
+                                                                   instrument-id
+                                                                   0 0 width height
+                                                                   is-soloed
+                                                                   use-single-letters
+                                                                   background-color))
+                                                  (lambda (is-selected)
+                                                    (undo-block
+                                                     (lambda ()
+                                                       ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
                                         ;(<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
-                                            (<ra> :set-instrument-solo instrument-id is-selected)
-                                            (if (<ra> :control-pressed)
-                                                (turn-off-all-solo instrument-id))
-                                            )))
-                                       (get-soloed)
-                                       min-height))
+                                                       (<ra> :set-instrument-solo instrument-id is-selected)
+                                                       (if (<ra> :control-pressed)
+                                                           (turn-off-all-solo instrument-id))
+                                                       )))
+                                                  (get-soloed)
+                                                  min-height
+                                                  :effect-name "System Solo On/Off"
+                                                  ))
   
   (add-gui-effect-monitor (cadr mute) instrument-id volume-on-off-name #t #t
                           (lambda (on/off automation)
@@ -1897,7 +1958,7 @@
   
   (add-gui-effect-monitor (cadr solo) instrument-id "System Solo On/Off" #t #t
                           (lambda (on/off automation)
-                            (c-display "Solo changed for" instrument-id)
+                            ;;(c-display "Solo changed for" instrument-id)
                             ((car solo) (get-soloed))))
   
   (define gui (if stack-horizontally
@@ -1915,6 +1976,7 @@
 
   (<gui> :add gui (cadr mute) 1)
   (<gui> :add gui (cadr solo) 1)
+
   gui
   )
 
@@ -2101,13 +2163,10 @@
                   (set! has-made-undo #t))
                  ((and (= button *right-button*)
                        (= state *is-pressing*))
-                  (popup-menu "Reset" (lambda ()
-                                        (<ra> :undo-instrument-effect instrument-id effect-name)
-                                        (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized 0)))
-                              "------------Effect"
-                              (get-effect-popup-entries instrument-id effect-name)
-                              "------------"
-                              (get-global-mixer-strips-popup-entries instrument-id strips-config))))
+                  (if (and effect-name
+                           (<ra> :shift-pressed))
+                      (<ra> :reset-instrument-effect instrument-id effect-name)
+                      (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))))
            #f))
 
 
@@ -2125,8 +2184,11 @@
   (when show-voltext
     (add-safe-mouse-callback voltext (lambda (button state x y)                                       
                                          (cond ((and (= button *right-button*)
-                                                     (= state *is-pressing*))                                                
-                                                (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
+                                                     (= state *is-pressing*))
+                                                (if (and effect-name
+                                                         (<ra> :shift-pressed))
+                                                    (<ra> :reset-instrument-effect instrument-id effect-name)
+                                                    (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))
                                                 #t)
                                                ((and (= button *left-button*)
                                                      (= state *is-pressing*))
@@ -2154,11 +2216,18 @@
     (<gui> :add-audio-meter-peak-callback volmeter (lambda (text)
                                                      (set! peaktexttext text)
                                                      (<gui> :update peaktext)))
+
+    (define (reset-peak!)
+      (set! peaktexttext "-inf")
+      (<gui> :reset-audio-meter-peak volmeter)
+      (<gui> :update peaktext))
     
     (add-safe-mouse-callback volmeter (lambda (button state x y)
                                         (cond ((and (= button *right-button*)
                                                     (= state *is-pressing*))
-                                               (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
+                                               (if (<ra> :shift-pressed)
+                                                   (reset-peak!)
+                                                   (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))
                                                #t)
                                               (else
                                                #f))))
@@ -2166,13 +2235,13 @@
     (add-safe-mouse-callback peaktext (lambda (button state x y)
                                           (cond ((and (= button *right-button*)
                                                       (= state *is-pressing*))
-                                                 (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
+                                                 (if (<ra> :shift-pressed)
+                                                     (reset-peak!)
+                                                     (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))
                                                  #t)
                                                 ((and (= button *left-button*)
                                                       (= state *is-pressing*))
-                                                 (set! peaktexttext "-inf")
-                                                 (<gui> :reset-audio-meter-peak volmeter)
-                                                 (<gui> :update peaktext)
+                                                 (reset-peak!)
                                                  #t)
                                                 (else
                                                  #f)))))

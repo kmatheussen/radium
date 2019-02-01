@@ -524,13 +524,13 @@
     FROM_C-show-blocklist-popup-menu
     FROM_C-show-playlist-popup-menu
     load
-    show-note-duplicator-popup-menu
     FROM_C-set-current-seqblock!
     FROM_C-call-me-when-curr-seqtrack-has-changed
     FROM-C-sequencer-gui-in-window
     FROM_C-create-menu-entry-widget
     FROM_C-reconfigure-sequencer-timing-part
     FROM_C-paint-sequencer-grid
+    FROM_C-show-effect-popup-menu
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

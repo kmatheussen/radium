@@ -188,37 +188,37 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       int64_t id = _patch->id;
       
       get_o(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System On/Off Voice %d\")", id, i+1));
+        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System On/Off Voice %d\")", id, i+1));
         set_editor_focus();
       };
 
       get_t(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Transpose Voice %d\")", id, i+1));
+        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Transpose Voice %d\")", id, i+1));
         set_editor_focus();
       };
       
       get_v(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Volume Voice %d\")", id, i+1));
+        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Volume Voice %d\")", id, i+1));
         set_editor_focus();
       };
 
       get_s(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Start Voice %d\")", id, i+1));
+        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Start Voice %d\")", id, i+1));
         set_editor_focus();
       };
 
       get_l(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Length Voice %d\")", id, i+1));
+        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Length Voice %d\")", id, i+1));
         set_editor_focus();
       };
             
       get_p(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Pan Voice %d\")", id, i+1));
+        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Pan Voice %d\")", id, i+1));
         set_editor_focus();
       };
       
       get_c(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Chance Voice %d\")", id, i+1));
+        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Chance Voice %d\")", id, i+1));
         set_editor_focus();
       };
       

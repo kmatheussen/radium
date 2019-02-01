@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/undo_connection_enabled_proc.h"
 #include "../audio/undo_audio_connection_gain_proc.h"
 #include "../audio/Modulator_plugin_proc.h"
+#include "../audio/Pd_plugin_proc.h"
 #include "../audio/SampleReader_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
@@ -872,6 +873,29 @@ void resetInstrumentEffect(int64_t instrument_id, const char *effect_name){
   post_set_effect(patch, plugin, effect_name);
 }
 
+void deletePdController(int64_t instrument_id, const char *effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+
+  if (strcmp(plugin->type->type_name, "Pd")){
+    handleError("Instrument #%d is not a Pd instrument: \"%s\"", (int)instrument_id, plugin->type->type_name);
+    return;
+  }
+  
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num < 0)
+    return;
+
+  PD_delete_controller(plugin, effect_num);
+}
+
 const_char* getInstrumentEffectColor(int64_t instrument_id, const_char* effect_name){
   const struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -1130,7 +1154,60 @@ bool addAutomationToCurrentSequencerTrack(int64_t instrument_id, const_char* eff
   return true;
 }
   
-              
+void setInstrumentEffectChangesValueWhenPressingRandom(int64_t instrument_id, const_char* effect_name, bool doit){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num < 0)
+    return;
+
+  PLUGIN_set_random_behavior(plugin, effect_num, doit);
+}
+
+bool getInstrumentEffectChangesValueWhenPressingRandom(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num < 0)
+    return false;
+
+  return PLUGIN_get_random_behavior(plugin, effect_num);
+}
+
+void startRecordingInstrumentAutomationInEditor(int64_t instrument_id, const_char* effect_name, bool do_start_recording_not_stop_recording){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num < 0)
+    return;
+
+  PLUGIN_set_recording_automation(plugin, effect_num, do_start_recording_not_stop_recording);
+}
+
 void setInstrumentSolo(int64_t instrument_id, bool do_solo){
   S7CALL2(void_int_bool,"FROM-C-set-solo!", instrument_id, do_solo);
 }

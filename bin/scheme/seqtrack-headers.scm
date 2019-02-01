@@ -34,19 +34,26 @@
                      0.95)
               background-color)))))
 
-(define (show-sequencer-header-popup-menu seqtracknum instrument-id effect-name parentgui)
-  (popup-menu
-   (list "Reset volume"
-         (lambda ()
-           (<ra> :undo-instrument-effect instrument-id "System Volume")
-           (<ra> :set-instrument-effect instrument-id "System Volume" (db-to-radium-normalized 0.0))))
-   "-------------"
-   (get-effect-popup-entries instrument-id effect-name)
-   "------------"
-   (get-instrument-popup-entries instrument-id parentgui)
-   "------------"
+(define (get-sequencer-header-popup-menu-entries seqtracknum instrument-id effect-name parentgui)
+  (list
+   (and effect-name
+        (get-effect-popup-entries instrument-id effect-name))
+   
+   (get-instrument-popup-entries instrument-id parentgui :include-delete-and-replace #f)
+   
+   "------------Seqtrack"
    (get-seqtrack-popup-menu-entries seqtracknum)))
-
+   
+(define (show-sequencer-header-popup-menu seqtracknum instrument-id effect-name parentgui)
+  (if (and effect-name
+           (<ra> :shift-pressed))
+      (begin
+        (c-display "Resetting " effect-name)
+        (<ra> :reset-instrument-effect instrument-id effect-name))
+      (<ra> :schedule 0
+            (lambda ()
+              (popup-menu (get-sequencer-header-popup-menu-entries seqtracknum instrument-id effect-name parentgui))
+              #f))))
 
 (define *sequencer-window-gui* (if (defined? '*sequencer-window-gui*)
                                    *sequencer-window-gui*
@@ -508,7 +515,8 @@
                                                :instrument-id
                                                :effect-name "System Volume"
                                                :display-instrument-name #t
-                                               :get-color)
+                                               :get-color
+                                               :seqtracknum)
   (define has-made-undo #f)
   
   (define (maybe-make-undo)
@@ -584,13 +592,17 @@
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
      (set! has-made-undo #f)
-     (and (= button *left-button*)
-          (begin
+     (cond ((= button *right-button*)
+            (show-sequencer-header-popup-menu seqtracknum instrument-id "System Volume" gui)
+            #t)
+           ((= button *left-button*)
             (define radium-normalized (get-radium-normalized))
             (set! start-mouse-value (get-scaled-value radium-normalized));;(scale x* x1 x2 0 1));;(get-db-value));;(<ra> :get-stored-instrument-effect instrument-id effect-name))
             ;;(c-display "press button/x/y" x* y*)
             (set-statusbar-text! (get-statusbar-text))
-            #t)))
+            #t)
+           (else
+            #f)))
    (lambda (button x* y* dx dy)
      (maybe-make-undo)
      (define slider-value (between 0 (+ start-mouse-value
@@ -826,31 +838,29 @@
   (define start-mouse-value #f)
 
   (define (show-popup)
-          (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
-                (lambda ()
-                  (define pan-enabled (pan-enabled?))
-                  (popup-menu (list "Reset Pan" (lambda ()
-                                              (<ra> :undo-instrument-effect instrument-id "System Pan")
-                                              (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))
-                              (list "Pan Enabled"
-                                    :check pan-enabled
-                                    enable!)
-                              "------------"
-                              (get-effect-popup-entries instrument-id "System Pan"
-                                                        :pre-undo-block-callback (lambda ()
-                                                                                   (enable! #t)))
-                              "------------"
-                              (get-instrument-popup-entries instrument-id gui)
-                              "------------"
-                              (get-seqtrack-popup-menu-entries seqtracknum))
-                  #f)))
-
+    (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
+          (lambda ()
+            (define pan-enabled (pan-enabled?))
+            (popup-menu ;;(list "Reset Pan" (lambda ()
+             ;;                (<ra> :undo-instrument-effect instrument-id "System Pan")
+             ;;                (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))
+             (list "Pan Enabled"
+                   :check pan-enabled
+                   enable!)
+             (get-sequencer-header-popup-menu-entries seqtracknum instrument-id "System Pan" gui))
+            #f)))
+  
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
      (set! has-made-undo #f)
      (cond ((and (= button *right-button*)
-                 (not (<ra> :shift-pressed)))
-            (show-popup)
+                 #t );;(not (<ra> :shift-pressed)))
+            (if (<ra> :shift-pressed)
+                (undo-block
+                 (lambda ()                  
+                   (<ra> :reset-instrument-effect instrument-id "System Pan On/Off")
+                   (<ra> :reset-instrument-effect instrument-id "System Pan")))
+                (show-popup))
             #t)
            ((= button *left-button*)
             (define pan (get-pan))
@@ -981,6 +991,7 @@
                                 :effect-name "System Volume"
                                 :display-instrument-name (not use-two-rows)
                                 :get-color get-background-color
+                                seqtracknum
                                 ))
     
     (<gui> :add-vertical-audio-meter gui instrument-id (+ b x-meter-split) y1 x2 y2))
@@ -1051,10 +1062,7 @@
                                       (if (and (= button *right-button*)
                                                (not (<ra> :shift-pressed)))
                                           (begin
-                                            (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
-                                                  (lambda ()
-                                                    (show-sequencer-header-popup-menu seqtracknum instrument-id "System Volume" gui)
-                                                    #f))
+                                            (show-sequencer-header-popup-menu seqtracknum instrument-id #f gui)
                                             #t)
                                           #f))))
   )
