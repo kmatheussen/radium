@@ -1350,7 +1350,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       if (is_enabled)
         receive_external_midi = VECTOR_push_back(&v,"[check on]Recv. external MIDI");
       else
-        receive_external_midi = VECTOR_push_back(&v,"[check off]Recv. exteranl MIDI");
+        receive_external_midi = VECTOR_push_back(&v,"[check off]Recv. external MIDI");
     }
       
     VECTOR_push_back(&v, "--------");
