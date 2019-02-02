@@ -269,10 +269,10 @@
              text)
          x1 y1 x2 y2
          #f ;; wrap-lines
-         align-top
-         align-left
-         rotate
-         cut-text-to-fit
+         align-top ;; align-top
+         align-left ;; align-left
+         rotate ;; rotate
+         cut-text-to-fit ;; cut-text-to-fit
          scale-font-size))
 
 (define *last-tooltip-and-statusbar-text* "")
