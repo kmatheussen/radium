@@ -44,12 +44,16 @@ static int64_t RT_scheduled_fx(struct SeqTrack *seqtrack, int64_t time, union Su
   int x;
   FX_when when;
   
-  if (time==time1) {
+  if (time <= time1) {
+
+    R_ASSERT_NON_RELEASE(time==time1);
     
     when = FX_start;
     x = val1;
     
-  } else if (time==time2) {
+  } else if (time >= time2) {
+
+    R_ASSERT_NON_RELEASE(time==time2);
     
     when = FX_end;
     x = val2;
@@ -57,7 +61,17 @@ static int64_t RT_scheduled_fx(struct SeqTrack *seqtrack, int64_t time, union Su
   } else {
     
     when = FX_middle;
-    x = scale_double(time, time1, time2, val1, val2);
+
+    if (time1==time2){
+      
+      R_ASSERT_NON_RELEASE(false);
+      x = (val1 + val2) / 2.0;
+      
+    } else {
+      
+      x = scale_double(time, time1, time2, val1, val2);
+      
+    }
     
   }
 
@@ -119,6 +133,17 @@ static void RT_schedule_fxnodeline(
   int64_t time1 = get_seqblock_place_time2(seqblock, track, fxnodeline1->l.p);
   int64_t time2 = get_seqblock_place_time2(seqblock, track, fxnodeline2->l.p);
 
+  if (time2 >= seqblock->t.time2){
+    R_ASSERT_NON_RELEASE(time2==seqblock->t.time2);
+
+    // We adjust fx-end to play right before the seqblock ends to avoid fx-end in curr block (seq1)
+    // being played after fx-start in next block (seq2).
+    //
+    // This can happen if seq1 ends when seq2 starts and fx in seq1 plays to the
+    // end and fx in seq2 starts at block start.
+    time2 = seqblock->t.time2 - 1;
+  }
+  
   int64_t time;
   if (PlaceEqual(&start_place, &fxnodeline1->l.p)) // This test is not really necessary, get_seqblock_place_time should always return the same value for the same place. But with this check there is no need to think about the possibility of it to fail.
     time = time1;
