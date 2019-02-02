@@ -1,3 +1,7 @@
+#define __STDC_FORMAT_MACROS 1
+#include <inttypes.h>
+
+
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
 #include "../common/OS_string_proc.h"
