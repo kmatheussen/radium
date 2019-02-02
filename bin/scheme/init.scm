@@ -531,6 +531,7 @@
     FROM_C-reconfigure-sequencer-timing-part
     FROM_C-paint-sequencer-grid
     FROM_C-show-effect-popup-menu
+    show-instrument-color-dialog
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
