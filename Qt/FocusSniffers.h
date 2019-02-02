@@ -231,7 +231,8 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
   bool dontsniff;
 
   std::function<void(void)> _show_popup_menu;
-  
+  QString _statusbar_text;
+    
   FocusSnifferQSpinBox(QWidget *parent_ = NULL, const char *name = "gakk")  
     : QSpinBox(parent_),dontsniff(false)                                     
   {                                                                   
@@ -269,7 +270,17 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
     }                                 
     QSpinBox::hideEvent(event_);          
   }
-  
+
+  void enterEvent(QEvent *event) override {
+    if (_statusbar_text != "")
+      GFX_SetStatusBar(_statusbar_text.toUtf8().constData());
+  }
+
+  void leaveEvent(QEvent *event) override {
+    if (_statusbar_text != "")
+      GFX_SetStatusBar("");
+  }
+
   void keyPressEvent ( QKeyEvent * event_ ) override {                             
     if(event_->key()==Qt::Key_Escape){                                   
       GL_lock();                                                        
@@ -291,6 +302,7 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
   bool dontsniff;
 
   std::function<void(void)> _show_popup_menu;
+  QString _statusbar_text;
   
   FocusSnifferQDoubleSpinBox(QWidget *parent_ = NULL, const char *name = "gakk")  
    : QDoubleSpinBox(parent_),dontsniff(false)                                     
@@ -336,6 +348,15 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
     }                                                                   
     QDoubleSpinBox::keyPressEvent(event_);                                        
   }                                                                     
+  void enterEvent(QEvent *event) override {
+    if (_statusbar_text != "")
+      GFX_SetStatusBar(_statusbar_text.toUtf8().constData());
+  }
+
+  void leaveEvent(QEvent *event) override {
+    if (_statusbar_text != "")
+      GFX_SetStatusBar("");
+  }
   void 	wheelEvent ( QWheelEvent * event_ ) override {
     printf("Got wheel event\n");
     QDoubleSpinBox::wheelEvent(event_);

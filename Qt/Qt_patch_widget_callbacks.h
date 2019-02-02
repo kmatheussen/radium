@@ -174,53 +174,62 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 
     }
 
-    setup_popup_menus();
+    setup_popup_menus_and_stuff();
     
     updateWidgets();
     initing = false;
   }
 
-  void setup_popup_menus(void){
+  const char *get_effect_name(const char *name, int voicenum){
+    return talloc_format("System %s Voice %d", name, voicenum+1);
+  }
+
+  const char *get_popup(const char *name, int voicenum){
+    int64_t id = _patch->id;
+    return talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"%s\")", id, get_effect_name(name, voicenum));
+  }
+
+  template <class SpinBox> void set_popup_and_stuff(SpinBox *spinbox, const char *name, int voicenum){
+    //int64_t id = _patch->id;
+
+    const char *effect_name = get_effect_name(name, voicenum);
+    
+    spinbox->_statusbar_text = QString("\"") + effect_name + "\" (right-click for options)";
+
+    IsAlive is_alive(this);
+    
+    spinbox->_show_popup_menu = [is_alive, this, name, voicenum](){
+      if (!is_alive)
+        return;
+      
+      evalScheme(get_popup(name, voicenum));
+      set_editor_focus();
+    };    
+  }
+  
+  void setup_popup_menus_and_stuff(void){
     if (_patch->instrument != get_audio_instrument())
       return;
     
     for(int i=0;i<NUM_PATCH_VOICES;i++){
-      int64_t id = _patch->id;
+
+      IsAlive is_alive(this);
+
+      get_o(i)->_show_popup_menu = [is_alive, this, i](){
+        if (!is_alive)
+          return;
       
-      get_o(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System On/Off Voice %d\")", id, i+1));
+        evalScheme(get_popup("On/Off", i));
         set_editor_focus();
       };
 
-      get_t(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Transpose Voice %d\")", id, i+1));
-        set_editor_focus();
-      };
-      
-      get_v(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Volume Voice %d\")", id, i+1));
-        set_editor_focus();
-      };
-
-      get_s(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Start Voice %d\")", id, i+1));
-        set_editor_focus();
-      };
-
-      get_l(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Length Voice %d\")", id, i+1));
-        set_editor_focus();
-      };
-            
-      get_p(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Pan Voice %d\")", id, i+1));
-        set_editor_focus();
-      };
-      
-      get_c(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"System Chance Voice %d\")", id, i+1));
-        set_editor_focus();
-      };
+      //get_t(i)->_statusbar_text = QString(get_effect_name("Voice", getInstrumentEffectName(_effect_num, i))) + " (right-click for options)";
+      set_popup_and_stuff(get_t(i), "Transpose", i);
+      set_popup_and_stuff(get_v(i), "Volume", i);
+      set_popup_and_stuff(get_s(i), "Start", i);
+      set_popup_and_stuff(get_l(i), "Length", i);
+      set_popup_and_stuff(get_p(i), "Pan", i);
+      set_popup_and_stuff(get_c(i), "Chance", i);
       
     }
   }

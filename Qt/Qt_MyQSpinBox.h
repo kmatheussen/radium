@@ -35,6 +35,8 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
   int _effect_num;
   bool _is_patchvoice_spinbox;
 
+  QString _statusbar_text;
+  
   void init(){
     _has_mouse=false;
     _patch.set(NULL);
@@ -71,6 +73,40 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
     set_editor_focus();
   }
 
+  bool _is_hovered = false;
+      
+  bool _popup_menu_is_visible = false;
+
+  void enterEvent(QEvent *event) override {
+    if (_statusbar_text != "")
+      GFX_SetStatusBar(_statusbar_text.toUtf8().constData());
+  }
+
+  void leaveEvent(QEvent *event) override {
+    if (_statusbar_text != "")
+      GFX_SetStatusBar("");
+  }
+
+  /*
+  void enterEvent(QEvent *event) override {
+    if (_patch.data() != NULL){
+      _is_hovered = true;
+      update();
+      GFX_SetStatusBar(talloc_format("\"%s\" (right-click for options)", getInstrumentEffectName(_effect_num, _patch->id)));
+    }
+  }
+
+  void leaveEvent(QEvent *event) override {
+    if (_patch.data() != NULL){
+      if(_popup_menu_is_visible==false){
+        _is_hovered = false;
+        update();
+      }
+      GFX_SetStatusBar("");
+    }
+  }
+  */
+  
   void contextMenuEvent(QContextMenuEvent *event){
     if (_show_popup_menu) {
       _show_popup_menu();
@@ -79,6 +115,7 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
   }
   
   // Is this method ever called? It doesn't seems so. Maybe it's only used if the arrows are clicked?
+#if 0
   void mousePressEvent ( QMouseEvent * event ) override
   {
     if (event->button() == Qt::LeftButton){      
@@ -92,7 +129,8 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
 
     QSpinBox::mousePressEvent(event);
   }
-
+#endif
+  
 #if 0
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
