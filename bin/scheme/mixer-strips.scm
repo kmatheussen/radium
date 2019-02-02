@@ -2030,7 +2030,7 @@
   ;;(<gui> :set-min-width volslider 1) ;; ?? Why is this necessary?
   (<gui> :set-min-height volslider (* (get-fontheight) 2)) ;; This is strange. If we don't do this, min-height will be set to approx something that looks very good, but I don't find the call doing that.
   
-  (define (paint-text gui text)
+  (define (paint-text gui text cut-text-to-fit)
     (define width (<gui> :width gui))
     (define height (<gui> :height gui))
     
@@ -2045,13 +2045,19 @@
         (<gui> :filled-box gui col1 0 0 width height 5 5))
     
     ;; text
-    (<gui> :my-draw-text gui *text-color* text 2 2 (- width 2) (- height 2) #t #f #f 0 #f #t))
+    (<gui> :my-draw-text gui *text-color* text 2 2 (- width 2) (- height 2)
+           #f ;;wrap-lines
+           #f ;;align-top
+           #f ;;align-left
+           0  ;; rotate
+           cut-text-to-fit ;; cut-text-to-fit
+           #t)) ;; scale-font-size
 
     
   (when show-voltext
     (set! paint-voltext
           (lambda ()
-            (paint-text voltext (db-to-text (get-volume) #f))))
+            (paint-text voltext (db-to-text (get-volume) #f #f))))
     
     (add-safe-paint-callback voltext (lambda x (paint-voltext)))
     ;;(paint-voltext)
@@ -2060,7 +2066,7 @@
   (when show-peaktext
     (set! paint-peaktext
           (lambda ()
-            (paint-text peaktext peaktexttext)))
+            (paint-text peaktext peaktexttext #f)))
     
     (add-safe-paint-callback peaktext (lambda x (paint-peaktext)))
     ;;(paint-peaktext)
