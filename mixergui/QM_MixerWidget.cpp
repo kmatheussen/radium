@@ -1230,9 +1230,11 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int instrument_info = -1;
   int random = -1;
   int solo = -1;
-  int unsolo = -1;
+  int solo_several = -1;
+  int unsolo_several = -1;
   int mute = -1;
-  int unmute = -1;
+  int mute_several = -1;
+  int unmute_several = -1;
   int unsolo_all = -1;
   int mute_all = -1;
   int unmute_all = -1;
@@ -1266,10 +1268,10 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     VECTOR_push_back(&v, "--------");
     show_mixer_strips = VECTOR_push_back(&v, "Show mixer strips");
     VECTOR_push_back(&v, "--------");
-    solo = VECTOR_push_back(&v, "Solo all selected");
-    unsolo = VECTOR_push_back(&v, "Un-solo all selected");
-    mute = VECTOR_push_back(&v, "Mute all selected");
-    unmute = VECTOR_push_back(&v, "Un-mute all selected");
+    solo_several = VECTOR_push_back(&v, "Solo all selected");
+    unsolo_several = VECTOR_push_back(&v, "Un-solo all selected");
+    mute_several = VECTOR_push_back(&v, "Mute all selected");
+    unmute_several = VECTOR_push_back(&v, "Un-mute all selected");
     VECTOR_push_back(&v, "--------");
     unsolo_all = VECTOR_push_back(&v, "Un-solo all");
     mute_all = VECTOR_push_back(&v, "Mute all");
@@ -1303,21 +1305,21 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     VECTOR_push_back(&v, "--------");
 
     if (ATOMIC_GET(plugin->solo_is_on)){
-      solo = VECTOR_push_back(&v, "[disabled]Solo");    
-      unsolo = VECTOR_push_back(&v, "Un-solo");
+      solo = VECTOR_push_back(&v, "[check on]Solo");    
+      //unsolo = VECTOR_push_back(&v, "Un-solo");
     }else{
-      solo = VECTOR_push_back(&v, "Solo");    
-      unsolo = VECTOR_push_back(&v, "[disabled]Un-solo");
+      solo = VECTOR_push_back(&v, "[check off]Solo");    
+      //unsolo = VECTOR_push_back(&v, "[disabled]Un-solo");
     }
 
     VECTOR_push_back(&v, "--------");
         
     if (!ATOMIC_GET(plugin->volume_is_on)){
-      mute = VECTOR_push_back(&v, "[disabled]Mute");
-      unmute = VECTOR_push_back(&v, "Un-mute");
+      mute = VECTOR_push_back(&v, "[check on]Mute");
+      //unmute = VECTOR_push_back(&v, "Un-mute");
     }else{
-      mute = VECTOR_push_back(&v, "Mute");
-      unmute = VECTOR_push_back(&v, "[disabled]Un-mute");
+      mute = VECTOR_push_back(&v, "[check off]Mute");
+      //unmute = VECTOR_push_back(&v, "[disabled]Un-mute");
     }
 
     VECTOR_push_back(&v, "--------");
@@ -1367,7 +1369,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     patch_ids.push_back(patch->id);
   }END_VECTOR_FOR_EACH;
 
-#define sels connect_to_main_pipe,insert,replace,solo,unsolo,mute,unmute,unsolo_all,mute_all,unmute_all,copy,cut,delete_,save,show_mixer_strips,config_color,generate_new_color,show_gui,receive_external_midi,random,instrument_info
+#define sels connect_to_main_pipe,insert,replace,solo,solo_several,unsolo_several,mute,mute_several,unmute_several,unsolo_all,mute_all,unmute_all,copy,cut,delete_,save,show_mixer_strips,config_color,generate_new_color,show_gui,receive_external_midi,random,instrument_info
   
   GFX_Menu3(v,[is_alive, chip_under, scene, patch_ids, sels, mouse_x, mouse_y, parentguinum](int sel, bool onoff){
       
@@ -1409,17 +1411,25 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
         
       } else if (sel==solo) {
         
+        MW_solo(patches, onoff);
+        
+      } else if (sel==solo_several) {
+        
         MW_solo(patches, true);
         
-      } else if (sel==unsolo) {
+      } else if (sel==unsolo_several) {
         
         MW_solo(patches, false);
         
       } else if (sel==mute) {
         
+        MW_mute(patches, onoff);
+        
+      } else if (sel==mute_several) {
+        
         MW_mute(patches, true);
         
-      } else if (sel==unmute) {
+      } else if (sel==unmute_several) {
         
         MW_mute(patches, false);
         
