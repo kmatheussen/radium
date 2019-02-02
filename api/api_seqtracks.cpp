@@ -173,7 +173,8 @@ int64_t getSequencerVisibleEndTime(void){
 
 void setSequencerVisibleStartTime(int64_t value){
   if (value < 0 || value >= SEQUENCER_get_visible_end_time()){
-    handleError("setSequencerVisibleStartTime: Value must be 0 or higher and lower than visible end time. End time: %f. Value: %f\n", SEQUENCER_get_visible_end_time(), (double)value);
+    // Comment out call to handleError since it could happen while playing. (and not very important)
+    //handleError("setSequencerVisibleStartTime: Value must be 0 or higher and lower than visible end time. End time: %f. Value: %f\n", SEQUENCER_get_visible_end_time(), (double)value);
     return;
   }
   //printf("                   Set: %f\n", value/48000.0);
@@ -182,7 +183,8 @@ void setSequencerVisibleStartTime(int64_t value){
 
 void setSequencerVisibleEndTime(int64_t value){
   if (value <= SEQUENCER_get_visible_start_time()){
-    handleError("setSequencerVisibleEndTime: Value must be higher than visible start time. Start time: %f. Value: %f\n", SEQUENCER_get_visible_start_time(), (double)value);
+    // Comment out call to handleError since it could happen while playing. (and not very important)
+    //handleError("setSequencerVisibleEndTime: Value must be higher than visible start time. Start time: %f. Value: %f\n", SEQUENCER_get_visible_start_time(), (double)value);
     return;
   }
   SEQUENCER_set_visible_end_time(value);
