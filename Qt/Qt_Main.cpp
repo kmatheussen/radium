@@ -3327,6 +3327,15 @@ int radium_main(const char *arg){
   
   CalledPeriodically periodic_timer;
 
+
+  // Hack to fix generated_keybinding_code to load during startup.
+  // In general, it's not necessary to call reloadKeybindings() twice, it's just during startup it doesn't work.
+  // I don't know why, maybe it's some file cache thing.
+  QTimer::singleShot(200,[]{
+      reloadKeybindings();
+    });
+
+    
 #if USE_QT_VISUAL
   qapplication->exec();
 #else

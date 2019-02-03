@@ -71,6 +71,11 @@ except:
 if keybindingsparser.parse_and_show_errors()==False:
     sys.exit(5)
 
+# Hack to fix generated_keybinding_code to load during startup. This is not necessary when calling reloadKeybindings(), so I don't know why this is. Maybe some file cache thing.
+# Didn't work (I thought it worked once, but maybe not). Instead we call reloadKeybindings() in Qt_Main.cpp after startup..
+#if keybindingsparser.parse_and_show_errors()==False:
+#    sys.exit(50)
+
 
 
 
