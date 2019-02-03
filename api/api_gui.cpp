@@ -749,6 +749,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       p.setPen(Qt::NoPen);
 
+      if (_note_intencity==0) {
+        
+        p.setBrush(qcolor1);
+        p.drawRect(get_indicator_rect());
+
+        _note_intencity = -1;
+      }
+          
+
       int num_channels = get_num_visible_channels();
       
       for(int ch=0 ; ch < num_channels ; ch++){
@@ -850,7 +859,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
 
       //int intencity = ATOMIC_GET_RELAXED(_patch->visual_note_intencity);
-      if(_note_intencity >= 0){
+      if(_note_intencity > 0){
 
         QColor c = get_qcolor(NOTE_EVENT_INDICATOR_COLOR_NUM);
         c.setAlphaF(::scale(_note_intencity, 0, MAX_NOTE_INTENCITY, 0.0, 1.0));
@@ -862,8 +871,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         float width = get_indicator_width();
         p.drawRoundedRect(get_indicator_rect(), width, width);
 
-        if (_note_intencity == 0)
-          _note_intencity = -1;
       }
 
       p.setBrush(Qt::NoBrush);
