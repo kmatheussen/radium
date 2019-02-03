@@ -63,6 +63,10 @@ void playSongFromCurrent(int windownum){
   PlaySongCurrPos();
 }
 
+void playSongFromCurrentSequencerPosition(void){
+  PlaySong(ATOMIC_DOUBLE_GET(pc->song_abstime));
+}
+
 void playRangeFromStart(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
