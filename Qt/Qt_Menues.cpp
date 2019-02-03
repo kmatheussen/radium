@@ -265,6 +265,15 @@ void gakk(){
 }
 */
 
+void GFX_MakeMakeMainMenuActive(void){
+  g_first_menu->menuAction()->setVisible(true);
+  
+  QTimer::singleShot(0, []{
+      EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
+      send_key_down(editor->main_window->menuBar(), 1);
+    });
+}
+
 bool GFX_MenuActive(void){
   //return current_menu->base->activeAction() != NULL;
   return g_menu_is_open > 0;

@@ -719,7 +719,8 @@ protected:
    bool SystemEventFilter(void *event){
 
      if(g_is_starting_up==true){
-      return false;
+       //printf("   ret false 0\n");
+       return false;
      }
      
     OS_SYSTEM_EventPreHandler(event);
@@ -736,6 +737,9 @@ protected:
     //printf("Got key. Another window has focus? %d\n",(int)g_a_non_radium_window_has_focus);
     //return false;    
     if (g_a_non_radium_window_has_focus && JUCE_native_gui_grabs_keyboard()){
+
+      //printf("   Ret false 1. non: %d. juce: %d\n", g_a_non_radium_window_has_focus, JUCE_native_gui_grabs_keyboard());
+      
       /*
       static int downcount = 10;
       if ((--downcount) == 0){
@@ -773,7 +777,7 @@ protected:
       type = TR_KEYBOARD;
     
     if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP){
-      //printf("ret false 3\n");
+      //printf("ret false 3. Type: %d\n", type);
       return false;
     }
     
@@ -796,13 +800,18 @@ protected:
               
     static int last_pressed_key = EVENT_NO;
 
-    //printf(" Got key 1. modifier: %d. Left ctrl: %d, Press: %d\n", modifier, EVENT_CTRL_L, is_key_press);
+    //printf(" Got key 1. modifier: %d. Left ctrl: %d, Press: %d. Is EVENT_NO: %d\n", modifier, EVENT_CTRL_L, is_key_press, modifier==EVENT_NO);
 
     if (modifier != EVENT_NO) {
 
       bool must_return_true = false;
 
       //printf("   Modifier: %d. EVENT_ALT_L: %d. Menu is active: %d. Is key press: %d\n", modifier, EVENT_ALT_L, GFX_MenuActive(), is_key_press);
+
+      /*
+      if(modifier==EVENT_ALT_L)       
+        printf("   Main window has focus: %d. Menu active: %d. Menu visible: %d. Last was alt: %d\n", OS_GFX_main_window_has_focus(), GFX_MenuActive(), GFX_MenuVisible(window), last_pressed_key==EVENT_ALT_L);
+      */
       
       if (modifier==EVENT_ALT_L && OS_GFX_main_window_has_focus()){
         
@@ -860,6 +869,7 @@ protected:
 
               //printf("    Making MENU active. Last pressed: %d\n", last_pressed_key);
               menu_should_be_active = 1;
+              GFX_MakeMakeMainMenuActive();
               
             }else {
               
@@ -962,12 +972,13 @@ protected:
     //printf("keynum1: %d. switch: %d\n",keynum,tevent.keyswitch);
 
 
-    //printf("  menu_should_be_active: %d\n", menu_should_be_active);
+    //printf("  menu_should_be_active: %d. GFX_MenuActive(): %d\n", menu_should_be_active, GFX_MenuActive());
+    
     if (GFX_MenuActive() || menu_should_be_active>0){
-      
+
       if (GFX_MenuActive())
         menu_should_be_active = 0; // we can't rely entirely on menu_should_be_active to be true, since it won't be false when using the mouse to cancel menu navigation.
-
+      
       // Qt doesn't do anything when pressing page down / page up / shift+down / shift+up / home / end
       switch(keynum){
         case EVENT_DOWNARROW:
@@ -1047,7 +1058,6 @@ protected:
 
     //printf("Setting lalt==false 2\n");
     last_key_was_lalt = false;
-
 
     //printf(" Got key 5\n");
 
