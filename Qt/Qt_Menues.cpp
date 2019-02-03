@@ -266,12 +266,12 @@ void gakk(){
 */
 
 void GFX_MakeMakeMainMenuActive(void){
-  g_first_menu->menuAction()->setVisible(true);
+  //  g_first_menu->menuAction()->setVisible(true);
   
-  QTimer::singleShot(0, []{
+  //  QTimer::singleShot(0, []{
       EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
       send_key_down(editor->main_window->menuBar(), 1);
-    });
+      //});
 }
 
 bool GFX_MenuActive(void){
@@ -309,7 +309,12 @@ void GFX_ShowMenu(struct Tracker_Windows *tvisual){
 
 void GFX_HideMenu(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  editor->main_window->menuBar()->hide();  
+  //g_first_menu->menuAction()->setVisible(false);
+  editor->main_window->menuBar()->hide();
+
+  //EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
+  QKeyEvent *eve1 = new QKeyEvent((enum QEvent::Type)6, Qt::Key_Escape, Qt::NoModifier);
+  qApp->postEvent(editor->main_window->menuBar(),eve1);
 }
 
 void GFX_SetMenuFontsAgain(void){
