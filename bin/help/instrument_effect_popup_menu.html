@@ -7,10 +7,10 @@
 <a href="#reset">Reset</a><br>
 <a href="#midilearn">MIDI Learn</a><br>
 <a href="#assignmodulator">Assign Modulator</a><br>
-<a href="#record">Record</a><br>
+<a href="#record">Start recording automation in editor</a><br>
 <a href="#addautomationtocurrenteditortrack">Add automation to current editor track</a><br>
 <a href="#addautomationtocurrentsequencertrack">Add automation to current sequencer track</a><br>
-<a href="#dontchangevaluewhenpressingrandom">Don't change value when pressing "Random"</a><br>
+<a href="#changevaluewhenpressingrandom">Change value when pressing "Random"</a><br>
 
 
 
@@ -46,14 +46,39 @@ under "Input ports" in the "MIDI" tab in the preferences window:<br>
 
 <a name="assignmodulator"></a><h2>Assign Modulator</h2>
 
-(not written yet because of emergency release)
+A modulator constantly changes the value of the effect, usually in a cyclic manner (LFO). You change shape and frequency of the modulator in the instrument widget of the modulator instrument.
+<p>
+  Modulators are often used to create vibrato, tremolo, and so forth.
+<p>
+  
+<img src="modulator_instrument.png" width=70%>
 
 <p>
   
 
-<a name="record"></a><h2>Record</h2>
+<a name="record"></a><h2>Start recording automation in editor</h2>
 
-(not written yet because of emergency release)
+Lets you record automation:
+<OL>
+  <LI> Move the editor cursor to the track you want the automation
+  <LI> Select "Start recording automation in editor"
+  <LI> Play block (Press right shift)
+  <LI> While playing, move the slider, or a MIDI controller that has <a href="#midilearn">learned</a> to control this slider.
+  <LI> Stop playing.
+  <LI> The recorded automation should now be placed in the current track.    
+</OL>
+
+<p>
+
+  After recording, a lot of automation nodes have often been created. Editing all these values can be inconvenient, so you might also want to quantitize the values afterwards:
+  <OL>
+    <LI> Enable "FX Text" in the editor track popup menu.
+    <LI> Move cursor to the FX text subtrack.
+    <LI> Adjust LZ to the resolution you want.
+    <LI> Press Left Alt + Q to quantitize.
+  </OL>
+
+  To delete the automation, press Left Alt + X while the cursor is positioned in the FX text subtrack. (Or use undo.)
 
 <p>
 
@@ -61,7 +86,9 @@ under "Input ports" in the "MIDI" tab in the preferences window:<br>
 
 <a name="addautomationtocurrenteditortrack"></a><h2>Add automation to current editor track</h2>
 
-(not written yet because of emergency release)
+Convenient function to create a minimal automation for this effect at the current line in the current track in the editor.
+<p>
+  Selecting this option is much faster than manually creating the automation in the editor.
 
 <p>
 
@@ -69,18 +96,27 @@ under "Input ports" in the "MIDI" tab in the preferences window:<br>
   
 <a name="addautomationtocurrentsequencertrack"></A><h2>Add automation to current sequencer track</h2>
 
-(not written yet because of emergency release)
+Convenient function to create a minimal automation for this effect at the current position in the current seqtrack in the sequencer.
+
+<p>
+
+  Selecting this option is much faster than manually creating the automation in the sequencer.
 
 <p>
 
 
+<a name="changevaluewhenpressingrandom"></A><h2>Change value when pressing "Random"</h2>
 
-<a name="dontchangevaluewhenpressingrandom"></A><h2>Don't change value when pressing "Random"</h2>
-
-(not written yet because of emergency release)
+In the Instrument widget, there is a "Random" button in the upper right part:
 
 <p>
 
+<img src="random_button.png">
+
+<p>
+
+  Pressing this button will cause random values to be assigned to all effect that have been set to change value when pressing "Random".
+  
 
 
 
