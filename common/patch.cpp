@@ -1049,6 +1049,7 @@ static void RT_play_voice(struct SeqTrack *seqtrack, struct Patch *patch, const 
   patch->playnote(seqtrack, patch, note, time);
 
   ATOMIC_SET_RELAXED(patch->visual_note_intencity, MAX_NOTE_INTENCITY);
+  //ATOMIC_SET_RELAXED(patch->visual_note_pitch, (int)note.pitch*1000);
 
   if(patch->forward_events)
     RT_PATCH_send_play_note_to_receivers(seqtrack, patch, note, time);
