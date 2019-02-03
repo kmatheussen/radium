@@ -2057,7 +2057,7 @@
   (when show-voltext
     (set! paint-voltext
           (lambda ()
-            (paint-text voltext (db-to-text (get-volume) #f #f))))
+            (paint-text voltext (db-to-text (get-volume) #f) #f)))
     
     (add-safe-paint-callback voltext (lambda x (paint-voltext)))
     ;;(paint-voltext)
