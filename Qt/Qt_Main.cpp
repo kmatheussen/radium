@@ -713,7 +713,10 @@ public:
 
 protected:
 
-  bool last_key_was_lalt;
+  double _time_of_last_alt = -1;
+  bool last_released_key_was_lalt = false;
+  bool menu_was_active_at_least_key_press = false;
+  bool last_key_was_lalt = false;
   int menu_should_be_active = 0; // When value is 1, or higher, we are about to navigate menues. We need this variable since GFX_MenuActive() doesn't return true until the menu actually pops up.
   
    bool SystemEventFilter(void *event){
@@ -806,6 +809,8 @@ protected:
 
       bool must_return_true = false;
 
+      bool menu_is_active = GFX_MenuActive();
+      
       //printf("   Modifier: %d. EVENT_ALT_L: %d. Menu is active: %d. Is key press: %d\n", modifier, EVENT_ALT_L, GFX_MenuActive(), is_key_press);
 
       /*
@@ -814,8 +819,26 @@ protected:
       */
       
       if (modifier==EVENT_ALT_L && OS_GFX_main_window_has_focus()){
-        
-        if (GFX_MenuActive()) {
+
+        //printf(   " last_key_was_alt: %d. Time now: %f. last time: %f. press: %d. Menu active: %d.  Duration: %f\n", last_released_key_was_lalt, TIME_get_ms(), _time_of_last_alt, is_key_press, GFX_MenuActive(), TIME_get_ms()- _time_of_last_alt);
+
+        if(last_released_key_was_lalt && !is_key_press && menu_was_active_at_least_key_press) { //last_key_was_lalt==true && (TIME_get_ms() - _time_of_last_alt) < 200) {
+
+            // Double-pressed left alt key.
+            
+            last_key_was_lalt = false;
+            menu_should_be_active = 0;
+            must_return_true = true;
+            
+            //printf("  EVENT_ALT_L. Visible: %d.\n", GFX_MenuVisible(window));
+
+            if (true){ //GFX_MenuVisible(window)){
+              //printf("   HIDING 1\n");
+              GFX_HideMenu(window);
+              schedule_set_editor_focus(20);
+            }
+            
+        } else if (menu_is_active) {
 
           //printf("   MENU ACTIVE while pressing left alt. Hiding\n");
           last_key_was_lalt = false;
@@ -844,23 +867,6 @@ protected:
             
             printf("   SHOW MENU\n");
             GFX_ShowMenu(window);
-
-          } else if(last_key_was_lalt==true) {
-
-            // Double-pressed left alt key.
-            
-            last_key_was_lalt = false;
-            menu_should_be_active = 0;
-            must_return_true = true;
-            
-            //printf("  EVENT_ALT_L. Visible: %d.\n", GFX_MenuVisible(window));
-
-            if (GFX_MenuVisible(window)){
-              printf("   HIDING\n");
-              GFX_HideMenu(window);
-              set_editor_focus();
-            }
-            
             
           } else {
             
@@ -870,6 +876,8 @@ protected:
               //printf("    Making MENU active. Last pressed: %d\n", last_pressed_key);
               menu_should_be_active = 1;
               GFX_MakeMakeMainMenuActive();
+              _time_of_last_alt = TIME_get_ms();
+            
               
             }else {
               
@@ -883,11 +891,17 @@ protected:
           }
 
         }
+
+        last_released_key_was_lalt = true;
+
+        if (is_key_press)
+          menu_was_active_at_least_key_press = menu_is_active;
         
       } else {
 
         //printf("Setting lalt==false 1\n");
         last_key_was_lalt = false;
+        last_released_key_was_lalt = false;
         
       }
       
