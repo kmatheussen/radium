@@ -18,6 +18,7 @@ class QMenu;
 class QMenuBar;
 
 void initMenues(QMenuBar *base_menu);
+void GFX_MakeMakeMainMenuActive(void);
 bool GFX_MenuActive();
 QMenu *GFX_GetActiveMenu(void);
 void GFX_SetMenuFontsAgain(void);
