@@ -1266,7 +1266,7 @@ public:
 
     background_color.setAlpha(180);
     
-    myFillRect(p, rect, background_color);
+    myFillRect(p, rect.adjusted(0,header_height,0,0), background_color);
 
     const SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
     //    R_ASSERT(plugin!=NULL); // Commented out. Plugin can be NULL during loading.
@@ -1438,7 +1438,7 @@ public:
     // background
     QColor header_color = get_seqblock_color(seqtrack, seqblock);//.lighter(150);
     header_color.setAlpha(128);
-    myFillRect(p, rect, half_alpha(header_color, type));
+    myFillRect(p, rect, header_color); //half_alpha(header_color, type));
 
     // name
     p.setPen(text_color);
@@ -3280,7 +3280,7 @@ public:
 
           VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, seqblocks){
 
-            QColor seqblock_color = get_seqblock_color(seqtrack, seqblock).lighter(150);
+            QColor seqblock_color = get_seqblock_color(seqtrack, seqblock); //.lighter(150);
             
             seqblock_color.setAlpha(128);
           
