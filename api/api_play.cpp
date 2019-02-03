@@ -113,13 +113,33 @@ void setSongPos(int64_t pos){
         return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
       });
 
-    SEQUENCER_update(SEQUPDATE_TIME);
+
+    bool set_last_song_starttime = false;
+
+    if (abs(pc->last_song_starttime - pos) > 1){
+      pc->last_song_starttime = pos;
+      set_last_song_starttime = true;
+    }
+  
+    if (set_last_song_starttime)
+      SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR);
+    else
+      SEQUENCER_update(SEQUPDATE_TIME);
   }
 }
 
 int64_t getSongPos(void){
   return ATOMIC_DOUBLE_GET(pc->song_abstime);
 }
+
+int64_t getLastSongPosStart(void){
+  return pc->last_song_starttime;
+}
+
+void setLastSongPosStart(int64_t pos){
+  pc->last_song_starttime = pos;
+}
+
 
 void playSongFromPos(int64_t pos){
   PlaySong(pos);

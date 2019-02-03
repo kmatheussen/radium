@@ -3142,24 +3142,35 @@ struct CursorPainter {
     }    
   }
   
+  void paintCursor2(QPainter &p, QColor color, double x){
+    if(x >= t_x1 && x < t_x2) {
 
-  void paintCursor(const QRegion &update_region, QPainter &p){
-    _last_painted_cursor_x = get_curr_cursor_x(0);
-
-    if(_last_painted_cursor_x >= t_x1 && _last_painted_cursor_x < t_x2){
-
-      double y1 = t_y1; //_songtempoautomation_widget.t_y1;
-      double y2 = t_y2;
-      
-      QPen pen(get_qcolor(SEQUENCER_CURSOR_COLOR_NUM));
+      QPen pen(color);
       pen.setWidthF(cursor_width);
-    
-      QLineF line(_last_painted_cursor_x, y1, _last_painted_cursor_x, y2);
+      
+      QLineF line(x, t_y1, x, t_y2);
       
       //printf("   line: %f, %f -> %f, %f\n", _last_painted_cursor_x, y1, _last_painted_cursor_x, y2);
       p.setPen(pen);
       p.drawLine(line);
+      
     }
+  }
+  
+  void paintCursor(const QRegion &update_region, QPainter &p){
+
+    // Start-pos cursor (blue)
+    {
+      double x = scale_double(pc->last_song_starttime, _start_time, _end_time, t_x1, t_x2);
+      paintCursor2(p, Qt::blue, x);
+    }
+
+    // red cursor
+    {
+      _last_painted_cursor_x = get_curr_cursor_x(0);
+      paintCursor2(p, get_qcolor(SEQUENCER_CURSOR_COLOR_NUM), _last_painted_cursor_x);
+    }
+    
   }
   
 };

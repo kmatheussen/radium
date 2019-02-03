@@ -216,11 +216,18 @@ static void play_stop(bool called_from_jack_transport){
   if(!is_playing()){
     StopAllInstruments();
     R_ASSERT(is_playing()==false);
+    return;
   }
-  else if (called_from_jack_transport)
+
+  bool was_playing_song = pc->playtype==PLAYSONG;
+  
+  if (called_from_jack_transport)
     PlayStopReally(true, false);
   else
     PlayStopReally(true, true);
+
+  if(was_playing_song)
+    SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR); // Update start-pos-cursor
 }
                       
 void PlayStop(void){
@@ -591,6 +598,8 @@ static void play_song(double abstime, int64_t absabstime, bool called_from_jack_
 
   pc->is_playing_range = false;
 
+  pc->last_song_starttime = abstime;
+  
   start_player(PLAYSONG, abstime, absabstime, NULL, NULL, NULL, NULL);
 
   // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
@@ -599,6 +608,8 @@ static void play_song(double abstime, int64_t absabstime, bool called_from_jack_
   while(GC_is_disabled()==false)
     Threadsafe_GC_disable();
 #endif
+
+  SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR); // Update start-pos-cursor
 }
 
 void PlaySong(double abstime){
