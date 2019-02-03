@@ -113,9 +113,12 @@ void printExceptionIfError(void){
 
 // Warning, is likely to cause a longjmp!
 void throwExceptionIfError(void){
-  R_ASSERT_NON_RELEASE(g_scheme_nested_level > 0);
-
   R_ASSERT_NON_RELEASE(g_is_going_to_call_throwExceptionIfError==true);
+    
+  if(g_scheme_nested_level==0){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
 
   const char *message = pullErrorMessage();
   if (message != NULL){
@@ -153,9 +156,13 @@ void handleError_internal(const char *fmt,...){
     }
   */
 
+  R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
+    
+  bool is_called_from_scheme = g_scheme_nested_level > 0;
+  
   g_num_calls_to_handleError++;
 
-  if (g_error_message != NULL)
+  if (g_error_message != NULL && is_called_from_scheme)
     return;
 
   bool is_going_to_call_throwExceptionIfError = g_is_going_to_call_throwExceptionIfError;
@@ -167,20 +174,24 @@ void handleError_internal(const char *fmt,...){
   vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
-  g_error_message = talloc_strdup(message); // Set this value before calling SCHEME_get_history and GFX_Message, so that we won't get into an infinite loop.
+  if (is_called_from_scheme)
+    g_error_message = talloc_strdup(message); // Set this value before calling SCHEME_get_history and GFX_Message, so that we won't get into an infinite loop.
     
   printException(message);
 
   const char *backtrace = SCHEME_get_history();
   puts(backtrace);
 
-  /*
-  const char *message2 = V_strdup(talloc_format("%s:%s\n", message, backtrace));
-  QTimer::singleShot(3,[message2]{
-      GFX_addMessage(message2);
-      V_free((void*)message2);
-    });
-  */
+
+  if (!is_called_from_scheme) {
+
+    const char *message2 = V_strdup(talloc_format("%s:%s\n", message, backtrace));
+    
+    QTimer::singleShot(3,[message2]{
+        GFX_addMessage(message2);
+        V_free((void*)message2);
+      });
+  }
   
   if (is_going_to_call_throwExceptionIfError==false)
     g_error_message = NULL; // If not, the next scheme function to run, whatever it might be, will throw exception.
