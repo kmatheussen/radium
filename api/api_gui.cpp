@@ -607,6 +607,20 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
                     x2-x1, falloff_height);      
     }
 
+    float get_indicator_width(void) const {
+      return R_MIN(root->song->tracker_windows->systemfontheight / 2, _x2-_x1-2);
+    }
+      
+    QRectF get_indicator_rect(void) const {
+      float width = get_indicator_width();
+      
+      float x1 = ((_x1+_x2) / 2.0) - (width/2.0);
+      //float y1 = scale(pitch, 0, 128, _y2-width/2.0, width/2.0); //_y1 + (x1 - _x1);
+      float y1 = _y1 + width/2.0;
+
+      return QRectF(x1,y1,width,width);
+    }
+    
     void myupdate(QWidget *widget, float x1, float y1, float x2, float y2){
       int x1_i = floor(R_MAX(_x1, x1));
       int y1_i = floor(R_MAX(_y1, y1));
@@ -631,6 +645,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
   private:
+
+    int _note_intencity = -1;
     
     // NOTE. This function can be called from a custom exec().
     // This means that _patch->plugin might be gone, and the same goes for soundproducer.
@@ -649,6 +665,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       if(plugin==NULL)
         return;
 
+      {
+        int old_intencity = _note_intencity;
+        
+        _note_intencity = ATOMIC_GET_RELAXED(_patch->visual_note_intencity);
+        
+        if(_note_intencity>0 || old_intencity != -1)
+          myupdate(widget, get_indicator_rect());
+      }
+      
       const AudioMeterPeaks &peaks = get_audio_meter_peaks();
 
       R_ASSERT_NON_RELEASE(plugin->num_visible_outputs <= _num_channels);
@@ -821,6 +846,24 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         p.setBrush(qcolor2);
         p.drawRoundedRect(rect2,5,5);
         */
+      }
+
+
+      //int intencity = ATOMIC_GET_RELAXED(_patch->visual_note_intencity);
+      if(_note_intencity >= 0){
+
+        QColor c = get_qcolor(NOTE_EVENT_INDICATOR_COLOR_NUM);
+        c.setAlphaF(::scale(_note_intencity, 0, MAX_NOTE_INTENCITY, 0.0, 1.0));
+        p.setBrush(QBrush(c,Qt::SolidPattern));
+        
+        QColor border_color = get_qcolor(NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM);
+        p.setPen(border_color);
+
+        float width = get_indicator_width();
+        p.drawRoundedRect(get_indicator_rect(), width, width);
+
+        if (_note_intencity == 0)
+          _note_intencity = -1;
       }
 
       p.setBrush(Qt::NoBrush);
