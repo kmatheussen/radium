@@ -611,16 +611,25 @@ void PlaySong_from_jack_transport(int64_t absabstime){
 
 void PlaySongCurrPos(void){
 
+  struct SeqTrack *curr_seqtrack = SEQUENCER_get_curr_seqtrack();
+  if (curr_seqtrack->for_audiofiles){
+    PlaySong(ATOMIC_DOUBLE_GET(pc->song_abstime));
+    return;
+  }
+  
   struct WBlocks *wblock=root->song->tracker_windows->wblock;
   
   int playlistpos = BS_GetCurrPlaylistPos();
 
   struct SeqBlock *seqblock = BS_GetSeqBlockFromPos(playlistpos);
-  if (seqblock==NULL)
+  if (seqblock==NULL){
+    R_ASSERT_NON_RELEASE(false);
     return;
+  }
 
   if (seqblock->block==NULL){
-    
+
+    R_ASSERT_NON_RELEASE(false);
     PlaySong(ATOMIC_DOUBLE_GET(pc->song_abstime));
     
   } else {
