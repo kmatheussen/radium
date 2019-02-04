@@ -1847,7 +1847,10 @@
                       (else
                        (assert #f))))
 
-  (define is-implicitly-muted (and (eq? type 'mute) (<ra> :instrument-is-implicitly-muted instrument-id)))
+  (define is-implicitly-muted (and (eq? type 'mute)
+                                   instrument-id
+                                   (>= instrument-id 0)
+                                   (<ra> :instrument-is-implicitly-muted instrument-id)))
 
   (draw-checkbox gui text is-selected x1 y1 x2 y2 color
                  :x-border border

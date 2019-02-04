@@ -689,18 +689,19 @@ static void RT_handle_seqblock_volume_automation(linked_note_t *linked_notes, st
 
       const note_t &note = linked_note->note;
       const struct SeqBlock *seqblock = note.seqblock;
+      struct SeqTrack *seqtrack = linked_note->seqtrack;
 
-      if (seqblock==NULL) {
+      if (seqblock==NULL || seqtrack==NULL) {
 
         R_ASSERT(false);
 
       } else {
 
-        if (seqblock->curr_gain_changed_this_block){
-
-          double seqblock_automation_volume = seqblock->curr_gain;
+        if (seqblock->curr_gain_changed_this_block || seqtrack->note_gain_has_changed_this_block==true) {
           
-          RT_PATCH_change_velocity(linked_note->seqtrack,
+          double seqblock_automation_volume = seqblock->curr_gain * seqtrack->note_gain;
+        
+          RT_PATCH_change_velocity(seqtrack,
                                    patch,
                                    create_note_t(seqblock,
                                                  note.id,
@@ -713,6 +714,7 @@ static void RT_handle_seqblock_volume_automation(linked_note_t *linked_notes, st
                                            ),
                                    0
                                    );
+
         }
       }
     }
@@ -743,6 +745,14 @@ static void RT_handle_seqblock_volume_automation(void){
     }END_VECTOR_FOR_EACH;
   }
 
+    
+  ALL_SEQTRACKS_FOR_EACH(){
+
+    if (seqtrack->for_audiofiles==false && seqtrack->note_gain_has_changed_this_block==true)
+      seqtrack->note_gain_has_changed_this_block = false;
+    
+  }END_ALL_SEQTRACKS_FOR_EACH;
+
 }
 
 static void RT_clear_all_volume_automation_block_statuses(vector_t *patches){
@@ -770,7 +780,7 @@ static void RT_clear_all_volume_automation_block_statuses(void){
   RT_clear_all_volume_automation_block_statuses(&get_audio_instrument()->patches);
 }
 
-static void RT_set_seqblock_volume_envelope_values(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const double pos, const int64_t seqblock_pos_start, const int64_t seqblock_pos_end){
+static void RT_set_seqblock_curr_gain(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const double pos, const int64_t seqblock_pos_start, const int64_t seqblock_pos_end){
   struct SeqblockAutomation *seqblockenvelope = seqblock->automations[SAT_VOLUME];
 
   double new_db = 0.0;
@@ -788,7 +798,6 @@ static void RT_set_seqblock_volume_envelope_values(struct SeqTrack *seqtrack, st
 
     //printf("new db: %f. Old: %f (old gain: %f)\n", new_db, seqblock->envelope_db, seqblock->curr_gain);
 
-    seqblock->curr_gain_changed_this_block = true;
     seqblock->envelope_db = new_db;
 
     if (new_db==0.0)
@@ -796,31 +805,31 @@ static void RT_set_seqblock_volume_envelope_values(struct SeqTrack *seqtrack, st
     else
       seqblock->curr_gain = db2gain(new_db);
 
+    seqblock->curr_gain_changed_this_block = true;
+      
   } else {
 
     seqblock->curr_gain_changed_this_block = false;
 
-    //printf("new db: xxx\n");
-        
   }
+  
 
-      
   // Add sample gain.
   //
   if (fabsf(seqblock->gain-1.0f) > 0.0001f){
-
+    
     if (seqblock->curr_gain_changed_this_block) {
-          
+      
       seqblock->curr_gain *= seqblock->gain;
-          
+      
     } else {
-          
+      
       seqblock->curr_gain = seqblock->gain;
       seqblock->curr_gain_changed_this_block = true;
-          
+      
     }
   }
-
+  
       
   // Add fade out/in gain.
   //
@@ -880,7 +889,7 @@ static void RT_set_seqblock_volume_envelope_values(struct SeqTrack *seqtrack, st
 
 }
 
-static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
+static void RT_set_seqblock_curr_gains(struct SeqTrack *seqtrack){
   R_ASSERT_NON_RELEASE(is_playing_song());
 
   const int64_t start_time = seqtrack->start_time;
@@ -896,7 +905,7 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
       double s1 = get_seqblock_noninterior_start(seqblock);
       double time = (start_time-s1) / (seqblock->t.stretch*seqblock->t.speed);
 
-      RT_set_seqblock_volume_envelope_values(seqtrack, seqblock, time, seqblock_pos_start, seqblock_pos_end);
+      RT_set_seqblock_curr_gain(seqtrack, seqblock, time, seqblock_pos_start, seqblock_pos_end);
     }
 
   }END_VECTOR_FOR_EACH;
@@ -960,7 +969,7 @@ void RT_SEQBLOCK_AUTOMATION_called_before_editor(struct SeqTrack *seqtrack){
   if (is_playing_song()==false)
     return;
 
-  RT_set_seqblock_volume_automation_values(seqtrack);
+  RT_set_seqblock_curr_gains(seqtrack);
 }
 
 // Called from player.c
@@ -980,7 +989,7 @@ void RT_SEQBLOCK_AUTOMATION_called_when_player_stopped(void){
 
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
 
-      seqblock->envelope_db = MIN_DB - 1; // <-- To ensure (fabs(new_db-seqblock->envelope_db) > 0.0001) is true in RT_set_seqblock_volume_automation_values.
+      seqblock->envelope_db = MIN_DB - 1; // <-- To ensure (fabs(new_db-seqblock->envelope_db) > 0.0001) is true in RT_set_seqblock_curr_gains.
       
       //seqblock->curr_gain = -1; // WARNING: When enabling the Seqtrack_plugin, ensure that we don't use seqblock->curr_gain when player is stopped. If we do, it could be hard to hear since the only thing we do is to invert the phase, at least when there's no envelope volume.
 

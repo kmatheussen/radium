@@ -348,7 +348,9 @@
           ((eq? type 'solo)
            (get-soloed))
           ((eq? type 'mute)
-           (get-muted))
+           (if for-audiofiles
+               (get-muted)
+               (= 0.0 (<ra> :get-seqtrack-note-gain seqtracknum))))
           (else
            (assert #f))))
   
@@ -359,7 +361,7 @@
   (layout-func x1 y1 x2 y2
                (if for-audiofiles
                    '(record mute solo height)
-                   '(height))
+                   '(mute height))
                :spacing -1
                :callback
                (lambda (type x1 y1 x2 y2)
@@ -389,9 +391,12 @@
                                                 (if (<ra> :control-pressed)
                                                     (turn-off-all-solo instrument-id)))
                                                ((eq? type 'mute)
-                                                (<ra> :set-instrument-mute instrument-id is-selected)
+                                                (if for-audiofiles
+                                                    (<ra> :set-instrument-mute instrument-id is-selected)
+                                                    (<ra> :set-seqtrack-note-gain (if is-selected 0.0 1.0) seqtracknum))
                                                 ;;(c-display "mute: " is-muted)
-                                                (if (<ra> :control-pressed)
+                                                (if (and for-audiofiles
+                                                         (<ra> :control-pressed))
                                                     (turn-off-all-mute instrument-id)))
                                                (else
                                                 (assert #f))))))
@@ -911,7 +916,7 @@
 
   (define mutesolo-width (myfloor (* 1.8 (<gui> :text-width (if for-audiofiles
                                                                 "H R M S "
-                                                                "H ")))))
+                                                                "M H ")))))
   (define meter-width (if for-audiofiles
                           (max 4 (myfloor (/ fontheight 2)))
                           0))

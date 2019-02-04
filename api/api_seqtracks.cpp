@@ -442,7 +442,11 @@ void setSeqtrackNoteGain(float gain, int seqtracknum){
   if (seqtrack==NULL)
     return;
 
-  safe_float_write(&seqtrack->note_gain, gain);
+  {
+    radium::PlayerLock lock;
+    seqtrack->note_gain = gain;
+    seqtrack->note_gain_has_changed_this_block = true;
+  }
 }
 
 float getSeqtrackNoteGain(int seqtracknum){
