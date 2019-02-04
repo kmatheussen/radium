@@ -3732,12 +3732,18 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     radium::ScopedResizeEventTracker resize_event_tracker;
     
     RETURN_IF_DATA_IS_INACCESSIBLE();
-
+    
     int num_seqtracks = root->song->seqtracks.num_elements;
 
     if (num_seqtracks==0)
       return;
 
+    //printf("    RESIZEEvent. Height: %d\n", height());
+
+    // Hack to workaround screwed up layout, probably caused by a Qt bug. For some reason resizeEvent() is called twice when shown, first with minimumHeight, and then with last height.
+    if (height() <= minimumHeight())
+      return;
+    
     bool last_seqtrack_was_visible = SEQUENCER_last_seqtrack_is_visible();
     
     //int lowest_topmost_seqtracknum = SEQUENCER_get_lowest_seqtracknum_after_resizing(dy);
