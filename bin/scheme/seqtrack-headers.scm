@@ -422,7 +422,12 @@
                                                                           ((eq? type 'solo)
                                                                            (show-sequencer-header-popup-menu seqtracknum instrument-id "System Solo On/Off" gui))
                                                                           ((eq? type 'mute)
-                                                                           (show-sequencer-header-popup-menu seqtracknum instrument-id "System Volume On/Off" gui))
+                                                                           (if for-audiofiles
+                                                                               (show-sequencer-header-popup-menu seqtracknum instrument-id "System Volume On/Off" gui)
+                                                                               (popup-menu "Reset"
+                                                                                           (lambda ()
+                                                                                             (<ra> :set-editor-seqtrack-muted #f seqtracknum)
+                                                                                             (update-me!)))))
                                                                           (else
                                                                            (assert #f))))))
 
@@ -704,8 +709,11 @@
    (lambda (button x* y*)
      (set! has-made-undo #f)
      (cond ((= button *right-button*)
-            ;;(show-sequencer-header-popup-menu seqtracknum instrument-id "System Volume" gui)
-            #t)
+            (popup-menu "Reset"
+                        (lambda ()
+                          (<ra> :undo-seqtrack-note-gain seqtracknum)
+                          (<ra> :set-seqtrack-note-gain 1.0 seqtracknum)
+                          (update-me!))))
            ((= button *left-button*)
             (define gain (get-gain))
             (set! start-mouse-value (get-scaled-value gain));;(scale x* x1 x2 0 1));;(get-db-value));;(<ra> :get-stored-instrument-effect instrument-id effect-name))
