@@ -1104,7 +1104,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
   if (editor_note != NULL){
     
     if (note.seqblock != NULL){
-      curr_gain = note.seqblock->curr_gain * seqtrack->note_gain;
+      curr_gain = note.seqblock->curr_gain * seqtrack->note_gain * seqtrack->note_gain_muted;
     }else
       R_ASSERT(false);
     
@@ -1917,7 +1917,7 @@ void RT_PATCH_voice_volume_has_changed(struct Patch *patch, int voicenum){
         note.velocity = editor_note->curr_velocity;
 
       if (note.seqblock != NULL)
-        note.velocity *= note.seqblock->curr_gain * linked_note->seqtrack->note_gain;
+        note.velocity *= note.seqblock->curr_gain * linked_note->seqtrack->note_gain * linked_note->seqtrack->note_gain_muted;
 
       int64_t time = 0;
       if (editor_note != NULL && is_really_playing()) // Without the is_really_playing() test the scheduler is filled up after song ends.

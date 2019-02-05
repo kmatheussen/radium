@@ -1578,6 +1578,7 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_sa
   seqtrack->seqtrackautomation = seqtrackautomation;
 
   seqtrack->note_gain = 1.0;
+  seqtrack->note_gain_muted = 1.0;
   
   GC_register_finalizer(seqtrack, seqtrackgcfinalizer, NULL, NULL, NULL);
   

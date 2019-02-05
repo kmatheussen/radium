@@ -699,7 +699,7 @@ static void RT_handle_seqblock_volume_automation(linked_note_t *linked_notes, st
 
         if (seqblock->curr_gain_changed_this_block || seqtrack->note_gain_has_changed_this_block==true) {
           
-          double seqblock_automation_volume = seqblock->curr_gain * seqtrack->note_gain;
+          double seqblock_automation_volume = seqblock->curr_gain * seqtrack->note_gain * seqtrack->note_gain_muted;
         
           RT_PATCH_change_velocity(seqtrack,
                                    patch,
