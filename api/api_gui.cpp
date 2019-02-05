@@ -4094,9 +4094,9 @@ const_char* gui_mixColors(const_char* color1, const_char* color2, float how_much
 
 const_char* gui_setAlphaForColor(const_char* color, float how_much_alpha){
   QColor col1 = getQColor(color);
-  printf(" Before: %S\n", STRING_create(col1.name(QColor::HexArgb)));
+  //printf(" Before: %S\n", STRING_create(col1.name(QColor::HexArgb)));
   col1.setAlphaF(how_much_alpha);
-  printf(" After: %S\n\n", STRING_create(col1.name(QColor::HexArgb)));
+  //printf(" After: %S\n\n", STRING_create(col1.name(QColor::HexArgb)));
   return talloc_strdup(col1.name(QColor::HexArgb).toUtf8().constData());
 }
 
