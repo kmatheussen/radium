@@ -149,9 +149,8 @@ void undoSeqtrackAutomations(void){
 void undoSeqblock(int seqblocknum, int seqtracknum){
   ADD_UNDO(Seqblock(seqtracknum, seqblocknum));
 }
-static void undoSeqblock2(int64_t seqblockid){
-  undoSeqblock(getSeqblockSeqblockNum(seqblockid), getSeqblockSeqtrackNum(seqblockid));
-}
+
+#define UNDO_SEQBLOCK_2(int64_t seqblockid) undoSeqblock(getSeqblockSeqblockNum(seqblockid), getSeqblockSeqtrackNum(seqblockid));
 
 void undoSequencer(void){
   ADD_UNDO(Sequencer());
@@ -251,7 +250,7 @@ float getSeqnavRightSizeHandleY2(void){
 }
 
 void appendSeqtrack(bool for_audiofiles){
-  undoSequencer();
+  ADD_UNDO(Sequencer());
   SEQUENCER_append_seqtrack(NULL, for_audiofiles);
 
   setCurrSeqtrack(root->song->seqtracks.num_elements - 1);
@@ -266,7 +265,7 @@ void insertSeqtrack(bool for_audiofiles, int pos){
     return;
   }
 
-  undoSequencer();
+  ADD_UNDO(Sequencer());
   SEQUENCER_insert_seqtrack(NULL, pos, for_audiofiles);
 
   setCurrSeqtrack(pos);
@@ -287,7 +286,7 @@ void deleteSeqtrack(int seqtracknum){
   }    
 
   UNDO_OPEN_REC();{ // SEQUENCER_delete_seqtrack might delete a seqtrack plugin as well.
-    undoSequencer();
+    ADD_UNDO(Sequencer());
     SEQUENCER_delete_seqtrack(seqtracknum);
   }UNDO_CLOSE();
 }
@@ -377,7 +376,7 @@ void swapSeqtracks(int seqtracknum1, int seqtracknum2){
   if (seqtrack2==NULL)
     return;
 
-  undoSequencer();
+  ADD_UNDO(Sequencer());
 
   { 
     radium::PlayerPause pause(is_playing_song());
@@ -633,7 +632,7 @@ static int add_seq_automation(int64_t time1, float value1, int64_t time2, float 
     return -1;
   }
   
-  undoSeqtrackAutomations();
+  ADD_UNDO(SeqtrackAutomations());
 
   return SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, time1, value1, LOGTYPE_LINEAR, time2, value2, nodenum1, nodenum2);
 }
@@ -663,7 +662,7 @@ void replaceAllSeqAutomation(int64_t old_instrument, int64_t new_instrument){
   if(new_patch==NULL)
     return;
 
-  undoSeqtrackAutomations();
+  ADD_UNDO(SeqtrackAutomations());
 
   SEQTRACK_AUTOMATION_replace_all_automations(old_patch, new_patch);
 }
@@ -718,7 +717,7 @@ void setSeqAutomationEnabled(int automationnum, int seqtracknum, bool is_enabled
 
   VALIDATE_AUTOMATIONNUM();
 
-  undoSeqtrackAutomations();
+  ADD_UNDO(SeqtrackAutomations());
     
   SEQTRACK_AUTOMATION_set_enabled(seqtrack->seqtrackautomation, automationnum, is_enabled);
 }
@@ -798,7 +797,7 @@ int addSeqAutomationNode(int64_t time, float value, int logtype, int automationn
   VALIDATE_AUTOMATIONNUM(-1);
   VALIDATE_TIME(time, -1)
     
-  undoSeqtrackAutomations();
+  ADD_UNDO(SeqtrackAutomations());
 
   return SEQTRACK_AUTOMATION_add_node(seqtrack->seqtrackautomation, automationnum, time, value, logtype);
 }
@@ -811,7 +810,7 @@ void deleteSeqAutomationNode(int nodenum, int automationnum, int seqtracknum){
   VALIDATE_AUTOMATIONNUM();
   VALIDATE_NODENUM();
 
-  undoSeqtrackAutomations();
+  ADD_UNDO(SeqtrackAutomations());
 
   SEQTRACK_AUTOMATION_delete_node(seqtrack->seqtrackautomation, automationnum, nodenum);
 }
@@ -946,7 +945,7 @@ static void maybe_make_seqblock_undo(int64_t seqblockid){
   return;
   
  do_undo:  
-  undoSeqblock2(seqblockid);
+  UNDO_SEQBLOCK_2(seqblockid);
   last_undo_num = curr_undo_num + 1;
   last_undo_time = curr_time;
   last_seqblockid = seqblockid;
@@ -1198,7 +1197,7 @@ void setSeqblockAutomationEnabled(bool is_enabled, int automationnum, int64_t se
   if (RT_seqblock_automation_is_enabled(seqblock->automations[automationnum])==is_enabled)
     return;
 
-  undoSeqblock2(seqblockid);
+  UNDO_SEQBLOCK_2(seqblockid);
 
   SEQBLOCK_AUTOMATION_set_enabled(seqblock->automations[automationnum], is_enabled);
 }
@@ -1971,7 +1970,7 @@ void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
   if (seqtrack==NULL)
     return;
 
-  undoSequencer();
+  ADD_UNDO(Sequencer());
 
   SEQTRACK_insert_silence(seqtrack, pos, duration);
 }
@@ -2056,7 +2055,7 @@ int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
   if (block==NULL)
     return -1;
 
-  undoSequencer();
+  ADD_UNDO(Sequencer());
 
   int64_t start_seqtime;
   int64_t end_seqtime;
@@ -2073,7 +2072,7 @@ int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, i
   if (seqtrack==NULL)
     return -1;
 
-  undoSequencer();
+  ADD_UNDO(Sequencer());
 
   {
     radium::ScopedIgnoreUndo ignore_undo;
@@ -3225,7 +3224,7 @@ void deleteSeqblock(int64_t seqblockid, bool notify_listeners){
   if (seqblock==NULL)
     return;
 
-  undoSequencer();
+  ADD_UNDO(Sequencer());
   
   SEQTRACK_delete_seqblock(seqtrack, seqblock, notify_listeners);
 
@@ -3717,7 +3716,7 @@ dyn_t getAllSequencerMarkers(void){
 }
 
 void setSequencerMarkers(dyn_t markers){
-  //undoSequencer();
+  //ADD_UNDO(Sequencer());
   SEQUENCER_MARKER_create_from_state(markers, -1);
 }
 
@@ -3743,7 +3742,7 @@ void setUsingSequencerTiming(bool use_sequencer){
   if (use_sequencer==root->song->use_sequencer_tempos_and_signatures)
     return;
 
-  undoSequencer();
+  ADD_UNDO(Sequencer());
 
   {
     radium::PlayerLock lock(is_playing_song());
