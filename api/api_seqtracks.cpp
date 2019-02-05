@@ -3028,6 +3028,8 @@ void removeSeqblockDeletedCallback(func_t *callback){
     handleError("removeSeqblockDeletedCallback: Could not find deleted callback %p\n", callback);
 }
 
+DEFINE_ATOMIC(bool, g_has_seqblock_marked_as_available) = false;
+
 static QSet<int64_t> g_seqblocks_marked_as_available;
 
 void API_seqblock_has_been_deleted(int64_t seqblockid){
@@ -3068,11 +3070,15 @@ void API_all_seqblocks_will_be_deleted(void){
   
 void markSeqblockAvailable(int64_t seqblockid){
   g_seqblocks_marked_as_available << seqblockid;
+  ATOMIC_SET(g_has_seqblock_marked_as_available, true);
 }
 
 void unmarkSeqblockAvailable(int64_t seqblockid){
   if(g_seqblocks_marked_as_available.remove(seqblockid)==false)
     handleError("unmarkSeqblockAvailable: %d not marked as deletable", (int)seqblockid);
+
+  if(g_seqblocks_marked_as_available.isEmpty())
+    ATOMIC_SET(g_has_seqblock_marked_as_available, false);
 }
 
 static void remove_unused_seqblocks_from_seqblocks_z_order(struct SeqTrack *seqtrack){

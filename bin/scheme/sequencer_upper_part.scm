@@ -818,7 +818,7 @@
                (scale 0.5 0 1 y1 y2)))))) ;; one of tempos or signatures is shown
 
 (def-area-subclass (<sequencer-timeline-headers> :gui :x1 :y1 :x2 :y2)
-  (c-display "   TYIMELINE-HEADERS. " x1 y1 "/" x2 y2)
+  ;;(c-display "   TYIMELINE-HEADERS. " x1 y1 "/" x2 y2)
   (define tempo-y2 (get-sequencer-timeline-tempo-y2 y1 y2))
   (define signature-y2 (get-sequencer-timeline-signature-y2 y1 y2))
 

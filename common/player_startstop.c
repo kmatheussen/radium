@@ -117,6 +117,8 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
 
   //printf("  Stopping. Realline now: %d\n", root->song->tracker_windows->wblock->curr_realline);
 
+  //printf(" Backtgrace: %s\n", JUCE_get_backtrace());
+  
     
   if (PLAYER_current_thread_has_lock()){
     RError("Potential deadlock detected: Calling PlayStopReally while holding player lock.");
