@@ -3248,7 +3248,8 @@ public:
     {
 
       //QColor block_color = QColor(140,140,140,180);
-      //QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
+      QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
+      //text_color.setAlpha(128);
 
       VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
         //int seqtracknum = iterator666;
@@ -3291,14 +3292,19 @@ public:
             
             QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
             myFillRect(p, rect, seqblock_color);
-            
-            /*
-              if(rect.height() > root->song->tracker_windows->systemfontheight*1.3){
-              p.setPen(text_color);
-              
-              myDrawText(rect.adjusted(2,1,-1,-1), get_seqblock_name(seqtrack, seqblock), QTextOption(Qt::AlignLeft | Qt::AlignTop));
+
+            {
+              if(rect.height() > 5){
+                p.setPen(text_color);
+                
+                myDrawText(&p, rect.adjusted(2,1,-1,-1), get_seqblock_name(seqtrack, seqblock), Qt::AlignLeft | Qt::AlignVCenter,
+                           false, //wrap
+                           0, //rotate
+                           true, //scale
+                           false // cut
+                           );
               }
-            */
+            }
 
             if (type==Seqblock_Type::RECORDING)
               p.setPen(QColor("red"));
