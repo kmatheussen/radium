@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Pd_plugin.h"
 
-extern LANGSPEC void PD_set_controller_name(struct SoundPlugin *plugin, int n, const wchar_t *name);
+extern LANGSPEC const wchar_t *PD_set_controller_name(struct SoundPlugin *plugin, int n, const wchar_t *name);
 extern LANGSPEC Pd_Controller *PD_get_controller(struct SoundPlugin *plugin, int n);
 extern LANGSPEC void PD_set_qtgui(struct SoundPlugin *plugin, void *qtgui);
 extern LANGSPEC void PD_delete_controller(struct SoundPlugin *plugin, int controller_num);

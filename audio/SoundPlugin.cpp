@@ -1512,7 +1512,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
   } else {
 
     if (false==THREADING_is_main_thread()) {
-      R_ASSERT(THREADING_is_player_thread() || THREADING_is_juce_thread()); // Called from midi learn or juce.
+      R_ASSERT(THREADING_is_player_thread() || THREADING_is_juce_thread()); // Called from midi learn or juce. Note that we get a hit here if controlling from Pd (executed in a runner thread), but that's a false positive.
 
       if (THREADING_is_player_thread())
         R_ASSERT(sent_from_midi_learn);

@@ -1153,17 +1153,33 @@ Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n){
   return &data->controllers[n];
 }
 
-void PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *wname){
+static bool controller_name_exists(const Data *data, const char *name){
+  for(int i=0;i<NUM_PD_CONTROLLERS;i++)
+    if (data->controllers[i].name != NULL)
+      if(!strcmp(name, data->controllers[i].name))
+        return true;
+
+  return false;
+}
+
+const wchar_t *PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *wname){
   Data *data = (Data*)plugin->data;
   Pd_Controller *controller = &data->controllers[n];
   const char *name = STRING_get_chars(wname);
   
   if(!strcmp(controller->name, name))
-    return;
+    return wname;
 
+  if (controller_name_exists(data, name)){
+    showAsyncMessage(talloc_format("A controller \"%S\" already exists", wname));
+    return STRING_create(controller->name);
+  }
+  
   controller->display_name = wcsdup(wname);
   
   // Should check if it is different before binding. (but also if it is already binded)
+
+  ADD_UNDO(PdControllers_CurrPos(const_cast<struct Patch*>(plugin->patch)));
 
   PLAYER_lock();{
     strncpy(controller->name, name, PD_NAME_LENGTH-1);
@@ -1174,6 +1190,8 @@ void PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *wname){
     RT_bind_receiver(controller);
 
   }PLAYER_unlock();
+
+  return wname;
 }
 
 void PD_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state){
@@ -1383,7 +1401,7 @@ void create_pd_plugin(void){
 void create_pd_plugin(void){
 }
 
-void PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *name) {}
+const wchar_t *PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *name) {}
 Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n) {return NULL;}
 void PD_set_qtgui(SoundPlugin *plugin, void *qtgui) {}
 void PD_delete_controller(SoundPlugin *plugin, int controller_num) {}

@@ -41,7 +41,8 @@ public:
   int _type;
   QString _name;
   const wchar_t *_display_name;
-  
+
+
   struct Timer : QTimer{
     Pd_Controller_Config_dialog *my;
     void timerEvent(QTimerEvent * e) override {
@@ -60,6 +61,7 @@ public:
     , _type(0)
     , _display_name(NULL)
  {
+
     setupUi(this);
     update_gui();
 
@@ -249,6 +251,7 @@ public slots:
   }
 
   void on_name_widget_editingFinished(){
+    
     Pd_Controller *controller = get_controller();
     if(controller==NULL){
       printf("controller==NULL (\?\?\?)\n");
@@ -261,8 +264,12 @@ public slots:
       printf("name: -%s-\n",name_widget->text().toUtf8().constData());
       QString name = name_widget->text();
       if(name != controller->name) {
-        ADD_UNDO(PdControllers_CurrPos(_patch.data()));
-        PD_set_controller_name(plugin, controller->num, STRING_create(name));
+        QString new_name = STRING_get_qstring(PD_set_controller_name(plugin, controller->num, STRING_create(name)));
+        if (new_name != name){
+          _is_updating_gui = true;
+          name_widget->setText(new_name);
+          _is_updating_gui = false;
+        }
       }
       //set_editor_focus();
       //_pd_controller_widget->update();
