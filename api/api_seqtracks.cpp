@@ -150,7 +150,7 @@ void undoSeqblock(int seqblocknum, int seqtracknum){
   ADD_UNDO(Seqblock(seqtracknum, seqblocknum));
 }
 
-#define UNDO_SEQBLOCK_2(int64_t seqblockid) undoSeqblock(getSeqblockSeqblockNum(seqblockid), getSeqblockSeqtrackNum(seqblockid));
+#define UNDO_SEQBLOCK_2(seqblockid) undoSeqblock(getSeqblockSeqblockNum(seqblockid), getSeqblockSeqtrackNum(seqblockid))
 
 void undoSequencer(void){
   ADD_UNDO(Sequencer());
