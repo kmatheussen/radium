@@ -1034,6 +1034,9 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                     :pre-undo-block-callback (lambda () #f)
                                     :post-undo-block-callback (lambda () #f)
                                     )
+  (define is-solo (and effect-name
+                       (string=? effect-name "System Solo On/Off")))
+  
   (list
    (<-> "------------Effect: \"" effect-name "\"")
 
@@ -1045,9 +1048,11 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                         
    (list "Reset"
          :enabled effect-name
-         (lambda ()                      
-           (<ra> :reset-instrument-effect instrument-id effect-name)))
-   
+         (lambda ()
+           (if is-solo
+               (<ra> :set-instrument-solo instrument-id #f)
+               (<ra> :reset-instrument-effect instrument-id effect-name))))
+         
    "-------------" ;;Midi Learn"
    (get-midi-learn-menu-elements instrument-id effect-name)
 
