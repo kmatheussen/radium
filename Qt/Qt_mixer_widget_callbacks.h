@@ -186,7 +186,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
       
     g_mixer_widget2 = this;
 
-    _bottom_bar = BottomBar_create(this);
+    _bottom_bar = BottomBar_create(this, false);
+      
     verticalLayout->insertWidget(-1, _bottom_bar, 0);
     _bottom_bar->hide();
     

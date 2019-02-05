@@ -4950,8 +4950,8 @@ int64_t gui_fontRequester(const_char* fontdescr){
 }
 
 int64_t gui_bottomBar(void){
-  QWidget *bottom_bar = BottomBar_create(NULL);
-
+  QWidget *bottom_bar = BottomBar_create(NULL, false);
+  
   return API_get_gui_from_existing_widget(bottom_bar);
 }
 

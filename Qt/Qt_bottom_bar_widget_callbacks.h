@@ -260,6 +260,37 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   ~Bottom_bar_widget(){
     g_bottom_bars.removeOne(this);
   }
+
+  void remove_editor_elements(void){
+    velocity_slider->hide();
+    min_velocity_slider->hide();
+    drunk_velocity_onoff->hide();
+    
+    edit_onoff->hide();
+    
+    octave_label->hide();
+    octave_up_button->hide();
+    octave_down_button->hide();
+    
+    lpb->hide();
+    lpb_label->hide();
+
+    play_cursor_onoff->hide();
+    editor_follows_play_cursor_onoff->hide();
+
+    editlines_label->hide();
+    editlines->hide();
+
+    line_5->hide();
+    line_6->hide();
+    line_8->hide();
+    line_9->hide();
+    line_10->hide();
+    line_11->hide();
+    el_line->hide();
+    sps_line->hide();
+    tempo_line->hide();
+  }
   
   void enterEvent(QEvent *event) override {
     setCursor(Qt::ArrowCursor);
@@ -538,8 +569,11 @@ struct Patch *GFX_OS_get_system_out(void){
   return g_system_out_patch;
 }
 
-QWidget *BottomBar_create(QWidget *parent){
-  return new Bottom_bar_widget(parent);
+QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements){
+  auto *ret = new Bottom_bar_widget(parent);
+  if(!include_editor_elements)
+    ret->remove_editor_elements();
+  return ret;
 }
 
 
