@@ -1422,7 +1422,7 @@
              (header-height (- seqtrack0-y1 (<ra> :get-seqtimeline-area-y2)))
              (y2 (- (+ y1 header-height)
                     6))) ;; Hack. Don't know why. The value is probably scaled by font size too, so this might need to be fixed.
-        (c-display "timeline-height:" timeline-height ". header-height:" header-height)
+        ;;(c-display "timeline-height:" timeline-height ". header-height:" header-height)
         (add-sub-area-plain! (<new> :sequencer-timeline-headers gui x1 y1 x2 y2))))
   
   (define header-area (<new> :area gui x1 topbar-y2 x2 (- ty2 1)))
@@ -1578,7 +1578,7 @@
   *sequencer-left-part-area*)
 
 (define (FROM_C-reconfigure-sequencer-left-part)
-  (c-display "   Scheme: Reconfiguring left part")
+  ;;(c-display "   Scheme: Reconfiguring left part")
 
   (get-sequencer-left-part-area)
 

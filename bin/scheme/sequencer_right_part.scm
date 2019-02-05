@@ -178,7 +178,7 @@
                                        (<ra> :set-sequencer-right-part-empty (= tab-num 0))
                                        #f))
                                (cond ((= tab-num 0)
-                                      (c-display "EMPTY")
+                                      ;;(c-display "EMPTY")
                                       (<new> :area gui x1 y1 x2 y2))
                                      ((= tab-num 1)
                                       (create-blocks-browser-area gui x1 y1 x2 y2 state))

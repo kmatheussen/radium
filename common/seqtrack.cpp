@@ -1746,7 +1746,6 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
 
   const vector_t old_seqblocks = seqtrack->seqblocks;
 
-  
   {
     radium::PlayerPause pause(seqtrack_is_live && is_playing_song());
 
@@ -2267,9 +2266,19 @@ bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
 
     if (SEQUENCER_is_looping() && SEQUENCER_get_loop_end() > seqtrack->end_time)
       more_things_to_do = true;
+    
     else if (SEQUENCER_is_punching() && SEQUENCER_get_punch_end() > seqtrack->end_time)
       more_things_to_do = true;
 
+    else if (seqtrack->gfx_seqblocks != NULL && seqtrack->gfx_seqblocks->num_elements > 0)
+      more_things_to_do = true;
+
+    else if (seqtrack->gfx_gfx_seqblocks.num_elements > 0)
+      more_things_to_do = true;
+
+    else if (ATOMIC_GET(g_has_seqblock_marked_as_available))
+      more_things_to_do = true;
+    
   }
 
   return more_things_to_do;
