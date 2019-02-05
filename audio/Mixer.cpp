@@ -1828,7 +1828,7 @@ static DEFINE_ATOMIC(bool, g_someone_is_selected) = false;
 
 // May be called from a realtime thread
 bool MIXER_someone_has_solo(void){
-  return ATOMIC_GET_RELAXED(g_someone_has_solo);
+  return ATOMIC_GET_RELAXED(g_someone_has_solo); // It's fine using RELAXED here. If called from a realtime thread, access to g_someone_has_solo is already protected by semaphores.
 }
 
 static void RT_MIXER_check_if_someone_has_solo(void){

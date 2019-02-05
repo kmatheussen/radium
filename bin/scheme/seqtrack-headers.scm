@@ -295,7 +295,9 @@
                                   (get-instrument-volume-on/off-effect-name instrument-id)))
 
   (define (get-muted)
-    (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
+    (if for-audiofiles
+        (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5)
+        (<ra> :get-editor-seqtrack-muted seqtracknum)))
   (define (get-soloed)
     (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
   (define (get-recording)
@@ -348,9 +350,7 @@
           ((eq? type 'solo)
            (get-soloed))
           ((eq? type 'mute)
-           (if for-audiofiles
-               (get-muted)
-               (= 0.0 (<ra> :get-seqtrack-note-gain seqtracknum))))
+           (get-muted))
           (else
            (assert #f))))
   
@@ -393,7 +393,7 @@
                                                ((eq? type 'mute)
                                                 (if for-audiofiles
                                                     (<ra> :set-instrument-mute instrument-id is-selected)
-                                                    (<ra> :set-seqtrack-note-gain (if is-selected 0.0 1.0) seqtracknum))
+                                                    (<ra> :set-editor-seqtrack-muted is-selected seqtracknum))
                                                 ;;(c-display "mute: " is-muted)
                                                 (if (and for-audiofiles
                                                          (<ra> :control-pressed))
@@ -640,76 +640,80 @@
 
   )
 
-#||
-;; Not used, too confusing. A little bit buggy too, but that should be easily fixed.
-(def-area-subclass (<block-seqtrack-volume-slider> :gui :x1 :y1 :x2 :y2
-                                                   :seqtracknum
-                                                   :display-seqtrack-name #t
-                                                   :get-color)
+
+(def-area-subclass (<editor-seqtrack-volume-slider> :gui :x1 :y1 :x2 :y2
+                                                    :display-instrument-name #t
+                                                    :get-color
+                                                    :seqtracknum)
   (define has-made-undo #f)
   
   (define (maybe-make-undo)
     (when (not has-made-undo)
       (set! has-made-undo #t)
-      ;;(<ra> :undo-instrument-effect instrument-id effect-name)))
-      ))
+      (<ra> :undo-seqtrack-note-gain seqtracknum)))
 
-  (define (get-radium-normalized)
-    (c-display "get-r-n: " seqtracknum (<ra> :get-seqtrack-note-gain seqtracknum) (db-to-text (slider-to-db (<ra> :get-seqtrack-note-gain seqtracknum)) #t))
+  (define (get-gain)
     (<ra> :get-seqtrack-note-gain seqtracknum))
-
-  (define (get-db-value radium-normalized)
-    (radium-normalized-to-db radium-normalized))
-
-  (define (set-db-value db)
-    (c-display "      -------set-db-val:" (db-to-radium-normalized db))
-    (<ra> :set-seqtrack-note-gain (db-to-radium-normalized db) seqtracknum ))
   
-  (define (get-scaled-value radium-normalized)
-    (db-to-slider (get-db-value radium-normalized)))
+  (define (get-db-value gain)
+    (<ra> :gain-to-db gain))
 
-  (define (get-volume-slider-value-text value)
-    (db-to-text (slider-to-db value) #t))
+  (define (set-db-value db)    
+    ;;(c-display "      -------set-db-val:" (<ra> :db-to-gain db))
+    (<ra> :set-seqtrack-note-gain (<ra> :db-to-gain db) seqtracknum))
   
-  (define (get-volume-slider-text radium-normalized)
-    (define midi-learn-text "")
-    (let ((volume-text (get-volume-slider-value-text (get-scaled-value radium-normalized))))
-      (if display-seqtrack-name
-          (let ((seqtrack-name (<ra> :get-seqtrack-name seqtracknum)))
-            (<-> midi-learn-text seqtrack-name ": " volume-text))
-          (<-> " " midi-learn-text volume-text))))
+  (define (get-scaled-value gain)
+    (db-to-slider (get-db-value gain)))
 
-  (define last-painted-radium-normalized -10000)
+  (define (get-volume-slider-value-text gain)
+    (db-to-text (get-db-value gain) #t))
   
+  (define (get-volume-slider-text gain)
+    (let ((volume-text (get-volume-slider-value-text gain)))
+      (if display-instrument-name
+          (let ((instrument-name (<ra> :get-seqtrack-name seqtracknum)))
+            (<-> instrument-name ": " volume-text))
+          (<-> " " volume-text))))
+  
+  (define last-painted-gain -10000)
+
   (define-override (paint)
     (define b 1)
-    (define radium-normalized (get-radium-normalized))
-    (set! last-painted-radium-normalized radium-normalized)
+    (define gain (get-gain))
+    (set! last-painted-gain gain)
 
-    (paint-horizontal-instrument-slider gui
-                                        -1
-                                        (get-scaled-value radium-normalized)
-                                        (get-volume-slider-text radium-normalized)
-                                        #t
-                                        #f
-                                        #f ;;get-automation-data
-                                        (+ b x1)
-                                        (+ b x1) (+ b y1) (- x2 b) (- y2 b)
+    (paint-horizontal-slider :widget gui
+                             :value (get-scaled-value gain)
+                             :text (get-volume-slider-text gain)
+                             :x1 (+ b x1)
+                             :y1 (+ b y1)
+                             :x2 (- x2 b)
+                             :y2 (- y2 b)
+                             :color (if (procedure? get-color)
                                         (get-color)
-                                        ))
+                                        get-color)
+                             :is-enabled #t
+                             :is-current #f
+                             :get-automation-data #f
+                             :text-x1 (+ b x1)
+                             ))
   
   (define start-mouse-value #f)
   
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
      (set! has-made-undo #f)
-     (and (= button *left-button*)
-          (begin
-            (define radium-normalized (get-radium-normalized))
-            (set! start-mouse-value (get-scaled-value radium-normalized));;(scale x* x1 x2 0 1));;(get-db-value));;(<ra> :get-stored-instrument-effect instrument-id effect-name))
+     (cond ((= button *right-button*)
+            ;;(show-sequencer-header-popup-menu seqtracknum instrument-id "System Volume" gui)
+            #t)
+           ((= button *left-button*)
+            (define gain (get-gain))
+            (set! start-mouse-value (get-scaled-value gain));;(scale x* x1 x2 0 1));;(get-db-value));;(<ra> :get-stored-instrument-effect instrument-id effect-name))
             ;;(c-display "press button/x/y" x* y*)
             (set-statusbar-text! (get-statusbar-text))
-            #t)))
+            #t)
+           (else
+            #f)))
    (lambda (button x* y* dx dy)
      (maybe-make-undo)
      (define slider-value (between 0 (+ start-mouse-value
@@ -720,27 +724,34 @@
      (update-me!)
      )
    (lambda (button x* y* dx dy)
-     (c-display "release button/x/y" x* y*)))
+     ;;(c-display "release button/x/y" x* y*)
+     #f
+     ))
   
   (define (get-statusbar-text)
-    (c-display "GETAST for" seqtracknum (get-radium-normalized) (get-volume-slider-text (get-radium-normalized)))
-    (get-volume-slider-text (get-radium-normalized)))
+    (get-volume-slider-text (get-gain)))
   
   (add-statusbar-text-handler get-statusbar-text)
                                 
-
-  '(define (mouse-callback button state x y)
-    (if (and (>= x x1)
-             (< x x2)
-             (>= y y1)
-             (< y y2))
-        (let ((status-text (get-volume-slider-text (get-radium-normalized))))
-          ;;(c-display "hepp " status-text)
-          (<ra> :set-statusbar-text status-text)
-          )))
-
   )
-||#
+
+#!!
+(let ()
+  (define (recreate gui width height state)
+    (<new> :editor-seqtrack-volume-slider
+           gui 0 0 width height
+           :display-instrument-name #t
+           :get-color "green"
+           :seqtracknum 0))
+
+  (define testarea (make-qtarea :width 450 :height 750
+                                :sub-area-creation-callback recreate))
+  (<gui> :show (testarea :get-gui))
+  )
+
+(<ra> :get-seqtrack-note-gain 0)
+!!#
+
 
 (def-area-subclass (<instrument-pan-slider> :gui :x1 :y1 :x2 :y2
                                             :instrument-id
@@ -909,6 +920,9 @@
                             -1
                             (<ra> :get-seqtrack-instrument seqtracknum)))
 
+  (if for-blocks
+      (set! show-panner #f))
+  
   ;;(<gui> :set-background-color gui "blue")
 
   (define fontheight (get-fontheight))
@@ -933,11 +947,14 @@
   (define y-split (myfloor (+ y1 name-height)))
 
   (delafina (get-background-color :gakk #f)
-    (if (= seqtracknum (<ra> :get-curr-seqtrack))
-        (get-seqtrack-background-color gui seqtracknum)
-        (if gakk
-            (get-instrument-background-color gui instrument-id)
-            (<ra> :get-instrument-color instrument-id)))
+    (cond ((= seqtracknum (<ra> :get-curr-seqtrack))
+           (get-seqtrack-background-color gui seqtracknum))
+          (for-blocks
+           "sequencer_background_color")
+          (gakk
+           (get-instrument-background-color gui instrument-id))
+          (else
+           (<ra> :get-instrument-color instrument-id)))
     )
 
   (if (or use-two-rows
@@ -978,28 +995,35 @@
                               x-meter-split y-split
                               instrument-id #t #t seqtracknum))
   
-  (when for-audiofiles
+  (if show-panner
+      (add-sub-area-plain! (<new> :instrument-pan-slider gui
+                                  x1 panner-y1
+                                  panner-x2 panner-y2
+                                  instrument-id
+                                  :get-color get-background-color
+                                  seqtracknum
+                                  )))
 
-    (if show-panner
-        (add-sub-area-plain! (<new> :instrument-pan-slider gui
-                                    x1 panner-y1
-                                    panner-x2 panner-y2
-                                    instrument-id
-                                    :get-color get-background-color
-                                    seqtracknum
-                                    )))
+  (if for-audiofiles
+      (add-sub-area-plain! (<new> :instrument-volume-slider gui
+                                  (if (not use-two-rows) x1-split x1) vol-y1
+                                  vol-x2 vol-y2
+                                  instrument-id
+                                  :effect-name "System Volume"
+                                  :display-instrument-name (not use-two-rows)
+                                  :get-color get-background-color
+                                  seqtracknum
+                                  ))
+      (add-sub-area-plain! (<new> :editor-seqtrack-volume-slider gui
+                                  (if (not use-two-rows) x1-split x1) vol-y1
+                                  vol-x2 vol-y2
+                                  :display-instrument-name (not use-two-rows)
+                                  :get-color get-background-color
+                                  :seqtracknum seqtracknum
+                                  )))
 
-    (add-sub-area-plain! (<new> :instrument-volume-slider gui
-                                (if (not use-two-rows) x1-split x1) vol-y1
-                                vol-x2 vol-y2
-                                instrument-id
-                                :effect-name "System Volume"
-                                :display-instrument-name (not use-two-rows)
-                                :get-color get-background-color
-                                seqtracknum
-                                ))
-    
-    (<gui> :add-vertical-audio-meter gui instrument-id (+ b x-meter-split) y1 x2 y2))
+  (if for-audiofiles
+      (<gui> :add-vertical-audio-meter gui instrument-id (+ b x-meter-split) y1 x2 y2))
 
   ;;(define vam2 (<gui> :add-vertical-audio-meter gui instrument-id (- x2 8) y1 x2 y2))
   

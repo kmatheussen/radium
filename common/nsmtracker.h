@@ -3024,6 +3024,8 @@ struct SeqTrack{
   struct SeqtrackAutomation *seqtrackautomation;
 
   float note_gain; // Only used when for_audiofiles==false; Change by calling setSeqtrackNoteGain.
+  float note_gain_muted; // if an editor seqtrack is muted, this field has the value 0.0.
+  bool note_gain_soloed; // not used yet.
   bool note_gain_has_changed_this_block; // set to false after each audio block. Only used when for_audiofiles==false.
   
   const char *name; // Not used when for_audiofiles==true. (then we use patch->name instead)

@@ -436,6 +436,14 @@ const_char *getSeqtrackName(int seqtracknum){
     return seqtrack->name == NULL ? "" : seqtrack->name;
 }
 
+void undoSeqtrackNoteGain(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+  
+  ADD_UNDO(EditorSeqtrackVolume(seqtracknum));
+}
+
 void setSeqtrackNoteGain(float gain, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
@@ -456,6 +464,32 @@ float getSeqtrackNoteGain(int seqtracknum){
   return safe_float_read(&seqtrack->note_gain);
 }
 
+void setEditorSeqtrackMuted(bool muteit, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  bool old_value = seqtrack->note_gain_muted < 0.1 ? true : false;
+  
+  if (muteit==old_value)
+    return;
+
+  ADD_UNDO(EditorSeqtrackVolume(seqtracknum));
+  
+  {
+    radium::PlayerLock lock(is_playing_song());
+    seqtrack->note_gain_muted = muteit ? 0.0 : 1.0;
+    seqtrack->note_gain_has_changed_this_block = true;
+  }
+}
+
+bool getEditorSeqtrackMuted(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  return seqtrack->note_gain_muted < 0.1 ? true : false;
+}
 
 
 // Recording

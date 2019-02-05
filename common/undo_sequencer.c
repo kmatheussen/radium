@@ -23,12 +23,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "undo_sequencer_proc.h"
 
-
-static struct SeqBlock *get_seqblock(int seqtracknum, int seqblocknum, struct SeqTrack **seqtrack_to){
+static struct SeqTrack *get_seqtrack(int seqtracknum){
   R_ASSERT_RETURN_IF_FALSE2(seqtracknum>=0, NULL);
   R_ASSERT_RETURN_IF_FALSE2(seqtracknum<root->song->seqtracks.num_elements, NULL);
   
-  struct SeqTrack *seqtrack = root->song->seqtracks.elements[seqtracknum];
+  return root->song->seqtracks.elements[seqtracknum];
+}
+
+static struct SeqBlock *get_seqblock(int seqtracknum, int seqblocknum, struct SeqTrack **seqtrack_to){
+  struct SeqTrack *seqtrack = get_seqtrack(seqtracknum);
+  if (seqtrack==NULL)
+    return NULL;
 
   if (seqtrack_to != NULL)
     *seqtrack_to = seqtrack;
@@ -306,8 +311,8 @@ static void *Undo_Do_SeqblockFades(
   struct SeqBlock *seqblock = get_seqblock(seqtracknum, seqblocknum, &seqtrack);
   if (seqblock==NULL)
     return seq_fades;
-  
-  bool needlock = is_playing_song();
+
+  bool needlock = is_playing_song(); // TODO: Check if this is ok. RT_set_seqblock_curr_gain is called SCHEDULER_called_per_block, but SCHEDULER_called_per_block is always called. Not very important we hold the lock though.
   
   if(needlock) PLAYER_lock();
   {
@@ -317,6 +322,96 @@ static void *Undo_Do_SeqblockFades(
   if(needlock) PLAYER_unlock();
 
   SEQBLOCK_update(seqtrack, seqblock);
+  
+  return ret;
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// 5. Just seqtrack note gain and mute. (doesn't require player to pause when modified) //
+/////////////////////////////////////////////////////////////////////////////////////////
+
+static void *Undo_Do_EditorSeqtrackVolume(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+);
+
+struct EditorSeqtrackVolume{
+  int seqtracknum;
+  float note_gain;
+  float note_gain_muted;
+};
+
+static struct EditorSeqtrackVolume *get_editorseqtrackvolume(int seqtracknum){
+  struct SeqTrack *seqtrack = get_seqtrack(seqtracknum);
+  if (seqtrack==NULL)
+    return NULL;
+
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack->for_audiofiles==false, NULL);
+  
+  struct EditorSeqtrackVolume *seqtrack_volume = talloc(sizeof(struct EditorSeqtrackVolume));
+
+  seqtrack_volume->seqtracknum = seqtracknum;
+
+  seqtrack_volume->note_gain = seqtrack->note_gain;
+  seqtrack_volume->note_gain_muted = seqtrack->note_gain_muted;
+  
+  return seqtrack_volume;
+}
+
+void ADD_UNDO_FUNC(EditorSeqtrackVolume(int seqtracknum)){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  
+  struct EditorSeqtrackVolume *seqtrack_volume = get_editorseqtrackvolume(seqtracknum);
+  if (seqtrack_volume==NULL)
+    return;
+  
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             window->wblock->l.num,
+                             window->curr_track,
+                             window->wblock->curr_realline,
+                             seqtrack_volume,
+                             Undo_Do_EditorSeqtrackVolume,
+                             "EditorSeqtrackVolume"
+                             );
+}
+
+static void *Undo_Do_EditorSeqtrackVolume(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+){
+  struct EditorSeqtrackVolume *seqtrack_volume = pointer;
+  int seqtracknum = seqtrack_volume->seqtracknum;
+  
+  struct EditorSeqtrackVolume *ret = get_editorseqtrackvolume(seqtracknum);
+  if (ret==NULL)
+    return seqtrack_volume; // Something is seriously wrong (assertion window was shown above), but I'm not sure if we can return NULL from this function so we return seqtrack_volume instead.
+
+  struct SeqTrack *seqtrack = get_seqtrack(seqtracknum);
+  if (seqtrack==NULL)
+    return seqtrack_volume;
+
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack->for_audiofiles==false, seqtrack_volume);
+  
+  bool needlock = true; //is_playing_song();
+  
+  if(needlock) PLAYER_lock();
+  {
+    seqtrack->note_gain = seqtrack_volume->note_gain;
+    seqtrack->note_gain_muted = seqtrack_volume->note_gain_muted;
+    seqtrack->note_gain_has_changed_this_block = true;
+  }
+  if(needlock) PLAYER_unlock();
+
+  SEQUENCER_update(SEQUPDATE_HEADERS);
   
   return ret;
 }

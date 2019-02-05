@@ -2287,28 +2287,30 @@ bool SP_has_input_links(const SoundProducer *sp){
   return sp->_input_links.size() > 0;
 }
 
+// Note: Might be called from any thread, both main thread and an audio thread.
 bool SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(SoundProducer *sp) {
-  if (MIXER_someone_has_solo()){
+
+  if (!MIXER_someone_has_solo())
+    return false;
     
-    SoundPlugin *plugin = SP_get_plugin(sp);
     
-    if (ATOMIC_GET(plugin->solo_is_on) == false) {
-      
-      if (MIXER_at_least_two_soundproducers_are_selected()){
-        
-        if (ATOMIC_GET(plugin->is_selected))
-          return true;
-        
-      } else {
-        
-        if (SP_has_audio_input_link(sp)==false)
-          if (SP_get_bus_num(sp) == -1)            
-            return true;
-        
-      }
-      
-    }      
-  }
+  SoundPlugin *plugin = SP_get_plugin(sp);
+
+  
+  if (ATOMIC_GET(plugin->solo_is_on))
+    return false;
+
+  
+  // Very special situation. When several sound objects are selected, we run local solo behaviour for those objects only. All other are playing. I don't remember what this was good for...
+  if (MIXER_at_least_two_soundproducers_are_selected())    
+    if (ATOMIC_GET(plugin->is_selected))
+      return true;
+
+  
+  if (SP_has_audio_input_link(sp)==false)
+    if (SP_get_bus_num(sp) == -1)            
+      return true;
+
   
   return false;
 }
