@@ -951,7 +951,7 @@ static void AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *trac
 }
 
 static void AUDIO_save_FX(struct FX *fx,const struct Tracks *track){
-  printf("AUDIO_save_FX called for track %d\n",track->l.num);
+  //printf("AUDIO_save_FX called for track %d\n",track->l.num);
 
   DC_start("FXDATA");{
 
