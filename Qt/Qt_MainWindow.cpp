@@ -568,24 +568,12 @@ void SetupMainWindow(void){
 #if 1
   {
     QStatusBar *status_bar = main_window->statusBar();
-    auto *bottom_bar = new Bottom_bar_widget(main_window);
+    auto *bottom_bar = BottomBar_create(main_window, true, true);
     status_bar->addWidget(bottom_bar, 1);//, true);
     bottom_bar->show();
     //main_window->statusBar()->addWidget(bottom_bar, 1, true);
     //editor->status_labels.push_back(bottom_bar->status_label);
     //main_window->statusBar()->setFrameStyle(QFrame::NoFrame);
-
-    {
-      QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
-      QPalette pal(bottom_bar->palette());
-      pal.setColor( QPalette::Active, QPalette::Dark, system_color);
-      pal.setColor( QPalette::Active, QPalette::Light, system_color);
-      pal.setColor( QPalette::Inactive, QPalette::Dark, system_color);
-      pal.setColor( QPalette::Inactive, QPalette::Light, system_color);
-      pal.setColor( QPalette::Disabled, QPalette::Dark, system_color);
-      pal.setColor( QPalette::Disabled, QPalette::Light, system_color);
-      bottom_bar->setPalette(pal);
-    }
 
     {
       QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));

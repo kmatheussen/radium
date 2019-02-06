@@ -96,7 +96,7 @@
                            (let ((bottom-bar (<gui> :child window "bottom-bar")))
                              (<gui> :remove-parent bottom-bar)
                              bottom-bar)
-                           (let ((bottom-bar (<gui> :bottom-bar)))
+                           (let ((bottom-bar (<gui> :bottom-bar #f #f)))
                              (<gui> :set-name bottom-bar "bottom-bar")
                              bottom-bar)))
     

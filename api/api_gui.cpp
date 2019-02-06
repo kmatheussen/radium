@@ -4949,8 +4949,8 @@ int64_t gui_fontRequester(const_char* fontdescr){
   return (new FontRequester(font))->get_gui_num();
 }
 
-int64_t gui_bottomBar(void){
-  QWidget *bottom_bar = BottomBar_create(NULL, false);
+int64_t gui_bottomBar(bool include_editor_elements, bool include_navigator){
+  QWidget *bottom_bar = BottomBar_create(NULL, include_editor_elements, include_navigator);
   
   return API_get_gui_from_existing_widget(bottom_bar);
 }

@@ -582,14 +582,21 @@ static QColor get_seqblock_color(const SeqTrack *seqtrack, const SeqBlock *seqbl
     return get_block_color(seqblock->block);
 }
 
+static double get_visible_song_length(void){
+  return SONG_get_length() + SEQUENCER_EXTRA_SONG_LENGTH;
+}
+
+
 class MouseTrackerQWidget : public QWidget, public radium::MouseCycleFix {
 public:
 
   bool _is_sequencer_widget;
-
-  MouseTrackerQWidget(QWidget *parent, bool is_sequencer_widget = false)
+  bool _is_standalone_navigator;
+  
+  MouseTrackerQWidget(QWidget *parent, bool is_sequencer_widget, bool is_standalone_navigator)
     : QWidget(parent)
     , _is_sequencer_widget(is_sequencer_widget)
+    , _is_standalone_navigator(is_standalone_navigator)
   {
     setMouseTracking(true);
   }
@@ -613,9 +620,21 @@ public:
     if (_is_sequencer_widget)
       if (API_run_mouse_press_event_for_custom_widget(SEQUENCER_getWidget(), event))
         return;
-
+    
     _currentButton = getMouseButtonEventID(event);
     QPoint point = mapToEditor(this, event->pos());
+
+    if (_is_standalone_navigator){
+      double pos = scale_double(event->x(), 0, width(), 0, get_visible_song_length()*MIXER_get_sample_rate());
+      if (is_playing_song()){
+        PlayStop();
+        setSongPos(pos);
+      } else {
+        PlaySong(pos);
+      }
+      return;
+    }
+
     SCHEME_mousepress(_currentButton, point.x(), point.y());
     //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
   }
@@ -628,6 +647,10 @@ public:
       if (API_run_mouse_move_event_for_custom_widget(SEQUENCER_getWidget(), event))
         return;
 
+    if (_is_standalone_navigator){
+      return;
+    }
+
     QPoint point = mapToEditor(this, event->pos());
     SCHEME_mousemove(_currentButton, point.x(), point.y());
     //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
@@ -639,6 +662,10 @@ public:
       if (API_run_mouse_release_event_for_custom_widget(SEQUENCER_getWidget(), event))
         return;
 
+    if (_is_standalone_navigator){
+      return;
+    }
+
     QPoint point = mapToEditor(this, event.pos());
     SCHEME_mouserelease(_currentButton, point.x(), point.y());
     _currentButton = 0;
@@ -648,13 +675,14 @@ public:
   MOUSE_CYCLE_CALLBACKS_FOR_QT;
   
   void leaveEvent(QEvent *event) override{
+
+    if (_is_standalone_navigator){
+      return;
+    }
+
     API_run_mouse_leave_event_for_custom_widget(SEQUENCER_getWidget(), event);
   }
 };
-
-static double get_visible_song_length(void){
-  return SONG_get_length() + SEQUENCER_EXTRA_SONG_LENGTH;
-}
 
 static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, double start_play_time, double end_play_time) {
 
@@ -3175,24 +3203,40 @@ struct CursorPainter {
   
 };
 
+
+struct Seqtracks_navigator_widget;
+ 
+static QVector<Seqtracks_navigator_widget*> g_navigator_widgets;
+ 
 struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
   double _cursor_start_time = 0;
   double _cursor_end_time = 100;
   double &_start_time;
   double &_end_time;
   Seqtracks_widget &_seqtracks_widget;
-
+  bool _paint_zoom_interface;
+  
   CursorPainter _cursor_painter;
   
-  Seqtracks_navigator_widget(QWidget *parent, double &start_time, double &end_time, Seqtracks_widget &seqtracks_widget)
-    : MouseTrackerQWidget(parent)
+  Seqtracks_navigator_widget(QWidget *parent, double &start_time, double &end_time, Seqtracks_widget &seqtracks_widget, bool is_standalone)
+    : MouseTrackerQWidget(parent, false, is_standalone)
     , _start_time(start_time)
     , _end_time(end_time)
     , _seqtracks_widget(seqtracks_widget)
+    , _paint_zoom_interface(!is_standalone)
     , _cursor_painter(_cursor_start_time, _cursor_end_time)
   {
+    printf("    ADDING Navigator\n");
+    g_navigator_widgets.push_back(this);
   }
 
+  ~Seqtracks_navigator_widget(){
+    printf("    REMOVING Navigator\n");
+    
+    R_ASSERT(g_navigator_widgets.removeAll(this)==1);
+  }
+  
+  /*
   void position_widgets(double x1, double y1, double x2, double y2){
     setGeometry(x1, y1,
                 x2-x1, y2-y1);
@@ -3200,10 +3244,13 @@ struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
     _cursor_painter.position_widgets(0, 0,
                                      x2-x1, y2-y1);
   }
-
+  */
+  
   void update_cursor(void){
-    _cursor_end_time = get_visible_song_length()*MIXER_get_sample_rate();
-    _cursor_painter.update_cursor(this);
+    if (isVisible()){
+      _cursor_end_time = get_visible_song_length()*MIXER_get_sample_rate();
+      _cursor_painter.update_cursor(this);
+    }
   }
   
   void wheelEvent(QWheelEvent *e) override {
@@ -3211,6 +3258,12 @@ struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
     e->accept();
   }
 
+  void resizeEvent( QResizeEvent *qresizeevent) override {
+    radium::ScopedResizeEventTracker resize_event_tracker;
+    _cursor_painter.position_widgets(0, 0,
+                                     width(), height());
+  }
+  
 public:
   
   double get_x1(void) const {
@@ -3327,7 +3380,7 @@ public:
 
     // Navigator
     //
-    {
+    if (_paint_zoom_interface){
       double seqtracks_y1 = _seqtracks_widget.get_seqtracks_y1();
       double seqtracks_y2 = _seqtracks_widget.get_seqtracks_y2();
 
@@ -3506,14 +3559,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   bool _left_part_is_empty = false;
 
   Sequencer_widget(QWidget *parent)
-    : MouseTrackerQWidget(parent, true)
+    : MouseTrackerQWidget(parent, true, false)
     , _end_time(get_visible_song_length()*MIXER_get_sample_rate())
     , _samples_per_pixel((_end_time-_start_time) / width())
     , _songtempoautomation_widget(_start_time, _end_time)
     , _timeline_widget(this, _start_time, _end_time, true)
     , _bars_and_beats_widget(this, _start_time, _end_time, false)
     , _seqtracks_widget(_start_time, _end_time)
-    , _navigator_widget(this, _start_time, _end_time, _seqtracks_widget)
+    , _navigator_widget(this, _start_time, _end_time, _seqtracks_widget, false)
     , _cursor_painter(_start_time, _end_time)
       //, _main_reltempo(this)
   {
@@ -3594,7 +3647,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     }
 
     _cursor_painter.update_cursor(this);
-    _navigator_widget.update_cursor();
+
+    for(auto *navigator_widget : g_navigator_widgets)
+      navigator_widget->update_cursor();
   }
   
   bool _called_from_my_update = false;
@@ -3634,7 +3689,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     }
     
     //_timeline_widget.update();
-    _navigator_widget.update();
+    for(auto *navigator_widget : g_navigator_widgets)
+      navigator_widget->update();
+    
     update();
   }
 
@@ -3888,9 +3945,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     // navigator
     //
     y1 += get_seqtrack_border_width()/2.0;
+    _navigator_widget.setGeometry(x1, y1,
+                                  x1_width, height() - y1);
+                                       
+    /*
     _navigator_widget.position_widgets(x1, y1,
-                                       x1 + x1_width, height());
-
+    x1 + x1_width, height());
+    */
+    
     /*
     _main_reltempo.setGeometry(0, y1,
                                x1, bottom_height);
@@ -4407,6 +4469,18 @@ QWidget *SEQUENCER_getWidget_r0(void){
 QWidget *SEQUENCER_getWidget(void){
   R_ASSERT(g_sequencer_widget != NULL);
   return g_sequencer_widget;
+}
+
+QWidget *SEQUENCER_create_navigator_widget(void){
+  if (g_sequencer_widget==NULL)
+    return NULL;
+  
+  Seqtracks_navigator_widget *navigator_widget = new Seqtracks_navigator_widget(NULL, g_sequencer_widget->_start_time, g_sequencer_widget->_end_time, g_sequencer_widget->_seqtracks_widget, true);
+  //navigator_widget->position_widgets(0,0,100,40);
+  QSizePolicy policy = QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+  navigator_widget->setSizePolicy(policy);
+  
+  return navigator_widget;
 }
 
 // sequencer
@@ -5101,7 +5175,8 @@ void SEQUENCER_update(uint32_t what){
     }
 
     if ((what & SEQUPDATE_NAVIGATOR) || (what & SEQUPDATE_TIME)){
-      g_sequencer_widget->_navigator_widget.update();
+      for(auto *navigator_widget : g_navigator_widgets)
+        navigator_widget->update();
     }
   }
 
