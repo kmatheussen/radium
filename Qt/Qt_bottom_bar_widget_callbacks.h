@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/instruments_proc.h"
 #include "../common/undo.h"
 #include "../common/OS_visual_input.h"
+#include "../common/seqtrack_proc.h"
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
@@ -82,6 +83,19 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   bool has_midi_learn = false;
 
   void frequent_timer_callback(void){
+
+    if (_include_navigator && _navigator_widget==NULL) {
+      
+      _navigator_widget = SEQUENCER_create_navigator_widget();
+      
+      if (_navigator_widget !=NULL) {
+        horizontalLayout_2->insertWidget(3, _navigator_widget);
+        _navigator_widget->show();
+      }
+      
+    }
+
+
     if (this->edit_onoff->isChecked() != ATOMIC_GET(root->editonoff))
       this->edit_onoff->setChecked(ATOMIC_GET(root->editonoff));
     
@@ -151,10 +165,12 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   Timer2 _timer2;
 
   bool _triggered_by_user;
+  bool _include_navigator;
   
- Bottom_bar_widget(QWidget *parent=NULL)
+  Bottom_bar_widget(QWidget *parent, bool include_navigator)
     : QWidget(parent)
     , _triggered_by_user(true)
+    , _include_navigator(include_navigator)
   {
     _initing = true;
     setupUi(this);
@@ -241,8 +257,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
               this, SLOT(ShowSignaturePopup(const QPoint&)));
     }
 
-
-
+    
     {
       QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
       QPalette pal(palette());
@@ -259,8 +274,11 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
   ~Bottom_bar_widget(){
     g_bottom_bars.removeOne(this);
+    delete _navigator_widget;
   }
 
+  QWidget *_navigator_widget = NULL;
+      
   void remove_editor_elements(void){
     velocity_slider->hide();
     min_velocity_slider->hide();
@@ -290,8 +308,17 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     el_line->hide();
     sps_line->hide();
     tempo_line->hide();
+
   }
-  
+
+  /*
+  void resizeEvent( QResizeEvent *qresizeevent) override {
+    if(_navigator_widget != NULL){
+      _navigator_widget->setMinimumHeight(frame->height());
+      _navigator_widget->setMaximumHeight(frame->height());
+    }
+  }
+  */
   void enterEvent(QEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
@@ -569,10 +596,23 @@ struct Patch *GFX_OS_get_system_out(void){
   return g_system_out_patch;
 }
 
-QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements){
-  auto *ret = new Bottom_bar_widget(parent);
+QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool include_navigator){
+  auto *ret = new Bottom_bar_widget(parent, include_navigator);
   if(!include_editor_elements)
     ret->remove_editor_elements();
+
+  {
+    QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
+    QPalette pal(ret->palette());
+    pal.setColor( QPalette::Active, QPalette::Dark, system_color);
+    pal.setColor( QPalette::Active, QPalette::Light, system_color);
+    pal.setColor( QPalette::Inactive, QPalette::Dark, system_color);
+    pal.setColor( QPalette::Inactive, QPalette::Light, system_color);
+    pal.setColor( QPalette::Disabled, QPalette::Dark, system_color);
+    pal.setColor( QPalette::Disabled, QPalette::Light, system_color);
+    ret->setPalette(pal);
+  }
+  
   return ret;
 }
 

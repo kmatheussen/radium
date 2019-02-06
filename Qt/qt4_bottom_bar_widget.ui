@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1712</width>
-    <height>27</height>
+    <height>26</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -106,6 +106,15 @@
           </color>
          </brush>
         </colorrole>
+        <colorrole role="PlaceholderText">
+         <brush brushstyle="NoBrush">
+          <color alpha="128">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
        </active>
        <inactive>
         <colorrole role="WindowText">
@@ -147,6 +156,15 @@
         <colorrole role="ButtonText">
          <brush brushstyle="SolidPattern">
           <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="PlaceholderText">
+         <brush brushstyle="NoBrush">
+          <color alpha="128">
            <red>0</red>
            <green>0</green>
            <blue>0</blue>
@@ -197,6 +215,15 @@
            <red>90</red>
            <green>90</green>
            <blue>90</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="PlaceholderText">
+         <brush brushstyle="NoBrush">
+          <color alpha="128">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
           </color>
          </brush>
         </colorrole>
@@ -442,6 +469,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </active>
           <inactive>
            <colorrole role="WindowText">
@@ -597,6 +633,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </inactive>
           <disabled>
            <colorrole role="WindowText">
@@ -749,6 +794,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
              </color>
             </brush>
            </colorrole>
@@ -952,6 +1006,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </active>
           <inactive>
            <colorrole role="WindowText">
@@ -1107,6 +1170,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </inactive>
           <disabled>
            <colorrole role="WindowText">
@@ -1259,6 +1331,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
              </color>
             </brush>
            </colorrole>
@@ -1636,6 +1717,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </active>
           <inactive>
            <colorrole role="WindowText">
@@ -1791,6 +1881,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </inactive>
           <disabled>
            <colorrole role="WindowText">
@@ -1943,6 +2042,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
              </color>
             </brush>
            </colorrole>
@@ -2181,6 +2289,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </active>
           <inactive>
            <colorrole role="WindowText">
@@ -2336,6 +2453,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </inactive>
           <disabled>
            <colorrole role="WindowText">
@@ -2488,6 +2614,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
              </color>
             </brush>
            </colorrole>
@@ -2735,6 +2870,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </active>
           <inactive>
            <colorrole role="WindowText">
@@ -2890,6 +3034,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </inactive>
           <disabled>
            <colorrole role="WindowText">
@@ -3042,6 +3195,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
              </color>
             </brush>
            </colorrole>
@@ -3284,6 +3446,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </active>
           <inactive>
            <colorrole role="WindowText">
@@ -3439,6 +3610,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </inactive>
           <disabled>
            <colorrole role="WindowText">
@@ -3591,6 +3771,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
              </color>
             </brush>
            </colorrole>
@@ -3878,6 +4067,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </active>
           <inactive>
            <colorrole role="WindowText">
@@ -4030,6 +4228,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
              </color>
             </brush>
            </colorrole>
@@ -4188,6 +4395,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </disabled>
          </palette>
         </property>
@@ -4226,7 +4442,7 @@ Scrolling too often can be tiresome for the eyes.</string>
       <item>
        <widget class="QSpinBox" name="editlines">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -4406,6 +4622,15 @@ Scrolling too often can be tiresome for the eyes.</string>
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </active>
           <inactive>
            <colorrole role="WindowText">
@@ -4561,6 +4786,15 @@ Scrolling too often can be tiresome for the eyes.</string>
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </inactive>
           <disabled>
            <colorrole role="WindowText">
@@ -4713,6 +4947,15 @@ Scrolling too often can be tiresome for the eyes.</string>
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
              </color>
             </brush>
            </colorrole>
@@ -4936,6 +5179,15 @@ Scrolling too often can be tiresome for the eyes.</string>
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </active>
           <inactive>
            <colorrole role="WindowText">
@@ -5091,6 +5343,15 @@ Scrolling too often can be tiresome for the eyes.</string>
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </inactive>
           <disabled>
            <colorrole role="WindowText">
@@ -5243,6 +5504,15 @@ Scrolling too often can be tiresome for the eyes.</string>
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
              </color>
             </brush>
            </colorrole>
