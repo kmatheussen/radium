@@ -2421,9 +2421,9 @@ int addPitchnum(float value, Place place, int tracknum, int blocknum, int window
   if (wtrack==NULL)
     return -1;
 
-  if (validate_place(place)==false)
+  if (validate_place2(place, wblock->block)==false)
     return -1;
-      
+
   struct Notes *note = getNoteAtPlace(wtrack->track, &place);
 
   value = R_BOUNDARIES(1,value,127);

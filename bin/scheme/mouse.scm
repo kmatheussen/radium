@@ -2130,6 +2130,10 @@
   (= (-line (<ra> :get-num-lines))
      place))
 
+(define (place-is-last-place-or-below place)
+  (>= place
+      (-line (<ra> :get-num-lines))))
+
 (define (note-spans-last-place notenum tracknum)
   (define num-nodes (<ra> :get-num-velocities notenum tracknum))
   (place-is-last-place (<ra> :get-velocity-place
@@ -2293,7 +2297,7 @@
                                  (<ra> :get-pitchnum-y (pitchnum-info :Num) *current-track-num*))
                         :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
-                                           (if (place-is-last-place Place)
+                                           (if (place-is-last-place-or-below Place)
                                                #f
                                                (begin
                                                  (define Value (scale X
