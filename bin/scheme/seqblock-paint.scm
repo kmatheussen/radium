@@ -126,4 +126,3 @@
 
   (call-maybe-paint-box)
 )
-
