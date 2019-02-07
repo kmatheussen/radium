@@ -183,15 +183,35 @@ static bool paste_track(
         struct Tracks *track = wtrack->track;
         Place *p1,p2;
 
-	towtrack->notelength=wtrack->notelength;
-	towtrack->fxwidth=wtrack->fxwidth;
+        {
+          const char *src_start = (const char*)wtrack;
+          const char *src_start_copy = (const char*)&wtrack->start_copyable_data;
+          char *dst_start_copy = (char*)&towtrack->start_copyable_data;
+          size_t size = sizeof(struct WTracks) - (src_start_copy - src_start);
+            
+          memcpy(dst_start_copy, src_start_copy, size);
+          
+          //towtrack->notelength=wtrack->notelength;
+          //towtrack->fxwidth=wtrack->fxwidth;
+        }
+            
+        {
+          const char *src_start = (const char*)track;
+          const char *src_start_copy = (const char*)&track->start_copyable_data;
+          char *dst_start_copy = (char*)&totrack->start_copyable_data;
+          size_t size = sizeof(struct Tracks) - (src_start_copy - src_start);
+            
+          memcpy(dst_start_copy, src_start_copy, size);
 
-	totrack->onoff=track->onoff;
-	totrack->pan=track->pan;
-	totrack->volume=track->volume;
-	totrack->panonoff=track->panonoff;
-	totrack->volumeonoff=track->volumeonoff;
-        ATOMIC_SET(totrack->midi_channel, ATOMIC_GET(track->midi_channel));
+          /*
+          totrack->onoff=track->onoff;
+          totrack->pan=track->pan;
+          totrack->volume=track->volume;
+          totrack->panonoff=track->panonoff;
+          totrack->volumeonoff=track->volumeonoff;
+          ATOMIC_SET(totrack->midi_channel, ATOMIC_GET(track->midi_channel));
+          */
+        }
         
 	if(track->midi_instrumentdata!=NULL){
           totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);

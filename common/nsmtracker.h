@@ -1737,12 +1737,9 @@ struct Tracks{
 
 	struct Notes *notes;
 	struct Stops *stops;
-	int onoff;
 
         struct Notes *gfx_notes; // Used when recording MIDI notes in sequencer mode.
 
-        int polyphony;
-  
         const char *trackname; // Contains the value "(click me)" when patch==NULL
 	struct Patch *patch;
         vector_t fxs; // Contains struct FXs* elements
@@ -1753,6 +1750,20 @@ struct Tracks{
   
         void *midi_instrumentdata;			/* Used by the midi instrument. */
 
+        DEFINE_ATOMIC(bool, is_recording);
+
+
+  /**************************************************************
+   * Note! All data below here can be memcpied to a new track. *
+   *************************************************************/
+  
+        union{
+          int start_copyable_data;
+          int onoff;
+        };
+  
+        int polyphony;
+  
 	int pan;
 	int volume;
 
@@ -1761,7 +1772,6 @@ struct Tracks{
 
         DEFINE_ATOMIC(int, midi_channel);
   
-        DEFINE_ATOMIC(bool, is_recording);
 };
 #define NextTrack(a) ((struct Tracks *)((a)->l.next))
 
@@ -2001,9 +2011,17 @@ struct WTracks{
 	struct ListHeader1 l;
 //	l.num=wtracknum;
 
+  	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */
+
 	int x,y,x2,y2;						/* GFX area. */
 
-	int notesonoff;					/* notearea and placementarea on/off. */
+  /**************************************************************
+   * Note! All data below here can be memcpied to a new wtrack. *
+   *************************************************************/  
+        union{
+          int start_copyable_data;
+          int notesonoff;					/* notearea and placementarea on/off. */
+        };
 	int notelength;					/* Number of characters the notes is. Usually 2 or 3. */
         int notewidth;
 	Area notearea;						/* These are all parts of the GFX area. */
@@ -2040,15 +2058,13 @@ struct WTracks{
   
         //int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
 
-	struct Tracks *track;			/* Only referenced. wtracknum=track->tracknum */
-
 	TBox pan;
 	TBox volume;
 
 	TBox panonoff;
 	TBox volumeonoff;
 
-  int noteshowtype;
+        int noteshowtype;
 };
 #define NextWTrack(a) ((struct WTracks *)((a)->l.next))
 
