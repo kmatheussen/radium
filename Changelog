@@ -1,3 +1,179 @@
+Changes 5.9.32 -> 5.9.34:
+* Editor: Fix possible undefined behavior if
+  changing numer of tracks in a block in the
+  blocklist while playing.
+* OSX: Temporarily disable "Import MOD" from
+  the menus since importing MOD doesn't work
+  on OSX. (Should be fixed in the next release.)
+* Windows: Fix media keys not being eaten by
+  Radium when used. E.g. pressing the volume
+  up key causes other programs to also increase
+  the volume.
+* Windows: Fix media keys being interpreted
+  as other keys when handlers for them were
+  disabled in the keyboard configuration.
+  (Seems like media keys doesn't have valid
+  scan codes.)
+* Editor: Fix copying various data to new track
+  such as Piano roll range and so forth.
+* Build: Update s7 to latest version.
+* Build: Update QScintilla to 2.10.8.
+* Sequencer: Fix bottom of audio meters beiing cut
+  off if ranging below the top of the navigator.
+* Mixer/Sequencer: Adjust colors in the bottom
+  bars.
+* Mixer/Editor: Add a mini-sequencer navigator the
+  bottom bars. These navigators support both mouse
+  clicking and mouse wheeling to start/stop
+  playing.
+* Editor: Fix assertion window popping up if
+  clicking below last line in a note-text
+  sub-track.
+* Mixer/Sequencer: Remove editor elements from the
+  bottom bars of the sequencer and the mixer.
+* Sequencer: Draw seqblock names in navigator if
+  enough vertical space.
+* Pd: Don't allow two controllers with the same
+  name.
+* Sequencer: Don't stop playing if moving the last
+  seqblock in song to a new seqtrack, and that
+  seqblock was currently playing.
+* Sequencer/Mixer: Fix resetting solo (didn't
+  update  descendant instrument solo values and so
+  forth.)
+* Sequencer: Add a volume slider to editor
+  seqtracks.
+* General: Improve undo log.
+* Sequencer: Fix screwed up seqtrack layout when
+  sequencer is shown. (When pressing F8 twice.)
+* Sequencer: Add a Mute button to editor seqtracks.
+* Help: Complete the documentation page for the
+  instrument effect popup menu.
+* Sequencer: Fix header colors for audio seqblocks
+  and seqblock colors in the navigator.
+* Keybindings: Pressing Space now switches between
+  playing and not playing (common DAW behavior).
+  While Enter/Return starts playing from the cursor
+  position, Space starts playing from the
+  startplay-cursor position.
+* Keybindings: Changed the old keybinding for
+  Space to Ctrl+Space and renamed it to "Silence!".
+* Sequencer: Paint blue line where we started to
+  play ("startplay-cursor").
+* Keybindings: Fix python code between asterisks in
+  the configuration file not loading during startup.
+* Keybindings: Made the Enter and Return keys
+  start/stop playing (common DAW behavior).
+* Keybindings: Changed the default keybinding for
+  solo/unsolo current editor track from Enter to
+  Alt + Enter.
+* Keybindings: Changed the default keybinding for
+  adding note (and so forth) from Return alone
+  into Alt + Return.
+* Player: Fix starting to play from current position,
+  either from the menues or pressing Shift+Alt+Space.
+  It didn't work if current seqtrack was an audio
+  seqtrack. Bug introduced a while ago.
+* Menus: Add "Navigate 4 menu rows down" and
+  "Navigate 4 menu rows up" entries
+* Mixer: Show a note indicator led in the audio
+  meters, similar to the ones in the modular mixer.
+* GUI: Open the "Project menu" when pressing the
+  Left Alt key, similar to standard GUI behavior
+  in Windows. This makes it easier to know whether
+  we start navigating the menus when pressing left
+  alt.
+* Mixer: Fix peak and volume text not being scaled
+  to fit.
+* Sequencer: Don't show error messages about illegal
+  navigator handle values since it seems to happen
+  legitimately during playback when the "always show
+  cursor" option is enabled.
+* Note duplicator: Show effect names and "(right
+  click for options)" in the status bar for all
+  fields when mouse is above a field.
+* Editor: Fix wrong automation value sometimes (i.e.
+  50% of the time) being sent to plugin if the same
+  automation is played in two consequtive seqblocks
+  and the first automation plays to block end and the
+  second automation starts at block start.
+* Note duplicator: Show correct effect name in the
+  status bar when mouse is above the on/off buttons.
+* Modular mixer: Make the "Solo" and "Mute" entries
+  in the popup menu into checkboxes.
+* Mixer/Sequencer/Instrument: Right-clicking an
+  effect slider or an effect checkbox resets the
+  effect.
+* Mixer/Sequencer/Instrument: Make sure all effect
+  sliders and checkboxes show the same popup menu.
+  This also adds the options "Start recording
+  automation in editor", "Add automation to
+  current editor track", "Add automation to
+  current sequencer track", and "Change value
+  when pressing Random" to the sequencer and the
+  mixer.
+* Mixer: Clean up various popup menus.
+* Sequencer: Clean up various popup menus in the
+  audio seqtrack headers.
+* Mixer/Sequencer/Instrument: Cleaned up the
+  instrument effect popup menu.
+* Instruments: Don't show rare (and false) error
+  message about a missing instrument after creating
+  an instrument, especially after creating a
+  modulator.
+* Load: decrease time importing MOD and XM files.
+* Instruments: When undoing the deletion of an
+  instrument, don't make that instrument the
+  current instrument unless it was the current
+  instrument when being deleted.
+* Modular mixer: When loading an .mrec file, make the
+  first loaded instrument the current instrument, not
+  the last.
+* Load: Sligtly faster to load track if it contains
+  many instruments.
+* Sequencer: Fix border around the current file
+  browser entry not being clipped correctly.
+* Sequencer: Fix slightly wrongly painted graphics for
+  seqtrack name in the seqtrack headers.
+* Instruments: Support "Random" also for system
+  effects. "Random" is turned off for system effects
+  by default though.
+* Sequencer: Fix error message popping up when
+  clicking on a seqtrack header pan slider.
+* Sequencer: Don't accept dropped audio file or block
+  when dropped into the right side tabs.
+* Sequencer: Make Shift + Right-click delete block in
+  blocklist.
+* Blocklist GUI: Change blockname text color to black.
+* Block lists: Add "Rename" option to the popup menus.
+* Mixer: Fix undo for resetting an insert slider.
+* Editor: Faster to insert/delete lines while plaing
+  if LZ is less than 1.
+* Editor: Fix cursor not always positioned at correct
+  line when stopping to play after changing LZ while
+  playing. Also fixes wrong and/or lacking "realline"
+  messages sent to Pd instruments, and possibly other
+  things.
+* API:
+  * New functions: deletePdController,
+    setInstrumentEffectChangesValueWhenPressingRandom,
+    getInstrumentEffectChangesValueWhenPressingRandom,
+    startRecordingInstrumentAutomationInEditor,
+    playSongFromCurrentSequencerPosition,
+    getLastSongPosStart, setLastSongPosStart,
+    undoSeqtrackNoteGain, setEditorSeqtrackMuted,
+    getEditorSeqtrackMuted.
+  * Add optional argument "textcolor" to gui_line.
+  * Add optional argument "set_as_current" to
+    createAudioInstrument,
+    createAudioInstrumentFromPreset,
+    createAudioInstrumentFromDescription, and
+    cloneAudioInstrument.
+  * Add arguments "include_editor_elements" and
+    "bool include_navigator" to gui_bottomBar
+
+
+
 Changes 5.9.31 -> 5.9.32:
 * Mixer: Some minor improvements to the popup menu.
 * Instruments/Help: Add "Help" option to the bottom of
