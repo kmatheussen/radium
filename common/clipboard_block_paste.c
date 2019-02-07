@@ -54,6 +54,8 @@ void CB_PasteBlock(
 	struct WBlocks *towblock
 ){
 
+  R_ASSERT(is_playing()==false);
+  
 	struct Blocks *block=wblock->block;
 	struct Blocks *toblock=towblock->block;
 	struct WTracks *towtrack=towblock->wtracks;
