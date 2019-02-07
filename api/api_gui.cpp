@@ -727,7 +727,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
   public:
     
-    void paint(QPainter &p) {
+    void paintMeter(QPainter &p) {
       if(_patch->instrument==get_MIDI_instrument()){
 #if !defined(RELEASE)
         abort(); // Not necessarily anything wrong. Just want to know if this can happen.
@@ -1530,7 +1530,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       if (do_sequencer_clipping){
         // Hack to avoid vamps to be painted on top of the "+A a" button, and the dragger.
         float y1 = SEQTIMELINE_get_y2() - SEQUENCER_get_y1();
-        float y2 = SEQNAV_get_y1() - SEQUENCER_get_y1();
+        float y2 = SEQNAV_get_y2() - SEQUENCER_get_y1() - 1.5*(4 + root->song->tracker_windows->systemfontheight); // If changing 1.5, also change 1.5 in "ty2" in <sequencer-left-part> in seqtrack-headers.scm. And if changing 4+systemfontheight, change get-fontheight in mixer-strips.scm and (get-fontheight) in mixer-strips.scm.
         p.setClipRect(QRectF(0, y1, widget->width(), y2-y1));
         p.setClipping(true);
       }
@@ -1540,7 +1540,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
         //printf("            Painting vamp %d: %d\n", i, vamps_to_paint[i]);
         if (vamps_to_paint[i]==true)
-          vamp->paint(p);
+          vamp->paintMeter(p);
         
         i++;
       }
