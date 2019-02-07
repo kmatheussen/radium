@@ -100,7 +100,7 @@ SAMPLERATEOPT ?= `$(PKG) --cflags samplerate`
 PYPATH ?=
 QT_SYSTEM_CFLAGS ?=
 
-QSCINTILLA_PATH ?= $(shell pwd)/bin/packages/QScintilla_gpl-2.10.1
+QSCINTILLA_PATH ?= $(shell pwd)/bin/packages/QScintilla_gpl-2.10.8
 
 GCC_VERSION:=$(shell $(GCC) -dumpversion)
 GCC_MAJOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f1)
@@ -130,7 +130,7 @@ ifeq ($(RADIUM_QT_VERSION),5)
 	QT_UI_LDFLAGS ?= `$(PKGqt) --libs Qt5UiTools` $(FPIC)
 
 #	If using QtWebEngine: (Not recommended, dragging doesn't work using it)
-#	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.1/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5
+#	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.8/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
 
 #	If using QtWebKit:
