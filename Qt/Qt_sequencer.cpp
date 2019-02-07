@@ -626,7 +626,7 @@ public:
 
     if (_is_standalone_navigator){
       double pos = scale_double(event->x(), 0, width(), 0, get_visible_song_length()*MIXER_get_sample_rate());
-      if (is_playing_song()){
+      if (false && is_playing_song()){
         PlayStop();
         setSongPos(pos);
       } else {
