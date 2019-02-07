@@ -640,7 +640,11 @@ void setNumTracks(int numtracks, int blocknum, int windownum){
                                              );
   if(wblock==NULL) return;
 
-  Block_Set_num_tracks(wblock->block, numtracks);
+  {
+    radium::PlayerPause player_pause;
+    Block_Set_num_tracks(wblock->block, numtracks);
+  }
+  
   //MinimizeBlock_CurrPos(window);
   wblock->block->is_dirty = true;
 }
