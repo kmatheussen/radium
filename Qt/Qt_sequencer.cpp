@@ -2219,7 +2219,7 @@ public:
   }
 
   void get_heights(double heights[], const bool get_min) const {
-    const double font_height = 4 + root->song->tracker_windows->systemfontheight; // If changing this one, change get-fontheight in mixer-strips.scm too.
+    const double font_height = 4 + root->song->tracker_windows->systemfontheight; // If changing this one, change get-fontheight in mixer-strips.scm, and paintVamps in api_gui.cpp, too.
     const double border_width =  get_seqtrack_border_width() / 2.0;
     
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
