@@ -239,13 +239,23 @@ static void init_keymap(void){
   keymap[VK_END] = EVENT_END;
 
   keymap[VK_APPS] = EVENT_MENU;
+  /*
   keymap[VK_VOLUME_MUTE] = EVENT_MUTE;
   keymap[VK_VOLUME_DOWN] = EVENT_VOLUME_DOWN;
   keymap[VK_VOLUME_UP] = EVENT_VOLUME_UP;
   keymap[VK_MEDIA_STOP] = EVENT_STOP;
   keymap[VK_MEDIA_PLAY_PAUSE] = EVENT_PLAY;
+  */
 
-
+  // These are handled by WM_APPCOMMAND events instead. However, we need to eat them so Radium doesn't try to look at the scancode, which doesn't seem to be valid for these keys.
+  keymap[VK_VOLUME_MUTE] = EVENT_EAT_BUT_DO_NOTHING;
+  keymap[VK_VOLUME_DOWN] = EVENT_EAT_BUT_DO_NOTHING;
+  keymap[VK_VOLUME_UP] = EVENT_EAT_BUT_DO_NOTHING;
+  keymap[VK_MEDIA_STOP] = EVENT_EAT_BUT_DO_NOTHING;
+  keymap[VK_MEDIA_PLAY_PAUSE] = EVENT_EAT_BUT_DO_NOTHING;
+  keymap[VK_MEDIA_NEXT_TRACK] = EVENT_EAT_BUT_DO_NOTHING;
+  keymap[VK_MEDIA_PREV_TRACK] = EVENT_EAT_BUT_DO_NOTHING;
+  
   // arrows
   keymap[VK_LEFT]  = EVENT_LEFTARROW;
   keymap[VK_UP]    = EVENT_UPARROW;
@@ -403,9 +413,30 @@ int OS_SYSTEM_get_keynum2(uint32_t wParam, bool keypad_pressed){
   return keymap[wParam];
 }
 
+static int get_event_from_appcommand(MSG *msg){
+  switch(GET_APPCOMMAND_LPARAM(msg->lParam)){
+    case APPCOMMAND_MEDIA_STOP: return EVENT_STOP;
+    case APPCOMMAND_MEDIA_PLAY_PAUSE: return EVENT_PLAY;
+    case APPCOMMAND_MEDIA_PLAY: return EVENT_PLAY;
+    case APPCOMMAND_VOLUME_UP: return EVENT_VOLUME_UP;
+    case APPCOMMAND_VOLUME_DOWN: return EVENT_VOLUME_DOWN;
+    case APPCOMMAND_VOLUME_MUTE: return EVENT_MUTE;
+      
+    default:
+      return EVENT_NO;            
+  }
+}
+
 int OS_SYSTEM_get_keynum(void *void_event){
   MSG *msg = (MSG*)void_event;
   
+  if (msg->message==WM_APPCOMMAND){
+    
+    // Although these keys are registered in the normal keyboard handler as well, we need to return true now. If not the events will also be sent to other programs.
+    
+    return get_event_from_appcommand(msg);
+  }
+
   if(msg->wParam >= 0x100)
     return EVENT_NO;
 
@@ -718,6 +749,12 @@ static bool event_is_arrow(WPARAM w){
 int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   MSG *msg = (MSG*)void_event;
   switch(msg->message){
+  case WM_APPCOMMAND:
+    //printf("   EVENT_TYPE. GOT HANDLE appcommand\n");
+    if (get_event_from_appcommand(msg) != EVENT_NO)
+      return TR_KEYBOARD;
+    else
+      return -1; // Only return TR_KEYBOARD for those keys we are able to handle. Shouldn"t make a difference, but things are messy here, so we return -1 to ensure the system-event handler returns as soon as possible.
   case WM_KEYDOWN:
   case WM_SYSKEYDOWN:
     {
@@ -740,7 +777,12 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
 // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event. Several other problems too.
 int OS_SYSTEM_get_modifier(void *void_msg){
   MSG *msg = (MSG*)void_msg;
-  
+
+  if (msg->message==WM_APPCOMMAND){
+    //printf("   OS_SYSTEM_get_modifier. GOT HANDLE appcommand\n");
+    return EVENT_NO;
+  }
+      
   int type = OS_SYSTEM_get_event_type(void_msg, true);
   
   unsigned int keyswitch;

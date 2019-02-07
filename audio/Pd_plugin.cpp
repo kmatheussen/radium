@@ -1401,7 +1401,7 @@ void create_pd_plugin(void){
 void create_pd_plugin(void){
 }
 
-const wchar_t *PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *name) {}
+const wchar_t *PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *name) {return name;}
 Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n) {return NULL;}
 void PD_set_qtgui(SoundPlugin *plugin, void *qtgui) {}
 void PD_delete_controller(SoundPlugin *plugin, int controller_num) {}
