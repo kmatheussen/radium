@@ -780,7 +780,6 @@ protected:
       type = TR_KEYBOARD;
     
     if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP){
-      //printf("ret false 3. Type: %d\n", type);
       return false;
     }
     
@@ -977,9 +976,9 @@ protected:
       return false;
     }
 
-    //printf(" Got key 4\n");
-    
     int keynum = OS_SYSTEM_get_keynum(event);
+    
+    //printf(" Got key 4. Keynum: %d. down: %d. up: %d\n", keynum, EVENT_VOLUME_DOWN, EVENT_VOLUME_UP);
     
     last_pressed_key = keynum;
             
@@ -1112,6 +1111,8 @@ protected:
 
       if (keynum==EVENT_NO)
         ret = false;
+      else if (keynum==EVENT_EAT_BUT_DO_NOTHING)
+        ret = true;
       else
         ret = EventReciever(&tevent,window);
       
