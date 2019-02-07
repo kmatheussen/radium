@@ -1675,7 +1675,7 @@ api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c
 api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp  embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_undo.cpp $(QTOPT)
 
-api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp bin/packages/s7/s7.h $(P)EditorWidget.h embedded_scheme/s7extra_proc.h
+api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference
 
 api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp  $(API)api_instruments_proc.h embedded_scheme/s7extra_proc.h
