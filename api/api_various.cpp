@@ -2236,7 +2236,11 @@ static void init_keybindings(void){
   
   while (PyDict_Next(keybindings, &pos, &command, &value)) { // I assume PyDict_Next takes care of decrefs-ing all key and value objects.
     PyObject *keys = PySequence_GetItem(value,0);
+    R_ASSERT_RETURN_IF_FALSE(keys!=NULL);
+    
     PyObject *qualifiers = PySequence_GetItem(value,1);
+    R_ASSERT_RETURN_IF_FALSE(qualifiers!=NULL);
+    
     //printf("\n%s:\n", PyString_AsString(key));
 
     int num_keys = (int)PyList_Size(keys);
@@ -2262,8 +2266,12 @@ static void init_keybindings(void){
     //printf("\n  qualifiers: ");
     for(int i = 0 ; i < num_qualifiers ; i++){
       PyObject *qualifier = PySequence_GetItem(qualifiers, i);
+      R_ASSERT_RETURN_IF_FALSE(qualifier!=NULL);
+      
       //printf("%s, ", PyString_AsString(qualifier));
       const char *qualifierstring = PyString_AsString(qualifier);
+      R_ASSERT_RETURN_IF_FALSE(qualifierstring!=NULL);
+      
       keybinding_line = keybinding_line==NULL ? qualifierstring : talloc_format("%s %s", keybinding_line, qualifierstring);
       //DYNVEC_push_back(r_qualifiers, DYN_create_string_from_chars(qualifierstring));
       Py_DECREF(qualifier);
@@ -2276,7 +2284,8 @@ static void init_keybindings(void){
     */
 
     const char *commandstring = PyString_AsString(command);
-
+    R_ASSERT_RETURN_IF_FALSE(commandstring!=NULL);
+    
     // command
     //HASH_put_hash(r_keybindings_from_commands, commanstring, element);
     HASH_remove(r_keybindings_from_commands, commandstring); // in case it was already there.
