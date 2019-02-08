@@ -3828,6 +3828,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       setDirectory(dir);
       setSupportedSchemes(FileRequester::get_postfixes_filter(filetypename, postfixes).split(";;"));
       */
+
+#if FOR_MACOSX
+      printf("          WORKAROUND: Always set DontUseNativeDialog on OSX to avoid partly GUI freeze.\n");
+      setOption(QFileDialog::DontUseNativeDialog, true);
+#endif
       
       if (for_loading)
         setAcceptMode(QFileDialog::AcceptOpen);
