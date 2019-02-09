@@ -248,8 +248,8 @@ namespace{
     void apply_table_to_seqblock(struct SeqBlock *seqblock){
       inc_users();
       {
-        seqblock->conversion_table = _table;
         radium::PlayerLock lock;
+        seqblock->conversion_table = _table;
       }
     }
 
