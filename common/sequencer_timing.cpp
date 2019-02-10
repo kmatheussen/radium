@@ -794,18 +794,22 @@ void SEQUENCER_MARKER_create_from_state(dyn_t markers, double state_samplerate){
 
   if(state_samplerate > 0){
 
-    for(const dyn_t &marker : *markers.array){
-      hash_t *hash = marker.hash;
-      double time = HASH_get_number(hash, ":time");
+    if (fabs(state_samplerate-pc->pfreq) > 1) {
+      
+      for(const dyn_t &marker : *markers.array){
+        hash_t *hash = marker.hash;
+        double time = HASH_get_number(hash, ":time");
+        
+        HASH_remove(hash, ":time");
+        HASH_put_float(hash, ":time", R_MAX(1, time*(double)pc->pfreq/state_samplerate) - 1); // subtract 1 to avoid possibly not playing a note if marker was placed at block start.
+      }
 
-      HASH_remove(hash, ":time");
-      HASH_put_float(hash, ":time", R_MAX(1, time*(double)pc->pfreq/state_samplerate) - 1); // subtract 1 to avoid possibly not playing a note if marker was placed at block start.
     }
 
   }
-  
-  
+    
   g_markers = markers;
+  
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_NAVIGATOR);
 }
 
