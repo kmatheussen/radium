@@ -377,7 +377,10 @@ template <typename T> class SeqAutomation{
   
 private:
   
-  QVector<T> _automation;
+  QVector<T> &_automation;
+
+  QVector<T> _automation_storage; // Used if constructor didn't get a QVector<T> as argument.
+  
 public:
   struct RT{
     int num_nodes;
@@ -419,8 +422,14 @@ private:
 
 public:
 
+  SeqAutomation(QVector<T> &automation)
+    : _automation(automation)
+    , _rt(free_rt)
+  {
+  }
+
   SeqAutomation()
-    : _rt(free_rt)
+    : SeqAutomation(_automation_storage)
   {
   }
 
@@ -1156,8 +1165,9 @@ public:
     return make_qvector_from_state(dynstate, &myprovider, state_samplerate);
   }
 
-  void set_qvector(const QVector<T> &automation){    
-    _automation = automation;
+  void set_qvector(const QVector<T> &automation){
+    _automation_storage = automation;
+    _automation = _automation_storage;
 
     sort_qvector_if_necessary(_automation);
       
@@ -1228,6 +1238,7 @@ public:
 
 template <typename T> 
 class SeqAutomationIterator{
+  const SeqAutomation<T> _automation_storage;
   const SeqAutomation<T> &_automation;
 
 #if !defined(RELEASE)
@@ -1243,11 +1254,7 @@ class SeqAutomationIterator{
   double _value2;
   int _logtype1;
 
-public:
-  SeqAutomationIterator(const SeqAutomation<T> &automation)
-    : _automation(automation)
-    , _size(automation.size())
-  {
+  void init(void){
     R_ASSERT_RETURN_IF_FALSE(_size > 0);
 
     const T &_node1 = _automation.at(0);
@@ -1265,7 +1272,24 @@ public:
       _value2 = _value1; // Used in case there is only one node.
     }
   }
+  
+public:
 
+  SeqAutomationIterator(const SeqAutomation<T> &automation)
+    : _automation(automation)
+    , _size(automation.size())
+  {
+    init();
+  }
+
+  SeqAutomationIterator(QVector<T> &automation)
+    : _automation_storage(automation)
+    , _automation(_automation_storage)
+    , _size(automation.size())
+  {
+    init();
+  }
+    
   SeqAutomationReturnType return_no_more_values(const T **node1, const T **node2) const {
     *node1 = &_automation.last();
     *node2 = NULL;

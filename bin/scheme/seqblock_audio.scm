@@ -144,7 +144,7 @@
   (define (sample-pos->x write-pos)
     (scale write-pos 0 1000 x1 x2))
 
--  (let loop ((sample-pos 0))
+  (let loop ((sample-pos 0))
     (define grain-x1 (sample-pos->x sample-pos))
     (when (< grain-x1 x2)
       (let ((grain-x2 (sample-pos->x (+ sample-pos grain-length))))

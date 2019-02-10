@@ -473,12 +473,9 @@ static double find_ppq(radium::SeqAutomationIterator<TempoAutomationNode> &itera
 
 
 static QVector<BarAutomationNode> recreate_bar_automation(const QVector<SignatureAutomationNode> &signatures,
-                                                          const QVector<TempoAutomationNode> &tempos)
+                                                          QVector<TempoAutomationNode> &tempos) // tempos is not modified. It just needs to be non-const because it's used as argument to SeqAutomation.
 {
-  radium::SeqAutomation<TempoAutomationNode> tempo_automation;
-  tempo_automation.set_qvector(tempos);
-
-  radium::SeqAutomationIterator<TempoAutomationNode> tempo_iterator(tempo_automation);
+  radium::SeqAutomationIterator<TempoAutomationNode> tempo_iterator(tempos);
 
 
   QVector<BarAutomationNode> ret;
