@@ -1675,11 +1675,11 @@
           (define width (<gui> :width slider))
           (define value (get-pan))
           (define is-on (pan-enabled?))
-          (<gui> :filled-box slider system-background-color 0 0 width height)
+          ;;(<gui> :filled-box slider system-background-color 5 5 width height)
           (define background (if is-on
                                  (<gui> :mix-colors background-color "black" 0.39)
                                  (<gui> :mix-colors background-color "white" 0.95)))
-          (<gui> :filled-box slider background 0 0 width height 5 5 #f)
+          (<gui> :filled-box slider background 0 0 width height 2 2 #f)
           (define col1 (<gui> :mix-colors "white" background 0.4))
           (define col2 (<gui> :mix-colors "#010101" background 0.5))
 
@@ -1697,7 +1697,7 @@
             (define middle (scale automation-slider-value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
             (<gui> :draw-line slider pan-automation-color middle 2 middle (- height 3) 2.0))
           
-          (<gui> :draw-box slider "#404040" 0 0 width height 2)
+          (<gui> :draw-box slider "#404040" 0 0 width height 1.5 2 2)
 
           (when (<ra> :instrument-effect-has-midi-learn instrument-id "System Pan")
             (define midi-learn-color (<gui> :mix-colors *text-color* background 0.2))
