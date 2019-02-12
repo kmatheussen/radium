@@ -572,7 +572,8 @@
       (<gui> :filled-box
              gui
              background-color
-             x1 y1 x2 y2))
+             x1 y1 x2 y2
+             box-rounding box-rounding))
 
   (if is-selected
       (<gui> :filled-box
