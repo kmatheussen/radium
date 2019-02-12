@@ -1995,6 +1995,7 @@
   (define show-voltext (not is-minimized))
   (define show-peaktext #t)
 
+  (define peaktext-is-red #f)
   (define peaktexttext "-inf")
 
   (define is-sink? (= 0 (<ra> :get-num-output-channels instrument-id)))
@@ -2035,14 +2036,14 @@
   ;;(<gui> :set-min-width volslider 1) ;; ?? Why is this necessary?
   (<gui> :set-min-height volslider (* (get-fontheight) 2)) ;; This is strange. If we don't do this, min-height will be set to approx something that looks very good, but I don't find the call doing that.
   
-  (define (paint-text gui text cut-text-to-fit)
+  (define (paint-text gui text cut-text-to-fit red-background)
     (define width (<gui> :width gui))
     (define height (<gui> :height gui))
     
-    (define col1 (<gui> :mix-colors "#010101" background-color 0.7))
+    (define col1 (<gui> :mix-colors (if red-background "red" "#010101") background-color 0.7))
     
     ;; background
-    (<gui> :filled-box gui background-color 0 0 width height -1 -1 #f)
+    ;;(<gui> :filled-box gui (if red-background "red" background-color) 0 0 width height -1 -1 #f)
     
     ;; rounded
     (if is-minimized
@@ -2062,7 +2063,7 @@
   (when show-voltext
     (set! paint-voltext
           (lambda ()
-            (paint-text voltext (db-to-text (get-volume) #f) #f)))
+            (paint-text voltext (db-to-text (get-volume) #f) #f #f)))
     
     (add-safe-paint-callback voltext (lambda x (paint-voltext)))
     ;;(paint-voltext)
@@ -2071,7 +2072,7 @@
   (when show-peaktext
     (set! paint-peaktext
           (lambda ()
-            (paint-text peaktext peaktexttext #f)))
+            (paint-text peaktext peaktexttext #f peaktext-is-red)))
     
     (add-safe-paint-callback peaktext (lambda x (paint-peaktext)))
     ;;(paint-peaktext)
@@ -2224,8 +2225,9 @@
 
   (when (and show-peaktext has-inputs-or-outputs)
 
-    (<gui> :add-audio-meter-peak-callback volmeter (lambda (text)
-                                                     (set! peaktexttext text)
+    (<gui> :add-audio-meter-peak-callback volmeter (lambda (db)
+                                                     (set! peaktext-is-red (>= db 4))
+                                                     (set! peaktexttext (db-to-text db #f))
                                                      (<gui> :update peaktext)))
 
     (define (reset-peak!)

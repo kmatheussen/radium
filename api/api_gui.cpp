@@ -529,13 +529,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void callPeakCallback(void){
-
-      if (_peak_callback.v != NULL){
-        if (_last_peak<=-100.0)
-          S7CALL(void_charpointer,_peak_callback.v, "-inf");
-        else
-          S7CALL(void_charpointer,_peak_callback.v, talloc_format("%.1f", _last_peak));
-      }
+      if (_peak_callback.v != NULL)
+        S7CALL(void_double,_peak_callback.v, _last_peak);
     }
 
     void resetPeak(void){
