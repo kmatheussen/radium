@@ -1852,6 +1852,7 @@
                                    (>= instrument-id 0)
                                    (<ra> :instrument-is-implicitly-muted instrument-id)))
 
+  ;;(c-display "background-color:" background-color)
   (draw-checkbox gui text is-selected x1 y1 x2 y2 color
                  :x-border border
                  :y-border border
@@ -1968,6 +1969,7 @@
                   (<gui> :horizontal-layout)
                   (<gui> :vertical-layout)))
   (<gui> :set-layout-spacing gui 0 0 0 0 0)
+  ;;(<gui> :set-background-color gui "yellow")
   
   (when set-fixed-size
     (assert min-height)
