@@ -1864,7 +1864,8 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
         //float new_value = solo_is_on?0.0f:1.0f;
 
-        //UNDO_OPEN();{
+        {
+          radium::ScopedUndo scoped_undo;
           
           // Turn off all other solos if ctrl is pressed.
           if (ctrl_pressed){
@@ -1874,7 +1875,8 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
               if (thispatch != patch && plugin!=NULL && ATOMIC_GET(plugin->solo_is_on)) {
                 int num_effects = plugin->type->num_effects;
-                //ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
+                if(doUndoSolo())
+                  ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
                 PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, 0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
                 //CHIP_update(plugin);
               }
@@ -1896,9 +1898,10 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
           //CHIP_update(plugin);
           //GFX_update_instrument_widget((struct Patch*)patch);
           
-          //}UNDO_CLOSE();        
           */
 
+        }
+        
         event->accept();
         return;
       }

@@ -1251,9 +1251,17 @@ void setInstrumentBypass(int64_t instrument_id, bool do_bypass){
 
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   int num_effects = plugin->type->num_effects;
-  
+  int effect_num = num_effects+EFFNUM_EFFECTS_ONOFF;
+
+  bool is_bypassed = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_PLUGIN) < 0.5;
+
+  //printf("  old val: %f. is_bypassed: %d. do_bypass: %d\n", PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_PLUGIN), is_bypassed, do_bypass);
+
+  if(is_bypassed==do_bypass)
+    return;
+     
   if(doUndoBypass())
-    ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
+    ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
   
   float new_val = do_bypass ? 0.0 : 1.0;
   PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);

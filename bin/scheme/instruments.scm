@@ -721,9 +721,13 @@
 
 (define (set-instrument-solo! id is-on)
   ;;(c-display "     Setting" (<ra> :get-instrument-name id) "solo to" is-on)
-  (if (<ra> :do-undo-solo)
-      (<ra> :undo-instrument-effect id "System Solo On/Off"))
-  (<ra> :set-instrument-effect id "System Solo On/Off" (if is-on 1.0 0.0)))
+  (define current-value (> (<ra> :get-instrument-effect id "System Solo On/Off") 0.5))
+  (when (or (and is-on (not current-value))
+            (and (not is-on) current-value))            
+    (if (<ra> :do-undo-solo)
+        (<ra> :undo-instrument-effect id "System Solo On/Off"))
+    (<ra> :set-instrument-effect id "System Solo On/Off" (if is-on 1.0 0.0))))
+
 
 (define (set-solo-for-connected-output-instruments! instrument-id is-on)
   (define output-instruments (get-instruments-connecting-from-instrument instrument-id))
