@@ -1185,6 +1185,9 @@ public slots:
   // effects onoff / dry_wet
 
   void on_bypass_button_toggled(bool val){
+    if(is_starting==false)
+      setInstrumentBypass(_patch->id, val);
+    /*
     SoundPlugin *plugin = (SoundPlugin*)(_patch->patchdata);
         
     if (doUndoBypass()){
@@ -1196,6 +1199,7 @@ public slots:
     drywet_slider->setEnabled(!val);
     CHIP_update(plugin);
     updateWidgets();
+    */
   }
 
   void on_solo_button_toggled(bool val){
