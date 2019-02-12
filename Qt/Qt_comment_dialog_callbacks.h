@@ -42,7 +42,7 @@ class comment_dialog : public RememberGeometryQDialog, public Ui::Comment_dialog
  public:
   bool _initing;
 
- comment_dialog(QWidget *parent=NULL)
+ comment_dialog(QWidget *parent)
    : RememberGeometryQDialog(parent, radium::NOT_MODAL)
   {
     _initing = true;
