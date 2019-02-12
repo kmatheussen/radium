@@ -47,7 +47,7 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
  public:
   bool _initing;
 
- song_properties(QWidget *parent=NULL)
+ song_properties(QWidget *parent)
    : RememberGeometryQDialog(parent, radium::NOT_MODAL)
   {
     _initing = true;

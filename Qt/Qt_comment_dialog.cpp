@@ -20,6 +20,7 @@ static QPointer<comment_dialog> widget;
 static void ensure_widget_is_created(void){
   if(widget.isNull()){
     R_ASSERT(has_been_made==false);
+    R_ASSERT(g_main_window!=NULL);
     widget = new comment_dialog(g_main_window);
     g_static_toplevel_widgets.push_back(widget.data());
     has_been_made = true;
@@ -29,8 +30,12 @@ static void ensure_widget_is_created(void){
 
 void COMMENTDIALOG_open(void){
   ensure_widget_is_created();
-  
-  safeShowOrExec(widget, true);
+
+  if (g_qtgui_has_started_step2==false){
+    QTimer::singleShot(50, COMMENTDIALOG_open);
+  } else {
+    safeShowOrExec(widget, true);
+  }
 }
 
 bool COMMENT_show_after_loading(void){

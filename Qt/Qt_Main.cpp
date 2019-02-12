@@ -224,6 +224,7 @@ DEFINE_ATOMIC(bool, is_starting_up) = true;
 bool g_is_starting_up = true;
 bool g_qt_is_running = false;
 bool g_qtgui_has_started = false;
+bool g_qtgui_has_started_step2 = false;
 bool g_qtgui_exec_has_started = false;
 bool g_qtgui_has_stopped = false;
 bool g_program_has_ended = false;
@@ -2184,6 +2185,7 @@ protected:
         if (gakkbox != NULL){
           gakkbox->hide();
           g_main_window->raise();
+          g_qtgui_has_started_step2 = true;
           //g_main_window->activateWindow();
         }
       }
