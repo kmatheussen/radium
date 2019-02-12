@@ -405,6 +405,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     friend struct Gui;
     
     radium::GcHolder<struct Patch> _patch;
+    radium::GcHolder<struct Patch> _note_event_patch;
     float *_pos = NULL;
     float *_falloff_pos = NULL;
 
@@ -440,8 +441,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
   private:
     
-    VerticalAudioMeterPainter(struct Patch *patch, int64_t guinum, double x1, double y1, double x2, double y2)
+    VerticalAudioMeterPainter(struct Patch *patch, struct Patch *note_event_patch, int64_t guinum, double x1, double y1, double x2, double y2)
       : _patch(patch)
+      , _note_event_patch(note_event_patch)
       , _guinum(guinum)
     {
       R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
@@ -648,7 +650,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     // (_patch is never gone, never deleted, except when loading song)
     void call_regularly(QWidget *widget){
       ScopedEventHandlerTracker event_handler_tracker;
-        
+
       if(_patch->instrument==get_MIDI_instrument()){
 #if !defined(RELEASE)
           abort(); // want to know if this can happen.
@@ -657,14 +659,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
             
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      if(plugin==NULL)
+      if(plugin==NULL){
         return;
+      }
 
       {
         int old_intencity = _note_intencity;
         
-        _note_intencity = ATOMIC_GET_RELAXED(_patch->visual_note_intencity);
-        
+        _note_intencity = ATOMIC_GET_RELAXED(_note_event_patch->visual_note_intencity);
+
         if(_note_intencity>0 || old_intencity != -1)
           myupdate(widget, get_indicator_rect());
       }
@@ -1428,8 +1431,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
     QVector<VerticalAudioMeterPainter*> _vamps;
 
-    VerticalAudioMeterPainter *createVamp(struct Patch *patch, double x1, double y1, double x2, double y2){
-      auto *vamp = new VerticalAudioMeterPainter(patch, get_gui_num(), x1, y1, x2, y2);
+    VerticalAudioMeterPainter *createVamp(struct Patch *patch, struct Patch *note_event_patch, double x1, double y1, double x2, double y2){
+      auto *vamp = new VerticalAudioMeterPainter(patch, note_event_patch, get_gui_num(), x1, y1, x2, y2);
 
 #if !defined(RELEASE)
       for(const auto *vamp2 : _vamps){
@@ -1454,7 +1457,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         R_ASSERT_NON_RELEASE(false);
         return;
       }
-      
+
       vamp->call_regularly(_widget);
     }
 
@@ -2948,11 +2951,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
   public:
     
-    VerticalAudioMeter(struct Patch *patch)
+    VerticalAudioMeter(struct Patch *patch, struct Patch *note_event_patch)
       : Gui(this)
     {
       set_widget_takes_care_of_painting_everything(this);
-      createVamp(patch, 0, 0, width(), height());
+      createVamp(patch, note_event_patch, 0, 0, width(), height());
     }
 
   private:
@@ -6794,7 +6797,7 @@ const_char *getHtmlFromText(const_char* text){
 // audio meter
 ////////////////
 
-int64_t gui_verticalAudioMeter(int64_t instrument_id){
+int64_t gui_verticalAudioMeter(int64_t instrument_id, int64_t note_event_instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
@@ -6806,11 +6809,15 @@ int64_t gui_verticalAudioMeter(int64_t instrument_id){
     handleError("gui_verticalAudioMeter: instrument %s has no audio inputs or audio outputs", patch->name);
     return -1;
   }
-  
-  return (new VerticalAudioMeter(patch))->get_gui_num();
+
+  struct Patch *note_event_patch = note_event_instrument_id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
+  if(note_event_patch==NULL)
+    return -1;
+
+  return (new VerticalAudioMeter(patch, note_event_patch))->get_gui_num();
 }
 
-int64_t gui_addVerticalAudioMeter(int64_t guinum, int64_t instrument_id, double x1, double y1, double x2, double y2){
+int64_t gui_addVerticalAudioMeter(int64_t guinum, int64_t instrument_id, double x1, double y1, double x2, double y2, int64_t note_event_instrument_id){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return -1;
@@ -6819,13 +6826,17 @@ int64_t gui_addVerticalAudioMeter(int64_t guinum, int64_t instrument_id, double 
   if(patch==NULL)
     return -1;
 
+  struct Patch *note_event_patch = note_event_instrument_id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
+  if(note_event_patch==NULL)
+    return -1;
+  
   // We get garbage graphics when the coordinates are not integers. Don't bother to investigate why.
   x1 = floor(x1);
   y1 = floor(y1);
   x2 = floor(x2);
   y2 = floor(y2);
   
-  auto *vamp = gui->createVamp(patch, x1, y1, x2, y2);
+  auto *vamp = gui->createVamp(patch, note_event_patch, x1, y1, x2, y2);
   gui_update(guinum, x1, y1, x2, y2);
                        
   return vamp->_id;

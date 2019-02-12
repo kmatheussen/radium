@@ -2140,7 +2140,7 @@
   (define has-inputs-or-outputs (or (> (<ra> :get-num-input-channels instrument-id) 0)
                                     (> (<ra> :get-num-output-channels instrument-id) 0)))
   (define volmeter (if has-inputs-or-outputs
-                       (<gui> :vertical-audio-meter meter-instrument-id)
+                       (<gui> :vertical-audio-meter meter-instrument-id instrument-id)
                        (<gui> :widget)))
   
   (add-gui-effect-monitor volslider instrument-id effect-name #t #t
