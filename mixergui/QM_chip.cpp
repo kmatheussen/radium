@@ -1609,19 +1609,23 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     QColor patchcolor(patch->color);
 
-    QColor c =
+    QColor c = patchcolor.lighter(120);
+    /*
       (false && is_selected)
       ? mix_colors(QColor(30,25,70,60), patchcolor, 0.45)
       : mix_colors(QColor(30,65,70,35), patchcolor, 0.05);
-
+    */
+    
     if (ATOMIC_GET(patch->is_recording))
       c = mix_colors(c, QColor(255,0,0), 0.1);
 
+    myFillRect(*painter, QRectF(chip_box_x1, y1, x2-chip_box_x1, y2-y1), c);
+    /*
     painter->setPen(Qt::NoPen);
     painter->setBrush(c);
     painter->drawRoundedRect(x1, y1, x2-x1, y2-y1, 2,2);
     painter->setBrush(Qt::NoBrush);
-    
+    */
     x1 += 2;    
     x2 -= 1;
     
