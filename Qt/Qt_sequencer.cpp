@@ -2858,7 +2858,7 @@ struct Timeline_widget { //: public MouseTrackerQWidget {
     //QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
 
     QRect rect(t_x1+1,t_y1+1,t_width-1,t_height-1);
-    p.fillRect(rect, get_qcolor(SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM));
+    myFillRect(p, rect, get_qcolor(SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM));
     
     //p.setPen(text_color);
     //p.drawText(4,2,width()-6,height()-4, Qt::AlignLeft, "timeline");
