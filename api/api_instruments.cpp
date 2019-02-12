@@ -163,8 +163,25 @@ void setUndoSolo(bool doit){
 }
 
 
-// Warning, All these functions (except selectPatchForTrack) must be called via python (does not update graphics, or handle undo/redo))
-// (TODO: detect this automatically.)
+
+static bool g_undo_bypass = true;
+
+bool doUndoBypass(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_undo_bypass = SETTINGS_read_bool("undo_bypass", g_undo_bypass);
+    has_inited = true;
+  }
+
+  return g_undo_bypass;
+}
+
+void setUndoBypass(bool doit){
+  g_undo_bypass = doit;
+  SETTINGS_write_bool("undo_bypass", doit);
+}
+
 
 
 void selectInstrumentForTrack(int tracknum){
@@ -1234,7 +1251,10 @@ void setInstrumentBypass(int64_t instrument_id, bool do_bypass){
 
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   int num_effects = plugin->type->num_effects;
-  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
+  
+  if(doUndoBypass())
+    ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
+  
   float new_val = do_bypass ? 0.0 : 1.0;
   PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 }

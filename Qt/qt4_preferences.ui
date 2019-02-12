@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>6</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -690,7 +690,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
          <item>
           <widget class="QGroupBox" name="groupBox_17">
            <property name="title">
-            <string>Undo solo</string>
+            <string>Undo solo / bypass</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_8">
             <property name="leftMargin">
@@ -709,6 +709,13 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
              <widget class="QCheckBox" name="undo_solo">
               <property name="text">
                <string>Make undo when changing Solo for an instrument</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="undo_bypass">
+              <property name="text">
+               <string>Make undo when changing Bypass for an instrument</string>
               </property>
              </widget>
             </item>
@@ -8166,8 +8173,8 @@ you should check this box.
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>583</width>
-            <height>536</height>
+            <width>398</width>
+            <height>28</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -10787,8 +10794,8 @@ you should check this box.
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>952</width>
-               <height>244</height>
+               <width>100</width>
+               <height>30</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -11006,8 +11013,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <connections/>
  <buttongroups>
   <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_4"/>
+  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>
