@@ -490,6 +490,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       enable_autobypass->setChecked(autobypassEnabled());
       autobypass_delay->setValue(getAutoBypassDelay());
       undo_solo->setChecked(doUndoSolo());
+      undo_bypass->setChecked(doUndoBypass());
       recalculate_bus_latency_onoff->setChecked(doAlwaysRunBuses());
     }
 
@@ -886,6 +887,11 @@ public slots:
   void on_undo_solo_toggled(bool val){
     if (_initing==false)
       setUndoSolo(val);
+  }
+
+  void on_undo_bypass_toggled(bool val){
+    if (_initing==false)
+      setUndoBypass(val);
   }
 
   void on_autobypass_delay_editingFinished(){

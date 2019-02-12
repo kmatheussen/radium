@@ -1963,8 +1963,9 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         bool effects_are_on = ATOMIC_GET(plugin->effects_are_on);
         //float new_value = effects_are_on?0.0f:1.0f;
 
-        UNDO_OPEN();{
-          
+        {
+          radium::ScopedUndo scoped_undo;
+            
           // Turn off all other bypasses if ctrl is pressed.
           if (ctrl_pressed){
             vector_t *patches = &get_audio_instrument()->patches;
@@ -1973,7 +1974,8 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
               if (thispatch != patch && plugin!=NULL && !ATOMIC_GET(plugin->effects_are_on)) {
                 int num_effects = plugin->type->num_effects;
-                ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_EFFECTS_ONOFF));
+                if(doUndoBypass())
+                  ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_EFFECTS_ONOFF));
                 PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
                 CHIP_update(plugin);
               }
@@ -1996,7 +1998,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
           GFX_update_instrument_widget((struct Patch*)patch);
           */
 
-        }UNDO_CLOSE();
+        }
         
         event->accept();
         return;

@@ -112,7 +112,8 @@ public:
     time_of_last_minheight_inc.start();
 
     solo_button->_add_undo_when_clicked = false;
-
+    bypass_button->_add_undo_when_clicked = false;
+    
     /*
     {
       //QFontMetrics fm(font());
@@ -1184,9 +1185,16 @@ public slots:
   // effects onoff / dry_wet
 
   void on_bypass_button_toggled(bool val){
+    SoundPlugin *plugin = (SoundPlugin*)(_patch->patchdata);
+        
+    if (doUndoBypass()){
+      const SoundPluginType *type = plugin->type;
+      ADD_UNDO(AudioEffect_CurrPos(_patch.data(), type->num_effects + EFFNUM_EFFECTS_ONOFF));
+    }
+    
     set_plugin_value(val==false ? 10000 : 0, EFFNUM_EFFECTS_ONOFF);
     drywet_slider->setEnabled(!val);
-    CHIP_update((SoundPlugin*)_patch->patchdata);
+    CHIP_update(plugin);
     updateWidgets();
   }
 
