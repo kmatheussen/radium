@@ -106,6 +106,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/CpuUsage.hpp"
 #include "../audio/Sampler_plugin_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 
 extern EditorWidget *g_editor;
 
@@ -1223,6 +1225,8 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int copy = -1;
   int cut = -1;
   int delete_ = -1;
+  int rename = -1;
+  int load = -1;
   int save = -1;
   int show_mixer_strips = -1;
   int config_color = -1;
@@ -1288,9 +1292,11 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     
     if (QString("Sample Player") == SP_get_plugin(chip_under->_sound_producer)->type->type_name){
+      VECTOR_push_back(&v, "--------Sample player");
       random = VECTOR_push_back(&v, "Load random sample from folder (Left Shift + R)");
-      VECTOR_push_back(&v, "--------");
     }
+
+    VECTOR_push_back(&v, "--------Object");
 
     if (plugin->type->num_outputs>0 && getNumOutAudioConnections(patch->id)==0)
       connect_to_main_pipe = VECTOR_push_back(&v, "Connect to main pipe");
@@ -1330,14 +1336,18 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       bypass = VECTOR_push_back(&v, "[check off]Bypass");
     }
 
-    VECTOR_push_back(&v, "--------");
-    unsolo_all = VECTOR_push_back(&v, "Un-solo all");
-    mute_all = VECTOR_push_back(&v, "Mute all");
-    unmute_all = VECTOR_push_back(&v, "Un-mute all");
+    VECTOR_push_back(&v, talloc_format("--------Instrument: \"%s\"", patch->name));
+
+    rename = VECTOR_push_back(&v, "Rename");
     
-    VECTOR_push_back(&v, "--------");
-    
+    VECTOR_push_back(&v, "---------");
+        
+    load = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Load preset" : "Load preset (.rec)");
+
     save = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Save preset" : "Save preset (.rec)");
+
+    VECTOR_push_back(&v, "---------");
+        
     config_color = VECTOR_push_back(&v, "Configure color");
     generate_new_color = VECTOR_push_back(&v, "Generate new color");
     
@@ -1366,6 +1376,13 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     VECTOR_push_back(&v, "--------");
     
     instrument_info = VECTOR_push_back(&v, "Show info");
+    
+    VECTOR_push_back(&v, "--------Mixer");
+        
+    unsolo_all = VECTOR_push_back(&v, "Un-solo all");
+    mute_all = VECTOR_push_back(&v, "Mute all");
+    unmute_all = VECTOR_push_back(&v, "Un-mute all");
+    
   }
 
   
@@ -1377,7 +1394,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     patch_ids.push_back(patch->id);
   }END_VECTOR_FOR_EACH;
 
-#define sels connect_to_main_pipe,insert,replace,solo,solo_several,unsolo_several,mute,mute_several,unmute_several,unsolo_all,mute_all,unmute_all,bypass,copy,cut,delete_,save,show_mixer_strips,config_color,generate_new_color,show_gui,receive_external_midi,random,instrument_info
+#define sels connect_to_main_pipe,insert,replace,solo,solo_several,unsolo_several,mute,mute_several,unmute_several,unsolo_all,mute_all,unmute_all,bypass,copy,cut,delete_,load,save,rename,show_mixer_strips,config_color,generate_new_color,show_gui,receive_external_midi,random,instrument_info
   
   GFX_Menu3(v,[is_alive, chip_under, scene, patch_ids, sels, mouse_x, mouse_y, parentguinum](int sel, bool onoff){
       
@@ -1468,6 +1485,16 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       } else if (sel==delete_) {
         
         MW_delete2(mouse_x, mouse_y, true);
+        
+      } else if (sel==rename) {
+
+        R_ASSERT_RETURN_IF_FALSE(patch_ids.size() == 1);
+        S7CALL2(void_int, "FROM_C-request-rename-instrument", patch_ids.at(0));
+        
+      } else if (sel==load) {
+
+        R_ASSERT_RETURN_IF_FALSE(patch_ids.size() == 1);
+        requestReplaceInstrument(patch_ids.at(0), "", parentguinum);
         
       } else if (sel==save) {
         
