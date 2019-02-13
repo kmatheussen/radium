@@ -1234,6 +1234,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int unsolo_several = -1;
   int mute = -1;
   int mute_several = -1;
+  int bypass = -1;
   int unmute_several = -1;
   int unsolo_all = -1;
   int mute_all = -1;
@@ -1270,6 +1271,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     VECTOR_push_back(&v, "--------");
     solo_several = VECTOR_push_back(&v, "Solo all selected");
     unsolo_several = VECTOR_push_back(&v, "Un-solo all selected");
+    VECTOR_push_back(&v, "--------");
     mute_several = VECTOR_push_back(&v, "Mute all selected");
     unmute_several = VECTOR_push_back(&v, "Un-mute all selected");
     VECTOR_push_back(&v, "--------");
@@ -1322,6 +1324,12 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       //unmute = VECTOR_push_back(&v, "[disabled]Un-mute");
     }
 
+    if (PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_PLUGIN) < 0.5){
+      bypass = VECTOR_push_back(&v, "[check on]Bypass");
+    }else{
+      bypass = VECTOR_push_back(&v, "[check off]Bypass");
+    }
+
     VECTOR_push_back(&v, "--------");
     unsolo_all = VECTOR_push_back(&v, "Un-solo all");
     mute_all = VECTOR_push_back(&v, "Mute all");
@@ -1369,7 +1377,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     patch_ids.push_back(patch->id);
   }END_VECTOR_FOR_EACH;
 
-#define sels connect_to_main_pipe,insert,replace,solo,solo_several,unsolo_several,mute,mute_several,unmute_several,unsolo_all,mute_all,unmute_all,copy,cut,delete_,save,show_mixer_strips,config_color,generate_new_color,show_gui,receive_external_midi,random,instrument_info
+#define sels connect_to_main_pipe,insert,replace,solo,solo_several,unsolo_several,mute,mute_several,unmute_several,unsolo_all,mute_all,unmute_all,bypass,copy,cut,delete_,save,show_mixer_strips,config_color,generate_new_color,show_gui,receive_external_midi,random,instrument_info
   
   GFX_Menu3(v,[is_alive, chip_under, scene, patch_ids, sels, mouse_x, mouse_y, parentguinum](int sel, bool onoff){
       
@@ -1424,6 +1432,10 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       } else if (sel==mute) {
         
         MW_mute(patches, onoff);
+        
+      } else if (sel==bypass) {
+        
+        MW_bypass(patches, onoff);
         
       } else if (sel==mute_several) {
         
