@@ -71,10 +71,15 @@
       ""
       (let* ((command (get-keybindings-command (get-python-ra-funcname rafuncname) args))
              (keybinding (<ra> :get-keybinding-from-command command)))
+        ;;(c-display "command:" command)
+        ;;(c-display "keybinding:" keybinding)
         (if (string=? "" keybinding)
             ""
             (get-displayable-keybinding-from-keybinding keybinding)))))
 
+
+(define (FROM_C-get-displayable-keybinding rafuncname args)
+  (get-displayable-keybinding rafuncname (to-list args)))
 
 (***assert*** (get-displayable-keybinding "w" '())
               "")
@@ -85,6 +90,8 @@
 (get-displayable-keybinding "e" '())
 (get-displayable-keybinding "ra:copy-tracke" '())
 (get-displayable-keybinding "ra:paste-seqblocks" '())
+(get-displayable-keybinding "ra:copy-paste-seqblocks" '())
+(get-displayable-keybinding "ra:copy-selected-mixer-objects" '())
 
 (get-displayable-keybinding "ra:eval-scheme" '("(moduloskew-track -1)"))
   
