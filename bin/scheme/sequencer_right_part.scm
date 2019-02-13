@@ -97,8 +97,8 @@
                                        (if (and (<ra> :shift-pressed)
                                                 (= button *right-button*))
                                            (<ra> :delete-block blocknum)
-                                           (begin
-                                             (<ra> :select-block blocknum)))
+                                           (if (not (<ra> :is-playing-song))
+                                               (<ra> :select-block blocknum)))
                                        (update)
                                        #f)
                            :is-current (= (<ra> :current-block) blocknum)
