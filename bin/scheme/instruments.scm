@@ -967,6 +967,17 @@
                        (not (string=? new-name old-name)))
                   (<ra> :set-instrument-name new-name instrument-id)))
 
+   "-----------"
+   
+   (list "Load Preset" :enabled instrument-id
+         :enabled (not (<ra> :instrument-is-permanent instrument-id))
+         (lambda ()
+           (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
+   (list "Save Preset" :enabled instrument-id
+         :enabled (not (<ra> :instrument-is-permanent instrument-id))
+         (lambda ()
+           (<ra> :save-instrument-preset (list instrument-id) parentgui)))
+   
    "------------------"
    
    "Show Info" (lambda ()
