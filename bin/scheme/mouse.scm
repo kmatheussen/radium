@@ -356,7 +356,7 @@
           ;;
           (when (and (not (<ra> :sequencer-in-window))
                      (<ra> :can-move-pointer))
-            
+
             (define (set-mouse x y)
               ;;(c-display " ... SET MOUSE " x y)
               (<ra> :move-mouse-pointer x y)
@@ -380,19 +380,20 @@
               (define new-x x)
               (define new-y y)
 
-              (if (<= x limit)
-                  (set! new-x limit)
-                  (if (>= x (- x2 limit-x2))
-                      (set! new-x (- x2 limit-x2))))
+              (cond ((<= x limit)
+                     (set! new-x limit))
+                    ((>= x (- x2 limit-x2))
+                     (set! new-x (- x2 limit-x2))))
               
-              (if (<= y limit)
-                  (set! new-y limit)
-                  (if (>= y (- y2 limit))
-                      (set! new-y (- y2 limit))))
-
-              (if (or (not (= new-x x))
-                      (not (= new-y y)))
-                  (set-mouse new-x new-y))))
+              (cond ((<= y limit)
+                     (set! new-y limit))
+                    ((and (>= y (- y2 limit))
+                          mouse-pointer-is-hidden)
+                     (set! new-y (- y2 limit))))
+              
+              (cond ((or (not (= new-x x))
+                         (not (= new-y y)))
+                     (set-mouse new-x new-y)))))
               
 
           (set! instance (move-and-release $button
