@@ -764,15 +764,6 @@
               ;;                                #t)
 
               (get-instrument-popup-entries instrument-id parentgui :must-have-inputs effect-name :must-have-outputs effect-name)
-              "-----------"
-              (list "Load Preset" :enabled instrument-id
-                    :enabled (not (<ra> :instrument-is-permanent instrument-id))
-                    (lambda ()
-                      (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
-              (list "Save Preset" :enabled instrument-id
-                    :enabled (not (<ra> :instrument-is-permanent instrument-id))
-                    (lambda ()
-                      (<ra> :save-instrument-preset (list instrument-id) parentgui)))
 
               (get-global-mixer-strips-popup-entries first-instrument-id strips-config parent-instrument-id)
               )
