@@ -766,6 +766,28 @@ dyn_t s7extra_callFunc2_dyn_dyn_dyn_dyn_int(const char *funcname, const dyn_t ar
 }
 
 
+dyn_t s7extra_callFunc_dyn_dyn_int(const func_t *func, const dyn_t arg1, int64_t arg2){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list_nl(s7,
+                                         3,
+                                         (s7_pointer)func,
+                                         Protect(s7extra_make_dyn(s7, arg1)).v,
+                                         Protect(s7_make_integer(s7, arg2)).v,
+                                         NULL
+                                         )
+                              );
+  
+
+  return s7extra_dyn(s7, ret);
+}
+
+dyn_t s7extra_callFunc2_dyn_dyn_int(const char *funcname, const dyn_t arg1, int64_t arg2){
+  return s7extra_callFunc_dyn_dyn_int((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
+}
+
+
 dyn_t s7extra_callFunc_dyn_charpointer(const func_t *func, const char *arg1){
   ScopedEvalTracker eval_tracker;
   
@@ -1527,14 +1549,14 @@ const char *s7extra_callFunc_charpointer_dyn(const func_t *func, const dyn_t arg
   
   s7_pointer ret = catch_call(s7,
                               s7_list_nl(s7,
-                                         2,
-                                         (s7_pointer)func,
-                                         Protect(s7extra_make_dyn(s7, arg1)).v,
-                                         NULL
+                                           2,
+                                           (s7_pointer)func,
+                                           Protect(s7extra_make_dyn(s7, arg1)).v,
+                                           NULL
                                          )
                               );
   if(!s7_is_string(ret)){
-    handleError("Callback did not return an integer");
+    handleError("Callback did not return a string");
     return "";
   }else{
     return talloc_strdup(s7_string(ret));
@@ -1543,6 +1565,30 @@ const char *s7extra_callFunc_charpointer_dyn(const func_t *func, const dyn_t arg
 
 const char *s7extra_callFunc2_charpointer_dyn(const char *funcname, const dyn_t arg1){
   return s7extra_callFunc_charpointer_dyn((const func_t*)find_scheme_value(s7, funcname), arg1);
+}
+
+const char *s7extra_callFunc_charpointer_charpointer_dyn(const func_t *func, const char* arg1, const dyn_t arg2){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list_nl(s7,
+                                         3,
+                                         (s7_pointer)func,
+                                         Protect(s7_make_string(s7, arg1)).v,
+                                         Protect(s7extra_make_dyn(s7, arg2)).v,
+                                         NULL
+                                         )
+                              );
+  if(!s7_is_string(ret)){
+    handleError("Callback did not return a string");
+    return "";
+  }else{
+    return talloc_strdup(s7_string(ret));
+  }
+}
+
+const char *s7extra_callFunc2_charpointer_charpointer_dyn(const char *funcname, const char* arg1, const dyn_t arg2){
+  return s7extra_callFunc_charpointer_charpointer_dyn((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
 }
 
 #if !defined(RELEASE)

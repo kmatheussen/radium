@@ -242,14 +242,14 @@
         (let ((B -__Arg2))
           (begin
             (newline)
-            (pretty-print "Wrong. Result: ")
-            (pretty-print (to-displayable-string A))
-            (pretty-print ". Correct: ")
-            (pretty-print (to-displayable-string B))
-            (pretty-print "")
+            (c-display ". Correct: ")
+            (c-display (pp B))
+            (c-display "Wrong. Result: ")
+            (c-display (pp A))
             (handle-assertion-failure-during-startup (list "***assert*** failed. Result:" A ". Expected:" B))
             (newline)
-            (error 'assert-failed)
+            (if *is-initializing*
+                (error 'assert-failed))
             #f))))
     (-__Func1))
 
@@ -532,6 +532,8 @@
     FROM_C-paint-sequencer-grid
     FROM_C-show-effect-popup-menu
     show-instrument-color-dialog
+    FROM_C-prepare-seqblock-stretch-automation-for-interface2
+    FROM_C-request-rename-instrument
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
