@@ -771,19 +771,32 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
           p.setBrush(qcolor1);
           p.drawRect(rect1);
         }
-        
+
+        const bool do_gradient = false;
+
+        float ratio = (_y2-_y1) / (x2-x1);
+        int how_much_gradient = R_BOUNDARIES(5, scale(ratio, 1, 15, 0, 15), 15);
         
         // decaying meter
         {
+          float gx = (x1+x2) / 2.0;
 
             // Do the dark green
             {
               float dark_green_pos = R_MAX(pos, posm20db);
               QRectF rect(x1, dark_green_pos,
                           x2-x1,  get_pos_y2()-dark_green_pos);
-              
-              p.setBrush(colordarkgreen);
-              p.drawRect(rect);
+
+              if(do_gradient){
+                QLinearGradient gradient(gx, posm20db, gx, get_pos_y2());
+                gradient.setColorAt(1, colordarkgreen);
+                gradient.setColorAt(0, colorgreen);
+                p.setBrush(gradient);
+                p.drawRect(rect);
+              } else {
+                //p.setBrush(colordarkgreen);
+                myFillRectHorizontalGradient(p, rect, colordarkgreen, true, how_much_gradient);
+              }
             }
 
             // Do the green
@@ -792,8 +805,16 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
               QRectF rect(x1, green_pos,
                           x2-x1,  posm20db-green_pos);
               
-              p.setBrush(colorgreen);
-              p.drawRect(rect);
+              if(do_gradient){
+                QLinearGradient gradient(gx, pos0db, gx, posm20db);
+                gradient.setColorAt(1, colorgreen);
+                gradient.setColorAt(0, color0db);
+                p.setBrush(gradient);
+                p.drawRect(rect);
+              } else {
+                p.setBrush(colorgreen);
+                myFillRectHorizontalGradient(p, rect, colorgreen, true, how_much_gradient);
+              }
             }
 
             // Do the yellow
@@ -802,8 +823,16 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
               QRectF rect(x1, yellow_pos,
                            x2-x1,  pos0db-yellow_pos);
               
-              p.setBrush(color0db);
-              p.drawRect(rect);
+              if(do_gradient){
+                QLinearGradient gradient(gx, pos4db, gx, pos0db);
+                gradient.setColorAt(1, color0db);
+                gradient.setColorAt(0, color4db);
+                p.setBrush(gradient);
+                p.drawRect(rect);
+              } else {
+                //p.setBrush(color0db);
+                myFillRectHorizontalGradient(p, rect, color0db, true, how_much_gradient);
+              }
             }
 
             // Do the red
@@ -811,9 +840,16 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
               float red_pos = pos;
               QRectF rect(x1, red_pos,
                            x2-x1,  pos4db-red_pos);
-              
-              p.setBrush(color4db);
-              p.drawRect(rect);
+              if(do_gradient){
+                QLinearGradient gradient(gx, get_pos_y1(), gx, pos4db);
+                gradient.setColorAt(1, color4db);
+                gradient.setColorAt(0, color4db.darker());
+                p.setBrush(gradient);
+                p.drawRect(rect);
+              } else {
+                //p.setBrush(color4db);
+                myFillRectHorizontalGradient(p, rect, color4db, true, how_much_gradient);
+              }
             }
         }
 
