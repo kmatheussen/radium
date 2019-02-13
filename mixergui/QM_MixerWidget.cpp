@@ -1207,6 +1207,20 @@ void MW_set_connections_visibility(bool show){
   g_connections_are_visible=show;
 }
 
+static const char *get_displayable_keybinding(const char *prefix, const char *racommand, const dynvec_t &args){
+  const char *result = S7CALL2(charpointer_charpointer_dyn, "FROM_C-get-displayable-keybinding", racommand, DYN_create_array(args));
+
+  if (!strcmp("", result))
+    return prefix;
+  else
+    return talloc_format("[shortcut]%s[/shortcut]%s", result, prefix);
+}
+
+static int create_menu_entry(vector_t *v, const char *prefix, const char *racommand, const dynvec_t &args = *g_empty_dynvec.array){
+  return VECTOR_push_back(v, get_displayable_keybinding(prefix, racommand, args));
+}
+  
+                             
 static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent * event, float mouse_x, float mouse_y){
 
   Chip *chip_under = MW_get_chip_at(mouse_x,mouse_y,NULL);
@@ -1259,19 +1273,26 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   
   if (patches.num_elements > 1) {
 
+    VECTOR_push_back(&v, "--------Sample player");
+    
     if (has_sampler_instrument)
-      random = VECTOR_push_back(&v, "Load random samples from folders (Left Shift + R)");
+      random = create_menu_entry(&v, "Load random samples from folders", "ra:set-random-sample-for-all-selected-instruments");
     else
-      random = VECTOR_push_back(&v, "[disabled]Load random sample from folders (Left Shift + R)");
+      random = create_menu_entry(&v, "[disabled]Load random samples from folders", "ra:set-random-sample-for-all-selected-instruments");
+
+    VECTOR_push_back(&v, "--------Selected objects");
+
+    copy = create_menu_entry(&v, "Copy", "ra:copy-selected-mixer-objects");
+    
+    cut = create_menu_entry(&v, "Cut", "ra:cut-selected-mixer-objects");
+    
+    delete_ = VECTOR_push_back(&v, "Delete"); // sound objects");
+
     VECTOR_push_back(&v, "--------");
     
-    copy = VECTOR_push_back(&v, "Copy"); // sound objects");
-    cut = VECTOR_push_back(&v, "Cut"); // sound objects");
-    delete_ = VECTOR_push_back(&v, "Delete"); // sound objects");
-    VECTOR_push_back(&v, "--------");
     save = VECTOR_push_back(&v, "Save multi preset (.mrec)");
     VECTOR_push_back(&v, "--------");
-    show_mixer_strips = VECTOR_push_back(&v, "Show mixer strips");
+    show_mixer_strips = VECTOR_push_back(&v, "Create new mixer strips window for the selected objects");
     VECTOR_push_back(&v, "--------");
     solo_several = VECTOR_push_back(&v, "Solo all selected");
     unsolo_several = VECTOR_push_back(&v, "Un-solo all selected");
@@ -1279,13 +1300,14 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     mute_several = VECTOR_push_back(&v, "Mute all selected");
     unmute_several = VECTOR_push_back(&v, "Un-mute all selected");
     VECTOR_push_back(&v, "--------");
+    config_color = VECTOR_push_back(&v, "Configure color");
+    generate_new_color = VECTOR_push_back(&v, "Generate new color");
+
+    VECTOR_push_back(&v, "--------Mixer");
     unsolo_all = VECTOR_push_back(&v, "Un-solo all");
     mute_all = VECTOR_push_back(&v, "Mute all");
     unmute_all = VECTOR_push_back(&v, "Un-mute all");
-    VECTOR_push_back(&v, "--------");
-    config_color = VECTOR_push_back(&v, "Configure color");
-    generate_new_color = VECTOR_push_back(&v, "Generate new color");
-      
+
   } else { // i.e. if (patches.num_elements == 1){
 
     struct Patch *patch = CHIP_get_patch(chip_under);
@@ -1293,7 +1315,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
     if (QString("Sample Player") == SP_get_plugin(chip_under->_sound_producer)->type->type_name){
       VECTOR_push_back(&v, "--------Sample player");
-      random = VECTOR_push_back(&v, "Load random sample from folder (Left Shift + R)");
+      random = create_menu_entry(&v, "Load random samples from folders", "ra:set-random-sample-for-all-selected-instruments");
     }
 
     VECTOR_push_back(&v, "--------Object");
@@ -1305,9 +1327,11 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     replace = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Replace" : "Replace"); // sound object");
     
     VECTOR_push_back(&v, "--------");
+
+    copy = create_menu_entry(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Copy" : "Copy", "ra:copy-selected-mixer-objects");
     
-    copy = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Copy" : "Copy"); // sound object");
-    cut = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Cut" : "Cut"); // sound object");
+    cut = create_menu_entry(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Cut" : "Cut", "ra:cut-selected-mixer-objects");
+    
     delete_ = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Delete" : "Delete"); // sound object");
 
     VECTOR_push_back(&v, "--------");
@@ -1494,7 +1518,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       } else if (sel==load) {
 
         R_ASSERT_RETURN_IF_FALSE(patch_ids.size() == 1);
-        requestReplaceInstrument(patch_ids.at(0), "", parentguinum);
+        requestLoadInstrumentPreset(patch_ids.at(0), "", parentguinum);
         
       } else if (sel==save) {
         
