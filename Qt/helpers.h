@@ -152,12 +152,13 @@ static inline QPoint getCentrePosition(QWidget *parent, int width, int height, Q
       // Move to middle of screen instead.
       parentRect = QApplication::desktop()->availableGeometry();
     else
-      parentRect = parent->window()->geometry();
+      parentRect = parent->window()->frameGeometry();
     
   }
   
-  int x = parentRect.x()+parentRect.width()/2-width/2;
-  int y = parentRect.y()+parentRect.height()/2-height/2;
+  int x = parentRect.x() + (parentRect.width() - width)/2;
+  int y = parentRect.y() + (parentRect.height() - height)/2;
+  
   //printf("w: %d, h: %d\n",width,height);
 
   return QPoint(R_MAX(20, x), R_MAX(20, y));
