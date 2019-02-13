@@ -4540,15 +4540,27 @@
                 (<ra> :set-seqtempo-visible doit)))
         (list "Time"
               :check (<ra> :show-time-sequencer-lane)
-              :enabled (or (not (<ra> :show-time-sequencer-lane))
+              :enabled (or #t
+                           (not (<ra> :show-time-sequencer-lane))
                            (<ra> :show-bars-and-beats-sequencer-lane))
               (lambda (doit)
+                (if (and (not doit)
+                         (not (<ra> :show-bars-and-beats-sequencer-lane)))
+                    (<ra> :set-show-bars-and-beats-sequencer-lane #t))
+                    ;;(show-async-message (<gui> :get-sequencer-gui)
+                    ;;                    "Either the time lane or the bars+beats lane must be visible")
                 (<ra> :set-show-time-sequencer-lane doit)))
         (list "Bars and beats"
               :check (<ra> :show-bars-and-beats-sequencer-lane)
-              :enabled (or (not (<ra> :show-bars-and-beats-sequencer-lane))
+              :enabled (or #t
+                           (not (<ra> :show-bars-and-beats-sequencer-lane))
                            (<ra> :show-time-sequencer-lane))
               (lambda (doit)
+                (if (and (not doit)
+                         (not (<ra> :show-time-sequencer-lane)))
+                    (<ra> :set-show-time-sequencer-lane #t))
+                    ;;(show-async-message (<gui> :get-sequencer-gui)
+                    ;;                    "Either the time lane or the bars+beats lane must be visible")
                 (<ra> :set-show-bars-and-beats-sequencer-lane doit)))
         (list "Tempos"
               :check (<ra> :show-tempos-sequencer-lane)
