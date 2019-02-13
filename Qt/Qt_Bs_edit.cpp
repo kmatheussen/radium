@@ -857,7 +857,8 @@ public slots:
     if (seqtrack->for_audiofiles==true)
       _last_selected_audiofilenum = num;
     else
-      selectBlock(num, -1);
+      if (!is_playing_song())
+        selectBlock(num, -1);
   }
 
   void blocklist_doubleclicked(QListWidgetItem *item){
