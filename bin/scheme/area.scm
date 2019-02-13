@@ -419,7 +419,12 @@
                                             nonpress-mouse-cycles)
                                   #f)))))
        
-     
+     (define do-nothing-mouse-cycle (make-mouse-cycle (lambda (button x* y*)
+                                                        (assert #f))
+                                                      (lambda (button x* y*)
+                                                        #f)
+                                                      (lambda (button x* y*)
+                                                        #f)))
 
      (define (get-mouse-cycle button x* y*)
        (and (paint?)
@@ -432,8 +437,13 @@
                                   #f))
 		(call-with-exit (lambda (return)
                                   (for-each (lambda (mouse-cycle)
-                                              (and-let* ((res (mouse-cycle :press-func button x* y*)))
-                                                        (return mouse-cycle)))
+                                              (let ((use-it (mouse-cycle :press-func button x* y*)))
+                                                (cond ((eq? 'eat-mouse-cycle use-it)
+                                                       (return do-nothing-mouse-cycle))
+                                                      ((eq? #t use-it)
+                                                       (return mouse-cycle))
+                                                      (else
+                                                       (assert (eq? #f use-it))))))
                                             mouse-cycles)
                                   #f)))))
 
@@ -959,11 +969,7 @@
                              (update-me!)
                              #t)
                             (else
-                             #t)))
-                    (lambda (button x* y*)
-                      #f)
-                    (lambda (button x* y*)
-                      #f)))
+                             #t)))))
                           
                             
 (def-area-subclass (<radiobuttons> :gui :x1 :y1 :x2 :y2
@@ -1074,7 +1080,7 @@
                                   ;;(not (<ra> :shift-pressed))
                                   )
                              (right-mouse-clicked-callback)
-                             #t)
+                             'eat-mouse-cycle)
                             ((= button *left-button*)
                              (set! is-pressing #t)
                              (if callback
