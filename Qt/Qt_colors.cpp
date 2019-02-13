@@ -540,7 +540,7 @@ unsigned int GFX_MakeRandomColor(void){//int blendcolornum, float blendfactor){
 }
 
 unsigned int GFX_MakeRandomBlockColor(void){
-  QColor color = get_next_color().lighter(115);
+  QColor color = get_next_color().lighter(125);
   return color.rgb();
 }
   
