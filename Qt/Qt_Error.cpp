@@ -71,7 +71,7 @@ static int show_message(QString message, const QVector<QString> &menu_strings){
 }
 
 QMainWindow *g_main_window = NULL; // referenced by helpers.h
-QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
+//QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
 bool g_radium_runs_custom_exec = false; // used by helpers.h
 bool g_qt_is_painting = false;
 const char *g_qt_is_painting_where = "nowhere";

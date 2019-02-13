@@ -3,7 +3,6 @@
 #include <unistd.h>
 
 #include <QApplication>
-#include <QTextBrowser>
 #include <QFile>
 #include <QProcess>
 #include <QTimer>
@@ -14,6 +13,8 @@
 #include <QMutex>
 #include <QQueue>
 #include <QMutexLocker>
+#include <QPainter>
+#include <QDateTime>
 
 
 static const QString message_hide = "_MESSAGE_HIDE";
@@ -25,7 +26,7 @@ static const QString message_split_string = "_____SPLIT______";
 #ifdef P_CLIENT
 
 static QString g_main_message;
-static QTextBrowser *progressWindow = NULL;
+static QString g_content_message;
 
 /*
 static int longest_line(QString text){
@@ -38,6 +39,112 @@ static int longest_line(QString text){
 }
 */
 
+namespace{
+  class MyProgressWindow : public QWidget{
+    QPixmap _pixmap;
+    char _text[80];
+
+  public:
+    
+    MyProgressWindow()
+    {
+      qsrand(QDateTime::currentMSecsSinceEpoch());
+      generate_new_text();
+    }
+
+    void make_anagram(const char *input, char *output) const {
+      int len = strlen(input);
+      memset(output,0,len);
+      
+      output[0]=input[0];
+      
+      for(int i=1;i<len;i++){
+        int pos;
+        do{
+          pos=qrand() % len;
+        }while(output[pos] != 0);
+        output[pos] = input[i];
+      }
+
+      output[len] = 0;
+    }
+
+    void generate_new_text(void){
+      make_anagram("RADUM", _text);
+    }
+
+    void paintAnagram(QPainter &painter){
+      float text_height = height() / 5.5;
+      
+      QFont font("Nimbus Sans L");
+      //font.fromString("Nimbus Sans L [urw],48,-1,5,75,0,0,0,0,0,Bold"); //Nimbus Sans L");
+      //font.setPointSizeF(text_height);
+      font.setPixelSize(text_height);
+      font.setBold(true);
+
+      painter.setFont(font);
+      
+      float border = height() / 30.0;
+
+      painter.setPen(QPen(QColor("#3138bf")));
+      
+      QRectF rect(border, height() - text_height - border, width()-border*2, text_height);
+
+      //generate_new_text();
+        
+      painter.drawText(rect, _text);
+    }
+    
+    void resizeEvent(QResizeEvent *ev) override{
+      _pixmap = QPixmap("logo_medium.png").scaled(width(), height(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+      //QPainter painter(&_pixmap);
+    }
+
+    void paintEvent(QPaintEvent *ev) override{
+      QPainter painter(this);
+
+      painter.drawPixmap(0, 0, _pixmap);
+
+      float border = height() / 30.0;
+
+      QFont bold_font;
+      bold_font.setBold(true);
+      
+      const QFontMetrics fn(bold_font);
+      int header_height = fn.boundingRect(QRect(border,border,width() - border, height()),
+                                          Qt::TextWordWrap,
+                                          g_main_message
+                                          ).height();
+
+      int fontheight = fn.boundingRect(g_main_message).height();
+      
+      float ysplit1 = border + header_height + fontheight*0.5;
+      //float ysplit2 = ysplit1 + (header_height * 1.5);
+      
+      QRectF headline_rect(border, border,      width() - border, ysplit1-border);
+
+
+      QTextOption option(Qt::AlignTop|Qt::AlignLeft);
+      option.setWrapMode(QTextOption::WordWrap);
+
+      painter.setFont(bold_font);
+      painter.drawText(headline_rect, g_main_message, option);
+
+
+      QRectF message_rect(border, ysplit1, std::min(2 * width() / 3 - border, width()-border*2), height() - ysplit1);
+
+      QFont nonbold_font;
+      painter.setFont(nonbold_font);
+      painter.drawText(message_rect, g_content_message, option);
+
+      paintAnagram(painter);
+    }
+  };
+}
+
+static MyProgressWindow *g_progressWindow = NULL;
+
+
 class MyTimer : public QTimer{
 public:
   MyTimer(){
@@ -45,8 +152,8 @@ public:
   }
 
   void timerEvent(QTimerEvent *e) override {
-    if (progressWindow != NULL && progressWindow->isVisible()) {
-      progressWindow->raise();
+    if (g_progressWindow != NULL && g_progressWindow->isVisible()) {
+      g_progressWindow->raise();
     }
   }
 };
@@ -65,6 +172,9 @@ static void positionWindow(const QRect &rect, QWidget *widget){
     width = rect.width() + 100;
   }
 
+  height=rect.height();
+  width=rect.width();
+  
   widget->setMinimumHeight(height);
   widget->setMaximumHeight(height);
   widget->setMinimumWidth(width);
@@ -94,43 +204,48 @@ static QString handle_rect_in_message(QString message, QWidget *widget){
 }
 
 static void setContent(QString message){
-  progressWindow->setHtml("<p><pre>\n\n</pre><center><b>" + g_main_message + "</b></center><p><pre>\n\n\n</pre><blockquote>" + message + "</blockquote>");
+  g_content_message = message;
+  //progressWindow->setHtml("<p><pre>\n\n</pre><center><b>" + g_main_message + "</b></center><p><pre>\n\n\n</pre><blockquote>" + message + "</blockquote>");
+  g_progressWindow->update();
 }
 
+
 static void process_OpenProgress(QString message, QRect rect){
-  delete progressWindow;
+  delete g_progressWindow;
 
   g_main_message = message;
   
-  progressWindow = new QTextBrowser;
-  progressWindow->setStyleSheet("QTextBrowser { padding-left:20; padding-top:20; padding-bottom:20; padding-right:20; background-color: white;}");
-  
+  //progressWindow = new QTextBrowser;
+  g_progressWindow = new MyProgressWindow;
+  //progressWindow->setStyleSheet("QTextBrowser { padding-left:20; padding-top:20; padding-bottom:20; padding-right:20; background-color: white;}");
+  //  g_progressWindow->setStyleSheet("QTextBrowser { padding-left:20; padding-top:20; padding-bottom:20; padding-right:20; background-color: none;}"); //background-image: url(./logo_smaller.png);}");
   
 #if 1 // defined(FOR_LINUX) // popup locks up X on my computer if radium crashes while the progress window is open.
-  progressWindow->setWindowFlags(progressWindow->windowFlags() | Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint | Qt::MSWindowsFixedSizeDialogHint);
+  g_progressWindow->setWindowFlags(g_progressWindow->windowFlags() | Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint | Qt::MSWindowsFixedSizeDialogHint);
 #else
-  progressWindow->setWindowFlags(progressWindow->windowFlags() | Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
+  g_progressWindow->setWindowFlags(g_progressWindow->windowFlags() | Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
 #endif
 
-  progressWindow->resize(30,50); // positionWindow doesn't shrink window.
-  positionWindow(rect, progressWindow);
+  g_progressWindow->resize(30,50); // positionWindow doesn't shrink window.
+  positionWindow(rect, g_progressWindow);
   setContent("");
-  
-  progressWindow->show();
-  progressWindow->raise();
-  progressWindow->activateWindow();
+
+  g_progressWindow->generate_new_text();
+  g_progressWindow->show();
+  g_progressWindow->raise();
+  g_progressWindow->activateWindow();
 }
 
 static void process_ShowProgressMessage(QString message, QRect rect){
-  if (progressWindow == NULL)
+  if (g_progressWindow == NULL)
     process_OpenProgress("...", rect);
 
   setContent(message);
 }
 
 static void process_CloseProgress(void){
-  delete progressWindow;
-  progressWindow = NULL;
+  delete g_progressWindow;
+  g_progressWindow = NULL;
 }
 
 
@@ -237,13 +352,14 @@ int main(int argc, char **argv){
     if (line==message_exit)
       break;
     else if (line==message_hide) {
-      //progressWindow->setText("HIDING\n");
-      progressWindow->hide();
+      //g_progressWindow->setText("HIDING\n");
+      g_progressWindow->hide();
     } else if (line==message_show) {
-      progressWindow->show();
-      progressWindow->raise();
-    } else if (progressWindow->isVisible()){
-      QString message = handle_rect_in_message(line, progressWindow);
+      g_progressWindow->generate_new_text();
+      g_progressWindow->show();
+      g_progressWindow->raise();
+    } else if (g_progressWindow->isVisible()){
+      QString message = handle_rect_in_message(line, g_progressWindow);
       process_ShowProgressMessage(message, rect);
     }
 
@@ -294,10 +410,11 @@ static QRect get_rect(int fontsize){
 
 #ifdef TEST_MAIN
   return QRect(50,50,400,400);
-#else
-
-  int width = fontsize*600/8;
+#else  
+  
+  //int width = fontsize*600/8;
   int height = fontsize*300/8;
+  int width = height * 1.779291553133515;
   
   QPoint point = getCentrePosition(g_main_window, width, height);
 
@@ -317,9 +434,15 @@ static QString get_rect_string(void){
 }
 
 
+static int g_num_open = 0;
 
 void GFX_OpenProgress(const char *message){
-  GFX_CloseProgress();
+  g_num_open++;
+
+  if(g_num_open>1)
+    return;
+  
+  //GFX_CloseProgress();
 
   g_process = new QProcess;
 
@@ -408,6 +531,11 @@ bool GFX_ProgressIsOpen(void){
 
 
 void GFX_CloseProgress(void){
+  g_num_open--;
+
+  if(g_num_open > 0)
+    return;
+  
   if (g_process != NULL){
     send_string(message_exit);
     g_process->closeWriteChannel();

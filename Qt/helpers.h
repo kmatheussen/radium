@@ -6,7 +6,7 @@
 #include <QTimer>
 #include <QTime>
 #include <QMainWindow>
-#include <QSplashScreen>
+//#include <QSplashScreen>
 #include <QApplication>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -52,7 +52,7 @@ extern void set_editor_focus(void);
 extern QVector<QWidget*> g_static_toplevel_widgets;
 
 extern QMainWindow *g_main_window;
-extern QSplashScreen *g_splashscreen;
+//extern QSplashScreen *g_splashscreen;
 extern QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if !g_curr_popup_qmenu.isNull()
 extern QPointer<QMenu> g_curr_popup_qmenu;
 
@@ -674,7 +674,7 @@ struct ScopedQPointer {
 
 
 struct MyQMessageBox : public QMessageBox {
-  bool _splashscreen_visible;
+  //bool _splashscreen_visible;
 
   // Prevent stack allocation. Not sure, but I think get_current_parent() could return something that could be deleted while calling exec.
   MyQMessageBox(const MyQMessageBox &) = delete;
@@ -718,18 +718,20 @@ struct MyQMessageBox : public QMessageBox {
   }
   
   void showEvent(QShowEvent *event_) override {
+    /*
     _splashscreen_visible = g_splashscreen!=NULL && g_splashscreen->isVisible();
 
     if (_splashscreen_visible)
       g_splashscreen->hide();
-
+    */
     QMessageBox::showEvent(event_);
   }
   
   void hideEvent(QHideEvent *event_) override {
+    /*
     if (_splashscreen_visible && g_splashscreen!=NULL)
       g_splashscreen->show();
-
+    */
     QMessageBox::hideEvent(event_);
   }
   

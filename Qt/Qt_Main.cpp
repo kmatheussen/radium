@@ -199,7 +199,7 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
 class MyApplication;
 MyApplication *qapplication = NULL;
 QApplication *g_qapplication = NULL;
-QSplashScreen *g_splashscreen = NULL;
+//QSplashScreen *g_splashscreen = NULL;
 
 static QRect g_startup_rect;
 
@@ -3279,10 +3279,13 @@ int radium_main(const char *arg){
 
   //abort();
 
+  //getchar();
+  
   //RWarning("warning!");
   //g_splashscreen->finish(main_window);
-  delete g_splashscreen;
-  g_splashscreen = NULL;
+  GFX_CloseProgress();
+  //delete g_splashscreen;
+  //g_splashscreen = NULL;
   
   show_nag_window("");
 
@@ -3912,10 +3915,12 @@ int main(int argc, char **argv){
 
 
   //GC_disable();
-  QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
+  //QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
+  //QPixmap pixmap(QPixmap(OS_get_full_program_file_path("/home/kjetil/radium/pictures/logo_big.png")).scaled(QSize(256,256), Qt::KeepAspectRatioByExpanding));
+  GFX_OpenProgress("Please wait, starting program");
   
-  g_splashscreen = new QSplashScreen(pixmap);
-#if 1 //def RELEASE
+  //g_splashscreen = new QSplashScreen(pixmap);
+#if 0 //def RELEASE
   g_splashscreen->adjustSize();
   g_splashscreen->showMessage("Starting up");
   g_splashscreen->show();
@@ -3923,7 +3928,7 @@ int main(int argc, char **argv){
   QApplication::processEvents();
 #endif
 
-#ifdef FOR_WINDOWS
+#if 0 //def FOR_WINDOWS
   HWND wnd=(HWND)g_splashscreen->winId();
   //SetFocus(rt_msgBox);
   SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE); // The splash screen window doesn't always show at top.
