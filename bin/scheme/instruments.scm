@@ -927,6 +927,14 @@
 (<ra> :get-sound-plugin-registry #t)
 ||#
 
+(define (FROM_C-request-rename-instrument instrument-id)
+  (define old-name (<ra> :get-instrument-name instrument-id))
+  (define new-name (<ra> :request-string "New name:" #t old-name))
+  (c-display "NEWNAME" (<-> "-" new-name "-"))
+  (if (and (not (string=? new-name ""))
+           (not (string=? new-name old-name)))
+      (<ra> :set-instrument-name new-name instrument-id)))
+
 
 (delafina (get-instrument-popup-entries :instrument-id
                                         :parentgui
@@ -936,15 +944,17 @@
   (list
    (<-> "----------Instrument: \"" (<ra> :get-instrument-name instrument-id) "\"");; " instrument")
    ;;"-----------Instrument"
-   (let ((is-current (= (<ra> :get-current-instrument)
-                        instrument-id)))
-     (and (not is-current)
-          (list
-           (list "Set as current instrument"
-                 :enabled (not is-current)
-                 (lambda ()
-                   (<ra> :set-current-instrument instrument-id #f)))
-           "------------------")))
+   
+   (and #f ;; Seems like instrument-id is always current instrument.
+        (let ((is-current (= (<ra> :get-current-instrument)
+                             instrument-id)))
+          (and (not is-current)
+               (list
+                (list "Set as current instrument"
+                      :enabled (not is-current)
+                      (lambda ()
+                        (<ra> :set-current-instrument instrument-id #f)))
+                "------------------"))))
 
    (and include-delete-and-replace
         (list
@@ -960,32 +970,28 @@
          "------------------"))
   
    "Rename" (lambda ()
-              (define old-name (<ra> :get-instrument-name instrument-id))
-              (define new-name (<ra> :request-string "New name:" #t old-name))
-              (c-display "NEWNAME" (<-> "-" new-name "-"))
-              (if (and (not (string=? new-name ""))
-                       (not (string=? new-name old-name)))
-                  (<ra> :set-instrument-name new-name instrument-id)))
+              (FROM_C-request-rename-instrument instrument-id))
 
    "-----------"
    
-   (list "Load Preset" :enabled instrument-id
+   (list "Load Preset (.rec)" :enabled instrument-id
          :enabled (not (<ra> :instrument-is-permanent instrument-id))
          (lambda ()
            (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
-   (list "Save Preset" :enabled instrument-id
+   (list "Save Preset (.rec)" :enabled instrument-id
          :enabled (not (<ra> :instrument-is-permanent instrument-id))
          (lambda ()
            (<ra> :save-instrument-preset (list instrument-id) parentgui)))
    
    "------------------"
    
-   "Show Info" (lambda ()
-                 (<ra> :show-instrument-info instrument-id parentgui))
    "Configure color" (lambda ()
                        (show-instrument-color-dialog parentgui instrument-id))
    "Generate new color" (lambda ()
                           (<ra> :set-instrument-color (<ra> :generate-new-color 0.9) instrument-id))
+
+   "--------"
+   
    (list "Show GUI"
          :enabled (<ra> :has-native-instrument-gui instrument-id)
          :check (<ra> :instrument-gui-is-visible instrument-id parentgui)
@@ -997,6 +1003,12 @@
          :check (<ra> :instrument-always-receive-midi-input instrument-id)
          (lambda (onoff)
            (<ra> :set-instrument-always-receive-midi-input instrument-id onoff)))
+   
+   "--------"
+   
+   "Show Info" (lambda ()
+                 (<ra> :show-instrument-info instrument-id parentgui))
+
    ))
               
 
