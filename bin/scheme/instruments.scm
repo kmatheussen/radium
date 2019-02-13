@@ -899,6 +899,7 @@
                  (cons (list "Paste" ;; sound objects(s)"
                              :enabled (and (instrconf :include-load-preset)
                                            (<ra> :instrument-preset-in-clipboard))
+                             :shortcut ra:paste-mixer-objects
                              mcallback)
                        (loop (cdr entries))))
                 ((string=? type "NUM_USED_PLUGIN")
@@ -955,31 +956,34 @@
                       (lambda ()
                         (<ra> :set-current-instrument instrument-id #f)))
                 "------------------"))))
-
-   (and include-delete-and-replace
-        (list
-         (list "Delete"
-               :enabled (not (<ra> :instrument-is-permanent instrument-id))
-               (lambda ()
-                 (<ra> :delete-instrument instrument-id)))
-         (list "Replace"
-               :enabled (not (<ra> :instrument-is-permanent instrument-id))
-               (lambda ()           
-                 (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs must-have-inputs :must-have-outputs must-have-outputs :parentgui parentgui)))
-               )
-         "------------------"))
-  
+   
+   (list "Delete"
+         :enabled (and include-delete-and-replace
+                       (not (<ra> :instrument-is-permanent instrument-id)))
+         (lambda ()
+           (<ra> :delete-instrument instrument-id)))
+   (list "Replace"
+         :enabled (and include-delete-and-replace
+                       (not (<ra> :instrument-is-permanent instrument-id)))
+         (lambda ()           
+           (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs must-have-inputs :must-have-outputs must-have-outputs :parentgui parentgui)))
+         )
+   
+   "------------------"
+   
    "Rename" (lambda ()
               (FROM_C-request-rename-instrument instrument-id))
-
+   
    "-----------"
    
    (list "Load Preset (.rec)" :enabled instrument-id
-         :enabled (not (<ra> :instrument-is-permanent instrument-id))
+         :enabled (and include-delete-and-replace
+                       (not (<ra> :instrument-is-permanent instrument-id)))
          (lambda ()
            (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
    (list "Save Preset (.rec)" :enabled instrument-id
-         :enabled (not (<ra> :instrument-is-permanent instrument-id))
+         :enabled (and include-delete-and-replace
+                       (not (<ra> :instrument-is-permanent instrument-id)))
          (lambda ()
            (<ra> :save-instrument-preset (list instrument-id) parentgui)))
    
