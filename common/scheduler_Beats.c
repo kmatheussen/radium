@@ -4,6 +4,7 @@
 #include "nsmtracker.h"
 #include "patch_proc.h"
 #include "placement_proc.h"
+#include "sequencer_timing_proc.h"
 
 #include "../audio/Mixer_proc.h"
 
@@ -94,7 +95,10 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
     if (iterator->last_valid_signature.denominator<=0)
       abort();
 #endif
-  
+
+    g_rt_beatnum = beat->beat_num;
+    g_rt_barnum = beat->bar_num;
+
     if (beat->beat_num==1)
       iterator->new_beat_bar_set = true;
     //iterator->beat_position_of_last_bar_start = RT_LPB_get_beat_position();

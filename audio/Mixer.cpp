@@ -1310,31 +1310,8 @@ struct Mixer{
       // 3. Set bar and beat.
       ///////////////////////////////////
       
-      if (using_sequencer_timing){
-
-        pos->beat = g_rt_sequencer_beatnum;
-        pos->bar = g_rt_sequencer_barnum;
-        
-      } else {
-        
-        const struct Beats *beat = seqtrack->beat_iterator.next_beat;
-        
-        if (beat==NULL) {
-          // TO REPRODUCE:
-          // 1. Play block
-          // 2. Wait until cursor is at line 62
-          // 3. Press AltGr+Space
-          // (transport was set to jack, don't know if it's required)
-          //
-          //R_ASSERT_NON_RELEASE(false); // Removed since it happened so often. (doesn't seem like a very important bug)
-          pos->bar = 1;
-          pos->beat = 1;
-        } else {
-          pos->bar = beat->bar_num;
-          pos->beat = beat->beat_num;
-        }
-
-      }
+      pos->beat = g_rt_beatnum;
+      pos->bar = g_rt_barnum;
 
     }
     

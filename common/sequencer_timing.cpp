@@ -883,8 +883,8 @@ StaticRatio g_rt_sequencer_signature = {4,4};
 double g_rt_sequencer_bpm = 120;
 double g_rt_sequencer_ppq = 0;
 double g_rt_sequencer_ppq_of_last_bar_start = 0;
-int g_rt_sequencer_beatnum = 1;
-int g_rt_sequencer_barnum = 0;
+int g_rt_beatnum = 1;
+int g_rt_barnum = 0;
 
 static void RT_play_click(struct SeqTrack *seqtrack, int beatnum){
   //printf("           beaTT: %d\n", beatnum);
@@ -917,7 +917,7 @@ bool RT_SEQUENCER_TIMING_call_before_start_of_audio_block(struct SeqTrack *seqtr
     g_rt_sequencer_bpm = RT_SEQUENCER_TEMPO_get_value(start_time);
     g_rt_sequencer_ppq = RT_SEQUENCER_TEMPO_get_num_quarters(start_time);
 
-    g_rt_sequencer_ppq_of_last_bar_start = RT_SEQUENCER_BAR_get_ppq_of_last_bar_start(start_time, g_rt_sequencer_barnum);
+    g_rt_sequencer_ppq_of_last_bar_start = RT_SEQUENCER_BAR_get_ppq_of_last_bar_start(start_time, g_rt_barnum);
 
     
     // find beatnum
@@ -934,10 +934,10 @@ bool RT_SEQUENCER_TIMING_call_before_start_of_audio_block(struct SeqTrack *seqtr
     const double beatnum = ppq_since_last_bar / ppq_duration_of_beat;
     const int i_beatnum = beatnum + 1;
     
-    if (g_rt_sequencer_beatnum != i_beatnum){
-      //printf("Beatnum: %d / %d\n", g_rt_sequencer_barnum, g_rt_sequencer_beatnum);
+    if (g_rt_beatnum != i_beatnum){
+      //printf("Beatnum: %d / %d\n", g_rt_barnum, g_rt_beatnum);
       
-      g_rt_sequencer_beatnum = i_beatnum;
+      g_rt_beatnum = i_beatnum;
     }
     
     if(ATOMIC_GET(root->clickonoff)){
