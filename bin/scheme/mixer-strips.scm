@@ -574,12 +574,15 @@
            (<gui> :filled-box label color 0 0 width height)
            (if is-minimized
                (begin
-                 (<gui> :draw-vertical-text label *text-color* name 2 7 (+ width 0) height #t #f #t)
+                 (define ysplit (if (<= num-in-path 1)
+                                    height
+                                    (- height (* 1.5 (<gui> :get-system-fontheight)))))                                    
+                 (<gui> :draw-vertical-text label *text-color* name 2 7 (+ width 0) ysplit #t #f #t)
                  (if (> num-in-path 1)
                      (<gui> :do-alpha label 0.7
                             (lambda () 
                               (<gui> :draw-text label *text-color* (<-> "(" (- num-in-path 1) ")")
-                                     2 (- height (* 1.5 (<gui> :get-system-fontheight)))
+                                     2 ysplit
                                      (+ width 0) height
                                      #f ;; wrap
                                      #f ;; align top
