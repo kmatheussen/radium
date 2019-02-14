@@ -532,7 +532,7 @@
     FROM_C-paint-sequencer-grid
     FROM_C-show-effect-popup-menu
     show-instrument-color-dialog
-    FROM_C-prepare-seqblock-stretch-automation-for-interface2
+    ;;FROM_C-prepare-seqblock-stretch-automation-for-interface2
     FROM_C-request-rename-instrument
     ))
 
