@@ -505,12 +505,13 @@
                                    :is-current #f
                                    :get-automation-data #f
                                    :text-x1 (+ x1 2)
+                                   :rounding 2.6
                                    )
 
   (define pos (scale value 0 1 x1 x2))
   (<gui> :filled-box widget (<gui> :get-background-color widget) x1 y1 x2 y2)
-  (<gui> :filled-box widget "black" (1+ x1) (1+ y1) (1- x2) (1- y2) 5 5)
-  (<gui> :filled-box widget color x1 y1 pos y2 5 5)
+  (<gui> :filled-box widget "black" (1+ x1) (1+ y1) (1- x2) (1- y2) rounding rounding)
+  (<gui> :filled-box widget color x1 y1 pos y2 rounding rounding)
   
   ;;(if (= (<ra> :get-current-instrument) instrument-id)
   ;;    (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
@@ -546,8 +547,8 @@
 
   ;; border
   (if is-current
-      (<gui> :draw-box widget *current-mixer-strip-border-color* (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 5 5) ;; "#aa111144"
-      (<gui> :draw-box widget "gray"      x1 y1 x2 y2   0.8 5 5))
+      (<gui> :draw-box widget *current-mixer-strip-border-color* (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 rounding rounding) ;; "#aa111144"
+      (<gui> :draw-box widget "gray"      x1 y1 x2 y2   0.8 rounding rounding))
   )
   
 

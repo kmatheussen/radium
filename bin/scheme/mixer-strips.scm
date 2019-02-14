@@ -1121,7 +1121,7 @@
 
 (define (get-mixer-strip-send-horiz gui)
   (define horiz (<gui> :horizontal-layout))
-  (<gui> :set-layout-spacing horiz 1 1 0 1 0)
+  (<gui> :set-layout-spacing horiz 1 1 0 0 0)
 
   (define text-gui #f)
 
@@ -2215,7 +2215,7 @@
 
   ;; vertical
   (define vertical (<gui> :vertical-layout))
-  (<gui> :set-layout-spacing vertical 5 0 0 0 0)
+  (<gui> :set-layout-spacing vertical 2 0 0 0 0)
 
   (<gui> :add vertical horizontal1)
   (<gui> :add vertical volslider)
@@ -2299,7 +2299,7 @@
   (define bsize (if is-standalone-mixer-strip 0 border-width))
   
   (define gui (<gui> :vertical-layout)) ;; min-width height))
-  (<gui> :set-layout-spacing gui 5 bsize bsize bsize bsize)
+  (<gui> :set-layout-spacing gui bsize bsize bsize bsize bsize)
       
   (define background-color (get-mixer-strip-background-color gui instrument-id))
   (<gui> :set-background-color gui color)
@@ -2376,7 +2376,7 @@
   ;;(<gui> :set-max-width gui width)
   ;;(<gui> :set-size-policy gui #f #t)
 
-  (define bsize (if is-standalone-mixer-strip 0 5))
+  (define bsize (if is-standalone-mixer-strip 0 2))
   
   (<gui> :set-layout-spacing gui 2 bsize bsize bsize bsize)
 
@@ -2399,7 +2399,8 @@
   (<gui> :add gui name)
 
   (define mixer-strip-path-gui (<gui> :vertical-scroll #f))
-  (<gui> :set-layout-spacing mixer-strip-path-gui 5 5 5 5 5)
+  ;;(<gui> :set-layout-spacing mixer-strip-path-gui 5 5 5 5 5)
+  (<gui> :set-layout-spacing mixer-strip-path-gui 1 0 0 2 0)
   (<gui> :set-style-sheet mixer-strip-path-gui
          (<-> "QScrollArea {"
               "  background: " system-background-color ";"
@@ -2409,7 +2410,7 @@
  
 
   (define hepp (<gui> :horizontal-layout))
-  (<gui> :set-layout-spacing hepp 0 5 2 5 2)
+  (<gui> :set-layout-spacing hepp 0 1 1 1 1)
 
   ;;(<gui> :add-layout-space hepp 2 2 #f #f)
   (<gui> :add hepp mixer-strip-path-gui)
