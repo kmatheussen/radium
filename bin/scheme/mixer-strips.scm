@@ -564,12 +564,27 @@
   
   (if is-minimized
       (<gui> :set-min-height label (* 2 (<gui> :get-system-fontheight))))
+
+  (define instruments-in-path (and is-minimized
+                                   (get-all-instruments-used-in-mixer-strip instrument-id)))
+  (define num-in-path (length instruments-in-path))
   
   (add-safe-paint-callback label
          (lambda (width height)
            (<gui> :filled-box label color 0 0 width height)
            (if is-minimized
-               (<gui> :draw-vertical-text label *text-color* name 2 7 (+ width 0) height #t #f #t)
+               (begin
+                 (<gui> :draw-vertical-text label *text-color* name 2 7 (+ width 0) height #t #f #t)
+                 (if (> num-in-path 1)
+                     (<gui> :do-alpha label 0.7
+                            (lambda () 
+                              (<gui> :draw-text label *text-color* (<-> "(" (- num-in-path 1) ")")
+                                     2 (- height (* 1.5 (<gui> :get-system-fontheight)))
+                                     (+ width 0) height
+                                     #f ;; wrap
+                                     #f ;; align top
+                                     #f ;; align left
+                                     )))))
                (if (not (<gui> :my-draw-text label *text-color* name 5 0 width height #f #f #f 0 #t #t))
                    (show-name-tool-tip)
                    (<gui> :set-tool-tip label "")))
