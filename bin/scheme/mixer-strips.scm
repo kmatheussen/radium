@@ -2629,7 +2629,7 @@
   ;;(define mixer-strips-gui (<gui> :horizontal-scroll)) ;;widget 800 800))
   (define mixer-strips-gui (<gui> :scroll-area #t #t))
   (<gui> :set-layout-spacing mixer-strips-gui 0 0 0 0 0)
-  (<gui> :set-background-color mixer-strips-gui border-color)
+  (<gui> :set-background-color mixer-strips-gui *mixer-strip-background-color*)
   
   (define vertical-layout (<gui> :vertical-layout))
   (<gui> :set-layout-spacing vertical-layout strip-separator-width 0 0 0 0)
@@ -2696,7 +2696,7 @@
     (<gui> :add horizontal-layout text))
   
   (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections (cat-instruments :bus-instruments))))
-  
+
   (kont (append instrument-mixer-strips
                 bus-mixer-strips)
         mixer-strips-gui)
@@ -2835,7 +2835,7 @@
   ;;mixer-strips-object
 
   (<gui> :set-takes-keyboard-focus gui #f)
-  
+
   gui
   )
 

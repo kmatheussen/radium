@@ -1312,6 +1312,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         _widget->setAttribute(Qt::WA_DeleteOnClose);
       }
       //_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+      //_widget->setAttribute(Qt::WA_OpaquePaintEvent);
     }
 
     virtual ~Gui(){
@@ -1931,7 +1932,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
     
     bool closeEvent(QCloseEvent *event){
-
       if (_close_callback.v==NULL || Gui::_has_been_closed){
 
         apply_deleted_callbacks(); // Do this as early as possible

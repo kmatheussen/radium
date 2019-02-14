@@ -5,6 +5,7 @@
 (define-constant *max-mixer-db* 6)
 
 (define-constant *mixer-strip-border-color* "#bb222222")
+(define-constant *mixer-strip-background-color* "#222222")
 (define *current-mixer-strip-border-color* "mixerstrips_selected_object_color_num")
 
 
