@@ -5,8 +5,8 @@ extern StaticRatio g_rt_sequencer_signature;
 extern double g_rt_sequencer_bpm;
 extern double g_rt_sequencer_ppq;
 extern double g_rt_sequencer_ppq_of_last_bar_start;
-extern int g_rt_sequencer_beatnum;
-extern int g_rt_sequencer_barnum;
+extern int g_rt_beatnum;
+extern int g_rt_barnum;
 
 extern LANGSPEC bool RT_SEQUENCER_TIMING_call_before_start_of_audio_block(struct SeqTrack *seqtrack, bool is_playing_song);
 
