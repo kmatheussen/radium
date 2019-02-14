@@ -965,7 +965,10 @@
 
   (define has-made-undo #t)
   
-  (add-safe-mouse-callback widget (lambda (button state x y)                                    
+  (add-safe-mouse-callback widget (lambda (button state x y)
+                                    ;;(c-display "state:" state)
+                                    (if (= state *is-pressing*)
+                                        (<ra> :set-current-instrument instrument-id))
                                     (define is-left-pressing (and (= button *left-button*)
                                                                   (= state *is-pressing*)))
 
