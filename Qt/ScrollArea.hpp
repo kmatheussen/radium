@@ -90,7 +90,7 @@ class ScrollArea : public QWidget {
         _inner_scroll_area->_scroll_area->updateScrollbars();
       }
 
-      int getPreferredWidth(void){
+      int getPreferredWidth(void){        
         return childrenRect().width();
       }
 
@@ -170,10 +170,44 @@ class ScrollArea : public QWidget {
 
   InnerScrollArea *_inner_scroll_area;
 
-  void updateScrollbars(void){
-
+  bool _update_scrollbars_scheduled = false;
+  double _time_to_update_scrollbars = 0;
+  
+  void updateScrollbars(bool called_from_timer = false){
+    //return;
     //QWidget *widget = getWidget();
 
+    // Workaround to fix flicker. (might cause an endless loop here, but since we are waiting 50ms between each call, and each call doesn't do much, it wouldn't be noticed)
+    {
+      
+      double now = TIME_get_ms();
+
+      if(called_from_timer==false)
+        _time_to_update_scrollbars = now + 40;
+      
+      if(_update_scrollbars_scheduled)
+        return;
+      
+      if (now < _time_to_update_scrollbars){
+        
+        _update_scrollbars_scheduled = true;
+
+        //printf(" Is single-shotting: %p\n", this);
+        
+        IsAlive is_alive(this);
+        
+        QTimer::singleShot(50, [is_alive, this]{
+            if (is_alive){
+              _update_scrollbars_scheduled = false;
+              updateScrollbars(true);
+            }
+          });
+        
+        return;
+      }
+      
+    }
+    
     // vertical scroll bar
     {
       int outer_height = _inner_scroll_area->height();
@@ -186,14 +220,21 @@ class ScrollArea : public QWidget {
 
       //printf("                Vertical outer: %d. inner: %d. maximum: %d\n", outer_height, inner_height, maximum);
 
-      if (_vertical_scrollbar_policy==Qt::ScrollBarAlwaysOff)
+      //static int counter = 0;
+      
+      if (_vertical_scrollbar_policy==Qt::ScrollBarAlwaysOff){
+        //printf("           HIDE 1: %d\n", counter++);
         _vertical_scroll_bar->hide();
-      else if (_vertical_scrollbar_policy==Qt::ScrollBarAlwaysOn)
+      }else if (_vertical_scrollbar_policy==Qt::ScrollBarAlwaysOn){
+        //printf("           SHOW 1: %d\n", counter++);
         _vertical_scroll_bar->show();
-      else if (maximum <= 0)
+      }else if (maximum <= 0){
+        //printf("           HIDE 2: %d\n", counter++);
         _vertical_scroll_bar->hide();
-      else
+      }else{
+        //printf("           SHOW 2: %d. outer_height: %d. inner_height: %d. maximum: %d\n", counter++, outer_height, inner_height, maximum);
         _vertical_scroll_bar->show();
+      }
     }
 
     // horizontal scroll bar
@@ -289,6 +330,9 @@ class ScrollArea : public QWidget {
 #endif
 
   void pauseUpdatesALittleBit(void){
+    
+    //return; // Seems like pausing is not necessary anymore. Only tested on 5.12, so maybe it's been fixed recently in Qt. Need to check 5.10. (seems like it still has a function)
+    
     if(g_pause_scroll_area_updates_when_resizing)
       setUpdatesEnabled(false);     // <--- This causes flickering when resizing.
     _mytimer.startit();
@@ -300,7 +344,7 @@ public:
     radium::ScopedResizeEventTracker resize_event_tracker;
     pauseUpdatesALittleBit();
   }
-
+  
   ScrollArea(QWidget *parent = NULL, bool listen_to_mouse_wheel = true)
     : QWidget(parent)
     , _listen_to_mouse_wheel(listen_to_mouse_wheel)
