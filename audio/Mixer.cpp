@@ -1289,40 +1289,78 @@ struct Mixer{
 
     } else {
 
-      const struct Beats *beat = seqtrack->beat_iterator.next_beat;
+      const bool using_sequencer_timing = root->song->use_sequencer_tempos_and_signatures;
       
-      if (beat==NULL) {
-        // TO REPRODUCE:
-        // 1. Play block
-        // 2. Wait until cursor is at line 62
-        // 3. Press AltGr+Space
-        // (transport was set to jack, don't know if it's required)
-        //
-        //R_ASSERT_NON_RELEASE(false); // Removed since it happened so often. (doesn't seem like a very important bug)
-        pos->bar = 1;
-        pos->beat = 1;
-      } else {
-        pos->bar = beat->bar_num;
-        pos->beat = beat->beat_num;
-      }
-    
-      pos->bar_start_tick = seqtrack->beat_iterator.beat_position_of_last_bar_start * ticks_per_beat;
+      // 1. Set bar start tick.
+      /////////////////////////////////
+      
+      // Note: If changing this line, might also have to change ppqPositionOfLastBarStart in Juce_plugins.c. (note that we don't subtract "latency_beats" here.)
+      pos->bar_start_tick = (using_sequencer_timing ? g_rt_sequencer_ppq_of_last_bar_start : seqtrack->beat_iterator.beat_position_of_last_bar_start) * ticks_per_beat;
 
-      double beatpos = RT_LPB_get_beat_position(seqtrack);
-      double beats_since_beat_start = beatpos - floor(beatpos);
+      
+      // 2. Set tick.
+      ///////////////////
+      
+      const double beatpos = RT_LPB_get_beat_position(seqtrack);
+      const double beats_since_beat_start = beatpos - floor(beatpos);
     
       pos->tick           =  ticks_per_beat * beats_since_beat_start;
+
+
+      // 3. Set bar and beat.
+      ///////////////////////////////////
       
+      if (using_sequencer_timing){
+
+        pos->beat = g_rt_sequencer_beatnum;
+        pos->bar = g_rt_sequencer_barnum;
+        
+      } else {
+        
+        const struct Beats *beat = seqtrack->beat_iterator.next_beat;
+        
+        if (beat==NULL) {
+          // TO REPRODUCE:
+          // 1. Play block
+          // 2. Wait until cursor is at line 62
+          // 3. Press AltGr+Space
+          // (transport was set to jack, don't know if it's required)
+          //
+          //R_ASSERT_NON_RELEASE(false); // Removed since it happened so often. (doesn't seem like a very important bug)
+          pos->bar = 1;
+          pos->beat = 1;
+        } else {
+          pos->bar = beat->bar_num;
+          pos->beat = beat->beat_num;
+        }
+
+      }
+
     }
-      
+    
+
+    // 4. Set signature
+    ///////////////////////////////////
+    
     //printf("bar_tick: %f. beat_tick: %f\n", (float)pos->bar_start_tick / (float)ticks_per_beat, (float)pos->tick/(float)ticks_per_beat);
       
     StaticRatio signature = RT_Signature_get_current_Signature(seqtrack);
     pos->beats_per_bar = signature.numerator;
     pos->beat_type = signature.denominator;
 
+
+    // 5. Set ticks per beat
+    ///////////////////////////////////
+    
+
     pos->ticks_per_beat = ticks_per_beat;
     
+
+    
+    // 6. Set BPM
+    ///////////////////////////////////
+    
+
     pos->beats_per_minute = RT_LPB_get_current_BPM(seqtrack);
 
     

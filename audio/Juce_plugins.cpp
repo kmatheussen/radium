@@ -372,7 +372,8 @@ namespace{
         //  printf("timeInSeconds: %f\n", result.timeInSeconds);
 
         bool using_sequencer_timing = root->song->use_sequencer_tempos_and_signatures;
-        
+
+        // Note: If changing ppqPositionOfLastBarStart, we might also have to change pos->bar_start_tick in Mixer.cpp/RT_rjack_timebase. (note that we dsubtract "latency_beats" here.)
         result.ppqPosition               = RT_LPB_get_beat_position(seqtrack) - latency_beats;
         result.ppqPositionOfLastBarStart = (using_sequencer_timing ? g_rt_sequencer_ppq_of_last_bar_start-latency_beats : seqtrack->beat_iterator.beat_position_of_last_bar_start);
         
