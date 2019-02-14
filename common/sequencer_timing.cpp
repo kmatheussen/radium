@@ -57,6 +57,7 @@ struct BarAutomationNode{
   int logtype;
   double bar_duration_in_frames;  // Only set for the last bar. (used when calculating ppq of bars after last node)
   double bar_duration_in_ppq;  // Only set for the last bar. (used when calculating ppq of bars after last node)
+  int barnum;
 };
 
 struct SignatureAutomationNode{
@@ -437,12 +438,13 @@ void SEQUENCER_iterate_sequencer_time(int64_t start_seqtime, int64_t end_seqtime
           BAR automation
 *************************************************/
 
-static double RT_SEQUENCER_BAR_get_ppq_of_last_bar_start(double seqtime){
+static double RT_SEQUENCER_BAR_get_ppq_of_last_bar_start(double seqtime, int &barnum){
 
   radium::SeqAutomation<BarAutomationNode>::ScopedRtAccess rt_access(g_bar_automation);
     
   auto res = g_bar_automation.RT_get_nodes(seqtime, rt_access);
   if (res==radium::SeqAutomationReturnType::NO_VALUES_YET || res==radium::SeqAutomationReturnType::NO_VALUES){
+    barnum = 1;
     R_ASSERT_NON_RELEASE(false);
     return 0.0;
   }
@@ -453,12 +455,16 @@ static double RT_SEQUENCER_BAR_get_ppq_of_last_bar_start(double seqtime){
     double bar_duration_in_frames = rt_access.node1->bar_duration_in_frames;
     int num_bars = int(duration_in_frames / bar_duration_in_frames);
 
+    barnum = rt_access.node1->barnum + num_bars;
+    
     double ret = rt_access.node1->value + rt_access.node1->bar_duration_in_ppq*num_bars;
 
     //printf("   RET: %f. Num bars: %d\n", ret,num_bars);
     return ret;
   }
 
+  barnum = rt_access.node1->barnum;
+  
   return rt_access.node1->value;
 }
 
@@ -475,7 +481,9 @@ static double find_ppq(radium::SeqAutomationIterator<TempoAutomationNode> &itera
 static QVector<BarAutomationNode> recreate_bar_automation(const QVector<SignatureAutomationNode> &signatures,
                                                           QVector<TempoAutomationNode> &tempos) // tempos is not modified. It just needs to be non-const because it's used as argument to SeqAutomation.
 {
-  radium::SeqAutomationIterator<TempoAutomationNode> tempo_iterator(tempos);
+  radium::SeqAutomationIterator<TempoAutomationNode> tempo_iterator2(tempos);
+
+  radium::SeqAutomationIterator<TempoAutomationNode> tempo_iterator(tempo_iterator2);
 
 
   QVector<BarAutomationNode> ret;
@@ -495,7 +503,8 @@ static QVector<BarAutomationNode> recreate_bar_automation(const QVector<Signatur
                              .value = find_ppq(tempo_iterator, seqtime),
                              .logtype = LOGTYPE_HOLD,
                              .bar_duration_in_frames = -1,
-                             .bar_duration_in_ppq = -1
+                             .bar_duration_in_ppq = -1,
+                             .barnum = barnum
                            };
 
                            //printf("    Create BAR PPQ. Time: %f. End time: %f. barnum: %d/%d. ppq: %f\n", (double)seqtime/(double)pc->pfreq, end_time/(double)pc->pfreq, barnum, beatnum, node.value);
@@ -874,11 +883,13 @@ StaticRatio g_rt_sequencer_signature = {4,4};
 double g_rt_sequencer_bpm = 120;
 double g_rt_sequencer_ppq = 0;
 double g_rt_sequencer_ppq_of_last_bar_start = 0;
+int g_rt_sequencer_beatnum = 1;
+int g_rt_sequencer_barnum = 0;
 
 static void RT_play_click(struct SeqTrack *seqtrack, int beatnum){
   //printf("           beaTT: %d\n", beatnum);
 
-  int note_num = beatnum==0 ? c_bar_note_num : c_beat_note_num;
+  int note_num = beatnum==1 ? c_bar_note_num : c_beat_note_num;
 
   int64_t time = 0; // We could calculate the accurate time here (somewhere between 0 and RADIUM_BLOCKSIZE), but unless each tick is only a few ms apart (which probably wouldn't make sense for a metronome), it would probably be impossible to notice a difference.
   RT_play_click_note(seqtrack, time, note_num);
@@ -905,27 +916,37 @@ bool RT_SEQUENCER_TIMING_call_before_start_of_audio_block(struct SeqTrack *seqtr
     g_rt_sequencer_signature = RT_SEQUENCER_SIGNATURE_get_value(start_time);
     g_rt_sequencer_bpm = RT_SEQUENCER_TEMPO_get_value(start_time);
     g_rt_sequencer_ppq = RT_SEQUENCER_TEMPO_get_num_quarters(start_time);
-    g_rt_sequencer_ppq_of_last_bar_start = RT_SEQUENCER_BAR_get_ppq_of_last_bar_start(start_time);
 
+    g_rt_sequencer_ppq_of_last_bar_start = RT_SEQUENCER_BAR_get_ppq_of_last_bar_start(start_time, g_rt_sequencer_barnum);
+
+    
+    // find beatnum
+
+    const double numerator = g_rt_sequencer_signature.numerator;
+    const double denominator = g_rt_sequencer_signature.denominator;
+      
+    const double ppq_since_last_bar = g_rt_sequencer_ppq - g_rt_sequencer_ppq_of_last_bar_start;
+    const double signature = numerator / denominator;
+    
+    const double ppq_duration_of_bar = 4.0 * signature;
+    const double ppq_duration_of_beat = ppq_duration_of_bar / numerator;
+    
+    const double beatnum = ppq_since_last_bar / ppq_duration_of_beat;
+    const int i_beatnum = beatnum + 1;
+    
+    if (g_rt_sequencer_beatnum != i_beatnum){
+      //printf("Beatnum: %d / %d\n", g_rt_sequencer_barnum, g_rt_sequencer_beatnum);
+      
+      g_rt_sequencer_beatnum = i_beatnum;
+    }
+    
     if(ATOMIC_GET(root->clickonoff)){
 
       static int s_last_beatnum = -1;
 
-      const double numerator = g_rt_sequencer_signature.numerator;
-      const double denominator = g_rt_sequencer_signature.denominator;
-      
-      const double ppq_since_last_bar = g_rt_sequencer_ppq - g_rt_sequencer_ppq_of_last_bar_start;
-      const double signature = numerator / denominator;
-      
-      const double ppq_duration_of_bar = 4.0 * signature;
-      const double ppq_duration_of_beat = ppq_duration_of_bar / numerator;
-      
-      const double beatnum = ppq_since_last_bar / ppq_duration_of_beat;
-      const int i_beatnum = beatnum;
-
       if (s_was_playing_click) {
 
-        if (i_beatnum != s_last_beatnum && i_beatnum < numerator)
+        if (i_beatnum != s_last_beatnum && (i_beatnum-1) < numerator)
           RT_play_click(seqtrack, i_beatnum);
 
       } else {

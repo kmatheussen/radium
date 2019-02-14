@@ -1036,11 +1036,11 @@ public:
 
 public:
 
-  void print(void){
+  void print(void) const {
     for(int i = 0 ; i < _automation.size()-1 ; i++){
       const T &node1 = _automation.at(i);
       const T &node2 = _automation.at(i+1);
-      printf("%d: %f -> %f. (%f -> %f)\n", i, node1.value, node2.value, node1.time, node2.time);
+      printf("%d: Value: %f -> %f. (Time: %f -> %f)\n", i, node1.value, node2.value, node1.time, node2.time);
     }
   }
 
@@ -1177,7 +1177,7 @@ public:
   const QVector<T> &get_qvector(void) const {
     return _automation;
   }
-  
+
   void create_from_state(const dyn_t &dynstate, const NodeFromStateProvider<T> *nsp, double state_samplerate){
     _automation.clear();
 
@@ -1241,55 +1241,65 @@ class SeqAutomationIterator{
   const SeqAutomation<T> _automation_storage;
   const SeqAutomation<T> &_automation;
 
+  struct Something {
 #if !defined(RELEASE)
-  double _prev_time = -1;
+    double prev_time = -1;
 #endif
+    
+    int size;
 
-  int _size;
-  int _n;
-  const T *_node2 = NULL;
-  double _time1;
-  double _time2;
-  double _value1;
-  double _value2;
-  int _logtype1;
-
-  void init(void){
-    R_ASSERT_RETURN_IF_FALSE(_size > 0);
+    int n;
+    const T *node2 = NULL;
+    double time1;
+    double time2;
+    double value1;
+    double value2;
+    int logtype1;
+  } _t;
+  
+  void init_something(void){
+    _t.size = _automation.size();
+    
+    R_ASSERT_RETURN_IF_FALSE(_t.size > 0);
 
     const T &_node1 = _automation.at(0);
-    _time1 = _node1.time;
-    _value1 = _node1.value;
-    _logtype1 = _node1.logtype;
+    _t.time1 = _node1.time;
+    _t.value1 = _node1.value;
+    _t.logtype1 = _node1.logtype;
 
-    _n = 1;
+    _t.n = 1;
 
-    if (_size >= 2){
-      _node2 = &_automation.at(_n);
-      _time2 = _node2->time;
-      _value2 = _node2->value;
+    if (_t.size >= 2){
+      _t.node2 = &_automation.at(_t.n);
+      _t.time2 = _t.node2->time;
+      _t.value2 = _t.node2->value;
     } else {
-      _value2 = _value1; // Used in case there is only one node.
+      _t.value2 = _t.value1; // Used in case there is only one node.
     }
   }
-  
+
 public:
 
   SeqAutomationIterator(const SeqAutomation<T> &automation)
     : _automation(automation)
-    , _size(automation.size())
   {
-    init();
+    init_something();
   }
 
   SeqAutomationIterator(QVector<T> &automation)
     : _automation_storage(automation)
     , _automation(_automation_storage)
-    , _size(automation.size())
   {
-    init();
+    init_something();
   }
-    
+
+
+  SeqAutomationIterator(const SeqAutomationIterator &obj)
+    : _automation(obj._automation)
+    , _t(obj._t)
+  {
+  }
+
   SeqAutomationReturnType return_no_more_values(const T **node1, const T **node2) const {
     *node1 = &_automation.last();
     *node2 = NULL;
@@ -1300,44 +1310,44 @@ public:
 #if !defined(RELEASE)
     if(time<0)
       abort();
-    if(time<=_prev_time)
+    if(time<=_t.prev_time)
       abort();
-    _prev_time = time;
+    _t.prev_time = time;
 #endif
 
-    if (_n==_size)
+    if (_t.n==_t.size)
       return return_no_more_values(node1,node2);
 
-    if (time < _time1){
+    if (time < _t.time1){
       *node1 = NULL;
       *node2 = &_automation.at(0);
       return SeqAutomationReturnType::NO_VALUES_YET;
     }
 
-    if (time <= _time2){
+    if (time <= _t.time2){
 
-      *node1 = &_automation.at(_n-1);
-      *node2 = _node2;
+      *node1 = &_automation.at(_t.n-1);
+      *node2 = _t.node2;
 
     } else {
 
       do{
-        _n++;
+        _t.n++;
         
-        if (_n==_size)
+        if (_t.n==_t.size)
           return return_no_more_values(node1,node2);
         
-        *node1 = _node2;
-        _time1 = _time2;
-        _value1 = _value2;
-        _logtype1 = _node2->logtype;
+        *node1 = _t.node2;
+        _t.time1 = _t.time2;
+        _t.value1 = _t.value2;
+        _t.logtype1 = _t.node2->logtype;
         
-        _node2 = &_automation.at(_n);
-        *node2 = _node2;
-        _time2 = _node2->time;
-        _value2 = _node2->value;
+        _t.node2 = &_automation.at(_t.n);
+        *node2 = _t.node2;
+        _t.time2 = _t.node2->time;
+        _t.value2 = _t.node2->value;
         
-      }while(time > _time2);
+      }while(time > _t.time2);
 
     }
 
@@ -1348,33 +1358,33 @@ public:
 #if !defined(RELEASE)
     if(time<0)
       abort();
-    if(time<=_prev_time)
+    if(time<=_t.prev_time)
       abort();
-    _prev_time = time;
+    _t.prev_time = time;
 #endif
 
-    if (_n==_size)
-      return _value2;
+    if (_t.n==_t.size)
+      return _t.value2;
 
-    if (time < _time1)
-      return _value1;
+    if (time < _t.time1)
+      return _t.value1;
 
-    while(time > _time2){
-      _n++;
+    while(time > _t.time2){
+      _t.n++;
 
-      if (_n==_size)
-        return _value2;
+      if (_t.n==_t.size)
+        return _t.value2;
 
-      _time1 = _time2;
-      _value1 = _value2;
-      _logtype1 = _node2->logtype;
+      _t.time1 = _t.time2;
+      _t.value1 = _t.value2;
+      _t.logtype1 = _t.node2->logtype;
 
-      _node2 = &_automation.at(_n);
-      _time2 = _node2->time;
-      _value2 = _node2->value;
+      _t.node2 = &_automation.at(_t.n);
+      _t.time2 = _t.node2->time;
+      _t.value2 = _t.node2->value;
     }
 
-    return _automation.get_value(time, _time1, _time2, _logtype1, _value1, _value2);
+    return _automation.get_value(time, _t.time1, _t.time2, _t.logtype1, _t.value1, _t.value2);
   }
 };
 
