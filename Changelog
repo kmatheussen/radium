@@ -1,3 +1,97 @@
+Changes 5.9.34 -> 5.9.36:
+* Mixer: Set current instrument immediately when
+  clicking a plugin or send slider. No need to
+  right-click or select the instrument in other ways.
+* Jack transport: Fix next beat always being sent
+  instead of current beat in editor timing mode.
+* Jack transport: Fix beats/bar when using sequencer
+  timing.
+* Mixer: Removed all resize flickering. Hopefully.
+* Mixer: Fix graphical garbage that sometimes can be
+  seen between mixer strips.
+* Mixer: Write number of elements in mixer path below
+  label in non-wide mixer strips.
+* Mixer: Make GUI more compact by removing some
+  unnecessary spacing between elements and use
+  less corner rounding.
+* Sequencer: Lighter seqblock header background
+  color.
+* Startup: Remove splashscreen. Only show progress
+  window during startup.
+* GUI: Nicer looking and less buggy progress window.
+* Sequencer: Disallow being able to deselect both
+  time lane and bars+beat lane at the same time.
+* Import MOD: Don't show markers lane.
+* Import MOD: Don't show bus mixer strips.
+* Audio meters: Add slight gradient color. Makes it
+  easier/possible to see number of channels
+* Sequencer: Fix slightly skewed horizontal mouse
+  movement when mouse cursor goes outside vertical
+  boundaries.
+* Instruments: Clean up the popup menus a little bit.
+* Modular mixer: Clean up the popup menus.
+* Modular mixer: Added "Rename" and "Load Preset"
+  entries to the popup menu.
+* Instruments: Minor clean-up of the instrument popup
+  menu.
+* Instruments: Add "Load Preset" and "Save Preset"
+  entries to all popup menues.
+* GUI: Fix positioning windows in the middle of the
+  parent window.
+* Sequencer: Fixed some situations where controllers
+  could be wrongly modified, or an error message
+  could pop up, when showing popup menu.
+* Modular mixer: Add "Bypass" checkbox to the popup
+  menu.
+* Sequencer: Show audio meter for the output of
+  the last instrument in chain, not the first.
+  Same behaviour as in the mixer.
+* Sequencer: Don't stop playing song if
+  right-clicking a block in the block browser.
+* Blocklist: Don't stop playing song if
+  right-clicking a block.
+* Audio: Fix various issues with undo when
+  changing solo or bypass.
+* Instrument: Make it optional whether to make
+  undo when pressing a bypass button. (Enabled by
+  default).
+* Startup: Fix main window sometimes being put in
+  front of the comment window when loading song
+  from the command line.
+* Mixer: Fix note indicators not lighting up for
+  mixer strips that have plugins in it's path.
+* Mixer: Paint red background for peak text if
+  peak is above 4db.
+* Mixer: Adjust painting pan slider a little bit.
+* Mixer: Minor tweak to solo/mute buttons drawing.
+* Modular mixer: Adjust object background color a
+  little bit.
+* Sequencer: Fix timeline sometimes painted with
+  the wrong background color.
+* Sequencer: Paint timeline background with
+  gradient color.
+* Sequencer: Fix markers being placed at wrong
+  position when loading song with different
+  samplerate.
+* Load: Fix assertion window popping when loading
+  any song saved after 5.9.30 with a different
+  samplerate.
+* Sequencer: Minor optimization for automation.
+* Sequencer: Fix race condition when automating
+  stretch or speed.
+* Build: Update s7.
+* OSX: Put back "Import MOD" into the menus.
+* Startup: Applied possible fix for super rare
+  startup crash while initing keybindings.
+* OSX: Never use native file dialog when importing
+  MOD. Workaround to avoid GUI freeze on high sierra.
+* API:
+  * New functions: doUndoBypass, setUndoBypass
+  * Add optional argument "note_event_instrument_id"
+    to gui_verticalAudioMeter and
+    gui_addVerticalAudioMeter.
+
+
 Changes 5.9.32 -> 5.9.34:
 * Editor: Fix possible undefined behavior if
   changing numer of tracks in a block in the
