@@ -1502,7 +1502,7 @@ $(P)Qt_vst_paths_widget.h: $(P)qt4_vst_paths_widget.ui
 	cd $(P) && $(UIC) qt4_vst_paths_widget.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_vst_paths_widget.h
 
 
-Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h midi/midi_i_input_proc.h common/Vector.hpp
+Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h midi/midi_i_input_proc.h common/Vector.hpp Qt/ScrollArea.hpp 
 	$(CCC) $(P)Qt_tools_callbacks.cpp $(QTOPT)
 
 $(P)Qt_tools.h: $(BUILD_DEPENDENCIES) $(P)qt4_tools.ui $(P)Qt_tools_callbacks.h $(P)lzqlineedit.h

@@ -2040,7 +2040,7 @@
           (define spacing (if is-minimized
                               0
                               horizontal-spacing/2))
-          (define width (- mid spacing))
+          (define width volslider-width) ;;(- mid spacing))
           (define height (<gui> :height volslider))
           (define x1 0)
           (define x2 width)
@@ -2090,6 +2090,8 @@
   (define volmeter (if has-inputs-or-outputs
                        (<gui> :vertical-audio-meter meter-instrument-id instrument-id)
                        (<gui> :widget)))
+
+  (<gui> :set-size-policy volmeter #t #t)
   
   (add-gui-effect-monitor volslider instrument-id effect-name #t #t
                           (lambda (radium-normalized-volume radium-normalized-automation-volume)
@@ -2110,29 +2112,37 @@
                               (<gui> :update volslider))))
 
   (define has-made-undo #t)
+
+  (define (create-vol-mouse-callback is-slider)    
+    (lambda (button state x y)
+      (cond ((and (= button *left-button*)
+                  (= state *is-pressing*))
+             (set! has-made-undo #f))
+            ((and (not has-made-undo)
+                  (= button *left-button*)
+                  (= state *is-moving*))
+             (<ra> :undo-instrument-effect instrument-id effect-name)
+             (set! has-made-undo #t))
+            ((and (= button *right-button*)
+                  (= state *is-pressing*))
+             (cond ((and is-slider
+                         effect-name
+                         (<ra> :shift-pressed))
+                    (<ra> :reset-instrument-effect instrument-id effect-name))
+                   ((and (not is-slider)
+                         (<ra> :shift-pressed))
+                    (reset-peak!))
+                   (else
+                    (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name))))))
+      #f))
   
-  (add-safe-mouse-callback volslider
-         (lambda (button state x y)
-           (cond ((and (= button *left-button*)
-                       (= state *is-pressing*))
-                  (set! has-made-undo #f))
-                 ((and (not has-made-undo)
-                       (= button *left-button*)
-                       (= state *is-moving*))
-                  (<ra> :undo-instrument-effect instrument-id effect-name)
-                  (set! has-made-undo #t))
-                 ((and (= button *right-button*)
-                       (= state *is-pressing*))
-                  (if (and effect-name
-                           (<ra> :shift-pressed))
-                      (<ra> :reset-instrument-effect instrument-id effect-name)
-                      (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))))
-           #f))
+  (add-safe-mouse-callback volslider (create-vol-mouse-callback #t))
+  (add-safe-mouse-callback volmeter (create-vol-mouse-callback #f))
 
 
-  (<gui> :add volslider volmeter 0 0 5 5) ;; Set parent of volmeter to volslider (gui_setParent should be renamed to something else, this is awkward)
+  ;;(<gui> :add volslider volmeter 0 0 5 5) ;; Set parent of volmeter to volslider (gui_setParent should be renamed to something else, this is awkward)
   
-  (add-safe-resize-callback volslider (lambda (width height) 
+  '(add-safe-resize-callback volslider (lambda (width height) 
                                         (define mid (floor (/ width 2)))
                                         (define spacing (if is-minimized
                                                             0
@@ -2183,16 +2193,6 @@
       (<gui> :reset-audio-meter-peak volmeter)
       (<gui> :update peaktext))
     
-    (add-safe-mouse-callback volmeter (lambda (button state x y)
-                                        (cond ((and (= button *right-button*)
-                                                    (= state *is-pressing*))
-                                               (if (<ra> :shift-pressed)
-                                                   (reset-peak!)
-                                                   (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))
-                                               #t)
-                                              (else
-                                               #f))))
-
     (add-safe-mouse-callback peaktext (lambda (button state x y)
                                           (cond ((and (= button *right-button*)
                                                       (= state *is-pressing*))
@@ -2236,7 +2236,12 @@
   (<gui> :set-layout-spacing vertical 2 0 0 0 0)
 
   (<gui> :add vertical horizontal1)
-  (<gui> :add vertical volslider)
+
+  (define horizontal2 (<gui> :horizontal-layout))  
+  (<gui> :add horizontal2 volslider)
+  (<gui> :add horizontal2 volmeter)
+
+  (<gui> :add vertical horizontal2)
 
   (set! doit #t)
 
@@ -2700,6 +2705,14 @@
   
   (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections (cat-instruments :bus-instruments))))
 
+
+  '(<gui> :add-resize-callback mixer-strips-gui
+         (lambda (width height)
+           (<gui> :disable-updates mixer-strips-gui)
+           (<ra> :schedule 1 (lambda ()
+                                (<gui> :enable-updates mixer-strips-gui)
+                                #f))))
+           
   (kont (append instrument-mixer-strips
                 bus-mixer-strips)
         mixer-strips-gui)
