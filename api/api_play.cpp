@@ -82,10 +82,19 @@ void playRangeFromCurrent(int windownum){
 }
 
 void setSongPos(int64_t pos){
-  if (is_playing_song())
+  if (pos < 0){
+    handleError("setSongPos: Song pos must be 0 or higher: %" PRId64 "\n", pos);
+    return;
+  }
+  
+  if (is_playing_song()) {
+    
     PlaySong(pos);
-  else{
+    
+  } else {
+    
     ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
+    
     if (useJackTransport())
       MIXER_TRANSPORT_set_pos(pos);
 
@@ -137,6 +146,11 @@ int64_t getLastSongPosStart(void){
 }
 
 void setLastSongPosStart(int64_t pos){
+  if (pos < 0){
+    handleError("setLastSongPos: Song pos must be 0 or higher: %" PRId64 "\n", pos);
+    return;
+  }
+
   pc->last_song_starttime = pos;
 }
 

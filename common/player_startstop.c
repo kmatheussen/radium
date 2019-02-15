@@ -293,10 +293,12 @@ static void start_player(int playtype, double abstime, int64_t absabstime, const
       absabstime = TEMPOAUTOMATION_get_absabstime(abstime);
   }
 
+  
   if (playtype==PLAYSONG) {
 
     R_ASSERT(block==NULL);
 
+    pc->last_song_starttime = abstime;
     
     g_initing_starting_to_play_song = true;
     {
@@ -599,8 +601,6 @@ static void play_song(double abstime, int64_t absabstime, bool called_from_jack_
   PlayStopReally(false, false);
 
   pc->is_playing_range = false;
-
-  pc->last_song_starttime = abstime;
   
   start_player(PLAYSONG, abstime, absabstime, NULL, NULL, NULL, NULL);
 
