@@ -173,12 +173,12 @@ class ScrollArea : public QWidget {
   bool _update_scrollbars_scheduled = false;
   double _time_to_update_scrollbars = 0;
   
-  void updateScrollbars(bool called_from_timer = false){
+  void updateScrollbars(bool called_from_timer = false, bool update_now = false){
     //return;
     //QWidget *widget = getWidget();
 
     // Workaround to fix flicker. (might cause an endless loop here, but since we are waiting 50ms between each call, and each call doesn't do much, it wouldn't be noticed)
-    {
+    if(update_now==false){
       
       double now = TIME_get_ms();
 
@@ -371,7 +371,7 @@ public:
 
     setLayout(_vertical_layout);
 
-    updateScrollbars();
+    updateScrollbars(false, true);
   }
 
   void setVerticalScrollBarPolicy(Qt::ScrollBarPolicy policy){
@@ -380,7 +380,7 @@ public:
     if(_vertical_scrollbar_policy==Qt::ScrollBarAlwaysOff)
       _inner_scroll_area->_widget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
 
-    updateScrollbars();
+    updateScrollbars(false, true);
   }
 
   void setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy policy){
@@ -389,7 +389,7 @@ public:
     if(_horizontal_scrollbar_policy==Qt::ScrollBarAlwaysOff)
       _inner_scroll_area->_widget->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::MinimumExpanding);
 
-    updateScrollbars();
+    updateScrollbars(false, true);
   }
 
   QScrollBar *verticalScrollBar(void){
