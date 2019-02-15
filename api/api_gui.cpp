@@ -248,6 +248,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   }                                                                     
 
 
+
 #define RESIZE_OVERRIDER(classname)                                     \
   void resizeEvent( QResizeEvent *event) override {                     \
     ScopedEventHandlerTracker event_handler_tracker;                    \
@@ -1385,7 +1386,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void apply_deleted_callbacks(void){
-
       _deleted_callbacks.safe_for_all(false, [](func_t *func){
           S7CALL(void_bool,func, g_radium_runs_custom_exec);
           return true;
@@ -1930,70 +1930,77 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         abort();
 #endif
     }
+
+    int _num_close_calls = 0;
+
+    bool run_close_callback(void) const {
+      int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
+        
+      bool closeresult;
+      
+      {
+        ScopedEventHandlerTracker event_handler_tracker; // To avoid another closeEvent to be called from this closeEvent. Qt likes crashing.
+        closeresult = S7CALL(bool_bool,_close_callback.v, g_radium_runs_custom_exec);
+      }
+
+      R_ASSERT_NON_RELEASE(gui_isOpen(guinum));
+      
+      
+      return closeresult;
+    }
     
     bool closeEvent(QCloseEvent *event){
-      if (_close_callback.v==NULL || Gui::_has_been_closed){
 
-        apply_deleted_callbacks(); // Do this as early as possible
       
-        _has_been_closed = true;
+      _num_close_calls++;
 
-        if (safe_to_close_widget()==true) {
-          
-          _delayed_deletion = false; // It might have been set to true in an earlier attempt.
-          return true;
-
-        } else {
-
-           // Some scheme code is running (which might be run from an event handler), so we let the garbage collector delete us instead to avoid memory corruption in those event handlers.
-          setDelayedDeletion(event);
-          return false;
-
-        }
-      }
-
-      {
-        int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
+      
+      if (_close_callback.v != NULL){
         
-        bool closeresult;
+        R_ASSERT(_num_close_calls==1);
+        
+        if (run_close_callback()==false){
 
-        {
-          ScopedEventHandlerTracker event_handler_tracker;
-          closeresult = S7CALL(bool_bool,_close_callback.v, g_radium_runs_custom_exec);
-        }
-
-        if (false==closeresult) {
-
-          if (gui_isOpen(guinum))
-            Gui::_has_been_closed = false;
-          else{
-            R_ASSERT_NON_RELEASE(false);
-          }
-
+          // Closing was cancelled, so we clean the "close-state".
+          _num_close_calls = 0;          
           event->ignore();
 
-        }else{
-
-          apply_deleted_callbacks(); // Do this as early as possible
+          return false;
           
-          if (gui_isOpen(guinum)){ // Always supposed to be true.
+        } else {
 
-            Gui::_has_been_closed = true;
-            
-            if (safe_to_close_widget()==false)
-              setDelayedDeletion(event);
-            else
-              event->accept();
-
-          } else {
-            
-            R_ASSERT_NON_RELEASE(false);
-            
-          }
+          _close_callback.set(NULL);
+          
         }
       }
 
-      return false;
+      R_ASSERT(_close_callback.v==NULL);
+
+      apply_deleted_callbacks(); // Do this as early as possible
+
+      _has_been_closed = true;
+
+
+      /*
+       + We test for "_num_close_call==1" here to avoid mysterious crashes when running Qt 5.12.0.
+         The crashes happened in later events and at apparently random places within Qt. It took
+         two days work to track it down, and I only managed to find a workaround for the problem.
+         The bug might have been fixed in later versions of Qt, but there's probably no good reason to remove
+         the test since a delayed deletion shouldn't degrade performance.
+       + We test for g_scheme_nested_level > 0 just in case. Seems like a sane precaution, but
+         it can probably be removed.
+       + We test for safe_to_close_widget() since Qt crashes if closeEvent is called from another event.
+         (Qt might not crash anymore, haven't checked this in a long time, but there's probably no reason to remove the test.)
+      */
+      if(_num_close_calls==1 || g_scheme_nested_level > 0 || safe_to_close_widget()==false){
+        
+        setDelayedDeletion(event);
+        
+        return false; // delay closing        
+      }
+
+      
+      return true; // close it.
     }
 
     void addCloseCallback(func_t* func){      
@@ -3669,6 +3676,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     // https://forum.qt.io/topic/23736/qwebview-qwebpage-need-help-with-context-menu/4
     void contextMenuEvent(QContextMenuEvent * ev) override {
+      ScopedEventHandlerTracker event_handler_tracker;
+      
       auto *main_frame = page()->mainFrame();
       auto rel_pos = ev->pos();
       auto hit_test = main_frame->hitTestContent(rel_pos);
@@ -4083,6 +4092,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     QWidget *createWidget(const QString &className, QWidget *parent = Q_NULLPTR, const QString &name = QString()) override {
+      ScopedEventHandlerTracker event_handler_tracker;
+      
       QWidget *ret = NULL;
 
       //printf("\n\n  CLASSNAME: -%s-\n\n", className.toUtf8().constData());
@@ -7219,6 +7230,7 @@ namespace{
     }
 
     void paintEvent(QPaintEvent *ev) override{
+      ScopedEventHandlerTracker event_handler_tracker;
       TRACK_PAINT();
       QPainter p(this);
       _current_painter = &p;
