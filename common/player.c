@@ -181,7 +181,6 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
           double song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
           double new_song_abstime = song_abstime + reltime;
           ATOMIC_DOUBLE_SET(pc->song_abstime, new_song_abstime);
-
         }
         
 #ifdef WITH_PD

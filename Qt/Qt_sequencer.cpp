@@ -201,7 +201,6 @@ static bool g_is_drawing_sequencer_time = false;
 static bool g_is_drawing_sequencer_gfx_block = false;
 
 bool myDrawText(QPainter *painter, QRectF rect, QString text, int flags, bool wrap_lines, int rotate, bool scale_font_size, bool cut_text_to_fit){
-
   QFont font;
 
   rect.adjust(0,-1,0,0); // strange.

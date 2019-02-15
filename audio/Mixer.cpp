@@ -1465,7 +1465,9 @@ void MIXER_TRANSPORT_set_pos(double abstime){
   int64_t absabstime = TEMPOAUTOMATION_get_absabstime(abstime);
   if (absabstime >= UINT32_MAX)
     RT_message("Can not seek that far when using Jack Transport. Jack time format is 32 bit only.");
-  else {
+  else if (absabstime < 0){
+    RT_message("Jack transport: Can not seek to negative position\n");
+  }else {
     int ret = jack_transport_locate(g_jack_client, (jack_nframes_t)absabstime);
     if (ret!=0){
       printf("   jack_transport_locate failed: %d\n",(int)absabstime);
