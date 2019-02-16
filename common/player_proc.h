@@ -34,6 +34,7 @@ extern LANGSPEC void PlaySong_from_jack_transport(int64_t absabstime);
 extern LANGSPEC void PlaySongFromStart(void);
 extern LANGSPEC void PlayStop(void);
 extern LANGSPEC void PlayStop_from_jack_transport(void);
+extern LANGSPEC void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool called_from_jack_transport);
 
 extern STime g_last_seq_time_converted_to_delta_time; // This one can be used since calls to patch->playnote, patch->stopnote, etc. are single threaded.
 extern LANGSPEC int PLAYER_get_block_delta_time(struct SeqTrack *seqtrack, STime time);

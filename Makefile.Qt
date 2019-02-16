@@ -936,8 +936,8 @@ scheduler_Signature.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_Signature.c $(CD)sc
 playerclass.o:  $(BUILD_DEPENDENCIES) $(CD)playerclass.c $(CD)playerclass.h
 	$(CC) $(CD)playerclass.c $(OPT)
 
-player_startstop.o:  $(BUILD_DEPENDENCIES) $(CD)player_startstop.c $(CD)playerclass.h $(CD)scheduler_proc.h
-	$(GCC) $(CD)player_startstop.c $(OPT) #-fno-sanitize=undefined
+player_startstop.o:  $(BUILD_DEPENDENCIES) $(CD)player_startstop.cpp $(CD)playerclass.h $(CD)scheduler_proc.h
+	$(CCC) $(CD)player_startstop.cpp $(QTOPT) #-fno-sanitize=undefined
 
 patch.o:  $(BUILD_DEPENDENCIES) $(CD)patch.cpp $(CD)nsmtracker.h
 	$(CCC) $(CD)patch.cpp $(QTOPT)

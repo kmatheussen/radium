@@ -787,16 +787,26 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
         setTopmostVisibleSeqtrack(seqtracknum);
 
     } else {
-      
+
       if (e->delta() > 0){
+        
         //printf("        PLAY SONG WHEEL:: %f\n",pos);
-        PlaySong(pos);
+        if (!is_playing_song())
+          PlaySong(pos);
+        else
+          PLAYER_set_song_pos(pos, -1, false);
+        
       }else {
+        
         if (is_playing_song())
           PlayStop();
-        setSongPos(pos);
+
+        PLAYER_set_song_pos(pos, -1, false);
+        
       }
+
       
+
     }
   }
 }
