@@ -36,13 +36,6 @@ else:
   sys.g_program_path = ""
 
   
-commands = {}
-def get_command(menutext):
-  if menutext in commands:
-    return commands[menutext]
-  else:
-    return ""
-
 # This should be documented. There's not even an example in the repository.
 def parse_user_keys():
   import codecs
@@ -91,6 +84,11 @@ def get_key_name(keyorqualifier):
       return keyorqualifier
 
 
+class Line:
+  def __init__(self, text, command):
+    self.text = text
+    self.command = command
+    
 class LineParser:
   def __init__(self,filename):
     if not '_keybindingsdict' in dir(ra):
@@ -125,8 +123,9 @@ class LineParser:
       return " "+emptystring(num-1)
     
     if len(items)==1:
-      return items[0]
+      return Line(items[0],"")
 
+    #print "ITEMS:",items
     keykey=string.lstrip(string.rstrip(items[1]))
     if keykey not in keybindingsdict:
       ret = string.rstrip(items[0])
@@ -164,31 +163,39 @@ class LineParser:
             command += arg
           is_first = False
       command += ")"
-      
-    commands[string.lstrip(ret)] = command
-    return ret
+
+    return Line(ret, command)
   
-  def numTabs(self,line):
-    if line[0]!='\t':
+  
+  def numTabs(self,text):
+    #print "line:",line
+    if text[0]!='\t':
       return 0
     else:
-      return 1+self.numTabs(line[1:])
+      return 1+self.numTabs(text[1:])
     
   def nextLine(self,currlevel):
     if self.currline==len(self.lines):
       return -1,-1
-    numtabs=self.numTabs(self.lines[self.currline])
+
+    line = self.lines[self.currline]
+    numtabs=self.numTabs(line.text)
+    
     if currlevel>numtabs:
       return -2,-2
     if currlevel<numtabs:
       return -3,-3
+    
     self.currline+=1
-    line = string.lstrip(self.lines[self.currline-1])
-    return numtabs,line
+    
+    text = string.lstrip(line.text)
+    
+    return numtabs,Line(text, line.command)
 
 
 class Menu:
-  def __init__(self,lineparser,level):
+  def __init__(self,lineparser,level,parentstring=""):
+    #print "   MENU:",level,lineparser.currline
     self.level=level
     self.items=[]
     while 1:
@@ -210,22 +217,22 @@ class Menu:
         space = ""
         for i in range(self.level):
           space = space + "  "
-        print space+str(self.level)+". "+item+". Command: '"+get_command(item)+"'"
+        print space+str(self.level)+". "+item.text+". Command: '"+item.command+"'"
 
   def createRadiumMenues(self):
     def rec(items):
       if items==[]:
         return
       if len(items)>1 and isinstance(items[1],Menu):
-        ra.addMenuMenu(items[0], get_command(items[0]))
+        ra.addMenuMenu(items[0].text, items[0].command)
         items[1].createRadiumMenues()
         ra.goPreviousMenuLevel()
         rec(items[2:])
-      elif items[0].startswith("--"):
+      elif items[0].text.startswith("--"):
         ra.addMenuSeparator()
         rec(items[1:])
       else:
-        ra.addMenuItem(items[0],get_command(items[0]))
+        ra.addMenuItem(items[0].text, items[0].command)
         rec(items[1:])
     rec(self.items)
     
