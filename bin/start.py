@@ -77,6 +77,7 @@ if keybindingsparser.parse_and_show_errors()==False:
 #    sys.exit(50)
 
 
+import generated_keybinding_code as keybinding
 
 
 
