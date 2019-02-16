@@ -230,7 +230,7 @@ static void play_stop(bool called_from_jack_transport){
 
   bool was_playing_song = pc->playtype==PLAYSONG;
   
-  if (called_from_jack_transport)
+  if (called_from_jack_transport || pc->playtype==PLAYBLOCK)
     PlayStopReally(true, false);
   else
     PlayStopReally(true, true);
@@ -238,7 +238,7 @@ static void play_stop(bool called_from_jack_transport){
   if(was_playing_song)
     SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR); // Update start-pos-cursor
 }
-                      
+
 void PlayStop(void){
   play_stop(false);
 }
