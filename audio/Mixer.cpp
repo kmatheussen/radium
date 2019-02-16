@@ -1456,13 +1456,14 @@ void OS_InitAudioTiming(void){
   //printf("OS_InitAudioTiming called. New time: %d\n",(int)g_startup_time);
 }
 
-void MIXER_TRANSPORT_set_pos(double abstime){
+int64_t MIXER_TRANSPORT_set_pos(double abstime){
   if (g_jack_client==NULL)
-    return;
+    return 0;
   
   //printf("    MIXER_TRANSPORT_set_pos: %f\n", abstime/44100.0);
   
   int64_t absabstime = TEMPOAUTOMATION_get_absabstime(abstime);
+  
   if (absabstime >= UINT32_MAX)
     RT_message("Can not seek that far when using Jack Transport. Jack time format is 32 bit only.");
   else if (absabstime < 0){
@@ -1473,32 +1474,35 @@ void MIXER_TRANSPORT_set_pos(double abstime){
       printf("   jack_transport_locate failed: %d\n",(int)absabstime);
     }
   }
+
+  return absabstime;
 }
 
 void MIXER_TRANSPORT_play(double abstime){
   if (g_jack_client==NULL)
     return;
-  
+
   int64_t pos_before = jack_get_current_transport_frame(g_jack_client);
-  
-  MIXER_TRANSPORT_set_pos(abstime);
-  
+
+  int64_t requested_pos = MIXER_TRANSPORT_set_pos(abstime);
+
   if(jack_transport_query(g_jack_client,NULL) == JackTransportStopped){
     
     //printf("  Starting jack transport. Curr pos: %d\n", jack_get_current_transport_frame(g_jack_client));
 
     const int64_t max_time = 1000; // won't wait more than this (ms).
     int64_t ms_waited = 0;
-    
+
     // Wait until the the jack transport location has changed or we time out. (the transport frame is not updated immediately when claling jack_transport_query)
-    while(ms_waited < max_time && jack_get_current_transport_frame(g_jack_client)==pos_before){
-      msleep(5);
-      ms_waited+=5;
-    }
-    
+    if (pos_before != requested_pos)
+      while(ms_waited < max_time && jack_get_current_transport_frame(g_jack_client)==pos_before){
+        msleep(5);
+        ms_waited+=5;
+      }
+
     jack_transport_start(g_jack_client);
-    
-  }else{
+
+  }else{    
     //printf("  We weren't in stopped. So not starting jack transport\n");
   }
 }

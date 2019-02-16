@@ -115,6 +115,8 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
   */
 #endif
 
+  //printf("--------------    STOP song called\n");
+    
   //printf("  Stopping. Realline now: %d\n", root->song->tracker_windows->wblock->curr_realline);
 
   //printf(" Backtgrace: %s\n", JUCE_get_backtrace());
@@ -589,7 +591,7 @@ bool g_initing_starting_to_play_song = false;
 
 // All calls to 'start_player', where the first argument is PLAYSONG, MUST go through here.
 static void play_song(double abstime, int64_t absabstime, bool called_from_jack_transport){
-  //printf("Play song. abstime: %f, absabstime: %f\n", abstime, (double)absabstime/44100.0);
+  //printf("--------------Play song called. Jack_transport: %d. abstime: %f, absabstime: %f\n", called_from_jack_transport, abstime, (double)absabstime/44100.0);
 
   if (called_from_jack_transport==false && useJackTransport()){
     R_ASSERT_RETURN_IF_FALSE(abstime>=0);

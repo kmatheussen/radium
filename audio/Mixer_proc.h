@@ -27,7 +27,7 @@ extern LANGSPEC void MIXER_request_stop_saving_soundfile(void);
 
 extern LANGSPEC void OS_InitAudioTiming(void);
 
-extern LANGSPEC void MIXER_TRANSPORT_set_pos(double abstime);
+extern LANGSPEC int64_t MIXER_TRANSPORT_set_pos(double abstime); // returns absabstime.
 extern LANGSPEC void MIXER_TRANSPORT_play(double abstime);
 extern LANGSPEC void MIXER_TRANSPORT_stop(void);
 extern LANGSPEC void MIXER_set_jack_timebase_master(bool doit);
