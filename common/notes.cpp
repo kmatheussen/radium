@@ -665,9 +665,10 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   }
 
   
-  const TrackRealline2 &tr2 = trs[0];
+  const TrackRealline2 &tr2 = trs.at(0);
 
   if (tr2.pitch != NULL) {
+    EVENTLOG_add_event("RemoveNoteCurrPos 1");
     DeletePitch(track, tr2.note, tr2.pitch);
     if (trs.size()==1)
       maybe_scroll_down(window);
@@ -684,6 +685,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   }
                               
   if (tr2.note != NULL) {
+    EVENTLOG_add_event("RemoveNoteCurrPos 2");
     {
       SCOPED_PLAYER_LOCK_IF_PLAYING();
       ListRemoveElement3(&track->notes,&tr2.note->l);
@@ -697,6 +699,8 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   }
 
   const struct Stops *stop = tr2.stop;
+  EVENTLOG_add_event("RemoveNoteCurrPos 3");
+  R_ASSERT_RETURN_IF_FALSE(stop!=NULL);
   {
     SCOPED_PLAYER_LOCK_IF_PLAYING();
     ListRemoveElement3(&track->stops, &stop->l);
