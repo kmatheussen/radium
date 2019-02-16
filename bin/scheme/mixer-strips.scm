@@ -689,7 +689,6 @@
                                
                                is-send?
                                is-sink?
-                               upper-half?
 
                                delete-func
                                replace-func
@@ -707,8 +706,7 @@
 
   (popup-menu (<-> "----------Insert")
               (list (<-> "Insert Plugin" (if effect-name " (after this position)" ""))
-                    :enabled (or upper-half?
-                                 (not is-sink?))
+                    :enabled (not is-sink?)
                     (lambda ()
                       (define (finished new-instrument)
                         ;;(c-display "             first: " (<ra> :get-instrument-name first-instrument-id) ", new:" (and new-instrument (<ra> :get-instrument-name new-instrument)))
@@ -716,13 +714,6 @@
                       (cond (is-send?
                              (insert-new-instrument-between parent-instrument-id
                                                             (get-instruments-connecting-from-instrument parent-instrument-id)
-                                                            #t
-                                                            parentgui
-                                                            finished))
-                            (upper-half?
-                             ;; before
-                             (insert-new-instrument-between parent-instrument-id
-                                                            instrument-id
                                                             #t
                                                             parentgui
                                                             finished))
@@ -739,8 +730,6 @@
                     :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
                     (lambda ()
                       (let ((instrument-id (cond (is-send?
-                                                  parent-instrument-id)
-                                                 (upper-half?
                                                   parent-instrument-id)
                                                  (else
                                                   instrument-id))))
@@ -804,9 +793,8 @@
                          instrument-id
                          instrument-id
                          strips-config
-                         #f
-                         (= 0 (<ra> :get-num-output-channels instrument-id))
-                         #f
+                         #f ;; is-send
+                         (= 0 (<ra> :get-num-output-channels instrument-id)) ;; is-sinc
                          (if is-permanent? #f delete)
                          (if is-permanent? #f replace)
                          reset
@@ -1007,7 +995,6 @@
                                                                        strips-config
                                                                        is-send?
                                                                        is-sink?
-                                                                       (< y (/ (<gui> :height widget) 2))
                                                                        delete-func
                                                                        replace-func
                                                                        (lambda ()
