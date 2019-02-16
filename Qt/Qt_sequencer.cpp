@@ -378,7 +378,11 @@ static int get_seqtracks_total_height(void){
 */
 
 static double get_seqtrack_border_width(void){
-  return floor(root->song->tracker_windows->systemfontheight / 2.5);
+  int ret = ceil(root->song->tracker_windows->systemfontheight / 5.0);
+  if ((ret % 2)==0)
+    ret++;
+  
+  return ret;
 }
 
 static int get_block_header_height(void) {
