@@ -444,6 +444,7 @@ static void paintCurrBorder(QPainter &p, const QRectF &rect, const QColor &color
   // outer border
   {
     QColor color("black");
+    color.setAlpha(180);
     float width = b1;
       
     QPen pen(color);
@@ -467,6 +468,7 @@ static void paintCurrBorder(QPainter &p, const QRectF &rect, const QColor &color
   // inner border
   {
     QColor color("#222222");
+    color.setAlpha(180);
     float width = b2;
       
     QPen pen(color);
@@ -1522,12 +1524,12 @@ public:
 
       if (is_current_block){
         QColor c = get_block_qcolor(CURSOR_EDIT_ON_COLOR_NUM, type);
-        c.setAlpha(150);      
-        p.setPen(QPen(c, 4));
+        //c.setAlpha(150);      
+        p.setPen(QPen(c, get_seqtrack_border_width()));
       } else {
         p.setPen(border_color);
       }
-
+      
       p.drawRoundedRect(rect,1,1);
     }
 
@@ -1941,7 +1943,7 @@ public:
   void paint_current_seqblock_border(QPainter &p, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool paint_float) const {
     //printf("Seqblock: ");
     if(get_seqtracknum(seqtrack) >= root->song->topmost_visible_seqtrack)
-      paintCurrBorder(p, get_current_seqblock_rect(seqblock, false), QColor(0,0x60,0x90,0xb0), paint_float, 0, 0);
+      paintCurrBorder(p, get_current_seqblock_rect(seqblock, false), get_qcolor(SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM), paint_float);
   }
   
   bool paintSeqBlock(QPainter &p, const QRegion &update_region, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int seqtracknum, int seqblocknum, Seqblock_Type type){
@@ -2191,7 +2193,7 @@ public:
 
           if (is_current_seqblock(seqblock)){
             
-            bool paint_float = seqtrack->gfx_seqblocks != NULL;
+            bool paint_float = true;//seqtrack->gfx_seqblocks != NULL;
 
             if(false==paint_float)
               p.setRenderHints(QPainter::Antialiasing,false);
@@ -4301,7 +4303,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       QRectF rect(0, w.t_y1, w.t_x2+20, w.t_y2-w.t_y1);
 
       //printf("Seqtrack: ");
-      paintCurrBorder(p, rect, get_qcolor(MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM));
+      paintCurrBorder(p, rect, get_qcolor(MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM), true);
     }
   }
 
@@ -4417,8 +4419,11 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       {
         p.setClipRect(QRectF(0, 0, _seqtracks_widget.t_x2, seqtracks_y_max));
         p.setClipping(true);
-      
+
         paintSeqtrackBorders(p);
+
+        p.setRenderHints(QPainter::Antialiasing,true);
+        
         paintCurrentSeqtrackBorder(p);
 
         p.setClipping(false);

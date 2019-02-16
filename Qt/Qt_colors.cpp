@@ -172,6 +172,7 @@ static const ColorConfig g_colorconfig[] = {
   {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, "mixerstrips_selected_object_color_num", "Mixer strips: Current instrument border color"},
   
   {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, "sequencer_currtrack_border_color", "Sequencer current track border color"},
+  {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, "sequencer_curr_seqblock_border_color", "Sequencer current seqblock border color"},
   {SEQUENCER_BACKGROUND_COLOR_NUM, "sequencer_background_color", "Sequencer background color"},
   {SEQUENCER_BORDER_COLOR_NUM, "sequencer_border_color", "Sequencer border color"},
   {SEQUENCER_TEXT_COLOR_NUM, "sequencer_text_color", "Sequencer text color"},
@@ -284,6 +285,7 @@ static ReplacementColor g_replacement_color[] = {
   {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, QColor("#ff337755")},
   
   {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, QColor("#ffc8c8c8")},
+  {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, QColor("#ebc909")},
   {SEQUENCER_BACKGROUND_COLOR_NUM, QColor("#ff464d47")},
   {SEQUENCER_BORDER_COLOR_NUM, QColor("#ff010101")},
   {SEQUENCER_TEXT_COLOR_NUM, QColor("#ff010101")},
