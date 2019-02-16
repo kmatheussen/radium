@@ -46,14 +46,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wblocks_proc.h"
 #include "patch_proc.h"
 #include "cursor_updown_proc.h"
-#include "../midi/midi_i_input_proc.h"
-#include "../audio/Mixer_proc.h"
+#include "wblocks_proc.h"
 #include "scheduler_proc.h"
 #include "seqtrack_proc.h"
 #include "song_tempo_automation_proc.h"
-#include "../OpenGL/Widget_proc.h"
 #include "realline_calc_proc.h"
 
+#include "../OpenGL/Widget_proc.h"
+
+#include "../midi/midi_i_input_proc.h"
+
+#include "../audio/Mixer_proc.h"
+
+#include "../api/api_common_proc.h"
 #include "../api/api_proc.h"
 
 #include "player_proc.h"
@@ -309,7 +314,7 @@ static void start_player(int playtype, double abstime, int64_t absabstime, const
     }
     g_initing_starting_to_play_song = false;
 
-    player_start_data_t startdata = {0}; 
+    player_start_data_t startdata = {}; 
     startdata.playtype = playtype;
     startdata.abstime = abstime;
     if (place!=NULL)
@@ -670,3 +675,86 @@ void PlaySongFromStart(void){
     PlaySong(0);
 }
 
+void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool called_from_jack_transport){
+  
+  //static int callnum = 0; int l_callnum = callnum++; printf("        >>> %d: PLAYER_set_song_pos called: abs: %d. absabs: %d. From jack transport: %d\n", l_callnum, (int)pos, (int)absabstime, called_from_jack_transport);
+
+  const int playtype = pc->playtype;
+  
+  if (pos < 0){
+    
+    R_ASSERT_RETURN_IF_FALSE(absabstime >= 0);
+    
+    if (playtype==PLAYBLOCK)
+      pos = absabstime;
+    else
+      pos = TEMPOAUTOMATION_get_abstime_from_absabstime(absabstime);
+    
+  } else if (absabstime < 0){
+    
+    R_ASSERT_RETURN_IF_FALSE(pos >= 0);
+    
+    if (playtype==PLAYBLOCK)
+      absabstime = pos;
+    else
+      absabstime = TEMPOAUTOMATION_get_absabstime(pos);
+    
+  } else {
+
+    R_ASSERT_RETURN_IF_FALSE(false); // No reason why the caller couldn't fill in both values, but currently we have no such situations. If that happens, this assertion must be removed.
+    
+  }
+
+
+  if (is_playing_song()) {
+    
+    PlaySong(pos);
+    
+  } else {
+    
+    ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
+    pc->absabstime = absabstime;
+        
+    if (false==called_from_jack_transport && useJackTransport())
+      MIXER_TRANSPORT_set_pos(pos);
+
+    SEQUENCER_iterate_time_seqblocks
+      (pos-1,pos+1,false,
+       [&](const struct SeqTrack *seqtrack,const struct SeqBlock *seqblock, const struct Blocks *block, const struct SeqBlock *next_seqblock){
+        if(pos >= seqblock->t.time && pos < seqblock->t.time2){
+
+          struct Tracker_Windows *window;
+          struct WBlocks *wblock = getWBlockFromNumA(-1, &window, block->l.num);
+          if(wblock==NULL){
+            R_ASSERT(false);
+            return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
+          }
+
+          const int64_t blocktime = seqtime_to_blocktime(seqblock, pos - seqblock->t.time);
+          const Place place = STime2Place(block, blocktime);
+          const int realline = FindRealLineFor(wblock, 0, &place);
+
+          SelectWBlock(window, wblock);
+          ScrollEditorToRealLine(window, wblock, realline);
+
+          return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
+        }
+        return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
+      });
+
+
+    if (abs(pc->last_song_starttime - pos) > 1){
+      
+      pc->last_song_starttime = pos;
+      SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR);
+      
+    } else {
+  
+      SEQUENCER_update(SEQUPDATE_TIME);
+
+    }
+  }
+
+
+  //printf("       <<< %d: PLAYER_set_song_pos finished\n", l_callnum);
+}

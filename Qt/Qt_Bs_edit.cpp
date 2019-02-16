@@ -934,7 +934,7 @@ public slots:
       
       int seqblocknum = pe.seqblocknum;
 
-      int64_t abstime, seqtime;
+      int64_t abstime;
       
       //SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
 
@@ -943,47 +943,15 @@ public slots:
       if (pe.is_pause()) {
         if (seqblocknum==0) {
           abstime = 0;
-          seqtime = 0;
         } else {
           struct SeqBlock *prev_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum-1];
           abstime = prev_seqblock->t.time2;
-          seqtime = prev_seqblock->t.time2;
         }
       } else {
         abstime = seqblock->t.time;
-        seqtime = seqblock->t.time;
       }      
 
-      if (is_playing_song()==false) {
-
-        if (seqblock->block!=NULL) {
-        
-          struct Tracker_Windows *window=getWindowFromNum(-1);
-          struct WBlocks *wblock=getWBlockFromNum(-1,seqblock->block->l.num);
-          if(wblock->curr_realline == wblock->num_reallines-1)
-            wblock->curr_realline = 0;
-          
-          PC_PauseNoMessage();{
-            ATOMIC_DOUBLE_SET(pc->song_abstime, abstime);
-            //ATOMIC_DOUBLE_SET(seqtrack->start_time_f, seqtime);
-            printf("seqtime: %d\n",(int)seqtime);
-            DO_GFX(SelectWBlock(window,wblock));
-          }PC_StopPause_ForcePlayBlock(NULL);
-          
-        } else {
-          
-          ATOMIC_DOUBLE_SET(pc->song_abstime, abstime);
-          
-        }
-          
-        SEQUENCER_update(SEQUPDATE_TIME);
-              
-      } else {
-        
-        PlaySong(abstime);
-        
-      }
-        
+      PLAYER_set_song_pos(abstime, -1, false);
     }
   }
   

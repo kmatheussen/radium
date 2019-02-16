@@ -87,55 +87,8 @@ void setSongPos(int64_t pos){
     handleError("setSongPos: Song pos must be 0 or higher: %" PRId64 "\n", pos);
     return;
   }
-  
-  if (is_playing_song()) {
-    
-    PlaySong(pos);
-    
-  } else {
-    
-    ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
-    
-    if (useJackTransport())
-      MIXER_TRANSPORT_set_pos(pos);
 
-    SEQUENCER_iterate_time_seqblocks
-      (pos-1,pos+1,false,
-       [&](const struct SeqTrack *seqtrack,const struct SeqBlock *seqblock, const struct Blocks *block, const struct SeqBlock *next_seqblock){
-        if(pos >= seqblock->t.time && pos < seqblock->t.time2){
-
-          struct Tracker_Windows *window;
-          struct WBlocks *wblock = getWBlockFromNumA(-1, &window, block->l.num);
-          if(wblock==NULL){
-            R_ASSERT(false);
-            return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
-          }
-
-          const int64_t blocktime = seqtime_to_blocktime(seqblock, pos - seqblock->t.time);
-          const Place place = STime2Place(block, blocktime);
-          const int realline = FindRealLineFor(wblock, 0, &place);
-
-          SelectWBlock(window, wblock);
-          ScrollEditorToRealLine(window, wblock, realline);
-
-          return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
-        }
-        return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
-      });
-
-
-    bool set_last_song_starttime = false;
-
-    if (abs(pc->last_song_starttime - pos) > 1){
-      pc->last_song_starttime = pos;
-      set_last_song_starttime = true;
-    }
-  
-    if (set_last_song_starttime)
-      SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR);
-    else
-      SEQUENCER_update(SEQUPDATE_TIME);
-  }
+  PLAYER_set_song_pos(pos, -1, false);
 }
 
 int64_t getSongPos(void){

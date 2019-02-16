@@ -115,7 +115,8 @@ typedef struct{
 
         int pfreq; // player frequency. i.e. sample rate. TODO: Get rid of this one. Use MIXER_getsamplerate instead.
 
-        DEFINE_ATOMIC(double, song_abstime); // Used by the cursor position in the sequencer. Absolute time, i.e. not seqtime. Is double instead of int64_t since it's incremented by a double value.
+        // Used by the cursor position in the sequencer. Absolute time, i.e. not seqtime. Is double instead of int64_t since it's incremented by a double value.
+        DEFINE_ATOMIC(double, song_abstime); // Don't set directly. Call PLAYER_set_song_pos instead.
         double last_song_starttime;
         
         STime reltime; // The argument for PlayerTask. Don't think it's used anymore. All previous usage of it actually required RADIUM_BLOCKSIZE and not reltime, it turned out.
@@ -197,7 +198,6 @@ static inline void init_player_state(void){
   ATOMIC_DOUBLE_SET(pc->song_abstime, 0);
   pc->last_song_starttime = 0;
 }
-
 
 
 #endif
