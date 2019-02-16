@@ -788,9 +788,10 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
 
     } else {
       
-      if (e->delta() > 0)
+      if (e->delta() > 0){
+        //printf("        PLAY SONG WHEEL:: %f\n",pos);
         PlaySong(pos);
-      else {
+      }else {
         if (is_playing_song())
           PlayStop();
         setSongPos(pos);

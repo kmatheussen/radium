@@ -3802,16 +3802,23 @@ void iterateSequencerTime(int64_t start_time, int64_t end_time, const_char* grid
     return;
   }
 
+  double start_ms_time = TIME_get_ms();
+  
   int num_calls_to_handleError = g_num_calls_to_handleError;
 
   SEQUENCER_iterate_time(start_time, end_time, what,
-                         [callback, num_calls_to_handleError](int64_t seqtime, int barnum, int beatnum, int linenum){
+                         [callback, num_calls_to_handleError, start_ms_time](int64_t seqtime, int barnum, int beatnum, int linenum){
 
+                           if ((TIME_get_ms() - start_ms_time) > 5000){
+                             handleError("   Error: Used more than 5 seconds to iterate timing.");
+                             return false;
+                           }
+                           
                            bool ret = S7CALL(bool_int_int_int_int, callback, seqtime, barnum, beatnum, linenum);
 
                            if (g_num_calls_to_handleError != num_calls_to_handleError)
                              return false;
-
+                           
                            return ret;
                          });
 }

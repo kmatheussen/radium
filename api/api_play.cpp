@@ -64,6 +64,7 @@ void playSongFromCurrent(int windownum){
 }
 
 void playSongFromCurrentSequencerPosition(void){
+  //printf("        PLAY CURR SEQPOS: %f\n",ATOMIC_DOUBLE_GET(pc->song_abstime));
   PlaySong(ATOMIC_DOUBLE_GET(pc->song_abstime));
 }
 
