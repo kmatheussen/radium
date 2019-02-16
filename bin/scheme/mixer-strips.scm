@@ -159,14 +159,18 @@
                                              :value-changed
                                              :is-selected
                                              :min-height
-                                             :effect-name #f)
+                                             :effect-name #f
+                                             :hovered-callback #f
+                                             )
   
   (define checkbox (<gui> :widget))
   (if min-height
       (<gui> :set-min-height checkbox min-height))
 
   (add-safe-mouse-callback checkbox (lambda (button state x y)
-                                        ;;(c-display "state" state)
+                                      ;;(c-display "state" state)
+                                      (if hovered-callback
+                                          (hovered-callback button state x y))
                                         (if (and (= button *right-button*)
                                                  (= state *is-pressing*))
                                             (if (<ra> :shift-pressed)
@@ -1590,6 +1594,7 @@
 
   (define last-slider-val (get-pan))
 
+  
   (define slider #f)
   (set! slider (<gui> :horizontal-int-slider
                       "pan: "
@@ -1678,43 +1683,45 @@
       (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
       (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0))))
     
-  (add-safe-mouse-callback slider
-         (lambda (button state x y)
-           (cond ((and (= button *left-button*)
-                       (= state *is-pressing*))
-                  (set! has-made-undo #f)
-                  #f)
-                 ((and (not has-made-undo)
+  (add-safe-mouse-callback
+   slider
+   (lambda (button state x y)
+     (<ra> :set-statusbar-text (<-> "Pan: " (get-pan)))
+     (cond ((and (= button *left-button*)
+                 (= state *is-pressing*))
+            (set! has-made-undo #f)
+            #f)
+           ((and (not has-made-undo)
                        (= button *left-button*)
                        (= state *is-moving*))
-                  (undo-block
-                   (lambda ()
-                     (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
-                     (<ra> :undo-instrument-effect instrument-id "System Pan")))
-                  (set! has-made-undo #t)
-                  #f)
-                 ((and (= button *right-button*)
-                       (= state *is-releasing*))
-                  (define pan-enabled (pan-enabled?))
-                  (if (<ra> :shift-pressed)
-                      (undo-block
-                       (lambda ()                  
-                         (<ra> :reset-instrument-effect instrument-id "System Pan On/Off")
-                         (<ra> :reset-instrument-effect instrument-id "System Pan")))
-                      (popup-menu ;(list "Reset" (lambda ()
+            (undo-block
+             (lambda ()
+               (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
+               (<ra> :undo-instrument-effect instrument-id "System Pan")))
+            (set! has-made-undo #t)
+            #f)
+           ((and (= button *right-button*)
+                 (= state *is-releasing*))
+            (define pan-enabled (pan-enabled?))
+            (if (<ra> :shift-pressed)
+                (undo-block
+                 (lambda ()                  
+                   (<ra> :reset-instrument-effect instrument-id "System Pan On/Off")
+                   (<ra> :reset-instrument-effect instrument-id "System Pan")))
+                (popup-menu ;(list "Reset" (lambda ()
                                         ;                (<ra> :undo-instrument-effect instrument-id "System Pan")
                                         ;                (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))
-                       (list "Pan Enabled"
-                             :check pan-enabled
-                             enable!)                              
-                       (get-effect-popup-entries instrument-id "System Pan"
-                                                 :pre-undo-block-callback (lambda ()
-                                                                            (enable! #t)))
-                       (get-instrument-popup-entries instrument-id slider)
-                       (get-global-mixer-strips-popup-entries instrument-id strips-config)))
-                  #t)
-                 (else
-                  #f))))
+                 (list "Pan Enabled"
+                       :check pan-enabled
+                       enable!)                              
+                 (get-effect-popup-entries instrument-id "System Pan"
+                                           :pre-undo-block-callback (lambda ()
+                                                                      (enable! #t)))
+                 (get-instrument-popup-entries instrument-id slider)
+                 (get-global-mixer-strips-popup-entries instrument-id strips-config)))
+            #t)
+           (else
+            #f))))
   
   slider)
 
@@ -1842,6 +1849,8 @@
                    use-single-letters
                    background-color))
 
+  (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
+  
   (define mute (create-instrument-effect-checkbox instrument-id strips-config
                                                   draw-mute
                                                   (lambda (is-muted)
@@ -1855,10 +1864,21 @@
                                                   (get-muted)
                                                   min-height
                                                   :effect-name "System Volume On/Off"
+                                                  :hovered-callback (lambda (button state x y)
+                                                                      (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": "
+                                                                                                     (cond ((get-muted)
+                                                                                                            "Muted")
+                                                                                                           (implicitly-muted
+                                                                                                            "Implicitly muted")
+                                                                                                           (else
+                                                                                                            "Not muted")))))
                                                   ))
 
-  (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
-  
+  ;;(add-safe-mouse-callback (cadr mute)
+  ;;                         (lambda (button state x y)
+  ;;                           (c-display (<->"gakk" x y))))
+
+  ;; Keep "implicitly-muted" up-to-date.
   (<ra> :schedule (random 1000) (let ((mute (cadr mute)))
                                   (lambda ()
                                     (if (and (<gui> :is-open mute) (<ra> :instrument-is-open-and-audio instrument-id))
@@ -1892,6 +1912,8 @@
                                                   (get-soloed)
                                                   min-height
                                                   :effect-name "System Solo On/Off"
+                                                  :hovered-callback (lambda (button state x y)
+                                                                      (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": " (if (get-soloed) "Solo" "Not solo"))))
                                                   ))
   
   (add-gui-effect-monitor (cadr mute) instrument-id volume-on-off-name #t #t
@@ -1968,12 +1990,12 @@
                                (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized db))
                                (if paint-voltext
                                    (<gui> :update voltext)
-                                   (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": " (db-to-text db #t))))))))
+                                   )))))
 
   (<gui> :set-size-policy volslider #t #t)
   ;;(<gui> :set-min-width volslider 1) ;; ?? Why is this necessary?
   (<gui> :set-min-height volslider (* (get-fontheight) 2)) ;; This is strange. If we don't do this, min-height will be set to approx something that looks very good, but I don't find the call doing that.
-  
+
   (define (paint-text gui text cut-text-to-fit red-background)
     (define width (<gui> :width gui))
     (define height (<gui> :height gui))
@@ -2105,6 +2127,9 @@
 
   (define (create-vol-mouse-callback is-slider)    
     (lambda (button state x y)
+      (if is-slider
+          (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": " (db-to-text (get-volume) #t))))
+      ;;(<ra> :set-statusbar-text (<-> "volume:" (db-to-text (get-volume) #t))))
       (cond ((and (= button *left-button*)
                   (= state *is-pressing*))
              (set! has-made-undo #f))
@@ -2142,33 +2167,35 @@
                                         (<gui> :set-size volmeter (- width volmeter-x1) height)))
 
   (when show-voltext
-    (add-safe-mouse-callback voltext (lambda (button state x y)                                       
-                                         (cond ((and (= button *right-button*)
-                                                     (= state *is-pressing*))
-                                                (if (and effect-name
-                                                         (<ra> :shift-pressed))
-                                                    (<ra> :reset-instrument-effect instrument-id effect-name)
-                                                    (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))
-                                                #t)
-                                               ((and (= button *left-button*)
-                                                     (= state *is-pressing*))
-                                                (define old-volume (let ((v (two-decimal-string (get-volume))))
-                                                                     (if (or (string=? v "-0.0")
-                                                                             (string=? v "-0.00"))
-                                                                         "0.00"
-                                                                         v)))
-                                                (let ((maybe (<gui> :requester-operations
-                                                                    (<-> "Set new volume for "
-                                                                         (<ra> :get-instrument-name instrument-id)
-                                                                         "\n[" (one-decimal-string *min-db*) " -> " (one-decimal-string *max-db*) "]")
-                                                                    (lambda ()
-                                                                      (<ra> :request-float "dB: " *min-db* *max-db* #f old-volume)))))
-                                                  (when (>= maybe *min-db*)
-                                                    (<ra> :undo-instrument-effect instrument-id effect-name)
-                                                    (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized maybe))))
-                                                #t)
-                                               (else
-                                                #f))))
+    (add-safe-mouse-callback voltext
+                             (lambda (button state x y)
+                               (<ra> :set-statusbar-text "Click to set new volume.") ;;(<-> (<ra> :get-instrument-name instrument-id) ": " (db-to-text (get-volume) #t) ". Click to set new value"))
+                               (cond ((and (= button *right-button*)
+                                           (= state *is-pressing*))
+                                      (if (and effect-name
+                                               (<ra> :shift-pressed))
+                                          (<ra> :reset-instrument-effect instrument-id effect-name)
+                                          (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))
+                                      #t)
+                                     ((and (= button *left-button*)
+                                           (= state *is-pressing*))
+                                      (define old-volume (let ((v (two-decimal-string (get-volume))))
+                                                           (if (or (string=? v "-0.0")
+                                                                   (string=? v "-0.00"))
+                                                               "0.00"
+                                                               v)))
+                                      (let ((maybe (<gui> :requester-operations
+                                                          (<-> "Set new volume for "
+                                                               (<ra> :get-instrument-name instrument-id)
+                                                               "\n[" (one-decimal-string *min-db*) " -> " (one-decimal-string *max-db*) "]")
+                                                          (lambda ()
+                                                            (<ra> :request-float "dB: " *min-db* *max-db* #f old-volume)))))
+                                        (when (>= maybe *min-db*)
+                                          (<ra> :undo-instrument-effect instrument-id effect-name)
+                                          (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized maybe))))
+                                      #t)
+                                     (else
+                                      #f))))
     )
 
   (when (and show-peaktext has-inputs-or-outputs)
@@ -2183,20 +2210,22 @@
       (<gui> :reset-audio-meter-peak volmeter)
       (<gui> :update peaktext))
     
-    (add-safe-mouse-callback peaktext (lambda (button state x y)
-                                          (cond ((and (= button *right-button*)
-                                                      (= state *is-pressing*))
-                                                 (if (<ra> :shift-pressed)
-                                                     (reset-peak!)
-                                                     (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))
-                                                 #t)
-                                                ((and (= button *left-button*)
-                                                      (= state *is-pressing*))
-                                                 (reset-peak!)
-                                                 #t)
-                                                (else
-                                                 #f)))))
-
+    (add-safe-mouse-callback peaktext
+                             (lambda (button state x y)
+                               (<ra> :set-statusbar-text "Click to reset peak.") ;;(<-> (<ra> :get-instrument-name instrument-id) ": " (db-to-text (get-volume) #t) ". Click to set new value"))
+                               (cond ((and (= button *right-button*)
+                                           (= state *is-pressing*))
+                                      (if (<ra> :shift-pressed)
+                                          (reset-peak!)
+                                          (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))
+                                      #t)
+                                     ((and (= button *left-button*)
+                                           (= state *is-pressing*))
+                                      (reset-peak!)
+                                      #t)
+                                     (else
+                                      #f)))))
+  
   #||
   ;; disable this code since graphics isn't different when disabled.
   (when (not has-inputs-or-outputs)
