@@ -17,6 +17,8 @@
 (define-constant *arrow-text* "↳")
 (define-constant *arrow-text2* "→")
 
+(define *pan-mutesolo-voltext-scale-factor* 0.75)
+
 (define *current-mixer-strip-is-wide* #f)
 
 
@@ -1735,8 +1737,8 @@
                          :is-selected 'undefined
                          :use-single-letters 
                          :background-color #f
-                         :border 2
-                         :implicit-border 0)
+                         :border 0
+                         :implicit-border 1)
 
   (define (get-muted)
     (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
@@ -1803,7 +1805,8 @@
                  :y-border border
                  :background-color background-color                 
                  :paint-implicit-border is-implicitly-muted
-                 :implicit-border-width implicit-border)
+                 :implicit-border-width implicit-border
+                 :box-rounding 2)
   )
 
 (delafina (create-mixer-strip-mutesolo :instrument-id 
@@ -1947,7 +1950,7 @@
 
 (define (create-mixer-strip-volume instrument-id meter-instrument-id strips-config background-color is-minimized)
   (define fontheight (get-fontheight))
-  (define voltext-height (floor (* 1.0 fontheight)))
+  (define voltext-height (ceiling (* *pan-mutesolo-voltext-scale-factor* fontheight)))
 
   (define horizontal-spacing 4) ;; must be an even number.
   (define horizontal-spacing/2 (/ horizontal-spacing 2))
@@ -2011,7 +2014,7 @@
         (<gui> :filled-box gui col1 0 0 width height 5 5))
     
     ;; text
-    (<gui> :my-draw-text gui *text-color* text 2 2 (- width 2) (- height 2)
+    (<gui> :my-draw-text gui *text-color* text 0 0 (- width 0) (- height 0)
            #f ;;wrap-lines
            #f ;;align-top
            #f ;;align-left
@@ -2252,7 +2255,7 @@
 
   ;; vertical
   (define vertical (<gui> :vertical-layout))
-  (<gui> :set-layout-spacing vertical 2 0 0 0 0)
+  (<gui> :set-layout-spacing vertical 1 0 1 0 1)
 
   (<gui> :add vertical horizontal1)
 
@@ -2353,9 +2356,10 @@
 
   (define label (create-mixer-strip-name instrument-id strips-config #t is-standalone-mixer-strip))
 
+  (define mutesolo-height (ceiling (* (get-fontheight) *pan-mutesolo-voltext-scale-factor*)))
 
   (<gui> :add gui label 1)
-  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color (get-fontheight) #t #f))
+  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color mutesolo-height #t #f))
 
   (define meter-instrument-id (find-meter-instrument-id instrument-id))
 
@@ -2418,9 +2422,9 @@
   ;;(<gui> :set-max-width gui width)
   ;;(<gui> :set-size-policy gui #f #t)
 
-  (define bsize (if is-standalone-mixer-strip 0 2))
+  (define bsize (if is-standalone-mixer-strip 0 2)) ;; Width of the ligth green border around current instrument.
   
-  (<gui> :set-layout-spacing gui 2 bsize bsize bsize bsize)
+  (<gui> :set-layout-spacing gui 0 bsize bsize bsize bsize)
 
   (define background-color (get-mixer-strip-background-color gui instrument-id))
 
@@ -2431,8 +2435,8 @@
   (define fontheight-and-borders (+ 4 fontheight))
 
   (define name-height fontheight-and-borders)
-  (define pan-height fontheight-and-borders)
-  (define mutesolo-height fontheight-and-borders)
+  (define pan-height (ceiling (* *pan-mutesolo-voltext-scale-factor* fontheight-and-borders)))
+  (define mutesolo-height (ceiling (* *pan-mutesolo-voltext-scale-factor* fontheight-and-borders)))
   (define comment-height fontheight-and-borders)
 
   (define name (create-mixer-strip-name instrument-id strips-config #f is-standalone-mixer-strip))
