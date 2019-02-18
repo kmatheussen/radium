@@ -17,16 +17,24 @@
                                                  (<-> bus-effect-name " On/Off"))
                                                *bus-effect-names*))
 
+(define-constant *send-connection-type* 0)
+(define-constant *plugin-connection-type* 1)
+(define-constant *auto-connection-type* 1)
+
 (define *instrument-memoized-generation* 0)
-(define *use-instrument-memoization* #f)
+(define *using-instrument-memoization* #f)
 
 (define (run-instrument-data-memoized func)
-  (try-finally :try (lambda ()
-                      (set! *use-instrument-memoization* #t)
-                      (inc! *instrument-memoized-generation* 1)
-                      (func))
-               :finally (lambda ()
-                          (set! *use-instrument-memoization* #f))))
+  (if *using-instrument-memoization*
+      (func)
+      (try-finally :try (lambda ()
+                          ;;(c-display "                     INSTRUMENTS MEMOIZED--->" *instrument-memoized-generation*)
+                          (set! *using-instrument-memoization* #t)
+                          (inc! *instrument-memoized-generation* 1)
+                          (func))
+                   :finally (lambda ()
+                              ;;(c-display "                     <--- FINISHED INSTRUMENTS MEMOIZED--->" *instrument-memoized-generation*)
+                              (set! *using-instrument-memoization* #f)))))
 
 
 (define-macro (define-instrument-memoized name&arg . body)
@@ -44,8 +52,8 @@
              ,@body)
            ;;(if (and (equal? ,args-name '(1))
            ;;         (eq? (quote ,(car name&arg)) 'find-next-plugin-instrument-in-path))
-           ;;    (c-display "Args:" ,args-name *use-instrument-memoization* ,last-generation *instrument-memoized-generation* (,memo ,args-name)))
-           (if *use-instrument-memoization*
+           ;;    (c-display "Args:" ,args-name *using-instrument-memoization* ,last-generation *instrument-memoized-generation* (,memo ,args-name)))
+           (if *using-instrument-memoization*
                (begin
                  (when (not (= ,last-generation
                                *instrument-memoized-generation*))
@@ -86,6 +94,7 @@
 (delafina (create-audio-connection-change :type
                                           :source
                                           :target
+                                          :connection-type *auto-connection-type*
                                           :gain #f)
   (assert (or (string=? type "connect")
               (string=? type "disconnect")))
@@ -95,7 +104,7 @@
       (assert (not gain))
       (assert (or (not gain)
                   (number? gain))))  
-  (hash-table :type type :source source :target target :gain gain))
+  (hash-table :type type :source source :target target :gain gain :connection-type connection-type))
 
 (define-macro (push-audio-connection-change! changes rest)
   `(push-back! ,changes (create-audio-connection-change ,@(cdr rest))))
@@ -341,16 +350,43 @@
 
 ;; Finds the next plugin in a plugin path. 'instrument-id' is the plugin to start searching from.
 (define-instrument-memoized (find-next-plugin-instrument-in-path instrument-id)
-  (let loop ((out-instruments (reverse (sort-instruments-by-mixer-position
-                                        (remove (lambda (id)
-                                                  (<ra> :instrument-is-permanent id))
-                                                (get-instruments-connecting-from-instrument instrument-id))))))
-    (if (null? out-instruments)
-        #f
-        (let ((out-instrument (car out-instruments)))
-          (if (= 1 (<ra> :get-num-in-audio-connections out-instrument))
-              out-instrument
-              (loop (cdr out-instruments)))))))
+  (define target-instruments (get-instruments-connecting-from-instrument instrument-id))
+
+  (define plugin-targets (let ((sorted (sort (keep (lambda (target-id)
+                                                     (= *plugin-connection-type*
+                                                        (<ra> :get-audio-connection-type instrument-id target-id)))
+                                                   target-instruments)                                    
+                                             (lambda (a b)
+                                               (< (<ra> :get-num-in-audio-connections a)
+                                                  (<ra> :get-num-in-audio-connections b))))))
+                           
+                           ;;(c-display "SORTED:" instrument-id (<ra> :get-instrument-name instrument-id) " ==> " (map ra:get-instrument-name sorted))
+                           
+                           (if (null? sorted)
+                               '()
+                               (let ((num-inputs (<ra> :get-num-in-audio-connections (car sorted))))
+                                 ;;(if (not (<ra> :release-mode))
+                                 ;;    (assert #f)) ;; It should never happen that there are more than one plugin connection. (can happen if converting a send into a plugin manually)
+                                 (take-while sorted ;; only keep plugins that have the least number of input connections. I.e. '(1 1 5 5 7) -> '(1 1)
+                                             (lambda (instrument-id)
+                                               (= num-inputs (<ra> :get-num-in-audio-connections instrument-id))))))))
+
+  (if (not (null? plugin-targets))
+      
+      (last (sort-instruments-by-mixer-position plugin-targets))
+      
+      (let loop ((out-instruments (reverse (sort-instruments-by-mixer-position
+                                            (remove (lambda (target-id)
+                                                      (or (<ra> :instrument-is-permanent target-id)
+                                                          (= *send-connection-type*
+                                                             (<ra> :get-audio-connection-type instrument-id target-id))))
+                                                    target-instruments)))))
+        (if (null? out-instruments)
+            #f
+            (let ((out-instrument (car out-instruments)))
+              (if (= 1 (<ra> :get-num-in-audio-connections out-instrument))
+                  out-instrument
+                  (loop (cdr out-instruments))))))))
 
                                               
 (define-instrument-memoized (find-all-plugins-used-in-mixer-strip instrument-id)
@@ -482,6 +518,7 @@
               (push-audio-connection-change! changes (list :type "connect"
                                                            :source from-instrument
                                                            :target id-new-instrument
+                                                           :connection-type (<ra> :get-audio-connection-type from-instrument id-old-instrument)
                                                            :gain (<ra> :get-audio-connection-gain from-instrument id-old-instrument)))
               (push-audio-connection-change! changes (list :type "disconnect"
                                                            :source from-instrument
@@ -492,6 +529,7 @@
               (push-audio-connection-change! changes (list :type "connect"
                                                            :source id-new-instrument
                                                            :target to-instrument
+                                                           :connection-type (<ra> :get-audio-connection-type id-old-instrument to-instrument)
                                                            :gain (<ra> :get-audio-connection-gain id-old-instrument to-instrument)))
               (push-audio-connection-change! changes (list :type "disconnect"
                                                            :source id-old-instrument
@@ -728,13 +766,18 @@
                                    out-list)
                          (push-audio-connection-change! changes (list :type "connect"
                                                                       :source instrument-id1
-                                                                      :target new-instrument)))
+                                                                      :target new-instrument
+                                                                      :connection-type *plugin-connection-type*
+                                                                      )))
                        
                        (for-each (lambda (out-id gain)
                                    (push-audio-connection-change! changes (list :type "connect"
                                                                                 :source new-instrument
                                                                                 :target out-id
-                                                                                :gain gain)))
+                                                                                :gain gain
+                                                                                :connection-type (if (not instrument-id1)
+                                                                                                     *auto-connection-type*
+                                                                                                     (<ra> :get-audio-connection-type instrument-id1 out-id)))))
                                  out-list
                                  gain-list)
 

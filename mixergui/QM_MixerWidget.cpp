@@ -887,7 +887,7 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
       } if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
         //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
         
-        scene->_current_connection = new AudioConnection(scene);
+        scene->_current_connection = new AudioConnection(scene, ConnectionType::IS_SEND);
         scene->addItem(scene->_current_connection);
         
         scene->_current_connection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
@@ -1743,12 +1743,12 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
       if(_current_from_chip != NULL && chip != _current_from_chip){
 
         ADD_UNDO(MixerConnections_CurrPos());
-        CHIP_connect_chips(this, _current_from_chip, chip);
+        CHIP_connect_chips(this, _current_from_chip, chip, ConnectionType::IS_SEND);
 
       }else if(_current_to_chip != NULL && chip != _current_to_chip){
 
         ADD_UNDO(MixerConnections_CurrPos());
-        CHIP_connect_chips(this, chip, _current_to_chip);
+        CHIP_connect_chips(this, chip, _current_to_chip, ConnectionType::IS_SEND);
 
       }
     }
@@ -2132,7 +2132,7 @@ void MW_connect_plugin_to_main_pipe(SoundPlugin *plugin){
   SoundPlugin *main_pipe = get_main_pipe();
 
   if(plugin->type->num_outputs>0)
-    CHIP_connect_chips(&g_mixer_widget->scene, plugin, main_pipe);
+    CHIP_connect_chips(&g_mixer_widget->scene, plugin, main_pipe, ConnectionType::IS_SEND);
 }
 
 
@@ -2345,14 +2345,14 @@ SoundPluginType *MW_popup_plugin_type_selector(bool must_have_inputs, bool must_
 }
 */
 
-void MW_connect(Patch *source, Patch *dest){
+void MW_connect(Patch *source, Patch *dest, ConnectionType connection_type){
   Chip *chip_source = CHIP_get(&g_mixer_widget->scene, source);
   R_ASSERT_RETURN_IF_FALSE(chip_source!=NULL);
   
   Chip *chip_dest = CHIP_get(&g_mixer_widget->scene, dest);
   R_ASSERT_RETURN_IF_FALSE(chip_dest!=NULL);
 
-  CHIP_connect_chips(&g_mixer_widget->scene, chip_source, chip_dest);
+  CHIP_connect_chips(&g_mixer_widget->scene, chip_source, chip_dest, connection_type);
 }
 
 bool MW_disconnect(Patch *source, Patch *dest){

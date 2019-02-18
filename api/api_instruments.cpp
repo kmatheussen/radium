@@ -1666,7 +1666,7 @@ void undoMixerConnections(void){
   ADD_UNDO(MixerConnections_CurrPos());  
 }
 
-void createAudioConnection(int64_t source_id, int64_t dest_id, float gain){
+void createAudioConnection(int64_t source_id, int64_t dest_id, float gain, int connection_type){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -1675,7 +1675,7 @@ void createAudioConnection(int64_t source_id, int64_t dest_id, float gain){
   if(dest==NULL)
     return;
   
-  MW_connect(source, dest); 
+  MW_connect(source, dest, get_connection_type_from_int(connection_type)); 
 
   if (gain != 1.0)
     setAudioConnectionGain(source_id, dest_id, gain, true);
@@ -1878,6 +1878,41 @@ void undoAudioConnectionGain(int64_t source_id, int64_t dest_id){
     return;
 
   ADD_UNDO(AudioConnectionGain_CurrPos(source, dest));
+}
+
+int getAudioConnectionType(int64_t source_id, int64_t dest_id){
+
+  const struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return get_int_from_connection_type(ConnectionType::NOT_SET);
+
+  const struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return get_int_from_connection_type(ConnectionType::NOT_SET);
+
+  AudioConnection *connection = CONNECTION_find_audio_connection(source, dest);
+  if (connection==NULL)
+    return get_int_from_connection_type(ConnectionType::NOT_SET);
+
+  return get_int_from_connection_type(connection->_connection_type);
+}
+
+  
+void setAudioConnectionType(int64_t source_id, int64_t dest_id, int audio_connection_type){
+  const struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return;
+
+  const struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return;
+
+  AudioConnection *connection = CONNECTION_find_audio_connection(source, dest);
+  if (connection==NULL)
+    return;
+
+  connection->_connection_type = get_connection_type_from_int(audio_connection_type);
+  remakeMixerStrips(-1);
 }
 
 
