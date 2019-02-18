@@ -2882,7 +2882,7 @@
              (if is-visible
                  (begin
                    ;;(c-display "REMAKING" das-mixer-strips-gui)
-                   (remake (get-all-audio-instruments)))
+                   (remake :non-are-valid))
                  (begin
                    ;;(c-display "CLOSING" das-mixer-strips-gui)
                    (<gui> :close das-mixer-strips-gui)
