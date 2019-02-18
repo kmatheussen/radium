@@ -2356,7 +2356,7 @@
 
   (define label (create-mixer-strip-name instrument-id strips-config #t is-standalone-mixer-strip))
 
-  (define mutesolo-height (ceiling (* (get-fontheight) *pan-mutesolo-voltext-scale-factor*)))
+  (define mutesolo-height (ceiling (* 0.9 (get-fontheight) *pan-mutesolo-voltext-scale-factor*)))
 
   (<gui> :add gui label 1)
   (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color mutesolo-height #t #f))
@@ -2436,7 +2436,7 @@
 
   (define name-height fontheight-and-borders)
   (define pan-height (ceiling (* *pan-mutesolo-voltext-scale-factor* fontheight-and-borders)))
-  (define mutesolo-height (ceiling (* *pan-mutesolo-voltext-scale-factor* fontheight-and-borders)))
+  (define mutesolo-height (ceiling (* 0.9 *pan-mutesolo-voltext-scale-factor* fontheight-and-borders)))
   (define comment-height fontheight-and-borders)
 
   (define name (create-mixer-strip-name instrument-id strips-config #f is-standalone-mixer-strip))
