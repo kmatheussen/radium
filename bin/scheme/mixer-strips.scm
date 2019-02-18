@@ -396,6 +396,7 @@
                                                      is-strip))))
                         (is-unique (or (cat-instruments :has-no-inputs-or-outputs? id)
                                        is-strip)))
+                   ;;(c-display "=======================" (<ra> :get-instrument-name id) ". is-instrument:" is-instrument ". is-enabled:" is-enabled ". is-strip:" is-strip)
                    (set! (confs id) (make-conf :instrument-id id
                                                :is-bus is-bus
                                                :row-num 0
@@ -677,6 +678,7 @@
                                    (push-audio-connection-change! changes (list :type "connect"
                                                                                 :source instrument-id
                                                                                 :target send-id
+                                                                                :connection-type *send-connection-type*
                                                                                 :gain gain))
                                    (apply-changes changes))))))
              (sort-instruments-by-mixer-position-and-connections
@@ -1070,12 +1072,18 @@
                            (push-audio-connection-change! changes (list :type "connect"
                                                                         :source parent-instrument-id
                                                                         :target child-id
+                                                                        :connection-type (<ra> :get-audio-connection-type instrument-id child-id)
                                                                         :gain child-gain)))
                          child-ids
                          child-gains)
+               
                (<ra> :undo-mixer-connections)
+               
                (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
-               (<ra> :delete-instrument instrument-id)
+
+               (if (= 0 (<ra> :get-num-in-audio-connections instrument-id))
+                   (<ra> :delete-instrument instrument-id))
+               
                ;;(remake-mixer-strips) ;; (makes very little difference in snappiness, and it also causes mixer strips to be remade twice)
                ))
             
@@ -1538,10 +1546,14 @@
         instrument-sends
         next-plugin-instrument))
 
+
 ;; Returns the last plugin.
 (define (create-mixer-strip-path gui first-instrument-id instrument-id strips-config)
+  ;;(c-display "instrument-id:" (<ra> :get-instrument-name instrument-id))
   (get-mixer-strip-path-instruments instrument-id
                                     (lambda (bus-sends instrument-sends next-plugin-instrument)
+                                      ;;(c-display "    next-plugin-instrument:" (and next-plugin-instrument (<ra> :get-instrument-name next-plugin-instrument)))
+                                      ;;(c-display "    instrument-sends:" (map ra:get-instrument-name instrument-sends))
                                       (for-each (lambda (bus-num)
                                                   (create-mixer-strip-bus-send gui
                                                                                instrument-id
@@ -1565,6 +1577,10 @@
                                                 (create-mixer-strip-plugin gui first-instrument-id instrument-id next-plugin-instrument strips-config))
                                             (create-mixer-strip-path gui first-instrument-id next-plugin-instrument strips-config))
                                           instrument-id))))
+
+#!!
+
+!!#
 
 (define (get-all-instruments-used-in-mixer-strip instrument-id)
   (get-mixer-strip-path-instruments instrument-id
@@ -2480,7 +2496,10 @@
                                                                #t)
                                                         #f)))
 
-  (define meter-instrument-id (create-mixer-strip-path mixer-strip-path-gui instrument-id instrument-id strips-config))
+  ;; create path gui
+  (define last-instrument-id-in-path (create-mixer-strip-path mixer-strip-path-gui instrument-id instrument-id strips-config))
+  
+  (define meter-instrument-id last-instrument-id-in-path)
 
   (<gui> :add gui (create-mixer-strip-pan instrument-id strips-config system-background-color background-color pan-height))
   (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color mutesolo-height #f #t))

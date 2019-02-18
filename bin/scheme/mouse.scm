@@ -7245,6 +7245,7 @@
                         )         
 #!!
 (pretty-print (<ra> :get-seqblocks-state 1))
+(begin *text-color*)
 !!#
 
 (define (remove-seqblock-automation seqtracknum seqblocknum automationnum)
@@ -8185,6 +8186,7 @@
                         :Make-undo (lambda (_)
                                      50)
                         :Move (lambda (_ Value)
+                                ;;(c-display "Value:" (/ Value 44100.0))
                                 (define song-length (<ra> :get-sequencer-song-length-in-frames))
                                 (define new-end-time (floor (scale Value
                                                                    (<ra> :get-seqnav-x1) (<ra> :get-seqnav-x2);; (<ra> :get-seqnav-right-size-handle-x1)

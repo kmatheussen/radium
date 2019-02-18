@@ -304,12 +304,48 @@ public:
 
 };
 
+enum class ConnectionType{
+  IS_SEND,
+  IS_PLUGIN,
+  NOT_SET  
+};
+
+/* If changing this order, also change order in instruments.scm */
+
+static inline ConnectionType get_connection_type_from_int(int c){
+  switch(c){
+  case 0:
+    return ConnectionType::IS_SEND;
+  case 1:
+    return ConnectionType::IS_PLUGIN;
+  case 2:
+    return ConnectionType::NOT_SET;
+  default:
+    R_ASSERT(false);
+    return ConnectionType::NOT_SET;
+  }
+}
+
+static inline int get_int_from_connection_type(ConnectionType connection_type){
+  switch(connection_type){
+  case ConnectionType::IS_SEND: return 0;
+  case ConnectionType::IS_PLUGIN: return 1;
+  case ConnectionType::NOT_SET: return 2;
+  default:
+    R_ASSERT(false);
+    return get_int_from_connection_type(ConnectionType::NOT_SET);
+  }
+}
+
 class AudioConnection : public SuperConnection {
   
 public:
   
- AudioConnection(QGraphicsScene *parent)
-   : SuperConnection(parent, false, MIXER_AUDIO_CONNECTION_COLOR_NUM)
+  ConnectionType _connection_type;
+
+  AudioConnection(QGraphicsScene *parent, ConnectionType connection_type)
+    : SuperConnection(parent, false, MIXER_AUDIO_CONNECTION_COLOR_NUM)
+    , _connection_type(connection_type)
   {}
 
   void update_position(void) override;
@@ -450,8 +486,8 @@ extern void CHIP_kick_left(Chip *chip);
 extern void CHIP_kick_right(Chip *chip);
 
 extern Chip *find_chip_for_plugin(QGraphicsScene *scene, SoundPlugin *plugin);
-extern void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
-extern void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to);
+extern void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to, ConnectionType connection_type);
+extern void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to, ConnectionType connection_type);
 extern bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
 extern bool CHIPS_are_connected(const Chip *from, const Chip *to);
 extern bool CHIPS_are_econnected(const Chip *from, const Chip *to);
@@ -490,6 +526,7 @@ void CHIP_update(Chip *chip, SoundPlugin *plugin);
 struct Patch *CHIP_get_patch(const Chip *chip);
 
 AudioConnection *CONNECTION_find_audio_connection(const Chip *from, const Chip *to);
+AudioConnection *CONNECTION_find_audio_connection(const struct Patch *from, const struct Patch *to);
 hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *patches);
 
 void CONNECTIONS_remove_all(QGraphicsScene *scene);
