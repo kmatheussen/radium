@@ -1091,18 +1091,49 @@ void CONNECTIONS_remove_all(QGraphicsScene *scene){
 // 2. Remove connection between middle and after
 // 3. Add connection between before and after
 void CHIP_remove_chip_from_connection_sequence(QGraphicsScene *scene, Chip *before, Chip *middle, Chip *after){
+
+  ConnectionType connection_type = ConnectionType::NOT_SET;
+
+  {
+    const AudioConnection *connection1 = CONNECTION_find_audio_connection(before, middle);
+    const AudioConnection *connection2 = CONNECTION_find_audio_connection(middle, after);
+    R_ASSERT_NON_RELEASE(connection1 != NULL);
+    R_ASSERT_NON_RELEASE(connection2 != NULL);
+    
+    
+    if (connection1 != NULL && connection2 != NULL){
+    
+      if (connection1->_connection_type==ConnectionType::IS_SEND || connection2->_connection_type==ConnectionType::IS_SEND)
+        connection_type = ConnectionType::IS_SEND;
+      
+      else if (connection1->_connection_type==ConnectionType::IS_PLUGIN && connection2->_connection_type==ConnectionType::IS_PLUGIN)
+        connection_type = ConnectionType::IS_PLUGIN;
+      
+    }
+  }
+  
   changes::AudioGraph changes;
   changes.remove(before, middle);
   changes.remove(middle, after);
-  changes.add(before, after, -1.0, false, true, ConnectionType::NOT_SET); // FIX: Set last argument (connection type)) to false if both deleted connections are plugin connections.
+  changes.add(before, after, -1.0, false, true, connection_type);
   CONNECTIONS_apply_changes(scene, changes);
 }
 
 // Opposite of remove_chip_from_connection_sequence
 void CHIP_add_chip_to_connection_sequence(QGraphicsScene *scene, Chip *before, Chip *middle, Chip *after){
+  const ConnectionType connection_type1 = ConnectionType::IS_PLUGIN;
+  ConnectionType connection_type2 = ConnectionType::NOT_SET;
+
+  {
+    const AudioConnection *connection = CONNECTION_find_audio_connection(before, after);
+    R_ASSERT_NON_RELEASE(connection != NULL);
+    if (connection != NULL)
+      connection_type2 = connection->_connection_type;
+  }
+  
   changes::AudioGraph changes;
-  changes.add(before, middle, -1.0, false, true, ConnectionType::IS_PLUGIN); // plugin-connection
-  changes.add(middle, after, -1.0, false, true, ConnectionType::NOT_SET); // FIX: Set last argument (is_send) to the same value as the deleted connection.
+  changes.add(before, middle, -1.0, false, true, connection_type1);
+  changes.add(middle, after, -1.0, false, true, connection_type2);
   changes.remove(before, after);
   CONNECTIONS_apply_changes(scene, changes);
 }
