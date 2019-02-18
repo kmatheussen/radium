@@ -3873,6 +3873,7 @@ int main(int argc, char **argv){
   qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
   qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt. https://bugreports.qt.io/browse/QTBUG-33479
 
+
   init_weak_jack();
   
   g_startup_rect = QApplication::desktop()->screenGeometry(); // Probably no point. Hoped that it would force radium to open on the same desktop that was current when program started.
@@ -3910,6 +3911,13 @@ int main(int argc, char **argv){
     
     g_gc_is_incremental = true;
   }
+
+
+#if defined(FOR_MACOSX)
+  if (QSysInfo::productVersion()=="10.14" || QSysInfo::productVersion()=="10.15" || QSysInfo::productVersion()=="10.16" || QSysInfo::productVersion()=="10.17" || true){
+    GFX_Message(NULL, "Radium has not been tested on this version of macOS. Latest supported version of macOS is 10.13. Radium is likely to misbehave on this operating system. It might also freeze, crash, or not run at all. But we will try to run anyway.");
+  }
+#endif
 
 
 
