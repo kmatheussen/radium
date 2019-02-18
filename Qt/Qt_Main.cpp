@@ -3911,7 +3911,6 @@ int main(int argc, char **argv){
     g_gc_is_incremental = true;
   }
 
-  SCHEME_init1();
 
 
   //GC_disable();
@@ -3919,6 +3918,8 @@ int main(int argc, char **argv){
   //QPixmap pixmap(QPixmap(OS_get_full_program_file_path("/home/kjetil/radium/pictures/logo_big.png")).scaled(QSize(256,256), Qt::KeepAspectRatioByExpanding));
   GFX_OpenProgress("Please wait, starting program");
   
+  SCHEME_init1();
+
   //g_splashscreen = new QSplashScreen(pixmap);
 #if 0 //def RELEASE
   g_splashscreen->adjustSize();
