@@ -521,7 +521,7 @@
   
   (define w 1.2)
   (define w2 (* 2 w))
-  (define w3 (* 3 w))
+  (define w3 (* 1.2 w))
   
   (if get-automation-data
       (get-automation-data
