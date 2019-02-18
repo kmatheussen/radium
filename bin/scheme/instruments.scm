@@ -34,23 +34,54 @@
         (func (gensym "func"))
         (args-name (gensym "args"))
 	(memo (gensym "memo"))
+        (false (gensym "false"))
         (last-generation (gensym "last-generation")))
     `(define ,(car name&arg)
-       (let ((,memo (make-hash-table))
+       (let ((,memo (make-hash-table 16 equal?))
              (,last-generation -1))
 	 (lambda ,args-name
            (define (,func ,@args)
              ,@body)
+           ;;(if (and (equal? ,args-name '(1))
+           ;;         (eq? (quote ,(car name&arg)) 'find-next-plugin-instrument-in-path))
+           ;;    (c-display "Args:" ,args-name *use-instrument-memoization* ,last-generation *instrument-memoized-generation* (,memo ,args-name)))
            (if *use-instrument-memoization*
                (begin
                  (when (not (= ,last-generation
                                *instrument-memoized-generation*))
+                   ;;(c-display "Recreating hash for" (quote ,name&arg) ":" ,last-generation *instrument-memoized-generation*)
                    (set! ,last-generation *instrument-memoized-generation*)
-                   (set! ,memo (make-hash-table)))
-                 (or (,memo ,args-name)
-                     (set! (,memo ,args-name) (apply ,func ,args-name))))
+                   (set! ,memo (make-hash-table 16 equal?)))
+                 (let ((hashed (,memo ,args-name)))
+                   (cond ((not hashed)
+                          (let ((result (apply ,func ,args-name)))
+                            (set! (,memo ,args-name) (if (not result)
+                                                         ',false ;; s7 hash tables have a very unfortunate logic.
+                                                         result))
+                            result))
+                         ((eq? ',false hashed)
+                          #f)
+                         (else
+                          hashed))))
                (apply ,func ,args-name)))))))
 
+
+#!!
+(define-instrument-memoized (testmemo a b)
+  (c-display "Evaluating (+" a b ")")
+  (+ a b)
+  #f)
+
+(begin
+  (c-display "\nAAAAAAAAAAAA")
+  (run-instrument-data-memoized
+   (lambda ()
+     (testmemo 2 3)
+     (testmemo 2 3)
+     (testmemo 2 3)
+     ))
+  (c-display "BBBBBBBBBBBB\n"))
+!!#
 
 (delafina (create-audio-connection-change :type
                                           :source
