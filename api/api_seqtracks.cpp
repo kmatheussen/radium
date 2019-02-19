@@ -292,13 +292,8 @@ void deleteSeqtrack(int seqtracknum){
 }
 
 void API_curr_seqtrack_has_changed(void){
-  static func_t *func = NULL;
+  S7EXTRA_GET_FUNC(func, "FROM_C-call-me-when-curr-seqtrack-has-changed");
   
-#if defined(RELEASE)
-  if (func==NULL)
-#endif
-    func = s7extra_get_func_from_funcname_for_storing("FROM_C-call-me-when-curr-seqtrack-has-changed");
- 
   S7CALL(void_int, func, ATOMIC_GET(root->song->curr_seqtracknum));
 }
 

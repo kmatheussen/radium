@@ -80,12 +80,117 @@ struct SoundPlugin;
 
 #include "../api/api_proc.h"
 
+class AudioConnection;
+class EventConnection;
+
+class Chip : public QGraphicsItem, public QObject
+{
+  
+public:
+
+  void init_new_plugin(void);
+  
+  Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float y);
+  ~Chip();
+
+  QRectF boundingRect() const override;
+  QPainterPath shape() const override;
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *item, QWidget *widget) override;
+
+  bool positionedAtSlider(QPointF pos);
+
+  bool myMouseDoubleClickEvent (float x, float y);
+
+  QString _name_text;
+  
+protected:
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+
+#if 0
+  void hoverMoveEvent ( QGraphicsSceneHoverEvent * event ) override{
+    printf("got hovermove event\n");
+  }
+#endif
+
+public:
+  QGraphicsScene *_scene;
+  SoundProducer *_sound_producer;
+  int _num_inputs;
+  int _num_outputs;
+  QColor _color;
+  radium::Vector<AudioConnection*> audio_connections;
+  radium::Vector<EventConnection*> event_connections;
+
+  SliderPainter *_input_slider;
+  SliderPainter *_output_slider;
+
+  float _last_updated_volume = -1;
+  bool _last_updated_mute = false;
+  bool _last_updated_implicitly_mute = false;
+  bool _last_updated_solo = false;
+  bool _last_updated_bypass = false;
+  bool _last_updated_recording = false;
+  bool _last_updated_autosuspending = false;
+  int64_t _autosuspend_on_time = 0;
+  
+  float _slider_start_value;
+  float _slider_start_pos;
+  int _slider_being_edited;
+  bool _has_made_volume_effect_undo = false;
+  
+  QPointF _moving_start_pos;
+  float _moving_x_offset;
+  float _moving_y_offset;
+
+  bool has_output_slider(void){
+    if (_sound_producer==NULL)
+      return false;
+    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    if (plugin==NULL)
+      return false;
+    return plugin->type->num_outputs > 0;
+  }
+
+  bool has_input_slider(void){
+    if (_sound_producer==NULL)
+      return false;
+    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    if (plugin==NULL)
+      return false;
+    return !has_output_slider() && plugin->type->num_inputs>0;
+  }
+
+  int get_volume_effect_num(void){
+    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    int num_effects = plugin->type->num_effects;
+    if(has_input_slider())
+      return num_effects+EFFNUM_INPUT_VOLUME;
+    else
+      return num_effects+EFFNUM_VOLUME;
+  }
+  
+  float get_slider_volume(void){
+    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    int effect_num = get_volume_effect_num();
+    return PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
+  }
+  
+  void mySetSelected(bool selected);
+
+};
+
+static inline struct SoundProducer *CHIP_get_soundproducer(const Chip *chip){
+  return chip->_sound_producer;
+}
+
 
 extern LANGSPEC bool MW_get_connections_visibility(void);
 
-class Chip;
-
-static inline struct SoundProducer *CHIP_get_soundproducer(Chip *chip);
+typedef Chip* ChipPointer;
 
 class SuperConnection  : public QGraphicsLineItem {
 
@@ -94,6 +199,17 @@ public:
   bool is_selected; // for some reason isSelected() doesn't work.
   bool is_event_connection;
   enum ColorNums color_num;
+
+  
+private:
+  Chip *_from; // Note: If we ever need to set this variable after constructor (we currently don't), we also need to ensure that the new from chip doesn't have more than one PLUGIN connection.
+  Chip *_to;
+  
+
+public:
+  
+  const ChipPointer &from; // Set to const. See comment about _from above.
+  const ChipPointer &to;
 
   //bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
   
@@ -129,13 +245,15 @@ public:
     return pen;
   }
 
-  SuperConnection(QGraphicsScene *parent, bool is_event_connection, enum ColorNums color_num)
+  SuperConnection(QGraphicsScene *parent, Chip *from, Chip *to, bool is_event_connection, enum ColorNums color_num)
     : QGraphicsLineItem()
     , is_selected(false)
     , is_event_connection(is_event_connection)
     , color_num(color_num)
-    , from(NULL)
-    , to(NULL)
+    , _from(from)
+    , _to(to)
+    , from(_from)
+    , to(_to)
     , visible_line(this)
       //, arrow_line1(this)
   {
@@ -159,17 +277,19 @@ public:
     visible_line.setPen(getPen());
     parent->addItem(&visible_line);
 
-    //setVisibility(MW_get_connections_visibility());
-    //setVisible(false);
-    
-    /*
-    if(_is_event_connection){
-      arrow_line1.setPen(getPen());
-      parent->addItem(&arrow_line1);
-    }
-    */
+    setVisibility(MW_get_connections_visibility());    
   }
 
+  /*
+  void setTo(Chip *new_to){
+    _to = new_to;
+  }
+  
+  void setFrom(Chip *new_from){
+    _from = new_from;
+  }
+  */
+  
   ~SuperConnection(){
     printf("       Remake: ~SuperConnectin\n");
     //remakeMixerStrips(-1);
@@ -182,9 +302,6 @@ public:
     update_colors();
     QGraphicsLineItem::paint(painter,option,widget);    
   }
-
-  Chip *from;
-  Chip *to;
 
   QGraphicsLineItem visible_line;
   //QGraphicsLineItem arrow_line1;
@@ -217,9 +334,7 @@ public:
     visible_line.setPen(getPen());
   }
   
-  virtual void update_position(void) {
-    R_ASSERT(false);
-  }
+  virtual void update_position(void) = 0;
 
 #if 0
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
@@ -339,145 +454,95 @@ static inline int get_int_from_connection_type(ConnectionType connection_type){
 
 class AudioConnection : public SuperConnection {
   
-public:
-  
   ConnectionType _connection_type;
 
-  AudioConnection(QGraphicsScene *parent, ConnectionType connection_type)
-    : SuperConnection(parent, false, MIXER_AUDIO_CONNECTION_COLOR_NUM)
-    , _connection_type(connection_type)
-  {}
+public:
+  
+  AudioConnection(QGraphicsScene *parent, Chip *from, Chip *to, ConnectionType connection_type)
+    : SuperConnection(parent, from, to, false, MIXER_AUDIO_CONNECTION_COLOR_NUM)
+    , _connection_type(ConnectionType::NOT_SET)
+  {
+    if (from!=NULL){
+      R_ASSERT_RETURN_IF_FALSE(to!=NULL);
+
+      {
+        bool gotit = false;
+        
+        for(auto *connection : from->audio_connections){
+          if(connection->from==from && connection->to==to){
+            R_ASSERT(false);
+            gotit = true;
+          }
+        }
+        
+        if (gotit==false)
+          from->audio_connections.push_back(this);
+      }
+
+      
+      {
+        bool gotit = false;
+        
+        for(auto *connection : to->audio_connections){
+          if(connection->from==from && connection->to==to){
+            R_ASSERT(false);
+            gotit = true;
+          }
+        }
+        
+        if (gotit==false)
+          to->audio_connections.push_back(this);
+      }
+    }
+
+    if(from != NULL)
+      set_connection_type(connection_type);
+    else
+      _connection_type = connection_type;
+
+    if (from != NULL && to != NULL)
+      update_position();
+  }
 
   void update_position(void) override;
+
+
+  ConnectionType get_connection_type(void) const {
+    return _connection_type;
+  }
+  
+  void set_connection_type(ConnectionType connection_type); // this function ensures there is only one plugin connection from 'from'.
+
+  void set_connection_type(int connection_type){
+    set_connection_type(get_connection_type_from_int(connection_type));
+  }
 };
 
 class EventConnection : public SuperConnection {
   
 public:
 
-  EventConnection(QGraphicsScene *parent)
-    : SuperConnection(parent, true, MIXER_EVENT_CONNECTION_COLOR_NUM)
-  {}
+  EventConnection(QGraphicsScene *parent, Chip *from, Chip *to)
+    : SuperConnection(parent, from, to, true, MIXER_EVENT_CONNECTION_COLOR_NUM)
+  {
+    
+    if (from!=NULL){
+      R_ASSERT_RETURN_IF_FALSE(to!=NULL);
+      
+      from->event_connections.push_back(this);
+      to->event_connections.push_back(this);
+
+      update_position();
+    }
+    
+  }
+
+
   
   void update_position(void) override;
 };
 
-class Chip : public QGraphicsItem, public QObject
-{
-  
-public:
 
-  void init_new_plugin(void);
-  
-  Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float y);
-  ~Chip();
-
-  QRectF boundingRect() const override;
-  QPainterPath shape() const override;
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *item, QWidget *widget) override;
-
-  bool positionedAtSlider(QPointF pos);
-
-  bool myMouseDoubleClickEvent (float x, float y);
-
-  QString _name_text;
-  
-protected:
-    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-
-    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-
-#if 0
-  void hoverMoveEvent ( QGraphicsSceneHoverEvent * event ) override{
-    printf("got hovermove event\n");
-  }
-#endif
-
-public:
-  QGraphicsScene *_scene;
-  SoundProducer *_sound_producer;
-  int _num_inputs;
-  int _num_outputs;
-  QColor _color;
-  radium::Vector<AudioConnection*> audio_connections;
-  radium::Vector<EventConnection*> event_connections;
-
-  SliderPainter *_input_slider;
-  SliderPainter *_output_slider;
-
-  float _last_updated_volume = -1;
-  bool _last_updated_mute = false;
-  bool _last_updated_implicitly_mute = false;
-  bool _last_updated_solo = false;
-  bool _last_updated_bypass = false;
-  bool _last_updated_recording = false;
-  bool _last_updated_autosuspending = false;
-  int64_t _autosuspend_on_time = 0;
-  
-  float _slider_start_value;
-  float _slider_start_pos;
-  int _slider_being_edited;
-  bool _has_made_volume_effect_undo = false;
-  
-  QPointF _moving_start_pos;
-  float _moving_x_offset;
-  float _moving_y_offset;
-
-  bool has_output_slider(void){
-    if (_sound_producer==NULL)
-      return false;
-    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-    if (plugin==NULL)
-      return false;
-    return plugin->type->num_outputs > 0;
-  }
-
-  bool has_input_slider(void){
-    if (_sound_producer==NULL)
-      return false;
-    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-    if (plugin==NULL)
-      return false;
-    return !has_output_slider() && plugin->type->num_inputs>0;
-  }
-
-  int get_volume_effect_num(void){
-    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-    int num_effects = plugin->type->num_effects;
-    if(has_input_slider())
-      return num_effects+EFFNUM_INPUT_VOLUME;
-    else
-      return num_effects+EFFNUM_VOLUME;
-  }
-  
-  float get_slider_volume(void){
-    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-    int effect_num = get_volume_effect_num();
-    return PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
-  }
-  
-  void mySetSelected(bool selected) {
-    for(auto audio_connection : audio_connections)
-      audio_connection->mySetSelected(selected);
-    
-    for(auto event_connection : event_connections)
-      event_connection->mySetSelected(selected);
-    
-    QGraphicsItem::setSelected(selected);
-
-    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-    if (plugin!=NULL){
-      ATOMIC_SET(plugin->is_selected, selected);
-      //remakeMixerStrips();
-    }
-  }
-};
-
-static inline struct SoundProducer *CHIP_get_soundproducer(Chip *chip){
-  return chip->_sound_producer;
-}
 
 extern void CHIP_get_name_coordinates(int &x1, int &y1, int &x2, int &y2);
 extern void CHIP_get_note_indicator_coordinates(int &x1, int &y1, int &x2, int &y2);

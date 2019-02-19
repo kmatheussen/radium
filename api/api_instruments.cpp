@@ -1894,7 +1894,7 @@ int getAudioConnectionType(int64_t source_id, int64_t dest_id){
   if (connection==NULL)
     return get_int_from_connection_type(ConnectionType::NOT_SET);
 
-  return get_int_from_connection_type(connection->_connection_type);
+  return get_int_from_connection_type(connection->get_connection_type());
 }
 
   
@@ -1911,7 +1911,7 @@ void setAudioConnectionType(int64_t source_id, int64_t dest_id, int audio_connec
   if (connection==NULL)
     return;
 
-  connection->_connection_type = get_connection_type_from_int(audio_connection_type);
+  connection->set_connection_type(audio_connection_type);
   remakeMixerStrips(-1);
 }
 

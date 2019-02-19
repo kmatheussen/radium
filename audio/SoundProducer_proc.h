@@ -34,7 +34,7 @@ struct SoundProducer;
 class Chip;
 
 namespace radium{
-  
+
 struct LinkParameter{
   SoundProducer *source;
   int source_ch;

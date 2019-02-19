@@ -887,7 +887,7 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
       } if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
         //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
         
-        scene->_current_connection = new AudioConnection(scene, ConnectionType::IS_SEND);
+        scene->_current_connection = new AudioConnection(scene, NULL, NULL, ConnectionType::IS_SEND);
         scene->addItem(scene->_current_connection);
         
         scene->_current_connection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
@@ -907,7 +907,7 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
         scene->_ecurrent_to_chip = chip;
 
       if(scene->_ecurrent_from_chip!=NULL || scene->_ecurrent_to_chip!=NULL){
-        scene->_current_econnection = new EventConnection(scene);
+        scene->_current_econnection = new EventConnection(scene, NULL, NULL);
         scene->addItem(scene->_current_econnection);
         
         scene->_current_econnection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
