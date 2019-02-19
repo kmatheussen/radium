@@ -5793,16 +5793,16 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                                 (send-events-to-radium playlist instruments patterns)
                                 (c-display "playlist before: " *playlist*)
                                 (c-display "playlist after: " playlist)
+                                (<ra> :show-progress-window-message (<-> "Loading graphical data into memory"))
+                                (<ra> :internal_update-all-block-graphics)
                                 #t))
-               
-               :finally (lambda ()
-                          (<ra> :stop-ignoring-undo)                          
-                          (<ra> :reset-undo))))
+                       
+                       :finally (lambda ()
+                                  (<ra> :stop-ignoring-undo)                          
+                                  (<ra> :reset-undo))))
    :finally (lambda ()
               (<ra> :close-progress-window)))
-                          
-
-  (<ra> :internal_update-all-block-graphics)
+  
   )
   
   

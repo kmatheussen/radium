@@ -272,6 +272,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   void setVisible(bool visible) override {                              \
     if (_has_been_opened_before == false)                               \
       _has_been_opened_before = true;                                   \
+    Gui::visibility_changed(visible);                                   \
     remember_geometry.setVisible_override<classname>(this, visible);    \
   }
 
@@ -1463,6 +1464,28 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
     }
 
+    bool _was_visible = false;
+    
+    radium::ProtectedS7Extra<func_t*> _visibility_change_callback;
+
+    void visibility_changed(bool visible) {
+      if (visible == _was_visible)
+        return;
+
+      if(_visibility_change_callback.v != NULL)
+        S7CALL(void_bool, _visibility_change_callback.v, visible);
+      
+      _was_visible = visible;
+    }
+      
+    void addVisiblityChangeCallback(func_t* func){
+      if (_visibility_change_callback.v!=NULL){
+        handleError("Gui %d already has a visibility change callback.", (int)_gui_num);
+        return;
+      }
+
+      _visibility_change_callback.set(func);
+    }
     
     /************ AUDIO METERS *******************/
     
@@ -1934,32 +1957,29 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     int _num_close_calls = 0;
 
     bool run_close_callback(void) const {
-      int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
-        
-      bool closeresult;
-      
-      {
-        ScopedEventHandlerTracker event_handler_tracker; // To avoid another closeEvent to be called from this closeEvent. Qt likes crashing.
-        closeresult = S7CALL(bool_bool,_close_callback.v, g_radium_runs_custom_exec);
-      }
-
-      R_ASSERT_NON_RELEASE(gui_isOpen(guinum));
-      
-      
-      return closeresult;
+      ScopedEventHandlerTracker event_handler_tracker; // To avoid another closeEvent to be called from this closeEvent. Qt likes crashing.
+      return S7CALL(bool_bool,_close_callback.v, g_radium_runs_custom_exec);
     }
     
     bool closeEvent(QCloseEvent *event){
 
-      
       _num_close_calls++;
 
       
       if (_close_callback.v != NULL){
         
         R_ASSERT(_num_close_calls==1);
-        
-        if (run_close_callback()==false){
+
+        int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback (not supposed to happen though)
+      
+        bool result = run_close_callback();
+
+        if (!gui_isOpen(guinum)){
+          R_ASSERT_NON_RELEASE(false);
+          return false; // return false so that we don't run the closeEvent method in the super class.
+        }
+
+        if (result==false){
 
           // Closing was cancelled, so we clean the "close-state".
           _num_close_calls = 0;          
@@ -5963,6 +5983,17 @@ bool gui_isVisible(int64_t guinum){
 
   return gui->_widget->isVisible();
 }
+
+void gui_addVisibilityChangeCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->addVisiblityChangeCallback(func);
+}
+
+
 
 void gui_show(int64_t guinum){
   if (g_qt_is_painting){

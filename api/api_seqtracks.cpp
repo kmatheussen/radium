@@ -292,13 +292,8 @@ void deleteSeqtrack(int seqtracknum){
 }
 
 void API_curr_seqtrack_has_changed(void){
-  static func_t *func = NULL;
+  S7EXTRA_GET_FUNC(func, "FROM_C-call-me-when-curr-seqtrack-has-changed");
   
-#if defined(RELEASE)
-  if (func==NULL)
-#endif
-    func = s7extra_get_func_from_funcname_for_storing("FROM_C-call-me-when-curr-seqtrack-has-changed");
- 
   S7CALL(void_int, func, ATOMIC_GET(root->song->curr_seqtracknum));
 }
 
@@ -2277,11 +2272,7 @@ void setCurrSeqblock(int64_t seqblockid){
   g_curr_seqblock_id = seqblockid;
 
   if(seqblock->block != NULL){
-    static func_t *func = NULL;
-#if defined(RELEASE)
-    if (func==NULL)
-#endif
-      func = s7extra_get_func_from_funcname_for_storing("FROM_C-update-seqblock-track-on-off-configuration");
+    S7EXTRA_GET_FUNC(func, "FROM_C-update-seqblock-track-on-off-configuration");
     
     S7CALL(void_int_int, func, seqtracknum, seqblocknum);
   }

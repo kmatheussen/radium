@@ -274,7 +274,9 @@
          align-left ;; align-left
          rotate ;; rotate
          cut-text-to-fit ;; cut-text-to-fit
-         scale-font-size))
+         scale-font-size
+         )
+  )
 
 (define *last-tooltip-and-statusbar-text* "")
 (define (set-tooltip-and-statusbar text)
@@ -519,7 +521,7 @@
   
   (define w 1.2)
   (define w2 (* 2 w))
-  (define w3 (* 3 w))
+  (define w3 (* 1.2 w))
   
   (if get-automation-data
       (get-automation-data
@@ -588,7 +590,8 @@
          gui
          text-color
          text
-         (+ x1 2) (+ y1 2) (- x2 2) (- y2 2)
+         ;;(+ x1 2) (+ y1 2) (- x2 2) (- y2 2)
+         (+ x1 0) (+ y1 0) (- x2 0) (- y2 -1)
          #f
          #f
          #f
