@@ -3728,7 +3728,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         newzoom = 1.0;
       
       if (newzoom > 0.05)
-        page()->mainFrame()->setZoomFactor(newzoom);
+        //page()->mainFrame()->setZoomFactor(newzoom);
+        setZoomFactor(newzoom);
     }
 
     void keyPressEvent(QKeyEvent *event) override{
