@@ -5,7 +5,37 @@
 (my-require 'instruments.scm)
 (my-require 'area.scm)
 
+(delafina (apply-editor-track-on/off-to-seqblock :seqblocknum -1
+                                                 :seqtracknum -1)
+  
+  (when (= -1 seqblocknum)
+    (define id (<ra> :get-curr-seqblock-id))
+    (when (>= id 0)
+      (set! seqtracknum (<ra> :get-seqblock-seqtrack-num id))
+      (set! seqblocknum (<ra> :get-seqblock-seqblock-num id))))
+                            
+  (cond ((not seqtracknum)
+         (show-async-message (<gui> :get-sequencer-gui)
+                             "No seqtrack selected"))
+        ((not seqblocknum)
+         (show-async-message (<gui> :get-sequencer-gui)
+                             "No seqblock selected"))         
+        ((<ra> :seqtrack-for-audiofiles seqtracknum)
+         (show-async-message (<gui> :get-sequencer-gui)
+                             "Current seqtrack is for audio files, not editor blocks"))
+        ((not (<ra> :seqblock-holds-block seqblocknum seqtracknum))
+         (show-async-message (<gui> :get-sequencer-gui)
+                             "The selected seqblock does not hold an editor block"))
+        (else
+         (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
+         (<ra> :undo-seqblock seqblocknum seqtracknum)
+         (for-each (lambda (tracknum)
+                     (<ra> :set-seqblock-track-enabled
+                           (<ra> :track-on tracknum blocknum)
+                           tracknum seqblocknum seqtracknum))
+                   (iota (<ra> :get-num-tracks blocknum))))))
 
+  
 (define-class (<seqblock-track-on-off-configuration>)
 
   (define has-started #f)

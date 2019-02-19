@@ -7692,7 +7692,6 @@
                          (split-sample-seqblock pos seqtracknum seqblocknum)
                          #t))))))))
 
-
 ;; seqblock menu
 (add-mouse-cycle
  (make-mouse-cycle
@@ -7939,7 +7938,7 @@
                                                         (list
                                                          "-----------------Editor Seqblock"
                                                          (create-automation-entry 0)
-                                                         
+                                                         "------------------------"
                                                          (list (if (pair? seqblock-infos) "Clone editor blocks" "Clone editor block")
                                                                :enabled (and blocknum
                                                                              (or (pair? seqblock-infos) seqblock-info)
@@ -8039,12 +8038,19 @@
                                                                                     seqblock-infos))))
                                                                    (<ra> :select-block blocknum))))
                                                          
+                                                         "------------------------"
                                                          (list "Configure block"
                                                                :enabled (and blocknum seqblock-info (not (<ra> :is-playing-song)))
                                                                (lambda ()
                                                                  (<ra> :select-block blocknum)
                                                                  (<ra> :config-block)))
                                                          
+                                                         "------------------------"
+                                                         (list "Apply editor track on/off to seqblock"
+                                                               :enabled (and blocknum seqblocknum)
+                                                               (lambda ()
+                                                                 (apply-editor-track-on/off-to-seqblock seqblocknum seqtracknum)))
+
                                                          (list "Enable/disable editor tracks (double click)"
                                                                :enabled (and blocknum seqblocknum)
                                                                (lambda ()
