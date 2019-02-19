@@ -2032,11 +2032,7 @@ public:
       API_run_custom_gui_paint_function(SEQUENCER_getWidget(),
                                         &p, &update_region,
                                         [seqtracknum,seqblocknum,seqblockid](){
-                                          static func_t *s_seqpaint_func = NULL;
-                                          if (s_seqpaint_func==NULL || !releaseMode()){
-                                            //printf("new seqpaintfunc\n");
-                                            s_seqpaint_func = s7extra_get_func_from_funcname("FROM_C-paint-seqblock-stuff");
-                                          }
+                                          S7EXTRA_GET_FUNC(s_seqpaint_func, "FROM_C-paint-seqblock-stuff");
                                           R_ASSERT_NON_RELEASE(getGfxSeqblockFromId(seqblockid) != NULL);
                                           S7CALL(void_int_int_int, s_seqpaint_func, seqtracknum, seqblocknum, seqblockid);
                                         });
@@ -4098,11 +4094,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     
     double y1 = _timing_markers_y1; //_seqtracks_widget.t_y1;
     double y2 = _seqtracks_widget.t_y2;
-    
-    static func_t *s_paint_sequencer_grid_func = NULL;
-    if (s_paint_sequencer_grid_func==NULL || !releaseMode()){
-      s_paint_sequencer_grid_func = s7extra_get_func_from_funcname("FROM_C-paint-sequencer-grid");
-    }
+
+    S7EXTRA_GET_FUNC(s_paint_sequencer_grid_func, "FROM_C-paint-sequencer-grid");
     
     API_gui_set_curr_painter(SEQUENCER_getWidget(), &p);
     S7CALL(void_int_float_float_float_float, s_paint_sequencer_grid_func, gui_getSequencerGui(), x1,y1,x2,y2);

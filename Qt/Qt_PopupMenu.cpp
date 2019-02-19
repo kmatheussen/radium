@@ -283,12 +283,7 @@ namespace{
       
       g_curr_visible_actions[entryid] = this;
       
-      static func_t *s_func = NULL;
-      
-#if defined(RELEASE)
-      if (s_func==NULL)
-#endif
-        s_func = s7extra_get_func_from_funcname("FROM_C-create-menu-entry-widget");
+      S7EXTRA_GET_FUNC(s_func, "FROM_C-create-menu-entry-widget");
 
       _guinum = S7CALL(int_int_charpointer_charpointer_bool_bool_bool_bool_bool, s_func, entryid, text.toUtf8().constData(), shortcut.toUtf8().constData(), is_checkbox, is_checked, is_radiobutton, is_first, is_last);
 
