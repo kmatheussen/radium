@@ -5490,13 +5490,14 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (define num-patterns (length patterns))
   
   (for-each (lambda (pattern patternnum)
-              (c-display "Sending pattern" patternnum "/" (1- num-patterns) "to Radium")
+              (<ra> :show-progress-window-message (<-> "Sending pattern " patternnum "/" (1- num-patterns) " to Radium"))
               (send-pattern-to-radium pattern instruments)
               (if (< patternnum (1- num-patterns))
                   (<ra> :append-block)))
             patterns
             (iota num-patterns))
   
+  (<ra> :show-progress-window-message "Sending playlist to Radium")
   (send-playlist-to-radium playlist)
 
   (for-each (lambda (n)
@@ -5762,43 +5763,43 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 (define (load-protracker-module filename)
   (if (string=? filename "")
       (assert #f))
-  
-  (<ra> :reset-undo)
-  (<ra> :load-song "sounds/mod_song_template.rad")
 
   (<ra> :open-progress-window (<-> "Please wait, loading " (<ra> :from-base64 filename)))
-  
-  (try-finally :try (lambda ()
-                      (<ra> :start-ignoring-undo)
-                            
-                      (<ra> :eval-python "import import_mod2")
-                      (<ra> :eval-python "import_mod2=reload(import_mod2)")
-                      
-                      (set! *playlist* #f)
-                      
-                      (<ra> :eval-python (<-> "import_mod2.import_mod(\"" filename "\")"))
-                      
-                      (let* ((stuff (process-events *playlist*
-                                                    *instrumentlist*
-                                                    (reverse *events*)
-                                                    *num-lines*
-                                                    *num-channels*
-                                                    ))
-                             (playlist (car stuff))
-                             (instruments (cadr stuff))
-                             (patterns (caddr stuff))
-                             (num 0))
-                        (<ra> :show-progress-window-message "Sending pattern data to Radium...")
-                        (send-events-to-radium playlist instruments patterns)
-                        (c-display "playlist before: " *playlist*)
-                        (c-display "playlist after: " playlist)
-                        (<ra> :close-progress-window)
-                        #t))
+    
+  (try-finally
+   :try (lambda ()
+          (<ra> :reset-undo)
+          (<ra> :load-song "sounds/mod_song_template.rad")
+          (try-finally :try (lambda ()
+                              (<ra> :start-ignoring-undo)
+                              
+                              (<ra> :eval-python "import import_mod2")
+                              (<ra> :eval-python "import_mod2=reload(import_mod2)")
+                              
+                              (set! *playlist* #f)
+                              
+                              (<ra> :eval-python (<-> "import_mod2.import_mod(\"" filename "\")"))
+                              
+                              (let* ((stuff (process-events *playlist*
+                                                            *instrumentlist*
+                                                            (reverse *events*)
+                                                            *num-lines*
+                                                            *num-channels*
+                                                            ))
+                                     (playlist (car stuff))
+                                     (instruments (cadr stuff))
+                                     (patterns (caddr stuff))
+                                     (num 0))
+                                (send-events-to-radium playlist instruments patterns)
+                                (c-display "playlist before: " *playlist*)
+                                (c-display "playlist after: " playlist)
+                                #t))
                
                :finally (lambda ()
                           (<ra> :stop-ignoring-undo)                          
-                          (<ra> :reset-undo)
-                          (<ra> :close-progress-window)))
+                          (<ra> :reset-undo))))
+   :finally (lambda ()
+              (<ra> :close-progress-window)))
                           
 
   (<ra> :internal_update-all-block-graphics)
