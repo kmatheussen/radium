@@ -2166,22 +2166,27 @@ protected:
     struct Tracker_Windows *window=root->song->tracker_windows;
 
     // No, we still need to do this. At least in qt 5.5.1. Seems like it's not necessary in 5.7 or 5.8 though, but that could be coincidental.
-    if(num_calls_at_this_point<250/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
+    if(num_calls_at_this_point<150/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
       updateWidgetRecursively(g_main_window);
     }
+
+    if(num_calls_at_this_point==160/interval){
+      show_nag_window("");
+    }
+
 
     // Force full keyboard focus to the main window after startup. This seems to be the only reliable way. (if you think this is unnecessary, see if left alt works to start navigating menues after startup while using the fvwm window manager)
     {
       static QPointer<MyQMessageBox> gakkbox = NULL; // gakkbox could, perhaps, be deleted by itself if radium finds a strange parent. (got a crash once where gakkbox was deleted before explicitly calling delete below.)
 
-      if(num_calls_at_this_point==100/interval){
+      if(num_calls_at_this_point==50/interval){
         gakkbox = MyQMessageBox::create(false, NULL);
         gakkbox->setText("Forcing focus");
         safeShow(gakkbox);
         if (gakkbox != NULL)
           gakkbox->lower(); // doesn't work, at least on linux. Normally I struggle to keep window on top, now it's the opposite. Should probably change Radium to use QMdiArea. It should solve all of the window manager problems.
       }
-      if(num_calls_at_this_point==105/interval){
+      if(num_calls_at_this_point==60/interval){
         if (gakkbox != NULL){
           gakkbox->hide();
           g_main_window->raise();
@@ -2190,9 +2195,10 @@ protected:
         }
       }
 
-      if(num_calls_at_this_point==150/interval){
+      if(num_calls_at_this_point==70/interval){
         delete gakkbox;
         GFX_SetMenuFontsAgain();
+        GFX_CloseProgress();
       }
     }
     
@@ -3160,7 +3166,6 @@ int radium_main(const char *arg){
 
   }
 
- 
   qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).dark(110).name(QColor::HexArgb) + ";}" +
                       "QTabWidget::pane { border: 0; background: " + get_qcolor(LOW_BACKGROUND_COLOR_NUM).name(QColor::HexArgb) + "}" +
                       DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"))
@@ -3283,12 +3288,13 @@ int radium_main(const char *arg){
   
   //RWarning("warning!");
   //g_splashscreen->finish(main_window);
-  GFX_CloseProgress();
+  //GFX_CloseProgress();
   //delete g_splashscreen;
   //g_splashscreen = NULL;
-  
-  show_nag_window("");
 
+  GFX_ShowProgressMessage("Final setup");
+
+  
 #if 0
   assertRadiumInHomeDirectory();
 #endif
