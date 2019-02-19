@@ -19,7 +19,7 @@
 
 (define-constant *send-connection-type* 0)
 (define-constant *plugin-connection-type* 1)
-(define-constant *auto-connection-type* 1)
+(define-constant *auto-connection-type* 2)
 
 (define *instrument-memoized-generation* 0)
 (define *using-instrument-memoization* #f)
@@ -362,14 +362,17 @@
                            
                            ;;(c-display "SORTED:" instrument-id (<ra> :get-instrument-name instrument-id) " ==> " (map ra:get-instrument-name sorted))
                            
-                           (if (null? sorted)
-                               '()
-                               (let ((num-inputs (<ra> :get-num-in-audio-connections (car sorted))))
-                                 ;;(if (not (<ra> :release-mode))
-                                 ;;    (assert #f)) ;; It should never happen that there are more than one plugin connection. (can happen if converting a send into a plugin manually)
-                                 (take-while sorted ;; only keep plugins that have the least number of input connections. I.e. '(1 1 5 5 7) -> '(1 1)
-                                             (lambda (instrument-id)
-                                               (= num-inputs (<ra> :get-num-in-audio-connections instrument-id))))))))
+                           (cond ((null? sorted)
+                                  '())
+                                 ((null? (cdr sorted))
+                                  sorted)
+                                 (else
+                                  (if (not (<ra> :release-mode))
+                                      (assert #f))
+                                  (let ((num-inputs (<ra> :get-num-in-audio-connections (car sorted))))
+                                    (take-while sorted ;; only keep plugins that have the least number of input connections. I.e. '(1 1 5 5 7) -> '(1 1)
+                                                (lambda (instrument-id)
+                                                  (= num-inputs (<ra> :get-num-in-audio-connections instrument-id)))))))))
 
   (if (not (null? plugin-targets))
       
@@ -381,11 +384,16 @@
                                                           (= *send-connection-type*
                                                              (<ra> :get-audio-connection-type instrument-id target-id))))
                                                     target-instruments)))))
+        ;;(c-display "  out-instruments for" (<ra> :get-instrument-name instrument-id) ": " (map ra:get-instrument-name out-instruments))
         (if (null? out-instruments)
-            #f
+            (begin
+              ;;(c-display "    result: #f")
+              #f)
             (let ((out-instrument (car out-instruments)))
               (if (= 1 (<ra> :get-num-in-audio-connections out-instrument))
-                  out-instrument
+                  (begin
+                    ;;(c-display "    result:" (<ra> :get-instrument-name out-instrument))
+                    out-instrument)
                   (loop (cdr out-instruments))))))))
 
                                               
@@ -464,7 +472,9 @@
                                    buses-plugin-buses)
                            =))
 
-  (define instrument-plugins (apply append (map find-all-nonbus-plugins-used-in-mixer-strip instruments)))
+  (define instrument-plugins (remove (lambda (id)
+                                       (> (<ra> :get-num-in-audio-connections id) 0))
+                                     (apply append (map find-all-nonbus-plugins-used-in-mixer-strip instruments))))
 
   (define buses-plugins (apply append (map find-all-plugins-used-in-mixer-strip (all-buses :list))))
 
@@ -1476,3 +1486,15 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
               (ra:hide-instrument-gui id)
               (ra:show-instrument-gui id parentgui))
           (show-async-message -2 (<-> "Instrument #" id " (" (<ra> :get-instrument-name id) ") doesn't have a GUI"))))))
+
+
+(define (pan-enabled? instrument-id)
+  (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))
+
+(define (pan-enable! instrument-id onoff)
+  (when (not (eq? onoff (pan-enabled? instrument-id)))
+    (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
+    (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0))))
+
+
+

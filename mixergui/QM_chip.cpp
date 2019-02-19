@@ -660,6 +660,8 @@ namespace{
     bool _is_enabled = true;
 
     ConnectionType _connection_type;
+
+  public:
     
     Parm(Chip *from, Chip *to, float volume, bool must_set_enabled, bool is_enabled, ConnectionType connection_type)
       : _from(from)
@@ -860,16 +862,8 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
         mixerstrips_to_remake.insert(CHIP_get_patch(parm._from));
         mixerstrips_to_remake.insert(CHIP_get_patch(parm._to));
         
-        AudioConnection *connection = new AudioConnection(scene, parm._connection_type);
-        connection->from = parm._from;
-        connection->to = parm._to;
+        AudioConnection *connection = new AudioConnection(scene, parm._from, parm._to, parm._connection_type);
         
-        parm._from->audio_connections.push_back(connection);
-        parm._to->audio_connections.push_back(connection);
-        
-        connection->setVisibility(MW_get_connections_visibility());
-      
-        connection->update_position();
         scene->addItem(connection);
       }
     }
@@ -1103,10 +1097,10 @@ void CHIP_remove_chip_from_connection_sequence(QGraphicsScene *scene, Chip *befo
     
     if (connection1 != NULL && connection2 != NULL){
     
-      if (connection1->_connection_type==ConnectionType::IS_SEND || connection2->_connection_type==ConnectionType::IS_SEND)
+      if (connection1->get_connection_type()==ConnectionType::IS_SEND || connection2->get_connection_type()==ConnectionType::IS_SEND)
         connection_type = ConnectionType::IS_SEND;
       
-      else if (connection1->_connection_type==ConnectionType::IS_PLUGIN && connection2->_connection_type==ConnectionType::IS_PLUGIN)
+      else if (connection1->get_connection_type()==ConnectionType::IS_PLUGIN && connection2->get_connection_type()==ConnectionType::IS_PLUGIN)
         connection_type = ConnectionType::IS_PLUGIN;
       
     }
@@ -1128,7 +1122,7 @@ void CHIP_add_chip_to_connection_sequence(QGraphicsScene *scene, Chip *before, C
     const AudioConnection *connection = CONNECTION_find_audio_connection(before, after);
     R_ASSERT_NON_RELEASE(connection != NULL);
     if (connection != NULL)
-      connection_type2 = connection->_connection_type;
+      connection_type2 = connection->get_connection_type();
   }
   
   changes::AudioGraph changes;
@@ -1147,16 +1141,8 @@ void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   if(econnect(scene, from, to)==false)
     return; // trying to make recursive connection
 
-  EventConnection *econnection = new EventConnection(scene);
-  econnection->from = from;
-  econnection->to = to;
+  EventConnection *econnection = new EventConnection(scene, from, to);
   
-  from->event_connections.push_back(econnection);
-  to->event_connections.push_back(econnection);
-
-  econnection->setVisibility(MW_get_connections_visibility());
-  
-  econnection->update_position();
   scene->addItem(econnection);
 }
 
@@ -1363,6 +1349,32 @@ void AudioConnection::update_position(void){
   this->setLine(x1,y1,x2,y2);
 }
 
+void AudioConnection::set_connection_type(ConnectionType connection_type){
+
+  R_ASSERT_RETURN_IF_FALSE(from != NULL);
+
+  bool has_set=false;
+
+  // Ensure there is only one plugin connection from 'from'.
+  if(connection_type==ConnectionType::IS_PLUGIN)
+    for(auto *connection : from->audio_connections)
+
+      if(connection->from == from) { // <-- (Both incoming and outgoing connections are stored in Chip::audio_connections)
+        
+        if(connection->to != to && connection->_connection_type==ConnectionType::IS_PLUGIN){
+          
+          R_ASSERT(has_set==false);
+          
+          connection->_connection_type=ConnectionType::NOT_SET;
+          
+          has_set=true;
+        }
+        
+      }
+
+  _connection_type = connection_type;
+}
+
 void EventConnection::update_position(void){
   int x1 = CHIP_get_eport_x(from);
   int x2 = CHIP_get_eport_x(to);
@@ -1389,7 +1401,7 @@ void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip)
   for (AudioConnection *connection : left_chip->audio_connections)
     if(connection->from==left_chip){
       changes.remove(connection);
-      changes.add(right_chip, connection->to, -1.0, false, true, connection->_connection_type);
+      changes.add(right_chip, connection->to, -1.0, false, true, connection->get_connection_type());
     }
 
   changes.add(left_chip, right_chip, -1.0, false, true, ConnectionType::IS_PLUGIN);
@@ -1404,7 +1416,7 @@ void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip
   for (AudioConnection *connection : right_chip->audio_connections)
     if(connection->to==right_chip){
       changes.remove(connection);
-      changes.add(connection->from, left_chip, -1.0, false, true, connection->_connection_type);
+      changes.add(connection->from, left_chip, -1.0, false, true, connection->get_connection_type());
     }
 
   changes.add(left_chip, right_chip, -1.0, false, true, ConnectionType::IS_PLUGIN);
@@ -2216,6 +2228,23 @@ void Chip::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
   event->accept();
 }
 
+void Chip::mySetSelected(bool selected) {
+  for(auto audio_connection : audio_connections)
+    audio_connection->mySetSelected(selected);
+  
+  for(auto event_connection : event_connections)
+    event_connection->mySetSelected(selected);
+  
+  QGraphicsItem::setSelected(selected);
+  
+  SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+  if (plugin!=NULL){
+    ATOMIC_SET(plugin->is_selected, selected);
+    //remakeMixerStrips();
+  }
+}
+
+
 struct Patch *CHIP_get_patch(const Chip *chip){
   const SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
   volatile struct Patch *patch = plugin->patch;
@@ -2287,7 +2316,7 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
     if(audio_connection==NULL)
       R_ASSERT(false);
     else
-      HASH_put_int(state, ":connection-type", get_int_from_connection_type(audio_connection->_connection_type));
+      HASH_put_int(state, ":connection-type", get_int_from_connection_type(audio_connection->get_connection_type()));
   }
   HASH_put_bool(state, "enabled", getConnectionEnabled(from->id, to->id, true));
 
