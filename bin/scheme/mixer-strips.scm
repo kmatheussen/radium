@@ -719,6 +719,8 @@
   ;;(c-display (<-> "Effect name: -" effect-name "-"))
   ;;(c-display "ins:" instrument-id)
 
+  (define is-top-instrument (= instrument-id first-instrument-id))
+
   (popup-menu (<-> "----------Insert")
               (list (<-> "Insert Plugin" (if effect-name " (after this position)" ""))
                     :enabled (not is-sink?)
