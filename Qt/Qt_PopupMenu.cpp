@@ -362,6 +362,38 @@ namespace{
     }
   };
 
+  // Seems like it's impossible to make Qt behave non-irritating when you have separators and are trying to click the separator (this happens because the previous hovered action is still shown as hovered, which is nice, but irritating since nothing happens to it when clicking).
+  // Just using menu->addSeparator() was the worst, where the menu was closed if you clicked a separator and nothing else happened. This class calls setEnabled(false),
+  // which prevents the menu from closing. But I still haven't found a way to make the hovered entry selected, which would have been the natural behavior.
+  class SeparatorAction : public QAction
+  {
+    Q_OBJECT;
+    
+  public:
+
+    ~SeparatorAction()
+    {
+      //printf("I was deleted: %s\n",text.toUtf8().constData());
+    }
+    
+    SeparatorAction() //const QString & text, bool is_first, bool is_last)
+    {
+      //connect(this, SIGNAL(hovered()), this, SLOT(hovered()));
+      //connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
+      setSeparator(true);
+      setEnabled(false);
+    }
+    /*
+  public slots:
+    void hovered(){
+      printf("                EYSYES\n");
+    }
+    void triggered(){
+      printf("          CLACKED\n");
+    }
+    */
+  };
+
   class ClickableIconAction : public QAction
   {
     Q_OBJECT;
@@ -581,7 +613,7 @@ namespace{
         
       }
       
-      //printf("  QMENU::HOVERED action: %p. myaction: %p\n", action, myaction);
+      //printf("  QMENU::HOVERED action: %p. myaction: %p. Is separator: %d\n", action, myaction, action->isSeparator());
     }
       
 
@@ -631,13 +663,16 @@ static QMenu *create_qmenu(
     
     if (text.startsWith("----")) {
       
-      auto *separator = curr_menu->addSeparator();
+      auto *separator = new SeparatorAction(); //curr_menu->addSeparator();
 
       for(int i = 3 ; i < text.size() ; i++)
         if (text[i] != '-'){
           separator->setText(text.mid(i));
           break;
         }
+
+      curr_menu->addAction(separator);
+ 
       
     } else {
       
