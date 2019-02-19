@@ -213,7 +213,16 @@ extern "C" {
 #ifdef __cplusplus
 }
 
-
+#if defined(RELEASE)
+#define S7EXTRA_GET_FUNC(CName,SchemeName)                              \
+  static func_t *CName = NULL;                                          \
+  if (CName==NULL)                                                      \
+    CName = s7extra_get_func_from_funcname_for_storing(SchemeName);
+#else
+#define S7EXTRA_GET_FUNC(CName,SchemeName)                              \
+  func_t *CName = s7extra_get_func_from_funcname(SchemeName);
+#endif
+                           
 namespace radium{
 
   template <typename T> struct ProtectedS7Extra{

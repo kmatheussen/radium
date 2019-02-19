@@ -80,251 +80,8 @@ struct SoundPlugin;
 
 #include "../api/api_proc.h"
 
-
-extern LANGSPEC bool MW_get_connections_visibility(void);
-
-class Chip;
-
-static inline struct SoundProducer *CHIP_get_soundproducer(Chip *chip);
-
-class SuperConnection  : public QGraphicsLineItem {
-
-public:
-
-  bool is_selected; // for some reason isSelected() doesn't work.
-  bool is_event_connection;
-  enum ColorNums color_num;
-
-  //bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
-  
-  QColor getColor(void) {
-    if (is_selected)
-      return get_qcolor(color_num).lighter(198);
-    else
-      return get_qcolor(color_num);
-  }
-  
-  QPen getPen(){
-    QPen pen(Qt::gray, 50);
-    if (is_selected)
-      pen.setWidthF(2.2);
-    else
-      pen.setWidthF(1.2);
-    pen.setJoinStyle(Qt::RoundJoin);
-    pen.setCapStyle(Qt::RoundCap);
-    //pen.setColor(QColor(30,25,70,6));
-
-    const char *error = NULL;
-    bool is_enabled = from==NULL||to==NULL ? true : SP_get_link_enabled(CHIP_get_soundproducer(to), CHIP_get_soundproducer(from), &error);
-    //R_ASSERT_NON_RELEASE(error==NULL); // link doesn't exist during startup.
-    
-    QColor c = getColor();
-    if (!is_enabled)
-      c.setAlpha(40);
-    else if(is_selected)
-      c.setAlpha(250);
-    else
-      c.setAlpha(140);
-    pen.setColor(c);
-    return pen;
-  }
-
-  SuperConnection(QGraphicsScene *parent, bool is_event_connection, enum ColorNums color_num)
-    : QGraphicsLineItem()
-    , is_selected(false)
-    , is_event_connection(is_event_connection)
-    , color_num(color_num)
-    , from(NULL)
-    , to(NULL)
-    , visible_line(this)
-      //, arrow_line1(this)
-  {
-    QPen pen(Qt::red, 50);
-    pen.setJoinStyle(Qt::RoundJoin);
-    pen.setCapStyle(Qt::RoundCap);
-    pen.setWidth(3);
-
-    QColor c(30,25,70,0);
-    c.setAlpha(0);
-    pen.setColor(c);
-
-    setPen(pen);
-    //_line_item->setPen(QPen(Qt::black, 2));
-    //_line_item->setPos(QPointF(x+50,y+50));
-
-    setZValue(-2);    
-    
-    setAcceptHoverEvents(true);
-
-    visible_line.setPen(getPen());
-    parent->addItem(&visible_line);
-
-    //setVisibility(MW_get_connections_visibility());
-    //setVisible(false);
-    
-    /*
-    if(_is_event_connection){
-      arrow_line1.setPen(getPen());
-      parent->addItem(&arrow_line1);
-    }
-    */
-  }
-
-  ~SuperConnection(){
-    printf("       Remake: ~SuperConnectin\n");
-    //remakeMixerStrips(-1);
-  }
-      
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
-             QWidget *widget)
-    override
-  {
-    update_colors();
-    QGraphicsLineItem::paint(painter,option,widget);    
-  }
-
-  Chip *from;
-  Chip *to;
-
-  QGraphicsLineItem visible_line;
-  //QGraphicsLineItem arrow_line1;
-
-  void setLine ( qreal x1, qreal y1, qreal x2, qreal y2 ){
-    visible_line.setLine(x1,y1,x2,y2);
-
-    /*
-    if(_is_event_connection){
-      qreal x = x2;
-      qreal y = y2;
-      qreal xb,yb;
-      if(x2>x1)
-        xb=x-10;
-      else
-        xb=x+10;
-      if(y2>y1)
-        yb=y-10;
-      else
-        yb=y+10;
-      arrow_line1.setLine(x,y,xb,yb);
-    }
-    QGraphicsLineItem::setLine(x1-14,y1,x2+14,y2);
-    */
-
-    QGraphicsLineItem::setLine(x1,y1,x2,y2);
-  }
-
-  void update_colors(void){
-    visible_line.setPen(getPen());
-  }
-  
-  virtual void update_position(void) {
-    R_ASSERT(false);
-  }
-
-#if 0
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
-    bool is_over = (option->state & QStyle::State_MouseOver);
-    printf("is over: %d\n",is_over);
-    QGraphicsLineItem::paint(painter,option,widget);
-  }
-#endif
-
-  void setVisibility(bool show){
-    visible_line.setVisible(show);
-  }
-  
-  void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ) override {
-    //printf("hover enter\n");
-
-    /*
-    QPen pen(Qt::gray,6);
-    pen.setJoinStyle(Qt::RoundJoin);
-    pen.setCapStyle(Qt::RoundCap);
-    pen.setColor(QColor(120,35,50,40));
-
-    visible_line.setPen(pen);
-    */
-    
-    {
-      QPen pen(Qt::gray, 50);
-      pen.setJoinStyle(Qt::RoundJoin);
-      pen.setCapStyle(Qt::RoundCap);
-      //pen.setMiterLimit(0);
-
-      QColor c = getColor();
-      c.setAlpha(100);
-      pen.setColor(c);
-      
-      //pen.setColor(QColor(120,35,50,18));
-      //pen.setColor(QColor(30,25,70,18));
-      pen.setWidthF(26);
-      
-      setPen(pen);
-    }
-
-    setVisible(true);
-  }
-
-  void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ) override {
-    //printf("hover leave\n");
-
-    /*
-    QPen pen(Qt::gray,6);
-    pen.setJoinStyle(Qt::RoundJoin);
-    pen.setCapStyle(Qt::RoundCap);
-    pen.setColor(QColor(30,25,70,40));
-    */
-
-    //visible_line.setPen(getPen());
-
-    {
-      QPen pen(Qt::gray, 50);
-      pen.setJoinStyle(Qt::RoundJoin);
-      pen.setCapStyle(Qt::RoundCap);
-
-      //pen.setColor(QColor(30,25,70,0));
-
-      QColor c(30,25,70,0);
-      c.setAlpha(0);
-      pen.setColor(c);
-
-      setPen(pen);
-    }
-
-    //setVisible(false);
-  }
-
-  void mySetSelected(bool selected){
-    if (is_selected != selected){
-      update_colors();
-      is_selected = selected;
-    }
-    QGraphicsLineItem::setSelected(selected);    
-  }
-
-};
-
-class AudioConnection : public SuperConnection {
-  
-public:
-  
- AudioConnection(QGraphicsScene *parent)
-   : SuperConnection(parent, false, MIXER_AUDIO_CONNECTION_COLOR_NUM)
-  {}
-
-  void update_position(void) override;
-};
-
-class EventConnection : public SuperConnection {
-  
-public:
-
-  EventConnection(QGraphicsScene *parent)
-    : SuperConnection(parent, true, MIXER_EVENT_CONNECTION_COLOR_NUM)
-  {}
-  
-  void update_position(void) override;
-};
+class AudioConnection;
+class EventConnection;
 
 class Chip : public QGraphicsItem, public QObject
 {
@@ -422,26 +179,370 @@ public:
     return PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
   }
   
-  void mySetSelected(bool selected) {
-    for(auto audio_connection : audio_connections)
-      audio_connection->mySetSelected(selected);
-    
-    for(auto event_connection : event_connections)
-      event_connection->mySetSelected(selected);
-    
-    QGraphicsItem::setSelected(selected);
+  void mySetSelected(bool selected);
 
-    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-    if (plugin!=NULL){
-      ATOMIC_SET(plugin->is_selected, selected);
-      //remakeMixerStrips();
+};
+
+static inline struct SoundProducer *CHIP_get_soundproducer(const Chip *chip){
+  return chip->_sound_producer;
+}
+
+
+extern LANGSPEC bool MW_get_connections_visibility(void);
+
+typedef Chip* ChipPointer;
+
+class SuperConnection  : public QGraphicsLineItem {
+
+public:
+
+  bool is_selected; // for some reason isSelected() doesn't work.
+  bool is_event_connection;
+  enum ColorNums color_num;
+
+  
+private:
+  Chip *_from; // Note: If we ever need to set this variable after constructor (we currently don't), we also need to ensure that the new from chip doesn't have more than one PLUGIN connection.
+  Chip *_to;
+  
+
+public:
+  
+  const ChipPointer &from; // Set to const. See comment about _from above.
+  const ChipPointer &to;
+
+  //bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
+  
+  QColor getColor(void) {
+    if (is_selected)
+      return get_qcolor(color_num).lighter(198);
+    else
+      return get_qcolor(color_num);
+  }
+  
+  QPen getPen(){
+    QPen pen(Qt::gray, 50);
+    if (is_selected)
+      pen.setWidthF(2.2);
+    else
+      pen.setWidthF(1.2);
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    //pen.setColor(QColor(30,25,70,6));
+
+    const char *error = NULL;
+    bool is_enabled = from==NULL||to==NULL ? true : SP_get_link_enabled(CHIP_get_soundproducer(to), CHIP_get_soundproducer(from), &error);
+    //R_ASSERT_NON_RELEASE(error==NULL); // link doesn't exist during startup.
+    
+    QColor c = getColor();
+    if (!is_enabled)
+      c.setAlpha(40);
+    else if(is_selected)
+      c.setAlpha(250);
+    else
+      c.setAlpha(140);
+    pen.setColor(c);
+    return pen;
+  }
+
+  SuperConnection(QGraphicsScene *parent, Chip *from, Chip *to, bool is_event_connection, enum ColorNums color_num)
+    : QGraphicsLineItem()
+    , is_selected(false)
+    , is_event_connection(is_event_connection)
+    , color_num(color_num)
+    , _from(from)
+    , _to(to)
+    , from(_from)
+    , to(_to)
+    , visible_line(this)
+      //, arrow_line1(this)
+  {
+    QPen pen(Qt::red, 50);
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    pen.setWidth(3);
+
+    QColor c(30,25,70,0);
+    c.setAlpha(0);
+    pen.setColor(c);
+
+    setPen(pen);
+    //_line_item->setPen(QPen(Qt::black, 2));
+    //_line_item->setPos(QPointF(x+50,y+50));
+
+    setZValue(-2);    
+    
+    setAcceptHoverEvents(true);
+
+    visible_line.setPen(getPen());
+    parent->addItem(&visible_line);
+
+    setVisibility(MW_get_connections_visibility());    
+  }
+
+  /*
+  void setTo(Chip *new_to){
+    _to = new_to;
+  }
+  
+  void setFrom(Chip *new_from){
+    _from = new_from;
+  }
+  */
+  
+  ~SuperConnection(){
+    printf("       Remake: ~SuperConnectin\n");
+    //remakeMixerStrips(-1);
+  }
+      
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
+             QWidget *widget)
+    override
+  {
+    update_colors();
+    QGraphicsLineItem::paint(painter,option,widget);    
+  }
+
+  QGraphicsLineItem visible_line;
+  //QGraphicsLineItem arrow_line1;
+
+  void setLine ( qreal x1, qreal y1, qreal x2, qreal y2 ){
+    visible_line.setLine(x1,y1,x2,y2);
+
+    /*
+    if(_is_event_connection){
+      qreal x = x2;
+      qreal y = y2;
+      qreal xb,yb;
+      if(x2>x1)
+        xb=x-10;
+      else
+        xb=x+10;
+      if(y2>y1)
+        yb=y-10;
+      else
+        yb=y+10;
+      arrow_line1.setLine(x,y,xb,yb);
     }
+    QGraphicsLineItem::setLine(x1-14,y1,x2+14,y2);
+    */
+
+    QGraphicsLineItem::setLine(x1,y1,x2,y2);
+  }
+
+  void update_colors(void){
+    visible_line.setPen(getPen());
+  }
+  
+  virtual void update_position(void) = 0;
+
+#if 0
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
+    bool is_over = (option->state & QStyle::State_MouseOver);
+    printf("is over: %d\n",is_over);
+    QGraphicsLineItem::paint(painter,option,widget);
+  }
+#endif
+
+  void setVisibility(bool show){
+    visible_line.setVisible(show);
+  }
+  
+  void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ) override {
+    //printf("hover enter\n");
+
+    /*
+    QPen pen(Qt::gray,6);
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    pen.setColor(QColor(120,35,50,40));
+
+    visible_line.setPen(pen);
+    */
+    
+    {
+      QPen pen(Qt::gray, 50);
+      pen.setJoinStyle(Qt::RoundJoin);
+      pen.setCapStyle(Qt::RoundCap);
+      //pen.setMiterLimit(0);
+
+      QColor c = getColor();
+      c.setAlpha(100);
+      pen.setColor(c);
+      
+      //pen.setColor(QColor(120,35,50,18));
+      //pen.setColor(QColor(30,25,70,18));
+      pen.setWidthF(26);
+      
+      setPen(pen);
+    }
+
+    setVisible(true);
+  }
+
+  void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ) override {
+    //printf("hover leave\n");
+
+    /*
+    QPen pen(Qt::gray,6);
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    pen.setColor(QColor(30,25,70,40));
+    */
+
+    //visible_line.setPen(getPen());
+
+    {
+      QPen pen(Qt::gray, 50);
+      pen.setJoinStyle(Qt::RoundJoin);
+      pen.setCapStyle(Qt::RoundCap);
+
+      //pen.setColor(QColor(30,25,70,0));
+
+      QColor c(30,25,70,0);
+      c.setAlpha(0);
+      pen.setColor(c);
+
+      setPen(pen);
+    }
+
+    //setVisible(false);
+  }
+
+  void mySetSelected(bool selected){
+    if (is_selected != selected){
+      update_colors();
+      is_selected = selected;
+    }
+    QGraphicsLineItem::setSelected(selected);    
+  }
+
+};
+
+enum class ConnectionType{
+  IS_SEND,
+  IS_PLUGIN,
+  NOT_SET  
+};
+
+/* If changing this order, also change order in instruments.scm */
+
+static inline ConnectionType get_connection_type_from_int(int c){
+  switch(c){
+  case 0:
+    return ConnectionType::IS_SEND;
+  case 1:
+    return ConnectionType::IS_PLUGIN;
+  case 2:
+    return ConnectionType::NOT_SET;
+  default:
+    R_ASSERT(false);
+    return ConnectionType::NOT_SET;
+  }
+}
+
+static inline int get_int_from_connection_type(ConnectionType connection_type){
+  switch(connection_type){
+  case ConnectionType::IS_SEND: return 0;
+  case ConnectionType::IS_PLUGIN: return 1;
+  case ConnectionType::NOT_SET: return 2;
+  default:
+    R_ASSERT(false);
+    return get_int_from_connection_type(ConnectionType::NOT_SET);
+  }
+}
+
+class AudioConnection : public SuperConnection {
+  
+  ConnectionType _connection_type;
+
+public:
+  
+  AudioConnection(QGraphicsScene *parent, Chip *from, Chip *to, ConnectionType connection_type)
+    : SuperConnection(parent, from, to, false, MIXER_AUDIO_CONNECTION_COLOR_NUM)
+    , _connection_type(ConnectionType::NOT_SET)
+  {
+    if (from!=NULL){
+      R_ASSERT_RETURN_IF_FALSE(to!=NULL);
+
+      {
+        bool gotit = false;
+        
+        for(auto *connection : from->audio_connections){
+          if(connection->from==from && connection->to==to){
+            R_ASSERT(false);
+            gotit = true;
+          }
+        }
+        
+        if (gotit==false)
+          from->audio_connections.push_back(this);
+      }
+
+      
+      {
+        bool gotit = false;
+        
+        for(auto *connection : to->audio_connections){
+          if(connection->from==from && connection->to==to){
+            R_ASSERT(false);
+            gotit = true;
+          }
+        }
+        
+        if (gotit==false)
+          to->audio_connections.push_back(this);
+      }
+    }
+
+    if(from != NULL)
+      set_connection_type(connection_type);
+    else
+      _connection_type = connection_type;
+
+    if (from != NULL && to != NULL)
+      update_position();
+  }
+
+  void update_position(void) override;
+
+
+  ConnectionType get_connection_type(void) const {
+    return _connection_type;
+  }
+  
+  void set_connection_type(ConnectionType connection_type); // this function ensures there is only one plugin connection from 'from'.
+
+  void set_connection_type(int connection_type){
+    set_connection_type(get_connection_type_from_int(connection_type));
   }
 };
 
-static inline struct SoundProducer *CHIP_get_soundproducer(Chip *chip){
-  return chip->_sound_producer;
-}
+class EventConnection : public SuperConnection {
+  
+public:
+
+  EventConnection(QGraphicsScene *parent, Chip *from, Chip *to)
+    : SuperConnection(parent, from, to, true, MIXER_EVENT_CONNECTION_COLOR_NUM)
+  {
+    
+    if (from!=NULL){
+      R_ASSERT_RETURN_IF_FALSE(to!=NULL);
+      
+      from->event_connections.push_back(this);
+      to->event_connections.push_back(this);
+
+      update_position();
+    }
+    
+  }
+
+
+  
+  void update_position(void) override;
+};
+
+
 
 extern void CHIP_get_name_coordinates(int &x1, int &y1, int &x2, int &y2);
 extern void CHIP_get_note_indicator_coordinates(int &x1, int &y1, int &x2, int &y2);
@@ -450,8 +551,8 @@ extern void CHIP_kick_left(Chip *chip);
 extern void CHIP_kick_right(Chip *chip);
 
 extern Chip *find_chip_for_plugin(QGraphicsScene *scene, SoundPlugin *plugin);
-extern void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
-extern void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to);
+extern void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to, ConnectionType connection_type);
+extern void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to, ConnectionType connection_type);
 extern bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
 extern bool CHIPS_are_connected(const Chip *from, const Chip *to);
 extern bool CHIPS_are_econnected(const Chip *from, const Chip *to);
@@ -490,6 +591,7 @@ void CHIP_update(Chip *chip, SoundPlugin *plugin);
 struct Patch *CHIP_get_patch(const Chip *chip);
 
 AudioConnection *CONNECTION_find_audio_connection(const Chip *from, const Chip *to);
+AudioConnection *CONNECTION_find_audio_connection(const struct Patch *from, const struct Patch *to);
 hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *patches);
 
 void CONNECTIONS_remove_all(QGraphicsScene *scene);

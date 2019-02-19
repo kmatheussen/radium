@@ -17,6 +17,8 @@
 (define-constant *arrow-text* "↳")
 (define-constant *arrow-text2* "→")
 
+(define *pan-mutesolo-voltext-scale-factor* 0.75)
+
 (define *current-mixer-strip-is-wide* #f)
 
 
@@ -90,6 +92,7 @@
                                                  :strips-config
                                                  :wide-mode-instrument-id #f
                                                  :effect-name #f)
+
   (if (not wide-mode-instrument-id)
       (set! wide-mode-instrument-id instrument-id))
   
@@ -97,6 +100,11 @@
    (and effect-name
         (get-effect-popup-entries instrument-id effect-name))
    "------------Mixer"
+   ;;(list "Pan Enabled"
+   ;;      :check (pan-enabled? instrument-id)
+   ;;      (lambda (onoff)
+   ;;        (pan-enable! instrument-id onoff)))
+
    (list "Wide mode"
          :check (and wide-mode-instrument-id
                      (<ra> :has-wide-instrument-strip wide-mode-instrument-id))
@@ -394,6 +402,7 @@
                                                      is-strip))))
                         (is-unique (or (cat-instruments :has-no-inputs-or-outputs? id)
                                        is-strip)))
+                   ;;(c-display "=======================" (<ra> :get-instrument-name id) ". is-instrument:" is-instrument ". is-enabled:" is-enabled ". is-strip:" is-strip)
                    (set! (confs id) (make-conf :instrument-id id
                                                :is-bus is-bus
                                                :row-num 0
@@ -675,6 +684,7 @@
                                    (push-audio-connection-change! changes (list :type "connect"
                                                                                 :source instrument-id
                                                                                 :target send-id
+                                                                                :connection-type *send-connection-type*
                                                                                 :gain gain))
                                    (apply-changes changes))))))
              (sort-instruments-by-mixer-position-and-connections
@@ -693,7 +703,8 @@
                                
                                is-send?
                                is-sink?
-
+                               is-bus?
+                               
                                delete-func
                                replace-func
                                reset-func
@@ -762,17 +773,58 @@
                               (lambda ()
                                 (reset-func))))
                   (and effect-name
-                       (get-effect-popup-entries midi-learn-instrument-id
-                                                 effect-name
-                                                 :automation-error-message (if effect-name
-                                                                               #f
-                                                                               "(Connection gain automation not supported yet)")
-                                                 :modulation-error-message (if effect-name
-                                                                               #f
-                                                                               "(Connection gain modulation not supported yet)"))))
+                       (list
+                        ;;"------------Plugin-slider"
+                        (get-effect-popup-entries midi-learn-instrument-id
+                                                  effect-name
+                                                  :automation-error-message (if effect-name
+                                                                                #f
+                                                                                "(Connection gain automation not supported yet)")
+                                                  :modulation-error-message (if effect-name
+                                                                                #f
+                                                                                "(Connection gain modulation not supported yet)")))))
               ;;"----------"
               ;;"Convert to standalone strip" (lambda ()
               ;;                                #t)
+
+                            (list (<-> "------------Connection " (<ra> :get-instrument-name parent-instrument-id) "-->" (<ra> :get-instrument-name instrument-id) "")
+                    (let ((connection-type (if (or (not parent-instrument-id)
+                                                   (not instrument-id))
+                                               *auto-connection-type*
+                                               (<ra> :get-audio-connection-type parent-instrument-id instrument-id))))
+                      (list
+                       :radio-buttons
+                       (list (<-> "Display as plugin-slider") ;; " " connection-type " - " is-top-instrument)
+                             :enabled (and (not is-top-instrument)
+                                           (not is-sink?)
+                                           (not is-bus?))
+                             :check (and (not is-top-instrument)
+                                         (not is-bus?)
+                                         (= connection-type *plugin-connection-type*))
+                             (lambda (ison)
+                               (if ison
+                                   (<ra> :set-audio-connection-type parent-instrument-id instrument-id *plugin-connection-type*))))
+                       (list "Display as send-slider"
+                             :enabled (and (not is-top-instrument)
+                                           (not is-sink?)
+                                           (not is-bus?))
+                             :check (and (not is-top-instrument)
+                                         (not is-bus?)
+                                         (= connection-type *send-connection-type*))
+                             (lambda (ison)
+                               (if ison
+                                   (<ra> :set-audio-connection-type parent-instrument-id instrument-id *send-connection-type*))))
+                       (list (<-> "Auto" (if (not (= connection-type *auto-connection-type*)) "" (if is-send? " (send)" " (plugin)")))
+                             :enabled (and (not is-top-instrument)
+                                           (not is-sink?)
+                                           (not is-bus?))
+                             :check (and (not is-top-instrument)
+                                         (not is-bus?)
+                                         (= connection-type *auto-connection-type*))
+                             (lambda (ison)
+                               (if ison
+                                   (<ra> :set-audio-connection-type parent-instrument-id instrument-id *auto-connection-type*)))))))
+              
 
               (get-instrument-popup-entries instrument-id parentgui :must-have-inputs effect-name :must-have-outputs effect-name)
 
@@ -799,6 +851,7 @@
                          strips-config
                          #f ;; is-send
                          (= 0 (<ra> :get-num-output-channels instrument-id)) ;; is-sinc
+                         #f ;; is-bus
                          (if is-permanent? #f delete)
                          (if is-permanent? #f replace)
                          reset
@@ -827,6 +880,7 @@
                       strips-config
                       is-send?
                       is-sink?
+                      is-bus?
                       make-undo
                       get-scaled-value
                       get-value-text
@@ -842,7 +896,7 @@
   ;;(define widget (<gui> :widget 100 (get-fontheight)))
   (define widget #f)
   (define is-changing-value #f)
-  
+
   (define (is-enabled?)
     ;;(c-display "INSTRUMENT:" instrument-name)
     (if is-send?
@@ -999,6 +1053,7 @@
                                                                        strips-config
                                                                        is-send?
                                                                        is-sink?
+                                                                       is-bus?
                                                                        delete-func
                                                                        replace-func
                                                                        (lambda ()
@@ -1068,12 +1123,18 @@
                            (push-audio-connection-change! changes (list :type "connect"
                                                                         :source parent-instrument-id
                                                                         :target child-id
+                                                                        :connection-type (<ra> :get-audio-connection-type instrument-id child-id)
                                                                         :gain child-gain)))
                          child-ids
                          child-gains)
+               
                (<ra> :undo-mixer-connections)
+               
                (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
-               (<ra> :delete-instrument instrument-id)
+
+               (if (= 0 (<ra> :get-num-in-audio-connections instrument-id))
+                   (<ra> :delete-instrument instrument-id))
+               
                ;;(remake-mixer-strips) ;; (makes very little difference in snappiness, and it also causes mixer strips to be remade twice)
                ))
             
@@ -1097,7 +1158,7 @@
                                parent-instrument-id
                                instrument-id
                                strips-config
-                               #f #f
+                               #f #f #f
                                (lambda ()
                                  (<ra> :undo-instrument-effect instrument-id "System Dry/Wet"))
                                get-drywet
@@ -1229,7 +1290,7 @@
                                parent-instrument-id
                                instrument-id
                                strips-config
-                               #t #t
+                               #t #t #f
 
                                make-undo
 
@@ -1293,13 +1354,14 @@
                                  delete
                                  replace
                                  midi-learn-instrument-id
-                                 effect-name)
+                                 effect-name
+                                 is-bus)
 
   (define horiz (get-mixer-strip-send-horiz gui))
 
   (define (reset)
     (set-db-value 0)
-    (remake-mixer-strips))
+    (<ra> :redraw-mixer-strips))
 
   (define automation-value #f)
   (define (get-automation-data kont)
@@ -1314,8 +1376,8 @@
                                parent-instrument-id
                                target-instrument-id
                                strips-config
-                               #t #f
-
+                               #t #f is-bus ;; is-send is-sink is-bus
+                               
                                make-undo
 
                                ;; get-scaled-value
@@ -1418,7 +1480,8 @@
                                           delete
                                           replace
                                           first-instrument-id ;; midi-learn-instrument-id
-                                          effect-name))
+                                          effect-name
+                                          #t))
   send-gui)
 
 
@@ -1507,7 +1570,9 @@
                                           delete
                                           replace
                                           #f ;; midi-learn-instrument-id
-                                          #f)) ;; automation not supported
+                                          #f ;; automation not supported
+                                          #f ;; is bus
+                                          ))
   send-gui)
 
 
@@ -1536,10 +1601,22 @@
         instrument-sends
         next-plugin-instrument))
 
+
 ;; Returns the last plugin.
 (define (create-mixer-strip-path gui first-instrument-id instrument-id strips-config)
+  ;;(c-display "Create path: " (<ra> :get-instrument-name instrument-id))
+  
+  (define (create-sink dasid)
+    (create-mixer-strip-sink-plugin gui
+                                    first-instrument-id
+                                    instrument-id
+                                    dasid
+                                    strips-config))
+  
   (get-mixer-strip-path-instruments instrument-id
                                     (lambda (bus-sends instrument-sends next-plugin-instrument)
+                                      ;;(c-display "    next-plugin-instrument:" (and next-plugin-instrument (<ra> :get-instrument-name next-plugin-instrument)))
+                                      ;;(c-display "    instrument-sends:" (map ra:get-instrument-name instrument-sends))
                                       (for-each (lambda (bus-num)
                                                   (create-mixer-strip-bus-send gui
                                                                                instrument-id
@@ -1549,20 +1626,26 @@
                                                 bus-sends)
                                       
                                       (for-each (lambda (out-instrument)
-                                                  (create-mixer-strip-audio-connection-send gui
-                                                                                            first-instrument-id
-                                                                                            instrument-id
-                                                                                            out-instrument
-                                                                                            strips-config))
+                                                  (if (= 0 (<ra> :get-num-output-channels out-instrument))
+                                                      (create-sink out-instrument)
+                                                      (create-mixer-strip-audio-connection-send gui
+                                                                                                first-instrument-id
+                                                                                                instrument-id
+                                                                                                out-instrument
+                                                                                                strips-config)))
                                                 instrument-sends)
 
                                       (if next-plugin-instrument
                                           (begin
                                             (if (= 0 (<ra> :get-num-output-channels next-plugin-instrument))
-                                                (create-mixer-strip-sink-plugin gui instrument-id instrument-id next-plugin-instrument strips-config)
+                                                (create-sink next-plugin-instrument)
                                                 (create-mixer-strip-plugin gui first-instrument-id instrument-id next-plugin-instrument strips-config))
                                             (create-mixer-strip-path gui first-instrument-id next-plugin-instrument strips-config))
                                           instrument-id))))
+
+#!!
+
+!!#
 
 (define (get-all-instruments-used-in-mixer-strip instrument-id)
   (get-mixer-strip-path-instruments instrument-id
@@ -1576,8 +1659,6 @@
                                                 
   
 (define (create-mixer-strip-pan instrument-id strips-config system-background-color background-color height)
-  (define (pan-enabled?)
-    (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))
 
   (define (get-pan-slider-value normalized-value)
     (floor (scale normalized-value
@@ -1617,7 +1698,7 @@
         (lambda ()
           (define width (<gui> :width slider))
           (define value (get-pan))
-          (define is-on (pan-enabled?))
+          (define is-on (pan-enabled? instrument-id))
           ;;(<gui> :filled-box slider system-background-color 5 5 width height)
           (define background (if is-on
                                  (<gui> :mix-colors background-color "black" 0.39)
@@ -1679,9 +1760,7 @@
   (define has-made-undo #t)
 
   (define (enable! onoff)
-    (when (not (eq? onoff (pan-enabled?)))
-      (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
-      (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0))))
+    (pan-enable! instrument-id onoff))
     
   (add-safe-mouse-callback
    slider
@@ -1702,7 +1781,7 @@
             #f)
            ((and (= button *right-button*)
                  (= state *is-releasing*))
-            (define pan-enabled (pan-enabled?))
+            (define pan-enabled (pan-enabled? instrument-id))
             (if (<ra> :shift-pressed)
                 (undo-block
                  (lambda ()                  
@@ -1735,8 +1814,8 @@
                          :is-selected 'undefined
                          :use-single-letters 
                          :background-color #f
-                         :border 2
-                         :implicit-border 0)
+                         :border 0
+                         :implicit-border 1)
 
   (define (get-muted)
     (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
@@ -1803,7 +1882,8 @@
                  :y-border border
                  :background-color background-color                 
                  :paint-implicit-border is-implicitly-muted
-                 :implicit-border-width implicit-border)
+                 :implicit-border-width implicit-border
+                 :box-rounding 2)
   )
 
 (delafina (create-mixer-strip-mutesolo :instrument-id 
@@ -1947,7 +2027,7 @@
 
 (define (create-mixer-strip-volume instrument-id meter-instrument-id strips-config background-color is-minimized)
   (define fontheight (get-fontheight))
-  (define voltext-height (floor (* 1.0 fontheight)))
+  (define voltext-height (ceiling (* *pan-mutesolo-voltext-scale-factor* fontheight)))
 
   (define horizontal-spacing 4) ;; must be an even number.
   (define horizontal-spacing/2 (/ horizontal-spacing 2))
@@ -2011,7 +2091,7 @@
         (<gui> :filled-box gui col1 0 0 width height 5 5))
     
     ;; text
-    (<gui> :my-draw-text gui *text-color* text 2 2 (- width 2) (- height 2)
+    (<gui> :my-draw-text gui *text-color* text 0 0 (- width 0) (- height 0)
            #f ;;wrap-lines
            #f ;;align-top
            #f ;;align-left
@@ -2252,7 +2332,7 @@
 
   ;; vertical
   (define vertical (<gui> :vertical-layout))
-  (<gui> :set-layout-spacing vertical 2 0 0 0 0)
+  (<gui> :set-layout-spacing vertical 1 0 1 0 1)
 
   (<gui> :add vertical horizontal1)
 
@@ -2353,9 +2433,10 @@
 
   (define label (create-mixer-strip-name instrument-id strips-config #t is-standalone-mixer-strip))
 
+  (define mutesolo-height (ceiling (* 0.9 (get-fontheight) *pan-mutesolo-voltext-scale-factor*)))
 
   (<gui> :add gui label 1)
-  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color (get-fontheight) #t #f))
+  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color mutesolo-height #t #f))
 
   (define meter-instrument-id (find-meter-instrument-id instrument-id))
 
@@ -2418,9 +2499,9 @@
   ;;(<gui> :set-max-width gui width)
   ;;(<gui> :set-size-policy gui #f #t)
 
-  (define bsize (if is-standalone-mixer-strip 0 2))
+  (define bsize (if is-standalone-mixer-strip 0 2)) ;; Width of the ligth green border around current instrument.
   
-  (<gui> :set-layout-spacing gui 2 bsize bsize bsize bsize)
+  (<gui> :set-layout-spacing gui 0 bsize bsize bsize bsize)
 
   (define background-color (get-mixer-strip-background-color gui instrument-id))
 
@@ -2431,10 +2512,16 @@
   (define fontheight-and-borders (+ 4 fontheight))
 
   (define name-height fontheight-and-borders)
-  (define pan-height fontheight-and-borders)
-  (define mutesolo-height fontheight-and-borders)
+  (define pan-height (ceiling (* *pan-mutesolo-voltext-scale-factor* fontheight-and-borders)))
+  (define mutesolo-height (ceiling (* 0.9 *pan-mutesolo-voltext-scale-factor* fontheight-and-borders)))
   (define comment-height fontheight-and-borders)
 
+  (define pan-enabled (and instrument-id
+                           (pan-enabled? instrument-id)))
+  
+  ;;(define total-fixed-height-without-pan (+ name-height mutesolo-height (if (<ra> :mixer-strip-comments-visible) comment-height 0)))
+  ;;(define total-fixed-height-with-pan (+ total-fixed-height-without-pan pan-height))
+  
   (define name (create-mixer-strip-name instrument-id strips-config #f is-standalone-mixer-strip))
   (set-fixed-height name name-height)
 
@@ -2476,9 +2563,14 @@
                                                                #t)
                                                         #f)))
 
-  (define meter-instrument-id (create-mixer-strip-path mixer-strip-path-gui instrument-id instrument-id strips-config))
+  ;; create path gui
+  (define last-instrument-id-in-path (create-mixer-strip-path mixer-strip-path-gui instrument-id instrument-id strips-config))
+  
+  (define meter-instrument-id last-instrument-id-in-path)
 
-  (<gui> :add gui (create-mixer-strip-pan instrument-id strips-config system-background-color background-color pan-height))
+  (if (or #t pan-enabled) ;; Always #t. Couldn't figure out the math to adjust stretch values for path and volume so that all mute/solo buttons buttons align.
+      (<gui> :add gui (create-mixer-strip-pan instrument-id strips-config system-background-color background-color pan-height)))
+  
   (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color mutesolo-height #f #t))
   (<gui> :add gui (create-mixer-strip-volume instrument-id meter-instrument-id strips-config background-color #f) 1)
 
@@ -2796,45 +2888,49 @@
 
   (define das-stored-mixer-strips '())
   (define das-mixer-strips-gui #f)
+
+  (define _is-visible #t)
   
   (define (remake list-of-modified-instrument-ids)
-    ;;(c-display "REMAKE" list-of-modified-instrument-ids)
-    (define start-time (time))
-    (set! g-total-time 0)
-    (set! g-total-time2 0)
-    (set! g-total-num-calls 0)
-    (set! g-total-sort-time 0)
+    ;;(c-display "REMAKE" list-of-modified-instrument-ids ". gui visible:" (<gui> :is-visible gui) ". _is-visible:" _is-visible)
     
-    (run-instrument-data-memoized
-     (lambda()
-       (<gui> :disable-updates gui)
-       ;;(c-display "   Size of das-stored:" (length das-stored-mixer-strips))
-       (create-mixer-strips (strips-config :num-rows) das-stored-mixer-strips strips-config list-of-modified-instrument-ids
-                            (lambda (new-mixer-strips new-mixer-strips-gui)
-                              (if das-mixer-strips-gui
-                                  (begin
-                                    (<gui> :replace gui das-mixer-strips-gui new-mixer-strips-gui)
-                                    (<gui> :close das-mixer-strips-gui))
-                                  (begin
-                                    (<gui> :add gui new-mixer-strips-gui)
-                                    ;;(<gui> :show mixer-strips-gui)
-                                    ))
-                              
-                              ;;(c-display "...scan2")
-                              ;;(strips-config :scan-instruments!) ;; :scan-instruments! was called in 'create-mixer-strips'.
-                              (strips-config :recreate-config-gui-content)
-                              (set! das-stored-mixer-strips new-mixer-strips)
-                              (set! das-mixer-strips-gui new-mixer-strips-gui)
-                              ))
-       ))
-    
-    ;; prevent some flickering
-    (<ra> :schedule 15 (lambda ()
-                         (<gui> :enable-updates gui)
-                         #f))
-    
-    (c-display "   remake-gui duration: " (- (time) start-time) g-total-time "("g-total-num-calls ")" g-total-time2 g-total-sort-time)
-    )
+    (when _is-visible
+      (define start-time (time))
+      (set! g-total-time 0)
+      (set! g-total-time2 0)
+      (set! g-total-num-calls 0)
+      (set! g-total-sort-time 0)
+
+      (run-instrument-data-memoized
+       (lambda()
+         (<gui> :disable-updates gui)
+         ;;(c-display "   Size of das-stored:" (length das-stored-mixer-strips))
+         (create-mixer-strips (strips-config :num-rows) das-stored-mixer-strips strips-config list-of-modified-instrument-ids
+                              (lambda (new-mixer-strips new-mixer-strips-gui)
+                                (if das-mixer-strips-gui
+                                    (begin
+                                      (<gui> :replace gui das-mixer-strips-gui new-mixer-strips-gui)
+                                      (<gui> :close das-mixer-strips-gui))
+                                    (begin
+                                      (<gui> :add gui new-mixer-strips-gui)
+                                      ;;(<gui> :show mixer-strips-gui)
+                                      ))
+                                
+                                ;;(c-display "...scan2")
+                                ;;(strips-config :scan-instruments!) ;; :scan-instruments! was called in 'create-mixer-strips'.
+                                (strips-config :recreate-config-gui-content)
+                                (set! das-stored-mixer-strips new-mixer-strips)
+                                (set! das-mixer-strips-gui new-mixer-strips-gui)
+                                ))
+         ))
+      
+      ;; prevent some flickering
+      (<ra> :schedule 15 (lambda ()
+                           (<gui> :enable-updates gui)
+                           #f))
+      
+      (c-display "   remake-gui duration: " (- (time) start-time) g-total-time "("g-total-num-calls ")" g-total-time2 g-total-sort-time)
+      ))
 
 
   (define strips-config (create-strips-config instrument-ids num-rows remake gui))
@@ -2867,6 +2963,19 @@
                               gui))
                          *mixer-strips-objects*))))
 
+  (<gui> :add-visibility-change-callback gui
+         (lambda (is-visible)
+           (when (not (eq? is-visible _is-visible))
+             (set! _is-visible is-visible)
+             (if is-visible
+                 (begin
+                   ;;(c-display "REMAKING" das-mixer-strips-gui)
+                   (remake :non-are-valid))
+                 (begin
+                   ;;(c-display "CLOSING" das-mixer-strips-gui)
+                   (<gui> :close das-mixer-strips-gui)
+                   (set! das-mixer-strips-gui #f))))))
+  
   ;;mixer-strips-object
 
   (<gui> :set-takes-keyboard-focus gui #f)
@@ -2899,9 +3008,11 @@
                                                 (remove (lambda (id)
                                                           (= id -2))
                                                         list-of-modified-instrument-ids)))))
-    (for-each (lambda (a-mixer-strips-object)
-                ((a-mixer-strips-object :remake) list-of-modified-instrument-ids))
-              *mixer-strips-objects*)))
+    (run-instrument-data-memoized
+     (lambda()
+       (for-each (lambda (a-mixer-strips-object)
+                   ((a-mixer-strips-object :remake) list-of-modified-instrument-ids))
+                 *mixer-strips-objects*)))))
 
 (define (FROM_C-redraw-mixer-strips . list-of-modified-instrument-ids)
   (set-minimum-mixer-strip-widths!)
