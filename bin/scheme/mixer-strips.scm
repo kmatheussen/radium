@@ -92,6 +92,7 @@
                                                  :strips-config
                                                  :wide-mode-instrument-id #f
                                                  :effect-name #f)
+
   (if (not wide-mode-instrument-id)
       (set! wide-mode-instrument-id instrument-id))
   
@@ -1303,13 +1304,14 @@
                                  delete
                                  replace
                                  midi-learn-instrument-id
-                                 effect-name)
+                                 effect-name
+                                 is-bus)
 
   (define horiz (get-mixer-strip-send-horiz gui))
 
   (define (reset)
     (set-db-value 0)
-    (remake-mixer-strips))
+    (<ra> :redraw-mixer-strips))
 
   (define automation-value #f)
   (define (get-automation-data kont)
