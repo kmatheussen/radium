@@ -26,55 +26,7 @@
       <string>GUI</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="always_on_top">
-        <property name="text">
-         <string>Always on top</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="3">
-       <spacer name="horizontalSpacer_3">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="2" column="0">
-       <widget class="QCheckBox" name="lock_juce_when_swapping_onoff">
-        <property name="text">
-         <string>Don't run plugin GUI code when swapping OpenGL</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QLabel" name="label_12">
-        <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Enabling this option might prevent some plugins using OpenGL&lt;br/&gt;from crashing.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
-Note that this problem probably doesn't exist anymore. At least&lt;br&gt;
-most of the time. But it might be worth trying to enable if&lt;br&gt;
-Radium crashes while using a plugin you know uses
-OpenGL.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>&lt;pre&gt;
-
-
-&lt;/pre&gt;</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
+      <item row="3" column="1">
        <spacer name="horizontalSpacer_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -90,10 +42,55 @@ OpenGL.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </spacer>
       </item>
-      <item row="1" column="0">
+      <item row="3" column="3">
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="lock_juce_when_swapping_onoff">
+        <property name="text">
+         <string>Don't run plugin GUI code when swapping OpenGL</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
        <widget class="QCheckBox" name="show_instrument_widget_when_double_clicking">
         <property name="text">
          <string>Also bring the instrument widget to front when showing GUI</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="always_on_top">
+        <property name="text">
+         <string>Always on top</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QLabel" name="label_12">
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Enabling this option might prevent some plugins using OpenGL&lt;br/&gt;from crashing.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
+Note that this problem probably doesn't exist anymore. At least&lt;br&gt;
+most of the time. But it might be worth trying to enable if&lt;br&gt;
+Radium crashes while using a plugin you know uses
+OpenGL.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="show_virtual_keyboard">
+        <property name="text">
+         <string>Show a virtual MIDI keyboard below the native GUI of instrument plugins</string>
         </property>
        </widget>
       </item>

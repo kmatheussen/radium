@@ -2574,13 +2574,13 @@ int radiumRevisionVersion(void){
 }
 
 
-static bool g_vst_gui_always_on_top;
+static bool g_vst_gui_always_on_top = true;
 
 bool vstGuiIsAlwaysOnTop(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_vst_gui_always_on_top = SETTINGS_read_bool("vst_gui_always_on_top", true);
+    g_vst_gui_always_on_top = SETTINGS_read_bool("vst_gui_always_on_top", g_vst_gui_always_on_top);
     has_inited = true;
   }
 
@@ -2594,6 +2594,30 @@ void setVstGuiAlwaysOnTop(bool doit){
     PREFERENCES_update();
   }
 }
+
+
+
+static bool g_show_virtual_midi_keyboard_below_native_guis = true;
+
+bool showVirtualMidiKeyboardBelowNativeGUIs(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_show_virtual_midi_keyboard_below_native_guis = SETTINGS_read_bool("show_virtual_midi_keyboard_below_native_guis", g_show_virtual_midi_keyboard_below_native_guis);
+    has_inited = true;
+  }
+
+  return g_show_virtual_midi_keyboard_below_native_guis;
+}
+
+void setShowVirtualMidiKeyboardBelowNativeGUIs(bool doit){
+  if (doit != g_show_virtual_midi_keyboard_below_native_guis) {
+    g_show_virtual_midi_keyboard_below_native_guis = doit;
+    SETTINGS_write_bool("show_virtual_midi_keyboard_below_native_guis", doit);
+    PREFERENCES_update();
+  }
+}
+
 
 
 static bool g_modal_windows;

@@ -841,7 +841,7 @@ namespace{
       , parentgui(parentgui)
     {
 
-      if (data->audio_instance->acceptsMidi())
+      if (showVirtualMidiKeyboardBelowNativeGUIs() && data->audio_instance->acceptsMidi())
         midi_keyboard = new juce::MidiKeyboardComponent(data->keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard);
 
       struct SoundPlugin *plugin = data->_plugin;
