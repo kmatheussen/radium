@@ -7213,7 +7213,7 @@
                                                                     max-value))
                                          
                                          (if (not (<ra> :control-pressed))
-                                             (set! new-Time (<ra> :get-seq-gridded-time new-Time (<ra> :get-seq-automation-grid-type))))
+                                             (set! new-Time (<ra> :get-seq-gridded-time new-Time)))
                                          ;;(c-display "new-Value" new-Value ". Y:" Y ". Time:" Time)
                                          (<ra> :set-seqblock-automation-node new-Time new-Value (node :logtype) Num automationnum seqblocknum seqtracknum)
                                          ;;(c-display "NUM:" Num ", Time:" (/ new-Time 44100.0) ", Value:" new-Value ", min/max:" min-value max-value ", new-Y:" new-Y "y1/Y/y2:" y1 Y y2)
