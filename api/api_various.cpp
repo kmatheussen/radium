@@ -507,8 +507,14 @@ void insertReallines(int toinsert,int windownum){
   InsertRealLines_CurrPos(window,toinsert);
 }
 
+extern int g_downscroll;
+
 void generalDelete(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+
+  int downscroll = g_downscroll;
+  g_downscroll = 0;
+
   switch(window->curr_track){
   case SWINGTRACK:
     RemoveSwingCurrPos(window);
@@ -529,6 +535,8 @@ void generalDelete(int windownum){
     if(window->curr_track_sub>=0) StopVelocityCurrPos(window,0);
     else RemoveNoteCurrPos(window);
   }
+
+  g_downscroll = downscroll;
 }
 
 void insertLines(int toinsert,int windownum){
