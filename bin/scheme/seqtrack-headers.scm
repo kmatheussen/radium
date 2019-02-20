@@ -949,7 +949,7 @@
                           (* fontheight 1.3)
                           height))
 
-  (define b (max 1 (myfloor (/ fontheight 10)))) ;; border between areas.
+  (define b (max 0.1 (myfloor (/ fontheight 10)))) ;; border between areas.
   
   (define x-meter-split (- x2 (+ b meter-width)))
   (define x1-split (+ x1 (myfloor (* 1.8 (<gui> :text-width "9:")))))
@@ -988,7 +988,7 @@
   
   (define panner-x2 (if use-two-rows x-meter-split x2-split))
   (define panner-y1 (if use-two-rows
-                        (+ b y-split)
+                        (+ 0 y-split)
                         y1))
   (define panner-y2 (min (+ panner-y1 fontheight)
                          (- y2 fontheight)))
@@ -996,7 +996,7 @@
   
   (define vol-x2 panner-x2)
   (define vol-y1 (if show-panner
-                     (+ 2 panner-y2)
+                     (+ 0 panner-y2)
                      panner-y1))
   (define vol-y2 y2)
     
@@ -1127,10 +1127,12 @@
 ;             (1+ x1) (1+ y1)
 ;             (1- x2) (1- y2)
 ;             1.3 0 0))) ;; align left
-      
+
+  ;; TODO: Add area::add-mouse-pointer-shape-handler
   (add-nonpress-mouse-cycle!
    :enter-func (lambda (x* y)
                  ;;(c-display "ENTER DRAGGER" class-name)
+                 (<ra> :set-statusbar-text "Change sequencer height")
                  (if (is-active)
                      (begin
                        (set-mouse-pointer ra:set-vertical-split-mouse-pointer gui)
@@ -1138,14 +1140,10 @@
                      #f))
    :leave-func (lambda (button-was-pressed)
                  ;;(c-display "LEAVE DRAGGER")
+                 (<ra> :set-statusbar-text "")
                  (set-mouse-pointer ra:set-normal-mouse-pointer gui)
                  #f))
 
-  (add-statusbar-text-handler (lambda ()
-                                (if (is-active)
-                                    "Change sequencer height"
-                                    "")))
-  
   (add-delta-mouse-cycle!
    :press-func (lambda (button x* y*)
                  (if (is-active)
@@ -1175,6 +1173,12 @@
    (lambda (button x* y* dx dy)
      (set-mouse-pointer ra:set-normal-mouse-pointer gui))
    )
+
+  ;; doesn't work. must fix nonpress-mouse-cycle in area.scm
+  '(add-statusbar-text-handler (lambda ()
+                                (if (is-active)
+                                    "Change sequencer height"
+                                    "")))
   )
 
 #!!
@@ -1336,53 +1340,140 @@
 
 (def-area-subclass (<sequencer-left-part-top-bar> :gui :x1 :y1 :x2 :y2)
   (define in-window *sequencer-window-gui-active*)
-  (define buttons-width (myfloor (* 1.8 (<gui> :text-width "| W | F |"))))
-  (define buttons-x1 (if in-window
-                         x1
-                         (- x2 buttons-width)))
+  (define show-dragger (and (not in-window)
+                            (<ra> :upper-part-of-main-window-is-visible)))
 
-  (if (not in-window)
-      (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 (- buttons-x1 2) y2)))
+  (define spacing 2)
+  
+  (define gridbutton-width (if show-dragger
+                               (myfloor (* 1.5 (<gui> :text-width "G: Beat")))
+                               (/ (- x2 x1)
+                                  2)))
+  
+  (define buttons-width (myfloor (* 1.8 (<gui> :text-width "W | F |"))))
+    
+  (define buttons-x1 (if show-dragger
+                         (- x2 buttons-width)
+                         (+ gridbutton-width x1)))
 
+  (define gridbutton-x1 (- buttons-x1 gridbutton-width spacing))
+
+  (when show-dragger
+    (define dragger (<new> :sequencer-height-dragger gui x1 y1 (- gridbutton-x1 spacing) y2))
+    (add-sub-area-plain! dragger))
+
+  (define (get-curr-grid)
+    (define grid (<ra> :get-sequencer-grid-type))
+    ;;(c-display "GRID:" grid)
+    (cond ((string=? (<ra> :get-sequencer-grid-type) "line")
+           "Line")
+          ((string=? (<ra> :get-sequencer-grid-type) "beat")
+           "Beat")
+          (else
+           "Bar")))
+  
+  (define grid-checkbox #f)
+  
+  (set! grid-checkbox
+        (<new> :checkbox gui gridbutton-x1 y1 (+ gridbutton-x1 gridbutton-width) y2
+               (lambda ()
+                 (<ra> :sequencer-grid-enabled))
+               (lambda (new-value)
+                 (<ra> :set-sequencer-grid-enabled new-value))
+               :text (lambda ()
+                       (<-> "G: " (get-curr-grid)))
+               :right-mouse-clicked-callback
+               (lambda ()
+                 (define grid (get-curr-grid))
+                 (popup-menu
+                  (list
+                   :radio-buttons
+                   (list "Line grid"
+                         :check (string=? grid "Line")
+                         (lambda (ison)
+                           (when ison
+                             (c-display "setting ot line")
+                             (<ra> :set-sequencer-grid-type "line")
+                             (update-me!))))
+                   (list "Beat grid"
+                         :check (string=? grid "Beat")
+                         (lambda (ison)
+                           (when ison
+                             (<ra> :set-sequencer-grid-type "beat")
+                             (update-me!))))
+                   (list "Bar grid"
+                         :check (string=? grid "Bar")
+                         (lambda (ison)
+                           when ison
+                           (<ra> :set-sequencer-grid-type "bar")
+                           (update-me!))))))))
+                  
+  (add-sub-area-plain! grid-checkbox)
+  (grid-checkbox :add-statusbar-text-handler "Grid. Right-click to change type")
+
+  
   (horizontally-layout-areas
    buttons-x1 y1 x2 y2
    (if in-window
        '(window)
        '(window full))
-   :spacing 2
+   :spacing spacing
    :callback
    (lambda (type x1 y1 x2 y2)
-     (add-sub-area-plain! (<new> :checkbox gui x1 y1 x2 y2
-                                 (lambda ()
-                                   (if (eq? type 'window)
-                                       *sequencer-window-gui-active*
-                                       (not (<ra> :upper-part-of-main-window-is-visible))))
-                                 (lambda (new-value)
-                                   ;;(c-display type "new-value:" new-value)
-                                   (if (eq? type 'window)
-                                       (if new-value
-                                           (begin                                               
-                                             ;; show sequencer in new window
-                                             (if (not (<ra> :upper-part-of-main-window-is-visible))
-                                                 (<ra> :show-upper-part-of-main-window)
-                                                 (remember-lower-tabs-height))
-                                             (FROM-C-sequencer-set-gui-in-window! #t))
-                                           (begin
-                                             ;; put back sequencer into main tabs
-                                             (FROM-C-sequencer-set-gui-in-window! #f)
-                                             (recall-lower-tabs-height)))
-                                       (if new-value
-                                           (begin
-                                             ;; show sequencer full
-                                             (remember-lower-tabs-height)
-                                             (<ra> :hide-upper-part-of-main-window))
-                                           (begin
-                                             ;; don't show sequencer full
-                                             (recall-lower-tabs-height)
-                                             (<ra> :show-upper-part-of-main-window))))
-                                   (<gui> :update gui)) ;; Necessary if the dragger is at topmost position. Then the dragger gfx won't be updated.
-                                 :text (if (eq? type 'window) "W" "F"))))
+     (define checkbox
+       (<new> :checkbox gui x1 y1 x2 y2
+              (lambda ()
+                (cond ((eq? type 'window)
+                       *sequencer-window-gui-active*)
+                      ((eq? type 'full)
+                       (not (<ra> :upper-part-of-main-window-is-visible)))
+                      (else
+                       (assert #f))))
+              (lambda (new-value)
+                ;;(c-display type "new-value:" new-value)
+                (cond ((eq? type 'window)
+                       (if new-value
+                           (begin                                               
+                             ;; show sequencer in new window
+                             (if (not (<ra> :upper-part-of-main-window-is-visible))
+                                 (<ra> :show-upper-part-of-main-window)
+                                 (remember-lower-tabs-height))
+                             (FROM-C-sequencer-set-gui-in-window! #t))
+                           (begin
+                             ;; put back sequencer into main tabs
+                             (FROM-C-sequencer-set-gui-in-window! #f)
+                             (recall-lower-tabs-height))))
+                      ((eq? type 'full)
+                       (if new-value
+                           (begin
+                             ;; show sequencer full
+                             (remember-lower-tabs-height)
+                             (<ra> :hide-upper-part-of-main-window))
+                           (begin
+                             ;; don't show sequencer full
+                             (recall-lower-tabs-height)
+                             (<ra> :show-upper-part-of-main-window))))
+                      (else
+                       (assert #f)))
+                (<gui> :update gui)) ;; Necessary if the dragger is at topmost position. Then the dragger gfx won't be updated.
+              :text (cond ((eq? type 'window)
+                           "W")
+                          ((eq? type 'full)
+                           "F")
+                          (else
+                           (assert #f)))))
+     (checkbox :add-statusbar-text-handler
+               (cond ((eq? type 'window)
+                      "Window")
+                     ((eq? type 'full)
+                      "Full. Use all available space in main window")
+                     (else
+                      (assert #f))))
+     
+     (add-sub-area-plain! checkbox)
+     )
    )
+                                 
   )
    
 

@@ -78,13 +78,15 @@
               (format p "~%<br>history:~%<br>    ~S" (if (pair? x) (car x) (car start)))
               (do ((x history (cdr x))
                    (line lines (cdr line))
-                   (f files (cdr f)))
+                   (f files (cdr f))
+                   (i2 0 (+ i 1))
+                   )
                   ((null? x))
                 (format p (if (and (integer? (car line))
                                    (string? (car f))
                                    (not (string=? (car f) "*stdout*")))
-                              (values "~%<br>    ~S~40T;<font color='red'>~A</font>[~A]" (car x) (car f) (car line))
-                              (values "~%<br>    ~S<br>" (car x)))))
+                              (values "~%<br>~A:&nbsp;&nbsp;&nbsp;    ~S~40T;<font color='red'>~A</font>[~A]" i2 (car x) (car f) (car line))
+                              (values "~%<br>~A:&nbsp;&nbsp;&nbsp;    ~S<br>" i2 (car x)))))
               (format p "~%<br>"))
            (set! history (cons (car x) history))
            (set! lines (cons (and (pair? (car x)) (pair-line-number (car x))) lines))
@@ -534,7 +536,8 @@
     show-instrument-color-dialog
     ;;FROM_C-prepare-seqblock-stretch-automation-for-interface2
     FROM_C-request-rename-instrument
-    apply-editor-track-on/off-to-seqblock
+    FROM_C-copy-editor-track-on/off-to-seqblock
+    FROM_C-copy-seqblock-track-on/off-to-editor
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

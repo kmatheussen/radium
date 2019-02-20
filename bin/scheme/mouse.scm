@@ -610,7 +610,7 @@
                       (cancel-current-stuff)
                       ;;(<ra> :set-normal-mouse-pointer)
                       (set! *check-mouse-horizontal-modifier* #t)
-                      (set-grid-type #f)
+                      (paint-grid! #f)
                       #t)
                     (begin
                       (set! *check-mouse-horizontal-modifier* #t)
@@ -4226,7 +4226,7 @@
                                                          (existing-box Num Box) :> (begin
                                                                                      ;;(c-display "EXISTING " Num)
                                                                                      (define Time (get-sequencer-time X))
-                                                                                     (set-grid-type (<ra> :get-seq-tempo-grid-type))
+                                                                                     (paint-grid! #t)
                                                                                      (callback (make-seqautomation-move :nodes (get-seqtempo-nodes)
                                                                                                                         :Num Num
                                                                                                                         :start-Y Y)
@@ -4235,7 +4235,7 @@
                                                                                         (let ((closest-node-num (find-closest-node-horizontal X
                                                                                                                                               get-seqtemponode-box
                                                                                                                                               num-nodes)))
-                                                                                          (set-grid-type (<ra> :get-seq-tempo-grid-type))
+                                                                                          (paint-grid! #t)
                                                                                           (<ra> :set-curr-seqtemponode closest-node-num)
                                                                                           (callback (make-seqautomation-move :nodes (get-seqtempo-nodes)
                                                                                                                              :Num closest-node-num
@@ -4256,20 +4256,20 @@
                                                                (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
                                            (define PositionTime (if (<ra> :control-pressed)
                                                                     Time
-                                                                    (<ra> :get-seq-gridded-time (floor Time) (<ra> :get-seq-tempo-grid-type))))
+                                                                    (<ra> :get-seq-gridded-time (floor Time))))
                                            (define TempoMul (get-seqtempo-value Y))
                                            (define Num (<ra> :add-seqtemponode PositionTime TempoMul *logtype-linear*))
                                            (if (= -1 Num)
                                                #f
                                                (begin
-                                                 (set-grid-type (<ra> :get-seq-tempo-grid-type))
+                                                 (paint-grid! #t)
                                                  (<ra> :set-curr-seqtemponode Num)
                                                  (callback (make-seqautomation-move :nodes (get-seqtempo-nodes)
                                                                                     :Num Num
                                                                                     :start-Y Y)
                                                            0))))
                         :Release-node (lambda (seqmove)
-                                        (set-grid-type #f))
+                                        (paint-grid! #f))
                         :Move-node (lambda (seqmove Time Y)
                                      (define-constant seqmove seqmove)
                                      (define-constant Time Time)
@@ -4284,7 +4284,7 @@
                                        (define TempoMul (get-seqtempo-value new-Y))
                                        (define logtype (node :logtype))
                                        (if (not (<ra> :control-pressed))
-                                           (set! new-Time (<ra> :get-seq-gridded-time new-Time (<ra> :get-seq-tempo-grid-type))))
+                                           (set! new-Time (<ra> :get-seq-gridded-time new-Time)))
                                        (<ra> :set-seqtemponode new-Time TempoMul logtype Num))
                                      
                                      (if (move-all-nodes?)
@@ -4453,7 +4453,7 @@
                                                    (let* ((start-x (get-sequencer-x (get-start)))
                                                           (end-x (get-sequencer-x (get-end)))
                                                           (mid (average start-x end-x)))
-                                                     (set-grid-type (<ra> :get-seq-loop-grid-type))
+                                                     (paint-grid! #t)
                                                      (set! gakkgakk-seqloop-handler-num-moves 0)
                                                      (set! gakkgakk-seqloop-handler-start-X X)
                                                      (if (< X mid)
@@ -4477,12 +4477,12 @@
                           :Get-value (lambda (Value)
                                        Value)
                           :Release (lambda ()
-                                     (set-grid-type #f)
+                                     (paint-grid! #f)
                                      (when (= 1 gakkgakk-seqloop-handler-num-moves)
                                        ;;(c-display "Released " gakkgakk-seqloop-handler-start-X)
                                        (define time (round (get-sequencer-time gakkgakk-seqloop-handler-start-X)))
                                        (if (not (<ra> :control-pressed))
-                                           (set! time (<ra> :get-seq-gridded-time (floor time) (<ra> :get-seq-loop-grid-type))))
+                                           (set! time (<ra> :get-seq-gridded-time (floor time))))
                                        (<ra> :play-song-from-pos (floor time))))
                           :Make-undo (lambda (_)
                                        50)
@@ -4491,7 +4491,7 @@
                                   (inc! gakkgakk-seqloop-handler-num-moves 1)
                                   (set! Value (floor Value))
                                   (if (not (<ra> :control-pressed))
-                                      (set! Value (<ra> :get-seq-gridded-time Value (<ra> :get-seq-loop-grid-type))))
+                                      (set! Value (<ra> :get-seq-gridded-time Value)))
                                   (setter! Value))
                           
                           :Publicize (lambda (Value)
@@ -4680,13 +4680,8 @@
                 (<ra> :get-num-seqblocks seqtracknum))
               (iota (<ra> :get-num-seqtracks)))))
 
-(define (set-grid-type type)
-  (cond ((string? type)
-         (<ra> :set-sequencer-grid-type type))
-        (type
-         (<ra> :set-sequencer-grid-type "bar"))
-        (else
-         (<ra> :set-sequencer-grid-type "no"))))
+(define (paint-grid! doit)
+  (<ra> :set-paint-sequencer-grid doit))
       
 (define (only-select-one-seqblock dasseqblocknum dasseqtracknum)
   (for-each-seqblocknum (lambda (seqtracknum seqblocknum)
@@ -4732,7 +4727,7 @@
                  (define new-pos2 (if (or (= 1 (num-seqblocks-in-sequencer))
                                           (<ra> :control-pressed))
                                       new-pos
-                                      (<ra> :get-seq-gridded-time new-pos (<ra> :get-seq-block-grid-type))))
+                                      (<ra> :get-seq-gridded-time new-pos)))
                  (if (< new-pos2 0)
                      (set! new-pos2 0))
                  (set! skew (- new-pos2 new-pos))
@@ -4839,7 +4834,7 @@
                                        
                                        ;;(set! Value (between 0 Value 1))
 
-                                       (set-grid-type #t)
+                                       (paint-grid! #t)
 
                                        (if is-left
                                            (<ra> :set-seqblock-fade-in Value seqblocknum seqtracknum)
@@ -4970,7 +4965,7 @@
   
   (define new-i1 (between 0
                           (/ (- (if use-grid
-                                    (max s1 (<ra> :get-seq-gridded-time (round (+ s1 (* mousex stretch))) (<ra> :get-seq-block-grid-type)))
+                                    (max s1 (<ra> :get-seq-gridded-time (round (+ s1 (* mousex stretch)))))
                                     (+ s1 (* mousex stretch)))
                                 s1)
                              stretch)
@@ -5007,7 +5002,7 @@
 
   (define new-i2 (between (+ (max 16 (* *min-seqblock-width* samples-per-pixel)) i1) ;;(ceiling stretch) i1)
                           (/ (- (if use-grid
-                                    (let ((closest (<ra> :get-seq-gridded-time (round (+ s1 (* stretch mousex))) (<ra> :get-seq-block-grid-type))))
+                                    (let ((closest (<ra> :get-seq-gridded-time (round (+ s1 (* stretch mousex))))))
                                       ;;(c-display "  |||Closest: " closest ". try:" (round (+ s1 (* stretch mousex))))
                                       closest)
                                     (+ s1 (* stretch mousex)))
@@ -5022,12 +5017,12 @@
 
 (define (get-new-start seqblock-info mousex)
   (if use-grid
-      (<ra> :get-seq-gridded-time (round mousex) (<ra> :get-seq-block-grid-type))
+      (<ra> :get-seq-gridded-time (round mousex))
       mousex))
 
 (define (get-new-end seqblock-info mousex)
   (if use-grid
-      (<ra> :get-seq-gridded-time (round mousex) (<ra> :get-seq-block-grid-type))
+      (<ra> :get-seq-gridded-time (round mousex))
       mousex))
 
 
@@ -5119,7 +5114,7 @@
                                      (set-seqblock-selected-box 'interior-left seqblocknum seqtracknum)
                                      (<ra> :set-curr-seqblock-under-mouse seqblockid)
 
-                                     (set-grid-type (<ra> :get-seq-block-grid-type))
+                                     (paint-grid! #t)
                                      seqblock-info)
                         
                         :Publicize (lambda (seqblock-info)
@@ -5237,7 +5232,7 @@
                                      (set-seqblock-selected-box 'interior-right seqblocknum seqtracknum)
                                      (<ra> :set-curr-seqblock-under-mouse seqblockid)
 
-                                     (set-grid-type (<ra> :get-seq-block-grid-type))
+                                     (paint-grid! #t)
                                      seqblock-info)
                         
                         :Publicize (lambda (seqblock-info)
@@ -5525,7 +5520,7 @@
   (define new-pos (if (or (= 1 (num-seqblocks-in-sequencer))
                           (<ra> :control-pressed))
                       new-pos-nongridded
-                      (<ra> :get-seq-gridded-time (floor Value) (<ra> :get-seq-block-grid-type))))
+                      (<ra> :get-seq-gridded-time (floor Value))))
   
   ;; Limit shrinking size
   (if is-left
@@ -5549,7 +5544,7 @@
 
   ;;(c-display "---------new-pos:" new-pos ". Value:" Value "min/max-value:" min-right-value max-left-value)
 
-  (set-grid-type (<ra> :get-seq-block-grid-type))
+  (paint-grid! #t)
 
   (define curr-speed (seqblock :speed))
 
@@ -6077,7 +6072,7 @@
                           ((only-y-direction)
                            curr-pos)
                           (else
-                           (<ra> :get-seq-gridded-time (floor Value) (<ra> :get-seq-block-grid-type)))))
+                           (<ra> :get-seq-gridded-time (floor Value)))))
 
     ;;(c-display "\n\nnew-pos/nongridded/curr-pos:" new-pos new-pos-nongridded curr-pos)
     
@@ -6086,7 +6081,7 @@
 
     (set! has-moved (not (= new-pos start-pos)))
     
-    (set-grid-type (<ra> :get-seq-block-grid-type))
+    (paint-grid! #t)
     
     ;; changing track
     (when (and (not (= seqtracknum new-seqtracknum))
@@ -6229,7 +6224,7 @@
                                                                                   )
                                                                                  )
 
-                                                                           (set-grid-type (<ra> :get-seq-block-grid-type))
+                                                                           (paint-grid! #t)
 
                                                                            (define has-made-undo #f)
                                                                            
@@ -6328,7 +6323,7 @@
                                                                     
                                                                     
                                                                     (cond ((> (<ra> :get-num-selected-seqblocks) 1)
-                                                                           (set-grid-type (<ra> :get-seq-block-grid-type))
+                                                                           (paint-grid! #t)
                                                                            
                                                                            (set! gakkgakk-start-pos 0);;(<ra> :get-seqblock-start-time seqblocknum seqtracknum))
                                                                            (set! gakkgakk-was-selected is-selected)
@@ -6398,7 +6393,7 @@
                                                  (<ra> :control-pressed))
                                             (<ra> :select-seqblock (not gakkgakk-was-selected) gakkgakk-startseqblocknum gakkgakk-startseqtracknum))
                                         
-                                        (set-grid-type #f)
+                                        (paint-grid! #f)
 
                                         seqblock-infos)
 
@@ -6746,7 +6741,7 @@
                                                     (define num-nodes (<ra> :get-num-seqtrack-automation-nodes automationnum seqtracknum))
                                                     (match (list (find-node-horizontal X Y get-nodebox num-nodes))
                                                            (existing-box Num Box) :> (begin
-                                                                                       (set-grid-type (<ra> :get-seq-automation-grid-type))
+                                                                                       (paint-grid! #t)
                                                                                        (callback (make-seqautomation-move :nodes (get-seqautomation-nodes automationnum seqtracknum)
                                                                                                                           :Num Num
                                                                                                                           :start-Y Y)
@@ -6756,7 +6751,7 @@
                                                                                           (let ((closest-node-num (find-closest-node-horizontal X
                                                                                                                                                 get-nodebox
                                                                                                                                                 num-nodes)))
-                                                                                            (set-grid-type (<ra> :get-seq-automation-grid-type))
+                                                                                            (paint-grid! #t)
                                                                                             (<ra> :set-curr-seq-automation-node closest-node-num automationnum seqtracknum)
                                                                                             (callback (make-seqautomation-move :nodes (get-seqautomation-nodes automationnum seqtracknum)
                                                                                                                                :Num closest-node-num
@@ -6787,7 +6782,7 @@
                                              (define Time (get-sequencer-time X))
                                              (define PositionTime (if (<ra> :control-pressed)
                                                                       Time
-                                                                      (<ra> :get-seq-gridded-time (floor Time) (<ra> :get-seq-automation-grid-type))))
+                                                                      (<ra> :get-seq-gridded-time (floor Time))))
                                              (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
                                              (define Num (<ra> :add-seq-automation-node (floor PositionTime) Value *logtype-linear* automationnum seqtracknum))
                                              '(c-display "NUM:" Num "\n"
@@ -6797,14 +6792,14 @@
                                              (if (< Num 0)
                                                  #f
                                                  (begin
-                                                   (set-grid-type (<ra> :get-seq-automation-grid-type))
+                                                   (paint-grid! #t)
                                                    (<ra> :set-curr-seq-automation-node Num automationnum seqtracknum)
                                                    (callback (make-seqautomation-move :nodes (get-seqautomation-nodes automationnum seqtracknum)
                                                                                       :Num Num
                                                                                       :start-Y Y)
                                                              0)))))
                         :Release-node (lambda (seqmove)
-                                        (set-grid-type #f))
+                                        (paint-grid! #f))
                         :Move-node (lambda (seqmove Time Y)
                                      ;;(c-display "MOVE-Nod:" seqmove)
                                      (define-constant seqmove seqmove)
@@ -6819,7 +6814,7 @@
                                          (define new-Y (+ delta-Y (node :y)))
                                          (define new-Value (scale new-Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
                                          (if (not (<ra> :control-pressed))
-                                             (set! new-Time (<ra> :get-seq-gridded-time new-Time (<ra> :get-seq-automation-grid-type))))
+                                             (set! new-Time (<ra> :get-seq-gridded-time new-Time)))
                                          ;;(c-display Num ": new-TIME:" new-Time ", new-Value:" new-Value)
                                          (<ra> :set-seq-automation-node new-Time new-Value (node :logtype) Num automationnum seqtracknum)
                                          ;;(c-display "NUM:" Num ", Time:" (/ Time 48000.0) ", Value:" Value)
@@ -7130,7 +7125,7 @@
                                                     (match (list (find-node-horizontal X Y get-nodebox num-nodes))
                                                            (existing-box Num Box) :> (begin
                                                                                        (define Time (get-sequencer-time X))
-                                                                                       (set-grid-type (<ra> :get-seq-automation-grid-type))
+                                                                                       (paint-grid! #t)
                                                                                        (set-current-seqblock! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                                                        (callback (make-seqautomation-move :nodes (get-seqblock-automation-nodes automationnum seqblocknum seqtracknum)
                                                                                                                           :Num Num
@@ -7140,7 +7135,7 @@
                                                                                           (let ((closest-node-num (find-closest-node-horizontal X
                                                                                                                                                 get-nodebox
                                                                                                                                                 num-nodes)))
-                                                                                            (set-grid-type (<ra> :get-seq-automation-grid-type))
+                                                                                            (paint-grid! #t)
                                                                                             (<ra> :set-curr-seqblock-automation-node closest-node-num automationnum seqblocknum seqtracknum)
                                                                                             (callback (make-seqautomation-move :nodes (get-seqblock-automation-nodes automationnum seqblocknum seqtracknum)
                                                                                                                                :Num closest-node-num
@@ -7173,7 +7168,7 @@
                                              (define Time (get-sequencer-time X))
                                              (define PositionTime (if (<ra> :control-pressed)
                                                                       Time
-                                                                      (<ra> :get-seq-gridded-time (floor Time) (<ra> :get-seq-automation-grid-type))))
+                                                                      (<ra> :get-seq-gridded-time (floor Time))))
                                              (define min-value (<ra> :get-seqblock-automation-min-value automationnum seqblocknum seqtracknum))
                                              (define max-value (<ra> :get-seqblock-automation-max-value automationnum seqblocknum seqtracknum))
                                              (define db (scale Y (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) max-value min-value))
@@ -7182,7 +7177,7 @@
                                              (if (= -1 Num)
                                                #f
                                                (begin
-                                                 (set-grid-type (<ra> :get-seq-automation-grid-type))
+                                                 (paint-grid! #t)
                                                  (set-current-seqblock! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                  (<ra> :set-curr-seqblock-automation-node Num automationnum seqblocknum seqtracknum)
                                                  (callback (make-seqautomation-move :nodes (get-seqblock-automation-nodes automationnum seqblocknum seqtracknum)
@@ -7190,7 +7185,7 @@
                                                                                     :start-Y Y)
                                                            0)))))
                         :Release-node (lambda (seqmove)
-                                        (set-grid-type #f))
+                                        (paint-grid! #f))
                         :Move-node (lambda (seqmove Time Y)
                                      (define-constant seqmove seqmove)
                                      (define-constant Time Time)
@@ -7687,7 +7682,7 @@
                        (let* ((X (<ra> :get-mouse-pointer-x -2))
                               (seqpos (round (get-sequencer-time X)))
                               (pos (if use-grid
-                                       (<ra> :get-seq-gridded-time seqpos (<ra> :get-seq-block-grid-type))
+                                       (<ra> :get-seq-gridded-time seqpos)
                                        seqpos)))
                          (split-sample-seqblock pos seqtracknum seqblocknum)
                          #t))))))))
@@ -7721,7 +7716,7 @@
                                   (set-current-seqblock! seqtracknum seqblockid)
                                   (<ra> :set-curr-seqtrack seqtracknum))
                               
-                              (set-grid-type (<ra> :get-seq-block-grid-type))
+                              (paint-grid! #t)
                               
                               (define guinum
                               (popup-menu (list
@@ -7738,7 +7733,7 @@
                                           (list (<-> "Paste automation")
                                                 :enabled *clipboard-seqtrack-automation*
                                                 (lambda ()
-                                                  (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
+                                                  (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
                                                     (apply-seqtrack-automation seqtracknum pos *clipboard-seqtrack-automation*))))
 
                                           (map (lambda (automationnum)
@@ -7757,7 +7752,7 @@
                                                "--------------------Editor Seqtrack" ;;Editor blocks"
                                                "Insert existing block"
                                                (lambda ()
-                                                 (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
+                                                 (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
                                                    (if (= 1 (<ra> :get-num-blocks))
                                                        (<ra> :create-seqblock seqtracknum 0 pos)                                          
                                                        (apply popup-menu
@@ -7779,21 +7774,21 @@
                                                (list                                          
                                                 "Insert current block"
                                                 (lambda ()
-                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type)))
+                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X))))
                                                          (blocknum (<ra> :current-block)))
                                                     (<ra> :create-seqblock seqtracknum blocknum pos))))
                                                
                                                (list                                           
                                                 "Insert new block"
                                                 (lambda ()
-                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type)))
+                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X))))
                                                          (blocknum (<ra> :append-block)))
                                                     (<ra> :create-seqblock seqtracknum blocknum pos))))
                                                
                                                (list
                                                 "Insert new block from disk (BETA)"
                                                 (lambda ()
-                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type)))
+                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X))))
                                                          (num-blocks (<ra> :get-num-blocks)))
                                                     (<ra> :load-block "")
                                                     (if (not (= num-blocks (<ra> :get-num-blocks)))
@@ -7807,7 +7802,7 @@
                                                    (list                                               
                                                     "Insert my soundfile"
                                                     (lambda ()
-                                                      (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
+                                                      (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
                                                         ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong_24000.wav") pos))))
                                                         ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
                                                         ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
@@ -7818,7 +7813,7 @@
                                                (list
                                                 "Insert new audio file"
                                                 (lambda ()
-                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
+                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
                                                     (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
                                                                            (lambda (filename)
                                                                              (<ra> :create-sample-seqblock seqtracknum filename pos))))))
@@ -7880,7 +7875,7 @@
                                                        :enabled (not (empty? *seqblock-clipboard*))
                                                        :shortcut ra:paste-seqblocks
                                                        (lambda ()
-                                                         (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
+                                                         (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
                                                            (<ra> :paste-seqblocks seqtracknum pos))))
                                                  
                                                  "--------------------"
@@ -7921,6 +7916,7 @@
 
                                                  (list "Delete"
                                                        :shortcut *shift-right-mouse*
+                                                       :enabled seqblock-info
                                                        (lambda ()
                                                          (set! *current-seqblock-info* #f)
                                                          (<ra> :delete-seqblock seqblockid)
@@ -8046,12 +8042,15 @@
                                                                  (<ra> :config-block)))
                                                          
                                                          "------------------------"
-                                                         (list "Apply editor track on/off to seqblock"
+                                                         (list "Copy editor track on/off -> seqblock track on/off"
                                                                :enabled (and blocknum seqblocknum)
-                                                               (lambda ()
-                                                                 (apply-editor-track-on/off-to-seqblock seqblocknum seqtracknum)))
+                                                               ra:copy-editor-track-on-off-to-seqblock)
 
-                                                         (list "Enable/disable editor tracks (double click)"
+                                                         (list "Copy seqblock track on/off -> editor track on/off"
+                                                               :enabled (and blocknum seqblocknum)
+                                                               ra:copy-seqblock-track-on-off-to-editor)
+                                                         
+                                                         (list "Seqblock track on/off editor (double click)" ;;Enable/disable editor tracks (double click)"
                                                                :enabled (and blocknum seqblocknum)
                                                                (lambda ()
                                                                  (show-seqblock-track-on-off-configuration seqblockid)))))
@@ -8089,7 +8088,7 @@
                                                                         (not blocknum))
                                                           :shortcut (list ra:eval-scheme "(FROM_C-split-sample-seqblock-under-mouse #f)")
                                                           (lambda ()
-                                                            (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
+                                                            (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
                                                               (split-sample-seqblock pos seqtracknum seqblocknum))))                                               
 
                                                          "---------------------"
@@ -8155,7 +8154,7 @@
                                       (if (<gui> :is-open guinum)
                                           100
                                           (begin
-                                            (set-grid-type #f)
+                                            (paint-grid! #f)
                                             #f))))
                               
                               )))))))

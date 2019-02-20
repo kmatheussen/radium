@@ -34,6 +34,17 @@ static void SwitchTrackOnOff(
   }
 }
 
+static void SetTrackOnOff(
+                          struct Tracks *track,
+                          bool ison
+){
+  if(ison){
+    track->onoff=1;
+  }else{
+    track->onoff=0;
+  }
+}
+
 static void SwitchAllTracksOnOff(
 	NInt tracknum
 ){
@@ -125,6 +136,16 @@ void TRACK_OF_switch_spesified_CurrPos(
         struct WTracks *wtrack = (struct WTracks*)ListFindElement1(&window->wblock->wtracks->l,tracknum);
         
 	SwitchTrackOnOff(wtrack->track);
+
+        window->must_redraw = true;
+}
+
+void TRACK_set_on_off(
+	struct Tracker_Windows *window,
+        struct Tracks *track,
+        bool is_on
+){
+	SetTrackOnOff(track, is_on);
 
         window->must_redraw = true;
 }

@@ -558,42 +558,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       is_timebase_master->setChecked(isJackTimebaseMaster());
       
       
-      if (!strcmp(getSeqBlockGridType(), "no"))
-        block_no_grid->setChecked(true);
-      else if (!strcmp(getSeqBlockGridType(), "line"))
-        block_line_grid->setChecked(true);
-      else if (!strcmp(getSeqBlockGridType(), "beat"))
-        block_beat_grid->setChecked(true);
-      else if (!strcmp(getSeqBlockGridType(), "bar"))
-        block_bar_grid->setChecked(true);
-
-      if (!strcmp(getSeqAutomationGridType(), "no"))
-        automation_no_grid->setChecked(true);
-      else if (!strcmp(getSeqAutomationGridType(), "line"))
-        automation_line_grid->setChecked(true);
-      else if (!strcmp(getSeqAutomationGridType(), "beat"))
-        automation_beat_grid->setChecked(true);
-      else if (!strcmp(getSeqAutomationGridType(), "bar"))
-        automation_bar_grid->setChecked(true);
-
-      if (!strcmp(getSeqTempoGridType(), "no"))
-        tempo_no_grid->setChecked(true);
-      else if (!strcmp(getSeqTempoGridType(), "line"))
-        tempo_line_grid->setChecked(true);
-      else if (!strcmp(getSeqTempoGridType(), "beat"))
-        tempo_beat_grid->setChecked(true);
-      else if (!strcmp(getSeqTempoGridType(), "bar"))
-        tempo_bar_grid->setChecked(true);
-
-      if (!strcmp(getSeqLoopGridType(), "no"))
-        loop_no_grid->setChecked(true);
-      else if (!strcmp(getSeqLoopGridType(), "line"))
-        loop_line_grid->setChecked(true);
-      else if (!strcmp(getSeqLoopGridType(), "beat"))
-        loop_beat_grid->setChecked(true);
-      else if (!strcmp(getSeqLoopGridType(), "bar"))
-        loop_bar_grid->setChecked(true);
-
       default_fadeout->setValue(getDefaultAudiofileFadeout());
       auto_crossfades->setChecked(doAutoCrossfades());
     }
@@ -1033,92 +997,6 @@ public slots:
       setIsJackTimebaseMaster(val);
   }
   
-  void on_block_no_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqBlockGridType("no");
-  }
-  void on_block_line_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqBlockGridType("line");
-  }
-  void on_block_beat_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqBlockGridType("beat");
-  }
-  void on_block_bar_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqBlockGridType("bar");
-  }
-
-  void on_automation_no_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqAutomationGridType("no");
-  }
-  void on_automation_line_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqAutomationGridType("line");
-  }
-  void on_automation_beat_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqAutomationGridType("beat");
-  }
-  void on_automation_bar_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqAutomationGridType("bar");
-  }
-
-
-  void on_tempo_no_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqTempoGridType("no");
-  }
-  void on_tempo_line_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqTempoGridType("line");
-  }
-  void on_tempo_beat_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqTempoGridType("beat");
-  }
-  void on_tempo_bar_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqTempoGridType("bar");
-  }
-
-
-  void on_loop_no_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqLoopGridType("no");
-  }
-  void on_loop_line_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqLoopGridType("line");
-  }
-  void on_loop_beat_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqLoopGridType("beat");
-  }
-  void on_loop_bar_grid_toggled(bool val){
-    if (_initing==false)
-      if (val)
-        setSeqLoopGridType("bar");
-  }
-
   void on_default_fadeout_valueChanged(double val){
     if (_initing==false)
       setDefaultAudiofileFadeout(val);

@@ -2285,12 +2285,50 @@ static void init_keybindings(void){
 
     const char *commandstring = PyString_AsString(command);
     R_ASSERT_RETURN_IF_FALSE(commandstring!=NULL);
+
+    /*
+    if(!strcmp(commandstring,"ra.copyEditorTrackOnOffToSeqblock"))
+       printf("Commandstring: %s. keybinding: %s\n", commandstring, keybinding_line);
+    */
     
     // command
-    //HASH_put_hash(r_keybindings_from_commands, commanstring, element);
-    HASH_remove(r_keybindings_from_commands, commandstring); // in case it was already there.
-    HASH_put_chars(r_keybindings_from_commands, commandstring, keybinding_line);
+    if (false && HASH_has_key(r_keybindings_from_commands, commandstring)){
 
+      // We are never in here since radium._keybindingdict (which we are traversing) is already a hash table.
+      
+      dynvec_t vec = {};
+      
+      dyn_t curr = HASH_get_dyn(r_keybindings_from_commands, commandstring);
+      
+      if (curr.type==STRING_TYPE){
+        
+        DYNVEC_push_back(vec, curr);
+        
+      } else if (curr.type==ARRAY_TYPE) {
+        
+        vec = *curr.array;
+
+      } else {
+        
+        R_ASSERT(false);
+        
+      }
+
+      DYNVEC_push_back(vec, DYN_create_string_from_chars(keybinding_line));
+                       
+      HASH_remove(r_keybindings_from_commands, commandstring);
+      HASH_put_dyn(r_keybindings_from_commands, commandstring, DYN_create_array(vec));
+                       
+                       
+    } else {
+
+      if(HASH_remove(r_keybindings_from_keys, keybinding_line)==true){ // in case it was already there. (shouldn't happen)
+        R_ASSERT_NON_RELEASE(false);
+      }
+      HASH_put_chars(r_keybindings_from_commands, commandstring, keybinding_line);
+      
+    }
+    
     // key
     HASH_remove(r_keybindings_from_keys, keybinding_line); // in case it was already there.
     HASH_put_chars(r_keybindings_from_keys, keybinding_line, commandstring);
@@ -2299,7 +2337,6 @@ static void init_keybindings(void){
     Py_DECREF(qualifiers);
   }
 
- 
   Py_DECREF(keybindings);
   Py_DECREF(radium);
 
@@ -2333,6 +2370,7 @@ dyn_t getKeybindingsFromCommands(void){
 
 const_char* getKeybindingFromCommand(const_char *command){
   hash_t *keybindings = getKeybindingsFromCommands().hash;
+  
   if (HASH_has_key(keybindings,command))
     return HASH_get_chars(keybindings, command);
   else
