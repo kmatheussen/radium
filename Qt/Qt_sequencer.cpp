@@ -3551,7 +3551,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   double _end_time = 600;
   double _samples_per_pixel;
 
-  enum GridType _grid_type = NO_GRID;
+  enum GridType _grid_type = BAR_GRID;
 
   SongTempoAutomation_widget _songtempoautomation_widget;
   Timeline_widget _timeline_widget;
@@ -3743,7 +3743,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
                                      getSequencerVisibleStartTime(), getSequencerVisibleEndTime()
                                      )
                         );
-    pos = getSeqGriddedTime(pos, getSeqBlockGridType());
+    pos = getSeqGriddedTime(pos, "current");
     pos = R_MAX(0, pos);
 
     if (event->mimeData()->hasUrls()) {
@@ -4651,6 +4651,7 @@ void SEQUENCER_set_visible_end_time(int64_t val){
 
 void SEQUENCER_set_grid_type(enum GridType grid_type){
   if(g_sequencer_widget->_grid_type != grid_type){
+    //printf("=============Setting grid type to %s.\n%s\n\n", grid_type_to_string(grid_type), JUCE_get_backtrace());
     g_sequencer_widget->_grid_type = grid_type;
     SEQUENCER_update(SEQUPDATE_TIME);
   }

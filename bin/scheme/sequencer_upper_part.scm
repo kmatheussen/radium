@@ -229,7 +229,7 @@
                                     (define new-time (get-sequencer-time-from-x (+ mouse-start-x dx) x1 x2))
                                     (if do-grid
                                         (if (not (<ra> :control-pressed))
-                                            (set! new-time (* 1.0 (<ra> :get-seq-gridded-time (round new-time) (<ra> :get-seq-block-grid-type))))))
+                                            (set! new-time (* 1.0 (<ra> :get-seq-gridded-time (round new-time))))))
                                     (when (not has-added-undo)
                                       (<ra> :undo-sequencer)
                                       (set! has-added-undo #t))

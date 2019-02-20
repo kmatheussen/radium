@@ -946,7 +946,7 @@
         (begin
           (<gui> :filled-box gui (<gui> :get-background-color gui) x1 y1 x2 y2 3 3)
           (draw-checkbox gui
-                         text
+                         (if (procedure? text) (text) text)
                          (is-selected-func)
                          x1 y1 x2 y2
                          selected-color
