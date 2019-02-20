@@ -907,6 +907,8 @@ static int show_gfx_message(vector_t *buttons, bool program_state_is_valid, QStr
   RememberGeometryQDialog::num_open_dialogs++;
 #endif
 
+  adjustSizeAndMoveWindowToCentre(msgBox);
+  
   {
     safeExec(msgBox, program_state_is_valid);
   }
