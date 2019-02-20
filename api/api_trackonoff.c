@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/track_onoff_proc.h"
+#include "../common/undo_trackheader_proc.h"
 
 
 #include "api_common_proc.h"

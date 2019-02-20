@@ -3434,6 +3434,10 @@ void copyEditorTrackOnOffToSeqblock(int seqblocknum, int seqtracknum){
   S7CALL2(void_int_int, "FROM_C-copy-editor-track-on/off-to-seqblock", seqblocknum, seqtracknum);
 }
 
+void copySeqblockTrackOnOffToEditor(int seqblocknum, int seqtracknum){
+  S7CALL2(void_int_int, "FROM_C-copy-seqblock-track-on/off-to-editor", seqblocknum, seqtracknum);
+}
+
 bool seqblockHoldsBlock(int seqblocknum, int seqtracknum, bool use_gfx_if_possible){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, use_gfx_if_possible);
