@@ -534,7 +534,8 @@
     show-instrument-color-dialog
     ;;FROM_C-prepare-seqblock-stretch-automation-for-interface2
     FROM_C-request-rename-instrument
-    apply-editor-track-on/off-to-seqblock
+    FROM_C-copy-editor-track-on/off-to-seqblock
+    FROM_C-copy-seqblock-track-on/off-to-editor
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
