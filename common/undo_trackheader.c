@@ -16,6 +16,7 @@ struct Undo_TrackHeader{
 	bool volumeonoff;
 	bool panonoff;
         int midi_channel;
+        int onoff;
 };
 
 static void fill_in(struct Undo_TrackHeader *u_th, struct WBlocks *wblock, struct WTracks *wtrack){
@@ -29,6 +30,7 @@ static void fill_in(struct Undo_TrackHeader *u_th, struct WBlocks *wblock, struc
   u_th->volumeonoff=track->volumeonoff;
   u_th->panonoff=track->panonoff;
   u_th->midi_channel=ATOMIC_GET(track->midi_channel);
+  u_th->onoff=track->onoff;
 }
 
 static void fill_out(struct Undo_TrackHeader *u_th, struct WBlocks *wblock, struct WTracks *wtrack){
@@ -42,6 +44,7 @@ static void fill_out(struct Undo_TrackHeader *u_th, struct WBlocks *wblock, stru
   track->volumeonoff=u_th->volumeonoff;
   track->panonoff = u_th->panonoff;
   ATOMIC_SET(track->midi_channel, u_th->midi_channel);
+  track->onoff = u_th->onoff;
 }
 
 static void *Undo_Do_TrackHeader(

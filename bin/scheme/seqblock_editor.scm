@@ -28,7 +28,7 @@
                              "The selected seqblock does not hold an editor block"))
         (else
          (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
-         (define has-made-undo #f)
+         (define has-made-undo #f)         
          (define (make-undo)
            (when (not has-made-undo)
              (<ra> :undo-seqblock seqblocknum seqtracknum)
@@ -40,7 +40,7 @@
                        (<ra> :set-seqblock-track-enabled
                              ison
                              tracknum seqblocknum seqtracknum)))
-                   (iota (<ra> :get-num-tracks blocknum))))))
+                   (iota (<ra> :get-num-tracks blocknum)))))))
 
   
 (delafina (FROM_C-copy-seqblock-track-on/off-to-editor :seqblocknum -1
@@ -66,11 +66,13 @@
                              "The selected seqblock does not hold an editor block"))
         (else
          (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
-         (for-each (lambda (tracknum)
-                     (<ra> :set-track-on
-                           (<ra> :is-seqblock-track-enabled tracknum seqblocknum seqtracknum)
-                           tracknum blocknum))
-                   (iota (<ra> :get-num-tracks blocknum))))))
+         (undo-block
+          (lambda ()
+            (for-each (lambda (tracknum)
+                        (<ra> :set-track-on
+                              (<ra> :is-seqblock-track-enabled tracknum seqblocknum seqtracknum)
+                              tracknum blocknum))
+                      (iota (<ra> :get-num-tracks blocknum))))))))
 
   
 (define-class (<seqblock-track-on-off-configuration>)

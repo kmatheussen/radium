@@ -142,14 +142,10 @@ void TRACK_OF_switch_spesified_CurrPos(
 
 void TRACK_set_on_off(
 	struct Tracker_Windows *window,
-	NInt tracknum,
+        struct Tracks *track,
         bool is_on
 ){
-	if(tracknum>=window->wblock->block->num_tracks) return;
-
-        struct WTracks *wtrack = (struct WTracks*)ListFindElement1(&window->wblock->wtracks->l,tracknum);
-        
-	SetTrackOnOff(wtrack->track, is_on);
+	SetTrackOnOff(track, is_on);
 
         window->must_redraw = true;
 }

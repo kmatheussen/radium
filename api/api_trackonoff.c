@@ -29,6 +29,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 
 void allTracksOn(void){
+  struct Tracker_Windows *window=getWindowFromNum(-1);
+
+  UNDO_OPEN();{
+    for(int tracknum=0;tracknum<window->wblock->block->num_tracks;tracknum++)
+      ADD_UNDO(TrackHeader(window->wblock->l.num, tracknum));
+  }UNDO_CLOSE();
+  
   AllTracksOn_CurrPos(root->song->tracker_windows);
 }
 
@@ -38,7 +45,11 @@ void switchTrackOn(int tracknum,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-	TRACK_OF_switch_spesified_CurrPos(window,tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum);
+        tracknum = tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum;
+        
+        ADD_UNDO(TrackHeader(window->wblock->l.num, tracknum));
+        
+	TRACK_OF_switch_spesified_CurrPos(window,tracknum);
 }
 
 bool trackOn(int tracknum,int blocknum,int windownum){
@@ -49,10 +60,14 @@ bool trackOn(int tracknum,int blocknum,int windownum){
 }
 
 void setTrackOn(bool ison, int tracknum,int blocknum,int windownum){
-  	struct Tracker_Windows *window=getWindowFromNum(windownum);
-	if(window==NULL) return;
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
 
-	TRACK_set_on_off(window,tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum, ison);
+  ADD_UNDO(TrackHeader(wblock->l.num, wtrack->l.num));
+  TRACK_set_on_off(window,wtrack->track, ison);
 }
 
 void soloTrack(int tracknum,int windownum){
@@ -61,7 +76,11 @@ void soloTrack(int tracknum,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-	TRACK_OF_solo_spesified_CurrPos(window,tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum);
+        tracknum = tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum;
+        
+        ADD_UNDO(TrackHeader(window->wblock->l.num, tracknum));
+        
+	TRACK_OF_solo_spesified_CurrPos(window,tracknum);
 }
 
 void switchSoloTrack(int tracknum,int windownum){
@@ -70,6 +89,10 @@ void switchSoloTrack(int tracknum,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-        TRACK_OF_switch_solo_spesified_CurrPos(window,tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum);
+        tracknum = tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum;
+        
+        ADD_UNDO(TrackHeader(window->wblock->l.num, tracknum));
+        
+        TRACK_OF_switch_solo_spesified_CurrPos(window,tracknum);
 }
 
