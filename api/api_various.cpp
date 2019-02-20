@@ -509,11 +509,12 @@ void insertReallines(int toinsert,int windownum){
 
 extern int g_downscroll;
 
-void generalDelete(int windownum){
+void generalDelete(bool scroll_down, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
 
   int downscroll = g_downscroll;
-  g_downscroll = 0;
+  if (!scroll_down)
+    g_downscroll = 0;
 
   switch(window->curr_track){
   case SWINGTRACK:
