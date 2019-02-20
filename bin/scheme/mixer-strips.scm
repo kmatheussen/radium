@@ -424,7 +424,6 @@
   (define is-enabled-content (<gui> :widget))
 
   (define config-gui (<gui> :vertical-layout))
-  (<gui> :set-parent config-gui parentgui)
 
   (<gui> :add config-gui is-enabled-content 3) ;; stretch 3
   (<gui> :add config-gui
@@ -463,6 +462,7 @@
   (define (show-config-gui)
     ;;(<gui> :show config-gui))
     (recreate-config-gui-content)
+    (<gui> :set-as-window config-gui parentgui)
     (<gui> :show config-gui)
     (when (not has-shown)
       (<gui> :move-to-centre-of config-gui parentgui)
