@@ -776,8 +776,8 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
   } else {
 
     int vu_width = root->song->tracker_windows->systemfontheight;
-    if ((e->modifiers() & Qt::MetaModifier) || mapToEditorX(widget, e->x()) < SEQTRACK_get_x1(0)-vu_width) {
-        
+    if (VerticalModifierPressed(e->modifiers()) || mapToEditorX(widget, e->x()) < SEQTRACK_get_x1(0)-vu_width) {
+
       int lowest_reasonable_topmost_seqtracknum = root->song->seqtracks.num_elements-1;
       int seqtracknum = root->song->topmost_visible_seqtrack;
       
