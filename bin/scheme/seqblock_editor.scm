@@ -5,15 +5,15 @@
 (my-require 'instruments.scm)
 (my-require 'area.scm)
 
-(delafina (apply-editor-track-on/off-to-seqblock :seqblocknum -1
-                                                 :seqtracknum -1)
+(delafina (apply-editor-track-on/off-to-seqblock :seqblocknum #f
+                                                 :seqtracknum #f)
   
-  (when (= -1 seqblocknum)
+  (when (not seqblocknum)
     (define id (<ra> :get-curr-seqblock-id))
     (when (>= id 0)
       (set! seqtracknum (<ra> :get-seqblock-seqtrack-num id))
       (set! seqblocknum (<ra> :get-seqblock-seqblock-num id))))
-                            
+  
   (cond ((not seqtracknum)
          (show-async-message (<gui> :get-sequencer-gui)
                              "No seqtrack selected"))
