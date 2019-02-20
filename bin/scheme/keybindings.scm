@@ -93,6 +93,8 @@
 (get-displayable-keybinding "ra:copy-paste-seqblocks" '())
 (get-displayable-keybinding "ra:copy-selected-mixer-objects" '())
 
+(<ra> :get-keybinding-from-command "ra.copyEditorTrackOnOffToSeqblock")
+
 (get-displayable-keybinding "ra:eval-scheme" '("(moduloskew-track -1)"))
   
 (let ((gakk (get-displayable-keybinding "ra:transpose-block" (list 1))))

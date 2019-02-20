@@ -47,6 +47,13 @@ bool trackOn(int tracknum,int blocknum,int windownum){
         return wtrack->track->onoff==1;
 }
 
+void setTrackOn(bool ison, int tracknum,int blocknum,int windownum){
+  	struct Tracker_Windows *window=getWindowFromNum(windownum);
+	if(window==NULL) return;
+
+	TRACK_set_on_off(window,tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum, ison);
+}
+
 void soloTrack(int tracknum,int windownum){
         printf("Solo track %d\n",tracknum);
         
