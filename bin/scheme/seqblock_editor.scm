@@ -40,7 +40,7 @@
                        (<ra> :set-seqblock-track-enabled
                              ison
                              tracknum seqblocknum seqtracknum)))
-                   (iota (<ra> :get-num-tracks blocknum)))))))
+                   (iota (<ra> :get-num-tracks blocknum))))))
 
   
 (delafina (FROM_C-copy-seqblock-track-on/off-to-editor :seqblocknum -1
