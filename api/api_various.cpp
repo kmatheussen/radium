@@ -2323,7 +2323,7 @@ static void init_keybindings(void){
     } else {
 
       if(HASH_remove(r_keybindings_from_keys, keybinding_line)==true){ // in case it was already there. (shouldn't happen)
-        R_ASSERT_NON_RELEASE(false);
+        //R_ASSERT_NON_RELEASE(false);
       }
       HASH_put_chars(r_keybindings_from_commands, commandstring, keybinding_line);
       
