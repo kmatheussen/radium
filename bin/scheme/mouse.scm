@@ -7921,6 +7921,7 @@
 
                                                  (list "Delete"
                                                        :shortcut *shift-right-mouse*
+                                                       :enabled seqblock-info
                                                        (lambda ()
                                                          (set! *current-seqblock-info* #f)
                                                          (<ra> :delete-seqblock seqblockid)
