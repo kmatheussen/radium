@@ -2892,24 +2892,41 @@
   (define das-mixer-strips-gui #f)
 
   (define _is-visible #t)
+  (define undone-remakes #f)
   
   (define (remake list-of-modified-instrument-ids)
     ;;(c-display "REMAKE" list-of-modified-instrument-ids ". gui visible:" (<gui> :is-visible gui) ". _is-visible:" _is-visible)
-    
-    (when _is-visible
-      (define start-time (time))
-      (set! g-total-time 0)
-      (set! g-total-time2 0)
-      (set! g-total-num-calls 0)
-      (set! g-total-sort-time 0)
 
-      (run-instrument-data-memoized
-       (lambda()
-         (<gui> :disable-updates gui)
-         ;;(c-display "   Size of das-stored:" (length das-stored-mixer-strips))
-         (create-mixer-strips (strips-config :num-rows) das-stored-mixer-strips strips-config list-of-modified-instrument-ids
-                              (lambda (new-mixer-strips new-mixer-strips-gui)
-                                (if das-mixer-strips-gui
+    (cond ((not _is-visible)
+           (cond ((not undone-remakes)
+                  (set! undone-remakes list-of-modified-instrument-ids))
+                 ((equal? list-of-modified-instrument-ids :non-are-valid)
+                  (set! undone-remakes :non-are-valid))
+                 ((equal? undone-remakes :non-are-valid)
+                  #t) ;; do nothing
+                 ((equal? undone-remakes :all-are-valid)
+                  (set! undone-remakes list-of-modified-instrument-ids))
+                 ((equal? list-of-modified-instrument-ids :all-are-valid)
+                  #t) ;; do nothing
+                 (else
+                  (assert (list? undone-remakes))
+                  (assert (list? list-of-modified-instrument-ids))
+                  (set! undone-remakes (remove-duplicates < = (append list-of-modified-instrument-ids
+                                                                      undone-remakes))))))
+          (else
+           (define start-time (time))
+           (set! g-total-time 0)
+           (set! g-total-time2 0)
+           (set! g-total-num-calls 0)
+           (set! g-total-sort-time 0)
+           
+           (run-instrument-data-memoized
+            (lambda()
+              (<gui> :disable-updates gui)
+              ;;(c-display "   Size of das-stored:" (length das-stored-mixer-strips))
+              (create-mixer-strips (strips-config :num-rows) das-stored-mixer-strips strips-config list-of-modified-instrument-ids
+                                   (lambda (new-mixer-strips new-mixer-strips-gui)
+                                     (if das-mixer-strips-gui
                                     (begin
                                       (<gui> :replace gui das-mixer-strips-gui new-mixer-strips-gui)
                                       (<gui> :close das-mixer-strips-gui))
@@ -2917,22 +2934,22 @@
                                       (<gui> :add gui new-mixer-strips-gui)
                                       ;;(<gui> :show mixer-strips-gui)
                                       ))
-                                
-                                ;;(c-display "...scan2")
-                                ;;(strips-config :scan-instruments!) ;; :scan-instruments! was called in 'create-mixer-strips'.
-                                (strips-config :recreate-config-gui-content)
-                                (set! das-stored-mixer-strips new-mixer-strips)
-                                (set! das-mixer-strips-gui new-mixer-strips-gui)
-                                ))
-         ))
-      
-      ;; prevent some flickering
-      (<ra> :schedule 15 (lambda ()
-                           (<gui> :enable-updates gui)
-                           #f))
-      
-      (c-display "   remake-gui duration: " (- (time) start-time) g-total-time "("g-total-num-calls ")" g-total-time2 g-total-sort-time)
-      ))
+                                     
+                                     ;;(c-display "...scan2")
+                                     ;;(strips-config :scan-instruments!) ;; :scan-instruments! was called in 'create-mixer-strips'.
+                                     (strips-config :recreate-config-gui-content)
+                                     (set! das-stored-mixer-strips new-mixer-strips)
+                                     (set! das-mixer-strips-gui new-mixer-strips-gui)
+                                     ))
+              ))
+           
+           ;; prevent some flickering
+           (<ra> :schedule 15 (lambda ()
+                                (<gui> :enable-updates gui)
+                                #f))
+           
+           (c-display "   remake-gui duration: " (- (time) start-time) g-total-time "("g-total-num-calls ")" g-total-time2 g-total-sort-time)
+           )))
 
 
   (define strips-config (create-strips-config instrument-ids num-rows remake gui))
@@ -2965,7 +2982,19 @@
                               gui))
                          *mixer-strips-objects*))))
 
+
   (<gui> :add-visibility-change-callback gui
+         (lambda (is-visible)
+           (when (not (eq? is-visible _is-visible))
+             (set! _is-visible is-visible)
+             (when (and is-visible
+                        undone-remakes)
+               (remake undone-remakes)
+               (set! undone-remakes #f)
+               ))))
+  
+  ;; Commented out since it doesn't remember scrollbar positions.
+  '(<gui> :add-visibility-change-callback gui
          (lambda (is-visible)
            (when (not (eq? is-visible _is-visible))
              (set! _is-visible is-visible)
