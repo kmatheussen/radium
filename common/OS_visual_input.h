@@ -54,6 +54,7 @@ extern LANGSPEC bool VerticalModifierPressed(void);
 #ifdef USE_QT4
 bool Control2Pressed(Qt::KeyboardModifiers modifiers);
 bool HorizontalModifierPressed(Qt::KeyboardModifiers modifiers);
+bool VerticalModifierPressed(Qt::KeyboardModifiers modifiers);
 #endif
 
 

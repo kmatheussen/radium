@@ -1047,7 +1047,7 @@ disk.o:  $(BUILD_DEPENDENCIES) $(CD)disk.c $(CD)disk.h
 disk_warea.o:  $(BUILD_DEPENDENCIES) $(CD)disk_warea.c $(CD)disk.h
 	$(CC) $(CD)disk_warea.c $(OPT)
 
-disk_save.o:  $(BUILD_DEPENDENCIES) $(CD)disk_save.c config/config.h
+disk_save.o:  $(BUILD_DEPENDENCIES) $(CD)disk_save.c config/config.h common/nag.h
 	$(CC) $(CD)disk_save.c $(OPT)
 
 disk_load.o:  $(BUILD_DEPENDENCIES) $(CD)disk_load.c config/config.h
@@ -1288,7 +1288,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
 
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
-Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h
+Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
 

@@ -2533,11 +2533,15 @@ bool ControlPressed(void){
 #endif
 }
 
+static bool ShiftPressed(Qt::KeyboardModifiers modifiers){
+  return modifiers & Qt::ShiftModifier;
+}
+
 bool ShiftPressed(void){
   if (editor_has_keyboard_focus()==true && QGuiApplication::mouseButtons()==Qt::NoButton)
     return AnyShift(tevent.keyswitch);
   else
-    return QApplication::keyboardModifiers() & Qt::ShiftModifier;
+    return ShiftPressed(QApplication::keyboardModifiers());
 }
 
 bool Control2Pressed(Qt::KeyboardModifiers modifiers){
@@ -2560,6 +2564,10 @@ bool HorizontalModifierPressed(void){
   return HorizontalModifierPressed(QApplication::keyboardModifiers());
 }
                                
+bool VerticalModifierPressed(Qt::KeyboardModifiers modifiers){
+  return ShiftPressed(modifiers);
+}
+
 bool VerticalModifierPressed(void){
   return ShiftPressed();
 }

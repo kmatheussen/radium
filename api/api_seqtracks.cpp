@@ -1855,6 +1855,8 @@ void setDoAutoCrossfades(double default_do_auto_crossfades){
 
 
 
+static bool g_sequencer_grid_enabled = true;
+
 void setSequencerGridType(const_char *grid_type){
   bool is_error=false;
   enum GridType what = !strcmp(grid_type, "current") ? SEQUENCER_get_grid_type() : string_to_grid_type(grid_type, &is_error);
@@ -1883,8 +1885,22 @@ int64_t getSeqGriddedTime(int64_t pos, const_char* type){
     handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", \"bar\", or \"current\". (\"%s\")", type);
     return pos;
   }
-    
+
+  if (g_sequencer_grid_enabled==false)
+    return pos;
+  
   return SEQUENCER_find_closest_grid_start(pos, what);
+}
+
+bool sequencerGridEnabled(void){
+  return g_sequencer_grid_enabled;
+}
+
+void setSequencerGridEnabled(bool val){
+  g_sequencer_grid_enabled = val;
+}
+
+void setPaintSequencerGrid(bool doit){
 }
 
 int64_t findClosestSeqtrackBarStart(int seqtracknum, int64_t pos){
@@ -1913,85 +1929,6 @@ int64_t findClosestSeqtrackLineStart(int seqtracknum, int64_t pos){
   
   return SEQUENCER_find_closest_line_start(pos);
 }
-
-
-static const char *g_block_grid = NULL;
-
-const_char *getSeqBlockGridType(void){
-  if (g_block_grid==NULL)
-    g_block_grid = SETTINGS_read_string("seq_block_grid_type", "bar");
-
-  return g_block_grid;
-}
-
-void setSeqBlockGridType(const_char *type){
-  if (strcmp(type, "no") && strcmp(type, "line") && strcmp(type, "beat") && strcmp(type, "bar")){
-    handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
-    return;
-  }
-
-  g_block_grid = talloc_strdup(type);
-  SETTINGS_write_string("seq_block_grid_type", g_block_grid);
-}
-
-static const char *g_automation_grid = NULL;
-
-const_char *getSeqAutomationGridType(void){
-  if (g_automation_grid==NULL)
-    g_automation_grid = SETTINGS_read_string("seq_automation_grid_type", "beat");
-
-  return g_automation_grid;
-}
-
-void setSeqAutomationGridType(const_char *type){
-  if (strcmp(type, "no") && strcmp(type, "line") && strcmp(type, "beat") && strcmp(type, "bar")){
-    handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
-    return;
-  }
-
-  g_automation_grid = talloc_strdup(type);
-  SETTINGS_write_string("seq_automation_grid_type", g_automation_grid);
-}
-
-static const char *g_tempo_grid = NULL;
-
-const_char *getSeqTempoGridType(void){
-  if (g_tempo_grid==NULL)
-    g_tempo_grid = SETTINGS_read_string("seq_tempo_grid_type", "beat");
-
-  return g_tempo_grid;
-}
-
-void setSeqTempoGridType(const_char *type){
-  if (strcmp(type, "no") && strcmp(type, "line") && strcmp(type, "beat") && strcmp(type, "bar")){
-    handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
-    return;
-  }
-
-  g_tempo_grid = talloc_strdup(type);
-  SETTINGS_write_string("seq_tempo_grid_type", g_tempo_grid);
-}
-
-
-static const char *g_loop_grid = NULL;
-
-const_char *getSeqLoopGridType(void){
-  if (g_loop_grid==NULL)
-    g_loop_grid = SETTINGS_read_string("seq_loop_grid_type", "beat");
-
-  return g_loop_grid;
-}
-
-void setSeqLoopGridType(const_char *type){
-  if (strcmp(type, "no") && strcmp(type, "line") && strcmp(type, "beat") && strcmp(type, "bar")){
-    handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
-    return;
-  }
-
-  g_loop_grid = talloc_strdup(type);
-  SETTINGS_write_string("seq_loop_grid_type", g_loop_grid);
-}
-
 
 
 void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
@@ -3388,7 +3325,7 @@ void unsetAllSelectedSeqblocks(void){
 
 bool isSeqblockTrackEnabled(int tracknum, int seqblocknum, int seqtracknum){
   if (tracknum < 0 || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS){
-    handleError("setSeqblockTrackEnabled: Illegal tracknum: %d", tracknum);
+    handleError("isSeqblockTrackEnabled: Illegal tracknum: %d", tracknum);
     return false;
   }
     
@@ -3398,7 +3335,7 @@ bool isSeqblockTrackEnabled(int tracknum, int seqblocknum, int seqtracknum){
     return false;
 
   if (seqblock->block==NULL){
-    handleError("getSeqblockBlocknum: Seqblock %d in Seqtrack %d is not a block seqblock", seqblocknum, seqtracknum);
+    handleError("isSeqblockTrackEnabled: Seqblock %d in Seqtrack %d is not a block seqblock", seqblocknum, seqtracknum);
     return false;
   }
 
@@ -3428,6 +3365,14 @@ void setSeqblockTrackEnabled(bool is_enabled, int tracknum, int seqblocknum, int
     }PC_StopPause(NULL);
     SEQUENCER_update(SEQUPDATE_TIME);
   }
+}
+
+void copyEditorTrackOnOffToSeqblock(int seqblocknum, int seqtracknum){
+  S7CALL2(void_int_int, "FROM_C-copy-editor-track-on/off-to-seqblock", seqblocknum, seqtracknum);
+}
+
+void copySeqblockTrackOnOffToEditor(int seqblocknum, int seqtracknum){
+  S7CALL2(void_int_int, "FROM_C-copy-seqblock-track-on/off-to-editor", seqblocknum, seqtracknum);
 }
 
 bool seqblockHoldsBlock(int seqblocknum, int seqtracknum, bool use_gfx_if_possible){

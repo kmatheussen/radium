@@ -5,9 +5,13 @@
 (my-require 'instruments.scm)
 (my-require 'area.scm)
 
-(delafina (apply-editor-track-on/off-to-seqblock :seqblocknum #f
-                                                 :seqtracknum #f)
+(delafina (FROM_C-copy-editor-track-on/off-to-seqblock :seqblocknum -1
+                                                       :seqtracknum -1)
   
+  (when (< seqblocknum 0)
+    (set! seqblocknum #f)
+    (set! seqtracknum #f))
+    
   (when (not seqblocknum)
     (define id (<ra> :get-curr-seqblock-id))
     (when (>= id 0)
@@ -28,12 +32,55 @@
                              "The selected seqblock does not hold an editor block"))
         (else
          (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
-         (<ra> :undo-seqblock seqblocknum seqtracknum)
+         (define has-made-undo #f)         
+         (define (make-undo)
+           (when (not has-made-undo)
+             (<ra> :undo-seqblock seqblocknum seqtracknum)
+             (set! has-made-undo #t)))
          (for-each (lambda (tracknum)
-                     (<ra> :set-seqblock-track-enabled
-                           (<ra> :track-on tracknum blocknum)
-                           tracknum seqblocknum seqtracknum))
+                     (define ison (<ra> :track-on tracknum blocknum))
+                     (when (not (eq? ison (<ra> :is-seqblock-track-enabled tracknum seqblocknum seqtracknum)))
+                       (make-undo)
+                       (<ra> :set-seqblock-track-enabled
+                             ison
+                             tracknum seqblocknum seqtracknum)))
                    (iota (<ra> :get-num-tracks blocknum))))))
+
+  
+(delafina (FROM_C-copy-seqblock-track-on/off-to-editor :seqblocknum -1
+                                                       :seqtracknum -1)
+  
+  (when (< seqblocknum 0)
+    (set! seqblocknum #f)
+    (set! seqtracknum #f))
+  
+  (when (not seqblocknum)
+    (define id (<ra> :get-curr-seqblock-id))
+    (when (>= id 0)
+      (set! seqtracknum (<ra> :get-seqblock-seqtrack-num id))
+      (set! seqblocknum (<ra> :get-seqblock-seqblock-num id))))
+                            
+  (cond ((not seqtracknum)
+         (show-async-message (<gui> :get-sequencer-gui)
+                             "No seqtrack selected"))
+        ((not seqblocknum)
+         (show-async-message (<gui> :get-sequencer-gui)
+                             "No seqblock selected"))         
+        ((<ra> :seqtrack-for-audiofiles seqtracknum)
+         (show-async-message (<gui> :get-sequencer-gui)
+                             "Current seqtrack is for audio files, not editor blocks"))
+        ((not (<ra> :seqblock-holds-block seqblocknum seqtracknum))
+         (show-async-message (<gui> :get-sequencer-gui)
+                             "The selected seqblock does not hold an editor block"))
+        (else
+         (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
+         (undo-block
+          (lambda ()
+            (for-each (lambda (tracknum)
+                        (<ra> :set-track-on
+                              (<ra> :is-seqblock-track-enabled tracknum seqblocknum seqtracknum)
+                              tracknum blocknum))
+                      (iota (<ra> :get-num-tracks blocknum))))))))
 
   
 (define-class (<seqblock-track-on-off-configuration>)

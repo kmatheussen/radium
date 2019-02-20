@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1102</width>
+    <width>1119</width>
     <height>632</height>
    </rect>
   </property>
@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -1128,6 +1128,15 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -1283,6 +1292,15 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -1435,6 +1453,15 @@ by mixing sound for all the buses.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -1907,6 +1934,15 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -2062,6 +2098,15 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -2214,6 +2259,15 @@ by mixing sound for all the buses.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -2408,6 +2462,15 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -2563,6 +2626,15 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -2715,6 +2787,15 @@ by mixing sound for all the buses.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -2968,6 +3049,15 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -3120,6 +3210,15 @@ by mixing sound for all the buses.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -3278,6 +3377,15 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
@@ -3413,7 +3521,7 @@ by mixing sound for all the buses.
          <item>
           <widget class="QGroupBox" name="groupBox_14">
            <property name="title">
-            <string>Play Cursor</string>
+            <string>Play-cursor</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
@@ -3502,175 +3610,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <item>
-          <widget class="QGroupBox" name="groupBox_13">
-           <property name="title">
-            <string>Grid</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_10">
-            <item row="0" column="3">
-             <widget class="QGroupBox" name="groupBox_9">
-              <property name="title">
-               <string>Loop/Punch Start/Stop</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_14">
-               <item>
-                <widget class="QRadioButton" name="loop_no_grid">
-                 <property name="toolTip">
-                  <string>Tip: There is no grid when pressing CTRL either</string>
-                 </property>
-                 <property name="text">
-                  <string>No Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="loop_line_grid">
-                 <property name="text">
-                  <string>Line Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="loop_beat_grid">
-                 <property name="text">
-                  <string>Beat Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="loop_bar_grid">
-                 <property name="text">
-                  <string>Bar Grid</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item row="0" column="2">
-             <widget class="QGroupBox" name="groupBox_8">
-              <property name="title">
-               <string>Tempo Automation</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_13">
-               <item>
-                <widget class="QRadioButton" name="tempo_no_grid">
-                 <property name="toolTip">
-                  <string>Tip: There is no grid when pressing CTRL either</string>
-                 </property>
-                 <property name="text">
-                  <string>No Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="tempo_line_grid">
-                 <property name="text">
-                  <string>Line Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="tempo_beat_grid">
-                 <property name="text">
-                  <string>Beat Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="tempo_bar_grid">
-                 <property name="text">
-                  <string>Bar Grid</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QGroupBox" name="groupBox_7">
-              <property name="title">
-               <string>Effect Automation</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_12">
-               <item>
-                <widget class="QRadioButton" name="automation_no_grid">
-                 <property name="toolTip">
-                  <string>Tip: There is no grid when pressing CTRL either</string>
-                 </property>
-                 <property name="text">
-                  <string>No Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="automation_line_grid">
-                 <property name="text">
-                  <string>Line Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="automation_beat_grid">
-                 <property name="text">
-                  <string>Beat Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="automation_bar_grid">
-                 <property name="text">
-                  <string>Bar Grid</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QGroupBox" name="groupBox_6">
-              <property name="title">
-               <string>Moving Blocks</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_11">
-               <item>
-                <widget class="QRadioButton" name="block_no_grid">
-                 <property name="toolTip">
-                  <string>Tip: There is no grid when pressing CTRL either</string>
-                 </property>
-                 <property name="text">
-                  <string>No Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="block_line_grid">
-                 <property name="text">
-                  <string>Line Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="block_beat_grid">
-                 <property name="text">
-                  <string>Beat Grid</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="block_bar_grid">
-                 <property name="text">
-                  <string>Bar Grid</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
          <item>
           <widget class="QGroupBox" name="groupBox_16">
            <property name="title">
@@ -4082,6 +4021,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -4237,6 +4185,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -4389,6 +4346,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -4594,6 +4560,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -4749,6 +4724,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -4901,6 +4885,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -5079,6 +5072,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -5234,6 +5236,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -5386,6 +5397,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -5564,6 +5584,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -5719,6 +5748,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -5871,6 +5909,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -6120,6 +6167,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -6275,6 +6331,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -6427,6 +6492,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -6632,6 +6706,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -6787,6 +6870,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -6939,6 +7031,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -7131,6 +7232,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -7286,6 +7396,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -7438,6 +7557,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -7713,6 +7841,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -7865,6 +8002,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -8023,6 +8169,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
@@ -8173,8 +8328,8 @@ you should check this box.
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>398</width>
-            <height>28</height>
+            <width>600</width>
+            <height>536</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -8432,6 +8587,15 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -8587,6 +8751,15 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -8739,6 +8912,15 @@ you should check this box.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -8937,6 +9119,15 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -9092,6 +9283,15 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -9244,6 +9444,15 @@ you should check this box.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -9442,6 +9651,15 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -9597,6 +9815,15 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -9749,6 +9976,15 @@ you should check this box.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -9934,6 +10170,15 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -10089,6 +10334,15 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -10241,6 +10495,15 @@ you should check this box.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -10439,6 +10702,15 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -10591,6 +10863,15 @@ you should check this box.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -10749,6 +11030,15 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
@@ -10794,8 +11084,8 @@ you should check this box.
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>100</width>
-               <height>30</height>
+               <width>969</width>
+               <height>244</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -11012,9 +11302,9 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup_4"/>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
-  <buttongroup name="buttonGroup_4"/>
-  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>
