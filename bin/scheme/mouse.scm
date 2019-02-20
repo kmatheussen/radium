@@ -8047,12 +8047,13 @@
                                                                  (<ra> :config-block)))
                                                          
                                                          "------------------------"
-                                                         (list "Apply editor track on/off to seqblock"
+                                                         (list "Copy editor track on/off -> seqblock track on/off"
                                                                :enabled (and blocknum seqblocknum)
+                                                               :shortcut ra:copy-editor-track-on-off-to-seqblock
                                                                (lambda ()
-                                                                 (apply-editor-track-on/off-to-seqblock seqblocknum seqtracknum)))
+                                                                 (FROM_C-apply-editor-track-on/off-to-seqblock seqblocknum seqtracknum)))
 
-                                                         (list "Enable/disable editor tracks (double click)"
+                                                         (list "Seqblock track on/off editor (double click)" ;;Enable/disable editor tracks (double click)"
                                                                :enabled (and blocknum seqblocknum)
                                                                (lambda ()
                                                                  (show-seqblock-track-on-off-configuration seqblockid)))))

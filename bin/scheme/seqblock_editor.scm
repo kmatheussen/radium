@@ -5,8 +5,8 @@
 (my-require 'instruments.scm)
 (my-require 'area.scm)
 
-(delafina (apply-editor-track-on/off-to-seqblock :seqblocknum -1
-                                                 :seqtracknum -1)
+(delafina (FROM_C-copy-editor-track-on/off-to-seqblock :seqblocknum -1
+                                                       :seqtracknum -1)
   
   (when (= -1 seqblocknum)
     (define id (<ra> :get-curr-seqblock-id))
