@@ -1128,15 +1128,6 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -1292,15 +1283,6 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -1453,15 +1435,6 @@ by mixing sound for all the buses.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -1934,15 +1907,6 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -2098,15 +2062,6 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -2259,15 +2214,6 @@ by mixing sound for all the buses.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -2462,15 +2408,6 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -2626,15 +2563,6 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -2787,15 +2715,6 @@ by mixing sound for all the buses.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -3049,15 +2968,6 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -3213,15 +3123,6 @@ by mixing sound for all the buses.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -3374,15 +3275,6 @@ by mixing sound for all the buses.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -4021,15 +3913,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
-                </color>
-               </brush>
-              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -4185,15 +4068,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
-                </color>
-               </brush>
-              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -4346,15 +4220,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
-                </color>
-               </brush>
-              </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -4560,15 +4425,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
-                </color>
-               </brush>
-              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -4724,15 +4580,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
-                </color>
-               </brush>
-              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -4885,15 +4732,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
-                </color>
-               </brush>
-              </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -5072,15 +4910,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
-                </color>
-               </brush>
-              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -5236,15 +5065,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
-                </color>
-               </brush>
-              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -5397,15 +5217,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
-                </color>
-               </brush>
-              </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -5584,15 +5395,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
-                </color>
-               </brush>
-              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -5748,15 +5550,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
-                </color>
-               </brush>
-              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -5909,15 +5702,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
-                </color>
-               </brush>
-              </colorrole>
-              <colorrole role="PlaceholderText">
-               <brush brushstyle="NoBrush">
-                <color alpha="128">
-                 <red>84</red>
-                 <green>84</green>
-                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -6167,15 +5951,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -6331,15 +6106,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -6492,15 +6258,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -6706,15 +6463,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -6870,15 +6618,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -7031,15 +6770,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -7232,15 +6962,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -7396,15 +7117,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -7557,15 +7269,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -7841,15 +7544,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -8005,15 +7699,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -8166,15 +7851,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -8587,15 +8263,6 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -8751,15 +8418,6 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -8912,15 +8570,6 @@ you should check this box.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -9119,15 +8768,6 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -9283,15 +8923,6 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -9444,15 +9075,6 @@ you should check this box.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -9651,15 +9273,6 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -9815,15 +9428,6 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -9976,15 +9580,6 @@ you should check this box.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -10170,15 +9765,6 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -10334,15 +9920,6 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -10495,15 +10072,6 @@ you should check this box.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -10702,15 +10270,6 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -10866,15 +10425,6 @@ you should check this box.
               </color>
              </brush>
             </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
-              </color>
-             </brush>
-            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -11027,15 +10577,6 @@ you should check this box.
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
-              </color>
-             </brush>
-            </colorrole>
-            <colorrole role="PlaceholderText">
-             <brush brushstyle="NoBrush">
-              <color alpha="128">
-               <red>84</red>
-               <green>84</green>
-               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
