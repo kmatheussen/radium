@@ -3430,6 +3430,10 @@ void setSeqblockTrackEnabled(bool is_enabled, int tracknum, int seqblocknum, int
   }
 }
 
+void copyEditorTrackOnOffToSeqblock(int seqblocknum, int seqtracknum){
+  S7CALL2(void_int_int, "FROM_C-copy-editor-track-on/off-to-seqblock", seqblocknum, seqtracknum);
+}
+
 bool seqblockHoldsBlock(int seqblocknum, int seqtracknum, bool use_gfx_if_possible){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, use_gfx_if_possible);
