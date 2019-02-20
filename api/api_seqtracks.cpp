@@ -3388,7 +3388,7 @@ void unsetAllSelectedSeqblocks(void){
 
 bool isSeqblockTrackEnabled(int tracknum, int seqblocknum, int seqtracknum){
   if (tracknum < 0 || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS){
-    handleError("setSeqblockTrackEnabled: Illegal tracknum: %d", tracknum);
+    handleError("isSeqblockTrackEnabled: Illegal tracknum: %d", tracknum);
     return false;
   }
     
@@ -3398,7 +3398,7 @@ bool isSeqblockTrackEnabled(int tracknum, int seqblocknum, int seqtracknum){
     return false;
 
   if (seqblock->block==NULL){
-    handleError("getSeqblockBlocknum: Seqblock %d in Seqtrack %d is not a block seqblock", seqblocknum, seqtracknum);
+    handleError("isSeqblockTrackEnabled: Seqblock %d in Seqtrack %d is not a block seqblock", seqblocknum, seqtracknum);
     return false;
   }
 
