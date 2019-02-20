@@ -36,7 +36,7 @@ extern LANGSPEC void TRACK_OF_switch_spesified_CurrPos(
 
 extern LANGSPEC void TRACK_set_on_off(
                                       struct Tracker_Windows *window,
-                                      NInt tracknum,
+                                      struct Tracks *track,
                                       bool is_on
                                       );
 
