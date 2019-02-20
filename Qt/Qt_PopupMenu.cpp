@@ -260,6 +260,7 @@ namespace{
 
 
   static QPointer<QWidget> g_last_hovered_widget;
+  static QPointer<MyQAction> g_last_hovered_myaction;
   
   class MyQAction : public QWidgetAction {
     Q_OBJECT
@@ -302,6 +303,11 @@ namespace{
       }
     }
 
+    // Called by MyQMenu. (workaround for stupid separator behaviour in Qt)
+    virtual bool my_clicked(void){
+      return false; // don't eat mouse press event
+    }
+
   public slots:
 
     // This one is called when toggling the checkbox itself, not just the whole widget (outside the checkbox)
@@ -331,6 +337,11 @@ namespace{
       connect(this, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
     }
 
+    bool my_clicked(void) override{
+      toggled(!isChecked());
+      return true;  // eat mouse press event
+    }
+
   public slots:
     void toggled(bool checked){
       callbacker->run_and_delete_checked(checked, callbacker);
@@ -354,6 +365,11 @@ namespace{
       , callbacker(callbacker)
     {
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
+    }
+
+    bool my_clicked(void) override{
+      triggered();
+      return true; // eat mouse press event
     }
 
   public slots:
@@ -381,7 +397,7 @@ namespace{
       //connect(this, SIGNAL(hovered()), this, SLOT(hovered()));
       //connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
       setSeparator(true);
-      setEnabled(false);
+      //setEnabled(false);
     }
     /*
   public slots:
@@ -412,6 +428,13 @@ namespace{
     {
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
     }
+
+    /*
+    bool my_clicked(void) override {
+      triggered();
+      return true; // eat mouse press event
+    }
+    */
 
   public slots:
     void triggered(){
@@ -559,7 +582,17 @@ namespace{
       }
     }
   
+    void mousePressEvent(QMouseEvent *event) override{
+      //printf("MOUSEPRESS. Last hovered: %d - %d\n", (int)_my_last_hovered_menu_entry_guinum, (int)g_last_hovered_menu_entry_guinum);
 
+      MyQAction *myaction = g_last_hovered_myaction.data();
+      
+      if (myaction!=NULL && myaction->my_clicked()==true)
+        event->accept();
+      else
+        QMenu::mousePressEvent(event);
+    }
+    
     /*
     void actionEvent(QActionEvent *e) override{
       printf("   ACTION EVENT called: %p\n", e);
@@ -577,8 +610,11 @@ namespace{
         
         g_last_hovered_menu_entry_guinum = -1;
         _my_last_hovered_menu_entry_guinum = -1;
+        
         g_last_hovered_widget = NULL;
 
+        g_last_hovered_myaction = NULL;
+                  
         if(old!=NULL)
           old->update();
         //updateWidgetRecursively(this);
@@ -599,18 +635,26 @@ namespace{
         
         g_last_hovered_menu_entry_guinum = myaction->_guinum;
         _my_last_hovered_menu_entry_guinum = -1;
+        
         g_last_hovered_widget = myaction->_widget;
+
+        if (myaction->isEnabled())
+          g_last_hovered_myaction = myaction;
+        else
+          g_last_hovered_myaction = NULL;
 
         //printf("  Hovered ON: %d\n", (int)g_last_hovered_menu_entry_guinum);
 
       } else {
-
+        
         //printf("  Hovered OFF: %d\n", (int)g_last_hovered_menu_entry_guinum);
         
         g_last_hovered_menu_entry_guinum = -1;
         _my_last_hovered_menu_entry_guinum = -1;
+
         g_last_hovered_widget = NULL;
-        
+
+        g_last_hovered_myaction = NULL;
       }
       
       //printf("  QMENU::HOVERED action: %p. myaction: %p. Is separator: %d\n", action, myaction, action->isSeparator());
