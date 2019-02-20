@@ -949,7 +949,7 @@
                           (* fontheight 1.3)
                           height))
 
-  (define b (max 1 (myfloor (/ fontheight 10)))) ;; border between areas.
+  (define b (max 0.1 (myfloor (/ fontheight 10)))) ;; border between areas.
   
   (define x-meter-split (- x2 (+ b meter-width)))
   (define x1-split (+ x1 (myfloor (* 1.8 (<gui> :text-width "9:")))))
@@ -988,7 +988,7 @@
   
   (define panner-x2 (if use-two-rows x-meter-split x2-split))
   (define panner-y1 (if use-two-rows
-                        (+ b y-split)
+                        (+ 0 y-split)
                         y1))
   (define panner-y2 (min (+ panner-y1 fontheight)
                          (- y2 fontheight)))
@@ -996,7 +996,7 @@
   
   (define vol-x2 panner-x2)
   (define vol-y1 (if show-panner
-                     (+ 2 panner-y2)
+                     (+ 0 panner-y2)
                      panner-y1))
   (define vol-y2 y2)
     
