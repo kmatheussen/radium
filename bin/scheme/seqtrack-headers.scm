@@ -21,7 +21,7 @@
 
 (define (get-seqtrack-background-color gui seqtracknum)
   (if (not (<ra> :seqtrack-for-audiofiles seqtracknum))
-      (if (= seqtracknum (<ra> :get-curr-seqtrack))
+      (if (and #f (= seqtracknum (<ra> :get-curr-seqtrack)))
           *curr-seqtrack-color*
           (get-instrument-background-color gui -1))
       (begin
