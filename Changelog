@@ -1,3 +1,126 @@
+Changes 5.9.36 -> 5.9.38:
+* Modular mixer: Show statusbar message about
+  creating new connections when mouse is hovering
+  over lower half of name, or hovering over the
+  input/output slot positions.
+* Modular mixer: Display mute/solo/bypass/volume in
+  statusbar when edited and hovered by mouse.
+* Mixer: Improve statusbar text for solo and mute.
+* Sequencer: Don't use different background color for
+  the current seqtrack header if the current seqtrack
+  is for editor blocks.
+* Mixer: Improve mixer strip popup menu.
+* Help: Improve mixer help somewhat.
+* Editor: Pressing shift while editing text
+  (fxtext/bpmtext/etc.) prevents cursor from moving
+  down.
+* Editor: Pressing shift while pressing the DEL key
+  prevents cursor from moving down.
+* New song: Turn off the high shelf filter for the
+  reverb. Don't know when +9dB 4500Hz happened, but
+  it seldomly sounds very good.
+* New song: Explicitly set connection type for the
+  connections.
+* Mixer: Fix configuration window not being on top of
+  mixer window.
+* Sequencer: Add a Grid checkbox to the seqtrack
+  header top button bar. Right click this checkbox to
+  change grid type.
+* Sequencer: Remove the sequencer grid options in the
+  preferences since this grid configuration has been
+  replaced by the Grid checkbox in the seqtracks
+  header.
+* Sequencer: Fix status bar text for the dragger.
+* Preferences: rename "Play Cursor" to "Play-cursor".
+* GUI: Fix placing message windows in the middle of
+  the parent window.
+* Nag window: Make simpler.
+* Internal: Improve scheme backtrace display.
+* Editor: Add undo/redo for setting track on/off.
+* GUI: Fix popup menus so that when you click, the
+  marked entry is selected, no matter whether the
+  mouse pointer is above a separator or not.
+  Workaround for Qt misbehavior.
+* Sequencer: Don't enable the "delete seqblock" entry
+  in the popup menu when mouse pointer is not above
+  a seqblock.
+* Sequencer: Add options "Copy editor track on/off ->
+  seqblock track on/off" and "Copy seqblock track
+  on/off -> editor track on/off" to the editor. Can
+  also be accessed by pressing Ctrl + Page Up /
+  Ctrl + Page Down.  
+  seqblock popup menu.
+* Init: 1. Lower startup time.
+* Init: Wait until startup is completely finished
+  before closing the progress window.
+* VST/AU: Add option to disable the virtual MIDI
+  keyboard below native GUIs.
+* Import MOD: show pattern number in progress bar
+  when sending patterns to radium.
+* Import MOD: Only open one progress window.
+* Web browser: Use direct method to zoom.
+* Mixer: Add options to explicitly change connection
+  type for the sliders in the mixer strip paths.
+  Either "Plugin", "Send", or "Auto".
+* OSX: Show warning during startup if running
+  macos 10.14 or newer.
+* Init: Show progress window a little bit earlier in
+  the process.
+* Help: Clarify that Radium never uses Jack Transport
+  for timing information.
+* Mixer: When adding plugin or send to a strip,
+  store the connection type (plugin or send) so that
+  the entries don't change role afterwards. For
+  instance, the roles could earlier change when
+  moving sound objects around in the modular mixer.
+* Remove some debug output from prev. commit. 
+* Mixer: Improve GUI performance a little bit.
+* Sequencer/Mixer: Various GUI tweaks.
+* Sequencer/Mixer: Make the color for current
+  seqtrack/mixer strip much brighter.
+* Mixer: Add status bar text when mouse pointer is
+  above volume slider, audio meter, volume text,
+  peak text, mute button, solo button, and pan
+  slider.
+* Mixer: Clean up the interface for inserting new
+  plugin and new send. (More cleanups needed though.)
+* Jack transport: When stopping to play block, don't
+  jump back to sequencer start position.
+* Menus: Make the dot entries (".") work when
+  clicking on them.
+* Menus: Make "play song" and so forth only play, not
+  stop if already playing. Vice versa for the stop
+  entries.
+* Menus: Fix wrong command being executed for all
+  entries having the same menu text, except the last
+  entry.
+* Help: Added picture of the instrument effect popup
+  menu to the instrument effect popup menu help page.
+* Jack transport: Fix various issues with playing,
+  stopping, and positioning cursor.
+* Help: Added info about Jack Transport to the timing
+  documentation.
+* GUI: Minor scrollarea/scrollbar update tweak.
+* API:
+  * New: gui_addVisibilityChangeCallback,
+    getAudioConnectionType, setAudioConnectionType,
+    showVirtualMidiKeyboardBelowNativeGUIs,
+    setShowVirtualMidiKeyboardBelowNativeGUIs,
+    copyEditorTrackOnOffToSeqblock,
+    copySeqblockTrackOnOffToEditor, setTrackOn,
+    sequencerGridEnabled, setSequencerGridEnabled,
+    setPaintSequencerGrid.
+  * Deleted: getSeqBlockGridType,
+    setSeqBlockGridType, getSeqAutomationGridType,
+    setSeqAutomationGridType, getSeqTempoGridType,
+    setSeqTempoGridType, getSeqLoopGridType,
+    setSeqLoopGridType.
+  * Add optional argument "connection_type" to
+    createAudioConnection.
+  * Let changeAudioConnections understand
+    ":connection-type" field for connections.
+
+
 Changes 5.9.34 -> 5.9.36:
 * Mixer: Set current instrument immediately when
   clicking a plugin or send slider. No need to
