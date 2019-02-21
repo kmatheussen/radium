@@ -149,7 +149,10 @@ extern LANGSPEC void MW_set_connections_visibility(bool show);
 
 extern LANGSPEC void MW_connect_plugin_to_main_pipe(SoundPlugin *plugin);
 
+#ifdef __cplusplus
 extern void MW_connect(struct Patch *source, struct Patch *dest, ConnectionType connection_type);
+#endif
+
 extern LANGSPEC void MW_econnect(struct Patch *source, struct Patch *dest);
 
 extern LANGSPEC bool MW_disconnect(struct Patch *source, struct Patch *dest);
