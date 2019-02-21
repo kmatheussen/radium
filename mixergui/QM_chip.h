@@ -102,7 +102,7 @@ public:
   bool myMouseDoubleClickEvent (float x, float y);
 
   QString _name_text;
-  
+
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
@@ -110,6 +110,10 @@ protected:
 
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
+  void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ) override;
+  void hoverMoveEvent ( QGraphicsSceneHoverEvent * event ) override;
+  void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ) override;
+  
 #if 0
   void hoverMoveEvent ( QGraphicsSceneHoverEvent * event ) override{
     printf("got hovermove event\n");

@@ -648,6 +648,13 @@ static inline bool is_muted(const SoundPlugin *plugin){
     return !ATOMIC_GET(plugin->volume_is_on);
 }
 
+static inline bool is_muted_relaxed(const SoundPlugin *plugin){
+  if (plugin->type->num_outputs==0)
+    return !ATOMIC_GET_RELAXED(plugin->input_volume_is_on);
+  else
+    return !ATOMIC_GET_RELAXED(plugin->volume_is_on);
+}
+
 // Call this function to get effects from the realtime process.
 // For instance, if there is a volume starting from 0.5, and ending at 1.0, in the current block of 1024 frames,
 // then the function will return {0.5, 0.50048828125, 0.5009765625, ..., 1.0}

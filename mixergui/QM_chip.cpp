@@ -1475,7 +1475,7 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
   , _last_updated_autosuspending(false)
   , _slider_being_edited(0)
 {
-
+  
    setPos(QPointF(x,y));
    //MW_move_chip_to_slot(this, x, y); // unfortunately, this function very often moves the chip to the right unnecessarily.
 
@@ -1721,13 +1721,13 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
       int x1,y1,x2,y2;
       get_volume_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "M", text_color, Qt::green, x1,y1,x2,y2, is_muted(plugin), SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(_sound_producer));
+      paint_checkbutton(painter, "M", text_color, Qt::green, x1,y1,x2,y2, is_muted_relaxed(plugin), SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(_sound_producer));
 
       get_solo_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "S", text_color, Qt::yellow, x1,y1,x2,y2, ATOMIC_GET(plugin->solo_is_on), false);
+      paint_checkbutton(painter, "S", text_color, Qt::yellow, x1,y1,x2,y2, ATOMIC_GET_RELAXED(plugin->solo_is_on), false);
 
       get_effects_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "B", text_color, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, !ATOMIC_GET(plugin->effects_are_on), false);
+      paint_checkbutton(painter, "B", text_color, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, !ATOMIC_GET_RELAXED(plugin->effects_are_on), false);
     }
   }
 
@@ -1882,6 +1882,120 @@ bool Chip::positionedAtSlider(QPointF pos){
   return false;
 }
 
+static bool in_solo_button(const QPointF &pos){
+  int x1,y1,x2,y2;
+  get_solo_onoff_coordinates(x1,y1,x2,y2);
+
+  return pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2;
+}
+
+static bool in_volume_button(const QPointF &pos){
+  int x1,y1,x2,y2;
+  get_volume_onoff_coordinates(x1,y1,x2,y2);
+
+  return pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2;
+}
+
+static bool in_bypass_button(const QPointF &pos){
+  int x1,y1,x2,y2;
+  get_effects_onoff_coordinates(x1,y1,x2,y2);
+
+  return pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2;
+}
+
+static bool in_slider(const QPointF &pos){
+  int x1,y1,x2,y2;
+  get_slider1_coordinates(x1,y1,x2,y2);      
+
+  return pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2;     
+}
+
+static int64_t g_statusbar_id = -1;
+
+void Chip::hoverEnterEvent ( QGraphicsSceneHoverEvent * event ){
+  if (g_statusbar_id >= 0){
+    removeStatusbarText(g_statusbar_id);
+    g_statusbar_id=-1;
+  }
+}
+
+static void set_solo_statusbar(Chip *chip){
+  SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+  const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+  
+  bool solo_is_on = ATOMIC_GET_RELAXED(plugin->solo_is_on);
+  g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, solo_is_on ? "Solo On" : "Solo Off"));
+}
+
+static void set_mute_statusbar(Chip *chip){
+  SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+  const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+  bool is_implicitly_muted = instrumentIsImplicitlyMuted(patch->id);
+  
+  g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, is_implicitly_muted ? "Implicitly muted" : is_muted_relaxed(plugin) ? "Mute On" : "Mute Off"));
+}
+
+static void set_bypass_statusbar(Chip *chip){
+  SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+  const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+  bool effects_are_on = ATOMIC_GET_RELAXED(plugin->effects_are_on);
+  g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, effects_are_on ? "Bypass Off" : "Bypass On"));
+}
+
+static void set_slider_statusbar(Chip *chip){
+  SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+  const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+  int effect_num = chip->get_volume_effect_num();
+  
+  char temp[64] = {};
+  PLUGIN_get_display_value_string(plugin, effect_num, temp, 62);
+  
+  g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, temp));
+}
+
+void Chip::hoverMoveEvent ( QGraphicsSceneHoverEvent * event ){
+  const QPointF pos = event->pos();
+  
+  if (in_solo_button(pos)){
+
+    set_solo_statusbar(this);
+    
+  } else if (in_volume_button(pos)){
+
+    set_mute_statusbar(this);
+        
+  } else if (in_bypass_button(pos)){
+
+    set_bypass_statusbar(this);
+    
+  } else if(in_slider(pos)){
+
+    set_slider_statusbar(this);
+    
+  } else if (g_statusbar_id >= 0){
+    
+    removeStatusbarText(g_statusbar_id);
+    g_statusbar_id=-1;
+    
+  }
+}
+
+void Chip::hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ){
+  if (g_statusbar_id >= 0){
+    
+    removeStatusbarText(g_statusbar_id);
+    g_statusbar_id=-1;
+    
+  }
+}
+
 void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
@@ -1903,181 +2017,168 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
     instrument->PP_Update(instrument,(struct Patch*)patch,false);
 
     // solo onoff
-    {
-      int x1,y1,x2,y2;
-      get_solo_onoff_coordinates(x1,y1,x2,y2);
-      if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-
-        bool solo_is_on = ATOMIC_GET(plugin->solo_is_on);
-
-        //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
-        //float new_value = solo_is_on?0.0f:1.0f;
-
-        {
-          radium::ScopedUndo scoped_undo;
-          
-          // Turn off all other solos if ctrl is pressed.
-          if (ctrl_pressed){
-            vector_t *patches = &get_audio_instrument()->patches;
-            for(int i=0;i<patches->num_elements;i++){
-              struct Patch *thispatch = (struct Patch*)patches->elements[i];
-              SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
-              if (thispatch != patch && plugin!=NULL && ATOMIC_GET(plugin->solo_is_on)) {
-                int num_effects = plugin->type->num_effects;
-                if(doUndoSolo())
-                  ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
-                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, 0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
-                //CHIP_update(plugin);
-              }
+    if(in_solo_button(pos)){
+  
+      bool solo_is_on = ATOMIC_GET(plugin->solo_is_on);
+      
+      //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
+      //float new_value = solo_is_on?0.0f:1.0f;
+      
+      {
+        radium::ScopedUndo scoped_undo;
+        
+        // Turn off all other solos if ctrl is pressed.
+        if (ctrl_pressed){
+          vector_t *patches = &get_audio_instrument()->patches;
+          for(int i=0;i<patches->num_elements;i++){
+            struct Patch *thispatch = (struct Patch*)patches->elements[i];
+            SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
+            if (thispatch != patch && plugin!=NULL && ATOMIC_GET(plugin->solo_is_on)) {
+              int num_effects = plugin->type->num_effects;
+              if(doUndoSolo())
+                ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
+              PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, 0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+              //CHIP_update(plugin);
             }
           }
-
-          vector_t patches = MW_get_selected_patches();
-          if (VECTOR_is_in_vector(&patches, patch)==false){
-            VECTOR_clean(&patches);
-            VECTOR_push_back(&patches,patch);
-          }
-
-          MW_solo(patches, !solo_is_on);
-          
-          /*
-          //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
-          
-          PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-          //CHIP_update(plugin);
-          //GFX_update_instrument_widget((struct Patch*)patch);
-          
-          */
-
         }
         
-        event->accept();
-        return;
+        vector_t patches = MW_get_selected_patches();
+        if (VECTOR_is_in_vector(&patches, patch)==false){
+          VECTOR_clean(&patches);
+          VECTOR_push_back(&patches,patch);
+        }
+        
+        MW_solo(patches, !solo_is_on);
+        
+        /*
+        //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
+        
+        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+        //CHIP_update(plugin);
+        //GFX_update_instrument_widget((struct Patch*)patch);
+        
+        */
+        
       }
+
+      set_solo_statusbar(this);
+                       
+      event->accept();
+      return;
     }
 
     // volume onoff
-    {
-      int x1,y1,x2,y2;
-      get_volume_onoff_coordinates(x1,y1,x2,y2);
-      if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
+    if(in_volume_button(pos)){
 
-        bool is_on = !is_muted(plugin);
+      bool is_on = !is_muted_relaxed(plugin);
 
-        //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
-        //float new_value = is_on?0.0f:1.0f;
-
-        UNDO_OPEN();{
-          
-          // Turn off all other mutes if ctrl is pressed.
-          if (ctrl_pressed){
-            vector_t *patches = &get_audio_instrument()->patches;
-            for(int i=0;i<patches->num_elements;i++){
-              struct Patch *thispatch = (struct Patch*)patches->elements[i];
-              SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
-              if (thispatch != patch && plugin!=NULL && is_muted(plugin)){
-                int effect_num = get_mute_effectnum(plugin->type);
-                ADD_UNDO(AudioEffect_CurrPos(thispatch, effect_num));
-                PLUGIN_set_effect_value(plugin, -1, effect_num, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
-                //CHIP_update(plugin);
-              }
+      //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
+      //float new_value = is_on?0.0f:1.0f;
+      
+      UNDO_OPEN();{
+        
+        // Turn off all other mutes if ctrl is pressed.
+        if (ctrl_pressed){
+          vector_t *patches = &get_audio_instrument()->patches;
+          for(int i=0;i<patches->num_elements;i++){
+            struct Patch *thispatch = (struct Patch*)patches->elements[i];
+            SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
+            if (thispatch != patch && plugin!=NULL && is_muted_relaxed(plugin)){
+              int effect_num = get_mute_effectnum(plugin->type);
+              ADD_UNDO(AudioEffect_CurrPos(thispatch, effect_num));
+              PLUGIN_set_effect_value(plugin, -1, effect_num, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+              //CHIP_update(plugin);
             }
           }
-
-          vector_t patches = MW_get_selected_patches();
-          if (VECTOR_is_in_vector(&patches, patch)==false){
-            VECTOR_clean(&patches);
-            VECTOR_push_back(&patches,patch);
-          }
-
-          MW_mute(patches, is_on);
-          /*
+        }
+        
+        vector_t patches = MW_get_selected_patches();
+        if (VECTOR_is_in_vector(&patches, patch)==false){
+          VECTOR_clean(&patches);
+          VECTOR_push_back(&patches,patch);
+        }
+        
+        MW_mute(patches, is_on);
+        /*
           ADD_UNDO(AudioEffect_CurrPos(patch, num_effects+EFFNUM_VOLUME_ONOFF));
           
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-          */
-          //CHIP_update(plugin);
-          //GFX_update_instrument_widget((struct Patch*)patch);
-
-        }UNDO_CLOSE();
+        */
+        //CHIP_update(plugin);
+        //GFX_update_instrument_widget((struct Patch*)patch);
         
-        event->accept();
-        return;
-      }
+      }UNDO_CLOSE();
+
+      set_mute_statusbar(this);
+      
+      event->accept();
+      return;
     }
 
     // effects onoff (i.e. bypass)
-    {
-      int x1,y1,x2,y2;
-      get_effects_onoff_coordinates(x1,y1,x2,y2);
-      if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
+    if(in_bypass_button(pos)){
         
-        bool effects_are_on = ATOMIC_GET(plugin->effects_are_on);
-        //float new_value = effects_are_on?0.0f:1.0f;
-
-        {
-          radium::ScopedUndo scoped_undo;
-            
-          // Turn off all other bypasses if ctrl is pressed.
-          if (ctrl_pressed){
-            vector_t *patches = &get_audio_instrument()->patches;
-            for(int i=0;i<patches->num_elements;i++){
-              struct Patch *thispatch = (struct Patch*)patches->elements[i];
-              SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
-              if (thispatch != patch && plugin!=NULL && !ATOMIC_GET(plugin->effects_are_on)) {
-                int num_effects = plugin->type->num_effects;
-                if(doUndoBypass())
-                  ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_EFFECTS_ONOFF));
-                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
-                CHIP_update(plugin);
-              }
+      bool effects_are_on = ATOMIC_GET(plugin->effects_are_on);
+      //float new_value = effects_are_on?0.0f:1.0f;
+      
+      {
+        radium::ScopedUndo scoped_undo;
+        
+        // Turn off all other bypasses if ctrl is pressed.
+        if (ctrl_pressed){
+          vector_t *patches = &get_audio_instrument()->patches;
+          for(int i=0;i<patches->num_elements;i++){
+            struct Patch *thispatch = (struct Patch*)patches->elements[i];
+            SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
+            if (thispatch != patch && plugin!=NULL && !ATOMIC_GET(plugin->effects_are_on)) {
+              int num_effects = plugin->type->num_effects;
+              if(doUndoBypass())
+                ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_EFFECTS_ONOFF));
+              PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+              CHIP_update(plugin);
             }
           }
-
-          vector_t patches = MW_get_selected_patches();
-          if (VECTOR_is_in_vector(&patches, patch)==false){
-            VECTOR_clean(&patches);
-            VECTOR_push_back(&patches,patch);
-          }
-
-          MW_bypass(patches, effects_are_on);
-
-          /*
+        }
+        
+        vector_t patches = MW_get_selected_patches();
+        if (VECTOR_is_in_vector(&patches, patch)==false){
+          VECTOR_clean(&patches);
+          VECTOR_push_back(&patches,patch);
+        }
+        
+        MW_bypass(patches, effects_are_on);
+        
+        /*
           ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
           
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
           CHIP_update(plugin);
           GFX_update_instrument_widget((struct Patch*)patch);
-          */
-
-        }
+        */
         
-        event->accept();
-        return;
       }
+
+      set_bypass_statusbar(this);
+      
+      event->accept();
+      return;
     }
 
-    for(int i=0;i<2;i++){
+    if (in_slider(pos)) {
 
-      if (i==0 && !has_input_slider())
-        continue;
-
-      if (i==1 && !has_output_slider())
-        continue;
-
-      int x1,y1,x2,y2;
-      if(i==0)
-        get_slider1_coordinates(x1,y1,x2,y2);      
-      else
-        get_slider2_coordinates(x1,y1,x2,y2);      
-
-      //printf("Got it %d/%d - %d/%d. %d/%d/%d/%d\n",x1,y1,x2,y2,pos.x()>x1, pos.x()<x2, pos.y()>y1, pos.y()<y2);
-
-      if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
-
+      for(int i=0;i<2;i++){
+        
+        if (i==0 && !has_input_slider())
+          continue;
+        
+        if (i==1 && !has_output_slider())
+          continue;
+        
+        
         _has_made_volume_effect_undo=false;
         //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
-
+        
         vector_t chips = MW_get_selected_chips();
         if (VECTOR_is_in_vector(&chips, this)==false){
           VECTOR_clean(&chips);
@@ -2143,11 +2244,15 @@ QVariant Chip::itemChange(GraphicsItemChange change, const QVariant &value) {
   return QGraphicsItem::itemChange(change, value);
 }
 
+
 void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
+  
+  if (_slider_being_edited != 0){
 
-  if(_slider_being_edited>0){
+    R_ASSERT_RETURN_IF_FALSE(_slider_being_edited == 1 || _slider_being_edited == 2);
+    
     QPointF pos = event->pos();
 
     int x1,y1,x2,y2;
@@ -2209,6 +2314,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
       _has_made_volume_effect_undo=true;
       
 
+    set_slider_statusbar(this);
     GFX_update_instrument_widget((struct Patch*)patch);
   }
 

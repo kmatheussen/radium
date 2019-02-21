@@ -300,7 +300,7 @@ class ParamWidget : public QWidget {
 
   QString get_slider_string(void){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    char buf[64]={0};
+    char buf[66]={0};
     PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
 
     return get_parameter_prepend_text(_patch.data(), _effect_num) + _name + ": " + QString::fromUtf8(buf);
