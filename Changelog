@@ -46,11 +46,10 @@ Changes 5.9.36 -> 5.9.38:
   a seqblock.
 * Sequencer: Add options "Copy editor track on/off ->
   seqblock track on/off" and "Copy seqblock track
-  on/off -> editor track on/off" to the editor. Can
-  also be accessed by pressing Ctrl + Page Up /
-  Ctrl + Page Down.  
-  seqblock popup menu.
-* Init: 1. Lower startup time.
+  on/off -> editor track on/off" to the seqblock
+  popup menu. Can also be accessed by pressing
+  Ctrl + Page Up / Ctrl + Page Down.  
+* Init: Lower startup time.
 * Init: Wait until startup is completely finished
   before closing the progress window.
 * VST/AU: Add option to disable the virtual MIDI
