@@ -507,8 +507,15 @@ void insertReallines(int toinsert,int windownum){
   InsertRealLines_CurrPos(window,toinsert);
 }
 
-void generalDelete(int windownum){
+extern int g_downscroll;
+
+void generalDelete(bool scroll_down, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+
+  int downscroll = g_downscroll;
+  if (!scroll_down)
+    g_downscroll = 0;
+
   switch(window->curr_track){
   case SWINGTRACK:
     RemoveSwingCurrPos(window);
@@ -529,6 +536,8 @@ void generalDelete(int windownum){
     if(window->curr_track_sub>=0) StopVelocityCurrPos(window,0);
     else RemoveNoteCurrPos(window);
   }
+
+  g_downscroll = downscroll;
 }
 
 void insertLines(int toinsert,int windownum){
@@ -2323,7 +2332,7 @@ static void init_keybindings(void){
     } else {
 
       if(HASH_remove(r_keybindings_from_keys, keybinding_line)==true){ // in case it was already there. (shouldn't happen)
-        R_ASSERT_NON_RELEASE(false);
+        //R_ASSERT_NON_RELEASE(false);
       }
       HASH_put_chars(r_keybindings_from_commands, commandstring, keybinding_line);
       
