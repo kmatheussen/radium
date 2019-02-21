@@ -131,18 +131,19 @@
                                  (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #f)) (get-all-audio-instruments))
                                  (<ra> :remake-mixer-strips)))
 
-   "----------"
+   (and strips-config
+        "----------")
 
-   (if strips-config
-       (list
-        :radio-buttons
-        (map (lambda (num-rows)
-               (list (<-> num-rows " row" (if (> num-rows 1) "s" ""))
-                     :check (= (strips-config :num-rows) num-rows)
-                     (lambda (ison)
-                       (if ison
-                           (set! (strips-config :num-rows) num-rows)))))
-             (map 1+ (iota 4)))))
+   (and strips-config
+        (list
+         :radio-buttons
+         (map (lambda (num-rows)
+                (list (<-> num-rows " row" (if (> num-rows 1) "s" ""))
+                      :check (= (strips-config :num-rows) num-rows)
+                      (lambda (ison)
+                        (if ison
+                            (set! (strips-config :num-rows) num-rows)))))
+              (map 1+ (iota 4)))))
    
    ;;(if strips-config
    ;;    (list "Set number of rows"
@@ -1034,7 +1035,8 @@
   
   (add-safe-mouse-callback widget (lambda (button state x y)
                                     ;;(c-display "state:" state)
-                                    (if (= state *is-pressing*)
+                                    (if (and strips-config
+                                             (= state *is-pressing*))
                                         (<ra> :set-current-instrument instrument-id))
                                     (define is-left-pressing (and (= button *left-button*)
                                                                   (= state *is-pressing*)))
