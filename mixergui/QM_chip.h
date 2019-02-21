@@ -150,26 +150,26 @@ public:
   float _moving_x_offset;
   float _moving_y_offset;
 
-  bool has_output_slider(void){
+  bool has_output_slider(void) const {
     if (_sound_producer==NULL)
       return false;
-    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    const SoundPlugin *plugin = SP_get_plugin(_sound_producer);
     if (plugin==NULL)
       return false;
     return plugin->type->num_outputs > 0;
   }
 
-  bool has_input_slider(void){
+  bool has_input_slider(void) const {
     if (_sound_producer==NULL)
       return false;
-    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    const SoundPlugin *plugin = SP_get_plugin(_sound_producer);
     if (plugin==NULL)
       return false;
     return !has_output_slider() && plugin->type->num_inputs>0;
   }
 
-  int get_volume_effect_num(void){
-    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+  int get_volume_effect_num(void) const {
+    const SoundPlugin *plugin = SP_get_plugin(_sound_producer);
     int num_effects = plugin->type->num_effects;
     if(has_input_slider())
       return num_effects+EFFNUM_INPUT_VOLUME;
@@ -177,7 +177,7 @@ public:
       return num_effects+EFFNUM_VOLUME;
   }
   
-  float get_slider_volume(void){
+  float get_slider_volume(void) const {
     SoundPlugin *plugin = SP_get_plugin(_sound_producer);
     int effect_num = get_volume_effect_num();
     return PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
