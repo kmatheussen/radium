@@ -1968,11 +1968,11 @@
                                                   :hovered-callback (lambda (button state x y)
                                                                       (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": "
                                                                                                      (cond ((get-muted)
-                                                                                                            "Muted")
+                                                                                                            "Mute On")
                                                                                                            (implicitly-muted
-                                                                                                            "Implicitly muted")
+                                                                                                            "Mute Implicitly on")
                                                                                                            (else
-                                                                                                            "Not muted")))))
+                                                                                                            "Mute Off")))))
                                                   ))
 
   ;;(add-safe-mouse-callback (cadr mute)
@@ -2014,7 +2014,7 @@
                                                   min-height
                                                   :effect-name "System Solo On/Off"
                                                   :hovered-callback (lambda (button state x y)
-                                                                      (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": " (if (get-soloed) "Solo" "Not solo"))))
+                                                                      (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": " (if (get-soloed) "Solo on" "Solo off"))))
                                                   ))
   
   (add-gui-effect-monitor (cadr mute) instrument-id volume-on-off-name #t #t
