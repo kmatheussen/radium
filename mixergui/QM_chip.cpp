@@ -1912,15 +1912,8 @@ static bool in_slider(const QPointF &pos){
 
 static int64_t g_statusbar_id = -1;
 
-void Chip::hoverEnterEvent ( QGraphicsSceneHoverEvent * event ){
-  if (g_statusbar_id >= 0){
-    removeStatusbarText(g_statusbar_id);
-    g_statusbar_id=-1;
-  }
-}
-
-static void set_solo_statusbar(Chip *chip){
-  SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+static void set_solo_statusbar(const Chip *chip){
+  const SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
   const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
   
@@ -1928,8 +1921,8 @@ static void set_solo_statusbar(Chip *chip){
   g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, solo_is_on ? "Solo On" : "Solo Off"));
 }
 
-static void set_mute_statusbar(Chip *chip){
-  SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+static void set_mute_statusbar(const Chip *chip){
+  const SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
   const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
@@ -1938,8 +1931,8 @@ static void set_mute_statusbar(Chip *chip){
   g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, is_implicitly_muted ? "Implicitly muted" : is_muted_relaxed(plugin) ? "Mute On" : "Mute Off"));
 }
 
-static void set_bypass_statusbar(Chip *chip){
-  SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+static void set_bypass_statusbar(const Chip *chip){
+  const SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
   const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
@@ -1947,7 +1940,7 @@ static void set_bypass_statusbar(Chip *chip){
   g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, effects_are_on ? "Bypass Off" : "Bypass On"));
 }
 
-static void set_slider_statusbar(Chip *chip){
+static void set_slider_statusbar(const Chip *chip){
   SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
   const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
@@ -1960,31 +1953,42 @@ static void set_slider_statusbar(Chip *chip){
   g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, temp));
 }
 
-void Chip::hoverMoveEvent ( QGraphicsSceneHoverEvent * event ){
+static void show_hover_statusbar_message(const Chip *chip, const QGraphicsSceneHoverEvent * event ){
   const QPointF pos = event->pos();
   
   if (in_solo_button(pos)){
 
-    set_solo_statusbar(this);
+    set_solo_statusbar(chip);
     
   } else if (in_volume_button(pos)){
 
-    set_mute_statusbar(this);
+    set_mute_statusbar(chip);
         
   } else if (in_bypass_button(pos)){
 
-    set_bypass_statusbar(this);
+    set_bypass_statusbar(chip);
     
   } else if(in_slider(pos)){
 
-    set_slider_statusbar(this);
+    set_slider_statusbar(chip);
     
-  } else if (g_statusbar_id >= 0){
+  } else if (pos.x() < chip_box_x1 || pos.x() >= chip_box_x2) {
+
+    g_statusbar_id = setStatusbarText("Press mouse button to create new audio-connection");
+
+  } else {
     
-    removeStatusbarText(g_statusbar_id);
-    g_statusbar_id=-1;
+    g_statusbar_id = setStatusbarText("Press mouse button to create new event-connection");
     
   }
+}
+
+void Chip::hoverEnterEvent ( QGraphicsSceneHoverEvent * event ){
+  show_hover_statusbar_message(this, event);
+}
+
+void Chip::hoverMoveEvent ( QGraphicsSceneHoverEvent * event ){
+  show_hover_statusbar_message(this, event);
 }
 
 void Chip::hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ){
