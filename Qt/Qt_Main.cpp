@@ -3928,7 +3928,7 @@ int main(int argc, char **argv){
 
 
 #if defined(FOR_MACOSX)
-  if (QSysInfo::productVersion()=="10.14" || QSysInfo::productVersion()=="10.15" || QSysInfo::productVersion()=="10.16" || QSysInfo::productVersion()=="10.17" || true){
+  if (QSysInfo::productVersion()=="10.14" || QSysInfo::productVersion()=="10.15" || QSysInfo::productVersion()=="10.16" || QSysInfo::productVersion()=="10.17"){
     GFX_Message(NULL, "Radium has not been tested on this version of macOS. Latest supported version of macOS is 10.13. Radium is likely to misbehave on this operating system. It might also freeze, crash, or not run at all. But we will try to run anyway.");
   }
 #endif
