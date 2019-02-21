@@ -99,13 +99,14 @@
   (list
    (and effect-name
         (get-effect-popup-entries instrument-id effect-name))
-   "------------Mixer"
+
+   (<-> "------------Mixer strip for " (<ra> :get-instrument-name instrument-id))
    ;;(list "Pan Enabled"
    ;;      :check (pan-enabled? instrument-id)
    ;;      (lambda (onoff)
    ;;        (pan-enable! instrument-id onoff)))
 
-   (list "Wide mode"
+   (list "Wide"
          :check (and wide-mode-instrument-id
                      (<ra> :has-wide-instrument-strip wide-mode-instrument-id))
          :enabled wide-mode-instrument-id
@@ -113,44 +114,54 @@
            (<ra> :set-wide-instrument-strip wide-mode-instrument-id enabled)
            (remake-mixer-strips instrument-id)))
    
+   (list "Visible" :enabled (or instrument-id
+                                (not strips-config))
+         :check #t
+         (lambda (hideit)
+           (if (not strips-config)
+               (<ra> :show-hide-mixer-strip)
+               (set! (strips-config :is-enabled instrument-id) #f))))
+
+   "---------Mixer"
+   
    (list "Make all strips wide" (lambda ()
                                   (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #t)) (get-all-audio-instruments))
                                   (<ra> :remake-mixer-strips)))
    (list "Make no strips wide" (lambda ()
                                  (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #f)) (get-all-audio-instruments))
                                  (<ra> :remake-mixer-strips)))
+
+   "----------"
+
+   (if strips-config
+       (list
+        :radio-buttons
+        (map (lambda (num-rows)
+               (list (<-> num-rows " row" (if (> num-rows 1) "s" ""))
+                     :check (= (strips-config :num-rows) num-rows)
+                     (lambda (ison)
+                       (if ison
+                           (set! (strips-config :num-rows) num-rows)))))
+             (map 1+ (iota 4)))))
    
+   ;;(if strips-config
+   ;;    (list "Set number of rows"
+   ;;          (lambda ()
+   ;;            (define num-rows-now (strips-config :num-rows))
+   ;;            (popup-menu (map (lambda (num-rows)
+   ;;                               (list (number->string num-rows)
+   ;;                                     :enabled (not (= num-rows num-rows-now))
+   ;;                                     (lambda ()
+   ;;                                       (set! (strips-config :num-rows) num-rows))))
+   ;;                             (map 1+ (iota 6))))))
+   ;;    '())
+
    "----------"
    
-   (list "Mixer strip visible" :enabled (or instrument-id
-                                            (not strips-config))
-         :check #t
-         (lambda (hideit)
-           (if (not strips-config)
-               (<ra> :show-hide-mixer-strip)
-               (set! (strips-config :is-enabled instrument-id) #f))))
    (list "Configure mixer strips on/off" :enabled strips-config
               (lambda ()
                 (strips-config :show-config-gui)))
-   
-   "----------"
-   
-   (if strips-config
-       (list "Set number of rows"
-             (lambda ()
-               (define num-rows-now (strips-config :num-rows))
-               (popup-menu (map (lambda (num-rows)
-                                  (list (number->string num-rows)
-                                        :enabled (not (= num-rows num-rows-now))
-                                        (lambda ()
-                                          (set! (strips-config :num-rows) num-rows))))
-                                (map 1+ (iota 6))))))
-       '())
-   
-   "----------"
-   
-   "Help" (lambda ()
-            (<ra> :show-mixer-help-window))
+
    "Set current instrument" (lambda ()
                               (popup-menu (map (lambda (instrument-id)
                                                  (list (<ra> :get-instrument-name instrument-id)
@@ -158,7 +169,14 @@
                                                          (<ra> :set-current-instrument instrument-id #f)
                                                          )))
                                                (sort-instruments-by-mixer-position-and-connections 
-                                                (get-all-audio-instruments)))))))
+                                                (get-all-audio-instruments)))))
+      
+   "----------"
+   
+   "Help" (lambda ()
+            (<ra> :show-mixer-help-window))
+
+   ))
 
 
 (delafina (create-instrument-effect-checkbox :instrument-id
@@ -720,31 +738,30 @@
   ;;(c-display "ins:" instrument-id)
 
   (define is-top-instrument (= instrument-id first-instrument-id))
-
+  
+  (define curr-plugin-instrument (if is-send?
+                                     parent-instrument-id
+                                     instrument-id))
+  
   (popup-menu (<-> "----------Insert")
-              (list (<-> "Insert Plugin" (if effect-name " (after this position)" ""))
-                    :enabled (not is-sink?)
+              (list (if is-top-instrument
+                        "Insert Plugin"
+                        (<-> "Insert Plugin after " (<ra> :get-instrument-name curr-plugin-instrument)))
+                    :enabled (> (<ra> :get-num-output-channels first-instrument-id) 0)
                     (lambda ()
                       (define (finished new-instrument)
                         ;;(c-display "             first: " (<ra> :get-instrument-name first-instrument-id) ", new:" (and new-instrument (<ra> :get-instrument-name new-instrument)))
                         (<ra> :set-current-instrument first-instrument-id))
-                      (cond (is-send?
-                             (insert-new-instrument-between parent-instrument-id
-                                                            (get-instruments-connecting-from-instrument parent-instrument-id)
-                                                            #t
-                                                            parentgui
-                                                            finished))
-                            (else
-                             ;; after
-                             (insert-new-instrument-between instrument-id
-                                                            (get-instruments-connecting-from-instrument instrument-id)
-                                                            #t
-                                                            parentgui
-                                                            finished)))
-                      ))
+                      (insert-new-instrument-between curr-plugin-instrument
+                                                     (get-instruments-connecting-from-instrument curr-plugin-instrument)
+                                                     #t
+                                                     parentgui
+                                                     finished)))
               
-              (list (<-> "Insert Send"  (if effect-name " (after this position)" ""))
-                    :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
+              (list (<-> "Insert Send for " (if is-send?
+                                                (<ra> :get-instrument-name parent-instrument-id)
+                                                (<ra> :get-instrument-name instrument-id)))
+                    :enabled (> (<ra> :get-num-output-channels first-instrument-id) 0)
                     (lambda ()
                       (let ((instrument-id (cond (is-send?
                                                   parent-instrument-id)
@@ -789,7 +806,9 @@
               ;;"Convert to standalone strip" (lambda ()
               ;;                                #t)
 
-                            (list (<-> "------------Connection " (<ra> :get-instrument-name parent-instrument-id) "-->" (<ra> :get-instrument-name instrument-id) "")
+              (list (<-> "------------Slider");. Connection" (if (equal? parent-instrument-id instrument-id)
+                                               ;               ""
+                                                ;              (<-> " " (<ra> :get-instrument-name parent-instrument-id) "-->" (<ra> :get-instrument-name instrument-id) "")))
                     (let ((connection-type (if (or (not parent-instrument-id)
                                                    (not instrument-id))
                                                *auto-connection-type*
