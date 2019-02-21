@@ -233,7 +233,8 @@ extern struct TEvent tevent;
 bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
 
   if (AnyModifierKeyPressed(tevent.keyswitch))
-    return false;
+    if(!AnyShift(tevent.keyswitch))
+      return false;
   
   struct WBlocks *wblock = window->wblock;
   struct WTracks *wtrack = wblock->wtrack;
@@ -284,8 +285,9 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
   
   window->must_redraw_editor = true;
 
-  MaybeScrollEditorDownAfterEditing(window);
-
+  if(!AnyShift(tevent.keyswitch))
+    MaybeScrollEditorDownAfterEditing(window);
+  
   return true;
 }
 

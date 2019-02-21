@@ -8,12 +8,16 @@
 (delafina (FROM_C-copy-editor-track-on/off-to-seqblock :seqblocknum -1
                                                        :seqtracknum -1)
   
-  (when (= -1 seqblocknum)
+  (when (< seqblocknum 0)
+    (set! seqblocknum #f)
+    (set! seqtracknum #f))
+    
+  (when (not seqblocknum)
     (define id (<ra> :get-curr-seqblock-id))
     (when (>= id 0)
       (set! seqtracknum (<ra> :get-seqblock-seqtrack-num id))
       (set! seqblocknum (<ra> :get-seqblock-seqblock-num id))))
-                            
+  
   (cond ((not seqtracknum)
          (show-async-message (<gui> :get-sequencer-gui)
                              "No seqtrack selected"))
@@ -46,7 +50,11 @@
 (delafina (FROM_C-copy-seqblock-track-on/off-to-editor :seqblocknum -1
                                                        :seqtracknum -1)
   
-  (when (= -1 seqblocknum)
+  (when (< seqblocknum 0)
+    (set! seqblocknum #f)
+    (set! seqtracknum #f))
+  
+  (when (not seqblocknum)
     (define id (<ra> :get-curr-seqblock-id))
     (when (>= id 0)
       (set! seqtracknum (<ra> :get-seqblock-seqtrack-num id))
