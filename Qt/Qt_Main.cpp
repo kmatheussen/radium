@@ -2190,7 +2190,6 @@ protected:
         if (gakkbox != NULL){
           gakkbox->hide();
           g_main_window->raise();
-          g_qtgui_has_started_step2 = true;
           //g_main_window->activateWindow();
         }
       }
@@ -2199,6 +2198,7 @@ protected:
         delete gakkbox;
         GFX_SetMenuFontsAgain();
         GFX_CloseProgress();
+        g_qtgui_has_started_step2 = true;
       }
     }
     
