@@ -77,6 +77,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "T2.hpp"
 #include "Timing.hpp"
 #include "Render_proc.h"
+#include "CheckOpenGL_proc.h"
 
 #include "Widget_proc.h"
 
@@ -1890,6 +1891,11 @@ QWidget *GL_create_widget(QWidget *parent){
 
   g_safe_mode = GL_get_safe_mode();
   init_g_pause_rendering_on_off();
+
+  if (CHECKOPENGL_checkit()==true){
+    exit(-2);
+    return NULL;
+  }
     
   if (QGLFormat::hasOpenGL()==false) {
     GFX_Message(NULL,"OpenGL not found");
