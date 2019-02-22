@@ -1152,7 +1152,7 @@ protected:
     return true;
    }
 
-  virtual bool eventFilter(QObject *obj, QEvent *event) override {
+  bool eventFilter(QObject *obj, QEvent *event) override {
 
     bool activation_changed = event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate;
 
@@ -1201,7 +1201,7 @@ protected:
   int _last_keynum = EVENT_NO;
   int _last_qwerty_keynum = EVENT_NO;
 
-  virtual bool eventFilter(QObject *obj, QEvent *event) override {
+  bool eventFilter(QObject *obj, QEvent *event) override {
     //printf("Got event. type: %d (%d)\n", event->type(), 6);
 
     if(ATOMIC_GET(is_starting_up)==true)
@@ -1588,7 +1588,7 @@ protected:
   
 #ifdef USE_QT5
 
-  virtual bool nativeEventFilter(const QByteArray &eventType, void *message, long *) Q_DECL_OVERRIDE
+  bool nativeEventFilter(const QByteArray &eventType, void *message, long *) Q_DECL_OVERRIDE
   {
     //printf("NAtive event filter!\n");
     return SystemEventFilter(message);
@@ -3147,7 +3147,7 @@ int radium_main(const char *arg){
       // To fix y-splitter not growing horizontally, causing the lower tabs to be minimized when neither the editor nor mixer were visible.
       {
         struct Gakk : public QWidget{
-          virtual QSize 	sizeHint() const override{
+          QSize 	sizeHint() const override{
             return QSize(0,0);
           }
         };

@@ -172,7 +172,7 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   QString vertical_text;
 
   // Have to do this. Just overriding the paintEvent makes mouse partly stop working.
-  virtual void mousePressEvent ( QMouseEvent * event ) override {
+  void mousePressEvent ( QMouseEvent * event ) override {
     setChecked(!isChecked());    
   }
 
