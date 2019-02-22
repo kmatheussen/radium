@@ -720,7 +720,7 @@ public:
   vl::ref<vl::Scissor> _scissor;
   
   // OpenGL thread
-  virtual void init_vl(vl::OpenGLContext *glContext) {
+  void init_vl(vl::OpenGLContext *glContext) override {
 
     printf("init_vl\n");
 
@@ -762,7 +762,7 @@ public:
   
   /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */
   // OpenGL thread
-  virtual void initEvent() {
+  void initEvent(void) override {
     //printf("initEvent\n");
     _rendering->sceneManagers()->clear();
     vgscene = new vl::SceneManagerVectorGraphics;
@@ -779,39 +779,39 @@ private:
 public:
 
   // Main thread
-  virtual void mouseReleaseEvent( QMouseEvent *qmouseevent){
+  void mouseReleaseEvent( QMouseEvent *qmouseevent) override {
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mouseReleaseEvent(&event);
     //GL_create(get_window(), get_window()->wblock);
   }
 
   // Main thread
-  virtual void mousePressEvent( QMouseEvent *qmouseevent){
+  void mousePressEvent( QMouseEvent *qmouseevent) override {
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mousePressEvent(&event);
     //GL_create(get_window(), get_window()->wblock);
   }
 
   // Main thread
-  virtual void mouseMoveEvent( QMouseEvent *qmouseevent){
+  void mouseMoveEvent( QMouseEvent *qmouseevent) override {
     QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->mouseMoveEvent(&event);
     //GL_create(get_window(), get_window()->wblock);
   }
 
-  virtual void wheelEvent(QWheelEvent *qwheelevent){
+  void wheelEvent(QWheelEvent *qwheelevent) override {
     //QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->wheelEvent(qwheelevent);
     //GL_create(get_window(), get_window()->wblock);
   }
     
-  virtual void leaveEvent(QEvent * event){
+  void leaveEvent(QEvent * event) override {
     //fprintf(stderr, "LEAVING\n");
     //setNormalMousePointer(-1); // This should not be necessary anymore.
   }
   
   /** Event generated right before the bound OpenGLContext is destroyed. */
-  virtual void destroyEvent() {
+  void destroyEvent() override {
     fprintf(stderr,"destroyEvent\n");
   }
 
@@ -819,7 +819,7 @@ public:
     // No need to override paintEvent. OpenGL takes care of that by itself.
 
   // Only called when parent needs to be repainted. For instances if another window has covered it, or it is resized.
-  virtual void paintEvent( QPaintEvent *e ){
+  void paintEvent( QPaintEvent *e ) override {
     //fprintf(stderr,"GLWindow paintEvent\n");
 
     // Doesn't seem to make any difference whether to call GL_create or set must_redraw=true.
@@ -1349,7 +1349,7 @@ public:
   /** Event generated when the bound OpenGLContext does not have any other message to process 
       and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
   // OpenGL thread
-  virtual void updateEvent() {
+  void updateEvent() override {
 
     radium::ScopedMutex lock(make_current_mutex);
 
@@ -1476,7 +1476,7 @@ public:
   }
   
   // Necessary to avoid error with clang++.
-  virtual void resizeEvent(QResizeEvent *qresizeevent) {
+  void resizeEvent(QResizeEvent *qresizeevent) override {
     radium::ScopedResizeEventTracker resize_event_tracker;
     
 #if USE_QT5
@@ -1488,7 +1488,7 @@ public:
 
   /** Event generated when the bound OpenGLContext is resized. */
   // OpenGL thread
-  virtual void resizeEvent(int w, int h) {
+  void resizeEvent(int w, int h) override {
     printf("resisizing %d %d\n",w,h);
 
     if (w<32)
@@ -1509,22 +1509,22 @@ public:
   // The rest of the methods in this class are virtual methods required by the vl::UIEventListener class. Not used.
 
   /** Event generated whenever setEnabled() is called. */
-  virtual void enableEvent(bool enabled){
+  void enableEvent(bool enabled) override {
     printf("enableEvent %d\n",(int)enabled);
   }
 
   /** Event generated whenever a listener is bound to an OpenGLContext context. */
-  virtual void addedListenerEvent(vl::OpenGLContext*) {
+  void addedListenerEvent(vl::OpenGLContext*) override {
     printf("addedListenerEvent\n");
   }
 
   /** Event generated whenever a listener is unbound from an OpenGLContext context. */
-  virtual void removedListenerEvent(vl::OpenGLContext*) {
+  void removedListenerEvent(vl::OpenGLContext*) override {
     printf("removedListenerEvent\n");
   }
   
   /** Event generated when the mouse moves. */
-  virtual void mouseMoveEvent(int x, int y) {
+  void mouseMoveEvent(int x, int y) override {
     printf("mouseMove %d %d\n",x,y);
     //_rendering->sceneManagers()->clear();
     //create_block();
@@ -1532,7 +1532,7 @@ public:
   }
   
   /** Event generated when one of the mouse buttons is released. */
-  virtual void mouseUpEvent(vl::EMouseButton button, int x, int y) {
+  void mouseUpEvent(vl::EMouseButton button, int x, int y) override {
     printf("mouseMove %d %d\n",x,y);
     //_rendering->sceneManagers()->clear();
     //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
@@ -1540,7 +1540,7 @@ public:
   }
   
   /** Event generated when one of the mouse buttons is pressed. */
-  virtual void mouseDownEvent(vl::EMouseButton button, int x, int y) {
+  void mouseDownEvent(vl::EMouseButton button, int x, int y) override {
     printf("mouseMove %d %d\n",x,y);
     //_rendering->sceneManagers()->clear();
     //create_block();
@@ -1548,12 +1548,12 @@ public:
   }
   
   /** Event generated when the mouse wheel rotated. */
-  virtual void mouseWheelEvent(int n) {
+  void mouseWheelEvent(int n) override {
     printf("mouseWheel %d\n",n);
   }
 
   // Necessary to avoid error with clang++.
-  virtual void keyPressEvent(QKeyEvent *event){
+  void keyPressEvent(QKeyEvent *event) override {
 #if USE_QT5
     vlQt5::Qt5ThreadedWidget::keyPressEvent(event);
 #else
@@ -1562,7 +1562,7 @@ public:
   }
 
   /** Event generated when a key is pressed. */
-  virtual void keyPressEvent(unsigned short unicode_ch, vl::EKey key) {
+  void keyPressEvent(unsigned short unicode_ch, vl::EKey key) override {
     printf("key pressed\n");
 
     //_rendering->sceneManagers()->clear();
@@ -1571,7 +1571,7 @@ public:
   }
 
   // Necessary to avoid error with clang++.
-  virtual void keyReleaseEvent(QKeyEvent *event){
+  void keyReleaseEvent(QKeyEvent *event) override {
 #if USE_QT5
     vlQt5::Qt5ThreadedWidget::keyReleaseEvent(event);
 #else
@@ -1581,15 +1581,15 @@ public:
 
 
   /** Event generated when a key is released. */
-  virtual void keyReleaseEvent(unsigned short unicode_ch, vl::EKey key) {
+  void keyReleaseEvent(unsigned short unicode_ch, vl::EKey key) override {
   }
   
   /** Event generated when one or more files are dropped on the bound OpenGLContext's area. */
-  virtual void fileDroppedEvent(const std::vector<vl::String>& files) {
+  void fileDroppedEvent(const std::vector<vl::String>& files) override {
   }
   
   /** Event generated when the bound OpenGLContext is shown or hidden. */
-  virtual void visibilityEvent(bool visible) {
+  void visibilityEvent(bool visible) override {
     printf("visibilityEvent %d\n",(int)visible);
   }
 };
