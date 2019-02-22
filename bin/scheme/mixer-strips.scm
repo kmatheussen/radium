@@ -953,20 +953,24 @@
                                 "[M] "
                                 ""))
     (<-> midi-learn-text instrument-name ": " (get-value-text value)))
+
+  (define couldnt-fit-all-text #f)
   
   (define (paint-slider x1-on/off width height)
     (define value (get-scaled-value))
-    (paint-horizontal-instrument-slider widget
-                                        instrument-id
-                                        value
-                                        (get-slider-text value)
-                                        (is-enabled?)
-                                        (= (<ra> :get-current-instrument) instrument-id)
-                                        get-automation-data
-                                        x1-on/off
-                                        0 0 width height
-                                        (<ra> :get-instrument-color instrument-id)
-                                        ))
+    (set! couldnt-fit-all-text
+          (or (not (paint-horizontal-instrument-slider widget
+                                                       instrument-id
+                                                       value
+                                                       (get-slider-text value)
+                                                       (is-enabled?)
+                                                       (= (<ra> :get-current-instrument) instrument-id)
+                                                       get-automation-data
+                                                       x1-on/off
+                                                       0 0 width height
+                                                       (<ra> :get-instrument-color instrument-id)
+                                                       ))
+              couldnt-fit-all-text)))
   
   (define fontheight (get-fontheight))
   
@@ -1048,6 +1052,7 @@
                                           #t)
                                         (begin
                                           (when is-left-pressing
+                                            (set! couldnt-fit-all-text #f)
                                             (set! is-changing-value #t)
                                             (set! has-made-undo #f)
                                             )
@@ -1061,8 +1066,10 @@
                                             (<gui> :tool-tip "")
                                             ;;(c-display "finished")
                                             )
+                                          ;;(c-display "all:" (not couldnt-fit-all-text))
                                           (let ((status-text (get-slider-text (get-scaled-value))))
-                                            (if is-changing-value
+                                            (if (and is-changing-value
+                                                     couldnt-fit-all-text)
                                                 (set-tooltip-and-statusbar status-text)
                                                 (<ra> :set-statusbar-text status-text)
                                                 ))

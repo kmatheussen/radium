@@ -217,7 +217,7 @@
 
 ;; Returns a version of 'text' with added line shifts so that it fits width and heigh.
 ;; If that is not possible, it will stop adding line shifts before it doesn't fit vertically anymore.
-(define (fit-text text width height)
+(define (fit-text text width height call-me-if-not-all-text-fitted!)
   (let loop ((text text)
              (num-lines (max 1 (floor (/ height (get-fontheight))))))
     (define text-width (<gui> :text-width text))
@@ -225,6 +225,7 @@
                (<= text-width width))
            text)
           ((= num-lines 1)
+           (call-me-if-not-all-text-fitted!)
            (fit-text-by-adding-dots width text))
           (else
            (split-text-at-first-best-space 
@@ -255,27 +256,42 @@
 
   (define vertical-text (= 0 (modulo (+ 90 rotate) 180)))
   (define horizontal-text (= 0 (modulo rotate 180)))
+
+  (define all-text-fitted #t)
   
-  (<gui> :draw-text gui color
-         (if (and wrap-lines
-                  (or vertical-text horizontal-text)
-                  )
-             (fit-text text  ;; Replacement code. Wrapping lines in gui_draw-text has been disabled since it didn't work very well.
-                       (if horizontal-text
-                           (- x2 x1)
-                           (- y2 y1))
-                       (if horizontal-text
-                           (- y2 y1)
-                           (- x2 x1)))
-             text)
-         x1 y1 x2 y2
-         #f ;; wrap-lines
-         align-top ;; align-top
-         align-left ;; align-left
-         rotate ;; rotate
-         cut-text-to-fit ;; cut-text-to-fit
-         scale-font-size
-         )
+  (define paint-text
+    (if (and wrap-lines
+             (or vertical-text horizontal-text)
+             )
+        (fit-text text  ;; Replacement code. Wrapping lines in gui_draw-text has been disabled since it didn't work very well.
+                  (if horizontal-text
+                      (- x2 x1)
+                      (- y2 y1))
+                  (if horizontal-text
+                      (- y2 y1)
+                      (- x2 x1))
+                  (lambda ()
+                    (set! all-text-fitted #f)))
+        text))
+  
+  (define ret
+    (<gui> :draw-text gui color
+           paint-text
+           x1 y1 x2 y2
+           #f ;; wrap-lines
+           align-top ;; align-top
+           align-left ;; align-left
+           rotate ;; rotate
+           cut-text-to-fit ;; cut-text-to-fit
+           scale-font-size
+           ))
+
+  (cond ((not all-text-fitted)
+         #f)
+        ((not ret)
+         #f)
+        (else
+         #t))      
   )
 
 (define *last-tooltip-and-statusbar-text* "")
@@ -496,6 +512,7 @@
           
           layout)
 
+;; returns true if all text was drawn
 (delafina (paint-horizontal-slider :widget
                                    :value ;; between 0 and 1
                                    :text
@@ -542,16 +559,18 @@
                          (<gui> :mix-colors *text-color* "#ff000000" 0.5)
                          *text-color*))
   
-  (<gui> :my-draw-text widget text-color text
-         (floor (+ (/ (get-fontheight) 4) text-x1)) y1 (- x2 4) y2
-         #t ;; wrap-lines
-         #f ;; align top
-         #t) ;; align left
+  (define ret (<gui> :my-draw-text widget text-color text
+                     (floor (+ (/ (get-fontheight) 4) text-x1)) y1 (- x2 4) y2
+                     #t ;; wrap-lines
+                     #f ;; align top
+                     #t)) ;; align left
 
   ;; border
   (if is-current
       (<gui> :draw-box widget *current-mixer-strip-border-color* (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 rounding rounding) ;; "#aa111144"
       (<gui> :draw-box widget "gray"      x1 y1 x2 y2   0.8 rounding rounding))
+
+  ret
   )
   
 
