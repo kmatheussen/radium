@@ -1,3 +1,10 @@
+Changes 5.9.38 -> 5.9.39:
+* Mixer strip for current instrument: Fix popup menu.
+* Mixer strip for current instrument: Don't change
+  current instrument when editing.
+
+
+
 Changes 5.9.36 -> 5.9.38:
 * Modular mixer: Show statusbar message about
   creating new connections when mouse is hovering
