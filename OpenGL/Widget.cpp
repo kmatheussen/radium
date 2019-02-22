@@ -1252,7 +1252,7 @@ private:
       juce_lock = JUCE_lock();
 
     // Swap to the newly rendered buffer
-    if ( openglContext()->hasDoubleBuffer()) {
+    if ( openglContext()->hasDoubleBuffer() && g_qtgui_has_started_step2==true) {
 
 #if USE_JUCE_CPU_PROTECTION_LOGIC
       double now;
@@ -1274,7 +1274,7 @@ private:
 
       //printf("update: %fms\n", time_estimator.get_vblank());
 
-#if !defined(FOR_MACOSX)      
+#if !defined(FOR_MACOSX)
       if (doHighCpuOpenGlProtection()) {
         double vblank = GL_get_vblank();
         if (vblank==-1)
