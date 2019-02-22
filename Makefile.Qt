@@ -424,7 +424,7 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 #undo_chip_addremove.o
 
 #OpenGL
-OBJ_VL=GfxElements.o T2.o Render.o Widget.o
+OBJ_VL=GfxElements.o T2.o Render.o Widget.o CheckOpenGL.o
 # Qt${RADIUM_QT_VERSION}Widget.o moc_Qt${RADIUM_QT_VERSION}Widget.o
 
 # Not using sndlib anymore, but will perhaps in the future.
@@ -445,7 +445,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 BUILD_DEPENDENCIES = buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
-PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so bin/scheme/api_protos.scm
+PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_check_opengl bin/radium_plugin_scanner bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so bin/scheme/api_protos.scm
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 all:
@@ -1563,6 +1563,11 @@ bin/radium_check_jack_status: audio/KillJackd.cpp Jack_plugin.o find_jack_librar
 	$(LINKER) `cat buildtype.opt` radium_check_jack_status.o find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) -o bin/radium_check_jack_status $(FPIC)
 	rm radium_check_jack_status.o
 
+bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp
+	$(CCC) -Wall -Werror OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o
+	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt5OpenGL`
+	rm radium_check_opengl.o
+
 Qt_progresswindow.o: $(BUILD_DEPENDENCIES) $(P)Qt_progresswindow.cpp
 	$(CCC) $(P)Qt_progresswindow.cpp $(QTOPT) -DP_SERVER
 
@@ -2306,6 +2311,9 @@ Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/S
 
 Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp
 	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) #-Wno-error=unused-variable
+
+CheckOpenGL.o: OpenGL/CheckOpenGL.cpp
+	$(CCC) OpenGL/CheckOpenGL.cpp $(QTOPT)
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)
