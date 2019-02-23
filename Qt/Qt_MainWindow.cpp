@@ -592,27 +592,6 @@ void SetupMainWindow(void){
     //editor->status_labels.push_back(bottom_bar->status_label);
     //main_window->statusBar()->setFrameStyle(QFrame::NoFrame);
 
-    {
-      QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
-      QPalette pal(bottom_bar->palette());
-      pal.setColor( QPalette::Active, QPalette::Dark, system_color);
-      pal.setColor( QPalette::Active, QPalette::Light, system_color);
-      pal.setColor( QPalette::Inactive, QPalette::Dark, system_color);
-      pal.setColor( QPalette::Inactive, QPalette::Light, system_color);
-      pal.setColor( QPalette::Disabled, QPalette::Dark, system_color);
-      pal.setColor( QPalette::Disabled, QPalette::Light, system_color);
-      bottom_bar->setPalette(pal);
-    }
-
-    main_window->setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
-    //bottom_bar->setSizeGripEnabled(false);
-
-    /*
-    {
-      QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
-      bottom_bar->setStyleSheet("#frame { border: 1px solid " + system_color.darker(150).name(QColor::HexArgb) + "; }");
-    }
-    */
   }
 #else
   {

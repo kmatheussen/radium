@@ -280,6 +280,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   QWidget *_navigator_widget = NULL;
       
   void remove_editor_elements(void){
+
     velocity_slider->hide();
     min_velocity_slider->hide();
     drunk_velocity_onoff->hide();
@@ -612,7 +613,14 @@ QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool in
     pal.setColor( QPalette::Disabled, QPalette::Light, system_color);
     ret->setPalette(pal);
   }
-  
+
+  ret->setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
+
+  {
+    QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
+    ret->setStyleSheet("#frame { border: 1px solid " + system_color.darker(150).name(QColor::HexArgb) + "; }");
+  }
+
   return ret;
 }
 
