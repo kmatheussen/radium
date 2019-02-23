@@ -497,7 +497,17 @@ void SetupMainWindow(void){
   QMainWindow *main_window = new MyQMainWindow();//NULL, "Radium");
   g_main_window = main_window;
   g_static_toplevel_widgets.push_back(main_window);
+
+
+  QWidget *central_widget = new QWidget(main_window);
+  QVBoxLayout *mainLayout = new QVBoxLayout;
+  mainLayout->setSpacing(0);
+  mainLayout->setContentsMargins(0,0,0,0);
+  central_widget->setLayout(mainLayout);
+  main_window->setCentralWidget(central_widget);
   
+  main_window->setStatusBar(NULL);
+
   //main_window->installEventFilter(main_window);
   
 #ifdef USE_QT4
@@ -568,37 +578,41 @@ void SetupMainWindow(void){
   //editor->setMinimumHeight(100);
 
   main_window->setWindowTitle("Radium editor window");
-  main_window->statusBar()->showMessage( "Ready", 2000 );
+
+
+  //main_window->statusBar()->showMessage( "Ready", 2000 );
 
 #if 1
   {
-    QStatusBar *status_bar = main_window->statusBar();
+    //QStatusBar *status_bar = main_window->statusBar();
     auto *bottom_bar = BottomBar_create(main_window, true, true);
-    status_bar->addWidget(bottom_bar, 1);//, true);
-    bottom_bar->show();
+    mainLayout->addWidget(bottom_bar, 0); // stretch = 1;
+    //bottom_bar->show();
     //main_window->statusBar()->addWidget(bottom_bar, 1, true);
     //editor->status_labels.push_back(bottom_bar->status_label);
     //main_window->statusBar()->setFrameStyle(QFrame::NoFrame);
 
     {
       QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
-      QPalette pal(status_bar->palette());
+      QPalette pal(bottom_bar->palette());
       pal.setColor( QPalette::Active, QPalette::Dark, system_color);
       pal.setColor( QPalette::Active, QPalette::Light, system_color);
       pal.setColor( QPalette::Inactive, QPalette::Dark, system_color);
       pal.setColor( QPalette::Inactive, QPalette::Light, system_color);
       pal.setColor( QPalette::Disabled, QPalette::Dark, system_color);
       pal.setColor( QPalette::Disabled, QPalette::Light, system_color);
-      status_bar->setPalette(pal);
+      bottom_bar->setPalette(pal);
     }
 
     main_window->setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
-    status_bar->setSizeGripEnabled(false);
+    //bottom_bar->setSizeGripEnabled(false);
 
+    /*
     {
       QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
-      status_bar->setStyleSheet("#frame { border: 1px solid " + system_color.darker(150).name(QColor::HexArgb) + "; }");
+      bottom_bar->setStyleSheet("#frame { border: 1px solid " + system_color.darker(150).name(QColor::HexArgb) + "; }");
     }
+    */
   }
 #else
   {
@@ -690,17 +704,26 @@ void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const wchar_t *title){
 static int64_t g_status_bar_id=0;
 
 static void set_status_bar_text(const char *title){
-  static const char *last_title="";
+  static int s_len_last_title = 10;
+  static char *s_last_title=(char*)calloc(1, s_len_last_title);
 
-  if (strcmp(last_title, title)){
-  
+  if (strcmp(s_last_title, title)){
+    
+    //printf("SETTIKNG text -%s-. Before: -%s-\n", title, last_title);
+    
     //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-    for(auto *bottom_bar : g_bottom_bars){
-      //printf("SETTIKNG text %s\n", title);
+    for(auto *bottom_bar : g_bottom_bars){      
       bottom_bar->status_label->setText(title);
     }
 
-    last_title = talloc_strdup(title);
+    int len = strlen(title);
+    
+    if (len > s_len_last_title){
+      s_last_title = (char*)malloc(len+2);
+      s_len_last_title = len;
+    }
+    
+    strcpy(s_last_title, title);
   }
 }
 
