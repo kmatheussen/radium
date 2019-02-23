@@ -625,6 +625,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       int y1_i = floor(R_MAX(_y1, y1));
       int x2_i = ceil(R_MIN(_x2, x2));
       int y2_i = ceil(R_MIN(_y2, y2));
+      //printf("y1: %d. y2: %d. height: %d\n", y1_i, y2_i, y2_i-y1_i);
       widget->update(x1_i,
                      y1_i,
                      x2_i - x1_i,
@@ -667,11 +668,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       {
         int old_intencity = _note_intencity;
-        
-        _note_intencity = ATOMIC_GET_RELAXED(_note_event_patch->visual_note_intencity);
 
-        if(_note_intencity>0 || old_intencity != -1)
+        int new_intencity = ATOMIC_GET_RELAXED(_note_event_patch->visual_note_intencity);
+        
+        if(new_intencity>0 || old_intencity != -1){
+          _note_intencity = new_intencity;
+          
+          printf("note_intencity: %d. old_intencity: %d\n", _note_intencity, old_intencity);
           myupdate(widget, get_indicator_rect());
+        }
       }
       
       const AudioMeterPeaks &peaks = get_audio_meter_peaks();
@@ -712,7 +717,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
                    x1-2,   prev_pos-2,
                    x2+4,   pos+4);
         }
-
+        
         //update();
 
         float falloff_pos = db2linear(db_falloff, get_pos_y1(), get_pos_y2());
