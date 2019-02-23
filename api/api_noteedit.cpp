@@ -167,13 +167,13 @@ void switchScrollPlayOnOff(void){
 
 
 
-static bool g_do_scroll_edit_lines = false;
+static bool g_do_scroll_edit_lines = true;
 
 bool doScrollEditLines(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_do_scroll_edit_lines = SETTINGS_read_bool("arrow_keys_scroll_edit_lines", false);
+    g_do_scroll_edit_lines = SETTINGS_read_bool("arrow_keys_scroll_edit_lines", g_do_scroll_edit_lines);
     has_inited = true;
   }
 
