@@ -3135,8 +3135,14 @@ int radium_main(const char *arg){
       ysplitter->setHandleWidth(0);
       //ysplitter->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding); // NOTE: Causes main window height to grow and grow when adding/removing widget. Strange.
       
-      main_window->setCentralWidget(ysplitter);
-
+      //main_window->setCentralWidget(ysplitter);
+      QBoxLayout *main_layout = dynamic_cast<QBoxLayout*>(main_window->centralWidget()->layout());
+      if(main_layout==NULL){
+        R_ASSERT(false);
+        exit(-100);
+      }
+      main_layout->insertWidget(0, ysplitter, 1); // position 0, stretch 1.
+      
       ysplitter->handle(1)->setEnabled(true);
       
       xsplitter->addWidget(get_qwidget(create_mixer_widget(main_window)));
