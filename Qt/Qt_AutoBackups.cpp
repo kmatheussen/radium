@@ -2,7 +2,6 @@
 #include <unistd.h>
 
 #include <QTime>
-#include <QMainWindow>
 #include <QApplication>
 
 #include "../common/nsmtracker.h"

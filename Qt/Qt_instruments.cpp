@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qstring.h>
 #include <qlineedit.h>
 #include <qsplitter.h>
-#include <qmainwindow.h>
 #include <qevent.h>
 #include <qtreeview.h>
 #include <qlistwidget.h>
@@ -528,7 +527,7 @@ static void set_widget_height(int height){
   return;
 
 #if 0
-  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  QWidget *main_window = static_cast<QWidget*>(root->song->tracker_windows->os_visual.main_window);
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   QSplitter *splitter = editor->ysplitter;
 

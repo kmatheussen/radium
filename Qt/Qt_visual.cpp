@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "EditorWidget.h"
 
 #include <qpainter.h>
-#include <qmainwindow.h>
 #include <qapplication.h>
 #include <qdesktopwidget.h>
 
@@ -76,7 +75,7 @@ static QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
 
 //#include <qpalette.h>
 int GFX_CreateVisual(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window = g_editor->main_window;
+  QWidget *main_window = g_editor->main_window;
 
   tvisual->os_visual.main_window = main_window;
   tvisual->os_visual.widget      = g_editor;

@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <unistd.h> // Must be placed after includepyton/api_proc to avoid compilation error.
 
 #include <QApplication>
-#include <QMainWindow>
 //#include <QSplitter>
 #include <QCloseEvent>
 #include <QStatusBar>
@@ -426,18 +425,17 @@ void handleDropEvent(QString filename, float x){
 
 
 namespace{
-class MyQMainWindow : public QMainWindow{
+class MyQMainWindow : public QWidget{
   //Q_OBJECT;
 
 public:
-  MyQMainWindow() : QMainWindow(NULL) {
+  MyQMainWindow(){
     setAcceptDrops(true);
 #if FOR_MACOSX
     setWindowFlags(windowFlags () | Qt::WindowFullscreenButtonHint); // F11 doesn't work in sierra. Setting this flag probably doesn't work though.
 #endif
     raise();
     activateWindow();
-
   }
 
   void closeEvent(QCloseEvent *ce) override{
@@ -489,25 +487,22 @@ public:
 }
 
 
-QMainWindow *g_main_window = NULL;
+QWidget *g_main_window = NULL;
 
 void SetupMainWindow(void){
 
   //QMainWindow *main_window = new QMainWindow(NULL, "Radium", Qt::WStyle_Customize | Qt::WStyle_NoBorder);// | Qt::WStyle_Dialog);
-  QMainWindow *main_window = new MyQMainWindow();//NULL, "Radium");
+  QWidget *main_window = new MyQMainWindow();//NULL, "Radium");
   g_main_window = main_window;
   g_static_toplevel_widgets.push_back(main_window);
 
 
-  QWidget *central_widget = new QWidget(main_window);
+  //QWidget *central_widget = new QWidget(main_window);
   QVBoxLayout *mainLayout = new QVBoxLayout;
   mainLayout->setSpacing(0);
   mainLayout->setContentsMargins(0,0,0,0);
-  central_widget->setLayout(mainLayout);
-  main_window->setCentralWidget(central_widget);
+  main_window->setLayout(mainLayout);
   
-  main_window->setStatusBar(NULL);
-
   //main_window->installEventFilter(main_window);
   
 #ifdef USE_QT4
@@ -605,11 +600,17 @@ void SetupMainWindow(void){
 
 
   QApplication::instance()->setAttribute(Qt::AA_DontUseNativeMenuBar);
-  
-#if FOR_MACOSX
-  //qt_mac_set_native_menubar(false);
+
   QMenuBar *menubar = new QMenuBar(0);
   initMenues(menubar);
+  menubar->setNativeMenuBar(false);
+  
+  mainLayout->insertWidget(0, menubar, 0); // position 0, stretch 1.
+
+  
+#if 0
+#if FOR_MACOSX
+  //qt_mac_set_native_menubar(false);
   //menubar->show();
   main_window->setMenuBar(menubar);
   
@@ -620,7 +621,8 @@ void SetupMainWindow(void){
   main_window->menuBar()->show();
   main_window->menuBar()->setNativeMenuBar(false);
 #endif
-
+#endif
+  
 #if USE_QT_VISUAL
 
   {
@@ -674,7 +676,7 @@ void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
 
 
 void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const wchar_t *title){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  QWidget *main_window = (QWidget *)tvisual->os_visual.main_window;
   main_window->setWindowTitle(STRING_get_qstring(title));
 }
 

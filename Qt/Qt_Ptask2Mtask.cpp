@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #ifdef USE_QT4
-#include <QMainWindow>
 
 //Added by qt3to4:
 #include <QEvent>

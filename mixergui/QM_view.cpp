@@ -69,8 +69,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 
-#include <QMainWindow>
-
 #include "../common/nsmtracker.h"
 #include "../Qt/Qt_MyQSlider.h"
 #include "QM_view.h"

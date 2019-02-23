@@ -5,7 +5,6 @@
 #include <QMenu>
 #include <QTimer>
 #include <QTime>
-#include <QMainWindow>
 //#include <QSplashScreen>
 #include <QApplication>
 #include <QScrollArea>
@@ -51,7 +50,7 @@ extern void set_editor_focus(void);
 
 extern QVector<QWidget*> g_static_toplevel_widgets;
 
-extern QMainWindow *g_main_window;
+extern QWidget *g_main_window;
 //extern QSplashScreen *g_splashscreen;
 extern QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if !g_curr_popup_qmenu.isNull()
 extern QPointer<QMenu> g_curr_popup_qmenu;
