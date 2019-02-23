@@ -42,7 +42,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <qapplication.h>
 #include <qsplashscreen.h>
-#include <qmainwindow.h>
 #include <qsplitter.h>
 #include <qpalette.h>
 #include <qtabwidget.h>
@@ -69,7 +68,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #ifdef USE_QT4
-#include <QMainWindow>
 
 //Added by qt3to4:
 #include <QEvent>
@@ -1798,7 +1796,7 @@ void *OS_GFX_create_embedded_native_window(void *child_handle, int x, int y, int
 void *OS_GFX_get_native_main_window(void){
   R_ASSERT_RETURN_IF_FALSE2(g_is_starting_up==false, NULL);
       
-  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  QWidget *main_window = static_cast<QWidget*>(root->song->tracker_windows->os_visual.main_window);
   return (void*)main_window->winId();
 }
 
@@ -1864,7 +1862,7 @@ static bool maybe_got_key_window(QWindow *window){
 
 // Warning: Does not always work on windows.
 bool OS_GFX_main_window_has_focus(void){
-  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  QWidget *main_window = static_cast<QWidget*>(root->song->tracker_windows->os_visual.main_window);
   return maybe_got_key_window(main_window->window()->windowHandle());
 }
 
@@ -2747,7 +2745,7 @@ void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
 #if defined(FOR_MACOSX) && !defined(USE_QT5)
   GFX_Message2(NULL, false, "Full screen not supported on OSX");
 #else
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  QWidget *main_window = (QWidget *)tvisual->os_visual.main_window;
 
   if(main_window->isFullScreen()){
     main_window->showNormal();
@@ -2827,7 +2825,7 @@ void GFX_toggleCurrWindowFullScreen(void){
 
 
 void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window=static_cast<QMainWindow*>(tvisual->os_visual.main_window);
+  QWidget *main_window=static_cast<QWidget*>(tvisual->os_visual.main_window);
 
   //GFX_PlayListWindowToBack();
   main_window->raise();
@@ -2925,7 +2923,7 @@ void Qt_EventHandler(void){
     qapplication->processEvents();
 #endif
 #if 0
-  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  QWidget *main_window = static_cast<QWidget*>(root->song->tracker_windows->os_visual.main_window);
   if(main_window->isVisible()==false)
     doquit=true;
 #endif
@@ -3059,7 +3057,7 @@ int radium_main(const char *arg){
 
   struct Tracker_Windows *window = root->song->tracker_windows;
 
-  QMainWindow *main_window = static_cast<QMainWindow*>(window->os_visual.main_window);
+  QWidget *main_window = static_cast<QWidget*>(window->os_visual.main_window);
 
   {
     EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
@@ -3136,12 +3134,12 @@ int radium_main(const char *arg){
       //ysplitter->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding); // NOTE: Causes main window height to grow and grow when adding/removing widget. Strange.
       
       //main_window->setCentralWidget(ysplitter);
-      QBoxLayout *main_layout = dynamic_cast<QBoxLayout*>(main_window->centralWidget()->layout());
+      QBoxLayout *main_layout = dynamic_cast<QBoxLayout*>(main_window->layout());
       if(main_layout==NULL){
         R_ASSERT(false);
         exit(-100);
       }
-      main_layout->insertWidget(0, ysplitter, 1); // position 0, stretch 1.
+      main_layout->insertWidget(1, ysplitter, 1); // position 0, stretch 1.
       
       ysplitter->handle(1)->setEnabled(true);
       

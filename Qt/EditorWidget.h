@@ -72,7 +72,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "MySplitter.hpp"
 
 
-class QMainWindow;
 class Upperleft_widget;
 
 #if USE_QIMAGE_BUFFER
@@ -110,7 +109,7 @@ public:
 
     struct Tracker_Windows *window; // Not sure if this one is used.
 
-    QMainWindow *main_window;
+    QWidget *main_window;
 
     Upperleft_widget *upperleft_widget;
 
@@ -271,7 +270,7 @@ protected:
 #endif
 };
 
-extern QMainWindow *g_main_window;
+extern QWidget *g_main_window;
 extern QWidget *g_mixerstripparent;
 extern QHBoxLayout *g_mixerstriplayout;
 extern EditorWidget *g_editor;

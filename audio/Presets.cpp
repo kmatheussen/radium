@@ -4,7 +4,6 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QFileDialog>
-#include <QMainWindow>
 #include <QCoreApplication>
 
 #include "../common/nsmtracker.h"

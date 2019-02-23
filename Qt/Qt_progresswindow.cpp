@@ -7,7 +7,6 @@
 #include <QProcess>
 #include <QTimer>
 #include <QDesktopWidget>
-#include <QMainWindow>
 #include <QLayout>
 #include <QThread>
 #include <QMutex>
@@ -402,7 +401,7 @@ static QPoint getCentrePosition(QWidget *parent, int width, int height){
 #include "helpers.h"
 #endif
 
-extern QMainWindow *g_main_window;
+extern QWidget *g_main_window;
 
 static QProcess *g_process = NULL;
 

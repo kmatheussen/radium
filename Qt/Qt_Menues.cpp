@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QMenuBar>
 #include <QApplication>
-#include <QMainWindow>
 #include <QStack>
 
 #include "../common/nsmtracker.h"
@@ -39,7 +38,8 @@ namespace{
 
 static QStack<QMenu* >g_curr_menu;
 static int g_menu_is_open = 0;
-  
+static QMenuBar *g_main_menu_bar = NULL;
+ 
 struct MyMenu : public QMenu, radium::Timer{
   Q_OBJECT;
 
@@ -269,8 +269,8 @@ void GFX_MakeMakeMainMenuActive(void){
   //  g_first_menu->menuAction()->setVisible(true);
   
   //  QTimer::singleShot(0, []{
-      EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
-      send_key_down(editor->main_window->menuBar(), 1);
+  //EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
+      send_key_down(g_main_menu_bar, 1);
       //});
 }
 
@@ -295,26 +295,34 @@ QMenu *GFX_GetActiveMenu(void){
 }
 
 bool GFX_MenuVisible(struct Tracker_Windows *tvisual){
+  /*
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   return editor->main_window->menuBar()->isVisible();
+  */
+  return g_main_menu_bar->isVisible();
 }
 
 void GFX_ShowMenu(struct Tracker_Windows *tvisual){
-  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   GL_lock();{
     GL_pause_gl_thread_a_short_while();
-    editor->main_window->menuBar()->show();
+    g_main_menu_bar->show();
+    //editor->main_window->menuBar()->show();
   }GL_unlock();
 }
 
 void GFX_HideMenu(struct Tracker_Windows *tvisual){
+  /*
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   //g_first_menu->menuAction()->setVisible(false);
   editor->main_window->menuBar()->hide();
-
+  */
+  
+  g_main_menu_bar->hide();
+  
   //EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
   QKeyEvent *eve1 = new QKeyEvent((enum QEvent::Type)6, Qt::Key_Escape, Qt::NoModifier);
-  qApp->postEvent(editor->main_window->menuBar(),eve1);
+  qApp->postEvent(g_main_menu_bar,eve1);
 }
 
 void GFX_SetMenuFontsAgain(void){
@@ -332,6 +340,8 @@ void GFX_SetMenuFontsAgain(void){
 }
                   
 void initMenues(QMenuBar *base_menu){
+  g_main_menu_bar = base_menu;
+  
   current_menu = (struct Menues*)V_calloc(1, sizeof(struct Menues));
   //g_base_menues = current_menu;
   current_menu->base = base_menu;

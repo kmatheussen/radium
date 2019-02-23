@@ -3,7 +3,6 @@
 #include <QWidget>
 
 #include <qapplication.h>
-#include <qmainwindow.h>
 #include <QPushButton>
 #include <QProcess>
 #include <QDir>
@@ -70,7 +69,7 @@ static int show_message(QString message, const QVector<QString> &menu_strings){
   return -1;
 }
 
-QMainWindow *g_main_window = NULL; // referenced by helpers.h
+QWidget *g_main_window = NULL; // referenced by helpers.h
 //QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
 bool g_radium_runs_custom_exec = false; // used by helpers.h
 bool g_qt_is_painting = false;
