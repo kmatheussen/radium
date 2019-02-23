@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -7342,7 +7342,7 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
          <item row="1" column="1">
           <widget class="QLabel" name="label_13">
            <property name="text">
-            <string>Tab bar height (a reboot is required for most tab bars)</string>
+            <string>Tab bar height (multiplied by fontheight). Most tab bars require a reboot for the changes to take effect.</string>
            </property>
           </widget>
          </item>
@@ -10843,9 +10843,9 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup_4"/>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>
