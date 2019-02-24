@@ -27,6 +27,97 @@ static const QString message_split_string = "_____SPLIT______";
 static QString g_main_message;
 static QString g_content_message;
 
+
+/*********************************
+ * Start.
+ isParentRunning() function made by "lisabeeren" found here: https://forum.qt.io/topic/33964/solved-child-qprocess-that-dies-with-parent/10
+***********************************/
+
+#if defined(FOR_WINDOWS)
+#include <windows.h>
+#include <tlhelp32.h>
+#else
+#include "unistd.h"
+#endif
+
+
+#if defined(FOR_WINDOWS)
+
+static unsigned long currentPID()
+{
+#if defined(FOR_WINDOWS)
+  return GetCurrentProcessId();
+#else
+  return getpid();
+#endif
+}
+
+static unsigned long parentPID()
+{
+#if defined(FOR_WINDOWS)
+  
+  HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  PROCESSENTRY32 pe = { 0 };
+  pe.dwSize = sizeof(PROCESSENTRY32);
+  
+  unsigned long pid = currentPID();
+  unsigned long ppid = 0;
+  
+  if( Process32First(h, &pe)) {
+    do {
+      if (pe.th32ProcessID == pid) {
+        ppid = pe.th32ParentProcessID;
+        break;
+      }
+    } while( Process32Next(h, &pe));
+  }
+  
+  CloseHandle(h);
+  
+  return ppid;
+  
+#else
+  
+  return getppid();
+  
+#endif
+}
+
+#endif // WIN32
+
+static bool isParentRunning()
+{
+#if defined(FOR_WINDOWS)
+  
+  static unsigned long _parentPID = parentPID();
+  static void* _parentHandle = NULL;
+  
+  if (_parentHandle == NULL && _parentPID != 0)
+    _parentHandle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, _parentPID);
+  
+  if (_parentHandle != NULL)
+    {
+      BOOL success;
+      DWORD exitCode;
+
+      success = GetExitCodeProcess(_parentHandle, &exitCode);
+      
+      return ( ! success) || exitCode == STILL_ACTIVE;
+    }
+  
+  return true;
+  
+#else
+  return getppid() != 1;
+#endif
+}
+
+/*********************************
+ * End (of isParentRunning())
+***********************************/
+
+
+
 /*
 static int longest_line(QString text){
   int ret = 0;
@@ -143,14 +234,28 @@ namespace{
 
 static MyProgressWindow *g_progressWindow = NULL;
 
+static QMutex g_mutex;
+static QQueue<QString> g_queue;
 
 class MyTimer : public QTimer{
 public:
   MyTimer(){
     setInterval(200);
   }
-
   void timerEvent(QTimerEvent *e) override {
+
+    /*
+      static int counter=0;
+
+      QMutexLocker locker(&g_mutex);
+      //printf("Adding -%s- to queue\n", line.toUtf8().constData());
+      g_queue.enqueue(QString(" "+QString::number(counter++) + ". Is parent alive? :" + (isParentRunning() ? "Yes" : "No")));
+    */
+
+    if (!isParentRunning()){
+      exit(-1);
+    }
+    
     if (g_progressWindow != NULL && g_progressWindow->isVisible()) {
       g_progressWindow->raise();
     }
@@ -252,8 +357,6 @@ namespace{
   
 class ReadStdinThread : public QThread
 {
-  QMutex mutex;
-  QQueue<QString> queue;
   
   QFile in;
   
@@ -268,12 +371,12 @@ public:
   }
   
   QString get_data(void){
-    QMutexLocker locker(&mutex);
+    QMutexLocker locker(&g_mutex);
     //printf("queue.size: %d\n", queue.size());
-    if (queue.size()==0)
+    if (g_queue.size()==0)
       return "";
     else
-      return queue.dequeue();
+      return g_queue.dequeue();
   }
   
 private:
@@ -295,9 +398,9 @@ private:
       }
 
       if (line != ""){
-        QMutexLocker locker(&mutex);
+        QMutexLocker locker(&g_mutex);
         //printf("Adding -%s- to queue\n", line.toUtf8().constData());
-        queue.enqueue(line);
+        g_queue.enqueue(line);
       }
     
       if (line==message_exit)
@@ -470,7 +573,8 @@ void GFX_OpenProgress(const char *message){
 
   //g_process->setReadChannel(QProcess::StandardOutput);
   //g_process->setProcessChannelMode(QProcess::MergedChannels);
-    
+
+#if 1
   g_process->start(program+" "+
                    QString::number(fontsize) + " " +
                    QString::number(rect.x()) + " " +
@@ -480,12 +584,24 @@ void GFX_OpenProgress(const char *message){
                    QString(QString(message).toUtf8().toBase64().constData()),
                    QIODevice::WriteOnly | QIODevice::Text | QIODevice::Unbuffered | QIODevice::Append
                    );
-
+#else
+  g_process->setProgram(program);
+  QStringList args;
+  args << QString::number(fontsize);
+  args <<               QString::number(rect.x());
+  args <<       QString::number(rect.y());
+  args << QString::number(rect.width());
+  args <<       QString::number(rect.height());
+  args <<  QString(QString(message).toUtf8().toBase64().constData());
+  g_process->setArguments(args);
+  g_process->startDetached();
+#endif
+  
   //printf("POINGSIZE: %d\n", QApplication::font().pointSize());
   //getchar();
   
   if (g_process->waitForStarted()==false){
-    printf("PROGRESSWINDOWS: Unable to start process: -%S-\n", STRING_create(program));
+    printf("PROGRESSWINDOWS: Unable to start process: -%s-\n", program.toUtf8().constData());
 #if !defined(RELEASE)
     getchar();
     abort();
@@ -564,7 +680,7 @@ void GFX_ShowProgress(void){
 
 
 /*
-cd /home/kjetil/radium && BUILDTYPE=DEBUG ./build_linux.sh && cd Qt && g++ Qt_progresswindow.cpp -DTEST_MAIN `pkg-config --libs Qt5Gui --cflags Qt5Gui --cflags Qt5Widgets` -std=gnu++11 -DNDEBUG -DP_SERVER -I../Qt -DFOR_LINUX -DUSE_QT4 -DUSE_QT5 `cat ../flagopts.opt` -fPIC && ./a.out
+cd /home/kjetil/radium && BUILDTYPE=DEBUG ./build_linux.sh && cd Qt && g++ Qt_progresswindow.cpp -DTEST_MAIN `pkg-config --libs Qt5Gui --cflags Qt5Gui --cflags Qt5Widgets` -std=gnu++11 -DNDEBUG -DP_SERVER -I../Qt -DFOR_LINUX -DUSE_QT4 -DUSE_QT5 `cat ../flagopts.opt` -fPIC -Wall && ./a.out
 */
 
   
