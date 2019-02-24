@@ -59,14 +59,24 @@ static int process (jack_nframes_t nframes, void *arg){
 //extern void init_weak_jack(void);
 
 int main(int argc, char **argv){
+  /*
+  usleep(14*1000*1000);
+  usleep(14*100*1000);
+  getchar();
+  */
 
+  /*
+  int *ai2=NULL;
+  ai2[0] = 50;
+  */
+  
   QCoreApplication app(argc, argv);
   init_weak_jack();
     
   jack_status_t status;
   
   jack_client_t *client = jack_client_open("radium_check_jack_working",JackNoStartServer,&status,NULL);
-
+  //  abort();
   if (client == NULL) {
     fprintf (stderr, "KillJackd.cpp: jack_client_open() failed, "
              "status = 0x%2.0x\n", status);
@@ -194,6 +204,7 @@ int main(int argc, char **argv){
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
+#include "../common/Process.hpp"
 
 #include "KillJackd_proc.h"
 
@@ -239,51 +250,39 @@ static void kill_jackd(void){
 
 // Returns true if unresponsive. (probably been killed too)
 bool KILLJACKD_kill_jackd_if_unresponsive(void){
+  radium::Process process;
 
-  QProcess *myProcess = new QProcess();
-
-#if defined(FOR_LINUX) || defined(FOR_MACOSX)
-  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-  env.insert("LD_LIBRARY_PATH", getenv("LD_LIBRARY_PATH"));
-  myProcess->setProcessEnvironment(env);
-#endif
-
-#if FOR_WINDOWS
-  QString program = OS_get_full_program_file_path("radium_check_jack_status.exe");
+#if FOR_WINDOWS  
+  process.start(OS_get_full_program_file_path("radium_check_jack_status.exe"));
 #else
-  QString program = OS_get_full_program_file_path("radium_check_jack_status");
+  process.start(OS_get_full_program_file_path("radium_check_jack_status"));
 #endif
-
-#if defined(FOR_WINDOWS)
-  program = QString("\"") + program + "\""; // necessary if path contains spaces.
-#endif
-
   
-  myProcess->start(program);
-
 #if defined(RELEASE)
   int msecs = 10000;
 #else
   int msecs = 5000;
 #endif
-
-  int status = 0;
-
-  bool timed_out = (myProcess->waitForFinished(msecs) == false);
+  
+  process.wait_for_finished(msecs);
 
   QString message;
   
-  if (timed_out==true) {
-    message = "Jack is unresponsive.";
-    
-  } else if (myProcess->exitStatus()==QProcess::CrashExit) {
+  if (process.error_has_occured()){
 
-    message = "Crash while testing jack.";
+    if (process.get_status()==radium::Process::Status::CRASHED)      
+      message = "Crash while testing jack.";
+
+    else if (process.get_status()==radium::Process::Status::TIMED_OUT)
+      message = "Jack is unresponsive.";
+
+    else
+      message = "Jack test program " + process.get_status_string() + ".";
     
   } else {
-    
-    status = myProcess->exitCode();
-      
+
+    int status = process.get_exit_code();
+
     switch(status){
     case JACK_ALIVE_AND_FINE:
       break;
@@ -311,9 +310,9 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
       message = "Unknown error (?) " + QString::number(status);
       break;      
     }
-    
-  }
 
+  }
+  
   if (message != ""){
     vector_t v = {};
     
@@ -330,10 +329,6 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
       return true;
     }
   }
-
-  myProcess->connect(myProcess, SIGNAL(finished(int)), myProcess, SLOT(deleteLater()));
-
-  msleep(1000); // Give jack some time to rest
 
   return false;
 }

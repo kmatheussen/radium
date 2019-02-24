@@ -1571,7 +1571,7 @@ bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp
 Qt_progresswindow.o: $(BUILD_DEPENDENCIES) $(P)Qt_progresswindow.cpp
 	$(CCC) $(P)Qt_progresswindow.cpp $(QTOPT) -DP_SERVER
 
-KillJackd.o:$(BUILD_DEPENDENCIES) audio/KillJackd.cpp weakjack/weak_libjack.c
+KillJackd.o:$(BUILD_DEPENDENCIES) audio/KillJackd.cpp weakjack/weak_libjack.c common/Process.hpp
 	$(CCC) audio/KillJackd.cpp $(QTOPT) -Wno-missing-declarations
 
 Rational.o: $(BUILD_DEPENDENCIES) $(P)Rational.cpp
