@@ -3213,6 +3213,9 @@ int radium_main(const char *arg){
 
 #if USE_OPENGL
   editor->gl_widget = GL_create_widget(editor);
+  if(editor->gl_widget==NULL)
+    return -100;
+  
   //editor->gl_widget->setAttribute(Qt::WA_PaintOnScreen);
   editor->position_gl_widget(window);
 #endif
