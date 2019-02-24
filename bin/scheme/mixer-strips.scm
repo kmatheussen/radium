@@ -752,7 +752,8 @@
                     (lambda ()
                       (define (finished new-instrument)
                         ;;(c-display "             first: " (<ra> :get-instrument-name first-instrument-id) ", new:" (and new-instrument (<ra> :get-instrument-name new-instrument)))
-                        (<ra> :set-current-instrument first-instrument-id))
+                        (if strips-config
+                            (<ra> :set-current-instrument first-instrument-id)))
                       (insert-new-instrument-between curr-plugin-instrument
                                                      (get-instruments-connecting-from-instrument curr-plugin-instrument)
                                                      #t
@@ -771,7 +772,8 @@
                         (request-send-instrument instrument-id
                                                  (lambda (create-send-func)
                                                    (create-send-func 0 '())
-                                                   (<ra> :set-current-instrument first-instrument-id))))))
+                                                   (if strips-config
+                                                       (<ra> :set-current-instrument first-instrument-id)))))))
 
               ;;(and (not is-send?)
               ;;     (list
@@ -853,7 +855,8 @@
               (get-global-mixer-strips-popup-entries first-instrument-id strips-config parent-instrument-id)
               )
 
-  (<ra> :set-current-instrument instrument-id)
+  (if strips-config
+      (<ra> :set-current-instrument instrument-id))
   )
     
 

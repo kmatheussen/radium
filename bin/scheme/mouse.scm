@@ -8042,11 +8042,11 @@
                                                                  (<ra> :config-block)))
                                                          
                                                          "------------------------"
-                                                         (list "Copy editor track on/off -> seqblock track on/off"
+                                                         (list "Copy track on/off editor => seqblock"
                                                                :enabled (and blocknum seqblocknum)
                                                                ra:copy-editor-track-on-off-to-seqblock)
 
-                                                         (list "Copy seqblock track on/off -> editor track on/off"
+                                                         (list "Copy track on/off seqblock => editor"
                                                                :enabled (and blocknum seqblocknum)
                                                                ra:copy-seqblock-track-on-off-to-editor)
                                                          
