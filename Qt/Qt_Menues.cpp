@@ -266,7 +266,7 @@ void gakk(){
 */
 
 static void make_menu_active(int trynum, int ms){
-  if (trynum >= 100)
+  if (trynum >= 100 || !safe_to_run_exec())
     return;
 
   QTimer::singleShot(ms, [trynum]{
