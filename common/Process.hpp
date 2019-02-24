@@ -7,7 +7,25 @@
 #include <QString>
 
 
-// Workaround for horrible QProcess API.
+/*
+  Workaround for broken QProcess API/implementation:
+
+  * It's not documented how error handling in QProcess actually works. The radium::Process class is made by trying and failing.
+
+  * The errorOccured signal is not called when timing out while calling QProcess::waitForFinished.
+    The result of QProcess::error() is always "unknown error" after calling QProcess::waitForFinished, not crashed or timeout.
+    The finished() signal is called though, so events seems to be processed while calling QProcess::waitForFinished.
+
+    Edit: errorOccured is called when radium is compiled in RELEASE mode.
+
+  * QProcess::waitForFinished returns false if the program had exited normally before calling. This is documented, and therefore
+    the intended behaviour, but it is also obviously the wrong behavior, and the reason for writing this file.
+
+  * When program crashes, QProcess::waitForFinished doesn't return. Instead QProcess::waitForFinished waits until it times out.
+    QProcess::error() also returns TimedOut when it crashes. I have no workaround for this.    
+    This bug is not present on OSX though so it could be a linux thing or something in my environment.
+    (haven't tested on Windows)
+ */
 
 #include "helpers.h"
 
@@ -28,8 +46,44 @@ private:
   
   bool _start_has_been_called = false;
 
+  void connect_signals(void){
+    {
+      IsAlive is_alive(this);
+    
+      QObject::connect(_process.data(), &QProcess::errorOccurred, [is_alive, this](QProcess::ProcessError error)
+                       {
+                         //fprintf(stderr,"       ERROR_OCCURED: %d\n\n\n\n", (int)error);
+                         if(is_alive){
+                           _error_occured = true;
+                           _proc_error = error;
+                         }
+                       });
+    }
+
+    {      
+      IsAlive is_alive(this);
+      QProcess *process = _process.data();
+      
+      QObject::connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [is_alive, this, process](int exitCode, QProcess::ExitStatus exitStatus)
+                       {
+                         //fprintf(stderr,"       FINISHED: %d %d\n\n\n\n", exitCode, (int)exitStatus);
+                         
+                         if(is_alive){
+                           _has_exited = true;
+                           _exit_status = exitStatus;
+                           _exit_code = exitCode;
+                         }
+                         process->deleteLater();
+                       });
+    }
+  }
+  
 public:
 
+  Process(){
+    connect_signals();
+  }
+  
   QPointer<QProcess> get_qprocess(void){
     QPointer<QProcess> ret = _process.data();
     return ret;
@@ -51,39 +105,6 @@ public:
 #else
     _process->start(program);
 #endif
-
-
-    {
-      /* This is the ONLY way in Qt to check for error properly. Workaround found here: https://stackoverflow.com/questions/37961852/how-to-check-if-qprocess-is-executing-correctly
-       */
-
-      IsAlive is_alive(this);
-    
-      QObject::connect(_process, &QProcess::errorOccurred, [is_alive, this](QProcess::ProcessError error)
-                       {
-                         if(is_alive){
-                           _error_occured = true;
-                           _proc_error = error;
-                         }
-                       });
-    }
-
-    {
-      /* And this one is also necessary. */
-      
-      IsAlive is_alive(this);
-      QProcess *process = _process.data();
-      
-      QObject::connect(_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [is_alive, this, process](int exitCode, QProcess::ExitStatus exitStatus)
-                       {
-                         if(is_alive){
-                           _has_exited = true;
-                           _exit_status = exitStatus;
-                           _exit_code = exitCode;
-                         }
-                         process->deleteLater();
-                       });
-    }
   }
 
   enum class Status{
@@ -110,6 +131,8 @@ public:
         return Status::CRASHED;
       else if(_proc_error==QProcess::FailedToStart)
         return Status::FAILED_TO_START;
+      else if(_proc_error==QProcess::Timedout)
+        return Status::TIMED_OUT;
       else
         return Status::OTHER_ERROR;
     }
@@ -129,7 +152,7 @@ public:
     return Status::OTHER_ERROR;    
   }
 
-  QString getStatusString(void) const {
+  QString get_status_string(void) const {
     R_ASSERT_RETURN_IF_FALSE2(_start_has_been_called==true, "");
     
     switch(get_status()){
@@ -140,7 +163,7 @@ public:
       case Status::TIMED_OUT: return "has timed out";
       case Status::CRASHED: return "has crashed";
       case Status::FAILED_TO_START: return "failed to start";
-      case Status::OTHER_ERROR: return "did not succeed because of an other error";
+      case Status::OTHER_ERROR: return "did not succeed because of an unknown error";
     }
 
     R_ASSERT_NON_RELEASE(false);
@@ -153,9 +176,51 @@ public:
     return _exit_code;
   }
   
-  void waitForFinished(int msecs){
+  void wait_for_finished(int msecs){
     R_ASSERT_RETURN_IF_FALSE(_start_has_been_called==true);
-    _process->waitForFinished(msecs);
+    //fprintf(stderr,"4. Waiting. has_exited: %d.\n", _has_exited);
+
+    if(_has_exited==true){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+
+    double start_time = TIME_get_ms();
+    
+    if (_process->waitForFinished(msecs)==false){
+
+      if(_has_exited==false){ // Yes, QProcess::waitForFinished returns false also if the program exited normally. (!$%^!#$%!#$%)
+
+        // The errorOccured signal does not seem to be called while calling waitForFinished(), so we have to do this check.
+        if (_error_occured==false){          
+          _error_occured = true;
+          
+          _proc_error = _process->error();
+
+          //printf("C: %f %f. _proc_error: %d\n",TIME_get_ms(), start_time, _proc_error);
+
+          if(_proc_error == QProcess::UnknownError){
+
+            if ((TIME_get_ms() - start_time) >= msecs){
+              
+              _proc_error = QProcess::Timedout;
+              
+            } else {
+
+              _proc_error = QProcess::Crashed;
+              
+            }
+            
+
+          }
+        }
+
+      }
+      
+      //fprintf(stderr,"5. Waiting. Error: %d. State: %d. has_exited: %d\n", (int)_process->error(), (int)_process->state(), _has_exited);
+    }
+    
+    //fprintf(stderr,"6. Waiting\n");        
   }
 
   

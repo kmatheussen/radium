@@ -15,13 +15,18 @@
 
 int main(int argc, char **argv){
 
+  /*
+  int *ai2=NULL;
+  ai2[0] = 50;
+  */
+
   QGuiApplication app(argc, argv);
 
   if (QGLFormat::hasOpenGL()==false)
     return 0;
 
   QGLFormat::openGLVersionFlags();
-    
+
   return 0;
 }
 
@@ -39,6 +44,7 @@ int main(int argc, char **argv){
 
 // Returns true if we want to exit;
 bool CHECKOPENGL_checkit(void){
+  
   radium::Process process;
 
 #if FOR_WINDOWS  
@@ -53,7 +59,7 @@ bool CHECKOPENGL_checkit(void){
   int msecs = 5000;
 #endif
   
-  process.waitForFinished(msecs);
+  process.wait_for_finished(msecs);
 
   if (process.error_has_occured()){
     bool may_try = true;
@@ -61,7 +67,7 @@ bool CHECKOPENGL_checkit(void){
     if (process.get_status()==radium::Process::Status::CRASHED)
       may_try = false;
 
-    QString message = "OpenGL process " + process.getStatusString() + ". Radium can not start. It might help to update the GFX driver.";
+    QString message = "OpenGL process " + process.get_status_string() + ". Radium can not start. It might help to update the GFX driver.";
     
     if (!may_try)
       message = "OpenGL crashed. Radium can not start. It might help to update the GFX driver.";
