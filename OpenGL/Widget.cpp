@@ -1892,13 +1892,13 @@ QWidget *GL_create_widget(QWidget *parent){
   init_g_pause_rendering_on_off();
 
   if (CHECKOPENGL_checkit()==true){
-    exit(-2);
+    //exit(-2);
     return NULL;
   }
     
   if (QGLFormat::hasOpenGL()==false) {
     GFX_Message(NULL,"OpenGL not found");
-    exit(-1);
+    //exit(-1);
     return NULL;
   }
 
@@ -1927,7 +1927,7 @@ QWidget *GL_create_widget(QWidget *parent){
                 "\n"
                 "To solve this problem, you might want to try updating your graphics card driver."
                 );
-    exit(-1);
+    //exit(-1);
     return NULL;
   }
   
@@ -1944,7 +1944,7 @@ QWidget *GL_create_widget(QWidget *parent){
                           "You might also have to disable \"Draw in separate process\" under Edit -> Preferences -> OpenGL if you choose to run anyway."
                           );
     if (ret==1){
-      exit(-1);
+      //exit(-1);
       return NULL;
     }
 
