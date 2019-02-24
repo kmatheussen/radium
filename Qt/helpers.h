@@ -1030,6 +1030,7 @@ struct ScopedExec{
   bool _do_tell_program_state_is_valid;
   bool _has_obtained_custom_exec;
   bool _has_obtained_safe_to_paint;
+  bool _has_hidden_progress = false;
   
   ScopedExec(bool program_state_is_valid, bool assert_running_custom_exec = true)
     : _do_tell_program_state_is_valid(program_state_is_valid)
@@ -1057,12 +1058,17 @@ struct ScopedExec{
       g_radium_runs_custom_exec = true;
       _has_obtained_custom_exec = true;
     }
-    
-    GFX_HideProgress();
+
+    if (true || g_qtgui_has_started_step2==true){
+      GFX_HideProgress();
+      _has_hidden_progress = true;
+    }
   }
   
   ~ScopedExec(){
-    GFX_ShowProgress();
+
+    if (_has_hidden_progress)
+      GFX_ShowProgress();
 
     R_ASSERT_NON_RELEASE(g_radium_runs_custom_exec==true);
 
@@ -1114,11 +1120,18 @@ static inline int safeExec(QMessageBox *widget, bool program_state_is_valid){
 #endif
 
   if (g_radium_runs_custom_exec==true){
-    GFX_HideProgress();
+    bool hide_progress = g_qtgui_has_started_step2==true;
+    
+    if (true || hide_progress)
+      GFX_HideProgress();
+    
     GL_lock();
     int ret = widget->exec();
-    GFX_ShowProgress();
     GL_unlock();
+
+    if (true || hide_progress)
+      GFX_ShowProgress();
+    
     return ret;
   }
 
