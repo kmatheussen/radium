@@ -183,8 +183,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
         
     setMinimumHeight(fm.height()*3/2);
     setMaximumHeight(fm.height()*3/2);
-    frame->setMinimumHeight(fm.height()*3/2);
-    frame->setMaximumHeight(fm.height()*3/2);
+    //frame->setMinimumHeight(fm.height()*3/2);
+    //frame->setMaximumHeight(fm.height()*3/2);
 
     min_velocity_slider->setValue(4000);
     velocity_slider->setValue(8000);
@@ -616,11 +616,12 @@ QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool in
 
   ret->setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
 
+  /*
   {
     QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
     ret->setStyleSheet("#frame { border: 1px solid " + system_color.darker(150).name(QColor::HexArgb) + "; }");
   }
-
+  */
   return ret;
 }
 
