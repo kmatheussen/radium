@@ -2312,7 +2312,7 @@ Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/S
 Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp
 	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) #-Wno-error=unused-variable
 
-CheckOpenGL.o: OpenGL/CheckOpenGL.cpp
+CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
 	$(CCC) OpenGL/CheckOpenGL.cpp $(QTOPT)
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
