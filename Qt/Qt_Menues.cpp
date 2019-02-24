@@ -265,13 +265,36 @@ void gakk(){
 }
 */
 
+static void make_menu_active(int trynum, int ms){
+  if (trynum >= 100)
+    return;
+
+  QTimer::singleShot(ms, [trynum]{
+      
+      //printf(" Hepp: %d. trynum: %d\n", g_menu_is_open, trynum);
+      
+      if(g_menu_is_open==0){
+        //g_main_menu_bar->setFocus(Qt::MenuBarFocusReason);
+
+        if (trynum==0 || trynum > 2)
+          send_key_down(g_main_menu_bar, 1);
+
+        if (trynum > 0){
+          QPoint topleft = g_main_menu_bar->rect().topLeft();
+          QPoint center = g_main_menu_bar->rect().center();
+          QPoint point = QPoint(topleft.x() + 40, center.y());
+          auto *event = new QMouseEvent(QEvent::MouseMove, point, Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+          qApp->postEvent(g_main_menu_bar, event);
+        }
+        
+        make_menu_active(trynum + 1, 10);
+      }
+    });
+
+}
+
 void GFX_MakeMakeMainMenuActive(void){
-  //  g_first_menu->menuAction()->setVisible(true);
-  
-  //  QTimer::singleShot(0, []{
-  //EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
-      send_key_down(g_main_menu_bar, 1);
-      //});
+  make_menu_active(0, 10);
 }
 
 bool GFX_MenuActive(void){
