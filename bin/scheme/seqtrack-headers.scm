@@ -981,12 +981,12 @@
                             seqtracknum)))
 
   (add-sub-area-plain! (<new> :text-area gui
-                              x1 y1
-                              x1-split y-split
+                              x1 (+ y1 0)
+                              (- x1-split 1) y-split
                               (<-> seqtracknum)
                               :text-color "black"
                               :background-color (lambda () (<gui> :mix-colors "white" (get-background-color #t) 0.02))
-                              :border-rounding 100 ;;(if use-two-rows 1 8)
+                              :border-rounding 108 ;0 ;;(if use-two-rows 1 8)
                               ))
   
   (define panner-x2 (if use-two-rows x-meter-split x2-split))
