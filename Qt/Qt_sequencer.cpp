@@ -4114,7 +4114,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       grid_type=BEAT_GRID;
      //      return;
 
-
     double x1 = _seqtracks_widget.t_x1;
     double x2 = _seqtracks_widget.t_x2;
     //double width = x2-x1;
@@ -4328,8 +4327,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   
-#define ERASE_FIRST 1    
-
   void seqtracks_and_timeline(QPaintEvent *ev, float seqtracks_y_max){
 
     // Need to put TRACK_PAINT in a different scope than the call to API_run_paint_event_for_custom_widget.
@@ -4341,13 +4338,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     QPainter p(this);
 
-#if !ERASE_FIRST
-    QRect erase_rect(rect());
-    erase_rect.setLeft(_seqtracks_widget.t_x1);
-    erase_rect.setRight(width() - _seqtracks_widget.t_x1);
-    p.eraseRect(erase_rect); // We don't paint everything.
-#endif
-      
     p.setRenderHints(QPainter::Antialiasing,true);    
       
     p.setClipRect(QRectF(_seqtracks_widget.t_x1, 0, _seqtracks_widget.t_width, seqtracks_y_max));
@@ -4401,7 +4391,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     // Erase background
     //
-#if ERASE_FIRST
+
     if(seqtracks_are_painted || right_part_is_painted){ // This is strange, but if we don't do this here, some graphical artifacts are shown in the left part of the headers.
       TRACK_PAINT();
       
@@ -4409,21 +4399,21 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       for(const QRect &rect : ev->region())
         p.eraseRect(rect);
     }
-#endif
 
-#undef ERASE_FIRST
-
+    
     float seqtracks_y_max = _seqtracks_widget.get_seqtracks_y2() + get_seqtrack_border_width();
 
     // Paint seqtrack headers (left part)
     //
 
+    
     if (right_part_is_painted || left_part_is_painted || timelanes_are_painted)
       API_run_paint_event_for_custom_widget(this,
                                             ev,
                                             _seqtracks_widget.get_region()
                                             );
-
+    
+    
     // Paint seqblocks and seqtrack backround
     //
     if(seqtracks_are_painted || timelanes_are_painted)
