@@ -571,23 +571,19 @@
            (when (and (> cx2 cx1)
                       (> cy2 cy1))
 
-             (<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
-
-             (define (paintit)
-                (paint)                
-                (for-each (lambda (sub-area)
-                            (sub-area :paint-internal cx1 cy1 cx2 cy2))
-                          sub-areas))
-
-             (if font
-                 (<gui> :do-font gui font paintit)
-                 (paintit))
-
-             (<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
-             (post-paint)))
-           
-         (if (not parent-area)
-             (<gui> :cancel-clip-rect gui))))
+             (<gui> :do-clipped gui cx1 cy1 cx2 cy2
+                    (lambda ()
+                      (define (paintit)
+                        (paint)                
+                        (for-each (lambda (sub-area)
+                                    (sub-area :paint-internal cx1 cy1 cx2 cy2))
+                                  sub-areas))
+                      
+                      (if font
+                          (<gui> :do-font gui font paintit)
+                          (paintit))
+             
+                      (post-paint)))))))
      
      (define class-name ',(car def))
 
