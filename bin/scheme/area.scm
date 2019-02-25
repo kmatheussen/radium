@@ -871,8 +871,12 @@
 
     (when paint-border
       (define background-color (<gui> :get-background-color gui))
-      (<gui> :draw-box gui background-color (+ 0 x1) (+ 0 y1) (- x2 0) (- y2 0) 2 0 0)
-      (<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 border-rounding border-rounding)
+      (<gui> :do-clipped gui x1 y1 x2 y2
+             (lambda ()
+               ;;(<gui> :draw-box gui background-color (+ 0 x1) (+ 0 y1) (- x2 0) (- y2 0) 2 0 0)
+               ;;(<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 border-rounding border-rounding)
+               (<gui> :draw-box gui "#222222" x1 y1 x2 y2 1.2 border-rounding border-rounding)
+               ))
       )
     )
 
