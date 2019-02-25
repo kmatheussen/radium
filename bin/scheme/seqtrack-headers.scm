@@ -19,6 +19,7 @@
         (/ 1.0 max-gain)
         100)))
 
+
 (define (get-seqtrack-background-color gui seqtracknum)
   (if (not (<ra> :seqtrack-for-audiofiles seqtracknum))
       (if (and #f (= seqtracknum (<ra> :get-curr-seqtrack)))
@@ -28,11 +29,13 @@
         (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
         (let ((background-color (get-mixer-strip-background-color gui instrument-id)))
           (if (= seqtracknum (<ra> :get-curr-seqtrack))
-              (<gui> :mix-colors
-                     (<gui> :mix-colors *curr-seqtrack-color* background-color 0.2)
-                     "white"
-                     0.95)
-              background-color)))))
+              (<gui> :make-color-lighter (<ra> :get-instrument-color instrument-id) 1.3)
+;              (<gui> :mix-colors
+;                     (<gui> :mix-colors *curr-seqtrack-color* background-color 0.2)
+;                     "white"
+;                     0.95)
+              background-color
+              )))))
 
 (define (get-sequencer-header-popup-menu-entries seqtracknum instrument-id effect-name parentgui)
   (list

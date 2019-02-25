@@ -2390,9 +2390,18 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       if(do_gradient){        
         //QLinearGradient gradient((x1+x2)/2.0, y1, (x1+x2)/2.0, y2);
+        int min = R_MIN(rect.height(), rect.width());
+        int how_much = 125;
+        if (rect.height() > gui_getSystemFontheight()*3 && min > gui_getSystemFontheight()*3){
+          if (rect.height() > gui_getSystemFontheight()*6 && min > gui_getSystemFontheight()*6)
+            how_much = 115;
+          else
+            how_much = scale(min, gui_getSystemFontheight()*3, gui_getSystemFontheight()*6, 125, 115);
+        }
+            
         QLinearGradient gradient(x1, y1, x1, y2);
-        gradient.setColorAt(0, qcolor.lighter(125));
-        gradient.setColorAt(1, qcolor.darker(125));
+        gradient.setColorAt(0, qcolor.lighter(how_much));
+        gradient.setColorAt(1, qcolor.darker(how_much));
         painter->setBrush(gradient);
       } else {
         painter->setBrush(qcolor);
