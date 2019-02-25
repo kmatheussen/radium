@@ -424,6 +424,8 @@ void handleDropEvent(QString filename, float x){
 }
 
 
+extern int last_pressed_key;
+
 namespace{
 class MyQMainWindow : public QWidget{
   //Q_OBJECT;
@@ -471,6 +473,17 @@ public:
     printf("Release. Auto: %d. %d %d\n", event->isAutoRepeat(),event->nativeScanCode(), event->nativeVirtualKey() );
   }
   */
+
+  void moveEvent(QMoveEvent *event) override {
+    if (last_pressed_key==EVENT_ALT_L)
+      last_pressed_key = EVENT_NO;
+  }
+
+  void resizeEvent(QResizeEvent *event) override {
+    if (last_pressed_key==EVENT_ALT_L)
+      last_pressed_key = EVENT_NO;
+  }
+
   
   void dropEvent(QDropEvent *event) override {
     printf("Got drop event\n");

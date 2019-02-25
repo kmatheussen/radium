@@ -199,6 +199,9 @@ MyApplication *qapplication = NULL;
 QApplication *g_qapplication = NULL;
 //QSplashScreen *g_splashscreen = NULL;
 
+int last_pressed_key = EVENT_NO;
+
+
 static QRect g_startup_rect;
 
 extern bool doquit;
@@ -713,8 +716,8 @@ public:
 protected:
 
   double _time_of_last_alt = -1;
-  bool last_released_key_was_lalt = false;
   bool menu_was_active_at_least_key_press = false;
+  bool last_released_key_was_lalt = false;  
   bool last_key_was_lalt = false;
   int menu_should_be_active = 0; // When value is 1, or higher, we are about to navigate menues. We need this variable since GFX_MenuActive() doesn't return true until the menu actually pops up.
   
@@ -787,7 +790,7 @@ protected:
 #endif
 
     bool is_key_press = type==TR_KEYBOARD;
-    
+
     int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
 
     //printf("modifier: %d. Right shift: %d\n",modifier, modifier==EVENT_SHIFT_R);
@@ -799,9 +802,7 @@ protected:
       GL_create(window);
     }
               
-    static int last_pressed_key = EVENT_NO;
-
-    //printf(" Got key 1. modifier: %d. Left ctrl: %d, Press: %d. Is EVENT_NO: %d\n", modifier, EVENT_CTRL_L, is_key_press, modifier==EVENT_NO);
+    //printf(" Got key 1. modifier: %d. Left ctrl: %d, Press: %d. Is EVENT_NO: %d. Scancode: %d\n", modifier, EVENT_CTRL_L, is_key_press, modifier==EVENT_NO, OS_SYSTEM_get_scancode(event));
 
     if (modifier != EVENT_NO) {
 
@@ -1638,7 +1639,6 @@ public slots:
 
 MyApplication::MyApplication(int &argc,char **argv)
   : QApplication(argc,argv)
-  , last_key_was_lalt(false)
 {
   //setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
 #if USE_QT5
