@@ -1214,6 +1214,10 @@ protected:
       CancelMaybeNavigateMenus();
       break;
 
+    case QEvent::Close:
+      CancelMaybeNavigateMenus();
+      break;
+
     default:
       break;
     }
