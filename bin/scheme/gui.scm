@@ -427,6 +427,9 @@
         ((eq? command :do-font)
          `(ra:gui_do-font ,@args))
         
+        ((eq? command :do-clipped)
+         `(ra:gui_do-clipped ,@args))
+        
         ((eq? command :create-block-drag-icon)
          `(ra:gui_create-block-drag-icon ,@args))
         
@@ -568,7 +571,9 @@
   ;; border
   (if is-current
       (<gui> :draw-box widget *current-mixer-strip-border-color* (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 rounding rounding) ;; "#aa111144"
-      (<gui> :draw-box widget "gray"      x1 y1 x2 y2   0.8 rounding rounding))
+      (<gui> :do-clipped widget x1 y1 x2 y2
+             (lambda ()
+               (<gui> :draw-box widget "gray"      x1 y1 x2 y2   0.8 rounding rounding))))
 
   ret
   )
@@ -652,6 +657,24 @@
                :finally (lambda ()
                           (<gui> :set-paint-opacity gui 1))))
 
+(define *curr-clip-rect* #f)
+
+(define (ra:gui_do-clipped gui x1 y1 x2 y2 func)
+  (define last-clip-rect *curr-clip-rect*)
+  
+  (set! *curr-clip-rect* (vector x1 y1 x2 y2))
+    
+  (try-finally :try (lambda ()
+                      (<gui> :set-clip-rect gui x1 y1 x2 y2)
+                      (func))
+               :finally (lambda ()
+                          (eat-errors :try (lambda ()
+                                             (if last-clip-rect
+                                                 (<gui> :set-clip-rect gui (last-clip-rect 0) (last-clip-rect 1) (last-clip-rect 2) (last-clip-rect 3))
+                                                 (<gui> :cancel-clip-rect gui))))
+                          (set! *curr-clip-rect* last-clip-rect))))
+                           
+  
 (define (ra:gui_requester-operations text block)
   (c-display "OPEN REQ")
   (<ra> :open-requester text)

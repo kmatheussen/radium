@@ -1253,6 +1253,9 @@ for .emacs:
 (define (cl-caddr a)
   (cl-car (cl-cdr (cl-cdr a))))
 
+(define (cl-cadddr a)
+  (cl-car (cl-cdr (cl-cdr (cl-cdr a)))))
+
 (define (butlast elements)
   (let ((rest (cdr elements)))
     (if (null? rest)
