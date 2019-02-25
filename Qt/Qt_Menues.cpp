@@ -265,15 +265,20 @@ void gakk(){
 }
 */
 
+static bool trying_to_make_menu_active = false;
+
 static void make_menu_active(int trynum, int ms){
-  if (trynum >= 100 || !safe_to_run_exec())
+  if (trynum >= 100 || !safe_to_run_exec()){
+    trying_to_make_menu_active = false;
     return;
+  }
 
   QTimer::singleShot(ms, [trynum]{
       
       //printf(" Hepp: %d. trynum: %d\n", g_menu_is_open, trynum);
       
       if(g_menu_is_open==0){
+
         //g_main_menu_bar->setFocus(Qt::MenuBarFocusReason);
 
         if (trynum==0 || trynum > 2)
@@ -288,18 +293,28 @@ static void make_menu_active(int trynum, int ms){
         }
         
         make_menu_active(trynum + 1, 10);
+
+      } else {
+
+        trying_to_make_menu_active = false;
+
       }
+
     });
 
 }
 
 void GFX_MakeMakeMainMenuActive(void){
+  if (trying_to_make_menu_active==true)
+    return;
+
+  trying_to_make_menu_active = true;
   make_menu_active(0, 10);
 }
 
 bool GFX_MenuActive(void){
   //return current_menu->base->activeAction() != NULL;
-  return g_menu_is_open > 0;
+  return g_menu_is_open > 0 || trying_to_make_menu_active;
 }
 
 QMenu *GFX_GetActiveMenu(void){
