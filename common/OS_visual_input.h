@@ -33,6 +33,7 @@ extern LANGSPEC const char *GFX_GetSystemFont(void);
 extern LANGSPEC void GFX_SetEditorFont(const char *fontdescr);
 extern LANGSPEC const char *GFX_GetEditorFont(void);
 
+extern LANGSPEC void CancelMaybeNavigateMenus(void);
 
 extern LANGSPEC bool RT_message_will_be_sent(void);
 extern LANGSPEC void RT_message_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2);

@@ -424,7 +424,6 @@ void handleDropEvent(QString filename, float x){
 }
 
 
-extern int last_pressed_key;
 
 namespace{
 class MyQMainWindow : public QWidget{
@@ -441,6 +440,7 @@ public:
   }
 
   void closeEvent(QCloseEvent *ce) override{
+    CancelMaybeNavigateMenus();
     ce->ignore();
     struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
     doquit = Quit(window);
@@ -461,6 +461,7 @@ public:
 #endif
 
   void dragEnterEvent(QDragEnterEvent *e) override {
+    CancelMaybeNavigateMenus();
     e->acceptProposedAction();
   }
 
@@ -475,18 +476,17 @@ public:
   */
 
   void moveEvent(QMoveEvent *event) override {
-    if (last_pressed_key==EVENT_ALT_L)
-      last_pressed_key = EVENT_NO;
+    CancelMaybeNavigateMenus();
   }
 
   void resizeEvent(QResizeEvent *event) override {
-    if (last_pressed_key==EVENT_ALT_L)
-      last_pressed_key = EVENT_NO;
+    CancelMaybeNavigateMenus();
   }
 
   
   void dropEvent(QDropEvent *event) override {
     printf("Got drop event\n");
+    CancelMaybeNavigateMenus();
     if (event->mimeData()->hasUrls()){
       foreach (QUrl url, event->mimeData()->urls()){
         printf(" Filepath: -%s-\n",url.toLocalFile().toUtf8().constData());          
