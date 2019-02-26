@@ -1216,7 +1216,7 @@ protected:
 
     case QEvent::Close:
       if (true || qobject_cast<QMenu*>(obj)==NULL){
-        printf("        CLOSE\n");
+        //printf("        CLOSE\n");
         CancelMaybeNavigateMenus();
       }
       break;
