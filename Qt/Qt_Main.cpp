@@ -204,7 +204,7 @@ static bool g_mouse_is_pressed = false;
 static int g_last_pressed_key = EVENT_NO;
 
 void CancelMaybeNavigateMenus(void){
-  if (g_last_pressed_key==EVENT_ALT_L)
+  if (g_last_pressed_key==EVENT_ALT_L && GFX_MenuActive()==false)
     g_last_pressed_key = EVENT_NO;
 }
 
@@ -1215,7 +1215,10 @@ protected:
       break;
 
     case QEvent::Close:
-      CancelMaybeNavigateMenus();
+      if (true || qobject_cast<QMenu*>(obj)==NULL){
+        printf("        CLOSE\n");
+        CancelMaybeNavigateMenus();
+      }
       break;
 
     default:
