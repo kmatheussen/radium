@@ -83,14 +83,14 @@ if(save_all)
 
 
 struct WBlocks *LoadWBlock(void){
-	static char *objs[4]={
+	static const char *objs[4]={
 		"LOCALZOOMS",
 		"WTRACK",
 		"RANGE_START",
 		"RANGE_END"
 	};
 
-	static char *vars[19]={
+	static const char *vars[19]={
 		"tempotrackonoff",
 		"temponodetrackonoff",
 		"zoomlevelarea", // not used anymore, kept for being able to load old songs

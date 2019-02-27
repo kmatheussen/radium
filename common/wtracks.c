@@ -195,10 +195,12 @@ int WTRACKS_getWidth(const struct Tracker_Windows *window,
 
   struct WTracks *wtrack = wblock->wtracks;
 
+  int x1 = wtrack->x;
+  
   while(true){
     struct WTracks *next = NextWTrack(wtrack);
     if (next==NULL)
-      return wtrack->x2 - wblock->skew_x - wblock->t.x1;
+      return wtrack->x2 - x1; //wblock->skew_x - wblock->t.x1;
     wtrack = next;
   }
 

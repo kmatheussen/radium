@@ -643,7 +643,7 @@ void PlaySongCurrPos(void){
 
   struct SeqBlock *seqblock = BS_GetSeqBlockFromPos(playlistpos);
   if (seqblock==NULL){
-    R_ASSERT_NON_RELEASE(false);
+    //R_ASSERT_NON_RELEASE(false); // Happens when cursor is not above an editor seqblock in current seqtrack.
     return;
   }
 

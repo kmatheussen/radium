@@ -338,31 +338,31 @@ void Qt_EnableAllWidgets(void){
 
 
 bool GFX_EditorIsVisible(void){
-  return !g_editor->isHidden();
+  return !g_editor->editor_layout_widget->isHidden();
 }
 
 void GFX_ShowEditor(void){
   GL_lock();{
-    g_editor->show();
+    g_editor->editor_layout_widget->show();
   }GL_unlock();
 
   set_editor_focus();
 }
 
 void GFX_HideEditor(void){
-  g_editor->hide();
+  g_editor->editor_layout_widget->hide();
 
   set_editor_focus();
 }
 
 void GFX_showHideEditor(void){
   GL_lock();{
-    if(g_editor->isHidden())
-      g_editor->show();
+    if(g_editor->editor_layout_widget->isHidden())
+      g_editor->editor_layout_widget->show();
     else
-      g_editor->hide();
+      g_editor->editor_layout_widget->hide();
   }GL_unlock();
-
+  
   set_editor_focus();
 }
 

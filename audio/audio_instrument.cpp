@@ -962,8 +962,8 @@ static void AUDIO_save_FX(struct FX *fx,const struct Tracks *track){
 }
 
 static void *AUDIO_LoadFX(struct FX *fx,const struct Tracks *track){
-  static char **objs=NULL;
-  static char *vars[2]={talloc_strdup("num"),talloc_strdup("name")};
+  static const char **objs=NULL;
+  static const char *vars[2]={talloc_strdup("num"),talloc_strdup("name")};
 
   init_fx(fx,0,"Effect name was not set in file (\?\?\?)",NULL);
 

@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "vector_proc.h"
 #include "hashmap_proc.h"
 #include "fxlines_proc.h"
+#include "windows_proc.h"
 #include "patch_proc.h"
 #include "visual_proc.h"
 #include "scheduler_proc.h"
@@ -94,7 +95,7 @@ DC_end();
 }
 
 struct Song *LoadSong(void){
-	static char *objs[7]={
+	static const char *objs[7]={
 		"TRACKER_WINDOW",
 		"BLOCK",
 		"PLAYLIST",
@@ -103,7 +104,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	static char *vars[10]={
+	static const char *vars[10]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -124,12 +125,12 @@ struct Song *LoadSong(void){
           
         MW_cleanup(true);
           
-        VECTOR_FOR_EACH(struct Patch *patch, &get_MIDI_instrument()->patches){
+        VECTOR_FOR_EACH(struct Patch *, patch, &get_MIDI_instrument()->patches){
           InstrumentWidget_delete(patch);
         }END_VECTOR_FOR_EACH;
 
         while(get_MIDI_instrument()->patches.num_elements > 0)
-          PATCH_remove_from_instrument(get_MIDI_instrument()->patches.elements[0]);
+          PATCH_remove_from_instrument((struct Patch*)get_MIDI_instrument()->patches.elements[0]);
 
         // Commented out since MW_cleanup() above calls PATCH_remove_from_instrument for all audio patches.
         //
@@ -142,7 +143,7 @@ struct Song *LoadSong(void){
         PATCH_reset();
 
         COMMENT_reset();
-        
+
         GENERAL_LOAD(7,10)
 
 obj0:
@@ -255,6 +256,10 @@ void DLoadSong(struct Root *newroot,struct Song *song){
           DLoadPlayList(newroot,song);
         
 	DLoadWindows(newroot,song->tracker_windows);
+
+
+        calculateNewWindowWidthAndHeight(song->tracker_windows);
+ 
 
         GFX_ShowProgressMessage("Creating instruments");
 

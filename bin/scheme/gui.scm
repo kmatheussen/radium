@@ -278,7 +278,7 @@
     (<gui> :draw-text gui color
            paint-text
            x1 y1 x2 y2
-           #f ;; wrap-lines
+           #f
            align-top ;; align-top
            align-left ;; align-left
            rotate ;; rotate
@@ -529,11 +529,18 @@
                                    :get-automation-data #f
                                    :text-x1 (+ x1 2)
                                    :rounding 2.6
+                                   :color2 "black"
+                                   :text-color #f
+                                   :border-color "gray"
+                                   :border-width 0.8
+                                   :cut-text-to-fit #t
+                                   :wrap-lines #t
                                    )
 
   (define pos (scale value 0 1 x1 x2))
-  (<gui> :filled-box widget (<gui> :get-background-color widget) x1 y1 x2 y2)
-  (<gui> :filled-box widget "black" (1+ x1) (1+ y1) (1- x2) (1- y2) rounding rounding)
+  ;;(<gui> :filled-box widget (<gui> :get-background-color widget) x1 y1 x2 y2)
+  (if color2
+      (<gui> :filled-box widget color2 (1+ x1) (1+ y1) (1- x2) (1- y2) rounding rounding))
   (<gui> :filled-box widget color x1 y1 pos y2 rounding rounding)
   
   ;;(if (= (<ra> :get-current-instrument) instrument-id)
@@ -557,27 +564,75 @@
   
   ;;(if show-tooltip
   ;;    (set-tooltip-and-statusbar text))
-  
-  (define text-color (if (not is-enabled)
-                         (<gui> :mix-colors *text-color* "#ff000000" 0.5)
-                         *text-color*))
+
+  (if (not text-color)
+      (set! text-color (if (not is-enabled)
+                           (<gui> :mix-colors *text-color* "#ff000000" 0.5)
+                           *text-color*)))
   
   (define ret (<gui> :my-draw-text widget text-color text
                      (floor (+ (/ (get-fontheight) 4) text-x1)) y1 (- x2 4) y2
-                     #t ;; wrap-lines
+                     wrap-lines ;; wrap-lines
                      #f ;; align top
-                     #t)) ;; align left
+                     #t
+                     :cut-text-to-fit cut-text-to-fit
+                     )) ;; align left
 
   ;; border
   (if is-current
       (<gui> :draw-box widget *current-mixer-strip-border-color* (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 rounding rounding) ;; "#aa111144"
       (<gui> :do-clipped widget x1 y1 x2 y2
              (lambda ()
-               (<gui> :draw-box widget "gray"      x1 y1 x2 y2   0.8 rounding rounding))))
+               (<gui> :draw-box widget border-color  x1 y1 x2 y2 border-width rounding rounding))))
 
   ret
   )
   
+
+(delafina (paint-scrollbar :gui
+                           :slider-pos1 ;; between 0 and slider-pos2
+                           :slider-pos2 ;; between slider-pos1 and 1
+                           :vertical
+                           :x1 :y1 :x2 :y2
+                           :background-color
+                           :color
+                           :border-color #f
+                           :border 1
+                           :border-rounding 2
+                           :paint-border #t)
+  (define b border)
+  (define slider-length (- slider-pos2 slider-pos1))
+
+  (if (not border-color)
+      (set! border-color color))
+  
+  (if background-color
+      (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding))
+    
+  (define sx1 (+ b x1))
+  (define sy1 (+ b y1))
+  (define sx2 (- x2 b))
+  (define sy2 (- y2 b))
+  (define sheight (- sy2 sy1))
+  (define swidth (- sx2 sx1))
+    
+  (if vertical
+      (begin
+        (set! sy1 (scale slider-pos1 0 1 sy1 sy2))
+        (set! sy2 (+ sy1 (scale slider-length 0 1 0 sheight))))
+      (begin
+        (set! sx1 (scale slider-pos1 0 1 sx1 sx2))
+        (set! sx2 (+ sx1 (scale slider-length 0 1 0 swidth)))))
+  
+  (<gui> :filled-box gui
+         color
+         sx1 sy1 sx2 sy2 border-rounding border-rounding)
+  
+  (if paint-border
+      (<gui> :draw-box gui border-color x1 y1 x2 y2 b (* 2 border-rounding) (* 2 border-rounding)))
+  
+  #t)
+
 
 (delafina (draw-checkbox :gui :text :is-selected
                          :x1 :y1 :x2 :y2

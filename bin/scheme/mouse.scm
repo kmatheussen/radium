@@ -1290,10 +1290,6 @@
                 (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer (<gui> :get-editor-gui))
                 (show-track-volume-in-statusbar *current-track-num*))
                
-               ((inside-box (<ra> :get-box reltempo-slider) X Y)
-                (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer (<gui> :get-editor-gui))
-                (show-reltempo-in-statusbar))
-               
                ((and *current-track-num*
                      (inside-box (<ra> :get-box track-pan-on-off *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
@@ -1379,9 +1375,6 @@
                        ;;(c-display "normal1" *current-seqblock-info*)
                        (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui)))))
                
-               ((inside-box (<ra> :get-box track-slider) X Y)
-                (<ra> :set-open-hand-mouse-pointer (<gui> :get-editor-gui)))
-               
                ((inside-box (<ra> :get-box editor-scrollbar) X Y)
                 (<ra> :set-open-hand-mouse-pointer (<gui> :get-editor-gui)))
                
@@ -1396,9 +1389,6 @@
 
 ;; block tempo multiplier slider
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define (show-reltempo-in-statusbar)
-  (set-editor-statusbar (<-> "Block tempo multiplied by " (two-decimal-string (<ra> :get-reltempo)))))
 
 
 (define (get-BPMs)
@@ -1421,151 +1411,9 @@
 !!#
 
 
-(define (reset-tempo-multiplier)
-  (<ra> :undo-reltempo)
-  (<ra> :set-reltempo 1.0))
-
-(define (apply-tempo-multiplier-to-block)
-  (define (apply-it callback)
-    (let* ((reltempo (<ra> :get-reltempo))
-           (bpms (get-BPMs))
-           (scale-bpm (lambda (bpm)
-                        (round (* reltempo bpm)))))
-      (for-each (lambda (place-and-bpm)
-                  (let ((place (car place-and-bpm))
-                        (bpm (cadr place-and-bpm)))
-                    (callback (scale-bpm bpm) place)))
-                bpms)
-      (if (or (null? bpms)
-              (> (car (car bpms)) 0))
-          (callback (scale-bpm (<ra> :get-main-bpm)) 0))))
-  (define lowest 1000)
-  (define highest 0)
-  (apply-it (lambda (value place)
-              (set! highest (max value highest))
-              (set! lowest (min value lowest))))
-  (cond ((> highest 999)
-         (show-async-message (<gui> :get-editor-gui)
-                             (<-> "Can not set BPM higher than 999. (" highest ")")))
-        ((< lowest 1)
-         (show-async-message (<gui> :get-editor-gui)
-                             (<-> "Can not set BPM lower than 1. (" lowest ")")))
-        (else
-         (undo-block
-          (lambda ()
-            (apply-it (lambda (value place)
-                        (<ra> :add-bpm value place)))
-            (reset-tempo-multiplier))))))
 
 
-(define (apply-bpm-glide bpmnum)
-  (undo-block
-   (lambda ()
-     (define bpms (get-BPMs))
-     (define bpm1 (list-ref bpms bpmnum))
-     (define bpm2 (list-ref bpms (1+ bpmnum)))
-     (define temponodes (get-temponodes))
-     (set! temponodes (nodelist-add-same-value-at-place (car bpm1) 0))
-     (set! temponodes (nodelist-add-same-value-at-place (car bpm2) 0))
-     (set! temponodes (nodelist-mix temponodes (list (create-node (car bpm1) 0)
-                                                     (create-node (-line (car bpm2)) 2)))) ;; Fix 2.
-     )))
 
-
-(define (get-reltemposlider-x)
-  (define box (<ra> :get-box reltempo-slider))
-  (scale (<ra> :get-reltempo)
-         (<ra> :get-min-reltempo)
-         (<ra> :get-max-reltempo)
-         (box :x1)
-         (box :x2)))
-
-;; slider
-(add-horizontal-handler :Get-handler-data (lambda (X Y)
-                                            (define box (<ra> :get-box reltempo-slider))
-                                            (and (inside-box box X Y)
-                                                 (<ra> :get-reltempo)))
-                        :Get-x1 (lambda (_)
-                                  (<ra> :get-reltempo-slider-x1))
-                        :Get-x2 (lambda (_)
-                                  (<ra> :get-reltempo-slider-x2))
-                        :Get-min-value (lambda (_)
-                                         (<ra> :get-min-reltempo))
-                        :Get-max-value (lambda (_)
-                                         (<ra> :get-max-reltempo))
-                        :Get-release-x (lambda (_)
-                                 (get-reltemposlider-x))
-                        :Get-value (lambda (Value)
-                                     Value)
-                        :Make-undo (lambda (_)
-                                     (<ra> :undo-reltempo))
-                        :Move (lambda (_ Value)
-                                ;;(c-display "Value:" Value)
-                                (<ra> :set-reltempo Value))
-                        :Publicize (lambda (_)
-                                     (show-reltempo-in-statusbar))
-                        )
-
-;; reset slider value
-(add-mouse-cycle (make-mouse-cycle
-                  :press-func (lambda (Button X Y)                                
-                                (if (and (= Button *right-button*)
-                                         (inside-box (<ra> :get-box reltempo-slider) X Y))
-                                    (let ((reltempo (<ra> :get-reltempo)))
-                                      (popup-menu (list "Reset"
-                                                        :enabled (not (= 1.0 reltempo))
-                                                        reset-tempo-multiplier)
-                                                  (list "Apply tempo (and Reset)"
-                                                        :enabled (not (= 1.0 reltempo))
-                                                        apply-tempo-multiplier-to-block)
-                                                  (list "Add MIDI learn"
-                                                        :enabled (not (<ra> :has-block-multiplier-midi-learn))
-                                                        ra:add-block-multiplier-midi-learn)
-                                                  (list "Remove MIDI learn"
-                                                        :enabled (<ra> :has-block-multiplier-midi-learn)
-                                                        ra:remove-block-multiplier-midi-learn))
-                                      #t)
-                                    #f))))
-
-;; track slider
-(add-node-mouse-handler :Get-area-box (lambda ()
-                                        (<ra> :get-box track-slider))
-                        :Get-existing-node-info (lambda (X Y callback)
-                                                  ;;(c-display "hep" X Y (box-to-string (<ra> :get-box editor-scrollbar-scroller)) (inside-box (<ra> :get-box editor-scrollbar-scroller) X Y))
-                                                  (<ra> :set-track-slider-is-moving #t)
-                                                  (callback (<ra> :get-track-slider-pos)
-                                                            (<ra> :get-track-slider-pos)
-                                                            0))
-                        :Get-min-value (lambda (_) 0)
-                        :Get-max-value (lambda (_) 1)
-                                        ;:Get-release-x (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-x1) (<ra> :get-editor-scrollbar-scroller-x2)))
-                                        ;:Get-release-y (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-y1) (<ra> :get-editor-scrollbar-scroller-y2)))
-                        :Make-undo (lambda (_) 50)
-                        :Create-new-node (lambda (X Place callback)
-                                           #f)
-                        :Move-node (lambda (Pos Value Y)
-                                     (define newpos (scale Value
-                                                           0 1
-                                                           0 1))
-                                     ;;(c-display "Pos/Value/Y/newpos" Pos Value Y newpos)
-                                     (<ra> :set-track-slider-pos newpos)
-                                     (<ra> :get-track-slider-pos)
-                                     )
-                        :Release-node (lambda (Num)
-                                        (<ra> :set-track-slider-is-moving #f)
-                                        #f
-                                        )
-                        :Publicize (lambda (Num)
-                                     #f)
-                        :Use-Place #f
-                        :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
-                        :Get-pixels-per-value-unit #f ;;(lambda (_)
-                        :Forgiving-box #f
-                        ;;1)
-                        )
-
-;;(<ra> :set-track-slider-pos 0)
-;;(<ra> :set-track-slider-pos -100)
 
 ;; Editor scrollbar
 ;;

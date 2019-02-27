@@ -69,7 +69,7 @@ if(save_all)
 
 
 struct Blocks *LoadBlock(void){
-	static char *objs[6]={
+	static const char *objs[6]={
 		"TRACK",
 		"SIGNATURES",
                 "LPBs",
@@ -77,7 +77,7 @@ struct Blocks *LoadBlock(void){
 		"RELTEMPO",
                 "SWING"
 	};
-	static char *vars[6]={
+	static const char *vars[6]={
 		"name",
 		"num_tracks",
 		"num_lines",

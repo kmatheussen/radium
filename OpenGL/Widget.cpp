@@ -51,7 +51,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDebug>
 #include <QElapsedTimer>
 
+#define GE_DRAW_VL
+
 #include "../common/nsmtracker.h"
+#include "../common/windows_proc.h"
 #include "../common/playerclass.h"
 #include "../common/list_proc.h"
 #include "../common/realline_calc_proc.h"
@@ -71,7 +74,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/Juce_plugins_proc.h"
 
-#define GE_DRAW_VL
 #include "GfxElements.h"
 #include "T2.hpp"
 #include "Timing.hpp"
@@ -1473,10 +1475,12 @@ public:
   void set_vblank(double value){
     ATOMIC_DOUBLE_SET(override_vblank_value, value);
   }
-  
-  // Necessary to avoid error with clang++.
+
   void resizeEvent(QResizeEvent *qresizeevent) override {
     radium::ScopedResizeEventTracker resize_event_tracker;
+    
+    if (g_editor->window != NULL)
+      calculateNewWindowWidthAndHeight(g_editor->window);
     
 #if USE_QT5
     vlQt5::Qt5ThreadedWidget::resizeEvent(qresizeevent);
@@ -1485,10 +1489,11 @@ public:
 #endif
   }
 
+  
   /** Event generated when the bound OpenGLContext is resized. */
   // OpenGL thread
   void resizeEvent(int w, int h) override {
-    printf("resisizing %d %d\n",w,h);
+    //printf("resisizing %d %d\n",w,h);
 
     if (w<32)
       w = 32;
@@ -1499,7 +1504,7 @@ public:
     current_height = h;
     
     initEvent();
-    
+
     GE_set_height(h);
 
     GFX_ScheduleEditorRedraw();

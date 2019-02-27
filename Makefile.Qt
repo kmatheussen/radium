@@ -362,7 +362,7 @@ VL_LDFLAGS=$(VL_LIBS)
 
 OBJ1= windows.o window_config.o list.o vector.o hashmap.o Dynvec.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o mmd2load.o
 
-OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o gfx_wblocks_reltempo.o common.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
+OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o common.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
 
 OBJ3= eventreciever.o scancodes.o reallines.o notestext.o trackreallines2.o signaturetext.o lpbtext.o bpmtext.o swingtext.o centtext.o chancetext.o veltext.o fxtext.o data_as_text.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
@@ -998,8 +998,8 @@ disk_temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)disk_temponodes.c $(CD)disk.h
 disk_tempos.o:  $(BUILD_DEPENDENCIES) $(CD)disk_tempos.c $(CD)disk.h
 	$(CC) $(CD)disk_tempos.c $(OPT)
 
-disk_song.o:  $(BUILD_DEPENDENCIES) $(CD)disk_song.c $(CD)disk.h
-	$(CC) $(CD)disk_song.c $(OPT)
+disk_song.o:  $(BUILD_DEPENDENCIES) $(CD)disk_song.cpp $(CD)disk.h
+	$(CCC) $(CD)disk_song.cpp $(QTOPT)
 
 disk_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)disk_velocities.c $(CD)disk.h
 	$(CC) $(CD)disk_velocities.c $(OPT)
@@ -1341,7 +1341,7 @@ Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cp
 $(P)mQt_PopupMenu.cpp: $(P)Qt_PopupMenu.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_PopupMenu.cpp -DUSE_QT_MENU >$(P)mQt_PopupMenu.cpp
 
-Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar_widget_callbacks.h $(P)mQt_upperleft_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h audio/CpuUsage.hpp
+Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar_widget_callbacks.h $(P)mQt_upperleft_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h audio/CpuUsage.hpp Qt/EditorWidget.h
 	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
 
 Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp

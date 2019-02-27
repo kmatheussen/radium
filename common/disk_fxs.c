@@ -51,11 +51,11 @@ void SaveFXs(vector_t *fxss,struct Tracks *track){
 }
 
 struct FXs *LoadFXs(struct Tracks *track){
-	static char *objs[2]={
+	static const char *objs[2]={
 		"FX",
 		"FXNODELINES"
 	};
-	static char **vars=NULL;
+	static const char **vars=NULL;
 
 	struct FXs *fxs=DC_alloc(sizeof(struct FXs));
 

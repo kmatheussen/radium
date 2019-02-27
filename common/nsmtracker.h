@@ -2403,7 +2403,7 @@ struct WBlocks{
 	TBox t;
 //	int tx,ty,tx2,ty2;				/* lines, nodes, etc. GFX area. */
 
-        TBox bottombar;                                /* reltempo slider and track slider */
+        TBox bottombar;                                /* midi record button, reltempo slider and track slider */
 
 	//WArea zoomlevelarea;
         WArea linenumarea;
@@ -2554,7 +2554,9 @@ struct Tracker_Windows{
         
 	int maxwtracksize;					/* The size of the widest wtrack for all wblocks. */
 
-	struct Slider bottomslider;
+        //struct Slider bottomslider;
+        int bottomslider_height;
+  
 	struct Slider leftslider;
 
         bool track_slider_is_moving; // If true, draw bottomslider in a different color.

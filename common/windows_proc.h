@@ -14,8 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef _RADIUM_COMMON_WINDOWS_PROC_H
+#define _RADIUM_COMMON_WINDOWS_PROC_H
 
-extern LANGSPEC void UpdateTrackerWindowCoordinates(struct Tracker_Windows *window);
 
 extern LANGSPEC void UpdateTrackerWindow(struct Tracker_Windows *window);
 
@@ -30,3 +31,16 @@ extern LANGSPEC void CloseAllTrackerWindows(void);
 extern LANGSPEC void checkIfWBlocksAreDirty(void);
 
 extern LANGSPEC void ValidateCursorPos(struct Tracker_Windows *window);
+
+static inline int getBottomSliderX2(struct Tracker_Windows *window){
+  return window->width-1;
+}
+
+#ifdef USE_QT4
+
+#include "../Qt/EditorWidget.h"
+
+#endif
+
+
+#endif

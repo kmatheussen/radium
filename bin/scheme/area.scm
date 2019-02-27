@@ -669,7 +669,7 @@
     ((car sub-areas) :apply-state! state)))
 
 
-(delafina (make-qtarea :width 100 :height 100 :sub-area-creation-callback #f)
+(delafina (make-qtarea :width 100 :height 100 :sub-area-creation-callback #f :enable-mouse-callbacks #t)
   (define gui (<gui> :widget width height))  
   (define x1 0)
   (define y1 0)
@@ -679,15 +679,15 @@
     (<gui> :add-paint-callback gui
            (lambda (width height)
              (paint-internal 0 0 width height)))
-    
-    (<gui> :add-mouse-callback gui
-           (lambda (button state x y)
-             (mouse-callback-internal button state x y)
-             ;;(c-display "has-mouse:" (and (defined? 'has-mouse) (has-mouse)))
-             ;;50))
-             (has-mouse)))
 
-    (<gui> :add-mouse-wheel-callback gui mouse-wheel-moved-internal!)
+    (when enable-mouse-callbacks
+      (<gui> :add-mouse-callback gui
+             (lambda (button state x y)
+               (mouse-callback-internal button state x y)
+               ;;(c-display "has-mouse:" (and (defined? 'has-mouse) (has-mouse)))
+               ;;50))
+               (has-mouse)))
+      (<gui> :add-mouse-wheel-callback gui mouse-wheel-moved-internal!))
 
     (define the-sub-area #f)
     
@@ -1101,7 +1101,8 @@
 
 (def-area-subclass (<scrollbar> :gui :x1 :y1 :x2 :y2
                                 :callback
-                                :slider-length ;; between 0 and 1. E.g. for 0.5; slider length = scrollbar length * 0.5
+                                :slider-pos
+                                :slider-length ;; between 0 and 1. E.g. for 0.5; slider length = scrollbar length * 0.5. Can also be a function returning the slider length.
                                 :vertical
                                 :background-color #f
                                 :paint-border #t
@@ -1109,15 +1110,23 @@
                                 :border-rounding 2
                                 :slider-color "#400010"
                                 :slider-pressed-color #f
+                                :border-width #f
+                                :mouse-press-callback #f
+                                :mouse-release-callback #f
                                 )
 
   (if (not slider-pressed-color)
       (set! slider-pressed-color (<gui> :mix-colors "#fefefe" slider-color 0.1)))
 
-  (define b (/ (get-fontheight) 5.0))
+  (define b (if border-width
+                border-width
+                (/ (get-fontheight) 5.0)))
 
-  (define slider-pos 0) ;; goes between 0 and 1.0 - slider-length
-
+  (define (get-slider-length)
+    (if (procedure? slider-length)
+        (slider-length)
+        slider-length))
+  
   (add-method! :get-slider-pos (lambda () slider-pos))
 
   (add-method! :set-slider-pos!
@@ -1130,38 +1139,23 @@
   (define is-moving #f)
   
   (define-override (paint)
-    (if background-color
-        (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding))
-    
-    (define sx1 (+ b x1))
-    (define sy1 (+ b y1))
-    (define sx2 (- x2 b))
-    (define sy2 (- y2 b))
-    (define sheight (- sy2 sy1))
-    (define swidth (- sx2 sx1))
-    
-    (if vertical
-        (begin
-          (set! sy1 (scale slider-pos 0 1 sy1 sy2))
-          (set! sy2 (+ sy1 (scale slider-length 0 1 0 sheight))))
-        (begin
-          (set! sx1 (scale slider-pos 0 1 sx1 sx2))
-          (set! sx2 (+ sx1 (scale slider-length 0 1 0 swidth)))))
-
-    (<gui> :filled-box gui
-           (if is-moving
-               slider-pressed-color
-               slider-color)
-           sx1 sy1 sx2 sy2 border-rounding border-rounding)
-    
-    (if paint-border
-        (<gui> :draw-box gui slider-color x1 y1 x2 y2 b (* 2 border-rounding) (* 2 border-rounding)))
-        
-    #t)
+    (paint-scrollbar gui
+                     slider-pos
+                     (+ slider-pos (get-slider-length))
+                     vertical
+                     x1 y1 x2 y2
+                     background-color
+                     (if is-moving
+                         slider-pressed-color
+                         slider-color)
+                     slider-color
+                     b
+                     border-rounding
+                     #t))
 
   (define (report!)
     (callback slider-pos
-	      (+ slider-pos slider-length)))
+	      (+ slider-pos (get-slider-length))))
 
   (define start-mouse-pos 0)
   
@@ -1169,6 +1163,8 @@
    (lambda (button x* y*)
      (and (= button *left-button*)
           (begin
+            (if mouse-press-callback
+                (mouse-press-callback))
             (set-mouse-pointer ra:set-closed-hand-mouse-pointer gui)
             ;;(c-display "start:" slider-pos)
             (set! start-mouse-pos slider-pos)
@@ -1184,7 +1180,7 @@
                                                (- height (* b 2))
                                                (- width (* b 2)))
                                          0 1))
-                               (- 1.0 slider-length)))
+                               (- 1.0 (get-slider-length))))
      ;;(c-display "  MOVE. y:" y* ". dy:" dy ". bef slider-pos:" bef-slider-pos ". slider-pos:" slider-pos)
 
      ;;(c-display "move"
@@ -1200,6 +1196,8 @@
      (set-mouse-pointer ra:set-open-hand-mouse-pointer gui)
      (set! is-moving #f)
      (update-me!)
+     (if mouse-release-callback
+         (mouse-release-callback))
      ;;(c-display "release button/x/y" x* y*)
      #f
      ))
@@ -1222,6 +1220,7 @@
   (define scrollbar (<new> :scrollbar (testarea :get-gui)
                            10 10 100 100
                            (lambda x (c-display "callback:" x))
+                           0
                            0.2
                            #f
                            :background-color "white"
@@ -1301,6 +1300,7 @@
                            scrollbar-x1 y1
                            x2 y2
                            scrollbar-callback
+                           :slider-pos 0
                            :slider-length slider-length
                            :vertical #t
                            :background-color background-color))

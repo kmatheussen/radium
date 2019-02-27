@@ -68,13 +68,13 @@ static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_da
 
 double g_opengl_scale_ratio = 1.0;
 
-static volatile float g_height = 512;
+static float g_height = 512;
 
 void GE_set_height(int height){
   if (height<=0)
     height = 1; // avoid various situations.
 
-  safe_volatile_float_write(&g_height, height);
+  g_height = height;
 }
 
 /*

@@ -21,9 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 
-extern void SaveSong(struct Song *song);
-extern struct Song *LoadSong(void);
-extern void DLoadSong(struct Root *newroot,struct Song *song);
+extern LANGSPEC void SaveSong(struct Song *song);
+extern LANGSPEC struct Song *LoadSong(void);
+extern LANGSPEC void DLoadSong(struct Root *newroot,struct Song *song);
 
 
 #endif

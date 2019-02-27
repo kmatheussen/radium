@@ -325,10 +325,6 @@ void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
 
   setFontValues(tvisual);
   UpdateAllWBlockWidths(tvisual);
-
-#if USE_OPENGL
-  editor->position_gl_widget(tvisual);
-#endif
 }
 
 void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
@@ -355,10 +351,6 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
  exit:
   setFontValues(tvisual);
   UpdateAllWBlockWidths(tvisual);
-  
-#if USE_OPENGL
-  editor->position_gl_widget(tvisual);
-#endif
 }
 
 void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
