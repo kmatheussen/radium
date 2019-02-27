@@ -1979,63 +1979,22 @@ MixerWidget::MixerWidget(QWidget *parent)
   g_mixer_widget = this;
   g_static_toplevel_widgets.push_back(this);
   
-    populateScene();
-
-    auto *layout = new QVBoxLayout(this);  
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(0);
-
-#if 0
-    View *view = new View("Das mixer",this);
-    view->view()->setScene(&scene);
-    layout->addWidget(view, 0, 0, 1, 1);
-
-#else
-
-    Mixer_widget *mixer_widget = new Mixer_widget(this);
-    mixer_widget->view->setScene(&scene);
-    layout->addWidget(mixer_widget);
-    this->view = mixer_widget->view;
-
-#endif
-
-#if 0
-    h1Splitter = new QSplitter;
-    h2Splitter = new QSplitter;
-    
-    QSplitter *vSplitter = new QSplitter;
-    vSplitter->setOrientation(Qt::Vertical);
-    vSplitter->addWidget(h1Splitter);
-    vSplitter->addWidget(h2Splitter);
-
-    View *view = new View("Top left view");
-    view->view()->setScene(scene);
-    h1Splitter->addWidget(view);
-
-    view = new View("Top right view");
-    view->view()->setScene(scene);
-    h1Splitter->addWidget(view);
-
-    view = new View("Bottom left view");
-    view->view()->setScene(scene);
-    h2Splitter->addWidget(view);
-
-    view = new View("Bottom right view");
-    view->view()->setScene(scene);
-    h2Splitter->addWidget(view);
-
-    QHBoxLayout *layout = new QHBoxLayout;
-    layout->addWidget(vSplitter);
-    setLayout(layout);
-#endif
-
-    setWindowTitle(tr("Radium Mixer"));
-
-    {
-      MixerWidgetTimer *timer = new MixerWidgetTimer;
-      timer->setInterval(50); // 3*16.666
-      timer->start();
-    }
+  auto *layout = new QVBoxLayout(this);  
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(0);
+  
+  Mixer_widget *mixer_widget = new Mixer_widget(this);
+  mixer_widget->view->setScene(&scene);
+  layout->addWidget(mixer_widget);
+  this->view = mixer_widget->view;
+  
+  setWindowTitle(tr("Radium Mixer"));
+  
+  {
+    MixerWidgetTimer *timer = new MixerWidgetTimer;
+    timer->setInterval(50); // 3*16.666
+    timer->start();
+  }
 }
 
 bool GFX_MixerIsVisible(void){
@@ -2085,47 +2044,6 @@ SoundPlugin *get_main_pipe(void){
   */
 }
 
-
-void MixerWidget::populateScene()
-{
-#if 0
-  SoundPluginType *type1 = PR_get_plugin(0);
-  SoundPlugin *plugin1 = PLUGIN_create(type1, NULL);
-
-  SoundPluginType *type2 = PR_get_plugin(1);
-  SoundPlugin *plugin2 = PLUGIN_create(type2, NULL);
-
-  SoundProducer *sound_producer1 = SP_create(plugin1);
-  SoundProducer *sound_producer2 = SP_create(plugin2);
-
-  Chip *from = new Chip(&scene,sound_producer1,20,30);    
-  Chip *to = new Chip(&scene,sound_producer2,50,80);
-
-  connect_chips(&scene,from, 0, to, 1);
-#endif
-
-  /*
-
-  // NB! main_pipe must be created first. The patch id of main_pipe must be 0. (really?)
-  SoundPluginType *pipe_type = PR_get_plugin_type_by_name(NULL, "Pipe","Pipe");
-  SoundPlugin *main_pipe = add_new_audio_instrument_widget(pipe_type, grid_width, 0,false,"Main Pipe");
-  g_main_pipe_patch_id = main_pipe->patch->id;
-
-
-  SoundPluginType *bus1 = PR_get_plugin_type_by_name(NULL, "Bus","Bus 1");
-  SoundPlugin *bus1_plugin = add_new_audio_instrument_widget(bus1, 0, 0,false,"Bus 1", NULL, NULL);
-
-  SoundPluginType *bus2 = PR_get_plugin_type_by_name(NULL, "Bus","Bus 2");
-  SoundPlugin *bus2_plugin = add_new_audio_instrument_widget(bus2, 0, grid_height,false,"Bus 2", NULL, NULL);
-
-  SoundPluginType *system_out = PR_get_plugin_type_by_name(NULL, "Jack","System Out");
-  SoundPlugin *system_out_plugin = add_new_audio_instrument_widget(system_out, grid_width*2, 0,false,"Main Out");
-
-  CHIP_connect_chips(&scene, main_pipe, system_out_plugin);
-  CHIP_connect_chips(&scene, bus1_plugin, main_pipe);
-  CHIP_connect_chips(&scene, bus2_plugin, main_pipe);
-  */
-}
 
 void MW_connect_plugin_to_main_pipe(SoundPlugin *plugin){
   SoundPlugin *main_pipe = get_main_pipe();
@@ -2889,7 +2807,6 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
 // This function is called when loading a song saved with a version of radium made before the audio system was added.
 void MW_create_plain(void){
   //MW_cleanup();
-  g_mixer_widget->populateScene();
   gui_resetAllMixerStrips();        
 }
 
