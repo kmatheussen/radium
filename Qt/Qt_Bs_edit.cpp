@@ -337,7 +337,7 @@ static int get_playlist_x2(bool stacked, int width, int height){
 }
 
 static int get_playlist_y2(bool stacked, int width, int height){
-  return height-button_height;//-yborder;
+  return height-button_height + 2;//-yborder;
 }
 
 static int get_add_button_x1(bool stacked, int width, int height){
@@ -362,7 +362,7 @@ static int get_add_button_x2(bool stacked, int width, int height){
 }
 
 static int get_add_button_y2(bool stacked, int width, int height){
-  return get_add_button_y1(stacked,width,height) + button_height;
+  return get_add_button_y1(stacked,width,height) + button_height + 5;
 }
 
 static int get_remove_button_x1(bool stacked, int width, int height){
@@ -387,7 +387,7 @@ static int get_remove_button_x2(bool stacked, int width, int height){
 }
 
 static int get_remove_button_y2(bool stacked, int width, int height){
-  return get_remove_button_y1(stacked,width,height) + button_height;
+  return get_remove_button_y1(stacked,width,height) + button_height + 5;
 }
 
 // move up button
@@ -449,6 +449,15 @@ struct ScopedVisitors{
 
 int g_default_slider_height = 20;
 
+static QFont bs_font;
+void set_default_slider_height(void){
+  bs_font.fromString("Cousine,11,-1,5,75,0,0,0,0,0");
+  bs_font.setStyleName("Bold");
+  bs_font.setPointSize(QApplication::font().pointSize());
+  
+  g_default_slider_height = bs_font.pointSize()+4;
+}
+
 namespace{
 class BlockSelector : public QWidget
 {
@@ -469,26 +478,25 @@ public:
     , last_shown_width(0) // frustrating: SETTINGS_read_int((char*)"blocklist_width",0))
   {
     
-    QFont sansFont;
+    //blocklist.setFont(bs_font);
+    //playlist.setFont(bs_font);
 
-    sansFont.fromString("Cousine,11,-1,5,75,0,0,0,0,0");
-    sansFont.setStyleName("Bold");
-    sansFont.setPointSize(QApplication::font().pointSize());
-        
-    //blocklist.setFont(sansFont);
-    //playlist.setFont(sansFont);
+    /*
+    {
+      QFont font2 = add_button.font();
+      font2.setPointSize(bs_font.pointSize()-4);
+      add_button.setFont(font2);
+      remove_button.setFont(font2);
+    }
+    */
     
-    //add_button.setFont(sansFont);
-    //remove_button.setFont(sansFont);
-    move_down_button.setFont(sansFont);
-    move_up_button.setFont(sansFont);
+    move_down_button.setFont(bs_font);
+    move_up_button.setFont(bs_font);
 
-    g_default_slider_height = sansFont.pointSize()+5;
-    
     add_button.setMaximumHeight(g_default_slider_height);
     remove_button.setMaximumHeight(g_default_slider_height);
-    move_down_button.setMaximumHeight(g_default_slider_height);
-    move_up_button.setMaximumHeight(g_default_slider_height);
+    move_down_button.setMaximumHeight(g_default_slider_height-2);
+    move_up_button.setMaximumHeight(g_default_slider_height-2 );
 
     button_width = add_button.width();
     button_height = add_button.height();

@@ -24,10 +24,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "sliders_proc.h"
 
 
+extern int g_default_slider_height;
 
 void InitSliderValues(struct Tracker_Windows *window){
   window->leftslider.show=1;
   window->leftslider.width   = SETTINGS_read_int32("left_slider_width",8);
 
-  window->bottomslider_height = SETTINGS_read_int32("bottom_slider_height",window->fontheight*3/4);
+  window->bottomslider_height = SETTINGS_read_int32("bottom_slider_height", g_default_slider_height - 2); //window->fontheight);//1 + window->fontheight*3/4);
 }
