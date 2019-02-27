@@ -1241,6 +1241,9 @@ private:
 
   // OpenGL thread
   void swap(void){
+    if(_dont_swap_right_now)
+      return;
+    
     if (USE_GL_LOCK)
       mutex.lock();
 
@@ -1347,6 +1350,8 @@ private:
 
 public:
 
+  bool _dont_swap_right_now = false;
+  
   /** Event generated when the bound OpenGLContext does not have any other message to process 
       and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
   // OpenGL thread
@@ -1478,6 +1483,8 @@ public:
 
   void resizeEvent(QResizeEvent *qresizeevent) override {
     radium::ScopedResizeEventTracker resize_event_tracker;
+
+    _dont_swap_right_now = true;
     
     if (g_editor->window != NULL)
       calculateNewWindowWidthAndHeight(g_editor->window);
@@ -1506,8 +1513,10 @@ public:
     initEvent();
 
     GE_set_height(h);
-
+    
     GFX_ScheduleEditorRedraw();
+
+    _dont_swap_right_now = false;
   }
   
   // The rest of the methods in this class are virtual methods required by the vl::UIEventListener class. Not used.
