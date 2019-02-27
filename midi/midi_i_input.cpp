@@ -152,7 +152,7 @@ static float get_msg_fx_value(uint32_t msg){
  *********************************************************
  *********************************************************/
 
-static bool g_record_accurately_while_playing = true;
+static bool g_record_accurately_while_playing = false;
 
 bool MIDI_get_record_accurately(void){
   return g_record_accurately_while_playing;

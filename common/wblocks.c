@@ -292,16 +292,26 @@ void UpdateWBlockCoordinates(
 	wblock->t.y2 = wblock->a.y2;
 
 
-        wblock->bottombar.x1 = wblock->t.x1;
+        wblock->bottombar.x1 = wblock->t.x1 + 1;
         wblock->bottombar.y1 = wblock->a.y2-1;
         wblock->bottombar.x2 = wblock->a.y2-1;
         wblock->bottombar.y2 = window->height;
 
-	wblock->reltempo.x1=0;
+        int midi_record_button_width = wblock->bottombar.y2-wblock->bottombar.y1 + 2;
+        
+	wblock->reltempo.x1=midi_record_button_width;
 	wblock->reltempo.y1=wblock->bottombar.y1+2;
-	wblock->reltempo.x2=wblock->t.x1 - 3;
+	wblock->reltempo.x2=wblock->bottombar.x1 - 1;
 	wblock->reltempo.y2=wblock->bottombar.y2-1;
 
+        {
+          int m_width = midi_record_button_width;
+          int r_width = wblock->reltempo.x2 - wblock->reltempo.x1;
+          if (m_width > r_width){
+            wblock->reltempo.x1 = R_MAX(1, (wblock->t.x1 - 3) / 2);
+          }
+        }
+        
 	wblock->num_visiblelines=(wblock->t.y2-wblock->t.y1)/window->fontheight;
 	if((wblock->num_visiblelines-2)*window->fontheight+wblock->t.y1>=wblock->t.y2){
 		wblock->num_visiblelines--;

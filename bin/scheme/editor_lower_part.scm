@@ -120,6 +120,8 @@
     )
   
   (define start-mouse-value #f)
+
+  (add-statusbar-text-handler "Block tempo multiplier: Right-click for options")
   
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
@@ -194,6 +196,17 @@
 
   )
 
+(define (create-editor-midi-record-checkbox gui x1 y1 x2 y2)
+  (define area (<new> :checkbox gui x1 y1 x2 y2
+                      ra:record-accurately-from-midi
+                      ra:set-record-accurately-from-midi
+                      :text "R"
+                      :selected-color "red"
+                      ))
+  (area :add-statusbar-text-handler "Enable polyphonic and time-accurate recording from MIDI")
+  area)
+
+
 
 (def-area-subclass (<editor-lower-part-area> :gui :x1 :y1 :x2 :y2)
   (define (add-sub-areas!)
@@ -202,7 +215,8 @@
     
     (define track-x1 (<ra> :get-track-slider-x1))
     (define track-x2 (<ra> :get-track-slider-x2))
-    
+
+    (add-sub-area-plain! (create-editor-midi-record-checkbox gui 0 y1 (- reltempo-x1 0) y2))
     (add-sub-area-plain! (<new> :reltempo-slider gui reltempo-x1 y1 reltempo-x2 y2))
     (add-sub-area-plain! (create-editor-track-scrollbar-area gui track-x1 y1 track-x2 y2)))
 

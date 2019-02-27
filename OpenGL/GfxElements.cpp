@@ -70,6 +70,7 @@ double g_opengl_scale_ratio = 1.0;
 
 static float g_height = 512;
 
+// Called from vl::Widget::resizeEvent
 void GE_set_height(int height){
   if (height<=0)
     height = 1; // avoid various situations.

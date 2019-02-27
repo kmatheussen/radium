@@ -595,11 +595,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     {
       use0x90->setChecked(MIDI_get_use_0x90_for_note_off());
       
-      if (MIDI_get_record_accurately())
-        record_sequencer_style->setChecked(true);
-      else
-        record_tracker_style->setChecked(true);
-      
       if(MIDI_get_record_velocity())
         record_velocity_on->setChecked(true);
       else
@@ -1127,11 +1122,6 @@ public slots:
   void on_use0x90_toggled(bool val){
     if (_initing==false)
       MIDI_set_use_0x90_for_note_off(val);
-  }
-
-  void on_record_sequencer_style_toggled(bool val){
-    if (_initing==false)
-      MIDI_set_record_accurately(val);
   }
 
   void on_record_velocity_on_toggled(bool val){
