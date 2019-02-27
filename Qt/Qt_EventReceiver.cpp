@@ -15,8 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#include "EditorWidget.h"
-
 #include <qpainter.h>
 #include <QUrl>
 
@@ -32,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPointF>
 #include <QKeyEvent>
 #endif
+
+#include "../common/nsmtracker.h"
 
 #include "Qt_instruments_proc.h"
 
@@ -55,6 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/seqtrack_proc.h"
 
 #include "../embedded_scheme/scheme_proc.h"
+#include "../embedded_scheme/s7extra_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/Widget_proc.h"
@@ -187,15 +188,28 @@ void EditorWidget::updateEditor(){
 #endif
   
   if (this->window->must_redraw) {
-    UpdateTrackerWindowCoordinates(window);
+    /*
+    int x2_before = getReltempoSliderX2();
+    int skew_before = this->window->wblock->skew_x;
+    */
+    
     UpdateWBlockCoordinates(this->window, this->window->wblock);
     GFX_UpdateUpperLeft(window, window->wblock);
     UpdateAllPianoRollHeaders(window, window->wblock);
 
-    update_seqtracks_with_current_editor_block();
-    
-    update();
+    /*
+    if (x2_before != getReltempoSliderX2() || skew_before != this->window->wblock->skew_x)
+    S7CALL2(void_void,"FROM_C-reconfigure-editor-lower-part-gui!");
+    else
+      bottom_widget->update();
+    */
 
+    S7CALL2(void_void,"FROM_C-reconfigure-editor-lower-part-gui!");
+    
+    update_seqtracks_with_current_editor_block();
+
+    update();
+    
     this->window->must_redraw_editor=true;
     this->window->must_redraw=false;
   }
@@ -652,38 +666,14 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
 
 
 #if USE_QT_VISUAL
-void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
+void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){
   radium::ScopedResizeEventTracker resize_event_tracker;
   
-#if !USE_OPENGL
-  this->init_buffers();
-#endif
-
-  if (this->window != NULL){
-    this->window->width=qresizeevent->size().width(); //this->get_editor_width();
-    this->window->height=qresizeevent->size().height(); //this->get_editor_height();
-  }
-  
-  if(g_is_starting_up==true)
-    return;
-
-  //UpdateWBlockCoordinates(window, window->wblock);
-
-#if 0
-  printf("width: %d/%d, height: %d/%d\n",this->width(),qresizeevent->size().width(),
-         this->height(),qresizeevent->size().height());
-#endif
-
+  // If we don't do this, there could be graphical garbage in the tracker headers while resizing.
   window->must_redraw = true;
-  updateEditor();
-
-  //UpdateWBlockCoordinates(window, window->wblock);
-
-#if USE_OPENGL
-  printf("********* height: %d\n",qresizeevent->size().height());
-  position_gl_widget(window);
-#endif
+  updateEditor();      
 }
+
 #endif // USE_QT_VISUAL
 
 

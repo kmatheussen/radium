@@ -83,6 +83,20 @@ typedef QPixmap PaintBuffer;
 #include "helpers.h"
 #include "Qt_colors_proc.h"
 
+struct EditorLayoutWidget : public QWidget{
+ public:
+  EditorLayoutWidget(){
+    set_widget_takes_care_of_painting_everything(this);
+
+    QVBoxLayout *layout = new QVBoxLayout(this);
+    
+    layout->setSpacing(0);
+    layout->setContentsMargins(0,0,0,0);
+    
+    setLayout(layout);
+  }
+};
+
 
 class EditorWidget : public QWidget, public radium::MouseCycleFix
 {
@@ -124,8 +138,12 @@ public:
     QFont font;
 #endif
 
+    EditorLayoutWidget *editor_layout_widget = NULL; // parent widget. The one holding the vertical layout.
+
+    QWidget *bottom_widget = NULL; // rec button, reltempo slider, and track scrollbar
+  
 #if USE_OPENGL
-    QWidget *gl_widget; // Note: might be NULL
+    QWidget *gl_widget = NULL; // Note: might be NULL
 #endif
 
     //QFrame *status_frame;
@@ -157,79 +175,6 @@ public:
 #endif
     
     void wheelEvent(QWheelEvent *qwheelevent) override;
-
-#if USE_QT_VISUAL && USE_QIMAGE_BUFFER
-#if !USE_OPENGL
-    void init_buffers(){
-       const QImage::Format image_format = QImage::Format_RGB32;
-
-       if(this->paintbuffer==NULL || this->cursorbuffer==NULL || this->paintbuffer->width()<this->width() || this->paintbuffer->height()<this->height()){
-         delete this->paintbuffer_painter;
-         delete this->cursorbuffer_painter;
-
-         delete this->paintbuffer;
-         delete this->cursorbuffer;
-         this->paintbuffer = new QImage(this->width(), this->height(), image_format);
-         this->cursorbuffer = new QImage(this->width(), this->height(), image_format);
-
-         this->paintbuffer_painter = new QPainter(this->paintbuffer);
-         this->cursorbuffer_painter = new QPainter(this->cursorbuffer);
-
-         //this->paintbuffer_painter->setFont(this->font);
-       }
-
-#if 1
-      {
-        this->cursorbuffer_painter->fillRect(0,0,this->width(),this->height(),get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM));
-      }
-#if 0
-      {
-        this->paintbuffer_painter->fillRect(0,0,this->width(),this->height(),get_qcolor(LOW_EDITOR_BACKGROUND_COLOR_NUM));
-      }
-#endif
-#endif
-    }
-#endif
-    
-#if USE_OPENGL
-    void position_gl_widget(struct Tracker_Windows *window2){
-      if (gl_widget != NULL && window2!=NULL && window2->wblock!=NULL) {
-        int height_;
-
-        GL_lock();{
-          gl_widget->move(0,window2->wblock->t.y1);
-          height_ = 1 + window2->wblock->t.y2 - window2->wblock->t.y1 -1;
-          //fprintf(stderr,"height: %d, width: %d\n",height_,width());
-          gl_widget->resize(width(), height_);
-        }GL_unlock();
-        GE_set_height(height_);
-        //printf("a2\n");
-
-        // TODO: Check if this is any point:
-        //GL_create(window2);
-      }
-    }
-#endif
-
-#else
-#if !USE_OPENGL
-    void init_buffers(){
-#if USE_QT_VISUAL
-       if(this->paintbuffer==NULL || this->cursorbuffer==NULL){
-          this->paintbuffer=new QPixmap(editor->width(),editor->height());
-          this->cursorbuffer=new QPixmap(editor->width(),editor->height());
-#ifdef USE_QT3
-          this->paintbuffer->setOptimization(QPixmap::BestOptim);
-          this->cursorbuffer->setOptimization(QPixmap::BestOptim);
-#endif
-       }else{
-          this->paintbuffer->resize(this->width(), this->height());
-          this->cursorbuffer->resize(this->width(), this->height());
-       }
-#endif
-    }
-#endif
-#endif
 
 protected:
     //    bool        event(QEvent *);
@@ -263,17 +208,55 @@ protected:
     void	fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override;
     MOUSE_CYCLE_CALLBACKS_FOR_QT;
 #endif
-    void        resizeEvent( QResizeEvent *) override ;
     void        closeEvent(QCloseEvent *) override ;
 #if 0
     void        customEvent(QEvent *);
 #endif
+  void        resizeEvent( QResizeEvent *) override ;
 };
 
 extern QWidget *g_main_window;
 extern QWidget *g_mixerstripparent;
 extern QHBoxLayout *g_mixerstriplayout;
 extern EditorWidget *g_editor;
+
+
+static inline void calculateNewWindowWidthAndHeight(struct Tracker_Windows *window){
+  
+  if (g_editor==NULL || g_editor->gl_widget==NULL || g_editor->editor_layout_widget==NULL)
+    return;
+
+  window->width = g_editor->editor_layout_widget->width();
+  window->height = g_editor->height() + g_editor->gl_widget->height() + g_editor->window->bottomslider_height; //g_editor->get_editor_height();
+
+
+  if(g_is_starting_up==true)
+    return;
+
+  if (window->wblock==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+    
+  UpdateWBlockCoordinates(window, window->wblock);
+
+  if (g_editor->height() != window->wblock->t.y1){
+    g_editor->setMinimumHeight(window->wblock->t.y1);
+    g_editor->setMaximumHeight(window->wblock->t.y1);
+  }
+
+  /*
+    // We call GE_set_height in the VisualizationLibrary resize callback instead.
+  {
+    int height_ = 1 + window->wblock->t.y2 - window->wblock->t.y1 -1;
+    //fprintf(stderr,"GAKK! height: %d, width: %d\n",height_,window->width);
+    GE_set_height(height_);
+    
+    g_editor->window->must_redraw = true;
+    g_editor->updateEditor();      
+  }
+  */
+}
 
 #endif
 

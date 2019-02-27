@@ -49,10 +49,10 @@ DC_end();
 
 struct FX *LoadFX(struct Tracks *track){
 
-	static char *objs[1]={
+	static const char *objs[1]={
 		"FXDATA"
 	};
-	static char *vars[7]={
+	static const char *vars[7]={
 		"name",
 		"color",
 		"min",

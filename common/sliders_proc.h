@@ -17,12 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_COMMON_SLIDERS_PROC_H
 #define _RADIUM_COMMON_SLIDERS_PROC_H
 
-extern LANGSPEC TBox GetBottomSliderCoordinates(const struct Tracker_Windows *window, const struct WBlocks *wblock, int *inner_x1, int *inner_x2);
-
-extern LANGSPEC void UpdateBottomSlider(struct Tracker_Windows *window);
-extern LANGSPEC void DrawBottomSlider(struct Tracker_Windows *window);
-extern LANGSPEC void UpdateLeftSlider(struct Tracker_Windows *window);
-extern LANGSPEC void DrawLeftSlider(struct Tracker_Windows *window);
 extern LANGSPEC void InitSliderValues(struct Tracker_Windows *window);
 
 #endif

@@ -94,7 +94,7 @@ static void SelectBottomSliderHeight(
 	char temp[100];
 	int newwidth;
 
-	sprintf(temp,"New Height (now %d) >",window->bottomslider.width);
+	sprintf(temp,"New Height (now %d) >",window->bottomslider_height);
 
 	newwidth=GFX_GetInteger(
 		window,
@@ -106,8 +106,8 @@ static void SelectBottomSliderHeight(
 	);
 	if(newwidth<2) return;
 
-	window->bottomslider.width=newwidth;
-
+        GFX_set_bottom_widget_height(newwidth);
+        
 	UpdateAllWBlockCoordinates(window);
 
         window->blt.clear_do=false;

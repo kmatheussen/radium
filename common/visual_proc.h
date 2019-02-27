@@ -79,6 +79,9 @@ extern LANGSPEC bool GFX_MenuVisible(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_ShowMenu(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_HideMenu(struct Tracker_Windows *tvisual);
 
+extern LANGSPEC void GFX_set_bottom_widget_height(int new_height);
+
+
 extern LANGSPEC void QUEUE_GFX_C2V_bitBlt(
 				    struct Tracker_Windows *window,
 				    int from_x1,int from_x2,

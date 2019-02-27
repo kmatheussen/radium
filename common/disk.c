@@ -332,7 +332,7 @@ int DC_Next(void){
 }
 
 
-int DC_whatString(char **variables,int num){
+int DC_whatString(const char **variables,int num){
 	char *string;
 	int ret=0;
 

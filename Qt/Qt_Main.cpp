@@ -2591,13 +2591,21 @@ void Qt_EventHandler(void){
 }
 
 
+void GFX_set_bottom_widget_height(int new_height){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  window->bottomslider_height = new_height;
+  EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+  if(editor != NULL && editor->bottom_widget != NULL){
+    editor->bottom_widget->setMinimumHeight(new_height);
+    editor->bottom_widget->setMaximumHeight(new_height);
+  }
+}
 
 //extern void updateAllFonts(QWidget *widget);
 
 static bool g_load_new_song=true;
 static char *g_songfile_from_commandline = NULL;
 static QString g_startup_path;
-
 
 int radium_main(const char *arg){
 
@@ -2778,7 +2786,8 @@ int radium_main(const char *arg){
       if(xsplitter->_strip_on_left_side)
         xsplitter->add_mixer_strip();
 
-      xsplitter->addWidget(editor);
+      editor->editor_layout_widget = new EditorLayoutWidget();
+      xsplitter->addWidget(editor->editor_layout_widget);
 
       xsplitter->addWidget(block_selector);
       block_selector->move(main_window->width()-100,0);
@@ -2876,9 +2885,13 @@ int radium_main(const char *arg){
   editor->gl_widget = GL_create_widget(editor);
   if(editor->gl_widget==NULL)
     return -100;
-  
-  //editor->gl_widget->setAttribute(Qt::WA_PaintOnScreen);
-  editor->position_gl_widget(window);
+
+  editor->editor_layout_widget->layout()->addWidget(editor);
+  editor->editor_layout_widget->layout()->addWidget(editor->gl_widget);
+
+  editor->bottom_widget = API_gui_get_widget(S7CALL2(int_void, "FROM_C-create-editor-lower-part-gui"));
+  GFX_set_bottom_widget_height(window->bottomslider_height);
+  editor->editor_layout_widget->layout()->addWidget(editor->bottom_widget);
 #endif
 
 

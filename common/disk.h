@@ -103,7 +103,7 @@ extern LANGSPEC void *DC_doalloc_atomic(int size);
 extern LANGSPEC int DC_Next(void);
 extern LANGSPEC void DC_SkipBlock(void);
 
-extern LANGSPEC int DC_whatString(char **variables,int num);
+extern LANGSPEC int DC_whatString(const char **variables,int num);
 
 extern float disk_load_version;
 extern int g_disk_load_radium_version_major;

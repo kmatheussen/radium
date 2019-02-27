@@ -51,8 +51,7 @@ bool NewSong(void){
 	//BL_init();
 
 
-	if(OpenTrackerWindow(20,20,00,00)==-1) return false;
-
+	if(OpenTrackerWindow(20,20,100,100)==-1) return false;
 
 	return true;
 }

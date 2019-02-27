@@ -538,6 +538,8 @@
     FROM_C-request-rename-instrument
     FROM_C-copy-editor-track-on/off-to-seqblock
     FROM_C-copy-seqblock-track-on/off-to-editor
+    FROM_C-create-editor-lower-part-gui
+    FROM_C-reconfigure-editor-lower-part-gui!
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
@@ -578,6 +580,7 @@
   (my-require 'mixer-strips.scm)
   (my-require 'pluginmanager.scm)
   (my-require 'seqblock_audio.scm)
+  (my-require 'editor_lower_part.scm)
 
   (assert-functions-called-from-evalScheme)
 

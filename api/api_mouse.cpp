@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../common/undo.h"
 #include "../common/undo_reltemposlider_proc.h"
-#include "../common/gfx_wblocks_reltempo_proc.h"
 #include "../common/time_proc.h"
 #include "../common/trackreallines2_proc.h"
 #include "../common/common_proc.h"
@@ -54,6 +53,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/seqtrack_proc.h"
 #include "../common/sliders_proc.h"
 #include "../common/fxtext_proc.h"
+#include "../common/windows_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -347,51 +347,17 @@ bool hasBlockMultiplierMidiLearn(void){
 // The track scrollbar (horizontal scrollbar)
 ///////////////////////////////////////////////////
 
-float getTrackSliderX1(void){
-  return root->song->tracker_windows->bottomslider.x;
+float getTrackSliderX1(void){  
+  return root->song->tracker_windows->wblock->t.x1;
 }
 float getTrackSliderY1(void){
   return root->song->tracker_windows->wblock->reltempo.y1;
 }
 float getTrackSliderX2(void){
-  return root->song->tracker_windows->bottomslider.x2;
+  return getBottomSliderX2(root->song->tracker_windows);
 }
 float getTrackSliderY2(void){
   return root->song->tracker_windows->wblock->reltempo.y2;
-}
-
-float getTrackSliderScrollerX1(int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock = getWBlockFromNumA(blocknum, &window, windownum);
-  if(wblock==NULL)
-    return 0.0;
-
-  int inner_x1;
-  int inner_x2;
-  GetBottomSliderCoordinates(window, window->wblock, &inner_x1, &inner_x2);
-
-  return inner_x1;
-}
-
-float getTrackSliderScrollerY1(void){
-  return getTrackSliderY1();
-}
-
-float getTrackSliderScrollerX2(int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock = getWBlockFromNumA(blocknum, &window, windownum);
-  if(wblock==NULL)
-    return 0.0;
-
-  int inner_x1;
-  int inner_x2;
-  GetBottomSliderCoordinates(window, window->wblock, &inner_x1, &inner_x2);
-
-  return inner_x2;
-}
-
-float getTrackSliderScrollerY2(void){
-  return getTrackSliderY2();
 }
 
 float getTrackSliderPos(int blocknum, int windownum){
@@ -411,9 +377,10 @@ void setTrackSliderPos(float pos, int blocknum, int windownum){
   if(wblock==NULL)
     return;
 
-  int visible_width = root->song->tracker_windows->bottomslider.x2 - root->song->tracker_windows->bottomslider.x;
+  int visible_width = getTrackSliderX2() - getTrackSliderX1();
   int total_width = WTRACKS_getWidth(window, wblock);
-
+  //printf("      total_width: %d\n", total_width);
+  
   if (visible_width >= total_width){
     //    R_ASSERT_NON_RELEASE(wblock->skew_x == 0);
     wblock->skew_x = 0;
@@ -437,6 +404,14 @@ void setTrackSliderIsMoving(bool is_moving, int windownum){
 
   window->track_slider_is_moving = is_moving;
   window->must_redraw=true;
+}
+
+bool getTrackSliderIsMoving(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if(window==NULL)
+    return false;
+
+  return window->track_slider_is_moving;
 }
 
 
@@ -3505,14 +3480,14 @@ void setOpenHandMousePointer(int64_t guinum){
     return;
   }
   //printf("c) api_mouse: Set OPEN mouse %d\n", (int)guinum);
-    SetOpenHandPointer(guinum);
+  SetOpenHandPointer(guinum);
 }
 void setClosedHandMousePointer(int64_t guinum){
   if (guinum<0){
     handleError("guinum for cursor must be 0 or larger");
     return;
   }
-    SetClosedHandPointer(guinum);
+  SetClosedHandPointer(guinum);
 }
 void setBlankMousePointer(int64_t guinum){
   if (guinum<0){

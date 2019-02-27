@@ -16,7 +16,7 @@
                     (define col1 color)
                     ;;(set! color (<gui> :make-color-lighter color 1.5))
                     (set! color (<gui> :set-alpha-for-color color 0.5))
-                    (c-display "With alpha:" col1 ". without:" color)
+                    ;;(c-display "With alpha:" col1 ". without:" color)
                     (define file-info (<ra> :get-file-info audiofile))
                     (<new> :sequencer-drag-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
                            :is-current (lambda ()

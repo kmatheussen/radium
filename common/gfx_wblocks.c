@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "cursor_proc.h"
 #include "sliders_proc.h"
 #include "gfx_wtrackheaders_proc.h"
-#include "gfx_wblocks_reltempo_proc.h"
 #include "blts_proc.h"
 #include "settings_proc.h"
 
@@ -552,24 +551,8 @@ void DrawWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
 	R_SetCursorPos(window);
 #endif
-        
-        // fill background in the bottom bar
-	GFX_FilledBox(
-                      window, HIGH_BACKGROUND_COLOR_NUM,
-                      0,            wblock->bottombar.y1,
-                      wblock->t.x2, window->height-1,
-                      PAINT_DIRECTLY
-                      );
-
-        
-	DrawBottomSlider(window);
-
-        // Definitely not. This function can not be called from inside QWidget->paintEvent()
-        //GFX_UpdateUpperLeft(window, wblock);
 
 	DrawAllWTrackHeaders(window,wblock);
-
-	DrawBlockRelTempo(window,wblock);
 }
 
 

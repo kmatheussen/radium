@@ -31,7 +31,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "control_proc.h"
 #include "gfx_op_queue_proc.h"
 #include "settings_proc.h"
+
 #include "../OpenGL/Widget_proc.h"
+
+#include "../api/api_proc.h"
+
 
 #include "disk_windows_proc.h"
 
@@ -67,9 +71,14 @@ DC_start("TRACKER_WINDOW");
 
 	//DC_SSI("minnodesize",window->minnodesize);
 
-	DC_SaveS("leftslider");SaveSlider(&window->leftslider);
-	DC_SaveS("bottomslider");SaveSlider(&window->bottomslider);
+        // Compatibility with older songs. (probably not necessary)
+        {
+          DC_SaveS("leftslider");SaveSlider(&window->leftslider);
 
+          struct Slider bottomslider = {1, window->bottomslider_height, getTrackSliderX1(), getTrackSliderX2(), getTrackSliderX1(), getTrackSliderX2()};
+          DC_SaveS("bottomslider");SaveSlider(&bottomslider);
+        }
+        
         DC_SSB("show_signature_track",window->show_signature_track);
         DC_SSB("show_lpb_track",window->show_lpb_track);
         DC_SSB("show_bpm_track",window->show_bpm_track);
@@ -86,10 +95,10 @@ SaveWindow(NextWindow(window));
 
 
 struct Tracker_Windows *LoadWindow(void){
-	static char *objs[1]={
+	static const char *objs[1]={
 		"WBLOCK"
 	};
-	static char *vars[22]={
+	static const char *vars[22]={
 		"x",
 		"y",
 		"width",
@@ -252,8 +261,6 @@ if(window==NULL) return;
 	window->curr_track_sub=-1;
 
         InitSliderValues(window);
-
-	UpdateTrackerWindowCoordinates(window);
 
 	DLoadWBlocks(newroot,window,window->wblocks, true);
 

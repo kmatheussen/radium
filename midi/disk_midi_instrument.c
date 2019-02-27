@@ -117,8 +117,8 @@ DC_end();
 }
 
 void LoadMIDIPatchData(struct PatchData *patchdata){
-	static char **objs=NULL;
-	static char *vars[10]={
+	static const char **objs=NULL;
+	static const char *vars[10]={
 		"clustername",
 		"channel",
 		"preset",
