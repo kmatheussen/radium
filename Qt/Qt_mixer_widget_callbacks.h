@@ -41,7 +41,7 @@ extern bool g_pause_scroll_area_updates_when_resizing;
 class MyQGraphicsView : public QGraphicsView{
 public:
 
-  QSlider *widget_zoom_slider;
+  
 
   MyQGraphicsView(QWidget *parent)
     : QGraphicsView(parent)
@@ -52,7 +52,49 @@ public:
     //horizontalScrollBar()->setCursor(Qt::OpenHandCursor);
     //verticalScrollBar()->setCursor(Qt::OpenHandCursor);
     setCornerWidget(NULL);
+
+    // Tro to find default zoom level based on system font
+    QFont font = g_editor->main_window->font();
+    _middle_zoom = 230 - (font.pointSize()-12) * 4.0;
+    
+    set_zoom_value(_zoom_value);
   }
+
+  qreal _rotate = 0;
+  qreal _middle_zoom = 1;
+
+  const int _min_slider = 0;
+  const int _max_slider = 500;
+  int _zoom_value = 250;
+  
+  void set_zoom_value(int val){
+    val = R_BOUNDARIES(_min_slider, val, _max_slider);
+
+    _zoom_value = val;
+    
+    qreal scale = qPow(qreal(2), (val - _middle_zoom) / qreal(50));
+    
+    QMatrix matrix;
+    matrix.scale(scale, scale);
+    matrix.rotate(_rotate);
+    
+    setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    
+    setMatrix(matrix);
+  }
+
+  void set_rotate(qreal rotate){
+    _rotate = rotate;
+
+    qreal scale = qPow(qreal(2), (_zoom_value - 250) / qreal(50));
+
+    QMatrix matrix;
+    matrix.scale(scale, scale);
+    matrix.rotate(_rotate);
+
+    setMatrix(matrix);    
+  }
+
 
   // http://stackoverflow.com/questions/1355446/get-visible-rectangle-of-qgraphicsview
   QRectF visibleRect(){
@@ -73,44 +115,39 @@ public:
   
   void wheelEvent(QWheelEvent *e) override
   {
-    
-    if(widget_zoom_slider!=NULL){
+    if (e->modifiers() & Qt::ControlModifier) {
       
-      if (e->modifiers() & Qt::ControlModifier) {
-
-        // Zooming in / out
-        
+      // Zooming in / out
+      
+      if (e->delta() > 0)
+        set_zoom_value(_zoom_value + 6);
+      else
+        set_zoom_value(_zoom_value - 6);
+      
+    } else if (HorizontalModifierPressed(e->modifiers())) {
+      
+      // Scrolling left / right
+      
+      QScrollBar *scrollbar = horizontalScrollBar();
+      if(scrollbar!=NULL){
         if (e->delta() > 0)
-          widget_zoom_slider->setValue(widget_zoom_slider->value() + 6);
+          scrollbar->setValue(scrollbar->value()+70);
         else
-          widget_zoom_slider->setValue(widget_zoom_slider->value() - 6);
-        
-      } else if (HorizontalModifierPressed(e->modifiers())) {
-
-        // Scrolling left / right
-        
-        QScrollBar *scrollbar = horizontalScrollBar();
-        if(scrollbar!=NULL){
-          if (e->delta() > 0)
-            scrollbar->setValue(scrollbar->value()+70);
-          else
-            scrollbar->setValue(scrollbar->value()-70);
-        }
-        
-      } else {
-
-        // Scrolling up / down
-        
-        QScrollBar *scrollbar = verticalScrollBar();
-        if(scrollbar!=NULL){
-          if (e->delta() > 0)
-            scrollbar->setValue(scrollbar->value()-70);
-          else
-            scrollbar->setValue(scrollbar->value()+70);
-        }
-        //QGraphicsView::wheelEvent(e);
-        
+          scrollbar->setValue(scrollbar->value()-70);
       }
+      
+    } else {
+      
+      // Scrolling up / down
+      
+      QScrollBar *scrollbar = verticalScrollBar();
+      if(scrollbar!=NULL){
+        if (e->delta() > 0)
+          scrollbar->setValue(scrollbar->value()-70);
+        else
+          scrollbar->setValue(scrollbar->value()+70);
+      }
+      //QGraphicsView::wheelEvent(e);
       
     }
 
@@ -135,10 +172,6 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
  public:
   bool initing;
 
-  qreal _rotate;
-
-  qreal _middle_zoom;
-
   Mixer_Direction_Menu _mixer_direction_menu;
 
   radium::GcHolder<dyn_t> _mixer_strip_configuration;
@@ -150,23 +183,13 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
  Mixer_widget(QWidget *parent=NULL)
     : QWidget(parent)
     , radium::Timer(100, true)
-    , _rotate(0)
-    , _middle_zoom(1.0)
     , _mixer_direction_menu(this)
     , _mytimer(this)
   {
     initing = true;
     
     setupUi(this);
-    view->widget_zoom_slider = zoom_slider;
-    zoom_slider->hide();
     
-    // Tro to find default zoom level based on system font
-    QFont font = g_editor->main_window->font();
-    _middle_zoom = 230 - (font.pointSize()-12) * 4.0;
-    
-    on_zoom_slider_valueChanged(zoom_slider->value());
-
     // don't need the zoom buttons.
     zoomin_button->hide();
     zoomout_button->hide();
@@ -196,18 +219,6 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
 
   void enterEvent(QEvent *event) override {
     setCursor(Qt::ArrowCursor);
-  }
-
-  void set_rotate(qreal rotate){
-    _rotate = rotate;
-
-    qreal scale = qPow(qreal(2), (zoom_slider->value() - 250) / qreal(50));
-
-    QMatrix matrix;
-    matrix.scale(scale, scale);
-    matrix.rotate(_rotate);
-
-    view->setMatrix(matrix);    
   }
 
   void update_ab_buttons(bool update_current_button){
@@ -541,7 +552,7 @@ public slots:
 
     if (show_modular){
 
-      modular_widget->show();
+      view->show();
 
       if(_mixer_strips_gui != -1){
         QWidget *w = API_gui_get_widget(_mixer_strips_gui);
@@ -565,7 +576,7 @@ public slots:
           //w->setParent(bottom_widget);
           //w->setFixedSize(width(), height()-50);
           verticalLayout->insertWidget(1, w, 1);
-          modular_widget->hide();
+          view->hide();
           /*
             mixer_layout->update();
             verticalLayout->update();
@@ -578,7 +589,7 @@ public slots:
         QWidget *w = API_gui_get_widget(_mixer_strips_gui);
         w->setUpdatesEnabled(false);
         show_modular_mixer_widgets(false);        
-        modular_widget->hide();
+        view->hide();
         w->show();
         w->setUpdatesEnabled(true);
 
@@ -649,11 +660,11 @@ public slots:
   void on_mixer_direction_menu_button_released() {
     _mixer_direction_menu.myExec();
     
-    if (_rotate>=(270+180)/2)
+    if (view->_rotate>=(270+180)/2)
       mixer_direction_menu_button->setText("\342\207\221");
-    else if (_rotate>=(180+90)/2)
+    else if (view->_rotate>=(180+90)/2)
       mixer_direction_menu_button->setText("\342\207\220");
-    else if (_rotate>=(90/2))
+    else if (view->_rotate>=(90/2))
       mixer_direction_menu_button->setText("\342\207\223");
     else
       mixer_direction_menu_button->setText("\342\207\222");
@@ -683,28 +694,15 @@ public slots:
     }
   }
   */
-  
-  void on_zoom_slider_valueChanged(int val){
-    
-    qreal scale = qPow(qreal(2), (val - _middle_zoom) / qreal(50));
-
-    QMatrix matrix;
-    matrix.scale(scale, scale);
-    matrix.rotate(_rotate);
-
-    view->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
-    
-    view->setMatrix(matrix);
-  }
 
   void on_zoomin_button_clicked(){
-    zoom_slider->setValue(zoom_slider->value() + 6);
+    view->set_zoom_value(view->_zoom_value + 6);
   }
   void on_zoomout_button_clicked(){
-    zoom_slider->setValue(zoom_slider->value() - 6);
+    view->set_zoom_value(view->_zoom_value - 6);
   }
   void on_zoomreset_button_clicked(){
-    zoom_slider->setValue(250);
+    view->set_zoom_value(250);
   }
 
   void on_help_button_clicked(){
@@ -715,7 +713,7 @@ public slots:
 
 
 void MW_set_rotate(float rotate){
-  g_mixer_widget2->set_rotate(rotate);
+  g_mixer_widget2->view->set_rotate(rotate);
 }
 
 void MW_update_mixer_widget(void){
@@ -745,7 +743,7 @@ void MW_hide_non_instrument_widgets(void){
     QWidget *w = API_gui_get_widget(g_mixer_widget2->_mixer_strips_gui);
     w->hide();
   }else
-    g_mixer_widget2->modular_widget->hide();
+    g_mixer_widget2->view->hide();
   
   g_mixer_widget2->bar_widget->hide();
 }
@@ -755,7 +753,7 @@ void MW_show_non_instrument_widgets(void){
     QWidget *w = API_gui_get_widget(g_mixer_widget2->_mixer_strips_gui);
     w->show();
   }else
-    g_mixer_widget2->modular_widget->show();
+    g_mixer_widget2->view->show();
   
   g_mixer_widget2->bar_widget->show();
 }
