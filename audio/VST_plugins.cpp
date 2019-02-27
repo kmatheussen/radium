@@ -1312,7 +1312,7 @@ static int create_vst_plugins_recursively(const QString main_path, const QString
     static double g_last_time = -1000;
     double time = TIME_get_ms();
     if (time > g_last_time + 100){
-      GFX_ShowProgressMessage(dir.absolutePath().toUtf8().constData());
+      GFX_ShowProgressMessage(dir.absolutePath().toUtf8().constData(), false);
       g_last_time = time;
     }
   }

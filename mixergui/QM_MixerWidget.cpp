@@ -2341,7 +2341,7 @@ static bool delete_a_connection(){
 
 static void MW_cleanup_connections(bool is_loading){
   if (is_loading)
-    GFX_ShowProgressMessage("Deleting all connection between instruments");
+    GFX_ShowProgressMessage("Deleting all connection between instruments", true);
 
   CONNECTIONS_remove_all(&g_mixer_widget->scene);
 }
@@ -2361,7 +2361,7 @@ static bool delete_a_chip(bool is_loading){
         printf("  MAKING %p inactive (%s), by force\n",chip,CHIP_get_patch(chip)->name);
 
         if (is_loading)
-          GFX_ShowProgressMessage(talloc_format("Deleting instrument %s", CHIP_get_patch(chip)->name));
+          GFX_ShowProgressMessage(talloc_format("Deleting instrument %s", CHIP_get_patch(chip)->name), true);
 
         PATCH_force_make_inactive(CHIP_get_patch(chip));
         //MW_delete_plugin(SP_get_plugin(chip->_sound_producer));
@@ -2600,7 +2600,7 @@ static void MW_create_chips_from_full_state(hash_t *chips, Buses buses, bool is_
     }
     
     if (is_loading)
-      GFX_ShowProgressMessage(talloc_format("Creating instrument %d / %d: %s", i, (int)num_chips, patch->name));
+      GFX_ShowProgressMessage(talloc_format("Creating instrument %d / %d: %s", i, (int)num_chips, patch->name), true);
 
     PATCH_init_audio_when_loading_song(patch, state);
   }
@@ -2770,12 +2770,12 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   create_missing_busses(bus_chips_state); // compatibility with old songs
 
   if (is_loading)
-    GFX_ShowProgressMessage("Creating instruments");
+    GFX_ShowProgressMessage("Creating instruments", true);
   
   MW_create_chips_from_full_state(chips_state, new_buses, is_loading);
 
   if (is_loading)
-    GFX_ShowProgressMessage("Creating connections between sound objects");
+    GFX_ShowProgressMessage("Creating connections between sound objects", true);
 
   CONNECTIONS_create_from_state(&g_mixer_widget->scene, HASH_get_hash(state, "connections"), -1, -1, -1, -1);
 

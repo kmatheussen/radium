@@ -2983,7 +2983,7 @@ int radium_main(const char *arg){
   //delete g_splashscreen;
   //g_splashscreen = NULL;
 
-  GFX_ShowProgressMessage("Final setup");
+  GFX_ShowProgressMessage("Final setup", true);
 
   
 #if 0

@@ -421,11 +421,25 @@ void showError(const_char *text){
 void openProgressWindow(const char *message){
   GFX_OpenProgress(message);
 }
-void showProgressWindowMessage(const char *message){
-  GFX_ShowProgressMessage(message);
+void showProgressWindowMessage(const char *message, bool force_show){
+  if (progressWindowIsOpen()==false){
+    handleError("Progress window is not open");
+    return;
+  }
+  GFX_ShowProgressMessage(message, force_show);
+}
+void showProgressWindowMessageIfOpen(const char *message, bool force_show){
+  if (progressWindowIsOpen()==false)
+    return;
+  else
+    GFX_ShowProgressMessage(message, force_show);
 }
 void closeProgressWindow(void){
   GFX_CloseProgress();
+}
+
+bool progressWindowIsOpen(void){
+  return GFX_ProgressIsOpen();
 }
 
 void showHomeHelpWindow(void){

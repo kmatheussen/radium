@@ -39,7 +39,7 @@ int GFX_Message(vector_t *buttons, QString message);
 #endif
 
 extern LANGSPEC void GFX_OpenProgress(const char *message);
-extern LANGSPEC void GFX_ShowProgressMessage(const char *message);
+extern LANGSPEC void GFX_ShowProgressMessage(const char *message, bool force_show);
 extern LANGSPEC bool GFX_ProgressIsOpen(void);
 extern LANGSPEC void GFX_HideProgress(void);
 extern LANGSPEC void GFX_ShowProgress(void);

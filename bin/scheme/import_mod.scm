@@ -535,7 +535,7 @@
                   patterns
                   (1- patternnum))
             (begin
-              (c-display "   Removing temporarily created pattern " patternnum)
+              (<ra> :show-progress-window-message-if-open (<-> "Removing temporarily created pattern " patternnum) #f)
               (loop (remove-from-playlist playlist patternnum)
                     (remove-pattern patterns patternnum)
                     (1- patternnum)))))))
@@ -718,7 +718,7 @@
              (new-patterns (vector-append (replace-pattern-in-patterns patterns patternnum1 pattern1)
                                           (vector pattern2)))
              (new-playlist (replace-splitted-patterns-in-playlist playlist patternnum1 patternnum1 patternnum2)))
-        (c-display "      Splitting pattern" patternnum1 "into two separate patterns since it was very long")
+        (<ra> :show-progress-window-message-if-open (<-> "Splitting long pattern " patternnum1) #f)
         (list new-playlist
               new-patterns))))
               
@@ -856,7 +856,7 @@
         (if (must-create-new-pattern? playlist patterns playlistpos1 playlistpos2 channel)
             (let* ((patternnum1 (list-ref playlist playlistpos1))
                    (patternnum2 (list-ref playlist playlistpos2))
-                   (displaying-result (c-display "  Merging patterns" patternnum1 "and" patternnum2 "into pattern" (vector-length patterns)))
+                   (displaying-result (<ra> :show-progress-window-message-if-open (<-> "  Merging patterns " patternnum1 " and " patternnum2 " into pattern " (vector-length patterns)) #f))
                    (new-playlist-and-patterns (add-new-merged-pattern-to-patterns playlist
                                                                                   patterns
                                                                                   patternnum1 patternnum2))
@@ -876,7 +876,8 @@
 
 
 (define (merge-patterns-0 playlist patterns channel) ;; iterate over channel
-  (c-display "merge-patterns-0" playlist)
+  (<ra> :show-progress-window-message-if-open (<-> "Merge pattern for channel " channel) #f)
+  ;;(c-display "merge-patterns-0" playlist)
   (if (= channel -1)
       (list playlist
             patterns)
@@ -892,8 +893,11 @@
 ;; replace-c00-with-stops ;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define *last-c00-patternnum* -1)
 (define (remove-c00-at-same-line patternnum channel linenum c00s)
-  (c-display "removing from" patternnum "/" channel "/" linenum)
+  (when (not (= patternnum *last-c00-patternnum*))
+    (<ra> :show-progress-window-message-if-open (<-> "Removing c00s from " patternnum) #f)
+    (set! *last-c00-patternnum* patternnum))
   (keep (lambda (c00)
           (or (not (= patternnum (c00 :patternnum)))
               (not (= channel (c00 :channel)))
@@ -913,7 +917,7 @@
 (define (find-all-c00-stops events current-c00s)
   (define length-events (length events))
   (if (= 0 (modulo length-events 128))
-      (c-display "left:" length-events (length current-c00s)))
+      (<ra> :show-progress-window-message-if-open (<-> "Find-all-c00-stops. Left: " length-events (length current-c00s))))
   ;;(c-display "events" events)
   ;;(c-display "find-all-c00-stops" current-c00s)
   (if (null? events)
@@ -948,7 +952,7 @@
                (convert-c00-event-to-stop (cdr events) c00-event)))))
 
 (define (replace-c00-with-stops-1 events c00s)
-  (c-display "replace-1" (length c00s))
+  (<ra> :show-progress-window-message-if-open (<-> "Replace c00 with stops-1: " (length c00s)) #f)
   (if (null? c00s)
       events
       (replace-c00-with-stops-1 (convert-c00-event-to-stop events (car c00s))
@@ -5365,10 +5369,16 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                 (2 4 ,(round (/ (* 6 400) 9)))
                 (3 4 ,(round (/ (* 6 80) 9)))))
 
-(define (send-tempos-to-radium tempo-events)
-  (let loop ((tempos (get-radium-tempos tempo-events))
+(define (send-tempos-to-radium tempo-events patternnum num-patterns)
+  (define tempos (get-radium-tempos tempo-events))
+  (define num-tempos (length tempos))
+  (let loop ((tempos tempos)
              (last-lpb 4)
-             (last-bpm 125))
+             (last-bpm 125)
+             (i 0))
+
+    (<ra> :show-progress-window-message-if-open (<-> "Sending tempo " i "/" num-tempos " for pattern " patternnum "/" (1- num-patterns) " to Radium") #f)
+  
     ;;(c-display "looping" last-lpb last-bpm tempos)
     ;;(c-display "hmm1" (null? tempos))
     ;;(c-display "hmm2" (not (null? tempos)))
@@ -5393,7 +5403,12 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                       bpm)
                   line))
           ;;(c-display "l3")
-          (loop (cdr tempos) lpb bpm)))))
+          (loop (cdr tempos)
+                lpb
+                bpm
+                (+ i 1)
+                )
+          ))))
 
 #||
 (send-tempos-to-radium (list (list (m-e :tpd :line 0 :value 6)
@@ -5412,7 +5427,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
 ;;(define *temp* '())
 
-(define (send-pattern-to-radium pattern instruments)
+(define (send-pattern-to-radium pattern patternnum num-patterns instruments)
   (define num-lines (pattern-get-num-lines pattern))
   (define tpds (pattern-get-tpds pattern))
   
@@ -5425,9 +5440,12 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (<ra> :minimize-block-tracks)
 
   ;; Important that we do this first since we need to ask radium later for line duration.
-  (send-tempos-to-radium (pattern-get-tempos pattern))
+  (send-tempos-to-radium (pattern-get-tempos pattern) patternnum num-patterns)
+
+  (define num-tracks (pattern-get-num-channels pattern))
   
   (for-each (lambda (channel tracknum)
+              (<ra> :show-progress-window-message-if-open (<-> "Sending pattern " patternnum "/" (1- num-patterns) " (track #" tracknum ") to Radium") #f)
               (let ((first-instrument-event (find-first channel
                                                         (lambda (event)
                                                           (> (event :instrumentnum) 0)))))
@@ -5457,7 +5475,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                               (loop (cdr events)))))))))
 
             (pattern-get-channels pattern)
-            (iota (pattern-get-num-channels pattern))))
+            (iota num-tracks)))
 
 (define (clear-radium-editor)
   (while (> (<ra> :get-num-blocks) 1)
@@ -5490,14 +5508,14 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (define num-patterns (length patterns))
   
   (for-each (lambda (pattern patternnum)
-              (<ra> :show-progress-window-message (<-> "Sending pattern " patternnum "/" (1- num-patterns) " to Radium"))
-              (send-pattern-to-radium pattern instruments)
+              (<ra> :show-progress-window-message-if-open (<-> "Sending pattern " patternnum "/" (1- num-patterns) " to Radium") #f)
+              (send-pattern-to-radium pattern patternnum num-patterns instruments)
               (if (< patternnum (1- num-patterns))
                   (<ra> :append-block)))
             patterns
             (iota num-patterns))
   
-  (<ra> :show-progress-window-message "Sending playlist to Radium")
+  (<ra> :show-progress-window-message-if-open "Sending playlist to Radium")
   (send-playlist-to-radium playlist)
 
   (for-each (lambda (n)
@@ -5541,7 +5559,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (define (print-progress-message message)
     (define message (<-> step ". PREPARING MOD. " message))
     (c-display message)
-    (<ra> :show-progress-window-message message))
+    (<ra> :show-progress-window-message-if-open message))
     
   (define (set-playlist-and-events! message new-playlist-and-events)
     (print-progress-message (<-> message " finished."))
@@ -5793,7 +5811,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                                 (send-events-to-radium playlist instruments patterns)
                                 (c-display "playlist before: " *playlist*)
                                 (c-display "playlist after: " playlist)
-                                (<ra> :show-progress-window-message (<-> "Loading graphical data into memory"))
+                                (<ra> :show-progress-window-message-if-open (<-> "Loading graphical data into memory"))
                                 (<ra> :internal_update-all-block-graphics)
                                 #t))
                        

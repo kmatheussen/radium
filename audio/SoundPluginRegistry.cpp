@@ -656,7 +656,7 @@ bool PR_is_initing_vst_first(void){
 void PR_init_plugin_types(void){
   GFX_OpenProgress("Initializing plugins");
 
-  GFX_ShowProgressMessage("Traversing plugin paths for plugins...");
+  GFX_ShowProgressMessage("Traversing plugin paths for plugins...", true);
   
   API_incSoundPluginRegistryGeneration();
   API_clearSoundPluginRegistryCache();
@@ -680,10 +680,10 @@ void PR_init_plugin_types(void){
 
     static bool has_run = false;
     if (has_run==false){
-      GFX_ShowProgressMessage("Adding LADSPA plugins... (This may take some time if realtime virus scanning is enabled)");
+      GFX_ShowProgressMessage("Adding LADSPA plugins... (This may take some time if realtime virus scanning is enabled)", true);
       has_run = true;
     } else {
-      GFX_ShowProgressMessage("Adding LADSPA plugins...");
+      GFX_ShowProgressMessage("Adding LADSPA plugins...", true);
     }
     create_ladspa_plugins();
 
@@ -695,7 +695,7 @@ void PR_init_plugin_types(void){
     create_vst_plugins(true);  
   }
 
-  GFX_ShowProgressMessage("Adding built-in instruments...");
+  GFX_ShowProgressMessage("Adding built-in instruments...", true);
   
   /*
   PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{
@@ -774,11 +774,11 @@ void PR_init_plugin_types(void){
   create_faust_system_highshelf_plugin();
   //create_faust_system_delay_plugin();
 
-  GFX_ShowProgressMessage("Recreating favourites...");
+  GFX_ShowProgressMessage("Recreating favourites...", true);
   recreate_favourites(true);
 
   // Update cache.
-  GFX_ShowProgressMessage("Updating cache...");
+  GFX_ShowProgressMessage("Updating cache...", true);
   getSoundPluginRegistry(false);
 
   GFX_CloseProgress();

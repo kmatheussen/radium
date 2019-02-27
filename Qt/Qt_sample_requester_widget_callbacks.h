@@ -448,7 +448,7 @@ class Sample_requester_widget : public QWidget
         time.restart();
         if (GFX_ProgressIsOpen()){
           const char *message = talloc_format("Loading sample directory \"%s\" into memory. (%d / %d)", pathtext, i, list.size());
-          GFX_ShowProgressMessage(message);
+          GFX_ShowProgressMessage(message, false);
         } else {
           const char *message = talloc_format("Loading sample directory into memory. (%d / %d)", i, list.size());       
           window->message = message;
