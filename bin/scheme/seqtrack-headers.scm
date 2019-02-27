@@ -434,8 +434,17 @@
                                                                           (else
                                                                            (assert #f))))))
 
-                 (if (eq? type 'record)
-                     (box :add-statusbar-text-handler "Right-click the \"R\" button to configure recording options."))
+                 (cond ((eq? type 'record)
+                        (box :add-statusbar-text-handler "Record audio. Right-click to configure recording options."))
+                       ((eq? type 'height)
+                        (box :add-statusbar-text-handler "Set seqtrack height"))
+                       ((eq? type 'solo)
+                        (box :add-statusbar-text-handler "Enable/disable Solo"))
+                       ((eq? type 'mute)
+                        (box :add-statusbar-text-handler "Enable/disable Mute"))
+                       (else
+                        (assert #f)))
+                       
                  (add-sub-area-plain! box)))
 
   )
@@ -632,7 +641,7 @@
      ))
   
   (define (get-statusbar-text)
-    (get-volume-slider-text (get-radium-normalized)))
+    (<-> "Volume: " (get-volume-slider-text (get-radium-normalized))))
   
   (add-statusbar-text-handler get-statusbar-text)
                                 
@@ -742,8 +751,8 @@
      ))
   
   (define (get-statusbar-text)
-    (get-volume-slider-text (get-gain)))
-  
+    (<-> "Volume: "(get-volume-slider-text (get-gain))))
+
   (add-statusbar-text-handler get-statusbar-text)
                                 
   )
@@ -1467,9 +1476,9 @@
                            (assert #f)))))
      (checkbox :add-statusbar-text-handler
                (cond ((eq? type 'window)
-                      "Window")
+                      "Window mode")
                      ((eq? type 'full)
-                      "Full. Use all available space in main window")
+                      "Full mode. Use all available space in main window")
                      (else
                       (assert #f))))
      
