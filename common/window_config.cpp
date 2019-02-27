@@ -87,6 +87,8 @@ static void SelectLeftSliderWidth(
         SETTINGS_write_int("left_slider_width",newwidth);
 }
 
+extern int g_default_slider_height;
+
 static void SelectBottomSliderHeight(
 	struct Tracker_Windows *window,
 	ReqType reqtype
@@ -94,19 +96,19 @@ static void SelectBottomSliderHeight(
 	char temp[100];
 	int newwidth;
 
-	sprintf(temp,"New Height (now %d) >",window->bottomslider_height);
+	sprintf(temp,"New Height (Now: %d. Use 0 to set automatic value) >",window->bottomslider_height);
 
 	newwidth=GFX_GetInteger(
 		window,
 		reqtype,
 		temp,
-		2,
+		0,
 		window->height-(window->wblock->t.y1+(window->fontheight*6)),
                 true
 	);
-	if(newwidth<2) return;
+	if(newwidth<0) return;
 
-        GFX_set_bottom_widget_height(newwidth);
+        GFX_set_bottom_widget_height(newwidth < 2 ? g_default_slider_height - 2 : newwidth);
         
 	UpdateAllWBlockCoordinates(window);
 
