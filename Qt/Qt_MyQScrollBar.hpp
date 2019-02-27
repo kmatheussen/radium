@@ -27,7 +27,7 @@ struct Qt_MyQScrollBar : public QScrollBar, public radium::MouseCycleFix {
   }
 
   QSize getSize(int pref_size) const {
-    int width = g_default_slider_height - 1; //root->song->tracker_windows->bottomslider_height;
+    int width = g_default_slider_height; //root->song->tracker_windows->bottomslider_height;
     
     if (orientation()==Qt::Vertical)
       return QSize(width, pref_size);

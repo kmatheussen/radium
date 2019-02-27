@@ -2683,6 +2683,8 @@ int radium_main(const char *arg){
   g_qtgui_has_started = true;
 
 
+  set_default_slider_height();
+  
 #if 0
     vector_t v = {0};
   VECTOR_push_back(&v,"hepp1");
@@ -2776,7 +2778,7 @@ int radium_main(const char *arg){
       
       XSplitter *xsplitter = new XSplitter(showMixerStripOnLeftSide());
       xsplitter->setChildrenCollapsible(false);
-      xsplitter->setHandleWidth(0);
+      xsplitter->setHandleWidth(2);
                                 
       editor->xsplitter = xsplitter;
 
@@ -2800,7 +2802,7 @@ int radium_main(const char *arg){
       }
 
       radium::Splitter *ysplitter = dynamic_cast<radium::Splitter*>(API_get_main_ysplitter()); //new radium::Splitter(Qt::Vertical, main_window);
-      ysplitter->setHandleWidth(0);
+      ysplitter->setHandleWidth(1);
       //ysplitter->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding); // NOTE: Causes main window height to grow and grow when adding/removing widget. Strange.
       
       //main_window->setCentralWidget(ysplitter);
