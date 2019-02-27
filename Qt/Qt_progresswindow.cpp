@@ -629,14 +629,27 @@ static void send_string(QString message){
 
 static bool g_is_showing=false;
 
-void GFX_ShowProgressMessage(const char *message){
-  if (g_process == NULL)
-    GFX_OpenProgress("...");
+void GFX_ShowProgressMessage(const char *message, bool force_show){
+  static double last_time = -1;
+  
+  if (g_process == NULL){
+    //GFX_OpenProgress("...");
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
 
-  if (g_process != NULL)
+  if(force_show==false){
+    double time = TIME_get_ms();
+    if ((time-last_time) < 100)
+      return;
+  }
+  
+  if (g_process != NULL) {
     send_string(get_rect_string() + message);
+    g_is_showing=true;
+  }
 
-  g_is_showing=true;
+  last_time = TIME_get_ms();
 }
 
 bool GFX_ProgressIsOpen(void){

@@ -269,7 +269,7 @@ static bool Load(const wchar_t *filename){
         }PLAYER_unlock();
         //}GL_draw_unlock();
 
-        GFX_ShowProgressMessage("Preparing");
+        GFX_ShowProgressMessage("Preparing", true);
         
         Undo_start_ignoring_undo_operations();{
           GFX_DisablePainting();{
@@ -277,7 +277,7 @@ static bool Load(const wchar_t *filename){
           }GFX_EnablePainting();
         }Undo_stop_ignoring_undo_operations();
 
-        GFX_ShowProgressMessage("Loading all graphical data into memory");
+        GFX_ShowProgressMessage("Loading all graphical data into memory", true);
         GL_create_all(root->song->tracker_windows);
         
 

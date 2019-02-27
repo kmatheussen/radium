@@ -4391,15 +4391,18 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     // Erase background
     //
-
-    if(seqtracks_are_painted || right_part_is_painted){ // This is strange, but if we don't do this here, some graphical artifacts are shown in the left part of the headers.
+    if(seqtracks_are_painted || right_part_is_painted){
       TRACK_PAINT();
+
       
       QPainter p(this);
+
+      myFillRect(p, rect(), get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM), true, 35);
+      /*
       for(const QRect &rect : ev->region())
         p.eraseRect(rect);
+      */
     }
-
     
     float seqtracks_y_max = _seqtracks_widget.get_seqtracks_y2() + get_seqtrack_border_width();
 
