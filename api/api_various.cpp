@@ -76,6 +76,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SampleReader_proc.h"
 #include "../audio/SoundfileSaver_proc.h"
 
+#include "../midi/midi_i_input_proc.h"
+
 #include "../mixergui/QM_MixerWidget.h"
 #include "../embedded_scheme/s7extra_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
@@ -128,13 +130,13 @@ void setShowInstrumentWidgetWhenDoubleClickingSoundObject(bool val){
 }
 
 
-static bool g_showPlaylistDuringStartup = true;
+static bool g_showPlaylistDuringStartup = false;
 
 bool showPlaylistDuringStartup(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_showPlaylistDuringStartup = SETTINGS_read_bool("show_playlist_during_startup", true);
+    g_showPlaylistDuringStartup = SETTINGS_read_bool("show_playlist_during_startup", false);
     has_inited = true;
   }
 
@@ -1986,6 +1988,14 @@ void setUseCPUFriendlyAudiometerUpdates(bool val){
   SETTINGS_write_bool("g_cpu_friendly_audio_meter_updates", val);
 }
 
+
+bool recordAccuratelyFromMidi(void){
+  return MIDI_get_record_accurately();
+}
+
+void setRecordAccuratelyFromMidi(bool accurately){
+  MIDI_set_record_accurately(accurately);
+}
 
 
 

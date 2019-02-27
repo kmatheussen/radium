@@ -597,7 +597,7 @@
                            :background-color
                            :color
                            :border-color #f
-                           :border 1
+                           :border 0.5
                            :border-rounding 2
                            :paint-border #t)
   (define b border)
@@ -629,7 +629,9 @@
          sx1 sy1 sx2 sy2 border-rounding border-rounding)
   
   (if paint-border
-      (<gui> :draw-box gui border-color x1 y1 x2 y2 b (* 2 border-rounding) (* 2 border-rounding)))
+      (<gui> :do-clipped gui x1 y1 x2 y2
+             (lambda ()
+               (<gui> :draw-box gui border-color x1 y1 x2 y2 b (* 2 border-rounding) (* 2 border-rounding)))))
   
   #t)
 

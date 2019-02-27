@@ -158,12 +158,17 @@
          ;;(c-display "     UPDATE" x1 y1 x2 y2)
          (if (and (> x2 x1)
                   (> y2 y1))
-             (<gui> :update gui x1 y1 x2 y2)
+             (begin
+               (<gui> :update gui x1 y1 x2 y2)
+               ;;#f
+               )
              (c-display "Warning, illegal parameters for update: " x1 y1 x2 y2))))
 
      (define (update-me!)
        ;;(c-display "     UPDATE-ME!" x1 y1 x2 y2)
-       (<gui> :update gui x1 y1 x2 y2))
+       (<gui> :update gui x1 y1 x2 y2)
+       ;;#f
+       )
       
      (define (set-position! x* y*)
        (let ((dx (- x* x1))
