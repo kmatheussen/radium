@@ -709,6 +709,9 @@ public:
     setMouseTracking(true);
     //setAttribute(Qt::WA_PaintOnScreen);
 
+    setAttribute(Qt::WA_NoSystemBackground); // makes no difference.
+    setAttribute(Qt::WA_OpaquePaintEvent);
+    
     _update_event_counter_timer.start();
   }
 
