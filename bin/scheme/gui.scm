@@ -579,11 +579,12 @@
                      )) ;; align left
 
   ;; border
-  (if is-current
-      (<gui> :draw-box widget *current-mixer-strip-border-color* (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 rounding rounding) ;; "#aa111144"
-      (<gui> :do-clipped widget x1 y1 x2 y2
-             (lambda ()
-               (<gui> :draw-box widget border-color  x1 y1 x2 y2 border-width rounding rounding))))
+  (if (> border-width 0)
+      (if is-current
+          (<gui> :draw-box widget *current-mixer-strip-border-color* (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 rounding rounding) ;; "#aa111144"
+          (<gui> :do-clipped widget x1 y1 x2 y2
+                 (lambda ()
+                   (<gui> :draw-box widget border-color  x1 y1 x2 y2 border-width rounding rounding)))))
 
   ret
   )

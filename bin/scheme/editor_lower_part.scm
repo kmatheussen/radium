@@ -107,13 +107,13 @@
     (paint-horizontal-slider gui
                              (get-slider-value)
                              (get-statusbar-text)
-                             x1 (+ y1 0.0)
-                             x2 (- y2 0.0)
+                             (+ 1 x1) (+ y1 0.0)
+                             (- x2 1) (- y2 0.0)
                              :color "color12"
-                             :color2 (<gui> :mix-colors "color0" "black" 0.7)
+                             :color2 #f ;;(<gui> :mix-colors "color0" "black" 0.7)
                              :text-color "black"
                              :border-color "#222222"
-                             :border-width 2
+                             :border-width 0
                              :cut-text-to-fit #f
                              :wrap-lines #f
                              )
