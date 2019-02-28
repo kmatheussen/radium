@@ -92,10 +92,10 @@ static void *Undo_Do_PatchVoice(
 
   struct PatchVoice new_patch_voice = patch->voices[voicenum];
 
-printf("Calling Undo_do for %d. Old value: %d. Setting it to %d\n", voicenum,new_patch_voice.is_on,undo_ae->voice.is_on);
-//if(new_patch_voice.is_on==undo_ae->voice.is_on)
-//  abort();
-
+  printf("Calling Undo_do for %d. Old value: %d. Setting it to %d\n", voicenum,new_patch_voice.is_on,undo_ae->voice.is_on);
+  //if(new_patch_voice.is_on==undo_ae->voice.is_on)
+  //  abort();
+  
   PLAYER_lock();
   {
     patch->voices[voicenum] = undo_ae->voice;

@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QFileInfo>
 #include <QDir>
+#include <QPointer>
+#include <QWidget>
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
@@ -57,7 +59,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Envelope_proc.h"
 #include "SoundFonts_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
+#include "../api/api_gui_proc.h"
+#include "../api/api_proc.h"
+
+
 #include "Sampler_plugin_proc.h"
+
 
 #define POLYPHONY 256
 #define MAX_NUM_SAMPLES 256
@@ -376,6 +385,9 @@ struct Data{
   radium::Vector<float> min_recording_peaks[2];
   radium::Vector<float> max_recording_peaks[2];
 
+  int64_t guinum = -1;
+  QPointer<QWidget> gui;
+  
   // There should be a compiler option in c++ to make this the default behavior. It would automatically eliminate a billion bugs in the world.
   /*
     Commented out. Doesn't work with gcc 7.
@@ -387,7 +399,7 @@ struct Data{
   */
 
   Sample samples[MAX_NUM_SAMPLES] = {}; // Put last to keep data togheter. (only the first elements of "samples" are used)
-
+  
   Data(const Data&) = delete;
   Data& operator=(const Data&) = delete;
  
@@ -3068,19 +3080,21 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
 static const char *get_effect_description(struct SoundPlugin *plugin, int effect_num){
   //Data *data=(Data*)plugin->data;
 
+#define STUFF ".\n\nOpen GUI to visualize."
+  
   switch(effect_num){
   case EFF_GRAN_onoff:
     return "Enable granular synthesis. Granular synthesis cuts the sound into smaller pieces (\"grains\") and plays them back in various ways";
   case EFF_GRAN_stretch:
     return "How much to stretch the sound";
   case EFF_GRAN_overlap:
-    return "How much each grain overlap on average";
+    return "How much each grain overlap on average" STUFF;
   case EFF_GRAN_length:
-    return "The duration of each grain";
+    return "The duration of each grain" STUFF;
   case EFF_GRAN_ramp:
-    return "The fade in / fade out duration of each grain. 33%, or thereabout, usually works well.";
+    return "The fade in / fade out duration of each grain. 33%, or thereabout, usually works well." STUFF;
   case EFF_GRAN_jitter:
-    return "A jitter of 0% means a juniform distribution of the grains. A higher jitter value should reduce comb filter effects.";
+    return "A jitter of 0% means a juniform distribution of the grains. A higher jitter value should reduce comb filter effects." STUFF;
   case EFF_GRAN_strict_no_jitter:
     return
       "Strict no jitter when jitter is 0.00%.\n"
@@ -3099,6 +3113,43 @@ static const char *get_effect_description(struct SoundPlugin *plugin, int effect
   }
   
   return "";
+}
+
+static bool gui_is_visible(struct SoundPlugin *plugin){
+  Data *data=(Data*)plugin->data;
+
+  //printf("  Is visible called\n");
+
+  if (data->gui.data()==NULL)
+    return false;
+
+  return data->gui->isVisible();
+}
+
+static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
+  Data *data=(Data*)plugin->data;
+
+  printf("  show_gui called\n");
+  
+  if (data->gui.data()==NULL){
+                                     
+    struct Patch *patch = (struct Patch*)plugin->patch;
+    
+    data->guinum = S7CALL2(int_int, "FROM_C-create-granular-vizualization-gui-for-sample-player", patch->id);
+
+    data->gui = API_gui_get_widget(data->guinum);
+  }
+
+  data->gui->show();
+
+  return true;
+}
+
+static void hide_gui(struct SoundPlugin *plugin){
+  Data *data=(Data*)plugin->data;
+
+  if(data->gui.data() != NULL)
+    data->gui->hide();
 }
 
 /*
@@ -3226,6 +3277,10 @@ static void init_plugin_type(void){
  plugin_type.set_effect_value = set_effect_value;
  plugin_type.get_effect_value = get_effect_value;
  plugin_type.get_display_value_string = get_display_value_string;
+
+ plugin_type.gui_is_visible = gui_is_visible;
+ plugin_type.show_gui = show_gui;
+ plugin_type.hide_gui = hide_gui;
 
  plugin_type.recreate_from_state = recreate_from_state;
  plugin_type.create_state        = create_state;

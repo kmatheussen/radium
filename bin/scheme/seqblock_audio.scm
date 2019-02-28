@@ -106,20 +106,21 @@
 
 (define *seqblock-guis* (make-hash-table 32 =))
 
-(define (visualize-granulation-parameters gui x1 y1 x2 y2 seqblockid)
-  (define grain-length (<ra> :get-seqblock-grain-length seqblockid))
-  (define grain-overlap (<ra> :get-seqblock-grain-overlap seqblockid))
-  (define grain-jitter (<ra> :get-seqblock-grain-jitter seqblockid))
-  (define grain-ramp (<ra> :get-seqblock-grain-ramp seqblockid))
-  (define stretch (<ra> :get-seqblock-stretch seqblockid))
-
+(define (visualize-granulation-parameters2 gui x1 y1 x2 y2
+                                           grain-length
+                                           grain-overlap
+                                           grain-jitter
+                                           grain-ramp
+                                           stretch
+                                           random-id)
+  
   (define write-frames-between-grains (/ grain-length grain-overlap))
 
   (define jittered (* write-frames-between-grains grain-jitter))
   (define random-min (- write-frames-between-grains jittered))
   (define random-max (+ write-frames-between-grains jittered))
 
-  (define random-state (random-state seqblockid))
+  (define random-state (random-state random-id))
 
   (define (get-next-random)
     (max 1
@@ -153,32 +154,100 @@
                  (get-next-random))))))
   )
 
-(define (create-granular-vizualization-gui seqblockid height)
-  (define gui (<gui> :widget 100 height))
+(define (visualize-seqblock-granulation-parameters gui x1 y1 x2 y2 seqblockid)
+  ;;(c-display "grainlen2:" (<ra> :get-seqblock-grain-length seqblockid))
+  (visualize-granulation-parameters2
+   gui x1 y1 x2 y2
+   (<ra> :get-seqblock-grain-length seqblockid)
+   (<ra> :get-seqblock-grain-overlap seqblockid)
+   (<ra> :get-seqblock-grain-jitter seqblockid)
+   (<ra> :get-seqblock-grain-ramp seqblockid)
+   (<ra> :get-seqblock-stretch seqblockid)
+   seqblockid))
+
+(define (visualize-sample-player-granulation-parameters gui x1 y1 x2 y2 instrument-id)
+  ;;(c-display "grainlen1:" (<ra> :get-native-instrument-effect instrument-id "Grain Length")
+  ;;           (* (/ (<ra> :get-native-instrument-effect instrument-id "Grain Length") 1000)
+  ;;              48000))
+  (visualize-granulation-parameters2
+   gui x1 y1 x2 y2
+   (<ra> :get-native-instrument-effect instrument-id "Grain Length")
+   (<ra> :get-native-instrument-effect instrument-id "Grain Overlap")
+   (<ra> :get-native-instrument-effect instrument-id "Gran. Jitter")
+   (<ra> :get-native-instrument-effect instrument-id "Grain Ramp")
+   (<ra> :get-native-instrument-effect instrument-id "Gran. Stretch")
+   instrument-id))
+
+(define (create-granular-vizualization-gui height paint-granulation)
+  (define gui (<gui> :widget height height))
   (<gui> :set-min-height gui height)
   (<gui> :set-size-policy gui #t #t)
   (define background "#000000")
   (<gui> :set-background-color gui background)
   (<gui> :add-paint-callback gui
          (lambda (width height)
-           (when (<ra> :seqblock-is-alive seqblockid)
-             (<gui> :do-alpha gui 0.2
-                    (lambda ()
-                      (visualize-granulation-parameters gui 0 0 width height seqblockid)))
-             (<gui> :draw-text gui
-                    "green"
-                    "1s"
-                    (- width (<gui> :text-width "1s  "))
-                    (- height (* 1.0 (get-fontheight)))
-                    width height
-                    #f ;;wrap
-                    #t ;;align top
-                    #t ;; align left
-                    ))))
+           (<gui> :do-alpha gui 0.2 (lambda ()
+                                      (paint-granulation gui width height)))
+           (<gui> :draw-text gui
+                  "green"
+                  "1s"
+                  (- width (<gui> :text-width "1s  "))
+                  (- height (* 1.0 (get-fontheight)))
+                  width height
+                  #f ;;wrap
+                  #t ;;align top
+                  #t ;; align left
+                  )))
   gui)
 
+(define (create-granular-vizualization-gui-for-seqblock seqblockid height)
+  (create-granular-vizualization-gui
+   height
+   (lambda (gui width height)
+     (if (<ra> :seqblock-is-alive seqblockid)
+         (visualize-seqblock-granulation-parameters gui 0 0 width height seqblockid)))))
+
+(define (FROM_C-create-granular-vizualization-gui-for-sample-player instrument-id)
+  (define ret (create-granular-vizualization-gui
+               (* (get-fontheight) 10)
+               (lambda (gui width height)
+                 (when (<ra> :instrument-is-open instrument-id)
+                   (visualize-sample-player-granulation-parameters gui 0 0 width height instrument-id)
+                   (<gui> :do-alpha gui 1.0 (lambda ()
+                                              (<gui> :draw-text gui
+                                                     "green"
+                                                     "Granulation"
+                                                     0 0 width (get-fontheight)
+                                                     #f ;;wrap
+                                                     #f ;;align top
+                                                     #f ;; align left
+                                                     )))))))
+
+  (<gui> :set-takes-keyboard-focus ret #f)
+  (<gui> :set-parent ret -1)
+  ;;(<gui> :show ret)
+  (<ra> :schedule 100
+        (lambda ()
+          (if (<gui> :is-open ret)
+              (begin
+                (<gui> :update ret)
+                60)
+              #f)))
+  ret)
 
 
+#!!
+(FROM_C-create-granular-vizualization-gui-for-sample-player 29)
+(let ((gui (FROM_C-create-granular-vizualization-gui-for-sample-player 29)))
+  (<gui> :show gui))
+
+(for-each (lambda (id)
+            (c-display id (<ra> :get-instrument-name id))
+            )
+          (get-all-audio-instruments))
+            
+!!#
+  
 (define (create-audio-seqblock-gui seqblocknum seqtracknum)
   (define funcs (<new> :seqblock-gui-functions))
   
@@ -395,7 +464,7 @@
 
   (define grain-group (<gui> :group "Granular synthesis"))
 
-  (define grain-visualizer (create-granular-vizualization-gui seqblockid (* 4 (get-fontheight))))
+  (define grain-visualizer (create-granular-vizualization-gui-for-seqblock seqblockid (* 4 (get-fontheight))))
 
   (<gui> :add grain-group grain-visualizer)
 
