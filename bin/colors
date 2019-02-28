@@ -78,7 +78,6 @@ check_button_enabled_color = #ff1c1a16
 slider_recording_color = #ffc50003
 mixer_autosuspension_color = #28a6a6a6
 sequencer_currtrack_border_color = #ffc8c8c8
-sequencer_background_color = #ff464d47
 sequencer_border_color = #ff010101
 sequencer_text_color = #ff010101
 sequencer_note_color = #960101c8

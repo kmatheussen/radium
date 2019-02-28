@@ -980,13 +980,18 @@ static inline void myFillRectHorizontalGradient(QPainter &p, QRectF rect, const 
   p.setPen(pen);
 }
 
-static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color, float do_gradient = true){
+static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color, float do_gradient = true, int how_much_gradient = 15){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
+  
   if (do_gradient){
+
+    int lighter = 100 + how_much_gradient;
+    int darker = 100 + how_much_gradient;
+
     QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
-    gradient.setColorAt(0, color.lighter(115));
-    gradient.setColorAt(1, color.darker(115));
+    gradient.setColorAt(0, color.lighter(lighter));
+    gradient.setColorAt(1, color.darker(darker));
     p.setBrush(gradient);
   } else {
     p.setBrush(color);
