@@ -2193,7 +2193,7 @@ bool PLUGIN_gui_is_visible(SoundPlugin *plugin, int64_t parentgui){
   
   if (plugin->type->gui_is_visible!=NULL)
     if (plugin->type->gui_is_visible(plugin)==false){
-      R_ASSERT_NON_RELEASE(plugin->gui_parentgui == NON_GUI_PARENTGUI); // The plugin must call PLUGIN_call_me_after_gui_has_closed if the GUI is closed on its own.
+      //R_ASSERT_NON_RELEASE(plugin->gui_parentgui == NON_GUI_PARENTGUI); // The plugin must call PLUGIN_call_me_after_gui_has_closed if the GUI is closed on its own.
       reset_gui_parentgui(plugin); // In case PLUGIN_call_me_after_gui_has_closed wasn't called.
       return false;
     }
@@ -2513,10 +2513,11 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
   return state;
 }
 
-float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name, enum WhereToGetValue where){
+float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name, enum WhereToGetValue where, enum ValueFormat value_format){
   const SoundPluginType *type=plugin->type;
   int i;
 
+  // This should be in a hash table. The function is called quite often.
   for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
     if (!strcmp(PLUGIN_get_effect_name(plugin, i), effect_name))
       break;
@@ -2527,8 +2528,9 @@ float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name, 
     return 0;
   }
 
-  return PLUGIN_get_effect_value(plugin, i, where);
+  return PLUGIN_get_effect_value2(plugin, i, where, value_format);
 }
+
 
 void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value){
   const SoundPluginType *type=plugin->type;
@@ -2547,6 +2549,7 @@ void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, f
   //printf("      Going to set %s to %f\n",effect_name,value);
   PLUGIN_set_effect_value(plugin, -1, i, value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 }
+
 
 void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   const SoundPluginType *type=plugin->type;

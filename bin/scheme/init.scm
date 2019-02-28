@@ -540,6 +540,7 @@
     FROM_C-copy-seqblock-track-on/off-to-editor
     FROM_C-create-editor-lower-part-gui
     FROM_C-reconfigure-editor-lower-part-gui!
+    FROM_C-create-granular-vizualization-gui-for-sample-player
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

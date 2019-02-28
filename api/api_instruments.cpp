@@ -787,7 +787,21 @@ float getInstrumentEffect(int64_t instrument_id, const_char* effect_name){
     return 0.0;
   }
 
-  return PLUGIN_get_effect_from_name(plugin, effect_name, VALUE_FROM_PLUGIN);
+  return PLUGIN_get_effect_from_name(plugin, effect_name, VALUE_FROM_PLUGIN, EFFECT_FORMAT_SCALED);
+}
+
+float getNativeInstrumentEffect(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return 0.0;
+  }
+
+  return PLUGIN_get_effect_from_name(plugin, effect_name, VALUE_FROM_PLUGIN, EFFECT_FORMAT_NATIVE);
 }
 
 float getStoredInstrumentEffect(int64_t instrument_id, const_char* effect_name){
@@ -801,7 +815,7 @@ float getStoredInstrumentEffect(int64_t instrument_id, const_char* effect_name){
     return 0.0;
   }
 
-  return PLUGIN_get_effect_from_name(plugin, effect_name, VALUE_FROM_STORAGE);
+  return PLUGIN_get_effect_from_name(plugin, effect_name, VALUE_FROM_STORAGE, EFFECT_FORMAT_SCALED);
 }
 
 static int get_effect_num(const struct Patch *patch, const_char* effect_name){
