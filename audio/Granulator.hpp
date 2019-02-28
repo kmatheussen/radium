@@ -34,7 +34,33 @@ namespace radium{
 
 
 struct AudioPickuper{
+  bool _there_is_more_data_to_pick_up = true;
+  
+protected:
+
   virtual int pick_up_data_for_granulator(float **samples, int max_num_frames) = 0;
+
+public:
+
+  void reset(void){
+    _there_is_more_data_to_pick_up = true;
+  }
+
+  int pick_up(float **samples, int num_ch, int max_num_frames){
+    int ret = pick_up_data_for_granulator(samples, max_num_frames);
+
+    if (ret==0){
+
+      _there_is_more_data_to_pick_up = false;
+
+      for(int ch=0;ch<num_ch;ch++)
+        memset(samples[ch], 0, sizeof(float)*max_num_frames);
+
+      ret = max_num_frames;
+    }
+    
+    return ret;
+  }
 };
 
 
@@ -78,6 +104,7 @@ public:
     _end_pos = 0;
     _num_frames_available = 0;
     _start_pos_global_pos = 0;
+    _sample_up_picker->reset();
   }
 
   bool is_filled_up(void) const {
@@ -93,7 +120,7 @@ public:
     R_ASSERT_NON_RELEASE(num_frames <= MIXER_get_remaining_num_jackblock_frames());
     
     const int num_frames_to_pick_up = R_MIN(R_MAX(num_frames, MIXER_get_remaining_num_jackblock_frames()), _size - _end_pos);
-    num_frames = _sample_up_picker->pick_up_data_for_granulator(samples, num_frames_to_pick_up);
+    num_frames = _sample_up_picker->pick_up(samples, _num_ch, num_frames_to_pick_up);
     //printf("     .... Got %d samples. Wanted: %d\n", num_frames, wanted);
 
     R_ASSERT_NON_RELEASE(num_frames > 0);
@@ -402,6 +429,7 @@ class Granulator : public GranResampler{
   double _last_global_read_pos = 0;
 
   radium::AudioPickupBuffer _pickup_buffer;
+  radium::AudioPickuper *_sample_up_picker;
 
   radium::Random _random;
 
@@ -414,6 +442,7 @@ public:
   Granulator(int max_grain_length, int max_frames_between_grains, int max_overlap, int num_ch, AudioPickuper *sample_up_picker)
     : GranResampler(num_ch, NULL)
     , _pickup_buffer(num_ch, (max_grain_length+max_frames_between_grains), sample_up_picker)
+    , _sample_up_picker(sample_up_picker)
   {
     int num_grains = max_overlap*num_ch*2;
 
@@ -468,8 +497,8 @@ private:
     }
   }
   
-  void set_frames_between_grains(const bool length_changed, const bool overlap_changed, const bool stretch_changed, const bool jitter_changed){
-    R_ASSERT_NON_RELEASE(length_changed || overlap_changed || stretch_changed || jitter_changed);
+  void set_frames_between_grains(const bool length_changed, const bool overlap_changed, const bool stretch_changed, const bool jitter_changed, const bool global_pos_changed = false){
+    R_ASSERT_NON_RELEASE(length_changed || overlap_changed || stretch_changed || jitter_changed || global_pos_changed);
     
     const bool hop_changed = length_changed || overlap_changed;
     
@@ -491,7 +520,7 @@ private:
       _random.set_boundaries(mi, ma, ms_to_frames(20));
     }
 
-    if (hop_changed || stretch_changed){
+    if (hop_changed || stretch_changed || global_pos_changed){
 
       _global_write_pos_of_next_frame = _last_global_write_pos;
       _global_read_pos_of_next_frame = _last_global_read_pos;
@@ -583,13 +612,16 @@ public:
     return _ramp;
   }
 
-  void reset(void){
+
+private:
+
+  void reset_step1(bool reset_parameters){
     R_ASSERT(_is_processing==false);
+    
     for(int ch=0;ch<_num_ch;ch++){
-      int grain_pos = 0;
-      while(grain_pos < _playing_grains[ch].size()){
-        Grain *grain = _playing_grains[ch].at(grain_pos);      
-        _playing_grains[ch].remove_pos(grain_pos);
+      while(_playing_grains[ch].size() > 0){
+        Grain *grain = _playing_grains[ch].at(0);
+        _playing_grains[ch].remove_pos(0);
         _free_grains.push_back(grain);
       }
     }
@@ -606,8 +638,35 @@ public:
     _random.reset();
     
     _pickup_buffer.reset();
+  }
 
-    {
+
+  void apply_parameters_step1(const Granulator &from){
+    _jitter = from._jitter;
+    _using_jitter = from._using_jitter;
+    _strict_no_jitter = from._strict_no_jitter;
+    _write_frames_between_grains = from._write_frames_between_grains;
+    _read_frames_between_grains = from._read_frames_between_grains;
+    _overlap = from._overlap;
+    _grain_length = from._grain_length;
+    _stretch = from._stretch;
+    _ramp = from._ramp;
+  }
+
+  
+public:
+  
+  void apply_parameters_and_reset(const Granulator &from){
+    reset_step1(false);
+    apply_parameters_step1(from);
+    set_frames_between_grains(true, true, true, true, true);
+  }
+
+  void reset(bool reset_parameters = true){
+    reset_step1(reset_parameters);
+    
+    if(reset_parameters){
+      
       _jitter = 0.5; // 0 -> 1
       _using_jitter = true;
       _strict_no_jitter = false;
@@ -618,11 +677,21 @@ public:
       _stretch = 1.0;
       _ramp = 0.3; // 0 -> 0.5
 
-      set_frames_between_grains(true, true, true, true);
+      set_frames_between_grains(true, true, true, true, true);
+
+    } else {
+
+      set_frames_between_grains(false, false, false, false, true);
+      
     }
-    
+
   }
 
+  void apply_parameters(const Granulator &from){
+    apply_parameters_step1(from);
+
+    set_frames_between_grains(true, true, true, true);
+  }
   
 private:
   
@@ -715,14 +784,18 @@ private:
 
 public:
   
-  void RT_process(float *data, const int ch, int num_samples) {
+  int RT_process(float *data, const int ch, int num_samples) {
+
+    if (_playing_grains[ch].is_empty() && _sample_up_picker->_there_is_more_data_to_pick_up==false)
+      return 0;
+
     const bool is_ch0 = (ch==0);
     const bool is_last_ch = (ch==_num_ch-1);
     
     if (is_ch0)
       _is_processing=true;
 
-    if (is_ch0)
+    if (is_ch0 && _sample_up_picker->_there_is_more_data_to_pick_up)
       add_new_grains(num_samples);
     
 #if 0   
@@ -743,6 +816,8 @@ public:
     
     if (is_last_ch)
       _is_processing=false;
+
+    return num_samples;
   }
   
 };

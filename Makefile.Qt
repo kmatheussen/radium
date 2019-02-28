@@ -1859,7 +1859,7 @@ VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
 Ladspa_plugins.o: audio/Ladspa_plugins.cpp
 	$(CCC) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT) $(IS_LINUX_BINARY)
 
-Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h audio/Peaks.hpp audio/SampleRecorder_proc.h common/OS_string_proc.h
+Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h audio/Peaks.hpp audio/SampleRecorder_proc.h common/OS_string_proc.h audio/Granulator.hpp  audio/GranResampler.hpp
 	$(CCC) $(QTOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) #  $(CPUOPT) 
 
 SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS_string_proc.h
