@@ -1,3 +1,90 @@
+Changes 5.9.39 -> 5.9.41:
+* Sequencer: Use a gradient background color.
+* Instruments: Fix bad bug when undoing/redoing note
+  duplicator voice on/off. Fix for undo/redo and
+  memory corruption. The bug was probably introduced
+  during the last year.
+* Sampler instrument: Added granulation.
+  Visualization is displayed in the GUI window.
+* Instruments: Save "Random" state by effect name and
+  not by effect number. Prevents wrong values if
+  loading an instrument that has changed the number
+  of effects, or the effect order, since last time.
+* Plugins: Show assertion window if saving effect
+  value to hash table with an already used key.
+* Editor: Let a bottom slider value of 0 mean that
+  the height is set automatically. (In "GFX tweaks")
+* Import MOD: More progress window messages.
+* OpenGL: Remove some flickering when resizing.
+* Editor: Add an "R" checkbox in the bottom left
+  corner. This checkbox replaces the "tracker style"
+  vs. "sequencer style" radio buttons in preferences.
+* Editor: Made tracker-style recording the default
+  mode.
+* Sequencer: Improve statusbar messages in the
+  seqtrack headers.
+* GUI: Ensured the bottom bar of editor, the up/down
+  buttons in playlist, and the horizontal scrollbar
+  in mixer, are aligned.
+* Mixer: Clean up widget hierarchy and removed a
+  small unnecessary border.
+* Editor: Reorganized widgets. This might possibly
+  have made graphics faster.
+* Editor: Re-implemented the bottom bar.
+* GUI: Less gradient colors for large rectangular
+  areas.
+* Sequencer: Don't change background color for the
+  current seqtrack header to green. Instead, just
+  make the color brighter.
+* GUI: Tweaks to painting rectangular border ardound
+  vertical sliders.
+* OSX: Minor improvement to rendering the mixer graphics.
+* Mixer: Don't change current instrument when
+  right-clicking in the mixer strip for the current
+  instrument.
+* Sequencer: Make the copy track on/off popup menu
+  entry texts shorter.
+* Sequencer: GUI tweaks.
+* OSX: Fix closing the progress window if Radium
+  crashes.
+* Jack: Fix checking if jack is running during startup
+  not always reporting correctly.
+* OSX/Windows: Fix let Left Alt start navigating
+  the main menus. (Probably also a fix for some
+  Linuxes as well.)
+* GUI: Workaround to avoid bottom bar updating
+  graphics unnecessarily often.
+* GUI: Remove the Qt bottom bar and replace it
+  with a custom bottom bar which looks sligthly
+  better.
+* Preferences: Make help text for "tab bar height"
+  clearer.
+* Audio meters: Fix bug causing all note diode areas
+  to be repainted every frame.
+* Editor: Enable by default the "Multiply number of
+  lines to scroll by the "Edit Lines" value" option.
+* Mixer: Only show tooltip for sliders if there
+  wasn't enough space to fit all text.
+* OpenGL: Wait to swap OpenGL until program is
+  finished initializing. Might fix semi-rare macOS
+  startup crash. Possibly looks better too.
+* Init: Run a test program during startup to detect
+  if the GFX driver crashes when probing OpenGL.
+* API:
+  * New: getTrackSliderIsMoving,
+    recordAccuratelyFromMidi,
+    setRecordAccuratelyFromMidi,
+    showProgressWindowMessageIfOpen,
+    progressWindowIsOpen.
+  * Removed: getTrackSliderScrollerX1,
+    getTrackSliderScrollerY1,
+    getTrackSliderScrollerX2,
+    getTrackSliderScrollerY2.
+  * Added optional argument "force_show" to
+    showProgressWindowMessage
+
+
+
 Changes 5.9.38 -> 5.9.39:
 * Mixer strip for current instrument: Fix popup menu.
 * Mixer strip for current instrument: Don't change
