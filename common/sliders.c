@@ -30,5 +30,11 @@ void InitSliderValues(struct Tracker_Windows *window){
   window->leftslider.show=1;
   window->leftslider.width   = SETTINGS_read_int32("left_slider_width",8);
 
-  window->bottomslider_height = SETTINGS_read_int32("bottom_slider_height", g_default_slider_height - 2); //window->fontheight);//1 + window->fontheight*3/4);
+  int auto_ = g_default_slider_height - 2;
+
+  int val = SETTINGS_read_int32("bottom_slider_height", 0);
+  if (val < 2)
+    val = auto_;
+
+  window->bottomslider_height = val; //window->fontheight);//1 + window->fontheight*3/4);
 }
