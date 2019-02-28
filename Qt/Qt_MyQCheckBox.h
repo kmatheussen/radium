@@ -163,6 +163,7 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
 struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   radium::GcHolder<struct Patch> _patch;
   bool _is_patchvoice_onoff_button = false;
+  int _patchvoicenum = 0;
   int _effect_num = 0;
   bool _is_implicitly_on = false;
 
@@ -268,7 +269,7 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
 #ifdef COMPILING_RADIUM
       if (_add_undo_when_clicked){
         if(_is_patchvoice_onoff_button==true)
-          ADD_UNDO(PatchVoice_CurrPos(_patch.data(),_effect_num));
+          ADD_UNDO(PatchVoice_CurrPos(_patch.data(), _patchvoicenum));
         else if(_patch.data()!=NULL  && _patch->instrument==get_audio_instrument())
           ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num));
       }
