@@ -325,6 +325,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       get_o(i)->_patch.set(_patch.data());
       get_o(i)->_effect_num = get_effect_num(EFFNUM_VOICE1_ONOFF, i);
       get_o(i)->_is_patchvoice_onoff_button = true;
+      get_o(i)->_patchvoicenum = i;
 
       update_spinbox_value(get_t(i), voice.transpose);
       update_spinbox_value(get_v(i), voice.volume);
