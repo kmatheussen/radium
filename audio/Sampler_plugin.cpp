@@ -90,9 +90,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define MAX_TREMOLO_SPEED 50
 #define MAX_TREMOLO_DEPTH 1
 
-#define MIN_STRETCH 0.01
-#define MAX_STRETCH 100
-
 const char *g_click_name = "Click";
 
 static void update_editor_graphics(SoundPlugin *plugin){
@@ -136,13 +133,19 @@ enum{
   EFF_REVERSE,
   EFF_PINGPONG,
 
-  EFF_GRAN_ONOFF,
-  EFF_GRAN_STRETCH,
+  EFF_GRAN_onoff,
+  EFF_GRAN_stretch,
+  EFF_GRAN_overlap,
+  EFF_GRAN_length,
+  EFF_GRAN_ramp,
+  EFF_GRAN_jitter,
+  EFF_GRAN_strict_no_jitter,
 
   EFF_NUM_EFFECTS,
   };
 
 #define SAMPLES_PER_PEAK 64
+
 
 namespace{
   
@@ -1337,6 +1340,8 @@ static bool note_has_sample(const Note *note){
   return note->samples.size() > 0;
 }
 
+static double gran_get_stretch(Data *data);
+    
 static int time_to_frame(Data *data, double time, float f_note_num){
 
   int i_note_num = (int)f_note_num;
@@ -1351,10 +1356,11 @@ static int time_to_frame(Data *data, double time, float f_note_num){
   const Sample *sample = note->samples.at(0);
 
   double src_ratio = RT_get_src_ratio2(data, sample, f_note_num);
-
+  double stretch = gran_get_stretch(data);
+ 
   return
     data->p.startpos*sample->num_frames 
-    + time/src_ratio ;
+    + time/(src_ratio*stretch) ;
 }
 
 
@@ -1609,28 +1615,27 @@ static int get_peaks(struct SoundPlugin *plugin,
 
 /************* Granulation *****************/
 
-static void set_gran_stretch(Data *data, double stretch){
-  // radium::PlayerRecursiveLock lock; // Player is always locked when calling set_effect_value
-  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
-    
-  memset(&data->_gran_voice_has_updated_parameters[1], 0, sizeof(bool)*(POLYPHONY-1));
+#define MIN_stretch 0.01
+#define MAX_stretch 100
+
+#define MIN_overlap 0.1
+#define MAX_overlap 50.0
+
+#define MIN_length 0.1
+#define MAX_length 1000
+
+#define MIN_ramp 0.0
+#define MAX_ramp 0.5
+
+#define MIN_jitter 0.0
+#define MAX_jitter 1.0
+
+#define ALL_GRAN_CASES()                              \
+  GRAN_CASE(overlap);                                 \
+  GRAN_CASE(length);                                  \
+  GRAN_CASE(ramp);                                    \
+  GRAN_CASE(jitter);                                  \
   
-  data->voices[0]._granulator->set_stretch(stretch);
-
-  for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next){
-    if(voice->voice_num != 0){
-      data->_gran_voice_has_updated_parameters[voice->voice_num] = true;
-      voice->_granulator->set_stretch(stretch);
-    }
-  }
-}
-
-static double get_gran_stretch(Data *data){
-  double ret = data->voices[0]._granulator->get_stretch();
-  //printf("   RET: %f\n", ret);
-  //getchar();
-  return ret;
-}
 
 static void set_granulation_enabled(Data *data, bool enabled){
   bool is_enabled = ATOMIC_GET_RELAXED(data->p.gran_enabled);
@@ -1658,6 +1663,69 @@ static bool get_granulation_enabled(Data *data){
   return ATOMIC_GET(data->p.gran_enabled);
 }
 
+
+#define GRAN_FUNCS(Methodname)                                          \
+  template<typename Type> static void gran_set_##Methodname(Data *data, Type val){ \
+    R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());             \
+                                                                        \
+    memset(&data->_gran_voice_has_updated_parameters[1], 0, sizeof(bool)*(POLYPHONY-1)); \
+                                                                        \
+    data->voices[0]._granulator->set_##Methodname(val);                 \
+                                                                        \
+    for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next){ \
+      if(voice->voice_num != 0){                                        \
+        data->_gran_voice_has_updated_parameters[voice->voice_num] = true; \
+        voice->_granulator->set_##Methodname(val);                      \
+      }                                                                 \
+    }                                                                   \
+  }                                                                     \
+                                                                        \
+  static double gran_get_##Methodname(Data *data){                      \
+    return data->voices[0]._granulator->get_##Methodname();             \
+  }
+
+
+GRAN_FUNCS(stretch)
+GRAN_FUNCS(overlap)
+GRAN_FUNCS(grain_length)
+GRAN_FUNCS(ramp)
+GRAN_FUNCS(jitter)
+GRAN_FUNCS(strict_no_jitter)
+
+static void gran_set_length(Data *data, double val){
+  gran_set_grain_length(data, ms_to_frames(val));
+}
+
+static double gran_get_length(Data *data){
+  return frames_to_ms(gran_get_grain_length(data));
+}
+
+  
+
+/*
+static void set_gran_overlap(Data *data, double overlap){
+  // radium::PlayerRecursiveLock lock; // Player is always locked when calling set_effect_value
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+    
+  memset(&data->_gran_voice_has_updated_parameters[1], 0, sizeof(bool)*(POLYPHONY-1));
+  
+  data->voices[0]._granulator->set_overlap(stretch);
+
+  for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next){
+    if(voice->voice_num != 0){
+      data->_gran_voice_has_updated_parameters[voice->voice_num] = true;
+      voice->_granulator->set_overlap(stretch);
+    }
+  }
+}
+
+static double get_gran_overlap(Data *data){
+  double ret = data->voices[0]._granulator->get_overlap();
+  //printf("   RET: %f\n", ret);
+  //getchar();
+  return ret;
+}
+*/
 
 
 
@@ -1810,15 +1878,27 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       }
       break;
 
-    case EFF_GRAN_ONOFF:
+    case EFF_GRAN_onoff:
       set_granulation_enabled(data, value >= 0.5);
       break;
       
-    case EFF_GRAN_STRETCH:
+    case EFF_GRAN_stretch:
       if (value < 0.5)
-        set_gran_stretch(data, scale(value, 0, 0.5, MIN_STRETCH, 1.0));
+        gran_set_stretch(data, scale_double(value, 0, 0.5, MIN_stretch, 1.0));
       else
-        set_gran_stretch(data, scale(value, 0.5, 1.0, 1.0, MAX_STRETCH));
+        gran_set_stretch(data, scale_double(value, 0.5, 1.0, 1.0, MAX_stretch));
+      update_editor_graphics(plugin);
+      break;
+
+#define GRAN_CASE(Name)                         \
+      case EFF_GRAN_##Name:                                             \
+        gran_set_##Name(data, scale_double(value, 0, 1, MIN_##Name, MAX_##Name)); \
+        break
+      ALL_GRAN_CASES();
+#undef GRAN_CASE
+
+    case EFF_GRAN_strict_no_jitter:
+      gran_set_strict_no_jitter(data, value >= 0.5);
       break;
       
     default:
@@ -1899,14 +1979,26 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       ATOMIC_SET(data->p.pingpong, value>=0.5f);
       break;
 
-    case EFF_GRAN_ONOFF:
+    case EFF_GRAN_onoff:
       set_granulation_enabled(data, value >= 0.5);
       break;
 
-    case EFF_GRAN_STRETCH:
-      set_gran_stretch(data, value);
+    case EFF_GRAN_stretch:
+      gran_set_stretch(data, value);
+      update_editor_graphics(plugin);
       break;
 
+#define GRAN_CASE(Name)                                                 \
+      case EFF_GRAN_##Name:                                             \
+        gran_set_##Name(data, value);                                   \
+        break
+      ALL_GRAN_CASES();
+#undef GRAN_CASE
+      
+    case EFF_GRAN_strict_no_jitter:
+      gran_set_strict_no_jitter(data, value >= 0.5);
+      break;
+      
     default:
       RError("S2. Unknown effect number %d\n",effect_num);
     }
@@ -1992,20 +2084,30 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return ATOMIC_GET(data->p.pingpong)==true?1.0f:0.0f;
       break;
 
-    case EFF_GRAN_ONOFF:
+    case EFF_GRAN_onoff:
       return get_granulation_enabled(data)==true?1.0f:0.0f;
       break;
 
-    case EFF_GRAN_STRETCH:
+    case EFF_GRAN_stretch:
       {
-        float stretch = get_gran_stretch(data);
+        float stretch = gran_get_stretch(data);
         if (stretch < 1.0)
-          return scale(stretch, MIN_STRETCH, 1.0, 0, 0.5);
+          return scale(stretch, MIN_stretch, 1.0, 0, 0.5);
         else
-          return scale(stretch, 1.0, MAX_STRETCH, 0.5, 1.0);
+          return scale(stretch, 1.0, MAX_stretch, 0.5, 1.0);
       }
       break;
+      
+#define GRAN_CASE(Name)                                                 \
+      case EFF_GRAN_##Name:                                             \
+        return scale_double(gran_get_##Name(data), MIN_##Name, MAX_##Name, 0, 1); \
+        break
+      ALL_GRAN_CASES();
+#undef GRAN_CASE
 
+    case EFF_GRAN_strict_no_jitter:
+      return gran_get_strict_no_jitter(data) ? 1.0 : 0.0;
+      
     default:
       RError("S3. Unknown effect number %d\n",effect_num);
       return 0.5f;
@@ -2056,14 +2158,24 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return ATOMIC_GET(data->p.pingpong)==true?1.0f:0.0f;
       break;
 
-    case EFF_GRAN_ONOFF:
+    case EFF_GRAN_onoff:
       return get_granulation_enabled(data)==true?1.0f:0.0f;
       break;
       
-    case EFF_GRAN_STRETCH:
-      return get_gran_stretch(data);
+    case EFF_GRAN_stretch:
+      return gran_get_stretch(data);
       break;
 
+#define GRAN_CASE(Name)                                                 \
+      case EFF_GRAN_##Name:                                             \
+        return gran_get_##Name(data);                                   \
+        break;
+      ALL_GRAN_CASES();
+#undef GRAN_CASE
+
+    case EFF_GRAN_strict_no_jitter:
+      return gran_get_strict_no_jitter(data) ? 1.0 : 0.0;
+      
     default:
       RError("S4. Unknown effect number %d\n",effect_num);
       return 0.5f;
@@ -2132,10 +2244,26 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     snprintf(buffer,buffersize-1,"%d samples",safe_int_read(&data->p.crossfade_length));
     break;
 
-  case EFF_GRAN_STRETCH:
-    snprintf(buffer,buffersize-1,"%.2fX",get_gran_stretch(data));
+  case EFF_GRAN_stretch:
+    snprintf(buffer,buffersize-1,"%.2fX",gran_get_stretch(data));
     break;
-
+    
+  case EFF_GRAN_overlap:
+    snprintf(buffer, buffersize-1, "%.2fX", gran_get_overlap(data));
+    break;
+    
+  case EFF_GRAN_length:
+    snprintf(buffer, buffersize-1, "%.2fms", gran_get_length(data));
+    break;
+    
+  case EFF_GRAN_ramp:
+    snprintf(buffer, buffersize-1, "%.2f%%", 100.0*gran_get_ramp(data));
+    break;
+    
+  case EFF_GRAN_jitter:
+    snprintf(buffer, buffersize-1, "%.2f%%", 100.0*gran_get_jitter(data));
+    break;
+    
   default:
     RError("S5. Unknown effect number %d\n",effect_num);
   }
@@ -2397,6 +2525,7 @@ static void init_voice(Data *data, Voice &voice){
   voice._granulator = new radium::Granulator(44100, 100000, 50, 1, get_samples);
 
   voice._granresampler = voice._resampler2;
+  
   //voice._resampler2->set_callback(voice._granulator);
   //voice._granulator.set_callback(get_samples);
 }
@@ -2907,10 +3036,20 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     return "Reverse";
   case EFF_PINGPONG:
     return "Ping-Pong Loop";
-  case EFF_GRAN_ONOFF:
+  case EFF_GRAN_onoff:
     return "Granulate";
-  case EFF_GRAN_STRETCH:
+  case EFF_GRAN_stretch:
     return "Gran. Stretch";
+  case EFF_GRAN_overlap:
+    return "Grain Overlap";
+  case EFF_GRAN_length:
+    return "Grain Length";
+  case EFF_GRAN_ramp:
+    return "Grain Ramp";
+  case EFF_GRAN_jitter:
+    return "Gran. Jitter";
+  case EFF_GRAN_strict_no_jitter:
+    return "Gran. Strict no Jitter";
   default:
     RError("S6. Unknown effect number %d\n",effect_num);
     return NULL;
@@ -2918,12 +3057,48 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
 }
 
 static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
-  if(effect_num==EFF_LOOP_ONOFF || effect_num==EFF_REVERSE || effect_num==EFF_PINGPONG || effect_num==EFF_GRAN_ONOFF)
+  if(effect_num==EFF_LOOP_ONOFF || effect_num==EFF_REVERSE || effect_num==EFF_PINGPONG || effect_num==EFF_GRAN_onoff || effect_num==EFF_GRAN_strict_no_jitter)
     return EFFECT_FORMAT_BOOL;
   else if (effect_num==EFF_CROSSFADE_LENGTH)
     return EFFECT_FORMAT_INT;
   else
     return EFFECT_FORMAT_FLOAT;
+}
+
+static const char *get_effect_description(struct SoundPlugin *plugin, int effect_num){
+  //Data *data=(Data*)plugin->data;
+
+  switch(effect_num){
+  case EFF_GRAN_onoff:
+    return "Enable granular synthesis. Granular synthesis cuts the sound into smaller pieces (\"grains\") and plays them back in various ways";
+  case EFF_GRAN_stretch:
+    return "How much to stretch the sound";
+  case EFF_GRAN_overlap:
+    return "How much each grain overlap on average";
+  case EFF_GRAN_length:
+    return "The duration of each grain";
+  case EFF_GRAN_ramp:
+    return "The fade in / fade out duration of each grain. 33%, or thereabout, usually works well.";
+  case EFF_GRAN_jitter:
+    return "A jitter of 0% means a juniform distribution of the grains. A higher jitter value should reduce comb filter effects.";
+  case EFF_GRAN_strict_no_jitter:
+    return
+      "Strict no jitter when jitter is 0.00%.\n"
+      "\n"
+      "If set, the distance between the start of all grains will always be the same when jitter is 0.00%.\n"
+      "\n"
+      "The duration of the generated sound will be slightly wrong if this mode is set,\n"
+      "but the sound will contain a purer comb filter effect, if you are looking for that effect.\n"
+      "\n"
+      "If this mode is not set, the distances will differ in size by at most 1 frame in such a way\n"
+      "that the total duration of the generated sound will be correct, at the cost of a less pure\n"
+      "comb filter effect.\n"
+      "\n"
+      "It's easier to hear the difference if overlap is set high, and grain length is set low."
+      ;
+  }
+  
+  return "";
 }
 
 /*
@@ -3031,6 +3206,7 @@ static void init_plugin_type(void){
  plugin_type.will_always_autosuspend  = true,
  plugin_type.get_effect_format        = get_effect_format;
  plugin_type.get_effect_name          = get_effect_name;
+ plugin_type.get_effect_description   = get_effect_description;
  plugin_type.effect_is_RT             = NULL;
  plugin_type.create_plugin_data       = create_plugin_data;
  plugin_type.cleanup_plugin_data      = cleanup_plugin_data;
