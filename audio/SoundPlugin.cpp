@@ -2154,14 +2154,25 @@ hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
   hash_t *effects=HASH_create(type->num_effects);
 
 #if 0
+  
   for(int i=0;i<type->num_effects;i++)
     HASH_put_float(effects, PLUGIN_get_effect_name(plugin,i), type->get_effect_value(plugin, i, EFFECT_FORMAT_NATIVE)); // Do this so that the plugin can change min/max values between sessions.
 
   for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
     HASH_put_float(effects, PLUGIN_get_effect_name(plugin,i), plugin->stored_effect_values[i]);
 #else
-  for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-    HASH_put_float(effects, PLUGIN_get_effect_name(plugin,i), plugin->stored_effect_values_native[i]);
+  
+  for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+    
+    const_char *effect_name = PLUGIN_get_effect_name(plugin,i);
+    
+    if(HASH_has_key(effects, effect_name)){
+      RError("Same key used twice: -%s-. Instrument: %s / %s", effect_name, plugin->type->type_name, plugin->type->name);
+    }else
+      HASH_put_float(effects, effect_name, plugin->stored_effect_values_native[i]);
+    
+  }
+  
 #endif
   
   return effects;
@@ -2430,10 +2441,15 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
     HASH_put_hash_at(state, "midi_learns", i, midi_learn->create_state());
   }
 
-  // do_random
-  for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-    HASH_put_bool_at(state, "do_random_change", i, plugin->do_random_change[i]);
-                     
+  // random_change
+  {
+    hash_t *r = HASH_create(type->num_effects+NUM_SYSTEM_EFFECTS);
+    for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+      HASH_put_bool(r, PLUGIN_get_effect_name(plugin,i), plugin->do_random_change[i]);
+    
+    HASH_put_hash(state, "random_change", r);
+  }
+  
   // effects
   HASH_put_hash(state,"effects",PLUGIN_get_effects_state(plugin));
 
