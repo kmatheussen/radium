@@ -57,7 +57,7 @@ static unsigned long parentPID()
 #if defined(FOR_WINDOWS)
   
   HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-  PROCESSENTRY32 pe = { 0 };
+  PROCESSENTRY32 pe = {};
   pe.dwSize = sizeof(PROCESSENTRY32);
   
   unsigned long pid = currentPID();
