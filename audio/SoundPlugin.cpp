@@ -2444,8 +2444,12 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
   // random_change
   {
     hash_t *r = HASH_create(type->num_effects+NUM_SYSTEM_EFFECTS);
-    for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-      HASH_put_bool(r, PLUGIN_get_effect_name(plugin,i), plugin->do_random_change[i]);
+    
+    for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+      const_char *effect_name = PLUGIN_get_effect_name(plugin,i);
+      if (false==HASH_has_key(r, effect_name)) // Prevent HASH_put_bool from showing assertion window if there are two effects with the same name. Not sure if it can happen though.
+        HASH_put_bool(r, effect_name, plugin->do_random_change[i]);
+    }
     
     HASH_put_hash(state, "random_change", r);
   }
@@ -2706,10 +2710,16 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   }
   */
 
-  // do_random
-  for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-    if (HASH_has_key_at(state, "do_random_change", i))
-      plugin->do_random_change[i] = HASH_get_bool_at(state, "do_random_change", i);
+  // random change
+  if (HASH_has_key(state, "random_change")){
+    hash_t *r = HASH_get_hash(state, "random_change");
+    
+    for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+      const char *effect_name = PLUGIN_get_effect_name(plugin,i);
+      if (HASH_has_key(r, effect_name))
+        plugin->do_random_change[i] = HASH_get_bool(r, effect_name);
+    }
+  }
   
   // midi learns state
   {
