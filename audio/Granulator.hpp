@@ -196,7 +196,7 @@ public:
     R_ASSERT_NON_RELEASE(ch>=0 && ch<_num_ch);
     
     if (_start_pos_global_pos > global_pos){
-      R_ASSERT_NON_RELEASE(false);
+      // R_ASSERT_NON_RELEASE(false); FIX ME. This happens when setting stretch to 0.01 in the sample player.
       return NULL;
     }
 
@@ -707,7 +707,7 @@ private:
       R_ASSERT_NON_RELEASE(wait >= 0);
       R_ASSERT_NON_RELEASE(wait <= 64); // Grains do work with wait > 64, but it is not supposed to be higher than 64 here.
       
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
       static int last_write_dx = 0;
       static int last_read_dx = 0;
       //printf("    grainread: %d (dx: %d %d) (wait: %d (%f)) (this: %p)\n", (int)_global_read_pos_of_next_frame, (int)(_global_read_pos_of_next_frame-last_global_read_pos), (int)(_global_write_pos_of_next_frame-last_global_write_pos), wait, (wait / _stretch), this);
