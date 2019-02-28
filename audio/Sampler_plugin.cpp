@@ -50,6 +50,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundPluginRegistry_proc.h"
 
+#include "GranResampler.hpp"
+#include "Granulator.hpp"
+
 #include "Resampler_proc.h"
 #include "Envelope_proc.h"
 #include "SoundFonts_proc.h"
@@ -86,6 +89,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define MAX_TREMOLO_SPEED 50
 #define MAX_TREMOLO_DEPTH 1
+
+#define MIN_STRETCH 0.01
+#define MAX_STRETCH 100
 
 const char *g_click_name = "Click";
 
@@ -129,7 +135,11 @@ enum{
   EFF_CROSSFADE_LENGTH,
   EFF_REVERSE,
   EFF_PINGPONG,
-  EFF_NUM_EFFECTS
+
+  EFF_GRAN_ONOFF,
+  EFF_GRAN_STRETCH,
+
+  EFF_NUM_EFFECTS,
   };
 
 #define SAMPLES_PER_PEAK 64
@@ -168,7 +178,15 @@ struct Sample{
   }
 };
 
+namespace{
+  struct ResettableGranResamplerCallback : public radium::GranResamplerCallback{
+    virtual void reset(void) = 0;
+  };
+}
+
 // A voice object points to only one sample. Stereo-files uses two voice objects. Soundfonts using x sounds to play a note, need x voice objects to play that note.
+//
+// A voice is inited in the function "init_voice", and released in "release_voice".
 struct Voice{
   Voice *prev = NULL;
   Voice *next = NULL;
@@ -178,6 +196,8 @@ struct Voice{
   float note_num = 0;
   int64_t note_id = 0;
   const struct SeqBlock *seqblock = NULL; // Not quite sure, but this variable could perhaps be gc-ed while its here, so it should only be used for comparison. (pretty sure it can not be gc-ed though)
+
+  int voice_num;
   
   // These two variables are used when setting velocity after a note has started playing.
   float start_volume = 0;
@@ -199,8 +219,14 @@ struct Voice{
   int64_t pos = 0;
 
   bool reverse = 0;
+
+  ResettableGranResamplerCallback *_get_samples;
   
-  radium::Resampler *resampler = NULL;
+  radium::Granulator *_granulator;
+  radium::Resampler2 *_resampler2;
+  radium::GranResampler *_granresampler;
+
+  //radium::Resampler *resampler = NULL;
   void *adsr = NULL;
 
   int delta_pos_at_start = 0; // Within the current block. Set when starting a note.
@@ -212,6 +238,7 @@ struct Voice{
 
   int num_samples = 0;
   const Sample *sample = NULL;
+
 };
 
 struct Note{
@@ -283,6 +310,8 @@ struct CopyData {
 
   float tremolo_depth;
   float tremolo_speed;
+
+  DEFINE_ATOMIC(bool, gran_enabled);
 };
 
  
@@ -326,7 +355,8 @@ struct Data{
   int num_different_samples = 0;  // not used for anything (important).
 
   Voice voices[POLYPHONY] = {};
-
+  bool _gran_voice_has_updated_parameters[POLYPHONY] = {};
+  
   // These two are used when switching sound on the fly
   DEFINE_ATOMIC(struct Data *, new_data) = NULL;
   RSemaphore *signal_from_RT = NULL;
@@ -365,6 +395,10 @@ struct Data{
     R_ASSERT(voices[0].next==NULL);
     R_ASSERT(samples[0].sound==NULL);
 
+    _gran_voice_has_updated_parameters[0] = true; // always true.
+    for(int i=0;i<POLYPHONY;i++)
+      voices[i].voice_num=i;
+        
     //for(int i=0;i<128;i++)
     //  notes[i] = new Note;
   }
@@ -796,7 +830,12 @@ static int RT_get_resampled_data(Data *data, Voice *voice, float *out, int num_f
   printf("  src ratio: %f\n", ratio);
 #endif
   
-  return RESAMPLER_read(voice->resampler, ratio, num_frames, out);
+  voice->_resampler2->_ratio = ratio;
+  //voice->_granulator->set_stretch(2.0);
+  //return voice->_resampler2->RT_process(out, 0, num_frames);
+  float *buffer[1] = {out};
+  return voice->_granresampler->RT_process(buffer, num_frames);
+  //return RESAMPLER_read(voice->resampler, ratio, num_frames, out);
 }
 
 #if 0
@@ -1019,6 +1058,22 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
   }
 }
 
+static void prepare_voice_for_playing_with_granulation(Data *data, Voice *voice){
+  if (data->_gran_voice_has_updated_parameters[voice->voice_num]){
+    
+    voice->_granulator->reset(false);
+    
+  } else {
+    
+    voice->_granulator->apply_parameters_and_reset(*data->voices[0]._granulator);
+    data->_gran_voice_has_updated_parameters[voice->voice_num] = true;
+    
+  }
+  
+  voice->_resampler2->set_callback(voice->_granulator);
+}
+
+
 static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   Data *data = (Data*)plugin->data;
 
@@ -1120,8 +1175,21 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
     voice->reverse = ATOMIC_GET(sample->data->p.reverse);
     
     voice->pan = get_pan_vals_vector(note2.pan,voice->sample->ch==-1?1:2);
-        
-    RESAMPLER_reset(voice->resampler);
+
+    if (ATOMIC_GET_RELAXED(data->p.gran_enabled)){
+
+      prepare_voice_for_playing_with_granulation(data, voice);
+      
+    } else {
+      
+      voice->_resampler2->set_callback(voice->_get_samples);
+      
+    }
+    
+    voice->_resampler2->reset();
+    voice->_get_samples->reset();
+    //RESAMPLER_reset(voice->resampler);
+
     ADSR_reset(voice->adsr);
     ADSR_set_adsr(voice->adsr, data->p.a, data->p.h, data->p.d, data->p.s, data->p.r);
 
@@ -1538,6 +1606,61 @@ static int get_peaks(struct SoundPlugin *plugin,
   return 2;
 }
 
+
+/************* Granulation *****************/
+
+static void set_gran_stretch(Data *data, double stretch){
+  // radium::PlayerRecursiveLock lock; // Player is always locked when calling set_effect_value
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+    
+  memset(&data->_gran_voice_has_updated_parameters[1], 0, sizeof(bool)*(POLYPHONY-1));
+  
+  data->voices[0]._granulator->set_stretch(stretch);
+
+  for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next){
+    if(voice->voice_num != 0){
+      data->_gran_voice_has_updated_parameters[voice->voice_num] = true;
+      voice->_granulator->set_stretch(stretch);
+    }
+  }
+}
+
+static double get_gran_stretch(Data *data){
+  double ret = data->voices[0]._granulator->get_stretch();
+  //printf("   RET: %f\n", ret);
+  //getchar();
+  return ret;
+}
+
+static void set_granulation_enabled(Data *data, bool enabled){
+  bool is_enabled = ATOMIC_GET_RELAXED(data->p.gran_enabled);
+  if (enabled==is_enabled)
+    return;
+
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+
+  if (enabled){
+
+    for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next)
+      prepare_voice_for_playing_with_granulation(data, voice);
+    
+  } else {
+    
+    for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next)
+      voice->_resampler2->set_callback(voice->_get_samples);
+    
+  }
+
+  ATOMIC_SET(data->p.gran_enabled, enabled);
+}
+
+static bool get_granulation_enabled(Data *data){
+  return ATOMIC_GET(data->p.gran_enabled);
+}
+
+
+
+
 static void set_loop_onoff(Data *data, bool loop_onoff){
   ATOMIC_SET(data->p.loop_onoff, loop_onoff);
 }
@@ -1686,6 +1809,17 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
           GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
       }
       break;
+
+    case EFF_GRAN_ONOFF:
+      set_granulation_enabled(data, value >= 0.5);
+      break;
+      
+    case EFF_GRAN_STRETCH:
+      if (value < 0.5)
+        set_gran_stretch(data, scale(value, 0, 0.5, MIN_STRETCH, 1.0));
+      else
+        set_gran_stretch(data, scale(value, 0.5, 1.0, 1.0, MAX_STRETCH));
+      break;
       
     default:
       RError("S1. Unknown effect number %d\n",effect_num);
@@ -1764,7 +1898,15 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
     case EFF_PINGPONG:
       ATOMIC_SET(data->p.pingpong, value>=0.5f);
       break;
-      
+
+    case EFF_GRAN_ONOFF:
+      set_granulation_enabled(data, value >= 0.5);
+      break;
+
+    case EFF_GRAN_STRETCH:
+      set_gran_stretch(data, value);
+      break;
+
     default:
       RError("S2. Unknown effect number %d\n",effect_num);
     }
@@ -1850,6 +1992,20 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return ATOMIC_GET(data->p.pingpong)==true?1.0f:0.0f;
       break;
 
+    case EFF_GRAN_ONOFF:
+      return get_granulation_enabled(data)==true?1.0f:0.0f;
+      break;
+
+    case EFF_GRAN_STRETCH:
+      {
+        float stretch = get_gran_stretch(data);
+        if (stretch < 1.0)
+          return scale(stretch, MIN_STRETCH, 1.0, 0, 0.5);
+        else
+          return scale(stretch, 1.0, MAX_STRETCH, 0.5, 1.0);
+      }
+      break;
+
     default:
       RError("S3. Unknown effect number %d\n",effect_num);
       return 0.5f;
@@ -1898,6 +2054,14 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 
     case EFF_PINGPONG:
       return ATOMIC_GET(data->p.pingpong)==true?1.0f:0.0f;
+      break;
+
+    case EFF_GRAN_ONOFF:
+      return get_granulation_enabled(data)==true?1.0f:0.0f;
+      break;
+      
+    case EFF_GRAN_STRETCH:
+      return get_gran_stretch(data);
       break;
 
     default:
@@ -1966,6 +2130,10 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 #endif
   case EFF_CROSSFADE_LENGTH:
     snprintf(buffer,buffersize-1,"%d samples",safe_int_read(&data->p.crossfade_length));
+    break;
+
+  case EFF_GRAN_STRETCH:
+    snprintf(buffer,buffersize-1,"%.2fX",get_gran_stretch(data));
     break;
 
   default:
@@ -2166,9 +2334,84 @@ static void generate_peaks(Data *data){
 
     }
 
-
-
   }
+}
+
+namespace{
+  struct GetSampleCallback : public ResettableGranResamplerCallback, public radium::AudioPickuper {
+    Voice &_voice;
+
+    GetSampleCallback(Voice &voice)
+      : _voice(voice)
+    {}
+
+    int _buffer_size = 0;
+    float *_buffer;
+
+    void reset(void) override {
+      _buffer_size = 0;
+    }
+
+    void maybe_fill_buffer(void){
+      if (_buffer_size==0)
+        _buffer_size = RT_src_callback(&_voice, &_buffer);
+    }
+
+    float *get_next_granresampler_sample_block(const int ch, int &num_frames) override {
+      maybe_fill_buffer();
+
+      float *ret = _buffer;
+      num_frames = R_MIN(1024, _buffer_size);
+
+      _buffer_size -= num_frames;
+      _buffer += num_frames;
+
+      return ret;
+    }
+
+    int pick_up_data_for_granulator(float **samples, int max_num_frames) override {
+      maybe_fill_buffer();
+
+      int ret = R_MIN(_buffer_size, R_MIN(1024, max_num_frames));
+
+      memcpy(samples[0], _buffer, ret*sizeof(float));
+
+      _buffer_size -= ret;
+      _buffer += ret;
+      
+      return ret;
+    }
+
+  };
+}
+
+static void init_voice(Data *data, Voice &voice){
+  //voice.resampler = RESAMPLER_create(RT_src_callback, 1, &voice, data->resampler_type);
+  voice.adsr = ADSR_create(data->samplerate);
+  RT_add_voice(&data->voices_not_playing, &voice);
+
+  auto *get_samples = new GetSampleCallback(voice);
+  voice._get_samples = get_samples;
+
+  voice._resampler2 = new radium::Resampler2(1, data->resampler_type, get_samples);
+  voice._granulator = new radium::Granulator(44100, 100000, 50, 1, get_samples);
+
+  voice._granresampler = voice._resampler2;
+  //voice._resampler2->set_callback(voice._granulator);
+  //voice._granulator.set_callback(get_samples);
+}
+
+static void release_voice(Voice &voice){
+  //RESAMPLER_delete(voice.resampler);
+  ADSR_delete(voice.adsr);
+  
+  // more debugging, trying to track down a crash.
+  //voice.resampler = NULL;
+  voice.adsr = NULL;
+
+  delete voice._resampler2;
+  delete voice._granulator;
+  delete voice._get_samples;
 }
 
 
@@ -2187,15 +2430,8 @@ static bool load_sample(Data *data, const wchar_t *filename, int instrument_numb
   generate_peaks(data);
 
   // Instead of calling RESAMPLER_reset/ADSR_reset every time we load a new sample, we recreate resampler and adsr instead. I.e. 'data' is recreated every time.
-  int i=0;
-  for(i=0;i<POLYPHONY;i++){
-    Voice *voice = &data->voices[i];
-
-    voice->resampler = RESAMPLER_create(RT_src_callback, 1, voice, data->resampler_type);
-    voice->adsr = ADSR_create(data->samplerate);
-
-    RT_add_voice(&data->voices_not_playing, voice);
-  }
+  for(int i=0;i<POLYPHONY;i++)
+    init_voice(data, data->voices[i]);
 
   return true;
 }
@@ -2322,14 +2558,8 @@ static void delete_data(Data *data){
 
   EVENTLOG_add_event("sampler_plugin: delete_data 2");
   
-  for(i=0;i<POLYPHONY;i++) {
-    RESAMPLER_delete(data->voices[i].resampler);
-    ADSR_delete(data->voices[i].adsr);
-
-    // more debugging, trying to track down a crash.
-    data->voices[i].resampler = NULL;
-    data->voices[i].adsr = NULL;
-  }
+  for(i=0;i<POLYPHONY;i++)
+    release_voice(data->voices[i]);
 
   EVENTLOG_add_event("sampler_plugin: delete_data 3");
   
@@ -2677,6 +2907,10 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     return "Reverse";
   case EFF_PINGPONG:
     return "Ping-Pong Loop";
+  case EFF_GRAN_ONOFF:
+    return "Granulate";
+  case EFF_GRAN_STRETCH:
+    return "Gran. Stretch";
   default:
     RError("S6. Unknown effect number %d\n",effect_num);
     return NULL;
@@ -2684,7 +2918,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
 }
 
 static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
-  if(effect_num==EFF_LOOP_ONOFF || effect_num==EFF_REVERSE || effect_num==EFF_PINGPONG)
+  if(effect_num==EFF_LOOP_ONOFF || effect_num==EFF_REVERSE || effect_num==EFF_PINGPONG || effect_num==EFF_GRAN_ONOFF)
     return EFFECT_FORMAT_BOOL;
   else if (effect_num==EFF_CROSSFADE_LENGTH)
     return EFFECT_FORMAT_INT;
@@ -2832,8 +3066,8 @@ void create_sample_plugin(void){
   if (has_inited==false) {
     
     init_plugin_type();
-    
-    memcpy((void*)&click_type, (void*)&plugin_type, sizeof(SoundPluginType));
+
+    click_type = plugin_type;
 
     click_type.name = g_click_name;
 

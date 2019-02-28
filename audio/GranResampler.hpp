@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define _RADIUM_AUDIO_GRANRESAMPLER_HPP
 
 
+#include "SampleReader_proc.h"
+
 #include "Resampler_proc.h"
 
       
@@ -74,7 +76,7 @@ private:
   GranResamplerCallback *_callback;
   float** _buffer;
   
-  virtual void RT_process(float *output, const int ch, int num_frames) = 0;
+  virtual int RT_process(float *output, const int ch, int num_frames) = 0; // 'num_frames' is the requested number of frames. The function returns the number of produced frames.
 
 protected:
   
@@ -97,9 +99,16 @@ protected:
 
 public:
   
-  void RT_process(float **output, int num_frames) {
-    for(int ch=0;ch<_num_ch;ch++)
-      RT_process(output[ch], ch, num_frames);
+  int RT_process(float **output, int num_frames) {
+    int ret = -1;
+
+    for(int ch=0;ch<_num_ch;ch++){
+      int num_frames2 = RT_process(output[ch], ch, num_frames);
+      if (num_frames2 > ret)
+        ret = num_frames2;
+    }
+
+    return ret;
   }
 
   void set_callback(GranResamplerCallback *callback){
@@ -110,8 +119,7 @@ private:
   
   // Used when instance is supplied as a callback to another GranResampler.
   float *get_next_granresampler_sample_block(const int ch, int &num_frames) override {    
-    RT_process(_buffer[ch], ch, GRANRESAMPLER_BUFFER_SIZE);
-    num_frames = GRANRESAMPLER_BUFFER_SIZE;
+    num_frames = RT_process(_buffer[ch], ch, GRANRESAMPLER_BUFFER_SIZE);
     return _buffer[ch];
   }
 
@@ -190,7 +198,7 @@ class Resampler2 : public GranResampler{
   
 public:
 
-  float _ratio = 1.0;
+  double _ratio = 1.0;
 
   Resampler2(int num_ch, enum ResamplerType resampler_type, GranResamplerCallback *callback)
     : GranResampler(num_ch, callback)
@@ -221,7 +229,7 @@ public:
     return num_frames;
   }
 
-  void RT_process(float *output, const int ch, int num_frames) override {
+  int RT_process(float *output, const int ch, int num_frames) override {
     _curr_ch = ch;
       
     int samples_left = num_frames;
@@ -232,15 +240,17 @@ public:
       int num_frames_read = RESAMPLER_read(_resamplers[ch], _ratio, samples_left, &output[pos]);
       
       if (num_frames_read==0){
-        R_ASSERT_NON_RELEASE(false);
-        return;
+        //R_ASSERT_NON_RELEASE(false);
+        return pos;
       }
       
       pos += num_frames_read;
       samples_left -= num_frames_read;
     }
     
-    R_ASSERT_NON_RELEASE(samples_left==0);      
+    R_ASSERT_NON_RELEASE(samples_left==0);
+    R_ASSERT_NON_RELEASE(pos==num_frames);
+    return pos;
   }
 
 };
@@ -273,7 +283,7 @@ private:
     Granulator *_granulator;
     
   public:
-    
+-    
     void init(int ch, Granulator *granulator){
       _ch = ch;
       _granulator = granulator;
@@ -407,9 +417,11 @@ public:
       mus_reset(_clm_granulators[ch]);
   }
 
-  void RT_process(float *output, const int ch, int num_frames) override {
+  int RT_process(float *output, const int ch, int num_frames) override {
     for(int i=0;i<num_frames;i++)
       output[i] = mus_granulate(_clm_granulators[ch], NULL);
+
+    return num_frames;
   }
   
 };

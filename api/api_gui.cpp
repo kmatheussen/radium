@@ -674,7 +674,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         if(new_intencity>0 || old_intencity != -1){
           _note_intencity = new_intencity;
           
-          printf("note_intencity: %d. old_intencity: %d\n", _note_intencity, old_intencity);
+          //printf("note_intencity: %d. old_intencity: %d\n", _note_intencity, old_intencity);
           myupdate(widget, get_indicator_rect());
         }
       }
