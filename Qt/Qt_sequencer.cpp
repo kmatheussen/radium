@@ -564,7 +564,7 @@ static double getBlockAbsDuration(const struct Blocks *block){
 */
 
 static QColor get_seqtrack_background_color(const SeqTrack *seqtrack){
-  QColor color = get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM);
+  QColor color = get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM);
   if (seqtrack->patch!=NULL)
     return mix_colors(color, QColor(seqtrack->patch->color), 0.6);
   else
@@ -1833,7 +1833,7 @@ public:
   }
       
   void draw_fades(QPainter &p, const QRectF &rect, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock) const {
-    QColor color = get_seqtrack_background_color(seqtrack); //get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM); //mix_colors(QColor(50,50,50,200), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM), 0.52f);
+    QColor color = get_seqtrack_background_color(seqtrack); //get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM); //mix_colors(QColor(50,50,50,200), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM), 0.52f);
     color.setAlpha(180);
     //QColor color(50,50,50,200);
 
@@ -2537,7 +2537,7 @@ struct SongTempoAutomation_widget  : public LightWidget {
     
     if(workingQRegionIntersects(update_region, t_rect)){
   
-      myFillRect(p, t_rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
+      myFillRect(p, t_rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_LANES_BACKGROUND_COLOR_NUM));
     
       //printf("height: %d\n",height());
       TEMPOAUTOMATION_paint(&p, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
@@ -3283,7 +3283,7 @@ public:
 
     // Background
     //
-    p.fillRect(t_rect, get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
+    p.fillRect(t_rect, get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM));
 
 
     int num_seqtracks = root->song->seqtracks.num_elements;
@@ -4391,15 +4391,18 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     // Erase background
     //
-
-    if(seqtracks_are_painted || right_part_is_painted){ // This is strange, but if we don't do this here, some graphical artifacts are shown in the left part of the headers.
+    if(seqtracks_are_painted || right_part_is_painted){
       TRACK_PAINT();
+
       
       QPainter p(this);
+
+      myFillRect(p, rect(), get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM), true, 35);
+      /*
       for(const QRect &rect : ev->region())
         p.eraseRect(rect);
+      */
     }
-
     
     float seqtracks_y_max = _seqtracks_widget.get_seqtracks_y2() + get_seqtrack_border_width();
 

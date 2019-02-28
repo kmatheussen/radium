@@ -173,7 +173,8 @@ static const ColorConfig g_colorconfig[] = {
   
   {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, "sequencer_currtrack_border_color", "Sequencer current track border color"},
   {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, "sequencer_curr_seqblock_border_color", "Sequencer current seqblock border color"},
-  {SEQUENCER_BACKGROUND_COLOR_NUM, "sequencer_background_color", "Sequencer background color"},
+  {SEQUENCER_LANES_BACKGROUND_COLOR_NUM, "sequencer_background_color", "Sequencer lanes background color"},
+  {SEQTRACKS_BACKGROUND_COLOR_NUM, "seqtracks_background_color", "Seqtracks background color"},
   {SEQUENCER_BORDER_COLOR_NUM, "sequencer_border_color", "Sequencer border color"},
   {SEQUENCER_TEXT_COLOR_NUM, "sequencer_text_color", "Sequencer text color"},
   {SEQUENCER_NOTE_COLOR_NUM, "sequencer_note_color", "Sequencer note color"},
@@ -286,7 +287,8 @@ static ReplacementColor g_replacement_color[] = {
   
   {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, QColor("#ffc8c8c8")},
   {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, QColor("#ebc909")},
-  {SEQUENCER_BACKGROUND_COLOR_NUM, QColor("#ff464d47")},
+  {SEQUENCER_LANES_BACKGROUND_COLOR_NUM, QColor("#ff464d47")},
+  {SEQTRACKS_BACKGROUND_COLOR_NUM, QColor("#ff3a4844")},
   {SEQUENCER_BORDER_COLOR_NUM, QColor("#ff010101")},
   {SEQUENCER_TEXT_COLOR_NUM, QColor("#ff010101")},
   {SEQUENCER_NOTE_COLOR_NUM, QColor("#960101c8")},
