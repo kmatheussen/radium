@@ -231,8 +231,9 @@
                    (update-me!) ;; If not, background between sub areas are not updated.
                    )))
 
-  ;;(define-override (paint)
-  ;;  (<gui> :filled-box gui "black" x1 y1 x2 y2 -1 -1 #f))
+  ;; Workaround. TODO: Investigate why this is necessary.
+  (define-override (paint)
+    (<gui> :filled-box gui "color11" x1 y1 x2 y2 -1 -1 #f))
   )
 
 (define *last-created-editor-lower-part-area* #f)
@@ -245,8 +246,11 @@
                                                             *last-created-editor-lower-part-area*)
                               :enable-mouse-callbacks #t))
   (define gui (qtarea :get-gui))
-  (<gui> :set-background-color gui "color11")
-  ;;(<ra> :dont-autofill-background gui)
+
+  ;; TODO: Investigate why this doesn't work on OSX.
+  ;;(<gui> :set-background-color gui "color11")
+  
+  (<gui> :dont-autofill-background gui)
   gui)
 
 (define (FROM_C-reconfigure-editor-lower-part-gui!)
