@@ -117,11 +117,11 @@ cd ..
 
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
-rm -fr gc-7.4.12 libatomic_ops-7.4.12
+rm -fr gc-7.4.16 libatomic_ops-7.4.14
 tar xvzf gc-7.4.16.tar.gz
-tar xvzf libatomic_ops-7.4.12.tar.gz
+tar xvzf libatomic_ops-7.4.14.tar.gz
 cd gc-7.4.16
-ln -s ../libatomic_ops-7.4.12 libatomic_ops
+ln -s ../libatomic_ops-7.4.14 libatomic_ops
 #echo 'void RADIUM_ensure_bin_packages_gc_is_used(void){ABORT("GC not configured properly");}' >>malloc.c
 echo 'void RADIUM_ensure_bin_packages_gc_is_used(void){}' >>malloc.c
 echo '#if defined(GC_ASSERTIONS) || !defined(NO_DEBUGGING)' >>malloc.c
