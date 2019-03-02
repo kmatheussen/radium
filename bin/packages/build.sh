@@ -117,17 +117,17 @@ cd ..
 
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
-rm -fr gc-7.4.4 libatomic_ops-7.4.4
-tar xvzf gc-7.4.4.tar.gz
-tar xvzf libatomic_ops-7.4.4.tar.gz
-cd gc-7.4.4
-ln -s ../libatomic_ops-7.4.4 libatomic_ops
+rm -fr gc-7.4.16 libatomic_ops-7.4.14
+tar xvzf gc-7.4.16.tar.gz
+tar xvzf libatomic_ops-7.4.14.tar.gz
+cd gc-7.4.16
+ln -s ../libatomic_ops-7.4.14 libatomic_ops
 #echo 'void RADIUM_ensure_bin_packages_gc_is_used(void){ABORT("GC not configured properly");}' >>malloc.c
 echo 'void RADIUM_ensure_bin_packages_gc_is_used(void){}' >>malloc.c
 echo '#if defined(GC_ASSERTIONS) || !defined(NO_DEBUGGING)' >>malloc.c
 echo "#error "nope"" >>malloc.c
 echo "#endif" >>malloc.c
-patch -p1 <../gcdiff.patch
+#patch -p1 <../gcdiff.patch
 CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" ./configure --enable-static --disable-shared --disable-gc-debug --disable-gc-assertions
 CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" make -j3
 cd ..
