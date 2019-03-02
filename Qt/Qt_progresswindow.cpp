@@ -234,9 +234,6 @@ namespace{
 
 static MyProgressWindow *g_progressWindow = NULL;
 
-static QMutex g_mutex;
-static QQueue<QString> g_queue;
-
 class MyTimer : public QTimer{
 public:
   MyTimer(){
@@ -244,17 +241,8 @@ public:
   }
   void timerEvent(QTimerEvent *e) override {
 
-    /*
-      static int counter=0;
-
-      QMutexLocker locker(&g_mutex);
-      //printf("Adding -%s- to queue\n", line.toUtf8().constData());
-      g_queue.enqueue(QString(" "+QString::number(counter++) + ". Is parent alive? :" + (isParentRunning() ? "Yes" : "No")));
-    */
-
-    if (!isParentRunning()){
-      exit(-1);
-    }
+    if (!isParentRunning())
+      QApplication::quit();
     
     if (g_progressWindow != NULL && g_progressWindow->isVisible()) {
       g_progressWindow->raise();
@@ -262,7 +250,6 @@ public:
   }
 };
 
-static MyTimer mytimer;
 
 static void positionWindow(const QRect &rect, QWidget *widget){
   int height = widget->height();
@@ -359,24 +346,18 @@ class ReadStdinThread : public QThread
 {
   
   QFile in;
+  QRect _rect;
   
 public:
 
-  ReadStdinThread(){
+  ReadStdinThread(const QRect &rect)
+    : _rect(rect)
+  {
     if (in.open(stdin, QIODevice::ReadOnly)==false){
       printf("Unable to open stdin\n");
     }else{
       start();
     }
-  }
-  
-  QString get_data(void){
-    QMutexLocker locker(&g_mutex);
-    //printf("queue.size: %d\n", queue.size());
-    if (g_queue.size()==0)
-      return "";
-    else
-      return g_queue.dequeue();
   }
   
 private:
@@ -398,13 +379,35 @@ private:
       }
 
       if (line != ""){
-        QMutexLocker locker(&g_mutex);
-        //printf("Adding -%s- to queue\n", line.toUtf8().constData());
-        g_queue.enqueue(line);
+        QMetaObject::invokeMethod(qApp, [line, this]
+                                  {
+                                    // We are now in the main thread.
+                                    
+                                    if (line==message_exit)
+                                      
+                                      QApplication::quit();
+                                    
+                                    else if (line==message_hide) {
+                                      //g_progressWindow->setText("HIDING\n");
+                                      g_progressWindow->hide();
+                                      
+                                    } else if (line==message_show) {
+                                      g_progressWindow->generate_new_text();
+                                      g_progressWindow->show();
+                                      g_progressWindow->raise();
+                                      
+                                    } else if (g_progressWindow->isVisible()){
+                                      QString message = handle_rect_in_message(line, g_progressWindow);
+                                      process_ShowProgressMessage(message, _rect);
+                                    }
+                                    
+                                  }
+                                  );
+        
+        if (line==message_exit)
+          return;
       }
     
-      if (line==message_exit)
-        return;
     }
   }
 };
@@ -431,43 +434,17 @@ int main(int argc, char **argv){
   font.setPointSize(fontsize);
   QApplication::setFont(font);
 
+  MyTimer mytimer;
   mytimer.start();
 
   QString header = QByteArray::fromBase64(argv[6]).constData();
 
   process_OpenProgress(header, rect);
 
-  ReadStdinThread read_thread;
+  ReadStdinThread read_thread(rect);
 
-  while(true){
-
-    QString line;
-    
-    do{
-      QCoreApplication::processEvents();
-      QThread::msleep(20);
-      line = read_thread.get_data();
-    }while(line == "");
-
-    //printf("LINE: -%s-. size: %d. Empty? %d\n", line.toUtf8().constData(), line.size(), line=="");
-    
-    if (line==message_exit)
-      break;
-    else if (line==message_hide) {
-      //g_progressWindow->setText("HIDING\n");
-      g_progressWindow->hide();
-    } else if (line==message_show) {
-      g_progressWindow->generate_new_text();
-      g_progressWindow->show();
-      g_progressWindow->raise();
-    } else if (g_progressWindow->isVisible()){
-      QString message = handle_rect_in_message(line, g_progressWindow);
-      process_ShowProgressMessage(message, rect);
-    }
-
-    fflush(stdout);
-  }
-
+  qApp->exec();
+  
   process_CloseProgress();
 
   read_thread.wait();
@@ -485,6 +462,17 @@ int main(int argc, char **argv){
 #include "../common/OS_settings_proc.h"
 
 #ifdef TEST_MAIN
+
+void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
+  printf("Crash: -%s-\n", fmt);
+  abort();
+}
+
+double TIME_get_ms(void){
+  return QTime::currentTime().msecsSinceStartOfDay();
+}
+
+/*
 static QPoint getCentrePosition(QWidget *parent, int width, int height){
   QRect rect;
   
@@ -500,6 +488,7 @@ static QPoint getCentrePosition(QWidget *parent, int width, int height){
 
   return QPoint(R_MAX(20, x), R_MAX(20, y));
 }
+*/
 #else
 #include "helpers.h"
 #endif
@@ -659,11 +648,16 @@ bool GFX_ProgressIsOpen(void){
 
 
 void GFX_CloseProgress(void){
+  if(g_num_open==0){    
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+  
   g_num_open--;
 
   if(g_num_open > 0)
     return;
-  
+
   if (g_process != NULL){
     send_string(message_exit);
     g_process->closeWriteChannel();
@@ -711,7 +705,7 @@ int main(int argc, char **argv){
 
   for(int i =0;i<=5;i++){
     printf("trying to show %d\n",i);
-    GFX_ShowProgressMessage((QString("ap ")+QString::number(i)).toUtf8().constData());
+    GFX_ShowProgressMessage((QString("ap ")+QString::number(i)).toUtf8().constData(), true);
     for(int i=0;i<100;i++){
       QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
       QThread::msleep(10);
