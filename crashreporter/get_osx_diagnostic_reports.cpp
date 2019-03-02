@@ -36,11 +36,11 @@ static QString get_latest_diagnostic_report(void){
   QString ret="";
   
   QDateTime start_time = QDateTime::currentDateTime();
-  QDateTime start_time_plus_40_seconds = QDateTime(start_time).addSecs(40); // we only wait 40 seconds for the file to be created
+  QDateTime start_time_plus_xx_seconds = QDateTime(start_time).addSecs(5); // we only wait 5 seconds for the file to be created
 
-  QDateTime start_time_minus_60_seconds = QDateTime(start_time).addSecs(-60);
+  QDateTime start_time_minus_xx_seconds = QDateTime(start_time).addSecs(-60);
 
-  while(QDateTime::currentDateTime() < start_time_plus_40_seconds) {
+  while(QDateTime::currentDateTime() < start_time_plus_xx_seconds) {
 
     QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
 
@@ -80,7 +80,7 @@ static QString get_latest_diagnostic_report(void){
 
       //printf("file_name: %s. Time: %s. Minus60: %s\n", file_name.toUtf8().constData(), file_time.toString("hh:mm:ss.zzz").toUtf8().constData(), start_time_minus_60_seconds.toString("hh:mm:ss.zzz").toUtf8().constData());
 
-      if (file_time < start_time_minus_60_seconds)
+      if (file_time < start_time_minus_xx_seconds)
         continue;
 
       //ret += "5\n";
