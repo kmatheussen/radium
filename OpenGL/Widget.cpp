@@ -1260,7 +1260,7 @@ private:
       juce_lock = JUCE_lock();
 
     // Swap to the newly rendered buffer
-    if ( openglContext()->hasDoubleBuffer() && g_qtgui_has_started_step2==true) {
+    if ( openglContext()->hasDoubleBuffer()) {
 
 #if USE_JUCE_CPU_PROTECTION_LOGIC
       double now;
@@ -1366,7 +1366,7 @@ public:
 
     if (handle_current)
       QGLWidget::makeCurrent();  // Not sure about this. updateEvent() is called immediately again after it returns.
-      
+
     if (g_order_pause_gl_thread.tryWait()) {
       g_ack_pause_gl_thread.notify_one();
       OS_WaitAtLeast(200);
@@ -1394,7 +1394,7 @@ public:
     ATOMIC_SET(g_has_updated_at_least_once, true);
 
 #if USE_QT5
-    if (ATOMIC_GET(_main_window_is_exposed)==false){
+    if (g_qtgui_has_started_step2==false || ATOMIC_GET(_main_window_is_exposed)==false){
       OS_WaitAtLeast(200);
       if (handle_current)
         QGLWidget::doneCurrent();
