@@ -2084,10 +2084,15 @@ protected:
     }
 
     BLOCKS_called_very_often();
-    
-    if (is_called_every_ms(100))
-      MIXERSTRIP_call_regularly();
 
+    if (num_calls_at_this_point < 100) {
+      if (is_called_every_ms(20))
+        MIXERSTRIP_call_regularly();
+    } else {
+      if (is_called_every_ms(100))
+        MIXERSTRIP_call_regularly();
+    }
+    
     API_call_very_often();
 
     THREADING_call_very_often();
@@ -3417,7 +3422,8 @@ static int gc_has_static_roots_func(
   #endif
 
   printf("   ===== has_static_roots: -%s-, %fMB (%f). is_main: %d.  (%p). argv0: -%s-\n", dlpi_name, (double)total / (1024*1024.0), (double)size / (1024*1024.0), is_main_root, p, executable_path);
-  //getchar();
+  if(is_main_root)
+    getchar();
   //abort();
 #endif
   
