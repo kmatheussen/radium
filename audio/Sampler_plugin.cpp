@@ -143,12 +143,14 @@ enum{
   EFF_PINGPONG,
 
   EFF_GRAN_onoff,
-  EFF_GRAN_stretch,
+  EFF_GRAN_coarse_stretch,
+  EFF_GRAN_fine_stretch,
   EFF_GRAN_overlap,
   EFF_GRAN_length,
   EFF_GRAN_ramp,
   EFF_GRAN_jitter,
   EFF_GRAN_strict_no_jitter,
+  EFF_GRAN_volume,
 
   EFF_NUM_EFFECTS,
   };
@@ -157,6 +159,23 @@ enum{
 
 
 namespace{
+
+namespace{
+  struct ResettableGranResamplerCallback : public radium::GranResamplerCallback{
+    virtual void reset(void) = 0;
+  };
+}
+
+
+  /*
+
+static void RT_release_granulator(radium::Granulator *granulator){
+  
+}
+static radium::Granulator *RT_get_granulator(void){
+  
+}
+  */
   
 struct Data;
 
@@ -190,11 +209,6 @@ struct Sample{
   }
 };
 
-namespace{
-  struct ResettableGranResamplerCallback : public radium::GranResamplerCallback{
-    virtual void reset(void) = 0;
-  };
-}
 
 // A voice object points to only one sample. Stereo-files uses two voice objects. Soundfonts using x sounds to play a note, need x voice objects to play that note.
 //
@@ -232,7 +246,7 @@ struct Voice{
 
   bool reverse = 0;
 
-  ResettableGranResamplerCallback *_get_samples;
+  std::unique_ptr<ResettableGranResamplerCallback> _get_samples;
   
   radium::Granulator *_granulator;
   radium::Resampler2 *_resampler2;
@@ -324,7 +338,12 @@ struct CopyData {
   float tremolo_speed;
 
   DEFINE_ATOMIC(bool, gran_enabled);
+
+  double gran_coarse_stretch;
+  double gran_fine_stretch;
+  float gran_volume;
 };
+
 
  
 enum{
@@ -482,6 +501,9 @@ struct MySampleRecorderInstance : radium::SampleRecorderInstance{
 
 
 } // end anon. namespace
+
+static bool get_granulation_enabled(Data *data);
+
 
 
 #if 0
@@ -1057,9 +1079,19 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
     voice = next;
   }
 
-  if (was_playing_something)
+  if (was_playing_something){
     data->tremolo->type->RT_process(data->tremolo, time, R_NUM_FRAMES, outputs, outputs);
-
+    if(ATOMIC_GET_RELAXED(data->p.gran_enabled)){
+      float gran_volume = data->p.gran_volume;
+      if (gran_volume != 0.0){
+        gran_volume = db2gain(gran_volume);
+        for(int ch=0;ch<2;ch++)
+          for(int i=0;i<R_NUM_FRAMES;i++)
+            outputs[ch][i] *= gran_volume;
+      }
+    }
+  }
+  
   Data *new_data = ATOMIC_GET(data->new_data);
   
   if(new_data != NULL){
@@ -1197,7 +1229,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
       
     } else {
       
-      voice->_resampler2->set_callback(voice->_get_samples);
+      voice->_resampler2->set_callback(voice->_get_samples.get());
       
     }
     
@@ -1368,7 +1400,7 @@ static int time_to_frame(Data *data, double time, float f_note_num){
   const Sample *sample = note->samples.at(0);
 
   double src_ratio = RT_get_src_ratio2(data, sample, f_note_num);
-  double stretch = gran_get_stretch(data);
+  double stretch = get_granulation_enabled(data) ? gran_get_stretch(data) : 1.0;
  
   return
     data->p.startpos*sample->num_frames 
@@ -1628,13 +1660,16 @@ static int get_peaks(struct SoundPlugin *plugin,
 /************* Granulation *****************/
 
 #define MIN_stretch 0.01
-#define MAX_stretch 100
+#define MAX_stretch 100.0
+
+#define MIN_fine_stretch 0.25
+#define MAX_fine_stretch 4.0
 
 #define MIN_overlap 0.1
 #define MAX_overlap 50.0
 
 #define MIN_length 0.1
-#define MAX_length 1000
+#define MAX_length 1000.0
 
 #define MIN_ramp 0.0
 #define MAX_ramp 0.5
@@ -1642,14 +1677,18 @@ static int get_peaks(struct SoundPlugin *plugin,
 #define MIN_jitter 0.0
 #define MAX_jitter 1.0
 
+#define MIN_volume MIN_DB
+#define MAX_volume MAX_DB
+
 #define ALL_GRAN_CASES()                              \
   GRAN_CASE(overlap);                                 \
   GRAN_CASE(length);                                  \
   GRAN_CASE(ramp);                                    \
   GRAN_CASE(jitter);                                  \
+  GRAN_CASE(volume);                                  \
   
 
-static void set_granulation_enabled(Data *data, bool enabled){
+static void set_granulation_enabled(SoundPlugin *plugin, Data *data, bool enabled){
   bool is_enabled = ATOMIC_GET_RELAXED(data->p.gran_enabled);
   if (enabled==is_enabled)
     return;
@@ -1664,16 +1703,20 @@ static void set_granulation_enabled(Data *data, bool enabled){
   } else {
     
     for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next)
-      voice->_resampler2->set_callback(voice->_get_samples);
+      voice->_resampler2->set_callback(voice->_get_samples.get());
     
   }
 
   ATOMIC_SET(data->p.gran_enabled, enabled);
+
+  update_editor_graphics(plugin);
 }
 
 static bool get_granulation_enabled(Data *data){
-  return ATOMIC_GET(data->p.gran_enabled);
+  return ATOMIC_GET_RELAXED(data->p.gran_enabled);
 }
+
+
 
 
 #define GRAN_FUNCS(Methodname)                                          \
@@ -1710,6 +1753,35 @@ static void gran_set_length(Data *data, double val){
 
 static double gran_get_length(Data *data){
   return frames_to_ms(gran_get_grain_length(data));
+}
+
+  
+static void gran_set_coarse_stretch(Data *data, double val){
+  //printf("               2. SETTING stretch to %f\n", val);
+  data->p.gran_coarse_stretch = val;
+  gran_set_stretch(data, data->p.gran_coarse_stretch * data->p.gran_fine_stretch);
+}
+
+static double gran_get_coarse_stretch(Data *data){
+  return data->p.gran_coarse_stretch;
+}
+
+static void gran_set_fine_stretch(Data *data, double val){
+  data->p.gran_fine_stretch = val;
+  gran_set_stretch(data, data->p.gran_coarse_stretch * data->p.gran_fine_stretch);
+}
+
+static double gran_get_fine_stretch(Data *data){
+  return data->p.gran_fine_stretch;
+}
+
+// val between MIN_DB and MAX_DB
+static void gran_set_volume(Data *data, float val){
+  data->p.gran_volume = val;
+}
+
+static float gran_get_volume(Data *data){
+  return data->p.gran_volume;
 }
 
   
@@ -1891,14 +1963,24 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       break;
 
     case EFF_GRAN_onoff:
-      set_granulation_enabled(data, value >= 0.5);
+      set_granulation_enabled(plugin, data, value >= 0.5);
       break;
       
-    case EFF_GRAN_stretch:
+    case EFF_GRAN_coarse_stretch:
       if (value < 0.5)
-        gran_set_stretch(data, scale_double(value, 0, 0.5, MIN_stretch, 1.0));
+        gran_set_coarse_stretch(data, 1.0 / scale_double(value, 0.5, 0.0, 1.0, MAX_stretch));
+      //gran_set_stretch(data, scale_double(value, 0, 0.5, MIN_stretch, 1.0));
       else
-        gran_set_stretch(data, scale_double(value, 0.5, 1.0, 1.0, MAX_stretch));
+        gran_set_coarse_stretch(data, scale_double(value, 0.5, 1.0, 1.0, MAX_stretch));
+      update_editor_graphics(plugin);
+      break;
+
+      case EFF_GRAN_fine_stretch:
+      if (value < 0.5)
+        gran_set_fine_stretch(data, 1.0 / scale_double(value, 0.5, 0.0, 1.0, MAX_fine_stretch));
+      //gran_set_stretch(data, scale_double(value, 0, 0.5, MIN_stretch, 1.0));
+      else
+        gran_set_fine_stretch(data, scale_double(value, 0.5, 1.0, 1.0, MAX_fine_stretch));
       update_editor_graphics(plugin);
       break;
 
@@ -1992,11 +2074,17 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       break;
 
     case EFF_GRAN_onoff:
-      set_granulation_enabled(data, value >= 0.5);
+      set_granulation_enabled(plugin, data, value >= 0.5);
       break;
 
-    case EFF_GRAN_stretch:
-      gran_set_stretch(data, value);
+    case EFF_GRAN_coarse_stretch:
+      //printf("               SETTING stretch to %f\n", value);
+      gran_set_coarse_stretch(data, value);
+      update_editor_graphics(plugin);
+      break;
+
+    case EFF_GRAN_fine_stretch:
+      gran_set_fine_stretch(data, value);
       update_editor_graphics(plugin);
       break;
 
@@ -2100,13 +2188,23 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return get_granulation_enabled(data)==true?1.0f:0.0f;
       break;
 
-    case EFF_GRAN_stretch:
+    case EFF_GRAN_coarse_stretch:
       {
-        float stretch = gran_get_stretch(data);
+        float stretch = gran_get_coarse_stretch(data);
         if (stretch < 1.0)
-          return scale(stretch, MIN_stretch, 1.0, 0, 0.5);
+          return scale(1.0 / stretch, 1.0, MAX_stretch, 0.5, 0.0);
         else
           return scale(stretch, 1.0, MAX_stretch, 0.5, 1.0);
+      }
+      break;
+      
+    case EFF_GRAN_fine_stretch:
+      {
+        float stretch = gran_get_fine_stretch(data);
+        if (stretch < 1.0)
+          return scale(1.0 / stretch, 1.0, MAX_fine_stretch, 0.5, 0.0);
+        else
+          return scale(stretch, 1.0, MAX_fine_stretch, 0.5, 1.0);
       }
       break;
       
@@ -2174,8 +2272,12 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return get_granulation_enabled(data)==true?1.0f:0.0f;
       break;
       
-    case EFF_GRAN_stretch:
-      return gran_get_stretch(data);
+    case EFF_GRAN_coarse_stretch:
+      return gran_get_coarse_stretch(data);
+      break;
+
+    case EFF_GRAN_fine_stretch:
+      return gran_get_fine_stretch(data);
       break;
 
 #define GRAN_CASE(Name)                                                 \
@@ -2256,9 +2358,25 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     snprintf(buffer,buffersize-1,"%d samples",safe_int_read(&data->p.crossfade_length));
     break;
 
-  case EFF_GRAN_stretch:
-    snprintf(buffer,buffersize-1,"%.2fX",gran_get_stretch(data));
-    break;
+  case EFF_GRAN_coarse_stretch:
+    {
+      double stretch = gran_get_coarse_stretch(data);
+      if (stretch < 1.0)
+        snprintf(buffer,buffersize-1,"1/%.2fX" , 1.0 / stretch);
+      else
+        snprintf(buffer,buffersize-1,"%.2fX" , stretch);
+      break;
+    }
+    
+  case EFF_GRAN_fine_stretch:
+    {
+      double stretch = gran_get_fine_stretch(data);
+      if (stretch < 1.0)
+        snprintf(buffer,buffersize-1,"1/%.2fX" , 1.0 / stretch);
+      else
+        snprintf(buffer,buffersize-1,"%.2fX" , stretch);
+      break;
+    }
     
   case EFF_GRAN_overlap:
     snprintf(buffer, buffersize-1, "%.2fX", gran_get_overlap(data));
@@ -2274,6 +2392,10 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     
   case EFF_GRAN_jitter:
     snprintf(buffer, buffersize-1, "%.2f%%", 100.0*gran_get_jitter(data));
+    break;
+    
+  case EFF_GRAN_volume:
+    set_db_display(buffer, buffersize, gran_get_volume(data));
     break;
     
   default:
@@ -2485,6 +2607,11 @@ namespace{
       : _voice(voice)
     {}
 
+    ~GetSampleCallback(){
+      //printf("        YES %d\n", _voice.voice_num);
+      //getchar();
+    }
+          
     int _buffer_size = 0;
     float *_buffer;
 
@@ -2530,11 +2657,15 @@ static void init_voice(Data *data, Voice &voice){
   voice.adsr = ADSR_create(data->samplerate);
   RT_add_voice(&data->voices_not_playing, &voice);
 
+  R_ASSERT(voice._get_samples.get()==NULL);
+  
   auto *get_samples = new GetSampleCallback(voice);
-  voice._get_samples = get_samples;
+  voice._get_samples = std::unique_ptr<GetSampleCallback>(get_samples);
 
+  double max_frames_between_grains = R_MIN(pc->pfreq*2, ms_to_frames(MAX_length / MIN_overlap)); // Don"t need more than 1 second between each grain. Just fail if trying to add more (possibly audible failure, not error message). Probably bad for CPU cache to allocate more than 1 second. Without the R_MIN, we would have allocated 10 seconds.
+    
   voice._resampler2 = new radium::Resampler2(1, data->resampler_type, get_samples);
-  voice._granulator = new radium::Granulator(44100, 100000, 50, 1, get_samples);
+  voice._granulator = new radium::Granulator(ms_to_frames(MAX_length), max_frames_between_grains, MAX_overlap, 1, get_samples);
 
   voice._granresampler = voice._resampler2;
   
@@ -2552,7 +2683,6 @@ static void release_voice(Voice &voice){
 
   delete voice._resampler2;
   delete voice._granulator;
-  delete voice._get_samples;
 }
 
 
@@ -2608,7 +2738,10 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
     data->p.r=DEFAULT_R;
 
     data->p.vibrato_phase_add = -1;
-        
+    
+    data->p.gran_coarse_stretch = 1;
+    data->p.gran_fine_stretch = 1;
+
   }else{
 
     memcpy(&data->p, &old_data->p, sizeof(CopyData));
@@ -2794,6 +2927,11 @@ static bool set_new_sample(struct SoundPlugin *plugin,
   
   // Put loop_onoff into storage.
   PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+
+
+  // Apply granulation parameters from old data.
+  data->voices[0]._granulator->apply_parameters(*old_data->voices[0]._granulator);
+
 
   if(SP_is_plugin_running(plugin)){
 
@@ -3050,8 +3188,10 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     return "Ping-Pong Loop";
   case EFF_GRAN_onoff:
     return "Granulate";
-  case EFF_GRAN_stretch:
+  case EFF_GRAN_coarse_stretch:
     return "Gran. Stretch";
+  case EFF_GRAN_fine_stretch:
+    return "Gran. Fine Stretch";
   case EFF_GRAN_overlap:
     return "Grain Overlap";
   case EFF_GRAN_length:
@@ -3062,6 +3202,8 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     return "Gran. Jitter";
   case EFF_GRAN_strict_no_jitter:
     return "Gran. Strict no Jitter";
+  case EFF_GRAN_volume:
+    return "Gran. Volume";
   default:
     RError("S6. Unknown effect number %d\n",effect_num);
     return NULL;
@@ -3080,36 +3222,41 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
 static const char *get_effect_description(struct SoundPlugin *plugin, int effect_num){
   //Data *data=(Data*)plugin->data;
 
-#define STUFF ".\n\nOpen GUI to visualize."
+#define STUFF "\n\nOpen GUI to visualize."
   
   switch(effect_num){
-  case EFF_GRAN_onoff:
-    return "Enable granular synthesis. Granular synthesis cuts the sound into smaller pieces (\"grains\") and plays them back in various ways";
-  case EFF_GRAN_stretch:
-    return "How much to stretch the sound";
-  case EFF_GRAN_overlap:
-    return "How much each grain overlap on average" STUFF;
-  case EFF_GRAN_length:
-    return "The duration of each grain" STUFF;
-  case EFF_GRAN_ramp:
-    return "The fade in / fade out duration of each grain. 33%, or thereabout, usually works well." STUFF;
-  case EFF_GRAN_jitter:
-    return "A jitter of 0% means a juniform distribution of the grains. A higher jitter value should reduce comb filter effects." STUFF;
-  case EFF_GRAN_strict_no_jitter:
-    return
-      "Strict no jitter when jitter is 0.00%.\n"
-      "\n"
-      "If set, the distance between the start of all grains will always be the same when jitter is 0.00%.\n"
-      "\n"
-      "The duration of the generated sound will be slightly wrong if this mode is set,\n"
-      "but the sound will contain a purer comb filter effect, if you are looking for that effect.\n"
-      "\n"
-      "If this mode is not set, the distances will differ in size by at most 1 frame in such a way\n"
-      "that the total duration of the generated sound will be correct, at the cost of a less pure\n"
-      "comb filter effect.\n"
-      "\n"
-      "It's easier to hear the difference if overlap is set high, and grain length is set low."
-      ;
+    case EFF_GRAN_onoff:
+      return "Enable granular synthesis.\n"
+        "Granular synthesis cuts the sound into smaller pieces (\"grains\") and plays them back in various ways." STUFF;
+    case EFF_GRAN_coarse_stretch:
+      return "How much to stretch the sound (coarse)";
+    case EFF_GRAN_fine_stretch:
+      return "How much to stretch the sound (fine)";
+    case EFF_GRAN_overlap:
+      return "How much each grain overlap on average." STUFF;
+    case EFF_GRAN_length:
+      return "The duration of each grain." STUFF;
+    case EFF_GRAN_ramp:
+      return "The fade in / fade out duration of each grain. 33%, or thereabout, usually works well." STUFF;
+    case EFF_GRAN_jitter:
+      return "A jitter of 0% means a juniform distribution of the grains. A higher jitter value should reduce comb filter effects." STUFF;
+    case EFF_GRAN_strict_no_jitter:
+      return
+        "Strict no jitter when jitter is 0.00%.\n"
+        "\n"
+        "If set, the distance between the start of all grains will always be the same when jitter is 0.00%.\n"
+        "\n"
+        "The duration of the generated sound will be slightly wrong if this mode is set,\n"
+        "but the sound will contain a purer comb filter effect, if you are looking for that effect.\n"
+        "\n"
+        "If this mode is not set, the distances will differ in size by at most 1 frame in such a way\n"
+        "that the total duration of the generated sound will be correct, at the cost of a less pure\n"
+        "comb filter effect.\n"
+        "\n"
+        "It's easier to hear the difference if overlap is set high, and grain length is set low."
+        ;
+    case EFF_GRAN_volume:
+      return "Volume compensation for granulation.";
   }
   
   return "";

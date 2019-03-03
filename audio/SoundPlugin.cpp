@@ -856,7 +856,7 @@ const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_t
 }
 */
 
-static void set_db_display(char *buffer, int buffersize, float value){
+static void set_db_display2(char *buffer, int buffersize, float value){
   float db = gain_2_db(value,MIN_DB,MAX_DB);
   
   if(db==MIN_DB)
@@ -891,7 +891,7 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     case EFFNUM_BUS3:
     case EFFNUM_BUS4:
     case EFFNUM_BUS5:
-      set_db_display(buffer,buffersize,store_value);
+      set_db_display2(buffer,buffersize,store_value);
       break;
       
     case EFFNUM_EQ1_GAIN:
