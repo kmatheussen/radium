@@ -211,28 +211,30 @@
   (define ret (create-granular-vizualization-gui
                (* (get-fontheight) 10)
                (lambda (gui width height)
-                 (when (<ra> :instrument-is-open instrument-id)
-                   (visualize-sample-player-granulation-parameters gui 0 0 width height instrument-id)
-                   (<gui> :do-alpha gui 1.0 (lambda ()
-                                              (<gui> :draw-text gui
-                                                     "green"
-                                                     "Granulation"
-                                                     0 0 width (get-fontheight)
-                                                     #f ;;wrap
-                                                     #f ;;align top
-                                                     #f ;; align left
-                                                     )))))))
+                 (if (not (<ra> :instrument-is-open instrument-id))
+                     (<gui> :close gui)
+                     (begin
+                       (visualize-sample-player-granulation-parameters gui 0 0 width height instrument-id)
+                       (<gui> :do-alpha gui 1.0 (lambda ()
+                                                  (<gui> :draw-text gui
+                                                         "green"
+                                                         "Granulation"
+                                                         0 0 width (get-fontheight)
+                                                         #f ;;wrap
+                                                         #f ;;align top
+                                                         #f ;; align left
+                                                         ))))))))
 
   (<gui> :set-takes-keyboard-focus ret #f)
   (<gui> :set-parent ret -1)
   ;;(<gui> :show ret)
-  (<ra> :schedule 100
-        (lambda ()
-          (if (<gui> :is-open ret)
-              (begin
-                (<gui> :update ret)
-                60)
-              #f)))
+  ;;(<ra> :schedule 100
+  ;;      (lambda ()
+  ;;        (if (<gui> :is-open ret)
+  ;;            (begin
+  ;;              (<gui> :update ret)
+  ;;              60)
+  ;;            #f)))
   ret)
 
 

@@ -75,7 +75,7 @@ class AudioPickupBuffer{
 
   int64_t _start_pos_global_pos = 0;
   
-  AudioPickuper *_sample_up_picker;
+  AudioPickuper *_sample_up_picker = NULL;
 
   const int _size;
   
@@ -99,6 +99,10 @@ public:
     V_free(_data);
   }
 
+  void set_sample_up_picker(AudioPickuper *sample_up_picker){
+    _sample_up_picker = sample_up_picker;
+  }
+  
   void reset(void){
     _start_pos = 0;
     _end_pos = 0;
@@ -400,21 +404,37 @@ public:
   }
 };
 
+struct GranulatorParameters{
+  double jitter;
+  bool strict_no_jitter;
 
-class Granulator : public GranResampler{
+  double overlap;
+  double grain_length;
+  double stretch;
+  double ramp;
+
+  GranulatorParameters(){
+    reset();
+  }
+  
+  void reset(){
+    jitter = 0.5; // 0 -> 1
+    strict_no_jitter = false;
+    overlap = 3.0;
+    grain_length = 2009; // in frames
+    stretch = 1.0;
+    ramp = 0.3; // 0 -> 0.5
+  }
+};
+  
+class Granulator : public GranResampler{  
   Grain *_grains;
 
   radium::Vector<Grain*> _free_grains;
   radium::Vector<Grain*> *_playing_grains;
-  
-  double _jitter = 0.5; // 0 -> 1
-  bool _using_jitter = true;
-  bool _strict_no_jitter = false;
 
-  double _overlap = 1.0;
-  double _grain_length = 2009; // in frames
-  double _stretch = 1.0;
-  double _ramp = 0.3; // 0 -> 0.5
+  GranulatorParameters _p;
+  bool _using_jitter = true;
 
   double _write_frames_between_grains = 600;
   double _read_frames_between_grains = 600;
@@ -434,10 +454,14 @@ class Granulator : public GranResampler{
   radium::Random _random;
 
   bool _is_processing = false; // is true if last ch for RT_process was not equal to _num_ch-1.
-  
 
+  
 public:
 
+  Granulator *_next; // Used by the sample player which reuses Granulator instances by putting them in a pool.
+
+  Granulator(const Granulator&) = delete;
+  Granulator& operator=(const Granulator&) = delete;
     
   Granulator(int max_grain_length, int max_frames_between_grains, int max_overlap, int num_ch, AudioPickuper *sample_up_picker)
     : GranResampler(num_ch, NULL)
@@ -455,7 +479,8 @@ public:
     for(int ch=0;ch<num_ch;ch++)
       _playing_grains[ch].reserve(num_grains); // It's a bit unclear how many grains there will be per channel, so we just reserve num_grains to be sure it's enough. (got error when using 1+num_grains/2).
 
-    reset();
+    if(sample_up_picker != NULL)
+      reset();
   }
 
   ~Granulator(){
@@ -469,12 +494,22 @@ public:
     delete[] _playing_grains;
   }
 
+  void set_sample_up_picker(AudioPickuper *sample_up_picker){
+    _sample_up_picker = sample_up_picker;
+    _pickup_buffer.set_sample_up_picker(sample_up_picker);
+  }
+
+  AudioPickuper *get_sample_up_picker(void) const {
+    return _sample_up_picker;
+  }
+
+  
 private:
 
   void increase_write_and_read_pos(void){
     if (!_using_jitter){
       
-      if (_strict_no_jitter) {
+      if (_p.strict_no_jitter) {
         _global_write_pos_of_next_frame += R_MAX(1, round(_write_frames_between_grains));
         _global_read_pos_of_next_frame += R_MAX(1, round(_read_frames_between_grains));
       } else {
@@ -492,7 +527,7 @@ private:
       }
       
       _global_write_pos_of_next_frame += to_dec;
-      _global_read_pos_of_next_frame += to_dec/_stretch;
+      _global_read_pos_of_next_frame += to_dec/_p.stretch;
       
     }
   }
@@ -503,17 +538,17 @@ private:
     const bool hop_changed = length_changed || overlap_changed;
     
     if (hop_changed)
-      _write_frames_between_grains = _grain_length / _overlap;
+      _write_frames_between_grains = _p.grain_length / _p.overlap;
 
     if (hop_changed || stretch_changed)
-      _read_frames_between_grains = _write_frames_between_grains / _stretch;
+      _read_frames_between_grains = _write_frames_between_grains / _p.stretch;
 
     if (jitter_changed)
-      _using_jitter = _jitter>0.001;
+      _using_jitter = _p.jitter>0.001;
 
     if (_using_jitter && (hop_changed || jitter_changed)) {
 
-      const double jittered = _write_frames_between_grains * _jitter;
+      const double jittered = _write_frames_between_grains * _p.jitter;
       const double mi = _write_frames_between_grains - jittered;
       const double ma = _write_frames_between_grains + jittered;
       
@@ -534,82 +569,82 @@ private:
 public:
 
   void set_strict_no_jitter(bool strict_no_jitter){
-    if (strict_no_jitter != _strict_no_jitter)
-      _strict_no_jitter = strict_no_jitter;
+    if (strict_no_jitter != _p.strict_no_jitter)
+      _p.strict_no_jitter = strict_no_jitter;
   }
 
   bool get_strict_no_jitter(void) const {
-    return _strict_no_jitter;
+    return _p.strict_no_jitter;
   }
     
   void set_overlap(double overlap){
     R_ASSERT(_is_processing==false);
-    if (overlap==_overlap)
+    if (overlap==_p.overlap)
       return;
     
-    _overlap = overlap;
+    _p.overlap = overlap;
 
     set_frames_between_grains(false, true, false, false);
   }
 
   double get_overlap(void) const {
-    return _overlap;
+    return _p.overlap;
   }
   
   void set_grain_length(double grain_length){
     R_ASSERT(_is_processing==false);
 
-    if (grain_length == _grain_length)
+    if (grain_length == _p.grain_length)
       return;
 
     //printf("Setting grain length to %fms\n", frames_to_ms(grain_length));
-    _grain_length = grain_length;
+    _p.grain_length = grain_length;
 
     set_frames_between_grains(true, false, false, false);
   }
 
   double get_grain_length(void) const {
-    return _grain_length;
+    return _p.grain_length;
   }
 
   void set_stretch(double stretch){
     R_ASSERT(_is_processing==false);
 
-    if (stretch == _stretch)
+    if (stretch == _p.stretch)
       return;
 
-    _stretch = stretch;
+    _p.stretch = stretch;
 
     set_frames_between_grains(false, false, true, false);
   }
 
   double get_stretch(void) const {
-    return _stretch;
+    return _p.stretch;
   }
 
   void set_jitter(double jitter){
     R_ASSERT(_is_processing==false);
     R_ASSERT_RETURN_IF_FALSE(jitter >= 0 && jitter <= 1);
 
-    if (jitter == _jitter)
+    if (jitter == _p.jitter)
       return;
 
-    _jitter = jitter;
+    _p.jitter = jitter;
     set_frames_between_grains(false, false, false, true);
   }
 
   double get_jitter(void) const {
-    return _jitter;
+    return _p.jitter;
   }
 
   void set_ramp(double ramp){
     R_ASSERT(_is_processing==false);
     R_ASSERT_RETURN_IF_FALSE(ramp >= 0 && ramp <= 0.5);
-    _ramp = ramp;
+    _p.ramp = ramp;
   }
 
   double get_ramp(void) const {
-    return _ramp;
+    return _p.ramp;
   }
 
 
@@ -636,30 +671,26 @@ private:
     _last_global_read_pos = 0;
 
     _random.reset();
-    
+
     _pickup_buffer.reset();
   }
 
 
-  void apply_parameters_step1(const Granulator &from){
-    _jitter = from._jitter;
-    _using_jitter = from._using_jitter;
-    _strict_no_jitter = from._strict_no_jitter;
-    _write_frames_between_grains = from._write_frames_between_grains;
-    _read_frames_between_grains = from._read_frames_between_grains;
-    _overlap = from._overlap;
-    _grain_length = from._grain_length;
-    _stretch = from._stretch;
-    _ramp = from._ramp;
+  void apply_parameters_step1(const GranulatorParameters &parms){
+    _p = parms;
   }
 
   
 public:
   
-  void apply_parameters_and_reset(const Granulator &from){
+  void apply_parameters_and_reset(const GranulatorParameters &parms){
     reset_step1(false);
-    apply_parameters_step1(from);
+    apply_parameters_step1(parms);
     set_frames_between_grains(true, true, true, true, true);
+  }
+
+  void apply_parameters_and_reset(const Granulator &from){
+    apply_parameters_and_reset(from._p);
   }
 
   void reset(bool reset_parameters = true){
@@ -667,15 +698,7 @@ public:
     
     if(reset_parameters){
       
-      _jitter = 0.5; // 0 -> 1
-      _using_jitter = true;
-      _strict_no_jitter = false;
-      _write_frames_between_grains = 600;
-      _read_frames_between_grains = 600;
-      _overlap = 1.0;
-      _grain_length = 2009; // in frames
-      _stretch = 1.0;
-      _ramp = 0.3; // 0 -> 0.5
+      _p.reset();
 
       set_frames_between_grains(true, true, true, true, true);
 
@@ -688,7 +711,7 @@ public:
   }
 
   void apply_parameters(const Granulator &from){
-    apply_parameters_step1(from);
+    apply_parameters_step1(from._p);
 
     set_frames_between_grains(true, true, true, true);
   }
@@ -710,13 +733,13 @@ private:
 #if 0 //!defined(RELEASE)
       static int last_write_dx = 0;
       static int last_read_dx = 0;
-      //printf("    grainread: %d (dx: %d %d) (wait: %d (%f)) (this: %p)\n", (int)_global_read_pos_of_next_frame, (int)(_global_read_pos_of_next_frame-last_global_read_pos), (int)(_global_write_pos_of_next_frame-last_global_write_pos), wait, (wait / _stretch), this);
+      //printf("    grainread: %d (dx: %d %d) (wait: %d (%f)) (this: %p)\n", (int)_global_read_pos_of_next_frame, (int)(_global_read_pos_of_next_frame-last_global_read_pos), (int)(_global_write_pos_of_next_frame-last_global_write_pos), wait, (wait / _p.stretch), this);
       int write_dx = (int)_global_write_pos_of_next_frame - (int)_last_global_write_pos;
       int read_dx = (int)_global_read_pos_of_next_frame - (int)_last_global_read_pos;
 
       if (!_using_jitter)
         if (write_dx != last_write_dx || read_dx != last_read_dx){
-          if (_strict_no_jitter || abs(write_dx-last_write_dx)>1 || abs(read_dx-last_read_dx)>1)
+          if (_p.strict_no_jitter || abs(write_dx-last_write_dx)>1 || abs(read_dx-last_read_dx)>1)
             printf("    dx differs: Read:%d %d. Write: %d %d\n", read_dx, last_read_dx, write_dx, last_write_dx);
         }
       
@@ -731,7 +754,7 @@ private:
         if (_free_grains.size() > 0){
           Grain *grain = _free_grains.pop_back();
 
-          grain->init(_ramp, _grain_length, _global_read_pos_of_next_frame, wait);
+          grain->init(_p.ramp, _p.grain_length, _global_read_pos_of_next_frame, wait);
           _playing_grains[ch].push_back(grain);
             
           //if(ch==1)
@@ -811,7 +834,7 @@ public:
 
     if (is_ch0) {
       _global_write_pos += num_samples;
-      _global_read_pos += (double)num_samples / _stretch;
+      _global_read_pos += (double)num_samples / _p.stretch;
     }
     
     if (is_last_ch)

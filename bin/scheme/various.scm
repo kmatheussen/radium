@@ -119,7 +119,7 @@
       (for-each (lambda (n target)
                   (define target-id (target :instrument-id))
                   (define target-effect-num (target :effect-num))
-                  (define effect-name (<ra> :get-instrument-effect-name target-effect-num target-id))
+                  (define effect-name (target :effect-name))
                   (create-row! n target-id target-effect-num effect-name))
                 (iota (length targets))
                 targets)
