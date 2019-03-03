@@ -474,7 +474,6 @@ struct Data{
   radium::Vector<float> min_recording_peaks[2];
   radium::Vector<float> max_recording_peaks[2];
 
-  int64_t guinum = -1;
   QPointer<QWidget> gui;
   DEFINE_ATOMIC(int, rtwidget_pos) = -1;
   
@@ -1776,10 +1775,11 @@ static bool get_granulation_enabled(Data *data){
   template<typename Type> static void gran_set_##Methodname(Data *data, Type val){ \
     R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());             \
                                                                         \
-    data->p.gran_parms.Methodname = val;                                 \
+    data->p.gran_parms.Methodname = val;                                \
                                                                         \
     for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next) \
-      voice->_granulator->set_##Methodname(val);                        \
+      if(voice->_granulator != NULL)                                    \
+        voice->_granulator->set_##Methodname(val);                      \
                                                                         \
     RT_RTWIDGET_mark_needing_update(ATOMIC_GET_RELAXED(data->rtwidget_pos)); \
   }                                                                     \
@@ -2976,6 +2976,13 @@ static bool set_new_sample(struct SoundPlugin *plugin,
 
   }
 
+
+  {
+    data->gui = old_data->gui.data();
+    ATOMIC_SET_RELAXED(data->rtwidget_pos, ATOMIC_GET(old_data->rtwidget_pos));
+    old_data->gui = NULL;
+  }
+  
   delete_data(old_data);
 
   update_editor_graphics(plugin);
@@ -3308,9 +3315,9 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
                                      
     struct Patch *patch = (struct Patch*)plugin->patch;
     
-    data->guinum = S7CALL2(int_int, "FROM_C-create-granular-vizualization-gui-for-sample-player", patch->id);
+    int64_t guinum = S7CALL2(int_int, "FROM_C-create-granular-vizualization-gui-for-sample-player", patch->id);
 
-    data->gui = API_gui_get_widget(data->guinum);
+    data->gui = API_gui_get_widget(guinum);
 
     ATOMIC_SET_RELAXED(data->rtwidget_pos, RTWIDGET_allocate_slot(data->gui.data()));
   }
