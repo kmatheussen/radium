@@ -2970,7 +2970,10 @@ int addFxnode(float value, Place place, int fxnum, int tracknum, int blocknum, i
 
   if (ret==-1){
     //handleError("addFxnode: Can not create new fx with the same position as another fx");
-    UNDO_CANCEL_LAST_UNDO();
+    //printf("   UNDOING CANCEL\n");
+    if (Undo_Is_Open()==false)
+      UNDO_CANCEL_LAST_UNDO();
+
     return -1;
   }
 
