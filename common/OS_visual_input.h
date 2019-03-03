@@ -40,7 +40,7 @@ extern LANGSPEC void RT_message_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1
 #define RT_message(...) do{donothing(0 && printf(__VA_ARGS__)); RT_message_internal(__VA_ARGS__);}while(0) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
 
 #if USE_QT4
-#include <QWidget>
+class QWidget;
 void RT_RTWIDGET_mark_needing_update(int pos);
 int RTWIDGET_allocate_slot(QWidget *widget);
 void RTWIDGET_release_slot(int pos);
