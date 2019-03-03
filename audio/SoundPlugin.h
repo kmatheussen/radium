@@ -97,6 +97,15 @@ static inline float db2gain(float db){
   }
 }
 
+static inline void set_db_display(char *buffer, int buffersize, float db){
+  if(db==MIN_DB)
+    snprintf(buffer,buffersize-1,"-inf dB");
+  else if (db>-0.01 && db<0.01)
+    snprintf(buffer,buffersize-1,"0.00 dB");
+  else
+    snprintf(buffer,buffersize-1,"%s%.2f dB", db<0.0f?"":"+", db);
+}
+
   
 #define NUM_AB 8
   
