@@ -118,11 +118,11 @@ class Spinlock {
   
   SPINLOCK_TYPE _lock;
 
+public:
+
 # if !defined(RELEASE)
   bool _holds_lock = false;
 # endif
-
-public:
 
   Spinlock(){
     SPINLOCK_INIT(_lock);

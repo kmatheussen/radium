@@ -236,7 +236,49 @@ bool g_qtgui_exec_has_started = false;
 bool g_qtgui_has_stopped = false;
 bool g_program_has_ended = false;
 
+#define RTWIDGET_SIZE 50
+static QPointer<QWidget> g_rtwidgets[RTWIDGET_SIZE];
+static bool g_widgets_needing_update[RTWIDGET_SIZE] = {};
 
+void RT_RTWIDGET_mark_needing_update(int pos){
+  if(pos==-1)
+    return;
+
+  R_ASSERT_NON_RELEASE(pos>=0 && pos<RTWIDGET_SIZE);
+  
+  safe_bool_write(&g_widgets_needing_update[pos], true);
+}
+
+void RTWIDGET_release_slot(int pos){
+  R_ASSERT_NON_RELEASE(g_rtwidgets[pos].data() != NULL);
+  g_rtwidgets[pos] = NULL;
+}
+
+int RTWIDGET_allocate_slot(QWidget *widget){
+  for(int i=0;i<RTWIDGET_SIZE;i++)
+    if (g_rtwidgets[i].data()==NULL){
+      g_rtwidgets[i] = widget;
+      //printf("POSITIOINING AT pos %d. Widget: %p. (%p)\n", i, g_rtwidgets[i].data(), widget);
+      return i;
+    }
+
+  R_ASSERT_NON_RELEASE(false);
+  return -1;
+}
+                           
+
+static void RTWIDGET_call_often(void){
+  for(int i=0;i<RTWIDGET_SIZE;i++){
+    bool needs_update = safe_bool_read(&g_widgets_needing_update[i]);
+    if(needs_update){
+      //printf("    RTWIDGETG call often. Needs update at %d. Widget: %p\n", i, g_rtwidgets[i].data());
+      safe_bool_write(&g_widgets_needing_update[i], false); // not atomically correct, but it's not that important hopefully.
+      if(g_rtwidgets[i].data() != NULL)
+        g_rtwidgets[i]->update();
+    }
+  }
+}
+  
 static boost::lockfree::queue<int64_t, boost::lockfree::capacity<64> > g_mixer_strips_needing_remake;
 
 DEFINE_ATOMIC(bool, g_all_mixer_strips_needs_remake) = false;
@@ -1756,12 +1798,14 @@ protected:
     }
 #else
     {
-      int interval = useCPUFriendlyAudiometerUpdates() ? 40 : 20;
+      int interval = useCPUFriendlyAudiometerUpdates() ? 50 : 15;
 
       if (is_called_every_ms(interval)){
         API_gui_call_regularly();
         
         AUDIOMETERPEAKS_call_very_often(interval, -1);
+
+        RTWIDGET_call_often();
       }
     }
 #endif
@@ -1948,8 +1992,7 @@ protected:
     SampleRecorder_called_regularly();
     
     if (is_called_every_ms(50)){ // 50ms = 3*1000ms/60 (each third frame)
-      static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function
-
+      static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function      
     }
     
     if (is_called_every_ms(15)){
@@ -3442,7 +3485,6 @@ static int gc_has_static_roots_func(
 #endif
  
  
-
   if (is_main_root)
     return 1;
   else
@@ -3617,7 +3659,14 @@ int main(int argc, char **argv){
 
 
 #if defined(FOR_MACOSX)
-  if (QSysInfo::productVersion()=="10.14" || QSysInfo::productVersion()=="10.15" || QSysInfo::productVersion()=="10.16" || QSysInfo::productVersion()=="10.17"){
+  if (QSysInfo::productVersion()=="10.14"){
+    GFX_Message(NULL,
+                "Radium has not been tested on this very much on this version of macOS. Please report problems you have with it.\n"
+                "\n"
+                "If Radium crashes right after startup, it's probably the OpenGL library that crashes. "
+                "Fortunately, the bug is usually only hit during startup, and not every time."
+                );
+  } else if (QSysInfo::productVersion()=="10.15" || QSysInfo::productVersion()=="10.16" || QSysInfo::productVersion()=="10.17"){
     GFX_Message(NULL, "Radium has not been tested on this version of macOS. Latest supported version of macOS is 10.13. Radium is likely to misbehave on this operating system. It might also freeze, crash, or not run at all. But we will try to run anyway.");
   }
 #endif

@@ -85,6 +85,10 @@ static inline bool atomic_compare_and_set_bool(bool *variable, bool old_value, b
   return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
                             
+static inline bool atomic_compare_and_set_bool_relaxed(bool *variable, bool old_value, bool new_value){
+  return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+}
+                            
 static inline bool atomic_compare_and_set_int(int *variable, int old_value, int new_value){
   return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
@@ -135,6 +139,9 @@ static inline bool atomic_compare_and_set_float(float *variable, float old_value
                           
 #define ATOMIC_COMPARE_AND_SET_BOOL(name, old_value, new_value) \
   atomic_compare_and_set_bool(&ATOMIC_NAME(name), old_value, new_value)
+
+#define ATOMIC_COMPARE_AND_SET_BOOL_RELAXED(name, old_value, new_value) \
+  atomic_compare_and_set_bool_relaxed(&ATOMIC_NAME(name), old_value, new_value)
 
 #define ATOMIC_COMPARE_AND_SET_INT(name, old_value, new_value) \
   atomic_compare_and_set_int(&ATOMIC_NAME(name), old_value, new_value)

@@ -856,7 +856,7 @@ const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_t
 }
 */
 
-static void set_db_display(char *buffer, int buffersize, float value){
+static void set_db_display2(char *buffer, int buffersize, float value){
   float db = gain_2_db(value,MIN_DB,MAX_DB);
   
   if(db==MIN_DB)
@@ -891,7 +891,7 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
     case EFFNUM_BUS3:
     case EFFNUM_BUS4:
     case EFFNUM_BUS5:
-      set_db_display(buffer,buffersize,store_value);
+      set_db_display2(buffer,buffersize,store_value);
       break;
       
     case EFFNUM_EQ1_GAIN:
@@ -2165,11 +2165,13 @@ hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
   for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
     
     const_char *effect_name = PLUGIN_get_effect_name(plugin,i);
-    
-    if(HASH_has_key(effects, effect_name)){
-      RError("Same key used twice: -%s-. Instrument: %s / %s", effect_name, plugin->type->type_name, plugin->type->name);
-    }else
-      HASH_put_float(effects, effect_name, plugin->stored_effect_values_native[i]);
+
+    if (strcmp(NOTUSED_EFFECT_NAME, effect_name)) {
+      if(HASH_has_key(effects, effect_name)){
+        RError("Same key used twice: -%s-. Instrument: %s / %s", effect_name, plugin->type->type_name, plugin->type->name);
+      }else
+        HASH_put_float(effects, effect_name, plugin->stored_effect_values_native[i]);
+    }
     
   }
   

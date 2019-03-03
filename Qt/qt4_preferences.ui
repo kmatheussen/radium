@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>8</number>
+      <number>5</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -4263,7 +4263,7 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
          <item row="10" column="1">
           <widget class="QLabel" name="label_20">
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Update meters every other frame instead of each frame. This sometimes&lt;br&gt;makes the editor scroll more smoothly when the CPU is buzy.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Update meters every third frame instead of each frame. This sometimes&lt;br&gt;makes the editor scroll more smoothly when the CPU is buzy.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
@@ -8004,8 +8004,8 @@ you should check this box.
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>600</width>
-            <height>536</height>
+            <width>398</width>
+            <height>28</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -10338,7 +10338,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup_4"/>
