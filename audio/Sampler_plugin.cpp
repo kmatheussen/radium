@@ -213,7 +213,7 @@ static radium::Granulator *RT_obtain_granulator(radium::AudioPickuper *sample_up
   radium::Granulator *ret = NULL;
   
   {
-    radium::ScopedSpinlock lock(_gran_pool_spinlock); // We obtain anyway, since I'm only 99% sure that the lock is not needed. (note that release is also called from the main thread)
+    radium::ScopedSpinlock lock(_gran_pool_spinlock); // We obtain anyway, since I'm only 99% sure that the lock is not needed. (note that release is also called from the main thread, which further complicates things.)
     
     if (_gran_pool!=NULL) {
       
@@ -476,6 +476,7 @@ struct Data{
 
   int64_t guinum = -1;
   QPointer<QWidget> gui;
+  DEFINE_ATOMIC(int, rtwidget_pos) = -1;
   
   // There should be a compiler option in c++ to make this the default behavior. It would automatically eliminate a billion bugs in the world.
   /*
@@ -1779,10 +1780,12 @@ static bool get_granulation_enabled(Data *data){
                                                                         \
     for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next) \
       voice->_granulator->set_##Methodname(val);                        \
+                                                                        \
+    RT_RTWIDGET_mark_needing_update(ATOMIC_GET_RELAXED(data->rtwidget_pos)); \
   }                                                                     \
                                                                         \
   static double gran_get_##Methodname(Data *data){                      \
-    return data->p.gran_parms.Methodname;                                \
+    return data->p.gran_parms.Methodname;                               \
   }
 
 
@@ -1996,7 +1999,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       update_editor_graphics(plugin);
       break;
 
-      case EFF_GRAN_fine_stretch:
+    case EFF_GRAN_fine_stretch:
       if (value < 0.5)
         gran_set_fine_stretch(data, 1.0 / scale_double(value, 0.5, 0.0, 1.0, MAX_fine_stretch));
       //gran_set_stretch(data, scale_double(value, 0, 0.5, MIN_stretch, 1.0));
@@ -2013,7 +2016,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
 #undef GRAN_CASE
 
     case EFF_GRAN_strict_no_jitter:
-      gran_set_strict_no_jitter(data, value >= 0.5);
+      gran_set_strict_no_jitter(data, value >= 0.5);      
       break;
       
     default:
@@ -3305,6 +3308,8 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
     data->guinum = S7CALL2(int_int, "FROM_C-create-granular-vizualization-gui-for-sample-player", patch->id);
 
     data->gui = API_gui_get_widget(data->guinum);
+
+    ATOMIC_SET_RELAXED(data->rtwidget_pos, RTWIDGET_allocate_slot(data->gui.data()));
   }
 
   data->gui->show();
@@ -3314,9 +3319,12 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 
 static void hide_gui(struct SoundPlugin *plugin){
   Data *data=(Data*)plugin->data;
-
-  if(data->gui.data() != NULL)
+  
+  if(data->gui.data() != NULL){
+    RTWIDGET_release_slot(ATOMIC_GET_RELAXED(data->rtwidget_pos));
+    ATOMIC_SET_RELAXED(data->rtwidget_pos, -1);
     data->gui->hide();
+  }
 }
 
 /*

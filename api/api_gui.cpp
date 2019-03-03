@@ -4340,19 +4340,19 @@ static void perhaps_collect_a_little_bit_of_gui_garbage(int num_guis_to_check){
     } else {
     
       if (gui->_has_been_closed && gui->_delayed_deletion && safe_to_close_widget()) {
+        
         printf("        GUI GC: Delayed closing of GUI. Pos: %d, guinum: %d\n", pos, (int)gui->get_gui_num());
         gui->_widget->close(); // Try to close again. Last time some scheme code was running, so we delayed closing the widget.
+        
       }
 
     }
-
-
-      
 
     pos++;
     num_guis_to_check--;
   }
 }
+
 
 void *API_get_native_gui_handle(int64_t guinum){
   Gui *gui = get_gui(guinum);
@@ -7397,7 +7397,7 @@ void API_gui_call_regularly(void){
       gui->callVampRegularly(vamp);
   }
   
-  perhaps_collect_a_little_bit_of_gui_garbage(20);
+  perhaps_collect_a_little_bit_of_gui_garbage(15);
 }
 
 QWidget *API_gui_get_widget(int64_t guinum){
