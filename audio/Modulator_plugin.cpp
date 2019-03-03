@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 #include "../common/patch_proc.h"
 #include "../common/scheduler_proc.h"
+#include "../common/disk.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -119,7 +120,38 @@ struct ModulatorTarget{
     int64_t patch_id = HASH_get_int(state, ":instrument-id");
     patch = PATCH_get_from_id(patch_id);
 
-    effect_num = HASH_get_int32(state, ":effect-num");
+    if (HASH_has_key(state, ":effect-name")){
+      
+      char *error_message = NULL;
+      effect_num = PATCH_get_effect_num(patch, HASH_get_chars(state, ":effect-name"), &error_message);
+      if (effect_num==-1){
+        GFX_Message(NULL, error_message);
+        effect_num = 0; // to avoid crash.
+      }
+      
+    } else {
+
+      effect_num = HASH_get_int32(state, ":effect-num");
+
+      // Workaround. The sample player changed number of effects.
+      if(g_is_loading) {
+        
+        if (patch->instrument==get_audio_instrument()){
+          
+          SoundPlugin *plugin = (SoundPlugin *)patch->patchdata;
+
+          if(!strcmp("Sample Player", plugin->type->type_name)){
+            int load_version = g_disk_load_radium_version_major*10000 + g_disk_load_radium_version_minor*100 + g_disk_load_radium_version_revision;
+            if (load_version < 50941){
+              if (effect_num >= 17){
+                effect_num += 9;
+              }
+            }
+          }
+        }
+      }
+    }
+    
     enabled = HASH_get_bool(state, ":enabled");
   }
 
@@ -128,6 +160,7 @@ struct ModulatorTarget{
     hash_t *state = HASH_create(2);
     HASH_put_int(state, ":instrument-id", patch->id);
     HASH_put_int(state, ":effect-num", effect_num);
+    HASH_put_chars(state, ":effect-name", patch->instrument->getFxName(patch, effect_num));
     HASH_put_bool(state, ":enabled", enabled);
 
     return DYN_create_hash(state);
