@@ -75,7 +75,7 @@ class AudioPickupBuffer{
 
   int64_t _start_pos_global_pos = 0;
   
-  AudioPickuper *_sample_up_picker;
+  AudioPickuper *_sample_up_picker = NULL;
 
   const int _size;
   
@@ -99,6 +99,10 @@ public:
     V_free(_data);
   }
 
+  void set_sample_up_picker(AudioPickuper *sample_up_picker){
+    _sample_up_picker = sample_up_picker;
+  }
+  
   void reset(void){
     _start_pos = 0;
     _end_pos = 0;
@@ -409,6 +413,10 @@ struct GranulatorParameters{
   double stretch;
   double ramp;
 
+  GranulatorParameters(){
+    reset();
+  }
+  
   void reset(){
     jitter = 0.5; // 0 -> 1
     strict_no_jitter = false;
@@ -419,7 +427,7 @@ struct GranulatorParameters{
   }
 };
   
-class Granulator : public GranResampler{
+class Granulator : public GranResampler{  
   Grain *_grains;
 
   radium::Vector<Grain*> _free_grains;
@@ -446,18 +454,20 @@ class Granulator : public GranResampler{
   radium::Random _random;
 
   bool _is_processing = false; // is true if last ch for RT_process was not equal to _num_ch-1.
-  
 
+  
 public:
 
+  Granulator *_next; // Used by the sample player which reuses Granulator instances by putting them in a pool.
+
+  Granulator(const Granulator&) = delete;
+  Granulator& operator=(const Granulator&) = delete;
     
   Granulator(int max_grain_length, int max_frames_between_grains, int max_overlap, int num_ch, AudioPickuper *sample_up_picker)
     : GranResampler(num_ch, NULL)
     , _pickup_buffer(num_ch, (max_grain_length+max_frames_between_grains), sample_up_picker)
     , _sample_up_picker(sample_up_picker)
   {
-    _p.reset();
-    
     int num_grains = max_overlap*num_ch*2;
 
     _grains = new Grain[num_grains];
@@ -469,7 +479,8 @@ public:
     for(int ch=0;ch<num_ch;ch++)
       _playing_grains[ch].reserve(num_grains); // It's a bit unclear how many grains there will be per channel, so we just reserve num_grains to be sure it's enough. (got error when using 1+num_grains/2).
 
-    reset();
+    if(sample_up_picker != NULL)
+      reset();
   }
 
   ~Granulator(){
@@ -483,6 +494,16 @@ public:
     delete[] _playing_grains;
   }
 
+  void set_sample_up_picker(AudioPickuper *sample_up_picker){
+    _sample_up_picker = sample_up_picker;
+    _pickup_buffer.set_sample_up_picker(sample_up_picker);
+  }
+
+  AudioPickuper *get_sample_up_picker(void) const {
+    return _sample_up_picker;
+  }
+
+  
 private:
 
   void increase_write_and_read_pos(void){
@@ -650,22 +671,26 @@ private:
     _last_global_read_pos = 0;
 
     _random.reset();
-    
+
     _pickup_buffer.reset();
   }
 
 
-  void apply_parameters_step1(const Granulator &from){
-    _p = from._p;
+  void apply_parameters_step1(const GranulatorParameters &parms){
+    _p = parms;
   }
 
   
 public:
   
-  void apply_parameters_and_reset(const Granulator &from){
+  void apply_parameters_and_reset(const GranulatorParameters &parms){
     reset_step1(false);
-    apply_parameters_step1(from);
+    apply_parameters_step1(parms);
     set_frames_between_grains(true, true, true, true, true);
+  }
+
+  void apply_parameters_and_reset(const Granulator &from){
+    apply_parameters_and_reset(from._p);
   }
 
   void reset(bool reset_parameters = true){
@@ -686,7 +711,7 @@ public:
   }
 
   void apply_parameters(const Granulator &from){
-    apply_parameters_step1(from);
+    apply_parameters_step1(from._p);
 
     set_frames_between_grains(true, true, true, true);
   }
