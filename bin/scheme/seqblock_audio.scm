@@ -226,13 +226,13 @@
   (<gui> :set-takes-keyboard-focus ret #f)
   (<gui> :set-parent ret -1)
   ;;(<gui> :show ret)
-  (<ra> :schedule 100
-        (lambda ()
-          (if (<gui> :is-open ret)
-              (begin
-                (<gui> :update ret)
-                60)
-              #f)))
+  ;;(<ra> :schedule 100
+  ;;      (lambda ()
+  ;;        (if (<gui> :is-open ret)
+  ;;            (begin
+  ;;              (<gui> :update ret)
+  ;;              60)
+  ;;            #f)))
   ret)
 
 
