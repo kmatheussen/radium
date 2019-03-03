@@ -1629,6 +1629,10 @@ enum{
   AUDIO_INSTRUMENT_TYPE
 };
 
+
+#define NOTUSED_EFFECT_NAME "NOTUSED"
+
+
 struct Tracker_Windows;
 struct Blocks;
 struct Tracks;

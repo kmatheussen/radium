@@ -43,8 +43,6 @@ extern "C"{
 
 #define MIN_AUTOSUSPEND_PEAK 0.00001
   
-#define NOTUSED_EFFECT_NAME "NOTUSED"
-
 // Used by the volume sliders and peak meters.
 #define MIN_DB -40           // "gain value" = 0.0. "scaled effect value" = 0.0.
 #define MIN_DB_THRESHOLD -35 // "gain_value" = 0.01778279410038923. Between MIN_DB and MIN_DB_THRESHOLD, we do linear gain<->db conversion. "scaled effect value" = 0.06666666666666667.
