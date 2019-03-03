@@ -2165,11 +2165,13 @@ hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
   for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
     
     const_char *effect_name = PLUGIN_get_effect_name(plugin,i);
-    
-    if(HASH_has_key(effects, effect_name)){
-      RError("Same key used twice: -%s-. Instrument: %s / %s", effect_name, plugin->type->type_name, plugin->type->name);
-    }else
-      HASH_put_float(effects, effect_name, plugin->stored_effect_values_native[i]);
+
+    if (strcmp(NOTUSED_EFFECT_NAME, key)) {
+      if(HASH_has_key(effects, effect_name)){
+        RError("Same key used twice: -%s-. Instrument: %s / %s", effect_name, plugin->type->type_name, plugin->type->name);
+      }else
+        HASH_put_float(effects, effect_name, plugin->stored_effect_values_native[i]);
+    }
     
   }
   

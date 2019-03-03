@@ -268,7 +268,7 @@ bool HASH_remove(hash_t *hash, const char *raw_key){
 
 static void put2(hash_t *hash, const char *key, int i, hash_element_t *element){
 #if !defined(RELEASE)
-  if (strcmp("NOTUSED", key)) // <- The pd and faust instruments create effect names called "NOTUSED" for unused effects.
+  if (strcmp(NOTUSED_EFFECT_NAME, key)) // <- The pd and faust instruments create effect names called "NOTUSED" for unused effects.
     R_ASSERT(!HASH_has_key_at(hash, key, i)); // NOTE. Hitting this one is not necessarily a bug. But since it's so seldom that we overwrite hash table elements, it seems like a good idea to have this line here.
 #endif
   
