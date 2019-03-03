@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "../common/PEQ_Signature_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/disk.h"
+#include "../common/spinlock.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -98,6 +99,31 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define MAX_TREMOLO_SPEED 50
 #define MAX_TREMOLO_DEPTH 1
+
+// Granulation constants
+
+#define MIN_stretch 0.01
+#define MAX_stretch 100.0
+
+#define MIN_fine_stretch 0.25
+#define MAX_fine_stretch 4.0
+
+#define MIN_overlap 0.1
+#define MAX_overlap 50.0
+
+#define MIN_length 0.1
+#define MAX_length 1000.0
+
+#define MIN_ramp 0.0
+#define MAX_ramp 0.5
+
+#define MIN_jitter 0.0
+#define MAX_jitter 1.0
+
+#define MIN_volume MIN_DB
+#define MAX_volume MAX_DB
+
+
 
 const char *g_click_name = "Click";
 
@@ -160,23 +186,65 @@ enum{
 
 namespace{
 
-namespace{
-  struct ResettableGranResamplerCallback : public radium::GranResamplerCallback{
-    virtual void reset(void) = 0;
-  };
-}
+struct ResettableGranResamplerCallback : public radium::GranResamplerCallback, public radium::AudioPickuper {
+  virtual void reset2(void) = 0; // There is already a reset() function in AudioPickuper, so we call this one reset2 to avoid confusion about which one is called.
+};
 
 
-  /*
+static radium::Spinlock _gran_pool_spinlock;
+static radium::Granulator *_gran_pool; // access protected by obtaining _gran_pool_spinlock.
 
+ 
 static void RT_release_granulator(radium::Granulator *granulator){
+  radium::ScopedSpinlock lock(_gran_pool_spinlock);
   
+#if !defined(RELEASE)
+  granulator->set_sample_up_picker(NULL);
+#endif
+
+  granulator->_next = _gran_pool;
+  _gran_pool = granulator;
 }
-static radium::Granulator *RT_get_granulator(void){
+
+ 
+static radium::Granulator *RT_obtain_granulator(radium::AudioPickuper *sample_up_picker){
+  R_ASSERT_NON_RELEASE(_gran_pool_spinlock._holds_lock==false); // This function is only called from RT_play or set_effect_value, which should only be called from the main player thread, or when the player thread is locked.
+
+  radium::Granulator *ret = NULL;
   
+  {
+    radium::ScopedSpinlock lock(_gran_pool_spinlock); // We obtain anyway, since I'm only 99% sure that the lock is not needed.
+    
+    if (_gran_pool!=NULL) {
+      
+      ret = _gran_pool;
+      _gran_pool = ret->_next;
+
+      R_ASSERT_NON_RELEASE(ret->get_sample_up_picker()==NULL);
+    }
+  }
+
+  if (ret != NULL)    
+    ret->set_sample_up_picker(sample_up_picker);
+  else
+    RT_message("No more free granulation voices. Increase the \"Max granulation voices\" variable in preferences");
+  
+  return ret;
 }
-  */
-  
+
+
+static void init_granulator_pool(void){
+  int pool_size = 128;
+
+  double max_frames_between_grains = R_MIN(pc->pfreq*2, ms_to_frames(MAX_length / MIN_overlap)); // Don"t need more than 1 second between each grain. Just fail if trying to add more (possibly audible failure, not error message). Probably bad for CPU cache to allocate more than 1 second. Without the R_MIN, we would have allocated 10 seconds.
+    
+  for(int i=0;i<pool_size;i++){
+    auto *granulator = new radium::Granulator(ms_to_frames(MAX_length), max_frames_between_grains, MAX_overlap, 1, NULL);
+    granulator->_next = _gran_pool;
+    _gran_pool = granulator;
+  }
+}
+   
 struct Data;
 
 struct Sample{
@@ -223,8 +291,6 @@ struct Voice{
   int64_t note_id = 0;
   const struct SeqBlock *seqblock = NULL; // Not quite sure, but this variable could perhaps be gc-ed while its here, so it should only be used for comparison. (pretty sure it can not be gc-ed though)
 
-  int voice_num;
-  
   // These two variables are used when setting velocity after a note has started playing.
   float start_volume = 0;
   float end_volume = 0;
@@ -248,7 +314,7 @@ struct Voice{
 
   std::unique_ptr<ResettableGranResamplerCallback> _get_samples;
   
-  radium::Granulator *_granulator;
+  radium::Granulator *_granulator = NULL;
   radium::Resampler2 *_resampler2;
   radium::GranResampler *_granresampler;
 
@@ -337,6 +403,8 @@ struct CopyData {
   float tremolo_depth;
   float tremolo_speed;
 
+  radium::GranulatorParameters gran_parms;
+
   DEFINE_ATOMIC(bool, gran_enabled);
 
   double gran_coarse_stretch;
@@ -386,7 +454,6 @@ struct Data{
   int num_different_samples = 0;  // not used for anything (important).
 
   Voice voices[POLYPHONY] = {};
-  bool _gran_voice_has_updated_parameters[POLYPHONY] = {};
   
   // These two are used when switching sound on the fly
   DEFINE_ATOMIC(struct Data *, new_data) = NULL;
@@ -429,10 +496,6 @@ struct Data{
     R_ASSERT(voices[0].next==NULL);
     R_ASSERT(samples[0].sound==NULL);
 
-    _gran_voice_has_updated_parameters[0] = true; // always true.
-    for(int i=0;i<POLYPHONY;i++)
-      voices[i].voice_num=i;
-        
     //for(int i=0;i<128;i++)
     //  notes[i] = new Note;
   }
@@ -1018,6 +1081,30 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
 }
 
 
+static void RT_prepare_voice_for_playing_with_granulation(Data *data, Voice *voice){
+  auto *granulator = RT_obtain_granulator(voice->_get_samples.get());
+  if(granulator==NULL)
+    return;
+
+  granulator->apply_parameters_and_reset(data->p.gran_parms);
+  
+  voice->_granulator = granulator;
+
+  voice->_resampler2->set_callback(granulator);
+}
+
+
+static void RT_release_voice_for_playing_with_granulation(Voice *voice){
+  auto *granulator = voice->_granulator;
+  if (granulator==NULL)
+    return;
+
+  voice->_granulator = NULL;
+    
+  RT_release_granulator(granulator);
+}
+
+
 static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
@@ -1072,6 +1159,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
     Voice *next = voice->next;
 
     if(RT_play_voice(data, voice, R_NUM_FRAMES, outputs)==true){
+      RT_release_voice_for_playing_with_granulation(voice);
       RT_remove_voice(&data->voices_playing, voice);
       RT_add_voice(&data->voices_not_playing, voice);
     }
@@ -1105,20 +1193,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
   }
 }
 
-static void prepare_voice_for_playing_with_granulation(Data *data, Voice *voice){
-  if (data->_gran_voice_has_updated_parameters[voice->voice_num]){
-    
-    voice->_granulator->reset(false);
-    
-  } else {
-    
-    voice->_granulator->apply_parameters_and_reset(*data->voices[0]._granulator);
-    data->_gran_voice_has_updated_parameters[voice->voice_num] = true;
-    
-  }
-  
-  voice->_resampler2->set_callback(voice->_granulator);
-}
 
 
 static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
@@ -1223,18 +1297,14 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
     
     voice->pan = get_pan_vals_vector(note2.pan,voice->sample->ch==-1?1:2);
 
-    if (ATOMIC_GET_RELAXED(data->p.gran_enabled)){
+    if (ATOMIC_GET(data->p.gran_enabled))
+      RT_prepare_voice_for_playing_with_granulation(data, voice);
 
-      prepare_voice_for_playing_with_granulation(data, voice);
-      
-    } else {
-      
+    if (voice->_granulator==NULL)
       voice->_resampler2->set_callback(voice->_get_samples.get());
-      
-    }
     
     voice->_resampler2->reset();
-    voice->_get_samples->reset();
+    voice->_get_samples->reset2();
     //RESAMPLER_reset(voice->resampler);
 
     ADSR_reset(voice->adsr);
@@ -1659,27 +1729,6 @@ static int get_peaks(struct SoundPlugin *plugin,
 
 /************* Granulation *****************/
 
-#define MIN_stretch 0.01
-#define MAX_stretch 100.0
-
-#define MIN_fine_stretch 0.25
-#define MAX_fine_stretch 4.0
-
-#define MIN_overlap 0.1
-#define MAX_overlap 50.0
-
-#define MIN_length 0.1
-#define MAX_length 1000.0
-
-#define MIN_ramp 0.0
-#define MAX_ramp 0.5
-
-#define MIN_jitter 0.0
-#define MAX_jitter 1.0
-
-#define MIN_volume MIN_DB
-#define MAX_volume MAX_DB
-
 #define ALL_GRAN_CASES()                              \
   GRAN_CASE(overlap);                                 \
   GRAN_CASE(length);                                  \
@@ -1698,7 +1747,7 @@ static void set_granulation_enabled(SoundPlugin *plugin, Data *data, bool enable
   if (enabled){
 
     for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next)
-      prepare_voice_for_playing_with_granulation(data, voice);
+      RT_prepare_voice_for_playing_with_granulation(data, voice);
     
   } else {
     
@@ -1723,20 +1772,14 @@ static bool get_granulation_enabled(Data *data){
   template<typename Type> static void gran_set_##Methodname(Data *data, Type val){ \
     R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());             \
                                                                         \
-    memset(&data->_gran_voice_has_updated_parameters[1], 0, sizeof(bool)*(POLYPHONY-1)); \
+    data->p.gran_parms.Methodname = val;                                 \
                                                                         \
-    data->voices[0]._granulator->set_##Methodname(val);                 \
-                                                                        \
-    for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next){ \
-      if(voice->voice_num != 0){                                        \
-        data->_gran_voice_has_updated_parameters[voice->voice_num] = true; \
-        voice->_granulator->set_##Methodname(val);                      \
-      }                                                                 \
-    }                                                                   \
+    for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next) \
+      voice->_granulator->set_##Methodname(val);                        \
   }                                                                     \
                                                                         \
   static double gran_get_##Methodname(Data *data){                      \
-    return data->voices[0]._granulator->get_##Methodname();             \
+    return data->p.gran_parms.Methodname;                                \
   }
 
 
@@ -1785,31 +1828,6 @@ static float gran_get_volume(Data *data){
 }
 
   
-
-/*
-static void set_gran_overlap(Data *data, double overlap){
-  // radium::PlayerRecursiveLock lock; // Player is always locked when calling set_effect_value
-  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
-    
-  memset(&data->_gran_voice_has_updated_parameters[1], 0, sizeof(bool)*(POLYPHONY-1));
-  
-  data->voices[0]._granulator->set_overlap(stretch);
-
-  for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next){
-    if(voice->voice_num != 0){
-      data->_gran_voice_has_updated_parameters[voice->voice_num] = true;
-      voice->_granulator->set_overlap(stretch);
-    }
-  }
-}
-
-static double get_gran_overlap(Data *data){
-  double ret = data->voices[0]._granulator->get_overlap();
-  //printf("   RET: %f\n", ret);
-  //getchar();
-  return ret;
-}
-*/
 
 
 
@@ -2600,7 +2618,7 @@ static void generate_peaks(Data *data){
 }
 
 namespace{
-  struct GetSampleCallback : public ResettableGranResamplerCallback, public radium::AudioPickuper {
+  struct GetSampleCallback : public ResettableGranResamplerCallback{
     Voice &_voice;
 
     GetSampleCallback(Voice &voice)
@@ -2615,7 +2633,7 @@ namespace{
     int _buffer_size = 0;
     float *_buffer;
 
-    void reset(void) override {
+    void reset2(void) override {
       _buffer_size = 0;
     }
 
@@ -2662,10 +2680,7 @@ static void init_voice(Data *data, Voice &voice){
   auto *get_samples = new GetSampleCallback(voice);
   voice._get_samples = std::unique_ptr<GetSampleCallback>(get_samples);
 
-  double max_frames_between_grains = R_MIN(pc->pfreq*2, ms_to_frames(MAX_length / MIN_overlap)); // Don"t need more than 1 second between each grain. Just fail if trying to add more (possibly audible failure, not error message). Probably bad for CPU cache to allocate more than 1 second. Without the R_MIN, we would have allocated 10 seconds.
-    
   voice._resampler2 = new radium::Resampler2(1, data->resampler_type, get_samples);
-  voice._granulator = new radium::Granulator(ms_to_frames(MAX_length), max_frames_between_grains, MAX_overlap, 1, get_samples);
 
   voice._granresampler = voice._resampler2;
   
@@ -2682,7 +2697,12 @@ static void release_voice(Voice &voice){
   voice.adsr = NULL;
 
   delete voice._resampler2;
-  delete voice._granulator;
+  //delete voice._granulator;
+
+  if(voice._granulator!=NULL){
+    radium::PlayerLock lock; // To avoid priority inversion in RT_release_granulator while holding spinlock. This should only happen if instrument is removed while playing, so probably no need to optimize.
+    RT_release_voice_for_playing_with_granulation(&voice);
+  }
 }
 
 
@@ -2741,10 +2761,11 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
     
     data->p.gran_coarse_stretch = 1;
     data->p.gran_fine_stretch = 1;
-
+    data->p.gran_volume = -6;
+    
   }else{
 
-    memcpy(&data->p, &old_data->p, sizeof(CopyData));
+    data->p = old_data->p;
  
     data->p.vibrato_value = 0.0;
     data->p.vibrato_phase = 4.71239;
@@ -2927,10 +2948,6 @@ static bool set_new_sample(struct SoundPlugin *plugin,
   
   // Put loop_onoff into storage.
   PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-
-
-  // Apply granulation parameters from old data.
-  data->voices[0]._granulator->apply_parameters(*old_data->voices[0]._granulator);
 
 
   if(SP_is_plugin_running(plugin)){
@@ -3442,6 +3459,8 @@ void create_sample_plugin(void){
   static bool has_inited = false;
 
   if (has_inited==false) {
+
+    init_granulator_pool();
     
     init_plugin_type();
 
