@@ -2872,6 +2872,9 @@ static void delete_data(Data *data){
 
   delete data->recorder_instance;
 
+  if (data->gui.data() != NULL)
+    data->gui->close();
+      
   delete data;
 }
 
