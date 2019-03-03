@@ -213,7 +213,7 @@ static radium::Granulator *RT_obtain_granulator(radium::AudioPickuper *sample_up
   radium::Granulator *ret = NULL;
   
   {
-    radium::ScopedSpinlock lock(_gran_pool_spinlock); // We obtain anyway, since I'm only 99% sure that the lock is not needed.
+    radium::ScopedSpinlock lock(_gran_pool_spinlock); // We obtain anyway, since I'm only 99% sure that the lock is not needed. (note that release is also called from the main thread)
     
     if (_gran_pool!=NULL) {
       
@@ -227,7 +227,10 @@ static radium::Granulator *RT_obtain_granulator(radium::AudioPickuper *sample_up
   if (ret != NULL)    
     ret->set_sample_up_picker(sample_up_picker);
   else
-    RT_message("No more free granulation voices. Increase the \"Max granulation voices\" variable in preferences");
+    RT_message("<center>No more free granulators.</center><p>"
+               "If you need more voices doing granulation, please create a ticket at<br>"
+               "<A href=\"https://github.com/kmatheussen/radium/issues\">https://github.com/kmatheussen/radium/issues</A>"
+               );
   
   return ret;
 }
