@@ -1525,8 +1525,7 @@
       (let* ((timeline-height (- (<ra> :get-seqtimeline-area-y2) (<ra> :get-sequencer-y1)))
              (y1 (+ y1 timeline-height))
              (header-height (- seqtrack0-y1 (<ra> :get-seqtimeline-area-y2)))
-             (y2 (- (+ y1 header-height)
-                    6))) ;; Hack. Don't know why. The value is probably scaled by font size too, so this might need to be fixed.
+             (y2 (+ y1 header-height)))
         ;;(c-display "timeline-height:" timeline-height ". header-height:" header-height)
         (add-sub-area-plain! (<new> :sequencer-timeline-headers gui x1 y1 x2 y2))))
   

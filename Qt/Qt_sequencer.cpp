@@ -4280,7 +4280,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       if (y >= _seqtracks_widget.t_y2)
         break;
       
-      if (y > _seqtracks_widget.t_y1) {
+      if (y > _seqtracks_widget.t_y1 - 2) {
       
         float x1 = SEQUENCER_get_left_part_x1();//w.t_x1; //get_seqtrack_border_width()+3;//w.t_x1; //;
         float x2 = w.t_x2; //width();
@@ -4492,6 +4492,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
           */
         });
     }
+
   }
 
 
