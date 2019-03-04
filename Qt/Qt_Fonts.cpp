@@ -200,7 +200,7 @@ void setFontValues(struct Tracker_Windows *tvisual){
   tvisual->must_redraw = true;
 }
 
-static void updateAllFonts(QObject *object, const QFont &old_font, QFont new_font){
+static void updateAllFonts(QObject *object, const QFont &old_font, const QFont &new_font){
   if(object != NULL){
 
     QWidget *widget = qobject_cast<QWidget*>(object);
@@ -208,14 +208,15 @@ static void updateAllFonts(QObject *object, const QFont &old_font, QFont new_fon
     bool is_font_dialog = widget!=NULL && qobject_cast<QFontDialog*>(widget->window())!=NULL;
   
     if (!is_font_dialog){
-      if (widget!=NULL && widget->font()==old_font){
+      //      if (widget!=NULL && widget->font()==old_font){
+      if(widget!=NULL){
         widget->setFont(new_font);
         widget->update();
       }
-
-      for(auto *c : object->children())
-        updateAllFonts(c, old_font, new_font);
     }
+
+    for(auto *c : object->children())
+      updateAllFonts(c, old_font, new_font);
   }
 }
 
