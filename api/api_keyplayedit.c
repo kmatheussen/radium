@@ -63,9 +63,18 @@ void polyKeyDownPlay(int notenum,int windownum){
 	if(notenum<=0 || notenum>127) return;
 	if(window==NULL || window->curr_track<0) return;
 
-	PATCH_playNoteCurrPos(window,notenum,-1);
-        if(ATOMIC_GET(root->editonoff))
+        bool do_edit = ATOMIC_GET_RELAXED(root->editonoff);
+
+        if (do_edit && doScrollPlay()) {
+
+          // Not playing note here, because then it would be played twice.
           InsertNoteCurrPos(window,notenum,true,-1);
+          
+        } else {
+          PATCH_playNoteCurrPos(window,notenum,-1);
+          if(do_edit)
+            InsertNoteCurrPos(window,notenum,true,-1);
+        }
 }
 
 void keyUpPlay(int notenum,int windownum){
