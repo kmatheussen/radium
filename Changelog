@@ -1,3 +1,89 @@
+Changes 5.9.41 -> 5.9.42:
+* Fluisynth: Update URL to fluidsynth in the info
+  window.
+* Editor: Don't play notes twice when adding notes
+  and "Play notes under the cursor when moving up or
+  down" is enabled.
+* Sequencer: Fix graphics rendering between the
+  timing/marker lanes and the opmost visible
+  seqtrack.
+* MIDI instrument: Fix error message popping up when
+  mouse is above a CC slider or above a note
+  duplicator on/off button.
+* Instrument widget: Fix wrong fonts in the note
+  duplicator, for the instrument name input widget,
+  and for the sample browser path.
+* Sampler instrument: Fix modulators when loading
+  songs saved before 5.9.41. Note that songs saved
+  with 5.9.41 (and only that version) will require
+  some editing if modulators had been assigned to
+  effects in the sample player in that version of
+  the program. (5.9.41 is marked as unstable now.)
+* Instruments: Fix assertion window popping up when
+  selecting "add automation to current editor track"
+  and there was already an automation node for that
+  effect at the current editor position.
+* Instruments: Don't show assertion window when
+  making states for the Faust Dev and Pd instruments.
+* Sample instrument: Delete GUI when instrument is
+  deleted.
+* OSX: Show a different startup warning when running
+  macOS 10.14. Radium has been tested on 10.14 now,
+  but not much, and it sometimes crashes during
+  startup.
+* fix for prev. commit
+* Sample player: Fix high CPU usage when the GUI is
+  open.
+* Audio meters: Ensure meters are really updated
+  every frame. Earlier we updated every 20ms, which
+  is more than the common 16.6ms update period.
+* Audio meters: Changed the "CPU friendly" option
+  in preferences to update every 3rd frame instead
+  of every 2.4th frame. Probably looks better with a
+  consistant refresh rate.
+* Sampler instrument: Set default grain overlap value
+  to 3.0 instead of 1.0.
+* Sampler instrument: Allocate granulator instances
+  from a common pool shared by all sampler
+  instruments. This should both lower memory usage
+  and CPU usage.
+* Sampler instrument: Added a "fine stretch" slider
+  in addition to the old "coarse stretc" slider. The
+  coarse stretch slider went from -100 to 100 which
+  was a bit hard to control.
+* Sampler instrument: Added a "gran. volume" slider
+  for doing volume compensation so that the level
+  can be set to approximately the same when
+  enabling/disabling granulation. Note that the
+  default value is set to -6dB, so you need to
+  manually set this value to 0.0dB after loading
+  songs saved with Radium 5.9.41.
+* Sampler instrument: Don't stretch waveform data in
+  editor when granulation is disabled.
+* Sampler instrument: Display stretch values between
+  0.0 and 1.0 as "1.0/xxx" instead of "0.xx".
+* Sampler instrument: Change scaling method when
+  stretch is below 1.0. Now stretch spans with
+  linear numerator values in the range 100/100 to
+  1/100 instead of ranging linearly from 1.0 to
+  0.01. Note that stretch automation will sound
+  different for values below 1.0 for songs saved with
+  Radium 5.9.41.
+* Startup: Don't draw OpenGL until program is
+  finished initializing. Fixes program sometimes
+  freezing for a few seconds after startup.
+* Startup: Show mixer strip for current instrument
+  before swapping opengl for the first time.
+* OSX/crashreporter: Only wait 5 seconds for the OSX
+  diagnostic report file to be created.
+* Progress window: Optimize performance.
+* Build: Upgarde libatomic_ops from 7.4.12 to 7.4.14
+* Build: Update BDWGC to 7.4.16. Contains an
+  important fix for Windows if running 32 bit Radium
+  in a 64 bit operating system.
+
+
+
 Changes 5.9.39 -> 5.9.41:
 * Sequencer: Use a gradient background color.
 * Instruments: Fix bad bug when undoing/redoing note
