@@ -142,7 +142,10 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
     if (_patch.data() != NULL && isEnabled()){
       SLIDERPAINTER_set_hovered(_painter, true);
       update();
-      GFX_SetStatusBar(talloc_format("\"%s\" (right-click for options)", getInstrumentEffectName(_effect_num, _patch->id)));
+      if(_patch->instrument==get_audio_instrument())
+        GFX_SetStatusBar(talloc_format("\"%s\" (right-click for options)", getInstrumentEffectName(_effect_num, _patch->id)));
+      else
+        GFX_SetStatusBar(talloc_format("MIDI CC %d. (right-click for options)", _effect_num));
     }
   }
 
