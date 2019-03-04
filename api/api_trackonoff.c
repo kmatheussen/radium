@@ -45,6 +45,11 @@ void switchTrackOn(int tracknum,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
+        {
+          struct WTracks *wtrack=getWTrackFromNum(windownum,-1,tracknum);
+          if(wtrack==NULL) return;
+        }
+        
         tracknum = tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum;
         
         ADD_UNDO(TrackHeader(window->wblock->l.num, tracknum));
@@ -76,6 +81,11 @@ void soloTrack(int tracknum,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
+        {
+          struct WTracks *wtrack=getWTrackFromNum(windownum,-1,tracknum);
+          if(wtrack==NULL) return;
+        }
+        
         tracknum = tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum;
         
         ADD_UNDO(TrackHeader(window->wblock->l.num, tracknum));
@@ -89,6 +99,11 @@ void switchSoloTrack(int tracknum,int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
+        {
+          struct WTracks *wtrack=getWTrackFromNum(windownum,-1,tracknum);
+          if(wtrack==NULL) return;
+        }
+        
         tracknum = tracknum==-1?window->wblock->wtrack->l.num:(NInt)tracknum;
         
         ADD_UNDO(TrackHeader(window->wblock->l.num, tracknum));
