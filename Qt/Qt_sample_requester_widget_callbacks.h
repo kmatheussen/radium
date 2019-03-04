@@ -239,6 +239,9 @@ class Sample_requester_widget : public QWidget
   {
     setupUi(this);
 
+    path_edit->setFont(QApplication::font()); // why?
+    file_list->setFont(QApplication::font()); // why?
+    
     file_list->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
     file_list->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
 

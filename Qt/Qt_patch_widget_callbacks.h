@@ -36,6 +36,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   radium::GcHolder<struct Patch> _patch;
   struct PatchVoice *_voices;
 
+  bool _has_inited = false;
+  
 #ifndef USE_QT5
   QCleanlooksStyle _cleanlooksStyle;
 #endif
@@ -142,9 +144,11 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 #ifdef USE_QT5
     static QStyle *fusion_style = QStyleFactory::create("fusion");
     if (fusion_style != NULL)
-      name_widget->setStyle(fusion_style);
+      name_widget->setStyle(fusion_style);    
 #endif
-    
+
+    name_widget->setFont(QApplication::font()); // why?
+        
     for(int i=0;i<NUM_PATCH_VOICES;i++){
       
       set_fixed_widget_width(get_o(i), "xx");    // onoff
@@ -178,6 +182,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     
     updateWidgets();
     initing = false;
+
+    _has_inited = true;
   }
 
   const char *get_effect_name(const char *name, int voicenum){
@@ -235,7 +241,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
   
   void set_fixed_widget_width(QWidget *widget, QString text){
-    QFontMetrics fm(font());
+    QFont font;
+    widget->setFont(font);
+    QFontMetrics fm(font);
     int width = fm.width(text) + 2;
     widget->setFixedWidth(width);
     widget->setMinimumWidth(width);
@@ -291,6 +299,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 
   void update_label_color(QLabel *l){
     QString text = l->text();
+    //QString orgtext = text;
     int pos = text.indexOf("#");
     l->setText(text.replace(pos, 9, get_qcolor(TEXT_COLOR_NUM).name(QColor::HexArgb)));
 
@@ -300,6 +309,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     int pos1 = text.indexOf("font-size:") + QString("font-size:").size();
     int pos2 = text.indexOf("pt;");
     l->setText(text.replace(pos1, pos2-pos1, QString::number(fontsize)));
+
+    //printf("Text before: -%s-. Text now: -%s-\n", orgtext.toUtf8().constData(), l->text().toUtf8().constData());
   }
 
 
@@ -356,6 +367,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void adjust_labels(void){
+    if(_has_inited==false)
+      return;
+    
     labels_widget->resize(labels_widget->width(), root->song->tracker_windows->systemfontheight*1.5);
     
     nd_label4->move(get_t(0)->x(), 0);
