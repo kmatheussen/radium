@@ -185,7 +185,8 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
     if (_patch.data() != NULL){
       _is_hovered = true;
       update();
-      GFX_SetStatusBar(talloc_format("\"%s\" (right-click for options)", getInstrumentEffectName(_effect_num, _patch->id)));
+      if(_patch->instrument==get_audio_instrument())
+        GFX_SetStatusBar(talloc_format("\"%s\" (right-click for options)", getInstrumentEffectName(_effect_num, _patch->id)));
     }
   }
 
