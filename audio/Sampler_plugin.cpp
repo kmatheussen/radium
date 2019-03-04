@@ -178,6 +178,8 @@ enum{
   EFF_GRAN_strict_no_jitter,
   EFF_GRAN_volume,
 
+  // Note: If adding more effects, workaround code for loading older songs must be updated in Modulator_plugin.cpp. (just increase that number to increase with the number of added effects.)
+  
   EFF_NUM_EFFECTS,
   };
 

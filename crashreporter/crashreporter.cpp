@@ -364,7 +364,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
                                    "\n"
                                    "The report is sent anonymously, and will only be seen by the author of Radium.\n"
                                    "\n"
-                                   "Only the information in \"Show details...\" is sent. You can also edit this text if there is anything you don't want to send.\n"
+                                   "Only the information in \"Show details\" is sent. You can also edit this text if there is anything you don't want to send.\n"
                                    "\n"
                                    "Please don't report the same %0 more than two or three times for the same version of Radium.\n"
                                    ).arg(crash_type==CT_CRASH ? "crash" : crash_type==CT_ERROR ? "error" : "warning")
