@@ -15,6 +15,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+extern LANGSPEC int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock);
+extern LANGSPEC int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock);
+
 extern LANGSPEC void R_SetCursorPos(struct Tracker_Windows *window);
 extern LANGSPEC void CursorRight_CurrPos(struct Tracker_Windows *window);
 extern LANGSPEC void CursorLeft_CurrPos(struct Tracker_Windows *window);
