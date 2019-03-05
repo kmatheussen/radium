@@ -54,6 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/sliders_proc.h"
 #include "../common/fxtext_proc.h"
 #include "../common/windows_proc.h"
+#include "../common/cursor_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -393,7 +394,53 @@ void setTrackSliderPos(float pos, int blocknum, int windownum){
 
   if (wblock->skew_x < -(total_width-visible_width))
     wblock->skew_x = -(total_width-visible_width);
-  //calculateblockcoordinates must also ensure that the current track is visible.
+
+  UpdateAllWTracksCoordinates(window,wblock);
+
+  // Scroll right
+  for(int safe = 0; safe < 10000 ; safe++){
+
+    //struct WTracks *wtrack = wblock->wtrack;
+  
+    NInt track    = window->curr_track;
+    int  subtrack = window->curr_track_sub;
+    
+    //int xb1 = GetXSubTrack_B1(wblock,track,subtrack)-1;
+    int xb2 = GetXSubTrack_B2(wblock,track,subtrack)+1;
+
+    if (xb2 > wblock->t.x1)
+      break;
+    
+    CursorRight(window, wblock);
+
+    if (track==window->curr_track && subtrack==window->curr_track_sub)
+      break;
+  }
+
+  // Scroll left
+  for(int safe = 0; safe < 10000 ; safe++){
+
+    //struct WTracks *wtrack = wblock->wtrack;
+  
+    NInt track    = window->curr_track;
+
+    if(track < 0)
+      break;
+    
+    int  subtrack = window->curr_track_sub;
+    
+    int xb1 = GetXSubTrack_B1(wblock,track,subtrack)-1;
+    //int xb2 = GetXSubTrack_B2(wblock,track,subtrack)+1;
+
+    if (xb1 < wblock->t.x2)
+      break;
+    
+    CursorLeft(window, wblock);
+
+    if (track==window->curr_track && subtrack==window->curr_track_sub)
+      break;
+  }
+
   window->must_redraw=true;
 }
 

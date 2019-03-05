@@ -93,7 +93,7 @@ static bool nextTrackHasSwingtext(struct WTracks *wtrack){
   return next->swingtext_on;
 }
 
-static int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
+int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 	struct WTracks *wtrack=wblock->wtrack;
 	//struct WTracks *leftwtrack;
 	//struct WTracks *rightwtrack;
@@ -282,7 +282,7 @@ static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *windo
 }
 
 
-static int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
+int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
   struct WTracks *wtrack = wblock->wtrack;
   bool is_going_to_be_at_normal_track = false;
 
