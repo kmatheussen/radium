@@ -2932,6 +2932,9 @@ int radium_main(const char *arg){
   EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
 
 #if USE_OPENGL
+
+  GFX_ShowProgressMessage("Creating editor window", true);
+  
   editor->gl_widget = GL_create_widget(editor);
   if(editor->gl_widget==NULL)
     return -100;
@@ -3680,6 +3683,15 @@ int main(int argc, char **argv){
   
   SCHEME_init1();
 
+
+  GFX_ShowProgressMessage("Starting OpenGL", true);
+  if (GL_check_compatibility()==false){
+    GFX_CloseProgress();
+    return -1;
+  }
+
+  GFX_ShowProgressMessage("Initializing keybindings and other things", true);
+  
   //g_splashscreen = new QSplashScreen(pixmap);
 #if 0 //def RELEASE
   g_splashscreen->adjustSize();

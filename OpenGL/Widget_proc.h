@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+
+// Should be called as early as possible. Might take some time though, so progress window should open first.
+bool GL_check_compatibility(void);
+
+
 #ifdef __cplusplus
 class QWidget;
 

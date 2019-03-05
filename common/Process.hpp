@@ -158,7 +158,7 @@ public:
     switch(get_status()){
       case Status::NOT_STARTED: return "has not started";
       case Status::RUNNING: return "is running";
-      case Status::NOT_FINISHED: return "is not finished";
+      case Status::NOT_FINISHED: return "has not finished";
       case Status::FINISHED: return "has finished";
       case Status::TIMED_OUT: return "has timed out";
       case Status::CRASHED: return "has crashed";
