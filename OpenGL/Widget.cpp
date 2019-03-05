@@ -1895,29 +1895,28 @@ static void setup_widget(QWidget *parent){
   widget->setAutomaticDelete(false);  // dont want auto-desctruction at program exit.
 }
 
-QWidget *GL_create_widget(QWidget *parent){
+static bool g_compatibility_ok = false;
 
-  doHighCpuOpenGlProtection(); // Load value from disk so the function can be called from the opengl thread later.
-  doLockJuceWhenSwappingOpenGL(); // same here
-    
-#if defined(FOR_MACOSX)
-  // doesn't work.
-  //cocoa_set_best_resolution(NULL);//(void*)widget->winId());
-#endif
+bool GL_check_compatibility(void){
 
-  g_safe_mode = GL_get_safe_mode();
-  init_g_pause_rendering_on_off();
-
-  if (CHECKOPENGL_checkit()==true){
-    //exit(-2);
-    return NULL;
+  // Load settings value from disk
+  {
+    doHighCpuOpenGlProtection();
+    doLockJuceWhenSwappingOpenGL();
+    g_safe_mode = GL_get_safe_mode();
+    init_g_pause_rendering_on_off();
   }
+  
     
   if (QGLFormat::hasOpenGL()==false) {
     GFX_Message(NULL,"OpenGL not found");
     //exit(-1);
-    return NULL;
+    return false;
   }
+
+  
+  if (CHECKOPENGL_checkit()==true)
+    return false;
 
   if (GL_get_vsync()==false){
     if (SETTINGS_read_bool("show_vsync_warning_during_startup", true)) {
@@ -1945,13 +1944,13 @@ QWidget *GL_create_widget(QWidget *parent){
                 "To solve this problem, you might want to try updating your graphics card driver."
                 );
     //exit(-1);
-    return NULL;
+    return false;
   }
   
   if (!is_opengl_version_recent_enough_questionmark()){
     vector_t v = {};
     VECTOR_push_back(&v,"Try to run anywyay"); // (but please don't send a bug report if Radium crashes)");
-    VECTOR_push_back(&v,"Quit");
+    int exit_=VECTOR_push_back(&v,"Exit");
 
     int ret = GFX_Message(&v,
                           "Your version of OpenGL is too old.\n"
@@ -1960,14 +1959,31 @@ QWidget *GL_create_widget(QWidget *parent){
                           "\n"
                           "You might also have to disable \"Draw in separate process\" under Edit -> Preferences -> OpenGL if you choose to run anyway."
                           );
-    if (ret==1){
+    if (ret==exit_){
       //exit(-1);
-      return NULL;
+      return false;
     }
 
     msleep(10);
     //QThread::currentThread()->wait(1000*10);
   }
+
+
+  g_compatibility_ok = true;  
+
+  return true;
+}
+
+QWidget *GL_create_widget(QWidget *parent){
+
+#if defined(FOR_MACOSX)
+  // doesn't work.
+  //cocoa_set_best_resolution(NULL);//(void*)widget->winId());
+#endif
+
+  R_ASSERT_RETURN_IF_FALSE2(g_compatibility_ok==true, NULL);
+
+    
 
   setup_widget(parent);
 #if !USE_QT5
