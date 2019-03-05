@@ -49,13 +49,30 @@ void keyDownPlay(int notenum,int windownum){
 	if(notenum<=0 || notenum>127) return;
 	if(window==NULL || window->curr_track<0) return;
 
-	PATCH_playNoteCurrPos(window,notenum,-1);
-        if(ATOMIC_GET(root->editonoff))
+        bool do_edit = ATOMIC_GET_RELAXED(root->editonoff);
+
+        if (do_edit && doScrollPlay()) {
+
+          // Not playing note here, because then it would be played twice.
           InsertNoteCurrPos(window,notenum,false,-1);
+          
+        } else {
+          
+          PATCH_playNoteCurrPos(window,notenum,-1);
+          if(do_edit)
+            InsertNoteCurrPos(window,notenum,false,-1);
+          
+        }
+
+        
 }
 
 void polyKeyDownPlay(int notenum,int windownum){
   //printf("POLY: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
+
+    if (!doAutoRepeat() && tevent_autorepeat)
+    return;
+
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 
 	notenum+=root->keyoct;
@@ -63,18 +80,9 @@ void polyKeyDownPlay(int notenum,int windownum){
 	if(notenum<=0 || notenum>127) return;
 	if(window==NULL || window->curr_track<0) return;
 
-        bool do_edit = ATOMIC_GET_RELAXED(root->editonoff);
-
-        if (do_edit && doScrollPlay()) {
-
-          // Not playing note here, because then it would be played twice.
+	PATCH_playNoteCurrPos(window,notenum,-1);
+        if(ATOMIC_GET(root->editonoff))
           InsertNoteCurrPos(window,notenum,true,-1);
-          
-        } else {
-          PATCH_playNoteCurrPos(window,notenum,-1);
-          if(do_edit)
-            InsertNoteCurrPos(window,notenum,true,-1);
-        }
 }
 
 void keyUpPlay(int notenum,int windownum){
