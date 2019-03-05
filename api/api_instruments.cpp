@@ -1201,6 +1201,8 @@ void setInstrumentEffectChangesValueWhenPressingRandom(int64_t instrument_id, co
     return;
 
   PLUGIN_set_random_behavior(plugin, effect_num, doit);
+  
+  (*patch->instrument->PP_Update)(patch->instrument,patch,false);
 }
 
 bool getInstrumentEffectChangesValueWhenPressingRandom(int64_t instrument_id, const_char* effect_name){
