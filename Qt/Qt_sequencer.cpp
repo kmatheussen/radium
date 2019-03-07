@@ -4397,7 +4397,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       
       QPainter p(this);
 
-      myFillRect(p, rect(), get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM), true, 35);
+      myFillRect(p, rect(), get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM), true, 15);
       /*
       for(const QRect &rect : ev->region())
         p.eraseRect(rect);
