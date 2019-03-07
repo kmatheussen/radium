@@ -2215,7 +2215,7 @@ QWidget *GL_create_widget(QWidget *parent){
 
 
     
-    if (s_version.contains("mesa", Qt::CaseInsensitive) != s_renderer.contains("AMD") && show_mesa_warning==true)
+    if (s_version.contains("mesa", Qt::CaseInsensitive) && !s_renderer.contains("AMD") && show_mesa_warning==true)
       GFX_Message(NULL,
                   "Warning!\n"
                   "MESA OpenGL driver detected.\n"
