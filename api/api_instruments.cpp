@@ -1119,10 +1119,14 @@ bool addAutomationToCurrentEditorTrack(int64_t instrument_id, const_char* effect
   int64_t track_instrument_id = getInstrumentForTrack(tracknum, blocknum, -1);
   
   if (track_instrument_id < 0) {
+    
     track_instrument_id = instrument_id;
     setInstrumentForTrack(instrument_id, tracknum, blocknum, -1);
+    
   }
-        
+
+  undoFxs(tracknum, blocknum, -1);
+
   float value_ = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
   
   int fxnum = getFx(effect_name, tracknum, patch->id, blocknum, -1);
