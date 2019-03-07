@@ -7866,10 +7866,10 @@
                                                                :enabled (and for-blocks
                                                                              (or (pair? seqblock-infos)
                                                                                  seqblock-info))
-                                                               (lambda ()
-                                                                 (let ((blocknum (<ra> :append-block)))
-                                                                   (undo-block
-                                                                    (lambda ()
+                                                               (lambda ()                                                                 
+                                                                 (undo-block
+                                                                  (lambda ()
+                                                                    (let ((blocknum (<ra> :append-block)))
                                                                       (for-each (lambda (seqblock-info)
                                                                                   (let* ((seqblocknum (seqblock-info :seqblocknum))
                                                                                          (seqtracknum (seqblock-info :seqtracknum))
@@ -7879,8 +7879,8 @@
                                                                                     (<ra> :create-seqblock seqtracknum blocknum pos)))
                                                                                 (if (null? seqblock-infos)
                                                                                     (list seqblock-info)
-                                                                                    seqblock-infos))))
-                                                                   (<ra> :select-block blocknum))))
+                                                                                    seqblock-infos))
+                                                                      (<ra> :select-block blocknum))))))
                                                          
                                                          "------------------------"
                                                          (list "Configure block"
