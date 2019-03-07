@@ -1,3 +1,31 @@
+Changes 5.9.43 -> 5.9.44:
+* Editor: Add undo when selecting "Add automation to
+  current editor track".
+* Sequencer: Delete block when undoing "Replace With
+  New Block".
+* Sequencer: Less gradient background color.
+* Modular mixer: Generate same color for all selected
+  instruments when selecting "Generate new color".
+* Linux: Don't show warning about MESA when using
+  an AMD GFX card.
+* Init: Initialize OpenGL much earlier in the
+  startup. Could reduce the chance of crashing
+  OpenGL during startup.
+* Editor: Fix not playing notes twice when adding a
+  note and "Play notes under the cursor when moving
+  up or down" is enabled". This supposedly fixed in
+  5.9.42, but wasn't.
+* Editor: Turn off autorepeat when pressing left
+  shift while adding notes and "Enable keyboard
+  autorepeat when adding notes in the editor" is
+  disabled.
+* Instruments: Update slider text immediately when
+  changing "Change value when pressing "random".
+* Editor: Ensure cursor is visible when moving the
+  horizontal scroll bar.
+
+
+
 Changes 5.9.42 -> 5.9.43:
 * Editor: Don't crash when changing on/off for a
   non-existent track.
