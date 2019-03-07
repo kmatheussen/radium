@@ -1549,9 +1549,14 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
         evalScheme(talloc_strdup(command.toUtf8().constData()));
         
       } else if (sel==generate_new_color) {
+
+        const char *new_color = generateNewColor(0.9);
         
-        QString command = QString("(ra:set-instrument-color (ra:generate-new-color 0.9) ") + QString::number(CHIP_get_patch(chip_under)->id) + ")";
-        evalScheme(talloc_strdup(command.toUtf8().constData()));
+        VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+          QString command = QString("(ra:set-instrument-color \"") + new_color + "\" " + QString::number(patch->id) + ")";
+          evalScheme(talloc_strdup(command.toUtf8().constData()));
+        }END_VECTOR_FOR_EACH;
+
         
       } else if (sel==instrument_info) {
         
