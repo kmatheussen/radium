@@ -13,8 +13,8 @@ Changes 5.9.43 -> 5.9.44:
   OpenGL during startup.
 * Editor: Fix not playing notes twice when adding a
   note and "Play notes under the cursor when moving
-  up or down" is enabled". This supposedly fixed in
-  5.9.42, but wasn't.
+  up or down" is enabled. This was supposedly fixed
+  in 5.9.42, but wasn't.
 * Editor: Turn off autorepeat when pressing left
   shift while adding notes and "Enable keyboard
   autorepeat when adding notes in the editor" is
