@@ -770,11 +770,28 @@ public:
 
     if(num_outputs>0){
       bool effects_are_on = ATOMIC_GET(plugin->effects_are_on);
+      
       input_volume_layout->setEnabled(effects_are_on);
+      
       if(plugin->type->num_inputs>0)
         _plugin_widget->setEnabled(effects_are_on);
+      
       filters_widget->setEnabled(effects_are_on);
+      
       volume_widget->setEnabled(effects_are_on);
+      
+      if (root->song->include_pan_and_dry_in_wet_signal){
+        bool pan_is_on = effects_are_on && PLUGIN_get_effect_value(plugin, type->num_effects + EFFNUM_PAN_ONOFF, VALUE_FROM_PLUGIN) >= 0.5f;
+        bool width_is_on = effects_are_on && PLUGIN_get_effect_value(plugin, type->num_effects + EFFNUM_DELAY_ONOFF, VALUE_FROM_PLUGIN) >= 0.5f;
+        
+        panning_slider->setEnabled(pan_is_on);
+        rightdelay_slider->setEnabled(width_is_on);
+
+        panning_onoff->setEnabled(effects_are_on);
+        rightdelay_onoff->setEnabled(effects_are_on);
+      }
+      
+      drywet_slider->setEnabled(effects_are_on);
     }
 
     _comp_widget->update_gui();

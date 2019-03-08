@@ -3140,6 +3140,7 @@ struct Song{
         bool editor_should_swing_along;
 
         bool mixer_comments_visible;
+        bool include_pan_and_dry_in_wet_signal;
         bool mute_editor_automation_when_track_is_muted;
         int num_channels_in_main_pipe;
 

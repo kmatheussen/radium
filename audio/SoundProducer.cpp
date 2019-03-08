@@ -1854,18 +1854,37 @@ public:
     // In addition, applying dry/wet is a dummy operation if wet=1.0 and dry=0.0, which is the normal situation, so it would normally
     // not make a difference in CPU usage. (and even when drywet!=1.0, there would probably be very little difference in CPU usage)
 
+    const bool include_pan_and_width_in_wet = root->song->include_pan_and_dry_in_wet_signal;
+    
+    
+    if (include_pan_and_width_in_wet){
+
+      // Output pan
+      SMOOTH_apply_pan(&_plugin->pan, _output_sound, _num_outputs, num_frames);
+      
+      // Right channel delay ("width")
+      if(_num_outputs>1)
+        static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, _output_sound[1], _output_sound[1]);
+
+    }
+
     RT_apply_dry_wet(latency_dry_sound, _num_dry_sounds, // dry
                      _output_sound, _num_outputs,        // wet (-> becomes output sound)
                      num_frames,
                      &_plugin->drywet);
 
-    // Output pan
-    SMOOTH_apply_pan(&_plugin->pan, _output_sound, _num_outputs, num_frames);
+    if (!include_pan_and_width_in_wet){
 
-    // Right channel delay ("width")
-    if(_num_outputs>1)
-      static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, _output_sound[1], _output_sound[1]);
+      // Output pan
+      SMOOTH_apply_pan(&_plugin->pan, _output_sound, _num_outputs, num_frames);
+      
+      // Right channel delay ("width")
+      if(_num_outputs>1)
+        static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, _output_sound[1], _output_sound[1]);
+
+    }
     
+
     // Output peaks
     if (_num_outputs > 0) {
       float volume_peaks[_num_outputs];
