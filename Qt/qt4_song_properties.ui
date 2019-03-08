@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>582</width>
-    <height>356</height>
+    <width>610</width>
+    <height>384</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -189,6 +189,13 @@
         <attribute name="buttonGroup">
          <string notr="true">buttonGroup</string>
         </attribute>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="include_pan_and_dry_in_wet">
+        <property name="text">
+         <string>Include Panning and Width in the Wet signal</string>
+        </property>
        </widget>
       </item>
      </layout>

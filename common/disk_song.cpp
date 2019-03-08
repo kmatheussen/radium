@@ -66,6 +66,7 @@ DC_start("SONG");
         DC_SSB("editor_should_swing_along", song->editor_should_swing_along);
 
         DC_SSB("mixer_comments_visible", song->mixer_comments_visible);
+        DC_SSB("include_pan_and_dry_in_wet_signal", song->include_pan_and_dry_in_wet_signal);
         DC_SSB("mute_editor_automation_when_track_is_muted", song->mute_editor_automation_when_track_is_muted);
         //DC_SSB("use_sequencer_timing", song->use_sequencer_tempos_and_signatures); // saved in sequencer state instead.
                 
@@ -104,7 +105,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	static const char *vars[10]={
+	static const char *vars[11]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -114,12 +115,14 @@ struct Song *LoadSong(void){
                 "plugins_should_receive_swing_tempo",
                 "editor_should_swing_along",
                 "mixer_comments_visible",
-                "mute_editor_automation_when_track_is_muted"
+                "mute_editor_automation_when_track_is_muted",
+                "include_pan_and_dry_in_wet_signal"
                 //"use_sequencer_timing"
 	};
 	struct Song *song=SONG_create();
 
         song->mute_editor_automation_when_track_is_muted = false; // Compatibility with older songs.
+        song->include_pan_and_dry_in_wet_signal = false; // Compatibility with older songs.
 
         MIDI_SetThroughPatch(NULL);
           
@@ -144,7 +147,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
 
-        GENERAL_LOAD(7,10)
+        GENERAL_LOAD(7,11)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -221,8 +224,8 @@ var9:
         goto start;
 
 var10:
-        //        song->use_sequencer_tempos_and_signatures = DC_LoadB();
-        //goto start;
+        song->include_pan_and_dry_in_wet_signal = DC_LoadB();
+        goto start;
 
 var11:
 var12:

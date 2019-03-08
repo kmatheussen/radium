@@ -2823,3 +2823,14 @@ void setMixerStripCommentsVisible(bool val){
 bool mixerStripCommentsVisible(void){
   return root->song->mixer_comments_visible;
 }
+
+void setIncludePanAndDryInWetSignal(bool val){
+  if(root->song->include_pan_and_dry_in_wet_signal != val){
+    radium::PlayerLock lock;
+    root->song->include_pan_and_dry_in_wet_signal = val;
+  }
+}
+  
+bool includePanAndDryInWetSignal(void){
+  return root->song->include_pan_and_dry_in_wet_signal;
+}
