@@ -125,7 +125,7 @@ struct ModulatorTarget{
       char *error_message = NULL;
       effect_num = PATCH_get_effect_num(patch, HASH_get_chars(state, ":effect-name"), &error_message);
       if (effect_num==-1){
-        GFX_Message(NULL, error_message);
+        GFX_Message(NULL, "%s", error_message);
         effect_num = 0; // to avoid crash.
       }
       

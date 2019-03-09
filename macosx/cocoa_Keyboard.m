@@ -83,16 +83,16 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   NSEventType type = [event type];
   int ret = -1;
   
-  if(type==NSFlagsChanged || type==NSKeyDown || type==NSKeyUp){
+  if(type==NSEventTypeFlagsChanged || type==NSEventTypeKeyDown || type==NSEventTypeKeyUp){
 
 #if 0
-    if (type==NSFlagsChanged)
+    if (type==NSEventTypeFlagsChanged)
       printf("type: %d. keycode: %d. modifiers: %d. Ignore autorepeat: %d\n",(int)type, [event keyCode],(int)[event modifierFlags], ignore_autorepeat);
     else
       printf("type: %d. keycode: %d. modifiers: %d. autorepeat: %d, ignore autorepeat: %d\n",(int)type, [event keyCode], (int)[event modifierFlags], [event isARepeat], ignore_autorepeat);
 #endif
 
-    if(type==NSFlagsChanged){
+    if(type==NSEventTypeFlagsChanged){
       int keycode = [event keyCode];
       
       if (g_modifiers[keycode])
@@ -105,17 +105,17 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
       
       //printf("   modifier is %s\n",(ret==TR_KEYBOARDUP)?"released":"pressed");
       
-    }else if(type==NSKeyDown){
+    }else if(type==NSEventTypeKeyDown){
       ret = TR_KEYBOARD;
       //printf("  M: 2\n");
     }
     
-    else if (type==NSKeyUp){
+    else if (type==NSEventTypeKeyUp){
       ret = TR_KEYBOARDUP;
       //printf("  M: 3\n");
     }
 
-    if (type==NSKeyDown || type==NSKeyUp){
+    if (type==NSEventTypeKeyDown || type==NSEventTypeKeyUp){
       if([event isARepeat]){
         ret = TR_AUTOREPEAT;
         //printf("  M: 4\n");
@@ -645,7 +645,7 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   //printf("Got event. type: %u\n",(unsigned int)type);
 
   static void *oldHotKeyMode = NULL;
-  if(type==NSAppKitDefined || type==NSSystemDefined || type==NSApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.
+  if(type==NSEventTypeAppKitDefined || type==NSEventTypeSystemDefined || type==NSEventTypeApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.
     //printf("      DAS EVENT: %x\n",(unsigned int)type);
 
     //printf(" Clear mod 1\n");
