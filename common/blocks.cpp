@@ -90,10 +90,21 @@ void NewBlock(
 struct Blocks *AppendBlock(void){
         NInt blocknum = root->song->blocks==NULL ? 0 : ListFindFirstFreePlace1(&root->song->blocks->l);
 
+        int num_tracks = 7;
+        int num_lines = 64;
+
+        {
+          struct WBlocks *curr_wblock = root==NULL ? NULL : root->song==NULL ? NULL : root->song->tracker_windows==NULL ? NULL : root->song->tracker_windows->wblock;
+          if (curr_wblock!=NULL){
+            num_tracks = curr_wblock->block->num_tracks;
+            num_lines = curr_wblock->block->num_lines;            
+          }
+        }
+        
 	struct Blocks *block=(struct Blocks*)talloc(sizeof(struct Blocks));
 
 	block->l.num=blocknum;
-	NewBlock(block,7,64,"NN");
+	NewBlock(block,num_tracks,num_lines,"NN");
 	root->song->num_blocks++;
         g_editor_blocks_generation++;
 
