@@ -900,7 +900,7 @@
                                  :get-wide-string #f
                                  :callback)
   (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 y2
-                              :text (lambda ()
+                              :text (lambda () 
                                       (if get-wide-string
                                           (<ra> :from-base64 text)
                                           text))
