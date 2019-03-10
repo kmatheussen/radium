@@ -2988,6 +2988,10 @@ const_char *fromBase64(const char *s){
   return STRING_get_chars(STRING_fromBase64(STRING_create(s)));
 }
 
+const_char *appendBase64Strings(const_char* w1, const_char* w2){
+  return qstring_to_w(w_to_qstring(w1) + w_to_qstring(w2));
+}
+
 const_char *createUuid(void){
   return talloc_strdup(QUuid::createUuid().toString().toUtf8().constData()); 
 }
