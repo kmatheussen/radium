@@ -2538,11 +2538,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       painter->setOpacity(opacity);
     }
     
-    bool drawText(const_char* color, const_char *chartext, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
+    bool drawText(const_char* color, QString text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
       QPainter *painter = get_painter();
 
-      QString text = QString(chartext); //.replace(" ", "\n");
-      
       QRectF rect(x1, y1, x2-x1, y2-y1);
 
       setPen(color);
@@ -7185,12 +7183,13 @@ void gui_setPaintOpacity(int64_t guinum, double opacity){
   gui->setOpacity(opacity);
 }
 
-bool gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
+bool gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size, bool text_is_base64) {
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return false;
 
-  return gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, rotate, cut_text_to_fit, scale_font_size);
+  QString qtext = text_is_base64 ? w_to_qstring(text) : text;
+  return gui->drawText(color, qtext, x1, y1, x2, y2, wrap_lines, align_top, align_left, rotate, cut_text_to_fit, scale_font_size);
 }
 
 void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left) {

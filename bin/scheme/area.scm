@@ -1560,13 +1560,13 @@
   (define is-soundfile (and file-info (file-info :is-audiofile)))
 
   (define name-text (if blocknum
-                        (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum))
+                        (<ra> :to-base64 (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum)))
                         (let ((filename (file-info :filename)))
                           (if (and is-dir
                                    ;;(not (string=? "." filename))
                                    ;;(not (string=? ".." filename))
                                    )
-                              (<-> filename "/")
+                              (<ra> :append-base64-strings filename (<ra> :to-base64 "/"))
                               filename))))
     
   (define ch-text (cond (blocknum
@@ -1677,6 +1677,7 @@
            0 ;; rotate
            #t ;; cut-text-to-fit
            #f ;; scale-font-size
+           #t ;; text is base64
            )
 
     (cond ((or blocknum
@@ -1945,7 +1946,8 @@
                                              (define is-dir-a (a :is-dir))
                                              (define is-dir-b (b :is-dir))
                                              (if (eq? is-dir-a is-dir-b)
-                                                 (string<? (a :filename) (b :filename))
+                                                 (string<? (<ra> :from-base64 (a :filename))
+                                                           (<ra> :from-base64 (b :filename)))
                                                  is-dir-a))))
                        (if is-finished
                            (set! entries-is-complete #t))

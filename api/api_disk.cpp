@@ -146,7 +146,7 @@ dyn_t getFileInfo(const_char* w_path){
   }
 
   HASH_put_chars(ret, ":path", qstring_to_w(path));
-  HASH_put_string(ret, ":filename", STRING_create(info.fileName()));
+  HASH_put_string(ret, ":filename", qstring_to_w(info.fileName())); //STRING_create(info.fileName()));
   HASH_put_bool(ret, ":is-dir", info.isDir());
   HASH_put_bool(ret, ":is-sym-link", info.isSymLink());
   HASH_put_bool(ret, ":exists", info.exists());
