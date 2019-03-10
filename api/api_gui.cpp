@@ -80,6 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_sequencer_proc.h"
 #include "../Qt/Qt_bottom_bar_widget_proc.h"
 #include "../Qt/Qt_MyQScrollBar.hpp"
+#include "../Qt/FileRequester.hpp"
 
 #include "../common/visual_proc.h"
 #include "../common/seqtrack_proc.h"
@@ -98,7 +99,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_gui_proc.h"
 
 
-static QByteArray g_filedialog_geometry;
+QByteArray g_filedialog_geometry;
 static QByteArray g_fontdialog_geometry;
 
 int g_num_running_resize_events = 0;
@@ -1067,7 +1068,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_int_int,_func.v, column, row);
     }
-    
+
     void fileSelected(const QString &file){
       ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_charpointer,_func.v, path_to_w_path(STRING_create(file)));
@@ -3892,53 +3893,21 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
 
 
-  struct FileRequester : QFileDialog, Gui, public radium::MouseCycleFix {
+  struct FileRequester : radium::FileRequester, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
-    
-  public:
 
+  public:
+    
     FileRequester(QString header_text, QString dir, QString filetypename, QString postfixes, bool for_loading)
-      : QFileDialog(NULL, header_text, dir, FileRequester::get_postfixes_filter(filetypename, postfixes))
+      : radium::FileRequester(NULL, header_text, dir, filetypename, postfixes, for_loading)
       , Gui(this)
     {
-      /*
-      setWindowTitle(header_text);
-      setDirectory(dir);
-      setSupportedSchemes(FileRequester::get_postfixes_filter(filetypename, postfixes).split(";;"));
-      */
-
-#if FOR_MACOSX
-      printf("          WORKAROUND: Always set DontUseNativeDialog on OSX to avoid partly GUI freeze.\n");
-      setOption(QFileDialog::DontUseNativeDialog, true);
-#endif
-      
-      if (for_loading)
-        setAcceptMode(QFileDialog::AcceptOpen);
-      else
-        setAcceptMode(QFileDialog::AcceptSave);
-
-      if (!g_filedialog_geometry.isEmpty()){
-        restoreGeometry(g_filedialog_geometry);
-      }
-      
       _have_set_size = true; // shouldn't this one be set only if we restore geometry?
     }
 
     ~FileRequester(){
-      g_filedialog_geometry = saveGeometry();
     }
     
-    static QString get_postfixes_filter(QString type, QString postfixes){
-      QString postfixes2 = postfixes==NULL ? "*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3" : QString(postfixes);
-      
-#if FOR_WINDOWS
-      return postfixes2 + " ;; All files (*)";
-#else
-      type = type==NULL ? "Song files" : type;
-      return QString(type) + " (" + postfixes2 + ") ;; All files (*)";
-#endif
-    }
-
     OVERRIDERS(QFileDialog);
   };
 

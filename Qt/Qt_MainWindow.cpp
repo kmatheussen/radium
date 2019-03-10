@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMenuBar>
 #include <QUrl>
 #include <QMimeData>
-#include <QFileDialog>
 
 #if USE_GTK_VISUAL
 #  ifdef __linux__
@@ -74,7 +73,7 @@ static HWND gtk_hwnd = NULL;
 
 #include "Qt_colors_proc.h"
 #include "Qt_Menues_proc.h"
-
+#include "FileRequester.hpp"
 
 #if USE_QT_VISUAL
 #  include "Qt_Fonts_proc.h"
@@ -747,17 +746,6 @@ void GFX_EnablePainting(void){
 
 
 
-static QString get_postfixes_filter(const char *type, const char *postfixes){
-  QString postfixes2 = postfixes==NULL ? "*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3" : QString(postfixes);
-  
-#if FOR_WINDOWS
-  return postfixes2 + " ;; All files (*)";
-#else
-  type = type==NULL ? "Song files" : type;
-  return QString(type) + " (" + postfixes2 + ") ;; All files (*)";
-#endif
-}
-
 const wchar_t *GFX_GetLoadFileName(
                                    struct Tracker_Windows *tvisual,
                                    ReqType reqtype,
@@ -771,16 +759,16 @@ const wchar_t *GFX_GetLoadFileName(
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
 
-  radium::ScopedExec scopedExec(program_state_is_valid);
-
   QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
-  QString filename = QFileDialog::getOpenFileName(editor,
-                                                  seltext,
-                                                  dir,
-                                                  get_postfixes_filter(type, postfixes),
-                                                  0,
-                                                  QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
-                                                  );
+  
+  QString filename = radium::FileRequester(editor,
+                                           seltext,
+                                           dir,
+                                           type,
+                                           postfixes,
+                                           true
+                                           ).get_filename(program_state_is_valid);
+  
   if(filename == "")
     return NULL;
   else
@@ -800,16 +788,15 @@ const wchar_t *GFX_GetSaveFileName(
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
 
-  radium::ScopedExec scopedExec(program_state_is_valid);
-
   QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
-  QString filename = QFileDialog::getSaveFileName(editor,
-                                                  seltext,
-                                                  "",
-                                                  get_postfixes_filter(type, postfixes),
-                                                  0,
-                                                  QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
-                                                  );
+  
+  QString filename = radium::FileRequester(editor,
+                                           seltext,
+                                           dir,
+                                           type,
+                                           postfixes,
+                                           false
+                                           ).get_filename(program_state_is_valid);
   if (filename == "")
     return NULL;
   else
