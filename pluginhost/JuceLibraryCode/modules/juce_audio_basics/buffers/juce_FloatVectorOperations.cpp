@@ -878,7 +878,7 @@ void JUCE_CALLTYPE FloatVectorOperations::convertFixedToFloat (float* dest, cons
                                   JUCE_LOAD_NONE, JUCE_INCREMENT_SRC_DEST, )
    #else
     JUCE_PERFORM_VEC_OP_SRC_DEST (dest[i] = (float) src[i] * multiplier,
-                                  Mode::mul (mult, _mm_cvtepi32_ps (_mm_loadu_si128 ((const __m128i*) src))),
+                                  Mode::mul (mult, _mm_cvtepi32_ps (_mm_loadu_si128 (reinterpret_cast<const __m128i*> (src)))),
                                   JUCE_LOAD_NONE, JUCE_INCREMENT_SRC_DEST,
                                   const Mode::ParallelType mult = Mode::load1 (multiplier);)
    #endif
@@ -1030,12 +1030,9 @@ double JUCE_CALLTYPE FloatVectorOperations::findMaximum (const double* src, int 
 
 intptr_t JUCE_CALLTYPE FloatVectorOperations::getFpStatusRegister() noexcept
 {
-  return 0;
-#if 0
     intptr_t fpsr = 0;
-    //  #if JUCE_INTEL && JUCE_USE_SSE_INTRINSICS
+  #if JUCE_INTEL && JUCE_USE_SSE_INTRINSICS
     fpsr = static_cast<intptr_t> (_mm_getcsr());
-    /*
   #elif defined (__arm64__) || defined (__aarch64__) || JUCE_USE_ARM_NEON
    #if defined (__arm64__) || defined (__aarch64__)
     asm volatile("mrs %0, fpcr" : "=r" (fpsr));
@@ -1047,14 +1044,12 @@ intptr_t JUCE_CALLTYPE FloatVectorOperations::getFpStatusRegister() noexcept
     jassertfalse; // No support for getting the floating point status register for your platform
    #endif
   #endif
-    */
+
     return fpsr;
-#endif
 }
 
 void JUCE_CALLTYPE FloatVectorOperations::setFpStatusRegister (intptr_t fpsr) noexcept
 {
-#if 0    
   #if JUCE_INTEL && JUCE_USE_SSE_INTRINSICS
     auto fpsr_w = static_cast<uint32_t> (fpsr);
     _mm_setcsr (fpsr_w);
@@ -1070,7 +1065,6 @@ void JUCE_CALLTYPE FloatVectorOperations::setFpStatusRegister (intptr_t fpsr) no
    #endif
     ignoreUnused (fpsr);
   #endif
-#endif
 }
 
 void JUCE_CALLTYPE FloatVectorOperations::enableFlushToZeroMode (bool shouldEnable) noexcept
