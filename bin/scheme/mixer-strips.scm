@@ -100,30 +100,31 @@
    (and effect-name
         (get-effect-popup-entries instrument-id effect-name))
 
-   (<-> "------------Mixer strip" (if instrument-id
-                                      (<-> " for " (<ra> :get-instrument-name instrument-id))
-                                      ""))
-   
-   ;;(list "Pan Enabled"
-   ;;      :check (pan-enabled? instrument-id)
-   ;;      (lambda (onoff)
-   ;;        (pan-enable! instrument-id onoff)))
-
-   (list "Wide"
-         :check (and wide-mode-instrument-id
-                     (<ra> :has-wide-instrument-strip wide-mode-instrument-id))
-         :enabled wide-mode-instrument-id
-         (lambda (enabled)
-           (<ra> :set-wide-instrument-strip wide-mode-instrument-id enabled)
-           (remake-mixer-strips instrument-id)))
-   
-   (list "Visible" :enabled (or instrument-id
-                                (not strips-config))
-         :check #t
-         (lambda (hideit)
-           (if (not strips-config)
-               (<ra> :show-hide-mixer-strip)
-               (set! (strips-config :is-enabled instrument-id) #f))))
+   (if instrument-id
+       (list
+        (<-> "------------Mixer strip for " (<ra> :get-instrument-name instrument-id))
+        
+        ;;(list "Pan Enabled"
+        ;;      :check (pan-enabled? instrument-id)
+        ;;      (lambda (onoff)
+        ;;        (pan-enable! instrument-id onoff)))
+        
+        (list "Wide"
+              :check (and wide-mode-instrument-id
+                          (<ra> :has-wide-instrument-strip wide-mode-instrument-id))
+              :enabled wide-mode-instrument-id
+              (lambda (enabled)
+                (<ra> :set-wide-instrument-strip wide-mode-instrument-id enabled)
+                (remake-mixer-strips instrument-id)))
+        
+        (list "Visible" :enabled (or instrument-id
+                                     (not strips-config))
+              :check #t
+              (lambda (hideit)
+                (if (not strips-config)
+                    (<ra> :show-hide-mixer-strip)
+                    (set! (strips-config :is-enabled instrument-id) #f)))))
+       '())
 
    "---------Mixer"
    
