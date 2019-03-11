@@ -122,6 +122,12 @@ struct ScopedMutex{
   ~ScopedMutex(){
     mutex.unlock();
   }
+
+  void wait_and_pause_lock(int ms){
+    mutex.unlock();
+    OS_WaitForAShortTime(ms);
+    mutex.lock();
+  }
 };
 
 
