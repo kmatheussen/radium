@@ -2654,22 +2654,23 @@ void setVstGuiAlwaysOnTop(bool doit){
 
 
 
-static bool g_show_virtual_midi_keyboard_below_native_guis = true;
+static DEFINE_ATOMIC(bool, g_show_virtual_midi_keyboard_below_native_guis) = true;
 
+// Can be called from the juce message thread as well as the main thread.
 bool showVirtualMidiKeyboardBelowNativeGUIs(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_show_virtual_midi_keyboard_below_native_guis = SETTINGS_read_bool("show_virtual_midi_keyboard_below_native_guis", g_show_virtual_midi_keyboard_below_native_guis);
+    ATOMIC_SET(g_show_virtual_midi_keyboard_below_native_guis, SETTINGS_read_bool("show_virtual_midi_keyboard_below_native_guis", ATOMIC_GET(g_show_virtual_midi_keyboard_below_native_guis)));
     has_inited = true;
   }
 
-  return g_show_virtual_midi_keyboard_below_native_guis;
+  return ATOMIC_GET(g_show_virtual_midi_keyboard_below_native_guis);
 }
 
 void setShowVirtualMidiKeyboardBelowNativeGUIs(bool doit){
-  if (doit != g_show_virtual_midi_keyboard_below_native_guis) {
-    g_show_virtual_midi_keyboard_below_native_guis = doit;
+  if (doit != ATOMIC_GET(g_show_virtual_midi_keyboard_below_native_guis)) {
+    ATOMIC_SET(g_show_virtual_midi_keyboard_below_native_guis, doit);
     SETTINGS_write_bool("show_virtual_midi_keyboard_below_native_guis", doit);
     PREFERENCES_update();
   }

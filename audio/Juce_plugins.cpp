@@ -2874,7 +2874,8 @@ void PLUGINHOST_init(void){
   }
   
   //juce::Font::setDefaultSansSerifFont
-  
+
+  showVirtualMidiKeyboardBelowNativeGUIs(); // To avoid calling SETTINGS_read_bool from the message thread.
 }
 
 void PLUGINHOST_shut_down(void){
