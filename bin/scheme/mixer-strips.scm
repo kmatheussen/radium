@@ -100,7 +100,10 @@
    (and effect-name
         (get-effect-popup-entries instrument-id effect-name))
 
-   (<-> "------------Mixer strip for " (<ra> :get-instrument-name instrument-id))
+   (<-> "------------Mixer strip" (if instrument-id
+                                      (<-> " for " (<ra> :get-instrument-name instrument-id))
+                                      ""))
+   
    ;;(list "Pan Enabled"
    ;;      :check (pan-enabled? instrument-id)
    ;;      (lambda (onoff)
