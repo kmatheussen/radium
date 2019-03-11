@@ -1380,12 +1380,12 @@ public:
 
     ATOMIC_SET(g_is_currently_pausing, false);
     
-    if (ATOMIC_GET(GE_version_string)==NULL) {
+    if (ATOMIC_GET_RELAXED(GE_version_string)==NULL) {
       ATOMIC_SET(GE_vendor_string, V_strdup((const char*)glGetString(GL_VENDOR)));
       ATOMIC_SET(GE_renderer_string, V_strdup((const char*)glGetString(GL_RENDERER)));
       ATOMIC_SET(GE_version_string, V_strdup((const char*)glGetString(GL_VERSION)));
       printf("vendor: %s, renderer: %s, version: %s \n",(const char*)ATOMIC_GET(GE_vendor_string),(const char*)ATOMIC_GET(GE_renderer_string),(const char*)ATOMIC_GET(GE_version_string));
-
+      
       ATOMIC_SET(GE_opengl_version_flags, QGLFormat::openGLVersionFlags());
       //abort();
     }
@@ -1395,9 +1395,9 @@ public:
 
 #if USE_QT5
     if (g_qtgui_has_started_step2==false || ATOMIC_GET(_main_window_is_exposed)==false){
-      OS_WaitAtLeast(200);
       if (handle_current)
         QGLWidget::doneCurrent();
+      lock.wait_and_pause_lock(200);
       return;
     }
 #endif
@@ -1634,15 +1634,15 @@ return SETTINGS_read_double("vblank", -1.0) > 0.0;
 #endif
 
 static double get_refresh_rate(void){
-  
+
   static bool has_started_t2_thread = false;
-  
+
   QWindow *qwindow = widget->windowHandle();
   if (qwindow!=NULL){
 
     double ratio = qwindow->devicePixelRatio();
     //ratio = 0.5;
-      
+
     if (fabs(ratio-1.0) > 0.01){
 
       static bool has_shown_warning = false;
@@ -1667,7 +1667,7 @@ static double get_refresh_rate(void){
       if (has_started_t2_thread==false){
         
         radium::ScopedMutex lock(make_current_mutex);
-        
+
         T1_start_t2_thread(widget->context()->contextHandle());
         has_started_t2_thread = true;
         

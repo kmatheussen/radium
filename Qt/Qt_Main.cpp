@@ -1865,7 +1865,7 @@ protected:
 
     static int num_calls_at_this_point = 0;
     num_calls_at_this_point++;
-    
+
     struct Tracker_Windows *window=root->song->tracker_windows;
 
     // No, we still need to do this. At least in qt 5.5.1. Seems like it's not necessary in 5.7 or 5.8 though, but that could be coincidental.
@@ -2061,7 +2061,7 @@ protected:
       if (gl_status>=1)
         GL_maybe_estimate_vblank(static_cast<EditorWidget*>(window->os_visual.widget)->gl_widget);
     }
-    
+
     #if 0
     static bool main_window_is_exposed = false;
     if (main_window_is_exposed==false){
