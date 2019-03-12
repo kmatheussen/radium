@@ -2719,8 +2719,8 @@ int radium_main(const char *arg){
 #endif
   }
 
-  QApplication::setEffectEnabled(Qt::UI_AnimateMenu,true);
-  QApplication::setEffectEnabled(Qt::UI_AnimateCombo,true);
+  //QApplication::setEffectEnabled(Qt::UI_AnimateMenu,true);
+  //QApplication::setEffectEnabled(Qt::UI_AnimateCombo,true);
 
   //QApplication::setGraphicsSystem("native");
   //QApplication::setGraphicsSystem("raster");
