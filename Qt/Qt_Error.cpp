@@ -48,6 +48,7 @@ static int show_message(QString message, const QVector<QString> &menu_strings){
   }
 
   msgBox->show();
+  adjustSizeAndMoveWindowToCentre(msgBox);
   msgBox->raise();
   msgBox->activateWindow();
   
