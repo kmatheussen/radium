@@ -206,6 +206,11 @@ MixerWidget *create_mixer_widget(QWidget *parent){
 }
 
 
+static bool modular_mixer_visible(void){
+  g_mixer_widget->view->isVisible()
+}
+
+
 /*
 struct HelpText : public QTimer{
   QGraphicsTextItem *_text;
@@ -1859,9 +1864,7 @@ namespace{
 
       RETURN_IF_DATA_IS_INACCESSIBLE();
 
-      if (g_mixer_widget->isVisible()){
-
-        //printf("UPDATING mixer\n");
+      if (modular_mixer_visible()){
 
         for (QGraphicsItem *das_item : g_mixer_widget->scene.items()){
           
