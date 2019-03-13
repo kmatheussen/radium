@@ -1645,13 +1645,15 @@ static double get_refresh_rate(void){
 
     if (fabs(ratio-1.0) > 0.01){
 
+      /*
       static bool has_shown_warning = false;
 
       if (has_shown_warning==false){
         RT_message("Note: High DPI display detected. Radium has not supported high DPI display very long. If you notice strange graphics, please report it.");
         has_shown_warning=true;
       }
-
+      */
+      
       g_opengl_scale_ratio = ratio;
       
       // Make sure editor font is scaled.
