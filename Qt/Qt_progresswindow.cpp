@@ -132,10 +132,12 @@ static int longest_line(QString text){
 
 namespace{
   class MyProgressWindow : public QWidget{
+    QPixmap _pixmap_org;
     QPixmap _pixmap;
     char _text[80];
     QToolButton *_close_button;
-    
+    Qt::WindowFlags _org_flags;
+     
   public:
     
     MyProgressWindow()
@@ -143,6 +145,13 @@ namespace{
       qsrand(QDateTime::currentMSecsSinceEpoch());
       generate_new_text();
 
+      _org_flags = windowFlags();
+
+      //setWindowFlags(_org_flags | Qt::FramelessWindowHint);
+      setWindowFlags(_org_flags | Qt::Tool | Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint | Qt::MSWindowsFixedSizeDialogHint);
+      
+      _pixmap_org = QPixmap("logo_medium.png");
+      
       _close_button = new QToolButton(this);
       _close_button->setText("_");
 
@@ -153,7 +162,19 @@ namespace{
       _close_button->adjustSize();
       _close_button->updateGeometry();
 
-      _close_button->connect(_close_button, SIGNAL(released()), this, SLOT(showMinimized()));
+      connect(_close_button, &QToolButton::released, this, [this]()
+              {
+                //printf("HERE\n");                
+#if FOR_MACOSX
+                //showMinimized doesn't work for frameless windows on OSX. Workaround:
+                setWindowFlags(_org_flags | Qt::WindowMinMaxButtonsHint); // https://bugreports.qt.io/browse/QTBUG-64994
+                _close_button->hide(); // Don"t need it since the min/max buttons are visible now.
+#endif
+                showMinimized();
+                
+              }
+              );
+
     }
 
     void make_anagram(const char *input, char *output) const {
@@ -200,9 +221,9 @@ namespace{
     }
     
     void resizeEvent(QResizeEvent *ev) override{
-      _pixmap = QPixmap("logo_medium.png").scaled(width(), height(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+      _pixmap = _pixmap_org.scaled(width(), height(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+        
       _close_button->move(width()-_close_button->width(), 0);
-      //QPainter painter(&_pixmap);
     }
 
     void paintEvent(QPaintEvent *ev) override{
@@ -258,8 +279,8 @@ public:
 
     if (!isParentRunning())
       QApplication::quit();
-    
-    if (g_progressWindow != NULL && g_progressWindow->isVisible()) {
+
+    if (g_progressWindow != NULL && g_progressWindow->isVisible() && !g_progressWindow->isMinimized()) {
       g_progressWindow->raise();
     }
   }
@@ -326,12 +347,6 @@ static void process_OpenProgress(QString message, QRect rect){
   //progressWindow->setStyleSheet("QTextBrowser { padding-left:20; padding-top:20; padding-bottom:20; padding-right:20; background-color: white;}");
   //  g_progressWindow->setStyleSheet("QTextBrowser { padding-left:20; padding-top:20; padding-bottom:20; padding-right:20; background-color: none;}"); //background-image: url(./logo_smaller.png);}");
   
-#if 1 // defined(FOR_LINUX) // popup locks up X on my computer if radium crashes while the progress window is open.
-  g_progressWindow->setWindowFlags(g_progressWindow->windowFlags() | Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint | Qt::MSWindowsFixedSizeDialogHint);
-#else
-  g_progressWindow->setWindowFlags(g_progressWindow->windowFlags() | Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
-#endif
-
   g_progressWindow->resize(30,50); // positionWindow doesn't shrink window.
   positionWindow(rect, g_progressWindow);
   setContent("");
