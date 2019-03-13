@@ -14,6 +14,7 @@
 #include <QMutexLocker>
 #include <QPainter>
 #include <QDateTime>
+#include <QToolButton>
 
 
 static const QString message_hide = "_MESSAGE_HIDE";
@@ -133,13 +134,26 @@ namespace{
   class MyProgressWindow : public QWidget{
     QPixmap _pixmap;
     char _text[80];
-
+    QToolButton *_close_button;
+    
   public:
     
     MyProgressWindow()
     {
       qsrand(QDateTime::currentMSecsSinceEpoch());
       generate_new_text();
+
+      _close_button = new QToolButton(this);
+      _close_button->setText("_");
+
+      _close_button->setAttribute(Qt::WA_TranslucentBackground);
+      _close_button->setStyleSheet("background-color: #46638f");
+      
+      _close_button->resize(10,10);
+      _close_button->adjustSize();
+      _close_button->updateGeometry();
+
+      _close_button->connect(_close_button, SIGNAL(released()), this, SLOT(showMinimized()));
     }
 
     void make_anagram(const char *input, char *output) const {
@@ -187,6 +201,7 @@ namespace{
     
     void resizeEvent(QResizeEvent *ev) override{
       _pixmap = QPixmap("logo_medium.png").scaled(width(), height(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+      _close_button->move(width()-_close_button->width(), 0);
       //QPainter painter(&_pixmap);
     }
 
@@ -687,7 +702,7 @@ void GFX_ShowProgress(void){
 
 
 /*
-cd /home/kjetil/radium && BUILDTYPE=DEBUG ./build_linux.sh && cd Qt && g++ Qt_progresswindow.cpp -DTEST_MAIN `pkg-config --libs Qt5Gui --cflags Qt5Gui --cflags Qt5Widgets` -std=gnu++11 -DNDEBUG -DP_SERVER -I../Qt -DFOR_LINUX -DUSE_QT4 -DUSE_QT5 `cat ../flagopts.opt` -fPIC -Wall && ./a.out
+cd /home/kjetil/radium && BUILDTYPE=DEBUG ./build_linux.sh && cd Qt && g++ Qt_progresswindow.cpp -DTEST_MAIN `pkg-config --libs Qt5Gui --cflags Qt5Gui --cflags Qt5Widgets` -std=gnu++11 -DNDEBUG -DP_SERVER -I../Qt -DFOR_LINUX -DUSE_QT4 -DUSE_QT5 `cat ../flagopts.opt` -fPIC -Wall && cd /home/kjetil/radium/bin && ../Qt/a.out
 */
 
   
