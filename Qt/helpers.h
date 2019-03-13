@@ -703,6 +703,7 @@ struct MyQMessageBox : public QMessageBox {
     } else {
       set_window_flags(this, radium::IS_MODAL);
     }
+
     adjustSizeAndMoveWindowToCentre(this);
   }
 
