@@ -194,6 +194,7 @@ public:
         {
             if (auto seqHandle = client.get())
             {
+              enableSubscription = true; // Make sure all connections and ports are shown (for instance in the qjackctl patchbay). Not showing them only creates confusion.
                 const unsigned int caps =
                     isInput ? (SND_SEQ_PORT_CAP_WRITE | (enableSubscription ? SND_SEQ_PORT_CAP_SUBS_WRITE : 0))
                             : (SND_SEQ_PORT_CAP_READ  | (enableSubscription ? SND_SEQ_PORT_CAP_SUBS_READ : 0));
