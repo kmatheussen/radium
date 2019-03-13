@@ -292,6 +292,21 @@ private:
     //==============================================================================
     class MidiInputThread   : public Thread
     {
+      
+      void setLowestRealtimePriority()
+        {
+          struct sched_param param = {0};
+          param.sched_priority=sched_get_priority_min(SCHED_RR);
+          pthread_setschedparam(pthread_self(), SCHED_RR, &param);
+        }
+      
+      void setNonrealtimePriority()
+        {
+          struct sched_param param = {0};
+          param.sched_priority=sched_get_priority_min(SCHED_OTHER);
+          pthread_setschedparam(pthread_self(), SCHED_OTHER, &param);
+        }
+      
     public:
         MidiInputThread (AlsaClient& c)
             : Thread ("JUCE MIDI Input"), client (c)
@@ -314,6 +329,8 @@ private:
 
                 HeapBlock<uint8> buffer (maxEventSize);
 
+                setLowestRealtimePriority();
+            
                 while (! threadShouldExit())
                 {
                     if (poll (pfd, (nfds_t) numPfds, 100) > 0) // there was a "500" here which is a bit long when we exit the program and have to wait for a timeout on this poll call
@@ -344,6 +361,8 @@ private:
                     }
                 }
 
+                setNonrealtimePriority();
+                
                 snd_midi_event_free (midiParser);
             }
         }
