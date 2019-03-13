@@ -1863,11 +1863,9 @@ namespace{
 
         //printf("UPDATING mixer\n");
 
-        QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
-        
-        for (int i = 0; i < das_items.size(); ++i) {
+        for (QGraphicsItem *das_item : g_mixer_widget->scene.items()){
           
-          Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+          Chip *chip = dynamic_cast<Chip*>(das_item);
           
           if(chip!=NULL){
             
@@ -1889,10 +1887,11 @@ namespace{
               volatile struct Patch *patch = plugin->patch;
               
               if(patch!=NULL){
-                
-                if(ATOMIC_GET_RELAXED(patch->visual_note_intencity) > 0) {
-                  ATOMIC_ADD_RETURN_OLD_RELAXED(patch->visual_note_intencity, -1);
-                  //printf("intencity: %d\n",intencity);
+
+                int note_intencity = ATOMIC_GET_RELAXED(patch->visual_note_intencity);
+                if(note_intencity != chip->_last_note_intencity){
+                  chip->_last_note_intencity = note_intencity;
+                  //printf("intencity: %d\n",ATOMIC_GET(patch->visual_note_intencity));
                   int x1,y1,x2,y2;
                   CHIP_get_note_indicator_coordinates(x1,y1,x2,y2);
                   chip->update(x1,y1,x2-x1,y2-y1);
