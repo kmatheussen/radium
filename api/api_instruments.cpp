@@ -585,7 +585,7 @@ const_char* getInstrumentEffectName(int effect_num, int64_t instrument_id){
     return "";
   }
   
-  return talloc_strdup(patch->instrument->getFxName(patch, effect_num));
+  return patch->instrument->getFxName(patch, effect_num);
 }
 
 bool instrumentHasBeenUsed(int64_t instrument_id){

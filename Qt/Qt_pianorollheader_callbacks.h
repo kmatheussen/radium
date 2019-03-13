@@ -65,6 +65,9 @@ class Pianorollheader : public QWidget, public Ui::Pianorollheader {
 public slots:
 
   void on_autorange_clicked(){
+    if (_initing)
+      return;
+    
     printf("Hepp hepp\n");
     //update();
     //autorange->setDown(false);
@@ -91,6 +94,9 @@ public slots:
   }
 
   void on_lowkey_editingFinished(){
+    if (_initing)
+      return;
+    
     printf("minkey\n");
 
     if (blocknum!=-1 && tracknum!=-1) {
@@ -112,6 +118,9 @@ public slots:
   }
 
   void on_highkey_editingFinished(){
+    if (_initing)
+      return;
+
     printf("maxkey\n");
 
     if (blocknum!=-1 && tracknum!=-1) {
