@@ -2410,7 +2410,7 @@ const_char* getSeqblockName(int seqblocknum, int seqtracknum){
     return STRING_get_chars(get_seqblock_sample_name(seqtrack, seqblock, false));
   
   else
-    return talloc_strdup(seqblock->block->name);
+    return seqblock->block->name;
 }
 
 int getNumSeqblocks(int seqtracknum){

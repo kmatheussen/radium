@@ -74,7 +74,7 @@ namespace radium{
     
     QString get_filename(bool program_state_is_valid){
       QString ret;
-      connect(this, &QFileDialog::fileSelected, this, [this, &ret](const QString &filename)
+      connect(this, &QFileDialog::fileSelected, this, [&ret](const QString &filename)
               {
                 ret = filename; // There is a function in QFileDialog called selectedFiles(), but the documentation for it is cryptic and contains no examples. This is easier.
               }
