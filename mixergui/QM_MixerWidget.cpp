@@ -207,7 +207,7 @@ MixerWidget *create_mixer_widget(QWidget *parent){
 
 
 static bool modular_mixer_visible(void){
-  g_mixer_widget->view->isVisible()
+  return g_mixer_widget->view->isVisible();
 }
 
 
