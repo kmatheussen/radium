@@ -831,18 +831,25 @@ void PATCH_remove_all_event_receivers(struct Patch *patch, radium::PlayerLockOnl
 
 
 void PATCH_call_very_often(void){
-  struct Instruments *instrument = get_all_instruments();
+  if (is_called_every_ms(50)){
+    
+    struct Instruments *instrument = get_all_instruments();
+    
+    while(instrument!=NULL){
+      
+      VECTOR_FOR_EACH(struct Patch *, patch, &instrument->patches){
+        if (ATOMIC_COMPARE_AND_SET_BOOL(patch->widget_needs_to_be_updated, true, false))
+          GFX_update_instrument_widget(patch);
+        
+        if(ATOMIC_GET_RELAXED(patch->visual_note_intencity) > 0)
+          ATOMIC_ADD_RETURN_OLD_RELAXED(patch->visual_note_intencity, -1);
+      
+      }END_VECTOR_FOR_EACH;
+      
+      instrument = NextInstrument(instrument);
 
-  while(instrument!=NULL){
-
-    VECTOR_FOR_EACH(struct Patch *, patch, &instrument->patches){
-      if (ATOMIC_COMPARE_AND_SET_BOOL(patch->widget_needs_to_be_updated, true, false))
-        GFX_update_instrument_widget(patch);
-    }END_VECTOR_FOR_EACH;
-
-    instrument = NextInstrument(instrument);
+    }
   }
-
 }
 
 static void add_linked_note(linked_note_t **root, linked_note_t *note);

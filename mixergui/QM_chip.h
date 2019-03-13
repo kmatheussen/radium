@@ -140,6 +140,7 @@ public:
   bool _last_updated_recording = false;
   bool _last_updated_autosuspending = false;
   int64_t _autosuspend_on_time = 0;
+  int _last_note_intencity = -1;
   
   float _slider_start_value;
   float _slider_start_pos;
