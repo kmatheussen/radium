@@ -440,7 +440,9 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   PLUGIN_touch(plugin);
     
   ATOMIC_SET(plugin->effect_num_to_show_because_it_was_used_externally, -1);
-  
+
+  plugin->is_dpi_aware = true;
+    
   int buffer_size = MIXER_get_buffer_size();
 
   plugin->midi_learns = new radium::Vector<radium::SoundPluginEffectMidiLearn*>;
@@ -2507,8 +2509,9 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
     HASH_put_hash(state,"ab",ab_state);
   }
 
-  // sample seek
   HASH_put_bool(state, "enable_sample_seek", ATOMIC_GET(plugin->enable_sample_seek));
+
+  HASH_put_bool(state, "is_dpi_aware", plugin->is_dpi_aware);
   
   HASH_put_int(state, "___radium_plugin_state_v3", 1);
       
@@ -2785,8 +2788,10 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   
   if (HASH_has_key(state, "enable_sample_seek"))
     ATOMIC_SET(plugin->enable_sample_seek, HASH_get_bool(state, "enable_sample_seek"));
-  
 
+  if (HASH_has_key(state, "is_dpi_aware"))
+    plugin->is_dpi_aware = HASH_get_bool(state, "is_dpi_aware");
+  
   return plugin;
 }
 

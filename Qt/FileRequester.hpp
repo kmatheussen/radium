@@ -39,7 +39,11 @@ namespace radium{
       setOption(QFileDialog::DontUseCustomDirectoryIcons, true); // Sometimes make windows crawl if I remember correctly.
     
 #if FOR_MACOSX
-      printf("          WORKAROUND: Always set DontUseNativeDialog on OSX to avoid partly GUI freeze.\n");
+      // Reasons for never using native dialog on OSX:
+      //
+      // 1. There doesn't seem to be a way to remove filtered-out files. They are drawn in a grayer color though, but that's just messy.
+      // 2. GUI Freezes when calling show(). (exec() works though, strangely enough)
+      //
       setOption(QFileDialog::DontUseNativeDialog, true);
 #else
       setOption(QFileDialog::DontUseNativeDialog, useNativeFileRequesters());
