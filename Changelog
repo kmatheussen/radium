@@ -1,3 +1,68 @@
+Changes 5.9.44 -> 5.9.46:
+* Windows/VST: Add a "DPI" checkbox to the VST plugin
+  header when DPI is not 96, i.e. when either the
+  display is scaled, or a hiDPI monitor is used.
+  When unchecking the DPI checkbox, the plugin GUI
+  will be reopened with a DPI of 96 instead. This
+  will both let Windows do the scaling (causing
+  blury and larger graphics), and in some cases fix
+  bugs caused by plugins not handling a
+  non-standard DPI. You need Windows 10 for this
+  to work.
+* OpenGL: Remove startup warning that Radium hasn't
+  supported high DPI display for a very long time.
+  It's been a pretty long time now.
+* Error message window: Position in the middle of the
+  screen.
+* Progress window: Add a minimize button in the upper
+  right corner.
+* Mixer: Don't update graphics for the modular mixer
+  when it's not visible.
+* Mixer strips: Fix note intencity circle only
+  lighting up/down when the main mixer was visible.
+* GUI: Turn off menu and combobox animation. Screwed
+  up menus on osx when using Qt 5.12. (Think the
+  menu animation actually brought back the same bug
+  that caused me to upgrade Qt from 5.7 to 5.10.)
+* Mixer: Fix error message sometimes popping up when
+  showing popup menu.
+* JUCE patch for Linux: Display ALSA MIDI client
+  names as clientName + ": " + portName to avoid
+  mixup for ports with the same port name belonging
+  to different clients.
+* JUCE patch for Linux: Make sure all ALSA MIDI
+  connections and ALSA MIDI ports are publicly shown
+  (for instance in the qjackctl patchbay). Not
+  showing them only creates confusion.
+* JUCE patch for Linux: Set realtime priority for the
+  MIDI input thread.
+* Build: Update Juce from 5.3.2 to 5.4.3.
+* Linux: Don't read from configuration file when
+  opening a native VST gui. (Race condition that
+  could have caused various trouble.)
+* Init: Fix 1-10 seconds freeze that sometimes
+  happened during program startup.
+* Windows/Sequencer: Fix displaying non-ascii
+  characters in the audio file browser.
+* OSX: Fix file requester not filtering out entries
+  when loading/saving mod/midi/xm/rad.  
+* OSX: Radium requires 10.12 or newer.
+* Editor: When appending new block, let it have the
+  same number of tracks and lines as the current
+  block. (Same behavior as insert block.)
+* Instruments: Include the pan and width effects in
+  the wet signal by default. This can be changed in
+  the song properties window. When loading older
+  songs, pan and width is not included in the wet
+  signal, since that could change the sound.
+* Instruments: Disable the dry/wet slider when
+  instrument is bypassed.
+* API:
+  * New functions: setIncludePanAndDryInWetSignal,
+    includePanAndDryInWetSignal, appendBase64Strings.
+  * Add optional argument "text_is_base64" to gui_drawText
+
+
 Changes 5.9.43 -> 5.9.44:
 * Editor: Add undo when selecting "Add automation to
   current editor track".
