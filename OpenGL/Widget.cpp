@@ -1901,7 +1901,7 @@ static bool g_compatibility_ok = false;
 
 bool GL_check_compatibility(void){
 
-  // Load settings value from disk
+  // Load setting values from disk
   {
     doHighCpuOpenGlProtection();
     doLockJuceWhenSwappingOpenGL();

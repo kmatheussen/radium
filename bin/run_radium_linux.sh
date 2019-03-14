@@ -13,7 +13,7 @@ fi
 
 export LD_LIBRARY_PATH="$XCB_LIB_DIR"${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
- # To avoid buggy qt plugins from crashing radium (very common).
+# To avoid buggy qt plugins crashing radium (very common).
 unset QT_QPA_PLATFORMTHEME
 unset QT_QPA_PLATFORM
 unset QT_PLUGIN_PATH
