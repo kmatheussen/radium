@@ -533,7 +533,16 @@ namespace{
 
   //int button_height = 10;
 
-  struct PluginWindow;
+  struct ToolTipMouseListener : public juce::MouseListener {
+    void mouseMove (const juce::MouseEvent &event){
+      gui_toolTip("Make plugin take care of scaling the user interface itself.\n"
+                  "\n"
+                  "Disabling this option can fix strange graphics or strange\n"
+                  "mouse behavior. The graphics will also be blury."
+                  );
+    }
+    
+  };
   
   struct PluginWindow  : public juce::DocumentWindow, juce::Button::Listener, juce::Timer, juce::ComponentListener {
     Data *data;
@@ -542,9 +551,12 @@ namespace{
     juce::ToggleButton grab_keyboard_button;
     //ToggleButton always_on_top_button;
     juce::ToggleButton bypass_button;
-
+    juce::ToggleButton dpi_awareness_button;
+    
     juce::ToggleButton ab_buttons[8];
     bool ab_button_valid[8] = {};
+
+    ToolTipMouseListener tooltipmouselistener;
     
     juce::MidiKeyboardComponent *midi_keyboard = NULL;
     
@@ -553,7 +565,10 @@ namespace{
     int64_t g_async_function_id = -1;
     
     int64_t parentgui;
-    
+
+    bool _show_dpi_button;
+          
+
 #if USE_EMBEDDED_NATIVE_WINDOW
     void *_embedded_native_window = NULL;
 #endif
@@ -568,11 +583,13 @@ namespace{
         return false;
 #endif
     }
-    
-    void 	buttonClicked (juce::Button *) override {
+
+    void buttonClicked (juce::Button *) override {
     }
 
     void buttonStateChanged (juce::Button *dasbutton) override {
+
+      //printf("Button state changed %p %p\n", dasbutton, &dpi_awareness_button);
       
       if (dasbutton == &grab_keyboard_button) {
         
@@ -601,6 +618,13 @@ namespace{
       else if (dasbutton == &bypass_button) {
         bool new_state = bypass_button.getToggleState();
 
+        /*
+        if(new_state)
+          editor->setScaleFactor(2.0);
+        else
+          editor->setScaleFactor(1.0);
+        */
+        
         struct SoundPlugin *plugin = data->_plugin;
         R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
         
@@ -611,6 +635,30 @@ namespace{
         if (new_state != is_bypass) {
           int num_effects = plugin->type->num_effects;
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_state ? 0.0 : 1.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+        }
+        
+      } else if (dasbutton == &dpi_awareness_button) {
+        bool new_state = dpi_awareness_button.getToggleState();
+
+        //printf("new state: %d\n", new_state);
+
+        struct SoundPlugin *plugin = data->_plugin;
+        R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+        
+        if (new_state != plugin->is_dpi_aware){
+          
+          plugin->is_dpi_aware = new_state;
+
+          int64_t instrument_id = plugin->patch->id;
+          int64_t parentgui2 = parentgui;
+          
+          delete this;
+          
+          THREADING_run_on_main_thread_async([instrument_id, parentgui2]
+                                             {
+                                               showInstrumentGui(instrument_id, parentgui2, false);
+                                             }
+                                             );
         }
         
       } else {
@@ -675,11 +723,21 @@ namespace{
       // bypass button
       {
         bool new_state = bypass_button.getToggleState();
-        bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
+        bool is_bypass = !ATOMIC_GET_RELAXED(plugin->effects_are_on);
         if (new_state != is_bypass)
           bypass_button.setToggleState(is_bypass, juce::NotificationType::dontSendNotification);
       }
 
+      // dpi awareness button
+#if 0
+      {
+        bool new_state = dpi_awareness_button.getToggleState();
+        bool is_dpi_aware = plugin->is_dpi_aware;
+        if (new_state != is_dpi_aware)
+          dpi_awareness_button.setToggleState(is_dpi_aware, juce::NotificationType::dontSendNotification);
+      }
+#endif
+      
       // ab buttons
       bool check_ab_buttons = false;
       
@@ -759,8 +817,14 @@ namespace{
 #else
       
       rightmost_ab_button_x = editor_width-grab_keyboard_button.getWidth()-bypass_button.getWidth();
-      bypass_button.setTopLeftPosition(R_MAX(x, rightmost_ab_button_x), 0);
-      x = bypass_button.getX() + bypass_button.getWidth();
+        
+      if(_show_dpi_button)
+        rightmost_ab_button_x -= dpi_awareness_button.getWidth();      
+
+      x = R_MAX(0, rightmost_ab_button_x);
+
+      bypass_button.setTopLeftPosition(x, 0);
+      x += bypass_button.getWidth();
       
       grab_keyboard_button.setTopLeftPosition(x, 0);
       x += grab_keyboard_button.getWidth();
@@ -768,7 +832,10 @@ namespace{
       //always_on_top_button.setTopLeftPosition(this->getWidth()-grab_keyboard_button.getWidth()-always_on_top_button.getWidth(), 0);
       
 #endif
-      
+
+      if(_show_dpi_button)
+        dpi_awareness_button.setTopLeftPosition(x, 0);
+
       //int total_button_width = x;
       
       x = 0;
@@ -829,8 +896,7 @@ namespace{
 
     }
 
-          
-    PluginWindow(const char *title, Data *data, juce::AudioProcessorEditor* const editor, int64_t parentgui, bool vst_gui_always_on_top)
+    PluginWindow(const char *title, Data *data, juce::AudioProcessorEditor* const editor, int64_t parentgui, bool vst_gui_always_on_top, bool show_dpi_button)
       : DocumentWindow (title,
                         juce::Colours::lightgrey,
                         juce::DocumentWindow::closeButton, //allButtons,
@@ -839,6 +905,7 @@ namespace{
       , title(title)
       , editor(editor)
       , parentgui(parentgui)
+      , _show_dpi_button(show_dpi_button)
     {
 
       if (showVirtualMidiKeyboardBelowNativeGUIs() && data->audio_instance->acceptsMidi())
@@ -924,8 +991,25 @@ namespace{
       }
 #endif
      
+      // dpi awareness button
+      if(_show_dpi_button){
+
+        dpi_awareness_button.setButtonText("DPI");
+        
+        dpi_awareness_button.setToggleState(plugin->is_dpi_aware, juce::NotificationType::dontSendNotification);
+        dpi_awareness_button.setSize(400, button_height);
+        dpi_awareness_button.changeWidthToFitText();
+        
+        dpi_awareness_button.addListener(this);
+
+        dpi_awareness_button.addMouseListener(&tooltipmouselistener, false); // Couldn't get JUCE tooltips to work properly. Showing Qt tooltip instead.
+        
+        // add it
+        main_component.addAndMakeVisible(&dpi_awareness_button);
+        dpi_awareness_button.setTopLeftPosition(0, 0);
+      }
+
       // bypass button
-#if 1
       {
         bypass_button.setButtonText("Bypass");
         
@@ -939,7 +1023,6 @@ namespace{
         main_component.addAndMakeVisible(&bypass_button);
         bypass_button.setTopLeftPosition(0, 0);
       }
-#endif
 
       // a/b buttons
       {
@@ -1607,9 +1690,10 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 
   bool vst_gui_always_on_top = vstGuiIsAlwaysOnTop();
   const char *title = plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name;
+
+  bool is_scaling_display = OS_WINDOWS_is_scaling_display();
   
-  run_on_message_thread([&](){
-                        
+  run_on_message_thread([&ret, title, plugin, data, is_scaling_display, parentgui, vst_gui_always_on_top](){
 
   if (data->window==NULL) {
 
@@ -1617,9 +1701,14 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 
       radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
 
-      juce::AudioProcessorEditor *editor;
+      bool has_editor = data->audio_instance->hasEditor();
+      bool show_dpi_button = has_editor && is_scaling_display; // OS_WINDOWS_is_scaling_display() returns false when not using windows.
       
-      if (data->audio_instance->hasEditor())
+      radium::ScopedSetDpiContextAwareness awareness(show_dpi_button && !plugin->is_dpi_aware);
+      
+      juce::AudioProcessorEditor *editor;
+
+      if (has_editor)
         editor = data->audio_instance->createEditor(); //IfNeeded();
       else{
         editor = new juce::GenericAudioProcessorEditor(data->audio_instance);        
@@ -1627,7 +1716,7 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
       
       if (editor != NULL) {
 
-        data->window = new PluginWindow(V_strdup(title), data, editor, parentgui, vst_gui_always_on_top);
+        data->window = new PluginWindow(V_strdup(title), data, editor, parentgui, vst_gui_always_on_top, show_dpi_button);
 
         ret = true;
       }
@@ -1659,6 +1748,7 @@ static void hide_gui(struct SoundPlugin *plugin){
       if (data->window != NULL)
         data->window->setVisible(false);
 #else
+      // Note, delete window is also called when clicking the DPI button.
       delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
 #endif
       

@@ -627,6 +627,9 @@ typedef struct SoundPlugin{
   DEFINE_ATOMIC(bool, is_shutting_down);
 
   double processing_time_so_far_in_jack_block; // Used when displaying CPU time for plugin.
+
+  bool is_dpi_aware; // If false, we call SetThreadDPIAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE) before opening GUI.
+
 } SoundPlugin;
 
   

@@ -1,5 +1,8 @@
 // operating system system
 
+#ifndef _RADIUM_COMMON_OS_SYSTEM_PROC_H
+#define _RADIUM_COMMON_OS_SYSTEM_PROC_H
+
 extern LANGSPEC void OS_OSX_show_icon_in_dock(void);
 
 extern LANGSPEC void OS_SYSTEM_init_keyboard(void);
@@ -25,6 +28,42 @@ extern LANGSPEC void OS_WINDOWS_set_key_window(void *win);
 extern LANGSPEC bool OS_OSX_is_key_window(void *void_nsview);
 extern LANGSPEC bool OS_WINDOWS_is_key_window(void *maybewin);
 
+extern LANGSPEC void *OS_WINDOWS_set_dpi_context_awareness(void);
+extern LANGSPEC void OS_WINDOWS_reset_dpi_context_awareness(void *org);
+
+#if defined(FOR_WINDOWS)
+extern LANGSPEC bool OS_WINDOWS_is_scaling_display(void);
+#else
+static inline bool OS_WINDOWS_is_scaling_display(void){
+  return false;
+}
+#endif
+
+
+#ifdef __cplusplus
+namespace radium{
+  struct ScopedSetDpiContextAwareness{
+    const bool _doit;
+    void *_awareness = NULL; // set to NULL to silence compiler warning.
+    ScopedSetDpiContextAwareness(const bool doit = true)
+      : _doit(doit)
+    {
+#if defined(FOR_WINDOWS)
+      if(_doit)
+        _awareness = OS_WINDOWS_set_dpi_context_awareness();
+#endif
+    }
+
+    ~ScopedSetDpiContextAwareness(){
+#if defined(FOR_WINDOWS)
+      if (_doit)
+        OS_WINDOWS_reset_dpi_context_awareness(_awareness);
+#endif
+    }
+  };
+}
+#endif
+
 extern LANGSPEC void OS_WINDOWS_set_window_on_top_of(void *parent_handle, void *child_handle);
   
 extern LANGSPEC void OS_WINDOWS_set_always_on_top(void *child_handle);
@@ -43,3 +82,5 @@ extern LANGSPEC uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch);
   
 //extern LANGSPEC bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *event);
 extern LANGSPEC void OS_SYSTEM_ResetKeysUpDowns(void);
+
+#endif

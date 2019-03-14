@@ -52,6 +52,90 @@ static unsigned int g_last_keyswitch;
 
 #ifndef RUN_TEST
 
+void gakk(void);
+
+#include <windef.h>
+#include <winuser.h>
+
+
+static void* get_user32_func(const char* name){
+  HMODULE module = GetModuleHandleA("user32.dll");
+  R_ASSERT_RETURN_IF_FALSE2(module!=NULL,NULL);
+  return GetProcAddress(module, name);
+}
+
+#ifndef _DPI_AWARENESS_CONTEXTS_
+ typedef HANDLE DPI_AWARENESS_CONTEXT;
+
+ #define DPI_AWARENESS_CONTEXT_UNAWARE              ((DPI_AWARENESS_CONTEXT) - 1)
+ #define DPI_AWARENESS_CONTEXT_SYSTEM_AWARE         ((DPI_AWARENESS_CONTEXT) - 2)
+ #define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE    ((DPI_AWARENESS_CONTEXT) - 3)
+ #define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((DPI_AWARENESS_CONTEXT) - 4)
+#endif
+
+#define DPI_UNDEFINED (void*)-99999
+
+typedef DPI_AWARENESS_CONTEXT (WINAPI* SetThreadDpiAwarenessContextProto)(DPI_AWARENESS_CONTEXT);
+static SetThreadDpiAwarenessContextProto SetThreadDpiAwarenessContextFunc = NULL;
+
+typedef UINT (WINAPI* GetDpiForWindowProto)(HWND);
+static GetDpiForWindowProto GetDpiForWindowFunc = NULL;
+
+bool OS_WINDOWS_is_scaling_display(void){
+  static bool has_inited = false;
+  if (has_inited==false){
+
+    if (SetThreadDpiAwarenessContextFunc==NULL)
+      SetThreadDpiAwarenessContextFunc = get_user32_func("SetThreadDpiAwarenessContext");
+    
+    GetDpiForWindowFunc = get_user32_func("GetDpiForWindow");
+    
+    has_inited = true;
+  }
+
+  if (SetThreadDpiAwarenessContextFunc==NULL){
+    return false;
+  }
+
+  if (GetDpiForWindowFunc==NULL){
+    return false;
+  }
+        
+  HWND parent_hwnd = (HWND)OS_GFX_get_native_main_window();
+  //addMessage(talloc_format("  hello: %d\n", GetDpiForWindowFunc(parent_hwnd)));
+             
+  return GetDpiForWindowFunc(parent_hwnd) != 96;
+}
+
+void *OS_WINDOWS_set_dpi_context_awareness(void){
+  static bool has_inited = false;
+  if (has_inited==false){
+
+    if (SetThreadDpiAwarenessContextFunc==NULL)
+      SetThreadDpiAwarenessContextFunc = get_user32_func("SetThreadDpiAwarenessContext");
+     
+    has_inited = true;
+  }
+
+  void *ret = DPI_UNDEFINED;
+  
+  if (SetThreadDpiAwarenessContextFunc!=NULL)
+    ret = SetThreadDpiAwarenessContextFunc(DPI_AWARENESS_CONTEXT_UNAWARE);
+  //SetThreadDpiHostingBehaviorFunc(DPI_HOSTING_BEHAVIOR_MIXED);
+  else
+    R_ASSERT(false);
+
+  return ret;
+}
+
+void OS_WINDOWS_reset_dpi_context_awareness(void *org){
+  if (org==DPI_UNDEFINED)
+    return;
+  
+  if (SetThreadDpiAwarenessContextFunc!=NULL)
+    SetThreadDpiAwarenessContextFunc(org);
+}
+
 void OS_WINDOWS_set_window_on_top_of(void *parent_handle, void *child_handle){
   SetWindowLongPtr(child_handle, -8, (LONG_PTR)parent_handle);
 }
