@@ -1225,9 +1225,14 @@ namespace{
       THREADING_init_juce_thread_type();
       
       juce::initialiseJuce_GUI();
+      
       juce::MessageManager::getInstance(); // make sure there is an instance here to avoid theoretical race condition
+      
       isInited.set(1);
-      juce::MessageManager::getInstance()->runDispatchLoop(); 
+      
+      juce::MessageManager::getInstance()->runDispatchLoop();
+
+      juce::shutdownJuce_GUI();
     }
   };
 }
@@ -2971,13 +2976,21 @@ void PLUGINHOST_init(void){
 void PLUGINHOST_shut_down(void){
   printf(" PLUGINHOST_shut_down: about to...\n");
 
-  juce::MessageManager::getInstance()->stopDispatchLoop();
+  if (g_use_custom_mm_thread){
+    
+    //juce::MessageManager::getInstance()->stopDispatchLoop();
 
-  if (g_juce_thread != NULL)
-    g_juce_thread->stopThread(5000);
+    if (g_juce_thread != NULL)
+      g_juce_thread->stopThread(5000);
+    
+    //juce::MessageManager::getInstance()->deleteInstance();
 
-  juce::MessageManager::getInstance()->deleteInstance();
+  } else {
+    
+    juce::shutdownJuce_GUI();
 
+  }
+  
   printf(" PLUGINHOST_shut_down: Got it\n");
 }
 

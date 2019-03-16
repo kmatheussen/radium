@@ -1443,6 +1443,8 @@ void MIXER_stop(void){
   R_ASSERT(has_been_called==false);
 
   SampleRecorder_shut_down();
+
+  fprintf(stderr,"            MIXER STOP 2\n");
   
   if (g_mixer->_rjack_client != NULL)
     jack_client_close(g_mixer->_rjack_client);

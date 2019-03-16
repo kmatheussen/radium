@@ -3096,17 +3096,31 @@ int radium_main(const char *arg){
   GTK_MainLoop();
 #endif
 
+#define D(A)
+//#define D(A) A
+
+  D(GFX_OpenProgress("Closing\n"));
+  D(GFX_ShowProgressMessage("1", true));
+  
   while(SAMPLEREADER_call_very_often()); // Drain the g_readers_ready_for_deletion queue.
+
+  D(GFX_ShowProgressMessage("2", true));
   
   g_qtgui_has_stopped = true;
 
   PlayStop();
-      
+
+  D(GFX_ShowProgressMessage("3", true));
+  
   // We don't want the crashreporter to pop up if there is something wrong when program exits. Not so important, and it looks unprofessional.
   CRASHREPORTER_dont_report();
 
+  D(GFX_ShowProgressMessage("4", true));
+  
   DISK_cleanup();
-      
+
+  D(GFX_ShowProgressMessage("5", true));
+  
   fprintf(stderr,"          ENDING 1\n");
   
   //g_qt_is_running = false;
@@ -3114,6 +3128,7 @@ int radium_main(const char *arg){
   if (editor->gl_widget != NULL)
     GL_stop_widget(editor->gl_widget);
 
+  D(GFX_ShowProgressMessage("6", true));
   fprintf(stderr,"          ENDING 2\n");
   
 #if 0
@@ -3130,17 +3145,22 @@ int radium_main(const char *arg){
   g_is_starting_up = true;
   
   Undo_start_ignoring_undo_operations();{
+    D(GFX_ShowProgressMessage("7", true));
     MW_cleanup(false); // Stop all sound properly. Don't want clicks when exiting.
+    D(GFX_ShowProgressMessage("8", true));
   }Undo_stop_ignoring_undo_operations();
 
+  D(GFX_ShowProgressMessage("9", true));
   fprintf(stderr,"          ENDING 3\n");
     
   msleep(30); // wait a little bit so the player gets back to the main loop
-  
-  EndProgram(); // shut down most of the program, except audio
+
+  D(GFX_ShowProgressMessage("10", true));
+  EndProgram(); // shut down most of the program, except audio and midi
 
   fprintf(stderr,"          ENDING 4\n");
-    
+
+  D(GFX_ShowProgressMessage("11", true));
   posix_EndPlayer();
   //EndGuiThread();
 
@@ -3148,28 +3168,39 @@ int radium_main(const char *arg){
   
   MIXER_stop();
 
+  D(GFX_ShowProgressMessage("12", true));
   fprintf(stderr,"          ENDING 6\n");
     
   MULTICORE_shut_down();
 
+  D(GFX_ShowProgressMessage("12.5", true));
+  fprintf(stderr,"          ENDING 6.5\n");
+
+  CloseAllInstruments();
+  
+  D(GFX_ShowProgressMessage("13", true));
   fprintf(stderr,"          ENDING 7\n");
   
 #ifdef WITH_FAUST_DEV
   FFF_shut_down();
+  D(GFX_ShowProgressMessage("14", true));
 #endif
 
   fprintf(stderr,"          ENDING 8\n");
   
   SAMPLEREADER_shut_down();
-
+  
+  D(GFX_ShowProgressMessage("15", true));
   fprintf(stderr,"          ENDING 9\n");
     
   DISKPEAKS_stop();
-  
+
+  D(GFX_ShowProgressMessage("16", true));
   fprintf(stderr,"          ENDING 10\n");
 
   SAMPLEREADER_delete_all_deletable_audio_files(); // This function is a little bit dirty, and because of some dirtyness that might interfere with the sample reder thread and the disk peaks, we call it after calling the two functions above (at least it feels cleaner this way, it probably works to call the function before the other ones as well.).
-  
+
+  D(GFX_ShowProgressMessage("17", true));
   fprintf(stderr,"          ENDING 11\n");
 
   //V_shutdown();
@@ -3683,7 +3714,6 @@ int main(int argc, char **argv){
   
   SCHEME_init1();
 
-
   GFX_ShowProgressMessage("Starting OpenGL", true);
   if (GL_check_compatibility()==false){
     GFX_CloseProgress();
@@ -3910,16 +3940,21 @@ int main(int argc, char **argv){
 #endif
   
   fprintf(stderr,"          ENDING B 1\n");
-    
+  D(GFX_ShowProgressMessage("19", true));
+  
   Py_Finalize();
 
+  D(GFX_ShowProgressMessage("20", true));
   fprintf(stderr,"          ENDING B 2\n");
 
   DISKPEAKS_stop();
+  D(GFX_ShowProgressMessage("21", true));
+  
   PLUGINHOST_shut_down();
   //msleep(5000);
 
   //abort();
+  D(GFX_ShowProgressMessage("22", true));
   fprintf(stderr, "My pid: %d\n",(int)getpid());
 
   // Make it quit faster. Qt 5.7.0 crashes during shut down on linux.
