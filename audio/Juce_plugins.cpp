@@ -142,8 +142,10 @@ namespace{
   static const bool g_use_custom_mm_thread = true;
 #elif FOR_WINDOWS  
   static const bool g_use_custom_mm_thread = false;
-#else
+#elif FOR_MACOSX
   static const bool g_use_custom_mm_thread = false;
+#else
+  #error "unknown platform"
 #endif
   
   class MMLock{
@@ -2977,14 +2979,14 @@ void PLUGINHOST_shut_down(void){
   printf(" PLUGINHOST_shut_down: about to...\n");
 
   if (g_use_custom_mm_thread){
-    
-    //juce::MessageManager::getInstance()->stopDispatchLoop();
 
+    run_on_message_thread([&](){
+        juce::MessageManager::getInstance()->stopDispatchLoop();
+      });
+    
     if (g_juce_thread != NULL)
       g_juce_thread->stopThread(5000);
     
-    //juce::MessageManager::getInstance()->deleteInstance();
-
   } else {
     
     juce::shutdownJuce_GUI();
