@@ -29,18 +29,15 @@ static struct Instruments *g_instruments;
 
 // Called during program shutdown
 static void CloseInstrument(NInt instrumentnum){
-  R_ASSERT_NON_RELEASE(false);
-  #if 0
-	struct Instruments *temp=(struct Instruments *)ListFindElement1(
-                &g_instruments->l,
-		instrumentnum
-	);
-	if(temp==NULL) return;
-
-	(*temp->CloseInstrument)(temp);
-
-	ListRemoveElement1(&g_instruments,&temp->l);
-#endif
+  struct Instruments *temp=(struct Instruments *)ListFindElement1(
+                                                                  &g_instruments->l,
+                                                                  instrumentnum
+                                                                  );
+  if(temp==NULL) return;
+  
+  (*temp->CloseInstrument)(temp);
+  
+  ListRemoveElement1(&g_instruments,&temp->l);
 }
 
 // Called during program shutdown

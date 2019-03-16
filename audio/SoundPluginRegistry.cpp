@@ -774,11 +774,11 @@ void PR_init_plugin_types(void){
   create_faust_system_highshelf_plugin();
   //create_faust_system_delay_plugin();
 
-  GFX_ShowProgressMessage("Recreating favourites...", true);
+  GFX_ShowProgressMessage("Recreating instrument favourites...", true);
   recreate_favourites(true);
 
   // Update cache.
-  GFX_ShowProgressMessage("Updating cache...", true);
+  GFX_ShowProgressMessage("Updating plugin cache...", true);
   getSoundPluginRegistry(false);
 
   GFX_CloseProgress();

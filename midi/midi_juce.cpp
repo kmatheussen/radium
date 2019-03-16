@@ -65,10 +65,13 @@ namespace{
       , port_name(NULL)
     {}
 
-    ~MyMidiInputCallback(){  // todo: check if this function is ever called.
-      // free(port_name); // <- The string is used in queues in midi_i_input, so we get memory corruption if the port is deleted while the name lives in one of the buffers. The memory leak caused by not freing here doesn't really matter. The string is also used in midi_learn, where it can be kept for the remaining time of the program.
+    /*
+    ~MyMidiInputCallback(){
+      printf("_________________Deleted \"%s\"\n", port_name->name);
+      getchar();
     }
-      
+    */
+    
     void handleIncomingMidiMessage(juce::MidiInput *source,
                                    const juce::MidiMessage &message 
                                    )
@@ -89,7 +92,10 @@ namespace{
         MIDI_InputMessageHasBeenReceived(port_name, raw[0],raw[1],0);
       else if(length==3)
         MIDI_InputMessageHasBeenReceived(port_name, raw[0],raw[1],raw[2]);
-
+      else{
+        R_ASSERT_NON_RELEASE(false);
+      }
+      
       //printf("got message to %s (%d %d %d)\n",(const char*)midi_input->getName().toUTF8(),(int)raw[0],(int)raw[1],(int)raw[2]);
     }
   };
@@ -358,16 +364,24 @@ void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *name_c){
 
 static void remove_input_port(juce::String name, bool do_update_settings){
 
-  for (auto port : g_inports)
+  for (auto port : g_inports) {
+    
     if (port->midi_input->getName() == name) {
+      
       port->midi_input->stop();
+      
       g_inports.remove(port);
+      
       if (do_update_settings)
         update_settings();
+      
       delete port->midi_input;
       delete port;
-      return;
+      
+      return;      
     }
+
+  }
 
   GFX_Message(NULL, "%s does not seem to be used",(const char*)name.toUTF8());
 }

@@ -102,6 +102,72 @@ static void write_container_descriptions_to_cache_on_disk(juce::String container
   }
 }
 
+
+#if 0
+  struct MyMidiInputCallback : juce::MidiInputCallback{
+    juce::MidiInput *midi_input;
+    juce::String port_name;
+
+    MyMidiInputCallback()
+      : midi_input(NULL)
+    {}
+
+    /*
+    ~MyMidiInputCallback(){
+      printf("_________________Deleted \"%s\"\n", port_name->name);
+      getchar();
+    }
+    */
+    
+    void handleIncomingMidiMessage(juce::MidiInput *source,
+                                   const juce::MidiMessage &message 
+                                   )
+      override
+    {
+
+      /*
+      int64_t message_ms = message.timeStamp;
+      int64_t now_ms = Time::getMillisecondCounter();
+      */
+
+      //printf("got message to %s (%d %d %d)\n",(const char*)midi_input->getName().toUTF8(),(int)raw[0],(int)raw[1],(int)raw[2]);
+    }
+  };
+
+static void testmidi(void){
+  printf("HELLO!\n");
+  fprintf(stderr,"HELLO!\n");
+  fflush(stdout);
+  fflush(stderr);
+
+  juce::initialiseJuce_GUI();
+      
+  auto *midi_input_callback = new MyMidiInputCallback();
+
+  {
+    juce::MidiInput *midi_input = NULL;
+    
+    midi_input = juce::MidiInput::openDevice(0, midi_input_callback);
+    
+    midi_input_callback->midi_input = midi_input;
+    midi_input_callback->port_name = midi_input->getName();
+    
+    midi_input->start();
+  }
+
+  juce::MessageManager::getInstance()->runDispatchLoopUntil(1000);
+
+  midi_input_callback->midi_input->stop();
+  delete midi_input_callback->midi_input;
+  delete midi_input_callback;
+
+  juce::shutdownJuce_GUI();
+
+  //juce::MessageManager::getInstance()->stopDispatchLoop();
+  //juce::MessageManager::getInstance()->deleteInstance();
+}
+#endif
+
 int main(int argc, char **argv){
 
   //printf("Launched 1 -%s- (%s)\n",argv[1], Base64::toBase64(argv[1]).toRawUTF8());
@@ -111,6 +177,12 @@ int main(int argc, char **argv){
   char container_filename_data[1024] = {0};
   char filename_data[1024] = {0};
   */
+
+#if 0
+  
+  testmidi();
+  
+#else
   
   juce::MemoryOutputStream a(1024);
   juce::MemoryOutputStream b(1024);
@@ -139,6 +211,9 @@ int main(int argc, char **argv){
   
   printf("Launched: -%s- -%s-\n", container_filename.toRawUTF8(), description_filename.toRawUTF8());
   write_container_descriptions_to_cache_on_disk(container_filename, description_filename);
+
+#endif
+  
   return 0;
 }
 
