@@ -38,6 +38,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPluginLoader>
 #endif
 
+#include <QtWebKitWidgets/QWebView>
+
 #define TEST_CRASHREPORTER 0
 
 #include <qapplication.h>
@@ -3645,6 +3647,7 @@ int main(int argc, char **argv){
 
   QLocale::setDefault(QLocale::C);
 
+    
   argv = getQApplicationConstructorArgs(argc, argv); // Add Qt things to the command line arguments. (freetype).
   
   // Create application here in order to get default style. (not recommended, but can't find another way)
@@ -3652,6 +3655,7 @@ int main(int argc, char **argv){
   qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
   qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt. https://bugreports.qt.io/browse/QTBUG-33479
 
+  QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, false);
 
   init_weak_jack();
   
