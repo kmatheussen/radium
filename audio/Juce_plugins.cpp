@@ -172,7 +172,7 @@ namespace{
   
   void run_on_message_thread(std::function<void(void)> callback){
     if (THREADING_is_main_thread())
-      juce::MessageManager::getInstance()->callFunctionOnMessageThread(run_callback, &callback);
+      juce::MessageManager::getInstance()->callFunctionOnMessageThread(run_callback, &callback); // Note that 'callFunctionOnMessageThread' checks if this is the message thread and calls directly if so.
     else
       R_ASSERT(false); // Calling callFunctionOnMessageThread on a player thread can cause deadlock.
   }
@@ -2987,7 +2987,7 @@ void PLUGINHOST_shut_down(void){
 
   if (g_use_custom_mm_thread){
     
-    //juce::MessageManager::getInstance()->stopDispatchLoop();
+    juce::MessageManager::getInstance()->stopDispatchLoop();
 
     if (g_juce_thread != NULL)
       g_juce_thread->stopThread(5000);
