@@ -449,7 +449,7 @@ namespace{
     
     SoundPlugin *_plugin;
     
-    PluginWindow *window;
+    DEFINE_ATOMIC(PluginWindow *, window) = NULL;
 
     MyAudioPlayHead playHead;
 
@@ -484,7 +484,6 @@ namespace{
     Data(juce::AudioPluginInstance *audio_instance, SoundPlugin *plugin, int num_input_channels, int num_output_channels)
       : audio_instance(audio_instance)
       , _plugin(plugin)
-      , window(NULL)
       , playHead(audio_instance->getPluginDescription().name, plugin)
       , buffer(R_MAX(num_input_channels, num_output_channels), RADIUM_BLOCKSIZE)
       , listener(plugin)
@@ -1158,7 +1157,7 @@ namespace{
         radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
     
         delete editor;
-        data->window = NULL;
+        ATOMIC_SET(data->window, NULL);
         V_free((void*)title);
 
         delete midi_keyboard;
@@ -1565,7 +1564,7 @@ static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
     
   } else {
 
-    return ceil(instance->getTailLengthSeconds()*MIXER_get_sample_rate());
+    return ceil(instance->getTailLengthSeconds()*MIXER_get_sample_rate()); // FIX: check if getTailLengthSeconds() can return infinite.
     
   }
 }
@@ -1661,27 +1660,36 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     });
 }
 
+// This function is called extremely often.
 static bool gui_is_visible(struct SoundPlugin *plugin){
 
   //const MMLock mmLock; // Must place here. Even checkin gif data->window==NULL must be protected by lock.
     
   Data *data = (Data*)plugin->data;
 
+#if CHANGE_GUI_VISIBILITY_INSTEAD_OF_REOPENING
+
   bool ret = false;
-  
+
   run_on_message_thread([&](){
-      if (data->window==NULL) {
+      if (ATOMIC_GET_RELAXED(data->window)==NULL) {
         
         ret = false;
         
       } else {
         
-        ret = data->window->isVisible();
+        ret = ATOMIC_GET_RELAXED(data->window)->isVisible();
     
       }
     });
-
+  
   return ret;
+  
+#else
+
+  return ATOMIC_GET_RELAXED(data->window)!=NULL;
+  
+#endif
 }
 
 radium::Mutex JUCE_show_hide_gui_lock;
@@ -1700,40 +1708,40 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
   
   run_on_message_thread([&ret, title, plugin, data, is_scaling_display, parentgui, vst_gui_always_on_top](){
 
-  if (data->window==NULL) {
-
-    GL_lock();{
-
-      radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
-
-      bool has_editor = data->audio_instance->hasEditor();
-      bool show_dpi_button = has_editor && is_scaling_display; // OS_WINDOWS_is_scaling_display() returns false when not using windows.
-      
-      radium::ScopedSetDpiContextAwareness awareness(show_dpi_button && !plugin->is_dpi_aware);
-      
-      juce::AudioProcessorEditor *editor;
-
-      if (has_editor)
-        editor = data->audio_instance->createEditor(); //IfNeeded();
-      else{
-        editor = new juce::GenericAudioProcessorEditor(data->audio_instance);        
-      }
-      
-      if (editor != NULL) {
-
-        data->window = new PluginWindow(V_strdup(title), data, editor, parentgui, vst_gui_always_on_top, show_dpi_button);
-
-        ret = true;
-      }
-
-    }GL_unlock();
-
+      if (ATOMIC_GET_RELAXED(data->window)==NULL) {
+        
+        GL_lock();{
+          
+          radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+          
+          bool has_editor = data->audio_instance->hasEditor();
+          bool show_dpi_button = has_editor && is_scaling_display; // OS_WINDOWS_is_scaling_display() returns false when not using windows.
+          
+          radium::ScopedSetDpiContextAwareness awareness(show_dpi_button && !plugin->is_dpi_aware);
+          
+          juce::AudioProcessorEditor *editor;
+          
+          if (has_editor)
+            editor = data->audio_instance->createEditor(); //IfNeeded();
+          else{
+            editor = new juce::GenericAudioProcessorEditor(data->audio_instance);        
+          }
+          
+          if (editor != NULL) {
+            
+            ATOMIC_SET(data->window, new PluginWindow(V_strdup(title), data, editor, parentgui, vst_gui_always_on_top, show_dpi_button));
+            
+            ret = true;
+          }
+          
+        }GL_unlock();
+        
 #if CHANGE_GUI_VISIBILITY_INSTEAD_OF_REOPENING
-  } else {
-    data->window->setVisible(true);
-    ret = true;
+      } else {
+        ATOMIC_GET_RELAXED(data->window)->setVisible(true);
+        ret = true;
 #endif
-  }
+      }
 
     });
 
@@ -1748,13 +1756,15 @@ static void hide_gui(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
 
   run_on_message_thread([&](){
-        
+
+      auto *window = ATOMIC_GET_RELAXED(data->window);
+      
 #if CHANGE_GUI_VISIBILITY_INSTEAD_OF_REOPENING
-      if (data->window != NULL)
-        data->window->setVisible(false);
+      if (window != NULL)
+        window->setVisible(false);
 #else
       // Note, delete window is also called when clicking the DPI button.
-      delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
+      delete window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
 #endif
       
     });
@@ -2094,8 +2104,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
       printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
       Data *data = (Data*)plugin->data;
       
-      if (data->window != NULL)
-        delete data->window;
+      delete ATOMIC_GET_RELAXED(data->window);
       
       data->plugin_will_be_deleted();
       
