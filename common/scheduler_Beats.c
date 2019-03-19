@@ -88,13 +88,15 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
     //printf("%d %d. last bar: %f. signature: %d/%d\n", beat->bar_num, beat->beat_num, iterator->beat_position_of_last_bar_start,iterator->last_valid_signature.numerator, iterator->last_valid_signature.denominator);
 
     bool schedule_metronome;
-    if (root->song->use_sequencer_tempos_and_signatures)
-      schedule_metronome = false;
-    else if (is_playing_song())
-      schedule_metronome = seqtrack==root->song->seqtracks.elements[0];
-    else
+    if (is_playing_song()){
+      if (root->song->use_sequencer_tempos_and_signatures)
+        schedule_metronome = false;
+      else 
+        schedule_metronome = seqtrack==root->song->seqtracks.elements[0];
+    } else {
       schedule_metronome = seqtrack==root->song->block_seqtrack;
-    
+    }
+      
     // Schedule metronome sound
     if(schedule_metronome){
       const int num_args = 1;
