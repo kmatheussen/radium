@@ -1288,26 +1288,29 @@ void PATCH_stop_note(struct Patch *patch, const note_t note){
 // Metronome
 
 
+void PATCH_silence_click_instruments(void){
+  int num_patches = 0;
+  struct Patch **patches = RT_MIXER_get_all_click_patches(&num_patches);
+  for (int i=0 ; i<num_patches ; i++)
+    PATCH_stop_all_notes(patches[i]);
+}
+
 void RT_play_click_note(struct SeqTrack *seqtrack, int64_t time, int note_num){
   static int s_last_click_note = -1;
   
   int num_patches = 0;
   struct Patch **patches = RT_MIXER_get_all_click_patches(&num_patches);
   
-  if (s_last_click_note != -1){
-    int i;
-    for (i=0 ; i<num_patches ; i++){
+  if (s_last_click_note != -1)
+    for (int i=0 ; i<num_patches ; i++)
       RT_PATCH_stop_note(seqtrack,
                          patches[i],
                          create_note_t2(NULL, -1, s_last_click_note),
                          time);
-    }
-  }
 
   //printf("   rt_play_click_note. seqtrack: %p\n", seqtrack);
   
-  int i;
-  for (i=0 ; i<num_patches ; i++){
+  for (int i=0 ; i<num_patches ; i++){
     //printf("Playing click note. seqtrack: %p\n", seqtrack);
     RT_PATCH_play_note(seqtrack,
                        patches[i],
