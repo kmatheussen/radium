@@ -88,7 +88,6 @@ extern LANGSPEC void PATCH_change_pan(struct Patch *patch,const note_t note);
 #define c_bar_note_num  55
 #define c_beat_note_num 50
 
-extern LANGSPEC void RT_stop_click_note(struct SeqTrack *seqtrack, int64_t time, int note_num);
 extern LANGSPEC void RT_play_click_note(struct SeqTrack *seqtrack, int64_t time, int note_num);
 
 

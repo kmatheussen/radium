@@ -2703,8 +2703,6 @@ typedef struct {
 
   StaticRatio last_valid_signature; // = {4,4};
 
-  int last_played_metronome_note_num; // = -1;
-
   bool new_beat_bar_set; // = false;
 
   int play_id; // for sanity check
