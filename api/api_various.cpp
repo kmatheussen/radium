@@ -1159,10 +1159,13 @@ const char *getBlockColor(int blocknum, int windownum, bool displayed_color){
     return GFX_get_colorname_from_color(wblock->block->color);
 }
 
-const_char* getAudiofileColor(const_char* w_audiofilename){
-  unsigned int color = SAMPLEREADER_get_sample_color(w_path_to_path(w_audiofilename));
-
-  return GFX_get_colorname_from_color(color);
+const_char* getAudiofileColor(const_char* w_audiofilename, bool displayed_color){
+  const wchar_t *filename = w_path_to_path(w_audiofilename);
+  
+  if(displayed_color)
+    return talloc_strdup(get_displayed_audiofile_color(filename).name(QColor::HexArgb).toUtf8());
+  else
+    return GFX_get_colorname_from_color(SAMPLEREADER_get_sample_color(filename));
 }
 
 void setAudiofileColor(const_char* colorname, const_char* w_audiofilename){
