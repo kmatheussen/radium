@@ -735,7 +735,7 @@
      (list "Configure color"
            (lambda ()
              (if blocknum
-                 (<ra> :color-dialog (<ra> :get-block-color blocknum) -1
+                 (<ra> :color-dialog (<ra> :get-block-color blocknum -1 #f) -1
                        (lambda (color)
                          (<ra> :set-block-color color blocknum))))))
      

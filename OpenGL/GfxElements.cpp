@@ -93,9 +93,13 @@ int GE_get_tracker_height(){
 extern struct Root *root;
 */
 
-GE_Rgb GE_get_rgb(enum ColorNums colornum){
-  const QColor c = get_qcolor(colornum);
+GE_Rgb GE_get_rgb(enum ColorNums colornum, bool is_instrument){
+  QColor c = get_qcolor(colornum);
   //GE_Rgb ret = {50,60,20,255};
+  
+  if(is_instrument)
+    apply_instrument_colorization(c);
+  
   GE_Rgb ret = {(unsigned char)c.red(), (unsigned char)c.green(), (unsigned char)c.blue(), (unsigned char)c.alpha()};
   return ret;
 }

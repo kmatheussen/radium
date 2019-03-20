@@ -1594,7 +1594,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   Q_UNUSED(widget);
   
   SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-  volatile struct Patch *patch = plugin->patch;
+  struct Patch *patch = const_cast<struct Patch*>(plugin->patch);
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
   bool is_selected = (option->state & QStyle::State_Selected);
@@ -1656,7 +1656,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int x1,y1,x2,y2;
     get_name_coordinates(x1,y1,x2,y2);
 
-    QColor patchcolor(patch->color);
+    QColor patchcolor = get_displayed_instrument_color(patch);
 
     QColor c = patchcolor.lighter(120);
     /*

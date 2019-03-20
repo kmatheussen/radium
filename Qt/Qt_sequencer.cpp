@@ -566,14 +566,15 @@ static double getBlockAbsDuration(const struct Blocks *block){
 static QColor get_seqtrack_background_color(const SeqTrack *seqtrack){
   QColor color = get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM);
   if (seqtrack->patch!=NULL)
-    return mix_colors(color, QColor(seqtrack->patch->color), 0.6);
+    return mix_colors(color, get_displayed_instrument_color(seqtrack->patch), 0.6);
   else
     return color;
 }
 
 static QColor get_block_color(const struct Blocks *block){
   //return mix_colors(QColor(block->color), get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM), 0.32f);
-  return QColor(block->color);
+  //return QColor(block->color);
+  return get_displayed_block_color(block);
 }
 
 static QColor get_sample_color(const SeqTrack *seqtrack, const SeqBlock *seqblock){
@@ -1046,7 +1047,7 @@ public:
         color = get_block_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, Seqblock_Type::REGULAR);
       
       else if (track->patch!=NULL)
-        color = QColor(track->patch->color);
+        color = get_displayed_instrument_color(track->patch);
 
       else
         goto no_track_background;

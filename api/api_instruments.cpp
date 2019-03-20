@@ -64,6 +64,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Render_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
+#include "../Qt/Qt_colors_proc.h"
 
 #include "../common/patch_proc.h"
 #include "../common/undo_patchname_proc.h"
@@ -750,12 +751,14 @@ void setInstrumentColor(const_char *colorname, int64_t instrument_id){
   root->song->tracker_windows->must_redraw=true;
 }
 
-const char *getInstrumentColor(int64_t instrument_id){
+const char *getInstrumentColor(int64_t instrument_id, bool get_displayed_color){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
 
-  return GFX_get_colorname_from_color(patch->color);
+  QColor color = get_displayed_instrument_color(patch);
+ 
+  return talloc_strdup(color.name(QColor::HexArgb).toUtf8());
 }
 
 bool instrumentIsImplicitlyMuted(int64_t instrument_id){
