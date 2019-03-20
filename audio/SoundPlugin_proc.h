@@ -138,23 +138,29 @@ static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
   //  if (plugin->patch!=NULL && !strcmp(plugin->patch->name,"Test"))
   //    printf("Touching %s\n",plugin->patch==NULL ? "(null)" : plugin->patch->name);
 
+  R_ASSERT_NON_RELEASE(THREADING_is_runner_thread() || PLAYER_current_thread_has_lock());
+
   if (plugin != NULL) {
 
-    if(ATOMIC_GET(plugin->_RT_is_autosuspending)==true) // usually, it's already false.
-      ATOMIC_SET(plugin->_RT_is_autosuspending, false);
+    // We can use RELAXED on these two variables since they would be set to the same values if accessed simultaneously. I'm pretty sure that's a valid reason to use RELAXED.
+    // And furthermore, reading these two values are protected by other mechanisms, so they are never read at the same time as they are written.
+    ATOMIC_SET_RELAXED(plugin->_RT_is_autosuspending, false);
+    ATOMIC_SET_RELAXED(plugin->_RT_time_of_last_activity, RT_MIXER_get_last_used_time());
     
-    int64_t last_used_time = MIXER_get_last_used_time();
-  
-    if (ATOMIC_GET_RELAXED(plugin->time_of_last_activity)==last_used_time) // Optimization. Should be safe to use RELAXED. This function is called quite often
-      return;
-      
-    ATOMIC_SET(plugin->time_of_last_activity, last_used_time);
+  } else {
+    
+    R_ASSERT_NON_RELEASE(false);
+    
   }
 }
+
+#ifdef __cplusplus
 static inline void PLUGIN_touch(SoundPlugin *plugin){
+  radium::PlayerRecursiveLock lock;
   RT_PLUGIN_touch(plugin);
 }
-  
+#endif
+
 extern LANGSPEC bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time);
 //extern LANGSPEC bool PLUGIN_can_autosuspend(SoundPlugin *plugin);
   
@@ -180,7 +186,7 @@ extern LANGSPEC void RT_schedule_mixer_strips_redraw(void);
 
 static inline QString get_parameter_prepend_text(const struct Patch *patch, int effect_num){
   QString ret;
-
+ 
   if (MODULATOR_get_id(patch, effect_num) >= 0)
     ret = "m";
   

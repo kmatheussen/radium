@@ -599,7 +599,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 void PLUGIN_delete(SoundPlugin *plugin){
   ATOMIC_SET(plugin->is_shutting_down, true);
   
-  RT_PLUGIN_touch(plugin);
+  PLUGIN_touch(plugin);
   
   const SoundPluginType *plugin_type = plugin->type;
 
@@ -1493,8 +1493,8 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
   float store_value_scaled = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
-  RT_PLUGIN_touch(plugin);
-
+  PLUGIN_touch(plugin);
+  
 #if !defined(RELEASE)
   R_ASSERT(storeit_type==STORE_VALUE || storeit_type==DONT_STORE_VALUE);
 
@@ -1557,7 +1557,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
   if(effect_num < plugin->type->num_effects){
 
     radium::PlayerRecursiveLock lock; // Need lock both because set_effect_value expect player lock to be held, but also to ensure another thread doesn't interfere between set_effect_value() and get_effect_value().
-    
+
     plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
     
     if(storeit_type==STORE_VALUE) {
@@ -2914,7 +2914,7 @@ void radium::SoundPluginEffectMidiLearn::RT_callback(float val) {
 }
 
 void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num){
-  RT_PLUGIN_touch(plugin);
+  PLUGIN_touch(plugin);
   
   auto *midi_learn = new radium::SoundPluginEffectMidiLearn(plugin, effect_num);
   add_midi_learn(midi_learn);
@@ -2925,7 +2925,7 @@ void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num){
 }
 
 bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here){
-  RT_PLUGIN_touch(plugin);
+  PLUGIN_touch(plugin);
   
   radium::SoundPluginEffectMidiLearn *midi_learn=NULL;
 
@@ -3017,21 +3017,17 @@ bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time){
 
   {
     if (plugin->playing_voices != NULL || plugin->patch->playing_voices != NULL){
-      /*
-      if(!strcmp(plugin->patch->name, "Click")){
-        printf("  auto1\n");
-      }
-      */
+      //if(!strcmp(plugin->patch->name, "Paff_snare"))
+      //  printf("  auto1\n");
+      
       return false;
     }
   }
 
   {
     if (ATOMIC_GET(plugin->auto_suspend_suspended)){
-      /*
-      if(!strcmp(plugin->patch->name, "Click"))
-        printf("  auto2\n");
-      */
+      //if(!strcmp(plugin->patch->name, "Paff_snare"))
+      //  printf("  auto2\n");
       return false;
     }
   }
@@ -3046,10 +3042,9 @@ bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time){
       delay = (double)ATOMIC_GET(g_autobypass_delay) * MIXER_get_sample_rate() / 1000.0;
 
     if (delay < -1){
-      /*
-      if(!strcmp(plugin->patch->name, "Click"))
-        printf("  delay < -1\n");
-      */
+      //if(!strcmp(plugin->patch->name, "Paff_snare"))
+      //  printf("  delay < -1\n");
+      
       return false;
     }
     
@@ -3069,12 +3064,12 @@ bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time){
     // ...and we add some frames to eliminate rounding errors and possibly other minor things (system filters, etc.). (important for instruments that implement RT_get_audio_tail_length)
     delay += 64;
 
-    int64_t time_since_activity = time-ATOMIC_GET(plugin->time_of_last_activity);
+    int64_t time_since_activity = time - ATOMIC_NAME(plugin->_RT_time_of_last_activity);
 
-    /*
-    if(!strcmp(plugin->patch->name, "Click"))
-      printf("Auto: %d. time since last activity: %d (%fms). Delay: %d (%fms)\n", time_since_activity > delay, (int)time_since_activity, frames_to_ms(time_since_activity), (int)delay, frames_to_ms(delay));
-    */
+    
+    //if(!strcmp(plugin->patch->name, "Paff_snare"))
+    //  printf("Auto: %d. time since last activity: %d (%fms). Delay: %d (%fms)\n", time_since_activity > delay, (int)time_since_activity, frames_to_ms(time_since_activity), (int)delay, frames_to_ms(delay));
+    
     
     if (time_since_activity > delay){
       return true;
@@ -3209,7 +3204,7 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
     info += "Latency: " + QString::number(latency*1000/MIXER_get_sample_rate()) + "ms\n";
     info += "Audio tail: " + (tail < 0 ? "undefined" : QString::number(tail*1000.0/MIXER_get_sample_rate()) + "ms") + "\n";
 
-    double time_since_last_activity = MIXER_get_last_used_time() - ATOMIC_GET(plugin->time_of_last_activity);      
+    double time_since_last_activity = MIXER_get_last_used_time() - ATOMIC_GET_RELAXED(plugin->_RT_time_of_last_activity);
     info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago\n";
   }
   

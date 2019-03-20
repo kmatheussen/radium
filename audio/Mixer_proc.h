@@ -42,9 +42,15 @@ extern LANGSPEC float MIXER_get_curr_audio_block_cycle_fraction(void);
 
 extern DEFINE_ATOMIC(int64_t, g_last_mixer_time);
 
-// Called very often.
 static inline int64_t MIXER_get_last_used_time(void){
   return ATOMIC_GET(g_last_mixer_time);
+}
+
+// Called very often.
+static inline int64_t RT_MIXER_get_last_used_time(void){
+  R_ASSERT_NON_RELEASE(THREADING_is_runner_thread() || PLAYER_current_thread_has_lock());
+  
+  return ATOMIC_NAME(g_last_mixer_time);
 }
 
 

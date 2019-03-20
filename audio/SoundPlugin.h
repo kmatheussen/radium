@@ -610,9 +610,11 @@ typedef struct SoundPlugin{
   DEFINE_ATOMIC(bool, auto_suspend_suspended); // Can be set temporarily by plugin
   
   DEFINE_ATOMIC(enum AutoSuspendBehavior, auto_suspend_behavior);
-  DEFINE_ATOMIC(int64_t, time_of_last_activity); // used when determining whether to auto-bypass
+  
+  DEFINE_ATOMIC(int64_t, _RT_time_of_last_activity); // used when determining whether to auto-bypass. Only relaxed/ATOMIC_NAME() usage, but we still use DEFINE_ATOMIC to avoid tsan hit without having to suppress RT_PLUGIN_touch(), which I think would disable all tsan checks on this variable, not only access in RT_PLUGIN_touch().
 
-  DEFINE_ATOMIC(bool, _RT_is_autosuspending);
+  DEFINE_ATOMIC(bool, _RT_is_autosuspending); // Only relaxed / ATOMIC_NAME() usage here as well (see _RT_time_of_last_activity).
+  
   DEFINE_ATOMIC(bool, _is_autosuspending); // Relaxed version of _RT_is_autosuspending. Does not change value in the middle of a soundcard block either. Must be used by GUI and graphics instead of _RT_is_autosupending to avoid unnecessary flicker since _RT_is_autosuspending is often true in the beginning of a block, but immediately changes to false when starting to process samples.
   
   int curr_ab_num;
