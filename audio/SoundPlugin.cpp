@@ -2980,7 +2980,7 @@ void PLUGIN_set_autosuspend_behavior(SoundPlugin *plugin, enum AutoSuspendBehavi
   ATOMIC_SET(plugin->auto_suspend_behavior, new_behavior);
 }
 
-enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(SoundPlugin *plugin){
+enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(const SoundPlugin *plugin){
   return ATOMIC_GET(plugin->auto_suspend_behavior);
 }
 
@@ -2992,8 +2992,8 @@ bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num){
   return plugin->do_random_change[effect_num];
 }
 
-// only called from MultiCore.cpp, one time per audio block per instrument
-bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
+// only called from Soundproducer.cpp, one time per soundcard block per instrument
+bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time){
 
   struct SoundPluginType *type = plugin->type;
 
@@ -3016,13 +3016,24 @@ bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
   }
 
   {
-    if (plugin->playing_voices != NULL || plugin->patch->playing_voices != NULL)
+    if (plugin->playing_voices != NULL || plugin->patch->playing_voices != NULL){
+      /*
+      if(!strcmp(plugin->patch->name, "Click")){
+        printf("  auto1\n");
+      }
+      */
       return false;
+    }
   }
 
   {
-    if (ATOMIC_GET(plugin->auto_suspend_suspended))
+    if (ATOMIC_GET(plugin->auto_suspend_suspended)){
+      /*
+      if(!strcmp(plugin->patch->name, "Click"))
+        printf("  auto2\n");
+      */
       return false;
+    }
   }
   
   {
@@ -3034,8 +3045,13 @@ bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
     if (delay == -1)
       delay = (double)ATOMIC_GET(g_autobypass_delay) * MIXER_get_sample_rate() / 1000.0;
 
-    if (delay < -1)
+    if (delay < -1){
+      /*
+      if(!strcmp(plugin->patch->name, "Click"))
+        printf("  delay < -1\n");
+      */
       return false;
+    }
     
     // input latency
     delay += RT_SP_get_input_latency(plugin->sp);
@@ -3047,16 +3063,22 @@ bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
     // smooth delay delay
     delay += (plugin->delay_time * MIXER_get_sample_rate() / 1000);
     
-    // The timing logic is a little bit uncertain, so we add one jack block just to be sure.
+    // Add soundcard block size since we won't do this check again until the next soundcard block.
     delay += g_jackblock_size;
 
     // ...and we add some frames to eliminate rounding errors and possibly other minor things (system filters, etc.). (important for instruments that implement RT_get_audio_tail_length)
     delay += 64;
 
     int64_t time_since_activity = time-ATOMIC_GET(plugin->time_of_last_activity);
+
+    /*
+    if(!strcmp(plugin->patch->name, "Click"))
+      printf("Auto: %d. time since last activity: %d (%fms). Delay: %d (%fms)\n", time_since_activity > delay, (int)time_since_activity, frames_to_ms(time_since_activity), (int)delay, frames_to_ms(delay));
+    */
     
-    if (time_since_activity > delay)
+    if (time_since_activity > delay){
       return true;
+    }
   }
   
   return false;
