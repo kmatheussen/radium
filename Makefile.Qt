@@ -187,7 +187,7 @@ endif
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
 # "-Og" very often destroys debugging (although it's not supposed to), but without it things are too slow (well, it's already too slow, but -Og helps a lot).
-#THREAD_SANITIZE_OPTS=-Og -fsanitize=thread #-DDISABLE_BDWGC
+#THREAD_SANITIZE_OPTS=-Og -fsanitize=thread -DUSE_TSAN #-DDISABLE_BDWGC
 THREAD_SANITIZE_OPTS=
 
 ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common
