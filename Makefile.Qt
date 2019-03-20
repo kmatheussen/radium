@@ -197,7 +197,7 @@ ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common
 
 # Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
 OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS)
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
+DEBUG_BUILD_OPTS = -Werror -Wall -ggdb3 -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 
 NOSHORTEN64TO32FLAG=
 ifneq (,$(findstring clang,$(CC)))

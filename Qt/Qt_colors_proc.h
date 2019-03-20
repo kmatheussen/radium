@@ -38,6 +38,8 @@ void GFX_ResetColor(enum ColorNums colornum);
 void GFX_ResetColors(void);
 void GFX_SaveColors(const wchar_t *filename); // if filename==NULL, save to ~/.radium/colors.
 
+#ifdef RADIUM_COMMON_API_PROC_H
+
 /*
 static inline void apply_brightness(QColor &color, float brightness){
   if(brightness > 0.5001)
@@ -98,7 +100,7 @@ static inline QColor get_displayed_block_color(const struct Blocks *block){
   return color;
 }
 
-
+#ifdef _RADIUM_AUDIO_SAMPLEREADER_PROC_H
 static inline QColor get_displayed_audiofile_color(const wchar_t *filename){
   QColor color(SAMPLEREADER_get_sample_color(filename));
 
@@ -106,6 +108,9 @@ static inline QColor get_displayed_audiofile_color(const wchar_t *filename){
   
   return color;
 }
+#endif
+
+#endif
 
 
 #endif
