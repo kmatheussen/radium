@@ -122,7 +122,7 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   R_ASSERT(old==false);
 #endif
   
-  if ( ! ATOMIC_GET(sp->_plugin->_RT_is_autosuspending)){
+  if ( ! ATOMIC_NAME(sp->_plugin->_RT_is_autosuspending)){
     //double start_time = monotonic_seconds();
     {
       SP_RT_process(sp, time, num_frames, process_plugins);

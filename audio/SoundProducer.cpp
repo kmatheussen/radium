@@ -1595,13 +1595,12 @@ public:
           autosuspend = false;
       }
 
-      bool was_autosuspending_last_cycle = ATOMIC_GET(_plugin->_RT_is_autosuspending);
+      bool was_autosuspending_last_cycle = ATOMIC_NAME(_plugin->_RT_is_autosuspending);
 
       // Set _is_autosuspending. _is_autosuspending is only used by the GUI.
       ATOMIC_SET_RELAXED(_plugin->_is_autosuspending, autosuspend && was_autosuspending_last_cycle);
 
-      if(was_autosuspending_last_cycle != autosuspend)
-        ATOMIC_SET(_plugin->_RT_is_autosuspending, autosuspend);
+      ATOMIC_NAME(_plugin->_RT_is_autosuspending) = autosuspend;
     }
   }
 
@@ -1792,7 +1791,7 @@ public:
         continue;
       }
 
-      if (ATOMIC_GET(source->_plugin->_RT_is_autosuspending)) {
+      if (ATOMIC_NAME(source->_plugin->_RT_is_autosuspending)) {
         link->_delay.RT_call_instead_of_process(num_frames);
         continue;
       }
