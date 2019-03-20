@@ -136,10 +136,11 @@ void PATCH_add_to_instrument(struct Patch *patch){
   if (VECTOR_is_in_vector(&g_unused_patches, patch))
     VECTOR_remove(&g_unused_patches, patch);
 
-  VECTOR_ensure_space_for_one_more_element(&patch->instrument->patches);
+  const rt_vector_t *rt_vector = VECTOR_create_rt_vector(&patch->instrument->patches, 1);
+
   {
     radium::PlayerLock lock;
-    VECTOR_push_back(&patch->instrument->patches, patch);
+    RT_VECTOR_push_back(&patch->instrument->patches, patch, rt_vector);
   }
   
   g_patchhash[patch->id] = patch;

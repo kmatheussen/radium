@@ -2402,8 +2402,8 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
   */
   
   int pos = get_seqblock_pos(&seqtrack->seqblocks, seqtime);
-    
-  VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
+
+  const rt_vector_t *rt_vector = VECTOR_create_rt_vector(&seqtrack->seqblocks, 1);
 
   {
     radium::PlayerPause pause(is_playing_song());
@@ -2415,7 +2415,7 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
       set_seqblock_stretch(seqtrack, seqblock);
     }
     
-    VECTOR_insert(&seqtrack->seqblocks, seqblock, pos);
+    RT_VECTOR_insert(&seqtrack->seqblocks, seqblock, pos, rt_vector);
 
     /*
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
@@ -2684,8 +2684,8 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_
 
   if (new_seqtrack==NULL)
     new_seqtrack = SEQTRACK_create(NULL, -1, for_audiofiles);
-  
-  VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
+
+  const rt_vector_t *rt_vector = VECTOR_create_rt_vector(&root->song->seqtracks, 1);
 
   {
     radium::PlayerPause pause(is_playing_song());
@@ -2695,7 +2695,7 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_
       if (root->song->use_sequencer_tempos_and_signatures==false && for_audiofiles)
         root->song->use_sequencer_tempos_and_signatures = true;
             
-    VECTOR_insert(&root->song->seqtracks, new_seqtrack, pos);
+    RT_VECTOR_insert(&root->song->seqtracks, new_seqtrack, pos, rt_vector);
   }
 
   ensure_seqtrack_has_instrument(new_seqtrack);
@@ -2971,10 +2971,9 @@ void SONG_init(void){
 
   struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1, false); // for editor blocks
 
-  VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
-  
-  VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
-  
+  const rt_vector_t *rt_seqblocks_vector = VECTOR_create_rt_vector(&seqtrack->seqblocks, 1);
+  const rt_vector_t *rt_seqtracks_vector = VECTOR_create_rt_vector(&root->song->seqtracks, 1);
+    
   struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, root->song->blocks, NULL, -1, -1);
 
   SEQUENCER_init(root->song);
@@ -2983,9 +2982,9 @@ void SONG_init(void){
     
     VECTOR_clean(&root->song->seqtracks);
     
-    VECTOR_push_back(&root->song->seqtracks, seqtrack);
+    RT_VECTOR_push_back(&root->song->seqtracks, seqtrack, rt_seqtracks_vector);
 
-    VECTOR_push_back(&seqtrack->seqblocks, seqblock);
+    RT_VECTOR_push_back(&seqtrack->seqblocks, seqblock, rt_seqblocks_vector);
 
     set_plain_seqtrack_timing_no_pauses(seqtrack);
 
