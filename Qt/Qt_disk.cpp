@@ -37,27 +37,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define SUPPORT_TEMP_WRITING_FUNCTIONS 0
 
 const wchar_t *DISK_get_absolute_file_path(const wchar_t *wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QFileInfo info(STRING_get_qstring(wfilename));
   return STRING_create(QDir::toNativeSeparators(info.absoluteFilePath()));
 }
 
 int64_t DISK_get_creation_time(const wchar_t *wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QFileInfo info(STRING_get_qstring(wfilename));
   info.setCaching(false);
   return info.lastModified().toMSecsSinceEpoch();
 }
 
 bool DISK_file_exists(const wchar_t *wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QString filename = STRING_get_qstring(wfilename);
   return QFile::exists(filename);
 }
 
 bool DISK_dir_exists(const wchar_t *wdirname){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QString filename = STRING_get_qstring(wdirname);
   return QDir(filename).exists();
 }
 
 bool DISK_create_dir(const wchar_t *wdirname){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   if(DISK_dir_exists(wdirname))
     return true;
   QDir::root().mkpath(STRING_get_qstring(wdirname));
@@ -65,6 +75,8 @@ bool DISK_create_dir(const wchar_t *wdirname){
 }
 
 bool DISK_delete_file(const wchar_t *wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   if(!DISK_file_exists(wfilename))
     return false;
   
@@ -74,6 +86,8 @@ bool DISK_delete_file(const wchar_t *wfilename){
 }
 
 void DISK_delete_all_files_in_dir(const wchar_t *wdirname){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QDir dir(STRING_get_qstring(wdirname));
   R_ASSERT_RETURN_IF_FALSE(dir.absolutePath() != QDir::root().absolutePath());
   
@@ -84,10 +98,14 @@ void DISK_delete_all_files_in_dir(const wchar_t *wdirname){
 }
 
 const wchar_t *DISK_get_dir_separator(void){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   return STRING_create(QDir::separator());
 }
 
 const wchar_t *DISK_create_non_existant_filename(const wchar_t *filename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   if (DISK_file_exists(filename)==false)
     return filename;
 
@@ -109,14 +127,20 @@ const wchar_t *DISK_create_non_existant_filename(const wchar_t *filename){
 }
 
 bool DISK_copy(const wchar_t *old_file, const wchar_t *new_file){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   return QFile::copy(STRING_get_qstring(old_file), STRING_get_qstring(new_file));
 }
 
 const wchar_t *DISK_get_temp_dir(void){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   return STRING_create(QDir::tempPath());
 }
 
 const wchar_t *DISK_copy_to_temp_file(const wchar_t *old_file){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QFileInfo info(STRING_get_qstring(old_file));
 
   QString dirname = info.absoluteDir().absolutePath();
@@ -362,6 +386,8 @@ public:
 
 
 static disk_t *open_for_writing(QString filename, bool is_binary){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   disk_t *disk = new disk_t(filename, disk_t::WRITE, is_binary);
   
   if (disk->open()==false){
@@ -373,25 +399,35 @@ static disk_t *open_for_writing(QString filename, bool is_binary){
 }
 
 disk_t *DISK_open_for_writing(QString filename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   return open_for_writing(filename, false);
 }
 
 disk_t *DISK_open_binary_for_writing(QString filename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   return open_for_writing(filename, true);
 }
 
 disk_t *DISK_open_for_writing(const wchar_t *wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QString filename = STRING_get_qstring(wfilename);
   return DISK_open_for_writing(filename);
 }
 
 disk_t *DISK_open_binary_for_writing(const wchar_t *wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QString filename = STRING_get_qstring(wfilename);
   return DISK_open_binary_for_writing(filename);
 }
 
 #if SUPPORT_TEMP_WRITING_FUNCTIONS
 disk_t *DISK_open_temp_for_writing(void){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   GFX_Message(NULL, "Warning, never tested");
     
   disk_t *disk = new disk_t("", disk_t::WRITE);
@@ -405,6 +441,8 @@ disk_t *DISK_open_temp_for_writing(void){
 }
 
 wchar_t *DISK_close_temp_for_writing(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   GFX_Message(NULL, "Warning, never tested");
   
   disk->close();
@@ -420,6 +458,8 @@ wchar_t *DISK_close_temp_for_writing(disk_t *disk){
 #endif
 
 disk_t *DISK_open_for_reading(QString filename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   disk_t *disk = new disk_t(filename, disk_t::READ);
 
   if (disk->open()==false){
@@ -431,11 +471,15 @@ disk_t *DISK_open_for_reading(QString filename){
 }
 
 disk_t *DISK_open_for_reading(const wchar_t *wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QString filename = STRING_get_qstring(wfilename);
   return DISK_open_for_reading(filename);
 }
 
 disk_t *DISK_open_binary_for_reading(const wchar_t *wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QString filename = STRING_get_qstring(wfilename);
   
   disk_t *disk = new disk_t(filename, disk_t::READ, true);
@@ -449,6 +493,8 @@ disk_t *DISK_open_binary_for_reading(const wchar_t *wfilename){
 }
 
 const char* DISK_get_error(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   if(disk==NULL)
     return g_last_error;
   else
@@ -456,10 +502,14 @@ const char* DISK_get_error(disk_t *disk){
 }
 
 wchar_t *DISK_get_filename(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   return STRING_create(disk->filename);
 }
 
 int DISK_write_qstring(disk_t *disk, QString s){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   R_ASSERT(disk->is_binary==false);
   R_ASSERT(disk->type==disk_t::WRITE);
 
@@ -470,6 +520,8 @@ int DISK_write_qstring(disk_t *disk, QString s){
 }
 
 int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   if(wdata==NULL){
     R_ASSERT(false);
     wdata = L"";
@@ -479,6 +531,8 @@ int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
 }
 
 int DISK_write(disk_t *disk, const char *cdata){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   if(cdata==NULL){
     R_ASSERT(false);
     cdata = "";
@@ -490,6 +544,8 @@ int DISK_write(disk_t *disk, const char *cdata){
 QString g_file_at_end("_________FILE_AT_END");
 
 int DISK_get_curr_read_line(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   R_ASSERT(disk->is_binary==false);
   R_ASSERT(disk->type==disk_t::READ);
 
@@ -497,10 +553,14 @@ int DISK_get_curr_read_line(disk_t *disk){
 }
 
 bool DISK_at_end(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   return disk->stream->atEnd();
 }
 
 QString DISK_read_qstring_line(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   R_ASSERT(disk->is_binary==false);
   R_ASSERT(disk->type==disk_t::READ);
 
@@ -513,6 +573,8 @@ QString DISK_read_qstring_line(disk_t *disk){
 }
 
 wchar_t *DISK_read_wchar_line(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QString line = DISK_read_qstring_line(disk);
   
   if (line==g_file_at_end)
@@ -522,6 +584,8 @@ wchar_t *DISK_read_wchar_line(disk_t *disk){
 }
 
 char *DISK_readline(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QString line = DISK_read_qstring_line(disk);
   
   if (line==g_file_at_end)
@@ -531,6 +595,8 @@ char *DISK_readline(disk_t *disk){
 }
 
 char *DISK_read_trimmed_line(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QString line = DISK_read_qstring_line(disk);
   
   if (line==g_file_at_end)
@@ -540,24 +606,34 @@ char *DISK_read_trimmed_line(disk_t *disk){
 }
 
 bool DISK_set_pos(disk_t *disk, int64_t pos){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   R_ASSERT(disk->has_set_pos_without_reading==false);
   disk->has_set_pos_without_reading = true;
   return disk->set_pos(pos);
 }
 
 bool DISK_spool(disk_t *disk, int64_t how_much){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   return disk->spool(how_much);
 }
 
 int64_t DISK_pos(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   return disk->pos();
 }
 
 bool DISK_is_binary(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   return disk->is_binary;
 }
 
 int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   R_ASSERT_RETURN_IF_FALSE2(disk->is_binary==true, -1);
   R_ASSERT_RETURN_IF_FALSE2(disk->type==disk_t::READ, -1);
 
@@ -575,6 +651,8 @@ int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes){
 }
 
 int64_t DISK_write_binary(disk_t *disk, const void *source, int64_t num_bytes){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   R_ASSERT_RETURN_IF_FALSE2(disk->is_binary==true, -1);
   R_ASSERT_RETURN_IF_FALSE2(disk->type==disk_t::WRITE, -1);
 
@@ -592,6 +670,8 @@ int64_t DISK_write_binary(disk_t *disk, const void *source, int64_t num_bytes){
 }
 
 bool DISK_close_and_delete(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   bool ret = disk->close();
 
   delete disk;
@@ -601,6 +681,8 @@ bool DISK_close_and_delete(disk_t *disk){
 
 // Only used for audio files, so we don't bother with compression.
 const char *DISK_file_to_base64(const wchar_t *wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   disk_t *disk = DISK_open_binary_for_reading(wfilename);
 
   if (disk==NULL)
@@ -618,6 +700,8 @@ static radium::Mutex g_mutex;
 
 // Only used for audio files, so we don't bother with decompression.
 const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QFile *file;
 
   QTemporaryFile *temporary_write_file = NULL;
@@ -662,6 +746,8 @@ const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars){
 }
 
 void DISK_delete_base64_file(const wchar_t *wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   radium::ScopedMutex lock(g_mutex);
   
   QString key = STRING_get_qstring(wfilename);
@@ -675,6 +761,8 @@ void DISK_delete_base64_file(const wchar_t *wfilename){
 }
 
 void DISK_cleanup(void){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   radium::ScopedMutex lock(g_mutex);
   
   for(auto *file : g_temporary_files.values())
@@ -685,6 +773,8 @@ void DISK_cleanup(void){
 
 #if defined(FOR_WINDOWS)
 static QString file_to_string(QString filename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QFile file(filename);
   bool ret = file.open(QIODevice::ReadOnly | QIODevice::Text);
   if( ret )
@@ -702,6 +792,8 @@ static QString file_to_string(QString filename){
 // Can be called from any thread.
 // Leaks memory.
 const wchar_t *DISK_run_program_that_writes_to_temp_file(const wchar_t *program, const wchar_t *arg1, const wchar_t *arg2, const wchar_t *arg3){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QString filename;
 
   {

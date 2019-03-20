@@ -68,7 +68,7 @@ void init_memory(void){
 
 
 void tfree(void *element){
-  R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE()
   
 #ifdef DISABLE_BDWGC
 
@@ -110,7 +110,7 @@ static void dummyfree(void *data){
 }
 
 static void gcfinalizer(void *actual_mem_start, void *user_data){
-  R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE()
   
   //printf("gcfinalizer called for %p\n",actual_mem_start);
   V_free_actual_mem_real_start(dummyfree, actual_mem_start);

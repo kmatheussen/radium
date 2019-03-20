@@ -3001,6 +3001,8 @@ const_char *createUuid(void){
 }
 
 void msleep(int ms){
+  ASSERT_NON_RT_NON_RELEASE();
+  
   QThread::msleep(ms);
   //usleep(1000*ms); // usleep only works in the range 0->1000000
 }

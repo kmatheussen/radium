@@ -527,7 +527,7 @@ int g_scheme_nested_level = 0;
 static s7_pointer catch_call(s7_scheme *sc, const s7_pointer args){
   g_scheme_failed=false;
 
-  R_ASSERT(PLAYER_current_thread_has_lock()==false);
+  ASSERT_IS_NONRT_MAIN_THREAD();
 
   bool old_is_going_to_call_throwExceptionIfError = g_is_going_to_call_throwExceptionIfError; // save old value. Necesarry if a C function called from C evaluates some other scheme code.
   if (g_scheme_nested_level==0){ R_ASSERT_NON_RELEASE(old_is_going_to_call_throwExceptionIfError==false); }
@@ -620,7 +620,7 @@ bool s7extra_callFunc2_bool_void(const char *funcname){
 void s7extra_add_history(const char *funcname, const char *info){
   //printf("%s - %s", funcname, info);
 
-  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock()==false);
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
 
 #if !defined(RELEASE)
   s7_add_to_history(s7, s7_make_string(s7, info));
