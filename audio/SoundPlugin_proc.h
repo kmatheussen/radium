@@ -130,7 +130,7 @@ extern LANGSPEC void PLUGIN_set_recording_automation(SoundPlugin *plugin, int ef
 extern LANGSPEC void PLUGIN_set_all_effects_to_not_recording(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_set_autosuspend_behavior(SoundPlugin *plugin, enum AutoSuspendBehavior new_behavior);
-extern LANGSPEC enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(SoundPlugin *plugin);
+extern LANGSPEC enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(const SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_set_random_behavior(SoundPlugin *plugin, const int effect_num, bool do_random);
 extern LANGSPEC bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num);
 
@@ -139,9 +139,13 @@ static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
   //    printf("Touching %s\n",plugin->patch==NULL ? "(null)" : plugin->patch->name);
 
   if (plugin != NULL) {
+
+    if(ATOMIC_GET(plugin->_RT_is_autosuspending)==true) // usually, it's already false.
+      ATOMIC_SET(plugin->_RT_is_autosuspending, false);
+    
     int64_t last_used_time = MIXER_get_last_used_time();
   
-    if (ATOMIC_GET_RELAXED(plugin->time_of_last_activity)==last_used_time) // This function is called quite often
+    if (ATOMIC_GET_RELAXED(plugin->time_of_last_activity)==last_used_time) // Optimization. Should be safe to use RELAXED. This function is called quite often
       return;
       
     ATOMIC_SET(plugin->time_of_last_activity, last_used_time);
@@ -151,7 +155,7 @@ static inline void PLUGIN_touch(SoundPlugin *plugin){
   RT_PLUGIN_touch(plugin);
 }
   
-extern LANGSPEC bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time);
+extern LANGSPEC bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time);
 //extern LANGSPEC bool PLUGIN_can_autosuspend(SoundPlugin *plugin);
   
 

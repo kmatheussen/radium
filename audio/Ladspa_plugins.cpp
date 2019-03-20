@@ -122,7 +122,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     memcpy(outputs[ch],data->outputs[ch],sizeof(float)*num_frames);
 }
 
-static int RT_get_latency(struct SoundPlugin *plugin){
+static int RT_get_latency(const struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
 
   int latency = data->latency_output_control_port;

@@ -133,7 +133,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static int g_num_visible_plugin_windows = 0;
 static bool g_vst_grab_keyboard = true;
 
-static int RT_get_latency(struct SoundPlugin *plugin);
+static int RT_get_latency(const struct SoundPlugin *plugin);
 
 
 namespace{
@@ -1531,7 +1531,7 @@ static void send_raw_midi_message(struct SoundPlugin *plugin, int block_delta_ti
   //  RError("Illegal midi msg: %x",msg); // Well, the illegal message could have been created by a third party plugin.
 }
 
-static int RT_get_latency(struct SoundPlugin *plugin){
+static int RT_get_latency(const struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   juce::AudioPluginInstance *instance = data->audio_instance;
   int latency = instance->getLatencySamples();
@@ -1539,7 +1539,7 @@ static int RT_get_latency(struct SoundPlugin *plugin){
   return latency;
 }
 
-static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
+static int RT_get_audio_tail_length(const struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   juce::AudioPluginInstance *instance = data->audio_instance;
 

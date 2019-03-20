@@ -68,7 +68,7 @@ static void RT_pipeskew_process(SoundPlugin *plugin, int64_t time, int num_frame
       memcpy(outputs[1], inputs[1], sizeof(float)*num_frames);
 }
 
-static int RT_get_timeskew_latency(struct SoundPlugin *plugin){
+static int RT_get_timeskew_latency(const struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   
   if (data->timeskew < 0)
