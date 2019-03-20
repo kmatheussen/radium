@@ -56,6 +56,8 @@ extern LANGSPEC bool MIXER_is_saving(void);
 extern LANGSPEC void RT_PLAYER_runner_lock(void);
 extern LANGSPEC void RT_PLAYER_runner_unlock(void);
 
+extern LANGSPEC bool PLAYER_is_doing_RT_stuff(void);
+
 extern LANGSPEC bool PLAYER_current_thread_has_lock(void);
 extern LANGSPEC bool PLAYER_someone_has_player_lock(void);
 
@@ -80,6 +82,30 @@ extern LANGSPEC void RT_request_to_start_playing_block(void);
 extern LANGSPEC void RT_request_to_continue_playing_block(void);
 extern LANGSPEC void RT_request_to_stop_playing(void);
 extern LANGSPEC void RT_pause_plugins(void);
+
+
+static inline bool is_doing_RT(void){
+  return THREADING_is_player_or_runner_thread() || PLAYER_current_thread_has_lock();
+}
+
+#define ASSERT_IS_NONRT_MAIN_THREAD() R_ASSERT(THREADING_is_main_thread() && !PLAYER_current_thread_has_lock());
+
+#define ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE() R_ASSERT_NON_RELEASE(THREADING_is_main_thread() && !PLAYER_current_thread_has_lock());
+
+#define ASSERT_NON_RT()                                                 \
+  do{                                                                   \
+    R_ASSERT(!THREADING_is_player_or_runner_thread());                  \
+    R_ASSERT(!PLAYER_current_thread_has_lock());                        \
+  }while(0)
+
+#define ASSERT_NON_RT_NON_RELEASE()                                     \
+  do{                                                                   \
+    R_ASSERT_NON_RELEASE(!THREADING_is_player_or_runner_thread());      \
+    R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());            \
+  }while(0)
+
+
+
 
 #ifdef __cplusplus
 

@@ -955,7 +955,7 @@ private:
     printf("Warning, waiting for queue...\n");
 #endif
     has_waited_for_queue = true;
-    R_ASSERT(!PLAYER_current_thread_has_lock());
+    ASSERT_NON_RT();
     msleep(5);
   }
 
@@ -1474,7 +1474,7 @@ void SAMPLEREADER_dec_users_undo_callback(void *data){
 
 // can be called from any thread, but not while holding player lock.
 bool SAMPLEREADER_has_file(const wchar_t *filename){
-  R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
+  ASSERT_NON_RT_NON_RELEASE();
   
   QString key = STRING_get_qstring(filename);
 
