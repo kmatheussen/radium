@@ -839,8 +839,8 @@ Signature.o:  $(BUILD_DEPENDENCIES) $(CD)Signature.cpp
 Beats.o:  $(BUILD_DEPENDENCIES) $(CD)Beats.cpp
 	$(CCC) $(CD)Beats.cpp $(QTOPT)
 
-gfx_wtrackheaders.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackheaders.c
-	$(CC) $(CD)gfx_wtrackheaders.c $(OPT)
+gfx_wtrackheaders.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackheaders.cpp
+	$(CCC) $(CD)gfx_wtrackheaders.cpp $(QTOPT)
 
 temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes.c
 	$(CC) $(CD)temponodes.c $(OPT)

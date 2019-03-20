@@ -1144,7 +1144,7 @@ void setBlockColor(const_char *colorname, int blocknum, int windownum){
   SEQUENCER_update(SEQUPDATE_TIME);
 }
 
-const char *getBlockColor(int blocknum, int windownum){
+const char *getBlockColor(int blocknum, int windownum, bool displayed_color){
   struct Tracker_Windows *window=NULL;
   struct WBlocks *wblock = getWBlockFromNumA(
                                              windownum,
@@ -1153,7 +1153,10 @@ const char *getBlockColor(int blocknum, int windownum){
                                              );
   if(wblock==NULL) return "";
 
-  return GFX_get_colorname_from_color(wblock->block->color);
+  if(displayed_color)
+    return talloc_strdup(get_displayed_block_color(wblock->block).name(QColor::HexArgb).toUtf8());
+  else
+    return GFX_get_colorname_from_color(wblock->block->color);
 }
 
 const_char* getAudiofileColor(const_char* w_audiofilename){
@@ -2779,6 +2782,107 @@ void setUseNativeFileRequesters(bool doit){
   g_native_file_requesters = doit;
   SETTINGS_write_bool("native_file_requesters", doit);
 }
+
+
+
+static float g_instrument_brightness = 0.5;
+
+static void update_all_instrument_colors(void){
+  root->song->tracker_windows->must_redraw=true;
+  redrawMixerStrips(false);
+  MW_update_all_chips();
+  SEQUENCER_update(SEQUPDATE_HEADERS);
+}
+
+float getInstrumentBrightness(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_instrument_brightness = SETTINGS_read_double("color_instrument_brightness", g_instrument_brightness);
+    has_inited = true;
+  }
+
+  return g_instrument_brightness;
+}
+
+void setInstrumentBrightness(float val){
+  if (val != g_instrument_brightness){
+    g_instrument_brightness = val;
+    update_all_instrument_colors();
+    SETTINGS_write_double("color_instrument_brightness", val);
+  }
+}
+
+
+static float g_instrument_saturation = 0.5;
+
+float getInstrumentSaturation(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_instrument_saturation = SETTINGS_read_double("color_instrument_saturation", g_instrument_saturation);
+    has_inited = true;
+  }
+
+  return g_instrument_saturation;
+}
+
+void setInstrumentSaturation(float val){
+  if (val != g_instrument_saturation){
+    g_instrument_saturation = val;
+    update_all_instrument_colors();
+    SETTINGS_write_double("color_instrument_saturation", val);
+  }
+}
+
+
+static float g_block_brightness = 0.5;
+
+static void update_all_block_colors(void){
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
+}
+
+float getBlockBrightness(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_block_brightness = SETTINGS_read_double("color_block_brightness", g_block_brightness);
+    has_inited = true;
+  }
+
+  return g_block_brightness;
+}
+
+void setBlockBrightness(float val){
+  if (val != g_block_brightness){
+    g_block_brightness = val;
+    update_all_block_colors();
+    SETTINGS_write_double("color_block_brightness", val);
+  }
+}
+
+
+static float g_block_saturation = 0.5;
+
+float getBlockSaturation(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_block_saturation = SETTINGS_read_double("color_block_saturation", g_block_saturation);
+    has_inited = true;
+  }
+
+  return g_block_saturation;
+}
+
+void setBlockSaturation(float val){
+  if (val != g_block_saturation){
+    g_block_saturation = val;
+    update_all_block_colors();
+    SETTINGS_write_double("color_block_saturation", val);
+  }
+}
+
 
 
 static DEFINE_ATOMIC(bool, g_always_run_buses) = false;

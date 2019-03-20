@@ -38,4 +38,65 @@ void GFX_ResetColor(enum ColorNums colornum);
 void GFX_ResetColors(void);
 void GFX_SaveColors(const wchar_t *filename); // if filename==NULL, save to ~/.radium/colors.
 
+/*
+static inline void apply_brightness(QColor &color, float brightness){
+  if(brightness > 0.5001)
+    color = color.lighter(scale(brightness, 0.5, 1.0, 100, 600));
+  else if(brightness < 0.4999)
+    color = color.darker(scale(brightness, 0.5, 0.0, 100, 600));
+}
+*/
+
+static inline void apply_saturation_and_brightness(QColor &color, float saturation, float brightness){
+  bool do_saturation = saturation < 0.4999 || saturation > 0.5001;
+  bool do_brightness = brightness < 0.4999 || brightness > 0.5001;
+  if (!do_saturation && !do_brightness)
+    return;
+  
+  qreal h,s,l,a;
+  color.getHslF(&h,&s,&l,&a);
+
+  if(do_saturation){
+    if (saturation < 0.5)    
+      s = scale(saturation, 0, 0.5, 0, s);
+    else
+      s = scale(saturation, 0.5, 1.0, s, 1);
+  }
+
+  if(do_brightness){
+    if (brightness < 0.5)    
+      l = scale(brightness, 0, 0.5, 0, l);
+    else
+      l = scale(brightness, 0.5, 1.0, l, 1);
+  }
+  
+  color.setHslF(h, s, l, a);
+}
+
+static inline void apply_instrument_colorization(QColor &color){
+  apply_saturation_and_brightness(color, getInstrumentSaturation(), getInstrumentBrightness());
+}
+  
+static inline QColor get_displayed_instrument_color(const struct Patch *patch){
+  QColor color(patch->color);
+
+  apply_instrument_colorization(color);
+  
+  return color;
+}
+
+
+static inline void apply_block_colorization(QColor &color){
+  apply_saturation_and_brightness(color, getBlockSaturation(),  getBlockBrightness());
+}
+  
+static inline QColor get_displayed_block_color(const struct Blocks *block){
+  QColor color(block->color);
+
+  apply_block_colorization(color);
+  
+  return color;
+}
+
+
 #endif
