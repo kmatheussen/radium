@@ -99,4 +99,13 @@ static inline QColor get_displayed_block_color(const struct Blocks *block){
 }
 
 
+static inline QColor get_displayed_audiofile_color(const wchar_t *filename){
+  QColor color(SAMPLEREADER_get_sample_color(filename));
+
+  apply_block_colorization(color);
+  
+  return color;
+}
+
+
 #endif
