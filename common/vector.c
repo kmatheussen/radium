@@ -181,7 +181,7 @@ struct rt_vector_t_{
   vector_t v;
 };
 
-static const rt_vector_t g_null_rt_vector = {0};
+static const rt_vector_t g_null_rt_vector = {};
 
 const rt_vector_t *VECTOR_create_rt_vector(const vector_t *v, int num_extra_elements){
   ASSERT_NON_RT_NON_RELEASE();

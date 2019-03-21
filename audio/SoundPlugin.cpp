@@ -2574,9 +2574,13 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
 
   hash_t *copy = HASH_copy(effects);
       
-  bool has_value[type->num_effects+NUM_SYSTEM_EFFECTS] = {};
-  float values[type->num_effects+NUM_SYSTEM_EFFECTS] = {};
+  bool has_value[type->num_effects+NUM_SYSTEM_EFFECTS];
+  float values[type->num_effects+NUM_SYSTEM_EFFECTS];
 
+  // must use memset instead of {} since clang gave error message.
+  memset(has_value, 0, sizeof(bool)*(type->num_effects+NUM_SYSTEM_EFFECTS));
+  memset(values, 0, sizeof(float)*(type->num_effects+NUM_SYSTEM_EFFECTS));
+  
   bool has_given_warning_about_chance = false;
   
   for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++) {
