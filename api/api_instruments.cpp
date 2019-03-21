@@ -2044,6 +2044,9 @@ void removeModulator(int64_t instrument_id, const char *effect_name){
   }
 
   MODULATOR_remove_target(modulator_id, patch, effect_num);
+
+  if(patch==g_currpatch)
+    patch->instrument->PP_Update(patch->instrument, patch, false);
 }
 
 static const char *get_modulator_patch_description(const struct Patch *modulator_patch){
