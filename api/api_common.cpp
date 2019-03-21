@@ -230,11 +230,19 @@ void handleError_internal(const char *fmt,...){
 }
 
 struct Tracker_Windows *getWindowFromNum(int windownum){
-	if(windownum==-1) return root->song->tracker_windows;
-	struct Tracker_Windows *ret = (struct Tracker_Windows *)ListFindElement1_r0(&root->song->tracker_windows->l,(NInt)windownum);
-        if (ret==NULL)
-          handleError("Window #%d does not exist", windownum);
-        return ret;
+  if(root->song==NULL)
+    return NULL;
+  if (root->song->tracker_windows==NULL)
+    return NULL;
+  
+  if(windownum==-1)
+    return root->song->tracker_windows;
+  
+  struct Tracker_Windows *ret = (struct Tracker_Windows *)ListFindElement1_r0(&root->song->tracker_windows->l,(NInt)windownum);
+  if (ret==NULL)
+    handleError("Window #%d does not exist", windownum);
+  
+  return ret;
 }
 
 
