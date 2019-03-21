@@ -17,6 +17,7 @@ race:Compressor_wrapper::set_parameter
 race:QCoreApplication::postEvent
 race:RT_call_instead_of_process
 race:crashreporter_foo
+race:SP_write_mixer_tree_to_disk
 
 # Calling 3rd party code:
 race:call_ladspa_get_descriptor_func

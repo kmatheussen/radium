@@ -16,6 +16,8 @@
 #include "../common/spinlock.h"
 #include "../common/Mutex.hpp"
 #include "../common/OS_error_proc.h"
+
+#include "../api/api_proc.h"
 #include "../Qt/Qt_colors_proc.h"
 
 

@@ -1458,7 +1458,7 @@
 
 
 (define (show-instrument-color-dialog parentgui . instrument-ids)
-  (<ra> :color-dialog (<ra> :get-instrument-color (car instrument-ids)) parentgui
+  (<ra> :color-dialog (<ra> :get-instrument-color (car instrument-ids) #f) parentgui
         (lambda (color)
           (for-each (lambda (instrument-id)
                       (<ra> :set-instrument-color color instrument-id))
@@ -7745,11 +7745,11 @@
                                                        :enabled seqblock-info
                                                        (lambda ()
                                                          (if blocknum
-                                                             (<ra> :color-dialog (<ra> :get-block-color blocknum) -1
+                                                             (<ra> :color-dialog (<ra> :get-block-color blocknum -1 #f) -1
                                                                    (lambda (color)
                                                                      (<ra> :set-block-color color blocknum)))
                                                              (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
-                                                               (<ra> :color-dialog (<ra> :get-audiofile-color filename) -1
+                                                               (<ra> :color-dialog (<ra> :get-audiofile-color filename #f) -1
                                                                      (lambda (color)
                                                                        (<ra> :set-audiofile-color color filename)))))))
                                                  

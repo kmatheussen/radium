@@ -3695,6 +3695,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     Web(QString url)
       : Gui(this)
     {
+      //QWebView::settings()->setAttribute(QWebSettings::PluginsEnabled, false);
+
       //setWindowTitle(url);
       setUrl(getUrl(url));
       //connect(page(),SIGNAL(downloadRequested(QNetworkRequest)),this,SLOT(download(QNetworkRequest)));

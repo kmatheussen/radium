@@ -633,7 +633,13 @@ void GFX_OpenProgress(const char *message){
 }
 
 static void send_string(QString message){
+  
   printf("-______ sending string %s\n",message.toUtf8().constData());
+
+#ifdef RADIUM_USE_TSAN // get broken pipe in waitForBytesWritten when using tsan.
+  return;
+#endif
+  
   int64_t result = g_process->write((QString(message.toUtf8().toBase64().constData())+"\n").toUtf8());
   printf("num bytes sent: %d\n", (int)result);
   

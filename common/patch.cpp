@@ -136,10 +136,11 @@ void PATCH_add_to_instrument(struct Patch *patch){
   if (VECTOR_is_in_vector(&g_unused_patches, patch))
     VECTOR_remove(&g_unused_patches, patch);
 
-  VECTOR_ensure_space_for_one_more_element(&patch->instrument->patches);
+  const rt_vector_t *rt_vector = VECTOR_create_rt_vector(&patch->instrument->patches, 1);
+
   {
     radium::PlayerLock lock;
-    VECTOR_push_back(&patch->instrument->patches, patch);
+    RT_VECTOR_push_back(&patch->instrument->patches, patch, rt_vector);
   }
   
   g_patchhash[patch->id] = patch;
@@ -1287,23 +1288,30 @@ void PATCH_stop_note(struct Patch *patch, const note_t note){
 ////////////////////////////////////
 // Metronome
 
-void RT_stop_click_note(struct SeqTrack *seqtrack, int64_t time, int note_num){
+
+void PATCH_silence_click_instruments(void){
   int num_patches = 0;
   struct Patch **patches = RT_MIXER_get_all_click_patches(&num_patches);
-  int i;
-  for (i=0 ; i<num_patches ; i++){
-    RT_PATCH_stop_note(seqtrack,
-                       patches[i],
-                       create_note_t2(NULL, -1, note_num),
-                       time);
-  }
+  for (int i=0 ; i<num_patches ; i++)
+    PATCH_stop_all_notes(patches[i]);
 }
 
 void RT_play_click_note(struct SeqTrack *seqtrack, int64_t time, int note_num){
+  static int s_last_click_note = -1;
+  
   int num_patches = 0;
   struct Patch **patches = RT_MIXER_get_all_click_patches(&num_patches);
-  int i;
-  for (i=0 ; i<num_patches ; i++){
+  
+  if (s_last_click_note != -1)
+    for (int i=0 ; i<num_patches ; i++)
+      RT_PATCH_stop_note(seqtrack,
+                         patches[i],
+                         create_note_t2(NULL, -1, s_last_click_note),
+                         time);
+
+  //printf("   rt_play_click_note. seqtrack: %p\n", seqtrack);
+  
+  for (int i=0 ; i<num_patches ; i++){
     //printf("Playing click note. seqtrack: %p\n", seqtrack);
     RT_PATCH_play_note(seqtrack,
                        patches[i],
@@ -1319,6 +1327,8 @@ void RT_play_click_note(struct SeqTrack *seqtrack, int64_t time, int note_num){
                        NULL,
                        time);
   }
+
+  s_last_click_note = note_num; 
 }
 
 
@@ -2063,19 +2073,33 @@ void PATCH_stop_all_notes(struct Patch *patch){
   }
 }
 
-void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id){
-	struct Tracks *track=window->wblock->wtrack->track;
-	struct Patch *patch=track->patch;
+static struct Patch *get_curr_patch(struct Tracker_Windows *window, struct Tracks *&track){
+  track = NULL;
+  
+  bool do_edit = ATOMIC_GET_RELAXED(root->editonoff);
+  if (do_edit){
+    track=window->wblock->wtrack->track;
+    struct Patch *patch=track->patch;
+    return patch;
+  }
 
+  return g_currpatch;
+}
+
+void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id){
+
+        struct Tracks *track = NULL;
+        struct Patch *patch = get_curr_patch(window, track);
+  
 	if(patch==NULL || notenum<0 || notenum>127) return;
 
 	PATCH_play_note(patch,
                         create_note_t(NULL,
                                       note_id,
                                       notenum,
-                                      TRACK_get_volume(track),
-                                      TRACK_get_pan(track),
-                                      ATOMIC_GET(track->midi_channel),
+                                      track==NULL ? 1.0 : TRACK_get_volume(track),
+                                      track==NULL ? 0.0 : TRACK_get_pan(track),
+                                      track==NULL ? 0 : ATOMIC_GET(track->midi_channel),
                                       0,
                                       0
                                       )
@@ -2084,18 +2108,18 @@ void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_
 
 
 void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,float notenum, int64_t note_id){
-	struct Tracks *track=window->wblock->wtrack->track;
-	struct Patch *patch=track->patch;
-
+        struct Tracks *track = NULL;
+        struct Patch *patch = get_curr_patch(window, track);
+        
 	if(patch==NULL || notenum<0 || notenum>127) return;
 
 	PATCH_stop_note(patch,
                         create_note_t(NULL,
                                       note_id,
                                       notenum,
-                                      TRACK_get_volume(track),
-                                      TRACK_get_pan(track),
-                                      ATOMIC_GET(track->midi_channel),
+                                      track==NULL ? 1.0 : TRACK_get_volume(track),
+                                      track==NULL ? 0.0 : TRACK_get_pan(track),
+                                      track==NULL ? 0 : ATOMIC_GET(track->midi_channel),
                                       0,
                                       0
                                       )

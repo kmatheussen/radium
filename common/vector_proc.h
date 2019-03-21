@@ -52,11 +52,16 @@ static inline vector_t VECTOR_create(int size){
   return v;
 }
 
+typedef struct rt_vector_t_ rt_vector_t;
 
-static inline int VECTOR_push_back(vector_t *v, const void *element){
+extern LANGSPEC const rt_vector_t *VECTOR_create_rt_vector(const vector_t *v, int num_extra_elements);
+
+extern LANGSPEC int RT_VECTOR_push_back(vector_t *v, const void *element, const rt_vector_t *rt_vector);
+
+static inline int VECTOR_push_back_internal(vector_t *v, const void *element){
   R_ASSERT_RETURN_IF_FALSE2(v!=NULL, 0);
-  
-  VECTOR_ensure_space_for_one_more_element(v);
+
+  R_ASSERT_NON_RELEASE(v->num_elements < v->num_elements_allocated);
   
   const int num_elements = v->num_elements;
 
@@ -66,18 +71,33 @@ static inline int VECTOR_push_back(vector_t *v, const void *element){
   return num_elements;
 }
 
-static inline void VECTOR_insert(vector_t *v, const void *element, int pos){
+static inline int VECTOR_push_back(vector_t *v, const void *element){
+  ASSERT_NON_RT_NON_RELEASE();
+
+  VECTOR_ensure_space_for_one_more_element(v);
+  
+  return VECTOR_push_back_internal(v, element);
+}
+
+
+extern LANGSPEC void RT_VECTOR_insert(vector_t *v, const void *element, int pos, const rt_vector_t *rt_vector);
+
+  
+static inline void VECTOR_insert_internal(vector_t *v, const void *element, int pos){
+  
   int num_elements = v->num_elements;
   
   R_ASSERT(pos>=0 && pos<=num_elements);
 
   if (pos==num_elements) {
     
-    VECTOR_push_back(v, element);
+    VECTOR_push_back_internal(v, element);
 
   } else if (v->num_elements_allocated == v->num_elements){
+
+    ASSERT_NON_RT_NON_RELEASE();
     
-    const int num_elements_allocated = num_elements * 2;
+    const int num_elements_allocated = R_MAX(8, num_elements * 2);
     v->num_elements_allocated = num_elements_allocated;
     void **old_elements = v->elements;
     v->elements = (void**)talloc(num_elements_allocated*(int)sizeof(void*));
@@ -100,6 +120,12 @@ static inline void VECTOR_insert(vector_t *v, const void *element, int pos){
     v->num_elements = num_elements+1;
 
   }
+}
+
+static inline void VECTOR_insert(vector_t *v, const void *element, int pos){
+  ASSERT_NON_RT_NON_RELEASE();
+
+  VECTOR_insert_internal(v, element, pos);
 }
 
 static inline void VECTOR_push_front(vector_t *v, const void *element){

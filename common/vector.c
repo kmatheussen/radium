@@ -177,6 +177,56 @@ void VECTOR_insert_place(vector_t *v, const Place *p){
   VECTOR_push_back(v, p);
 }
 
+struct rt_vector_t_{
+  vector_t v;
+};
+
+static const rt_vector_t g_null_rt_vector = {0};
+
+const rt_vector_t *VECTOR_create_rt_vector(const vector_t *v, int num_extra_elements){
+  ASSERT_NON_RT_NON_RELEASE();
+  
+  if(v->num_elements_allocated >= v->num_elements + num_extra_elements)
+    return &g_null_rt_vector;
+
+  int num_elements_allocated = R_MAX(8, v->num_elements_allocated * 2);
+
+  while(num_elements_allocated < v->num_elements + num_extra_elements)
+    num_elements_allocated *= 2;
+  
+  rt_vector_t *ret = talloc(sizeof(rt_vector_t));
+  ret->v.num_elements = v->num_elements;
+  ret->v.num_elements_allocated = num_elements_allocated;
+  
+  ret->v.elements = talloc(sizeof(void*)*num_elements_allocated);
+
+  return ret;
+}
+
+int RT_VECTOR_push_back(vector_t *v, const void *element, const rt_vector_t *rt_vector){
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+  
+  if (rt_vector != &g_null_rt_vector){
+    if(v->num_elements > 0)
+      memcpy(rt_vector->v.elements, v->elements, v->num_elements*sizeof(void*));
+    memcpy(v, &rt_vector->v, sizeof(vector_t));
+  }
+  
+  return VECTOR_push_back_internal(v, element);
+}
+
+void RT_VECTOR_insert(vector_t *v, const void *element, int pos, const rt_vector_t *rt_vector){
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+  
+  if (rt_vector != &g_null_rt_vector){
+    if(v->num_elements > 0)
+      memcpy(rt_vector->v.elements, v->elements, v->num_elements*sizeof(void*));
+    memcpy(v, &rt_vector->v, sizeof(vector_t));
+  }
+  
+  VECTOR_insert_internal(v, element, pos);
+}
+  
 
 #ifdef TEST_VECTOR
 

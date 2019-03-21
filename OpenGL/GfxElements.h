@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFont>
 #endif
 
+#include "../api/api_proc.h"
+#include "../Qt/Qt_colors_proc.h"
+
 #include "SharedVariables.hpp"
 
 extern double g_opengl_scale_ratio;
@@ -57,10 +60,14 @@ typedef struct{
 } GE_Rgb;
 
 
-GE_Rgb GE_get_rgb(enum ColorNums colornum);
+GE_Rgb GE_get_rgb(enum ColorNums colornum, bool is_instrument = false);
 GE_Rgb GE_get_custom_rgb(int custom_colornum);
-static inline GE_Rgb GE_get_rgb(unsigned int color){
-  const QColor c(color);
+static inline GE_Rgb GE_get_rgb(unsigned int color, bool is_instrument = false){
+  QColor c(color);
+
+  if(is_instrument)
+    apply_instrument_colorization(c);
+
   GE_Rgb ret = {(unsigned char)c.red(), (unsigned char)c.green(), (unsigned char)c.blue(), (unsigned char)c.alpha()};
   return ret;
 }

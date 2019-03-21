@@ -187,7 +187,7 @@ endif
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
 # "-Og" very often destroys debugging (although it's not supposed to), but without it things are too slow (well, it's already too slow, but -Og helps a lot).
-#THREAD_SANITIZE_OPTS=-Og -fsanitize=thread #-DDISABLE_BDWGC
+#THREAD_SANITIZE_OPTS=-Og -fsanitize=thread -DUSE_TSAN #-DDISABLE_BDWGC
 THREAD_SANITIZE_OPTS=
 
 ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common
@@ -197,7 +197,7 @@ ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common
 
 # Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
 OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS)
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
+DEBUG_BUILD_OPTS = -Werror -Wall -ggdb3 -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 
 NOSHORTEN64TO32FLAG=
 ifneq (,$(findstring clang,$(CC)))
@@ -839,8 +839,8 @@ Signature.o:  $(BUILD_DEPENDENCIES) $(CD)Signature.cpp
 Beats.o:  $(BUILD_DEPENDENCIES) $(CD)Beats.cpp
 	$(CCC) $(CD)Beats.cpp $(QTOPT)
 
-gfx_wtrackheaders.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackheaders.c
-	$(CC) $(CD)gfx_wtrackheaders.c $(OPT)
+gfx_wtrackheaders.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackheaders.cpp
+	$(CCC) $(CD)gfx_wtrackheaders.cpp $(QTOPT)
 
 temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes.c
 	$(CC) $(CD)temponodes.c $(OPT)

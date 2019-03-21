@@ -225,7 +225,7 @@ private:
   }
   
   void reserve_internal(int new_num_elements_max, bool do_lock_player){
-    R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock()); // V_realloc should already have an assertion for this, but the memory functions are a bit chaotic.
+    ASSERT_NON_RT_NON_RELEASE(); // V_realloc should already have an assertion for this, but the memory functions are a bit chaotic.
     
     R_ASSERT_NON_RELEASE(new_num_elements_max > num_elements_max);
 

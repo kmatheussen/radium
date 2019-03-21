@@ -589,6 +589,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     {
       save_color_file->hide();
       load_color_file->hide();
+      
+      instrument_brightness->setValue(getInstrumentBrightness()*1000);
+      instrument_saturation->setValue(getInstrumentSaturation()*1000);
+      block_brightness->setValue(getBlockBrightness()*1000);
+      block_saturation->setValue(getBlockSaturation()*1000);
     }
     
     // MIDI
@@ -1074,6 +1079,37 @@ public slots:
   }
 
 
+  void on_instrument_brightness_valueChanged(int val){
+    if (_initing==false)
+      setInstrumentBrightness((float)val/1000.0);
+  }
+  void on_reset_instrument_brightness_clicked(){
+    instrument_brightness->setValue(500);
+  }
+
+  void on_instrument_saturation_valueChanged(int val){
+    if (_initing==false)
+      setInstrumentSaturation((float)val/1000.0);
+  }
+  void on_reset_instrument_saturation_clicked(){
+    instrument_saturation->setValue(500);
+  }
+  
+  void on_block_brightness_valueChanged(int val){
+    if (_initing==false)
+      setBlockBrightness((float)val/1000.0);
+  }
+  void on_reset_block_brightness_clicked(){
+    block_brightness->setValue(500);
+  }
+
+  void on_block_saturation_valueChanged(int val){
+    if (_initing==false)
+      setBlockSaturation((float)val/1000.0);
+  }
+  void on_reset_block_saturation_clicked(){
+    block_saturation->setValue(500);
+  }
   
   // windows
 

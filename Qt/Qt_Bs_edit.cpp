@@ -1004,9 +1004,10 @@ void BS_resizewindow(void){
 void BS_UpdateBlockList(void){
   ScopedVisitors v;
 
-  if (g_is_hidden)
-    return;
-  
+  // Must update if hidden because of BS_GetCurrBlocklistklistPos()
+  //if (g_is_hidden)
+  //  return;
+
   while(g_bs->blocklist.count()>0){
     delete g_bs->blocklist.takeItem(0);
   }
@@ -1057,8 +1058,10 @@ void BS_UpdatePlayList(void){
   ScopedVisitors v;
 
   //printf("  updateplaylist start\n");
-  if (g_is_hidden)
-    return;
+
+  // Must update if hidden because of BS_GetCurrPlaylistklistPos()
+  //if (g_is_hidden)
+  //  return;
   
   if (g_bs==NULL)
     return;
@@ -1240,6 +1243,10 @@ int BS_GetCurrPlaylistPos(void){
 }
 
 void BS_call_very_often(void){
+  // Must call if hidden because of BS_GetCurrPlaylistklistPos()
+  //if (g_is_hidden)
+  //  return;
+  
   ScopedVisitors v;
   if (is_called_every_ms(70))
     return g_bs->call_very_often();
@@ -1266,6 +1273,12 @@ bool GFX_PlaylistWindowIsVisible(void){
 void GFX_PlayListWindowToFront(void){
   ScopedVisitors v;
 
+  /*
+   not necessary to call these two since both blocklist and playlist are updated when playlist is not visible.
+  BS_UpdateBlockList();
+  BS_UpdatePlayList();
+  */
+  
   //set_widget_width(g_bs->last_shown_width > 30 ? g_bs->last_shown_width : 200);
   g_bs->show();
   

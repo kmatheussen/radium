@@ -588,7 +588,6 @@
 
 (define (create-mixer-strip-name instrument-id strips-config is-minimized is-current-mixer-strip)
   (define name (get-mixer-strip-name instrument-id strips-config))
-  (define color (<ra> :get-instrument-color instrument-id))
 
   (define label (<gui> :widget))
 
@@ -607,6 +606,8 @@
   
   (add-safe-paint-callback label
          (lambda (width height)
+           (define color (<ra> :get-instrument-color instrument-id))
+
            (<gui> :filled-box label color 0 0 width height)
            (if is-minimized
                (begin

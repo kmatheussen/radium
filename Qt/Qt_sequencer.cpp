@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
 
+#include "../audio/SampleReader_proc.h"
+
 #include "Qt_MyQCheckBox.h"
 #include "Qt_MyQSlider.h"
 #include "Qt_Bs_edit_proc.h"
@@ -50,7 +52,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/Peaks.hpp"
 #include "../audio/Envelope.hpp"
-#include "../audio/SampleReader_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -566,21 +567,24 @@ static double getBlockAbsDuration(const struct Blocks *block){
 static QColor get_seqtrack_background_color(const SeqTrack *seqtrack){
   QColor color = get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM);
   if (seqtrack->patch!=NULL)
-    return mix_colors(color, QColor(seqtrack->patch->color), 0.6);
+    return mix_colors(color, get_displayed_instrument_color(seqtrack->patch), 0.6);
   else
     return color;
 }
 
 static QColor get_block_color(const struct Blocks *block){
   //return mix_colors(QColor(block->color), get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM), 0.32f);
-  return QColor(block->color);
+  //return QColor(block->color);
+  return get_displayed_block_color(block);
 }
 
 static QColor get_sample_color(const SeqTrack *seqtrack, const SeqBlock *seqblock){
   if (seqtrack->patch!=NULL && seqtrack->patch->patchdata!=NULL){
     SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
     //return QColor(SEQTRACKPLUGIN_get_sample_color(plugin, seqblock->sample_id));
-    return QColor(SEQTRACKPLUGIN_get_sample_color(plugin, seqblock->sample_id));
+    QColor ret(SEQTRACKPLUGIN_get_sample_color(plugin, seqblock->sample_id));
+    apply_block_colorization(ret);
+    return ret;
   } else {
 #if !defined(RELEASE)
     printf("Qt_seqtrack_widget_callbacks.h: Warning: Could not find patch or patchdata for sample\n");
@@ -1046,7 +1050,7 @@ public:
         color = get_block_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, Seqblock_Type::REGULAR);
       
       else if (track->patch!=NULL)
-        color = QColor(track->patch->color);
+        color = get_displayed_instrument_color(track->patch);
 
       else
         goto no_track_background;

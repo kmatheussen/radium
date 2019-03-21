@@ -300,7 +300,7 @@ public:
 
       } else {
 
-        if (SP_is_autosuspending(plugin->sp)) {
+        if (ATOMIC_GET_RELAXED(plugin->_is_autosuspending)){
           if (cpu_usage->should_update())
             plugin_info->setText(AUTOSUSPENDING_STRING);
         } else {          

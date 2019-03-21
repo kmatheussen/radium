@@ -152,8 +152,6 @@ extern LANGSPEC void SP_delete(struct SoundProducer *producer);
 
 extern LANGSPEC int RT_SP_get_input_latency(const struct SoundProducer *sp);
 
-extern LANGSPEC bool SP_is_autosuspending(const struct SoundProducer *sp);
-
 //extern LANGSPEC bool SP_replace_plugin(struct SoundPlugin *old_plugin, struct SoundPlugin *new_plugin);
 extern LANGSPEC bool SP_is_plugin_running(const struct SoundPlugin *plugin);
 extern LANGSPEC void SP_print_tree(void);

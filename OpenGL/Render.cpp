@@ -494,7 +494,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
           struct Patch *patch = wtrack->track->patch;
           
           if (patch != NULL){
-            GE_Rgb rgb = patch==NULL ? GE_get_custom_rgb(HIGH_EDITOR_BACKGROUND_COLOR_NUM) : GE_get_rgb(patch->color);
+            GE_Rgb rgb = patch==NULL ? GE_get_custom_rgb(HIGH_EDITOR_BACKGROUND_COLOR_NUM) : GE_get_rgb(patch->color, true);
             
             bool is_current_track = get_current_instruments_gui_patch()==patch;
             
@@ -1813,7 +1813,7 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
           if (wtrack->track->patch==NULL)
             note_color = GE_color_alpha(colornum, 0.4, y1, use_scissors);
           else
-            note_color = GE_mix_color(GE_get_rgb(wtrack->track->patch->color), GE_get_rgb(colornum), 400, y1, use_scissors);
+            note_color = GE_mix_color(GE_get_rgb(wtrack->track->patch->color, true), GE_get_rgb(colornum), 400, y1, use_scissors);
         }
         c = note_color;
       }

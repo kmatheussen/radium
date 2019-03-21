@@ -1411,7 +1411,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   //HASH_put_hash(state, "modulator_state", modulator->get_state()); // "modulator_state" is only used when copy/pasting and saving/loading .rec/.mrec files, and not when saving/loading song.
 }
 
-static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
+static int RT_get_audio_tail_length(const struct SoundPlugin *plugin){
   return 0;
 }
 

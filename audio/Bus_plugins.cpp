@@ -74,7 +74,7 @@ static void RT_right_out_process(SoundPlugin *plugin, int64_t time, int num_fram
   memset(outputs[0],0,sizeof(float)*num_frames);
 }
 
-static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
+static int RT_get_audio_tail_length(const struct SoundPlugin *plugin){
   return 0;
 }
 

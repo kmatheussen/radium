@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <QColor>
+
 #include "nsmtracker.h"
 #include "gfx_wtext_proc.h"
 #include "visual_proc.h"
@@ -26,6 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_instruments_proc.h"
 #include "OS_visual_input.h"
 #include "instruments_proc.h"
+
+#include "../api/api_proc.h"
+#include "../Qt/Qt_colors_proc.h"
+
 
 #include "gfx_wtrackheaders_proc.h"
 
@@ -51,7 +57,7 @@ static void DrawWTrackNames(
   int y2 = wtrack1->panonoff.y1 - 2;
 
   // Background
-  unsigned int color = patch==NULL ? GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM) : patch->color;
+  unsigned int color = patch==NULL ? GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM) : get_displayed_instrument_color(patch).rgb();
   bool is_current_track = get_current_instruments_gui_patch()==patch;
   
   if(is_current_track)
@@ -275,7 +281,7 @@ static void DrawAllPianoRollHeaders_old(
 #endif
 
 
-static vector_t g_pianorollheaders = {0};
+static vector_t g_pianorollheaders = {};
 
 static void *get_pianorollheader(int tracknum, bool create_new){
   if (tracknum < 200 && tracknum>= g_pianorollheaders.num_elements)

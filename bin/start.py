@@ -68,8 +68,9 @@ except:
     radium.addMessage("Couldn't parse keybindings file.\n\nBacktrace:"+message)
     sys.exit(6)
 
-if keybindingsparser.parse_and_show_errors()==False:
-    sys.exit(5)
+# Wait parsing keybindings. If we do it here, we run code in keybindings.conf, but the program isn't finished initializing at this point.
+#if keybindingsparser.parse_and_show_errors()==False:
+#    sys.exit(5)
 
 # Hack to fix generated_keybinding_code to load during startup. This is not necessary when calling reloadKeybindings(), so I don't know why this is. Maybe some file cache thing.
 # Didn't work (I thought it worked once, but maybe not). Instead we call reloadKeybindings() in Qt_Main.cpp after startup..
@@ -77,6 +78,7 @@ if keybindingsparser.parse_and_show_errors()==False:
 #    sys.exit(50)
 
 
+# Doesn't seem like code with indentation 0 runs. (it is run later when parse_and_show_errors() is called later though.)
 import generated_keybinding_code as keybinding
 
 

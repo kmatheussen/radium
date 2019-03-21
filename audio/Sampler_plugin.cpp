@@ -1450,7 +1450,7 @@ static void player_is_stopped(struct SoundPlugin *plugin){
 }
 
 // returns the attack+decay+release value (i.e. A+D+R in ADSR) as number of samples.
-static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
+static int RT_get_audio_tail_length(const struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
   return (data->p.a+data->p.d+data->p.r) * (double)MIXER_get_sample_rate() / 1000.0;
 }

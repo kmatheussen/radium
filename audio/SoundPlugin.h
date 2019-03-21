@@ -358,9 +358,9 @@ typedef struct SoundPluginType{
   // * The function is allowed to return a higher value than the actual tail.
   // * If the function returns -1, it means that it was unable to report audio tail lenght. (use default/global tail length instead)
   // * If the function returns a value < -1, it means that the tail has infinite length.
-  int (*RT_get_audio_tail_length)(struct SoundPlugin *plugin);
+  int (*RT_get_audio_tail_length)(const struct SoundPlugin *plugin);
   
-  int (*RT_get_latency)(struct SoundPlugin *plugin);
+  int (*RT_get_latency)(const struct SoundPlugin *plugin);
   
   // Returns the number of channels it can provide peaks for. (calling this function with ch=-1 is considered a dummy operation, except that the return value is correct)
   int (*get_peaks)(struct SoundPlugin *plugin, float note_num, int ch, float pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value);
@@ -376,7 +376,7 @@ typedef struct SoundPluginType{
   
   float (*get_scaled_value_from_native_value)(struct SoundPlugin *plugin, int effect_num, float native_value); // If get_effect_value might take some time to call, or the plugin could have a lot of effects, or we may obtain a lock in get_effect_value (or do other blocking operations), it could be a good idea to implement this one if possible.
 
-  bool (*gui_is_visible)(struct SoundPlugin *plugin); // May be NULL
+  bool (*gui_is_visible)(struct SoundPlugin *plugin); // May be NULL. Note that the function is polled very often so it should be very efficient.
   bool (*show_gui)(struct SoundPlugin *plugin, int64_t parentgui); // If NULL, the "GUI" button will not show. Returns true if gui was opened.
   void (*hide_gui)(struct SoundPlugin *plugin);
 
@@ -610,8 +610,13 @@ typedef struct SoundPlugin{
   DEFINE_ATOMIC(bool, auto_suspend_suspended); // Can be set temporarily by plugin
   
   DEFINE_ATOMIC(enum AutoSuspendBehavior, auto_suspend_behavior);
-  DEFINE_ATOMIC(int64_t, time_of_last_activity); // used when determining whether to auto-bypass
+  
+  DEFINE_ATOMIC(int64_t, _RT_time_of_last_activity); // used when determining whether to auto-bypass. Only relaxed/ATOMIC_NAME() usage, but we still use DEFINE_ATOMIC to avoid tsan hit without having to suppress RT_PLUGIN_touch(), which I think would disable all tsan checks on this variable, not only access in RT_PLUGIN_touch().
 
+  DEFINE_ATOMIC(bool, _RT_is_autosuspending); // Only relaxed / ATOMIC_NAME() usage here as well (see _RT_time_of_last_activity).
+  
+  DEFINE_ATOMIC(bool, _is_autosuspending); // Relaxed version of _RT_is_autosuspending. Does not change value in the middle of a soundcard block either. Must be used by GUI and graphics instead of _RT_is_autosupending to avoid unnecessary flicker since _RT_is_autosuspending is often true in the beginning of a block, but immediately changes to false when starting to process samples.
+  
   int curr_ab_num;
   float *ab_values[NUM_AB]; // each element points to an array of floats. native format.
   hash_t *ab_states[NUM_AB];
@@ -623,7 +628,10 @@ typedef struct SoundPlugin{
   
   DEFINE_ATOMIC(bool, is_selected);
 
-  DEFINE_ATOMIC(bool, has_initialized);
+  // Both these values are set to true when PLUGIN_create() has ended.
+  bool has_initialized;                    // Use this value if it's certain that PLUGIN_create() is finished, or we are the main thread.
+  DEFINE_ATOMIC(bool, MT_has_initialized); // If not, use this value.
+  
   DEFINE_ATOMIC(bool, is_shutting_down);
 
   double processing_time_so_far_in_jack_block; // Used when displaying CPU time for plugin.
