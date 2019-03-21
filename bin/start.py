@@ -78,10 +78,6 @@ except:
 #    sys.exit(50)
 
 
-# Doesn't seem like code with indentation 0 runs. (it is run later when parse_and_show_errors() is called later though.)
-import generated_keybinding_code as keybinding
-
-
 
 #import os
 #os.system("/usr/bin/givertcap")
