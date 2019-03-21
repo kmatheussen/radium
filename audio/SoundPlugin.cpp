@@ -591,7 +591,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 
   PLUGIN_touch(plugin);
 
-  ATOMIC_SET(plugin->has_initialized, true);
+  plugin->has_initialized = true;
   
   return plugin;
 }
@@ -1974,7 +1974,7 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
     }
   }
 
-  if (ATOMIC_GET(plugin->has_initialized)) {
+  if (plugin->has_initialized) {
     if (value_format==EFFECT_FORMAT_SCALED)
       return safe_float_read(&plugin->last_written_effect_values_scaled[effect_num]);
     else
