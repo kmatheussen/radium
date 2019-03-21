@@ -426,10 +426,11 @@ static void release_system_filter(SystemFilter *filter, int num_channels){
 
 static void reset_gui_parentgui(SoundPlugin *plugin);
 
-SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
+static SoundPlugin *PLUGIN_create2(struct Patch *patch, SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
   printf("PLUGIN_create called\n");
   
   SoundPlugin *plugin = (SoundPlugin*)V_calloc(1,sizeof(SoundPlugin));
+  plugin->patch = patch;
   plugin->type = plugin_type;
 
   plugin->num_visible_outputs = -1;
@@ -594,6 +595,10 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   plugin->has_initialized = true;
   
   return plugin;
+}
+
+SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
+  return PLUGIN_create2(NULL, plugin_type, plugin_state, is_loading);
 }
 
 void PLUGIN_delete(SoundPlugin *plugin){
@@ -1981,6 +1986,17 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
       return safe_float_read(&plugin->last_written_effect_values_native[effect_num]);
   }
 
+
+  
+  
+  ///////////////////////////////////////////////////
+  // NOTE! We are only here during initialization! //
+  ///////////////////////////////////////////////////
+  
+  R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+  R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
+
+
   
   int system_effect_num = effect_num - plugin->type->num_effects;
 
@@ -2665,7 +2681,7 @@ void PLUGIN_DLoad(SoundPlugin *plugin){
   */
 }
 
-SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
+SoundPlugin *PLUGIN_create_from_state(struct Patch *patch, hash_t *state, bool is_loading){
   const char *container_name = HASH_has_key(state, "container_name") ? HASH_get_chars(state, "container_name") : NULL;
   const char *type_name = HASH_get_chars(state, "type_name");
   const char *name = HASH_get_chars(state, "name");
@@ -2690,7 +2706,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   //if (!strcmp(type_name,"VST"))
   //  return NULL;
   
-  SoundPlugin *plugin = PLUGIN_create(type, plugin_state, is_loading);
+  SoundPlugin *plugin = PLUGIN_create2(patch, type, plugin_state, is_loading);
 
   if(plugin==NULL)
     return NULL;
