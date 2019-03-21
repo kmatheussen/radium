@@ -3105,9 +3105,11 @@ int radium_main(const char *arg){
 
   D(GFX_OpenProgress("Closing\n"));
   D(GFX_ShowProgressMessage("1", true));
-  
-  while(SAMPLEREADER_call_very_often()); // Drain the g_readers_ready_for_deletion queue.
 
+  // Drain the g_readers_ready_for_deletion queue.
+  while(SAMPLEREADER_call_very_often()){
+  }
+  
   D(GFX_ShowProgressMessage("2", true));
   
   g_qtgui_has_stopped = true;
