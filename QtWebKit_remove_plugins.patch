@@ -1,0 +1,274 @@
+--- ./Source/WebCore/plugins/PluginDatabase.cpp~	2017-04-18 22:15:27.000000000 +0200
++++ ./Source/WebCore/plugins/PluginDatabase.cpp	2019-03-21 15:42:50.286047941 +0100
+@@ -70,10 +70,12 @@
+     if (!plugins) {
+         plugins = new PluginDatabase;
+ 
++        /*
+         if (populate) {
+             plugins->setPluginDirectories(PluginDatabase::defaultPluginDirectories());
+             plugins->refresh();
+         }
++        */
+     }
+ 
+     return plugins;
+@@ -91,12 +93,14 @@
+ 
+ void PluginDatabase::addExtraPluginDirectory(const String& directory)
+ {
+-    m_pluginDirectories.append(directory);
++    //    m_pluginDirectories.append(directory);
+     refresh();
+ }
+ 
+ bool PluginDatabase::refresh()
+ {
++    return false;
++    
+ #if ENABLE(NETSCAPE_PLUGIN_METADATA_CACHE)
+     if (!m_persistentMetadataCacheIsLoaded)
+         loadPersistentMetadataCache();
+@@ -175,11 +179,11 @@
+ Vector<PluginPackage*> PluginDatabase::plugins() const
+ {
+     Vector<PluginPackage*> result;
+-
++#if 0
+     PluginSet::const_iterator end = m_plugins.end();
+     for (PluginSet::const_iterator it = m_plugins.begin(); it != end; ++it)
+         result.append((*it).get());
+-
++#endif    
+     return result;
+ }
+ 
+@@ -193,6 +197,8 @@
+ 
+ PluginPackage* PluginDatabase::pluginForMIMEType(const String& mimeType)
+ {
++    return 0;
++       
+     if (mimeType.isEmpty())
+         return 0;
+ 
+@@ -232,6 +238,8 @@
+ 
+ String PluginDatabase::MIMETypeForExtension(const String& extension) const
+ {
++    return String();
++    
+     if (extension.isEmpty())
+         return String();
+ 
+@@ -283,6 +291,8 @@
+ 
+ PluginPackage* PluginDatabase::findPlugin(const KURL& url, String& mimeType)
+ {
++    return 0;
++    
+     if (!mimeType.isEmpty())
+         return pluginForMIMEType(mimeType);
+     
+@@ -314,6 +324,8 @@
+ 
+ bool PluginDatabase::fileExistsAndIsNotDisabled(const String& filePath) const
+ {
++    return false;
++    
+     // Skip plugin files that are disabled by filename.
+     if (m_disabledPluginFiles.contains(pathGetFileName(filePath)))
+         return false;
+@@ -332,6 +344,8 @@
+ 
+ bool PluginDatabase::add(PassRefPtr<PluginPackage> prpPackage)
+ {
++    return false;
++    
+     ASSERT_ARG(prpPackage, prpPackage);
+ 
+     RefPtr<PluginPackage> package = prpPackage;
+@@ -392,6 +406,7 @@
+ {
+     Vector<String> paths;
+ 
++#if 0
+     // Add paths specific to each platform
+ #if defined(XP_UNIX) && !PLATFORM(BLACKBERRY)
+     String userPluginPath = homeDirectoryPath();
+@@ -449,7 +464,8 @@
+     qtPath.split(UChar(':'), /* allowEmptyEntries */ false, qtPaths);
+     paths.appendVector(qtPaths);
+ #endif
+-
++#endif
++    
+     return paths;
+ }
+ 
+@@ -472,7 +488,7 @@
+ }
+ 
+ void PluginDatabase::getPluginPathsInDirectories(HashSet<String>& paths) const
+-{
++{return;
+     // FIXME: This should be a case insensitive set.
+     HashSet<String> uniqueFilenames;
+ 
+@@ -551,6 +567,8 @@
+ 
+ void PluginDatabase::loadPersistentMetadataCache()
+ {
++    return;
++    
+     if (!isPersistentMetadataCacheEnabled() || persistentMetadataCachePath().isEmpty())
+         return;
+ 
+@@ -631,6 +649,8 @@
+ 
+ void PluginDatabase::updatePersistentMetadataCache()
+ {
++    return;
++    
+     if (!isPersistentMetadataCacheEnabled() || persistentMetadataCachePath().isEmpty())
+         return;
+ 
+--- ./Source/WebKit2/Shared/Plugins/Netscape/x11/NetscapePluginModuleX11.cpp~	2017-04-18 22:15:27.000000000 +0200
++++ ./Source/WebKit2/Shared/Plugins/Netscape/x11/NetscapePluginModuleX11.cpp	2019-03-21 15:37:42.520399021 +0100
+@@ -98,6 +98,8 @@
+ {
+     ASSERT(m_isInitialized);
+ 
++    return false;
++    
+     Module* module = m_module.get();
+     NPP_GetValueProcPtr NPP_GetValue = module->functionPointer<NPP_GetValueProcPtr>("NP_GetValue");
+     if (!NPP_GetValue)
+@@ -127,6 +129,8 @@
+ 
+ bool NetscapePluginModule::getPluginInfo(const String& pluginPath, PluginModuleInfo& plugin)
+ {
++    return false;
++    
+     RawPluginMetaData metaData;
+     if (!PluginProcessProxy::scanPlugin(pluginPath, metaData))
+         return false;
+@@ -142,6 +146,8 @@
+ 
+ void NetscapePluginModule::determineQuirks()
+ {
++    return;
++    
+ #if CPU(X86_64)
+     RawPluginMetaData metaData;
+     if (!getPluginInfoForLoadedPlugin(metaData))
+@@ -179,6 +185,8 @@
+ 
+ bool NetscapePluginModule::scanPlugin(const String& pluginPath)
+ {
++    return true;
++    
+     RawPluginMetaData metaData;
+ 
+     {
+--- ./Source/WebKit2/Shared/Plugins/Netscape/NetscapePluginModule.cpp~	2017-04-18 22:15:27.000000000 +0200
++++ ./Source/WebKit2/Shared/Plugins/Netscape/NetscapePluginModule.cpp	2019-03-21 15:36:07.315634987 +0100
+@@ -137,6 +137,8 @@
+ 
+ PassRefPtr<NetscapePluginModule> NetscapePluginModule::getOrCreate(const String& pluginPath)
+ {
++    return 0;
++    #if 0
+     // First, see if we already have a module with this plug-in path.
+     for (size_t i = 0; i < initializedNetscapePluginModules().size(); ++i) {
+         NetscapePluginModule* pluginModule = initializedNetscapePluginModules()[i];
+@@ -144,14 +146,14 @@
+         if (pluginModule->m_pluginPath == pluginPath)
+             return pluginModule;
+     }
+-
+-    RefPtr<NetscapePluginModule> pluginModule(adoptRef(new NetscapePluginModule(pluginPath)));
++#endif
++    //    RefPtr<NetscapePluginModule> pluginModule(adoptRef(new NetscapePluginModule(pluginPath)));
+     
+     // Try to load and initialize the plug-in module.
+-    if (!pluginModule->load())
++    //if (!pluginModule->load())
+         return 0;
+     
+-    return pluginModule.release();
++        //return pluginModule.release();
+ }
+ 
+ void NetscapePluginModule::incrementLoadCount()
+@@ -177,6 +179,8 @@
+ 
+ bool NetscapePluginModule::load()
+ {
++    return false;
++    
+     if (m_isInitialized) {
+         ASSERT(initializedNetscapePluginModules().find(this) != notFound);
+         return true;
+@@ -199,6 +203,8 @@
+ 
+ bool NetscapePluginModule::tryLoad()
+ {
++    return false;
++    
+     m_module = adoptPtr(new Module(m_pluginPath));
+     if (!m_module->load())
+         return false;
+--- ./Source/WebKit2/UIProcess/Plugins/unix/PluginInfoStoreUnix.cpp~	2017-04-18 22:15:27.000000000 +0200
++++ ./Source/WebKit2/UIProcess/Plugins/unix/PluginInfoStoreUnix.cpp	2019-03-21 15:34:32.865886722 +0100
+@@ -42,7 +42,7 @@
+ Vector<String> PluginInfoStore::pluginsDirectories()
+ {
+     Vector<String> result;
+-
++#if 0
+     result.append(homeDirectoryPath() + "/.mozilla/plugins");
+     result.append(homeDirectoryPath() + "/.netscape/plugins");
+     result.append("/usr/lib/browser/plugins");
+@@ -74,20 +74,21 @@
+         mozillaPaths.split(UChar(':'), /* allowEmptyEntries */ false, paths);
+         result.appendVector(paths);
+     }
+-
++#endif
+     return result;
+ }
+ 
+ Vector<String> PluginInfoStore::pluginPathsInDirectory(const String& directory)
+ {
+     Vector<String> result;
++#if  0
+     Vector<String> pluginPaths = listDirectory(directory, String("*.so"));
+     Vector<String>::const_iterator end = pluginPaths.end();
+     for (Vector<String>::const_iterator it = pluginPaths.begin(); it != end; ++it) {
+         if (fileExists(*it))
+             result.append(*it);
+     }
+-
++#endif
+     return result;
+ }
+ 
+@@ -98,13 +99,15 @@
+ 
+ bool PluginInfoStore::getPluginInfo(const String& pluginPath, PluginModuleInfo& plugin)
+ {
+-    return NetscapePluginModule::getPluginInfo(pluginPath, plugin);
++    return false;
++    //return NetscapePluginModule::getPluginInfo(pluginPath, plugin);
+ }
+ 
+ bool PluginInfoStore::shouldUsePlugin(Vector<PluginModuleInfo>& /*alreadyLoadedPlugins*/, const PluginModuleInfo& /*plugin*/)
+ {
+     // We do not do any black-listing presently.
+-    return true;
++    //return true;
++    return false;    
+ }
+ 
+ } // namespace WebKit
