@@ -426,7 +426,7 @@ static void release_system_filter(SystemFilter *filter, int num_channels){
 
 static void reset_gui_parentgui(SoundPlugin *plugin);
 
-static SoundPlugin *PLUGIN_create2(struct Patch *patch, SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
+SoundPlugin *PLUGIN_create(struct Patch *patch, SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
   printf("PLUGIN_create called\n");
   
   SoundPlugin *plugin = (SoundPlugin*)V_calloc(1,sizeof(SoundPlugin));
@@ -596,10 +596,6 @@ static SoundPlugin *PLUGIN_create2(struct Patch *patch, SoundPluginType *plugin_
   ATOMIC_SET(plugin->MT_has_initialized, true);
   
   return plugin;
-}
-
-SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
-  return PLUGIN_create2(NULL, plugin_type, plugin_state, is_loading);
 }
 
 void PLUGIN_delete(SoundPlugin *plugin){
@@ -2707,7 +2703,7 @@ SoundPlugin *PLUGIN_create_from_state(struct Patch *patch, hash_t *state, bool i
   //if (!strcmp(type_name,"VST"))
   //  return NULL;
   
-  SoundPlugin *plugin = PLUGIN_create2(patch, type, plugin_state, is_loading);
+  SoundPlugin *plugin = PLUGIN_create(patch, type, plugin_state, is_loading);
 
   if(plugin==NULL)
     return NULL;
