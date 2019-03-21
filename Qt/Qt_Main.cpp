@@ -2763,6 +2763,8 @@ int radium_main(const char *arg){
     return 0;
   printf("ending\n");
 
+  evalPython("keybindingsparser.parse_and_show_errors()");
+    
   SCHEME_init2();
 
   //ProfilerStop();
@@ -3724,7 +3726,7 @@ int main(int argc, char **argv){
     return -1;
   }
 
-  GFX_ShowProgressMessage("Initializing keybindings and other things", true);
+  GFX_ShowProgressMessage("Initializing GUI", true);
   
   //g_splashscreen = new QSplashScreen(pixmap);
 #if 0 //def RELEASE
