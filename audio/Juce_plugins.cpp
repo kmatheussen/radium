@@ -243,10 +243,10 @@ namespace{
     void 	audioProcessorParameterChanged (juce::AudioProcessor *processor, int parameterIndex, float newValue) override {
 
 #if !defined(RELEASE)
-        printf("   JUCE listener: parm %d changed to %f. has_inited: %d. is_shutting_down: %d\n",parameterIndex, newValue, _plugin->has_initialized, ATOMIC_GET(_plugin->is_shutting_down));
+      printf("   JUCE listener: parm %d changed to %f. has_inited: %d. is_shutting_down: %d\n",parameterIndex, newValue, ATOMIC_GET(_plugin->MT_has_initialized), ATOMIC_GET(_plugin->is_shutting_down));
 #endif
 
-      if (_plugin->has_initialized && !ATOMIC_GET(_plugin->is_shutting_down))
+      if (ATOMIC_GET(_plugin->MT_has_initialized) && !ATOMIC_GET(_plugin->is_shutting_down))
         PLUGIN_call_me_when_an_effect_value_has_changed(_plugin,
                                                         parameterIndex,
                                                         newValue, // native
