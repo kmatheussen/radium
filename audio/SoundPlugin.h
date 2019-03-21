@@ -628,7 +628,10 @@ typedef struct SoundPlugin{
   
   DEFINE_ATOMIC(bool, is_selected);
 
-  bool has_initialized;
+  // Both these values are set to true when PLUGIN_create() has ended.
+  bool has_initialized;                    // Use this value if it's certain that PLUGIN_create() is finished, or we are the main thread.
+  DEFINE_ATOMIC(bool, MT_has_initialized); // If not, use this value.
+  
   DEFINE_ATOMIC(bool, is_shutting_down);
 
   double processing_time_so_far_in_jack_block; // Used when displaying CPU time for plugin.

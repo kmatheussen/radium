@@ -593,6 +593,7 @@ static SoundPlugin *PLUGIN_create2(struct Patch *patch, SoundPluginType *plugin_
   PLUGIN_touch(plugin);
 
   plugin->has_initialized = true;
+  ATOMIC_SET(plugin->MT_has_initialized, true);
   
   return plugin;
 }
