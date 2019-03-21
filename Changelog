@@ -1,3 +1,71 @@
+Changes 5.9.46 -> 5.9.48:
+* Linux: Patch the included WebKit library so that it
+  doesn't load browser plugins. Visiting the
+  Wikipedia LFO page (linked to in the manual) could
+  make Radium crash if user had installed a buggy
+  plugin, or a plugin linking to Qt.
+* Sequencer: When pressing Space while playing, just
+  stop playing, and don't move cursor back. When
+  pressing Space while NOT playing, first move cursor
+  back to last place we started playing from, and
+  then start playing.
+* GUI: Remove the text "CPU:" from the bottom bar.
+* GUI: In the bottom bar, make the status bar and
+  the volume slider always have the same width.
+* Editor: When edit is OFF, and we are playing notes
+  on the computer keyboard, send the notes to the
+  current instrument and not to the instrument for
+  the current track.
+* Instruments: For older songs (approx. a year), fix
+  note duplicator values being set to default values
+  if undoing Reset or Random. Also fixes A/B usage
+  and possibly other things. These are more
+  fixes for the old note duplicator Chance bug which
+  unfortunately caused old songs to have wrong values
+  in them.
+* Init: Make sure custom initialization code (in
+  keybindings.conf) doesn't run until program has
+  started up. Program could crash during startup
+  because of this.
+* Playlist: Fix wrong content showing up when a
+  different seqtrack was selected while playlist was
+  hidden.
+* Playlist: Fix selecting prev and next playlist
+  block when playlist isn't visible.
+* Instruments: Immediately remove "[m]" from
+  instrument slider/checkbox text after removing
+  a modulator from the effect.
+* Preferences: Add sliders to control brightness and
+  saturation for blocks/audiofiles colors and
+  instrument colors.
+* Instrument: Fix rare crash that could happen when
+  creating new instrument.
+* Sequencer: Fix rare crash that could happen when
+  creating new seqtrack.
+* Audio: Optimize checking if instrument can
+  autosuspend.
+* GUI: Make tab colors configurable.
+* Metronome: Fix silent metronome when playing block
+  in sequencer timing mode.
+* Metronome: Fix stop notes not being sent out in
+  sequencer timing mode.
+* Metronome: Fix stop notes sometimes not being sent
+  out when starting to play a new block in editor
+  timing mode.
+* Modular mixer: Draw autosuspended objects in a
+  grayer color than before.
+* Linux: Decrease CPU usage for VST plugin GUIs.
+* Windows/OSX: Fix program sometimes hanging when
+  exiting program after using a midi input or output
+  device.
+* API: getInstrumentBrightness,
+  setInstrumentBrightness, getInstrumentSaturation,
+  setInstrumentSaturation, getBlockBrightness,
+  setBlockBrightness, getBlockSaturation,
+  setBlockSaturation.
+
+
+
 Changes 5.9.44 -> 5.9.46:
 * Windows/VST: Add a "DPI" checkbox to the VST plugin
   header when DPI is not 96, i.e. when either the
@@ -61,6 +129,7 @@ Changes 5.9.44 -> 5.9.46:
   * New functions: setIncludePanAndDryInWetSignal,
     includePanAndDryInWetSignal, appendBase64Strings.
   * Add optional argument "text_is_base64" to gui_drawText
+
 
 
 Changes 5.9.43 -> 5.9.44:
