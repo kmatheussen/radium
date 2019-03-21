@@ -489,7 +489,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
     else
       plugin_state = HASH_get_hash(audio_state, "plugin");
   
-    plugin = PLUGIN_create_from_state(plugin_state, is_loading_song);
+    plugin = PLUGIN_create_from_state(patch, plugin_state, is_loading_song);
 
     if (plugin!=NULL)
       type = plugin->type;
@@ -510,7 +510,8 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
       }
     }
 
-    plugin = PLUGIN_create(type, NULL, is_loading_song);
+    plugin = PLUGIN_create(patch, type, NULL, is_loading_song);
+
   }
 
   if (plugin==NULL){
@@ -542,8 +543,6 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
     const char *name = PLUGIN_generate_new_patchname(type);
     PATCH_set_name(patch, name);
   }
-
-  plugin->patch = patch;
 
   AUDIO_set_patch_attributes(patch, plugin);
   AUDIO_set_permanent_id(patch, plugin);

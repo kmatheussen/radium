@@ -1010,11 +1010,11 @@
     ;; horizontal: Same thing, but for width.
 
   (if (not background-color)      
-      (set! background-color (<gui> :mix-colors (<gui> :get-background-color gui) "#004000" 0.65)))
+      (set! background-color (<gui> :mix-colors (<gui> :get-background-color gui) "tab_unselected" 0.65)))
 
   ;;(<gui> :get-background-color gui)))
 
-  (define curr-tab-background (<gui> :mix-colors "green" background-color 0.47))
+  (define curr-tab-background (<gui> :mix-colors "tab_selected" background-color 0.47))
 
   (define num-tabs (length tab-names))
 
@@ -1050,7 +1050,6 @@
   (define tab-bar (<gui> :get-tab-bar tabs))
 
   (define background-color (<gui> :get-background-color tabs))
-  (define curr-tab-background (<gui> :mix-colors "green" background-color 0.47))
 
   (define (get-index-from-x-y x y)
     (define num-tabs (<gui> :num-tabs tabs))

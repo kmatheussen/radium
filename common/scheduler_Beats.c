@@ -36,36 +36,18 @@ void RT_Beats_set_new_last_bar_start_value(struct SeqTrack *seqtrack, double bea
   iterator->new_beat_bar_set = false;
 }
 
-static void RT_stop_last_played_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int64_t time){
-  if (iterator->last_played_metronome_note_num != -1) {
-    RT_stop_click_note(seqtrack, time, iterator->last_played_metronome_note_num);
-    iterator->last_played_metronome_note_num = -1;
-  }
-}
-
-static void RT_play_click_note2(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int64_t time, int note_num){
-  RT_play_click_note(seqtrack, time, note_num);
-  iterator->last_played_metronome_note_num = note_num;
-}
-
 static int64_t RT_scheduled_play_bar_note(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
-  Beat_Iterator *iterator = args[0].pointer;
-    
-  RT_stop_last_played_note(seqtrack, iterator, time);
   //printf("** BAR\n");
   if (ATOMIC_GET(root->clickonoff))
-    RT_play_click_note2(seqtrack, iterator, time, c_bar_note_num);
+    RT_play_click_note(seqtrack, time, c_bar_note_num);
 
   return DONT_RESCHEDULE;
 }
 
 static int64_t RT_scheduled_play_beat_note(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
-  Beat_Iterator *iterator = args[0].pointer;
-    
-  RT_stop_last_played_note(seqtrack, iterator, time);
   //printf("     BEAT **\n");
   if (ATOMIC_GET(root->clickonoff))
-    RT_play_click_note2(seqtrack, iterator, time, c_beat_note_num);
+    RT_play_click_note(seqtrack, time, c_beat_note_num);
 
   return DONT_RESCHEDULE;
 }
@@ -106,13 +88,15 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
     //printf("%d %d. last bar: %f. signature: %d/%d\n", beat->bar_num, beat->beat_num, iterator->beat_position_of_last_bar_start,iterator->last_valid_signature.numerator, iterator->last_valid_signature.denominator);
 
     bool schedule_metronome;
-    if (root->song->use_sequencer_tempos_and_signatures)
-      schedule_metronome = false;
-    else if (is_playing_song())
-      schedule_metronome = seqtrack==root->song->seqtracks.elements[0];
-    else
+    if (is_playing_song()){
+      if (root->song->use_sequencer_tempos_and_signatures)
+        schedule_metronome = false;
+      else 
+        schedule_metronome = seqtrack==root->song->seqtracks.elements[0];
+    } else {
       schedule_metronome = seqtrack==root->song->block_seqtrack;
-    
+    }
+      
     // Schedule metronome sound
     if(schedule_metronome){
       const int num_args = 1;
@@ -148,7 +132,6 @@ void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
   
   Beat_Iterator *iterator = &seqtrack->beat_iterator;
   memset(iterator, 0, sizeof(Beat_Iterator));
-  iterator->last_played_metronome_note_num = -1;
 
   R_ASSERT(iterator->is_active==false);
 

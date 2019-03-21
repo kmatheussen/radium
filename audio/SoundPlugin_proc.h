@@ -37,7 +37,7 @@ enum WhereToGetValue{
   VALUE_FROM_STORAGE
 };
 
-extern LANGSPEC SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading);
+extern LANGSPEC SoundPlugin *PLUGIN_create(struct Patch *patch, SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading);
 extern LANGSPEC void PLUGIN_delete(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_update_smooth_values(SoundPlugin *plugin);
 
@@ -116,7 +116,7 @@ extern LANGSPEC float PLUGIN_get_last_written_effect_from_name(SoundPlugin *plug
 extern LANGSPEC float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name, enum WhereToGetValue where, enum ValueFormat value_format);
 extern LANGSPEC void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value); // scaled format
 extern LANGSPEC void PLUGIN_DLoad(SoundPlugin *plugin);
-extern LANGSPEC SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading);
+extern LANGSPEC SoundPlugin *PLUGIN_create_from_state(struct Patch *patch, hash_t *state, bool is_loading);
 extern LANGSPEC void PLUGIN_change_ab(SoundPlugin *plugin, int ab); // Only called from AUDIOWIDGET_set_ab. Call AUDIOWIDGET_set_ab instead.
 extern LANGSPEC void PLUGIN_reset_ab(SoundPlugin *plugin, int ab);
 extern LANGSPEC char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type);
@@ -130,7 +130,7 @@ extern LANGSPEC void PLUGIN_set_recording_automation(SoundPlugin *plugin, int ef
 extern LANGSPEC void PLUGIN_set_all_effects_to_not_recording(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_set_autosuspend_behavior(SoundPlugin *plugin, enum AutoSuspendBehavior new_behavior);
-extern LANGSPEC enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(SoundPlugin *plugin);
+extern LANGSPEC enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(const SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_set_random_behavior(SoundPlugin *plugin, const int effect_num, bool do_random);
 extern LANGSPEC bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num);
 
@@ -138,20 +138,30 @@ static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
   //  if (plugin->patch!=NULL && !strcmp(plugin->patch->name,"Test"))
   //    printf("Touching %s\n",plugin->patch==NULL ? "(null)" : plugin->patch->name);
 
+  R_ASSERT_NON_RELEASE(THREADING_is_runner_thread() || PLAYER_current_thread_has_lock());
+
   if (plugin != NULL) {
-    int64_t last_used_time = MIXER_get_last_used_time();
-  
-    if (ATOMIC_GET_RELAXED(plugin->time_of_last_activity)==last_used_time) // This function is called quite often
-      return;
-      
-    ATOMIC_SET(plugin->time_of_last_activity, last_used_time);
+
+    // We can use RELAXED on these two variables since they would be set to the same values if accessed simultaneously. I'm pretty sure that's a valid reason to use RELAXED.
+    // And furthermore, reading these two values are protected by other mechanisms, so they are never read at the same time as they are written.
+    ATOMIC_SET_RELAXED(plugin->_RT_is_autosuspending, false);
+    ATOMIC_SET_RELAXED(plugin->_RT_time_of_last_activity, RT_MIXER_get_last_used_time());
+    
+  } else {
+    
+    R_ASSERT_NON_RELEASE(false);
+    
   }
 }
+
+#ifdef __cplusplus
 static inline void PLUGIN_touch(SoundPlugin *plugin){
+  radium::PlayerRecursiveLock lock;
   RT_PLUGIN_touch(plugin);
 }
-  
-extern LANGSPEC bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time);
+#endif
+
+extern LANGSPEC bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time);
 //extern LANGSPEC bool PLUGIN_can_autosuspend(SoundPlugin *plugin);
   
 
@@ -176,7 +186,7 @@ extern LANGSPEC void RT_schedule_mixer_strips_redraw(void);
 
 static inline QString get_parameter_prepend_text(const struct Patch *patch, int effect_num){
   QString ret;
-
+ 
   if (MODULATOR_get_id(patch, effect_num) >= 0)
     ret = "m";
   

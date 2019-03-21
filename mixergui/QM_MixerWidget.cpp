@@ -1906,7 +1906,7 @@ namespace{
                 bool is_solo = ATOMIC_GET_RELAXED(plugin->solo_is_on);
                 bool is_bypass = !ATOMIC_GET_RELAXED(plugin->effects_are_on);
                 bool is_recording = ATOMIC_GET_RELAXED(patch->is_recording);
-                bool is_autosuspending = SP_is_autosuspending(plugin->sp);
+                bool is_autosuspending = ATOMIC_GET_RELAXED(plugin->_is_autosuspending);
 
                 //printf("last: %f. vol: %f. Equal? %d\n", chip->_last_updated_volume, volume, chip->_last_updated_volume == volume);
                 if (chip->_last_updated_volume != volume){

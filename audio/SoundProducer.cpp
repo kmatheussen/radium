@@ -60,6 +60,8 @@ static inline int myisinf(float val){
 #include "../common/Queue.hpp"
 #include "../common/Time.hpp"
 
+#include "../midi/midi_i_input_proc.h"
+
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 #include "AudioMeterPeaks_proc.h"
@@ -700,9 +702,6 @@ struct SoundProducer {
   double running_time;
   bool has_run_for_each_block2;
 
-  bool _autosuspending_this_cycle;
-  DEFINE_ATOMIC(bool, _is_autosuspending); // Relaxed version of _autosuspending_this_cycle. Can be accessed from any thread.
-  
   bool _is_bus;
   int _bus_num;
   enum BusDescendantType _bus_descendant_type; // Is 'IS_BUS_DESCENDANT' for all descendants of bus plugins. To prevent accidental feedback loops.
@@ -717,10 +716,12 @@ struct SoundProducer {
   DEFINE_ATOMIC(bool, is_processed) = false;
 #endif
 
-  DEFINE_ATOMIC(int, num_dependencies_left);  // = num_dependencies + (is_bus ? num_not_bus_descendants : 0). Decreased during processing. When the number is zero, it is scheduled for processing.
+  DEFINE_ATOMIC(int, _num_active_input_links_left);  // = num_active_input_links + (is_bus ? num_not_bus_descendants : 0). Decreased during processing. When the number is zero, it is scheduled for processing.
   
-  int num_dependencies;              // number of active input links
+  int _num_active_input_links;
 
+  DEFINE_ATOMIC(int, num_output_links_left) = 0; // Decreased by output soundproducers. When 0, we can release _output_sound.
+  
 #if 0
   int downcounter = 1; // When zero, the soundproducer can change order. We do this to avoid too much fluctation, which is likely to be bad for the cache.
 
@@ -751,13 +752,13 @@ public:
     , _num_outputs(plugin->type->num_outputs)
     , _last_time(-1)
     , running_time(0.0)
-    , num_dependencies(0)
+    , _num_active_input_links(0)
   {    
     printf("New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
 
     plugin->sp = this;
     
-    ATOMIC_SET(num_dependencies_left, 0);
+    ATOMIC_SET(_num_active_input_links_left, 0);
     
     R_ASSERT(THREADING_is_main_thread());
     
@@ -1568,28 +1569,59 @@ public:
 
     return true;
   }
+
   
+  // Called by main mixer thread before starting multicore, and before RT_called_for_each_soundcard_block2.
+  // Note: Called for each _soundcard_ block, not each radium block.
   void RT_called_for_each_soundcard_block1(int64_t time){
     running_time = 0.0;
     has_run_for_each_block2 = false;
+
+    if(ATOMIC_NAME(num_output_links_left) != 0){
+      //printf("    num_output_links_left for %s should be 0, but was %d\n", _plugin->patch->name, ATOMIC_NAME(num_output_links_left));
+      //R_ASSERT_NON_RELEASE(ATOMIC_NAME(num_output_links_left)==0);
+
+      ATOMIC_NAME(num_output_links_left) = 0;
+    }
+
+    // Set initial autosuspend. Autosuspend is also set to false when a soundproducer sends audio to another soundproducer.
+    {      
+      bool autosuspend = RT_PLUGIN_can_autosuspend(_plugin, time);
+      
+      // We don't autosuspend current patch when not playing.
+      if (autosuspend && !is_playing()){
+        struct Patch *current_patch = ATOMIC_GET(g_through_patch);
+        if (_plugin->patch == current_patch)
+          autosuspend = false;
+      }
+
+      bool was_autosuspending_last_cycle = ATOMIC_NAME(_plugin->_RT_is_autosuspending);
+
+      // Set _is_autosuspending. _is_autosuspending is only used by the GUI.
+      ATOMIC_SET_RELAXED(_plugin->_is_autosuspending, autosuspend && was_autosuspending_last_cycle);
+
+      ATOMIC_NAME(_plugin->_RT_is_autosuspending) = autosuspend;
+    }
   }
 
   // Called by main mixer thread before starting multicore.
+  // Note: Called for each _soundcard_ block, not each radium block.
   void RT_called_for_each_soundcard_block2(int64_t time){
     if (has_run_for_each_block2 == true)
       return;
 
     has_run_for_each_block2 = true;
 
-    
-    // 1. Find num_dependencies
+  
+    // 1. Find _num_active_input_links
     //
-    num_dependencies = 0;
+    _num_active_input_links = 0;
 
     for (SoundProducerLink *link : _input_links) {
 
-      if (link->RT_called_for_each_soundcard_block())
-        num_dependencies++;
+      if (link->RT_called_for_each_soundcard_block()){
+        _num_active_input_links++;
+      }
     }
 
     // 2. Ensure RT_called_for_each_soundcard_block2 is called for all soundobjects sending sound here. (since we read the _latency variable from those a little bit further down in this function)
@@ -1600,6 +1632,8 @@ public:
 
       if (!should_run_link(link))
         continue;
+
+      ATOMIC_NAME(link->source->num_output_links_left)++;
 
       link->source->RT_called_for_each_soundcard_block2(time);
     }
@@ -1738,6 +1772,11 @@ public:
       
       SoundProducer *source = link->source;
       
+      if(ATOMIC_ADD_RETURN_NEW(source->num_output_links_left, -1)==0){
+        //printf("   Used all remaining buffers for %s\n", source->_plugin->patch->name);
+      }
+      //printf("   %s: Num remaining output buffer users for %s: %d\n", _plugin->patch->name, source->_plugin->patch->name, ATOMIC_GET(source->num_output_links_left));
+      
       int latency = _highest_input_link_latency - source->_latency;
       
       if (latency >= link->_delay._delay.buffer_size) {
@@ -1757,7 +1796,7 @@ public:
         continue;
       }
 
-      if (source->_autosuspending_this_cycle) {
+      if (ATOMIC_NAME(source->_plugin->_RT_is_autosuspending)) {
         link->_delay.RT_call_instead_of_process(num_frames);
         continue;
       }
@@ -1895,12 +1934,16 @@ public:
         const float out_peak = RT_get_max_val(_output_sound[ch],num_frames);
         volume_peaks[ch] = out_peak;
 
-        is_touched = is_touched || (out_peak > MIN_AUTOSUSPEND_PEAK);
+        if(false==is_touched && out_peak > MIN_AUTOSUSPEND_PEAK)
+          is_touched = true;
       }
 
       if(is_touched) {
+        
         RT_PLUGIN_touch(_plugin);
+        
         for(auto link : _output_links){
+          
           if (false==link->is_event_link && link->is_active)
             RT_PLUGIN_touch(link->target->_plugin);
         }
@@ -2166,7 +2209,7 @@ void SP_write_mixer_tree_to_disk(QFile *file){
     volatile Patch *patch = plugin==NULL ? NULL : plugin->patch;
     const char *name = patch==NULL ? "<null>" : patch->name;
     
-    file->write(QString().sprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,name,sp->num_dependencies,ATOMIC_GET(sp->num_dependencies_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER).toUtf8());
+    file->write(QString().sprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,name,sp->_num_active_input_links,ATOMIC_GET(sp->_num_active_input_links_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER).toUtf8());
     
     for (SoundProducerLink *link : sp->_output_links){
       SoundPlugin *plugin = link->target->_plugin;
@@ -2188,8 +2231,8 @@ void SP_print_tree(void){
             sp->_plugin->patch==NULL?-1:(int)sp->_plugin->patch->id,
             sp,
             sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,
-            sp->num_dependencies,
-            ATOMIC_GET(sp->num_dependencies_left),
+            sp->_num_active_input_links,
+            ATOMIC_GET(sp->_num_active_input_links_left),
             sp->_output_links.size(),
             sp->_bus_descendant_type==IS_BUS_PROVIDER
             
@@ -2284,10 +2327,6 @@ bool SP_is_plugin_running(const SoundPlugin *plugin){
 
 int RT_SP_get_input_latency(const SoundProducer *sp){
   return sp->_highest_input_link_latency;
-}
-
-bool SP_is_autosuspending(const SoundProducer *sp){
-  return ATOMIC_GET_RELAXED(sp->_is_autosuspending);
 }
 
 void SP_set_buffer_size(SoundProducer *producer,int buffer_size){

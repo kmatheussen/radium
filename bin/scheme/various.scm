@@ -735,7 +735,7 @@
      (list "Configure color"
            (lambda ()
              (if blocknum
-                 (<ra> :color-dialog (<ra> :get-block-color blocknum) -1
+                 (<ra> :color-dialog (<ra> :get-block-color blocknum -1 #f) -1
                        (lambda (color)
                          (<ra> :set-block-color color blocknum))))))
      
@@ -773,7 +773,7 @@
    (list "Configure color"
          :enabled filename
          (lambda ()
-           (<ra> :color-dialog (<ra> :get-audiofile-color filename) -1
+           (<ra> :color-dialog (<ra> :get-audiofile-color filename #f) -1
                  (lambda (color)
                    (<ra> :set-audiofile-color color filename)))))
    

@@ -15,8 +15,6 @@
 
 #include "../common/OS_Player_proc.h"
 
-#include "../midi/midi_i_input_proc.h"
-
 #include "SoundProducer_proc.h"
 
 
@@ -101,10 +99,10 @@ static void avoid_lockup(int counter){
   }
 }
 
-static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, SoundProducer **next){
-  if (ATOMIC_ADD_RETURN_NEW(sp->num_dependencies_left, -1) == 0) {
-    if (*next == NULL)
-      *next = sp;
+static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, SoundProducer *&next){
+  if (ATOMIC_ADD_RETURN_NEW(sp->_num_active_input_links_left, -1) == 0) {
+    if (next == NULL)
+      next = sp;
     else
       soundproducer_queue.put(sp);
   }
@@ -124,19 +122,7 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   R_ASSERT(old==false);
 #endif
   
-  bool autosuspend = RT_PLUGIN_can_autosuspend(sp->_plugin, time);
-
-  // We don't autosuspend current patch, when not playing.
-  if (autosuspend && !is_playing()){
-    struct Patch *current_patch = ATOMIC_GET(g_through_patch);
-    if (sp->_plugin->patch == current_patch)
-      autosuspend = false;
-  }
-  
-  sp->_autosuspending_this_cycle = autosuspend;
-  ATOMIC_SET_RELAXED(sp->_is_autosuspending, sp->_autosuspending_this_cycle);
-  
-  if ( ! sp->_autosuspending_this_cycle){
+  if ( ! ATOMIC_NAME(sp->_plugin->_RT_is_autosuspending)){
     //double start_time = monotonic_seconds();
     {
       SP_RT_process(sp, time, num_frames, process_plugins);
@@ -153,7 +139,7 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
   
   for(SoundProducerLink *link : sp->_output_links)
     if (link->is_active)
-      dec_sp_dependency(link->source, link->target, &next);
+      dec_sp_dependency(link->source, link->target, next);
 
   // Important that we decrease 'num_sp_left' AFTER scheduling other soundproducers for processing. (i.e. calling when 'dec_sp_dependency')
   if (ATOMIC_ADD_RETURN_NEW(num_sp_left, -1) == 0) {
@@ -369,7 +355,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
   //fflush(stderr);
 
   for (SoundProducer *sp : sp_all) {
-    ATOMIC_SET(sp->num_dependencies_left, sp->num_dependencies);
+    ATOMIC_SET(sp->_num_active_input_links_left, sp->_num_active_input_links);
 #if !defined(RELEASE)
     ATOMIC_SET(sp->is_processed, false); // is this really necessary? When could it be true?
 #endif
@@ -390,7 +376,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
   // 3. start threads;
 
   for (SoundProducer *sp : sp_all)
-    if (sp->num_dependencies==0){
+    if (sp->_num_active_input_links==0){
       if (sp_in_main_thread == NULL && g_num_runners>0){
         sp_in_main_thread = sp;
       } else {

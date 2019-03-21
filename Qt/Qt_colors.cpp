@@ -120,7 +120,10 @@ static const ColorConfig g_colorconfig[] = {
   {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled",    "Slider disabled"},
   {SLIDER_TEXT_COLOR_NUM,       "slider_text",        "Slider Text"},
   {SLIDER_RECORDING_COLOR_NUM,  "slider_recording",   "Slider recording"},
-   
+
+  {TAB_SELECTED_COLOR_NUM,  "tab_selected",   "Selected tab"},
+  {TAB_UNSELECTED_COLOR_NUM,  "tab_unselected",   "Unselected tab"},
+
   {PEAKS_COLOR_NUM,             "peaks",                    "Peaks < 0dB"},
   {PEAKS_0DB_COLOR_NUM,         "peaks0db",                 "Peaks 0dB - 4dB"},
   {PEAKS_4DB_COLOR_NUM,         "peaks4db",                 "Peaks > 4dB"},
@@ -263,6 +266,10 @@ static ReplacementColor g_replacement_color[] = {
   {SLIDER1_COLOR_NUM, QColor(108,65,36)},
   {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},
   {SLIDER_RECORDING_COLOR_NUM, QColor(197,0,3)},
+
+  {TAB_SELECTED_COLOR_NUM,  QColor("green")},
+  {TAB_UNSELECTED_COLOR_NUM,  QColor("#004000")},
+
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor(1,1,1)},
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
   {BUTTONS_ON_OFF_COLOR_NUM, QColor(40, 40, 40)},
@@ -280,7 +287,7 @@ static ReplacementColor g_replacement_color[] = {
 
   {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor(30,95,70,140)},
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor(50,25,70,140)},
-  {MIXER_AUTOSUSPENSION_COLOR_NUM, QColor("#28a6a6a6")},
+  {MIXER_AUTOSUSPENSION_COLOR_NUM, QColor("#3ca6a6a6")},
   {MIXER_SELECTED_OBJECT_COLOR_NUM, QColor("#54071780")},
   {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, QColor("#ff080a81")},
   {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, QColor("#ff337755")},
@@ -544,8 +551,10 @@ unsigned int GFX_MakeRandomColor(void){//int blendcolornum, float blendfactor){
 }
 
 unsigned int GFX_MakeRandomBlockColor(void){
+  //return GFX_MakeRandomColor();
+  
   QColor color = get_next_color().lighter(125);
-  return color.rgb();
+  return color.rgb();  
 }
   
 // if colornum==-1, create new color

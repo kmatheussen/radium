@@ -426,10 +426,11 @@ static void release_system_filter(SystemFilter *filter, int num_channels){
 
 static void reset_gui_parentgui(SoundPlugin *plugin);
 
-SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
+SoundPlugin *PLUGIN_create(struct Patch *patch, SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
   printf("PLUGIN_create called\n");
   
   SoundPlugin *plugin = (SoundPlugin*)V_calloc(1,sizeof(SoundPlugin));
+  plugin->patch = patch;
   plugin->type = plugin_type;
 
   plugin->num_visible_outputs = -1;
@@ -591,7 +592,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 
   PLUGIN_touch(plugin);
 
-  ATOMIC_SET(plugin->has_initialized, true);
+  plugin->has_initialized = true;
+  ATOMIC_SET(plugin->MT_has_initialized, true);
   
   return plugin;
 }
@@ -599,7 +601,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 void PLUGIN_delete(SoundPlugin *plugin){
   ATOMIC_SET(plugin->is_shutting_down, true);
   
-  RT_PLUGIN_touch(plugin);
+  PLUGIN_touch(plugin);
   
   const SoundPluginType *plugin_type = plugin->type;
 
@@ -1493,8 +1495,8 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
   float store_value_scaled = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
-  RT_PLUGIN_touch(plugin);
-
+  PLUGIN_touch(plugin);
+  
 #if !defined(RELEASE)
   R_ASSERT(storeit_type==STORE_VALUE || storeit_type==DONT_STORE_VALUE);
 
@@ -1557,7 +1559,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
   if(effect_num < plugin->type->num_effects){
 
     radium::PlayerRecursiveLock lock; // Need lock both because set_effect_value expect player lock to be held, but also to ensure another thread doesn't interfere between set_effect_value() and get_effect_value().
-    
+
     plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
     
     if(storeit_type==STORE_VALUE) {
@@ -1974,12 +1976,23 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
     }
   }
 
-  if (ATOMIC_GET(plugin->has_initialized)) {
+  if (plugin->has_initialized) {
     if (value_format==EFFECT_FORMAT_SCALED)
       return safe_float_read(&plugin->last_written_effect_values_scaled[effect_num]);
     else
       return safe_float_read(&plugin->last_written_effect_values_native[effect_num]);
   }
+
+
+  
+  
+  ///////////////////////////////////////////////////
+  // NOTE! We are only here during initialization! //
+  ///////////////////////////////////////////////////
+  
+  R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+  R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
+
 
   
   int system_effect_num = effect_num - plugin->type->num_effects;
@@ -2665,7 +2678,7 @@ void PLUGIN_DLoad(SoundPlugin *plugin){
   */
 }
 
-SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
+SoundPlugin *PLUGIN_create_from_state(struct Patch *patch, hash_t *state, bool is_loading){
   const char *container_name = HASH_has_key(state, "container_name") ? HASH_get_chars(state, "container_name") : NULL;
   const char *type_name = HASH_get_chars(state, "type_name");
   const char *name = HASH_get_chars(state, "name");
@@ -2690,7 +2703,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   //if (!strcmp(type_name,"VST"))
   //  return NULL;
   
-  SoundPlugin *plugin = PLUGIN_create(type, plugin_state, is_loading);
+  SoundPlugin *plugin = PLUGIN_create(patch, type, plugin_state, is_loading);
 
   if(plugin==NULL)
     return NULL;
@@ -2914,7 +2927,7 @@ void radium::SoundPluginEffectMidiLearn::RT_callback(float val) {
 }
 
 void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num){
-  RT_PLUGIN_touch(plugin);
+  PLUGIN_touch(plugin);
   
   auto *midi_learn = new radium::SoundPluginEffectMidiLearn(plugin, effect_num);
   add_midi_learn(midi_learn);
@@ -2925,7 +2938,7 @@ void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num){
 }
 
 bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here){
-  RT_PLUGIN_touch(plugin);
+  PLUGIN_touch(plugin);
   
   radium::SoundPluginEffectMidiLearn *midi_learn=NULL;
 
@@ -2980,7 +2993,7 @@ void PLUGIN_set_autosuspend_behavior(SoundPlugin *plugin, enum AutoSuspendBehavi
   ATOMIC_SET(plugin->auto_suspend_behavior, new_behavior);
 }
 
-enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(SoundPlugin *plugin){
+enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(const SoundPlugin *plugin){
   return ATOMIC_GET(plugin->auto_suspend_behavior);
 }
 
@@ -2992,8 +3005,8 @@ bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num){
   return plugin->do_random_change[effect_num];
 }
 
-// only called from MultiCore.cpp, one time per audio block per instrument
-bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
+// only called from Soundproducer.cpp, one time per soundcard block per instrument
+bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time){
 
   struct SoundPluginType *type = plugin->type;
 
@@ -3016,13 +3029,20 @@ bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
   }
 
   {
-    if (plugin->playing_voices != NULL || plugin->patch->playing_voices != NULL)
+    if (plugin->playing_voices != NULL || plugin->patch->playing_voices != NULL){
+      //if(!strcmp(plugin->patch->name, "Paff_snare"))
+      //  printf("  auto1\n");
+      
       return false;
+    }
   }
 
   {
-    if (ATOMIC_GET(plugin->auto_suspend_suspended))
+    if (ATOMIC_GET(plugin->auto_suspend_suspended)){
+      //if(!strcmp(plugin->patch->name, "Paff_snare"))
+      //  printf("  auto2\n");
       return false;
+    }
   }
   
   {
@@ -3034,8 +3054,12 @@ bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
     if (delay == -1)
       delay = (double)ATOMIC_GET(g_autobypass_delay) * MIXER_get_sample_rate() / 1000.0;
 
-    if (delay < -1)
+    if (delay < -1){
+      //if(!strcmp(plugin->patch->name, "Paff_snare"))
+      //  printf("  delay < -1\n");
+      
       return false;
+    }
     
     // input latency
     delay += RT_SP_get_input_latency(plugin->sp);
@@ -3047,16 +3071,22 @@ bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
     // smooth delay delay
     delay += (plugin->delay_time * MIXER_get_sample_rate() / 1000);
     
-    // The timing logic is a little bit uncertain, so we add one jack block just to be sure.
+    // Add soundcard block size since we won't do this check again until the next soundcard block.
     delay += g_jackblock_size;
 
     // ...and we add some frames to eliminate rounding errors and possibly other minor things (system filters, etc.). (important for instruments that implement RT_get_audio_tail_length)
     delay += 64;
 
-    int64_t time_since_activity = time-ATOMIC_GET(plugin->time_of_last_activity);
+    int64_t time_since_activity = time - ATOMIC_NAME(plugin->_RT_time_of_last_activity);
+
     
-    if (time_since_activity > delay)
+    //if(!strcmp(plugin->patch->name, "Paff_snare"))
+    //  printf("Auto: %d. time since last activity: %d (%fms). Delay: %d (%fms)\n", time_since_activity > delay, (int)time_since_activity, frames_to_ms(time_since_activity), (int)delay, frames_to_ms(delay));
+    
+    
+    if (time_since_activity > delay){
       return true;
+    }
   }
   
   return false;
@@ -3187,7 +3217,7 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
     info += "Latency: " + QString::number(latency*1000/MIXER_get_sample_rate()) + "ms\n";
     info += "Audio tail: " + (tail < 0 ? "undefined" : QString::number(tail*1000.0/MIXER_get_sample_rate()) + "ms") + "\n";
 
-    double time_since_last_activity = MIXER_get_last_used_time() - ATOMIC_GET(plugin->time_of_last_activity);      
+    double time_since_last_activity = MIXER_get_last_used_time() - ATOMIC_GET_RELAXED(plugin->_RT_time_of_last_activity);
     info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago\n";
   }
   

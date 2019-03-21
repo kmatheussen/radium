@@ -559,6 +559,8 @@ enum ColorNums {
   SLIDER_DISABLED_COLOR_NUM,
   SLIDER_TEXT_COLOR_NUM,
   SLIDER_RECORDING_COLOR_NUM,
+  TAB_SELECTED_COLOR_NUM,
+  TAB_UNSELECTED_COLOR_NUM,
   
   WAVEFORM_COLOR_NUM,
   VELOCITY1_COLOR_NUM,
@@ -746,7 +748,7 @@ typedef struct vector_t_ vector_t;
 static inline vector_t create_static_vector_t(int num_elements, void **elements){
   const vector_t ret = {
     .num_elements = num_elements,
-    .num_elements_allocated = num_elements,
+     .num_elements_allocated= num_elements,
     .elements = elements
   };
   return ret;
@@ -2702,8 +2704,6 @@ typedef struct {
   double beat_position_of_last_bar_start; // = 0.0;
 
   StaticRatio last_valid_signature; // = {4,4};
-
-  int last_played_metronome_note_num; // = -1;
 
   bool new_beat_bar_set; // = false;
 
