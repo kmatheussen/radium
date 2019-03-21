@@ -2560,7 +2560,7 @@ namespace{
       //progress_bar->setLookAndFeel(new LookAndFeel_V2);
         
       //addAndMakeVisible(progress_bar);
-        
+        
       //this->setAlwaysOnTop(true);
       //this->setSize (600, 20);
       this->setUsingNativeTitleBar(true);
