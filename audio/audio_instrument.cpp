@@ -510,7 +510,8 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
       }
     }
 
-    plugin = PLUGIN_create(type, NULL, is_loading_song);
+    plugin = PLUGIN_create(patch, type, NULL, is_loading_song);
+
   }
 
   if (plugin==NULL){

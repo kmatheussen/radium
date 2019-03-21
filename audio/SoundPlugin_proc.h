@@ -37,7 +37,7 @@ enum WhereToGetValue{
   VALUE_FROM_STORAGE
 };
 
-extern LANGSPEC SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading);
+extern LANGSPEC SoundPlugin *PLUGIN_create(struct Patch *patch, SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading);
 extern LANGSPEC void PLUGIN_delete(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_update_smooth_values(SoundPlugin *plugin);
 
