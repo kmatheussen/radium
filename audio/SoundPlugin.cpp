@@ -2574,13 +2574,19 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
 
   hash_t *copy = HASH_copy(effects);
       
-  bool has_value[type->num_effects+NUM_SYSTEM_EFFECTS];
-  float values[type->num_effects+NUM_SYSTEM_EFFECTS];
+  bool has_value[type->num_effects+NUM_SYSTEM_EFFECTS] = {};
+  float values[type->num_effects+NUM_SYSTEM_EFFECTS] = {};
 
   bool has_given_warning_about_chance = false;
   
   for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++) {
+
     const char *effect_name = PLUGIN_get_effect_name(plugin,i);
+
+    // Workaround for that pesky old bug that caused all chance values being set to 1 in older songs, e.g. "the elf" and "romance".
+    if (g_is_loading && QString(effect_name)=="System On/Off Voice 1")
+      break;
+    
     has_value[i] = HASH_has_key(effects, effect_name);
 
     if (!has_value[i]) {
@@ -2630,6 +2636,14 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   
   // 2. Store system effects
   for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+
+    // Workaround for that pesky old bug that caused all chance values being set to 1 in older songs, e.g. "the elf" and "romance".
+    if (g_is_loading){
+      const char *effect_name = PLUGIN_get_effect_name(plugin,i);
+      if (QString(effect_name)=="System On/Off Voice 1")
+        break;
+    }
+
     float val = has_value[i] ? values[i] : plugin->initial_effect_values_native[i];
     PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
     

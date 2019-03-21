@@ -178,7 +178,7 @@ enum{
 
   // Add new effects here, or earlier.
   
-  EFFNUM_VOICE1_ONOFF,
+  EFFNUM_VOICE1_ONOFF, // This effect must be the first voice effect num.
   EFFNUM_VOICE2_ONOFF,
   EFFNUM_VOICE3_ONOFF,
   EFFNUM_VOICE4_ONOFF,
