@@ -132,7 +132,8 @@ void switchEditOnOff(void){
         char temp[1000];
         sprintf(temp,"Edit %s",ATOMIC_GET(root->editonoff)?"On":"Off");
         GFX_SetStatusBar(temp);
-        window->must_redraw=true;
+        if(window != NULL)
+          window->must_redraw=true;
 }
 
 void switchSoundScrollOnOff(int windownum){
