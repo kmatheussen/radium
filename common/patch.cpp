@@ -291,6 +291,8 @@ struct Patch *PATCH_alloc(void){
   patch->comment = "Comment";
   patch->wide_mixer_strip = true;
 
+  PATCH_init_voices(patch);
+
   return patch;
 }
 
@@ -317,8 +319,6 @@ static struct Patch *create_new_patch(const char *name, bool is_main_pipe){
   
   //patch->colornum = GFX_MakeRandomCustomColor(-1);
   patch->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.75f);
-
-  PATCH_init_voices(patch);
 
   return patch;
 }
