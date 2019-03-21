@@ -1772,6 +1772,11 @@ public:
       
       SoundProducer *source = link->source;
       
+      if(ATOMIC_ADD_RETURN_NEW(source->num_output_links_left, -1)==0){
+        //printf("   Used all remaining buffers for %s\n", source->_plugin->patch->name);
+      }
+      //printf("   %s: Num remaining output buffer users for %s: %d\n", _plugin->patch->name, source->_plugin->patch->name, ATOMIC_GET(source->num_output_links_left));
+      
       int latency = _highest_input_link_latency - source->_latency;
       
       if (latency >= link->_delay._delay.buffer_size) {

@@ -628,7 +628,7 @@ typedef struct SoundPlugin{
   
   DEFINE_ATOMIC(bool, is_selected);
 
-  DEFINE_ATOMIC(bool, has_initialized);
+  bool has_initialized;
   DEFINE_ATOMIC(bool, is_shutting_down);
 
   double processing_time_so_far_in_jack_block; // Used when displaying CPU time for plugin.
