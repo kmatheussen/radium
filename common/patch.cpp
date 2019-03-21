@@ -2073,19 +2073,33 @@ void PATCH_stop_all_notes(struct Patch *patch){
   }
 }
 
-void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id){
-	struct Tracks *track=window->wblock->wtrack->track;
-	struct Patch *patch=track->patch;
+static struct Patch *get_curr_patch(struct Tracker_Windows *window, struct Tracks *&track){
+  track = NULL;
+  
+  bool do_edit = ATOMIC_GET_RELAXED(root->editonoff);
+  if (do_edit){
+    track=window->wblock->wtrack->track;
+    struct Patch *patch=track->patch;
+    return patch;
+  }
 
+  return g_currpatch;
+}
+
+void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id){
+
+        struct Tracks *track = NULL;
+        struct Patch *patch = get_curr_patch(window, track);
+  
 	if(patch==NULL || notenum<0 || notenum>127) return;
 
 	PATCH_play_note(patch,
                         create_note_t(NULL,
                                       note_id,
                                       notenum,
-                                      TRACK_get_volume(track),
-                                      TRACK_get_pan(track),
-                                      ATOMIC_GET(track->midi_channel),
+                                      track==NULL ? 1.0 : TRACK_get_volume(track),
+                                      track==NULL ? 0.0 : TRACK_get_pan(track),
+                                      track==NULL ? 0 : ATOMIC_GET(track->midi_channel),
                                       0,
                                       0
                                       )
@@ -2094,18 +2108,18 @@ void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_
 
 
 void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,float notenum, int64_t note_id){
-	struct Tracks *track=window->wblock->wtrack->track;
-	struct Patch *patch=track->patch;
-
+        struct Tracks *track = NULL;
+        struct Patch *patch = get_curr_patch(window, track);
+        
 	if(patch==NULL || notenum<0 || notenum>127) return;
 
 	PATCH_stop_note(patch,
                         create_note_t(NULL,
                                       note_id,
                                       notenum,
-                                      TRACK_get_volume(track),
-                                      TRACK_get_pan(track),
-                                      ATOMIC_GET(track->midi_channel),
+                                      track==NULL ? 1.0 : TRACK_get_volume(track),
+                                      track==NULL ? 0.0 : TRACK_get_pan(track),
+                                      track==NULL ? 0 : ATOMIC_GET(track->midi_channel),
                                       0,
                                       0
                                       )
