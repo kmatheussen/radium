@@ -1132,7 +1132,7 @@ struct Comp
       else{
         // Do the linebreak manually instead.
         p->drawText(rect,text,c);
-        rect.y1+=p->getTextHeight();
+        rect.y1+=p->getTextHeight()*1.5;
         p->drawText(rect,value_text,c);
       }
 
