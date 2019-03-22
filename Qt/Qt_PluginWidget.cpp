@@ -112,6 +112,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
 
   bool is_multiband = !strcmp(type->type_name,"Faust") && !strcmp(type->name,"Multiband Compressor");
   bool is_tapiir = !strcmp(type->type_name,"Faust") && !strcmp(type->name,"Tapiir");
+  bool is_sampleplayer = !strcmp(type->type_name,"Sample Player");
 
   if (is_multiband){
 
@@ -196,7 +197,9 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
     ParamWidget *param_widget = new ParamWidget(widget, patch, effect_num, iPage-1);
     widget->_param_widgets.push_back(param_widget);
     pGridLayout->addWidget(param_widget, iY, iX);
-    if (++iY >= iYsPerPage) {
+    iY++;
+    
+    if (iY >= iYsPerPage || (is_sampleplayer && iX==1 && iY >=iYsPerPage-1)) {
       iY = 0;
       if (++iX >= iXsPerPage) {
         iX = 0;
