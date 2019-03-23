@@ -1,3 +1,15 @@
+Changes 5.9.48 -> 5.9.49:
+* System: Updated Qt to 5.12.2.
+* GUI: Color tweaks.
+* System: Add missing Qt5Webkit library for QT5
+  build. (Teteros)
+* Sample player: Move the "Granulate" checkbox to the
+  top of the next column.
+* Instrument: Adjust displaying ratio text in the
+  compressor.
+
+
+
 Changes 5.9.46 -> 5.9.48:
 * Linux: Patch the included WebKit library so that it
   doesn't load browser plugins. Visiting the
