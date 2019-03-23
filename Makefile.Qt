@@ -134,8 +134,8 @@ ifeq ($(RADIUM_QT_VERSION),5)
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
 
 #	If using QtWebKit:
-	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets` -Ibin/packages/qhttpserver-master/src -I$(QSCINTILLA_PATH)/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
-	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets` $(FPIC)
+	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets --cflags Qt5WebKit` -Ibin/packages/qhttpserver-master/src -I$(QSCINTILLA_PATH)/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
+	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets --libs Qt5WebKit` $(FPIC)
 endif
 
 
