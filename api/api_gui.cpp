@@ -2392,12 +2392,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       if(do_gradient){        
         //QLinearGradient gradient((x1+x2)/2.0, y1, (x1+x2)/2.0, y2);
         int min = R_MIN(rect.height(), rect.width());
-        int how_much = 125;
+        int how_much = 115;
         if (rect.height() > gui_getSystemFontheight()*3 && min > gui_getSystemFontheight()*3){
           if (rect.height() > gui_getSystemFontheight()*6 && min > gui_getSystemFontheight()*6)
-            how_much = 115;
+            how_much = 105;
           else
-            how_much = scale(min, gui_getSystemFontheight()*3, gui_getSystemFontheight()*6, 125, 115);
+            how_much = scale(min, gui_getSystemFontheight()*3, gui_getSystemFontheight()*6, 115, 105);
         }
             
         QLinearGradient gradient(x1, y1, x1, y2);

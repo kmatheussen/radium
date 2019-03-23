@@ -273,7 +273,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
       int result = GFX_Message(&v,
                                "Warning!"
                                "<p>"
-                               "TAP plugins might be be unstable. Use at your own risk."
+                               "TAP plugins have a history of being unstable. Use at your own risk."
                                );
       
       if (result==1)
