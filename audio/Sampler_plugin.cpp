@@ -1460,26 +1460,41 @@ static bool note_has_sample(const Note *note){
 }
 
 static double gran_get_stretch(Data *data);
+
+namespace{
+
+  // TimeToFrame class used to prevent logical errors. When converting more than one time-value to frame simultaneously, we want to use the same src and stretch values for all computations. If not, the result may not only be slighly wrong now and then (no big deal), but we also risk end frame starting before start frame.
+  struct TimeToFrame{
+
+    int _A;
+    double _B;
     
-static int time_to_frame(Data *data, double time, float f_note_num){
+    TimeToFrame(Data *data, float f_note_num){
 
-  int i_note_num = (int)f_note_num;
-  
-  const Note *note = data->notes[(int)i_note_num];
+      int i_note_num = (int)f_note_num;
+      
+      const Note *note = data->notes[(int)i_note_num];
+      
+      if (note->samples.is_empty()){
+        RError("note->samples is empty. %f\n",f_note_num);
+        _A = data->p.startpos*10000;
+        _B = 30000.0;
+        return;
+      }
+      
+      const Sample *sample = note->samples.at(0);
+      
+      const double src_ratio = RT_get_src_ratio2(data, sample, f_note_num);
+      const double stretch = get_granulation_enabled(data) ? gran_get_stretch(data) : 1.0;
 
-  if (note->samples.is_empty()){
-    RError("note->samples is empty. %f\n",f_note_num);
-    return data->p.startpos*10000 + time/30000.0f;
-  }
-
-  const Sample *sample = note->samples.at(0);
-
-  double src_ratio = RT_get_src_ratio2(data, sample, f_note_num);
-  double stretch = get_granulation_enabled(data) ? gran_get_stretch(data) : 1.0;
- 
-  return
-    data->p.startpos*sample->num_frames 
-    + time/(src_ratio*stretch) ;
+      _A = data->p.startpos*sample->num_frames;
+      _B = src_ratio*stretch;
+    }
+    
+    int get(double time){
+      return _A + time/_B;
+    }
+  };
 }
 
 
@@ -1666,7 +1681,7 @@ static int get_peaks(struct SoundPlugin *plugin,
 
   const Note *note = data->notes[R_BOUNDARIES(0, (int)note_num, 127)];
 
-  if (!note_has_sample(note) || start_time==end_time){
+  if (!note_has_sample(note) || start_time >= end_time){
     R_ASSERT_NON_RELEASE(end_time > start_time);
     goto return_empty;
   } 
@@ -1674,11 +1689,14 @@ static int get_peaks(struct SoundPlugin *plugin,
   //printf("Creating new peak for ch %d, frames %d -> %d\n", ch, (int)start_frame, (int)end_frame);
 
   {
-    int64_t start_frame = time_to_frame(data, start_time, note_num);
-    int64_t end_frame = time_to_frame(data, end_time, note_num);
+    TimeToFrame time_to_frame(data, note_num);
+    const int64_t start_frame = time_to_frame.get(start_time);
+    const int64_t end_frame = time_to_frame.get(end_time);
     
-    if (start_frame==end_frame)
+    if (start_frame>=end_frame){
+      R_ASSERT_NON_RELEASE(start_frame==end_frame);
       goto return_empty;
+    }
   
     for(const Sample *sample : note->samples){
     
