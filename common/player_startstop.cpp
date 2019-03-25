@@ -229,11 +229,12 @@ static void play_stop(bool called_from_jack_transport){
   }
 
   bool was_playing_song = pc->playtype==PLAYSONG;
-  
+
   if (called_from_jack_transport || pc->playtype==PLAYBLOCK)
     PlayStopReally(true, false);
   else
     PlayStopReally(true, true);
+  
 
   if(was_playing_song)
     SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR); // Update start-pos-cursor
@@ -718,33 +719,35 @@ void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool called_from_jack_
     if (false==called_from_jack_transport && useJackTransport())
       MIXER_TRANSPORT_set_pos(pos);
 
-    SEQUENCER_iterate_time_seqblocks
-      (pos-1,pos+1,false,
-       [&](const struct SeqTrack *seqtrack,const struct SeqBlock *seqblock, const struct Blocks *block, const struct SeqBlock *next_seqblock){
-        if(pos >= seqblock->t.time && pos < seqblock->t.time2){
-
-          struct Tracker_Windows *window;
-          struct WBlocks *wblock = getWBlockFromNumA(-1, &window, block->l.num);
-          if(wblock==NULL){
-            R_ASSERT(false);
+    // The if-test is a fix for current line to go back to current sequencer position when stopping playing block.
+    // And it would probably annoying if another program changed line position as well.
+    if(false==called_from_jack_transport)
+      SEQUENCER_iterate_time_seqblocks
+        (pos-1,pos+1,false,
+         [&](const struct SeqTrack *seqtrack,const struct SeqBlock *seqblock, const struct Blocks *block, const struct SeqBlock *next_seqblock){
+          if(pos >= seqblock->t.time && pos < seqblock->t.time2){
+            
+            struct Tracker_Windows *window;
+            struct WBlocks *wblock = getWBlockFromNumA(-1, &window, block->l.num);
+            if(wblock==NULL){
+              R_ASSERT(false);
+              return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
+            }
+            
+            const int64_t blocktime = seqtime_to_blocktime(seqblock, pos - seqblock->t.time);
+            const Place place = STime2Place(block, blocktime);
+            const int realline = FindRealLineFor(wblock, 0, &place);
+            
+            SelectWBlock(window, wblock);
+            ScrollEditorToRealLine(window, wblock, realline);
+            
             return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
           }
-
-          const int64_t blocktime = seqtime_to_blocktime(seqblock, pos - seqblock->t.time);
-          const Place place = STime2Place(block, blocktime);
-          const int realline = FindRealLineFor(wblock, 0, &place);
-
-          SelectWBlock(window, wblock);
-          ScrollEditorToRealLine(window, wblock, realline);
-
-          return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
-        }
-        return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
-      });
-
-
+          return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
+        });
+    
     if (abs(pc->last_song_starttime - pos) > 1){
-      
+      //printf("           SETTING last song starttime 22222\n")      ;
       pc->last_song_starttime = pos;
       SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR);
       

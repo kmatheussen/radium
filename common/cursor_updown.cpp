@@ -373,7 +373,8 @@ void ScrollEditorToRealLine(
 ){
 	int curr_realline=wblock->curr_realline;
 
-	//printf("Going to scroll to line %d. Now: %d \n",till_curr_realline,curr_realline);
+        //printf("Going to scroll to line %d. Now: %d \n",till_curr_realline,curr_realline);
+
 /*
 	if(till_curr_realline<0){
 		till_curr_realline=wblock->num_reallines-1;
