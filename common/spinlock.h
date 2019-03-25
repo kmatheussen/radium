@@ -171,16 +171,20 @@ public:
 class ScopedSpinlock {
 
   Spinlock &_lock;
-
+  bool _needs_lock;
+  
  public:
 
-  ScopedSpinlock(Spinlock &lock)
-    :_lock(lock)
+  ScopedSpinlock(Spinlock &lock, bool needs_lock = true)
+    : _lock(lock)
+    , _needs_lock(needs_lock)
   {
-    lock.lock();
+    if(_needs_lock)
+      lock.lock();
   }
   ~ScopedSpinlock(){
-    _lock.unlock();
+    if(_needs_lock)
+      _lock.unlock();
   }
 
 };
