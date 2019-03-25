@@ -63,6 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SampleRecorder_proc.h"
 #include "Juce_plugins_proc.h"
 #include "Modulator_plugin_proc.h"
+#include "AudioBuffer.hpp"
 
 #include "Mixer_proc.h"
 
@@ -918,7 +919,9 @@ struct Mixer{
       }
 
       g_rt_always_run_buses = doAlwaysRunBuses();
-      
+
+      RT_AUDIOBUFFERS_optimize();
+        
       RT_lock_player();
       
       RT_MIXER_check_if_someone_has_solo();
@@ -1404,7 +1407,9 @@ bool MIXER_start(void){
   // Read a couple of settings variables from disk, so we don't read from disk in the realtime threads.
   doAlwaysRunBuses();
   useJackTransport();
-    
+
+  AUDIOBUFFERS_init();
+  
   SampleRecorder_Init();
     
   init_player_lock();

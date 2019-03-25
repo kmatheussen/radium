@@ -187,7 +187,7 @@ endif
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
 # "-Og" very often destroys debugging (although it's not supposed to), but without it things are too slow (well, it's already too slow, but -Og helps a lot).
-#THREAD_SANITIZE_OPTS=-Og -fsanitize=thread -DUSE_TSAN #-DDISABLE_BDWGC
+#THREAD_SANITIZE_OPTS=-Og -fsanitize=thread -DRADIUM_USE_TSAN #-DDISABLE_BDWGC
 THREAD_SANITIZE_OPTS=
 
 ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common
@@ -414,7 +414,7 @@ OBJ14=disk_midi_fx.o disk_midi_instrument.o midi_fx.o midi_instrument.o midi_pla
 OBJ_FAUST=zita_rev.o stk_flute.o stk_bowed.o stk_blow_bottle.o stk_bass.o stk_blow_hole.o stk_brass.o stk_clarinet.o stk_flute_stk.o stk_glass_harmonica.o stk_harpsi.o stk_modal_bar.o stk_NLF_eks.o stk_NLF_fm.o stk_piano.o stk_saxophony.o stk_sitar.o stk_tibetan_bowl.o stk_tuned_bar.o stk_uni_bar.o stk_voice_form.o faust_tapiir.o faust_system_eq.o faust_system_tremolo.o faust_system_lowpass.o faust_system_highpass.o faust_system_lowshelf.o faust_system_highshelf.o faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o find_jack_library.o Faust_plugins.o Bus_plugins.o Timeskew_plugin.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o SampleRecorder.o SampleReader.o Seqtrack_plugin.o FluidSynth_plugin.o Pd_plugin.o Modulator_plugin.o SoundPluginRegistry.o SoundPlugin.o AudioMeterPeaks.o Peaks.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o Presets.o undo_audio_effect.o undo_connection_enabled.o undo_audio_connection_gain.o undo_pd_controllers.o undo_plugin_state.o SoundfileSaver.o system_compressor_wrapper.o KillJackd.o 
+OBJ_AUDIO=audio_instrument.o SoundProducer.o AudioBuffer.o Jack_plugin.o find_jack_library.o Faust_plugins.o Bus_plugins.o Timeskew_plugin.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o SampleRecorder.o SampleReader.o Seqtrack_plugin.o FluidSynth_plugin.o Pd_plugin.o Modulator_plugin.o SoundPluginRegistry.o SoundPlugin.o AudioMeterPeaks.o Peaks.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o Presets.o undo_audio_effect.o undo_connection_enabled.o undo_audio_connection_gain.o undo_pd_controllers.o undo_plugin_state.o SoundfileSaver.o system_compressor_wrapper.o KillJackd.o 
  
 #MultiCore.o
 
@@ -546,7 +546,7 @@ profile:
 check: test
 test: dotesting
 
-dotesting: test_vector test_placement test_notes test_path_resolver
+dotesting: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer
 	$(CCC) common/threading.cpp -DTEST_THREADING -Wall -lpthread && ./a.out
 	clang common/threading.cpp -DTEST_THREADING -Wall -lpthread && ./a.out
 	i686-w64-mingw32-g++ common/threading.cpp -DTEST_THREADING -Wall -lpthread -o test/a.exe && cd test && wine a.exe
@@ -569,11 +569,18 @@ test_path_resolver:
 	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_seqautomation:
-	$(CCC) -g -Wall -Werror test/test_seqautomation.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined
+	$(CCC) -g -Wall -Wextra -Werror test/test_seqautomation.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined
 	$(CCC) test_seqautomation.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -fsanitize=address -fsanitize=undefined -o test_seqautomation
 	./test_seqautomation
 	@echo "=== success: test_seqautomation ==="
 	@rm test_seqautomation
+
+test_audiobuffer:
+	$(CCC) -g -Wall -Werror test/test_audiobuffer.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined -fPIC -DFOR_LINUX
+	$(CCC) test_audiobuffer.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -fsanitize=address -fsanitize=undefined -o test_audiobuffer
+	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_audiobuffer
+	@echo "=== success: test_audiobuffer ==="
+	@rm test_audiobuffer
 
 packages: bin/packages/deletemetorebuild
 
@@ -2195,7 +2202,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 #audio/faust-examples/faust-stk/flute.cpp: audio/faust-examples/faust-stk/flute.dsp
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp -o flute.cpp
 
-SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/Queue.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp
+SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/Queue.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
 	$(CCC) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT)  # -O3 # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
@@ -2206,6 +2213,9 @@ SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_e
 #MultiCore.o: audio/MultiCore.cpp audio/fade_envelopes.h
 #	$(CCC) audio/MultiCore.cpp $(QTOPT)
 
+
+AudioBuffer.o: audio/AudioBuffer.cpp audio/AudioBuffer.hpp
+	$(CCC) audio/AudioBuffer.cpp $(CPPOPT)
 
 SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_proc.h common/Vector.hpp
 	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
