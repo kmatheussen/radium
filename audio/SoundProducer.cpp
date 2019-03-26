@@ -1653,8 +1653,13 @@ public:
     //
     _highest_input_link_latency = 0;
 
-    int my_latency = _plugin->type->RT_get_latency!=NULL ? _plugin->type->RT_get_latency(_plugin) : 0;
+    int plugin_latency = _plugin->type->RT_get_latency!=NULL ? _plugin->type->RT_get_latency(_plugin) : 0;
 
+    // Used by dry/wet
+    for(int ch = 0 ; ch < _num_dry_sounds ; ch++)
+      _dry_sound_latencycompensator_delays[ch].RT_set_preferred_delay(plugin_latency); // <- Note! NOT set to _latency. Set to plugin_latency.
+
+    
     FOR_EACH_ACTIVE_AUDIO_INPUT_LINK(this){
       
       SoundProducer *source = link->source;
@@ -1666,13 +1671,10 @@ public:
     }END_FOR_EACH_ACTIVE_AUDIO_INPUT_LINK;
     
     //int prev=_latency;
-    _latency = _highest_input_link_latency + my_latency;
+    _latency = _highest_input_link_latency + plugin_latency;
     //if (prev != _latency)
-    //  printf("    Set latency to %d. (%s). Highest: %d. My: %d, Prev: %d\n", _latency, _plugin->patch->name, _highest_input_link_latency, my_latency,prev);
+    //  printf("    Set latency to %d. (%s). Highest: %d. My: %d, Prev: %d\n", _latency, _plugin->patch->name, _highest_input_link_latency, plugin_latency,prev);
 
-
-    for(int ch = 0 ; ch < _num_dry_sounds ; ch++)
-      _dry_sound_latencycompensator_delays[ch].RT_set_preferred_delay(my_latency);
   }
   
   bool has_run(int64_t time) const {
@@ -1742,6 +1744,63 @@ public:
       }
     }
   }
+
+  void RT_create_dry_sound_from_input_link(SoundProducerLink *link, int64_t time, int num_frames, float **dry_sound) {
+    SoundProducer *source = link->source;
+
+    int latency = _highest_input_link_latency - source->_latency;
+    
+    if (latency >= link->_delay._delay.buffer_size) {
+      RT_message("%s -> %s: Compensating for a latency of more than %dms is not supported.\nNumber of frames: %d",  source->_plugin->patch->name, link->target->_plugin->patch->name, MAX_COMPENSATED_LATENCY, latency);
+      latency = link->_delay._delay.buffer_size-1;
+    }
+    
+    if (latency != link->_delay._delay.getSize()) {
+      link->_delay.RT_set_preferred_delay(latency);
+#ifndef RELEASE
+      printf("    Set latency %d. (%s -> %s)\n", latency, source->_plugin->patch->name, link->target->_plugin->patch->name);
+#endif
+    }
+    
+    if (false==link->is_active) {        
+      link->_delay.RT_call_instead_of_process(num_frames);        
+      return;
+    }
+    
+    if (ATOMIC_NAME(source->_plugin->_RT_is_autosuspending)) {
+      link->_delay.RT_call_instead_of_process(num_frames);
+      return;
+    }
+    
+    R_ASSERT(source->has_run(time));
+    
+    if (true){ //false==link->is_event_link) { // <-- We already tested for this above.
+      
+      SMOOTH_called_per_block(&link->volume);
+      
+      const float *input_producer_sound = link->source->_output_buffer.get_channel(link->source_ch);
+      
+      float latency_sound_sound[num_frames];
+      const float *latency_compensated_input_producer_sound = link->_delay.RT_process(input_producer_sound, latency_sound_sound, num_frames);
+      
+      SMOOTH_mix_sounds(&link->volume,
+                        dry_sound[link->target_ch],
+                        latency_compensated_input_producer_sound,
+                        num_frames
+                        );
+      
+    } // end !link->is_event_link
+    
+  }
+
+  void RT_process_pan_and_width(float **outputs, int num_frames) const {
+    // Output pan
+    SMOOTH_apply_pan(&_plugin->pan, outputs, _num_outputs, num_frames);
+    
+    // Right channel delay ("width")
+    if(_num_outputs>1)
+      static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, outputs[1], outputs[1]);
+  }
   
   void RT_process(int64_t time, int num_frames, bool process_plugins) {
 
@@ -1754,133 +1813,90 @@ public:
     for(int ch=0;ch<_num_dry_sounds;ch++)
       dry_sound[ch] = &dry_sound_sound[ch*num_frames];
 
-    float input_sound_sound[R_MAX(1, _num_inputs)*num_frames];
-    float *input_sound[R_MAX(1, _num_inputs)];
-    for(int ch=0;ch<_num_inputs;ch++)
-      input_sound[ch] = &input_sound_sound[ch*num_frames];
-    
     R_ASSERT(has_run(time)==false);
     _last_time = time;
     
-    PLUGIN_update_smooth_values(_plugin);
-
     // Fill inn target channels
     FOR_EACH_ACTIVE_AUDIO_INPUT_LINK(this){
       
-      SoundProducer *source = link->source;
-
-      int latency = _highest_input_link_latency - source->_latency;
+      RT_create_dry_sound_from_input_link(link, time, num_frames, dry_sound);
       
-      if (latency >= link->_delay._delay.buffer_size) {
-        RT_message("%s -> %s: Compensating for a latency of more than %dms is not supported.\nNumber of frames: %d",  source->_plugin->patch->name, link->target->_plugin->patch->name, MAX_COMPENSATED_LATENCY, latency);
-        latency = link->_delay._delay.buffer_size-1;
-      }
-
-      if (latency != link->_delay._delay.getSize()) {
-        link->_delay.RT_set_preferred_delay(latency);
-#ifndef RELEASE
-        printf("    Set latency %d. (%s -> %s)\n", latency, source->_plugin->patch->name, link->target->_plugin->patch->name);
-#endif
-      }
-    
-      if (false==link->is_active) {        
-        link->_delay.RT_call_instead_of_process(num_frames);        
-        continue;
-      }
-
-      if (ATOMIC_NAME(source->_plugin->_RT_is_autosuspending)) {
-        link->_delay.RT_call_instead_of_process(num_frames);
-        continue;
-      }
-      
-      R_ASSERT(source->has_run(time));
-      
-      if (true){ //false==link->is_event_link) { // <-- We already tested for this above.
-
-        SMOOTH_called_per_block(&link->volume);
-
-        const float *input_producer_sound = link->source->_output_buffer.get_channel(link->source_ch);
-
-        float latency_sound_sound[num_frames];
-        const float *latency_compensated_input_producer_sound = link->_delay.RT_process(input_producer_sound, latency_sound_sound, num_frames);
-
-        SMOOTH_mix_sounds(&link->volume,
-                          dry_sound[link->target_ch],
-                          latency_compensated_input_producer_sound,
-                          num_frames
-                          );
-
-      } // end !link->is_event_link
-
     }END_FOR_EACH_ACTIVE_AUDIO_INPUT_LINK;
-
     
-    bool is_a_generator = _num_inputs==0;
 
-  
-    if(is_a_generator)
-      PLUGIN_RT_process(_plugin, time, num_frames, input_sound, dry_sound, process_plugins);
-  
+    PLUGIN_update_smooth_values(_plugin);
 
-    // Input peaks
-    if (_num_dry_sounds > 0){
-      bool do_bypass     = !ATOMIC_GET(_plugin->effects_are_on); //_plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.value==0.0f;
-
-      float input_peaks[_num_dry_sounds];
-      for(int ch=0;ch<_num_dry_sounds;ch++) {
-        
-        float dry_peak = RT_get_max_val(dry_sound[ch],num_frames);
-        
-        if (dry_peak > MIN_AUTOSUSPEND_PEAK)
-          RT_PLUGIN_touch(_plugin);
-        
-        float input_volume = SMOOTH_get_target_value(&_plugin->input_volume);
-        
-        input_peaks[ch] = do_bypass ? 0.0f : dry_peak *  input_volume;
-      }
-      RT_set_input_peak_values(input_peaks, dry_sound);
-    }
-
-    float latency_dry_sound_sound[R_MAX(1,_num_dry_sounds)][num_frames]; // Using 'R_MAX' since array[0] is undefined behavior. (ubsan fix only, most likely nothing bad would happen)
-    const float *latency_dry_sound[R_MAX(1,_num_dry_sounds)];
-    for(int ch=0;ch<_num_dry_sounds;ch++)        
-      latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch], latency_dry_sound_sound[ch], num_frames);
-
-
+    // output_sound and wet_sound is actually the same (optimization)
     float **output_sound = _output_buffer.get_channels();
-        
-    if(is_a_generator){
-      
-      // Apply input volume and fill output
-      for(int ch=0;ch<_num_outputs;ch++)
-        SMOOTH_copy_sound(&_plugin->input_volume, output_sound[ch], dry_sound[ch], num_frames);
-            
-    }else{
-      
-      // Apply input volume
+    float **&wet_sound = output_sound;
+    
+
+    {
+      float temp_sound_sound[R_MAX(1, _num_inputs)*num_frames];
+      float *temp_sound[R_MAX(1, _num_inputs)];
       for(int ch=0;ch<_num_inputs;ch++)
-        SMOOTH_copy_sound(&_plugin->input_volume, input_sound[ch], dry_sound[ch], num_frames);
+        temp_sound[ch] = &temp_sound_sound[ch*num_frames];
       
-      // Fill output
-      PLUGIN_RT_process(_plugin, time, num_frames, input_sound, output_sound, process_plugins);
+      
+      bool is_a_generator = _num_inputs==0;
+      
+      
+      if(is_a_generator)
+        PLUGIN_RT_process(_plugin, time, num_frames, temp_sound, dry_sound, process_plugins); // I guess we could send NULL instead of temp_sound.
+      
+      
+      // Input peaks
+      if (_num_dry_sounds > 0){
+        bool do_bypass     = !ATOMIC_GET(_plugin->effects_are_on); //_plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.value==0.0f;
+        
+        float input_peaks[_num_dry_sounds];
+        for(int ch=0;ch<_num_dry_sounds;ch++) {
+          
+          float dry_peak = RT_get_max_val(dry_sound[ch],num_frames);
+          
+          if (dry_peak > MIN_AUTOSUSPEND_PEAK)
+            RT_PLUGIN_touch(_plugin);
+          
+          float input_volume = SMOOTH_get_target_value(&_plugin->input_volume);
+          
+          input_peaks[ch] = do_bypass ? 0.0f : dry_peak *  input_volume;
+        }
+        RT_set_input_peak_values(input_peaks, dry_sound);
+      }
+      
+      if(is_a_generator){
+        
+        // Apply input volume and fill output
+        for(int ch=0;ch<_num_outputs;ch++)
+          SMOOTH_copy_sound(&_plugin->input_volume, dry_sound[ch], wet_sound[ch], num_frames);
+        
+      }else{
+        
+        // Apply input volume
+        for(int ch=0;ch<_num_inputs;ch++)
+          SMOOTH_copy_sound(&_plugin->input_volume, dry_sound[ch], temp_sound[ch], num_frames);
+        
+        // Fill output
+        PLUGIN_RT_process(_plugin, time, num_frames, temp_sound, wet_sound, process_plugins);
+      }
     }
 
     
     // compressor
-    RT_apply_system_filter(&_plugin->comp,      output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->comp,      wet_sound, _num_outputs, num_frames, process_plugins);
 
     
     // filters
-    RT_apply_system_filter(&_plugin->lowshelf,  output_sound, _num_outputs, num_frames, process_plugins);
-    RT_apply_system_filter(&_plugin->eq1,       output_sound, _num_outputs, num_frames, process_plugins);
-    RT_apply_system_filter(&_plugin->eq2,       output_sound, _num_outputs, num_frames, process_plugins);
-    RT_apply_system_filter(&_plugin->highshelf, output_sound, _num_outputs, num_frames, process_plugins);
-    RT_apply_system_filter(&_plugin->lowpass,   output_sound, _num_outputs, num_frames, process_plugins);
-    RT_apply_system_filter(&_plugin->highpass,  output_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->lowshelf,  wet_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->eq1,       wet_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->eq2,       wet_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->highshelf, wet_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->lowpass,   wet_sound, _num_outputs, num_frames, process_plugins);
+    RT_apply_system_filter(&_plugin->highpass,  wet_sound, _num_outputs, num_frames, process_plugins);
 
     // Apply volume to the wet values.
     for(int ch=0 ; ch < _num_outputs ; ch++)
-      SMOOTH_apply_volume(&_plugin->volume, output_sound[ch], num_frames);
+      SMOOTH_apply_volume(&_plugin->volume, wet_sound[ch], num_frames);
 
 
     // Note: We could have optimized applying volume and dry/wet into one step. But that would have made the code a little bit more complicated.
@@ -1890,32 +1906,23 @@ public:
     const bool include_pan_and_width_in_wet = root->song->include_pan_and_dry_in_wet_signal;
     
     
-    if (include_pan_and_width_in_wet){
+    if (include_pan_and_width_in_wet)
+      RT_process_pan_and_width(wet_sound, num_frames);
 
-      // Output pan
-      SMOOTH_apply_pan(&_plugin->pan, output_sound, _num_outputs, num_frames);
+    {
+      float latency_dry_sound_sound[R_MAX(1,_num_dry_sounds)][num_frames]; // Using 'R_MAX' since array[0] is undefined behavior. (ubsan fix only, most likely nothing bad would happen)
+      const float *latency_dry_sound[R_MAX(1,_num_dry_sounds)];
+      for(int ch=0;ch<_num_dry_sounds;ch++)        
+        latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch], latency_dry_sound_sound[ch], num_frames);
       
-      // Right channel delay ("width")
-      if(_num_outputs>1)
-        static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, output_sound[1], output_sound[1]);
-
+      RT_apply_dry_wet(latency_dry_sound, _num_dry_sounds, // dry
+                       wet_sound, _num_outputs,        // wet (-> becomes output sound)
+                       num_frames,
+                       &_plugin->drywet);
     }
-
-    RT_apply_dry_wet(latency_dry_sound, _num_dry_sounds, // dry
-                     output_sound, _num_outputs,        // wet (-> becomes output sound)
-                     num_frames,
-                     &_plugin->drywet);
-
-    if (!include_pan_and_width_in_wet){
-
-      // Output pan
-      SMOOTH_apply_pan(&_plugin->pan, output_sound, _num_outputs, num_frames);
-      
-      // Right channel delay ("width")
-      if(_num_outputs>1)
-        static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, output_sound[1], output_sound[1]);
-
-    }
+    
+    if (!include_pan_and_width_in_wet)
+      RT_process_pan_and_width(output_sound, num_frames);
     
 
     // Output peaks

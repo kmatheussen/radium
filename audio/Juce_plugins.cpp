@@ -2689,11 +2689,11 @@ static inline void copy_sound2(const Smooth *__restrict__ smooth, float *__restr
   }
 }
 
-void SMOOTH_copy_sound(const Smooth *__restrict__ smooth, float *__restrict__ dst, const float *__restrict src, int num_frames){
+void SMOOTH_copy_sound(const Smooth *__restrict__ smooth, const float *__restrict src, float *__restrict__ dst, const int num_frames){
   R_ASSERT_NON_RELEASE(smooth->target_audio_will_be_modified==true);
 
-  if (num_frames==64){
-    copy_sound2(smooth, dst, src, 64);
+  if (num_frames==RADIUM_BLOCKSIZE){
+    copy_sound2(smooth, dst, src, RADIUM_BLOCKSIZE);
   } else {
     R_ASSERT_NON_RELEASE(false);
     copy_sound2(smooth, dst, src, num_frames);

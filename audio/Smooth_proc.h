@@ -118,7 +118,7 @@ extern LANGSPEC void SMOOTH_update_target_audio_will_be_modified_value(Smooth *s
 extern LANGSPEC void SMOOTH_called_per_block(Smooth *smooth);
 extern LANGSPEC void SMOOTH_apply_volume(const Smooth *smooth, float *sound, int num_frames);
 extern LANGSPEC void SMOOTH_apply_inverted_volume(const Smooth *smooth, float *sound, int num_frames);
-extern LANGSPEC void SMOOTH_copy_sound(const Smooth *smooth, float *dst, const float *src, int num_frames);
+extern LANGSPEC void SMOOTH_copy_sound(const Smooth *smooth, const float *src, float *dst, const int num_frames);
 extern LANGSPEC void SMOOTH_mix_sounds_raw(float *target, const float *source, int num_frames, float start_volume, float end_volume);
 extern LANGSPEC bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(const Smooth *smooth);
 extern LANGSPEC void SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source, int num_frames);
