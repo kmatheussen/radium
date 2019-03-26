@@ -417,7 +417,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
     
     ATOMIC_NAME(sp->_num_active_input_links_left) = sp->_num_active_input_links;
 
-    R_ASSERT_NON_RELEASE(sp->_num_active_output_links_left) == 0);
+    R_ASSERT_NON_RELEASE(sp->_num_active_output_links_left == 0);
     
     ATOMIC_NAME(sp->_num_active_output_links_left) = sp->_num_active_output_links;
     
