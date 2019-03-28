@@ -503,14 +503,66 @@ static void RT_apply_dry_wet(const float **dry, int num_dry_channels,
 }
 
 static void RT_fade_in2(float *sound, int pos, int num_frames){
+  if (pos + num_frames > FADE_LEN)
+    num_frames = FADE_LEN-pos;
+      
+#if 1
+
+  float mul = scale(pos+1, 0, FADE_LEN+1, 0.0, 1.0);
+  float mulinc = scale(1, 0, FADE_LEN+1, 0.0, 1.0);
+    
+  for(int i=0;i<num_frames;i++){
+    sound[i] *= mul;
+    mul += mulinc;
+  }
+  
+  
+#else
+  R_ASSERT_NON_RELEASE(num_frames+pos < FADE_LEN);
+  
   for(int i=0;i<num_frames;i++)
     sound[i] *= fade_in_envelope[i+pos];
+#endif
+  
 }
 
 
 static void RT_fade_out2(float *sound, int pos, int num_frames){
+  int frames_to_iterate = num_frames;
+  
+  if (pos + num_frames > FADE_LEN) {
+
+    frames_to_iterate = FADE_LEN-pos;
+
+    R_ASSERT_NON_RELEASE(frames_to_iterate < num_frames);
+    
+    if (frames_to_iterate <= 0){
+      memset(sound, 0, sizeof(float)*num_frames);
+      return;
+    }
+
+    memset(sound + frames_to_iterate, 0, sizeof(float)*(num_frames-frames_to_iterate));    
+  }
+    
+#if 1
+
+  float mul = scale(pos+1, 0, FADE_LEN+1, 1.0, 0.0);
+  float mulinc = -1.0 * scale(1, 0, FADE_LEN+1, 0.0, 1.0);
+    
+  for(int i=0;i<frames_to_iterate;i++){
+    sound[i] *= mul;
+    mul += mulinc;
+  }
+  
+  
+#else
+  
+  R_ASSERT_NON_RELEASE(num_frames+pos < FADE_LEN);
+  
   for(int i=0;i<num_frames;i++)
     sound[i] *= fade_out_envelope[i+pos];
+  
+#endif
 }
 
 static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_frames, float **outputs){

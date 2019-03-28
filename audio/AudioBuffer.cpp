@@ -29,6 +29,19 @@ static radium::AudioBufferChannel g_error_audio_channel;
 static int g_num_free_elements = 0;
 #endif
 
+static int get_audio_buffer_channel_size(void){
+  return sizeof(float)*RADIUM_BLOCKSIZE;
+}
+
+static radium::AudioBufferChannel *get_g_channel(int i){
+  char *hack = (char*)g_channels;
+
+  int blocksize = get_audio_buffer_channel_size();
+  
+  char *pos = hack + (i*blocksize);
+
+  return (radium::AudioBufferChannel*)pos;
+}
 
 void AUDIOBUFFERS_init(void){
 #if !defined(RELEASE)
@@ -38,11 +51,14 @@ void AUDIOBUFFERS_init(void){
   static bool has_inited = false;
   R_ASSERT_RETURN_IF_FALSE(has_inited==false);
 
-  g_channels = (radium::AudioBufferChannel*)V_calloc(sizeof(radium::AudioBufferChannel), g_num_elements);
+  int blocksize = get_audio_buffer_channel_size();
   
+  g_channels = (radium::AudioBufferChannel*)V_calloc(blocksize, g_num_elements);  
+
   for(int i=g_num_elements-1;i>=0;i--){
-    radium::AudioBufferChannel *channel = &g_channels[i];
     
+    auto *channel = get_g_channel(i);
+
     channel->next = g_audio_channels;
     g_audio_channels = channel;
   }
@@ -60,20 +76,21 @@ void RT_AUDIOBUFFERS_optimize(void){
   if (g_num_free_elements != g_num_elements)
     abort();
 #endif
-  
+
   if (g_highest_used_channel==NULL)
     return;
 
   bool has_hit_highest = false;
+
+  radium::AudioBufferChannel *next_channel = get_g_channel(0);
   
-  radium::AudioBufferChannel *next_channel = &g_channels[0];
-  
-  for(int i=0 ; i<g_num_elements ; i++){  
+  for(int i=0 ; i<g_num_elements ; i++){
     radium::AudioBufferChannel *channel = next_channel;
+    
     if (i==g_num_elements-1)
       next_channel = NULL;
     else
-      next_channel = &g_channels[i+1];
+      next_channel = get_g_channel(i+1);
   
     if (channel==g_highest_used_channel)
       has_hit_highest = true;
@@ -167,6 +184,8 @@ void RT_AUDIOBUFFER_get_channels(radium::AudioBufferChannel **channels, int num_
 
 #if TEST_AUDIOBUFFER
 
+int g_audio_block_size = 64;
+
 void RT_message_internal(const char *fmt,...){
   //abort();
 }
@@ -176,7 +195,7 @@ static void validate_channels(void){
   radium::AudioBufferChannel *it = g_audio_channels;
   
   for(int i=0 ; i<g_num_elements ; i++){  
-    radium::AudioBufferChannel *channel = &g_channels[i];
+    radium::AudioBufferChannel *channel = get_g_channel(i);
 
     assert(it==channel);
 
@@ -193,7 +212,7 @@ static void testrun1(int num_elements){
     stuff.push_back(RT_AUDIOBUFFER_get_channel(radium::NeedsLock::NO));
 
   if(num_elements==g_num_elements-1)
-    assert(stuff.last()->next == &g_channels[g_num_elements-1]);
+    assert(stuff.last()->next == get_g_channel(g_num_elements-1));
   
   if(num_elements==g_num_elements)
     assert(stuff.last()->next == NULL);

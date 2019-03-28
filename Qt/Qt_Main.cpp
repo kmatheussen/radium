@@ -2733,6 +2733,9 @@ int radium_main(const char *arg){
   g_qtgui_has_started = true;
 
 
+  g_audio_block_size = SETTINGS_read_int("audio_block_size",64);
+  
+  
   set_default_slider_height();
   
 #if 0

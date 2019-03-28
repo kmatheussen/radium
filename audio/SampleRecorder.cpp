@@ -53,7 +53,7 @@ struct PeakSlice{
   float min;
   float max;
 };
-  
+
 struct RecordingSlice{
   radium::SampleRecorderInstance *instance;
 
@@ -68,7 +68,7 @@ struct RecordingSlice{
   struct Slice{
     int ch;
     int num_frames;
-    float samples[RADIUM_BLOCKSIZE];
+    float *samples;
   };
 
   Slice slice;
@@ -630,9 +630,11 @@ void SampleRecorder_Init(void){
 
   RecordingSlice *slices = (RecordingSlice*)V_calloc(MAX_QUEUE_SIZE, sizeof(RecordingSlice));
 
-  for(int i=0;i<MAX_QUEUE_SIZE;i++)
+  for(int i=0;i<MAX_QUEUE_SIZE;i++){
+    slices[i].slice.samples = (float*)V_calloc(sizeof(float), RADIUM_BLOCKSIZE);
     g_free_slices->push(&slices[i]);
-
+  }
+  
   g_peak_slice_queue = new boost::lockfree::queue<PeakSlice, boost::lockfree::capacity<MAX_QUEUE_SIZE> >;
     
   g_sample_recorder_thread.start();

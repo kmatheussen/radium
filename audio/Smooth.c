@@ -35,7 +35,7 @@ void SMOOTH_init(Smooth *smooth, float value, int blocksize){
   init_it(smooth, value, blocksize, DEFAULT_SMOOTH_LENGTH);
 }
 void SMOOTH_init_immediate_smoothing(Smooth *smooth, float value, int blocksize){
-  init_it(smooth, value, blocksize, RADIUM_BLOCKSIZE);
+  init_it(smooth, value, blocksize, R_MIN(DEFAULT_SMOOTH_LENGTH, RADIUM_BLOCKSIZE));
 }
 
 void SMOOTH_force_target_value(Smooth *smooth, float value){
@@ -44,7 +44,7 @@ void SMOOTH_force_target_value(Smooth *smooth, float value){
   smooth->value = value;
 
   int i;
-  for(i=0;i<RADIUM_BLOCKSIZE;i++)
+  for(i=0;i<R_MIN(smooth->smooth_length, RADIUM_BLOCKSIZE);i++)
     smooth->values[i] = value;
 }
 
@@ -88,7 +88,7 @@ void SMOOTH_called_per_block(Smooth *smooth){
 
     if(smooth->smoothing_is_necessary==true){
       int i;
-      for(i=0;i<RADIUM_BLOCKSIZE;i++) // shouldn't be necessary.
+      for(i=0;i<R_MIN(smooth->smooth_length, RADIUM_BLOCKSIZE);i++) // shouldn't be necessary.
         smooth->values[i] = next_target_value;
 
       smooth->smoothing_is_necessary = false;
@@ -119,7 +119,7 @@ void SMOOTH_called_per_block(Smooth *smooth){
 
       R_ASSERT_NON_RELEASE(smooth->smooth_length==DEFAULT_SMOOTH_LENGTH);
       
-      for(int i=0;i<RADIUM_BLOCKSIZE;i++){
+      for(int i=0;i<R_MIN(smooth->smooth_length, RADIUM_BLOCKSIZE);i++){
         smooth->values[i] = scale(smooth->pos + i,
                                   0, DEFAULT_SMOOTH_LENGTH,
                                   start_value, end_value);
@@ -127,7 +127,7 @@ void SMOOTH_called_per_block(Smooth *smooth){
     }
     
     smooth->pos += RADIUM_BLOCKSIZE;
-    if(smooth->pos==smooth->smooth_length){
+    if(smooth->pos >= smooth->smooth_length){
       smooth->value = smooth->target_value;
       smooth->pos = 0;
     }
