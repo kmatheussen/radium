@@ -485,12 +485,13 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     // Audio
     {
       numCPUs->setValue(MULTICORE_get_num_threads());
+      numCPUs->setMaximum(MAX_NUM_CPUS);
+      
       buzy_looping->setChecked(doAudioBuzyLoop());
       enable_autobypass->setChecked(autobypassEnabled());
       autobypass_delay->setValue(getAutoBypassDelay());
       undo_solo->setChecked(doUndoSolo());
       undo_bypass->setChecked(doUndoBypass());
-      recalculate_bus_latency_onoff->setChecked(doAlwaysRunBuses());
     }
 
     {
@@ -813,9 +814,9 @@ public slots:
 
   void on_numCPUs_valueChanged(int val){
     printf("cpus: %d\n",val);
-    if (_initing==false)
+    if (_initing==false){
       MULTICORE_set_num_threads(val);
-    
+    }
     //set_editor_focus();
     //numCPUs->setFocusPolicy(Qt::NoFocus);
     //on_numCPUs_editingFinished();
@@ -864,11 +865,6 @@ public slots:
     }GL_unlock();
   }
 
-  void on_recalculate_bus_latency_onoff_toggled(bool val){
-    if (_initing==false)
-      setAlwaysRunBuses(val);
-  }
-  
   // embedded audio file paths
   void on_embedded_audio_files_editingFinished(){
     setEmbeddedAudioFilesPath(embedded_audio_files->text().toUtf8().constData());

@@ -2888,24 +2888,6 @@ void setBlockSaturation(float val){
 
 
 
-static DEFINE_ATOMIC(bool, g_always_run_buses) = false;
-bool doAlwaysRunBuses(void){
-  static bool has_inited = false;
-
-  if (has_inited==false){
-    ATOMIC_SET(g_always_run_buses, SETTINGS_read_bool("always_run_buses", false));
-    has_inited=true;
-  }
-
-  return ATOMIC_GET(g_always_run_buses);
-}
-void setAlwaysRunBuses(bool doit){
-  printf("Setting always stuff to %d\n",doit);
-  ATOMIC_SET(g_always_run_buses, doit);
-  SETTINGS_write_bool("always_run_buses", doit);
-}
-
-
 void printMixerTree(void){
   SP_print_tree();
 }

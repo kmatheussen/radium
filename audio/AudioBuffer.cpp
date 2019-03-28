@@ -106,6 +106,21 @@ void RT_AUDIOBUFFER_release_channel(radium::AudioBufferChannel *channel, radium:
   g_audio_channels = channel;
 }
 
+void RT_AUDIOBUFFER_release_channels(radium::AudioBufferChannel **channels, int num_ch, radium::NeedsLock needs_lock){
+  R_ASSERT_NON_RELEASE(THREADING_is_player_or_runner_thread());
+  
+  radium::ScopedSpinlock lock(g_audio_channels_spinlock, needs_lock==radium::NeedsLock::YES);
+
+  for(int ch=num_ch-1;ch>=0;ch--){ // Make sure the order of the individual channels is the same as when we started.
+    if(channels[ch] == NULL)
+      R_ASSERT(false);
+    else {
+      RT_AUDIOBUFFER_release_channel(channels[ch], radium::NeedsLock::NO);
+      channels[ch] = NULL;
+    }
+  }
+}
+
 radium::AudioBufferChannel *RT_AUDIOBUFFER_get_channel(radium::NeedsLock needs_lock){
   R_ASSERT_NON_RELEASE(THREADING_is_player_or_runner_thread());
   
@@ -139,6 +154,16 @@ radium::AudioBufferChannel *RT_AUDIOBUFFER_get_channel(radium::NeedsLock needs_l
   return ret;
 }
 
+void RT_AUDIOBUFFER_get_channels(radium::AudioBufferChannel **channels, int num_channels, radium::NeedsLock needs_lock){
+  R_ASSERT_NON_RELEASE(THREADING_is_player_or_runner_thread());
+  
+  radium::ScopedSpinlock lock(g_audio_channels_spinlock, needs_lock==radium::NeedsLock::YES);
+
+  for(int ch=0;ch<num_channels;ch++){
+    R_ASSERT_NON_RELEASE(channels[ch] == NULL);
+    channels[ch] = RT_AUDIOBUFFER_get_channel(radium::NeedsLock::NO);
+  }
+}
 
 #if TEST_AUDIOBUFFER
 

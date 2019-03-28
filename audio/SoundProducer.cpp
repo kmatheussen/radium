@@ -84,10 +84,6 @@ static inline int myisinf(float val){
 
 
 
-// Updated each block in Mixer.cpp
-bool g_rt_always_run_buses = false;
-
-
 #if 0
 faust conversions:
 db2linear(x)	= pow(10, x/20.0);
@@ -181,11 +177,14 @@ static float *g_empty_sound = NULL;
   
 struct LatencyCompensatorDelay {
   radium::SmoothDelay _delay;
+
+  int _total_num_processed_empty_frames;
   
   //float *_output_sound;
   
   LatencyCompensatorDelay()
     :_delay(MAX_COMPENSATED_LATENCY*MIXER_get_sample_rate()/1000)
+    , _total_num_processed_empty_frames(_delay.buffer_size) // <- _delay.buffer_size is not necessarily the same as MAX_COMP...etc. above.
   {
     //_output_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
     
@@ -203,7 +202,12 @@ struct LatencyCompensatorDelay {
   }
 
   // Should be called instead of RT_process if we don't need any sound.
-  void RT_call_instead_of_process(int num_frames){
+  void RT_call_instead_of_process_if_no_sound(int num_frames){
+    if (_total_num_processed_empty_frames >= _delay.buffer_size) // This optimization also eliminates (at least in practice I hope) the need for the earlier "g_rt_always_run_buses" option.
+      return;
+
+    _total_num_processed_empty_frames += num_frames;
+    
     _delay.RT_process(num_frames, g_empty_sound, g_empty_sound); // Avoid leftovers from last time.
   }
   
@@ -216,6 +220,8 @@ struct LatencyCompensatorDelay {
     R_ASSERT_RETURN_IF_FALSE2(_delay.fVec0!=NULL, g_empty_sound);
     R_ASSERT_RETURN_IF_FALSE2(num_frames==MIXER_get_buffer_size(), g_empty_sound);
 #endif
+
+    _total_num_processed_empty_frames = 0;
     
     if(_delay.RT_process(num_frames, input_sound, output_sound))
       return output_sound;
@@ -326,34 +332,27 @@ struct SoundProducerLink {
 
 
   // Called by main mixer thread before starting multicore.
-  bool RT_called_for_each_soundcard_block(void){
+  void RT_called_for_each_soundcard_block(void){
     //R_ASSERT(THREADING_is_player_thread());
 
     if (is_event_link) {
 
-      R_ASSERT(is_active==true);
+      R_ASSERT_NON_RELEASE(is_active==true);
 
-      return true;
-      
     } else {
 
       if (is_bus_link) {
-        if (SP_get_bus_descendant_type(source)==IS_BUS_DESCENDANT) { // need comment here what this is about
-          is_active = false;
-          return false;
+        if (SP_get_bus_descendant_type(source)==IS_BUS_DESCENDANT) {
+          is_active = false; // Deactivate since a bus descendant can not send sound to a bus (that would be a recursive connection, which is not supported).
+          return;
         }
       }
 
-      SMOOTH_set_target_value(&volume, get_total_link_volume());        
+      SMOOTH_set_target_value(&volume, get_total_link_volume());
       SMOOTH_update_target_audio_will_be_modified_value(&volume);
 
-      bool new_is_active = volume.target_audio_will_be_modified;
-      
-      is_active = new_is_active;
-      
-      return new_is_active;
+      is_active = volume.target_audio_will_be_modified;
     }
-
     
   }
 
@@ -361,8 +360,11 @@ struct SoundProducerLink {
     if (is_event_link)
       return true;
 
+    if(safe_bool_read(&is_active))
+      return false;
+      
     bool ret = false;
-    
+
     PLAYER_lock();{
       if(is_active==false)
         ret = true;
@@ -686,21 +688,9 @@ namespace{
 
 //struct Owner *owner;
 
-    // Note that the 'should_run_link' returns false if the link is inactive, a bus, and not a bus provider. I.e. a link that would never provide samples to us.
-#define FOR_EACH_ACTIVE_AUDIO_INPUT_LINK(Sp)                    \
-    for (SoundProducerLink *link : Sp->_input_links) {          \
-      if (link->is_event_link)                                  \
-        continue;                                               \
-                                                                \
-      if (!Sp->should_run_link(link))                           \
-        continue;
-    
-#define END_FOR_EACH_ACTIVE_AUDIO_INPUT_LINK }
-    
-
 struct SoundProducer {
   int64_t _id;
-  
+
   SoundPlugin *_plugin;
   int _latency;
   int _highest_input_link_latency;
@@ -720,8 +710,11 @@ struct SoundProducer {
 
   LatencyCompensatorDelay *_dry_sound_latencycompensator_delays;
   
-  radium::AudioBuffer _output_buffer;
-
+  //radium::AudioBuffer _output_buffer;
+  //radium::AudioBuffer **_input_buffers;
+  //radium::MultiThreadAccessAudioBuffers _input_buffers;
+  radium::MultiThreadAccessArray<radium::AudioBuffer> _input_buffers;
+  
   // Scheduling, start
   //
 #if !defined(RELEASE)
@@ -731,9 +724,6 @@ struct SoundProducer {
   DEFINE_ATOMIC(int, _num_active_input_links_left);  // = num_active_input_links + (is_bus ? num_not_bus_descendants : 0). Decreased during processing. When the number is zero, it is scheduled for processing. 
   int _num_active_input_links;
 
-  DEFINE_ATOMIC(int, _num_active_output_links_left) = 0; // Decreased by output soundproducers. When 0, we can release _output_buffer.
-  int _num_active_output_links;
-  
 #if 0
   int downcounter = 1; // When zero, the soundproducer can change order. We do this to avoid too much fluctation, which is likely to be bad for the cache.
 
@@ -753,6 +743,14 @@ struct SoundProducer {
   SoundProducer(const SoundProducer&) = delete;
   SoundProducer& operator=(const SoundProducer&) = delete;
 
+  std::vector<radium::AudioBuffer*> create_input_buffers(int size){
+    std::vector<radium::AudioBuffer*> ret;
+    for(int i=0;i<size;i++)
+      ret.push_back(new radium::AudioBuffer(_num_inputs));
+
+    return ret;
+  }
+  
 public:
   
   SoundProducer(SoundPlugin *plugin, int num_frames, Buses buses) // buses.bus1 and buses.bus2 must be NULL if the plugin itself is a bus.
@@ -764,7 +762,8 @@ public:
     , _num_outputs(plugin->type->num_outputs)
     , _last_time(-1)
     , running_time(0.0)
-    , _output_buffer(_num_outputs)
+      //, _output_buffer(_num_outputs)
+    , _input_buffers(create_input_buffers(MAX_NUM_CPUS))
     , _num_active_input_links(0)
   {    
     printf("New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
@@ -976,10 +975,13 @@ public:
     g_rt_set_bus_descendant_types_duration = time.elapsed();
     
     //printf("Time1: %f. Time2: %f. Diff: %f%%\n", time1, time2, 100*(time1-time2)/time2);
+
   }
 
   void allocate_sound_buffers(int num_frames){
     R_ASSERT(num_frames==RADIUM_BLOCKSIZE);
+
+
     
     //_output_buffer = (radium::AudioBuffer**)(V_calloc(sizeof(radium::AudioBuffer*),_num_outputs));
     
@@ -1228,7 +1230,7 @@ public:
     }
 
     
-    // 6. REMOVING: Wait until all links in 'to_remove' can be removed.
+    // 6. REMOVING: Wait until all links in 'to_remove' can be removed (when volume is finished fading down to 0).
     //
     for(auto *link : to_remove){
       PLUGIN_touch(link->source->_plugin);
@@ -1556,31 +1558,6 @@ public:
     }
   }
 
-  bool should_run_link(const SoundProducerLink *input_audio_link) const {
-
-    if (input_audio_link->is_active==false) {
-          
-      if (input_audio_link->is_bus_link){
-
-        if (g_rt_always_run_buses==true){
-          //printf("Ret false\n");
-          return false;
-        }
-        
-        const SoundProducer *source = input_audio_link->source;
-
-        bool legal_bus_provider = source->_bus_descendant_type==IS_BUS_PROVIDER;
-        
-        if (!legal_bus_provider) // We could also ignore all non-active links, but then latencies would be recalculated when turning on/off buses.
-          return false;
-        
-      }
-      
-    }
-
-    return true;
-  }
-
   bool RT_is_autosuspending(void) const{
     return ATOMIC_NAME(_plugin->_RT_is_autosuspending);
   }
@@ -1591,13 +1568,6 @@ public:
     running_time = 0.0;
     has_run_for_each_block2 = false;
 
-    //R_ASSERT_NON_RELEASE(ATOMIC_NAME(_num_active_output_links_left)==0);
-    /*
-    if(ATOMIC_NAME(_num_active_output_links_left) != 0)
-      printf("!!!    %s: Number of output links left: %d\n", _plugin->patch->name, ATOMIC_NAME(_num_active_output_links_left));
-    */
-    _num_active_output_links = 0;
-    
     // Set initial autosuspend. Autosuspend is also set to false when a soundproducer sends audio to another soundproducer.
     {      
       bool autosuspend = RT_PLUGIN_can_autosuspend(_plugin, time);
@@ -1625,33 +1595,30 @@ public:
       return;
 
     has_run_for_each_block2 = true;
-
-  
-    // 1. Find _num_active_input_links
-    //
+    
     _num_active_input_links = 0;
 
+    // 1. Find _num_active_input_links, and call RT_called_for_each_soundcard_block2 for all active input links.
+    //
     for (SoundProducerLink *link : _input_links) {
 
-      if (link->RT_called_for_each_soundcard_block()){
-        _num_active_input_links++;
-        link->source->_num_active_output_links++;
-      }
+      //printf("hepp %s->%s: %d. is_active: %d\n", link->source->_plugin->patch->name, link->target->_plugin->patch->name, link->is_active, link->gakk++);
 
+      link->RT_called_for_each_soundcard_block(); // Updates link->is_active and link->volume.
+
+      if(link->is_active) {
+        _num_active_input_links++;
+
+        // 2. Ensure RT_called_for_each_soundcard_block2 is called for all soundobjects sending sound here. (since we read the _latency variable from those a little bit further down in this function)
+        
+        // if(!link->is_event) // Not faster since since RT_called_for_each_soundcard_block2 returns immediately when it's already been called.
+        link->source->RT_called_for_each_soundcard_block2(time);
+      }
     }
 
-    // 2. Ensure RT_called_for_each_soundcard_block2 is called for all soundobjects sending sound here. (since we read the _latency variable from those a little bit further down in this function)
-    //
-    FOR_EACH_ACTIVE_AUDIO_INPUT_LINK(this){
-      
-      link->source->RT_called_for_each_soundcard_block2(time);
-      
-    }END_FOR_EACH_ACTIVE_AUDIO_INPUT_LINK;
 
-    
-    // 3. Find and set _latency and _highest_input_link_latency
+    // 3. Find and set plugin latency, _latency and _highest_input_link_latency
     //
-    _highest_input_link_latency = 0;
 
     int plugin_latency = _plugin->type->RT_get_latency!=NULL ? _plugin->type->RT_get_latency(_plugin) : 0;
 
@@ -1659,22 +1626,34 @@ public:
     for(int ch = 0 ; ch < _num_dry_sounds ; ch++)
       _dry_sound_latencycompensator_delays[ch].RT_set_preferred_delay(plugin_latency); // <- Note! NOT set to _latency. Set to plugin_latency.
 
-    
-    FOR_EACH_ACTIVE_AUDIO_INPUT_LINK(this){
-      
-      SoundProducer *source = link->source;
-      
-      int source_latency = source->_latency;
-      if (source_latency > _highest_input_link_latency)
-        _highest_input_link_latency = source_latency;
 
-    }END_FOR_EACH_ACTIVE_AUDIO_INPUT_LINK;
+    {
+      int highest_input_link_latency = 0;
     
-    //int prev=_latency;
-    _latency = _highest_input_link_latency + plugin_latency;
-    //if (prev != _latency)
-    //  printf("    Set latency to %d. (%s). Highest: %d. My: %d, Prev: %d\n", _latency, _plugin->patch->name, _highest_input_link_latency, plugin_latency,prev);
-
+      for (SoundProducerLink *link : _input_links) {
+        if (false==link->is_active)
+          continue;
+        if (link->is_event_link)
+          continue;
+        
+        SoundProducer *source = link->source;
+        
+        int source_latency = source->_latency;
+        if (source_latency > highest_input_link_latency)
+          highest_input_link_latency = source_latency;        
+      }
+      
+      if (highest_input_link_latency != _highest_input_link_latency)
+        _highest_input_link_latency = highest_input_link_latency;
+    }
+    
+    {    
+      int new_latency = _highest_input_link_latency + plugin_latency;
+      if (new_latency != _latency){
+        _latency = new_latency;
+        //  printf("    Set latency to %d. (%s). Highest: %d. My: %d, Prev: %d\n", _latency, _plugin->patch->name, _highest_input_link_latency, plugin_latency,prev);
+      }
+    }
   }
   
   bool has_run(int64_t time) const {
@@ -1698,7 +1677,7 @@ public:
     }
   }
     
-  void RT_set_output_peak_values(const float *volume_peaks) const {
+  void RT_set_output_peak_values(const float *volume_peaks, float **output_sound) const {
     // Output peaks
     {
       for(int ch=0;ch<_num_outputs;ch++){
@@ -1706,7 +1685,7 @@ public:
 
         if (RT_message_will_be_sent()==true)
           if (volume_peak > 317)
-            show_high_peak_message(_plugin, "generated (after applying volume and system effects)", _output_buffer.get_channel(ch), ch, volume_peak);
+            show_high_peak_message(_plugin, "generated (after applying volume and system effects)", output_sound[ch], ch, volume_peak);
           
         // "Volume"
         //safe_float_write(&_plugin->volume_peak_values[ch], volume_peak);
@@ -1745,7 +1724,34 @@ public:
     }
   }
 
-  void RT_create_dry_sound_from_input_link(SoundProducerLink *link, int64_t time, int num_frames, float **dry_sound) {
+  void RT_process_pan_and_width(float **outputs, int num_frames) const {
+    // Output pan
+    SMOOTH_apply_pan(&_plugin->pan, outputs, _num_outputs, num_frames);
+    
+    // Right channel delay ("width")
+    if(_num_outputs>1)
+      static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, outputs[1], outputs[1]);
+  }
+
+  // This function is called while processing link->source. "this" is link->target.
+  void RT_create_dry_sound_from_input_link(SoundProducerLink *link, int64_t time, int num_frames, float **source_output_sound, float **dry_sound) const {
+#if !defined(RELEASE)             
+    if (source_output_sound==NULL && dry_sound!=NULL)
+      abort();
+    
+    if (source_output_sound!=NULL && dry_sound==NULL)
+      abort();
+
+    if (!link->is_active){
+      if (source_output_sound!=NULL)
+        abort();
+    }
+
+    if(link->source->RT_is_autosuspending())
+      if (source_output_sound!=NULL)
+        abort();      
+#endif
+    
     SoundProducer *source = link->source;
 
     int latency = _highest_input_link_latency - source->_latency;
@@ -1761,75 +1767,131 @@ public:
       printf("    Set latency %d. (%s -> %s)\n", latency, source->_plugin->patch->name, link->target->_plugin->patch->name);
 #endif
     }
+
     
-    if (false==link->is_active) {        
-      link->_delay.RT_call_instead_of_process(num_frames);        
+    if (link->is_active)
+      SMOOTH_called_per_block(&link->volume); // A link can't turn inactive before link->volume has been smoothed down to 0.
+
+    
+    //
+    // !! All audio links (active or not, autosuspended or not, bus or not) will always run up to this point. !!
+    //
+
+    if (source_output_sound==NULL){
+      link->_delay.RT_call_instead_of_process_if_no_sound(num_frames);
       return;
     }
-    
-    if (ATOMIC_NAME(source->_plugin->_RT_is_autosuspending)) {
-      link->_delay.RT_call_instead_of_process(num_frames);
-      return;
-    }
-    
-    R_ASSERT(source->has_run(time));
-    
-    if (true){ //false==link->is_event_link) { // <-- We already tested for this above.
+
+    R_ASSERT_NON_RELEASE(source->has_run(time));
+
+    {      
       
-      SMOOTH_called_per_block(&link->volume);
-      
-      const float *input_producer_sound = link->source->_output_buffer.get_channel(link->source_ch);
+      //const float *input_producer_sound = link->source->_output_buffer.get_channel(link->source_ch);
       
       float latency_sound_sound[num_frames];
-      const float *latency_compensated_input_producer_sound = link->_delay.RT_process(input_producer_sound, latency_sound_sound, num_frames);
+      const float *latency_compensated_input_producer_sound = link->_delay.RT_process(source_output_sound[link->source_ch], latency_sound_sound, num_frames);
       
       SMOOTH_mix_sounds(&link->volume,
-                        dry_sound[link->target_ch],
-                        latency_compensated_input_producer_sound,
+                        dry_sound[link->target_ch], // out
+                        latency_compensated_input_producer_sound, // in
                         num_frames
                         );
       
-    } // end !link->is_event_link
+    }
     
   }
 
-  void RT_process_pan_and_width(float **outputs, int num_frames) const {
-    // Output pan
-    SMOOTH_apply_pan(&_plugin->pan, outputs, _num_outputs, num_frames);
+  // This function is called while processing link->source. "this" is link->target.
+  void RT_process_link(SoundProducerLink *link, int64_t time, float **source_output_sound, int num_frames) {
+
+    if (source_output_sound==NULL || link->is_active==false) {
+      
+      RT_create_dry_sound_from_input_link(link, time, num_frames, NULL, NULL);
     
-    // Right channel delay ("width")
-    if(_num_outputs>1)
-      static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, outputs[1], outputs[1]);
+    } else {
+
+      RT_PLUGIN_touch(link->target->_plugin);
+
+      radium::ScopedMultiThreadAccessArrayElement<radium::AudioBuffer> scoped_buffer(_input_buffers);
+        //auto scoped_buffer(_input_buffers);
+
+      float **dry_sound = NULL;
+      
+      auto *buffer = scoped_buffer.RT_get();
+      
+      if (buffer->RT_obtain_channels_if_necessary(radium::NeedsLock::YES))
+        buffer->clean();
+      
+      dry_sound = buffer->get_channels();
+      
+      RT_create_dry_sound_from_input_link(link, time, num_frames, source_output_sound, dry_sound);
+    }
+  }
+  
+  void RT_iterate_output_links_after_process(int64_t time, int num_frames, float **output_sound) const {
+      
+    for(auto link : _output_links){
+          
+      if (link->is_event_link)
+        continue;
+
+      if (link->is_active && output_sound != NULL)
+        RT_PLUGIN_touch(link->target->_plugin);
+
+      link->target->RT_process_link(link, time, output_sound, num_frames);
+    }
   }
   
   void RT_process(int64_t time, int num_frames, bool process_plugins) {
 
-    int dry_sound_sound_size = R_MAX(1,_num_dry_sounds)*num_frames*sizeof(float);
+    int dry_sound_sound_size = _num_dry_sounds*num_frames*sizeof(float);
     
     float *dry_sound_sound = (float*)alloca(dry_sound_sound_size); // using alloca since clang didn't like dynamically sized array here, for some reason.
-    memset(dry_sound_sound, 0, dry_sound_sound_size);
     
-    float *dry_sound[R_MAX(1,_num_dry_sounds)];
+    float *dry_sound[R_MAX(1,_num_dry_sounds)]; // r_max to avoid ubsan hit
     for(int ch=0;ch<_num_dry_sounds;ch++)
       dry_sound[ch] = &dry_sound_sound[ch*num_frames];
 
     R_ASSERT(has_run(time)==false);
     _last_time = time;
-    
-    // Fill inn target channels
-    FOR_EACH_ACTIVE_AUDIO_INPUT_LINK(this){
-      
-      RT_create_dry_sound_from_input_link(link, time, num_frames, dry_sound);
-      
-    }END_FOR_EACH_ACTIVE_AUDIO_INPUT_LINK;
-    
 
+    if (_num_inputs > 0){
+      
+      bool has_set[_num_inputs] = {};
+
+      for(auto *buffer : _input_buffers){
+        if (buffer->has_channels()){
+          
+          for(int ch=0;ch<_num_inputs;ch++){
+            if (has_set[ch]) {
+              JUCE_add_sound(dry_sound[ch], buffer->get_channel(ch), num_frames);
+            } else {
+              memcpy(dry_sound[ch], buffer->get_channel(ch), sizeof(float)*num_frames);
+              has_set[ch] = true;
+            }
+          }
+
+          buffer->RT_release_channels(radium::NeedsLock::YES);
+        }
+      }
+
+      for(int ch=0;ch<_num_inputs;ch++)
+        if (!has_set[ch])
+          memset(dry_sound[ch], 0, sizeof(float)*num_frames);
+      
+    }
+    
     PLUGIN_update_smooth_values(_plugin);
 
-    // output_sound and wet_sound is actually the same (optimization)
-    float **output_sound = _output_buffer.get_channels();
-    float **&wet_sound = output_sound;
     
+    // Note: output_sound and wet_sound is actually the same variable (optimization)
+    
+    float output_sound_sound[R_MAX(1, _num_outputs)*num_frames];
+    float *output_sound[R_MAX(1, _num_outputs)];
+    for(int ch=0;ch<_num_outputs;ch++)
+      output_sound[ch] = &output_sound_sound[ch*num_frames];
+
+    float **wet_sound = output_sound;
 
     {
       float temp_sound_sound[R_MAX(1, _num_inputs)*num_frames];
@@ -1913,22 +1975,27 @@ public:
       float latency_dry_sound_sound[R_MAX(1,_num_dry_sounds)][num_frames]; // Using 'R_MAX' since array[0] is undefined behavior. (ubsan fix only, most likely nothing bad would happen)
       const float *latency_dry_sound[R_MAX(1,_num_dry_sounds)];
       for(int ch=0;ch<_num_dry_sounds;ch++)        
-        latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch], latency_dry_sound_sound[ch], num_frames);
-      
+        latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch], latency_dry_sound_sound[ch], num_frames); // Usually a no-op. If the plugin has no latency, latency_dry_sound[ch] will just be set to dry_sound[ch].
+
       RT_apply_dry_wet(latency_dry_sound, _num_dry_sounds, // dry
                        wet_sound, _num_outputs,        // wet (-> becomes output sound)
                        num_frames,
                        &_plugin->drywet);
     }
+
+
+    //_input_buffers[cpunum]->RT_release_channels_if_necessary(radium::NeedsLock::YES);
     
+
     if (!include_pan_and_width_in_wet)
       RT_process_pan_and_width(output_sound, num_frames);
     
 
+    bool is_touched = false;
+    
     // Output peaks
     if (_num_outputs > 0) {
       float volume_peaks[_num_outputs];
-      bool is_touched = false;
       
       for(int ch=0;ch<_num_outputs;ch++) {
 
@@ -1939,19 +2006,13 @@ public:
           is_touched = true;
       }
 
-      if(is_touched) {
-        
+      if(is_touched)        
         RT_PLUGIN_touch(_plugin);
         
-        for(auto link : _output_links){
-          
-          if (false==link->is_event_link && link->is_active)
-            RT_PLUGIN_touch(link->target->_plugin);
-        }
-      }
-      
-      RT_set_output_peak_values(volume_peaks);
+      RT_set_output_peak_values(volume_peaks, output_sound);
     }
+
+    RT_iterate_output_links_after_process(time, num_frames, is_touched ? output_sound : NULL);      
   }
 };
 
@@ -2164,7 +2225,7 @@ void CpuUsage_delete(void *cpu_usage){
   delete (CpuUsage*)cpu_usage;
 }
 
-void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
+static void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
   SoundPlugin *plugin = producer->_plugin;
   
   bool is_visible = ATOMIC_GET_RELAXED(g_show_cpu_usage_in_mixer) || ATOMIC_GET_RELAXED(plugin->is_visible);
@@ -2187,6 +2248,8 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
     //double end_time = monotonic_rdtsc_seconds();
     //double end_time = monotonic_seconds();
     jack_time_t end_time = jack_get_time();
+
+    plugin->processing_time_so_far_in_jack_block += (end_time-start_time);
     
     //float new_cpu_usage = 100.0 * (end_time-start_time) / ((double)num_frames / MIXER_get_sample_rate());
 
@@ -2195,8 +2258,7 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
       float new_cpu_usage = plugin->processing_time_so_far_in_jack_block * 0.0001 * MIXER_get_sample_rate() / g_jackblock_size; //num_frames;
       cpu_usage->addUsage(new_cpu_usage);
       plugin->processing_time_so_far_in_jack_block = 0;
-    }else
-      plugin->processing_time_so_far_in_jack_block += (end_time-start_time);
+    }
   }
 }
 
@@ -2255,6 +2317,7 @@ void SP_print_tree(void){
     }    
   }
 }
+
 
 
 
