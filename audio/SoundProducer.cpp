@@ -2393,6 +2393,7 @@ int RT_SP_get_input_latency(const SoundProducer *sp){
   return sp->_highest_input_link_latency;
 }
 
+#if 0
 void SP_set_buffer_size(SoundProducer *producer,int buffer_size){
   if(producer->_plugin->type->buffer_size_is_changed != NULL)
     producer->_plugin->type->buffer_size_is_changed(producer->_plugin,buffer_size);
@@ -2400,6 +2401,7 @@ void SP_set_buffer_size(SoundProducer *producer,int buffer_size){
   producer->free_sound_buffers();
   producer->allocate_sound_buffers(buffer_size);
 }
+#endif
 
 double SP_get_running_time(const SoundProducer *sp){
   return sp->running_time;
