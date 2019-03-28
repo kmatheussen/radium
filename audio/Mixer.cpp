@@ -67,8 +67,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Mixer_proc.h"
 
-extern bool g_rt_always_run_buses;
-
 volatile bool g_test_crashreporter_in_audio_thread = false;
 
 extern PlayerClass *pc;
@@ -918,8 +916,6 @@ struct Mixer{
         excessive_time.restart();
       }
 
-      g_rt_always_run_buses = doAlwaysRunBuses();
-
       RT_AUDIOBUFFERS_optimize();
         
       RT_lock_player();
@@ -1405,7 +1401,6 @@ bool MIXER_start(void){
   }
 
   // Read a couple of settings variables from disk, so we don't read from disk in the realtime threads.
-  doAlwaysRunBuses();
   useJackTransport();
 
   AUDIOBUFFERS_init();

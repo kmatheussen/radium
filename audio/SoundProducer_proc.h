@@ -115,7 +115,6 @@ void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers); 
 void SP_remove_all_elinks(const radium::Vector<SoundProducer*> &soundproducers); // Only elinks.
 void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer, int64_t time);
 void SP_RT_called_for_each_soundcard_block2(SoundProducer *producer, int64_t time);
-void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins);
 void SP_RT_clean_output(SoundProducer *producer, int num_frames);
 void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins);
 void SP_RT_set_bus_descendant_type_for_plugin(SoundProducer *producer);

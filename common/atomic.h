@@ -155,6 +155,9 @@ static inline bool atomic_compare_and_set_float(float *variable, float old_value
 #define ATOMIC_COMPARE_AND_SET_POINTER_ARRAY(name, pos, old_value, new_value) \
   atomic_compare_and_set_pointer(&ATOMIC_NAME(name)[pos], old_value, new_value)
 
+#define ATOMIC_COMPARE_AND_SET_BOOL_ARRAY(name, pos, old_value, new_value) \
+  atomic_compare_and_set_bool(&ATOMIC_NAME(name)[pos], old_value, new_value)
+
 #define ATOMIC_SET_RETURN_OLD(name, val) \
   __atomic_exchange_n (&ATOMIC_NAME(name), val, __ATOMIC_SEQ_CST)
 

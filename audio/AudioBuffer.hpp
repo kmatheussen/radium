@@ -49,10 +49,14 @@ class AudioBuffer{
 }
 
 extern void AUDIOBUFFERS_init(void);
-extern void RT_AUDIOBUFFERS_optimize(void);
-extern void RT_AUDIOBUFFER_release_channel(radium::AudioBufferChannel *buffer, radium::NeedsLock needs_lock);
-extern radium::AudioBufferChannel *RT_AUDIOBUFFER_get_channel(radium::NeedsLock needs_lock)  __attribute__((returns_nonnull));
 
+extern void RT_AUDIOBUFFERS_optimize(void);
+
+extern void RT_AUDIOBUFFER_release_channel(radium::AudioBufferChannel *buffer, radium::NeedsLock needs_lock); // Use release_channels if releasing more than one, to avoid fragmentation.
+extern void RT_AUDIOBUFFER_release_channels(radium::AudioBufferChannel **channels, int num_ch, radium::NeedsLock needs_lock);
+
+extern radium::AudioBufferChannel *RT_AUDIOBUFFER_get_channel(radium::NeedsLock needs_lock)  __attribute__((returns_nonnull)); // User get_channels if allocating more than one, to avoid fragmentation.
+extern void RT_AUDIOBUFFER_get_channels(radium::AudioBufferChannel **channels, int num_channels, radium::NeedsLock needs_lock);
 
 namespace radium{
 
@@ -106,6 +110,7 @@ namespace radium{
     const int _num_ch;
     
   private:
+    bool _has_channels = false;
     AudioBufferChannel **_channels; // also const.
     
   public:
@@ -114,8 +119,7 @@ namespace radium{
       : _num_ch(num_ch)
       , _channels(new AudioBufferChannel*[num_ch])
     {
-      R_ASSERT(_num_ch >= 0);
-      
+      R_ASSERT(_num_ch >= 0);      
       
       for(int ch=0;ch<_num_ch;ch++)
         _channels[ch] = NULL;
@@ -128,24 +132,37 @@ namespace radium{
       delete[] _channels;
     }
 
-    bool has_data(void){
-      return _num_ch >= 0;
+    bool has_channels(void) const{
+      return _has_channels;
     }
     
     float *get_channel(int ch) const{
+      R_ASSERT_NON_RELEASE(_has_channels);
       return _channels[ch]->buffer;
     }
 
     // This one is probably 100% safe. (it better be, because it's used in the core of the audio engine)
     float **get_channels(void) const{
+      R_ASSERT_NON_RELEASE(_has_channels);
       return (float**)_channels;
+    }
+
+    void clean(void){
+      for(int ch=0;ch<_num_ch;ch++)
+        memset(_channels[ch]->buffer, 0, sizeof(float)*RADIUM_BLOCKSIZE);
     }
     
     void RT_obtain_channels(radium::NeedsLock needs_lock){
-      for(int ch=0;ch<_num_ch;ch++){
-        R_ASSERT(_channels[ch] == NULL);
-        _channels[ch] = RT_AUDIOBUFFER_get_channel(needs_lock);
-      }
+      RT_AUDIOBUFFER_get_channels(_channels, _num_ch, needs_lock);
+      _has_channels = true;
+    }
+    
+    bool RT_obtain_channels_if_necessary(radium::NeedsLock needs_lock){
+      if(_has_channels)
+        return false;
+      
+      RT_obtain_channels(needs_lock);
+      return true;
     }
     
     void RT_obtain_channels(AudioBufferChannelStorage &storage, radium::NeedsLock needs_lock){
@@ -153,22 +170,21 @@ namespace radium{
         R_ASSERT(_channels[ch] == NULL);
         _channels[ch] = storage.get(needs_lock);
       }
+      _has_channels = true;
     }
     
     void RT_release_channels(radium::NeedsLock needs_lock){
-      for(int ch=0;ch<_num_ch;ch++){
-        
-        if(_channels[ch] == NULL)
-          R_ASSERT(false);
-        else
-          RT_AUDIOBUFFER_release_channel(_channels[ch], needs_lock);
-        
-        _channels[ch] = NULL;
-      }
+      RT_AUDIOBUFFER_release_channels(_channels, _num_ch, needs_lock);
+      _has_channels = false;
     }
 
+    void RT_release_channels_if_necessary(radium::NeedsLock needs_lock){
+      if(_has_channels)
+        RT_release_channels(needs_lock);      
+    }
+      
     void RT_release_channels(AudioBufferChannelStorage &storage){
-      for(int ch=0;ch<_num_ch;ch++){
+      for(int ch=_num_ch-1;ch>=0;ch--){ // Make sure the order of the individual channels is the same as when we started.
         
         if(_channels[ch] == NULL)
           R_ASSERT(false);
@@ -177,9 +193,12 @@ namespace radium{
         
         _channels[ch] = NULL;
       }
+      
+      _has_channels = false;
     }
 
   };
+
 }
 
 

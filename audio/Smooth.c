@@ -12,11 +12,13 @@ static void init_it(Smooth *smooth, float value, int blocksize, int smooth_lengt
     blocksize=RADIUM_BLOCKSIZE;
   }
 
+#if (RADIUM_BLOCKSIZE!=DEFAULT_SMOOTH_LENGTH)
   if (smooth_length!=RADIUM_BLOCKSIZE && smooth_length!=DEFAULT_SMOOTH_LENGTH){
     R_ASSERT(false);
     smooth_length = DEFAULT_SMOOTH_LENGTH;
   }
-
+#endif
+  
   memset(smooth, 0, sizeof(Smooth));
 
   smooth->target_audio_will_be_modified = true;      
@@ -109,7 +111,7 @@ void SMOOTH_called_per_block(Smooth *smooth){
       
       for(int i=0;i<RADIUM_BLOCKSIZE;i++){
         smooth->values[i] = scale(i,
-                                  0, 64,
+                                  0, RADIUM_BLOCKSIZE,
                                   start_value, end_value);
       }
 

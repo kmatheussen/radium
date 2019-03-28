@@ -109,14 +109,16 @@ static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, So
   }
 }
 
-static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
+static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
 
-  radium::AudioBufferChannelStorage temp_channels; // minor optimization. Might decrease fluctuation of buffers between threads and CPUs. It also lowers spinlock usage.
-    
   R_ASSERT(sp!=NULL);
 
-  while(sp != NULL){
+  //int level = 0;
   
+  while(sp != NULL){
+
+    //for(int i=0;i<level;i++)printf("  "); printf("     >>> %d processes %s\n", cpunum, sp->_plugin->patch->name);
+            
 #if !defined(RELEASE)
     //  fprintf(stderr,"   Processing %p: %s %d\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,int(sp->is_processed));
     //fflush(stderr);
@@ -127,13 +129,7 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
 
     //printf("Running %s\n", sp->_plugin->patch->name);
 
-    bool must_release_output_buffer = false;
-
     if ( ! sp->RT_is_autosuspending()) {
-
-      must_release_output_buffer = ATOMIC_NAME(sp->_num_active_output_links_left) == 0;
-
-      sp->_output_buffer.RT_obtain_channels(temp_channels, radium::NeedsLock::YES);
 
       //double start_time = monotonic_seconds();
       
@@ -143,8 +139,17 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
       //    double duration = monotonic_seconds() - start_time;
       //if (duration > sp->running_time)
       //  sp->running_time = duration;
+      
+    } else {
+
+      for(auto *buffer : sp->_input_buffers)
+        buffer->RT_release_channels_if_necessary(radium::NeedsLock::YES);
+
+      sp->RT_iterate_output_links_after_process(time, num_frames, NULL); // last argument is sound (i.e. there's no sound)
+      
     }
     
+    //for(int i=0;i<level;i++)printf("  "); printf("     <<< %d processes %s\n",cpunum, sp->_plugin->patch->name);
 
     SoundProducer *next = NULL;
 
@@ -152,62 +157,15 @@ static void process_soundproducer(SoundProducer *sp, int64_t time, int num_frame
       if (link->is_active)
         dec_sp_dependency(link->source, link->target, next);
 
-    int num_channels_in_next = next==NULL ? 0 : next->_num_outputs;
-
-    for (SoundProducerLink *link : sp->_input_links) {
-      //FOR_EACH_ACTIVE_AUDIO_INPUT_LINK(sp){
-      if(link->is_active==false)
-        continue;
-      
-      SoundProducer *source = link->source;
-
-      int num_now = ATOMIC_ADD_RETURN_NEW(source->_num_active_output_links_left, -1);
-      
-      if(num_now==0) {
-
-        R_ASSERT_NON_RELEASE(source->_num_outputs > 0);
-        
-        if (!source->RT_is_autosuspending()) {
-
-          if (temp_channels.size() < num_channels_in_next)
-            source->_output_buffer.RT_release_channels(temp_channels);
-          else
-            source->_output_buffer.RT_release_channels(radium::NeedsLock::YES);
-          
-        }
-      }
-      
-      //printf("Decreased %s -> %s to %d\n", source->_plugin->patch->name, sp->_plugin->patch->name, ATOMIC_GET(source->_num_active_output_links_left));
-    
-      R_ASSERT_NON_RELEASE(num_now >= 0);
-      R_ASSERT_NON_RELEASE(ATOMIC_GET(source->_num_active_output_links_left) >= 0);
-    }
-
-
-    //int num_left = num_sp_left;
-    //printf("num_left2: %d\n",num_left);
-
-    // Må sjekke på FOR_EACH_ACTIVE_AUDIO_INPUT_LINK-måten om sp->_output_links er empty.
-    //if (sp->_output_links.is_empty()){
-    if (must_release_output_buffer){
-      //printf("  222. Releasing %d buffers for %s\n", sp->_num_outputs, sp->_plugin->patch->name);
-      sp->_output_buffer.RT_release_channels(radium::NeedsLock::YES);
-    }
-  
-  
     // Important that we decrease 'num_sp_left' AFTER scheduling other soundproducers for processing. (i.e. calling when 'dec_sp_dependency')
     if (ATOMIC_ADD_RETURN_NEW(num_sp_left, -1) == 0) {
       R_ASSERT(next==NULL);
       all_sp_finished.signal();
-      goto finished;
+      return;
     }
 
     sp = next;
   }
-  
- finished:
-  
-  temp_channels.release_all(radium::NeedsLock::YES);
 }
 
 
@@ -231,7 +189,10 @@ public:
   int num_frames;
   bool process_plugins;
 
-  Runner()
+  int _cpunum;
+  
+  Runner(int cpunum)
+    : _cpunum(cpunum)
   {
     ATOMIC_SET(must_exit, false);
     QObject::connect(this, SIGNAL(finished()), this, SLOT(onFinished()));
@@ -321,8 +282,8 @@ public:
         soundproducer_queue.put(sp);
         break;
       }
-            
-      process_soundproducer(sp, time, num_frames, process_plugins);
+
+      process_soundproducer(_cpunum, sp, time, num_frames, process_plugins);
     }
 
 
@@ -344,7 +305,7 @@ static void process_single_core(int64_t time, int num_frames, bool process_plugi
   while( ATOMIC_GET_RELAXED(num_sp_left) > 0 ) {
     // R_ASSERT(sp_ready.numSignallers()>0); // This assert can sometimes fail if there are still running runners with must_exit==true.
     SoundProducer *sp = soundproducer_queue.get();    
-    process_soundproducer(sp, time, num_frames, process_plugins);
+    process_soundproducer(0, sp, time, num_frames, process_plugins);
   }
 
   R_ASSERT_RETURN_IF_FALSE(all_sp_finished.numSignallers()==1);
@@ -417,10 +378,6 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
     
     ATOMIC_NAME(sp->_num_active_input_links_left) = sp->_num_active_input_links;
 
-    R_ASSERT_NON_RELEASE(sp->_num_active_output_links_left == 0);
-    
-    ATOMIC_NAME(sp->_num_active_output_links_left) = sp->_num_active_output_links;
-    
 #if !defined(RELEASE)
     ATOMIC_SET(sp->is_processed, false); // is this really necessary? When could it be true?
 #endif
@@ -475,9 +432,9 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
     if (g_use_buzy_get){
 
       // 4. Use main thread as another runner.
-      
-      process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
-      
+
+      process_soundproducer(0, sp_in_main_thread, time, num_frames, process_plugins);
+            
       int counter = 0;
       
       while(all_sp_finished.tryWaitLightly()==false){
@@ -485,7 +442,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 	bool gotit;
 	sp_in_main_thread = soundproducer_queue.tryGet(gotit);
 	if (gotit)
-	  process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
+	  process_soundproducer(0, sp_in_main_thread, time, num_frames, process_plugins);
 	else
 	  avoid_lockup(counter++);      
       }
@@ -495,8 +452,8 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
       // 4. process as much as we can in the main thread
       
       while(sp_in_main_thread != NULL){
-	process_soundproducer(sp_in_main_thread, time, num_frames, process_plugins);
-	
+	process_soundproducer(0, sp_in_main_thread, time, num_frames, process_plugins);
+              
 	bool gotit;
 	sp_in_main_thread = soundproducer_queue.tryGet(gotit); // This is not perfect. It's likely that we fail to get a soundproducer before everything is done.
 	if (!gotit)
@@ -559,8 +516,8 @@ static int get_num_cpus_from_config(void){
   if (default_num_cpus<1)
     default_num_cpus = 1;
 
-  if (default_num_cpus>25)
-    default_num_cpus = 256; // ensure sane value
+  if (default_num_cpus>MAX_NUM_CPUS)
+    default_num_cpus = MAX_NUM_CPUS; // ensure sane value
 
   return SETTINGS_read_int32(settings_key, default_num_cpus);
 }
@@ -583,7 +540,7 @@ void MULTICORE_set_num_threads(int num_new_cpus){
 
   // start them
   for(int i=0 ; i < num_new_runners ; i++)
-    new_runners[i]=new Runner;
+    new_runners[i]=new Runner(i+1); // add 1 since, cpunum 0 is main player thread.
 
   // wait until they are ready (takes some time, but if we don't wait here, there will be a moment where there are no active runners, and no sound)
   for(int i=0 ; i < num_new_runners ; i++)
