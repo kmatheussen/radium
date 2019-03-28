@@ -1909,8 +1909,9 @@ public:
 
     if (_num_inputs > 0){
       
-      bool has_set[_num_inputs] = {};
-
+      bool has_set[_num_inputs];
+      memset(has_set, 0, sizeof(bool)*_num_inputs);
+      
       for(auto *buffer : _input_buffers){
         if (buffer->has_channels()){
           
