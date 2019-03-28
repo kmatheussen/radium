@@ -1168,8 +1168,12 @@ struct Mixer{
   }
   
   static int RT_rjack_buffer_size_changed(jack_nframes_t num_frames, void *arg){
+    
     Mixer *mixer = static_cast<Mixer*>(arg);
 
+    if (mixer->_buffer_size==(int)num_frames)
+      return 0;
+    
     lock_player();{  // Not sure which thread this callback is called from.
       mixer->_buffer_size = num_frames;
 
@@ -1178,10 +1182,12 @@ struct Mixer{
       
     }unlock_player();
 
-    RT_message("Error: Radium does not officially support changing jack block size during runtime. It might work, it might not work. You should save your song and restart Radium to avoid undefined behavior.");
+    const char *main_message = "Error: Radium does not officially support changing jack block size during runtime. It might work, it might not work. You should save your song and restart Radium to avoid undefined behavior.";
                
     if( (mixer->_buffer_size % RADIUM_BLOCKSIZE) != 0)
-      RT_message("Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", mixer->_buffer_size, RADIUM_BLOCKSIZE);
+      RT_message("%s.\nAlso, jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", main_message, mixer->_buffer_size, RADIUM_BLOCKSIZE);
+    else
+      RT_message("%s", main_message);
 
     return 0;
   }
