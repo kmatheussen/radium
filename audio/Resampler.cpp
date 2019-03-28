@@ -86,12 +86,14 @@ struct InterpolatingResampler : public Resampler{
 private:
   
   int read_internal(
-                    double actual_ratio,
+                    const double actual_ratio,
                     int num_out_frames_left,
                     float *out,
                     int total_num_frames_produced
                     )
   {
+    
+  top:
     
     if (num_out_frames_left==0)
       return total_num_frames_produced;
@@ -123,12 +125,21 @@ private:
     m_num_in_frames_left  -= num_frames_consumed;
     m_in                  += num_frames_consumed;
 
+#if 1
+    // Simulate recursive function here. Doesn't seem like gcc does tail optimization, at least not with -Og. Got crash because it runs out of stack when setting radium block size to 4096.
+    num_out_frames_left -= num_frames_produced;
+    out += num_frames_produced;
+    total_num_frames_produced += num_frames_produced;
+
+    goto top;
+#else
     return read_internal(
                          actual_ratio,
                          num_out_frames_left       - num_frames_produced,
                          out                       + num_frames_produced,
                          total_num_frames_produced + num_frames_produced
                          );
+#endif
   }
     
 public:

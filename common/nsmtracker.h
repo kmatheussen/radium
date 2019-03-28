@@ -174,9 +174,12 @@ typedef int32_t NInt;
 #define LATENCY 0 // Dont need this when the player is called from the jack thread.
 
 
+extern int g_audio_block_size;
+
 // Must be a multiply of 64 because of pd, which uses a block size of 64. 64 seems to work fine.
-#define RADIUM_BLOCKSIZE 64
+//#define RADIUM_BLOCKSIZE 64
 //#define RADIUM_BLOCKSIZE 1024
+#define RADIUM_BLOCKSIZE g_audio_block_size
 
 #define MAX_NUM_CPUS 128
 

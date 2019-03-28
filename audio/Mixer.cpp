@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 #include "../common/seqtrack_proc.h"
 #include "../common/sequencer_timing_proc.h"
+#include "../common/settings_proc.h"
 
 #include "../midi/midi_i_input_proc.h"
 
@@ -82,6 +83,7 @@ static volatile int g_num_click_plugins = 0;
 static SoundPlugin **g_click_plugins = NULL;
 static Patch **g_click_patches = NULL; // only written to in RT_MIXER_get_all_click_patches.
 
+int g_audio_block_size = 64;
 
 
 #ifdef MEMORY_DEBUG
@@ -756,11 +758,27 @@ struct Mixer{
   
     _sample_rate = jack_get_sample_rate(_rjack_client);
     _buffer_size = jack_get_buffer_size(_rjack_client);
-    if(_buffer_size < RADIUM_BLOCKSIZE)
-      GFX_Message(NULL, "Jack's blocksize of %d is less than Radium's block size of %d. You will get bad sound. Adjust your audio settings.", _buffer_size, RADIUM_BLOCKSIZE);
-    else if((_buffer_size % RADIUM_BLOCKSIZE) != 0)
+    //if(_buffer_size < RADIUM_BLOCKSIZE)
+    //  GFX_Message(NULL, "Jack's blocksize of %d is less than Radium's block size of %d. You will get bad sound. Adjust your audio settings.", _buffer_size, RADIUM_BLOCKSIZE);
+    
+    if(_buffer_size < RADIUM_BLOCKSIZE){
+
+      SETTINGS_write_int("audio_block_size",_buffer_size);
+      
+      GFX_Message(NULL,
+                  "Radium's internal block size (%d) is higher than Jack's block size (%d). This is not supported.\n"
+                  "Radium block size has now been set to %d, but Radium needs to restart first. After program is finished shutting down, please start Radium again."
+                  ,
+                  RADIUM_BLOCKSIZE, _buffer_size, _buffer_size);
+      
+      return false;
+      
+    } else if((_buffer_size % RADIUM_BLOCKSIZE) != 0) {
+      
       GFX_Message(NULL, "Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", _buffer_size, RADIUM_BLOCKSIZE);
 
+    }
+    
     g_last_set_producer_buffersize = _buffer_size;
     g_jack_client_priority = jack_client_real_time_priority(_rjack_client);
 

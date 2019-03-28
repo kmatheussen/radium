@@ -40,12 +40,14 @@ class AudioBuffer{
     YES,NO
       };
 
+  extern "C"{
   struct AudioBufferChannel{
     union{
       AudioBufferChannel *next;
-      float buffer[RADIUM_BLOCKSIZE];
+      float buffer[64]; // Note: The allocated size is actually RADIUM_BLOCKSIZE. We just set 64 to avoid compilation errors.
     };
   };
+  }
 }
 
 extern void AUDIOBUFFERS_init(void);

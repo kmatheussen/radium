@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 // Must be a multiple of RADIUM_BLOCKSIZE
 #define DEFAULT_SMOOTH_LENGTH 1024
+//#define DEFAULT_SMOOTH_LENGTH 4096
 
 typedef struct{
   float *values;

@@ -336,6 +336,8 @@ struct Voice{
   int num_samples = 0;
   const Sample *sample = NULL;
 
+  double vibrato_phase;
+  double vibrato_value;
 };
 
 struct Note{
@@ -912,7 +914,7 @@ static double RT_get_src_ratio(Data *data, Voice *voice){
 
   // Add vibrato here instead of in get_src_ratio3 to avoid weird peaks
   if (data->p.vibrato_phase_add > 0.0) {
-    pitch += data->p.vibrato_value;
+    pitch += voice->vibrato_value; //data->p.vibrato_value;
     //printf("%f ,%f",data->p.vibrato_depth,data->p.vibrato_value);
   }
 
@@ -1005,10 +1007,44 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
     return false;
   
   float resampled_data[num_frames];
-  int frames_created_by_resampler = RT_get_resampled_data(data,voice,resampled_data,num_frames);
-  //printf("Frames created by resampler: %d\n",frames_created_by_resampler);
-  //printf("peak: %f\n",get_peak(resampled_data,frames_created_by_resampler));
+  int frames_created_by_resampler = 0;
 
+  {
+    bool do_add_vibrato = data->p.vibrato_phase_add > 0.0;
+    
+    int num_frames_inc;
+    
+    if (do_add_vibrato){
+      
+      voice->vibrato_value = data->p.vibrato_value;
+      voice->vibrato_phase = data->p.vibrato_phase;
+      
+      num_frames_inc = 64;  // Run smaller inner loop if using vibrato.
+      
+    } else {
+      
+      num_frames_inc = num_frames;
+
+    }
+
+    for(int i=0;i<num_frames;i+=num_frames_inc){
+      
+      int num_frames2 = num_frames_inc;
+
+      if( i + num_frames2 > num_frames)
+        num_frames2 = num_frames - i;
+      
+      frames_created_by_resampler += RT_get_resampled_data(data,voice,resampled_data+i,num_frames2);
+      //printf("Frames created by resampler: %d\n",frames_created_by_resampler);
+      //printf("peak: %f\n",get_peak(resampled_data,frames_created_by_resampler));
+      
+      if(do_add_vibrato){
+        voice->vibrato_value = data->p.vibrato_depth * sin(voice->vibrato_phase);
+        voice->vibrato_phase += data->p.vibrato_phase_add*(double)num_frames2;
+      }
+    }
+  }
+  
   if (frames_created_by_resampler==0)
     return true;
   
@@ -1110,12 +1146,12 @@ static void RT_release_voice_for_playing_with_granulation(Voice *voice){
 }
 
 
-static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL float **inputs, float **outputs){
+static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
 
-  memset(outputs[0],0,R_NUM_FRAMES*sizeof(float));
-  memset(outputs[1],0,R_NUM_FRAMES*sizeof(float));
+  memset(outputs[0],0,num_frames*sizeof(float));
+  memset(outputs[1],0,num_frames*sizeof(float));
 
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
     float *audio_[data->recorder_instance->num_ch];
@@ -1152,34 +1188,36 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
 
     return;
   }
+
+  bool do_add_vibrato = data->p.vibrato_phase_add > 0.0;
   
-  if (data->p.vibrato_phase_add > 0.0) {
+  if (do_add_vibrato){
     data->p.vibrato_value = data->p.vibrato_depth * sin(data->p.vibrato_phase);
-    data->p.vibrato_phase += data->p.vibrato_phase_add*(double)R_NUM_FRAMES;
+    data->p.vibrato_phase += data->p.vibrato_phase_add*(double)num_frames;
   }
-  
+
   bool was_playing_something = data->voices_playing != NULL;
-  
+    
   while(voice!=NULL){
     Voice *next = voice->next;
-
-    if(RT_play_voice(data, voice, R_NUM_FRAMES, outputs)==true){
+    
+    if(RT_play_voice(data, voice, num_frames, outputs)==true){
       RT_release_voice_for_playing_with_granulation(voice);
       RT_remove_voice(&data->voices_playing, voice);
       RT_add_voice(&data->voices_not_playing, voice);
     }
-
+    
     voice = next;
   }
-
+    
   if (was_playing_something){
-    data->tremolo->type->RT_process(data->tremolo, time, R_NUM_FRAMES, outputs, outputs);
+    data->tremolo->type->RT_process(data->tremolo, time, num_frames, outputs, outputs);
     if(ATOMIC_GET_RELAXED(data->p.gran_enabled)){
       float gran_volume = data->p.gran_volume;
       if (gran_volume != 0.0){
         gran_volume = db2gain(gran_volume);
         for(int ch=0;ch<2;ch++)
-          for(int i=0;i<R_NUM_FRAMES;i++)
+          for(int i=0;i<num_frames;i++)
             outputs[ch][i] *= gran_volume;
       }
     }
@@ -1188,12 +1226,12 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
   Data *new_data = ATOMIC_GET(data->new_data);
   
   if(new_data != NULL){
-    RT_fade_out(outputs[0],R_NUM_FRAMES);
-    RT_fade_out(outputs[1],R_NUM_FRAMES);
-
+    RT_fade_out(outputs[0],num_frames);
+    RT_fade_out(outputs[1],num_frames);
+    
     plugin->data = new_data; // Bang! (hmm.)
     ATOMIC_SET(data->new_data, NULL);
-
+    
     RSEMAPHORE_signal(data->signal_from_RT,1);
   }
 }

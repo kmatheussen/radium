@@ -424,7 +424,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         mma32->setChecked(true);
         break;
       }
-      
 
 #if USE_QT5
       eraseEstimatedVBlankInterval->hide();
@@ -492,6 +491,18 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       autobypass_delay->setValue(getAutoBypassDelay());
       undo_solo->setChecked(doUndoSolo());
       undo_bypass->setChecked(doUndoBypass());
+
+      switch(RADIUM_BLOCKSIZE){
+      case 64: b64->setChecked(true); break;
+      case 128: b128->setChecked(true); break;
+      case 256: b256->setChecked(true); break;
+      case 512: b512->setChecked(true); break;
+      case 1024: b1024->setChecked(true); break;
+      case 2048: b2048->setChecked(true); break;
+      case 4096: b4096->setChecked(true); break;
+      case 8192: b8192->setChecked(true); break;
+      }
+
     }
 
     {
@@ -865,6 +876,15 @@ public slots:
     }GL_unlock();
   }
 
+  void on_b64_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 64);  }
+  void on_b128_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 128);  }
+  void on_b256_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 256);  }
+  void on_b512_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 512);  }
+  void on_b1024_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 1024);  }
+  void on_b2048_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 2048);  }
+  void on_b4096_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 4096);  }
+  void on_b8192_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 8192);  }
+  
   // embedded audio file paths
   void on_embedded_audio_files_editingFinished(){
     setEmbeddedAudioFilesPath(embedded_audio_files->text().toUtf8().constData());
