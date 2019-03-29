@@ -1,3 +1,28 @@
+Changes 5.9.49 -> 5.9.50:
+* Audio: Make internal block size configurable.
+  CPU usage is reduced significantly when the
+  internal block size is increased.
+* Jack: Show error message if changing jack block
+  size during runtime.
+* Audio: Reorganized the audio engine in order to
+  significantly reduce CPU usage when there's many
+  sound objects.
+* Audio: Remove the "Recalculate latency on the
+  fly..." option since it is not necessary anymore.
+* Editor: Don't move cursor when stopping to play
+  block and jack transport is enabled. This fix also
+  turns off the ability for another program to set
+  current editor block and line when not playing.
+* Audio: Share output buffers between instruments to
+  decrease cache misses. Significantly reduces CPU
+  usage when there's many instruments.
+* Sampler instrument: Fix displaying empty waveforms
+  in the editor (very rarely though) when automating
+  pitch or stretch.
+* API: Removed doAlwaysRunBuses, setAlwaysRunBuses
+
+
+
 Changes 5.9.48 -> 5.9.49:
 * System: Updated Qt to 5.12.2.
 * GUI: Color tweaks.
