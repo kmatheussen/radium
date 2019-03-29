@@ -544,15 +544,15 @@ void SEQBLOCK_AUTOMATION_free(struct SeqblockAutomation *seqblockenvelope){  // 
   delete seqblockenvelope;
 }
 
-double SEQBLOCK_AUTOMATION_get_min_value(struct SeqblockAutomation *seqblockenvelope){
+double SEQBLOCK_AUTOMATION_get_min_value(const struct SeqblockAutomation *seqblockenvelope){
   return seqblockenvelope->_min_value;
 }
 
-double SEQBLOCK_AUTOMATION_get_default_value(struct SeqblockAutomation *seqblockenvelope){
+double SEQBLOCK_AUTOMATION_get_default_value(const struct SeqblockAutomation *seqblockenvelope){
   return seqblockenvelope->_default_value;
 }
 
-double SEQBLOCK_AUTOMATION_get_max_value(struct SeqblockAutomation *seqblockenvelope){
+double SEQBLOCK_AUTOMATION_get_max_value(const struct SeqblockAutomation *seqblockenvelope){
   return seqblockenvelope->_max_value;
 }
 
