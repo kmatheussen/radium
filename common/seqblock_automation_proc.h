@@ -52,9 +52,9 @@ extern LANGSPEC void RT_SEQBLOCK_AUTOMATION_called_when_player_stopped(void);
 
 struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t automation_state, double state_samplerate);
 void SEQBLOCK_AUTOMATION_free(struct SeqblockAutomation *seqblockenvelope);
-double SEQBLOCK_AUTOMATION_get_min_value(struct SeqblockAutomation *seqblockenvelope);
-double SEQBLOCK_AUTOMATION_get_default_value(struct SeqblockAutomation *seqblockenvelope);
-double SEQBLOCK_AUTOMATION_get_max_value(struct SeqblockAutomation *seqblockenvelope);
+double SEQBLOCK_AUTOMATION_get_min_value(const struct SeqblockAutomation *seqblockenvelope);
+double SEQBLOCK_AUTOMATION_get_default_value(const struct SeqblockAutomation *seqblockenvelope);
+double SEQBLOCK_AUTOMATION_get_max_value(const struct SeqblockAutomation *seqblockenvelope);
 const char *SEQBLOCK_AUTOMATION_get_display_string(struct SeqblockAutomation *seqblockenvelope, double value);
 double SEQBLOCK_AUTOMATION_get_value(struct SeqblockAutomation *seqblockenvelope, int nodenum);
 double SEQBLOCK_AUTOMATION_get_value_for_time(struct SeqblockAutomation *seqblockenvelope, int64_t time);

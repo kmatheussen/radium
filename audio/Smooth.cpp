@@ -26,7 +26,7 @@ static void init_it(Smooth *smooth, float value, int blocksize, int smooth_lengt
   smooth->smooth_length = smooth_length;
     
   //smooth->num_values = blocksize;
-  smooth->values = V_calloc(sizeof(float), blocksize);
+  smooth->values = (float*)V_calloc(sizeof(float), blocksize);
   
   SMOOTH_force_target_value(smooth, value);
 }
@@ -43,9 +43,7 @@ void SMOOTH_force_target_value(Smooth *smooth, float value){
   smooth->target_value = value;
   smooth->value = value;
 
-  int i;
-  for(i=0;i<R_MIN(smooth->smooth_length, RADIUM_BLOCKSIZE);i++)
-    smooth->values[i] = value;
+  juce::FloatVectorOperations::fill(smooth->values, value, R_MIN(smooth->smooth_length, RADIUM_BLOCKSIZE));
 }
 
 /*
@@ -87,9 +85,7 @@ void SMOOTH_called_per_block(Smooth *smooth){
   if(smooth->value == next_target_value && smooth->pos==0){
 
     if(smooth->smoothing_is_necessary==true){
-      int i;
-      for(i=0;i<R_MIN(smooth->smooth_length, RADIUM_BLOCKSIZE);i++) // shouldn't be necessary.
-        smooth->values[i] = next_target_value;
+      juce::FloatVectorOperations::fill(smooth->values, next_target_value, R_MIN(smooth->smooth_length, RADIUM_BLOCKSIZE));
 
       smooth->smoothing_is_necessary = false;
     }
@@ -134,28 +130,68 @@ void SMOOTH_called_per_block(Smooth *smooth){
   }
 }
 
-void SMOOTH_apply_volume(const Smooth *smooth, float *sound, int num_frames){
+void SMOOTH_apply_volume(const Smooth *__restrict__ smooth, float *__restrict__ sound, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
     
-  int i;
   if(is_smoothing_necessary(smooth)==true){
-    float *values = smooth->values;
-    for(i=0;i<num_frames;i++){
-      //if(smooth->last_target_value==0.0f || smooth->target_value==0.0f)
-      //  printf("val %d: %f\n",i,values[i]);
-      sound[i] *= values[i];
-    }
+    
+    juce::FloatVectorOperations::multiply(sound, smooth->values, RADIUM_BLOCKSIZE);
+    
   }else{
     float volume = smooth->value; // might be a click here if volume is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen. (edited much later: I guess "target_value" was introduced to eliminate this possibility, and perhaps also because "value" is not an atomic variable.)
-    if(volume != 1.0f)
-      for(i=0;i<num_frames;i++)
+    if(volume != 1.0f)      
+      for(int i=0;i<num_frames;i++)
         sound[i] *= volume;
   }
 }
 
 
-// Note: SMOOTH_copy_sound has been moved to Juce_plugins.cpp in order to use the optimized vector functions in Juce.
-// (SMOOTH_copy_sound uses a significant amount of CPU when there's many instruments.)
+static inline void copy_sound2(const Smooth *__restrict__ smooth, float *__restrict__ dst, const float *__restrict src, const int num_frames){
+  if(is_smoothing_necessary(smooth)==true){
+    
+    float *__restrict__ values = smooth->values;
+
+    /*
+      for(int i=0;i<64;i++){
+        //if(smooth->last_target_value==0.0f || smooth->target_value==0.0f)
+        //  printf("val %d: %f\n",i,values[i]);      
+        dst[i] = src[i] * values[i];
+      }
+    */
+
+    juce::FloatVectorOperations::multiply(dst, src, values, num_frames);
+
+  }else{
+    
+    const float volume = smooth->value; // might be a click here if volume is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen.
+    if(volume > 0.0f){
+      if (volume == 1.0f){
+        memcpy(dst, src, sizeof(float)*num_frames);
+      }else{
+        /*
+          for(int i=0;i<64;i++)
+          dst[i] = src[i] * volume;
+        */
+        juce::FloatVectorOperations::copyWithMultiply(dst, src, volume, num_frames);
+      }
+    } else {
+      memset(dst,0,sizeof(float)*num_frames);
+    }
+    
+  }
+}
+
+void SMOOTH_copy_sound(const Smooth *__restrict__ smooth, const float *__restrict src, float *__restrict__ dst, const int num_frames){
+  R_ASSERT_NON_RELEASE(smooth->target_audio_will_be_modified==true);
+
+  if (num_frames==64){
+    copy_sound2(smooth, dst, src, 64);
+  } else {
+    R_ASSERT_NON_RELEASE(false);
+    copy_sound2(smooth, dst, src, num_frames);
+  }
+}
+
 
   
 #if 0
@@ -191,10 +227,10 @@ void SMOOTH_mix_sounds_raw(float *target, const float *source, int num_frames, f
 
   if(fabsf(diff) < 0.0005){ 
 
-    for(i=0;i<num_frames;i++)
-      target[i] += source[i] * end_volume;
+    juce::FloatVectorOperations::addWithMultiply(target, source, end_volume, num_frames);
    
   }else{
+    
     float val = start_volume;
     float inc = diff/num_frames;
 
@@ -216,73 +252,85 @@ bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(const 
 void SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
-  int i;
-  if(is_smoothing_necessary(smooth)==true){
-    float *values = smooth->values;
-    for(i=0;i<num_frames;i++)
-      target[i] += source[i] * values[i];
-  }else{
+  if(is_smoothing_necessary(smooth)==true) {
+
+    juce::FloatVectorOperations::addWithMultiply(target, source, smooth->values, num_frames);
+        
+  } else {
+
     //printf("%p smooth->get: %f, smooth->set: %f. start: %f, end: %f\n",smooth,smooth->get,smooth->set,smooth->start_value,smooth->end_value);
     float volume = smooth->value;
     
     if(volume == 1.0f)
-      for(i=0;i<num_frames;i++)
-        target[i] += source[i];
+      juce::FloatVectorOperations::add(target, source, num_frames);
     
     else if(volume > 0.0f)
-      for(i=0;i<num_frames;i++)
-        target[i] += source[i] * volume;
+      juce::FloatVectorOperations::addWithMultiply(target, source, volume, num_frames);
+    
   }
 }
 
-void SMOOTH_mix_sounds_from_mono_to_stereo(const Smooth *smooth, float *target_ch0, float *target_ch1, const float *source, int num_frames){
+void SMOOTH_mix_sounds_from_mono_to_stereo(const Smooth *__restrict__ smooth, float *__restrict__ target_ch0, float *__restrict__ target_ch1, const float *__restrict__ source, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
-  int i;
   if(is_smoothing_necessary(smooth)==true){
+
+#if 1
+    // haven't benchmarked, but I guess this one might be faster.
+    juce::FloatVectorOperations::addWithMultiply(target_ch0, source, smooth->values, num_frames);
+    juce::FloatVectorOperations::addWithMultiply(target_ch1, source, smooth->values, num_frames);
+#else
     float *values = smooth->values;
-    for(i=0;i<num_frames;i++){
+
+    for(int i=0;i<num_frames;i++){
       float sample = source[i] * values[i];
       target_ch0[i] += sample;
       target_ch1[i] += sample;
     }
-  }else{
+#endif
+    
+  } else{
+    
     //printf("%p smooth->get: %f, smooth->set: %f. start: %f, end: %f\n",smooth,smooth->get,smooth->set,smooth->start_value,smooth->end_value);
     float volume = smooth->value;
     
     if(volume == 1.0f)
-      for(i=0;i<num_frames;i++){
+      for(int i=0;i<num_frames;i++){
         float sample = source[i];
         target_ch0[i] += sample;
         target_ch1[i] += sample;
       }
     
     else if(volume > 0.0f)
-      for(i=0;i<num_frames;i++){
+      for(int i=0;i<num_frames;i++){
         float sample = source[i] * volume;
         target_ch0[i] += sample;
         target_ch1[i] += sample;
       }
+    
   }
 }
 
-void SMOOTH_mix_sounds_using_inverted_values(const Smooth *smooth, float *wet, const float *dry, int num_frames){
+void SMOOTH_mix_sounds_using_inverted_values(const Smooth *__restrict__ smooth, float *__restrict__ wet, const float *__restrict__ dry, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
-  int i;
   if(is_smoothing_necessary(smooth)==true){
+    
     float *values = smooth->values;
-    for(i=0;i<num_frames;i++)
+    for(int i=0;i<num_frames;i++)
       wet[i] += dry[i] * (1.0f-values[i]);
-  }else{
+    
+  } else {
+    
     //printf("%p smooth->get: %f, smooth->set: %f. start: %f, end: %f\n",smooth,smooth->get,smooth->set,smooth->start_value,smooth->end_value);
     float volume = (1.0f-smooth->value);
+    
     if(volume == 1.0f)
-      for(i=0;i<num_frames;i++)
-        wet[i] += dry[i];
+      juce::FloatVectorOperations::add(wet, dry, num_frames);
+      
     else if(volume > 0.0f)
-      for(i=0;i<num_frames;i++)
-        wet[i] += dry[i] * volume;
+      juce::FloatVectorOperations::addWithMultiply(wet, dry, volume, num_frames);
+    
   }
 }
 
@@ -339,13 +387,12 @@ static Panvals das_get_pan_vals_vector(float pan, int num_source_channels){
 
 // Think I found this pan calculation method in the ardour source many years ago.
 // TODO: Optimize panning when smoothing is necessary.
-void SMOOTH_apply_pan(const Smooth *smooth, float **sound, int num_channels, int num_frames){
+void SMOOTH_apply_pan(const Smooth *__restrict__ smooth, float **__restrict__ sound, int num_channels, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
-  int i;
   if(num_channels>=2){
-    float *sound0 = sound[0];
-    float *sound1 = sound[1];
+    float *__restrict__ sound0 = sound[0];
+    float *__restrict__ sound1 = sound[1];
 
     if(is_smoothing_necessary(smooth)==true){
 
@@ -355,11 +402,17 @@ void SMOOTH_apply_pan(const Smooth *smooth, float **sound, int num_channels, int
       Panvals pan_end   = das_get_pan_vals_vector(scale(smooth->values[num_frames-1],0,1,-1,1),2);
       //fprintf(stderr,"s3\n");
 
-      for(i=0;i<num_frames;i++) {
+      for(int i=0;i<num_frames;i++) {
         float sound0i = sound0[i];
         float sound1i = sound1[i];
-        sound0[i] = sound0i*scale(i,0,num_frames,pan_start.vals[0][0],pan_end.vals[0][0]) + sound1i*scale(i,0,num_frames,pan_start.vals[1][0],pan_end.vals[1][0]);
-        sound1[i] = sound0i*scale(i,0,num_frames,pan_start.vals[0][1],pan_end.vals[0][1]) + sound1i*scale(i,0,num_frames,pan_start.vals[1][1],pan_end.vals[1][1]);
+        
+        sound0[i] =
+          sound0i * scale(i,   0, num_frames,   pan_start.vals[0][0], pan_end.vals[0][0]) +
+          sound1i * scale(i,   0, num_frames,   pan_start.vals[1][0], pan_end.vals[1][0]);
+        
+        sound1[i] =
+          sound0i * scale(i,   0, num_frames,   pan_start.vals[0][1], pan_end.vals[0][1]) +
+          sound1i * scale(i,   0, num_frames,   pan_start.vals[1][1], pan_end.vals[1][1]);
       }
 
     } else {
@@ -370,24 +423,54 @@ void SMOOTH_apply_pan(const Smooth *smooth, float **sound, int num_channels, int
 #if 1
         if(smooth->value < 0.5f){
 
-          for(i=0;i<num_frames;i++)
-            sound0[i] += sound1[i]*pan.vals[1][0];
+          if(smooth->value < 0.001f){
 
-          for(i=0;i<num_frames;i++)
-            sound1[i] *= pan.vals[1][1];
+            juce::FloatVectorOperations::add(sound0, sound1, num_frames);
+            memset(sound1, 0, sizeof(float)*num_frames);
 
+          } else {
+            
+            juce::FloatVectorOperations::addWithMultiply(sound0, sound1, pan.vals[1][0], num_frames);
+            /*
+              for(i=0;i<num_frames;i++)
+              sound0[i] += sound1[i]*pan.vals[1][0];
+            */
+            
+            juce::FloatVectorOperations::multiply(sound1, pan.vals[1][1], num_frames);
+            /*
+              for(i=0;i<num_frames;i++)
+              sound1[i] *= pan.vals[1][1];
+            */
+            
+          }
+          
         } else {
 
-          for(i=0;i<num_frames;i++)
-            sound1[i] += sound0[i]*pan.vals[0][1];
+          if(smooth->value > 0.999f){
+          
+            juce::FloatVectorOperations::add(sound1, sound0, num_frames);
+            memset(sound0, 0, sizeof(float)*num_frames);
 
-          for(i=0;i<num_frames;i++)
-            sound0[i] *= pan.vals[0][0];
+          } else {
+
+            juce::FloatVectorOperations::addWithMultiply(sound1, sound0, pan.vals[0][1], num_frames);
+            /*
+              for(i=0;i<num_frames;i++)
+              sound1[i] += sound0[i]*pan.vals[0][1];
+            */
+            
+            juce::FloatVectorOperations::multiply(sound0, pan.vals[0][0], num_frames);
+            /*
+              for(i=0;i<num_frames;i++)
+              sound0[i] *= pan.vals[0][0];
+            */
+            
+          }
 
         }
 #else
         // Same, but perhaps a bit slower.
-        for(i=0;i<num_frames;i++) {
+        for(int i=0;i<num_frames;i++) {
           float sound0i = sound0[i];
           float sound1i = sound1[i];
           sound0[i] = sound0i*pan.vals[0][0] + sound1i*pan.vals[1][0];

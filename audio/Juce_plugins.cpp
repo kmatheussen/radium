@@ -122,10 +122,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_gui_proc.h"
 
 
-#include "../midi/midi_juce.cpp"
 #include "Juce_plugins_proc.h"
 
 //#undef Slider
+
+
+
+#include "../midi/midi_juce.cpp"
+#include "Smooth.cpp"
 
 
 
@@ -2651,54 +2655,6 @@ const char *JUCE_get_backtrace(void){
   return g_backtrace.toUTF8();
 }
 
-
-#include "Smooth_proc.h"
-
-static inline void copy_sound2(const Smooth *__restrict__ smooth, float *__restrict__ dst, const float *__restrict src, const int num_frames){
-  if(is_smoothing_necessary(smooth)==true){
-    
-    float *__restrict__ values = smooth->values;
-
-    /*
-      for(int i=0;i<64;i++){
-        //if(smooth->last_target_value==0.0f || smooth->target_value==0.0f)
-        //  printf("val %d: %f\n",i,values[i]);      
-        dst[i] = src[i] * values[i];
-      }
-    */
-
-    juce::FloatVectorOperations::multiply(dst, src, values, num_frames);
-
-  }else{
-    
-    const float volume = smooth->value; // might be a click here if volume is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen.
-    if(volume > 0.0f){
-      if (volume == 1.0f){
-        memcpy(dst, src, sizeof(float)*num_frames);
-      }else{
-        /*
-          for(int i=0;i<64;i++)
-          dst[i] = src[i] * volume;
-        */
-        juce::FloatVectorOperations::copyWithMultiply(dst, src, volume, num_frames);
-      }
-    } else {
-      memset(dst,0,sizeof(float)*num_frames);
-    }
-    
-  }
-}
-
-void SMOOTH_copy_sound(const Smooth *__restrict__ smooth, const float *__restrict src, float *__restrict__ dst, const int num_frames){
-  R_ASSERT_NON_RELEASE(smooth->target_audio_will_be_modified==true);
-
-  if (num_frames==RADIUM_BLOCKSIZE){
-    copy_sound2(smooth, dst, src, RADIUM_BLOCKSIZE);
-  } else {
-    R_ASSERT_NON_RELEASE(false);
-    copy_sound2(smooth, dst, src, num_frames);
-  }
-}
 
 void JUCE_add_sound(float *dst, const float *src, int num_frames){
   juce::FloatVectorOperations::add(dst, src, num_frames);  

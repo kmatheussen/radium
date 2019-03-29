@@ -414,9 +414,9 @@ OBJ14=disk_midi_fx.o disk_midi_instrument.o midi_fx.o midi_instrument.o midi_pla
 OBJ_FAUST=zita_rev.o stk_flute.o stk_bowed.o stk_blow_bottle.o stk_bass.o stk_blow_hole.o stk_brass.o stk_clarinet.o stk_flute_stk.o stk_glass_harmonica.o stk_harpsi.o stk_modal_bar.o stk_NLF_eks.o stk_NLF_fm.o stk_piano.o stk_saxophony.o stk_sitar.o stk_tibetan_bowl.o stk_tuned_bar.o stk_uni_bar.o stk_voice_form.o faust_tapiir.o faust_system_eq.o faust_system_tremolo.o faust_system_lowpass.o faust_system_highpass.o faust_system_lowshelf.o faust_system_highshelf.o faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=audio_instrument.o SoundProducer.o AudioBuffer.o Jack_plugin.o find_jack_library.o Faust_plugins.o Bus_plugins.o Timeskew_plugin.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o SampleRecorder.o SampleReader.o Seqtrack_plugin.o FluidSynth_plugin.o Pd_plugin.o Modulator_plugin.o SoundPluginRegistry.o SoundPlugin.o AudioMeterPeaks.o Peaks.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o Presets.o undo_audio_effect.o undo_connection_enabled.o undo_audio_connection_gain.o undo_pd_controllers.o undo_plugin_state.o SoundfileSaver.o system_compressor_wrapper.o KillJackd.o 
+OBJ_AUDIO=audio_instrument.o SoundProducer.o AudioBuffer.o Jack_plugin.o find_jack_library.o Faust_plugins.o Bus_plugins.o Timeskew_plugin.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o SampleRecorder.o SampleReader.o Seqtrack_plugin.o FluidSynth_plugin.o Pd_plugin.o Modulator_plugin.o SoundPluginRegistry.o SoundPlugin.o AudioMeterPeaks.o Peaks.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Presets.o undo_audio_effect.o undo_connection_enabled.o undo_audio_connection_gain.o undo_pd_controllers.o undo_plugin_state.o SoundfileSaver.o system_compressor_wrapper.o KillJackd.o 
  
-#MultiCore.o
+#MultiCore.o Smooth.o 
 
 #Mixer
 QM=mixergui/
@@ -646,7 +646,7 @@ PLUGINHOSTOPTS = CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE
 LIBPLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\" " TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
 
 
-pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer common/Vector.hpp
+pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer common/Vector.hpp audio/Smooth.cpp audio/Smooth_proc.h
 	rm -f pluginhost/Builds/Linux/build/*/*/Juce_plugins_*.o pluginhost/Builds/Linux/build/*/*/Juce_plugin_scanner.o
 # dryrun
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
@@ -2250,8 +2250,8 @@ SoundFonts.o: audio/SoundFonts.cpp
 audio_instrument.o: audio/audio_instrument.cpp $(CD)disk.h audio/SoundPluginRegistry_proc.h
 	$(CCC) audio/audio_instrument.cpp $(QTOPT)
 
-Smooth.o: audio/Smooth.c audio/Smooth_proc.h
-	$(CC) audio/Smooth.c $(OPT) $(CPUOPT)
+#Smooth.o: audio/Smooth.c audio/Smooth_proc.h
+#	$(CC) audio/Smooth.c $(OPT) $(CPUOPT)
 
 Presets.o: audio/Presets.cpp audio/Presets_proc.h
 	$(CCC) audio/Presets.cpp $(QTOPT)
