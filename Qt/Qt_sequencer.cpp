@@ -5163,6 +5163,11 @@ void SEQBLOCK_update_with_borders(const struct SeqTrack *seqtrack, const struct 
 
 // Note: Might be called from a different thread than the main thread. (DiskPeak thread calls this function)
 void SEQUENCER_update(uint32_t what){
+
+  // Avoid crash when loading songs with playlist instead of sequencer. disk_playlist causes calls to SEQUENCER_update while root->song->editor is NULL.
+  if(g_is_loading)
+    return;
+  
   D({
   static int i=0;
   printf("%d: SEQUENCER_update called Main: %d. Has lock: %d. Time: %d. Header: %d. Trackorder: %d. Playlist: %d. Navigator: %d\n%s\n\n",
