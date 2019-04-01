@@ -37,7 +37,7 @@ private:
   T *_buffer;
 
 
-  int IOTA = 0;
+  int IOTA = -1;
 
 public:
 
@@ -58,11 +58,11 @@ public:
   }
   
   void write(T value){
+    IOTA++;
+    
     int write_pos = IOTA & _anding;
     //printf("............ write: %d\n", write_pos);
     _buffer[write_pos] = value;
-    
-    IOTA++;
   }
 
   T tap(int tap_pos) const {
