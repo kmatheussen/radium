@@ -34,8 +34,8 @@ private:
 
   int _buffer_size;  
   int _anding;
-
   T *_buffer;
+
 
   int IOTA = 0;
 
@@ -53,11 +53,16 @@ public:
     _buffer = NULL;
   }
 
+  void clear(void){
+    memset(_buffer, 0, sizeof(float)*_buffer_size);
+  }
+  
   void write(T value){
-    IOTA++;
     int write_pos = IOTA & _anding;
     //printf("............ write: %d\n", write_pos);
     _buffer[write_pos] = value;
+    
+    IOTA++;
   }
 
   T tap(int tap_pos) const {

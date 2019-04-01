@@ -215,8 +215,6 @@ public:
       return;
     }
 
-    _delay.write(_curr_value);
-
     if(patch->instrument==get_audio_instrument()){
 
       SoundPlugin *plugin = static_cast<SoundPlugin*>(patchdata);
@@ -236,6 +234,8 @@ public:
       MIDI_set_effect_value(patch, 0, effect_num, value);
 
     }
+
+    _delay.write(_curr_value);
   }
 
   virtual void RT_post_process(const GeneratorParameters &parms){
