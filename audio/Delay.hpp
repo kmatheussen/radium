@@ -44,12 +44,12 @@ public:
   Delay(int max_size)
     : _buffer_size(find_next_power2(max_size))
     , _anding(_buffer_size - 1)
-    , _buffer((T*)calloc(sizeof(T), _buffer_size))
+    , _buffer((T*)V_calloc(sizeof(T), _buffer_size))
   {
   }
 
   ~Delay(){
-    free(_buffer);
+    V_free(_buffer);
     _buffer = NULL;
   }
 
