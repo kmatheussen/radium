@@ -1050,7 +1050,7 @@ public:
         color = get_block_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, Seqblock_Type::REGULAR);
       
       else if (track->patch!=NULL)
-        color = get_displayed_instrument_color(track->patch);
+        color = get_displayed_instrument_color_in_editor(track->patch);
 
       else
         goto no_track_background;

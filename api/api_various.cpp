@@ -2790,6 +2790,11 @@ void setUseNativeFileRequesters(bool doit){
 
 static float g_instrument_brightness = 0.5;
 
+static void update_all_instrument_colors_in_editor(void){
+  root->song->tracker_windows->must_redraw_editor=true;
+  SEQUENCER_update(SEQUPDATE_TIMING);
+}
+
 static void update_all_instrument_colors(void){
   root->song->tracker_windows->must_redraw=true;
   redrawMixerStrips(false);
@@ -2817,6 +2822,28 @@ void setInstrumentBrightness(float val){
 }
 
 
+static float g_instrument_brightness_in_editor = 0.5;
+
+float getInstrumentBrightnessInEditor(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_instrument_brightness_in_editor = SETTINGS_read_double("color_instrument_brightness_in_editor", g_instrument_brightness_in_editor);
+    has_inited = true;
+  }
+
+  return g_instrument_brightness_in_editor;
+}
+
+void setInstrumentBrightnessInEditor(float val){
+  if (val != g_instrument_brightness_in_editor){
+    g_instrument_brightness_in_editor = val;
+    update_all_instrument_colors_in_editor();
+    SETTINGS_write_double("color_instrument_brightness_in_editor", val);
+  }
+}
+
+
 static float g_instrument_saturation = 0.5;
 
 float getInstrumentSaturation(void){
@@ -2835,6 +2862,28 @@ void setInstrumentSaturation(float val){
     g_instrument_saturation = val;
     update_all_instrument_colors();
     SETTINGS_write_double("color_instrument_saturation", val);
+  }
+}
+
+
+static float g_instrument_saturation_in_editor = 0.5;
+
+float getInstrumentSaturationInEditor(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_instrument_saturation_in_editor = SETTINGS_read_double("color_instrument_saturation_in_editor", g_instrument_saturation_in_editor);
+    has_inited = true;
+  }
+
+  return g_instrument_saturation_in_editor;
+}
+
+void setInstrumentSaturationInEditor(float val){
+  if (val != g_instrument_saturation_in_editor){
+    g_instrument_saturation_in_editor = val;
+    update_all_instrument_colors_in_editor();
+    SETTINGS_write_double("color_instrument_saturation_in_editor", val);
   }
 }
 

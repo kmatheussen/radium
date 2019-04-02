@@ -604,6 +604,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       
       instrument_brightness->setValue(getInstrumentBrightness()*1000);
       instrument_saturation->setValue(getInstrumentSaturation()*1000);
+      instrument_brightness_in_editor->setValue(getInstrumentBrightnessInEditor()*1000);
+      instrument_saturation_in_editor->setValue(getInstrumentSaturationInEditor()*1000);
       block_brightness->setValue(getBlockBrightness()*1000);
       block_saturation->setValue(getBlockSaturation()*1000);
     }
@@ -1109,6 +1111,22 @@ public slots:
   }
   void on_reset_instrument_saturation_clicked(){
     instrument_saturation->setValue(500);
+  }
+  
+  void on_instrument_brightness_in_editor_valueChanged(int val){
+    if (_initing==false)
+      setInstrumentBrightnessInEditor((float)val/1000.0);
+  }
+  void on_reset_instrument_brightness_in_editor_clicked(){
+    instrument_brightness_in_editor->setValue(500);
+  }
+
+  void on_instrument_saturation_in_editor_valueChanged(int val){
+    if (_initing==false)
+      setInstrumentSaturationInEditor((float)val/1000.0);
+  }
+  void on_reset_instrument_saturation_in_editor_clicked(){
+    instrument_saturation_in_editor->setValue(500);
   }
   
   void on_block_brightness_valueChanged(int val){
