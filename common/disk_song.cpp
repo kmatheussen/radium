@@ -255,9 +255,6 @@ void DLoadSong(struct Root *newroot,struct Song *song){
 
 	DLoadBlocks(newroot,song->blocks,true);
 
-        if (disk_load_version<0.875)
-          DLoadPlayList(newroot,song);
-        
 	DLoadWindows(newroot,song->tracker_windows);
 
 
@@ -317,5 +314,8 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         // Audio plugins are created after creating trackreallines.
         //TRACKREALLINES_update_peak_tracks(song->tracker_windows);
 
+        if (disk_load_version<0.875)
+          DLoadPlayList(newroot,song);
+        
         song->tracker_windows->must_redraw = true;
 }
