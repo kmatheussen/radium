@@ -555,13 +555,14 @@ test_samplereader:
 	cd audio && g++ SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++11 -g && ./a.out
 
 test_threading:
-	rm -f test_threading.o
 	$(CCC) common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) -fPIC -DFOR_LINUX
-	$(CCC) threading.o $(QT_LDFLAGS) -lpthread -fsanitize=address -fsanitize=undefined  -std=gnu++11
+	mv threading.o test_threading.o
+	$(CCC) test_threading.o $(QT_LDFLAGS) -lpthread -fsanitize=address -fsanitize=undefined  -std=gnu++11
 	./a.out
 #	rm -f test_threading.o
 #	echo "GGGGGGGGGGG"
 #	clang++ common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) -fPIC -DFOR_LINUX
+#       mv threading.o test_threading.o
 #	echo "HHHHHHHHH"
 #	clang++ threading.o $(QT_LDFLAGS) -lpthread -fsanitize=address -fsanitize=undefined  -std=gnu++11
 #	./a.out
