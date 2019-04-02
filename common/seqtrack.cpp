@@ -1229,6 +1229,8 @@ static QSet<int64_t> get_all_seqblock_ids(void){
 static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, const QSet<int64_t> &unavailable_ids, enum ShowAssertionOrThrowAPIException error_type, Seqblock_Type type){
   //R_ASSERT(is_gfx==true);
 
+  bool may_have_different_audiofile = false;
+  
   double adjust_for_samplerate = 1.0;
   double state_samplerate = -1.0;
   
@@ -1321,9 +1323,26 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
         return NULL;
     }
     
-    if (g_is_loading || g_is_saving)
-      filename = OS_loading_get_resolved_file_path(filename, false);
-
+    if (g_is_loading || g_is_saving){
+      const wchar_t *resolved_filename = OS_loading_get_resolved_file_path(filename, false);
+      if (resolved_filename==NULL)
+        return NULL;
+      
+      if (filename != resolved_filename){
+        
+        if (!STRING_equals2(DISK_get_pathless_file_path(filename), DISK_get_pathless_file_path(resolved_filename))){
+          GFX_addMessage("Warning: Could not replace \"%S\" with \"%S\" since their name differ.\n", filename, resolved_filename);
+          return NULL;
+        }
+        
+        filename = resolved_filename;
+        may_have_different_audiofile = true;
+      }
+    }
+    
+    if (filename==NULL)
+      return NULL;
+    
     enum ResamplerType resampler_type = RESAMPLER_SINC1;
     if (HASH_has_key(state, ":resampler-type"))
       resampler_type = (enum ResamplerType)HASH_get_int32(state, ":resampler-type");
@@ -1388,7 +1407,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
           show_rerror = false;  // Don't show error if it could be caused by a rounding error.
 #endif
         
-        if (show_rerror)
+        if (show_rerror && may_have_different_audiofile==false)
           RError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
         
         interior_end = default_duration;

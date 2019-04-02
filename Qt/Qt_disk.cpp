@@ -43,6 +43,13 @@ const wchar_t *DISK_get_absolute_file_path(const wchar_t *wfilename){
   return STRING_create(QDir::toNativeSeparators(info.absoluteFilePath()));
 }
 
+const wchar_t *DISK_get_pathless_file_path(const wchar_t *wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
+  QFileInfo info(STRING_get_qstring(wfilename));
+  return STRING_create(QDir::toNativeSeparators(info.fileName()));
+}
+
 int64_t DISK_get_creation_time(const wchar_t *wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   

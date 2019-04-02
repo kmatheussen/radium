@@ -361,7 +361,6 @@ static void test_insert_list3(void) TESTCODE(MAKE_L3, GET_L3)
 
 
 int main(void){
-
   fprintf(stderr, "1\n");
   test_insert();
   fprintf(stderr, "2\n");
