@@ -21,6 +21,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMessageBox>
 #include <QFileDialog>
 
+#ifdef TEST_PATH_RESOLVER
+#define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
+#endif
+
 #include "../common/nsmtracker.h"
 #include "../common/OS_visual_input.h"
 #include "../common/OS_settings_proc.h"
@@ -245,8 +249,10 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool prog
 
 #include "../common/control_proc.h"
 
+/*
 #define talloc_strdup(a) strdup(a)
 #define talloc_atomic(a) malloc(a)
+*/
 
 #include "Qt_settings.cpp"
 
@@ -255,7 +261,7 @@ void EndProgram(void){
   printf("ENDPROGRAM called\n");
 }
 
-void RError(const char *fmt,...){
+void RError_internal(const char *fmt,...){
   char message[1000];
   va_list argp;
   

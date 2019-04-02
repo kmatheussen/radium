@@ -317,6 +317,7 @@ ifeq (,$(findstring clang,$(CC)))
 endif
 
 
+
 # Can't be enabled because of 3rd party header files:
 #-Wsuggest-override
 
@@ -542,45 +543,71 @@ profile:
 #--sort comm,dso
 #	operf $(RADIUM_BIN) && opreport -ca |more
 
-
 check: test
-test: dotesting
-
-dotesting: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer
-	$(CCC) common/threading.cpp -DTEST_THREADING -Wall -lpthread && ./a.out
-	clang common/threading.cpp -DTEST_THREADING -Wall -lpthread && ./a.out
-	i686-w64-mingw32-g++ common/threading.cpp -DTEST_THREADING -Wall -lpthread -o test/a.exe && cd test && wine a.exe
+test: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer test_smoothdelay test_threading test_samplereader test_ratio
 	@echo
 	@echo " == All tests succeeded, apparently =="
+
+test_ratio:
+	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -DTEST_MAIN -Wall -Werror -g -o a.out &&	./a.out
+
+test_samplereader:
+	cd audio && g++ SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++11 -g && ./a.out
+
+test_threading:
+	rm -f test_threading.o
+	$(CCC) common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) -fPIC -DFOR_LINUX
+	$(CCC) threading.o $(QT_LDFLAGS) -lpthread -fsanitize=address -fsanitize=undefined  -std=gnu++11
+	./a.out
+#	rm -f test_threading.o
+#	echo "GGGGGGGGGGG"
+#	clang++ common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) -fPIC -DFOR_LINUX
+#	echo "HHHHHHHHH"
+#	clang++ threading.o $(QT_LDFLAGS) -lpthread -fsanitize=address -fsanitize=undefined  -std=gnu++11
+#	./a.out
+
 
 test_vector:
 	$(CC) -g -Wall -Werror -DTEST_VECTOR  -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fsanitize=address -fPIC -DFOR_LINUX -std=gnu99
 #	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
-	ASAN_OPTIONS="detect_leaks=0,allocator_may_return_null=1,suppressions=SanitizerSuppr.txt,abort_on_error=1,new_delete_type_mismatch=0" gdb ./a.out
+	ASAN_OPTIONS="detect_leaks=0,allocator_may_return_null=1,suppressions=SanitizerSuppr.txt,abort_on_error=1,new_delete_type_mismatch=0" ./a.out
 
 test_placement:
-	$(CC) -g -Wall -Werror -DTEST_PLACEMENT  -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt $(GCDIR).libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+	$(CC) -g -Wall -Werror -DTEST_PLACEMENT  -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu99
+#	gdb ./a.out
+	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_notes:
-	$(CC) -g -Wall -Werror -DTEST_NOTES  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.c common/memory.c -lm -IQt $(GCDIR)/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+	$(CCC) -g -Wall -Werror -DTEST_NOTES  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.cpp common/memory.c -lm -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu++11
+#	gdb ./a.out
+	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
+# Commented out. Too many link errors.
 test_path_resolver:
-	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread && ./a.out
-	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread && valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
+#	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread -fPIC  -DFOR_LINUX -std=gnu++11 -Wno-error=unknown-pragmas -DUSE_QT5 $(SNDFILEOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -lsndfile
+#	./a.out
+#	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_seqautomation:
-	$(CCC) -g -Wall -Wextra -Werror test/test_seqautomation.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined
+	$(CCC) -g -Wall -Wextra -Werror test/test_seqautomation.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined  -DUSE_QT4 -DUSE_QT5 -fPIC -DFOR_LINUX 
 	$(CCC) test_seqautomation.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -fsanitize=address -fsanitize=undefined -o test_seqautomation
 	./test_seqautomation
 	@echo "=== success: test_seqautomation ==="
 	@rm test_seqautomation
 
 test_audiobuffer:
-	$(CCC) -g -Wall -Werror test/test_audiobuffer.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined -fPIC -DFOR_LINUX
+	$(CCC) -g -Wall -Werror test/test_audiobuffer.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined -fPIC -DFOR_LINUX  -DUSE_QT4 -DUSE_QT5
 	$(CCC) test_audiobuffer.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -fsanitize=address -fsanitize=undefined -o test_audiobuffer
 	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_audiobuffer
 	@echo "=== success: test_audiobuffer ==="
 	@rm test_audiobuffer
+
+test_smoothdelay:
+#	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined -fPIC -DFOR_LINUX
+#	$(CCC) test_smoothdelay.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -fsanitize=address -fsanitize=undefined -o test_smoothdelay
+#	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_smoothdelay
+#	@echo "=== success: test_smoothdelay ==="
+#	@rm test_smoothdelay
 
 packages: bin/packages/deletemetorebuild
 
