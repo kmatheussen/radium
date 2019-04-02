@@ -728,7 +728,7 @@ private:
     
       int wait = _global_write_pos_of_next_frame - _global_write_pos;
       R_ASSERT_NON_RELEASE(wait >= 0);
-      R_ASSERT_NON_RELEASE(wait <= 64); // Grains do work with wait > 64, but it is not supposed to be higher than 64 here.
+      R_ASSERT_NON_RELEASE(wait <= num_samples); // Grains do work with wait > num_samples, but it is not supposed to be higher than num_samples here.
       
 #if 0 //!defined(RELEASE)
       static int last_write_dx = 0;
