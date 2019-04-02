@@ -12,6 +12,7 @@ race:safe_double_read
 race:safe_pointer_read
 race:safe_int_write
 race:safe_int_read
+race:safe_bool_read
 race:Compressor_wrapper::get_graph_value
 race:Compressor_wrapper::set_parameter
 race:QCoreApplication::postEvent
