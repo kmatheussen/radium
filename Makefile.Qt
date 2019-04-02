@@ -571,7 +571,8 @@ test_threading:
 test_vector:
 	$(CC) -g -Wall -Werror -DTEST_VECTOR  -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fsanitize=address -fPIC -DFOR_LINUX -std=gnu99
 #	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
-	ASAN_OPTIONS="detect_leaks=0,allocator_may_return_null=1,suppressions=SanitizerSuppr.txt,abort_on_error=1,new_delete_type_mismatch=0" ./a.out
+#	ASAN_OPTIONS="detect_leaks=0,allocator_may_return_null=1,suppressions=SanitizerSuppr.txt,abort_on_error=1,new_delete_type_mismatch=0"
+	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
 
 test_placement:
 	$(CC) -g -Wall -Werror -DTEST_PLACEMENT  -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu99
