@@ -245,7 +245,7 @@ extern double g_last_time_mouse_pointer_was_moved_by_the_program; // Only used i
 
 #ifdef __cplusplus
 static inline bool equal_floats(float x, float y) {
-  return std::abs(x - y) < std::numeric_limits<float>::epsilon();
+  return R_ABS(x - y) < std::numeric_limits<float>::epsilon();
 }
 #endif
 
