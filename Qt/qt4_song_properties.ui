@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>610</width>
+    <width>718</width>
     <height>384</height>
    </rect>
   </property>
@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string>Song Properties</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_3" rowstretch="0,0,0,0,0" columnstretch="0,0,0">
+  <layout class="QGridLayout" name="gridLayout_3" rowstretch="0,0,0,0,0" columnstretch="0,10,10">
    <property name="bottomMargin">
     <number>2</number>
    </property>
@@ -76,7 +76,7 @@
       <item row="0" column="0">
        <widget class="QCheckBox" name="send_swing_to_plugins">
         <property name="text">
-         <string>Send global swing tempo to plugins</string>
+         <string>Send global swing tempo to plugins and jack transport</string>
         </property>
        </widget>
       </item>
@@ -145,7 +145,7 @@
    <item row="3" column="2">
     <widget class="QGroupBox" name="groupBox_5">
      <property name="title">
-      <string>Audio files</string>
+      <string>Audio files in Sample player and Fluidsynth</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
