@@ -25,3 +25,7 @@ range_color = #3e4e47
 
 override_default_qt_colors = true
 last_color_version = 3.3.5
+
+
+color_instrument_saturation = 0.6669999957084656
+color_block_saturation = 1.0

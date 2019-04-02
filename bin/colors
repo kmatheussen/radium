@@ -106,3 +106,6 @@ sequencer_block_interface_color = #ff041ae0
 sequencer_block_audio_file_background_color = #64eeeeee
 sequencer_waveform_color = #c8000000
 sequencer_marker_color = #ff0a0632
+
+color_instrument_saturation = 0.6669999957084656
+color_block_saturation = 1.0
