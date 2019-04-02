@@ -1902,9 +1902,9 @@ public:
     
     RT_update_link_before_mixing(link, time, num_frames);
 
-    bool input_is_empty = source_output_sound==NULL || link->is_active==false;
+    bool input_line_is_empty = source_output_sound==NULL && link->_delay.RT_delay_line_is_empty();
     
-    if (input_is_empty && link->_delay.RT_delay_line_is_empty()) {
+    if (link->is_active==false || input_line_is_empty) {
       link->_delay.RT_call_instead_of_process_if_no_sound(num_frames, NULL);
       return;
     }
