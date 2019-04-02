@@ -237,7 +237,10 @@ void EndProgram(void){
   printf("ENDPROGRAM called\n");
 }
 
-void RError(const char *fmt,...){
+bool g_is_starting_up = false;
+
+
+void RError_internal(const char *fmt,...){
   char message[1000];
   va_list argp;
   
@@ -249,8 +252,12 @@ void RError(const char *fmt,...){
   fprintf(stderr,"error: %s\n",message);
 }
 
-void RWarning(const char *fmt,...){
+void RWarning_internal(const char *fmt,...){
   abort();
+}
+
+bool THREADING_is_player_or_runner_thread(void){
+  return false;
 }
 
 bool PLAYER_current_thread_has_lock(void){
@@ -354,10 +361,13 @@ static void test_insert_list3(void) TESTCODE(MAKE_L3, GET_L3)
 
 
 int main(void){
-  
-  test_insert();
-  test_insert_list3();
 
+  fprintf(stderr, "1\n");
+  test_insert();
+  fprintf(stderr, "2\n");
+  test_insert_list3();
+  fprintf(stderr, "3\n");
+  
   printf("Success, no errors\n");
 
   return 0;
