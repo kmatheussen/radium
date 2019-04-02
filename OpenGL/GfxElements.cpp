@@ -98,7 +98,7 @@ GE_Rgb GE_get_rgb(enum ColorNums colornum, bool is_instrument){
   //GE_Rgb ret = {50,60,20,255};
   
   if(is_instrument)
-    apply_instrument_colorization(c);
+    apply_instrument_in_editor_colorization(c);
   
   GE_Rgb ret = {(unsigned char)c.red(), (unsigned char)c.green(), (unsigned char)c.blue(), (unsigned char)c.alpha()};
   return ret;

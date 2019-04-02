@@ -79,10 +79,23 @@ static inline void apply_instrument_colorization(QColor &color){
   apply_saturation_and_brightness(color, getInstrumentSaturation(), getInstrumentBrightness());
 }
   
+static inline void apply_instrument_in_editor_colorization(QColor &color){
+  apply_saturation_and_brightness(color, getInstrumentSaturationInEditor(), getInstrumentBrightnessInEditor());
+}
+  
 static inline QColor get_displayed_instrument_color(const struct Patch *patch){
   QColor color(patch->color);
 
   apply_instrument_colorization(color);
+  
+  return color;
+}
+
+
+static inline QColor get_displayed_instrument_color_in_editor(const struct Patch *patch){
+  QColor color(patch->color);
+
+  apply_instrument_in_editor_colorization(color);
   
   return color;
 }
