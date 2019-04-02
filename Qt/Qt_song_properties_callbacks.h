@@ -55,6 +55,8 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     setupUi(this);
 
     update_widgets(root->song);
+
+    adjustSizeAndMoveWindowToCentre(this);
     
     _initing = false;
   }
