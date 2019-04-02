@@ -173,7 +173,8 @@ namespace{
 #endif
 
 
-static float *g_empty_sound = NULL;
+static const float *g_empty_sound = NULL;
+static float *g_dev_null_sound = NULL;
   
 struct LatencyCompensatorDelay {
   radium::SmoothDelay _delay;
@@ -188,8 +189,10 @@ struct LatencyCompensatorDelay {
   {
     //_output_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
     
-    if (g_empty_sound==NULL)
+    if (g_empty_sound==NULL){
       g_empty_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
+      g_dev_null_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
+    }
   }
   
   ~LatencyCompensatorDelay(){
@@ -201,14 +204,21 @@ struct LatencyCompensatorDelay {
     _delay.setSize(preferred_delay);
   }
 
+  bool RT_delay_line_is_empty(void) const {
+    return _total_num_processed_empty_frames >= _delay.buffer_size;
+  }
+  
   // Should be called instead of RT_process if we don't need any sound.
-  void RT_call_instead_of_process_if_no_sound(int num_frames){
-    if (_total_num_processed_empty_frames >= _delay.buffer_size) // This optimization also eliminates (at least in practice I hope) the need for the earlier "g_rt_always_run_buses" option.
-      return;
+  float *RT_call_instead_of_process_if_no_sound(int num_frames, float *output_sound){
+    if (RT_delay_line_is_empty()) // This optimization also eliminates (at least in practice I hope) the need for the earlier "g_rt_always_run_buses" option.
+      return NULL;
 
     _total_num_processed_empty_frames += num_frames;
     
-    _delay.RT_process(num_frames, g_empty_sound, g_empty_sound); // Avoid leftovers from last time.
+    if (_delay.RT_process(num_frames, g_empty_sound, output_sound==NULL ? g_dev_null_sound : output_sound))
+      return output_sound;
+    else
+      return NULL;
   }
   
   // May return 'input_sound'. Also, 'input_sound' is never modified.
@@ -1787,13 +1797,11 @@ public:
 
   // This function is called while processing link->source. "this" is link->target.
   void RT_create_dry_sound_from_input_link(SoundProducerLink *link, int64_t time, int num_frames, float **source_output_sound, float **dry_sound) const {
-#if !defined(RELEASE)             
-    if (source_output_sound==NULL && dry_sound!=NULL)
-      abort();
+#if !defined(RELEASE)
+    if (dry_sound==NULL)
+      if (source_output_sound != NULL)
+        abort();
     
-    if (source_output_sound!=NULL && dry_sound==NULL)
-      abort();
-
     if (!link->is_active){
       if (source_output_sound!=NULL)
         abort();
@@ -1807,6 +1815,8 @@ public:
     SoundProducer *source = link->source;
 
     int latency = _highest_input_link_latency - source->_latency;
+
+    latency = R_MAX(0, latency);
     
     if (latency >= link->_delay._delay.buffer_size) {
       RT_message("%s -> %s: Compensating for a latency of more than %dms is not supported.\nNumber of frames: %d",  source->_plugin->patch->name, link->target->_plugin->patch->name, MAX_COMPENSATED_LATENCY, latency);
@@ -1829,25 +1839,40 @@ public:
     // !! All audio links (active or not, autosuspended or not, bus or not) will always run up to this point. !!
     //
 
-    if (source_output_sound==NULL){
-      link->_delay.RT_call_instead_of_process_if_no_sound(num_frames);
+    if (dry_sound==NULL){
+      /*
+      if(!strcmp("Main Pipe", link->source->_plugin->patch->name)
+         && !strcmp("System Out", link->target->_plugin->patch->name))
+        printf("    Main pipe -> Out: NULL in/out\n");
+      */
+      link->_delay.RT_call_instead_of_process_if_no_sound(num_frames, NULL);
       return;
     }
 
-    R_ASSERT_NON_RELEASE(source->has_run(time));
-
+#if !defined(RELEASE)
+    if (source_output_sound != NULL)
+      if (source->has_run(time)==false)
+        abort();
+#endif
+    
     {      
       
       //const float *input_producer_sound = link->source->_output_buffer.get_channel(link->source_ch);
       
       float latency_sound_sound[num_frames];
-      const float *latency_compensated_input_producer_sound = link->_delay.RT_process(source_output_sound[link->source_ch], latency_sound_sound, num_frames);
+      const float *latency_compensated_input_producer_sound;
       
-      SMOOTH_mix_sounds(&link->volume,
-                        dry_sound[link->target_ch], // out
-                        latency_compensated_input_producer_sound, // in
-                        num_frames
-                        );
+      if (source_output_sound==NULL)
+        latency_compensated_input_producer_sound = link->_delay.RT_call_instead_of_process_if_no_sound(num_frames, latency_sound_sound);
+      else
+        latency_compensated_input_producer_sound = link->_delay.RT_process(source_output_sound[link->source_ch], latency_sound_sound, num_frames);
+
+      if (latency_compensated_input_producer_sound != NULL)
+        SMOOTH_mix_sounds(&link->volume,
+                          dry_sound[link->target_ch], // out
+                          latency_compensated_input_producer_sound, // in
+                          num_frames
+                          );
       
     }
     
@@ -1856,8 +1881,10 @@ public:
   // This function is called while processing link->source. "this" is link->target.
   void RT_process_link(SoundProducerLink *link, int64_t time, float **source_output_sound, int num_frames) {
 
-    if (source_output_sound==NULL || link->is_active==false) {
-      
+    bool input_is_empty = source_output_sound==NULL || link->is_active==false;
+    
+    if (input_is_empty && link->_delay.RT_delay_line_is_empty()) {
+
       RT_create_dry_sound_from_input_link(link, time, num_frames, NULL, NULL);
     
     } else {
@@ -1886,9 +1913,6 @@ public:
           
       if (link->is_event_link)
         continue;
-
-      if (link->is_active && output_sound != NULL)
-        RT_PLUGIN_touch(link->target->_plugin);
 
       link->target->RT_process_link(link, time, output_sound, num_frames);
     }
