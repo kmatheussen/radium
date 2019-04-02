@@ -62,7 +62,7 @@ static inline int VECTOR_push_back_internal(vector_t *v, const void *element){
   R_ASSERT_RETURN_IF_FALSE2(v!=NULL, 0);
 
   R_ASSERT_NON_RELEASE(v->num_elements < v->num_elements_allocated);
-  
+
   const int num_elements = v->num_elements;
 
   v->elements[num_elements] = (void*)element;
@@ -88,11 +88,14 @@ static inline void VECTOR_insert_internal(vector_t *v, const void *element, int 
   int num_elements = v->num_elements;
   
   R_ASSERT(pos>=0 && pos<=num_elements);
-
+  
   if (pos==num_elements) {
-    
-    VECTOR_push_back_internal(v, element);
 
+    if (v->num_elements_allocated == v->num_elements)
+      VECTOR_push_back(v, element);
+    else
+      VECTOR_push_back_internal(v, element);
+    
   } else if (v->num_elements_allocated == v->num_elements){
 
     ASSERT_NON_RT_NON_RELEASE();
@@ -112,13 +115,13 @@ static inline void VECTOR_insert_internal(vector_t *v, const void *element, int 
     v->num_elements = num_elements+1;
     
   } else {
-
+    
     memmove(&v->elements[pos+1], &v->elements[pos], sizeof(void*)*(num_elements - pos));
-
+    
     v->elements[pos] = (void*)element;
-
+    
     v->num_elements = num_elements+1;
-
+    
   }
 }
 
