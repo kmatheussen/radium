@@ -1229,7 +1229,7 @@ static QSet<int64_t> get_all_seqblock_ids(void){
 static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, const QSet<int64_t> &unavailable_ids, enum ShowAssertionOrThrowAPIException error_type, Seqblock_Type type){
   //R_ASSERT(is_gfx==true);
 
-  bool may_have_different_audiofile = false;
+  //bool may_have_different_audiofile = false;
   
   double adjust_for_samplerate = 1.0;
   double state_samplerate = -1.0;
@@ -1336,7 +1336,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
         }
         
         filename = resolved_filename;
-        may_have_different_audiofile = true;
+        //may_have_different_audiofile = true;
       }
     }
     
@@ -1407,7 +1407,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
           show_rerror = false;  // Don't show error if it could be caused by a rounding error.
 #endif
         
-        if (show_rerror && may_have_different_audiofile==false)
+        if (show_rerror) // && may_have_different_audiofile==false)
           RError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
         
         interior_end = default_duration;
