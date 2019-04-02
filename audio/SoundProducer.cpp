@@ -210,11 +210,18 @@ struct LatencyCompensatorDelay {
       return NULL;
 
     _total_num_processed_empty_frames += num_frames;
-    
-    if (_delay.RT_process(num_frames, g_empty_sound, output_sound==NULL ? g_dev_null_sound : output_sound))
-      return output_sound;
-    else
-      return NULL;
+
+    if (num_frames==64){
+      if (_delay.RT_process(64, g_empty_sound, output_sound==NULL ? g_dev_null_sound : output_sound))
+        return output_sound;
+      else
+        return NULL;
+    } else {
+      if (_delay.RT_process(num_frames, g_empty_sound, output_sound==NULL ? g_dev_null_sound : output_sound))
+        return output_sound;
+      else
+        return NULL;
+    }
   }
   
   // May return 'input_sound'. Also, 'input_sound' is never modified.
@@ -227,11 +234,18 @@ struct LatencyCompensatorDelay {
 #endif
 
     _total_num_processed_empty_frames = 0;
-    
-    if(_delay.RT_process(num_frames, input_sound, output_sound))
-      return output_sound;
-    else
-      return input_sound;
+
+    if (num_frames==64){
+      if(_delay.RT_process(64, input_sound, output_sound))
+        return output_sound;
+      else
+        return input_sound;
+    } else {
+      if(_delay.RT_process(num_frames, input_sound, output_sound))
+        return output_sound;
+      else
+        return input_sound;
+    }
   }
 };
   
