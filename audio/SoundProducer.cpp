@@ -181,23 +181,17 @@ struct LatencyCompensatorDelay {
 
   int _total_num_processed_empty_frames;
   
-  //float *_output_sound;
-  
   LatencyCompensatorDelay()
-    :_delay(MAX_COMPENSATED_LATENCY*MIXER_get_sample_rate()/1000)
+    :_delay(ms_to_frames(MAX_COMPENSATED_LATENCY))
     , _total_num_processed_empty_frames(_delay.buffer_size) // <- _delay.buffer_size is not necessarily the same as MAX_COMP...etc. above.
   {
-    //_output_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
-    
     if (g_empty_sound==NULL){
-      g_empty_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
-      g_dev_null_sound = (float*)V_calloc(sizeof(float), MIXER_get_buffer_size());
+      g_empty_sound = (float*)V_calloc(sizeof(float), RADIUM_BLOCKSIZE);
+      g_dev_null_sound = (float*)V_calloc(sizeof(float), RADIUM_BLOCKSIZE);
     }
   }
   
   ~LatencyCompensatorDelay(){
-    //V_free(_output_sound);
-    //_output_sound = NULL;
   }
 
   void RT_set_preferred_delay(int preferred_delay){
@@ -210,6 +204,8 @@ struct LatencyCompensatorDelay {
   
   // Should be called instead of RT_process if we don't need any sound.
   float *RT_call_instead_of_process_if_no_sound(int num_frames, float *output_sound){
+    R_ASSERT_NON_RELEASE(num_frames==RADIUM_BLOCKSIZE);
+    
     if (RT_delay_line_is_empty()) // This optimization also eliminates (at least in practice I hope) the need for the earlier "g_rt_always_run_buses" option.
       return NULL;
 
@@ -223,7 +219,6 @@ struct LatencyCompensatorDelay {
   
   // May return 'input_sound'. Also, 'input_sound' is never modified.
   const float *RT_process(const float *input_sound, float *output_sound, int num_frames){
-
 #if !defined(RELEASE)
     R_ASSERT_RETURN_IF_FALSE2(input_sound!=NULL, g_empty_sound);
     R_ASSERT_RETURN_IF_FALSE2(output_sound!=NULL, g_empty_sound);
@@ -497,13 +492,13 @@ static void RT_copy_sound_and_apply_volume(float *to_sound, const float *from_so
 #endif
 
 
-static void RT_apply_dry_wet(const float **dry, int num_dry_channels,
-                             float **wet, int num_wet_channels,
+static void RT_apply_dry_wet(const float **__restrict__ dry, int num_dry_channels,
+                             float **__restrict__ wet, int num_wet_channels,
                              int num_frames,
-                             const Smooth *wet_values){
+                             const Smooth *__restrict__ wet_values){
   //int num_channels = num_wet_channels; //std::min(num_dry_channels,num_wet_channels);
   for(int ch=0;ch<num_wet_channels;ch++){
-    float       *w = wet[ch];
+    float       *__restrict__ w = wet[ch];
 
     SMOOTH_apply_volume(wet_values, w, num_frames);
 
@@ -512,7 +507,7 @@ static void RT_apply_dry_wet(const float **dry, int num_dry_channels,
   }
 }
 
-static void RT_fade_in2(float *sound, int pos, int num_frames){
+static void RT_fade_in2(float *__restrict__ sound, int pos, int num_frames){
   if (pos + num_frames > FADE_LEN)
     num_frames = FADE_LEN-pos;
       
@@ -520,11 +515,17 @@ static void RT_fade_in2(float *sound, int pos, int num_frames){
 
   float mul = scale(pos+1, 0, FADE_LEN+1, 0.0, 1.0);
   float mulinc = scale(1, 0, FADE_LEN+1, 0.0, 1.0);
-    
-  for(int i=0;i<num_frames;i++){
-    sound[i] *= mul;
-    mul += mulinc;
-  }
+
+  if(num_frames==64)
+    for(int i=0;i<64;i++){
+      sound[i] *= mul;
+      mul += mulinc;
+    }
+  else
+    for(int i=0;i<num_frames;i++){
+      sound[i] *= mul;
+      mul += mulinc;
+    }
   
   
 #else
@@ -537,7 +538,7 @@ static void RT_fade_in2(float *sound, int pos, int num_frames){
 }
 
 
-static void RT_fade_out2(float *sound, int pos, int num_frames){
+static void RT_fade_out2(float *__restrict__ sound, int pos, int num_frames){
   int frames_to_iterate = num_frames;
   
   if (pos + num_frames > FADE_LEN) {
@@ -558,11 +559,17 @@ static void RT_fade_out2(float *sound, int pos, int num_frames){
 
   float mul = scale(pos+1, 0, FADE_LEN+1, 1.0, 0.0);
   float mulinc = -1.0 * scale(1, 0, FADE_LEN+1, 0.0, 1.0);
-    
-  for(int i=0;i<frames_to_iterate;i++){
-    sound[i] *= mul;
-    mul += mulinc;
-  }
+
+  if(frames_to_iterate==64)
+    for(int i=0;i<64;i++){
+      sound[i] *= mul;
+      mul += mulinc;
+    }
+  else
+    for(int i=0;i<frames_to_iterate;i++){
+      sound[i] *= mul;
+      mul += mulinc;
+    }
   
   
 #else
@@ -575,7 +582,7 @@ static void RT_fade_out2(float *sound, int pos, int num_frames){
 #endif
 }
 
-static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_frames, float **outputs){
+static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_frames, float **__restrict__ outputs){
   R_ASSERT_NON_RELEASE(num_frames==RADIUM_BLOCKSIZE);
 
   const int num_channels = plugin->type->num_outputs;
@@ -584,10 +591,14 @@ static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_f
   for(int ch=0;ch<num_channels;ch++) {
     const float *out = outputs[ch];
     float sum2 = 0.0f;
-    
-    for(int i=0;i<num_frames;i++)
-      sum2 += out[i];
-    
+
+    if(num_frames==64)
+      for(int i=0;i<64;i++)
+        sum2 += out[i];
+    else
+      for(int i=0;i<num_frames;i++)
+        sum2 += out[i];
+      
     sum += sum2;
   }
   
@@ -1530,18 +1541,16 @@ public:
   void RT_crossfade_in2(float *input, float *output, int fade_pos, int num_frames) const {
     RT_fade_in2(input, fade_pos, num_frames);
     RT_fade_out2(output, fade_pos, num_frames);
-          
-    for(int i=0;i<num_frames;i++)
-      output[i] += input[i];
+
+    JUCE_add_sound(output, input, num_frames);
   }
 
   // fade out 'input'
   void RT_crossfade_out2(float *input, float *output, int fade_pos, int num_frames) const {
     RT_fade_out2(input, fade_pos, num_frames);
     RT_fade_in2(output, fade_pos, num_frames);
-          
-    for(int i=0;i<num_frames;i++)
-      output[i] += input[i];
+
+    JUCE_add_sound(output, input, num_frames);
   }
 
   void RT_apply_system_filter_apply(SystemFilter *filter, float **input, float **output, int num_channels, int num_frames, bool process_plugins) const {
@@ -1686,8 +1695,8 @@ public:
 
     // 3. Find and set plugin latency, _latency and _highest_input_link_latency
     //
-
-    int plugin_latency = _plugin->type->RT_get_latency!=NULL ? _plugin->type->RT_get_latency(_plugin) : 0;
+    
+    const int plugin_latency = _plugin->type->RT_get_latency!=NULL ? _plugin->type->RT_get_latency(_plugin) : 0;
 
     // Used by dry/wet
     for(int ch = 0 ; ch < _num_dry_sounds ; ch++)
@@ -1828,9 +1837,13 @@ public:
   // This function is called while processing link->source.
   // "this" is link->target.
   // If "source_output_sound" can be NULL.
-  void RT_create_dry_sound_from_input_link(SoundProducerLink *link, int64_t time, int num_frames, float **source_output_sound, float **dry_sound) const {
+  void RT_create_dry_sound_from_input_link(SoundProducerLink *link, int64_t time, int num_frames, float **source_output_sound, float **target_dry_sound) const {
 #if !defined(RELEASE)
-    if (dry_sound==NULL)
+    
+    if (this != link->target)
+      abort();
+    
+    if (target_dry_sound==NULL)
       abort();
     
     if (!link->is_active){
@@ -1859,7 +1872,7 @@ public:
     
     if (latency_compensated_input_producer_sound != NULL)
       SMOOTH_mix_sounds(&link->volume,
-                        dry_sound[link->target_ch], // out
+                        target_dry_sound[link->target_ch], // out
                         latency_compensated_input_producer_sound, // in
                         num_frames
                         );    
@@ -1868,7 +1881,11 @@ public:
   // This function is called while processing link->source. "this" is link->target.
   // Note: Always called for all audio links, active or not, autosuspended or not, bus or not.
   void RT_process_link(SoundProducerLink *link, int64_t time, float **source_output_sound, int num_frames) {
-
+#if !defined(RELEASE)    
+    if (this != link->target)
+      abort();
+#endif
+    
     RT_update_link_before_mixing(link, time, num_frames);
 
     bool input_is_empty = source_output_sound==NULL || link->is_active==false;
@@ -1889,9 +1906,9 @@ public:
       if (buffer->RT_obtain_channels_if_necessary(radium::NeedsLock::YES))
         buffer->clean();
       
-      float **dry_sound = buffer->get_channels();
+      float **target_dry_sound = buffer->get_channels();
       
-      RT_create_dry_sound_from_input_link(link, time, num_frames, source_output_sound, dry_sound);
+      RT_create_dry_sound_from_input_link(link, time, num_frames, source_output_sound, target_dry_sound);
     }
   }
   
