@@ -48,8 +48,8 @@ namespace{
     
     Data()
       : timeskew(0)
-      , delay1(TIMESKEW_MAX * MIXER_get_sample_rate() / 1000)
-      , delay2(TIMESKEW_MAX * MIXER_get_sample_rate() / 1000)
+      , delay1(ms_to_frames(TIMESKEW_MAX))
+      , delay2(ms_to_frames(TIMESKEW_MAX))
     {
     }
   };

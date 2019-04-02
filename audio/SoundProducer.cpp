@@ -2054,9 +2054,19 @@ public:
 
         const float out_peak = RT_get_max_val(output_sound[ch],num_frames);
         volume_peaks[ch] = out_peak;
-
+                
         if(false==is_touched && out_peak > MIN_AUTOSUSPEND_PEAK)
           is_touched = true;
+
+        /*
+        for(auto link : _output_links){        
+          if(!strcmp("Main Pipe", link->source->_plugin->patch->name)
+             && !strcmp("System Out", link->target->_plugin->patch->name)){
+            printf("    Main pipe -> Out. out_peak[ch]: %f (min: %f). is_touched: %d\n", out_peak, MIN_AUTOSUSPEND_PEAK, is_touched);
+            break;
+          }
+        }
+        */
       }
 
       if(is_touched)        
@@ -2065,7 +2075,16 @@ public:
       RT_set_output_peak_values(volume_peaks, output_sound);
     }
 
-    RT_iterate_output_links_after_process(time, num_frames, is_touched ? output_sound : NULL);      
+    /*
+    for(auto link : _output_links){        
+      if(!strcmp("Main Pipe", link->source->_plugin->patch->name)
+         && !strcmp("System Out", link->target->_plugin->patch->name)){
+        printf("    Main pipe -> Out: NULL in/out 1. is_touched: %d\n", is_touched);
+        break;
+      }
+    }
+    */
+    RT_iterate_output_links_after_process(time, num_frames, is_touched ? output_sound : NULL);
   }
 };
 

@@ -526,7 +526,7 @@ SoundPlugin *PLUGIN_create(struct Patch *patch, SoundPluginType *plugin_type, ha
     plugin->highshelf_db = 0.0f;
 
     if (num_outputs > 0)
-      plugin->delay = new radium::SmoothDelay(DELAY_MAX * MIXER_get_sample_rate() / 1000);
+      plugin->delay = new radium::SmoothDelay(ms_to_frames(DELAY_MAX));
     //init_system_filter(&plugin->delay, num_outputs, "System Delay", is_loading);
     plugin->delay_time = 0.0f;
   }

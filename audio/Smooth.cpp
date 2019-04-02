@@ -184,10 +184,11 @@ static inline void copy_sound2(const Smooth *__restrict__ smooth, float *__restr
 void SMOOTH_copy_sound(const Smooth *__restrict__ smooth, const float *__restrict src, float *__restrict__ dst, const int num_frames){
   R_ASSERT_NON_RELEASE(smooth->target_audio_will_be_modified==true);
 
+  R_ASSERT_NON_RELEASE(num_frames==RADIUM_BLOCKSIZE);
+
   if (num_frames==64){
     copy_sound2(smooth, dst, src, 64);
   } else {
-    R_ASSERT_NON_RELEASE(false);
     copy_sound2(smooth, dst, src, num_frames);
   }
 }
@@ -248,7 +249,6 @@ bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(const 
   return smooth->target_audio_will_be_modified;
 }
 
-
 void SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
@@ -261,7 +261,7 @@ void SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source,
     //printf("%p smooth->get: %f, smooth->set: %f. start: %f, end: %f\n",smooth,smooth->get,smooth->set,smooth->start_value,smooth->end_value);
     float volume = smooth->value;
     
-    if(volume == 1.0f)
+    if(equal_floats(1.0, volume))
       juce::FloatVectorOperations::add(target, source, num_frames);
     
     else if(volume > 0.0f)

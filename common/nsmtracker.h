@@ -126,6 +126,10 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+#include <limits>
+#endif
+
 #if USE_QT4
 #if !defined(__clang__)
 #  pragma GCC diagnostic push
@@ -237,6 +241,12 @@ extern double g_last_time_mouse_pointer_was_moved_by_the_program; // Only used i
 #  define R_BOUNDARIES(min,b,max) ({ typeof(min) minTEMP = (min); typeof(b) bTEMP = (b); typeof(max) maxTEMP = (max); bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
 #else
 #  define R_BOUNDARIES(min,b,max) ({ typeof(min) minTEMP = (min); typeof(b) bTEMP = (b); typeof(max) maxTEMP = (max); maxTEMP < minTEMP ? (abort(),minTEMP) : bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
+#endif
+
+#ifdef __cplusplus
+static inline bool equal_floats(float x, float y) {
+  return std::abs(x - y) < std::numeric_limits<float>::epsilon();
+}
 #endif
 
 
