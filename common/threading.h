@@ -27,9 +27,6 @@
     #define AVOIDDENORMALS 
 #endif
 
-
-
-
 extern LANGSPEC void THREADING_init_main_thread_type(void);
 extern LANGSPEC void THREADING_init_player_thread_type(void);
 extern LANGSPEC void THREADING_init_runner_thread_type(void);

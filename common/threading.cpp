@@ -7,8 +7,6 @@
 
 #include <QHash>
 
-#ifndef TEST_THREADING
-
 #if defined(FOR_MACOSX)
 #include "../weakjack/weak_libjack.h"
 #endif
@@ -24,6 +22,7 @@
 #include "OS_Player_proc.h"
 
 
+#ifndef TEST_THREADING
 
 void OS_WaitForAShortTime(int milliseconds){
 #ifdef FOR_WINDOWS
@@ -43,9 +42,7 @@ void OS_WaitAtLeast(int milliseconds){
   while( (TIME_get_ms()-start_time) < milliseconds)
     OS_WaitForAShortTime(10);
 }
-
-#endif // !TEST_THREADING
-
+#endif
 
 
 
@@ -308,15 +305,23 @@ void THREADING_set_priority(priority_t priority){
 
 #ifdef TEST_THREADING
 
-#if 0
-g++ threading.cpp -Wall -lpthread
-#endif
-
 
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <assert.h>
+
+void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
+  abort();
+}
+bool PLAYER_current_thread_has_lock(void){
+  return false;
+}
+
+int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const char *fmt,...){
+  abort();
+  return -1;
+}
 
 static pthread_t thread;
 

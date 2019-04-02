@@ -232,7 +232,7 @@ void *talloc_atomic__(int size, const char *filename, int linenumber){
         // Fill with random data. Very often GC_malloc_atomic returns zeros, but not always.
         
         if (ret != NULL){
-          unsigned char *chars = ret;
+          unsigned char *chars = (unsigned char *)ret;
           for(int i=0;i<size;i++){
             chars[i] = rand() % 256;            
           }
@@ -311,8 +311,9 @@ void *talloc_realloc__(void *v, int new_size, const char *filename, int linenumb
 char *talloc_strdup__(const char *input, const char *filename, int linenumber) {
   if(input==NULL) // when does this happen?
     return NULL;
-  char *ret = talloc_atomic__((int)strlen(input) + 1, filename, linenumber);
-  sprintf(ret,"%s",input);
+  int len = strlen(input);
+  char *ret = (char*)talloc_atomic__(len + 1, filename, linenumber);
+  strcpy(ret, input);
   return ret;
 }
 
@@ -320,7 +321,7 @@ wchar_t *talloc_wcsdup__(const wchar_t *input, const char *filename, int linenum
   if(input==NULL) // when does this happen?
     return NULL;
   
-  wchar_t *ret = talloc_atomic__(sizeof(wchar_t) * ((int)wcslen(input) + 1), filename, linenumber);
+  wchar_t *ret = (wchar_t*)talloc_atomic__(sizeof(wchar_t) * ((int)wcslen(input) + 1), filename, linenumber);
   
   return wcscpy(ret, input);
 }
@@ -340,7 +341,7 @@ char *talloc_floatstring__(float number, const char *filename, int linenumber){
 
 char *talloc_format_internal(const char *fmt,...){
   int size = 64;
-  char *ret = talloc_atomic__(size,__FILE__,__LINE__);
+  char *ret = (char*)talloc_atomic__(size,__FILE__,__LINE__);
 
   for(;;){
     va_list argp;
@@ -351,10 +352,10 @@ char *talloc_format_internal(const char *fmt,...){
 
     if (len <= 0) {
       size = size * 2;
-      ret = talloc_realloc__(ret, size,__FILE__,__LINE__);
+      ret = (char*)talloc_realloc__(ret, size,__FILE__,__LINE__);
     } else if (len >= size-3) {
       size = len + 16;
-      ret = talloc_realloc__(ret, size,__FILE__,__LINE__);
+      ret = (char*)talloc_realloc__(ret, size,__FILE__,__LINE__);
     } else
       break;
   }

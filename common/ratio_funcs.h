@@ -334,8 +334,10 @@ static inline bool operator<=(const Ratio &r1, const Ratio &r2){
 
 #ifdef TEST_MAIN                
 
-//ln -sf ratio_funcs.h test_ratio.cpp
-//g++ test_ratio.cpp -DTEST_MAIN -Wall -Werror -g -o a.out && gdb ./a.out
+/*
+ln -sf ratio_funcs.h test_ratio.cpp
+g++ test_ratio.cpp -DTEST_MAIN -Wall -Werror -g -o a.out && gdb ./a.out
+*/
 
 static void comp(double a,double b){
   //printf("%f %f\n", fabs(a-b), std::max(a,b) / 10000000.0);

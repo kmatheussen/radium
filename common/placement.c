@@ -413,7 +413,25 @@ void EndProgram(void){
   printf("ENDPROGRAM called\n");
 }
 
-void RError(const char *fmt,...){
+void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
+  abort();
+}
+
+void RWarning_internal(const char *fmt,...){
+  abort();
+}
+
+bool THREADING_is_main_thread(void){
+  return true;
+}
+
+bool PLAYER_current_thread_has_lock(void){
+  return false;
+}
+
+bool g_is_starting_up = false;
+
+void RError_internal(const char *fmt,...){
   char message[1000];
   va_list argp;
   
@@ -433,7 +451,7 @@ void RError(const char *fmt,...){
 
 int main(void){
 
-  Place *p = PlaceCreate(0,0,0);
+  Place *p = PlaceCreate(0,0,1);
   const Place *p1 = PlaceCreate(5,0,50);
   const Place *p2 = PlaceCreate(5,1,MAX_UINT32);
   const Place *p3 = PlaceCreate(5,MAX_UINT32-1,MAX_UINT32);

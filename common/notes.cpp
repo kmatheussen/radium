@@ -1309,11 +1309,25 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 #include <stdarg.h>
 #include <assert.h>
 
+bool g_is_starting_up = false;
+
+
+extern "C"{
+void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
+  abort();
+}
 void EndProgram(void){
   printf("ENDPROGRAM called\n");
 }
 
-void RError(const char *fmt,...){
+bool THREADING_is_main_thread(void){
+  return true;
+}
+
+void RWarning_internal(const char *fmt,...){
+  abort();
+}
+void RError_internal(const char *fmt,...){
   char message[1000];
   va_list argp;
   
@@ -1324,8 +1338,12 @@ void RError(const char *fmt,...){
 
   fprintf(stderr,"error: %s\n",message);
 }
+bool PLAYER_current_thread_has_lock(void){
+  return false;
+}
+}
 
-static void cmp(char *text, float value){
+static void cmp(const char *text, float value){
   fprintf(stderr,"\n\nComparing \"%s\" against %f\n",text,value);
   
   float from_text = notenum_from_notetext(text);
