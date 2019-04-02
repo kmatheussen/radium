@@ -1110,7 +1110,7 @@ public slots:
       setInstrumentSaturation((float)val/1000.0);
   }
   void on_reset_instrument_saturation_clicked(){
-    instrument_saturation->setValue(500);
+    instrument_saturation->setValue(670);
   }
   
   void on_instrument_brightness_in_editor_valueChanged(int val){
@@ -1142,7 +1142,7 @@ public slots:
       setBlockSaturation((float)val/1000.0);
   }
   void on_reset_block_saturation_clicked(){
-    block_saturation->setValue(500);
+    block_saturation->setValue(1000);
   }
   
   // windows

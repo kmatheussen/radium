@@ -2844,7 +2844,7 @@ void setInstrumentBrightnessInEditor(float val){
 }
 
 
-static float g_instrument_saturation = 0.5;
+static float g_instrument_saturation = 0.6669999957084656;
 
 float getInstrumentSaturation(void){
   static bool has_inited = false;
@@ -2914,7 +2914,7 @@ void setBlockBrightness(float val){
 }
 
 
-static float g_block_saturation = 0.5;
+static float g_block_saturation = 1.0;
 
 float getBlockSaturation(void){
   static bool has_inited = false;
