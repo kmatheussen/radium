@@ -1,3 +1,49 @@
+
+Changes 5.9.50 -> 5.9.51:
+* Sequencer: Don't crash after selecting Cancel when
+  asked for replacement of missing audio file.
+* Sequencer: Don't accept replacement audio file if
+  the base names of the two filenames differ. This is
+  a quick right-before-the-release hack to avoid a
+  crash that can happen if the two files have
+  different lengths. Needs proper solution later.
+* Song properties: Change the text "Send global swing
+  tempo to plugins" to "Send global swing tempo to
+  plugins and jack transport".
+* Song properties: Change the text "Audio files" to
+  "Audio files in Sample player and Fluidsynth".
+* GUI: Increase default block saturation to 1.0
+* GUI: Increase default instrument saturation
+  to 0.67.
+* GUI: Add options to set instrument saturation and
+  brightness for the editor only. May want a less
+  saturated background color in the editor.
+* Internal: Include the samplereader and ratio tests
+  into "make test".
+* Internal: Fix "make test".
+* Internal: Run "make test" in the build script for
+  creating new releases. "make test" does catch the
+  bug below, but running it wasn't automated.
+* Internal: Fix crash when moving several seqblocks
+  in some situations. The bug was general though, so
+  it might have caused other problems as well. The
+  bug was introduced in 5.9.48, so all releases
+  between 5.9.48 and 5.9.51 will be marked unstable.
+* Audio: Fix the problems with latency compensation
+  in 5.9.50. The bug had actually always been there,
+  but hopefully it had not been audible
+  before 5.9.50.
+* Load: Fix crash when loading old songs,
+  approximately around 4.2.0 or older. Not sure when
+  this bug was introduced.
+* Audio: Some minor optimizations of CPU usage.
+* API: getInstrumentBrightnessInEditor,
+  setInstrumentBrightnessInEditor,
+  getInstrumentSaturationInEditor,
+  setInstrumentSaturationInEditor.
+
+
+
 Changes 5.9.49 -> 5.9.50:
 * Audio: Make internal block size configurable.
   CPU usage is reduced significantly when the
