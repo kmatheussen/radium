@@ -1646,6 +1646,11 @@ public:
       // Set _is_autosuspending. _is_autosuspending is only used by the GUI.
       ATOMIC_SET_RELAXED(_plugin->_is_autosuspending, autosuspend && was_autosuspending_last_cycle);
 
+#if 0
+      if (ATOMIC_NAME(_plugin->_RT_is_autosuspending) != autosuspend)
+        printf("%s: Autosuspend %s\n", _plugin->patch->name, autosuspend ? "ON" : "OFF");
+#endif
+      
       ATOMIC_NAME(_plugin->_RT_is_autosuspending) = autosuspend;
     }
   }
@@ -1795,25 +1800,11 @@ public:
       static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, outputs[1], outputs[1]);
   }
 
-  // This function is called while processing link->source. "this" is link->target.
-  void RT_create_dry_sound_from_input_link(SoundProducerLink *link, int64_t time, int num_frames, float **source_output_sound, float **dry_sound) const {
-#if !defined(RELEASE)
-    if (dry_sound==NULL)
-      if (source_output_sound != NULL)
-        abort();
-    
-    if (!link->is_active){
-      if (source_output_sound!=NULL)
-        abort();
-    }
+  // Note: Always called for all audio links, active or not, autosuspended or not, bus or not, going to be mixed or not.
+  void RT_update_link_before_mixing(SoundProducerLink *link, int64_t time, int num_frames) const {
 
-    if(link->source->RT_is_autosuspending())
-      if (source_output_sound!=NULL)
-        abort();      
-#endif
-    
     SoundProducer *source = link->source;
-
+    
     int latency = _highest_input_link_latency - source->_latency;
 
     latency = R_MAX(0, latency);
@@ -1829,79 +1820,76 @@ public:
       printf("    Set latency %d. (%s -> %s)\n", latency, source->_plugin->patch->name, link->target->_plugin->patch->name);
 #endif
     }
-
     
     if (link->is_active)
       SMOOTH_called_per_block(&link->volume); // A link can't turn inactive before link->volume has been smoothed down to 0.
-
+  }
+  
+  // This function is called while processing link->source.
+  // "this" is link->target.
+  // If "source_output_sound" can be NULL.
+  void RT_create_dry_sound_from_input_link(SoundProducerLink *link, int64_t time, int num_frames, float **source_output_sound, float **dry_sound) const {
+#if !defined(RELEASE)
+    if (dry_sound==NULL)
+      abort();
     
-    //
-    // !! All audio links (active or not, autosuspended or not, bus or not) will always run up to this point. !!
-    //
-
-    if (dry_sound==NULL){
-      /*
-      if(!strcmp("Main Pipe", link->source->_plugin->patch->name)
-         && !strcmp("System Out", link->target->_plugin->patch->name))
-        printf("    Main pipe -> Out: NULL in/out\n");
-      */
-      link->_delay.RT_call_instead_of_process_if_no_sound(num_frames, NULL);
-      return;
+    if (!link->is_active){
+      if (source_output_sound!=NULL)
+        abort();
     }
 
-#if !defined(RELEASE)
+    if(link->source->RT_is_autosuspending())
+      if (source_output_sound!=NULL)
+        abort();
+    
     if (source_output_sound != NULL)
-      if (source->has_run(time)==false)
+      if (link->source->has_run(time)==false)
         abort();
 #endif
     
-    {      
-      
-      //const float *input_producer_sound = link->source->_output_buffer.get_channel(link->source_ch);
-      
-      float latency_sound_sound[num_frames];
-      const float *latency_compensated_input_producer_sound;
-      
-      if (source_output_sound==NULL)
-        latency_compensated_input_producer_sound = link->_delay.RT_call_instead_of_process_if_no_sound(num_frames, latency_sound_sound);
-      else
-        latency_compensated_input_producer_sound = link->_delay.RT_process(source_output_sound[link->source_ch], latency_sound_sound, num_frames);
-
-      if (latency_compensated_input_producer_sound != NULL)
-        SMOOTH_mix_sounds(&link->volume,
-                          dry_sound[link->target_ch], // out
-                          latency_compensated_input_producer_sound, // in
-                          num_frames
-                          );
-      
-    }
+    //const float *input_producer_sound = link->source->_output_buffer.get_channel(link->source_ch);
     
+    float latency_sound_sound[num_frames];
+    const float *latency_compensated_input_producer_sound;
+    
+    if (source_output_sound==NULL)
+      latency_compensated_input_producer_sound = link->_delay.RT_call_instead_of_process_if_no_sound(num_frames, latency_sound_sound);
+    else
+      latency_compensated_input_producer_sound = link->_delay.RT_process(source_output_sound[link->source_ch], latency_sound_sound, num_frames);
+    
+    if (latency_compensated_input_producer_sound != NULL)
+      SMOOTH_mix_sounds(&link->volume,
+                        dry_sound[link->target_ch], // out
+                        latency_compensated_input_producer_sound, // in
+                        num_frames
+                        );    
   }
 
   // This function is called while processing link->source. "this" is link->target.
+  // Note: Always called for all audio links, active or not, autosuspended or not, bus or not.
   void RT_process_link(SoundProducerLink *link, int64_t time, float **source_output_sound, int num_frames) {
+
+    RT_update_link_before_mixing(link, time, num_frames);
 
     bool input_is_empty = source_output_sound==NULL || link->is_active==false;
     
     if (input_is_empty && link->_delay.RT_delay_line_is_empty()) {
+      link->_delay.RT_call_instead_of_process_if_no_sound(num_frames, NULL);
+      return;
+    }
 
-      RT_create_dry_sound_from_input_link(link, time, num_frames, NULL, NULL);
-    
-    } else {
+    RT_PLUGIN_touch(link->target->_plugin);
 
-      RT_PLUGIN_touch(link->target->_plugin);
-
+    {
       radium::ScopedMultiThreadAccessArrayElement<radium::AudioBuffer> scoped_buffer(_input_buffers);
-        //auto scoped_buffer(_input_buffers);
-
-      float **dry_sound = NULL;
+      //auto scoped_buffer(_input_buffers);
       
       auto *buffer = scoped_buffer.RT_get();
       
       if (buffer->RT_obtain_channels_if_necessary(radium::NeedsLock::YES))
         buffer->clean();
       
-      dry_sound = buffer->get_channels();
+      float **dry_sound = buffer->get_channels();
       
       RT_create_dry_sound_from_input_link(link, time, num_frames, source_output_sound, dry_sound);
     }

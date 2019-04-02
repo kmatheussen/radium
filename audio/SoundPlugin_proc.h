@@ -142,6 +142,11 @@ static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
 
   if (plugin != NULL) {
 
+#if 0
+    if(ATOMIC_GET(plugin->_RT_is_autosuspending) != false)
+      printf("  %s: Autosuspend OFF\n", plugin->patch->name);
+#endif
+    
     // We can use RELAXED on these two variables since they would be set to the same values if accessed simultaneously. I'm pretty sure that's a valid reason to use RELAXED.
     // And furthermore, reading these two values are protected by other mechanisms, so they are never read at the same time as they are written.
     ATOMIC_SET_RELAXED(plugin->_RT_is_autosuspending, false);
