@@ -69,5 +69,13 @@ public:
 #define LOCKASSERTER_EXCLUSIVE(a) radium::LockAsserter::Exclusive _exclusive___(  const_cast<radium::LockAsserter*>(a), CR_FORMATEVENT("LockWriter")  )
 #define LOCKASSERTER_SHARED(a)    radium::LockAsserter::Shared    _shared___(     const_cast<radium::LockAsserter*>(a), CR_FORMATEVENT("LockReader")  )
 
+#if defined(RELEASE)
+#define LOCKASSERTER_EXCLUSIVE_NON_RELEASE(a)
+#define LOCKASSERTER_SHARED_NON_RELEASE(a)
+#else
+#define LOCKASSERTER_EXCLUSIVE_NON_RELEASE(a) radium::LockAsserter::Exclusive _exclusive___(  const_cast<radium::LockAsserter*>(a), CR_FORMATEVENT("LockWriter")  )
+#define LOCKASSERTER_SHARED_NON_RELEASE(a)    radium::LockAsserter::Shared    _shared___(     const_cast<radium::LockAsserter*>(a), CR_FORMATEVENT("LockReader")  )
+#endif
+  
 }
 #endif

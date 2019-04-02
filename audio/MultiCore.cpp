@@ -129,7 +129,7 @@ static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, i
 
     //printf("Running %s\n", sp->_plugin->patch->name);
 
-    if ( ! sp->RT_is_autosuspending()) {
+    if (! sp->RT_is_autosuspending()) {
 
       //double start_time = monotonic_seconds();
       
@@ -145,6 +145,16 @@ static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, i
       for(auto *buffer : sp->_input_buffers)
         buffer->RT_release_channels_if_necessary(radium::NeedsLock::YES);
 
+      /*
+      for(auto link : sp->_output_links){        
+        if(!strcmp("Main Pipe", link->source->_plugin->patch->name)
+           && !strcmp("System Out", link->target->_plugin->patch->name)){
+          printf("    Main pipe -> Out: NULL in/out 2\n");
+          break;
+        }
+      }
+      */
+      
       sp->RT_iterate_output_links_after_process(time, num_frames, NULL); // last argument is sound (i.e. there's no sound)
       
     }

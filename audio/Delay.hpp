@@ -66,6 +66,8 @@ public:
   }
 
   T tap(int tap_pos) const {
+    R_ASSERT_NON_RELEASE(IOTA != -1);
+    
     int read_pos = (IOTA-tap_pos) & _anding;
     //printf("............ read(%d): %d\n", tap_pos, read_pos);
     return _buffer[read_pos];
