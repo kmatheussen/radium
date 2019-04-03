@@ -1702,6 +1702,8 @@ radium::Mutex JUCE_show_hide_gui_lock;
 
 static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
   //  const MMLock mmLock;
+  
+  showVirtualMidiKeyboardBelowNativeGUIs(); // To avoid calling SETTINGS_read_bool from the message thread. (only need to call one time, but it will only read from the disk the first time)
 
   bool ret = false;
   
@@ -2936,8 +2938,6 @@ void PLUGINHOST_init(void){
   }
   
   //juce::Font::setDefaultSansSerifFont
-
-  showVirtualMidiKeyboardBelowNativeGUIs(); // To avoid calling SETTINGS_read_bool from the message thread.
 }
 
 void PLUGINHOST_shut_down(void){

@@ -1859,7 +1859,7 @@ public:
     
     if (target_dry_sound==NULL)
       abort();
-    
+
     if (!link->is_active){
       if (source_output_sound!=NULL)
         abort();
