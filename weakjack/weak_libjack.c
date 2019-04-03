@@ -131,7 +131,7 @@ void init_weak_jack(void)
 	if (!lib) {
 #ifndef NDEBUG
           fprintf(stderr, "*** WEAK-JACK: libjack was not found\n");
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
           abort();
 #endif
 #endif
