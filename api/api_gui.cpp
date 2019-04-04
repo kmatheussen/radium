@@ -5250,6 +5250,13 @@ void gui_setSplitterSizes(int64_t splitter_guinum, dyn_t splitter_sizes){
   }
 
   splitter->setSizes(sizes);
+  
+#if defined(FOR_MACOSX)
+  // Workaround for sequencer not being updated when moving dragger.
+  QTimer::singleShot(30,[]{
+      SEQUENCER_update(SEQUPDATE_EVERYTHING);
+    });
+#endif
 }
 
 
