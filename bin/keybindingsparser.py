@@ -477,6 +477,7 @@ class KeyHandler:
                     eval(self.handlers[lokke])
                 except:
                     traceback.print_exc(file=sys.stdout)
+                    radium.addMessage(traceback.format_exc())
                 return True
                 break
         return False
