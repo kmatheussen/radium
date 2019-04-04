@@ -29,11 +29,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <vlCore/VisualizationLibrary.hpp>
 #include <vlVG/VectorGraphics.hpp>
 #include <vlGraphics/Rendering.hpp>
+
+/*
+  Note: !THREADED_OPENGL should compile and run (at least without too many modifications), but it hasn't been tested much.
+  Performance is also significantly worse, but it can probably be handy for debugging.
+*/
+
+
 #if USE_QT5
-#include <vlQt5/Qt5ThreadedWidget.hpp>
+#  if THREADED_OPENGL
+#    include <vlQt5/Qt5ThreadedWidget.hpp>
+#  else
+#    include <vlQt5/Qt5Widget.cpp> // Note Q_OBJECT must be removed from Qt5Widget
+#  endif
 #else
-#include <vlQt4/Qt4ThreadedWidget.hpp>
+#  include <vlQt4/Qt4ThreadedWidget.hpp>
 #endif
+
 #include <vlGraphics/SceneManagerActorTree.hpp>
 #include <vlVG/SceneManagerVectorGraphics.hpp>
 #include <vlGraphics/OcclusionCullRenderer.hpp>
@@ -626,7 +638,11 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
 
 class MyQtThreadedWidget
 #if USE_QT5
+#  if THREADED_OPENGL
   : public vlQt5::Qt5ThreadedWidget
+#  else
+  : public vlQt5::Qt5Widget
+#  endif
 #else
   : public vlQt4::Qt4ThreadedWidget
 #endif
@@ -682,7 +698,11 @@ public:
   // Main thread
   MyQtThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
 #if USE_QT5
+#  if THREADED_OPENGL
     : Qt5ThreadedWidget(vlFormat, parent)
+#  else
+    : Qt5Widget(parent)
+#  endif
 #else
     : Qt4ThreadedWidget(vlFormat, parent)
 #endif
@@ -698,6 +718,10 @@ public:
     , last_current_realline_while_playing(-1.0f)
   {
     ATOMIC_SET(_main_window_is_exposed, false);
+
+#if !THREADED_OPENGL
+    initQt5Widget("hello", vlFormat);
+#endif
     
 #if USE_QT5
     ATOMIC_DOUBLE_SET(override_vblank_value, 1000.0 / 60.0);
@@ -713,6 +737,10 @@ public:
     setAttribute(Qt::WA_OpaquePaintEvent);
     
     _update_event_counter_timer.start();
+
+#if !THREADED_OPENGL
+    init_vl(this);
+#endif
   }
 
   // Main thread
@@ -722,9 +750,13 @@ public:
 
   vl::ref<vl::OcclusionCullRenderer> mOcclusionRenderer;
   vl::ref<vl::Scissor> _scissor;
-  
+
   // OpenGL thread
-  void init_vl(vl::OpenGLContext *glContext) override {
+  void init_vl(vl::OpenGLContext *glContext)
+#if THREADED_OPENGL
+    override
+#endif
+  {
 
     printf("init_vl\n");
 
@@ -733,7 +765,9 @@ public:
     glContext->initGLContext(); // Sometimes, the first gl* call crashes inside here on OSX.
 
     // TODO: Maybe this should be user configurable
+#if THREADED_OPENGL
     QThread::currentThread()->setPriority(QThread::HighPriority);
+#endif
     
     _rendering = new vl::Rendering;
         
@@ -762,7 +796,6 @@ public:
     if(0)set_realtime(SCHED_FIFO,1); // TODO: Add priority inheritance to all locks. Setting the OpenGL thread to a higher priority might not make a difference because of priority inversion.
 #endif
   }
-
   
   /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */
   // OpenGL thread
@@ -992,6 +1025,7 @@ private:
         }else{
 
           //printf("Retfalse2. old_t2_datas.size: %d. sv->curr_playing_block==NULL (%d) || sv->block!=sv->curr_playing_block (%d)\n",old_t2_datas.size(), sv->curr_playing_block==NULL, sv->block!=sv->curr_playing_block);
+          //printf("  Wait.gakk\n");
           return false; // Returning false uses 100% CPU on Intel gfx / Linux, and could possibly cause jumpy graphics, but here we are just waiting for the block to be rendered.
         }
       }
@@ -1021,6 +1055,7 @@ private:
         
         if (t2_data_can_be_used  || blocktime != -100.0){
           _rendering->render();
+          //printf("   rettrue1\n");
           return true;
         } else {
           //printf("Retfalse3\n");
@@ -1066,6 +1101,7 @@ private:
     if (!is_playing && scroll_pos == last_scroll_pos && new_t2_data==NULL) {
       if (t2_data_can_be_used){
         _rendering->render();
+        //printf("   rettrue2\n");
         return true;
       }else{
         //printf("Retfalse5\n");
@@ -1193,6 +1229,7 @@ private:
     last_scroll_pos = scroll_pos;
     last_current_realline_while_playing = current_realline_while_playing;
 
+    //printf("    GOTIT\n");
     return true;
   }
 
@@ -1242,10 +1279,12 @@ private:
   int underrunCounter = 0;
 #endif
 
+  DEFINE_ATOMIC(bool, _dont_swap_right_now) = false; // written to in main thread. Both written to and read from in the opengl thread.
+  int _dont_swap_right_now_downcount = 0; // only accessed from opengl thread
+  //double _dont_swap_right_now_last_time = 0.0; // only accessed from opengl thread. Need to use a timer in case waiting for vblank isn't working (and it isn't always working on OSX).
+
   // OpenGL thread
   void swap(void){
-    if(_dont_swap_right_now)
-      return;
     
     if (USE_GL_LOCK)
       mutex.lock();
@@ -1260,24 +1299,33 @@ private:
       juce_lock = JUCE_lock();
 
     // Swap to the newly rendered buffer
-    if ( openglContext()->hasDoubleBuffer()) {
+    if (openglContext()->hasDoubleBuffer()) {
 
 #if USE_JUCE_CPU_PROTECTION_LOGIC
       double now;
 #endif
+
+      //printf("Swapping\n");
 
       if (juce_lock==NULL){
         radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
 #if USE_JUCE_CPU_PROTECTION_LOGIC
         now = monotonic_seconds() * 1000.0;
 #endif
-        openglContext()->swapBuffers();
+        
+        if(ATOMIC_GET(_dont_swap_right_now)) // Check this variable again in case it was set to false in the meantime.
+          msleep(15);
+        else
+          openglContext()->swapBuffers();
 
       }else{
 #if USE_JUCE_CPU_PROTECTION_LOGIC
         now = monotonic_seconds() * 1000.0;
 #endif
-        openglContext()->swapBuffers();
+        if(ATOMIC_GET(_dont_swap_right_now)) // Check this variable again in case it was set to false in the meantime.
+          msleep(15);
+        else
+          openglContext()->swapBuffers();
       }
 
       //printf("update: %fms\n", time_estimator.get_vblank());
@@ -1353,19 +1401,37 @@ private:
 
 public:
 
-  bool _dont_swap_right_now = false;
-  
   /** Event generated when the bound OpenGLContext does not have any other message to process 
       and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
   // OpenGL thread
   void updateEvent() override {
+    //{static double last_time = 0; static int counter =0; double nowtime = TIME_get_ms(); printf("   Counter: %d. Time: %f\n", counter++, nowtime-last_time);last_time = nowtime;}
+
+    if(ATOMIC_GET(_dont_swap_right_now)){
+      msleep(15);
+      return;
+    }
+    
+    if(_dont_swap_right_now_downcount > 0){
+      msleep(15);
+      _dont_swap_right_now_downcount--;
+      /*
+      double time = TIME_get_ms();
+      if ((time - _dont_swap_right_now_last_time) > 15){
+        _dont_swap_right_now_downcount--;
+        _dont_swap_right_now_last_time = time;
+      }
+      */
+      return;
+    }
 
     radium::ScopedMutex lock(make_current_mutex);
-
-    bool handle_current = true;
-
+#if THREADED_OPENGL
+    const bool handle_current = true;
+    
     if (handle_current)
       QGLWidget::makeCurrent();  // Not sure about this. updateEvent() is called immediately again after it returns.
+#endif
 
     if (g_order_pause_gl_thread.tryWait()) {
       g_ack_pause_gl_thread.notify_one();
@@ -1373,8 +1439,10 @@ public:
     }
     
     if (g_order_make_current.tryWait()) {
+#if THREADED_OPENGL
       if (!handle_current)
         QGLWidget::makeCurrent();
+#endif
       g_ack_make_current.notify_one();
     }
 
@@ -1393,13 +1461,16 @@ public:
 
     ATOMIC_SET(g_has_updated_at_least_once, true);
 
+#if THREADED_OPENGL
 #if USE_QT5
     if (g_qtgui_has_started_step2==false || ATOMIC_GET(_main_window_is_exposed)==false){
       if (handle_current)
         QGLWidget::doneCurrent();
+      //printf("hepp1\n");
       lock.wait_and_pause_lock(200);
       return;
     }
+#endif
 #endif
 
     double overridden_vblank_value = ATOMIC_DOUBLE_GET(override_vblank_value);
@@ -1427,12 +1498,16 @@ public:
 #if !USE_QT5
       if (ATOMIC_GET(is_training_vblank_estimator)==true) {
 
+        //printf("hepp3\n");
+        
         swap();
 
       } else
 #endif
         {
 
+          //printf("hepp4\n");
+          
           bool must_swap;
           
           {
@@ -1442,6 +1517,8 @@ public:
 #endif
             radium::ScopedMutex lock(draw_mutex);
 
+            //printf("hepp5\n");
+            
             if (canDraw()) {
               must_swap = draw();
             } else {
@@ -1450,6 +1527,7 @@ public:
           }
 
           //printf("Must swap: %d\n", must_swap);
+
           
           if (must_swap)
             swap();
@@ -1475,8 +1553,10 @@ public:
 
     ATOMIC_SET(g_has_updated_at_least_once, true);
 
+#if THREADED_OPENGL
     if (handle_current)
       QGLWidget::doneCurrent();
+#endif
   }
 
   // Main thread
@@ -1487,13 +1567,19 @@ public:
   void resizeEvent(QResizeEvent *qresizeevent) override {
     radium::ScopedResizeEventTracker resize_event_tracker;
 
-    _dont_swap_right_now = true;
-    
+    ATOMIC_SET(_dont_swap_right_now, true);
+
     if (g_editor->window != NULL)
       calculateNewWindowWidthAndHeight(g_editor->window);
     
+    GE_set_height(qresizeevent->size().height());
+    
 #if USE_QT5
+#  if THREADED_OPENGL
     vlQt5::Qt5ThreadedWidget::resizeEvent(qresizeevent);
+#  else
+    vlQt5::Qt5Widget::resizeEvent(qresizeevent);
+#  endif
 #else
     vlQt4::Qt4ThreadedWidget::resizeEvent(qresizeevent);
 #endif
@@ -1515,11 +1601,18 @@ public:
     
     initEvent();
 
-    GE_set_height(h);
+    // _dont_swap_right_now_downcount and _dont_swap_right_now prevent crash on OSX when resizing. At least I haven't seen crash after adding these two.
+    //
+    // Note: The crash didn't disappear when running single-threadedly.
+    //
+    // Doesn't seem necessary on other platforms to avoid crashes, but it seems to lower flickering when resizing.
+    //
+    // For each time this variable is decremented, we also wait 15ms, so spent_time(10) is effectively between 15ms*10 and 30ms*10 = 150-300ms. (on OSX the value is much much closer to 150ms than 300ms)
+    _dont_swap_right_now_downcount = 10;
     
-    GFX_ScheduleEditorRedraw();
+    ATOMIC_SET(_dont_swap_right_now, false);
 
-    _dont_swap_right_now = false;
+    GFX_ScheduleEditorRedraw();
   }
   
   // The rest of the methods in this class are virtual methods required by the vl::UIEventListener class. Not used.
@@ -1571,7 +1664,9 @@ public:
   // Necessary to avoid error with clang++.
   void keyPressEvent(QKeyEvent *event) override {
 #if USE_QT5
+#  if THREADED_OPENGL
     vlQt5::Qt5ThreadedWidget::keyPressEvent(event);
+#  endif
 #else
     vlQt4::Qt4ThreadedWidget::keyPressEvent(event);
 #endif
@@ -1589,7 +1684,9 @@ public:
   // Necessary to avoid error with clang++.
   void keyReleaseEvent(QKeyEvent *event) override {
 #if USE_QT5
+#  if THREADED_OPENGL
     vlQt5::Qt5ThreadedWidget::keyReleaseEvent(event);
+#  endif
 #else
     vlQt4::Qt4ThreadedWidget::keyReleaseEvent(event);
 #endif
@@ -1611,7 +1708,11 @@ public:
 };
 
 
+#if THREADED_OPENGL
 static vl::ref<MyQtThreadedWidget> widget;
+#else
+static MyQtThreadedWidget *widget;
+#endif
 
 /*
 QSurfaceFormat GL_get_qsurface_format(void){
@@ -1889,12 +1990,18 @@ static void setup_widget(QWidget *parent){
   //vlFormat.setVSync(false);
 
   widget = new MyQtThreadedWidget(vlFormat, parent);
+#if THREADED_OPENGL
   widget->start();
+#else
+  widget->initializeGL();
+#endif
   
   widget->resize(1000,1000);
   widget->show();
 
+#if THREADED_OPENGL
   widget->setAutomaticDelete(false);  // dont want auto-desctruction at program exit.
+#endif
 }
 
 static bool g_compatibility_ok = false;
@@ -1985,15 +2092,17 @@ QWidget *GL_create_widget(QWidget *parent){
 
   R_ASSERT_RETURN_IF_FALSE2(g_compatibility_ok==true, NULL);
 
-    
 
   setup_widget(parent);
+  
 #if !USE_QT5
   widget->set_vblank(GL_get_estimated_vblank());
 #endif
-  
+
+#if THREADED_OPENGL
   while(ATOMIC_GET(GE_vendor_string)==NULL || ATOMIC_GET(GE_renderer_string)==NULL || ATOMIC_GET(GE_version_string)==NULL)
     msleep(5);
+#endif
   
   {
     QString s_vendor((const char*)ATOMIC_GET(GE_vendor_string));
@@ -2227,23 +2336,34 @@ QWidget *GL_create_widget(QWidget *parent){
                   "In addition, the graphics tends to not look as good."
                   );
 
-  }  
-
+  }
+  
+#if THREADED_OPENGL
   while(ATOMIC_GET(g_has_updated_at_least_once)==false)
     msleep(5);
-
-  g_gl_widget_started = true;
+#endif
   
+  g_gl_widget_started = true;
+
+#if THREADED_OPENGL
   return widget.get();
+#else
+  return widget;
+#endif
 }
 
 
 void GL_stop_widget(QWidget *widget){
+#if THREADED_OPENGL
   MyQtThreadedWidget *mywidget = static_cast<MyQtThreadedWidget*>(widget);
-
-  T1_stop_t2();
+#endif
   
+  T1_stop_t2();
+
+#if THREADED_OPENGL
   mywidget->stop();
+#endif
+  
   //delete mywidget;
 }
 

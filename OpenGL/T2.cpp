@@ -326,7 +326,9 @@ void T1_stop_t2(void){
 }
 
 void T1_wait_until_t2_got_t1_data(void){
+#if THREADED_OPENGL
   while(t1_to_t2_queue.size() > 0)
     msleep(20);
+#endif
 }
 

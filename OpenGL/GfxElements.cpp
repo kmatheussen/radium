@@ -365,9 +365,11 @@ struct GradientTrianglesCollection2 {
     if (visitnum==0) // Program startup. Deadlock without this check.
       return;
 
+#if THREADED_OPENGL
     do{
       msleep(20);
     }while(ATOMIC_GET(_visitnum) < visitnum+2 || _queue.size() < GQUEUE_MAX_SIZE || ATOMIC_GET(_num_gradients_to_push_to_1) > 0);
+#endif
   }
   
   void T1_prepare_for_new_rendering(void){
