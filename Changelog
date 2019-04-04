@@ -1,3 +1,30 @@
+Changes 5.9.51 -> 5.9.52:
+* OSX: Workaround for sequencer graphics not being
+  updating in 10.14 when moving the "dragger" (i.e.
+  the "=" button in the top left corner of the
+  sequencer).
+* Editor: Fix cursor line sometimes being placed in
+  wrong position after resizing.
+* OSX: Workaround for crash in Apple's OpenGL library
+  that sometimes happened when starting up, and when
+  resizing editor. (The workaround is to pause
+  graphics rendering for a short while after
+  resizing). This bug was especially noticable on
+  macOS 10.14.
+* Internal: Add compile time option to run OpenGL in
+  the main thread instead of it's own thread. Didn't
+  fix the OSX crashes though.
+* Editor: Reduce flickering when resizing.
+* Keybindings: Don't crash and don't show assertion
+  reporter if there is something wrong with the
+  keybinding configuration.
+* Keybindings: Show error message in message window
+  when pressing a key and the keybinding failed to
+  run.
+* OSX: Don't crash if trying to run Radium without
+  first installing jack.
+
+
 
 Changes 5.9.50 -> 5.9.51:
 * Sequencer: Don't crash after selecting Cancel when
