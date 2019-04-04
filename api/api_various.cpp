@@ -2246,17 +2246,37 @@ void evalPython(const_char *code){
 static dyn_t g_keybindings_from_keys = g_uninitialized_dyn;
 static dyn_t g_keybindings_from_commands = g_uninitialized_dyn;
 
+#define EXIT_INIT_KEYBINDINGS() do{             \
+    if(keybindings != NULL)                     \
+      Py_DECREF(keybindings);                   \
+                                                \
+    if (radium != NULL)                                                 \
+      Py_DECREF(radium);                                                \
+                                                                        \
+    g_keybindings_from_keys = DYN_create_hash(r_keybindings_from_keys); \
+    g_keybindings_from_commands = DYN_create_hash(r_keybindings_from_commands); \
+    return;                                                             \
+  }while(0)
 
 static void init_keybindings(void){
-  PyObject *radium = PyImport_ImportModule("radium");
-  R_ASSERT_RETURN_IF_FALSE(radium!=NULL);
-  
-  PyObject *keybindings = PyObject_GetAttrString(radium, "_keybindingsdict");
-  R_ASSERT_RETURN_IF_FALSE(keybindings!=NULL);
-  
-
   hash_t *r_keybindings_from_keys = HASH_create(512);
   hash_t *r_keybindings_from_commands = HASH_create(512);
+
+  PyObject *keybindings = NULL;
+  
+  PyObject *radium = PyImport_ImportModule("radium");
+  
+  if(radium==NULL){
+    R_ASSERT(false);
+    EXIT_INIT_KEYBINDINGS();
+  }
+
+  keybindings = PyObject_GetAttrString(radium, "_keybindingsdict");
+  if(keybindings==NULL){
+    //R_ASSERT(false);
+    addMessage("Error: Keybindings are not defined. Something is probably wrong with the file .radium/keybindings.conf in your home area. If not, please send an email to k.s.matheussen@notam02.no");
+    EXIT_INIT_KEYBINDINGS();
+  }
   
 
   PyObject *command=NULL, *value=NULL;
@@ -2264,10 +2284,17 @@ static void init_keybindings(void){
   
   while (PyDict_Next(keybindings, &pos, &command, &value)) { // I assume PyDict_Next takes care of decrefs-ing all key and value objects.
     PyObject *keys = PySequence_GetItem(value,0);
-    R_ASSERT_RETURN_IF_FALSE(keys!=NULL);
+    if(keys==NULL){
+      R_ASSERT(false);
+      EXIT_INIT_KEYBINDINGS();
+    }
     
     PyObject *qualifiers = PySequence_GetItem(value,1);
-    R_ASSERT_RETURN_IF_FALSE(qualifiers!=NULL);
+    if(qualifiers==NULL){
+      R_ASSERT(false);
+      Py_DECREF(keys);
+      EXIT_INIT_KEYBINDINGS();
+    }
     
     //printf("\n%s:\n", PyString_AsString(key));
 
@@ -2294,11 +2321,22 @@ static void init_keybindings(void){
     //printf("\n  qualifiers: ");
     for(int i = 0 ; i < num_qualifiers ; i++){
       PyObject *qualifier = PySequence_GetItem(qualifiers, i);
-      R_ASSERT_RETURN_IF_FALSE(qualifier!=NULL);
+      if(qualifier==NULL){
+        R_ASSERT(false);
+        Py_DECREF(keys);
+        Py_DECREF(qualifiers);
+        EXIT_INIT_KEYBINDINGS();
+      }
       
       //printf("%s, ", PyString_AsString(qualifier));
       const char *qualifierstring = PyString_AsString(qualifier);
-      R_ASSERT_RETURN_IF_FALSE(qualifierstring!=NULL);
+      if(qualifierstring==NULL){
+        R_ASSERT(false);
+        Py_DECREF(qualifier);
+        Py_DECREF(keys);
+        Py_DECREF(qualifiers);
+        EXIT_INIT_KEYBINDINGS();
+      }
       
       keybinding_line = keybinding_line==NULL ? qualifierstring : talloc_format("%s %s", keybinding_line, qualifierstring);
       //DYNVEC_push_back(r_qualifiers, DYN_create_string_from_chars(qualifierstring));
@@ -2312,7 +2350,12 @@ static void init_keybindings(void){
     */
 
     const char *commandstring = PyString_AsString(command);
-    R_ASSERT_RETURN_IF_FALSE(commandstring!=NULL);
+    if(commandstring==NULL){
+      R_ASSERT(false);
+      Py_DECREF(keys);
+      Py_DECREF(qualifiers);
+      EXIT_INIT_KEYBINDINGS();
+    }
 
     /*
     if(!strcmp(commandstring,"ra.copyEditorTrackOnOffToSeqblock"))
@@ -2365,13 +2408,10 @@ static void init_keybindings(void){
     Py_DECREF(qualifiers);
   }
 
-  Py_DECREF(keybindings);
-  Py_DECREF(radium);
-
-  
-  g_keybindings_from_keys = DYN_create_hash(r_keybindings_from_keys);
-  g_keybindings_from_commands = DYN_create_hash(r_keybindings_from_commands);
+  EXIT_INIT_KEYBINDINGS();
 }
+
+#undef EXIT_INIT_KEYBINDINGS
 
 
 // Fun fact: This function takes a python hash table and converts it into a radium hash table which is further converted into an s7 hash table.
@@ -2381,7 +2421,7 @@ dyn_t getKeybindingsFromKeys(void){
     return g_keybindings_from_keys;
 
   init_keybindings();
-
+  
   return g_keybindings_from_keys;
 }
 
@@ -2398,7 +2438,14 @@ dyn_t getKeybindingsFromCommands(void){
 
 const_char* getKeybindingFromCommand(const_char *command){
   hash_t *keybindings = getKeybindingsFromCommands().hash;
-  
+
+  if (g_keybindings_from_commands.type==UNINITIALIZED_TYPE){
+    R_ASSERT(false);
+    return "";
+  }
+
+  R_ASSERT_RETURN_IF_FALSE2(g_keybindings_from_commands.type==HASH_TYPE, "");
+      
   if (HASH_has_key(keybindings,command))
     return HASH_get_chars(keybindings, command);
   else
@@ -2407,6 +2454,14 @@ const_char* getKeybindingFromCommand(const_char *command){
 
 const_char* getKeybindingFromKeys(const_char *keys){
   hash_t *keybindings = getKeybindingsFromKeys().hash;
+  
+  if (g_keybindings_from_keys.type==UNINITIALIZED_TYPE){
+    R_ASSERT(false);
+    return "";
+  }
+
+  R_ASSERT_RETURN_IF_FALSE2(g_keybindings_from_keys.type==HASH_TYPE, "");
+
   if (HASH_has_key(keybindings,keys))
     return HASH_get_chars(keybindings, keys);
   else
