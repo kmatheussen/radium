@@ -566,7 +566,11 @@ static inline QString get_seqblock_name(const struct SeqTrack *seqtrack, const s
     const struct Blocks *block = seqblock->block;
     
     if (right_justify){
+#ifdef __cplusplus
+      int justify_blocklist = ::log10(root->song->num_blocks) + 1;
+#else
       int justify_blocklist = log10(root->song->num_blocks) + 1;
+#endif
       return QString::number(block->l.num).rightJustified(justify_blocklist, ' ') + separator + QString(block->name);
     } else {
       return QString::number(block->l.num) + separator + QString(block->name);
