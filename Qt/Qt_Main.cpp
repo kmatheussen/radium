@@ -3841,7 +3841,7 @@ int main(int argc, char **argv){
 
     PyRun_SimpleString("import os");
 
-#if 1
+#if 0
     //#if defined(FOR_WINDOWS)
     sprintf(temp,"sys.g_program_path = \"\"");
 #else
@@ -3944,7 +3944,7 @@ int main(int argc, char **argv){
 
   OS_get_full_program_file_path("start.py"); // just ensure file is there
 
-#if defined(FOR_WINDOWS)
+#if 0 //defined(FOR_WINDOWS)
   PyRun_SimpleString("execfile(\"start.py\")");
 #else
   PyRun_SimpleString("execfile(os.path.join(sys.g_program_path,\"start.py\"))");
