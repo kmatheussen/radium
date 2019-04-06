@@ -1,0 +1,24 @@
+language:
+    - cpp
+
+matrix:
+  include:
+    # linux with gcc 8
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          install:
+            - gcc-8
+      dist: trusty
+      env:
+        - MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+      compiler: gcc
+
+before_install:
+  - eval "${MATRIX_EVAL}"
+
+script:
+    - make test
+
