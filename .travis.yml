@@ -10,14 +10,12 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
       dist: trusty
-      env:
-        - MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
       compiler: gcc
 
 before_install:
   - eval "${MATRIX_EVAL}"
 
 script:
-    - make test
+    - CC=gcc make test
 
  
