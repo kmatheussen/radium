@@ -9,8 +9,6 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-          install:
-            - gcc-8
       dist: trusty
       env:
         - MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
