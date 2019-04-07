@@ -1155,9 +1155,8 @@ Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n){
 
 static bool controller_name_exists(const Data *data, const char *name){
   for(int i=0;i<NUM_PD_CONTROLLERS;i++)
-    if (data->controllers[i].name != NULL)
-      if(!strcmp(name, data->controllers[i].name))
-        return true;
+    if(!strcmp(name, data->controllers[i].name))
+      return true;
 
   return false;
 }

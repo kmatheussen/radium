@@ -51,13 +51,27 @@ export CPUOPT=
 #"$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind. (Makefile sets CPUOPT to "-Og" in debug mode and "-O3" in release mode)
 #export CPUOPT=
 
-#export CCC="clang++ -mfpmath=sse -msse2"
-export CCC="g++ -mfpmath=sse -msse2"
-export CC="gcc -mfpmath=sse -msse2"
-#export CC="clang -Wno-gnu-designator -mfpmath=sse -msse2 -Wenum-conversion "
+# To compile clang:
+# cmake -DLLVM_ENABLE_PROJECTS="clang;compiler-rt" -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=$GCC_PREFIX/bin/gcc -DCMAKE_CXX_COMPILER=$GCC_PREFIX/bin/g++ -DGCC_INSTALL_PREFIX=$GCC_PREFIX -DCMAKE_INSTALL_PREFIX=/somewhere\ ../llvm
+
+USE_CLANG=1
+
+if [[ $USE_CLANG == 1 ]] ; then
+    export CCC="clang++ -mfpmath=sse -msse2"
+    export CC="clang -Wno-gnu-designator -mfpmath=sse -msse2 -Wenum-conversion "
+    if [[ $BUILDTYPE == RELEASE ]] ; then
+        export LINKER="clang++"
+    else
+        export LINKER="clang++ --rtlib=compiler-rt -lgcc_s"
+    fi
+else
+    export CCC="g++ -mfpmath=sse -msse2"
+    export CC="gcc -mfpmath=sse -msse2"
+    export LINKER=g++
+fi
+
 export GCC="gcc -mfpmath=sse -msse2"
 export CLANGCC="clang++ -mfpmath=sse -msse2"
-export LINKER=g++
 
 export FPIC="-fPIC"
 

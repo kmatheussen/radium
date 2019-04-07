@@ -107,7 +107,7 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
   }
   */
   
-  void contextMenuEvent(QContextMenuEvent *event){
+  void contextMenuEvent(QContextMenuEvent *event) override {
     if (_show_popup_menu) {
       _show_popup_menu();
     } else

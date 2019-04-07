@@ -238,7 +238,7 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
   {                                                                   
   }
   
-  void contextMenuEvent(QContextMenuEvent *event){
+  void contextMenuEvent(QContextMenuEvent *event) override {
     if (_show_popup_menu) {
       _show_popup_menu();
     } else
@@ -309,7 +309,7 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
   {                                                                   
   }
   
-  void contextMenuEvent(QContextMenuEvent *event){
+  void contextMenuEvent(QContextMenuEvent *event) override {
     if (_show_popup_menu) {
       _show_popup_menu();
     } else

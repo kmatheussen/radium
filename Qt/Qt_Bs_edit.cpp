@@ -1073,7 +1073,8 @@ void BS_UpdatePlayList(void){
 
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
   
-  int justify_playlist = log10(gfx_seqblocks(seqtrack)->num_elements) + 1;
+  int num_seqblocks = gfx_seqblocks(seqtrack)->num_elements;
+  int justify_playlist = num_seqblocks==0 ? 1 : (log10(num_seqblocks) + 1);
   
   QVector<PlaylistElement> elements = get_playlist_elements();
   {

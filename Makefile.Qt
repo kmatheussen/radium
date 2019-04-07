@@ -142,7 +142,8 @@ endif
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
 GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
 
-FREETYPE_CFLAGS ?= `$(PKG) -cflags freetype2`
+FREETYPE_CFLAGS ?=
+# `$(PKG) --cflags freetype2`
 
 VST_OPTS ?=
 
@@ -176,27 +177,33 @@ else ifeq ($(GCC_MAJOR),7)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 #	UNDEFINED_SANITIZE_OPTS=
+else ifneq (,$(findstring clang,$(CC)))
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 else
 	UNDEFINED_SANITIZE_OPTS=
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=
 endif
 
-# clang:
-#UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer
-#UNDEFINED_SANITIZE_OPTS=
+
+#UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer -DRADUM_USES_UBSAN
+UNDEFINED_SANITIZE_OPTS=
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
 # "-Og" very often destroys debugging (although it's not supposed to), but without it things are too slow (well, it's already too slow, but -Og helps a lot).
-#THREAD_SANITIZE_OPTS=-Og -fsanitize=thread -DRADIUM_USE_TSAN #-DDISABLE_BDWGC
+#THREAD_SANITIZE_OPTS=-Og -fsanitize=thread -DRADIUM_USES_TSAN #-DDISABLE_BDWGC
 THREAD_SANITIZE_OPTS=
 
-ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common
+ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common -DRADUM_USES_ASAN
 #-DDISABLE_BDWGC
 #ADDRESS_SANITIZE_OPTS=
 
+# msan requires all 3rd party libraries to be compiled with msan.
+#MEMORY_SANITIZE_OPTS=-fsanitize=memory -fsanitize-blacklist=SanitizerSupprMem.txt -DRADUM_USES_MSAN
+MEMORY_SANITIZE_OPTS=
+
 
 # Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
-OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS)
+OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS)
 DEBUG_BUILD_OPTS = -Werror -Wall -ggdb3 -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 
 NOSHORTEN64TO32FLAG=
@@ -250,7 +257,9 @@ COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P
 #-Wsuggest-final-types -Wsuggest-final-methods
 
 ifeq (,$(findstring clang,$(CC)))
-	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict 
+	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict
+else
+        COMMONOPT += -Wno-deprecated-register
 endif
 
 
@@ -288,7 +297,9 @@ CPPOPT = $(COMMONOPT) -Wmissing-declarations -DNDEBUG  # NDEBUG must be defined 
 # -Wno-parentheses added because of boost.
 
 ifeq ($(GCC_MAJOR),8)
-	CPPOPT += -Wno-class-memaccess  -Wno-parentheses
+	ifeq (,$(findstring clang,$(CC)))
+		CPPOPT += -Wno-class-memaccess  -Wno-parentheses
+	endif
 endif
 
 
@@ -316,6 +327,11 @@ ifeq (,$(findstring clang,$(CC)))
  WNO_DUPLICATED_BRANCHES += -Wno-duplicated-branches
 endif
 
+
+WNO_NULL_POINTER_ARITHMETIC=
+ifneq (,$(findstring clang,$(CC)))
+ WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
+endif
 
 
 # Can't be enabled because of 3rd party header files:
@@ -444,7 +460,8 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 #-------------------KARSJK-------------------------------
 
-BUILD_DEPENDENCIES = buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
+BUILD_DEPENDENCIES = flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
+#buildtype.opt 
 
 PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_check_opengl bin/radium_plugin_scanner bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so bin/scheme/api_protos.scm
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
@@ -729,7 +746,7 @@ vector.o:  $(BUILD_DEPENDENCIES) $(CD)vector.c
 	$(CC) $(CD)vector.c $(OPT)
 
 hashmap.o:  $(BUILD_DEPENDENCIES) $(CD)hashmap.c 
-	$(CC) $(CD)hashmap.c $(OPT) #-fno-sanitize=undefined
+	$(CC) $(CD)hashmap.c $(OPT) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) #-fno-sanitize=undefined
 
 Dynvec.o:  $(BUILD_DEPENDENCIES) $(CD)Dynvec.c $(CD)dyn_type.h $(CD)nsmtracker.h
 	$(CC) $(CD)Dynvec.c $(OPT)
@@ -2340,16 +2357,16 @@ crashreporter_windows.o: crashreporter/crashreporter_windows.c
 #	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
 GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
-	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) #-Wno-error=unused-variable
+	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) #-Wno-error=unused-variable
 
 T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/Queue.hpp OpenGL/GfxElements.h 
-	$(CCC) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES)    #-Wno-error=unused-variable
+	$(CCC) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)    #-Wno-error=unused-variable
 
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h
-	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES)
+	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)
 
 Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp
-	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) #-Wno-error=unused-variable
+	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) #-Wno-error=unused-variable
 
 CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
 	$(CCC) OpenGL/CheckOpenGL.cpp $(QTOPT)
@@ -2375,9 +2392,13 @@ endif
 
 ifeq ($(BUILDTYPE), DEBUG)
 	S7OPTS += -DS7_DEBUGGING=1 -DWITH_PROFILE=1 -DWITH_MULTITHREAD_CHECKS=1 -DS7_ALIGNED #-DWITH_GMP
+	ifneq (,$(findstring clang,$(CC)))
+		S7OPTS +=  -fno-sanitize=integer
+	endif
 endif
 
 S7OPTS += -DS7_ALIGNED -g
+
 
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
 	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1

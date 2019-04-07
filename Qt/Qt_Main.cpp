@@ -164,7 +164,7 @@ class Hepp2 : public Hepp{
 
 // The address sanitizer (asan) tends to zero out all allocated memory, covering up bugs. 
 // This is a workaround.
-
+#if defined(RADIUM_USES_ASAN)
 void * operator new(decltype(sizeof(0)) size) noexcept(false)
 {
   void *mem = malloc(size);
@@ -172,6 +172,8 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
     memset(mem, rand(), size);
   return mem;
 }
+#endif
+
 #endif
 
 
@@ -2435,7 +2437,7 @@ WPoint GetAbsPointerPos(struct Tracker_Windows *tvisual){
 
 Area GetScreenSize(struct Tracker_Windows *tvisual){
   Area ret;
-  QPoint pos;
+  //QPoint pos;
 
   QScreen *screen;
   

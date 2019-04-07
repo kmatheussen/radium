@@ -233,7 +233,7 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
 
   std::function<void(void)> _show_popup_menu;
   
-  void contextMenuEvent(QContextMenuEvent *event){
+  void contextMenuEvent(QContextMenuEvent *event) override {
     if (_show_popup_menu) {
       _show_popup_menu();
     } else
