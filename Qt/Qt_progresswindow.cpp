@@ -636,7 +636,7 @@ static void send_string(QString message){
   
   printf("-______ sending string %s\n",message.toUtf8().constData());
 
-#ifdef RADIUM_USE_TSAN // get broken pipe in waitForBytesWritten when using tsan.
+#ifdef RADIUM_USES_TSAN // get broken pipe in waitForBytesWritten when using tsan.
   return;
 #endif
   
