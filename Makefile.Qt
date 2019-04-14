@@ -81,11 +81,9 @@ TARGET_OS ?= any
 
 S7OPTS ?=
 
-WHICHFAUST = $(shell pwd)/bin/packages/faust2/compiler/faust
-#WHICHFAUST = /home/kjetil/faust-2.5.23/compiler/faust
-# The include files in audio/faudiostream are copied from Faust 0.9.55.
-FAUST = $(WHICHFAUST) -I $(shell pwd)/bin/packages/faust2/architecture  #`which faust` #/usr/bin/faust #~/site/bin/faust
-#FAUST = $(WHICHFAUST) -I /home/kjetil/faust-2.5.23/architecture
+FAUSTDIR = $(shell pwd)/bin/packages/faust
+WHICHFAUST = $(FAUSTDIR)/build/bin/faust
+FAUST = $(WHICHFAUST) -I $(FAUSTDIR)/libraries/old # -I /home/kjetil/faust/architecture  
 
 LLVM_OPTS ?=
 
@@ -134,7 +132,7 @@ ifeq ($(RADIUM_QT_VERSION),5)
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
 
 #	If using QtWebKit:
-	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets --cflags Qt5WebKit` -Ibin/packages/qhttpserver-master/src -I$(QSCINTILLA_PATH)/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
+	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets --cflags Qt5WebKit --cflags Qt5Concurrent` -Ibin/packages/qhttpserver-master/src -I$(QSCINTILLA_PATH)/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
 	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets --libs Qt5WebKit` $(FPIC)
 endif
 
@@ -185,8 +183,8 @@ else
 endif
 
 
-#UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer -DRADUM_USES_UBSAN
-UNDEFINED_SANITIZE_OPTS=
+UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover=undefined -DRADUM_USES_UBSAN # ,integer ,integer
+#UNDEFINED_SANITIZE_OPTS=
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
 # "-Og" very often destroys debugging (although it's not supposed to), but without it things are too slow (well, it's already too slow, but -Og helps a lot).
@@ -1371,7 +1369,7 @@ Qt_EventReceiver.o:  $(BUILD_DEPENDENCIES) $(P)Qt_EventReceiver.cpp $(P)EditorWi
 	$(CCC) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
 Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp common/visual_proc.h  embedded_scheme/s7extra_proc.h
-	$(CCC) $(P)Qt_colors.cpp $(QTOPT) -Ibin/packages/faust2/architecture
+	$(CCC) $(P)Qt_colors.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -Wno-overloaded-virtual #
 
 $(P)mQt_colors.cpp: $(P)Qt_colors.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_colors.cpp >$(P)mQt_colors.cpp
@@ -1936,15 +1934,18 @@ Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
 	$(CCC) $(QTOPT) audio/Modulator_plugin.cpp $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW)
 
 
-FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations
+FAUST_DEPENDENCIES = audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
+FAUST_OPTS1 = $(QTOPT) $(CPUOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations
+FAUST_OPTS = $(FAUST_OPTS1) -I$(FAUSTDIR)/architecture
+# -Ibin/packages/faust2/architecture 
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
 	$(CCC) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(NOSHORTEN64TO32FLAG) # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
 
-audio/mfaustqt2.cpp: bin/packages/faust2/architecture/faust/gui/faustqt.h
-	cd audio && $(MOC) ../bin/packages/faust2/architecture/faust/gui/faustqt.h >mfaustqt2.cpp
+audio/mfaustqt2.cpp: $(FAUSTDIR)/architecture/faust/gui/QTUI.h #bin/packages/faust2/architecture/faust/gui/faustqt.h
+	cd audio && $(MOC) $(FAUSTDIR)/architecture/faust/gui/QTUI.h >mfaustqt2.cpp
+
 
 #audio/mfaustqt1.cpp: bin/packages/faust2/architecture/faust/gui/faustqt.h
 #	cd audio && $(MOC) faudiostream/architecture/faust/gui/faustqt.h >mfaustqt1.cpp
@@ -1966,7 +1967,7 @@ stk_flute.o: audio/stk_flute.cpp
 	$(CCC) audio/stk_flute.cpp $(FAUST_OPTS) -DCLASSNAME=Flute_dsp -DDSP_NAME=\"STK\ Flute\" -DCREATE_NAME=create_stk_flute_plugin
 
 audio/stk_flute.cpp: audio/faust-examples/faust-stk/flute.dsp $(FAUST_DEPENDENCIES)
-	cd audio/faust-examples/faust-stk && $(FAUST) -mem -cn Flute_dsp -a ../../Faust_plugins_template.cpp flute.dsp -o ../../stk_flute.cpp
+	cd audio/faust-examples/faust-stk && $(FAUST) -cn Flute_dsp -a ../../Faust_plugins_template.cpp flute.dsp -o ../../stk_flute.cpp
 	./fix_faust_code.sh Flute_dsp $@
 
 

@@ -29,14 +29,14 @@ fi
 
 # Don't include faustdev (by default) in debug builds since it increases linker time and increases startup time when running under gdb.
 #
-if [[ $BUILDTYPE == RELEASE ]]
-then
-    if ! env |grep IS_LINUX_BINARY ; then
-        export INCLUDE_FAUSTDEV="jadda"
-    fi
-fi
+#if [[ $BUILDTYPE == RELEASE ]]
+#then
+#    if ! env |grep IS_LINUX_BINARY ; then
+#        export INCLUDE_FAUSTDEV="jadda"
+#    fi
+#fi
 
-#export INCLUDE_FAUSTDEV="jadda"
+export INCLUDE_FAUSTDEV="jadda"
 
 # Always compile pddev. Most of it is placed in a dynamic library, so it doesn't contribute to higher link time or startup time.
 export INCLUDE_PDDEV="jadda"
@@ -110,6 +110,11 @@ export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 export OS_OPTS="-Werror=array-bounds -msse2 -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras`"
 #export OS_OPTS="-Werror=array-bounds -march=native"
 
+
+#to copmile faust:
+#VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Debug -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which clang++` -DCMAKE_C_COMPILER=`which clang`" make most
+#VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc`" make most
+
 if env |grep INCLUDE_FAUSTDEV ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
 fi
@@ -129,11 +134,14 @@ if [ -f $MAYBELLVM ]; then
 else
     LLVMLIBS=`llvm-config --libs`
 fi
+if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
+    LLVMLIBS=
+fi
 
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_gpl-2.10.8
 
 if env |grep INCLUDE_FAUSTDEV ; then
-    FAUSTLDFLAGS="$QSCINTILLA_PATH/Qt4Qt5/libqscintilla2_qt5.a bin/packages/faust2/compiler/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
+    FAUSTLDFLAGS="$QSCINTILLA_PATH/Qt4Qt5/libqscintilla2_qt5.a `pwd`/bin/packages/faust/build/lib/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
 else    
     FAUSTLDFLAGS=""
 fi
@@ -150,7 +158,11 @@ if ! env |grep RADIUM_BFD_CFLAGS ; then
 fi
 
 if ! env |grep RADIUM_BFD_LDFLAGS ; then
+if [[ $USE_CLANG == 1 ]] ; then
+    export RADIUM_BFD_LDFLAGS="$CLANG_PREFIX/lib/libbfd.a"
+else
     export RADIUM_BFD_LDFLAGS="-Wl,-Bstatic -lbfd -Wl,-Bdynamic"
+fi
 fi
 
 export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -ldl -lXext "
