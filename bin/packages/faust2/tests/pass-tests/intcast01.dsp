@@ -1,1 +1,0 @@
-process =  int(int(hslider("toto", 0, -10, 10, 0.1))) : int;
