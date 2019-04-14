@@ -937,7 +937,7 @@ struct RememberGeometryQDialog : public QDialog {
   
 public:
    RememberGeometryQDialog(QWidget *parent_, radium::Modality modality)
-    : QDialog(parent_!=NULL ? parent_ : g_main_window, Qt::Window) // | Qt::Tool)
+     : QDialog(parent_!=NULL ? parent_->window() : g_main_window, Qt::Window) // | Qt::Tool)
 #if PUT_ON_TOP
     , timer(this)
 #endif
