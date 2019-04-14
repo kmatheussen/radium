@@ -20,6 +20,13 @@ race:QCoreApplication::postEvent
 race:RT_call_instead_of_process
 race:crashreporter_foo
 race:SP_write_mixer_tree_to_disk
+race:QWaitCondition
+race:QMetaObject::activate
+race:QMetaType::create
+race:QXcbWindow::compressExposeEvent
+race:QArrayData::allocate
+race:QXcbConnection::xi2HandleEvent
+race:QXcbConnection::processXcbEvents
 
 # Calling 3rd party code:
 race:call_ladspa_get_descriptor_func
