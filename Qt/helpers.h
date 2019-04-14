@@ -58,7 +58,7 @@ extern QPointer<QMenu> g_curr_popup_qmenu;
 extern int g_num_running_resize_events;
 extern bool g_qt_is_painting;
 extern bool g_qtgui_has_started,g_qtgui_has_stopped;
-extern bool g_qtgui_has_started_step2;
+extern DEFINE_ATOMIC(bool, g_qtgui_has_started_step2);
 extern bool g_qtgui_has_stopped;
 
 typedef QPointer<QObject> IsAlive;
@@ -1062,7 +1062,7 @@ struct ScopedExec{
       _has_obtained_custom_exec = true;
     }
 
-    if (true || g_qtgui_has_started_step2==true){
+    if (true || ATOMIC_GET(g_qtgui_has_started_step2)==true){
       GFX_HideProgress();
       _has_hidden_progress = true;
     }
@@ -1123,7 +1123,7 @@ static inline int safeExec(QMessageBox *widget, bool program_state_is_valid){
 #endif
 
   if (g_radium_runs_custom_exec==true){
-    bool hide_progress = g_qtgui_has_started_step2==true;
+    bool hide_progress = ATOMIC_GET_RELAXED(g_qtgui_has_started_step2)==true;
     
     if (true || hide_progress)
       GFX_HideProgress();

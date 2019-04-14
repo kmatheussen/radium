@@ -1463,7 +1463,7 @@ public:
 
 #if THREADED_OPENGL
 #if USE_QT5
-    if (g_qtgui_has_started_step2==false || ATOMIC_GET(_main_window_is_exposed)==false){
+    if (ATOMIC_GET(g_qtgui_has_started_step2)==false || ATOMIC_GET(_main_window_is_exposed)==false){
       if (handle_current)
         QGLWidget::doneCurrent();
       //printf("hepp1\n");
@@ -2023,9 +2023,10 @@ bool GL_check_compatibility(void){
     return false;
   }
 
-  
+#if !RADIUM_USES_TSAN
   if (CHECKOPENGL_checkit()==true)
     return false;
+#endif
 
   if (GL_get_vsync()==false){
     if (SETTINGS_read_bool("show_vsync_warning_during_startup", true)) {

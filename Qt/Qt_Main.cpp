@@ -235,7 +235,7 @@ DEFINE_ATOMIC(bool, is_starting_up) = true;
 bool g_is_starting_up = true;
 bool g_qt_is_running = false;
 bool g_qtgui_has_started = false;
-bool g_qtgui_has_started_step2 = false;
+DEFINE_ATOMIC(bool, g_qtgui_has_started_step2) = false;
 bool g_qtgui_exec_has_started = false;
 bool g_qtgui_has_stopped = false;
 bool g_program_has_ended = false;
@@ -1905,7 +1905,7 @@ protected:
         delete gakkbox;
         GFX_SetMenuFontsAgain();
         GFX_CloseProgress();
-        g_qtgui_has_started_step2 = true;
+        ATOMIC_SET(g_qtgui_has_started_step2, true);
       }
     }
     
@@ -3309,7 +3309,9 @@ static void myMessageOutput(QtMsgType type, const char *localMsg)
       snprintf(temp, 1000, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
       fprintf(stderr, "%s", temp);
 #ifndef RELEASE
+#if !RADIUM_USES_TSAN
       SYSTEM_show_error_message(temp);
+#endif
 #endif
       break;
     case QtCriticalMsg:
