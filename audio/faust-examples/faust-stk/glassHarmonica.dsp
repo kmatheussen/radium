@@ -68,7 +68,7 @@ modes(3,4) = 9.38;
 basegains(3,4) = pow(0.999,5);
 excitation(3,4) = 1*gain*gate/(nMode(3) - 1);
 
-modes(3,5) = 0 : float;
+modes(3,5) = 9 : float;
 basegains(3,5) = 0 : float;
 excitation(3,5) = 0 : float;
 

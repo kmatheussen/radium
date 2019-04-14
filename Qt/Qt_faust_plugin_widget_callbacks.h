@@ -462,9 +462,11 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     if (FAUST_is_compiling(plugin))
-      _faust_compilation_status->setText("Initializing... ");
+      _faust_compilation_status->setText("&#8987;");
+    //_faust_compilation_status->setText("Initializing... ");
     else
-      _faust_compilation_status->setText("Ready ");
+      _faust_compilation_status->setText("<font color=\"green\">&#10004;</font>");
+    //_faust_compilation_status->setText("Ready ");
 
     setupUi(this);
 
@@ -542,45 +544,133 @@ public:
   bool showing_svg(void){
     return _web_text=="";
   }
-  
-  // todo: Move web by dragging.
+
+  // These two are here so that an older version is not displayed after a newer version.
+  int _cpp_generation = 0;
+  int _last_displayed_cpp_generation = -1;
+
+  void update_cpp_editor(struct SoundPlugin *plugin){
+    if (_cpp_editor != NULL && _cpp_editor->isVisible()) {
+
+      _cpp_editor->setText("// Please wait, generating C++ code");
+
+
+      IsAlive is_alive(this);
+
+      FAUST_generate_cpp_code(plugin, _cpp_generation++, [is_alive, this](int generation, QString cpp_code){
+
+          R_ASSERT(THREADING_is_main_thread());
+
+          if (!is_alive)
+            return;
+          
+          if (generation < _last_displayed_cpp_generation)
+            return;
+
+          _last_displayed_cpp_generation = generation;
+
+          if (_cpp_editor != NULL)
+            _cpp_editor->setText(cpp_code);
+        });
+    }
+  }
   
   void calledRegularlyByParent(void){
 
     RETURN_IF_DATA_IS_INACCESSIBLE();
-    
+
+    /*    
     if (Undo_num_undos()==0) // I don't think this can happen, but in case it does, we return since the call to Undo_ReopenLast() below would fail (badly).
       return;
 
     //R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open()==false);
     if (Undo_Is_Open()==true) // <-- This seems to happen when we have just started to move a chip.
       return;
+    */
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL) {
 
-      FAUST_calledRegularlyByParentReply status;
-      
-      UNDO_REOPEN_LAST();{ // Simply add any undos create here into the last undo point. Adding a new undo point here would be confusing for the user since this function is triggered by a timer and not a user interaction. (and we need to add undo to avoid inconsitencies, i.e. we can't just call Undo_StartIgnoringUndo()/Undo_StopIgnoringUndo().)
-        status = FAUST_calledRegularlyByParent(plugin);
-      }UNDO_CLOSE();
-      
-      if (status==Faust_No_New_Reply){
+      const radium::FAUST_calledRegularlyByParentReply ready = FAUST_calledRegularlyByParent(plugin);      
 
-        //
-        
-      } else if (status==Faust_Failed){
+      if (ready.has_new_data==false){
+        R_ASSERT(ready.factory_is_ready==false);
+        R_ASSERT(ready.svg_is_ready==false);
+        return;
+      }
 
-        // TODO: Just print the error message into the web view. No need for a separate error label.
-        
-        _faust_compilation_status->setText("Failed ");
-        //error_message->setText(FAUST_get_error_message(plugin));
+      printf("========== %d: %d - %d: %d ===========\n", ready.factory_is_ready, ready.factory_succeeded, ready.svg_is_ready, ready.svg_succeeded);
+
+      if (ready.factory_is_ready) {
+
+        if (ready.factory_succeeded) {
+
+          _latest_working_code = FAUST_get_code(plugin);
+
+          _faust_compilation_status->setText("<font color=\"green\">&#10004;</font>");
+          
+          PluginWidget *old = _plugin_widget;
+          _plugin_widget = PluginWidget_create(this, _patch.data(), SIZETYPE_NORMAL);
+          
+          if (_size_type != SIZETYPE_NORMAL){
+            
+            faust_webview_layout->removeWidget(old);
+            faust_webview_layout->addWidget(_plugin_widget, 1);
+            
+          }else {
+            
+            faust_interface_layout_radium->insertWidget(0, _plugin_widget);
+            
+          }
+          
+          //_plugin_widget->set_automation_value_pointers(plugin);
+          
+          delete old;
+          
+
+        } else {
+
+          _faust_compilation_status->setText("<font color=\"red\">&#10007;</font>");
+          //_faust_compilation_status->setText("Failed ");
+
+        }
+
+      }
+
+
+      if (ready.svg_is_ready && ready.svg_succeeded) {
 
         if (showing_svg())
           _svg_zoom_factor = web->zoomFactor();
         else
           _error_zoom_factor = web->zoomFactor();
         
+        _web_text = "";
+        
+        web->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(FAUST_get_svg_path(plugin))));
+        
+        web->setZoomFactor(_svg_zoom_factor);
+        
+        printf("    URL: -%s-. native: -%s-, org: -%s-\n",web->url().toString().toUtf8().constData(), QDir::fromNativeSeparators(FAUST_get_svg_path(plugin)).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());
+#if !USE_QWEBENGINE
+        _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
+#endif
+        
+        update_cpp_editor(plugin);
+      }
+
+
+      bool factory_failed = ready.factory_is_ready && ready.factory_succeeded==false;
+      bool svg_failed = ready.svg_is_ready && ready.svg_succeeded==false;
+
+
+      if (factory_failed || svg_failed){
+
+        if (showing_svg())
+          _svg_zoom_factor = web->zoomFactor();
+        else
+          _error_zoom_factor = web->zoomFactor();
+          
         //_last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
         _web_text = 
                      "<!DOCTYPE html>"
@@ -597,46 +687,6 @@ public:
         _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
 #endif
         
-      } else if (status==Faust_Success){
-        _faust_compilation_status->setText("Ready ");
-
-        _latest_working_code = FAUST_get_code(plugin);
-
-        if (showing_svg())
-          _svg_zoom_factor = web->zoomFactor();
-        else
-          _error_zoom_factor = web->zoomFactor();
-
-        _web_text = "";
-
-        web->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(FAUST_get_svg_path(plugin))));
-        
-        web->setZoomFactor(_svg_zoom_factor);
-                
-        printf("    URL: -%s-. native: -%s-, org: -%s-\n",web->url().toString().toUtf8().constData(), QDir::fromNativeSeparators(FAUST_get_svg_path(plugin)).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());
-#if !USE_QWEBENGINE
-        _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
-#endif
-        PluginWidget *old = _plugin_widget;
-        _plugin_widget=PluginWidget_create(this, _patch.data(), SIZETYPE_NORMAL);
-
-        if (_size_type != SIZETYPE_NORMAL){
-          
-          faust_webview_layout->removeWidget(old);
-          faust_webview_layout->addWidget(_plugin_widget, 1);
-          
-        }else {
-          
-          faust_interface_layout_radium->insertWidget(0, _plugin_widget);
-          
-        }
-
-        if (_cpp_editor != NULL && _cpp_editor->isVisible())
-          _cpp_editor->setText(FAUST_get_cpp_code(plugin));
-
-        //_plugin_widget->set_automation_value_pointers(plugin);
-
-        delete old;
       }
     }
   }
@@ -692,8 +742,9 @@ public:
       FAUST_set_code(plugin, code);
       if (_options_editor != NULL)
         FAUST_set_options(plugin, _options_editor->text());
+      _faust_compilation_status->setText("&#8987;");
       FAUST_start_compilation(plugin);
-      _faust_compilation_status->setText("Compiling... ");
+      //_faust_compilation_status->setText("Compiling... ");
     }
   }
 
@@ -758,10 +809,10 @@ public:
         _cpp_dialog->resize(600,400);
       }
       
-      _cpp_editor->setText(FAUST_get_cpp_code(plugin));
-      
       _cpp_dialog->show();
       _cpp_dialog->raise();
+
+      update_cpp_editor(plugin);
     }
   }
 

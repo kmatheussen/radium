@@ -105,7 +105,7 @@ public:
     pthread_mutex_unlock(&mutex);
   }
 
-  bool is_locked(void){
+  bool is_locked(void) const {
     return num_locks>0;
   }
 };

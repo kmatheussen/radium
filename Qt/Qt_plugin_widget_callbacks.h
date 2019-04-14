@@ -183,6 +183,7 @@ public:
       faust_revert_button->hide();
       faust_show_button->hide();
       faust_options_button->hide();
+      faust_interpreted->hide();
       
       // Jack:
     }else if(!strcmp(plugin->type->type_name, "Jack")) {
@@ -193,6 +194,7 @@ public:
       faust_revert_button->hide();
       faust_show_button->hide();
       faust_options_button->hide();
+      faust_interpreted->hide();
       load_button->hide();
       save_button->hide();
       reset_button->hide();
@@ -218,6 +220,7 @@ public:
       faust_revert_button->hide();
       faust_show_button->hide();
       faust_options_button->hide();
+      faust_interpreted->hide();
       _plugin_widget=PluginWidget_create(this, _patch.data(), SIZETYPE_NORMAL);
       vertical_layout->insertWidget(1,_plugin_widget);
     }
@@ -364,8 +367,7 @@ public:
         faust_show_button->setChecked(false);
       
       if (faust_options_button->isChecked() && !_faust_plugin_widget->_options_dialog->isVisible())
-        faust_options_button->setChecked(false);
-      
+        faust_options_button->setChecked(false);      
     }
 #endif
 
@@ -814,6 +816,20 @@ public slots:
         _faust_plugin_widget->edit_options();
       else
         _faust_plugin_widget->_options_dialog->hide();
+    }
+#endif
+  }
+
+  void on_faust_interpreted_toggled(bool val){
+    if (_is_initing)
+      return;
+    
+#ifdef WITH_FAUST_DEV
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if(plugin != NULL){
+      faust_compilation_status->setText("&#8987;");
+      if (!FAUST_set_use_interpreter_backend(plugin, val))
+        faust_compilation_status->setText("<font color=\"green\">&#10004;</font>");
     }
 #endif
   }

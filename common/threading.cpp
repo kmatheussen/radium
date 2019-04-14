@@ -193,6 +193,32 @@ void THREADING_wait_for_async_function(int64_t id){
   }
 }
 
+int64_t THREADING_run_on_main_thread_async(std::function<void(void)> callback, bool called_from_main_thread, bool run_now_if_called_from_main_thread){
+  R_ASSERT(!PLAYER_current_thread_has_lock());
+
+  if (called_from_main_thread){
+    R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
+    if (run_now_if_called_from_main_thread){
+      callback();
+      return -1;
+    }
+
+  }else{
+    R_ASSERT_NON_RELEASE(!THREADING_is_main_thread());
+  }
+
+  {
+    radium::ScopedMutex lock(g_on_main_thread_lock);
+    
+    int64_t id = g_on_main_thread_id++;
+    
+    g_on_main_threads[id] = new OnMainThread(callback);
+    
+    return id;
+  }
+}
+
 int64_t THREADING_run_on_main_thread_async(std::function<void(void)> callback, bool called_from_main_thread){
   R_ASSERT(!PLAYER_current_thread_has_lock());
 

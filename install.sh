@@ -70,11 +70,26 @@ rm -f "$TARGET/packages/s7/*.o"
 # rm -fr "$TARGET/packages/s7/sndlib"
 
 # faust
-mkdir -p "$TARGET/packages/faust2"
-cp -a packages/faust2/examples "$TARGET/packages/faust2/"
-cp -a packages/faust2/architecture "$TARGET/packages/faust2/"
-rm -fr "$TARGET/packages/faust2/architecture/webaudio"
-rm -fr "$TARGET/packages/faust2/architecture/osclib"
+mkdir -p "$TARGET/packages/faust"
+cp -a packages/faust/examples "$TARGET/packages/faust/"
+cp -a packages/faust/architecture "$TARGET/packages/faust/"
+cp -a packages/faust/libraries "$TARGET/packages/faust/"
+rm -fr "$TARGET/packages/faust/architecture/webaudio"
+rm -fr "$TARGET/packages/faust/architecture/osclib"
+rm -fr "$TARGET/packages/faust/architecture/android"
+rm -fr "$TARGET/packages/faust/architecture/iOS"
+rm -fr "$TARGET/packages/faust/architecture/juce"
+rm -fr "$TARGET/packages/faust/architecture/max-msp"
+rm -fr "$TARGET/packages/faust/architecture/android"
+rm -fr "$TARGET/packages/faust/architecture/node2js"
+rm -fr "$TARGET/packages/faust/architecture/sam"
+rm -fr "$TARGET/packages/faust/architecture/smartKeyboard"
+rm -fr "$TARGET/packages/faust/architecture/soul"
+rm -fr "$TARGET/packages/faust/architecture/teensy"
+rm -fr "$TARGET/packages/faust/architecture/unity"
+rm -fr "$TARGET/packages/faust/architecture/unsupported-arch"
+
+
 
 # pure data
 cp -a packages/libpd-master "$TARGET/packages/"

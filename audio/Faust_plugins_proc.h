@@ -7,11 +7,18 @@ extern LANGSPEC float *FAUST_get_peak_value_pointer(struct SoundPlugin *plugin, 
 extern LANGSPEC void FAUST_change_qtguistyle(const char *style_name);
 
 #if USE_QT4
-enum FAUST_calledRegularlyByParentReply{
-  Faust_No_New_Reply,
-  Faust_Failed,
-  Faust_Success
-};
+namespace radium{
+  struct FAUST_calledRegularlyByParentReply{
+    bool has_new_data = false;
+
+    bool factory_is_ready = false;
+    bool factory_succeeded;
+
+    bool svg_is_ready = false;
+    bool svg_succeeded;
+  };
+}
+
 
 class QDialog;
 QDialog *FAUST_create_qdialog(SoundPlugin *plugin);
@@ -25,14 +32,14 @@ bool FAUST_is_compiling(const struct SoundPlugin *plugin);
 QWidget *FAUST_get_native_gui(struct SoundPlugin *plugin);
 QString FAUST_get_code(const struct SoundPlugin *plugin);
 QString FAUST_get_options(const struct SoundPlugin *plugin);
-QString FAUST_get_cpp_code(const struct SoundPlugin *plugin);
+void FAUST_generate_cpp_code(const struct SoundPlugin *plugin, int generation, std::function<void(int, QString)> callback);
 QString FAUST_get_error_message(const struct SoundPlugin *plugin);
 QString FAUST_get_svg_path(const struct SoundPlugin *plugin);
-FAUST_calledRegularlyByParentReply FAUST_calledRegularlyByParent(struct SoundPlugin *plugin);
+radium::FAUST_calledRegularlyByParentReply FAUST_calledRegularlyByParent(struct SoundPlugin *plugin);
 void FAUST_start_compilation(struct SoundPlugin *plugin);
-bool FAUST_compile_now(struct SoundPlugin *plugin, bool is_initializing);
-#define DEFAULT_FAUST_DEV_PROGRAM "import(\"music.lib\");\n\nprocess = *(v), *(v) with {\n  v = db2linear(hslider(\"volume\", 0, -35, 35, 0.1));\n};\n"
+#define DEFAULT_FAUST_DEV_PROGRAM "import(\"stdfaust.lib\");\n\nprocess = *(v), *(v) with {\n  v = ba.db2linear(hslider(\"volume\", 0, -35, 35, 0.1));\n};\n"
 QString FAUSTGUI_get_code(QWidget *widget);
+bool FAUST_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_interpreter);
 #endif
 
 #endif
