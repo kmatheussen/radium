@@ -18,7 +18,6 @@
 
 #include "Faust_plugins_proc.h"
 
-
 namespace{
 
 class MyUI : public UI
@@ -697,8 +696,14 @@ static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, s
 
 // must be called from main thread
 static void delete_dsps_and_data1(Data *data){
-  printf("          Deleting data->qtgui %p\n", data->qtgui);
+  R_ASSERT_RETURN_IF_FALSE(data!=NULL);
+
+  if (data->qtgui==NULL)
+    return;
+
+  //printf("          Deleting data->qtgui %p\n", data->qtgui);
   delete data->qtgui;
+  data->qtgui = NULL;
 }
 
 // May be called from any thread
@@ -762,6 +767,8 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
 static void set_effect_value2(Data *data, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   float scaled_value;
 
+  //printf("    Setting %d: %f\n", effect_num, value);
+
 #ifdef FAUST_SYSTEM_EFFECT
   scaled_value = value;
 #else
@@ -788,7 +795,6 @@ static void set_effect_value2(Data *data, int effect_num, float value, enum Valu
     MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
     safe_float_write(controller->control_port, scaled_value);
   }
-  
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
@@ -849,8 +855,8 @@ static const char *get_effect_description(struct SoundPlugin *plugin, int effect
 
 
 static bool show_gui2(Data* data, SoundPlugin *plugin, int64_t parentgui){
-  printf("   Showing gui %p\n",data->qtgui);
-
+  //printf("   Showing gui %p\n",data->qtgui);
+  
   int64_t guinum = API_get_gui_from_existing_widget(data->qtgui_parent);
   gui_setParent(guinum, -1); // We let main window be parent. Other windows might not work very well as parent, for some reason.
   gui_show(guinum);
@@ -866,7 +872,7 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 }
 
 static void hide_gui2(Data *data){
-  printf("   Hiding gui %p\n",data->qtgui);
+  //printf("   Hiding gui %p\n",data->qtgui);
 
   int64_t guinum = API_get_gui_from_existing_widget(data->qtgui_parent);
   gui_hide(guinum);

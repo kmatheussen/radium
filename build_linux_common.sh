@@ -51,12 +51,15 @@ export CPUOPT=
 #"$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind. (Makefile sets CPUOPT to "-Og" in debug mode and "-O3" in release mode)
 #export CPUOPT=
 
-# To compile clang:
-# cmake -DLLVM_ENABLE_PROJECTS="clang;compiler-rt" -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=$GCC_PREFIX/bin/gcc -DCMAKE_CXX_COMPILER=$GCC_PREFIX/bin/g++ -DGCC_INSTALL_PREFIX=$GCC_PREFIX -DCMAKE_INSTALL_PREFIX=/somewhere\ ../llvm
+# To compile llvm/clang/sanitizers: (Note: sometimes rtti is not needed, but it seems coincidental when it's necessary):
+# export GCC_PREFIX=$(dirname `which gcc`)/../
+# REQUIRES_RTTI=1 cmake -DLLVM_ENABLE_PROJECTS="clang;compiler-rt" -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=$GCC_PREFIX/bin/gcc -DCMAKE_CXX_COMPILER=$GCC_PREFIX/bin/g++ -DGCC_INSTALL_PREFIX=$GCC_PREFIX -DCMAKE_INSTALL_PREFIX=/home/kjetil/site -DLLVM_ENABLE_RTTI=ON ../llvm 
+# REQUIRES_RTTI=1 make REQUIRES_RTTI=1 -j2
 
 USE_CLANG=1
 
 if [[ $USE_CLANG == 1 ]] ; then
+    export CLANG_PREFIX=$(dirname `which clang`)/../
     export CCC="clang++ -mfpmath=sse -msse2"
     export CC="clang -Wno-gnu-designator -mfpmath=sse -msse2 -Wenum-conversion "
     if [[ $BUILDTYPE == RELEASE ]] ; then

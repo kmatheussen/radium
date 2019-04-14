@@ -1,7 +1,7 @@
 import("filter.lib");
 //import("fast_log_exp.dsp");
 
-// ../bin/packages/faust2/compiler/faust -I ../bin/packages/faust2/architecture envelope_follower.dsp 
+// ../bin/packages/faust/libraries/old -I ../bin/packages/faust2/architecture envelope_follower.dsp 
 
 effect = library("effect.lib");
 

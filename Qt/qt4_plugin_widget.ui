@@ -1086,7 +1086,7 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>70</width>
+          <width>20</width>
           <height>0</height>
          </size>
         </property>
@@ -1112,10 +1112,10 @@
          <enum>QFrame::Plain</enum>
         </property>
         <property name="text">
-         <string>Ready</string>
+         <string>R</string>
         </property>
         <property name="textFormat">
-         <enum>Qt::PlainText</enum>
+         <enum>Qt::RichText</enum>
         </property>
         <property name="scaledContents">
          <bool>true</bool>
@@ -1180,27 +1180,7 @@ Revert source code to last version that compiled successfully.
 &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>Revert</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="faust_show_button">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;
-Show generated C++ source code for the last version that compiled successfully.
-&lt;p&gt;
-&lt;/i&gt;(Note that the C++  code is generated only for convience since  Radium asks Faust to compile directly to LLVM)&lt;/i&gt;
-&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Show C++</string>
+         <string>Rev.</string>
         </property>
        </widget>
       </item>
@@ -1223,7 +1203,17 @@ Example:
 &quot;</string>
         </property>
         <property name="text">
-         <string>Options</string>
+         <string>Opts.</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="faust_interpreted">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If enabled, use interpreter backend instead of the llvm backend.&lt;/p&gt;&lt;p&gt;The interpreter backend compiles code faster, but runs code slower.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Interp.</string>
         </property>
        </widget>
       </item>
@@ -1250,6 +1240,22 @@ Example:
         </property>
         <property name="text">
          <string>Show GUI</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="faust_show_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show generated C++ source code for the faust code.&lt;/p&gt;&lt;p&gt;(Note that Radium does not use this code. Radium either uses the LLVM backend or the interpreter backend, but never the C++ backend. Showing the C++ code is only available as a convenience to help understand what the Faust code does.).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Show C++</string>
         </property>
        </widget>
       </item>

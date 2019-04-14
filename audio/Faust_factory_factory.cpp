@@ -1,163 +1,67 @@
-
 #include <QMap>
 #include <QThread>
+#include <QtConcurrent>
 #include <QPair>
 
-#if 0 //QT_VERSION >= 0x050600
-#include <QTemporaryDir> // Spends too much time deleting files, and gives error messages as well.
-#else
-namespace{
-
-  static bool try_temp_path(QString &path, QString &error_string){
-    QDir base(QDir::root());
-    
-    if (base.mkdir(path)){
-      
-      base.cd(path);
-      
-      if (QDir::toNativeSeparators(path) != QDir::toNativeSeparators(base.absolutePath())){
-        error_string = "Created a temporary directory, but the path does not have expected value. Expected: " + QDir::toNativeSeparators(path) + ". Actual: " + QDir::toNativeSeparators(base.absolutePath());
-
-        base.cdUp();
-        base.rmdir(path);
-        
-        return false;
-      }
-      
-      return true;
-      
-    } else {
-
-      error_string = "Unable to create temporary directory " + path;
-      return false;
-      
-    }
-  }
-  
-  static bool get_new_temp_path(const QString &templatePath, QString &path, QString &error_string){
-
-    if (templatePath.endsWith("XXXXXX")){
-
-      QString error_string2;
-      
-      for(int i = 100000 ; i < 110000 ; i++){
-        path = templatePath.left(templatePath.length()-6) + QString::number(i);
-        if (try_temp_path(path, error_string2))
-          return true;
-      }
-      
-      error_string = error_string2;
-      return false;
-      
-    } else {
-
-      path = templatePath;
-      return try_temp_path(path, error_string);
-    }
-    
-  }
-
-  // http://stackoverflow.com/questions/11050977/removing-a-non-empty-folder-in-qt
-  static bool removeDir(const QString & dirName)
-  {
-    bool result = true;
-    QDir dir(dirName);
-    
-    if (dir.exists()) {
-      Q_FOREACH(QFileInfo info, dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System | QDir::Hidden  | QDir::AllDirs | QDir::Files, QDir::DirsFirst)) {
-        if (info.isDir()) {
-          result = removeDir(info.absoluteFilePath());
-        }
-        else {
-          result = QFile::remove(info.absoluteFilePath());
-        }
-        
-        if (!result) {
-          return result;
-        }
-      }
-      result = dir.rmdir(dirName);
-    }
-    return result;
-  }
- 
-  // In qt5, but not in qt4  
-  struct QTemporaryDir{
-
-    QString _error_string;
-    QString _path;
-    bool _is_valid;
-    
-    QTemporaryDir(const QString &templatePath){
-      _path = templatePath;
-      _is_valid = get_new_temp_path(templatePath, _path, _error_string);
-    }
-    
-    ~QTemporaryDir(){
-      remove();
-    }
-
-    QString errorString() const {
-      return _error_string;
-    }
-                                               
-    bool isValid() const {
-      return _is_valid;
-    }
-  
-    QString path() const {
-      return _path;
-    }
-  
-    bool remove() {
-      if (_is_valid){
-        R_ASSERT_RETURN_IF_FALSE2(_path.startsWith(QDir::tempPath()), false);
-        return removeDir(_path);
-      } else
-        return false;
-    }
-    
-  };
-}
-#endif
 
 
 #include "../common/Mutex.hpp"
 #include "../common/Queue.hpp"
 
-// radium::Mutex fff_mutex; // Must be obtained when using the factory. (Not necessary, faust has its own lock)
+#define U_MUTEX false
+static radium::Mutex g_faust_mutex; // Calling startMTDSPFactories() is not enough since that one will only protect llvm factories.
+//radium::Mutex fff_mutex; // Must be obtained when using the factory. (Not necessary, faust has its own lock)
+
+#define COMPILE_SVG_IN_PARALLEL 0 // Setting this one to 1 is currently a lot slower. The reason is that Faust uses a common lock around all API functions (so it's not running in parallell anyway), plus that generating C++ code takes a lot of time.
+
+
+/*
+To run lambda on main thread:
+        QMetaObject::invokeMethod(qApp, [line, this]
+                                {
+                                printf("hello main thread\n");
+                                });
+*/
+
 
 namespace{
-  struct FFF_Reply {
-    
-    Data *data = NULL;
-    QTemporaryDir *svg_dir = NULL;
-    QString error_message;
-    bool is_instrument = false;
-    llvm_dsp_factory *factory = NULL;
-    
-    bool is_empty(void){
-      if (data==NULL && error_message=="") {
-        if (svg_dir!=NULL)
-          RError("svg_dir!=NUL: %p\n",svg_dir);
-        return true;
-      } else
-        return false;
+  struct CompileOptions{
+    QString code;
+    QString options;
+    int optlevel;
+    bool use_interpreter;
+
+    CompileOptions(QString code,
+                   QString options,
+                   int optlevel,
+                   bool use_interpreter)
+      : code(code)
+      , options(options)
+      , optlevel(optlevel)
+      , use_interpreter(use_interpreter)
+    {}
+
+    CompileOptions(const Devdata *devdata)
+      : CompileOptions(devdata->code, devdata->options, getFaustOptimizationLevel(), devdata->use_interpreter_backend)
+    {}
+
+    CompileOptions(){
     }
   };
 
   struct Request{
-    int64_t id;
-    QString code;
-    QString options;
-    int optlevel;
-    FFF_Reply reply;
+    int64_t patch_id;
+    CompileOptions opts;
+
     bool please_stop;
     
-    Request(int64_t id)
-      : id(id)
+    Request(int64_t patch_id, const CompileOptions &opts)
+      : patch_id(patch_id)
+      , opts(opts)
       , please_stop(false)
     {}
+
+    Request(){}
   };
 
   class ArgsCreator{
@@ -215,12 +119,123 @@ namespace{
   };
 }
 
+/*
+namespace{
+
+class SetDefaultValuesUI : public UI
+{
+
+ public:
+
+  SetDefaultValuesUI(dsp *dsp)
+  {
+    dsp->buildUserInterface(this);
+    for(float *control_port : control_ports){
+      *control_port = 0.1;
+    }
+    //printf("   SetDefault %s: Before: %f. Now: %f\n", name, bef, *control_port);
+  }
+
+  ~SetDefaultValuesUI() {	}
+  
+  // -- widget's layouts
+  
+  //void openFrameBox(const char* label) override {_curr_box_name = label;}
+  void openTabBox(const char* label) override {}
+  void openHorizontalBox(const char* label) override {}
+  void openVerticalBox(const char* label) override {}
+  void closeBox() override {}
+  
+  // -- active widgets
+
+  std::vector<float*> control_ports;
+
+private:
+
+  void addEffect(const char *name, float* control_port, int type, float min_value, float default_value, float max_value) {
+    control_ports.push_back(control_port);
+  }
+
+protected:
+
+  void addButton(const char* label, float* zone) override {
+    addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
+  }
+  void addCheckButton(const char* label, float* zone) override {
+    addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
+  }
+  void addVerticalSlider(const char* label, float* zone, float init, float min, float max, float step) override {
+    addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
+  }
+  void addHorizontalSlider(const char* label, float* zone, float init, float min, float max, float step) override {
+    addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
+  }
+  void addNumEntry(const char* label, float* zone, float init, float min, float max, float step) override {
+    addEffect(label, zone, step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max); // The INT effect format might not work. Need to go through the code first.
+  }
+  
+  // -- passive widgets
+
+  void addHorizontalBargraph(const char* label, float* zone, float min, float max) override {
+  }
+  void addVerticalBargraph(const char* label, float* zone, float min, float max) override {
+  }
+  
+  // -- soundfiles
+  
+#if 1 //HEPP
+  void addSoundfile(const char* label, const char* filename, Soundfile** sf_zone) override {}
+#endif
+};
+}
+*/
+
+
+static void FAUST_handle_new_svg_dir(struct SoundPlugin *plugin, MyQTemporaryDir *svg_dir, QString error_message);
+static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &reply, bool is_initializing);
+
+
 static radium::Queue<Request*,1024> g_queue;
 
-static radium::Mutex g_reply_mutex;
-static QMap<int64_t, FFF_Reply> g_ready; // Access must be protected by the g_reply_mutex
+static void add_factory_ready(Devdata *devdata, bool success){
+  R_ASSERT(THREADING_is_main_thread());
+
+  radium::FAUST_calledRegularlyByParentReply &ready = devdata->ready;
+  ready.has_new_data = true;
+
+  ready.factory_is_ready = true;
+  ready.factory_succeeded = success;
+}
+
+static void add_svg_ready(Devdata *devdata, bool success){
+  R_ASSERT(THREADING_is_main_thread());
+
+  radium::FAUST_calledRegularlyByParentReply &ready = devdata->ready;
+  ready.has_new_data = true;
+
+  ready.svg_is_ready = true;
+  ready.svg_succeeded = success;
+}
 
 namespace{
+
+    struct v_calloc_memory_manager : public dsp_memory_manager {
+    
+      void* allocate(size_t size) override
+      {
+        void* res = V_calloc(1, size);
+        return res;
+      }
+      
+      void destroy(void* ptr) override
+      {
+        //cout << "free_manager" << endl;
+        V_free(ptr);
+      }    
+    };
+
+    static v_calloc_memory_manager g_v_calloc_memory_manager;
+
   class FFF_Thread : public QThread {
     Q_OBJECT;
 
@@ -231,61 +246,68 @@ namespace{
     }
 
   private:
-    
-    bool create_svg(QString code, QString options, FFF_Reply &reply){
-      QTemporaryDir *svg_dir = new QTemporaryDir(QDir::tempPath() + QDir::separator() + "radium_faust_svg_XXXXXX");
+
+    MyQTemporaryDir *create_svg_dir(ArgsCreator &args, QString &error_message) const {
+      MyQTemporaryDir *svg_dir = new MyQTemporaryDir(QDir::tempPath() + QDir::separator() + "radium_faust_svg_XXXXXX");
 
       if (svg_dir->isValid()==false) {
-        reply.error_message = svg_dir->errorString();
-        if (reply.error_message==""){
-          R_ASSERT(false);
-          reply.error_message="Unable to create temporary directory";
-        }
+        error_message = "Unable to create temporary directory \"" + svg_dir->_path + "\": " + svg_dir->errorString();
         delete svg_dir;
-        return false;
+        return NULL;
       }
 
-      ArgsCreator args;
       args.push_back("-svg");
       args.push_back("-O");
       args.push_back(svg_dir->path());
+
+      return svg_dir;
+    }
+
+#if COMPILE_SVG_IN_PARALLEL
+    MyQTemporaryDir *create_svg(const CompileOptions &opts, QString &error_message) const {
+
+      ArgsCreator args;
       args.push_back("-o");
       args.push_back("cppsource.cpp");
       args.push_back(options.split("\n", QString::SkipEmptyParts));
-      
-      std::string error_message;
+
+      MyQTemporaryDir *svg_dir = create_svg_dir(args, error_message);
+      if (svg_dir==NULL)
+        return NULL;
+
+      std::string error_message2;
       printf("\n\n   Starting to create aux\n");
       double time = TIME_get_ms();
       if (generateAuxFilesFromString(
                                      "FaustDev",
-                                     code.toUtf8().constData(),
+                                     opts.code.toUtf8().constData(),
                                      args.get_argc(),
                                      args.get_argv(),
-                                     error_message
+                                     error_message2
                                      )
           ==false
           )
         {          
-          reply.error_message = QString("Unable to create svg: %1").arg(error_message.c_str());
+          error_message = QString("Unable to create svg: %1").arg(error_message2.c_str());
           delete svg_dir;
-          return false;
+          return NULL;
         }
 
       printf("   Aux created %f\n\n\n\n", (TIME_get_ms() - time) / 1000.0);
       
       //fprintf(stderr,"   SVG tempdir: -%s-. Error: %s\n", args.argv[2], error_message.c_str());
 
-      reply.svg_dir = svg_dir;
-      
-      return true;
+      return svg_dir;
     }
+#endif
 
-    bool create_reply_data(FFF_Reply &reply){
-      llvm_dsp *dsp_ = createDSPInstance(reply.factory);
+    QString create_reply_data(FFF_Reply &reply) const {
+      R_ASSERT(U_MUTEX==0 || g_faust_mutex.is_locked());
+
+      dsp *dsp_ = reply.factory->createDSPInstance();
       
       if (dsp_ == NULL){
-        reply.error_message = "createDSPInstance returned NULL 5";
-        return false;
+        return "createDSPInstance returned NULL 5";
       }
 
       dsp_->init(MIXER_get_sample_rate());
@@ -294,19 +316,26 @@ namespace{
       int num_outputs = dsp_->getNumInputs();
       
       if (num_inputs > MAX_CHANNELS){
-        reply.error_message = QString("Maximum %1 input channels supported (%2)").arg(QString::number(MAX_CHANNELS), QString::number(num_inputs));
+        QString ret = QString("Maximum %1 input channels supported (%2)").arg(QString::number(MAX_CHANNELS), QString::number(num_inputs));
         delete dsp_;
-        return false;
+        return ret;
       }
       
       if (num_outputs > MAX_CHANNELS){
-        reply.error_message = QString("Maximum %1 output channels supported (%2)").arg(QString::number(MAX_CHANNELS), QString::number(num_outputs));
+        QString ret = QString("Maximum %1 output channels supported (%2)").arg(QString::number(MAX_CHANNELS), QString::number(num_outputs));
         delete dsp_;
-        return false;
+        return ret;
       }
-      
+
+      {
+        
+      }
+
+      //SetDefaultValuesUI doit(dsp_);
+
       reply.data = create_effect_plugin_data2(MIXER_get_sample_rate(), dsp_);
-      
+      //set_effect_value2(reply.data, 0, 0.75, EFFECT_FORMAT_NATIVE, FX_single);
+
       reply.is_instrument = reply.data->voices[0].myUI.is_instrument();
       
       if (reply.is_instrument){
@@ -316,7 +345,7 @@ namespace{
         {
           //radium::ScopedMutex lock(fff_mutex);
           for(int i=1;i<MAX_POLYPHONY;i++)
-            dsps[i] = createDSPInstance(reply.factory);
+            dsps[i] = reply.factory->createDSPInstance(); //reply.factory);
         }
         
         for(int i=1;i<MAX_POLYPHONY;i++)
@@ -325,83 +354,282 @@ namespace{
         convert_effect_data_to_instrument_data(reply.data, dsps);
       }
 
-      return true;
+      return "";
     }
 
     // Check atan2! Opt seems to not work.
-    
-  public:
 
-    bool create_reply(QString code, QString options, int optlevel, FFF_Reply &reply){
-
+    QString create_reply_factory(const CompileOptions &opts, FFF_Reply &reply, MyQTemporaryDir* &svg_dir) const {
       ArgsCreator args;
-      args.push_back(options.split("\n", QString::SkipEmptyParts));
+      args.push_back(opts.options.split("\n", QString::SkipEmptyParts));
 #if 0 // __WIN32 && !_WIN64
       args.push_back("-l");
       args.push_back(OS_get_full_program_file_path("llvm_math.ll"));
 #endif
-      
+
+#if !COMPILE_SVG_IN_PARALLEL
+      {
+        QString error_message;
+        
+        svg_dir = create_svg_dir(args, error_message);
+        if (svg_dir==NULL){
+          R_ASSERT(error_message != "");
+          return error_message;
+        }
+
+        
+      }
+#endif
+ 
       std::string error_message;
 
       //R_ASSERT(OPT_LEVEL==0);
       
-      printf("\n\n   Starting to create factory %s.  \n\n Optlevel: %d\n\n",code.toUtf8().constData(),optlevel);
+      //printf("\n\n   Starting to create factory %s.  \n\n Optlevel: %d\n\n",code.toUtf8().constData(),optlevel);
       double time = TIME_get_ms();
-      reply.factory = createDSPFactoryFromString(
-                                                 //"/home/kjetil/radium/bin/packages/faust2/examples/graphic_eq.dsp",
-                                                 "FaustDev",
-                                                 code.toUtf8().constData(),
-                                                 args.get_argc(),
-                                                 args.get_argv(),
-                                                 "",
-                                                 error_message,
-                                                 optlevel);
+      reply.factory = NULL;
+      /*
+      create_svg(code, options, reply);
+      reply.svg_dir = NULL;
+      return false;
+      */
+      if (opts.use_interpreter) {
+        reply.interpreter_factory =
+          createInterpreterDSPFactoryFromString(
+                                                "FaustDev",
+                                                opts.code.toUtf8().constData(),
+                                                args.get_argc(),
+                                                args.get_argv(),
+                                                error_message
+                                                );
+        reply.factory = reply.interpreter_factory;
+
+      } else {
+
+        reply.llvm_factory =
+          createDSPFactoryFromString(
+                                     "FaustDev",
+                                     opts.code.toUtf8().constData(),
+                                     args.get_argc(),
+                                     args.get_argv(),
+                                     "",
+                                     error_message,
+                                     opts.optlevel
+                                     );
+        reply.factory = reply.llvm_factory;
+
+      }
+
       printf("   Factory created %f\n\n\n\n", (TIME_get_ms() - time) / 1000.0);
-            
       if (reply.factory==NULL) {
-        reply.error_message = error_message.c_str();
+
         printf("    Error,das: -%s-\n", reply.error_message.toUtf8().constData());
-        return false;
+
+        if (error_message==""){
+          printf("            returning unknown error\n");
+          return "Unknown error";
+        }
+
+        return QString(error_message.c_str());
       }
 
-      bool got_data = create_reply_data(reply);
+      reply.factory->setMemoryManager(&g_v_calloc_memory_manager);
 
-      if (got_data==false)
-        return false;
+      return create_reply_data(reply);
+    }
+    
+  public:
 
-      if (create_svg(code, options, reply)==false) {
-        delete_dsps_and_data2(reply.data);
-        reply.data = NULL;
-        return false;
+#if COMPILE_SVG_IN_PARALLEL
+    void run_svg_job(int64_t patch_id, const CompileOptions &opts, bool is_initializing) const {
+      QString error_message;
+      MyQTemporaryDir *svg_dir = create_svg(opts, error_message);
+      //printf("    SVG error: -%s-\n", error_message.toUtf8().constData());
+
+      THREADING_run_on_main_thread_async([patch_id, error_message, svg_dir]{ // THREADING_run_on_main_thread_async runs in order.
+
+          struct SoundPlugin *plugin = NULL;
+
+          struct Patch *patch = PATCH_get_from_id(patch_id); // if NULL, it means that the instrument has been deleted.
+
+          if (patch!=NULL)
+            plugin = (struct SoundPlugin*)patch->patchdata;
+
+          FAUST_handle_new_svg_dir(plugin, svg_dir, error_message);
+        },
+        is_initializing
+        );
+    }
+#endif
+
+    void run_create_factory_job(struct SoundPlugin *maybe_plugin, int64_t patch_id, const CompileOptions &opts, bool is_initializing) const {
+      FFF_Reply reply;
+
+      MyQTemporaryDir *svg_dir = NULL; // only used if !COMPILE_SVG_IN_PARALLEL
+
+      QString error_string = create_reply_factory(opts, reply, svg_dir);
+      reply.error_message = error_string;
+
+      // Don't want to run invokeMethod since we could be called from anywhere where Qt::exec() is called. (invokeMethod callbacks may not be run in order either, but that particular problem can be fixed easily)
+      //QMetaObject::invokeMethod(qApp, [patch_id, reply]{
+
+#if COMPILE_SVG_IN_PARALLEL
+      R_ASSERT(svg_dir==NULL);
+#endif
+
+      auto doit = [maybe_plugin, patch_id, reply, svg_dir, is_initializing]{
+
+        bool has_added_error_message = false;
+        
+        if (is_initializing && reply.error_message != ""){
+          has_added_error_message = true;
+          GFX_addMessage(reply.error_message.toUtf8().constData());
+        }
+
+        struct SoundPlugin *plugin = maybe_plugin;
+
+        if (plugin==NULL){
+          R_ASSERT(is_initializing==false);
+
+          struct Patch *patch = PATCH_get_from_id(patch_id);
+          if(patch==NULL)
+            return; // Instrument has been deleted.          
+
+          plugin = (struct SoundPlugin*)patch->patchdata;
+
+        } else {
+          
+          R_ASSERT(is_initializing==true);
+
+        }
+
+        Devdata *devdata = (Devdata*)plugin->data;
+        devdata->is_compiling = false;
+            
+        bool success;
+            
+        if (Undo_num_undos()==0) {
+          
+          UNDO_OPEN();{
+            success = FAUST_handle_fff_reply(plugin, reply, is_initializing);
+          }UNDO_CLOSE();
+          
+        } else if (is_initializing || Undo_Is_Open()==true) {
+          
+          success = FAUST_handle_fff_reply(plugin, reply, is_initializing);
+          
+        } else {
+          
+          UNDO_REOPEN_LAST();{ // Simply add any undos create here into the last undo point. Adding a new undo point here would be confusing for the user since this function is triggered by a timer and not a user interaction. (and we need to add undo to avoid inconsitencies, i.e. we can't just call Undo_StartIgnoringUndo()/Undo_StopIgnoringUndo().)
+            success = FAUST_handle_fff_reply(plugin, reply, is_initializing);
+          }UNDO_CLOSE();
+          
+        }
+        
+        if (is_initializing && has_added_error_message==false && devdata->reply.error_message != ""){
+          GFX_addMessage(devdata->reply.error_message.toUtf8().constData());
+        }
+        
+        add_factory_ready(devdata, success);
+        
+#if !COMPILE_SVG_IN_PARALLEL
+        {
+          QString error_message;
+          FAUST_handle_new_svg_dir(plugin, svg_dir, error_message);
+        }
+#endif
+      };
+
+      if(is_initializing) {
+
+        R_ASSERT(THREADING_is_main_thread());
+        R_ASSERT(maybe_plugin!=NULL);
+
+        doit();
+
+      } else {
+
+        R_ASSERT(!THREADING_is_main_thread());
+        R_ASSERT(maybe_plugin==NULL);
+
+        // THREADING_run_on_main_thread_async should be safe to use instead of invokeMethod. (these callbacks are also guaranteed to be run in order)
+        THREADING_run_on_main_thread_async(doit);
+
       }
-      
-      return true;
+
     }
 
-    void free_reply_data(FFF_Reply &reply){
-      delete reply.svg_dir;
-      delete_dsps_and_data2(reply.data);
-      deleteDSPFactory(reply.factory);
+    void start_new_job(int64_t patch_id, const CompileOptions &opts) const {
+
+      //printf("           start_new_job. is_init: %d\n", false);
+
+#if COMPILE_SVG_IN_PARALLEL
+      QtConcurrent::run([patch_id, this, opts]{
+          run_svg_job(patch_id, opts, false);
+        });
+#endif
+
+      run_create_factory_job(NULL, patch_id, opts, false);
+    }
+
+
+    void start_new_job_now(struct SoundPlugin *plugin, const CompileOptions &opts, bool is_initializing) const {
+      R_ASSERT(is_initializing==true);
+      R_ASSERT(plugin!=NULL);
+
+#if COMPILE_SVG_IN_PARALLEL
+      run_svg_job(patch_id, opts, is_initializing);
+#endif
+
+      printf("         start_new_job_now. is_init: %d\n", is_initializing);
+
+      run_create_factory_job(plugin, -1, opts, is_initializing);
+    }
+
+
+    void free_reply_data(FFF_Reply &reply, bool free_now) const {
+      R_ASSERT(U_MUTEX==0 || g_faust_mutex.is_locked());
+
+      if (reply.data==NULL && reply.interpreter_factory==NULL && reply.llvm_factory==NULL)
+        return;
+
+      auto doit = [reply]{
+
+        if (reply.data != NULL)
+          delete_dsps_and_data2(reply.data);
+        
+        if(reply.interpreter_factory != NULL)
+          deleteInterpreterDSPFactory(reply.interpreter_factory);
+        
+        if(reply.llvm_factory != NULL)
+          deleteDSPFactory(reply.llvm_factory);
+      };
+
+      if (free_now)
+        doit();
+      else
+        QtConcurrent::run(doit);
     }
     
   private:
     
     void run(){
-      
+
+#if COMPILE_SVG_IN_PARALLEL
+      setPriority(QThread::HighPriority); // To make this thread (which creates the dsp factories) run faster than the threads creating svg/c++ source.
+#endif
+
       while(true){
 
-        QMap<int64_t, QPair<QString, QPair<QString, int> > > code_requests;
+        QMap<int64_t, Request> code_requests;
 
-        // 1. First handle delete requests and collect compilation requests. Here we only keep the newest compilation requests for each plugin.
+        // 1. First collect compilation requests. Here we only keep the newest compilation requests for each plugin, i.e. ensure that we only compile latest version.
         do{
           Request *request = g_queue.get();
           if (request->please_stop==true)   // Program exit.
             return;
          
-          if (request->reply.data != NULL) {
-            free_reply_data(request->reply);
-          } else
-            code_requests[request->id] = qMakePair(request->code, qMakePair(request->options, request->optlevel));
+          code_requests[request->patch_id] = *request;
           
           delete request;
         }while(g_queue.size() > 0);
@@ -409,23 +637,19 @@ namespace{
         
         // 2. Then do the compilation
         
-        QMapIterator<int64_t, QPair<QString, QPair<QString, int> > > iterator(code_requests);
-        
-        while (iterator.hasNext()) {
-          
-          iterator.next();
+        QMapIterator<int64_t, Request> iterator(code_requests);
 
-          int64_t id = iterator.key();
-          QString code    = iterator.value().first;
-          QString options = iterator.value().second.first;
-          int optlevel    = iterator.value().second.second;
+        {
+#if U_MUTEX
+          radium::ScopedMutex lock(g_faust_mutex);
+#endif
+          while (iterator.hasNext()) {
+            
+            iterator.next();
 
-          FFF_Reply reply;
-          create_reply(code, options, optlevel, reply);
-          
-          {
-            radium::ScopedMutex lock(g_reply_mutex);
-            g_ready[id] = reply;
+            const Request &request = iterator.value();
+
+            start_new_job(request.patch_id, request.opts);
           }
         }
 
@@ -436,37 +660,41 @@ namespace{
 }
 
 static FFF_Thread g_fff_thread;
+//static FFF_Thread g_fff_thread2;
 
 static void init_fff(void){
   static bool has_started = false;
 
   if (has_started==false){
+          //#if !RADIUM_FAUST_USE_INTERPRETER
     startMTDSPFactories(); // Make faust llvm is thread safe
+    //#endif
     g_fff_thread.startit();
+    //g_fff_thread2.startit();
     has_started = true;
   }
 }
-
+  
 void FFF_shut_down(void){
   if (g_fff_thread.isRunning()){
     
-    Request *request = new Request(0);
+    Request *request = new Request();
     request->please_stop = true;
     
     g_queue.put(request);
     
     g_fff_thread.wait();
-
   }
 }
 
-FFF_Reply FFF_get_reply_now(QString code, QString options){
+static void FFF_run_now(struct SoundPlugin *plugin, const CompileOptions &opts){
+#if U_MUTEX
+  radium::ScopedMutex lock(g_faust_mutex);
+#endif
   init_fff();
 
-  FFF_Reply reply;
-  g_fff_thread.create_reply(code, options, getFaustOptimizationLevel(), reply);
-  
-  return reply;
+  printf("    Calling FFF_run_now\n");
+  g_fff_thread.start_new_job_now(plugin, opts, true);
 }
 
 /*
@@ -476,43 +704,11 @@ llvm_dsp *FFF_get_dsp(const FFF_Reply &reply){
 }
 */
 
-void FFF_request_reply(int64_t id, QString code, QString options){
+static void FFF_request_reply(int64_t patch_id, const CompileOptions &opts){
   init_fff();
   
-  Request *request = new Request(id);
-  request->code = code;
-  request->options = options;
-  request->optlevel = getFaustOptimizationLevel(); // getFaustOptimizationLevel is not thread safe, and it's simpler to just send it over rather than making getFaustOpimizationLevel thread safe.
+  Request *request = new Request(patch_id, opts);
     
-  g_queue.put(request);
-}
-
-FFF_Reply fff_empty_reply;
-
-// Lightweight function made to be called very often from a timer.
-// .reply->data==NULL and .reply->error_message=="" if there was nothing to get.
-FFF_Reply FFF_get_reply(int64_t id){
-  radium::ScopedMutex lock(g_reply_mutex);
-  
-  if (g_ready.contains(id)==false)
-    return fff_empty_reply;
-
-  FFF_Reply reply = g_ready[id];
-  
-  g_ready.remove(id);
-
-  return reply;
-}
-
-void FFF_request_free(int64_t id, const FFF_Reply &reply){
-  if (reply.data==NULL)
-    return;
-
-  delete_dsps_and_data1(reply.data);
-
-  Request *request = new Request(id);
-  request->reply = reply;
-  
   g_queue.put(request);
 }
 
@@ -520,7 +716,9 @@ void FFF_request_free(int64_t id, const FFF_Reply &reply){
 void FFF_free_now(FFF_Reply &reply){
   if (reply.data==NULL)
     return;
-
-  g_fff_thread.free_reply_data(reply);
+#if U_MUTEX
+  radium::ScopedMutex lock(g_faust_mutex);
+#endif
+  g_fff_thread.free_reply_data(reply, true);
 }
 

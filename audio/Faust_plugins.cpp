@@ -4,20 +4,24 @@
 
 #include <unistd.h>
 
-// We use faust2 here.
-//#define QTGUI FAUST2_QTGUI
+#include <string>
+#include "../bin/packages/faust/architecture/faust/dsp/dsp.h"
+#include "../bin/packages/faust/architecture/faust/dsp/llvm-dsp.h"
+#include "../bin/packages/faust/architecture/faust/dsp/interpreter-dsp.h"
 
-#include "../bin/packages/faust2/compiler/generator/llvm/llvm-dsp.h"
 
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
-#include "../bin/packages/faust2/compiler/libfaust.h"
+#include "../bin/packages/faust/compiler/generator/libfaust.h"
+#define HEPP 1
+#undef uchar
+#undef uint
 
-#include "../bin/packages/faust2/architecture/faust/dsp/dsp.h"
-#include "../bin/packages/faust2/architecture/faust/gui/UI.h"
-#include "../bin/packages/faust2/architecture/faust/gui/GUI.h"
+#include "../bin/packages/faust/architecture/faust/gui/UI.h"
+
+
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif
@@ -36,7 +40,6 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 
-#include "../bin/packages/faust2/architecture/faust/gui/faustqt.h"
 
 #pragma clang diagnostic pop
 
@@ -49,13 +52,12 @@
 std::list<GUI*>  GUI::fGuiList;
 
 
-
-
 #include "../common/visual_proc.h"
 #include "../common/patch_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 #include "../Qt/EditorWidget.h"
+#include "../Qt/MyQTemporaryDir.hpp"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -124,7 +126,7 @@ QDialog *FAUST_create_qdialog(SoundPlugin *plugin){
 
 void FAUST_change_qtguistyle(const char *style_name){
 
-  QString filename = "packages/faust2/architecture/faust/gui/Styles/" + QString(getFaustGuiStyle()) + ".qss";
+  QString filename = "packages/faust/architecture/faust/gui/Styles/" + QString(getFaustGuiStyle()) + ".qss";
   if (!OS_has_full_program_file_path(filename)){
     GFX_Message2(NULL, true, "File not found (%s)", filename.toUtf8().constData());
     return;
@@ -176,29 +178,46 @@ static Data *GET_DATA_FROM_PLUGIN(SoundPlugin *plugin){
 
 
 
-
-#include "Faust_factory_factory.cpp"
-
-
-static int64_t g_id = 0;
-
 namespace{
+
+  struct FFF_Reply {
+    
+    Data *data = NULL;
+    QString error_message;
+    bool is_instrument = false;
+    interpreter_dsp_factory *interpreter_factory = NULL;
+    llvm_dsp_factory *llvm_factory = NULL;
+    dsp_factory *factory = NULL;
+
+    bool is_empty(void){
+      if (data==NULL && error_message=="") {
+        //if (svg_dir!=NULL)
+        //  RError("svg_dir!=NUL: %p\n",svg_dir);
+        return true;
+      } else
+        return false;
+    }
+  };
+
+
 struct Devdata{
-  int64_t id;
-  
   QString code;
   QString options;
-  
+  bool use_interpreter_backend = false;
+
   FFF_Reply reply;
 
   bool is_compiling; // <-- Can only be trusted if sending one request at a time. (used by the Faust_Plugin_widget constructor)
 
   QPointer<QDialog> qtgui_parent;
-  
+
+  QString svg_dir_error_message;
+  MyQTemporaryDir *svg_dir = NULL;
+
+  radium::FAUST_calledRegularlyByParentReply ready;
+
   Devdata()
-    : id(g_id++)
-    , options("-I\n%radium_path%/packages/faust2/architecture")
-    , reply(fff_empty_reply)
+    : options("-I\n%radium_path%/packages/faust/libraries")
     , is_compiling(false)
     , qtgui_parent(NULL)
   {
@@ -208,7 +227,13 @@ struct Devdata{
     delete qtgui_parent.data();
   }
 };
-}
+
+} // end anon. namespace
+
+
+#include "Faust_factory_factory.cpp"
+
+
 
 static Data *GET_DATA_FROM_PLUGIN(SoundPlugin *plugin){
   Devdata *devdata = (Devdata*)plugin->data;
@@ -298,8 +323,9 @@ static float dev_get_effect_value(struct SoundPlugin *plugin, int effect_num, en
   Devdata *devdata = (Devdata*)plugin->data;
   Data *data = devdata->reply.data;
   
-  if (data==NULL || effect_num >= get_num_effects(data))
+  if (data==NULL || effect_num >= get_num_effects(data)){
     return 0.5;
+  }
   
   return get_effect_value2(data, effect_num, value_format);
 }
@@ -317,12 +343,16 @@ static void dev_get_display_value_string(SoundPlugin *plugin, int effect_num, ch
 }
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
-  printf("\n\n\n ********** CREATE_STATE ************* \n\n\n");
+  //printf("\n\n\n ********** CREATE_STATE ************* \n\n\n");
   Devdata *devdata = (Devdata*)plugin->data;
 
   HASH_put_string(state, "code", STRING_toBase64(STRING_create(devdata->code)));
   HASH_put_string(state, "options", STRING_toBase64(STRING_create(devdata->options)));
+  HASH_put_bool(state, "use_interpreter_backend", devdata->use_interpreter_backend);
 }
+
+
+static void FAUST_compile_now(struct SoundPlugin *plugin);
 
 static void *dev_create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   Devdata *devdata = new Devdata;
@@ -332,6 +362,8 @@ static void *dev_create_plugin_data(const SoundPluginType *plugin_type, SoundPlu
   if (state!=NULL) {
     devdata->code = STRING_get_qstring(STRING_fromBase64(HASH_get_string(state, "code")));
     devdata->options = STRING_get_qstring(STRING_fromBase64(HASH_get_string(state, "options")));
+    if(HASH_has_key(state, "use_interpreter_backend"))
+      devdata->use_interpreter_backend = HASH_get_bool(state, "use_interpreter_backend");
   } else
     devdata->code = DEFAULT_FAUST_DEV_PROGRAM;
 
@@ -339,15 +371,10 @@ static void *dev_create_plugin_data(const SoundPluginType *plugin_type, SoundPlu
   if (is_loading==false) {
     
     FAUST_start_compilation(plugin);
-  
+
   } else {
   
-    if (FAUST_compile_now(plugin, is_loading)==false){
-      GFX_Message(NULL, "Something went wrong when compiling: %s", devdata->reply.error_message.toUtf8().constData());
-      plugin->data = NULL;
-      delete devdata;
-      return NULL;
-    }
+    FAUST_compile_now(plugin);
     
   }
   
@@ -361,6 +388,8 @@ static void dev_cleanup_plugin_data(SoundPlugin *plugin){
 
   FFF_free_now(devdata->reply);
 
+  delete devdata->svg_dir;
+  
   // We can lose memory by not receiving replies in the queue, but that won't crash the program or make it unstable.
   // This should be so rare though, plus that the only consequency is to waste a little bit of memory, that it's probably not worth fixing.
   delete devdata;
@@ -417,6 +446,7 @@ static bool dev_show_gui(struct SoundPlugin *plugin, int64_t parentgui){
     if (parent != NULL)
       set_window_parent(devdata->qtgui_parent.data(), parent, radium::NOT_MODAL);
     
+    data->qtgui->update(); // prevent flicker (update slider positions before showing gui)
     safeShow(devdata->qtgui_parent.data());
     data->qtgui->run();
     
@@ -434,7 +464,7 @@ static void dev_hide_gui(struct SoundPlugin *plugin){
     devdata->qtgui_parent->hide();
   }
   
-  if (data!=NULL)
+  if (data!=NULL && data->qtgui!=NULL)
     data->qtgui->stop();
 }
 
@@ -528,55 +558,162 @@ QString FAUST_get_options(const struct SoundPlugin *plugin){
   return devdata->options;
 }
 
-QString FAUST_get_cpp_code(const struct SoundPlugin *plugin){
-  Devdata *devdata = (Devdata*)plugin->data;
-  if (devdata->reply.svg_dir==NULL || devdata->reply.svg_dir->isValid()==false)
-    return "";
+void FAUST_generate_cpp_code(const struct SoundPlugin *plugin, int generation, std::function<void(int, QString)> callback){
 
-  QString filename = devdata->reply.svg_dir->path() + QDir::separator() + "cppsource.cpp";
-  disk_t *disk = DISK_open_for_reading(filename);
+  const Devdata *devdata = (Devdata*)plugin->data;
+  
+  QString code = devdata->code;
+  QString options = devdata->options;
 
-  if (disk==NULL){
-    GFX_Message(NULL, "File not found (%s)", filename.toUtf8().constData());
-    return "";
-  }
+  // CPU usage should not clubber up here, at least not too much, since FAUST_generate_cpp_code is only called after the llvm/interpreter code has been created.
 
-  QString cpp_code = DISK_read_qstring_file(disk);
+  // Must do this in main thread since DISK_create_non_existant_filename allocates gc-memory.
+  QString template_ = STRING_get_qstring(DISK_get_temp_dir()) + QDir::separator() + "radium_faust_cppsource.cpp";
+  const wchar_t *temp_file = DISK_create_non_existant_filename(STRING_create(template_));
+  
+  QString filename = STRING_get_qstring(temp_file);
       
-  if (DISK_close_and_delete(disk)==false) {
-    GFX_Message(NULL, "Unable to read from %s", filename.toUtf8().constData());
-    return "";
-  }
+  QtConcurrent::run([code, options, generation, filename, callback]{
 
-  return cpp_code;
+      ArgsCreator args;
+      args.push_back("-o");
+      args.push_back(filename);
+      args.push_back(options.split("\n", QString::SkipEmptyParts));
+      
+      std::string error_message2;
+      
+      QString message;
+    
+      if (generateAuxFilesFromString(
+                                     "FaustDev",
+                                     code.toUtf8().constData(),
+                                     args.get_argc(),
+                                     args.get_argv(),
+                                     error_message2
+                                     )
+          == false)
+        {
+
+          message = QString("// Unable to create cpp source: %1").arg(error_message2.c_str());
+
+        } else {
+        
+          disk_t *disk = DISK_open_for_reading(filename);
+        
+          if (disk==NULL){
+            
+            message = QString("// Error! File not found: \"") + filename.toUtf8().constData() + "\"";
+          
+          } else {
+            
+            QString cpp_code = DISK_read_qstring_file(disk);
+            
+            if (DISK_close_and_delete(disk)==false) {
+              
+              message = QString("// Error! Unable to read from \"") + filename.toUtf8().constData() + "\"";
+              
+            } else {
+             
+              message = cpp_code;
+              
+            }
+            
+          }
+
+          QFile::remove(filename);
+
+      }
+      
+      THREADING_run_on_main_thread_async([callback, generation, message]{
+          callback(generation, message);
+        }
+        );
+      
+    });
 }
+
 
 QString FAUST_get_error_message(const struct SoundPlugin *plugin){
   Devdata *devdata = (Devdata*)plugin->data;
-  return devdata->reply.error_message;
+
+  if (devdata->reply.error_message != "")
+    return devdata->reply.error_message;
+
+  if (devdata->svg_dir_error_message != "")
+    return devdata->svg_dir_error_message;
+
+  return "";
 }
 
 QString FAUST_get_svg_path(const struct SoundPlugin *plugin){
   Devdata *devdata = (Devdata*)plugin->data;
-  if (devdata->reply.svg_dir==NULL || devdata->reply.svg_dir->isValid()==false)
+  if (devdata->svg_dir==NULL || devdata->svg_dir->isValid()==false)
     return "";
   else
-    return devdata->reply.svg_dir->path() + QDir::separator() + "FaustDev-svg" + QDir::separator() + "process.svg";
+    return devdata->svg_dir->path() + QDir::separator() + "FaustDev-svg" + QDir::separator() + "process.svg";
 }
 
 
 
 
+static void FAUST_handle_new_svg_dir(struct SoundPlugin *plugin, MyQTemporaryDir *svg_dir, QString error_message){
+  R_ASSERT(THREADING_is_main_thread());
+
+  if(plugin==NULL){
+
+    printf("     .. patch disappeared\n");
+    delete svg_dir;
+    
+  } else {
+      
+    Devdata *devdata = (Devdata*)plugin->data;
+    
+    if(devdata->svg_dir!=NULL)
+      delete devdata->svg_dir;
+    
+    devdata->svg_dir = svg_dir;
+    devdata->svg_dir_error_message = error_message;
+    
+    //printf("    SVG error2: -%s-\n", error_message.toUtf8().constData());
+    add_svg_ready(devdata, svg_dir != NULL);
+    
+  } 
+}
+
+static void copy_effects(Data *from, Data *to){
+  int from_num_effects = get_num_effects(from);
+  int to_num_effects = get_num_effects(to);
+
+  for(int i1=0;i1<from_num_effects;i1++){
+
+    for(int i2=0;i2<to_num_effects;i2++){
+
+      if(!strcmp(get_effect_name2(from, i1), get_effect_name2(to, i2))){
+
+        float val = get_effect_value2(from, i1, EFFECT_FORMAT_NATIVE);
+        set_effect_value2(to, i2, val, EFFECT_FORMAT_NATIVE, FX_single);
+
+        break;
+      }
+    }
+  }
+}
+
 static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &reply, bool is_initializing){
+  R_ASSERT(THREADING_is_main_thread());
+
   Devdata *devdata = (Devdata*)plugin->data;
   
-  if (reply.data==NULL){    
+  if (reply.data==NULL){
     fprintf(stderr,"Error-message: -%s-\n", devdata->reply.error_message.toUtf8().constData());
     devdata->reply.error_message = reply.error_message;
     return false;
   }
 
   FFF_Reply old_reply = devdata->reply;
+
+  bool do_call_qtgui_update = false;
+  bool do_call_qtgui_run = false;
 
   // handle gui
   {
@@ -590,60 +727,105 @@ static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &
 
     create_gui(devdata->qtgui_parent.data(), reply.data, plugin);
 
-    if (devdata->qtgui_parent->isVisible())
-      reply.data->qtgui->run();    
+    if (!is_initializing && old_reply.data != NULL && reply.data != NULL){
+      copy_effects(old_reply.data, reply.data); // Must do this after calling create_gui since the QTGUI functions sets sliders to the default values of the plugin (using meta information), and not the actual values.
+      do_call_qtgui_update = true;
+    }
+
+    do_call_qtgui_run = devdata->qtgui_parent->isVisible();
   }
-  
-  hash_t *effects_state = is_initializing ? NULL : PLUGIN_get_effects_state(plugin);
 
   PLAYER_lock();{
     devdata->reply = reply;
   }PLAYER_unlock();
-
-  if (effects_state != NULL)
-    PLUGIN_set_effects_from_state(plugin, effects_state);
 
   if (old_reply.data != NULL){
     struct Patch *patch = (struct Patch*)plugin->patch;
     PATCH_handle_fxs_when_fx_names_have_changed(patch, true);
   }
 
-  FFF_request_free(devdata->id, old_reply);
+  if (old_reply.data != NULL)
+    delete_dsps_and_data1(old_reply.data);
+
+  g_fff_thread.free_reply_data(old_reply, false);
+
+  // QTGUI has a custom update() function that updates directly, so we must call update() after calling "devdata->reply = reply". 
+  //
+  if (do_call_qtgui_update)
+    reply.data->qtgui->update(); // Update slider positions before starting the timer below (by calling "run"). If not, there might be flicker.
+  
+  if (do_call_qtgui_run)
+    reply.data->qtgui->run();
 
   return true;
 }
 
-FAUST_calledRegularlyByParentReply FAUST_calledRegularlyByParent(struct SoundPlugin *plugin){
+radium::FAUST_calledRegularlyByParentReply FAUST_calledRegularlyByParent(struct SoundPlugin *plugin){
+
   Devdata *devdata = (Devdata*)plugin->data;
   
-  FFF_Reply reply = FFF_get_reply(devdata->id);
-  
-  if (reply.is_empty())
-    return Faust_No_New_Reply;
+  auto ret = devdata->ready; //FFF_get_reply(devdata->id);
 
-  devdata->is_compiling = false;
-  
-  if (FAUST_handle_fff_reply(plugin, reply, false))
-    return Faust_Success;
-  else
-    return Faust_Failed;
+  devdata->ready = radium::FAUST_calledRegularlyByParentReply();
+
+  return ret;
 }
 
 
 
 void FAUST_start_compilation(struct SoundPlugin *plugin){
+
   Devdata *devdata = (Devdata*)plugin->data;
 
+  const auto *patch = plugin->patch;
+  int64_t patch_id = -1;
+
+  if(patch==NULL)
+    R_ASSERT_NON_RELEASE(false);
+  else
+    patch_id = patch->id;
+
+  FFF_request_reply(patch_id, CompileOptions(devdata));
+
+  /*      
   devdata->is_compiling = true;
-  FFF_request_reply(devdata->id, devdata->code, devdata->options); 
+
+  QString code = devdata->code;
+  QString options = devdata->options;
+
+  
+  QtConcurrent::run([plugin, code, options, optlevel]{    
+      FFF_Reply reply;
+      g_fff_thread.create_reply(code, options, optlevel, reply);
+      
+      QMetaObject::invokeMethod(qApp, [plugin, reply]{
+          FAUST_handle_fff_reply(plugin, reply, false);
+        });
+      
+    });
+  */
 }
 
 
-bool FAUST_compile_now(struct SoundPlugin *plugin, bool is_initializing){
+static void FAUST_compile_now(struct SoundPlugin *plugin){
   Devdata *devdata = (Devdata*)plugin->data;
 
-  return FAUST_handle_fff_reply(plugin, FFF_get_reply_now(devdata->code, devdata->options), is_initializing);
+  printf("    Calling FAUST_compile_now\n");
+  FFF_run_now(plugin, CompileOptions(devdata));
+
+  //return FAUST_handle_fff_reply(plugin, FFF_get_reply_now(devdata->code, devdata->options), is_initializing);
 }
 
+bool FAUST_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_interpreter){
+  Devdata *devdata = (Devdata*)plugin->data;
+
+  if (use_interpreter != devdata->use_interpreter_backend){
+    devdata->use_interpreter_backend = use_interpreter;
+    FAUST_start_compilation(plugin);
+    return true;
+  }
+
+  return false;
+}
 
 #endif
