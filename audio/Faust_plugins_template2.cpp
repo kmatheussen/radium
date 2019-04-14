@@ -154,15 +154,17 @@ class MyUI : public UI
   
   // -- widget's layouts
   
-  void openFrameBox(const char* label) {_curr_box_name = label;}
-  void openTabBox(const char* label) {_curr_box_name = label;}
-  void openHorizontalBox(const char* label) {_curr_box_name = label;}
-  void openVerticalBox(const char* label) {_curr_box_name = label;}
-  void closeBox() {_curr_box_name = NULL;}
+  //void openFrameBox(const char* label) override {_curr_box_name = label;}
+  void openTabBox(const char* label) override {_curr_box_name = label;}
+  void openHorizontalBox(const char* label) override {_curr_box_name = label;}
+  void openVerticalBox(const char* label) override {_curr_box_name = label;}
+  void closeBox() override {_curr_box_name = NULL;}
   
   // -- active widgets
 
-  void addEffect(const char *name, float* control_port, int type, float min_value, float default_value, float max_value){
+private:
+
+  void addEffect(const char *name, float* control_port, int type, float min_value, float default_value, float max_value) {
     int effect_num = get_controller_num(control_port);
 
     Controller *controller = &_controllers.at(effect_num);
@@ -172,7 +174,9 @@ class MyUI : public UI
     }else{
       controller->name = name;
     }
-    //printf("Controller name: \"%s\"\n",controller->name.c_str());
+
+    //printf("  addEffect. Controller name: \"%s\". Value: %f\n",controller->name.c_str(), *control_port);
+
     controller->type = type;
     controller->min_value = min_value;
     controller->default_value = default_value;
@@ -193,22 +197,24 @@ class MyUI : public UI
       _gain_control = control_port;
   }
 
-  void addButton(const char* label, float* zone) {
+protected:
+
+  void addButton(const char* label, float* zone) override {
     addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
   }
   void addToggleButton(const char* label, float* zone) {
     addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
   }
-  void addCheckButton(const char* label, float* zone) {
+  void addCheckButton(const char* label, float* zone) override {
     addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
   }
-  void addVerticalSlider(const char* label, float* zone, float init, float min, float max, float step) {
+  void addVerticalSlider(const char* label, float* zone, float init, float min, float max, float step) override {
     addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
   }
-  void addHorizontalSlider(const char* label, float* zone, float init, float min, float max, float step) {
+  void addHorizontalSlider(const char* label, float* zone, float init, float min, float max, float step) override {
     addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
   }
-  void addNumEntry(const char* label, float* zone, float init, float min, float max, float step) {
+  void addNumEntry(const char* label, float* zone, float init, float min, float max, float step) override {
     addEffect(label, zone, step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max); // The INT effect format might not work. Need to go through the code first.
   }
   
@@ -216,18 +222,24 @@ class MyUI : public UI
 
   void addNumDisplay(const char* label, float* zone, int precision) {remove_last_item();}
   void addTextDisplay(const char* label, float* zone, const char* names[], float min, float max) {remove_last_item();}
-  void addHorizontalBargraph(const char* label, float* zone, float min, float max) {
+  void addHorizontalBargraph(const char* label, float* zone, float min, float max) override {
     remove_last_item(); // remove metadata
     next_peak = zone;
   }
-  void addVerticalBargraph(const char* label, float* zone, float min, float max) {
+  void addVerticalBargraph(const char* label, float* zone, float min, float max) override {
     remove_last_item(); // remove metadata
     next_peak = zone;
   }
   
+  // -- soundfiles
+  
+#if 1 //HEPP
+  void addSoundfile(const char* label, const char* filename, Soundfile** sf_zone) override {}
+#endif
+
   // -- metadata declarations
   
-  void declare(float* control_port, const char* key, const char* value) {
+  void declare(float* control_port, const char* key, const char* value) override {
     if(control_port==NULL){
       if(!strcmp(key,"tooltip"))
         _effect_tooltip = value;
@@ -541,11 +553,11 @@ static void faust_gui_zone_callback(float val, void* arg){
   if (fabs(val - data->automation_values[effect_num]) < fabs((max-min)/100.0)) // approx.
     return;
 
-  //printf("  Callback called %f. controller: %p\n      val/auto: %f %f", val, controller, val, data->automation_values[effect_num]);
-
   float stored_value;
   stored_value = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
 
+  //printf("\n  Callback called %f. controller: %p\n      val/auto/stored: %f %f %f\n\n", val, controller, val, data->automation_values[effect_num], stored_value);
+  
   if (val==stored_value)
     return;
 
@@ -557,6 +569,8 @@ static void faust_gui_zone_callback(float val, void* arg){
   ATOMIC_SET(patch->widget_needs_to_be_updated, true);
 }
 #endif
+
+static float get_effect_value2(Data *data, int effect_num, enum ValueFormat value_format);
 
 static void create_gui(QDialog *parent, Data *data, SoundPlugin *plugin){
 
@@ -585,7 +599,7 @@ static void create_gui(QDialog *parent, Data *data, SoundPlugin *plugin){
     controller->plugin = plugin;
     data->qtgui->addCallback(controller->control_port, faust_gui_zone_callback, controller);
   }
- #endif
+#endif
   
   if (parent->layout()==NULL){
     QLayout *layout = new QGridLayout(parent);

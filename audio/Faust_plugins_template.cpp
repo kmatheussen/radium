@@ -33,7 +33,8 @@ struct Meta
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 
-  #include <faust/gui/faustqt.h>
+//  #include <faust/gui/faustqt.h>
+  #include <faust/gui/QTUI.h>
 
 #pragma clang diagnostic pop
 

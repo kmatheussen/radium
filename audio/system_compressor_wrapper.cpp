@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include <faust/gui/UI.h>
+#include <faust/gui/meta.h>
 #include <faust/dsp/dsp.h>
 #ifdef COMPILING_STANDALONE
 #include "myjack-dsp.h"
@@ -88,13 +89,15 @@ inline double 	min (double a, float b) 	{ return (a<b) ? a : b; }
 
 
 
-namespace{
+   /*
 
+namespace{
 struct Meta
 {
     void declare (const char* key, const char* value) { }
 };
 }
+  */
 
 #ifdef JUCE_API
 #  if BUILD_MONO
@@ -111,46 +114,50 @@ class MyUI : public UI
 {
 
  public:
-  void declare(float* control_port, const char* key, const char* value) {
+  void declare(float* control_port, const char* key, const char* value) override {
   }
 
   const char *_curr_box_name;
 
   void openFrameBox(const char* label) {_curr_box_name = label;}
-  void openTabBox(const char* label) {_curr_box_name = label;}
-  void openHorizontalBox(const char* label) {_curr_box_name = label;}
-  void openVerticalBox(const char* label) {_curr_box_name = label;}
-  void closeBox() {_curr_box_name = NULL;}
+  void openTabBox(const char* label) override {_curr_box_name = label;}
+  void openHorizontalBox(const char* label) override {_curr_box_name = label;}
+  void openVerticalBox(const char* label) override {_curr_box_name = label;}
+  void closeBox() override {_curr_box_name = NULL;}
 
   std::vector<float*> _controllers;
   std::vector<float*> _graphs;
+
+private:
 
   void remove_last_item(){
     //printf("Popping last effect\n");
     _controllers.pop_back();
   }
 
-  void addEffect(const char *name, float* control_port, float min_value, float default_value, float max_value){
+  void addEffect(const char *name, float* control_port, float min_value, float default_value, float max_value) {
     //printf("Adding effect %s %p\n",name,control_port);
     _controllers.push_back(control_port);
   }
 
-  void addButton(const char* label, float* zone) {
+protected:
+
+  void addButton(const char* label, float* zone) override {
     addEffect(label, zone, 0, 0, 1);
   }
   void addToggleButton(const char* label, float* zone) {
     addEffect(label, zone, 0, 0, 1);
   }
-  void addCheckButton(const char* label, float* zone) {
+  void addCheckButton(const char* label, float* zone) override {
     addEffect(label, zone, 0, 0, 1);
   }
-  void addVerticalSlider(const char* label, float* zone, float init, float min, float max, float step) {
+  void addVerticalSlider(const char* label, float* zone, float init, float min, float max, float step) override {
     addEffect(label, zone,  min, init, max);
   }
-  void addHorizontalSlider(const char* label, float* zone, float init, float min, float max, float step) {
+  void addHorizontalSlider(const char* label, float* zone, float init, float min, float max, float step) override {
     addEffect(label, zone,  min, init, max);
   }
-  void addNumEntry(const char* label, float* zone, float init, float min, float max, float step) {
+  void addNumEntry(const char* label, float* zone, float init, float min, float max, float step) override {
     addEffect(label, zone, min, init, max); // The INT effect format might not work. Need to go through the code first.
   }
   
@@ -158,18 +165,20 @@ class MyUI : public UI
 
   void addNumDisplay(const char* label, float* zone, int precision) {remove_last_item();}
   void addTextDisplay(const char* label, float* zone, const char* names[], float min, float max) {remove_last_item();}
-  void addHorizontalBargraph(const char* label, float* zone, float min, float max) {
+  void addHorizontalBargraph(const char* label, float* zone, float min, float max) override {
     *zone = (min+max)/2; // init
     _graphs.push_back(zone);
     //remove_last_item(); // remove metadata
     //next_peak = zone;
   }
-  void addVerticalBargraph(const char* label, float* zone, float min, float max) {
+  void addVerticalBargraph(const char* label, float* zone, float min, float max) override {
     *zone = (min+max)/2; // init
     _graphs.push_back(zone);
     //remove_last_item(); // remove metadata
     //next_peak = zone;
   }
+
+  void addSoundfile(const char* label, const char* filename, Soundfile** sf_zone) override {}
 
 };
 

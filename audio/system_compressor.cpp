@@ -1,48 +1,57 @@
 /* ------------------------------------------------------------
-Code generated with Faust 2.0.a43 (http://faust.grame.fr)
+name: "system_compressor"
+Code generated with Faust 2.17.6 (https://faust.grame.fr)
+Compilation options: -lang cpp -vec -lv 0 -vs 32 -ftz 0 -mcd 16
 ------------------------------------------------------------ */
+
+#ifndef  __Faust_system_compressor_H__
+#define  __Faust_system_compressor_H__
+
 #ifndef FAUSTFLOAT
 #define FAUSTFLOAT float
-#endif  
+#endif 
 
 /* link with : "" */
 #include "typepunning.h"
+#include <algorithm>
+#include <cmath>
 #include <math.h>
 
 
 #ifndef FAUSTCLASS 
 #define FAUSTCLASS Faust_system_compressor
 #endif
+#ifdef __APPLE__ 
+#define exp10f __exp10f
+#define exp10 __exp10
+#endif
 
 class Faust_system_compressor : public dsp {
 	
-  private:
+ private:
 	
-	float fRec0_perm[4];
-	float fRec3_perm[4];
-	float fRec2_perm[4];
-	float fRec1_perm[4];
-	FAUSTFLOAT* fInput0_ptr;
-	FAUSTFLOAT* fInput1_ptr;
-	FAUSTFLOAT* fOutput0_ptr;
-	FAUSTFLOAT* fOutput1_ptr;
 	FAUSTFLOAT fHslider0;
-	int fSamplingFreq;
+	float fRec0_perm[4];
+	int fSampleRate;
 	float fConst0;
 	float fConst1;
 	FAUSTFLOAT fHslider1;
+	float fRec3_perm[4];
 	FAUSTFLOAT fHslider2;
+	float fRec2_perm[4];
 	float fConst2;
 	FAUSTFLOAT fHslider3;
 	FAUSTFLOAT fHbargraph0;
 	FAUSTFLOAT fHslider4;
 	FAUSTFLOAT fHbargraph1;
+	float fRec1_perm[4];
 	
-  public:
+ public:
 	
-	void static metadata(Meta* m) { 
+	void metadata(Meta* m) { 
 		m->declare("effect.lib/author", "Julius O. Smith (jos at ccrma.stanford.edu)");
 		m->declare("effect.lib/copyright", "Julius O. Smith III");
+		m->declare("effect.lib/deprecated", "This library is deprecated and is not maintained anymore. It will be removed in August 2017.");
 		m->declare("effect.lib/exciter_author", "Priyanka Shekar (pshekar@ccrma.stanford.edu)");
 		m->declare("effect.lib/exciter_copyright", "Copyright (c) 2013 Priyanka Shekar");
 		m->declare("effect.lib/exciter_license", "MIT License (MIT)");
@@ -51,22 +60,27 @@ class Faust_system_compressor : public dsp {
 		m->declare("effect.lib/license", "STK-4.3");
 		m->declare("effect.lib/name", "Faust Audio Effect Library");
 		m->declare("effect.lib/version", "1.33");
+		m->declare("filename", "system_compressor");
 		m->declare("filter.lib/author", "Julius O. Smith (jos at ccrma.stanford.edu)");
 		m->declare("filter.lib/copyright", "Julius O. Smith III");
+		m->declare("filter.lib/deprecated", "This library is deprecated and is not maintained anymore. It will be removed in August 2017.");
 		m->declare("filter.lib/license", "STK-4.3");
 		m->declare("filter.lib/name", "Faust Filter Library");
 		m->declare("filter.lib/reference", "https://ccrma.stanford.edu/~jos/filters/");
 		m->declare("filter.lib/version", "1.29");
 		m->declare("math.lib/author", "GRAME");
 		m->declare("math.lib/copyright", "GRAME");
+		m->declare("math.lib/deprecated", "This library is deprecated and is not maintained anymore. It will be removed in August 2017.");
 		m->declare("math.lib/license", "LGPL with exception");
 		m->declare("math.lib/name", "Math Library");
 		m->declare("math.lib/version", "1.0");
 		m->declare("music.lib/author", "GRAME");
 		m->declare("music.lib/copyright", "GRAME");
+		m->declare("music.lib/deprecated", "This library is deprecated and is not maintained anymore. It will be removed in August 2017.");
 		m->declare("music.lib/license", "LGPL with exception");
 		m->declare("music.lib/name", "Music Library");
 		m->declare("music.lib/version", "1.0");
+		m->declare("name", "system_compressor");
 	}
 
 	virtual int getNumInputs() {
@@ -118,330 +132,348 @@ class Faust_system_compressor : public dsp {
 		
 	}
 	
-	static void classInit(int samplingFreq) {
+	static void classInit(int sample_rate) {
 		
 	}
 	
-	virtual void instanceInit(int samplingFreq) {
-		fSamplingFreq = samplingFreq;
-		fHslider0 = FAUSTFLOAT(0.0f);
-		for (int i0 = 0; (i0 < 4); i0 = (i0 + 1)) {
-			fRec0_perm[i0] = 0.0f;
-			
-		}
-		fConst0 = min(1.92e+05f, max(1.0f, float(fSamplingFreq)));
+	virtual void instanceConstants(int sample_rate) {
+		fSampleRate = sample_rate;
+		fConst0 = std::min<float>(192000.0f, std::max<float>(1.0f, float(fSampleRate)));
 		fConst1 = (1.0f / fConst0);
-		fHslider1 = FAUSTFLOAT(100.237f);
-		for (int i1 = 0; (i1 < 4); i1 = (i1 + 1)) {
-			fRec3_perm[i1] = 0.0f;
-			
-		}
-		fHslider2 = FAUSTFLOAT(50.148f);
-		for (int i2 = 0; (i2 < 4); i2 = (i2 + 1)) {
-			fRec2_perm[i2] = 0.0f;
-			
-		}
 		fConst2 = (2.0f / fConst0);
+		
+	}
+	
+	virtual void instanceResetUserInterface() {
+		fHslider0 = FAUSTFLOAT(0.0f);
+		fHslider1 = FAUSTFLOAT(100.23699999999999f);
+		fHslider2 = FAUSTFLOAT(50.148000000000003f);
 		fHslider3 = FAUSTFLOAT(2.0f);
-		fHslider4 = FAUSTFLOAT(-2e+01f);
-		for (int i3 = 0; (i3 < 4); i3 = (i3 + 1)) {
-			fRec1_perm[i3] = 0.0f;
+		fHslider4 = FAUSTFLOAT(-20.0f);
+		
+	}
+	
+	virtual void instanceClear() {
+		for (int l0 = 0; (l0 < 4); l0 = (l0 + 1)) {
+			fRec0_perm[l0] = 0.0f;
+			
+		}
+		for (int l1 = 0; (l1 < 4); l1 = (l1 + 1)) {
+			fRec3_perm[l1] = 0.0f;
+			
+		}
+		for (int l2 = 0; (l2 < 4); l2 = (l2 + 1)) {
+			fRec2_perm[l2] = 0.0f;
+			
+		}
+		for (int l3 = 0; (l3 < 4); l3 = (l3 + 1)) {
+			fRec1_perm[l3] = 0.0f;
 			
 		}
 		
 	}
 	
-	virtual void init(int samplingFreq) {
-		classInit(samplingFreq);
-		instanceInit(samplingFreq);
+	virtual void init(int sample_rate) {
+		classInit(sample_rate);
+		instanceInit(sample_rate);
+	}
+	virtual void instanceInit(int sample_rate) {
+		instanceConstants(sample_rate);
+		instanceResetUserInterface();
+		instanceClear();
 	}
 	
-	virtual void buildUserInterface(UI* interface) {
-		interface->openVerticalBox("0x00");
-		interface->declare(&fHslider3, "0", "");
-		interface->declare(&fHslider3, "style", "slider");
-		interface->declare(&fHslider3, "tooltip", "A compression Ratio of N means that for each N dB increase in input signal level above Threshold, the output level goes up 1 dB");
-		interface->addHorizontalSlider("Ratio", &fHslider3, 2.0f, 1.0f, 2e+01f, 0.1f);
-		interface->declare(&fHslider4, "1", "");
-		interface->declare(&fHslider4, "style", "slider");
-		interface->declare(&fHslider4, "tooltip", "When the signal level exceeds the Threshold (in dB), its level is compressed according to the Ratio");
-		interface->declare(&fHslider4, "unit", "dB");
-		interface->addHorizontalSlider("Threshold", &fHslider4, -2e+01f, -2e+01f, 2e+01f, 0.1f);
-		interface->declare(&fHslider2, "2", "");
-		interface->declare(&fHslider2, "style", "slider");
-		interface->declare(&fHslider2, "tooltip", "Time constant in ms (1/e smoothing time) for the compression gain to approach (exponentially) a new lower target level (the compression `kicking in')");
-		interface->declare(&fHslider2, "unit", "ms");
-		interface->addHorizontalSlider("Attack", &fHslider2, 50.148f, 0.0f, 5e+02f, 0.1f);
-		interface->declare(&fHslider1, "3", "");
-		interface->declare(&fHslider1, "style", "slider");
-		interface->declare(&fHslider1, "tooltip", "Time constant in ms (1/e smoothing time) for the compression gain to approach (exponentially) a new higher target level (the compression 'releasing')");
-		interface->declare(&fHslider1, "unit", "ms");
-		interface->addHorizontalSlider("Release", &fHslider1, 100.237f, 0.0f, 1e+03f, 0.1f);
-		interface->declare(&fHslider0, "5", "");
-		interface->declare(&fHslider0, "tooltip", "The compressed-signal output level is increased by this amount (in dB) to make up for the level lost due to compression");
-		interface->declare(&fHslider0, "unit", "dB");
-		interface->addHorizontalSlider("Output Gain", &fHslider0, 0.0f, -4e+01f, 4e+01f, 0.1f);
-		interface->declare(&fHbargraph0, "0", "");
-		interface->declare(&fHbargraph0, "7", "");
-		interface->addHorizontalBargraph("Gakk", &fHbargraph0, -5e+01f, 1e+01f);
-		interface->declare(&fHbargraph1, "1", "");
-		interface->declare(&fHbargraph1, "7", "");
-		interface->addHorizontalBargraph("Gakk", &fHbargraph1, -5e+01f, 1e+01f);
-		interface->closeBox();
+	virtual Faust_system_compressor* clone() {
+		return new Faust_system_compressor();
+	}
+	
+	virtual int getSampleRate() {
+		return fSampleRate;
+		
+	}
+	
+	virtual void buildUserInterface(UI* ui_interface) {
+		ui_interface->openVerticalBox("system_compressor");
+		ui_interface->declare(&fHslider3, "0", "");
+		ui_interface->declare(&fHslider3, "style", "slider");
+		ui_interface->declare(&fHslider3, "tooltip", "A compression Ratio of N means that for each N dB increase in input signal level above Threshold, the output level goes up 1 dB");
+		ui_interface->addHorizontalSlider("Ratio", &fHslider3, 2.0f, 1.0f, 20.0f, 0.100000001f);
+		ui_interface->declare(&fHslider4, "1", "");
+		ui_interface->declare(&fHslider4, "style", "slider");
+		ui_interface->declare(&fHslider4, "tooltip", "When the signal level exceeds the Threshold (in dB), its level is compressed according to the Ratio");
+		ui_interface->declare(&fHslider4, "unit", "dB");
+		ui_interface->addHorizontalSlider("Threshold", &fHslider4, -20.0f, -20.0f, 20.0f, 0.100000001f);
+		ui_interface->declare(&fHslider2, "2", "");
+		ui_interface->declare(&fHslider2, "style", "slider");
+		ui_interface->declare(&fHslider2, "tooltip", "Time constant in ms (1/e smoothing time) for the compression gain to approach (exponentially) a new lower target level (the compression `kicking in')");
+		ui_interface->declare(&fHslider2, "unit", "ms");
+		ui_interface->addHorizontalSlider("Attack", &fHslider2, 50.1479988f, 0.0f, 500.0f, 0.100000001f);
+		ui_interface->declare(&fHslider1, "3", "");
+		ui_interface->declare(&fHslider1, "style", "slider");
+		ui_interface->declare(&fHslider1, "tooltip", "Time constant in ms (1/e smoothing time) for the compression gain to approach (exponentially) a new higher target level (the compression 'releasing')");
+		ui_interface->declare(&fHslider1, "unit", "ms");
+		ui_interface->addHorizontalSlider("Release", &fHslider1, 100.237f, 0.0f, 1000.0f, 0.100000001f);
+		ui_interface->declare(&fHslider0, "5", "");
+		ui_interface->declare(&fHslider0, "tooltip", "The compressed-signal output level is increased by this amount (in dB) to make up for the level lost due to compression");
+		ui_interface->declare(&fHslider0, "unit", "dB");
+		ui_interface->addHorizontalSlider("Output Gain", &fHslider0, 0.0f, -40.0f, 40.0f, 0.100000001f);
+		ui_interface->declare(&fHbargraph0, "0", "");
+		ui_interface->declare(&fHbargraph0, "7", "");
+		ui_interface->addHorizontalBargraph("Gakk", &fHbargraph0, -50.0f, 10.0f);
+		ui_interface->declare(&fHbargraph1, "1", "");
+		ui_interface->declare(&fHbargraph1, "7", "");
+		ui_interface->addHorizontalBargraph("Gakk", &fHbargraph1, -50.0f, 10.0f);
+		ui_interface->closeBox();
 		
 	}
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
+		FAUSTFLOAT* input0_ptr = inputs[0];
+		FAUSTFLOAT* input1_ptr = inputs[1];
+		FAUSTFLOAT* output0_ptr = outputs[0];
+		FAUSTFLOAT* output1_ptr = outputs[1];
+		float fSlow0 = (0.00100000005f * std::pow(10.0f, (0.0500000007f * float(fHslider0))));
 		float fRec0_tmp[36];
-		float fRec3_tmp[36];
-		float fRec2_tmp[36];
-		float fRec1_tmp[36];
-		float fZec0[32];
-		float fZec1[32];
-		float fZec2[32];
-		float fZec3[32];
-		FAUSTFLOAT* fInput0 = 0;
-		FAUSTFLOAT* fInput1 = 0;
-		FAUSTFLOAT* fOutput0 = 0;
-		FAUSTFLOAT* fOutput1 = 0;
 		float* fRec0 = &fRec0_tmp[4];
+		float fZec0[32];
+		float fSlow1 = std::max<float>(fConst1, (0.00100000005f * float(fHslider1)));
+		float fSlow2 = ((fSlow1 > 0.0f) ? std::exp((0.0f - (fConst1 / fSlow1))) : 0.0f);
+		float fSlow3 = (1.0f - fSlow2);
+		float fRec3_tmp[36];
 		float* fRec3 = &fRec3_tmp[4];
+		float fSlow4 = std::max<float>(fConst1, (0.00100000005f * float(fHslider2)));
+		float fSlow5 = ((fSlow4 > 0.0f) ? std::exp((0.0f - (fConst1 / fSlow4))) : 0.0f);
+		float fSlow6 = (1.0f - fSlow5);
+		float fRec2_tmp[36];
 		float* fRec2 = &fRec2_tmp[4];
-		float* fRec1 = &fRec1_tmp[4];
-		fInput0_ptr = inputs[0];
-		fInput1_ptr = inputs[1];
-		fOutput0_ptr = outputs[0];
-		fOutput1_ptr = outputs[1];
-		float fSlow0 = (0.001f * powf(1e+01f, (0.05f * float(fHslider0))));
-		float fSlow1 = expf((0.0f - (fConst1 / max(fConst1, (0.001f * float(fHslider1))))));
-		float fSlow2 = (1.0f - fSlow1);
-		float fSlow3 = max(fConst1, (0.001f * float(fHslider2)));
-		float fSlow4 = expf((0.0f - (fConst1 / fSlow3)));
-		float fSlow5 = (1.0f - fSlow4);
-		float fSlow6 = expf((0.0f - (fConst2 / fSlow3)));
-		float fSlow7 = (1.0f - fSlow6);
-		float fSlow8 = ((1.0f / float(fHslider3)) - 1.0f);
+		float fSlow7 = (((0.5f * fSlow4) > 0.0f) ? std::exp((0.0f - (fConst2 / fSlow4))) : 0.0f);
+		float fSlow8 = ((1.0f / float(fHslider3)) + -1.0f);
+		float fZec1[32];
 		float fSlow9 = float(fHslider4);
-		int fullcount = count;
-		int index = 0;
+		float fZec2[32];
+		float fSlow10 = (1.0f - fSlow7);
+		float fRec1_tmp[36];
+		float* fRec1 = &fRec1_tmp[4];
+		float fZec3[32];
+		int vindex = 0;
 		/* Main loop */
-		for (index = 0; (index <= (fullcount - 32)); index = (index + 32)) {
-			fInput0 = &fInput0_ptr[index];
-			fInput1 = &fInput1_ptr[index];
-			fOutput0 = &fOutput0_ptr[index];
-			fOutput1 = &fOutput1_ptr[index];
-			int count = 32;
-			/* Recursive loop 0 */
+		for (vindex = 0; (vindex <= (count - 32)); vindex = (vindex + 32)) {
+			FAUSTFLOAT* input0 = &input0_ptr[vindex];
+			FAUSTFLOAT* input1 = &input1_ptr[vindex];
+			FAUSTFLOAT* output0 = &output0_ptr[vindex];
+			FAUSTFLOAT* output1 = &output1_ptr[vindex];
+			int vsize = 32;
+			/* Vectorizable loop 0 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fZec0[i] = fabsf((fabsf(float(fInput1[i])) + fabsf(float(fInput0[i]))));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fZec0[i] = std::fabs((std::fabs(float(input1[i])) + std::fabs(float(input0[i]))));
 				
 			}
 			/* Recursive loop 1 */
 			/* Pre code */
-			for (int j1 = 0; (j1 < 4); j1 = (j1 + 1)) {
-				fRec3_tmp[j1] = fRec3_perm[j1];
+			for (int j2 = 0; (j2 < 4); j2 = (j2 + 1)) {
+				fRec3_tmp[j2] = fRec3_perm[j2];
 				
 			}
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fRec3[i] = max(fZec0[i], ((fSlow1 * fRec3[(i - 1)]) + (fSlow2 * fZec0[i])));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fRec3[i] = std::max<float>(fZec0[i], ((fRec3[(i - 1)] * fSlow2) + (fZec0[i] * fSlow3)));
 				
 			}
 			/* Post code */
-			for (int j = 0; (j < 4); j = (j + 1)) {
-				fRec3_perm[j] = fRec3_tmp[(count + j)];
+			for (int j3 = 0; (j3 < 4); j3 = (j3 + 1)) {
+				fRec3_perm[j3] = fRec3_tmp[(vsize + j3)];
 				
 			}
 			/* Recursive loop 2 */
 			/* Pre code */
-			for (int j2 = 0; (j2 < 4); j2 = (j2 + 1)) {
-				fRec2_tmp[j2] = fRec2_perm[j2];
+			for (int j4 = 0; (j4 < 4); j4 = (j4 + 1)) {
+				fRec2_tmp[j4] = fRec2_perm[j4];
 				
 			}
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fRec2[i] = ((fSlow4 * fRec2[(i - 1)]) + (fSlow5 * fRec3[i]));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fRec2[i] = ((fRec2[(i - 1)] * fSlow5) + (fRec3[i] * fSlow6));
 				
 			}
 			/* Post code */
-			for (int j = 0; (j < 4); j = (j + 1)) {
-				fRec2_perm[j] = fRec2_tmp[(count + j)];
+			for (int j5 = 0; (j5 < 4); j5 = (j5 + 1)) {
+				fRec2_perm[j5] = fRec2_tmp[(vsize + j5)];
 				
 			}
-			/* Recursive loop 3 */
+			/* Vectorizable loop 3 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fZec1[i] = (8.685889f * ((8.262958e-08f * float(int(pun_float_to_int(float(fRec2[i]))))) - 87.98997f));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fZec1[i] = (8.68588924f * ((8.26295832e-08f * float(int(pun_float_to_int(float(fRec2[i]))))) + -87.9899673f));
 				
 			}
-			/* Recursive loop 4 */
+			/* Vectorizable loop 4 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
+			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fHbargraph0 = FAUSTFLOAT(fZec1[i]);
-				fZec2[i] = (fSlow8 * max((fZec1[i] - fSlow9), 0.0f));
+				fZec2[i] = (fSlow8 * std::max<float>((fZec1[i] - fSlow9), 0.0f));
 				
 			}
 			/* Recursive loop 5 */
+			/* Pre code */
+			for (int j6 = 0; (j6 < 4); j6 = (j6 + 1)) {
+				fRec1_tmp[j6] = fRec1_perm[j6];
+				
+			}
+			/* Compute code */
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fHbargraph1 = FAUSTFLOAT(fZec2[i]);
+				fRec1[i] = ((fRec1[(i - 1)] * fSlow7) + (fZec2[i] * fSlow10));
+				
+			}
+			/* Post code */
+			for (int j7 = 0; (j7 < 4); j7 = (j7 + 1)) {
+				fRec1_perm[j7] = fRec1_tmp[(vsize + j7)];
+				
+			}
+			/* Recursive loop 6 */
 			/* Pre code */
 			for (int j0 = 0; (j0 < 4); j0 = (j0 + 1)) {
 				fRec0_tmp[j0] = fRec0_perm[j0];
 				
 			}
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fRec0[i] = ((0.999f * fRec0[(i - 1)]) + fSlow0);
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fRec0[i] = (fSlow0 + (0.999000013f * fRec0[(i - 1)]));
 				
 			}
 			/* Post code */
-			for (int j = 0; (j < 4); j = (j + 1)) {
-				fRec0_perm[j] = fRec0_tmp[(count + j)];
+			for (int j1 = 0; (j1 < 4); j1 = (j1 + 1)) {
+				fRec0_perm[j1] = fRec0_tmp[(vsize + j1)];
 				
 			}
-			/* Recursive loop 6 */
-			/* Pre code */
-			for (int j3 = 0; (j3 < 4); j3 = (j3 + 1)) {
-				fRec1_tmp[j3] = fRec1_perm[j3];
-				
-			}
+			/* Vectorizable loop 7 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fHbargraph1 = FAUSTFLOAT(fZec2[i]);
-				fRec1[i] = ((fSlow6 * fRec1[(i - 1)]) + (fSlow7 * fZec2[i]));
-				
-			}
-			/* Post code */
-			for (int j = 0; (j < 4); j = (j + 1)) {
-				fRec1_perm[j] = fRec1_tmp[(count + j)];
-				
-			}
-			/* Recursive loop 7 */
-			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fZec3[i] = (fRec0[i] * float(pun_int_to_float(int((8388608.0f * (126.942696f + max(-126.0f, (0.1660964f * fRec1[i]))))))));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fZec3[i] = float(pun_int_to_float(int((8388608.0f * (std::max<float>(-126.0f, (0.166096404f * fRec1[i])) + 126.942696f)))));
 				
 			}
 			/* Vectorizable loop 8 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fOutput0[i] = FAUSTFLOAT((fZec3[i] * float(fInput0[i])));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				output0[i] = FAUSTFLOAT(((float(input0[i]) * fRec0[i]) * fZec3[i]));
 				
 			}
 			/* Vectorizable loop 9 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fOutput1[i] = FAUSTFLOAT((fZec3[i] * float(fInput1[i])));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				output1[i] = FAUSTFLOAT(((float(input1[i]) * fRec0[i]) * fZec3[i]));
 				
 			}
 			
 		}
 		/* Remaining frames */
-		if (index < fullcount) {
-			fInput0 = &fInput0_ptr[index];
-			fInput1 = &fInput1_ptr[index];
-			fOutput0 = &fOutput0_ptr[index];
-			fOutput1 = &fOutput1_ptr[index];
-			int count = (fullcount - index);
-			/* Recursive loop 0 */
+		if (vindex < count) {
+			FAUSTFLOAT* input0 = &input0_ptr[vindex];
+			FAUSTFLOAT* input1 = &input1_ptr[vindex];
+			FAUSTFLOAT* output0 = &output0_ptr[vindex];
+			FAUSTFLOAT* output1 = &output1_ptr[vindex];
+			int vsize = (count - vindex);
+			/* Vectorizable loop 0 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fZec0[i] = fabsf((fabsf(float(fInput1[i])) + fabsf(float(fInput0[i]))));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fZec0[i] = std::fabs((std::fabs(float(input1[i])) + std::fabs(float(input0[i]))));
 				
 			}
 			/* Recursive loop 1 */
 			/* Pre code */
-			for (int j1 = 0; (j1 < 4); j1 = (j1 + 1)) {
-				fRec3_tmp[j1] = fRec3_perm[j1];
+			for (int j2 = 0; (j2 < 4); j2 = (j2 + 1)) {
+				fRec3_tmp[j2] = fRec3_perm[j2];
 				
 			}
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fRec3[i] = max(fZec0[i], ((fSlow1 * fRec3[(i - 1)]) + (fSlow2 * fZec0[i])));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fRec3[i] = std::max<float>(fZec0[i], ((fRec3[(i - 1)] * fSlow2) + (fZec0[i] * fSlow3)));
 				
 			}
 			/* Post code */
-			for (int j = 0; (j < 4); j = (j + 1)) {
-				fRec3_perm[j] = fRec3_tmp[(count + j)];
+			for (int j3 = 0; (j3 < 4); j3 = (j3 + 1)) {
+				fRec3_perm[j3] = fRec3_tmp[(vsize + j3)];
 				
 			}
 			/* Recursive loop 2 */
 			/* Pre code */
-			for (int j2 = 0; (j2 < 4); j2 = (j2 + 1)) {
-				fRec2_tmp[j2] = fRec2_perm[j2];
+			for (int j4 = 0; (j4 < 4); j4 = (j4 + 1)) {
+				fRec2_tmp[j4] = fRec2_perm[j4];
 				
 			}
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fRec2[i] = ((fSlow4 * fRec2[(i - 1)]) + (fSlow5 * fRec3[i]));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fRec2[i] = ((fRec2[(i - 1)] * fSlow5) + (fRec3[i] * fSlow6));
 				
 			}
 			/* Post code */
-			for (int j = 0; (j < 4); j = (j + 1)) {
-				fRec2_perm[j] = fRec2_tmp[(count + j)];
+			for (int j5 = 0; (j5 < 4); j5 = (j5 + 1)) {
+				fRec2_perm[j5] = fRec2_tmp[(vsize + j5)];
 				
 			}
-			/* Recursive loop 3 */
+			/* Vectorizable loop 3 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fZec1[i] = (8.685889f * ((8.262958e-08f * float(int(pun_float_to_int(float(fRec2[i]))))) - 87.98997f));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fZec1[i] = (8.68588924f * ((8.26295832e-08f * float(int(pun_float_to_int(float(fRec2[i]))))) + -87.9899673f));
 				
 			}
-			/* Recursive loop 4 */
+			/* Vectorizable loop 4 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
+			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fHbargraph0 = FAUSTFLOAT(fZec1[i]);
-				fZec2[i] = (fSlow8 * max((fZec1[i] - fSlow9), 0.0f));
+				fZec2[i] = (fSlow8 * std::max<float>((fZec1[i] - fSlow9), 0.0f));
 				
 			}
 			/* Recursive loop 5 */
+			/* Pre code */
+			for (int j6 = 0; (j6 < 4); j6 = (j6 + 1)) {
+				fRec1_tmp[j6] = fRec1_perm[j6];
+				
+			}
+			/* Compute code */
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fHbargraph1 = FAUSTFLOAT(fZec2[i]);
+				fRec1[i] = ((fRec1[(i - 1)] * fSlow7) + (fZec2[i] * fSlow10));
+				
+			}
+			/* Post code */
+			for (int j7 = 0; (j7 < 4); j7 = (j7 + 1)) {
+				fRec1_perm[j7] = fRec1_tmp[(vsize + j7)];
+				
+			}
+			/* Recursive loop 6 */
 			/* Pre code */
 			for (int j0 = 0; (j0 < 4); j0 = (j0 + 1)) {
 				fRec0_tmp[j0] = fRec0_perm[j0];
 				
 			}
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fRec0[i] = ((0.999f * fRec0[(i - 1)]) + fSlow0);
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fRec0[i] = (fSlow0 + (0.999000013f * fRec0[(i - 1)]));
 				
 			}
 			/* Post code */
-			for (int j = 0; (j < 4); j = (j + 1)) {
-				fRec0_perm[j] = fRec0_tmp[(count + j)];
+			for (int j1 = 0; (j1 < 4); j1 = (j1 + 1)) {
+				fRec0_perm[j1] = fRec0_tmp[(vsize + j1)];
 				
 			}
-			/* Recursive loop 6 */
-			/* Pre code */
-			for (int j3 = 0; (j3 < 4); j3 = (j3 + 1)) {
-				fRec1_tmp[j3] = fRec1_perm[j3];
-				
-			}
+			/* Vectorizable loop 7 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fHbargraph1 = FAUSTFLOAT(fZec2[i]);
-				fRec1[i] = ((fSlow6 * fRec1[(i - 1)]) + (fSlow7 * fZec2[i]));
-				
-			}
-			/* Post code */
-			for (int j = 0; (j < 4); j = (j + 1)) {
-				fRec1_perm[j] = fRec1_tmp[(count + j)];
-				
-			}
-			/* Recursive loop 7 */
-			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fZec3[i] = (fRec0[i] * float(pun_int_to_float(int((8388608.0f * (126.942696f + max(-126.0f, (0.1660964f * fRec1[i]))))))));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				fZec3[i] = float(pun_int_to_float(int((8388608.0f * (std::max<float>(-126.0f, (0.166096404f * fRec1[i])) + 126.942696f)))));
 				
 			}
 			/* Vectorizable loop 8 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fOutput0[i] = FAUSTFLOAT((fZec3[i] * float(fInput0[i])));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				output0[i] = FAUSTFLOAT(((float(input0[i]) * fRec0[i]) * fZec3[i]));
 				
 			}
 			/* Vectorizable loop 9 */
 			/* Compute code */
-			for (int i = 0; (i < count); i = (i + 1)) {
-				fOutput1[i] = FAUSTFLOAT((fZec3[i] * float(fInput1[i])));
+			for (int i = 0; (i < vsize); i = (i + 1)) {
+				output1[i] = FAUSTFLOAT(((float(input1[i]) * fRec0[i]) * fZec3[i]));
 				
 			}
 			
@@ -449,6 +481,6 @@ class Faust_system_compressor : public dsp {
 		
 	}
 
-	
 };
 
+#endif
