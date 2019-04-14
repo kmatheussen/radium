@@ -378,7 +378,7 @@ static void lock_player_from_nonrt_thread(void){
 // Only called from PLAYER_maybe_pause_lock_a_little_bit and PLAYER_unlock
 static void unlock_player_from_nonrt_thread(int iteration){
 
-#if !defined(RELEASE)
+#if !defined(RELEASE) && !RADIUM_USES_TSAN
   float elapsed = g_player_lock_timer.elapsed();
   double setdur = g_rt_set_bus_descendant_types_duration;
 #endif
@@ -401,7 +401,7 @@ static void unlock_player_from_nonrt_thread(int iteration){
   
 #endif
 
-#if !defined(RELEASE)
+#if !defined(RELEASE) && !RADIUM_USES_TSAN
   //printf("Elapsed: %f. (%d)\n", elapsed, iteration);
   if(elapsed > MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS){  // The lock is realtime safe, but we can't hold it a long time.
 

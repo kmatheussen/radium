@@ -31,7 +31,7 @@ static void ensure_widget_is_created(void){
 void COMMENTDIALOG_open(void){
   ensure_widget_is_created();
 
-  if (g_qtgui_has_started_step2==false){
+  if (ATOMIC_GET(g_qtgui_has_started_step2)==false){
     QTimer::singleShot(50, COMMENTDIALOG_open);
   } else {
     safeShowOrExec(widget, true);
