@@ -81,6 +81,20 @@ fi
 #cd ..
 
 
+
+rm -fr faust
+tar xvzf faust-master-dev-2019-04-12.tar.gz 
+mv faust-master-dev faust
+cd faust
+tar xvzf ../faustlibraries-26d4145859b4a603ddfc78785dc2442be504fd3b.tar.gz
+rm -fr libraries
+mv faustlibraries-26d4145859b4a603ddfc78785dc2442be504fd3b libraries
+patch -p1 <../faust.patch
+VERBOSE=1 CFLAGS="$MYFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc`" make most
+cd ..
+
+
+
 rm -fr Visualization-Library-master
 tar xvzf Visualization-Library-master.tar.gz 
 cd Visualization-Library-master/
@@ -193,31 +207,6 @@ then
     cd ..
     
 fi
-
-
-# Build faust last since we reset the build flags.
-
-# faust, debug
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -Wno-misleading-indentation -fPIC  -fno-strict-aliasing" # -D_GLIBCXX_USE_CXX11_ABI=0
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC  -fno-strict-aliasing" # -D_GLIBCXX_USE_CXX11_ABI=0
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC  -fno-strict-aliasing" # -D_GLIBCXX_USE_CXX11_ABI=0
-export LDFLAGS="-fsanitize=address"
-cd faust2
-make -j `nproc`
-mv compiler/libfaust.a libfaust_debug.a
-make clean
-cd ..
-
-#faust, release
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -Wno-misleading-indentation -fPIC   -fno-strict-aliasing" # -D_GLIBCXX_USE_CXX11_ABI=0
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC   -fno-strict-aliasing" # -D_GLIBCXX_USE_CXX11_ABI=0
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC  -fno-strict-aliasing" #  -D_GLIBCXX_USE_CXX11_ABI=0
-export LDFLAGS=""
-cd faust2
-make -j `nproc`
-mv libfaust_debug.a compiler/
-cd ..
-
 
 
 touch deletemetorebuild

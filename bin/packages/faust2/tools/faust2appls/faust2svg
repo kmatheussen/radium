@@ -1,6 +1,0 @@
-#! /bin/bash -e
-
-for f in $@; do
-    faust -t 0 -svg $f -o /dev/null || exit
-done
-
