@@ -40,6 +40,7 @@ void FAUST_start_compilation(struct SoundPlugin *plugin);
 #define DEFAULT_FAUST_DEV_PROGRAM "import(\"stdfaust.lib\");\n\nprocess = *(v), *(v) with {\n  v = ba.db2linear(hslider(\"volume\", 0, -35, 35, 0.1));\n};\n"
 QString FAUSTGUI_get_code(QWidget *widget);
 bool FAUST_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_interpreter);
+bool FAUST_get_use_interpreter_backend(struct SoundPlugin *plugin);
 #endif
 
 #endif
