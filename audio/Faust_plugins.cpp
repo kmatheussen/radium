@@ -739,6 +739,8 @@ static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &
     devdata->reply = reply;
   }PLAYER_unlock();
 
+  plugin->num_visible_outputs = R_MIN(MAX_CHANNELS, reply.data->voices[0].dsp_instance->getNumOutputs());
+
   if (old_reply.data != NULL){
     struct Patch *patch = (struct Patch*)plugin->patch;
     PATCH_handle_fxs_when_fx_names_have_changed(patch, true);
