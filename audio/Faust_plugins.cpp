@@ -830,4 +830,10 @@ bool FAUST_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_inte
   return false;
 }
 
+bool FAUST_get_use_interpreter_backend(struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+
+  return devdata->use_interpreter_backend;
+}
+
 #endif

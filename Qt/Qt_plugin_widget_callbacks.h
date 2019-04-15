@@ -208,6 +208,7 @@ public:
       new_pd_controller_button->hide();
       _faust_plugin_widget = new Faust_Plugin_widget(this, faust_compilation_status, _patch.data());
       vertical_layout->insertWidget(1,_faust_plugin_widget);
+      faust_interpreted->setChecked(FAUST_get_use_interpreter_backend(plugin));
       //_plugin_widget=PluginWidget_create(this, _patch.data());
 #endif
 
