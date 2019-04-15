@@ -90,7 +90,7 @@ tar xvzf ../faustlibraries-26d4145859b4a603ddfc78785dc2442be504fd3b.tar.gz
 rm -fr libraries
 mv faustlibraries-26d4145859b4a603ddfc78785dc2442be504fd3b libraries
 patch -p1 <../faust.patch
-VERBOSE=1 CFLAGS="$MYFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc`" make most
+VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc`" make most
 cd ..
 
 
