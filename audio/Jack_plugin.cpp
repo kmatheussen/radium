@@ -34,10 +34,10 @@ typedef struct{
 } Data;
 
 static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *client, int num_inputs, int num_outputs, const char **input_portnames, const char **output_portnames){
-  Data *data = V_calloc(1,sizeof(Data));
+  Data *data = (Data*)V_calloc(1,sizeof(Data));
   data->client = client;
-  data->input_ports=V_calloc(num_outputs,sizeof(jack_port_t*));
-  data->output_ports=V_calloc(num_inputs,sizeof(jack_port_t*));
+  data->input_ports=(jack_port_t**)V_calloc(num_outputs,sizeof(jack_port_t*));
+  data->output_ports=(jack_port_t**)V_calloc(num_inputs,sizeof(jack_port_t*));
 
   int i;
 
@@ -124,7 +124,7 @@ extern jack_time_t g_jackblock_delta_time;
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   const SoundPluginType *type = plugin->type;
-  Data *data = (Data*)plugin->data;
+  Data *data = static_cast<Data*>(plugin->data);
 
 #if 0
   if(!strcmp(type->name,"System Out")){
@@ -140,22 +140,17 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     
   }
 
-  {
-    int ch;
-    
-    for(ch=0;ch<type->num_inputs;ch++)
-      if (data->output_ports[ch]!=NULL)
-        memcpy(((float*)jack_port_get_buffer(data->output_ports[ch],g_jackblock_size))+g_jackblock_delta_time,
-               inputs[ch],
-               sizeof(float)*num_frames);
-    
-    for(ch=0;ch<type->num_outputs;ch++)
-      if (data->input_ports[ch]!=NULL)
-        memcpy(outputs[ch],
-               ((float*)jack_port_get_buffer(data->input_ports[ch],g_jackblock_size))+g_jackblock_delta_time,
-               sizeof(float)*num_frames);
-    
-  }
+  for(int ch=0;ch<type->num_inputs;ch++)
+    if (data->output_ports[ch]!=NULL)
+      memcpy(((float*)jack_port_get_buffer(data->output_ports[ch],g_jackblock_size))+g_jackblock_delta_time,
+             inputs[ch],
+             sizeof(float)*num_frames);
+  
+  for(int ch=0;ch<type->num_outputs;ch++)
+    if (data->input_ports[ch]!=NULL)
+      memcpy(outputs[ch],
+             ((float*)jack_port_get_buffer(data->input_ports[ch],g_jackblock_size))+g_jackblock_delta_time,
+             sizeof(float)*num_frames);
 }
 
 
@@ -197,7 +192,7 @@ static void called_after_system_out_has_been_created(const SoundPluginType *plug
   
 static void cleanup_plugin_data(SoundPlugin *plugin){
   int i;
-  Data *data = plugin->data;
+  Data *data = static_cast<Data*>(plugin->data);
 
   if(!strcmp(plugin->type->name,"System Out") || !strcmp(plugin->type->name,"System Out 8")){
     struct SoundPlugin *other_system_out = MIXER_get_soundplugin("Jack", "System Out");
@@ -484,7 +479,7 @@ void create_jack_plugins(void){
 }
 
 const char *JACK_get_name(SoundPlugin *plugin, int portnum){
-  Data *data = plugin->data;
+  Data *data = static_cast<Data*>(plugin->data);
 
   if(plugin->type->num_outputs>0)
     return jack_port_short_name(data->input_ports[portnum]);
@@ -493,7 +488,8 @@ const char *JACK_get_name(SoundPlugin *plugin, int portnum){
 }
 
 void JACK_set_name(SoundPlugin *plugin, int portnum, const char *new_name){
-  Data *data = plugin->data;
+  Data *data = static_cast<Data*>(plugin->data);
+
   if(plugin->type->num_inputs>0)
     jack_port_set_name(data->output_ports[portnum], new_name);
   else
