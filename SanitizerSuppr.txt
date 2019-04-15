@@ -27,6 +27,7 @@ race:QXcbWindow::compressExposeEvent
 race:QArrayData::allocate
 race:QXcbConnection::xi2HandleEvent
 race:QXcbConnection::processXcbEvents
+race:RX11_get_event_response_type
 
 # Calling 3rd party code:
 race:call_ladspa_get_descriptor_func

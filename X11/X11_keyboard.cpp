@@ -425,6 +425,10 @@ static bool event_is_arrow(XKeyEvent *event){
 
 
 #if USE_QT5
+static uint8_t RX11_get_event_response_type(const xcb_generic_event_t *event){
+  return event->response_type;
+}
+
 int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
    xcb_generic_event_t *event = (xcb_generic_event_t *)void_event;
 
@@ -436,7 +440,9 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   if(0)
     printf("last_key_press_not_used %p %d\n", &last_key_press, last_event_was_key_press);
   
-  if ( (event->response_type & ~0x80) == XCB_KEY_PRESS){
+  auto response_type = RX11_get_event_response_type(event);
+
+  if ( (response_type & ~0x80) == XCB_KEY_PRESS){
     
     struct Stuff{
       xcb_key_release_event_t *key_event;
@@ -487,7 +493,7 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
     return stuff.ret;
   }
   
-  else if ( (event->response_type & ~0x80) == XCB_KEY_RELEASE){
+  else if ( (response_type & ~0x80) == XCB_KEY_RELEASE){
     
     struct Stuff{
       xcb_key_release_event_t *key_event;
@@ -504,9 +510,11 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
 
     auto peeker_callback = [](xcb_generic_event_t *next_event, void *peekerData) {
       
+      auto next_event_response_type = RX11_get_event_response_type(next_event);
+
       Stuff *stuff = static_cast<Stuff*>(peekerData);
       
-      if ( (next_event->response_type & ~0x80) == XCB_KEY_PRESS){
+      if ( (next_event_response_type & ~0x80) == XCB_KEY_PRESS){
         
         xcb_key_release_event_t *next_key = (xcb_key_release_event_t *)next_event;
         //printf("A Release+Press in Queue. %d %d (%d %d)\n", next_key->time, stuff->key_event->time, next_key->detail, stuff->key_event->detail);
