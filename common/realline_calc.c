@@ -106,7 +106,14 @@ int FindRealLineFor(
 		) break;
 	}
 
-	return realline-1;
+        realline--;
+
+        if (realline >= wblock->num_reallines){
+          R_ASSERT(false);
+          return wblock->num_reallines-1;
+        }
+
+	return realline;
 }
 
 
