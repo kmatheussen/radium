@@ -85,6 +85,10 @@ FAUSTDIR = $(shell pwd)/bin/packages/faust
 WHICHFAUST = $(FAUSTDIR)/build/bin/faust
 FAUST = $(WHICHFAUST) -I $(FAUSTDIR)/libraries/old # -I /home/kjetil/faust/architecture  
 
+ifneq (,$(findstring clang,$(CC)))
+	FAUST += -clang
+endif
+
 LLVM_OPTS ?=
 
 PLUGINHOSTSCANNERLIB ?= pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a
