@@ -1275,7 +1275,7 @@ private:
 #endif
 
 #if USE_JUCE_CPU_PROTECTION_LOGIC && !defined(FOR_MACOSX)
-  double lastSwapTime = 0;
+  double lastSwapTime = monotonic_seconds() * 1000.0;
   int underrunCounter = 0;
 #endif
 
