@@ -115,7 +115,11 @@ private:
 
   
 public:
-  
+
+  void set_seed(int64_t seed){
+    _seed = seed;
+  }
+
   double get_next(double mi, double ma) {
     return mi + next_random() * (ma-mi);
   }

@@ -174,20 +174,15 @@ namespace{
 
 
 static const float *g_empty_sound = NULL;
-static float *g_dev_null_sound = NULL;
   
 struct LatencyCompensatorDelay {
   radium::SmoothDelay _delay;
 
-  int _total_num_processed_empty_frames;
-  
   LatencyCompensatorDelay()
-    :_delay(ms_to_frames(MAX_COMPENSATED_LATENCY))
-    , _total_num_processed_empty_frames(_delay.buffer_size) // <- _delay.buffer_size is not necessarily the same as MAX_COMP...etc. above.
+    : _delay(ms_to_frames(MAX_COMPENSATED_LATENCY))
   {
     if (g_empty_sound==NULL){
       g_empty_sound = (float*)V_calloc(sizeof(float), RADIUM_BLOCKSIZE);
-      g_dev_null_sound = (float*)V_calloc(sizeof(float), RADIUM_BLOCKSIZE);
     }
   }
   
@@ -199,29 +194,24 @@ struct LatencyCompensatorDelay {
   }
 
   bool RT_delay_line_is_empty(void) const {
-    return _total_num_processed_empty_frames >= _delay.buffer_size;
+    return _delay.RT_delay_line_is_empty();
   }
   
   // Should be called instead of RT_process if we don't need any sound.
-  float *RT_call_instead_of_process_if_no_sound(int num_frames, float *output_sound){
+  const float *RT_call_instead_of_process_if_no_sound(int num_frames, float *output_sound){
     R_ASSERT_NON_RELEASE(num_frames==RADIUM_BLOCKSIZE);
-    
-    if (RT_delay_line_is_empty()) // This optimization also eliminates (at least in practice I hope) the need for the earlier "g_rt_always_run_buses" option.
-      return NULL;
 
-    _total_num_processed_empty_frames += num_frames;
-
-    if (num_frames==64){
-      if (_delay.RT_process(64, g_empty_sound, output_sound==NULL ? g_dev_null_sound : output_sound))
-        return output_sound;
-      else
-        return NULL;
-    } else {
-      if (_delay.RT_process(num_frames, g_empty_sound, output_sound==NULL ? g_dev_null_sound : output_sound))
-        return output_sound;
-      else
-        return NULL;
+#if !defined(RELEASE)
+    for(int i=0;i<num_frames;i++){
+      if(g_empty_sound[i] != 0)
+        abort();
     }
+#endif
+
+    if (num_frames==64)
+      return _delay.RT_call_instead_of_process_if_no_sound(64, g_empty_sound, output_sound);
+    else
+      return _delay.RT_call_instead_of_process_if_no_sound(num_frames, g_empty_sound, output_sound);
   }
   
   // May return 'input_sound'. Also, 'input_sound' is never modified.
@@ -229,11 +219,9 @@ struct LatencyCompensatorDelay {
 #if !defined(RELEASE)
     R_ASSERT_RETURN_IF_FALSE2(input_sound!=NULL, g_empty_sound);
     R_ASSERT_RETURN_IF_FALSE2(output_sound!=NULL, g_empty_sound);
-    R_ASSERT_RETURN_IF_FALSE2(_delay.fVec0!=NULL, g_empty_sound);
+    //R_ASSERT_RETURN_IF_FALSE2(_delay.fVec0!=NULL, g_empty_sound);
     R_ASSERT_RETURN_IF_FALSE2(num_frames==MIXER_get_buffer_size(), g_empty_sound);
 #endif
-
-    _total_num_processed_empty_frames = 0;
 
     if (num_frames==64){
       if(_delay.RT_process(64, input_sound, output_sound))
@@ -1832,9 +1820,9 @@ public:
 
     latency = R_MAX(0, latency);
     
-    if (latency >= link->_delay._delay.buffer_size) {
+    if (latency >= link->_delay._delay.get_max_delay_size()) {
       RT_message("%s -> %s: Compensating for a latency of more than %dms is not supported.\nNumber of frames: %d",  source->_plugin->patch->name, link->target->_plugin->patch->name, MAX_COMPENSATED_LATENCY, latency);
-      latency = link->_delay._delay.buffer_size-1;
+      latency = link->_delay._delay.get_max_delay_size()-1;
     }
     
     if (latency != link->_delay._delay.getSize()) {

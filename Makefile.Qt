@@ -292,6 +292,14 @@ ifeq ($(BUILDTYPE), RELEASE)
 	CPUOPT += -O3
 endif
 
+ifeq ($(BUILDTYPE), RELEASE)
+	OPTIMIZE_O3="-O3" # SmoothDelay.hpp runs faster with -O3.
+else
+	OPTIMIZE_O3=""
+endif
+
+
+
 # -pg
 
 # CPPOPT is CPP flags
@@ -625,11 +633,19 @@ test_audiobuffer:
 	@rm test_audiobuffer
 
 test_smoothdelay:
-#	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined -fPIC -DFOR_LINUX
-#	$(CCC) test_smoothdelay.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -fsanitize=address -fsanitize=undefined -o test_smoothdelay
-#	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_smoothdelay
-#	@echo "=== success: test_smoothdelay ==="
-#	@rm test_smoothdelay
+	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined -fPIC -DFOR_LINUX
+	$(CCC) test_smoothdelay.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -fsanitize=address -fsanitize=undefined -o test_smoothdelay
+	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_smoothdelay
+	@echo "=== success: test_smoothdelay ==="
+	@rm test_smoothdelay
+
+benchmark_smoothdelay:
+	@echo "first: make clean && BUILDTYPE=RELEASE ./build_linux.sh + ctrl-c"
+	@echo "to benchmark using clang: CC=clang CCC=clang++ make benchmark_smoothdelay"
+	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp $(QTOPT) -UNDEBUG -fPIC -DFOR_LINUX -DBENCHMARK_SMOOTHDELAY -O3 # -fopt-info-vec-optimized -fopt-info-vec-all
+	$(CCC) test_smoothdelay.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm -o test_smoothdelay
+	./test_smoothdelay
+	@rm test_smoothdelay
 
 packages: bin/packages/deletemetorebuild
 
@@ -1901,7 +1917,7 @@ Bus_plugins.o: audio/Bus_plugins.cpp
 	$(CCC) audio/Bus_plugins.cpp $(QTOPT)
 
 Timeskew_plugin.o: audio/Timeskew_plugin.cpp audio/SmoothDelay.hpp
-	$(CCC) audio/Timeskew_plugin.cpp $(QTOPT)
+	$(CCC) audio/Timeskew_plugin.cpp $(QTOPT) $(OPTIMIZE_O3)
 
 Patchbay_plugin.o: audio/Patchbay_plugin.cpp
 	$(CCC) audio/Patchbay_plugin.cpp $(QTOPT)
@@ -1964,7 +1980,7 @@ zita_rev.o: audio/zita_rev.cpp
 # Non-vec touches a lot of memory too tough, so there seems to be room for improvement in the faust compiler here.
 audio/zita_rev.cpp: audio/zita_rev.dsp $(FAUST_DEPENDENCIES)
 #	cd audio && $(FAUST) -vec -cn Zita_dsp -a Faust_plugins_template.cpp zita_rev.dsp -o zita_rev.cpp
-	cd audio && $(FAUST) -cn Zita_dsp -a Faust_plugins_template.cpp zita_rev.dsp -o zita_rev.cpp
+	cd audio && $(FAUST) -cn Zita_dsp -a Faust_plugins_template.cpp zita_rev.dsp -scal -o zita_rev.cpp
 	./fix_faust_code.sh Zita_dsp $@
 
 
@@ -2256,7 +2272,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 
 SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/Queue.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
-	$(CCC) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT)  # -O3 # $(CPUOPT)
+	$(CCC) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT) $(OPTIMIZE_O3) # -O3 # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
@@ -2273,7 +2289,7 @@ SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_p
 	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
 SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h Sine_plugin.o # we add Sine_plugin.o here to make sure it is up to date.
-	$(CCC) audio/SoundPlugin.cpp $(QTOPT)
+	$(CCC) audio/SoundPlugin.cpp $(QTOPT) $(OPTIMIZE_O3)
 ### $(CPUOPT)
 
 AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp
