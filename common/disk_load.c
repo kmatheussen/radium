@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo.h"
 #include "player_proc.h"
 #include "patch_proc.h"
+#include "settings_proc.h"
 
 #include "../api/api_seqtracks_proc.h"
 
@@ -323,9 +324,13 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
         if(Undo_are_you_sure_questionmark()==false)
           goto exit;
 
-        if(filename==NULL)
-          filename=GFX_GetLoadFileName(window,NULL,"Select file to load", NULL, NULL, NULL, true);
-            
+        if(filename==NULL){
+          const wchar_t *wdir = SETTINGS_read_wchars("filerequester_song_path", NULL);
+          filename=GFX_GetLoadFileName(window,NULL,"Select file to load", wdir, NULL, NULL, true);
+          if (filename!=NULL)
+            SETTINGS_write_wchars("filerequester_song_path", DISK_get_absolute_dir_path(filename));
+        }
+
 	if(filename==NULL)
           goto exit;
 

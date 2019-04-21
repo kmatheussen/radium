@@ -5,6 +5,7 @@
 #include "OS_string_proc.h"
 
 // Some helper functions. The file API in Qt is quite often ridiculous.
+extern LANGSPEC const wchar_t *DISK_get_absolute_dir_path(const wchar_t *wfilename);
 extern LANGSPEC const wchar_t *DISK_get_absolute_file_path(const wchar_t *wfilename);
 extern LANGSPEC const wchar_t *DISK_get_pathless_file_path(const wchar_t *wfilename);
 extern LANGSPEC int64_t DISK_get_creation_time(const wchar_t *wfilename);
