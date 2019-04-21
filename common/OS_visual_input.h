@@ -162,7 +162,7 @@ extern LANGSPEC const wchar_t *GFX_GetLoadFileName(
                                                    struct Tracker_Windows *tvisual,
                                                    ReqType reqtype,
                                                    const char *seltext,
-                                                   wchar_t *dir,
+                                                   const wchar_t *dir,
                                                    const char *postfixes,
                                                    const char *type,
                                                    bool program_state_is_valid
@@ -172,7 +172,7 @@ extern LANGSPEC const wchar_t *GFX_GetSaveFileName(
                                                    struct Tracker_Windows *tvisual,
                                                    ReqType reqtype,
                                                    const char *seltext,
-                                                   wchar_t *dir,
+                                                   const wchar_t *dir,
                                                    const char *postfixes,
                                                    const char *type,
                                                    bool program_state_is_valid

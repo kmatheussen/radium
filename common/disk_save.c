@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo.h"
 #include "nag.h"
 #include "OS_settings_proc.h"
+#include "settings_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -118,10 +119,13 @@ void SaveAs(struct Root *theroot){
 
         if (g_user_interaction_enabled==false)
           return;
-        
-        const wchar_t *filename=GFX_GetSaveFileName(theroot->song->tracker_windows, NULL," Select file to save", NULL, "*.rad", NULL, true);
+
+        const wchar_t *wdir = SETTINGS_read_wchars("filerequester_song_path", NULL);
+        const wchar_t *filename=GFX_GetSaveFileName(theroot->song->tracker_windows, NULL," Select file to save", wdir, "*.rad", NULL, true);
 
 	if(filename==NULL) return;
+
+        SETTINGS_write_wchars("filerequester_song_path", DISK_get_absolute_dir_path(filename));
 
 #ifndef GUIISQT // Qt asks this question for us.
 	char *ret=NULL;

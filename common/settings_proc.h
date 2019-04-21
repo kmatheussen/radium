@@ -26,6 +26,9 @@ extern LANGSPEC int SETTINGS_read_int32(const char *key, int def);
 extern LANGSPEC double SETTINGS_read_double(const char *key, double def);
 extern LANGSPEC const char *SETTINGS_read_string(const char *key, const char *def);
 
+extern LANGSPEC const wchar_t* SETTINGS_read_wchars(const char* key, const wchar_t* def);
+extern LANGSPEC void SETTINGS_write_wchars(const char* key, const wchar_t *wchars);
+
 extern LANGSPEC vector_t *SETTINGS_get_all_lines_starting_with(const char *prefix);
 
 extern LANGSPEC void SETTINGS_write_bool(const char *key, bool val);

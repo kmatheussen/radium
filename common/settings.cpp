@@ -358,6 +358,15 @@ QString SETTINGS_read_qstring(const char* key, QString def){
     return val;
 }
 
+const wchar_t* SETTINGS_read_wchars(const char* key, const wchar_t* def){
+  QString val = SETTINGS_get(key);
+
+  if(val==not_found)
+    return def;
+  else
+    return STRING_create(val);
+}
+
 QString SETTINGS_read_qstring(QString key, QString def){
   return SETTINGS_read_qstring(key.toUtf8().constData(), def);
 }
@@ -401,6 +410,10 @@ void SETTINGS_write_string(const char* key, const char* val){
 
 void SETTINGS_write_string(const char* key, QString val){
   SETTINGS_put(key,val);
+}
+
+void SETTINGS_write_wchars(const char* key, const wchar_t *wchars){
+  SETTINGS_put(key, STRING_get_chars(wchars));
 }
 
 void SETTINGS_write_string(QString key, const char* val){
