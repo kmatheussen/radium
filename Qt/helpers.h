@@ -183,10 +183,13 @@ static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget, QRect parent
   moveWindowToCentre(widget, parentRect);
 }
 
-#if !defined(RELEASE)
-  #define D(A) A
-#else
-  #define D(A)
+#ifndef D_IS_DEFINED
+  #if !defined(RELEASE)
+    #define D(A) A
+  #else
+    #define D(A)
+  #endif
+  #define D_IS_DEFINED 1
 #endif
 
 
