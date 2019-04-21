@@ -711,6 +711,11 @@ void OS_GFX_Text(
                  int flags,
                  int where
 ){
+  if (width<=0){
+    //R_ASSERT_NON_RELEASE(width==0); it happens, not important probably.
+    return;
+  }
+
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPainter *painter=GET_QPAINTER(editor,where);
 
