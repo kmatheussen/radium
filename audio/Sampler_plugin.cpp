@@ -2873,12 +2873,17 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
                                     STRING_append(STRING_create(OS_get_directory_separator()),
                                     STRING_append(STRING_create("sounds"),
                                     STRING_append(STRING_create(OS_get_directory_separator()),
-                                                  !strcmp(plugin_type->name, "Click")
+                                                  !strcmp(plugin_type->name, g_click_name)
                                                   ? STRING_create("243749__unfa__metronome-1khz-weak-pulse.flac")
                                                   : STRING_create("016.WAV")))));
     
   Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC, true, is_loading); // cubic is the default
-  
+
+  // Add a little bit release to click instrument to avoid noise when unpressing the "Click" button in the bottom bar.
+  if (!strcmp(plugin_type->name, g_click_name)){
+    data->p.r = 50;
+  }
+
   if(load_sample(data,default_sound_filename,0, true)==false){
     delete data;
     return NULL;
