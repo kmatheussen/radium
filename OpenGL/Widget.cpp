@@ -83,6 +83,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../Qt/Timer.hpp"
 #include "../Qt/Qt_Fonts_proc.h"
+#include "../Qt/Qt_mix_colors.h"
 
 #include "../audio/Juce_plugins_proc.h"
 
@@ -1399,6 +1400,142 @@ private:
     //assertHealthyVBlank();
   }
 
+  class Cover : QObject {
+    QImage _image;
+    radium::Mutex _image_mutex;
+
+    struct CoverWidget : public QWidget {
+
+      Cover *_cover ;
+      double _start_time = TIME_get_ms();
+
+      CoverWidget(QWidget *parent, Cover *cover)
+        : QWidget(parent)
+        , _cover(cover)
+      {}
+    
+      void paintEvent( QPaintEvent *e ){
+        TRACK_PAINT();
+        QPainter p(this);
+        
+        {
+          radium::ScopedMutex lock(_cover->_image_mutex);
+
+          p.fillRect(rect(), get_qcolor(LOW_EDITOR_BACKGROUND_COLOR_NUM));
+
+          if ((TIME_get_ms() - _start_time) > 50){
+
+            QRect cover_rect = rect().adjusted(rect().width()/4, rect().height()/4, -rect().width()/4, -rect().height()/4);
+            
+            p.fillRect(cover_rect.adjusted(-20,-20,20,20), mix_colors(get_qcolor(LOW_EDITOR_BACKGROUND_COLOR_NUM), Qt::black, 0.5));
+            
+            QRect text_rect(0, 0, width(), cover_rect.y()-20);
+            p.drawText(text_rect, Qt::AlignCenter, "Resizing OpenGL");
+            
+            if(!_cover->_image.isNull()){
+              p.drawImage(cover_rect, _cover->_image);
+            }
+          }
+        }
+      }
+
+    };
+
+  public:
+
+    CoverWidget *_widget = NULL;
+
+    Cover(QWidget *parent, QSize size)
+    {
+      IsAlive is_alive(this);
+
+      // We are in the main thread here, but since we are called from the resize event, we don't want to create a new QWidget now.
+      // Doing Qt stuff inside event handlers has led to strange and untracable crashes and other strange behaviors in the past.
+      THREADING_run_on_main_thread_async([is_alive, this, parent, size]{
+
+          if (!is_alive)
+            return;
+
+          _widget = new CoverWidget(parent, this);
+          _widget->resize(size);
+          _widget->move(0,0);
+          _widget->show();
+        },
+        true);
+    }
+
+    ~Cover(){
+      delete _widget;
+    }
+
+    bool has_grabbed_image(void){
+      radium::ScopedMutex lock(_image_mutex);
+      return !_image.isNull();
+    }
+
+    void maybe_grab_frame_buffer(QGLWidget *parent){
+      radium::ScopedMutex lock(_image_mutex);
+
+      if (_image.isNull()){
+        _image = parent->grabFrameBuffer();
+      }
+    }
+
+  };
+
+  radium::Mutex _cover_mutex;
+  Cover *_cover = NULL;
+
+  void hide_cover(void){
+    IsAlive is_alive(this);
+
+    THREADING_run_on_main_thread_async([is_alive, this]{
+
+        if (!is_alive)
+          return;
+
+        radium::ScopedMutex lock(_cover_mutex);
+        delete _cover;
+        _cover = NULL;
+      });
+  }
+
+  void show_cover(void){
+    radium::ScopedMutex lock(_cover_mutex);
+
+    if (_cover == NULL){
+      _cover = new Cover(this, size());
+
+      for(int i=0;i<200/30;i++){
+        if(_cover->has_grabbed_image())
+          break;
+        {
+          _cover_mutex.unlock();
+          msleep(30);
+          _cover_mutex.lock();
+        }
+      }
+
+    } else {
+      if (_cover->_widget != NULL){
+
+        IsAlive is_alive(this);
+
+        // We are in the main thread, but we don't want to call resize() inside a qt event handler.
+        THREADING_run_on_main_thread_async([is_alive, this]{
+            if (!is_alive)
+              return;
+
+            radium::ScopedMutex lock(_cover_mutex);
+            if (_cover!=NULL && _cover->_widget != NULL){
+              _cover->_widget->resize(size());
+            }
+          },
+          true);
+      }
+    }
+  }
+
 public:
 
   /** Event generated when the bound OpenGLContext does not have any other message to process 
@@ -1406,6 +1543,14 @@ public:
   // OpenGL thread
   void updateEvent() override {
     //{static double last_time = 0; static int counter =0; double nowtime = TIME_get_ms(); printf("   Counter: %d. Time: %f\n", counter++, nowtime-last_time);last_time = nowtime;}
+
+    {
+      radium::ScopedMutex lock(_cover_mutex);
+      if (_cover != NULL){
+        //QGLWidget::makeCurrent();
+        _cover->maybe_grab_frame_buffer(this);
+      }
+    }
 
     if(ATOMIC_GET(_dont_swap_right_now)){
       msleep(15);
@@ -1415,6 +1560,8 @@ public:
     if(_dont_swap_right_now_downcount > 0){
       msleep(15);
       _dont_swap_right_now_downcount--;
+      if(_dont_swap_right_now_downcount==0)
+        hide_cover();
       /*
       double time = TIME_get_ms();
       if ((time - _dont_swap_right_now_last_time) > 15){
@@ -1567,13 +1714,16 @@ public:
   void resizeEvent(QResizeEvent *qresizeevent) override {
     radium::ScopedResizeEventTracker resize_event_tracker;
 
+    
+    show_cover();
+
     ATOMIC_SET(_dont_swap_right_now, true);
 
     if (g_editor->window != NULL)
       calculateNewWindowWidthAndHeight(g_editor->window);
     
     GE_set_height(qresizeevent->size().height());
-    
+
 #if USE_QT5
 #  if THREADED_OPENGL
     vlQt5::Qt5ThreadedWidget::resizeEvent(qresizeevent);
@@ -1590,6 +1740,12 @@ public:
   // OpenGL thread
   void resizeEvent(int w, int h) override {
     //printf("resisizing %d %d\n",w,h);
+
+    if(0){
+      radium::ScopedMutex lock(_cover_mutex);
+      if (_cover != NULL)
+        _cover->maybe_grab_frame_buffer(this);
+    }
 
     if (w<32)
       w = 32;
