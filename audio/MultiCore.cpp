@@ -11,7 +11,7 @@
 #include "../common/stacktoucher_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/Semaphores.hpp"
-#include "../common/Queue.hpp"
+#include "../common/QueueStack.hpp"
 
 #include "../common/OS_Player_proc.h"
 
@@ -77,7 +77,35 @@ static DEFINE_ATOMIC(int, num_sp_left) = 0;
 
 #define MAX_NUM_SP 8192
 
+#if 0
+
+// 1. The original Queue type.
 static radium::Queue< SoundProducer* , MAX_NUM_SP > soundproducer_queue;
+#define GET_NEXT_SP_DIRECTLY 1
+#define LET_MAIN_THREAD_TAKE_FIRST_SP 1
+
+#elif 0
+
+// 2. Lighter. A little bit faster than 1.
+static radium::LinkedListStack< SoundProducer*> soundproducer_queue;
+#define GET_NEXT_SP_DIRECTLY 1
+#define LET_MAIN_THREAD_TAKE_FIRST_SP 1
+
+#elif 1
+
+// 3. Same as 2, but stored in a vector. Probably less cache misses when queue has many elements.
+static radium::VectorStack< SoundProducer*, MAX_NUM_SP > soundproducer_queue;
+#define GET_NEXT_SP_DIRECTLY 1
+#define LET_MAIN_THREAD_TAKE_FIRST_SP 1
+
+#else
+
+// 3. Tries to be smart. Should in theory work better than the others, but the implementation of SameCpuQueue isn't finished.
+static radium::SameCpuQueue< SoundProducer*> soundproducer_queue;
+#define GET_NEXT_SP_DIRECTLY 0
+#define LET_MAIN_THREAD_TAKE_FIRST_SP 0
+
+#endif
 
 static void avoid_lockup(int counter){
   if ((counter % (1024*64)) == 0){
@@ -102,9 +130,11 @@ static void avoid_lockup(int counter){
 static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, SoundProducer *&next){
   
   if (ATOMIC_ADD_RETURN_NEW(sp->_num_active_input_links_left, -1) == 0) {
+#if GET_NEXT_SP_DIRECTLY
     if (next == NULL)
       next = sp;
     else
+#endif
       soundproducer_queue.put(sp);
   }
 }
@@ -116,6 +146,8 @@ static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, i
   //int level = 0;
   
   while(sp != NULL){
+
+    //printf("    Processing %p\n", sp);
 
     //for(int i=0;i<level;i++)printf("  "); printf("     >>> %d processes %s\n", cpunum, sp->_plugin->patch->name);
             
@@ -347,6 +379,15 @@ void MULTICORE_end_block(void){
   }
 }
 
+static SoundProducer *tryget_next_sp_in_main_thread(void){
+  bool gotit;
+  auto *ret = soundproducer_queue.tryGet(gotit);
+  if (!gotit)
+    return NULL;
+  else
+    return ret;
+}
+
 void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t time, int num_frames, bool process_plugins){
 
   if (sp_all.size()==0)
@@ -381,8 +422,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
   //printf(" mc: SET: %d\n",sp_all.size());
   ATOMIC_SET(num_sp_left, sp_all.size());
   
-  //  fprintf(stderr,"**************** STARTING %d\n",sp_all.size());
-  //fflush(stderr);
+  //fprintf(stderr,"**************** STARTING %d\n",sp_all.size()); fflush(stderr);
 
   for (SoundProducer *sp : sp_all) {
     
@@ -409,7 +449,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 
   for (SoundProducer *sp : sp_all)
     if (sp->_num_active_input_links==0){
-      if (sp_in_main_thread == NULL && g_num_runners>0){
+      if (LET_MAIN_THREAD_TAKE_FIRST_SP && sp_in_main_thread == NULL && g_num_runners>0){
         sp_in_main_thread = sp;
       } else {
         num_ready_sp++;
@@ -422,6 +462,11 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 #endif
       }
     }
+  
+#if !LET_MAIN_THREAD_TAKE_FIRST_SP
+  sp_in_main_thread = tryget_next_sp_in_main_thread();
+#endif
+
 
 #if START_ALL_RUNNERS_SIMULTANEOUSLY
   if(num_ready_sp > 0)
@@ -436,8 +481,9 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
     
   } else {
 
-
+#if LET_MAIN_THREAD_TAKE_FIRST_SP
     R_ASSERT(sp_in_main_thread!=NULL);
+#endif
 
     if (g_use_buzy_get){
 
@@ -449,9 +495,8 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
       
       while(all_sp_finished.tryWaitLightly()==false){
 	
-	bool gotit;
-	sp_in_main_thread = soundproducer_queue.tryGet(gotit);
-	if (gotit)
+        sp_in_main_thread = tryget_next_sp_in_main_thread();
+        if (sp_in_main_thread)
 	  process_soundproducer(0, sp_in_main_thread, time, num_frames, process_plugins);
 	else
 	  avoid_lockup(counter++);      
@@ -463,11 +508,8 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
       
       while(sp_in_main_thread != NULL){
 	process_soundproducer(0, sp_in_main_thread, time, num_frames, process_plugins);
-              
-	bool gotit;
-	sp_in_main_thread = soundproducer_queue.tryGet(gotit); // This is not perfect. It's likely that we fail to get a soundproducer before everything is done.
-	if (!gotit)
-	  sp_in_main_thread = NULL;
+
+        sp_in_main_thread = tryget_next_sp_in_main_thread(); // This is not perfect. It's likely that we fail to get a soundproducer before everything is done.
       }
       
       // 5. wait.

@@ -6,7 +6,7 @@
 
 
 #include "../common/Mutex.hpp"
-#include "../common/Queue.hpp"
+#include "../common/QueueStack.hpp"
 
 #define U_MUTEX false
 static radium::Mutex g_faust_mutex; // Calling startMTDSPFactories() is not enough since that one will only protect llvm factories.

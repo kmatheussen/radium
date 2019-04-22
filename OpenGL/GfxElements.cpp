@@ -44,7 +44,7 @@ static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_da
 #include "../common/OS_settings_proc.h"
 #include "../common/Mutex.hpp"
 #include "../common/spinlock.h"
-#include "../common/Queue.hpp"
+#include "../common/QueueStack.hpp"
 
 #include "../Qt/Qt_colors_proc.h"
 

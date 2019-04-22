@@ -233,7 +233,7 @@ int main(){
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
 #include "../common/nsmtracker.h"
-#include "../common/Queue.hpp"
+#include "../common/QueueStack.hpp"
 #include "../common/OS_visual_input.h"
 #include "../common/OS_Bs_edit_proc.h"
 #include "../common/LockAsserter.hpp"

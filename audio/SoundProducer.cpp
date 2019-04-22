@@ -57,7 +57,7 @@ static inline int myisinf(float val){
 #include "../common/threading.h"
 #include "../common/visual_proc.h"
 #include "../common/Vector.hpp"
-#include "../common/Queue.hpp"
+#include "../common/QueueStack.hpp"
 #include "../common/Time.hpp"
 
 #include "../midi/midi_i_input_proc.h"
@@ -764,6 +764,11 @@ namespace{
 //struct Owner *owner;
 
 struct SoundProducer {
+  /*
+  SoundProducer *next; // Used by the MultiCore scheduler. (soundproducers ready to run are stored in a linked list)
+  int cpunum = 0;
+  */
+
   int64_t _id;
 
   SoundPlugin *_plugin;

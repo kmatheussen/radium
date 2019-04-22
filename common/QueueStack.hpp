@@ -26,13 +26,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <boost/lockfree/queue.hpp>
 
 #include "Semaphores.hpp"
+#include "spinlock.h"
+
 
 
 // Lockless multithread read / multithread write queue
 
 namespace radium {
 
-template <typename T, int SIZE> struct Queue{
+  /*
+template <typename T> struct QueueStorage{
+};
+  */
+template <typename T> struct BaseQueueStack{
 
 private:
 
@@ -41,10 +47,12 @@ private:
   Semaphore buzyget_ready;
 
   Semaphore ready;
-  typedef boost::lockfree::queue< T , boost::lockfree::capacity<SIZE> > queuetype;
-  queuetype queue;
   
   //boost::lockfree::queue< T > queue2;
+
+
+  virtual bool pop(T &ret) = 0;
+  virtual bool push(T &t) = 0;
   
 public:
 
@@ -54,7 +62,7 @@ public:
     
     if (ready.tryWait()) {
     
-      R_ASSERT(queue.pop(ret));
+      R_ASSERT(pop(ret));
 
       success = true;
 
@@ -80,7 +88,7 @@ private:  // Rather not expose this messy (and unsafe) API unless it's needed.
     T ret;
     memset(&ret, 0, sizeof(T)); // why?
     
-    R_ASSERT(queue.pop(ret));
+    R_ASSERT(pop(ret));
 
     return ret;
   }
@@ -136,7 +144,7 @@ public:
   }
                  
   void putWithoutSignal(T t) {
-    while (!queue.bounded_push(t));
+    while (!push(t));
   }
 
   void signal(int num){
@@ -145,7 +153,7 @@ public:
   
   // returns false if queue was full
   bool tryPut(T t){
-    if (queue.bounded_push(t)) {
+    if (push(t)) {
       ready.signal();
       return true;
     }
@@ -163,6 +171,200 @@ public:
     return ready.numSignallers();
   }
 };
+
+// RT safe.
+template <typename T, int SIZE> class Queue : public BaseQueueStack<T>{
+
+  typedef boost::lockfree::queue< T , boost::lockfree::capacity<SIZE> > queuetype;
+  queuetype queue;
+
+  bool pop(T &ret) override{
+    return queue.pop(ret);
+  }
+
+  bool push(T &t) override{
+    return queue.push(t);
+  }
+
+};
+
+// RT safe, but all threads must run with the same priority to avoid priority inversion
+// 'T' must be a pointer and have a "T *next" field.
+template <typename T> class LinkedListStack : public BaseQueueStack<T>{
+
+  radium::Spinlock _lock;
+
+  T _root = NULL;
+
+  //int size=0;
+
+  bool pop(T &ret) override{
+    radium::ScopedSpinlock lock(_lock);
+    if (_root==NULL)
+      return false;
+
+    ret = _root;
+    _root = _root->next;
+
+    //size--;   printf("        << Pop %p. Size: %d\n", ret, size);
+
+    return true;
+  }
+
+  bool push(T &t) override{
+    radium::ScopedSpinlock lock(_lock);
+
+    //size++;   printf("        >> Push %p. Size: %d\n", t, size);
+
+    t->next = _root;
+    _root = t;
+
+    return true;
+  }
+
+};
+
+// RT safe, but all threads must run with the same priority to avoid priority inversion.
+template <typename T, int SIZE> class VectorStack : public BaseQueueStack<T>{
+
+  radium::Spinlock _lock;
+  int _pos = 0;
+
+  T _elements[SIZE];
+
+  //int size=0;
+
+  bool pop(T &ret) override{
+    radium::ScopedSpinlock lock(_lock);
+
+    if (_pos==0)
+      return false;
+
+    _pos--;
+
+    ret = _elements[_pos];
+
+    //size--;   printf("        << Pop %p. Size: %d\n", ret, size);
+
+    return true;
+  }
+
+  bool push(T &t) override{
+    radium::ScopedSpinlock lock(_lock);
+
+    //size++;   printf("        >> Push %p. Size: %d\n", t, size);
+
+    if (_pos==SIZE)
+      return false;
+
+    _elements[_pos] = t;
+
+    _pos++;
+
+    return true;
+  }
+
+};
+
+static inline int get_curr_cpu(void){
+#if defined(FOR_WINDOWS)
+  GetCurrentProcessorNumber();
+#elif defined(FOR_LINUX)
+  return sched_getcpu();
+#elif defined(FOR_MACOSX)
+  return 0; // Can't find equivalent function on osx.
+#endif
+}
+
+// 'pop' returns the first element that was runing on the same cpunum as the current thread when being pushed.
+// RT safe, but all access must have realtime priority to avoid priority inversion
+// 'T' must be a pointer and have a "T *next" field.
+// Implementation is not finished.
+template <typename T> class SameCpuQueue : public BaseQueueStack<T>{
+
+  // hwloc: https://www.open-mpi.org/projects/hwloc/ (probably faster to implement a library from scratch than it would take to learn that api though)
+
+  #define num_cpus 4 // Hardcoded to match my laptop. Definitely not always correct.
+  T _roots[num_cpus] = {}; //NULL;
+
+  // Hardcoded to match my laptop. Use hwloc to generate table.
+  const int cpumap[4][3] = {{1,2,3},
+                            {0,3,2},
+                            {3,0,1},
+                            {2,1,0}};
+  /*
+  const int cpumap[4][3] = {{1,2,3},
+                            {0,2,3},
+                            {0,1,3},
+                            {0,1,2}};
+  */
+  //radium::Spinlock _locks[num_cpus];
+  radium::Spinlock _lock;
+
+  //int size=0;
+
+  bool pop(T &ret, int cpunum, int current_cpunum){
+    //radium::ScopedSpinlock locks(_lock[cpunum]);
+
+    if (_roots[cpunum]==NULL)
+      return false;
+
+    ret = _roots[cpunum];
+    _roots[cpunum] = _roots[cpunum]->next;
+
+    ret->cpunum = current_cpunum;
+
+    return true;
+  }
+
+  bool pop(T &ret) override{
+
+    //size--;   printf("        << Pop %p. Size: %d\n", ret, size);
+
+    int current_cpunum = get_curr_cpu();
+
+    if(current_cpunum < 0 || current_cpunum>3){
+      printf("========================Illegal cpu num: %d\n", current_cpunum);
+      abort();
+    }
+
+    radium::ScopedSpinlock lock(_lock);
+
+    if (pop(ret, current_cpunum, current_cpunum))
+      return true;
+      
+    for(int i=0;i<3;i++){
+      int old_cpunum = cpumap[current_cpunum][i];
+      if (pop(ret, old_cpunum, current_cpunum)){
+        //if (i > 0) printf("....%s switched CPU %d -> %d\n", ret->_plugin->patch->name, old_cpunum, current_cpunum);
+        return true;
+      }
+    }
+
+    printf("========================No ret\n");
+    abort();
+
+    return false;
+  }
+
+  bool push(T &t) override{
+
+    //size++;   printf("        >> Push %p. Size: %d\n", t, size);
+
+    int cpunum = t->cpunum;
+
+    //radium::ScopedSpinlock lock(_locks[cpunum]);
+    radium::ScopedSpinlock lock(_lock);
+
+    t->next = _roots[cpunum];
+    _roots[cpunum] = t;
+
+    return true;
+  }
+
+  #undef num_cpus
+};
+
  
 #if 0
 // This buffer does not keep order.
