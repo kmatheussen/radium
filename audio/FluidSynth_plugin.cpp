@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPlugin_proc.h"
 #include "SoundProducer_proc.h"
 #include "Mixer_proc.h"
+#include "Fade.hpp"
 
 #include "SoundPluginRegistry_proc.h"
 
@@ -91,19 +92,6 @@ typedef struct _Data{
 
 } Data;
 
-
-
-static void RT_fade_out(float *sound, int num_frames){
-  float num_frames_plus_1 = num_frames+1.0f;
-  int i;
-  float val = (num_frames / num_frames_plus_1);
-  float inc = val - ( (num_frames-1) / num_frames_plus_1);
-
-  for(i=0;i<num_frames;i++){
-    sound[i] *= val;
-    val -= inc;
-  }
-}
 
 
 static int get_fluidsynth_time(Data *data, int64_t time){
@@ -237,7 +225,7 @@ static void send_raw_midi_message(struct SoundPlugin *plugin, int block_delta_ti
 
   if (cc>=0xe0 && cc<0xf0) {
     int pitch = (data2<<7) + data1;
-    sendpitchbend(plugin->data, 0, pitch, (unsigned int)(data->time + block_delta_time));
+    sendpitchbend(data, 0, pitch, (unsigned int)(data->time + block_delta_time));
 
   } else if (cc >= 0xb0 && cc <0xc0)
     sendcontrolchange(data,0,data1,data2, (unsigned int)(data->time + block_delta_time));
@@ -383,8 +371,8 @@ static void delete_data(Data *data){
   V_free(data);
 }
 
-static void *create_data(const wchar_t *filename, float samplerate){
-  Data *data = V_calloc(1,sizeof(Data));
+static Data *create_data(const wchar_t *filename, float samplerate){
+  Data *data = (Data*)V_calloc(1,sizeof(Data));
   //CRASHREPORTER_send_assert_message("AIAI2!");
   //data = NULL;
   
@@ -502,7 +490,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 }
 
 bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int bank_num, int preset_num){
-  Data *data = plugin->data;
+  Data *data = (Data*)plugin->data;
 
   if(!STRING_equals2(sf2_file, data->filename)){
 

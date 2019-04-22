@@ -2,6 +2,9 @@
 #ifndef RADIUM_COMMON_VECTOR_HPP
 #define RADIUM_COMMON_VECTOR_HPP
 
+#include <vector>
+#include <algorithm>
+
 #include "validatemem_proc.h"
 
 #include "LockAsserter.hpp"

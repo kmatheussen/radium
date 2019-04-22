@@ -6,9 +6,9 @@
 #include "../common/nsmtracker.h"
 
 static void RT_fade_out(float *sound, int num_frames){
-  float num_frames_plus_1 = num_frames+1.0f;
+  float num_frames_plus_1 = 1.0 / (num_frames+1.0f);
   for(int i=0;i<num_frames;i++)
-    sound[i] *= (num_frames-i)/num_frames_plus_1;
+    sound[i] *= (num_frames-i) * num_frames_plus_1;
 }
 
 

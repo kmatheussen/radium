@@ -1943,8 +1943,8 @@ SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
 Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp common/Random.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h audio/Fade.hpp
 	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) $(OPTIMIZE_O3) # $(CPUOPT) 
 
-FluidSynth_plugin.o: audio/FluidSynth_plugin.c
-	$(CC) $(OPT) $(CPUOPT) audio/FluidSynth_plugin.c
+FluidSynth_plugin.o: audio/FluidSynth_plugin.cpp
+	$(CCC) $(CPPOPT) $(CPUOPT) audio/FluidSynth_plugin.cpp -Wno-gnu-designator
 #`$(PKG) --cflags fluidsynth`
 
 Pd_plugin.o: audio/Pd_plugin.cpp
