@@ -5,6 +5,8 @@
 #include "../common/LockAsserter.hpp"
 #include "Delay.hpp"
 #include "Juce_plugins_proc.h"
+#include "Fade.hpp"
+
 
   //#define B(A) A
   #define B(A)
@@ -58,133 +60,7 @@ using namespace SmoothDelayState;
 
 #define SMOOTH_DELAY_FADE_LEN ms_to_frames(100)
 
-class Fader{
-  
-  int _num_fade_frames_left;
-  double _inc_fade;
-  double _fade_mul;
-
-  bool _is_fading_in;
-#if !defined(RELEASE)
-  const bool _fixed_fade_type;
-#endif
-
-public:
-
-  Fader(const bool is_fading_in)
-    : _is_fading_in(is_fading_in)
-#if !defined(RELEASE)
-    , _fixed_fade_type(true)
-#endif
-  {}
-
-  Fader(void)
-#if !defined(RELEASE)
-    : _fixed_fade_type(false)
-#endif
-  {}
-
-  bool is_fading_in(void) const {
-    return _is_fading_in;
-  }
-
-  void RT_start_fading_in(int fade_len){
-    R_ASSERT_NON_RELEASE(!_fixed_fade_type || _is_fading_in);
-    _num_fade_frames_left = fade_len;
-    _inc_fade = 1.0 / (double)(2 + fade_len); // Add 2 since we don't multiply by 0.0 and 1.0 in the fades.
-    _fade_mul = _inc_fade;
-    _is_fading_in = true;
-  }
-
-  void RT_start_fading_out(int fade_len){
-    R_ASSERT_NON_RELEASE(!_fixed_fade_type || !_is_fading_in);
-    _num_fade_frames_left = fade_len;
-    _inc_fade = - 1.0 / (double)(2 + fade_len); // Add 2 since we don't multiply by 0.0 and 1.0 in the fades.
-    _fade_mul = 1.0 + _inc_fade;
-    _is_fading_in = false;
-  }
-
-  void RT_fade(int num_frames, float *__restrict__ data){
-#if TEST_SMOOTHDELAY
-    double time = TIME_get_ms();
-#endif
-
-    int how_many = R_MIN(num_frames, _num_fade_frames_left);
-
-    {
-      float fade_mul = _fade_mul;
-
-      double d_how_many = how_many;
-
-      double d_fade_span = _inc_fade*d_how_many;
-
-
-#define USE_VECTORIZABLE_FADE_LOOP 1 // Approx. nine times faster in both gcc and clang! (clang 8.0.0 is ~11% faster than gcc 8.1.0 here)
-
-
-#if USE_VECTORIZABLE_FADE_LOOP
-
-      float fade_inc = d_fade_span / d_how_many;
-
-      #pragma clang loop vectorize(enable) interleave(enable)
-      for(int i=0;i<how_many;i++)
-        data[i] *= fade_mul + i*fade_inc;
-          
-      // same as:
-      // for(int i=0;i<how_many;i++)
-      //   data[i] *= R_SCALE(i, 0, how_many, fade_mul, fade_mul+fade_span);
-
-#else
-
-      for(int i=0;i<how_many;i++){
-        data[i] *= fade_mul;
-        fade_mul += _inc_fade;
-      }
-
-#endif
-
-      _fade_mul += d_fade_span;
-    }
-
-#if TEST_SMOOTHDELAY
-    g_fade_benchmark_time += TIME_get_ms()-time;
-#endif
-
-    if (!_is_fading_in){
-      int extra = num_frames-how_many;
-      if(extra > 0)
-        memset(data + how_many, 0, extra*sizeof(float));
-    }
-    _num_fade_frames_left -= how_many;
-  }
-
-  void RT_fade_in(int num_frames, float *__restrict__ data){
-    R_ASSERT_NON_RELEASE(is_fading_in());
-    return RT_fade(num_frames, data);
-  }
-
-  void RT_fade_out(int num_frames, float *__restrict__ data){
-    R_ASSERT_NON_RELEASE(!is_fading_in());
-    return RT_fade(num_frames, data);
-  }
-
-  bool RT_is_finished_fading(void) const {
-    return _num_fade_frames_left==0;
-  }
-};
-
-struct FadeIn : public Fader{
-  FadeIn(void)
-    : Fader(true)
-  {}
-};
-
-struct FadeOut : public Fader{
-  FadeOut(void)
-    : Fader(false)
-  {}
-};
-
+ 
   // returns new ringbuffer_pos
 template <typename T> 
 static inline int copy_to_ringbuffer(T *__restrict__ ringbuffer, int ringbuffer_pos, const int size_ringbuffer, const T *__restrict__ input, const int size_input) {
@@ -444,7 +320,7 @@ class SmoothDelay{
   SmoothDelayDelay<float> *_delay1;
   SmoothDelayDelay<float> *_delay2;
 
-  Fader _fader;
+  Fade _fade;
 
   State _state = State::NO_DELAY;
 
@@ -497,7 +373,7 @@ private:
 
         if (_delay1->RT_is_finished_filling_buffer()==true){
           _delay1->RT_start_fading_in();
-          _fader.RT_start_fading_out(SMOOTH_DELAY_FADE_LEN);
+          _fade.RT_start_fading_out(SMOOTH_DELAY_FADE_LEN);
           SET_STATE(State::FADE_IN_DELAY);
         }
 
@@ -505,10 +381,10 @@ private:
         return false;
 
       case State::FADE_IN_DELAY:
-        R_ASSERT_NON_RELEASE(!_fader.is_fading_in());
+        R_ASSERT_NON_RELEASE(!_fade.is_fading_in());
 
         if (_delay1->RT_is_finished_fading_in()){
-          R_ASSERT_NON_RELEASE(_fader.RT_is_finished_fading());
+          R_ASSERT_NON_RELEASE(_fade.RT_is_finished_fading());
           SET_STATE(State::PLAIN_DELAY);
         }
 
@@ -516,7 +392,7 @@ private:
           float temp[num_frames];
           memcpy(temp, input, sizeof(float)*num_frames);
 
-          _fader.RT_fade_out(num_frames, temp);
+          _fade.RT_fade_out(num_frames, temp);
 
           _delay1->RT_process_overwrite_fade_in(num_frames, input, output);
 
@@ -529,7 +405,7 @@ private:
         if (delay_size != _delay1->RT_get_delay_size()){
           if (delay_size==0){
             _delay1->RT_start_fading_out();
-            _fader.RT_start_fading_in(SMOOTH_DELAY_FADE_LEN);
+            _fade.RT_start_fading_in(SMOOTH_DELAY_FADE_LEN);
             SET_STATE(State::FADE_OUT_DELAY);
           } else {
             _delay2->RT_start_filling_buffer(delay_size);
@@ -566,10 +442,10 @@ private:
         return true;
 
       case State::FADE_OUT_DELAY:
-        R_ASSERT_NON_RELEASE(_fader.is_fading_in());
+        R_ASSERT_NON_RELEASE(_fade.is_fading_in());
 
         if (_delay1->RT_is_finished_fading_out()){
-          R_ASSERT_NON_RELEASE(_fader.RT_is_finished_fading());
+          R_ASSERT_NON_RELEASE(_fade.RT_is_finished_fading());
           SET_STATE(State::NO_DELAY);
         }
 
@@ -577,7 +453,7 @@ private:
           float temp[num_frames];
           memcpy(temp, input, sizeof(float)*num_frames);
 
-          _fader.RT_fade_in(num_frames, temp);
+          _fade.RT_fade_in(num_frames, temp);
           
           _delay1->RT_process_overwrite_fade_out(num_frames, input, output);
 

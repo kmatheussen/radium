@@ -17,9 +17,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_AUDIO_GRANULATOR_HPP
 #define _RADIUM_AUDIO_GRANULATOR_HPP
 
-#include "Mixer_proc.h"
 #include "../common/Random.hpp"
 #include "../common/Vector.hpp"
+
+#include "Mixer_proc.h"
+#include "Fade.hpp"
 
 #include "GranResampler.hpp"
 
@@ -274,6 +276,10 @@ public:
       const int local_pos2 = R_MIN(_fade_length - grain_pos, num_frames);
       const int num_frames2 = local_pos2;
 
+#define USE_FADE_CLASS 1
+
+#if !USE_FADE_CLASS
+
       const float inc_inc = 1.0 / _fade_length;
       float inc = grain_pos * inc_inc;
       for(int i=0;i<local_pos2;i++){
@@ -282,6 +288,12 @@ public:
             printf("A. %d: %f  (a: %d). Fade length: %d\n", i+grain_pos, inc, i, _fade_length););
         inc += inc_inc;
       }
+
+#else
+
+      RT_fade_in_and_add(out, in, _fade_length, grain_pos, grain_pos + local_pos2);
+
+#endif
     
       if(num_frames2==num_frames)
         return;
@@ -297,6 +309,7 @@ public:
 
       int local_pos2 = R_MIN(num_frames, _duration-grain_pos);
 
+#if !USE_FADE_CLASS
       const float inc_inc = 1.0 / _fade_length;
       float inc = (_duration-grain_pos) * inc_inc;
       for(int i=local_pos;i<local_pos2;i++){
@@ -305,6 +318,11 @@ public:
             printf("B. %d: %f  (b: %d). Duration: %d\n", i-local_pos + grain_pos, inc, i, _duration););
         inc -= inc_inc;
       }
+#else
+      int startpos = _fade_length - (_duration - grain_pos);
+      int dur = local_pos2 - local_pos;
+      RT_fade_out_and_add(out + local_pos, in + local_pos, _fade_length, startpos, startpos+dur);
+#endif
 
       R_ASSERT_NON_RELEASE(grain_pos+(local_pos2-local_pos)<=_duration);
       
@@ -328,7 +346,8 @@ public:
     // Fade out after no fading
     if (local_pos < num_frames){
       const int local_pos2 = R_MIN(num_frames, _duration - grain_pos);
-        
+
+#if !USE_FADE_CLASS
       const float inc_inc = 1.0 / _fade_length;
       float inc = (_duration-grain_pos) * inc_inc;
       for(int i=local_pos;i<local_pos2;i++){
@@ -337,6 +356,11 @@ public:
             printf("C. %d: %f  (c: %d). Duration: %d\n", i-local_pos + grain_pos, inc, i, _duration);)
         inc -= inc_inc;
       }
+#else
+      int startpos = _fade_length - (_duration - grain_pos);
+      int dur = local_pos2 - local_pos;
+      RT_fade_out_and_add(out + local_pos, in + local_pos, _fade_length, startpos, startpos+dur);
+#endif
     }
   }
 

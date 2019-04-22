@@ -293,7 +293,7 @@ ifeq ($(BUILDTYPE), RELEASE)
 endif
 
 ifeq ($(BUILDTYPE), RELEASE)
-	OPTIMIZE_O3="-O3" # SmoothDelay.hpp runs faster with -O3.
+	OPTIMIZE_O3="-O3" # SmoothDelay.hpp / Fade.hpp / Granulator.hpp runs faster with -O3.
 else
 	OPTIMIZE_O3=""
 endif
@@ -1931,8 +1931,8 @@ VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
 Ladspa_plugins.o: audio/Ladspa_plugins.cpp
 	$(CCC) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT) $(IS_LINUX_BINARY)
 
-Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h audio/Peaks.hpp audio/SampleRecorder_proc.h common/OS_string_proc.h audio/Granulator.hpp  audio/GranResampler.hpp
-	$(CCC) $(QTOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) #  $(CPUOPT) 
+Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h audio/Peaks.hpp audio/SampleRecorder_proc.h common/OS_string_proc.h audio/Granulator.hpp  audio/GranResampler.hpp audio/Fade.hpp
+	$(CCC) $(QTOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) $(OPTIMIZE_O3) #  $(CPUOPT) 
 
 SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS_string_proc.h
 	$(CCC) $(QTOPT) audio/SampleRecorder.cpp $(SNDFILEOPT)
@@ -1940,8 +1940,8 @@ SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS
 SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
 	$(CCC) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
 
-Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp common/Random.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h
-	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) # $(CPUOPT) 
+Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp common/Random.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h audio/Fade.hpp
+	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) $(OPTIMIZE_O3) # $(CPUOPT) 
 
 FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 	$(CC) $(OPT) $(CPUOPT) audio/FluidSynth_plugin.c
