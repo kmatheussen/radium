@@ -1017,7 +1017,7 @@ void BS_UpdateBlockList(void){
   if (seqtrack->for_audiofiles){
 
     vector_t filenames = SAMPLEREADER_get_all_filenames();
-    int justify = log10(filenames.num_elements) + 1;
+    int justify = filenames.num_elements==0 ? 1 : log10(filenames.num_elements) + 1;
 
     VECTOR_FOR_EACH(const wchar_t*, filename, &filenames){
 
