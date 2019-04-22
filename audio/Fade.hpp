@@ -180,6 +180,10 @@ static inline void RT_fade_in(float *data, int num_frames, int pos1, int pos2){
   
   fader.RT_fade(pos2-pos1, data);
 }
+
+static inline void RT_fade_in(float *data, int num_frames){
+  RT_fade_in(data, num_frames, 0, num_frames);
+}
  
 static inline void RT_fade_in(float *__restrict__ out, const float *__restrict__ in, int num_frames, int pos1, int pos2, bool do_add = false){
   R_ASSERT_NON_RELEASE(pos1 >= 0);
@@ -215,7 +219,12 @@ static inline void RT_fade_out(float *data, int num_frames, int pos1, int pos2){
   
   fader.RT_fade(pos2-pos1, data);
 }
+
+static inline void RT_fade_out(float *data, int num_frames){
+  RT_fade_out(data, num_frames, 0, num_frames);
+}
  
+
 static inline void RT_fade_out(float *__restrict__ out, const float *__restrict__ in, int num_frames, int pos1, int pos2, bool do_add = false){
   R_ASSERT_NON_RELEASE(pos1 >= 0);
   R_ASSERT_NON_RELEASE(num_frames > 0);

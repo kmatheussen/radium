@@ -106,11 +106,16 @@ struct Envelope{
         {
           float val     = scale(_frame_pos, x0, x1, y0, y1);
           float inc_val = scale(_frame_pos+1, x0, x1, y0, y1) - val;
-          
+
+#if 0
           for(int x=0;x<loop_len;x++){
             data[x] = val;
             val += inc_val;
           }
+#else
+          for(int x=0;x<loop_len;x++)
+            data[x] = val + x*inc_val;
+#endif
         }
         
         i          += loop_len;
