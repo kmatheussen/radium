@@ -55,6 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "GranResampler.hpp"
 #include "Granulator.hpp"
+#include "Fade.hpp"
 
 #include "Resampler_proc.h"
 #include "Envelope_proc.h"
@@ -605,18 +606,6 @@ static float velocity2gain(float val){
 }
 
 
-static void RT_fade_out(float *sound, int num_frames){
-  float num_frames_plus_1 = num_frames+1.0f;
-  int i;
-  float val = (num_frames / num_frames_plus_1);
-  float inc = val - ( (num_frames-1) / num_frames_plus_1);
-
-  for(i=0;i<num_frames;i++){
-    sound[i] *= val;
-    val -= inc;
-  }
-}
-
 static void RT_add_voice(Voice **root, Voice *voice){
   voice->next = *root;
   if(*root!=NULL)
@@ -643,20 +632,30 @@ static void RT_fade_replace(float *dst, float *src, int num_frames, float start_
   float mul = start_val;
   float inc = (end_val-start_val)/(float)num_frames;
   int i;
-  for(i=0;i<num_frames;i++){
+#if 0
+   for(i=0;i<num_frames;i++){
     dst[i] = src[i]*mul;
     mul += inc;
   }
+#else
+  for(i=0;i<num_frames;i++)
+    dst[i] = src[i] * (mul + inc*i);
+#endif
 }
 
 static void RT_fade_add(float *dst, float *src, int num_frames, float start_val, float end_val){
   float mul = start_val;
   float inc = (end_val-start_val)/(float)num_frames;
   int i;
+#if 0
   for(i=0;i<num_frames;i++){
     dst[i] += src[i]*mul;
     mul += inc;
   }
+#else
+  for(i=0;i<num_frames;i++)
+    dst[i] += src[i] * (mul + inc*i);
+#endif
 }
 
 static int RT_crossfade(int64_t start_pos, int64_t end_pos, int64_t crossfade_start, int64_t crossfade_end, float *out_data, float *in_data){

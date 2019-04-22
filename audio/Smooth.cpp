@@ -235,10 +235,8 @@ void SMOOTH_mix_sounds_raw(float *target, const float *source, int num_frames, f
     float val = start_volume;
     float inc = diff/num_frames;
 
-    for(i=0;i<num_frames;i++){
-      target[i] += source[i] * val;
-      val += inc;
-    }
+    for(i=0;i<num_frames;i++)
+      target[i] += source[i] * (val + inc*i);
 
     //printf("Start: %f. End: %f. inc: %f. End: %f\n\n",start_volume,end_volume,inc, val);
   }

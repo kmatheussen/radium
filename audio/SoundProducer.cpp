@@ -518,6 +518,7 @@ static void RT_fade_in2(float *__restrict__ sound, int pos, int num_frames){
   float mul = scale(pos+1, 0, FADE_LEN+1, 0.0, 1.0);
   float mulinc = scale(1, 0, FADE_LEN+1, 0.0, 1.0);
 
+#if 0
   if(num_frames==64)
     for(int i=0;i<64;i++){
       sound[i] *= mul;
@@ -528,6 +529,14 @@ static void RT_fade_in2(float *__restrict__ sound, int pos, int num_frames){
       sound[i] *= mul;
       mul += mulinc;
     }
+#else
+  if(num_frames==64)
+    for(int i=0;i<64;i++)
+      sound[i] *= mul + i*mulinc;
+  else
+    for(int i=0;i<num_frames;i++)
+      sound[i] *= mul + i*mulinc;
+#endif
   
   
 #else
@@ -562,6 +571,7 @@ static void RT_fade_out2(float *__restrict__ sound, int pos, int num_frames){
   float mul = scale(pos+1, 0, FADE_LEN+1, 1.0, 0.0);
   float mulinc = -1.0 * scale(1, 0, FADE_LEN+1, 0.0, 1.0);
 
+#if 0
   if(frames_to_iterate==64)
     for(int i=0;i<64;i++){
       sound[i] *= mul;
@@ -572,7 +582,14 @@ static void RT_fade_out2(float *__restrict__ sound, int pos, int num_frames){
       sound[i] *= mul;
       mul += mulinc;
     }
-  
+#else
+  if(frames_to_iterate==64)
+    for(int i=0;i<64;i++)
+      sound[i] *= mul + mulinc*i;
+  else
+    for(int i=0;i<frames_to_iterate;i++)
+      sound[i] *= mul + mulinc*i;
+#endif
   
 #else
   
