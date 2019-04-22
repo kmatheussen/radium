@@ -616,8 +616,13 @@ public:
   int _delay_size = 0;
   int _total_num_processed_empty_frames = 0;
 
+#if defined(RELEASE)
+#define CHECK_NOISE 0
+#else
+#define CHECK_NOISE 0
+#endif
 
-#if !defined(RELEASE)
+#if CHECK_NOISE
   int64_t _time = 0;
   float _prev = 0.0;
 #endif
@@ -626,7 +631,7 @@ public:
 
     bool ret = RT_process(num_samples, input, output, _delay_size);
 
-#if !defined(RELEASE)
+#if CHECK_NOISE
     if(ret){
       for(int i=0;i<num_samples;i++){
         if (fabsf(output[i]-_prev) > 0.2)
@@ -640,6 +645,8 @@ public:
     }
     _time += num_samples;
 #endif
+
+#undef CHECK_NOISE
 
     return ret;
   }

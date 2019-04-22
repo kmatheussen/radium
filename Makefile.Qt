@@ -2270,7 +2270,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 #audio/faust-examples/faust-stk/flute.cpp: audio/faust-examples/faust-stk/flute.dsp
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp -o flute.cpp
 
-SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/Queue.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp
+SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/QueueStack.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
 	$(CCC) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT) $(OPTIMIZE_O3) # -O3 # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
@@ -2381,7 +2381,7 @@ crashreporter_windows.o: crashreporter/crashreporter_windows.c
 GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
 	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) #-Wno-error=unused-variable
 
-T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/Queue.hpp OpenGL/GfxElements.h 
+T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h 
 	$(CCC) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)    #-Wno-error=unused-variable
 
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h

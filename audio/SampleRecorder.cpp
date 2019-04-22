@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
 #include "../common/nsmtracker.h"
-#include "../common/Queue.hpp"
+#include "../common/QueueStack.hpp"
 #include "../common/OS_visual_input.h"
 #include "../common/OS_string_proc.h"
 #include "../common/threading.h"

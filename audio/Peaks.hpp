@@ -316,7 +316,7 @@ public:
 
 #include "../common/visual_proc.h"
 #include "../common/seqtrack_proc.h"
-#include "../common/Queue.hpp"
+#include "../common/QueueStack.hpp"
 #include "../common/Mutex.hpp"
 
 static inline wchar_t *get_peak_filename(const wchar_t *soundfilename){
