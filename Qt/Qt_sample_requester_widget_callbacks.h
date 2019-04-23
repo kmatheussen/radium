@@ -175,7 +175,7 @@ static QString get_display_name(QString filename, int bank=-1, int preset=-1){
   str += filename;
     
   if (bank>=0)
-    str += str.sprintf(", b: %d, p: %d",bank,preset);
+    str += QString::asprintf(", b: %d, p: %d",bank,preset);
 
   str += "</span></p></body></html>";
     
@@ -353,6 +353,7 @@ class Sample_requester_widget : public QWidget
   
   void update_sample_name_label(QString text, int bank=-1, int preset=-1){
     //_sample_name_label->setText(QString("<font color='%1'>%2</font").arg(get_qcolor(CURRENT_SOUNDFILE_COLOR_NUM).name(QColor::HexArgb), text));
+    //printf("    SETTING text to -%s-. Text: -%s-\n", get_display_name(text, bank, preset).toUtf8().constData(), text.toUtf8().constData());
     _sample_name_label->setText(get_display_name(text, bank, preset));
   }
   
