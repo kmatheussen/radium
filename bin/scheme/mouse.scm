@@ -7971,6 +7971,12 @@
                                                               (<ra> :set-seqblock-gain (get-normalized-gain) seqblockid))))))
                                                     
                                                     "---------------------"
+
+                                                    (list "Copy filename to system clipboard"
+                                                          :enabled (and seqblocknum (not blocknum))
+                                                          (lambda ()
+                                                            (<ra> :copy-wtext-to-clipboard (<ra> :get-seqblock-sample seqblocknum seqtracknum))
+                                                            #t))
                                                     
                                                     (list "Settings (double click)"
                                                           :enabled (and seqblocknum (not blocknum))

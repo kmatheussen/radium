@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLinkedList>
 #include <QThread>
 #include <QUuid>
+#include <QClipboard>
 
 #include "../bin/packages/s7/s7.h"
 
@@ -3230,6 +3231,19 @@ const_char* getProgramLog(void){
   return EVENTLOG_get();
 }
 
+void copyWtextToClipboard(const_char* wtext){
+  QGuiApplication::clipboard()->setText(w_to_qstring(wtext));
+}
+const_char* getClipboardWtext(void){
+  return qstring_to_w(QGuiApplication::clipboard()->text());
+}
+
+void copyTextToClipboard(const_char* text){
+  QGuiApplication::clipboard()->setText(text);
+}
+const_char* getClipboardText(void){
+  return talloc_strdup(QGuiApplication::clipboard()->text().toUtf8().constData());
+}
 
 // Scheduler
 ////////////////////////////
