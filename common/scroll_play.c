@@ -51,7 +51,8 @@ static vector_t scrollplaying_notes[MAX_SCROLLPLAYTRACKS] = {{0}};
 static void Scroll_play_down3(
                       struct WBlocks *wblock,
                       const Place *p1,
-                      const Place *p2
+                      const Place *p2,
+                      const struct Notes *dont_play_this_note
 ){
   struct Tracks *track = wblock->block->tracks;
 
@@ -66,30 +67,32 @@ static void Scroll_play_down3(
         struct Notes *note = track->notes;
         
         while(note != NULL){
-          if (PlaceIsBetween2(&note->l.p, p1, p2))
-            PATCH_play_note(patch, 
-                            create_note_t(NULL,
-                                          note->id,
-                                          note->note,
-                                          VELOCITY_get(note->velocity),
-                                          TRACK_get_pan(track),
-                                          ATOMIC_GET(track->midi_channel),
-                                          0,
-                                          0)
-                            );
-          
-          if (PlaceIsBetween2(&note->end, p1, p2))
-            PATCH_stop_note(patch,
-                            create_note_t(NULL,
-                                          note->id,
-                                          note->note,
-                                          0,
-                                          TRACK_get_pan(track),
-                                          ATOMIC_GET(track->midi_channel),
-                                          0,
-                                          0
-                                          )
-                            );
+          if (note != dont_play_this_note){
+            if (PlaceIsBetween2(&note->l.p, p1, p2))
+              PATCH_play_note(patch, 
+                              create_note_t(NULL,
+                                            note->id,
+                                            note->note,
+                                            VELOCITY_get(note->velocity),
+                                            TRACK_get_pan(track),
+                                            ATOMIC_GET(track->midi_channel),
+                                            0,
+                                            0)
+                              );
+            
+            if (PlaceIsBetween2(&note->end, p1, p2))
+              PATCH_stop_note(patch,
+                              create_note_t(NULL,
+                                            note->id,
+                                            note->note,
+                                            0,
+                                            TRACK_get_pan(track),
+                                            ATOMIC_GET(track->midi_channel),
+                                            0,
+                                            0
+                                            )
+                              );
+          }
           
           note = NextNote(note);
         }
@@ -183,14 +186,15 @@ static void Scroll_play_up3(
 static void Scroll_play_down2(
                              struct WBlocks *wblock,
                              int start_realline,
-                             int end_realline
+                             int end_realline,
+                             const struct Notes *dont_play_this_note
 ){
   Place p1 = {0};
   Place p2 = {0};
 
   set_p1_and_p2(wblock, start_realline, end_realline, &p1, &p2);
   
-  Scroll_play_down3(wblock, &p1, &p2);
+  Scroll_play_down3(wblock, &p1, &p2, dont_play_this_note);
 }
 
 static void Scroll_play_up2(
@@ -210,14 +214,15 @@ static void Scroll_play_up2(
 void Scroll_play_down(
                       struct WBlocks *wblock,
                       int start_realline,
-                      int end_realline
+                      int end_realline,
+                      const struct Notes *dont_play_this_note
 ){
   if(is_playing() || doScrollPlay()==false) return;
 
   start_realline=R_BOUNDARIES(0,start_realline,wblock->num_reallines-1);
   end_realline=R_BOUNDARIES(0,end_realline,wblock->num_reallines-1);
   
-  Scroll_play_down2(wblock,start_realline,end_realline);
+  Scroll_play_down2(wblock,start_realline,end_realline, dont_play_this_note);
 }
 
 

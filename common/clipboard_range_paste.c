@@ -250,7 +250,7 @@ void PasteRange_CurrPos(
           Place next_place = p_Add(wblock->reallines[curr_realline]->l.p, range->length);
           while(next_realline < wblock->num_reallines && p_Less_Than(wblock->reallines[next_realline]->l.p, next_place))
             next_realline++;
-          ScrollEditorDown(window, next_realline - curr_realline);
+          ScrollEditorDown(window, next_realline - curr_realline, NULL);
         }
         
         window->must_redraw = true;

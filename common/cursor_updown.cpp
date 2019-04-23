@@ -52,10 +52,12 @@ int getScrollMultiplication(void){
     return 1;
 }
 
-void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
+bool ScrollEditorDown(struct Tracker_Windows *window,int num_lines, const struct Notes *dont_play_this_note){
 	struct WBlocks *wblock;
 
-	if(num_lines==0) return;
+        bool ret = false;
+        
+	if(num_lines==0) return ret;
 
 	wblock=window->wblock;
 
@@ -66,8 +68,10 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 		num_lines=wblock->num_reallines - wblock->curr_realline;
 	}
 
-	if(num_lines/getScrollMultiplication()==1 || num_lines/getScrollMultiplication()==-1)
-          Scroll_play_down(wblock,wblock->curr_realline,wblock->curr_realline+num_lines-1);
+	if(num_lines/getScrollMultiplication()==1 || num_lines/getScrollMultiplication()==-1){
+          Scroll_play_down(wblock,wblock->curr_realline,wblock->curr_realline+num_lines-1, dont_play_this_note);
+          ret = true;
+        }
 
 	if(wblock->curr_realline < wblock->num_reallines-1) {
 
@@ -87,8 +91,8 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
                   if (wblock->curr_realline == wblock->num_reallines-1)
                     wblock->curr_realline=0;
                   else{
-                    ScrollEditorDown(window,  wblock->num_reallines - wblock->curr_realline - 1);
-                    return;
+                    ScrollEditorDown(window,  wblock->num_reallines - wblock->curr_realline - 1, dont_play_this_note);
+                    return ret;
                   }
                         GE_set_curr_realline(0);
 
@@ -142,12 +146,16 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 
 	UpdateLeftSlider(window);
 #endif
+
+        return ret;
 }
 
 
-void MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window){
+bool MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window, const struct Notes *dont_play_this_note){
   if(!is_playing() || ATOMIC_GET(root->play_cursor_onoff)==true)
-    ScrollEditorDown(window,g_downscroll);
+    return ScrollEditorDown(window,g_downscroll, dont_play_this_note);
+
+  return false;
 }
 
 void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
@@ -224,7 +232,7 @@ static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, 
 	int curr_realline=wblock->curr_realline;
 
         if(curr_realline==wblock->num_reallines-1){ // last line
-          ScrollEditorDown(window,1);
+          ScrollEditorDown(window,1,NULL);
           return;
         }
 
@@ -234,7 +242,7 @@ static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, 
           if (trss.contains(new_realline))
             break;
 
-	ScrollEditorDown(window,new_realline-curr_realline);
+	ScrollEditorDown(window,new_realline-curr_realline,NULL);
 }
 
 template <class T>
@@ -394,7 +402,8 @@ void ScrollEditorToRealLine(
 		if( till_curr_realline > curr_realline ){
 			ScrollEditorDown(
 				window,
-				till_curr_realline - curr_realline
+				till_curr_realline - curr_realline,
+                                NULL
 			);
 		}
 	}

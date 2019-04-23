@@ -39,9 +39,9 @@ extern bool tevent_autorepeat;
 void keyDownPlay(int notenum,int windownum){
   //printf("DOWN: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
   
-  if (!doAutoRepeat() && tevent_autorepeat)
-    return;
-    
+        if (!doAutoRepeat() && tevent_autorepeat)
+          return;
+
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 
 	notenum+=root->keyoct;
@@ -51,27 +51,16 @@ void keyDownPlay(int notenum,int windownum){
 
         bool do_edit = ATOMIC_GET_RELAXED(root->editonoff);
 
-        if (do_edit && doScrollPlay()) {
-
-          // Not playing note here, because then it would be played twice.
+        PATCH_playNoteCurrPos(window,notenum,-1);
+        if(do_edit)
           InsertNoteCurrPos(window,notenum,false,-1);
-          
-        } else {
-          
-          PATCH_playNoteCurrPos(window,notenum,-1);
-          if(do_edit)
-            InsertNoteCurrPos(window,notenum,false,-1);
-          
-        }
-
-        
 }
 
 void polyKeyDownPlay(int notenum,int windownum){
   //printf("POLY: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
 
-    if (!doAutoRepeat() && tevent_autorepeat)
-    return;
+        if (!doAutoRepeat() && tevent_autorepeat)
+          return;
 
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 

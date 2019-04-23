@@ -511,14 +511,17 @@ int NOTE_get_velocity(struct Tracks *track){
 }
 
 
-static void maybe_scroll_down(struct Tracker_Windows *window){
+static bool maybe_scroll_down(struct Tracker_Windows *window, const struct Notes *dont_play_this_note){
   if(window->curr_track_sub==-1) 
-    MaybeScrollEditorDownAfterEditing(window);
+    return MaybeScrollEditorDownAfterEditing(window, dont_play_this_note);
+  else
+    return false;
 }
 
-
-void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyphonic, float velocity){
-  if(notenum<0.001 || notenum>127.9) return;
+// return true if it was scroll-playing (i.e. may have played the note)
+bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyphonic, float velocity){
+  
+  if(notenum<0.001 || notenum>127.9) return false;
 
   ADD_UNDO(Notes_CurrPos(window));
 
@@ -534,8 +537,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
 
     if (tr2.pitch != NULL) {
       tr2.pitch->note = notenum; // lock not necessary
-      maybe_scroll_down(window);
-      return;
+      return maybe_scroll_down(window, tr2.note);
     }
 
 
@@ -547,8 +549,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
       else
         tr2.note->note = notenum;
       
-      maybe_scroll_down(window);
-      return;
+      return maybe_scroll_down(window, tr2.note);
     }
 
     const struct Stops *stop = tr2.stop;
@@ -560,17 +561,19 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
 
   const struct LocalZooms *realline = wblock->reallines[curr_realline];
   
-  InsertNote(
-             wblock,wtrack,&realline->l.p,NULL,notenum,
-             velocity < 0.0 ? NOTE_get_velocity(wtrack->track) : velocity*MAX_VELOCITY,
-             polyphonic
-             );
+  struct Notes *note = InsertNote(
+                                  wblock,wtrack,&realline->l.p,NULL,notenum,
+                                  velocity < 0.0 ? NOTE_get_velocity(wtrack->track) : velocity*MAX_VELOCITY,
+                                  polyphonic
+                                  );
 
   //if(wtrack->l.num==wblock->right_track && polyphonic)
   //  UpdateAllWTracksCoordinates(window,wblock);
 
   if (!polyphonic)
-    maybe_scroll_down(window);
+    return maybe_scroll_down(window, note);
+
+  return false;
 }
 
 static void InsertStop(
@@ -660,7 +663,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 
   if (trs.size()==0) {
     InsertStop(window,wblock,wtrack,&realline->l.p);
-    maybe_scroll_down(window);
+    maybe_scroll_down(window, NULL);
     return;
   }
 
@@ -671,7 +674,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
     EVENTLOG_add_event("RemoveNoteCurrPos 1");
     DeletePitch(track, tr2.note, tr2.pitch);
     if (trs.size()==1)
-      maybe_scroll_down(window);
+      maybe_scroll_down(window, NULL);
     return;
   }
 
@@ -694,7 +697,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
     SetNotePolyphonyAttributes(wtrack->track);
     ValidateCursorPos(window);
     if (trs.size()==1)
-      maybe_scroll_down(window);
+      maybe_scroll_down(window, NULL);
     return;
   }
 
@@ -708,7 +711,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   }
   
   if (trs.size()==1)
-    maybe_scroll_down(window);
+    maybe_scroll_down(window, NULL);
 }
 
 struct Notes *FindPrevNoteOnSameSubTrack(const struct Tracks *track, const struct Notes *note){
