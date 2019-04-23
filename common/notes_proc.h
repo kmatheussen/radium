@@ -58,7 +58,8 @@ extern LANGSPEC struct Notes *InsertNote(
 
 extern LANGSPEC int NOTE_get_velocity(struct Tracks *track);
 
-extern LANGSPEC void InsertNoteCurrPos(struct Tracker_Windows *window,float notenum,bool polyphonic, float velocity);
+// returns true if it may have been scroll-playing
+extern LANGSPEC bool InsertNoteCurrPos(struct Tracker_Windows *window,float notenum,bool polyphonic, float velocity);
 
 extern LANGSPEC void LengthenNotesTo(
                      struct Blocks *block,

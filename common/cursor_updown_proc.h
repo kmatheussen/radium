@@ -17,8 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC int getScrollMultiplication(void);
 
-extern LANGSPEC void ScrollEditorDown(struct Tracker_Windows *window,int num_lines);
-extern LANGSPEC void MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window);
+extern LANGSPEC bool ScrollEditorDown(struct Tracker_Windows *window,int num_lines, const struct Notes *dont_play_this_note); // return true if it was scroll-playing (i.e. may have played a note)
+extern LANGSPEC bool MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window, const struct Notes *dont_play_this_note); // return true if it was scroll-playing (i.e. may have played a note)
 
 extern LANGSPEC void ScrollEditorUp(struct Tracker_Windows *window,int num_lines);
 

@@ -286,7 +286,7 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
   window->must_redraw_editor = true;
 
   if(!AnyShift(tevent.keyswitch))
-    MaybeScrollEditorDownAfterEditing(window);
+    MaybeScrollEditorDownAfterEditing(window,NULL);
   
   return true;
 }
