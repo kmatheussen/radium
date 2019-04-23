@@ -4205,9 +4205,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Scrolls Per Second.
-Maximum number of times per second the player will scroll the editor to a new line.
-Scrolling too often can be tiresome for the eyes.</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit Lines.&lt;/p&gt;&lt;p&gt;The number of lines to scroll up or down after adding a note.&lt;/p&gt;&lt;p&gt;To use these number of lines to scroll when pressing cursor up/down too, enable &amp;quot;Multiply number of lines to scroll ...&amp;quot; under Edit -&amp;gt; Preferences -&amp;gt; Editor.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>EL:</string>
@@ -4223,7 +4221,7 @@ Scrolling too often can be tiresome for the eyes.</string>
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit Lines.&lt;/p&gt;&lt;p&gt;The number of lines to scroll down after adding a note.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit Lines.&lt;/p&gt;&lt;p&gt;The number of lines to scroll up or down after adding a note.&lt;/p&gt;&lt;p&gt;To use these number of lines to scroll when pressing cursor up/down too, enable &amp;quot;Multiply number of lines to scroll ...&amp;quot; under Edit -&amp;gt; Preferences -&amp;gt; Editor.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="statusTip">
          <string/>
