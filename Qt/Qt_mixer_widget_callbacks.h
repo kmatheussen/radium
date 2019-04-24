@@ -181,10 +181,10 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
   QWidget *_bottom_bar;
 
  Mixer_widget(QWidget *parent=NULL)
-    : QWidget(parent)
-    , radium::Timer(100, true)
-    , _mixer_direction_menu(this)
-    , _mytimer(this)
+   : QWidget(parent)
+   , radium::Timer(100, true)
+   , _mixer_direction_menu(this)
+   , _mytimer(this)
   {
     initing = true;
     

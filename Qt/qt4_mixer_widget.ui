@@ -34,6 +34,9 @@
    </property>
    <item>
     <widget class="QWidget" name="bar_widget" native="true">
+     <property name="autoFillBackground">
+      <bool>true</bool>
+     </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <property name="spacing">
        <number>0</number>
@@ -381,7 +384,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

@@ -173,6 +173,22 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
                           places[len]=EVENT_MOUSE_MIXERSTRIPS;
                           len++;
 			}
+			if(a&EVENT_FOCUS_EDITOR2){
+                          places[len]=EVENT_FOCUS_EDITOR;
+                          len++;
+			}
+			if(a&EVENT_FOCUS_MIXER2){
+                          places[len]=EVENT_FOCUS_MIXER;
+                          len++;
+			}
+			if(a&EVENT_FOCUS_SEQUENCER2){
+                          places[len]=EVENT_FOCUS_SEQUENCER;
+                          len++;
+			}
+			if(a&EVENT_FOCUS_MIXERSTRIPS2){
+                          places[len]=EVENT_FOCUS_MIXERSTRIPS;
+                          len++;
+			}
 			//if(a&EVENT_AUTOREPEAT2){
 			//	places[len]=EVENT_AUTOREPEAT;
 			//	len++;

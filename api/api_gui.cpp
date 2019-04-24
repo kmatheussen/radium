@@ -4577,6 +4577,10 @@ int64_t gui_getSequencerGui(void){
   return API_get_gui_from_existing_widget(SEQUENCER_getWidget());
 }
 
+int64_t gui_getSequencerFrameGui(void){
+  return API_get_gui_from_existing_widget(SEQUENCER_getFrameWidget());
+}
+
 int64_t gui_getInstrumentGui(void){
   return API_get_gui_from_existing_widget(getInstrumentsWidget());
 }
