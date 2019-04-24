@@ -2668,6 +2668,11 @@ const_char* getQualifierName(const_char *qualifier){
     C("MOUSE_MIXER", "Mouse in mixer");
     C("MOUSE_EDITOR", "Mouse in editor");
 
+    C("FOCUS_MIXERSTRIPS", "Mixer strips has keyboard focus");
+    C("FOCUS_SEQUENCER", "Sequencer has keyboard focus");
+    C("FOCUS_MIXER", "Mixer has keyboard focus");
+    C("FOCUS_EDITOR", "Editor has keyboard focus");
+
 #undef C
 #ifdef _RADIUM_OLD_C
 #  define C _RADIUM_OLD_C

@@ -3,9 +3,12 @@ keysub=(
 "NO", # Default value. Means that it's not used
 
 # Qualifier keys ("UP" is for keyboard release). These must be placed here, starting at position 1.
-"CTRL_L","CTRL_R","CAPS","SHIFT_L","SHIFT_R","ALT_L","ALT_R","EXTRA_L","EXTRA_R","UP", "MOUSE_EDITOR", "MOUSE_MIXER", "MOUSE_SEQUENCER", "MOUSE_MIXERSTRIPS",
-#   1       2         3     4         5        6        7         8         9      10     11               12            13                 14
-   
+"CTRL_L","CTRL_R","CAPS","SHIFT_L","SHIFT_R","ALT_L","ALT_R","EXTRA_L","EXTRA_R","UP",
+#   1       2         3     4         5        6        7         8         9      10
+"MOUSE_EDITOR", "MOUSE_MIXER", "MOUSE_SEQUENCER", "MOUSE_MIXERSTRIPS", "FOCUS_EDITOR", "FOCUS_MIXER", "FOCUS_SEQUENCER", "FOCUS_MIXERSTRIPS",
+#  11               12            13                 14                    15             16               17                18
+    
+    
 "FIRST_NON_QUALIFIER", # also not used. keys lower than this are qualifier, higher are normal keys.
 
 "ESC",

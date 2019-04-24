@@ -164,7 +164,7 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 #endif
 
 	DrawWBlock(window,window->wblock);
-        
+
 	window->wblock->isgfxdatahere=true;
 
 #if !USE_OPENGL

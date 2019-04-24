@@ -428,6 +428,20 @@ uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch){
     //printf("  MOUSE: Editor\n");
   }
 
+  if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR)){
+    to_add |= EVENT_FOCUS_EDITOR2;
+    
+  } else if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::SEQUENCER)){
+    to_add |= EVENT_FOCUS_SEQUENCER2;
+    
+  } else if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::MIXERSTRIPS)){
+    to_add |= EVENT_FOCUS_MIXERSTRIPS2;
+    
+  } else if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::MIXER)){
+    to_add |= EVENT_FOCUS_MIXER2;
+    
+  }
+  
   s_last_to_add = to_add;
   s_last_time = time;
 
@@ -2793,7 +2807,8 @@ int radium_main(const char *arg){
 
     {
 
-      struct XSplitter : public radium::Splitter { public:
+      struct XSplitter : public radium::Splitter {
+      public:
         
         bool _strip_on_left_side;
 

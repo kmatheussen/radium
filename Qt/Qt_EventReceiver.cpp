@@ -501,6 +501,8 @@ void EditorWidget::fix_mousePressEvent( QMouseEvent *qmouseevent) {
   if(g_is_starting_up==true)
     return;
 
+  FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, true);
+  
   tevent.ID = getMouseButtonEventID(qmouseevent);
 #if USE_QT5
   tevent.x  = qmouseevent->localPos().x();

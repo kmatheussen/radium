@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MyQSlider.h"
 #include "Qt_Bs_edit_proc.h"
 #include "Qt_Fonts_proc.h"
+#include "KeyboardFocusFrame.hpp"
 
 #include "../embedded_scheme/scheme_proc.h"
 #include "../common/seqtrack_automation_proc.h"
@@ -162,6 +163,7 @@ int64_t g_curr_seqblock_id_under_mouse = -1;
 namespace{
 struct Sequencer_widget;
 static Sequencer_widget *g_sequencer_widget = NULL;
+ static radium::KeyboardFocusFrame *g_sequencer_frame_widget = NULL;
 }
 
 
@@ -607,7 +609,6 @@ static double get_visible_song_length(void){
 
 namespace{
 
-  
 class MouseTrackerQWidget : public QWidget, public radium::MouseCycleFix {
 public:
 
@@ -637,7 +638,9 @@ public:
 
   void	fix_mousePressEvent(QMouseEvent *event) override{
     event->accept();
-    
+
+    FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
+      
     if (_is_sequencer_widget)
       if (API_run_mouse_press_event_for_custom_widget(SEQUENCER_getWidget(), event))
         return;
@@ -4497,6 +4500,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         });
     }
 
+    //MouseTrackerQWidget<radium::KeyboardFocusFrame>::paintEvent(ev);
   }
 
 
@@ -4523,6 +4527,11 @@ QWidget *SEQUENCER_getWidget_r0(void){
 QWidget *SEQUENCER_getWidget(void){
   R_ASSERT(g_sequencer_widget != NULL);
   return g_sequencer_widget;
+}
+
+QWidget *SEQUENCER_getFrameWidget(void){
+  R_ASSERT(g_sequencer_frame_widget != NULL);
+  return g_sequencer_frame_widget;
 }
 
 QWidget *SEQUENCER_create_navigator_widget(void){
@@ -4616,7 +4625,9 @@ float SEQUENCER_get_right_part_y2(void){
 
 void SEQUENCER_WIDGET_initialize(QWidget *main_window){
   R_ASSERT(g_sequencer_widget==NULL);
-  g_sequencer_widget = new Sequencer_widget(main_window);
+  g_sequencer_frame_widget = new radium::KeyboardFocusFrame(main_window, radium::KeyboardFocusFrameType::SEQUENCER, true);
+  g_sequencer_widget = new Sequencer_widget(g_sequencer_frame_widget);
+  g_sequencer_frame_widget->layout()->addWidget(g_sequencer_widget);
 }
 
 void SEQUENCER_WIDGET_call_very_often(void){
@@ -4627,6 +4638,7 @@ void SEQUENCER_WIDGET_call_very_often(void){
 QWidget *SEQUENCER_WIDGET_get_widget(void){
   return g_sequencer_widget;
 }
+
 
 
 static int update_enabled_counter = 0;

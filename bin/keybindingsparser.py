@@ -199,6 +199,10 @@ class Parser:
         self.mouseMixerKey = tuple_has_key(keysub,"MOUSE_MIXER")
         self.mouseMixerStripsKey = tuple_has_key(keysub,"MOUSE_MIXERSTRIPS")
         self.mouseSequencerKey = tuple_has_key(keysub,"MOUSE_SEQUENCER")
+        self.focusEditorKey = tuple_has_key(keysub,"FOCUS_EDITOR")
+        self.focusMixerKey = tuple_has_key(keysub,"FOCUS_MIXER")
+        self.focusMixerStripsKey = tuple_has_key(keysub,"FOCUS_MIXERSTRIPS")
+        self.focusSequencerKey = tuple_has_key(keysub,"FOCUS_SEQUENCER")
         
     def readLine(self):
         self.linenum+=1
@@ -355,6 +359,9 @@ class Parser:
                     else:
                         new_keys.append(key)
 
+                new_keys.sort()
+                self.qualifiers.sort()
+                
                 if len(keys)>len(self.qualifiers): # ????????
                     self.keys=new_keys
                         
@@ -398,6 +405,18 @@ class Parser:
         else:
             return False;
         
+    def focusInQualifiers(self):
+        if self.focusEditorKey in self.qualifiers:
+            return True
+        elif self.focusMixerKey in self.qualifiers:
+            return True
+        elif self.focusMixerStripsKey in self.qualifiers:
+            return True
+        elif self.focusSequencerKey in self.qualifiers:
+            return True
+        else:
+            return False;
+        
     def getQualifiers(self):
         #print "qualifiers:", self.qualifiers
         return self.qualifiers[:]
@@ -437,14 +456,24 @@ def printsak(file,keyhandles,parser,codestring):
     print
 
 
+def addIt2(keyhandles, parser, command, extra):
+    if not parser.focusInQualifiers():
+        putCode(keyhandles, parser, command, extra + [parser.focusEditorKey])
+        putCode(keyhandles, parser, command, extra + [parser.focusMixerKey])
+        putCode(keyhandles, parser, command, extra + [parser.focusMixerStripsKey])
+        putCode(keyhandles, parser, command, extra + [parser.focusSequencerKey])
+    else:
+        putCode(keyhandles, parser, command, extra)
+    
+    
 def addIt(keyhandles, parser, command):
     if not parser.mouseInQualifiers():
-        putCode(keyhandles, parser, command, [parser.mouseEditorKey])
-        putCode(keyhandles, parser, command, [parser.mouseMixerKey])
-        putCode(keyhandles, parser, command, [parser.mouseMixerStripsKey])
-        putCode(keyhandles, parser, command, [parser.mouseSequencerKey])
+        addIt2(keyhandles, parser, command, [parser.mouseEditorKey])
+        addIt2(keyhandles, parser, command, [parser.mouseMixerKey])
+        addIt2(keyhandles, parser, command, [parser.mouseMixerStripsKey])
+        addIt2(keyhandles, parser, command, [parser.mouseSequencerKey])
     else:
-        putCode(keyhandles, parser, command, [])
+        addIt2(keyhandles, parser, command, [])
 
 
 
@@ -462,6 +491,7 @@ class KeyHandler:
                     #ra.addMessage("Overriding the " + str(self.keyslist) + " keybinding.")
                     #return False
 
+        keys.sort()
         self.keyslist.insert(0,keys)
         self.handlers.insert(0,handle)
         return True
@@ -470,7 +500,7 @@ class KeyHandler:
     def exe(self,windownum,keys):
         #print "keys",keys, ". len(self.keyslist):", len(self.keyslist)
         for lokke in range(len(self.keyslist)):
-            #print "keyslist[lokke]",self.keyslist[lokke], map(lambda k:keysub[k], keyslist[lokke])
+            #print "keyslist[lokke]",self.keyslist[lokke], map(lambda k:keysub[k], self.keyslist[lokke])
             if self.keyslist[lokke]==keys:
                 #print "evaling",self.handlers[lokke]
                 eval(self.handlers[lokke])
@@ -495,7 +525,6 @@ def gotKey(windownum,key,keys):
     try:
         global keyhandles
         #print "*********** key: " + keysub[key] + ". keys: " + str(map(lambda k:keysub[k], keys))
-        #    key=keys.pop(0)
         return keyhandles[key].exe(windownum,keys);    
     except:
         traceback.print_exc(file=sys.stdout)

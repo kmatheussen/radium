@@ -552,6 +552,8 @@ void SetupMainWindow(void){
 
   editor->setAcceptDrops(true);
                  
+  editor->setAutoFillBackground(true);
+
   //#if USE_OPENGL
     // editor->setAttribute(Qt::WA_PaintOnScreen);
   //#endif

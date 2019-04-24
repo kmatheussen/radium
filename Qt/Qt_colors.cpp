@@ -111,6 +111,8 @@ static const ColorConfig g_colorconfig[] = {
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM,                  "color15", "High Editor background"},
   {SCROLLBAR_COLOR_NUM,                  "scroll_bar", "Scroll bar color"},
 
+  {KEYBOARD_FOCUS_BORDER_COLOR_NUM,                  "keyboard_focus_border", "Keyboard Focus Border"},
+
   {SOUNDFONT_COLOR_NUM,         "soundfont",          "Browser: Soundfont"},
   {SOUNDFILE_COLOR_NUM,         "soundfile",          "Browser: Sound file"},
   {CURRENT_SOUNDFILE_COLOR_NUM, "current_soundfile",  "Current sound file"},
@@ -262,6 +264,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
 
 static ReplacementColor g_replacement_color[] = {
   {SCROLLBAR_COLOR_NUM, QColor("#69b8b8b8")},
+  {KEYBOARD_FOCUS_BORDER_COLOR_NUM, QColor("#ff9d00")},
 
   {SLIDER1_COLOR_NUM, QColor(108,65,36)},
   {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},

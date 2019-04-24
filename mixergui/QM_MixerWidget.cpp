@@ -81,6 +81,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_MyQButton.h"
 #include "../Qt/Qt_MyQSlider.h"
 #include "../Qt/mQt_mixer_widget_callbacks.h"
+#include "../Qt/KeyboardFocusFrame.hpp"
 
 #include "../common/vector_proc.h"
 #include "../common/Vector.hpp"
@@ -170,7 +171,7 @@ class MyScene : public QGraphicsScene{
 };
 
 
-class MixerWidget : public QWidget
+class MixerWidget : public radium::KeyboardFocusFrame
 {
     Q_OBJECT
 public:
@@ -1642,6 +1643,8 @@ void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
 static bool g_is_pressed = false; // Workaround for nasty Qt bug.
 
 void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
+  FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
+  
   if (g_is_pressed==true)
     return;
 
@@ -1974,8 +1977,8 @@ namespace{
 }
 
 MixerWidget::MixerWidget(QWidget *parent)
-    : QWidget(parent)
-    , scene(this)
+  : radium::KeyboardFocusFrame(parent, radium::KeyboardFocusFrameType::MIXER, true)
+  , scene(this)
 {
 
   if(g_mixer_widget!=NULL){
@@ -1985,14 +1988,10 @@ MixerWidget::MixerWidget(QWidget *parent)
 
   g_mixer_widget = this;
   g_static_toplevel_widgets.push_back(this);
-  
-  auto *layout = new QVBoxLayout(this);  
-  layout->setContentsMargins(0, 0, 0, 0);
-  layout->setSpacing(0);
-  
+
   Mixer_widget *mixer_widget = new Mixer_widget(this);
   mixer_widget->view->setScene(&scene);
-  layout->addWidget(mixer_widget);
+  layout()->addWidget(mixer_widget);
   this->view = mixer_widget->view;
   
   setWindowTitle(tr("Radium Mixer"));

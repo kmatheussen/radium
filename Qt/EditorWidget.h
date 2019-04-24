@@ -82,18 +82,15 @@ typedef QPixmap PaintBuffer;
 
 #include "helpers.h"
 #include "Qt_colors_proc.h"
+#include "KeyboardFocusFrame.hpp"
 
-struct EditorLayoutWidget : public QWidget{
+
+struct EditorLayoutWidget : public radium::KeyboardFocusFrame{
  public:
-  EditorLayoutWidget(){
+  EditorLayoutWidget()
+    : radium::KeyboardFocusFrame(NULL, radium::KeyboardFocusFrameType::EDITOR, true)
+  {
     set_widget_takes_care_of_painting_everything(this);
-
-    QVBoxLayout *layout = new QVBoxLayout(this);
-    
-    layout->setSpacing(0);
-    layout->setContentsMargins(0,0,0,0);
-    
-    setLayout(layout);
   }
 };
 

@@ -87,24 +87,25 @@
   
   (define instrument-gui (<gui> :get-instrument-gui))
   (define sequencer-gui (<gui> :get-sequencer-gui))
+  (define sequencer-frame-gui (<gui> :get-sequencer-frame-gui))
 
   ;; Try to make tabs have same size
   (<gui> :minimize-as-much-as-possible sequencer-gui)
   (<gui> :minimize-as-much-as-possible instrument-gui)
   (<gui> :minimize-as-much-as-possible *notem-gui*)
   
-  (define width (max (<gui> :width sequencer-gui)
+  (define width (max (<gui> :width sequencer-frame-gui)
                      (<gui> :width instrument-gui)
                      (<gui> :width *notem-gui*)))
-  (define height (max (<gui> :height sequencer-gui)
+  (define height (max (<gui> :height sequencer-frame-gui)
                       (<gui> :height instrument-gui)
                       (<gui> :height *notem-gui*)))
 
   (<gui> :set-size instrument-gui width height)
-  (<gui> :set-size sequencer-gui width height)
+  (<gui> :set-size sequencer-frame-gui width height)
   (<gui> :set-size *notem-gui* width height)
   
-  (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-gui)
+  (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-frame-gui)
   
   (if (not (<ra> :instrument-widget-is-in-mixer))
       (<gui> :add-tab *lowertab-gui* *instrument-gui-tab-name* instrument-gui))
