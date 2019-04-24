@@ -468,18 +468,13 @@ class KeyHandler:
             
     # keys is a constant
     def exe(self,windownum,keys):
-        #print "keys",keys
+        #print "keys",keys, ". len(self.keyslist):", len(self.keyslist)
         for lokke in range(len(self.keyslist)):
-            #print "keyslist[lokke]",self.keyslist[lokke]
+            #print "keyslist[lokke]",self.keyslist[lokke], map(lambda k:keysub[k], keyslist[lokke])
             if self.keyslist[lokke]==keys:
-                try:
-                    #print "evaling",self.handlers[lokke]
-                    eval(self.handlers[lokke])
-                except:
-                    traceback.print_exc(file=sys.stdout)
-                    radium.addMessage("Keybinding error.\n\nBacktrace:<pre>" + traceback.format_exc() + "</pre>")
+                #print "evaling",self.handlers[lokke]
+                eval(self.handlers[lokke])
                 return True
-                break
         return False
 
 
@@ -497,10 +492,15 @@ resetKeyHandles()
 
 # key and keys are constants!
 def gotKey(windownum,key,keys):
-    global keyhandles
-    #print "*********** key: " + keysub[key] + ". keys: " + str(map(lambda k:keysub[k], keys))
-    #    key=keys.pop(0)
-    return keyhandles[key].exe(windownum,keys);    
+    try:
+        global keyhandles
+        #print "*********** key: " + keysub[key] + ". keys: " + str(map(lambda k:keysub[k], keys))
+        #    key=keys.pop(0)
+        return keyhandles[key].exe(windownum,keys);    
+    except:
+        traceback.print_exc(file=sys.stdout)
+        radium.addMessage("Keybinding error.\n\nBacktrace:<pre>" + traceback.format_exc() + "</pre>")
+        return True
 
 filename1 = ""
 filename2 = ""
