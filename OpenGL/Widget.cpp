@@ -2398,7 +2398,7 @@ QWidget *GL_create_widget(QWidget *parent){
                   "<p>"
                   "The Nouveau driver also performs worse than the Nvidia driver."
                   "<p>"
-                  "The Nvidia driver can be installed to get faster and smoother graphics, and to avoid crashing. It can be downloaded here: <a href=\"http://www.nvidia.com/object/unix.html\">http://www.nvidia.com/object/unix.html</a>"
+                  "The Nvidia driver can be installed to get faster and smoother graphics, and to avoid crashing. It can be downloaded here: <a href=\"https://www.nvidia.com/object/unix.html\">https://www.nvidia.com/object/unix.html</a>"
                   );
       show_mesa_warning = false;
     }

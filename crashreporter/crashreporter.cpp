@@ -325,7 +325,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
                     "<p>"
                     "The Nouveau GFX driver is often installed instead of the Nvidia driver, but it is unstable and has significantly worse performance."
                     "<p>"
-                    "Get a working GFX driver <a href=\"http://www.nvidia.com/object/unix.html\">here</A> (http://www.nvidia.com/object/unix.html)."
+                    "Get a working GFX driver <a href=\"https://www.nvidia.com/object/unix.html\">here</A> (https://www.nvidia.com/object/unix.html)."
                     "<p>"
                     "Thanks for trying Radium!"
                     );
