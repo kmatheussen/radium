@@ -317,6 +317,9 @@ public:
   }
   
   ~RecordingQueuePullThread(){
+    if(g_midi_event_queue==NULL)
+      return;
+    
     ATOMIC_SET(is_running, false);
     midi_event_t event = {};
     g_midi_event_queue->put(event);
