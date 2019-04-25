@@ -92,6 +92,8 @@ public:
     return QListWidget::currentRow();
   }
   QString currentText(){
+    if(QListWidget::currentItem()==NULL)
+      return "";
     return QListWidget::currentItem()->text();
   }
   void setSelected(int pos, bool something){
@@ -741,20 +743,30 @@ public slots:
         vector_t filenames = SAMPLEREADER_get_all_filenames();
         
         if (blocklist.currentItem() < filenames.num_elements){
+          
           wchar_t *filename = (wchar_t*)filenames.elements[blocklist.currentItem()];
-          QFileInfo info(STRING_get_qstring(filename));
-          if (blocklist.currentText().endsWith(QString(info.fileName()))) {
+          
+          if (filename != NULL){
             
-            double samplerate = SAMPLEREADER_get_samplerate(filename);
-            int64_t duration = SAMPLEREADER_get_sample_duration(filename);
-            
-            if (fabs(samplerate-pc->pfreq) > 1)
-              duration = (double)duration * pc->pfreq / samplerate;
-            
-            SEQTRACK_insert_silence(seqtrack, seqtime, duration);
-            SEQTRACK_insert_sample(seqtrack, get_seqtracknum(seqtrack), filename, seqtime, -1);
-                                    
+            QFileInfo info(STRING_get_qstring(filename));
+            if (blocklist.currentText().endsWith(QString(info.fileName()))) {
+              
+              double samplerate = SAMPLEREADER_get_samplerate(filename);
+              int64_t duration = SAMPLEREADER_get_sample_duration(filename);
+              
+              if (fabs(samplerate-pc->pfreq) > 1)
+                duration = (double)duration * pc->pfreq / samplerate;
+              
+              SEQTRACK_insert_silence(seqtrack, seqtime, duration);
+              SEQTRACK_insert_sample(seqtrack, get_seqtracknum(seqtrack), filename, seqtime, -1);
+              
+            }
           }
+
+        } else {
+          
+          R_ASSERT_NON_RELEASE(false);
+          
         }
         
       } else {
