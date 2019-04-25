@@ -537,10 +537,12 @@
                                                              (<gui> :vertical-layout
                                                                     (create-keybinding-button "Block" "ra:eval-scheme" '("(randomize-note-durations-block)")))))
   
-  (define randomly-delete-notes-layout (create-notem-layout (<gui> :horizontal-int-slider "chance %: "
-                                                                   0 (floor (* 100 *default-randomly-delete-chance*)) 100
-                                                                   (lambda (val)
-                                                                     (set! *default-randomly-delete-chance* (/ val 100))))
+  (define randomly-delete-notes-layout (create-notem-layout (let ((slider (<gui> :horizontal-int-slider "chance %: "
+                                                                                 0 (floor (* 100 *default-randomly-delete-chance*)) 100
+                                                                                 (lambda (val)
+                                                                                   (set! *default-randomly-delete-chance* (/ val 100))))))
+                                                              ;;(<gui> :set-min-width slider (<gui> :text-width "chance %: "))
+                                                              slider)
                                                             (<gui> :vertical-layout
                                                                    (create-keybinding-button "Range" "ra:eval-scheme" '("(randomly-delete-notes-range)")))
                                                             (<gui> :vertical-layout
