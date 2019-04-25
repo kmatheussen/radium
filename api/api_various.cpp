@@ -85,6 +85,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../crashreporter/crashreporter_proc.h"
 #include "../Qt/Qt_comment_dialog_proc.h"
 #include "../Qt/EditorWidget.h"
+#include "../Qt/KeyboardFocusFrame.hpp"
 
 #include "../common/PriorityQueue.hpp"
 
@@ -270,6 +271,18 @@ void toggleFullScreen(int windownum){
 void showHideEditor(int windownum){
   //struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_showHideEditor();
+}
+
+void setEditorKeyboardFocus(bool setit){
+  FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, setit);
+}
+
+void setMixerKeyboardFocus(bool setit){
+  FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, setit);
+}
+
+void setSequencerKeyboardFocus(bool setit){
+  FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, setit);
 }
 
 void showSequencer(void){
