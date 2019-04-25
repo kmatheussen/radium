@@ -60,7 +60,7 @@ namespace{
 
 
 
-  struct MyProxyStyle: public QProxyStyle {
+  struct MyProxyStyle : public QProxyStyle {
     MyProxyStyle(){
       static QStyle *base_style = QStyleFactory::create("Fusion");
       setBaseStyle(base_style); // Trying to fix style on OSX and Windows. Not necessary on Linux, for some reason.
@@ -276,7 +276,7 @@ namespace{
     
     bool _success = true;
 
-    MyQAction(const QIcon &icon, const QString &text, const QString &shortcut, std::shared_ptr<Callbacker> &callbacker, bool is_checkbox, bool is_checked, bool is_radiobutton, bool is_first, bool is_last, QObject *parent = NULL)
+    MyQAction(const QString &text, const QString &shortcut, std::shared_ptr<Callbacker> &callbacker, bool is_checkbox, bool is_checked, bool is_radiobutton, bool is_first, bool is_last, QObject *parent = NULL)
       : QWidgetAction(parent)
       , _callbacker(callbacker)
     {
@@ -289,8 +289,11 @@ namespace{
       _guinum = S7CALL(int_int_charpointer_charpointer_bool_bool_bool_bool_bool, s_func, entryid, text.toUtf8().constData(), shortcut.toUtf8().constData(), is_checkbox, is_checked, is_radiobutton, is_first, is_last);
 
       if (_guinum > 0){
+        
         _widget = API_gui_get_widget(_guinum);
-        setDefaultWidget(_widget);        
+        setDefaultWidget(_widget);
+        //_widget->setStyle(&g_my_proxy_style);
+
       } else
         _success = false;
 
@@ -328,8 +331,8 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
 
-    CheckableAction(QIcon icon, const QString & text_b, const QString &shortcut, bool is_on, bool is_radiobutton, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
-      : MyQAction(icon, text_b, shortcut, callbacker, true, is_on, is_radiobutton, is_first, is_last, callbacker->qmenu)
+    CheckableAction(const QString & text_b, const QString &shortcut, bool is_on, bool is_radiobutton, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
+      : MyQAction(text_b, shortcut, callbacker, true, is_on, is_radiobutton, is_first, is_last, callbacker->qmenu)
       , callbacker(callbacker)
     {
       setCheckable(true);
@@ -348,21 +351,35 @@ namespace{
     }
   };
 
+  class ClickableAction;
+  
+  static QHash<QString,ClickableAction*> g_clickable_actions;  // Reuse ClickableAction actions. Speeds up plugin menu a lot.
+
   class ClickableAction : public MyQAction
   {
     Q_OBJECT;
     
-    std::shared_ptr<Callbacker> callbacker;
-    
   public:
+    
+    std::shared_ptr<Callbacker> callbacker;
 
+    QString _text;
+    QString _shortcut;
+    bool _is_first, _is_last;
+    
     ~ClickableAction(){
-      //printf("I was deleted: %s\n",text.toUtf8().constData());
+      //printf("I was deleted: %s\n",_text.toUtf8().constData());
+      if(g_clickable_actions[_text] == this)
+        g_clickable_actions.remove(_text);
     }
     
-    ClickableAction(QIcon icon, const QString & text, const QString &shortcut, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
-      : MyQAction(icon, text, shortcut, callbacker, false, false, false, is_first, is_last, callbacker->qmenu)
+    ClickableAction(const QString & text, const QString &shortcut, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
+      : MyQAction(text, shortcut, callbacker, false, false, false, is_first, is_last, callbacker->qmenu)
       , callbacker(callbacker)
+      , _text(text)
+      , _shortcut(shortcut)
+      , _is_first(is_first)
+      , _is_last(is_last)
     {
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
     }
@@ -378,6 +395,36 @@ namespace{
     }
   };
 
+  static void release_clickable_action(ClickableAction *action){
+    action->setParent(NULL);
+    action->callbacker = NULL;
+    
+    auto *old = g_clickable_actions[action->_text];
+    
+    if (old != action){
+      
+      if (old != NULL)
+        delete old;
+      
+      g_clickable_actions[action->_text] = action;
+    }
+  }
+  
+  static ClickableAction *get_clickable_action(const QString & text, const QString &shortcut, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker){
+    ClickableAction *action = g_clickable_actions[text];
+    
+    if (action==NULL || action->_shortcut != shortcut || action->_is_first!=is_first || action->_is_last!=is_last)
+      return new ClickableAction(text, shortcut, is_first, is_last, callbacker);
+
+    g_clickable_actions.remove(text);
+    
+    action->callbacker = callbacker;
+
+    return action;
+  }
+
+  
+  
   // Seems like it's impossible to make Qt behave non-irritating when you have separators and are trying to click the separator (this happens because the previous hovered action is still shown as hovered, which is nice, but irritating since nothing happens to it when clicking).
   // Just using menu->addSeparator() was the worst, where the menu was closed if you clicked a separator and nothing else happened. This class calls setEnabled(false),
   // which prevents the menu from closing. But I still haven't found a way to make the hovered entry selected, which would have been the natural behavior.
@@ -426,7 +473,7 @@ namespace{
       : QAction(icon, text, callbacker->qmenu)
       , callbacker(callbacker)
     {
-      connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
+      connect(this, SIGNAL(triggered()), this, SLOT(triggered()));
     }
 
     /*
@@ -448,6 +495,22 @@ namespace{
     {
     }
 
+    ~MyQMenu(){
+      QVector<ClickableAction*> to_remove;
+      
+      for(auto a : actions()){
+        auto *c = dynamic_cast<ClickableAction*>(a);
+        if (c != NULL)
+          to_remove.push_back(c);
+      }
+      
+      for(auto *a : to_remove){
+        removeAction(a);
+        release_clickable_action(a);
+      }
+    
+    }
+    
     void keyPressEvent(QKeyEvent *event) {
       bool custom_treat
         = ((event->modifiers() & Qt::ShiftModifier) && (event->key()==Qt::Key_Up || event->key()==Qt::Key_Down))
@@ -558,7 +621,8 @@ namespace{
     
     ~MyMainQMenu(){
       //if(_callback!=NULL)
-      //  s7extra_unprotect(_callback);      
+      //  s7extra_unprotect(_callback);
+      //printf("\n\n\n\n\n===============================              MYMAINQMENU deleted\n\n\n\n\n");
     }
 
     void showEvent(QShowEvent *event) override {
@@ -666,13 +730,33 @@ namespace{
 
 }
 
+//static int num_s = 0,num_saved = 0;
 
-static void setStyleRecursively(QWidget *widget, QStyle *style){
-  if (widget != NULL){
-    widget->setStyle(style);
+static void setStyleRecursively(QObject *o, QStyle *style){
+  if (o != NULL){
+
+#if 0
+    QWidget *w = dynamic_cast<QWidget*>(o);
+    if (w!=NULL){
+      if (dynamic_cast<MyProxyStyle*>(w->style()) == NULL) {// != style){
+        //printf(" Setting %p. class name: %s. style name: %s \n", w, w->metaObject()->className(), w->style()->metaObject()->className());
+        //w->setStyle(style);
+        num_s++;
+      } else {
+        num_saved++;
+      }
+    }
+#endif
     
-    for(auto *c : widget->children())
-      setStyleRecursively(dynamic_cast<QWidget*>(c), style);
+    ClickableIconAction *a = dynamic_cast<ClickableIconAction*>(o);
+    if (a != NULL){
+      for(auto *w : a->associatedWidgets() ){
+        w->setStyle(&g_my_proxy_style);
+      }
+    }
+    
+    for(auto *c : o->children())
+      setStyleRecursively(c, style);
   }
 }
 
@@ -700,13 +784,18 @@ static QMenu *create_qmenu(
 
   QActionGroup *radio_buttons = NULL;
   QButtonGroup *radio_buttons2 = NULL;
+
+  //num_s = 0,num_saved=0;
+  double time = TIME_get_ms();
+  double clickdur = 0,checkdur=0,subdur=0,sepdur=0,callbackdur=0,setdatadur=0;
   
   for(int i=0;i<v.num_elements;i++) {
     
     QString text = (const char*)v.elements[i];
     
     if (text.startsWith("----")) {
-      
+
+      double t = TIME_get_ms();
       auto *separator = new SeparatorAction(); //curr_menu->addSeparator();
 
       for(int i = 3 ; i < text.size() ; i++)
@@ -716,12 +805,14 @@ static QMenu *create_qmenu(
         }
 
       curr_menu->addAction(separator);
- 
+      sepdur += TIME_get_ms() - t;
       
     } else {
       
       if (n_submenues==getMaxSubmenuEntries()){
+        double t = TIME_get_ms();
         auto *new_menu = new MyQMenu(curr_menu, "Next");
+        subdur += TIME_get_ms()-t;
         curr_menu->addMenu(new_menu);
         curr_menu = new_menu;
         //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
@@ -792,7 +883,9 @@ static QMenu *create_qmenu(
         n_submenuess.push(n_submenues);
         n_submenues = -1;
         parents.push(curr_menu);
+        double t = TIME_get_ms();
         auto *new_menu = new MyQMenu(curr_menu, text.right(text.size() - 15));
+        subdur += TIME_get_ms()-t;
         curr_menu->addMenu(new_menu);
         curr_menu = new_menu;
         //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
@@ -870,15 +963,18 @@ static QMenu *create_qmenu(
           }
         }
 
+        double t = TIME_get_ms();
         auto callbacker = std::shared_ptr<Callbacker>(new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
-          
+        callbackdur += TIME_get_ms()-t;
+        
         if (!icon.isNull()) {
 
           action = new ClickableIconAction(icon, text, callbacker);
-                    
+          
         } else if (is_checkable) {
 
-          auto *hepp = new CheckableAction(icon, text, shortcut, is_checked, radio_buttons != NULL, is_first, is_last, callbacker);
+          auto *hepp = new CheckableAction(text, shortcut, is_checked, radio_buttons != NULL, is_first, is_last, callbacker);
+          
           if (hepp->_success==false){
             radio_buttons=NULL;
             goto finished_parsing;
@@ -899,44 +995,59 @@ static QMenu *create_qmenu(
           
         } else {
 
-          auto *hepp = new ClickableAction(icon, text, shortcut, is_first, is_last, callbacker);
+          double t = TIME_get_ms();
+          auto *hepp = get_clickable_action(text, shortcut, is_first, is_last, callbacker);
+          clickdur += TIME_get_ms() - t;
+
           if (hepp->_success==false)
             goto finished_parsing;
           
           action = hepp;
         }
       }
-      
+
+
       if (action != NULL){
-        action->setData(i);
+        //action->setData(i);
+        double t = TIME_get_ms();
         curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu? (yes, seems so) (they are probably freed because they are children of the qmenu)
+        setdatadur += TIME_get_ms() - t;
       }
       
       if (disabled)
-        action->setDisabled(true);      
+        action->setDisabled(true);
+
     }
 
     n_submenues++;
   }
 
  finished_parsing:
-  
+
+  double t = TIME_get_ms();
+
   if (menu->actions().size() > 0)
     menu->setActiveAction(menu->actions().at(0));
 
   R_ASSERT_NON_RELEASE(radio_buttons==NULL);
   R_ASSERT_NON_RELEASE(radio_buttons2==NULL);
+
+  double t2 = TIME_get_ms();
   
   if (radio_buttons!=NULL && radio_buttons->actions().size()==0){
     R_ASSERT_NON_RELEASE(false);
     delete radio_buttons;
   }
 
+  double t3 = TIME_get_ms();
+
   if (radio_buttons2!=NULL && radio_buttons2->buttons().size()==0){
     R_ASSERT_NON_RELEASE(false);
     delete radio_buttons2;
   }
 
+  double t4 = TIME_get_ms();
+  
   /*
   for(auto style : QStyleFactory::keys())
     printf("  STYLE: -%s\n", style.toUtf8().constData());
@@ -944,11 +1055,18 @@ static QMenu *create_qmenu(
   
   setStyleRecursively(menu, &g_my_proxy_style);
 
+  double t5 = TIME_get_ms();
+    
   /*
   menu->setStyleSheet("QMenu::indicator:exclusive:checked {  background-color: #ff00ff; }"
                       "QMenu::indicator:exclusive:unchecked {  background-color: #00ffff; }"
                       );
   */
+  checkdur += TIME_get_ms() - t;
+
+  if(0)
+    printf("      DUR: %f. clickdur: %f. checkdur: %f, subdur: %f. End: %f %f %f %f. sepdur: %f. callbackdur: %f. setdatadur: %f. Num calls to setStyle: %d / %d\n", TIME_get_ms()-time, clickdur, checkdur, subdur, t2-t,t3-t2,t4-t3,t5-t4, sepdur,callbackdur,setdatadur,0,0 ); //, num_s, num_saved);
+  
   return menu;
 }
 
