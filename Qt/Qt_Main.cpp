@@ -647,7 +647,7 @@ bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event){
   }
 
 #if !defined(RELEASE)
-  printf("CYCLE: registering %p\n", widget);
+  printf("CYCLE: registering %p. Type: %s\n", widget, widget->metaObject()->className());
 #endif
 
   bool same_widget = widget == g_curr_mouse_cycle.widget.data();
@@ -702,7 +702,7 @@ bool MOUSE_CYCLE_move(QWidget *widget, QMouseEvent *event){
 
 bool MOUSE_CYCLE_unregister(QWidget *widget){
 #if !defined(RELEASE)
-  printf("CYCLE: unregistering %p\n", widget);
+  printf("CYCLE: unregistering %p. Type: %s\n", widget, widget->metaObject()->className());
 #endif
   
   if(g_curr_mouse_cycle.widget.data() != widget)
