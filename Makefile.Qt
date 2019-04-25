@@ -1364,7 +1364,7 @@ Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_inst
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
 
-KeyboardFocus.o:  $(BUILD_DEPENDENCIES) Qt/KeyboardFocusFrame.hpp
+KeyboardFocus.o:  $(BUILD_DEPENDENCIES) Qt/KeyboardFocus.cpp Qt/KeyboardFocusFrame.hpp
 	$(CCC) $(P)KeyboardFocus.cpp $(QTOPT)
 
 Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h

@@ -4,9 +4,9 @@
 
 void set_default_slider_height();
 
-QWidget *create_blockselector(void);
+QWidget *BS_get(void);
 
-void GFX_PlayListWindowToBack(void);
+//void GFX_PlayListWindowToBack(void);
 
 #endif
   

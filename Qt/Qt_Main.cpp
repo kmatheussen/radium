@@ -2791,7 +2791,7 @@ int radium_main(const char *arg){
 
   posix_InitPlayer();
 
-  QWidget *block_selector = create_blockselector();
+  QWidget *block_selector = BS_get();
 
   BS_UpdateBlockList();
   BS_UpdatePlayList();
@@ -3114,7 +3114,9 @@ int radium_main(const char *arg){
       reloadKeybindings();
     });
 
-    
+
+  FOCUSFRAMES_init();
+  
 #if USE_QT_VISUAL
   qapplication->exec();
 #else

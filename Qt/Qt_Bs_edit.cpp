@@ -552,7 +552,7 @@ public:
 
     button_width = add_button.width();
 
-    qApp->installEventFilter(this);
+    //qApp->installEventFilter(this);
   }
 
   /*
@@ -562,7 +562,7 @@ public:
     QWidget::mousePressEvent(qmouseevent);
   }
   */
-
+  /*
   bool isChildWidget(QWidget *w){
     if (w==NULL)
       return false;
@@ -573,7 +573,7 @@ public:
     else
       return isChildWidget(w->parentWidget());
   }
-    
+
   bool eventFilter(QObject *obj, QEvent *event) override {
     if (event->type()==QEvent::GraphicsSceneMousePress || event->type()==QEvent::MouseButtonPress){
       if (isChildWidget(dynamic_cast<QWidget*>(obj))){
@@ -584,7 +584,8 @@ public:
     
     return false;
   }
-
+  */
+  
   void enterEvent(QEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
@@ -1015,10 +1016,11 @@ static BlockSelector *g_bs = NULL;
 static bool g_is_hidden = false;
 
 
-QWidget *create_blockselector(void){
+QWidget *BS_get(void){
   ScopedVisitors v;
 
-  g_bs = new BlockSelector (NULL);
+  if(g_bs==NULL)
+    g_bs = new BlockSelector (NULL);
 
   return g_bs;
 }
