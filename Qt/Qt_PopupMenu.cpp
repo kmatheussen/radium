@@ -353,7 +353,7 @@ namespace{
 
   class ClickableAction;
   
-  static QHash<QString,ClickableAction*> g_clickable_actions;  // Reuse ClickableAction actions. Speeds up plugin menu a lot.
+  static QMultiHash<QString,ClickableAction*> g_clickable_actions;  // Reuse ClickableAction actions. Speeds up plugin menu a lot.
 
   class ClickableAction : public MyQAction
   {
@@ -369,8 +369,8 @@ namespace{
     
     ~ClickableAction(){
       //printf("I was deleted: %s\n",_text.toUtf8().constData());
-      if(g_clickable_actions[_text] == this)
-        g_clickable_actions.remove(_text);
+      R_ASSERT_NON_RELEASE(false);
+      g_clickable_actions.remove(_text, this);
     }
     
     ClickableAction(const QString & text, const QString &shortcut, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
@@ -398,29 +398,21 @@ namespace{
   static void release_clickable_action(ClickableAction *action){
     action->setParent(NULL);
     action->callbacker = NULL;
-    
-    auto *old = g_clickable_actions[action->_text];
-    
-    if (old != action){
-      
-      if (old != NULL)
-        delete old;
-      
-      g_clickable_actions[action->_text] = action;
-    }
+
+    g_clickable_actions.insert(action->_text, action);
+
+    //printf("    clickable size: %d\n", g_clickable_actions.size());
   }
   
   static ClickableAction *get_clickable_action(const QString & text, const QString &shortcut, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker){
-    ClickableAction *action = g_clickable_actions[text];
-    
-    if (action==NULL || action->_shortcut != shortcut || action->_is_first!=is_first || action->_is_last!=is_last)
-      return new ClickableAction(text, shortcut, is_first, is_last, callbacker);
-
-    g_clickable_actions.remove(text);
-    
-    action->callbacker = callbacker;
-
-    return action;
+    for(ClickableAction *action : g_clickable_actions.values(text))
+      if (action->_shortcut == shortcut && action->_is_first==is_first && action->_is_last==is_last){
+        g_clickable_actions.remove(text, action);
+        action->callbacker = callbacker;
+        return action;
+      }
+      
+    return new ClickableAction(text, shortcut, is_first, is_last, callbacker);
   }
 
   
