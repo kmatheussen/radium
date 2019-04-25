@@ -192,6 +192,29 @@ public:
     void hideEvent(QHideEvent *event_) override {
       remember_geometry.hideEvent_override(this);
     }
+
+  bool isChildWidget(QWidget *w){
+    if (w==NULL)
+      return false;
+    
+    else if (w==this)
+      return true;
+
+    else
+      return isChildWidget(w->parentWidget());
+  }
+    
+  bool eventFilter(QObject *obj, QEvent *event) override {
+    if (event->type()==QEvent::GraphicsSceneMousePress || event->type()==QEvent::MouseButtonPress){
+      if (isChildWidget(dynamic_cast<QWidget*>(obj))){
+        FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
+        //printf("    CLICKED\n");
+      }
+    }
+    
+    return false;
+  }
+
 };
 
 QGraphicsScene *get_scene(MixerWidget *mixer_widget){
@@ -1643,7 +1666,7 @@ void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
 static bool g_is_pressed = false; // Workaround for nasty Qt bug.
 
 void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
-  FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
+  //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
   
   if (g_is_pressed==true)
     return;
@@ -2001,6 +2024,8 @@ MixerWidget::MixerWidget(QWidget *parent)
     timer->setInterval(50); // 3*16.666
     timer->start();
   }
+
+  qApp->installEventFilter(this);
 }
 
 bool GFX_MixerIsVisible(void){
