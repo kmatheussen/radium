@@ -1134,6 +1134,7 @@
     *popup-menu-args-cache-args*))
 
 #!!
+(ra:show-message (number->string (length (ra:get-sound-plugin-registry))))
 (for-each (lambda (i)
             (<ra> :add-message (pp ((<ra> :get-sound-plugin-registry) i))))
           (iota 50))

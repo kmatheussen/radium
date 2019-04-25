@@ -125,8 +125,8 @@
 
 
 (define (FROM-C-get-lowertab-gui)
-  (if (or (not (<gui> :get-sequencer-gui))
-          (< (<gui> :get-tab-pos *lowertab-gui* (<gui> :get-sequencer-gui))
+  (if (or (not (<gui> :get-sequencer-frame-gui))
+          (< (<gui> :get-tab-pos *lowertab-gui* (<gui> :get-sequencer-frame-gui))
              0))
       (init-lowertab-gui))
   *lowertab-gui*)
@@ -197,19 +197,19 @@
 (define (FROM-C-sequencer-gui-is-visible)
   (let ((ret (or (and *sequencer-window-gui-active*
                       (<gui> :is-visible *sequencer-window-gui*))
-                 (lowertab-gui-is-visible (<gui> :get-sequencer-gui)))))
+                 (lowertab-gui-is-visible (<gui> :get-sequencer-frame-gui)))))
     (c-display "sequencer visible:" ret)
     ret))
 
 (define (FROM-C-show-sequencer-gui)
   (if *sequencer-window-gui-active*
       (<gui> :show *sequencer-window-gui*)
-      (show-lowertab-gui (<gui> :get-sequencer-gui))))
+      (show-lowertab-gui (<gui> :get-sequencer-frame-gui))))
 
 (define (FROM-C-hide-sequencer-gui)
   (if *sequencer-window-gui-active*
       (<gui> :hide *sequencer-window-gui*)
-      (hide-lowertab-gui (<gui> :get-sequencer-gui))))
+      (hide-lowertab-gui (<gui> :get-sequencer-frame-gui))))
 
 
 #!!
