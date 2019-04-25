@@ -131,6 +131,7 @@ struct KeyboardFocusFrame : public QFrame{
 
 }
 
+void FOCUSFRAMES_init(void);
 void FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType type, bool has_focus);
 bool FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType type);
 

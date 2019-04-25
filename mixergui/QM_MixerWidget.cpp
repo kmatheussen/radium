@@ -193,6 +193,7 @@ public:
       remember_geometry.hideEvent_override(this);
     }
 
+  /*
   bool isChildWidget(QWidget *w){
     if (w==NULL)
       return false;
@@ -214,6 +215,7 @@ public:
     
     return false;
   }
+  */
 
 };
 
@@ -2025,7 +2027,7 @@ MixerWidget::MixerWidget(QWidget *parent)
     timer->start();
   }
 
-  qApp->installEventFilter(this);
+  //qApp->installEventFilter(this);
 }
 
 bool GFX_MixerIsVisible(void){

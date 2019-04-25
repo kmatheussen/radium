@@ -639,7 +639,7 @@ public:
   void	fix_mousePressEvent(QMouseEvent *event) override{
     event->accept();
 
-    FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
+    //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
       
     if (_is_sequencer_widget)
       if (API_run_mouse_press_event_for_custom_widget(SEQUENCER_getWidget(), event))

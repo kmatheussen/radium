@@ -175,7 +175,7 @@ public:
 // RT safe.
 template <typename T, int SIZE> class Queue : public BaseQueueStack<T>{
 
-  typedef boost::lockfree::queue< T , boost::lockfree::capacity<SIZE> > queuetype;
+  using queuetype = boost::lockfree::queue< T , boost::lockfree::capacity<SIZE> >;
   queuetype queue;
 
   bool pop(T &ret) override{
@@ -372,7 +372,7 @@ template <typename T> struct ExpandableBuffer{
   const int MAX_QUEUE_SIZE = (65536-2);       // boost::lockfree::queue limit
   const int max_queues = 1024;
   
-  typedef boost::lockfree::queue< T , boost::lockfree::capacity<MAX_QUEUE_SIZE> > queuetype;
+  using queuetype = boost::lockfree::queue< T , boost::lockfree::capacity<MAX_QUEUE_SIZE> >;
 
   
   DEFINE_ATOMIC(int, num_queues) = 0;
