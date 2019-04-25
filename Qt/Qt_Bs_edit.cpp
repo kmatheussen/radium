@@ -549,6 +549,8 @@ public:
     }
 
     button_width = add_button.width();
+
+    qApp->installEventFilter(this);
   }
 
   /*
@@ -558,7 +560,29 @@ public:
     QWidget::mousePressEvent(qmouseevent);
   }
   */
-  
+
+  bool isChildWidget(QWidget *w){
+    if (w==NULL)
+      return false;
+    
+    else if (w==this)
+      return true;
+
+    else
+      return isChildWidget(w->parentWidget());
+  }
+    
+  bool eventFilter(QObject *obj, QEvent *event) override {
+    if (event->type()==QEvent::GraphicsSceneMousePress || event->type()==QEvent::MouseButtonPress){
+      if (isChildWidget(dynamic_cast<QWidget*>(obj))){
+        FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, true);
+        //printf("    CLICKED\n");
+      }
+    }
+    
+    return false;
+  }
+
   void enterEvent(QEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
