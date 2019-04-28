@@ -1,7 +1,7 @@
 
 #ifndef _RADIUM_QT_QT_BS_EDIT_PROC_H
 #define _RADIUM_QT_QT_BS_EDIT_PROC_H
-#include <QtWidgets>
+class QtWidgets;
 
 void set_default_slider_height();
 
