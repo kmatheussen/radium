@@ -450,6 +450,8 @@
 
 (my-require 'timing.scm) ;; Note that the program assumes that g_scheme_has_inited1 is true after timing.scm has been loaded.
 
+(my-require 'main_menus.scm)
+
 
 (define-constant *functions-called-from-evalScheme* 
   '(show-global-swing-track-popup-menu
@@ -541,6 +543,7 @@
     FROM_C-create-editor-lower-part-gui
     FROM_C-reconfigure-editor-lower-part-gui!
     FROM_C-create-granular-vizualization-gui-for-sample-player
+    generate-main-menus
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
@@ -571,10 +574,14 @@
 (define (init-step-2)
 
   (set! *is-initializing* #t)
-
+  
   ;; gui.scm can be loaded this late since expansion macros now can be defined after they are used.
   ;; Prev comment: Must be loaded early since it creates the <gui> expansion macro.
   (my-require 'gui.scm)
+
+  ;; Evaluate before loading main_layout.scm since main_layout creates the edit tab, which uses keybindings.
+  (<ra> :reload-keybindings)
+
   (my-require 'main_layout.scm)
   
   (my-require 'mouse.scm)

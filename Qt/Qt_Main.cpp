@@ -2783,8 +2783,6 @@ int radium_main(const char *arg){
     return 0;
   printf("ending\n");
 
-  evalPython("keybindingsparser.parse_and_show_errors()");
-    
   SCHEME_init2();
 
   //ProfilerStop();
@@ -2927,9 +2925,11 @@ int radium_main(const char *arg){
                       "QTabWidget::pane { border: 0; background: " + get_qcolor(LOW_BACKGROUND_COLOR_NUM).name(QColor::HexArgb) + "}" +
                       DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"))
                       );
-
-  PyRun_SimpleString("import menues");
-
+  
+  evalScheme("(generate-main-menus)");
+    
+  //getchar();
+  
   //QFontDatabase::addApplicationFont("/gammelhd/usr/share/fonts/liberation/LiberationMono-Regular.ttf");
 
   ResetUndo();
@@ -3105,15 +3105,6 @@ int radium_main(const char *arg){
 #endif
   
   CalledPeriodically periodic_timer;
-
-
-  // Hack to fix generated_keybinding_code to load during startup.
-  // In general, it's not necessary to call reloadKeybindings() twice, it's just during startup it doesn't work.
-  // I don't know why, maybe it's some file cache thing.
-  QTimer::singleShot(200,[]{
-      reloadKeybindings();
-    });
-
 
   FOCUSFRAMES_init();
   

@@ -1247,6 +1247,9 @@ for .emacs:
       (cdr a)
       #f))
 
+(define (cl-cddr a)
+  (cl-cdr (cl-cdr a)))
+
 (define (cl-cadr a)
   (cl-car (cl-cdr a)))
 
@@ -1319,13 +1322,14 @@ for .emacs:
                   (remove-duplicates-in-sorted-list comparer (cdr das-list))
                   (cons a
                         (remove-duplicates-in-sorted-list comparer (cdr das-list)))))))))
-                   
+
 (define (remove-duplicates less-than equal das-list)
   (remove-duplicates-in-sorted-list equal
                                     (sort das-list less-than)))
 
 #!!
 (remove-duplicates < = '(8 2 2 5 7))
+(remove-duplicates-in-sorted-list = '(1 1 8 9 10 10))
 
 (< 1 2)
 

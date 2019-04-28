@@ -16,6 +16,7 @@
 
 import sys
 import platform
+import traceback
 
 import string,sys,os
 
@@ -23,17 +24,50 @@ import string,sys,os
 if __name__!="__main__":
   import radium as ra
 else:
+  sys.argv = ["", "keybindings.conf", ""]
+  sys.path = [os.path.join(os.path.expanduser("~"), ".radium")] + sys.path
+  sys.path = [os.path.abspath(os.path.dirname(sys.argv[0]))] + sys.path
+  
   class Mock:
     def __init__(self):
       self._keybindingsdict={}
+      self.is_mocked = True
+      self.level = 0
     def getConfPath(self, key):
       return os.path.join(os.getenv("HOME"),".radium",key)
     def hasConfPath(self, key):
       return True
     def addMessage(self, message):
-      print "ra.addMessage: "+message    
+      print "ra.addMessage: "+message
+    def getQualifierName(self, code):
+      return code
+    def addMenuMenu(self, text, command):
+      space = ""
+      for i in range(self.level):
+        space = space + "  "
+      print space+str(self.level)+". "+text+". Command: '"+command+"'"
+      self.level = self.level+1
+    def addMenuItem(self, text, command):
+      space = ""
+      for i in range(self.level):
+        space = space + "  "
+      print space+str(self.level)+". \""+text+"\". Command: '"+command+"'"
+    def addMenuSeparator(self):
+      self.addMenuItem("------------------","")
+    def goPreviousMenuLevel(self):
+      self.level = self.level-1
+    
+    
   ra = Mock()
+  radium = ra
   sys.g_program_path = ""
+  sys.radium_is_mocked = True
+
+  import keybindingsparser
+  keybindingsparser.parse_and_show_errors()
+  ra._keybindingsdict = keybindingsparser.ra._keybindingsdict
+  #print "keybindingsdict1:", ra._keybindingsdict
+  #print "keybindingsdicct2:", keybindingsparser.ra._keybindingsdict
 
   
 # This should be documented. There's not even an example in the repository.
@@ -98,10 +132,12 @@ class LineParser:
       keybindingsdict = ra._keybindingsdict
     except:
       print sys.exc_info()
+      message = traceback.format_exc()
+      print message
       ra.addMessage("Unable to generate menues. ("+str(sys.exc_info())+")")
 
     #print "AAAAAAAAAAAA",keybindingsdict
-    
+
     file=open(filename,'r')
 
     self.lines=map(lambda x: self.constructmenuitemstring(string.split(x,"|"),keybindingsdict),
@@ -131,7 +167,7 @@ class LineParser:
       ret = string.rstrip(items[0])
     else:
     
-      key=keybindingsdict[keykey]
+      key=keybindingsdict[keykey][0] # fix
       qualifier=""
     
       for item in key[1]:
@@ -147,7 +183,7 @@ class LineParser:
       command = command[0:hashpos]
       
     command = command.strip()
-    
+
     if command.find("ra.evalPython")==0 or command.find("ra.evalScheme")==0: # Treat these two specially since the arguments can contain spaces
       firstspace = command.find(" ")
       command = command[0:firstspace] + "(" + command[firstspace+1:] + ")"
@@ -164,6 +200,8 @@ class LineParser:
           is_first = False
       command += ")"
 
+    #print "             ret2:", ret
+      
     return Line(ret, command)
   
   
@@ -208,8 +246,8 @@ class Menu:
         break
       else:
         self.items.append(Menu(lineparser,self.level+1))
-
-  def printit(self):
+    
+  def printit_old(self):
     for item in self.items:
       if isinstance(item,Menu):
         item.printit()
@@ -219,11 +257,15 @@ class Menu:
           space = space + "  "
         print space+str(self.level)+". "+item.text+". Command: '"+item.command+"'"
 
+  def printit(self):
+    self.createRadiumMenues()
+    
   def createRadiumMenues(self):
     def rec(items):
       if items==[]:
         return
       if len(items)>1 and isinstance(items[1],Menu):
+        #print "item1:", items[0].text, items[0].command
         ra.addMenuMenu(items[0].text, items[0].command)
         items[1].createRadiumMenues()
         ra.goPreviousMenuLevel()
@@ -232,6 +274,7 @@ class Menu:
         ra.addMenuSeparator()
         rec(items[1:])
       else:
+        #print "item2. text:",items[0].text, ", command:",items[0].command
         ra.addMenuItem(items[0].text, items[0].command)
         rec(items[1:])
     rec(self.items)
@@ -257,6 +300,13 @@ if __name__=="__main__":
   menu=Menu(LineParser("menues.conf"), 0)
   menu.printit()
 else:
-  parse_user_keys()
-  menu=Menu(LineParser(ra.getMenuesConfPath()), 0)
-  menu.createRadiumMenues()
+  try:
+    parse_user_keys()
+    menu=Menu(LineParser(ra.getMenuesConfPath()), 0)
+    menu.createRadiumMenues()
+  except:
+    print sys.exc_info()
+    #radium.showError("Couldn't create menus: ("+str(sys.exc_info())+")")
+    message = traceback.format_exc()
+    print message
+    radium.addMessage("Couldn't create menus: ("+str(sys.exc_info())+")")

@@ -2,6 +2,26 @@
 #if !defined(_RADIUM_COMMON_DYNVEC_PROC_H)
 #define _RADIUM_COMMON_DYNVEC_PROC_H
 
+
+#ifdef __cplusplus
+static inline const dyn_t* begin(const dynvec_t &v) {
+  return &v.elements[0];
+}
+
+static inline const dyn_t* end(const dynvec_t &v) {
+  return &v.elements[v.num_elements];
+}
+
+static inline const dyn_t* begin(const dynvec_t *v) {
+  return &v->elements[0];
+}
+
+static inline const dyn_t* end(const dynvec_t *v) {
+  return &v->elements[v->num_elements];
+}
+#endif
+
+
 extern void DYN_save(disk_t *file, const dyn_t dyn);
 extern dyn_t DYN_load(disk_t *file, bool *success);
 
@@ -53,24 +73,63 @@ static inline void DYNVEC_light_clean(dynvec_t &v){
   v.num_elements = 0;
 }
 
+static inline void DYNVEC_remove_at_and_keep_order(dynvec_t &v, int pos){
+  R_ASSERT_RETURN_IF_FALSE(pos < v.num_elements);
+  R_ASSERT_RETURN_IF_FALSE(pos >= 0);
+  
+  v.num_elements--;
+
+  for(int i=pos ; i < v.num_elements ; i++)    
+    v.elements[i] = v.elements[i+1];
+  
+  v.elements[v.num_elements] = g_uninitialized_dyn; // help gc
+}
+
+static inline void DYNVEC_remove_at(dynvec_t &v, int pos){
+  R_ASSERT_RETURN_IF_FALSE(pos < v.num_elements);
+  R_ASSERT_RETURN_IF_FALSE(pos >= 0);
+  
+  v.num_elements--;
+
+  if (pos < v.num_elements)
+    v.elements[pos] = v.elements[v.num_elements];
+  
+  v.elements[v.num_elements] = g_uninitialized_dyn; // help gc
+}
+
+static inline bool DYN_equal(const dyn_t a1, const dyn_t a2);
+static inline int DYNVEC_find_pos(dynvec_t &v, const dyn_t &element){
+  for(int i=0;i<v.num_elements;i++)
+    if(DYN_equal(v.elements[i], element))
+      return i;
+
+  return -1;
+}
+
+static inline bool DYNVEC_has_element(dynvec_t &v, const dyn_t &element){
+  return DYNVEC_find_pos(v, element) >= 0;
+}
+
+static inline bool DYNVEC_remove_element_and_keep_order(dynvec_t &v, const dyn_t &element){
+  int pos = DYNVEC_find_pos(v, element);
+  if (pos < 0)
+    return false;
+  
+  DYNVEC_remove_at_and_keep_order(v, pos);
+  return true;
+}
+
+static inline bool DYNVEC_remove_element(dynvec_t &v, const dyn_t &element){
+  int pos = DYNVEC_find_pos(v, element);
+  if (pos < 0)
+    return false;
+  
+  DYNVEC_remove_at(v, pos);
+  return true;
+}
+
 static inline int DYNVEC_push_back(dynvec_t &v, const dyn_t element){
   return DYNVEC_push_back(&v, element);
-}
-
-static inline const dyn_t* begin(const dynvec_t &v) {
-  return &v.elements[0];
-}
-
-static inline const dyn_t* end(const dynvec_t &v) {
-  return &v.elements[v.num_elements];
-}
-
-static inline const dyn_t* begin(const dynvec_t *v) {
-  return &v->elements[0];
-}
-
-static inline const dyn_t* end(const dynvec_t *v) {
-  return &v->elements[v->num_elements];
 }
 
 

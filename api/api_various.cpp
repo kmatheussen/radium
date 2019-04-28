@@ -71,6 +71,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
 #include "../common/OS_string_proc.h"
+#include "../common/Dynvec_proc.h"
 
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/Mixer_proc.h"
@@ -2258,212 +2259,100 @@ void evalPython(const_char *code){
 }
 
 static dyn_t g_keybindings_from_keys = g_uninitialized_dyn;
-static dyn_t g_keybindings_from_commands = g_uninitialized_dyn;
+static dyn_t g_keybindings_from_command = g_uninitialized_dyn;
 
-#define EXIT_INIT_KEYBINDINGS() do{             \
-    if(keybindings != NULL)                     \
-      Py_DECREF(keybindings);                   \
-                                                \
-    if (radium != NULL)                                                 \
-      Py_DECREF(radium);                                                \
-                                                                        \
-    g_keybindings_from_keys = DYN_create_hash(r_keybindings_from_keys); \
-    g_keybindings_from_commands = DYN_create_hash(r_keybindings_from_commands); \
-    return;                                                             \
-  }while(0)
+void addKeybinding(const_char* command, const_char* keys){ // keys must be sorted
 
-static void init_keybindings(void){
-  hash_t *r_keybindings_from_keys = HASH_create(512);
-  hash_t *r_keybindings_from_commands = HASH_create(512);
-
-  PyObject *keybindings = NULL;
+  hash_t *r_keybindings_from_keys;
+  hash_t *r_keybindings_from_command;
   
-  PyObject *radium = PyImport_ImportModule("radium");
-  
-  if(radium==NULL){
+  if (g_keybindings_from_keys.type==UNINITIALIZED_TYPE){
+
     R_ASSERT(false);
-    EXIT_INIT_KEYBINDINGS();
+    
+    r_keybindings_from_keys = HASH_create(512);
+    g_keybindings_from_keys = DYN_create_hash(r_keybindings_from_keys);
+
+    r_keybindings_from_command = HASH_create(512);
+    g_keybindings_from_command = DYN_create_hash(r_keybindings_from_command);
+
+  } else {
+
+    r_keybindings_from_keys = g_keybindings_from_keys.hash;
+    r_keybindings_from_command = g_keybindings_from_command.hash;
+    
   }
 
-  keybindings = PyObject_GetAttrString(radium, "_keybindingsdict");
-  if(keybindings==NULL){
-    //R_ASSERT(false);
-    addMessage("Error: Keybindings are not defined. Something is probably wrong with the file .radium/keybindings.conf in your home area. If not, please send an email to k.s.matheussen@notam02.no");
-    EXIT_INIT_KEYBINDINGS();
+  dyn_t dyn_keys = DYN_create_string_from_chars(keys);
+  
+  // Add to key->command hash table
+  {
+
+    // First remove old keybinding->command, if stored.
+    if (HASH_has_key(r_keybindings_from_keys, keys)){
+      const_char *old_command = HASH_get_chars(r_keybindings_from_keys, keys);
+      if (HASH_has_key(r_keybindings_from_command, old_command)){
+        dyn_t dyn = HASH_get_dyn(r_keybindings_from_command, old_command);
+        DYNVEC_remove_element_and_keep_order(*dyn.array, dyn_keys);
+      }
+    }
+
+    // One of the few places where we overwrite old element in hash_t
+    if (HASH_has_key(r_keybindings_from_keys, keys))
+      HASH_remove(r_keybindings_from_keys, keys);
+    
+    HASH_put_chars(r_keybindings_from_keys, keys, command);
   }
-  
 
-  PyObject *command=NULL, *value=NULL;
-  Py_ssize_t pos = 0;
-  
-  while (PyDict_Next(keybindings, &pos, &command, &value)) { // I assume PyDict_Next takes care of decrefs-ing all key and value objects.
-    PyObject *keys = PySequence_GetItem(value,0);
-    if(keys==NULL){
-      R_ASSERT(false);
-      EXIT_INIT_KEYBINDINGS();
-    }
-    
-    PyObject *qualifiers = PySequence_GetItem(value,1);
-    if(qualifiers==NULL){
-      R_ASSERT(false);
-      Py_DECREF(keys);
-      EXIT_INIT_KEYBINDINGS();
-    }
-    
-    //printf("\n%s:\n", PyString_AsString(key));
+  // Add to command->keys hash table
+  {
 
-    int num_keys = (int)PyList_Size(keys);
-    int num_qualifiers = (int)PyList_Size(qualifiers);
-
-    const char *keybinding_line = NULL;
-
-    /*
-    dynvec_t r_keys = {};
-    dynvec_t r_qualifiers = {};
-    */
-
-    //printf("  keys: ");
-    for(int i = 0 ; i < num_keys ; i++){
-      PyObject *key = PySequence_GetItem(keys, i);
-      //printf("%s, ", PyString_AsString(key));
-      const char *keystring = PyString_AsString(key);
-      keybinding_line = keybinding_line==NULL ? keystring: talloc_format("%s %s", keybinding_line, keystring);
-      //DYNVEC_push_back(r_keys, DYN_create_string_from_chars(keystring));
-      Py_DECREF(key);
-    }
-
-    //printf("\n  qualifiers: ");
-    for(int i = 0 ; i < num_qualifiers ; i++){
-      PyObject *qualifier = PySequence_GetItem(qualifiers, i);
-      if(qualifier==NULL){
-        R_ASSERT(false);
-        Py_DECREF(keys);
-        Py_DECREF(qualifiers);
-        EXIT_INIT_KEYBINDINGS();
-      }
-      
-      //printf("%s, ", PyString_AsString(qualifier));
-      const char *qualifierstring = PyString_AsString(qualifier);
-      if(qualifierstring==NULL){
-        R_ASSERT(false);
-        Py_DECREF(qualifier);
-        Py_DECREF(keys);
-        Py_DECREF(qualifiers);
-        EXIT_INIT_KEYBINDINGS();
-      }
-      
-      keybinding_line = keybinding_line==NULL ? qualifierstring : talloc_format("%s %s", keybinding_line, qualifierstring);
-      //DYNVEC_push_back(r_qualifiers, DYN_create_string_from_chars(qualifierstring));
-      Py_DECREF(qualifier);
-    }
-
-    /*
-    hash_t *element = HASH_create(2);
-    HASH_put_dyn(element, ":keys", DYN_create_array(r_keys));
-    HASH_put_dyn(element, ":qualifiers", DYN_create_array(r_qualifiers));
-    */
-
-    const char *commandstring = PyString_AsString(command);
-    if(commandstring==NULL){
-      R_ASSERT(false);
-      Py_DECREF(keys);
-      Py_DECREF(qualifiers);
-      EXIT_INIT_KEYBINDINGS();
-    }
-
-    /*
-    if(!strcmp(commandstring,"ra.copyEditorTrackOnOffToSeqblock"))
-       printf("Commandstring: %s. keybinding: %s\n", commandstring, keybinding_line);
-    */
-    
-    // command
-    if (false && HASH_has_key(r_keybindings_from_commands, commandstring)){
-
-      // We are never in here since radium._keybindingdict (which we are traversing) is already a hash table.
+    if (!HASH_has_key(r_keybindings_from_command, command)){
       
       dynvec_t vec = {};
-      
-      dyn_t curr = HASH_get_dyn(r_keybindings_from_commands, commandstring);
-      
-      if (curr.type==STRING_TYPE){
-        
-        DYNVEC_push_back(vec, curr);
-        
-      } else if (curr.type==ARRAY_TYPE) {
-        
-        vec = *curr.array;
-
-      } else {
-        
-        R_ASSERT(false);
-        
-      }
-
-      DYNVEC_push_back(vec, DYN_create_string_from_chars(keybinding_line));
-                       
-      HASH_remove(r_keybindings_from_commands, commandstring);
-      HASH_put_dyn(r_keybindings_from_commands, commandstring, DYN_create_array(vec));
-                       
-                       
-    } else {
-
-      if(HASH_remove(r_keybindings_from_keys, keybinding_line)==true){ // in case it was already there. (shouldn't happen)
-        //R_ASSERT_NON_RELEASE(false);
-      }
-      HASH_put_chars(r_keybindings_from_commands, commandstring, keybinding_line);
+      HASH_put_dyn(r_keybindings_from_command, command, DYN_create_array(vec));
       
     }
-    
-    // key
-    HASH_remove(r_keybindings_from_keys, keybinding_line); // in case it was already there.
-    HASH_put_chars(r_keybindings_from_keys, keybinding_line, commandstring);
-                 
-    Py_DECREF(keys);
-    Py_DECREF(qualifiers);
+
+    dyn_t dyn = HASH_get_dyn(r_keybindings_from_command, command);
+    DYNVEC_push_back(dyn.array, dyn_keys);
+
   }
-
-  EXIT_INIT_KEYBINDINGS();
+  
 }
-
-#undef EXIT_INIT_KEYBINDINGS
-
-
-// Fun fact: This function takes a python hash table and converts it into a radium hash table which is further converted into an s7 hash table.
+                   
 dyn_t getKeybindingsFromKeys(void){
 
   if (g_keybindings_from_keys.type!=UNINITIALIZED_TYPE)
     return g_keybindings_from_keys;
 
-  init_keybindings();
-  
   return g_keybindings_from_keys;
 }
 
 dyn_t getKeybindingsFromCommands(void){
 
-  if (g_keybindings_from_commands.type!=UNINITIALIZED_TYPE)
-    return g_keybindings_from_commands;
+  if (g_keybindings_from_command.type!=UNINITIALIZED_TYPE)
+    return g_keybindings_from_command;
 
-  init_keybindings();
-
-  return g_keybindings_from_commands;
+  return g_keybindings_from_command;
 }
 
 
-const_char* getKeybindingFromCommand(const_char *command){
-  hash_t *keybindings = getKeybindingsFromCommands().hash;
+dyn_t getKeybindingsFromCommand(const_char *command){
 
-  if (g_keybindings_from_commands.type==UNINITIALIZED_TYPE){
+  if (g_keybindings_from_command.type==UNINITIALIZED_TYPE){
     R_ASSERT(false);
-    return "";
+    return g_empty_dynvec;
   }
 
-  R_ASSERT_RETURN_IF_FALSE2(g_keybindings_from_commands.type==HASH_TYPE, "");
+  hash_t *keybindings = getKeybindingsFromCommands().hash;
+  
+  R_ASSERT_RETURN_IF_FALSE2(g_keybindings_from_command.type==HASH_TYPE, g_empty_dynvec);
       
   if (HASH_has_key(keybindings,command))
-    return HASH_get_chars(keybindings, command);
+    return HASH_get_dyn(keybindings, command);
   else
-    return "";
+    return g_empty_dynvec;
 }
 
 const_char* getKeybindingFromKeys(const_char *keys){
@@ -2483,59 +2372,18 @@ const_char* getKeybindingFromKeys(const_char *keys){
 }
 
 void reloadKeybindings(void){
-  evalPython("keybindingsparser.parse_and_show_errors()");
-  g_keybindings_from_keys = g_uninitialized_dyn;
-  g_keybindings_from_commands = g_uninitialized_dyn;
-  evalScheme("(FROM_C-keybindings-have-been-reloaded)");
-}
-
-/*
-void setKeybinding(const_char* keyname, dyn_t qualifiers, const_char* funcname, dyn_t arguments){
-
-  if (qualifiers.type != ARRAY_TYPE){
-    handleError("setKeybinding: Expected for argument \"qualifiers\". Found %s", DYN_type_name(qualifiers.type));
-    return;
-  }
-
-  if (arguments.type != ARRAY_TYPE){
-    handleError("setKeybinding: Expected for argument \"arguments\". Found %s", DYN_type_name(arguments.type));
-    return;
-  }
-
-  const char *keybinding = keyname;
-  for(int i=0;i<qualifiers.array->num_elements;i++){
-    dyn_t qualifier = qualifiers.array->elements[i];
-    if (qualifier.type != STRING_TYPE){
-      handleError("setKeybinding: Expected string in qualifiers[%d], found %s", i, DYN_type_name(qualifier.type));
-      return;
-    }
-    keybinding = talloc_format("%s %s", keybinding, STRING_get_chars(qualifier.string));
-  }
-
-  const char *command = funcname;
-  for(int i=0;i<arguments.array->num_elements;i++){
-    dyn_t argument = arguments.array->elements[i];
-    if (argument.type != STRING_TYPE){
-      handleError("setKeybinding: Expected string in argument[%d], found %s", i, DYN_type_name(argument.type));
-      return;
-    }
-    command = talloc_format("%s %s", command, STRING_get_chars(argument.string));
-  }
-
-  const char *pythoncommand = talloc_format("keybindings_changer.FROM_C_insert_new_keybinding_into_conf_file(\"%s\", \'%s\')", keybinding, command);
-  printf("Evaling -%s\n", pythoncommand);
-
-  static bool has_imported = false;
-  if (has_imported==false){
-    evalPython("import keybindings_changer");
-    has_imported = true;
-  }
+  bool first_time = g_keybindings_from_command.type==UNINITIALIZED_TYPE;
+    
+  g_keybindings_from_keys = DYN_create_hash(HASH_create(512));
+  g_keybindings_from_command = DYN_create_hash(HASH_create(512));
   
-  evalPython(pythoncommand);  
-}
-*/
+  evalPython("keybindingsparser.parse_and_show_errors()");
 
-void setKeybinding(const_char* keybinding, const_char* funcname, dyn_t arguments){
+  if(!first_time)
+    evalScheme("(FROM_C-keybindings-have-been-reloaded)");
+}
+
+void addKeybindingToConfFile(const_char* keybinding, const_char* funcname, dyn_t arguments){
 
   if (arguments.type != ARRAY_TYPE){
     handleError("setKeybinding: Expected array for argument \"arguments\". Found %s", DYN_type_name(arguments.type));
@@ -2565,7 +2413,7 @@ void setKeybinding(const_char* keybinding, const_char* funcname, dyn_t arguments
 }
 
 
-void removeKeybinding(const_char* keybinding, const_char* funcname, dyn_t arguments){
+void removeKeybindingFromConfFile(const_char* keybinding, const_char* funcname, dyn_t arguments){
 
   if (arguments.type != ARRAY_TYPE){
     handleError("setKeybinding: Expected for argument \"arguments\". Found %s", DYN_type_name(arguments.type));

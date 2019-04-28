@@ -1,5 +1,15 @@
 (provide 'keybindings.scm)
 
+(define (get-keybindings-from-command-without-focus-and-mouse command)
+  (remove-duplicates-in-sorted-list equal?
+                                    (map (lambda (keybindings)
+                                           (remove (lambda (keybinding)
+                                                     (or (string-starts-with? keybinding "FOCUS_")
+                                                         (string-starts-with? keybinding "MOUSE_")))
+                                                   (string-split keybindings #\space)))
+                                         (to-list (<ra> :get-keybindings-from-command command)))))
+
+
 (define *reload-keybindings-callbacks* '())
 
 (define (add-reload-keybindings-callback func)
@@ -57,7 +67,9 @@
                         (if (string=? "" readable)
                             qualifier
                             readable)))
-                    (let* ((keys (string-split keybinding #\ ))
+                    (let* ((keys (if (string? keybinding)
+                                     (string-split keybindings #\space)
+                                     keybinding))
                            (qualifiers (cdr keys))
                            (key (car keys)))
                       (append (remove (lambda (qualifier)
@@ -70,12 +82,12 @@
   (if (< (string-length rafuncname) 3)
       ""
       (let* ((command (get-keybindings-command (get-python-ra-funcname rafuncname) args))
-             (keybinding (<ra> :get-keybinding-from-command command)))
+             (keybindings (get-keybindings-from-command-without-focus-and-mouse command)))
         ;;(c-display "command:" command)
         ;;(c-display "keybinding:" keybinding)
-        (if (string=? "" keybinding)
+        (if (null? keybindings)
             ""
-            (get-displayable-keybinding-from-keybinding keybinding)))))
+            (get-displayable-keybinding-from-keybinding (last keybindings))))))
 
 
 (define (FROM_C-get-displayable-keybinding rafuncname args)
@@ -144,9 +156,10 @@
     (<ra> :grab-keybinding
           (lambda (keybinding)
             (set! keybinding (remove-mouse-from-keybinding keybinding))
+            (c-display "KEYBINDING: -" keybinding "-")
             (<gui> :close grab-gui)
             (define (setit!)
-              (<ra> :set-keybinding keybinding (get-python-ra-funcname ra-funcname) (map get-arg-string args)))
+              (<ra> :add-keybinding-to-conf-file keybinding (get-python-ra-funcname ra-funcname) (map get-arg-string args)))
             (define existing-command (<ra> :get-keybinding-from-keys keybinding))
             (if (string=? "" existing-command)
                 (setit!)
@@ -173,8 +186,15 @@
                          "Remove the keybinding"
                          (lambda ()
                            (define python-ra-funcname (get-python-ra-funcname ra-funcname))
-                           (<ra> :remove-keybinding
-                                 (<ra> :get-keybinding-from-command (get-keybindings-command python-ra-funcname args))
+                           (<ra> :remove-keybinding-from-conf-file
+                                 (let* ((keybinding (last (get-keybindings-from-command-without-focus-and-mouse (get-keybindings-command python-ra-funcname args))))
+                                        (key (car keybinding)))
+                                   (define ret (string-join (cons key (sort (cons "FOCUS_EDITOR"
+                                                                                  (cdr keybinding))
+                                                                            string<?))
+                                                            " "))
+                                   (c-display "RET:" ret)
+                                   ret)
                                  python-ra-funcname
                                  (map get-arg-string args))
                            (c-display "removing")))
