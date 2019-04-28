@@ -118,9 +118,9 @@ struct KeyboardFocusFrame : public QFrame{
       p.drawRect(rect());
     }
 
-    if (_has_focus){
+    if (_has_focus && lineWidth()*2 > 2){
       QPen pen(color.darker());
-      pen.setWidth(1);    
+      pen.setWidth(2);    
       p.setPen(pen);
       
       p.drawRect(rect());
