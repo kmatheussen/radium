@@ -1489,7 +1489,7 @@
   )
    
 
-(def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2)
+(def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2 :seqtrack-x1)
   (define num-seqtracks (<ra> :get-num-seqtracks))
 
   (define topmost-seqtrack (<ra> :get-topmost-visible-seqtrack))
@@ -1561,7 +1561,7 @@
             
             (if (or (not (<ra> :seqtrack-for-audiofiles seqtracknum))
                     (>= (<ra> :get-seqtrack-instrument seqtracknum) 0))
-                (header-area :add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 use-two-rows show-panner seqtracknum)))
+                (header-area :add-sub-area-plain! (<new> :seqtrack-header gui seqtrack-x1 sy1 x2 sy2 use-two-rows show-panner seqtracknum)))
             
             (loop (1+ seqtracknum))))))
 
@@ -1625,7 +1625,7 @@
                                          (get-sequencer-left-part-position
                                           (lambda (x1 y1 x2 y2)
                                             (<new> :area (<gui> :get-sequencer-gui)
-                                                   x1 y1 x2 y2)))))
+                                                   0 y1 x2 y2)))))
     (when (and (not *use-testgui*)
                (not *had-sequencer-paint-callback*))
 
@@ -1707,9 +1707,11 @@
                                                                 210 (+ 30 height))))
       (get-sequencer-left-part-position
        (lambda (x1 y1 x2 y2)         
-         (*sequencer-left-part-area* :reset! x1 y1 x2 y2)        
+         (*sequencer-left-part-area* :reset! 0 y1 x2 y2)        
          (*sequencer-left-part-area* :add-sub-area-plain! (<new> :sequencer-left-part gui
-                                                                 x1 y1 x2 y2)))))
+                                                                 0 y1 x2 y2
+                                                                 x1
+                                                                 )))))
   )
 
 
