@@ -56,7 +56,7 @@ if test $2 = "yes" ; then
     tar xvzf libglade-0.17.tar.gz
     cd libglade-0.17
     ./configure --prefix=$PREFIX
-    make
+    make -j`nproc`
     make install
     cd ..
 
@@ -66,7 +66,7 @@ if test $2 = "yes" ; then
     cd pygtk-0.6.11
     export PYTHON=$1
     ./configure --prefix=$PREFIX --with-libglade-config=$PREFIX/bin/libglade-config
-    make
+    make -j`nproc`
     make install
     sed -i s/" as"/" as2"/ $PREFIX/lib/python2.6/site-packages/gtk-1.2/gtk.py
     cd ..
@@ -104,14 +104,14 @@ MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g" #  -D_GLIBCXX_USE_CXX11_ABI=0
 echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt
 # previously used build type: RelWithDebInfo. Unfortunately, this one enable _DEBUG and various runtime checks.
 CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CC="gcc" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
-VERBOSE=1 make -j `nproc`
+VERBOSE=1 make -j`nproc`
 cd ..
 
 rm -fr libpd-master
 tar xvzf libpd-master.tar.gz
 cd libpd-master/
 make clean
-make -j  `nproc`
+make -j`nproc`
 cd ..
 
 rm -fr qhttpserver-master
@@ -119,7 +119,7 @@ tar xvzf qhttpserver-master.tar.gz
 cd qhttpserver-master/
 echo "CONFIG += staticlib" >> src/src.pro
 `../../../find_moc_and_uic_paths.sh qmake`
-make -j3 # necessary to create the moc files.
+make -j`nproc` # necessary to create the moc files.
 cd ..
 
 
@@ -143,7 +143,7 @@ echo "#error "nope"" >>malloc.c
 echo "#endif" >>malloc.c
 #patch -p1 <../gcdiff.patch
 CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" ./configure --enable-static --disable-shared --disable-gc-debug --disable-gc-assertions
-CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" make -j3
+CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" make -j`nproc`
 cd ..
 
 rm -fr fluidsynth-1.1.6
@@ -152,7 +152,7 @@ cd fluidsynth-1.1.6
 make clean
 CFLAGS="-fno-strict-aliasing -O3 -DDEFAULT_SOUNDFONT=\\\"\\\"" CPPFLAGS="-fno-strict-aliasing -O3" CXXFLAGS="-fno-strict-aliasing -O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
 # --enable-debug
-make -j3
+make -j`nproc`
 cd ..
 
 rm -fr libgig
@@ -160,7 +160,7 @@ tar xvzf libgig.tar.gz
 cd libgig
 make clean
 CFLAGS="-O3 -fno-strict-aliasing" CPPFLAGS="-O3 -fno-strict-aliasing" CXXFLAGS="-O3 -fno-strict-aliasing" ./configure
-CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j3
+CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j`nproc`
 cd ..
 
 
@@ -171,7 +171,7 @@ cd QScintilla_gpl-2.10.8/Qt4Qt5/
 echo "CONFIG += staticlib" >> qscintilla.pro
 `../../../../find_moc_and_uic_paths.sh qmake`
 patch -p0 <../../qscintilla.patch
-make -j `nproc`
+make -j`nproc`
 cd ../..
 
 
@@ -181,7 +181,7 @@ then
     tar xvzf qtstyleplugins-src-5.0.0.tar.gz
     cd qtstyleplugins-src-5.0.0/
     `../../../find_moc_and_uic_paths.sh qmake`
-    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j3
+    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j`nproc`
     cd ../
 fi
 
@@ -193,7 +193,7 @@ then
     cd xcb-proto-1.13/
     mkdir install
     ./configure --prefix=`pwd`/install PYTHON=`which python2`
-    make
+    make -j`proc`
     make install
     cd ..
     
@@ -203,7 +203,7 @@ then
     #patch -p1 <../libxcb-1.12.patch
     export PKG_CONFIG_PATH=`pwd`/../xcb-proto-1.13/install/lib/pkgconfig:$PKG_CONFIG_PATH
     CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" ./configure PYTHON=`which python2`
-    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make
+    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j`nproc`
     cd ..
     
 fi
