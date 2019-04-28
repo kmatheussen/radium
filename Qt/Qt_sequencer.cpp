@@ -4278,6 +4278,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void paintSeqtrackBorders(QPainter &p) {
+    bool is_first_seqtrack = true;
     int num_elements = root->song->seqtracks.num_elements;
     for(int seqtracknum=0 ; seqtracknum<=num_elements ; seqtracknum++){
       bool is_last = seqtracknum==num_elements;
@@ -4289,8 +4290,10 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       
       if (y > _seqtracks_widget.t_y1 - 2) {
       
-        float x1 = SEQUENCER_get_left_part_x1();//w.t_x1; //get_seqtrack_border_width()+3;//w.t_x1; //;
+        float x1 = is_first_seqtrack ? 0 : SEQUENCER_get_left_part_x1();//w.t_x1; //get_seqtrack_border_width()+3;//w.t_x1; //;
         float x2 = w.t_x2; //width();
+
+        is_first_seqtrack = false;
         
         {
           QColor color("#000000");
@@ -4581,7 +4584,10 @@ float SEQTRACKS_get_y2(void){
 }
 
 float SEQUENCER_get_left_part_x1(void){
-  return get_seqtrack_border_width();
+  if (root->song->seqtracks.num_elements > 1)
+    return get_seqtrack_border_width();
+  else
+    return 0;
 }
 
 float SEQUENCER_get_left_part_x2(void){
