@@ -59,10 +59,32 @@ import sys,string,os
 import traceback
 import platform
 
-import radium,protoconfparser
+try:
+    is_mocked = sys.radium_is_mocked
+except:
+    is_mocked = False
+
+
+if __name__!="__main__" and not is_mocked:
+  import radium as ra
+else:
+  sys.argv = ["", "keybindings.conf", ""]
+  sys.path = [os.path.join(os.path.expanduser("~"), ".radium")] + sys.path
+  sys.path = [os.path.abspath(os.path.dirname(sys.argv[0]))] + sys.path
+  class Mock:
+    def getConfPath(self, key):
+      return os.path.join(os.getenv("HOME"),".radium",key)
+    def hasConfPath(self, key):
+      return True
+    def addMessage(self, message):
+      print "ra.addMessage: "+message    
+  ra = Mock()
+  sys.g_program_path = ""
+
+
+import protoconfparser
 from types import *
 
-ra=radium
 
 
 true=1
@@ -341,7 +363,7 @@ class Parser:
                     if key==-1:
                         message = "Unknown key \""+keys[lokke] +"\" in line %d in keyconfig file." % self.linenum
                         print message
-                        radium.addMessage(message)
+                        ra.addMessage(message)
                         del keys[lokke]
                         self.linetype="ERROR"
                         return "OK"
@@ -428,16 +450,33 @@ class Parser:
         return self.linenum
         
 
-def putCode(keyhandles,parser,codestring,added_qualifiers):
+def putCode(keyhandles,parser,commands,added_qualifiers):
     keys=parser.getKeys()+parser.getQualifiers()+added_qualifiers
     firstkey=keys.pop(0)
-    #print "adding \"%s\", line: %d, firstkey: %d, keys: %s" % (codestring,parser.getCurrLineNum(),firstkey,keys)
 
-    if keyhandles[firstkey].addHandle(keys,compile(codestring,'<string>','single'))==False:
+    command = " ".join(commands)
+    pythoncall = commands[0] + "(" + ",".join(commands[1:]) + ")"
+    
+    #print "addkeybinding:", commands, keysub[firstkey] + " " + " ".join(sorted(map(lambda x:keysub[x],keys))), pythoncall
+    ra.addKeybinding(command, keysub[firstkey] + " " + " ".join(sorted(map(lambda x:keysub[x],keys))))
+
+    
+    #pythoncall=commands.pop(0)
+    #pythoncall+="("
+    #while len(commands)>1:
+    #    pythoncall+=commands.pop(0)+","
+    #    if len(commands)>0:
+    #        pythoncall+=commands.pop(0)
+    #    pythoncall+=")"
+
+    if pythoncall=="ra.undo()":
+        print "adding \"%s\", line: %d, firstkey: %d, keys: %s" % (pythoncall,parser.getCurrLineNum(),firstkey,keys)
+        
+    if keyhandles[firstkey].addHandle(keys,compile(pythoncall,'<string>','single'))==False:
         # Note. This doesn't happen anymore. Redefining a keybinding is allowed.
-        message = "Keybindings for command \"%s\" in line %d is already used" % (codestring , parser.getCurrLineNum())
+        message = "Keybindings for command \"%s\" in line %d is already used" % (pythoncall , parser.getCurrLineNum())
         print message
-        radium.addMessage(message)
+        ra.addMessage(message)
         return False
         
     return True
@@ -456,24 +495,24 @@ def printsak(file,keyhandles,parser,codestring):
     print
 
 
-def addIt2(keyhandles, parser, command, extra):
+def addIt2(keyhandles, parser, commands, extra):
     if not parser.focusInQualifiers():
-        putCode(keyhandles, parser, command, extra + [parser.focusEditorKey])
-        putCode(keyhandles, parser, command, extra + [parser.focusMixerKey])
-        putCode(keyhandles, parser, command, extra + [parser.focusMixerStripsKey])
-        putCode(keyhandles, parser, command, extra + [parser.focusSequencerKey])
+        putCode(keyhandles, parser, commands, extra + [parser.focusEditorKey])
+        putCode(keyhandles, parser, commands, extra + [parser.focusMixerKey])
+        putCode(keyhandles, parser, commands, extra + [parser.focusMixerStripsKey])
+        putCode(keyhandles, parser, commands, extra + [parser.focusSequencerKey])
     else:
-        putCode(keyhandles, parser, command, extra)
+        putCode(keyhandles, parser, commands, extra)
     
     
-def addIt(keyhandles, parser, command):
+def addIt(keyhandles, parser, commands):
     if not parser.mouseInQualifiers():
-        addIt2(keyhandles, parser, command, [parser.mouseEditorKey])
-        addIt2(keyhandles, parser, command, [parser.mouseMixerKey])
-        addIt2(keyhandles, parser, command, [parser.mouseMixerStripsKey])
-        addIt2(keyhandles, parser, command, [parser.mouseSequencerKey])
+        addIt2(keyhandles, parser, commands, [parser.mouseEditorKey])
+        addIt2(keyhandles, parser, commands, [parser.mouseMixerKey])
+        addIt2(keyhandles, parser, commands, [parser.mouseMixerStripsKey])
+        addIt2(keyhandles, parser, commands, [parser.mouseSequencerKey])
     else:
-        addIt2(keyhandles, parser, command, [])
+        addIt2(keyhandles, parser, commands, [])
 
 
 
@@ -528,7 +567,7 @@ def gotKey(windownum,key,keys):
         return keyhandles[key].exe(windownum,keys);    
     except:
         traceback.print_exc(file=sys.stdout)
-        radium.addMessage("Keybinding error.\n\nBacktrace:<pre>" + traceback.format_exc() + "</pre>")
+        ra.addMessage("Keybinding error.\n\nBacktrace:<pre>" + traceback.format_exc() + "</pre>")
         return True
 
 filename1 = ""
@@ -545,14 +584,14 @@ def get_file_handles():
     try:
         infilehandle=open(sys.argv[1],'r')
     except:
-        print "Cant open %s" % sys.argv[1]
-        radium.addMessage("Cant open %s" % sys.argv[1])
+        print "Cant open1 -%s-" % sys.argv[1]
+        ra.addMessage("Cant open %s" % sys.argv[1])
         sys.exit(1)
 
     try:
         infilehandle2=open(sys.argv[2],'r')
     except:
-        print "Cant open %s" % sys.argv[2]
+        print "Cant open2 -%s-" % sys.argv[2]
         infilehandle2 = None
 
     #print "Cant open %s" % sys.argv[2], infilehandle2
@@ -564,7 +603,7 @@ def get_file_handles():
     except:
         message = "Could not write to \"" + os.path.join(os.path.expanduser("~"), ".radium", "generated_keybinding_code.py") + "\"."
         print message
-        radium.addMessage(message)
+        ra.addMessage(message)
         outfilehandle = False
 
     return infilehandle, infilehandle2, outfilehandle
@@ -575,11 +614,12 @@ def clean_generated_keybinding_file():
         outfilehandle.close()
 
 clean_generated_keybinding_file() # If not, we will run previous keybinding in the next line. If it contained e.g. "*exit()*", radium wouldn't start. But it could also create other types of confusion.
-import generated_keybinding_code as keybinding
+
+if not is_mocked:
+    import generated_keybinding_code as keybinding
 
 def parse():
-    global keyhandles
-    keybindingsdict={}
+    global keyhandles,radium
 
     filehandle, filehandle2, outfilehandle = get_file_handles()
     
@@ -629,29 +669,10 @@ def parse():
             for c in commands[1:]:
                 command += " " + c
 
-            keybindingsdict[command]=[map(lambda x:keysub[x],parser.getKeys()),
-                                      map(lambda x:keysub[x],parser.getQualifiers())]
+            element = [map(lambda x:keysub[x],parser.getKeys()),
+                       sorted(map(lambda x:keysub[x],parser.getQualifiers()))]
 
-            #print "commands", commands
-            pythoncall=commands.pop(0)
-            pythoncall+="("
-            while len(commands)>1:
-                pythoncall+=commands.pop(0)+","
-            if len(commands)>0:
-                pythoncall+=commands.pop(0)
-            pythoncall+=")"
-            keys=parser.getKeys()+parser.getQualifiers() 
-            firstkey=keys.pop(0)
-                
-            #printsak(0,keyhandles,parser,command)
-            
-            addIt(keyhandles, parser, pythoncall)
-
-    try:
-        radium._keybindingsdict = keybindingsdict
-    except:
-        print sys.exc_info()
-        radium.addMessage("Couldn't create keybindings dict. ("+str(sys.exc_info())+")")
+            addIt(keyhandles, parser, commands)
 
     try:
         if filehandle:
@@ -667,11 +688,11 @@ def parse():
         print "Could not close file. Out of disk space?"
         #sys.exit(3)
 
-    reload(keybinding) # i.e re-do "import generated_keybinding_code as keybinding"
+    if not is_mocked:
+        reload(keybinding) # i.e re-do "import generated_keybinding_code as keybinding"
 
     #sys.exit(1)
     
-    #print "BBBBBB",radium._keybindingsdict
     return True
 
 
@@ -700,7 +721,7 @@ def parse_and_show_errors():
         print message
         #radium.addMessage("Loading "+filename+" failed.") # If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
         #        for m in message.split("\n"):
-        radium.addMessage("Couldn't parse keybindings file.\n\nBacktrace:<pre>"+message+"</pre>")
+        ra.addMessage("Couldn't parse keybindings file.\n\nBacktrace:<pre>"+message+"</pre>")
         keyhandles = old_keyhandles
 
     if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
@@ -708,3 +729,7 @@ def parse_and_show_errors():
         sys.stderr = old_stderr
 
     return ret
+
+if __name__=="__main__":
+    parse_and_show_errors()
+    

@@ -467,7 +467,7 @@
 (define (delete el l comp)
   (if (comp el (car l))
       (cdr l)
-      (cons (car el)
+      (cons (car l)
             (delete el (cdr l) comp))))
       
 (define (delete-maybe el l comp)
