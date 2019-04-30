@@ -2962,7 +2962,15 @@ double SONG_get_length(void){
 
   if (ATOMIC_GET_RELAXED(root->song->punching.enabled))
     len = R_MAX(2 + (double)ATOMIC_GET_RELAXED(root->song->punching.end) / (double)pc->pfreq, len);
-  
+
+
+  const dynvec_t *markers = SEQUENCER_MARKER_get_state().array;
+  if (markers->num_elements > 0){
+    const dyn_t &mark = markers->elements[markers->num_elements-1];
+    double time = HASH_get_number(mark.hash, ":time");
+    len = R_MAX(2 + time / (double)pc->pfreq, len);
+  }
+    
   return len;
 }
 
