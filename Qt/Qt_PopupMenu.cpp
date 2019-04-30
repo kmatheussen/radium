@@ -409,6 +409,7 @@ namespace{
       if (action->_shortcut == shortcut && action->_is_first==is_first && action->_is_last==is_last){
         g_clickable_actions.remove(text, action);
         action->callbacker = callbacker;
+        action->setEnabled(true); // Might have been set to disabled last time.
         return action;
       }
       
@@ -962,6 +963,7 @@ static QMenu *create_qmenu(
         if (!icon.isNull()) {
 
           action = new ClickableIconAction(icon, text, callbacker);
+          //printf("   1. Setting action %p to -%s-\n", action, text.toUtf8().constData());
           
         } else if (is_checkable) {
 
@@ -973,6 +975,8 @@ static QMenu *create_qmenu(
           }
           
           action = hepp;
+          //printf("   2. Setting action %p to -%s-\n", action, text.toUtf8().constData());
+          
           if (radio_buttons != NULL){
             radio_buttons->addAction(action);
             if (radio_buttons2 != NULL){
@@ -995,6 +999,7 @@ static QMenu *create_qmenu(
             goto finished_parsing;
           
           action = hepp;
+          //printf("   3. Setting action %p to -%s-\n", action, text.toUtf8().constData());
         }
       }
 
@@ -1005,9 +1010,14 @@ static QMenu *create_qmenu(
         curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu? (yes, seems so) (they are probably freed because they are children of the qmenu)
         setdatadur += TIME_get_ms() - t;
       }
-      
-      if (disabled)
-        action->setDisabled(true);
+
+      if (disabled){
+        if (action != NULL){
+          action->setDisabled(true);
+        } else {
+          R_ASSERT_NON_RELEASE(false);
+        }
+      }
 
     }
 

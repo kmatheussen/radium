@@ -1511,7 +1511,7 @@
   (define ty1 (+ y1 ty1-height))    
   (define ty2 (- y2 (* 1.5 (get-fontheight)))) ;; If changing this, also change the y2 value for setClipRect in paintVamps in api_gui.cpp too.
 
-  ;;(c-display "       ___:" x1 y1 x2 y2 ty1 ty2)
+  ;;(c-display "       ___:" x1 y1 x2 y2 ty1 ty2 seqtrack-x1)
 
   (define topbar-y2 (+ y1 topbar-height))
 

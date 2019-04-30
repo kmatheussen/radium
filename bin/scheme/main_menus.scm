@@ -129,7 +129,10 @@
                     (loopB (cdr keybindingsB))
                     (begin
                       (assert (= (length maybe) 1))
-                      (merge-keybindings (replace-merged-keybinding-in-keybindings keybindings keybindingA keybindingB (car maybe)))))))))))
+                      (merge-keybindings (replace-merged-keybinding-in-keybindings keybindings
+                                                                                   keybindingA
+                                                                                   keybindingB
+                                                                                   (car maybe)))))))))))
                                        
 (***assert*** (merge-keybindings '(("Z" "ALT_R") ("Z" "ALT_L")))
               '(("Z" "ALT")))

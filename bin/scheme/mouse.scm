@@ -1545,10 +1545,11 @@
 ;;(<ra> :request-integer "MIDI channel (1-16):" 1 16))
 
 (define (track-configuration-popup-async X Y)
-  (c-display "TRACK " *current-track-num*)
+  ;;(c-display "TRACK " *current-track-num*)
   (define tracknum *current-track-num*)
   (define instrument-id (<ra> :get-instrument-for-track tracknum))
   (define has-instrument (>= instrument-id 0))
+  ;;(c-display "tracknunm/instrument-id/has:" tracknum instrument-id has-instrument)
   (popup-menu 
               "---------FX"
               (list "New FX"
