@@ -187,7 +187,6 @@
 (random-shuffle '(4))
 (random-shuffle '(5 2))
 
-6 2 3 1))
 !!#
 
 ;; uses "chance" to determine the chance of swapping two sequential elements
@@ -1896,6 +1895,7 @@ for .emacs:
               ((get-func n) (car checkboxval))))))
 
 (define (popup-menu-from-args popup-menu-args)
+  ;;(c-display "ARGS:") (pretty-print popup-menu-args)
   (apply ra:popup-menu popup-menu-args)  
   )
         
