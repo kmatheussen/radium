@@ -96,7 +96,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define OnlyLeftShift(a) (a==EVENT_LEFTSHIFT)
 #define OnlyLeftAlt(a) (a==EVENT_LEFTALT)
 
-#define AnyModifierKeyPressed(a) (a!=0 && a!=EVENT_MOUSE_SEQUENCER2 && a!=EVENT_MOUSE_MIXER2 && a!=EVENT_MOUSE_EDITOR2 && a!=EVENT_MOUSE_MIXERSTRIPS2 && a!=EVENT_FOCUS_SEQUENCER2 && a!=EVENT_FOCUS_MIXER2 && a!=EVENT_FOCUS_EDITOR2 && a!=EVENT_FOCUS_MIXERSTRIPS2)
+#define AnyModifierKeyPressed(a) (AnyCtrl(a) || CapsLock(a) || AnyShift(a) || AnyAlt(a) || AnyExtra(a))
 
 
 
