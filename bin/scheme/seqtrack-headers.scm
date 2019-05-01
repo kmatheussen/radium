@@ -80,7 +80,7 @@
   (assert (not *sequencer-window-gui-active*))
   (set! *sequencer-window-gui-active* #t)
   
-  (let* ((sequencer-gui (<gui> :get-sequencer-gui))
+  (let* ((sequencer-gui (<gui> :get-sequencer-frame-gui))
          (has-window *sequencer-window-gui*)
          (window (if has-window
                      *sequencer-window-gui*
@@ -131,7 +131,7 @@
   (assert *sequencer-window-gui-active*)    
   (set! *sequencer-window-gui-active* #f)
     
-  (let ((sequencer-gui (<gui> :get-sequencer-gui))
+  (let ((sequencer-gui (<gui> :get-sequencer-frame-gui))
         (window *sequencer-window-gui*))
     (<gui> :remove-parent sequencer-gui)
     (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-gui 0)

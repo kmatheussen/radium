@@ -254,7 +254,7 @@
 
 (<gui> :minimize-as-much-as-possible *lowertab-gui*)
 (<gui> :minimize-as-much-as-possible (<gui> :get-instrument-gui))
-                                         
+
 (let ((inst (<gui> :get-instrument-gui)))
   (<gui> :set-min-height *lowertab-gui* (<gui> :height inst)))
 
