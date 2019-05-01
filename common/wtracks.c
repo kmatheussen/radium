@@ -739,9 +739,9 @@ void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 
 
 int WTRACK_getx1(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	NInt tracknum
+                 const struct Tracker_Windows *window,
+                 const struct WBlocks *wblock,
+                 NInt tracknum
 ){
 
 	struct WTracks *wtrack;
@@ -782,9 +782,9 @@ int WTRACK_getx1(
 
 
 int WTRACK_getx2(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	NInt tracknum
+                 const struct Tracker_Windows *window,
+                 const struct WBlocks *wblock,
+                 NInt tracknum
 ){
 
 	struct WTracks *wtrack;

@@ -117,14 +117,14 @@ extern LANGSPEC void SwapTrack_CurrPos(
 extern LANGSPEC void AppendWTrack_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock);
 
 extern LANGSPEC int WTRACK_getx1(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
+	const struct Tracker_Windows *window,
+	const struct WBlocks *wblock,
 	NInt track
 );
 
 extern LANGSPEC int WTRACK_getx2(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
+	const struct Tracker_Windows *window,
+	const struct WBlocks *wblock,
 	NInt track
 );
 
