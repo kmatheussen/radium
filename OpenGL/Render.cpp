@@ -513,7 +513,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
 
 
             if (has_keyboard_focus && wtrack==curr_wtrack){
-              float width = 2; // must be same width as in create_curr_track_border
+              float width = 1; // must be same width as in create_curr_track_border
               GE_filledBox(c,x1+width,y1,x2-width,y2);
 
               /*
@@ -579,7 +579,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
 }
 
 static void create_curr_track_border(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  float width = 2; // must be same width as in create_background_realline
+  float width = 1; // must be same width as in create_background_realline
         
   int x1 = WTRACK_getx1(window, wblock, window->curr_track);
   int x2 = WTRACK_getx2(window, wblock, window->curr_track);
@@ -591,7 +591,7 @@ static void create_curr_track_border(const struct Tracker_Windows *window, const
   float y2 = GE_get_height();//get_scrollbar_y2(window, wblock);
   
   GE_Context *c2 = GE_z(GE_get_rgb(KEYBOARD_FOCUS_BORDER_COLOR_NUM),
-                        GE_Conf(Z_BELOW(Z_STATIC), NOMASK_Y, NO_SCISSORS));
+                        GE_Conf(Z_BELOW(Z_STATIC), NOMASK_Y, USE_SCISSORS));
   
   GE_box(c2,x1+width/2,y1+width/2,x2-width/2,y2-width/2,width);
 }
