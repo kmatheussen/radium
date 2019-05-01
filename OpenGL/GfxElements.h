@@ -263,6 +263,21 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
 void GE_text(GE_Context *c, const char *text, int x, int y);
 void GE_text_halfsize(GE_Context *c, const char *text, int x, int y);
 void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);
+
+static inline void GE_box_without_left(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+  GE_line(c, x1, y1, x2, y1, pen_width);
+  GE_line(c, x2, y1, x2, y2, pen_width);
+  GE_line(c, x2, y2, x1, y2, pen_width);
+  //GE_line(c, x1, y2, x1, y1, pen_width);
+}
+
+static inline void GE_box_without_right(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+  GE_line(c, x1, y1, x2, y1, pen_width);
+  //GE_line(c, x2, y1, x2, y2, pen_width);
+  GE_line(c, x2, y2, x1, y2, pen_width);
+  GE_line(c, x1, y2, x1, y1, pen_width);
+}
+
 void GE_filledBox(GE_Context *c, float x1, float y1, float x2, float y2);
 void GE_polyline(GE_Context *c, int num_points, const APoint *points, float pen_width);
 //void GE_polygon(GE_Context *c, int num_points, const APoint *points);

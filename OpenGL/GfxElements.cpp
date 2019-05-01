@@ -78,12 +78,12 @@ void GE_set_height(int height){
   g_height = height;
 }
 
-/*
+
 int GE_get_height(void){
   //return root->song->tracker_windows->wblock->t.y2 - root->song->tracker_windows->wblock->t.y1;
   return g_height;
 }
-*/
+
 
 /*
 int GE_get_tracker_height(){

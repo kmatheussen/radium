@@ -161,6 +161,8 @@ static const ColorConfig g_colorconfig[] = {
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, "pianoroll_note_border", "Pianoroll note border"},
   
   {CURSOR_EDIT_OFF_COLOR_NUM,     "cursor_edit_off",  "Cursor, edit OFF"},
+  {CURSOR_BORDER_COLOR_NUM,     "cursor_border",  "Cursor border current column border"},
+  {CURSOR_CURR_COLUMN_BORDER_COLOR_NUM,     "cursor_curr_column_border",  "Cursor, current column border"},
   {PLAY_CURSOR_COLOR_NUM,     "play_cursor_edit_off",  "Play cursor"},
 
   {MIXER_TEXT_COLOR_NUM, "mixer_text_color", "Mixer text color"},
@@ -265,6 +267,8 @@ static ReplacementColorNum g_replacement_color_num[] = {
 static ReplacementColor g_replacement_color[] = {
   {SCROLLBAR_COLOR_NUM, QColor("#69b8b8b8")},
   {KEYBOARD_FOCUS_BORDER_COLOR_NUM, QColor("#ff9d00")},
+
+  {CURSOR_CURR_COLUMN_BORDER_COLOR_NUM, QColor("red")},
 
   {SLIDER1_COLOR_NUM, QColor(108,65,36)},
   {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},

@@ -444,6 +444,9 @@ static GE_Rgb shade_realline(const GE_Rgb rgb, bool is_current_track, const WSig
 
 static void create_background_realline(const struct Tracker_Windows *window, const struct WBlocks *wblock, const WSignature &wsignature, int realline){
 
+  bool has_keyboard_focus = FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR);
+  struct WTracks *curr_wtrack = window->curr_track >=0 ? wblock->wtrack : NULL;
+  
   const struct WTracks *last_wtrack = (const struct WTracks*)ListLast1(&wblock->wtracks->l);
   const struct LocalZooms *localzoom = wblock->reallines[realline];
   
@@ -507,8 +510,22 @@ static void create_background_realline(const struct Tracker_Windows *window, con
                                  ,
                                  GE_Conf(Z_BACKGROUND | Z_STATIC_X, y1)
                                  );
-          
-            GE_filledBox(c,x1,y1,x2,y2);
+
+
+            if (has_keyboard_focus && wtrack==curr_wtrack){
+              float width = 2; // must be same width as in create_curr_track_border
+              GE_filledBox(c,x1+width,y1,x2-width,y2);
+
+              /*
+              GE_Context *c2 = GE_z(GE_get_rgb(CURR_TRACK_BORDER_COLOR_NUM),
+                                    GE_Conf(Z_BACKGROUND | Z_STATIC_X, y1));
+                
+              GE_box(c2,x1+width/2,y1+width/2,x2-width/2,y2-width/2,width);
+              */
+              
+            } else {
+              GE_filledBox(c,x1,y1,x2,y2);
+            }
           }
           
           wtrack=NextWTrack(wtrack);
@@ -561,11 +578,31 @@ static void create_background_realline(const struct Tracker_Windows *window, con
   }
 }
 
+static void create_curr_track_border(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+  float width = 2; // must be same width as in create_background_realline
+        
+  int x1 = WTRACK_getx1(window, wblock, window->curr_track);
+  int x2 = WTRACK_getx2(window, wblock, window->curr_track);
+
+  x1--;
+  x2 += 3;
+  
+  float y1 = get_scrollbar_y1(window, wblock);
+  float y2 = GE_get_height();//get_scrollbar_y2(window, wblock);
+  
+  GE_Context *c2 = GE_z(GE_get_rgb(KEYBOARD_FOCUS_BORDER_COLOR_NUM),
+                        GE_Conf(Z_BELOW(Z_STATIC), NOMASK_Y, NO_SCISSORS));
+  
+  GE_box(c2,x1+width/2,y1+width/2,x2-width/2,y2-width/2,width);
+}
 
 static void create_background(const struct Tracker_Windows *window, const struct WBlocks *wblock, const WSignature_trss &wsignatures_trss){
   int realline;
   for(realline = 0 ; realline<wblock->num_reallines ; realline++)
     create_background_realline(window, wblock, wsignatures_trss[realline], realline);
+
+  if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR))
+    create_curr_track_border(window, wblock);
 }
 
 
@@ -2694,21 +2731,38 @@ static void create_cursor(const struct Tracker_Windows *window, const struct WBl
 
   {
     const GE_Conf conf(Z_STATIC, y1, NO_SCISSORS);
-    
-    c = GE_z(GE_alpha(Black_rgb(), 0.75), conf);
-    
     float width = 0.8f;
-    GE_box(c,
-           x1+2,y1,
-           x4-3,y2-1,
+
+    {
+      GE_Context *c = GE_z(GE_get_rgb(CURSOR_BORDER_COLOR_NUM), conf);
+      
+      GE_box_without_right(c,
+                           x1+2,y1,
+                           x2+2,y2-1,
+                           width
+                           );
+      GE_box_without_left(c,
+                          x3,y1,
+                          x4-3,y2-1,
+                          width
+                          );
+    }
+
+    {
+      const GE_Conf conf2(Z_ABOVE(Z_STATIC), y1, NO_SCISSORS);
+      GE_Context *c = GE_z(GE_alpha(White_rgb(), 0.05), conf2);
+      GE_filledBox(c, 
+                   x2+2, y1,
+                   x3, y2-1
+                   );
+    }
+
+    GE_box(GE_z(GE_get_rgb(CURSOR_CURR_COLUMN_BORDER_COLOR_NUM), conf),
+           x2+1,y1,
+           x3,y2-1,
            width
            );
-    
-    c = GE_z(GE_alpha(White_rgb(), 0.05), conf);
-    GE_filledBox(c, 
-                 x2, y1,
-                 x3, y2-1
-                 );
+
   }
 
   /*
