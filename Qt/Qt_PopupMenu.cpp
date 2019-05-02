@@ -341,7 +341,8 @@ namespace{
     }
 
     bool my_clicked(void) override{
-      toggled(!isChecked());
+      setChecked(!isChecked());
+      //toggled(!isChecked());
       return true;  // eat mouse press event
     }
 
