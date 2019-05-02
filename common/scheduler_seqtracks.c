@@ -187,7 +187,9 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
       if (prev_disabled!=NULL && disabled!=NULL){
         for(int i=0;i<block->num_tracks;i++){
           if(prev_disabled[i] != disabled[i]){
+#if DO_DEBUG
             printf("   RT_scheduled_seqblock: Calling GFX_ScheduleEditorRedraw\n");
+#endif
             GFX_ScheduleEditorRedraw();
             break;
           }
