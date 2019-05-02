@@ -250,7 +250,7 @@ extern LANGSPEC float SEQTIMELINE_get_x2(void);
 extern LANGSPEC float SEQTIMELINE_get_y1(void);
 extern LANGSPEC float SEQTIMELINE_get_y2(void);
 
-extern LANGSPEC void SEQUENCER_set_looping(bool do_loop);
+extern LANGSPEC void SEQUENCER_set_looping(bool do_loop, int64_t start, int64_t end);
 extern LANGSPEC bool SEQUENCER_is_looping(void);
 extern LANGSPEC void SEQUENCER_set_loop_start(int64_t start);
 extern LANGSPEC int64_t SEQUENCER_get_loop_start(void);

@@ -1573,8 +1573,8 @@ float getSeqtimelineAreaY2(void){
 
 
 // loop
-void setSeqlooping(bool do_loop){
-  SEQUENCER_set_looping(do_loop);
+void setSeqlooping(bool do_loop, int64_t start, int64_t end){
+  SEQUENCER_set_looping(do_loop, start, end);
 }
 
 bool isSeqlooping(void){
