@@ -412,6 +412,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     float *_pos = NULL;
     float *_falloff_pos = NULL;
 
+    int _last_num_channels = 0;
     int _num_channels = 0;
     bool _is_input = false;
     bool _is_output = false;
@@ -686,6 +687,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       int num_channels = R_MIN(peaks.num_channels, get_num_visible_channels());
 
+      if (num_channels != _last_num_channels){
+        widget->update();
+        _last_num_channels = num_channels;
+      }
+      
       for(int ch=0 ; ch < num_channels ; ch++){
         float prev_pos = _pos[ch];
         float prev_falloff_pos = _falloff_pos[ch];
