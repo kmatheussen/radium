@@ -639,6 +639,27 @@
                                      )))
             #f)))
 
+  (define (doubleclick-marker x* curr-marker)
+    (define (bail-out)
+      (request-marker x* curr-marker
+                      (lambda (marker)
+                        (if curr-marker
+                            (area :replace-curr-entry! marker)
+                            (area :add-entry! marker)))))
+      
+    (let loop ((markers (to-list (<ra> :get-all-sequencer-markers))))
+      (if (or (null? markers)
+              (null? (cdr markers))
+              (not curr-marker))
+          (bail-out)
+          (let ((marker1 (car markers)))
+            (if (equal? curr-marker marker1)
+                (let ((marker2 (cadr markers)))
+                  (<ra> :set-seqlooping-start (floor (marker1 :time)))
+                  (<ra> :set-seqlooping-end (floor (marker2 :time)))
+                  (<ra> :set-seqlooping #t))
+                (loop (cdr markers)))))))
+
   (set! area
         (<new> :sequencer-timeline-entry-area gui x1 y1 x2 y2
                :value-type-name "Marker"
@@ -672,13 +693,7 @@
                :curr-entry-color "#ff002244"
                :get-entry-info-string get-entry-info-string
                :do-grid #t
-               :double-click-callback
-               (lambda (x* curr-marker)
-                 (request-marker x* curr-marker
-                                    (lambda (marker)
-                                      (if curr-marker
-                                          (area :replace-curr-entry! marker)
-                                          (area :add-entry! marker)))))
+               :double-click-callback doubleclick-marker
                :is-marker #t
                :can-be-edited-in-sequencer-timing-mode #t
                ))
