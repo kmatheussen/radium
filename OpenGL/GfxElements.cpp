@@ -671,6 +671,7 @@ public:
       //, gradient(NULL)
       //, is_gradient(false)
   {
+    //static int num = 0; printf("num2: %d\n", num++);
     R_ASSERT(sizeof(Color)==sizeof(uint64_t));
   }
 
@@ -679,6 +680,7 @@ public:
       return NULL;
     
     if (_scissor.get()==NULL){
+      //static int num = 0; printf("num: %d\n", num++);
       const SharedVariables *shared_variables = GE_get_shared_variables(painting_data);
       _scissor = new vl::Scissor(shared_variables->wtracks_scissor_x1 * g_opengl_scale_ratio,
                                  0,

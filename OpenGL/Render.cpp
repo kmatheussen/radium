@@ -591,7 +591,7 @@ static void create_curr_track_border(const struct Tracker_Windows *window, const
   float y2 = GE_get_height();//get_scrollbar_y2(window, wblock);
   
   GE_Context *c2 = GE_z(GE_get_rgb(KEYBOARD_FOCUS_BORDER_COLOR_NUM),
-                        GE_Conf(Z_BELOW(Z_STATIC), NOMASK_Y, USE_SCISSORS));
+                        GE_Conf(Z_BELOW(Z_STATIC), NOMASK_Y, window->curr_track >= 0 ? USE_SCISSORS : NO_SCISSORS));
   
   GE_box(c2,x1+width/2,y1+width/2,x2-width/2,y2-width/2,width);
 }
