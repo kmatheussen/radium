@@ -102,7 +102,7 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
   sv->scrollbar_height          = R_MAX(1, get_scrollbar_y2(window,wblock) - get_scrollbar_y1(window,wblock));
   sv->scrollbar_scroller_height = R_MAX(1, get_scrollbar_scroller_height(window,wblock));
 
-  sv->wtracks_scissor_x1 = wblock->t.x1;
+  sv->wtracks_scissor_x1 = wblock->t.x1 - 1; // subtract one to include all of track border.
   sv->wtracks_scissor_x2 = wblock->t.x2;
 
   sv->block          = block;
