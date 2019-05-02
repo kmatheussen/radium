@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
+#include "SoundProducer_proc.h"
 #include "Peaks.hpp"
 #include "SampleReader_proc.h"
 #include "GranResampler.hpp"
@@ -1557,7 +1558,7 @@ public:
 
   void called_very_often(SoundPlugin *plugin){
     R_ASSERT(THREADING_is_main_thread());
-    
+
   again:
     for(auto *sample : _samples){
       if (ATOMIC_GET(sample->_state)==Sample::State::READY_FOR_DELETION){

@@ -2493,7 +2493,7 @@
                                            (define raw-Value (get-pianoroll-key X))
                                            (define Value (if (<ra> :control-pressed)
                                                              raw-Value
-                                                             (round raw-Value)))
+                                                             (floor raw-Value)))
                                            (define Next-Place (get-next-place-from-y *left-button* (<ra> :get-mouse-pointer-y)))
                                            (define noteid (<ra> :add-pianonote
                                                                 Value
