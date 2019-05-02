@@ -617,6 +617,7 @@
 
   area)
 
+
 (define (create-sequencer-marker-area gui x1 y1 x2 y2)
   (define area #f)
 
@@ -646,7 +647,11 @@
                         (if curr-marker
                             (area :replace-curr-entry! marker)
                             (area :add-entry! marker)))))
-      
+
+    ;;(c-display "curr:" (pp curr-marker))
+    ;;(pretty-print (to-list (<ra> :get-all-sequencer-markers)))(newline)
+    ;;(c-display "hepp")
+    
     (let loop ((markers (to-list (<ra> :get-all-sequencer-markers))))
       (if (or (null? markers)
               (null? (cdr markers))
@@ -655,9 +660,7 @@
           (let ((marker1 (car markers)))
             (if (equal? curr-marker marker1)
                 (let ((marker2 (cadr markers)))
-                  (<ra> :set-seqlooping-start (floor (marker1 :time)))
-                  (<ra> :set-seqlooping-end (floor (marker2 :time)))
-                  (<ra> :set-seqlooping #t))
+                  (<ra> :set-seqlooping #t (floor (marker1 :time)) (floor (marker2 :time))))
                 (loop (cdr markers)))))))
 
   (set! area
