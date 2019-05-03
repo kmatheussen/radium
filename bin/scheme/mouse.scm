@@ -180,7 +180,7 @@
 (define (get-gridded-place place)
   (if (eq? 'same-place place)
       place           
-      (* (round (/ place (<ra> :get-grid)))
+      (* (floor (/ place (<ra> :get-grid)))
          (<ra> :get-grid))))
 
 (define (get-maybe-gridded-place place)
