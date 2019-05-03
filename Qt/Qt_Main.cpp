@@ -2783,12 +2783,16 @@ int radium_main(const char *arg){
     return 0;
   printf("ending\n");
 
+  GFX_ShowProgressMessage("Initializing various parts of the program", true);
+  
   SCHEME_init2();
 
   //ProfilerStop();
 
   posix_InitPlayer();
 
+  GFX_ShowProgressMessage("Setting up main window", true);
+  
   QWidget *block_selector = BS_get();
 
   BS_UpdateBlockList();
@@ -2925,11 +2929,15 @@ int radium_main(const char *arg){
                       "QTabWidget::pane { border: 0; background: " + get_qcolor(LOW_BACKGROUND_COLOR_NUM).name(QColor::HexArgb) + "}" +
                       DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"))
                       );
-  
+
+  GFX_ShowProgressMessage("Creating main menus", true);
   evalScheme("(generate-main-menus)");
     
   //getchar();
-  
+
+
+  GFX_ShowProgressMessage("Creating new song", true);
+    
   //QFontDatabase::addApplicationFont("/gammelhd/usr/share/fonts/liberation/LiberationMono-Regular.ttf");
 
   ResetUndo();
