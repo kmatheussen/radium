@@ -160,7 +160,9 @@ namespace{
       
       if (qmenu.data() != NULL)
         qmenu->close();
-      
+
+      MOUSE_CYCLE_schedule_unregister_all(); // Actions are cached, so custom widgets are not deleted when menu is closed.
+
       //if (callback.v==NULL && callback3==NULL)
       //  delete this;
 
@@ -396,7 +398,7 @@ namespace{
     }
   };
 
-  static void release_clickable_action(ClickableAction *action){
+  static void release_clickable_action(ClickableAction *action){    
     action->setParent(NULL);
     action->callbacker = NULL;
 
@@ -413,7 +415,7 @@ namespace{
         action->setEnabled(true); // Might have been set to disabled last time.
         return action;
       }
-      
+    
     return new ClickableAction(text, shortcut, is_first, is_last, callbacker);
   }
 
