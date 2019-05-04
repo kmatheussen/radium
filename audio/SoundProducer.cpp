@@ -2532,6 +2532,7 @@ double SP_get_running_time(const SoundProducer *sp){
   return sp->running_time;
 }
 
+
 bool SP_has_input_links(const SoundProducer *sp){
   return sp->_input_links.size() > 0;
 }
@@ -2562,6 +2563,28 @@ bool SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_pa
 
   
   return false;
+}
+
+int SP_get_max_input_channels_from_audio_input_links(const struct SoundProducer *sp){
+  int ret = 0;
+  for(auto *link : sp->_input_links)
+    ret = R_MAX(ret, link->source->_plugin->type->num_outputs);
+
+  return ret;
+}
+
+int SP_get_max_visible_input_channels_from_audio_input_links(const struct SoundProducer *sp){
+  int ret = 0;
+  
+  for(const auto *link : sp->_input_links){
+    const auto *plugin = link->source->_plugin;
+    if (plugin->num_visible_outputs >= 0)
+      ret = R_MAX(ret, plugin->num_visible_outputs);
+    else
+      ret = R_MAX(ret, plugin->type->num_outputs);
+  }
+  
+  return ret;
 }
 
 bool SP_has_audio_input_link(const SoundProducer *sp){

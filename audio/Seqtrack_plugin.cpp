@@ -114,8 +114,7 @@ namespace radium{
  */
 
 enum{
-  //EFF_SAMPLENUM,
-  //EFF_PITCH,
+  EFF_ENABLE_PIPING,
   EFF_NUM_EFFECTS
 };
 
@@ -1400,6 +1399,9 @@ struct Data {
     
   float _sample_rate;
 
+  Smooth _piping_volume;
+  bool _enable_piping = true;
+  
 #if !defined(RELEASE)
   
 private:
@@ -1477,12 +1479,15 @@ public:
 #endif
 
 
-  Data(float sample_rate)
-    :_sample_rate(sample_rate)
+  Data(float sample_rate, bool enable_piping)
+    : _sample_rate(sample_rate)
+    , _enable_piping(enable_piping)
   {
     R_ASSERT(THREADING_is_main_thread());
+    
+    SMOOTH_init(&_piping_volume, enable_piping ? 1.0 : 0.0, MIXER_get_buffer_size());
   }
-
+  
   ~Data(){
     R_ASSERT(THREADING_is_main_thread());
     
@@ -1496,6 +1501,8 @@ public:
       
       delete sample;
     }
+
+    SMOOTH_release(&_piping_volume);
   }
 
 private:
@@ -1601,6 +1608,9 @@ public:
 
       sample->interior_start_may_have_changed(); // light operation.
     }
+
+    if (is_called_every_ms(1000))
+      set_num_visible_outputs(plugin);
   }
 
   void prepare_to_play(const struct SeqTrack *seqtrack, int64_t seqtime, radium::FutureSignalTrackingSemaphore *gotit){
@@ -1635,6 +1645,10 @@ static void set_num_visible_outputs(SoundPlugin *plugin){
   for(auto *sample : data->_samples)
     new_visible_channels = R_MAX(new_visible_channels, sample->_num_ch);
 
+  new_visible_channels = R_MAX(new_visible_channels,
+                               SP_get_max_visible_input_channels_from_audio_input_links(SP_get_sound_producer(plugin))
+                               );
+    
   if (new_visible_channels > NUM_OUTPUTS)
     new_visible_channels = NUM_OUTPUTS;
 
@@ -2405,17 +2419,24 @@ static void RT_record(Data *data, int num_frames, const float **instrument_input
                               );
 }
 
-static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **__restrict__ inputs, float **__restrict__ outputs){
   //SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
 
+  SMOOTH_called_per_block(&data->_piping_volume);
+  
   if (ATOMIC_GET(data->_recording_status)==IS_RECORDING)
     RT_record(data, num_frames, const_cast<const float**>(inputs));
   
-  // Null out channels
   for(int ch = 0 ; ch < NUM_OUTPUTS ; ch++)
-    memset(outputs[ch], 0, num_frames*sizeof(float));
+    if(ch < NUM_INPUTS)
+      SMOOTH_copy_sound(&data->_piping_volume, inputs[ch], outputs[ch], num_frames);
+    else
+      memset(outputs[ch], 0, num_frames*sizeof(float));    
 
+  if (data->_samples.size()==0)
+    return;
+  
   //if (is_really_playing_song()==false)
   //  return;
 
@@ -2428,17 +2449,17 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   // change outputs in case there are more channels in the audio file than NUM_OUTPUTS
   int extra_num_ch = max_ch - NUM_OUTPUTS;
   float *extra_outputs[R_MAX(1, max_ch)];
-  float extra[R_MAX(1, num_frames * extra_num_ch)];
+  float extra[extra_num_ch > 0 ? num_frames : 1];
 
   if (extra_num_ch > 0){
 
-    memset(extra, 0, num_frames*sizeof(float)*extra_num_ch); // This data is not used for anything, but since we add data to it, we null it out first avoid nominalization/inf/nan/etc. problems.
+    memset(extra, 0, num_frames*sizeof(float)); // This data is not used for anything, but since we add data to it, we null it out first avoid nominalization/inf/nan/etc. problems.
 
     for(int ch=0;ch<NUM_OUTPUTS;ch++)
       extra_outputs[ch] = outputs[ch];
 
     for(int ch=NUM_OUTPUTS;ch<max_ch;ch++){
-      extra_outputs[ch] = &extra[ (ch-NUM_OUTPUTS) * num_frames];
+      extra_outputs[ch] = extra;
     }
 
     outputs = extra_outputs;
@@ -2477,26 +2498,38 @@ static void RT_player_is_stopped(struct SoundPlugin *plugin){
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
-  //Data *data = (Data*)plugin->data;
-  printf("####################################################### Setting sine volume to %f\n",value);
-  //data->volume = value;
+  Data *data = (Data*)plugin->data;
+  //printf("####################################################### Setting sine volume to %f\n",value);
+  
+  bool new_val = value >= 0.5;
+
+  if (new_val != data->_enable_piping){
+    if (g_is_loading)
+      SMOOTH_force_target_value(&data->_piping_volume, new_val ? 1.0 : 0.0);
+    else
+      SMOOTH_set_target_value(&data->_piping_volume, new_val ? 1.0 : 0.0);
+    data->_enable_piping = new_val;
+  }
 }
 
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
-  //Data *data = (Data*)plugin->data;
-  return 0;//data->volume;
+  Data *data = (Data*)plugin->data;
+  return data->_enable_piping ? 1.0 : 0.0;
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
-  //Data *data = (Data*)plugin->data;
-  snprintf(buffer,buffersize-1,"%f",0.1);//data->volume);
+  Data *data = (Data*)plugin->data;
+  snprintf(buffer,buffersize-1,"%s",data->_enable_piping ? "On" : "Off");
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
-  Data *data = new Data(sample_rate);
+  bool enable_piping = !is_loading;  // Compatibility with old songs.
+  
+  Data *data = new Data(sample_rate, enable_piping);
   printf("####################################################### Setting sine volume to 0.5f (create_plugin_data)\n");
 
   //add_sample(L"/home/kjetil/radium/bin/sounds/bbs2.wav");
+  
   return data;
 }
 
@@ -2507,9 +2540,12 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 }
 
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
-  return "Volume";
+  return "Enable piping";
 }
 
+static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
+  return EFFECT_FORMAT_BOOL;
+}
 
 void create_seqtrack_plugin(void){
   SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
@@ -2521,7 +2557,7 @@ void create_seqtrack_plugin(void){
   plugin_type->is_instrument            = false;
   plugin_type->note_handling_is_RT      = false;
   plugin_type->num_effects              = EFF_NUM_EFFECTS,
-  plugin_type->get_effect_format        = NULL;
+  plugin_type->get_effect_format        = get_effect_format,
   plugin_type->get_effect_name          = get_effect_name;
   plugin_type->effect_is_RT             = NULL;
   plugin_type->create_plugin_data       = create_plugin_data;
