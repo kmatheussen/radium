@@ -19,6 +19,8 @@ extern LANGSPEC dyn_t SEQUENCER_SIGNATURE_get_state(void);
 
 #ifdef __cplusplus
 
+#include "seqtrack_proc.h"
+
 // Note that calling either of these two functions might change both tempos and signatures (required to ensure tempos are aligned with beats, and signatures are aligned with tempos)
 // Use SEQUENCER_TIMING_get_state/SEQUENCER_TIMING_create_from_state instead to avoid this if possible.
 void SEQUENCER_TEMPO_create_from_state(const dyn_t &state, double state_samplerate);

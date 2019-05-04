@@ -206,7 +206,7 @@ namespace{
 
     int num_callback_tries = 0;
     
-    void call_callback_and_delete(std::shared_ptr<Callbacker> callbacker){ // don't know why, but we get compilation error if referencing callbacker.
+    void call_callback_and_delete(const std::shared_ptr<Callbacker> &callbacker){
       num_callback_tries++;
       
       if (false==qmenu.isNull()){
