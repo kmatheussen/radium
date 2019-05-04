@@ -586,7 +586,9 @@ struct Sample{
 
   bool _do_looping = false;
 
+#if !defined(RELEASE)
   radium::LockAsserter lockAsserter;
+#endif
   
   Sample(const wchar_t *filename, radium::SampleReader *reader1, radium::SampleReader *reader2, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, const struct SeqTrack *seqtrack, Seqblock_Type type)
     : _filename(wcsdup(filename))
@@ -606,10 +608,10 @@ struct Sample{
     //printf("     =========SAMPLE c/d: Alloced 1: %p\n", _reader_holding_permanent_samples);
     
     R_ASSERT(THREADING_is_main_thread());
-    
-    LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
 #if !defined(RELEASE)
+    LOCKASSERTER_EXCLUSIVE(&lockAsserter);
+    
     QFileInfo info(STRING_get_qstring(_filename));
     if (!info.isAbsolute())
       abort();
@@ -641,9 +643,11 @@ struct Sample{
 
   ~Sample(){
     R_ASSERT(THREADING_is_main_thread());
-    
-    LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
+#if !defined(RELEASE)
+    LOCKASSERTER_EXCLUSIVE(&lockAsserter);
+#endif
+    
     R_ASSERT(ATOMIC_GET(_state)!=State::RUNNING);
     
     R_ASSERT_NON_RELEASE(_curr_reader==NULL);
@@ -716,7 +720,9 @@ struct Sample{
   
     if (_curr_reader!=NULL) {
 
+#if !defined(RELEASE)
       LOCKASSERTER_EXCLUSIVE(&_curr_reader->lockAsserter);
+#endif
       
       //printf("    ==== RT_stop_playing stopping player. Fading out: %d\n", do_fade_out);
 
@@ -830,8 +836,10 @@ struct Sample{
     
     {
       radium::PlayerLock lock; // Must lock even if playing since RT_process (which sometimes pushes to _free_readers) is called when not playing.
-      
+
+#if !defined(RELEASE)
       LOCKASSERTER_EXCLUSIVE(&lockAsserter);
+#endif
       
       num_free_readers = _free_readers.size();
       if (num_free_readers > 0){
@@ -881,8 +889,10 @@ struct Sample{
   */
   
   void RT_process(int num_frames, float **outputs){
+#if !defined(RELEASE)
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
-
+#endif
+    
     //printf("RT_Process. _curr_reader: %p. Volume: %f. is1: %d. is2: %d\n", _curr_reader, _seqblock->curr_gain, is_really_playing_song(), _is_playing);
     
     // Playing Fadeouters
@@ -965,8 +975,9 @@ struct Sample{
     // Playing Current
     //
     if (is_playing && _curr_reader != NULL){ // move the _is_playing test above here instead. Note: Must check 'is_playing' before '_curr_reader' to avoid tsan hit.
+#if !defined(RELEASE)
       LOCKASSERTER_EXCLUSIVE(&_curr_reader->lockAsserter);
-
+#endif
       if (true || ATOMIC_COMPARE_AND_SET_BOOL(_has_updates, true, false)){ // TODO: Fix the _has_updates thing.
         
         double grain_overlap = _grain_overlap;
@@ -1092,14 +1103,22 @@ struct Sample{
 
   // Called after scheduler and before audio processing.
   bool RT_called_per_block(struct SeqTrack *seqtrack, int64_t curr_start_time, int64_t curr_end_time){ // (end_time-start_time is usually RADIUM_BLOCKSIZE.)
-  
-    if (ATOMIC_GET(_state)!=Sample::State::RUNNING || is_really_playing_song()==false){
+
+#if !defined(RELEASE)
+    if (is_really_playing_song()==false){
       //_is_playing = false;
+      R_ASSERT(false);
       return false;
     }
+#endif
 
+    if (ATOMIC_GET(_state)!=Sample::State::RUNNING)
+      return false;
+
+#if !defined(RELEASE)
     // Must place this line after the is_really_playing_song() check. If not, we sometimes (quite rarely) gets lockAsserter hit here and in prepare_to_play.
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
+#endif
     
     //printf("   RT_called_per_block %d -> %d (%d)\n", (int)curr_start_time, (int)curr_end_time, int(curr_end_time-curr_start_time));
     
@@ -1546,11 +1565,16 @@ public:
         break;
     }
     
-    
-    for(auto *sample : _samples){
-      if (sample->RT_called_per_block(seqtrack, start_time, end_time)==true)
-        more_to_play = true;
-      assert_samples(seqtrack);
+    if (is_really_playing_song()){
+      
+      for(auto *sample : _samples){
+        
+        if (sample->RT_called_per_block(seqtrack, start_time, end_time)==true)
+          more_to_play = true;
+        
+        assert_samples(seqtrack);
+      }
+      
     }
 
     return more_to_play;
