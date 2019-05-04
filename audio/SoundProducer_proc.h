@@ -115,9 +115,7 @@ void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers); 
 void SP_remove_all_elinks(const radium::Vector<SoundProducer*> &soundproducers); // Only elinks.
 void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer, int64_t time);
 void SP_RT_called_for_each_soundcard_block2(SoundProducer *producer, int64_t time);
-void SP_RT_clean_output(SoundProducer *producer, int num_frames);
-void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins);
-void SP_RT_set_bus_descendant_type_for_plugin(SoundProducer *producer);
+//void SP_RT_clean_output(SoundProducer *producer, int num_frames);
 int SP_get_bus_num(const SoundProducer *sp);
 //float SP_get_input_peak(SoundProducer *producer, int ch);
 //float SP_get_output_peak(SoundProducer *producer, int ch);
@@ -156,6 +154,9 @@ extern LANGSPEC bool SP_is_plugin_running(const struct SoundPlugin *plugin);
 extern LANGSPEC void SP_print_tree(void);
 
 extern LANGSPEC bool SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(struct SoundProducer *sp);
+
+extern LANGSPEC int SP_get_max_input_channels_from_audio_input_links(const struct SoundProducer *sp);
+extern LANGSPEC int SP_get_max_visible_input_channels_from_audio_input_links(const struct SoundProducer *sp);
 
 extern LANGSPEC bool SP_has_input_links(const struct SoundProducer *sp);
 extern LANGSPEC bool SP_has_audio_input_link(const struct SoundProducer *sp);
