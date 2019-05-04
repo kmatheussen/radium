@@ -2560,20 +2560,21 @@ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtra
                                                    int64_t start_seqtime, int64_t end_seqtime,
                                                    GridType what_to_find,
                                                    int64_t end_blockseqtime, int64_t next_blockstarttime,
-                                                   int64_t last_barseqtime, int64_t last_beatseqtime,
+                                                   const StaticRatio *signature, int64_t last_beatseqtime,
                                                    std::function<bool(int64_t,int,int,int)> callback
                                                    )
 {
-    int64_t bar_seqlength = end_blockseqtime - last_barseqtime;
+  
+    if (signature==NULL || signature->numerator <= 0){
+      R_ASSERT_NON_RELEASE(false);
+      return false;
+    }
+
+    //int64_t bar_seqlength = end_blockseqtime - last_barseqtime;
     int64_t beat_seqlength = end_blockseqtime - last_beatseqtime;
 
     //printf("last_x: %d, width: %d. bar_length: %d. next: %f, end_seqtime: %f\n", (int)last_x, width(),(int)bar_length,((double)end_blockseqtime + bar_length)/44100.0, (double)end_seqtime/44100.0);
 
-
-    if (bar_seqlength <= 0){
-      R_ASSERT_NON_RELEASE(false);
-      return false;
-    }
 
     if (beat_seqlength <= 0){
       fprintf(stderr,"BEAT_seqlength: %d. end_blockseqtime: %d. last_beatseqtime: %d\n", (int)beat_seqlength, (int)end_blockseqtime, (int)last_beatseqtime);
@@ -2583,46 +2584,49 @@ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtra
     }
 
     
+    int64_t beat_seqtime = end_blockseqtime;
+
     int beatnum = 1;
-    int64_t bar_seqtime = end_blockseqtime;
-    
+    barnum++;
 
-    for(;;){
+    bool is_first_iteration=true;
 
-      if (next_blockstarttime != -1 && R_ABS(bar_seqtime-next_blockstarttime) < 20)
+    for(int i = 0 ; ; i++){
+
+      if (i==10000)
+        return false;
+      
+      if (next_blockstarttime != -1 && R_ABS(beat_seqtime-next_blockstarttime) < 20)
         return true;
 
-      if (bar_seqtime >= end_seqtime)
+      if (beat_seqtime >= end_seqtime)
         return false;
 
-      barnum++;
-      beatnum = 1;
-      callback(bar_seqtime, barnum, beatnum, -1);
-
-      const int64_t next_bartime = bar_seqtime + bar_seqlength;
-
-      if (what_to_find==GridType::BEAT_GRID) {
-
+      if (is_first_iteration){
+        barnum++;
+        is_first_iteration = false;
+      }
+        
+      callback(beat_seqtime, barnum, beatnum, -1);
+      
+      if (what_to_find==GridType::BAR_GRID) {
+        
+        barnum++;
+        beat_seqtime += beat_seqlength * signature->numerator;
+        
+      } else {
+            
         beatnum++;
         
-        for(int64_t beat_seqtime = bar_seqtime+beat_seqlength ; beat_seqtime < next_bartime ; beat_seqtime += beat_seqlength){
-
-          if (next_blockstarttime != -1 && R_ABS(beat_seqtime-next_blockstarttime) < 20)
-            return true;
-
-          if (beat_seqtime >= end_seqtime)
-            return false;
-
-          if (callback(beat_seqtime, barnum, beatnum, -1)==false)
-            return false;
-
-          beatnum++;
+        if (beatnum==signature->numerator+1){
+          beatnum = 1;
+          barnum++;
         }
+
+        beat_seqtime += beat_seqlength;
       }
-
+      
       //printf("  after. abstime: %f\n",(double)abstime/44100.0);
-
-      bar_seqtime = next_bartime;
     }
 
     return true;
@@ -2722,17 +2726,17 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
     int64_t end_blockseqtime = seqblock->t.time2;
 
     int64_t next_blockstarttime = next_seqblock==NULL ? -1 : next_seqblock->t.time;
-      
+
     if (what_to_find==GridType::BEAT_GRID || what_to_find==GridType::BAR_GRID){
       
       const struct Beats *beat = block->beats;
           
       int64_t last_barseqtime = -1;
       int64_t last_beatseqtime = -1;
-      //Ratio *last_signature = NULL;
+      const StaticRatio *last_signature = NULL;
       
       while(beat!=NULL){
-        //last_signature = &beat->valid_signature;
+        last_signature = &beat->valid_signature;
 
         int64_t blocktime = Place2STime(block, &beat->l.p);
         R_ASSERT_NON_RELEASE(blocktime>=0);
@@ -2763,7 +2767,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
                                           start_seqtime, end_seqtime,
                                           what_to_find,
                                           end_blockseqtime, next_blockstarttime,
-                                          last_barseqtime, last_beatseqtime,
+                                          last_signature, last_beatseqtime,
                                           callback)
           == false)
         return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
