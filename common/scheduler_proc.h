@@ -148,9 +148,14 @@ extern LANGSPEC double RT_LPB_get_beat_position(const struct SeqTrack *seqtrack)
 extern LANGSPEC void RT_LPB_set_beat_position(struct SeqTrack *seqtrack, int audioblocksize);
 
 // scheduler_Beats_proc.h
-extern void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
-                                       const struct SeqBlock *seqblock,
-                                       const Place start_place);
+extern LANGSPEC void RT_schedule_beats_between_seqblocks(struct SeqTrack *seqtrack,
+                                                         int64_t now_time,
+                                                         const struct SeqBlock *seqblock1,
+                                                         const struct SeqBlock *seqblock2);
+extern LANGSPEC void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
+                                                const struct SeqBlock *seqblock,
+                                                const struct SeqBlock *next_seqblock,
+                                                const Place start_place);
 extern LANGSPEC void RT_Beats_set_new_last_bar_start_value(struct SeqTrack *seqtrack, double beat_position, bool just_started_playing);
   
 // scheduler_Signature_proc.h

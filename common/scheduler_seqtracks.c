@@ -12,7 +12,7 @@
 
 #define DO_DEBUG 0
 
-#define G_NUM_ARGS 5
+#define G_NUM_ARGS 6
 
 static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);
 
@@ -24,6 +24,7 @@ static int64_t RT_scheduled_end_of_seqblock(struct SeqTrack *seqtrack, int64_t s
 
 static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
                                      struct SeqBlock *seqblock,
+                                     const struct SeqBlock *next_seqblock,
                                      int64_t seqtime,
                                      int64_t block_start_time,
                                      const Place *place_pointer,
@@ -64,7 +65,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     RT_schedule_Signature_newblock(seqtrack, seqblock, place);
 
     // Beats
-    RT_schedule_Beats_newblock(seqtrack, seqblock, place);
+    RT_schedule_Beats_newblock(seqtrack, seqblock, next_seqblock, place);
 
     // LPB
     RT_schedule_LPBs_newblock(seqtrack, seqblock, place);
@@ -135,6 +136,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
       args[2].const_pointer = &first_place;
       args[3].int32_num     = playtype;
       args[4].const_pointer = seqblock;
+      args[5].const_pointer = NULL;
       
 #if DO_DEBUG
       printf("  2. Scheduling RT_scheduled_seqblock at %f. Curr_time: %f\n",next_time/MIXER_get_sample_rate(), seqtime/MIXER_get_sample_rate());
@@ -160,6 +162,7 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
   const Place           *place            = args[2].const_pointer;
   int                    playtype         = args[3].int32_num;
   const struct SeqBlock *prev_seqblock    = args[4].const_pointer;
+  const struct SeqBlock *next_seqblock    = args[5].const_pointer;
 
   R_ASSERT_RETURN_IF_FALSE2(seqblock->block!=NULL, DONT_RESCHEDULE);
   
@@ -198,7 +201,7 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
     }
   }
   
-  RT_schedule_new_seqblock(seqtrack, seqblock, seqtime, block_start_time, place, playtype);
+  RT_schedule_new_seqblock(seqtrack, seqblock, next_seqblock, seqtime, block_start_time, place, playtype);
 
   return DONT_RESCHEDULE;
 }
@@ -250,18 +253,22 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
 
       SCHEDULER_set_seqtrack_timing(seqtrack, seq_start_time, seq_start_time);
       RT_LPB_call_when_start_playing(seqtrack);
-      
+
       // Schedule the first seqblock in each seqtrack.
       VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
 
         if (seqblock->block == NULL)
           continue;
-        
+
         int64_t seqblock_start_time = seqblock->t.time;
         int64_t seqblock_end_time   = SEQBLOCK_get_seq_endtime(seqblock);
-        
+
+        const struct SeqBlock *next_seqblock = NULL;
+        if(iterator666 < seqtrack->seqblocks.num_elements-1)
+          next_seqblock = seqtrack->seqblocks.elements[iterator666 + 1];
+
         if (seq_start_time < seqblock_end_time){
-          
+
           union SuperType args[G_NUM_ARGS];
           
           args[0].pointer       = seqblock;
@@ -269,6 +276,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
           args[2].const_pointer = startdata->seqblock==seqblock ? &static_place : NULL;
           args[3].int_num       = PLAYSONG;
           args[4].const_pointer = NULL;
+          args[5].const_pointer = next_seqblock;
           
           int64_t seqtime = R_MAX(seqblock_start_time, seq_start_time);
 #if DO_DEBUG
@@ -278,6 +286,11 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
           SCHEDULER_add_event(seqtrack, seqtime, RT_scheduled_seqblock, &args[0], G_NUM_ARGS, SCHEDULER_INIT_BLOCK_PRIORITY);
           
           break;
+          
+        } else if (next_seqblock==NULL || seq_start_time < next_seqblock->t.time) {
+
+          RT_schedule_beats_between_seqblocks(seqtrack, seq_start_time, seqblock, next_seqblock);
+          
         }
         
       }END_VECTOR_FOR_EACH;
@@ -335,7 +348,8 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
     args[2].const_pointer = &static_place;
     args[3].int32_num = PLAYBLOCK;
     args[4].const_pointer = &g_block_seqtrack_seqblock;
- 
+    args[5].const_pointer = NULL;
+    
 #if DO_DEBUG
     printf("  Scheduling RT_scheduled_seqblock at %d. seqtrack->start_time: %d\n",(int)seq_start_time, (int)seqtrack->start_time);
 #endif

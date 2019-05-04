@@ -999,8 +999,8 @@ scheduler_reallines.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_reallines.c $(CD)sc
 scheduler_LPB.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_LPB.c $(CD)scheduler_proc.h
 	$(CC) $(CD)scheduler_LPB.c $(OPT)
 
-scheduler_Beats.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_Beats.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler_Beats.c $(OPT)
+scheduler_Beats.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_Beats.cpp $(CD)scheduler_proc.h
+	$(CCC) $(CD)scheduler_Beats.cpp $(CPPOPT)
 
 scheduler_Signature.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_Signature.c $(CD)scheduler_proc.h
 	$(CC) $(CD)scheduler_Signature.c $(OPT)
