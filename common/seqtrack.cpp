@@ -2840,7 +2840,7 @@ int64_t SEQUENCER_get_loop_start(void){
 }
 
 void SEQUENCER_set_loop_end(int64_t end){
-  ATOMIC_SET(root->song->looping.end, R_MAX(ATOMIC_GET(root->song->looping.end)+1, end));
+  ATOMIC_SET(root->song->looping.end, R_MAX(ATOMIC_GET(root->song->looping.start)+1, end));
   //printf("   Set end. %d %d %d\n",(int)(root->song->looping.start+1), (int)end, (int)(SONG_get_length()*MIXER_get_sample_rate()));
   SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
 }
