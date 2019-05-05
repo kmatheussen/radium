@@ -95,6 +95,11 @@
 
   (if (not wide-mode-instrument-id)
       (set! wide-mode-instrument-id instrument-id))
+
+  (display (and strips-config (strips-config :parent-gui)))
+  (newline)
+  (define is-standalone (or (not strips-config) (strips-config :is-standalone)))
+  (c-display "num-instruments:" is-standalone strips-config)
   
   (list
    (and effect-name
@@ -126,28 +131,43 @@
                     (set! (strips-config :is-enabled instrument-id) #f)))))
        '())
 
-   "---------Mixer"
-   
-   (list "Make all strips wide" (lambda ()
-                                  (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #t)) (get-all-audio-instruments))
-                                  (<ra> :remake-mixer-strips)))
-   (list "Make no strips wide" (lambda ()
-                                 (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #f)) (get-all-audio-instruments))
-                                 (<ra> :remake-mixer-strips)))
+   (and (not is-standalone)
+        (list
+         "---------Mixer"
+         (list "Make all strips wide" (lambda ()
+                                        (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #t)) (get-all-audio-instruments))
+                                        (<ra> :remake-mixer-strips)))
+         (list "Make no strips wide" (lambda ()
+                                       (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #f)) (get-all-audio-instruments))
+                                       (<ra> :remake-mixer-strips)))
 
-   (and strips-config
-        "----------")
+         "----------"
+
+         (list
+          :radio-buttons
+          (map (lambda (num-rows)
+                 (list (<-> num-rows " row" (if (> num-rows 1) "s" ""))
+                       :check (= (strips-config :num-rows) num-rows)
+                       (lambda (ison)
+                         (if ison
+                             (set! (strips-config :num-rows) num-rows)))))
+               (map 1+ (iota 4))))
+         ))
 
    (and strips-config
         (list
          :radio-buttons
-         (map (lambda (num-rows)
-                (list (<-> num-rows " row" (if (> num-rows 1) "s" ""))
-                      :check (= (strips-config :num-rows) num-rows)
-                      (lambda (ison)
-                        (if ison
-                            (set! (strips-config :num-rows) num-rows)))))
-              (map 1+ (iota 4)))))
+         (let ((makeit (lambda (name vert-ratio)
+                         (list name
+                               :check (= (strips-config :vert-ratio) vert-ratio)
+                               (lambda (ison)
+                                 (if ison
+                                     (set! (strips-config :vert-ratio) vert-ratio)))))))
+           (list
+            "--------Height ratio"
+            (makeit "1/3" 1/3)
+            (makeit "1" 1)
+            (makeit "3/1" 3)))))
    
    ;;(if strips-config
    ;;    (list "Set number of rows"
@@ -162,10 +182,11 @@
    ;;    '())
 
    "----------"
-   
-   (list "Configure mixer strips on/off" :enabled strips-config
+
+   (and (not is-standalone)
+        (list "Configure mixer strips on/off" :enabled strips-config
               (lambda ()
-                (strips-config :show-config-gui)))
+                (strips-config :show-config-gui))))
 
    "Set current instrument" (lambda ()
                               (popup-menu (map (lambda (instrument-id)
@@ -238,7 +259,8 @@
 (define (get-mixer-strip-name instrument-id strips-config)
   (let ((name (<ra> :get-instrument-name instrument-id)))
     (if (or (not strips-config)
-            (strips-config :is-unique instrument-id))
+            (strips-config :is-unique instrument-id)
+            (strips-config :is-standalone instrument-id))            
         name
         (<-> "[" name "]"))))
 
@@ -396,7 +418,8 @@
 
 !!#
   
-(define (create-strips-config initial-instruments num-rows remake parentgui)
+(delafina (create-strips-config :initial-instruments :num-rows :vert-ratio :remake :parentgui :is-standalone #f)
+  (assert vert-ratio)
   (define-struct conf
     :instrument-id
     :is-bus
@@ -431,8 +454,10 @@
                                                :row-num 0
                                                :is-enabled is-enabled
                                                :is-unique is-unique))))
-              (get-all-audio-instruments))
-
+              (if is-standalone
+                  initial-instruments
+                  (get-all-audio-instruments)))
+    
     (if first-time
         (set! first-time #f))
     )
@@ -510,25 +535,29 @@
                   ((:is-enabled) (confs (car rest) :is-enabled))
                   ((:is-unique) (confs (car rest) :is-unique))
                   ((:scan-instruments!) (scan-instruments!))
+                  ((:is-standalone) is-standalone)
                   ((:reset!) (begin
                                (reset!)
                                (remake :non-are-valid)))
                   ((:show-config-gui) (show-config-gui))
                   ((:recreate-config-gui-content) (recreate-config-gui-content))
                   ((:num-rows) num-rows)
+                  ((:vert-ratio) vert-ratio)
                   ((:get) (hash-table :num-rows num-rows
-                                       :instrument-settings (keep identity
-                                                                  (map (lambda (entry)
-                                                                         (define instrument-id (car entry))
-                                                                         (if (<ra> :instrument-is-open-and-audio instrument-id) ;; When saving song, conf can include deleted instruments.
-                                                                             (let ((conf (cdr entry)))
-                                                                               (hash-table :instrument-id instrument-id
-                                                                                            :is-enabled (conf :is-enabled)))
-                                                                             #f))
-                                                                       confs))))
+                                      :vert-ratio vert-ratio
+                                      :instrument-settings (keep identity
+                                                                 (map (lambda (entry)
+                                                                        (define instrument-id (car entry))
+                                                                        (if (<ra> :instrument-is-open-and-audio instrument-id) ;; When saving song, conf can include deleted instruments.
+                                                                            (let ((conf (cdr entry)))
+                                                                              (hash-table :instrument-id instrument-id
+                                                                                          :is-enabled (conf :is-enabled)))
+                                                                            #f))
+                                                                      confs))))
                   ((:set!) (let ((settings (car rest)))
                              (reset!)
                              (set! num-rows (settings :num-rows))
+                             (set! vert-ratio (or (settings :vert-ratio) 1))
                              (for-each (lambda (conf)
                                          (define instrument-id (conf :instrument-id))
                                          (if (<ra> :instrument-is-open-and-audio instrument-id) ;; When loading older songs, settings can include id of deleted instruments
@@ -543,6 +572,10 @@
                       ((:num-rows) (begin
                                      (set! num-rows first-arg)
                                      (remake :all-are-valid)))
+                      ((:vert-ratio) (begin
+                                       (assert first-arg)
+                                       (set! vert-ratio first-arg)
+                                       (remake :non-are-valid)))
                       (else
                        (error (<-> "Unknown keyword3 " keyword))))                      
                     (let ((instrument-id first-arg)
@@ -2484,6 +2517,14 @@
   ;;(if (not is-standalone-mixer-strip)
   ;;    (create-current-instrument-border gui instrument-id))
 
+  ;;(c-display "VERT_RATIO:" (and strips-config (strips-config :vert-ratio)))
+  (if strips-config
+      (let ((vert-ratio (strips-config :vert-ratio)))
+        (cond ((> vert-ratio 1)
+               (<gui> :set-layout-stretch gui label (floor vert-ratio)))
+              ((< vert-ratio 1)
+               (<gui> :set-layout-stretch gui volume-gui (floor (/ 1 vert-ratio)))))))
+  
   (add-safe-paint-callback gui
          (lambda (width height)
            ;;(set-fixed-height volume-gui (floor (/ height 2)))
@@ -2610,7 +2651,9 @@
       (<gui> :add gui (create-mixer-strip-pan instrument-id strips-config system-background-color background-color pan-height)))
   
   (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color mutesolo-height #f #t))
-  (<gui> :add gui (create-mixer-strip-volume instrument-id meter-instrument-id strips-config background-color #f) 1)
+
+  (define volume (create-mixer-strip-volume instrument-id meter-instrument-id strips-config background-color #f))
+  (<gui> :add gui volume 1)
 
   (when (<ra> :mixer-strip-comments-visible)
     (define comment (create-mixer-strip-comment instrument-id strips-config comment-height))
@@ -2619,6 +2662,13 @@
   ;;(if (not is-standalone-mixer-strip)
   ;;    (create-current-instrument-border gui instrument-id))
 
+  (if strips-config
+      (let ((vert-ratio (strips-config :vert-ratio)))
+        (cond ((> vert-ratio 1)
+               (<gui> :set-layout-stretch gui hepp (floor vert-ratio)))
+              ((< vert-ratio 1)
+               (<gui> :set-layout-stretch gui volume (floor (/ 1 vert-ratio)))))))
+  
   (add-safe-paint-callback gui
                            (lambda (width height)
                              (<gui> :filled-box gui background-color 0 0 width height 0 0)
@@ -2667,6 +2717,8 @@
                           (get-all-instruments-used-in-mixer-strip instrument-id))))))))
 
 
+(define *standalone-mixer-strip-ratio* 1)
+
 (define (create-standalone-mixer-strip instrument-id width height)
   ;;(define parent (<gui> :horizontal-layout))
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
@@ -2686,10 +2738,18 @@
 
   (define org-width width)
 
+  (define strips-config (create-strips-config (list instrument-id) 1 *standalone-mixer-strip-ratio*
+                                              (lambda x
+                                                (remake (<gui> :width parent) (<gui> :height parent)))
+                                              parent
+                                              #t))
+  (strips-config :scan-instruments!)
+  
   (define is-calling-remake #f)
   
   (define (remake width height)
     (when (not is-calling-remake)
+      (set! *standalone-mixer-strip-ratio* (strips-config :vert-ratio))
       (set! is-calling-remake #t)
       (define instrument-is-open (<ra> :instrument-is-open-and-audio instrument-id))
       
@@ -2700,7 +2760,7 @@
            (set! das-mixer-strip-gui #f))
          
          (when instrument-is-open                
-           (set! das-mixer-strip-gui (create-mixer-strip instrument-id :is-standalone-mixer-strip #t))
+           (set! das-mixer-strip-gui (create-mixer-strip instrument-id strips-config :is-standalone-mixer-strip #t))
            (if *current-mixer-strip-is-wide*
                (set! width org-width)
                (set! width (<gui> :width das-mixer-strip-gui)))
@@ -2751,6 +2811,9 @@
 
 
 #!
+(let ((gui (create-standalone-mixer-strip (get-instrument-from-name "Main Pipe") 100 300)))
+  (<gui> :show gui))
+  
 (begin
   (define pos-x (or (and (defined? 'mixer-strips) (<gui> :get-x mixer-strips))
                     400))
@@ -2886,6 +2949,7 @@
 (define *mixer-strip-gui-num* 1)
 
 (delafina (create-mixer-strips-gui :num-rows 1
+                                   :vert-ratio 1
                                    :instrument-ids #f
                                    :is-full-screen #f
                                    :pos #f)
@@ -2988,7 +3052,7 @@
            )))
 
 
-  (define strips-config (create-strips-config instrument-ids num-rows remake gui))
+  (define strips-config (create-strips-config instrument-ids num-rows vert-ratio remake gui))
 
   (add-safe-mouse-callback gui
          (lambda (button state x y)
@@ -3120,6 +3184,24 @@
 !!#
 
 
+(define (mixer-strips-get-vert-ratio mixer-strips-gui)
+  (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
+    ;;(if object
+    ;;    (c-display "obj:" (object :strips-config :vert-ratio)))
+    (if object
+        (object :strips-config :vert-ratio)
+        #f)))
+
+(define (mixer-strips-change-vert-ratio mixer-strips-gui vert-ratio)
+  (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
+    (if object
+        (set! (object :strips-config :vert-ratio) vert-ratio))))
+
+#!!
+(mixer-strips-change-num-rows ((car *mixer-strips-objects*) :gui) 6)
+!!#
+
+
 (define (mixer-strips-reset-configuration! mixer-strips-gui)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
     (if object
@@ -3157,14 +3239,14 @@
     (if (mixer-strips :is-full-screen)
         (begin
           (define pos (mixer-strips :pos))
-          (create-mixer-strips-gui 1 #f #f pos))
+          (create-mixer-strips-gui 1 1 #f #f pos))
         (begin
           (define x (<gui> :get-x gui))
           (define y (<gui> :get-y gui))
           (define width (<gui> :width gui))
           (define height (<gui> :height gui))
           (define pos (list x y width height))
-          (create-mixer-strips-gui 1 #f #t pos))))
+          (create-mixer-strips-gui 1 1 #f #t pos))))
 
   (define (toggle mixer-strips)
     ;;(c-display "         About to toggle" (mixer-strips :gui) ". is fullscreen?" (<gui> :is-full-screen (mixer-strips :gui)))

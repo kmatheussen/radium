@@ -105,7 +105,22 @@ static inline StaticRatio make_static_ratio_from_ratio(const Ratio ratio){
 static inline Ratio make_ratio_from_static_ratio(const StaticRatio ratio){
   return make_ratio(ratio.numerator, ratio.denominator);
 }
-                             
+
+// intratio is a ratio stored in a single integer. Only works if either numerator or denominator is 1.
+static inline int RATIO_get_intratio(const Ratio ratio){
+  if(ratio.num==1)
+    return -ratio.den;
+  else
+    return ratio.num;
+}
+
+static inline Ratio RATIO_create_from_intratio(int intratio){
+  if(intratio < 0)
+    return make_ratio(1, -intratio);
+  else
+    return make_ratio(intratio, 1);
+}
+
 /*
 // Using RATIO_equal below instead. We probably don't need to worry about integer overflows.
 static inline bool ratio_equal(const Ratio a, const Ratio b){

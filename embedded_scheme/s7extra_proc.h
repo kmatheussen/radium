@@ -184,6 +184,12 @@ extern "C" {
   int64_t s7extra_callFunc_int_int_dyn(const func_t *func, int64_t arg1, const dyn_t arg2);
   int64_t s7extra_callFunc2_int_int_dyn(const char *funcname, int64_t arg1, const dyn_t arg2);
 
+  int64_t s7extra_callFunc_int_int_int_dyn(const func_t *func, int64_t arg1, int64_t arg2, const dyn_t arg3);
+  int64_t s7extra_callFunc2_int_int_int_dyn(const char *funcname, int64_t arg1, int64_t arg2, const dyn_t arg3);
+
+  int64_t s7extra_callFunc_int_int_dyn_dyn(const func_t *func, int64_t arg1, const dyn_t arg2, const dyn_t arg3);
+  int64_t s7extra_callFunc2_int_int_dyn_dyn(const char *funcname, int64_t arg1, const dyn_t arg2, const dyn_t arg3);
+
   int64_t s7extra_callFunc_int_charpointer_charpointer(const func_t *func, const char *arg1, const char *arg2);
   int64_t s7extra_callFunc2_int_charpointer_charpointer(const char *funcname, const char *arg1, const char *arg2);
 
