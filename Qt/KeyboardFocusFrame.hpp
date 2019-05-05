@@ -66,10 +66,12 @@ struct KeyboardFocusFrame : public QFrame{
     maybe_update_width();
   }
 
+  /*
   void updateAll(void) {
     for(auto *focus : g_keyboard_focus_frames)
       focus->update();
   }
+  */
   
   void set_focus(bool has_focus){
     if (has_focus != _has_focus){
@@ -80,6 +82,8 @@ struct KeyboardFocusFrame : public QFrame{
           if (focus->_has_focus){
             focus->_has_focus = false;
             focus->update();
+            if(focus->_type==KeyboardFocusFrameType::EDITOR)
+              root->song->tracker_windows->must_redraw_editor = true;
           }
         }
     }
@@ -95,7 +99,7 @@ struct KeyboardFocusFrame : public QFrame{
       QTimer::singleShot(30,[this]
                             {
                               _last_fontheight = root->song->tracker_windows->systemfontheight;
-                              setLineWidth(R_MAX(1, _last_fontheight  / 7.8));
+                              setLineWidth(R_MAX(1, _last_fontheight  / (_type==KeyboardFocusFrameType::EDITOR ? 7.8 : 4.8)));
                             }
         );
     }
