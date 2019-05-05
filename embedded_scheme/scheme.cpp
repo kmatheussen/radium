@@ -1490,6 +1490,56 @@ int64_t s7extra_callFunc2_int_int_dyn(const char *funcname, int64_t arg1, const 
   return s7extra_callFunc_int_int_dyn((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
 }
 
+int64_t s7extra_callFunc_int_int_int_dyn(const func_t *func, int64_t arg1, int64_t arg2, const dyn_t arg3){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list_nl(s7,
+                                         4,
+                                         (s7_pointer)func,
+                                         Protect(s7_make_integer(s7, arg1)).v,
+                                         Protect(s7_make_integer(s7, arg2)).v,
+                                         Protect(s7extra_make_dyn(s7, arg3)).v,
+                                         NULL
+                                         )
+                              );
+  if(!s7_is_integer(ret)){
+    handleError("Callback did not return an integer");
+    return -1;
+  }else{
+    return s7_integer(ret);
+  }
+}
+
+int64_t s7extra_callFunc2_int_int_int_dyn(const char *funcname, int64_t arg1, int64_t arg2, const dyn_t arg3){
+  return s7extra_callFunc_int_int_int_dyn((const func_t*)find_scheme_value(s7, funcname), arg1, arg2, arg3);
+}
+
+int64_t s7extra_callFunc_int_int_dyn_dyn(const func_t *func, int64_t arg1, const dyn_t arg2, const dyn_t arg3){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list_nl(s7,
+                                         4,
+                                         (s7_pointer)func,
+                                         Protect(s7_make_integer(s7, arg1)).v,
+                                         Protect(s7extra_make_dyn(s7, arg2)).v,
+                                         Protect(s7extra_make_dyn(s7, arg3)).v,
+                                         NULL
+                                         )
+                              );
+  if(!s7_is_integer(ret)){
+    handleError("Callback did not return an integer");
+    return -1;
+  }else{
+    return s7_integer(ret);
+  }
+}
+
+int64_t s7extra_callFunc2_int_int_dyn_dyn(const char *funcname, int64_t arg1, const dyn_t arg2, const dyn_t arg3){
+  return s7extra_callFunc_int_int_dyn_dyn((const func_t*)find_scheme_value(s7, funcname), arg1, arg2, arg3);
+}
+
 int64_t s7extra_callFunc_int_charpointer_charpointer(const func_t *func, const char *arg1, const char *arg2){
   ScopedEvalTracker eval_tracker;
   

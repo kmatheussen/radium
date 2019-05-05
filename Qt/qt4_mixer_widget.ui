@@ -188,11 +188,11 @@
          <enum>Qt::Horizontal</enum>
         </property>
         <property name="sizeType">
-         <enum>QSizePolicy::Maximum</enum>
+         <enum>QSizePolicy::Expanding</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>20</width>
+          <width>40</width>
           <height>20</height>
          </size>
         </property>
@@ -245,46 +245,113 @@
        </spacer>
       </item>
       <item>
-       <widget class="QCheckBox" name="rows1">
-        <property name="text">
-         <string>1R</string>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">buttonGroup_2</string>
-        </attribute>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="rows2">
-        <property name="text">
-         <string>2R</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">buttonGroup_2</string>
-        </attribute>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="rows3">
-        <property name="text">
-         <string>3R</string>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">buttonGroup_2</string>
-        </attribute>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="rows4">
-        <property name="text">
-         <string>4R</string>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">buttonGroup_2</string>
-        </attribute>
+       <widget class="QWidget" name="strips_layout_widget" native="true">
+        <layout class="QHBoxLayout" name="strips_layout">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QCheckBox" name="ratio13">
+           <property name="text">
+            <string>1:3</string>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">buttonGroup_4</string>
+           </attribute>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="ratio1">
+           <property name="text">
+            <string>1:1</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">buttonGroup_4</string>
+           </attribute>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="ratio31">
+           <property name="text">
+            <string>3:1</string>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">buttonGroup_4</string>
+           </attribute>
+          </widget>
+         </item>
+         <item>
+          <spacer name="strips_spacer1">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="rows1">
+           <property name="text">
+            <string>1R</string>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">buttonGroup_5</string>
+           </attribute>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="rows2">
+           <property name="text">
+            <string>2R</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">buttonGroup_5</string>
+           </attribute>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="rows3">
+           <property name="text">
+            <string>3R</string>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">buttonGroup_5</string>
+           </attribute>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="rows4">
+           <property name="text">
+            <string>4R</string>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">buttonGroup_5</string>
+           </attribute>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
       <item>
@@ -345,6 +412,19 @@
        </widget>
       </item>
       <item>
+       <spacer name="horizontalSpacer_4">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <widget class="QToolButton" name="help_button">
         <property name="text">
          <string>Help</string>
@@ -386,5 +466,8 @@
  <buttongroups>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup_4"/>
+  <buttongroup name="buttonGroup_5"/>
  </buttongroups>
 </ui>

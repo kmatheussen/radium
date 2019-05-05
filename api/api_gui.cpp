@@ -6692,7 +6692,7 @@ void gui_addLayoutSpace(int64_t guinum, int width, int height, bool grow_horizon
 
   QLayout *layout = gui->getLayout();
   if (layout==NULL){
-    handleError("Gui #%d doesn't have a layout", (int)guinum);
+    handleError("gui_addLayoutSpace: Gui #%d doesn't have a layout", (int)guinum);
     return;
   }
 
@@ -6700,6 +6700,32 @@ void gui_addLayoutSpace(int64_t guinum, int width, int height, bool grow_horizon
                                   get_grow_policy_from_bool(grow_horizontally),get_grow_policy_from_bool(grow_vertically)
                                   )
                   );
+}
+
+void gui_setLayoutStretch(int64_t guinum, int64_t childguinum, int stretch){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  QLayout *layout = gui->getLayout();
+  if (layout==NULL){
+    handleError("gui_setLayoutStretch: Gui #%d doesn't have a layout", (int)guinum);
+    return;
+  }
+
+  QBoxLayout *box_layout = dynamic_cast<QBoxLayout*>(layout);
+  if (box_layout==NULL){
+    handleError("gui_setLayoutStretch: Gui #%d's layout is not a box layout", (int)guinum);
+    return;
+  }
+
+  Gui *child = get_gui(childguinum);
+  if (child==NULL)
+    return;
+
+  if (box_layout->setStretchFactor(child->_widget, stretch)==false){
+    handleError("gui_setLayoutStretch: #%d is not a direct child of #%d", (int)childguinum, (int)guinum);
+  }
 }
 
 void gui_setSizePolicy(int64_t guinum, bool grow_horizontally, bool grow_vertically){
@@ -6992,11 +7018,14 @@ void informAboutGuiBeingAMixerStrips(int64_t guinum){
   g_mixerstrip_guinums.push_back(guinum);
 }
 
-int64_t gui_createMixerStrips(int num_rows, dyn_t instrument_ids){
+int64_t gui_createMixerStrips(int num_rows, dyn_t vert_ratio, dyn_t instrument_ids){
   if (instrument_ids.type==UNINITIALIZED_TYPE)
     instrument_ids = DYN_create_bool(false);
+
+  if (vert_ratio.type==UNINITIALIZED_TYPE)
+    vert_ratio = DYN_create_ratio(make_ratio(1,1));
   
-  return S7CALL2(int_int_dyn, "create-mixer-strips-gui", num_rows, instrument_ids);
+  return S7CALL2(int_int_dyn_dyn, "create-mixer-strips-gui", num_rows, vert_ratio, instrument_ids);
 }
 
 int gui_getNumRowsInMixerStrips(int64_t guinum){
@@ -7009,6 +7038,14 @@ void gui_setNumRowsInMixerStrips(int64_t guinum, int num_rows){
     return;
   }
   S7CALL2(void_int_int, "mixer-strips-change-num-rows", guinum, num_rows);
+}
+
+dyn_t gui_getVertRatioInMixerStrips(int64_t guinum){
+  return S7CALL2(dyn_int, "mixer-strips-get-vert-ratio", guinum);
+}
+
+void gui_setVertRatioInMixerStrips(int64_t guinum, dyn_t vert_ratio){
+  S7CALL2(void_int_dyn, "mixer-strips-change-vert-ratio", guinum, vert_ratio);
 }
 
 // Called after loading.
@@ -7026,7 +7063,7 @@ void gui_setMixerStripsConfiguration(int64_t guinum, dyn_t configuration){
 }
 
 int64_t showMixerStrips2(int num_rows, dyn_t instrument_ids){
-  int64_t gui = gui_createMixerStrips(num_rows, instrument_ids);
+  int64_t gui = gui_createMixerStrips(num_rows, DYN_create_ratio(make_ratio(1,1)), instrument_ids);
   if (gui!=-1)
     gui_show(gui);
   return gui;

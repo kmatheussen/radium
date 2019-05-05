@@ -177,12 +177,13 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
   radium::GcHolder<dyn_t> _mixer_strip_configuration;
   int64_t _mixer_strips_gui = -1;
   int _num_rows = 2;
+  Ratio _vert_ratio = make_ratio(1,1);
 
   QWidget *_bottom_bar;
 
  Mixer_widget(QWidget *parent=NULL)
    : QWidget(parent)
-   , radium::Timer(100, true)
+   , radium::Timer(1000, true)
    , _mixer_direction_menu(this)
    , _mytimer(this)
   {
@@ -285,10 +286,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     show_cpu_usage->setVisible(is_modular);
     connections_visibility->setVisible(is_modular);
 
-    rows1->setVisible(!is_modular);
-    rows2->setVisible(!is_modular);
-    rows3->setVisible(!is_modular);
-    rows4->setVisible(!is_modular);
+    strips_layout_widget->setVisible(!is_modular);
   }
 
   void change_num_mixerstrips_rows(int num_rows){
@@ -309,7 +307,13 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     _num_rows = num_rows;
   }
     
-
+  void change_mixerstrips_vert_ratio(const Ratio &vert_ratio){
+    if(!initing && _mixer_strips_gui!=-1 && RATIO_get_intratio(_vert_ratio) != RATIO_get_intratio(vert_ratio)){
+      _vert_ratio = vert_ratio;
+      gui_setVertRatioInMixerStrips(_mixer_strips_gui, DYN_create_ratio(vert_ratio));
+    }
+  }
+    
   struct MyTimer : public QTimer{
     Mixer_widget *_parent;
     QTime time;
@@ -383,6 +387,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
   */
 
   void calledFromTimer(void) override {
+    //printf("m: %d\n",(int)_mixer_strips_gui);
+    
     if (_mixer_strips_gui >= 0){
 
       int new_num_rows = gui_getNumRowsInMixerStrips(_mixer_strips_gui);
@@ -400,7 +406,51 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
             rows4->setChecked(true);
 
         }initing = false;
+        
+      }
 
+      dyn_t dynratio = gui_getVertRatioInMixerStrips(_mixer_strips_gui);
+
+      if (dynratio.type != RATIO_TYPE && dynratio.type != INT_TYPE){
+        
+        R_ASSERT_NON_RELEASE(false);
+        
+      } else {
+
+        int curr_intratio = RATIO_get_intratio(_vert_ratio);
+        int intratio;
+
+        if (dynratio.type==RATIO_TYPE)
+          intratio = RATIO_get_intratio(*dynratio.ratio);
+        else
+          intratio = (int)dynratio.int_number;
+        
+        //printf("1: %d. 2: %d\n", curr_intratio, intratio);
+        
+        if (curr_intratio != intratio){
+          
+          initing = true;{
+            
+            if (intratio==-3)
+              ratio13->setChecked(true);
+            
+            else if (intratio==1)
+              ratio1->setChecked(true);
+            
+            else if (intratio==3)
+              ratio31->setChecked(true);
+            
+            else{
+              ratio13->setChecked(false);
+              ratio1->setChecked(false);
+              ratio31->setChecked(false);
+            }
+
+            _vert_ratio = RATIO_create_from_intratio(intratio);
+            
+          }initing = false;
+          
+        }
       }
     }
   }
@@ -568,7 +618,7 @@ public slots:
 
       if (_mixer_strips_gui == -1){
 
-        _mixer_strips_gui = gui_createMixerStrips(_num_rows, g_uninitialized_dyn);
+        _mixer_strips_gui = gui_createMixerStrips(_num_rows, DYN_create_ratio(_vert_ratio), g_uninitialized_dyn);
 
         if (_mixer_strips_gui != -1){
           show_modular_mixer_widgets(false);
@@ -645,6 +695,21 @@ public slots:
   void on_rows4_toggled(bool val){
     if(val)
       change_num_mixerstrips_rows(4);
+  }
+  
+  void on_ratio13_toggled(bool val){
+    if(val)
+      change_mixerstrips_vert_ratio(make_ratio(1,3));
+  }
+  
+  void on_ratio1_toggled(bool val){
+    if(val)
+      change_mixerstrips_vert_ratio(make_ratio(1,1));
+  }
+  
+  void on_ratio31_toggled(bool val){
+    if(val)
+      change_mixerstrips_vert_ratio(make_ratio(3,1));
   }
   
   void on_show_cpu_usage_toggled(bool val){
