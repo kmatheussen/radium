@@ -16,17 +16,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if USE_QT_MENU
 
-#if FOR_LINUX
-#define SAFE_POPUP 1 // X often freezes if a program crash while a popup menu is open. (at least when running under gdb)
-#define CLOSE_TIME 40
-#define KILL_TIME 50
-#else
-#define SAFE_POPUP 0
+#ifndef SAFE_POPUP
+  #if FOR_LINUX
+    #define SAFE_POPUP 1 // X often freezes if a program crash while a popup menu is open. (at least when running under gdb)
+  #else
+    #define SAFE_POPUP 0
+  #endif
 #endif
 
 #if SAFE_POPUP
 #include <sys/types.h>
 #include <unistd.h>
+#define CLOSE_TIME 40
+#define KILL_TIME 50
 #endif
 
 #include <memory>
