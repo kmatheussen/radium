@@ -1400,7 +1400,7 @@ struct Data {
   float _sample_rate;
 
   Smooth _piping_volume;
-  bool _enable_piping = true;
+  bool _enable_piping = false;
   
 #if !defined(RELEASE)
   
@@ -2523,7 +2523,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
-  bool enable_piping = !is_loading;  // Compatibility with old songs.
+  bool enable_piping = false;
   
   Data *data = new Data(sample_rate, enable_piping);
   printf("####################################################### Setting sine volume to 0.5f (create_plugin_data)\n");

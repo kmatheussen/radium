@@ -178,6 +178,8 @@ static const ColorConfig g_colorconfig[] = {
   {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, "mixer_selected_object_border_color_num", "Mixer: Selected sound object border color"},
   {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, "mixerstrips_selected_object_color_num", "Mixer strips: Current instrument border color"},
   
+  {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, "default_bus_color", "Default Bus color"},
+
   {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, "sequencer_currtrack_border_color", "Sequencer current track border color"},
   {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, "sequencer_curr_seqblock_border_color", "Sequencer current seqblock border color"},
   {SEQUENCER_LANES_BACKGROUND_COLOR_NUM, "sequencer_background_color", "Sequencer lanes background color"},
@@ -298,7 +300,9 @@ static ReplacementColor g_replacement_color[] = {
   {MIXER_SELECTED_OBJECT_COLOR_NUM, QColor("#54071780")},
   {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, QColor("#ff080a81")},
   {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, QColor("#ff337755")},
-  
+
+  {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, QColor("#246790")},
+
   {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, QColor("#ffc8c8c8")},
   {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, QColor("#ebc909")},
   {SEQUENCER_LANES_BACKGROUND_COLOR_NUM, QColor("#ff464d47")},

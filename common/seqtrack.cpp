@@ -224,6 +224,18 @@ static bool plays_same_seqblock_completely_later_in_seqtrack(struct SeqTrack *se
   return false;
 }
 
+static int get_busnum(struct SeqTrack *seqtrack){
+  int busnum = 1;
+  
+  VECTOR_FOR_EACH(struct SeqTrack *, maybe_seqtrack, &root->song->seqtracks){
+    if(maybe_seqtrack==seqtrack)
+      return busnum;
+    if (maybe_seqtrack->is_bus)
+      busnum++;
+  }END_VECTOR_FOR_EACH;
+  
+  return busnum;
+}
 
 static bool ensure_seqtrack_has_instrument(struct SeqTrack *seqtrack){
   if (seqtrack->for_audiofiles==false)
@@ -233,13 +245,24 @@ static bool ensure_seqtrack_has_instrument(struct SeqTrack *seqtrack){
     
     radium::ScopedIgnoreUndo ignore_undo; // Because we can't delete seqtrack plugin when it has samples.
 
-    int seqtracknum = get_seqtracknum(seqtrack);
-    
-    int64_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, talloc_format("Seqtrack %d", seqtracknum), 0, 0, true);
+    const char *name;
+    if (seqtrack->is_bus){
+      int busnum = get_busnum(seqtrack);
+      name = talloc_format("Bus %d", busnum);
+    } else {
+      int seqtracknum = get_seqtracknum(seqtrack);
+      name = talloc_format("Seqtrack %d", seqtracknum);
+    }
+    int64_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, name, 0, 0, true);
     R_ASSERT_RETURN_IF_FALSE2(patch_id >= 0, false);
     
     struct Patch *patch = PATCH_get_from_id(patch_id);
     R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
+
+    if (seqtrack->is_bus){
+      patch->color = GFX_get_color(INSTRUMENT_BUS_DEFAULT_COLOR_NUM);
+      setInstrumentEffect(patch_id, "Enable piping", 1);
+    }
     
     connectAudioInstrumentToMainPipe(patch_id);
     autopositionInstrument(patch_id);
@@ -1580,14 +1603,18 @@ void SEQBLOCK_replace_seqblock(hash_t *hash, bool must_replace_same_id, enum Sho
 }
 
 
-struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_samplerate, bool for_audiofiles){
+struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_samplerate, bool for_audiofiles, bool is_bus){
+  if(!for_audiofiles)
+    R_ASSERT(is_bus==false);
+  
   struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
-  //memset(seqtrack, 0, sizeof(struct SeqTrack));
-
+  
   seqtrack->min_height_type = SHT_2ROWS;
   seqtrack->max_height_type = SHT_UNLIMITED;
   
   seqtrack->for_audiofiles = for_audiofiles;
+  seqtrack->is_bus = is_bus;
+
   reset_recording_config(&seqtrack->custom_recording_config);
   seqtrack->use_custom_recording_config = false;
   
@@ -1608,7 +1635,8 @@ static hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_
   hash_t *state = HASH_create(seqtrack->seqblocks.num_elements);
 
   HASH_put_bool(state, "for_audiofiles", seqtrack->for_audiofiles);
-
+  HASH_put_bool(state, "is_bus", seqtrack->is_bus);
+    
   for(int i=0;i<seqtrack->seqblocks.num_elements;i++){
     hash_t *seqblock_state = SEQBLOCK_get_state(seqtrack, (struct SeqBlock*)seqtrack->seqblocks.elements[i], false);
     /*
@@ -1823,12 +1851,16 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
     automation_state = HASH_get_hash(state, "automation");
 
   bool has_for_audiofiles_key = HASH_has_key(state, "for_audiofiles");
-  
-  bool for_audiofiles = false; // fix, maybe
-  if (has_for_audiofiles_key)
-    for_audiofiles = HASH_get_bool(state, "for_audiofiles");
 
-  struct SeqTrack *seqtrack = SEQTRACK_create(automation_state, state_samplerate, for_audiofiles);
+  bool is_bus = false;
+  bool for_audiofiles = false; // fix, maybe
+  if (has_for_audiofiles_key){
+    for_audiofiles = HASH_get_bool(state, "for_audiofiles");
+    if (HASH_has_key(state, "is_bus"))
+      is_bus = HASH_get_bool(state, "is_bus");
+  }
+  
+  struct SeqTrack *seqtrack = SEQTRACK_create(automation_state, state_samplerate, for_audiofiles, is_bus);
   struct SeqTrack *seqtrack_extra = NULL; // For loading older songs. In older songs, both audiofiles and editor blocks could be placed in all seqtracks. (and they still can, probably, but it makes very little sense to allow it)
 
   if(seqtrack->for_audiofiles==false) R_ASSERT(seqtrack->patch==NULL);
@@ -1899,7 +1931,7 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
       R_ASSERT(false==for_audiofiles);
       
       if (seqtrack_extra==NULL){
-        seqtrack_extra = SEQTRACK_create(NULL, state_samplerate, true);
+        seqtrack_extra = SEQTRACK_create(NULL, state_samplerate, true, is_bus);
         seqtrack_extra->gfx_seqblocks = &gfx_seqblocks_extra;
 
         R_ASSERT(patch!=NULL);
@@ -1960,7 +1992,7 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
 struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
   vector_t seqblocks = {};
   
-  struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1, false);
+  struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1, false, false);
     
   for(int pos=0;pos<len;pos++)
     VECTOR_push_back(&seqblocks,
@@ -2696,13 +2728,13 @@ void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 }
 
-void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_audiofiles){
+void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_audiofiles, bool is_bus){
 
   if(new_seqtrack!=NULL)
     R_ASSERT(new_seqtrack->for_audiofiles==for_audiofiles);
 
   if (new_seqtrack==NULL)
-    new_seqtrack = SEQTRACK_create(NULL, -1, for_audiofiles);
+    new_seqtrack = SEQTRACK_create(NULL, -1, for_audiofiles, is_bus);
 
   const rt_vector_t *rt_vector = VECTOR_create_rt_vector(&root->song->seqtracks, 1);
 
@@ -2724,8 +2756,8 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
-void SEQUENCER_append_seqtrack(struct SeqTrack *new_seqtrack, bool for_audiofiles){
-  SEQUENCER_insert_seqtrack(new_seqtrack, root->song->seqtracks.num_elements, for_audiofiles);
+void SEQUENCER_append_seqtrack(struct SeqTrack *new_seqtrack, bool for_audiofiles, bool is_bus){
+  SEQUENCER_insert_seqtrack(new_seqtrack, root->song->seqtracks.num_elements, for_audiofiles, is_bus);
 }
 
 static void call_me_after_seqtrack_has_been_removed(struct SeqTrack *seqtrack){
@@ -2984,7 +3016,7 @@ double SONG_get_length(void){
 // Called from SONG_create()
 void SEQUENCER_init(struct Song *song){
   TEMPOAUTOMATION_reset();
-  song->block_seqtrack = SEQTRACK_create(NULL, -1, false);
+  song->block_seqtrack = SEQTRACK_create(NULL, -1, false, false);
   ATOMIC_SET(song->looping.start, 0);
   ATOMIC_SET(song->punching.start, 0);
 
@@ -3002,7 +3034,7 @@ void SEQUENCER_init(struct Song *song){
 // Only called during program startup
 void SONG_init(void){
 
-  struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1, false); // for editor blocks
+  struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1, false, false); // for editor blocks
 
   const rt_vector_t *rt_seqblocks_vector = VECTOR_create_rt_vector(&seqtrack->seqblocks, 1);
   const rt_vector_t *rt_seqtracks_vector = VECTOR_create_rt_vector(&root->song->seqtracks, 1);
