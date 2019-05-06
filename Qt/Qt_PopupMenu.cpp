@@ -620,6 +620,7 @@ namespace{
   public:
 
 #if SAFE_POPUP
+    bool _do_safe_popup;
     QString _kill_file_name;
 #endif
     
@@ -628,19 +629,27 @@ namespace{
     MyMainQMenu(QWidget *parent, QString title, bool is_async, func_t *callback)
       : MyQMenu(parent, title)
 #if SAFE_POPUP
-      , radium::Timer(1000)
+      , radium::Timer(1000, false)
+      , _do_safe_popup(getenv("USE_SAFE_POPUP") != NULL)
 #endif
         //, _callback(callback)
     {
       
 #if SAFE_POPUP
-      _kill_file_name = get_kill_temp_filename();
-      system(talloc_format("\"%s\" %s %d %d &",
-                           OS_get_full_program_file_path("radium_linux_popup_killscript.sh").toUtf8().constData(),
-                           _kill_file_name.toUtf8().constData(),
-                           KILL_TIME,
-                           getpid()
-                           ));
+      if(_do_safe_popup){
+
+        start_timer();
+          
+        _kill_file_name = get_kill_temp_filename();
+        
+        system(talloc_format("\"%s\" %s %d %d &",
+                             OS_get_full_program_file_path("radium_linux_popup_killscript.sh").toUtf8().constData(),
+                             _kill_file_name.toUtf8().constData(),
+                             KILL_TIME,
+                             getpid()
+                             ));
+        
+      }
 #endif
       
       R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
@@ -656,9 +665,11 @@ namespace{
       //  s7extra_unprotect(_callback);
       //printf("\n\n\n\n\n===============================              MYMAINQMENU deleted\n\n\n\n\n");
 #if SAFE_POPUP
-      printf("Deleting file %s\n", _kill_file_name.toUtf8().constData());
-      system(talloc_format("rm /tmp/%s", _kill_file_name.toUtf8().constData()));
-      printf(" ... %s deleted\n", _kill_file_name.toUtf8().constData());
+      if(_do_safe_popup){
+        printf("Deleting file %s\n", _kill_file_name.toUtf8().constData());
+        system(talloc_format("rm /tmp/%s", _kill_file_name.toUtf8().constData()));
+        printf(" ... %s deleted\n", _kill_file_name.toUtf8().constData());
+      }
 #endif
     }
 

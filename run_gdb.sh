@@ -13,6 +13,9 @@ unset QT_QPA_PLATFORMTHEME
 unset QT_QPA_PLATFORM
 unset QT_PLUGIN_PATH
 
+# To avoid freezing X
+export USE_SAFE_POPUP="1"
+
 export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 export G_DEBUG="fatal-warnings,gc-friendly"
 
