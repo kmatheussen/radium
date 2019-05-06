@@ -930,6 +930,98 @@
                                 
   )
 
+(def-area-subclass (<seqtrack-number> :gui :x1 :y1 :x2 :y2
+                                      :seqtracknum
+                                      :get-color)
+  (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 y2
+                              (<-> seqtracknum)
+                              :text-color "black"
+                              :background-color get-color
+                              :border-rounding 108 ;0 ;;(if use-two-rows 1 8)
+                              ))
+
+  (define has-made-undo #f)
+
+  (define (maybe-make-undo)
+    (when (not has-made-undo)
+      (<ra> :undo-sequencer)
+      (set! has-made-undo #t)
+      ))
+
+  (define (get-seqtrack-y1 seqtracknum)
+    (define s-y1 (<ra> :get-sequencer-y1))
+    (- (<ra> :get-seqtrack-y1 seqtracknum) s-y1))
+  
+  (define (get-seqtrack-y2 seqtracknum)
+    (define s-y1 (<ra> :get-sequencer-y1))
+    (- (<ra> :get-seqtrack-y2 seqtracknum) s-y1))
+
+  (define (get-new-seqtracknum y)
+    (cond ((< y (- (get-seqtrack-y1 seqtracknum) 2))
+           (let loop ((seqtracknum2 (- seqtracknum 1)))
+             (cond ((<= seqtracknum2 0)
+                    0)
+                   ((< y (- (get-seqtrack-y1 seqtracknum2) 2))
+                    (loop (- seqtracknum 1)))
+                   (else
+                    seqtracknum2))))
+          ((> y (+ 2 (get-seqtrack-y2 seqtracknum)))
+           (let loop ((seqtracknum2 (+ seqtracknum 1)))
+             (cond ((>= seqtracknum2 (- (<ra> :get-num-seqtracks) 1))
+                    (- (<ra> :get-num-seqtracks) 1))
+                   ((> y (+ 2 (get-seqtrack-y2 seqtracknum2)))
+                    (loop (+ seqtracknum2 1)))
+                   (else
+                    seqtracknum2))))
+          (else
+           seqtracknum)))
+
+  (define (get-statusbar-text)
+    "Drag number to change seqtrack order")
+  
+  (add-statusbar-text-handler get-statusbar-text)
+
+  (define first-seqtrack-was-audio #f)
+  
+  (add-delta-mouse-cycle!
+   (lambda (button x* y*)
+     (set-statusbar-text! (get-statusbar-text))
+     ;;(c-display "press" x* y*)
+     (set! has-made-undo #f)
+     (set! first-seqtrack-was-audio (<ra> :seqtrack-for-audiofiles 0))
+     (if (= button *left-button*)
+         (begin
+           #t)
+         (else
+          #f)))
+   (lambda (button x* y* dx dy)
+     ;;(c-display "move" x* y*)
+     (maybe-make-undo)
+     (define new-seqtracknum (get-new-seqtracknum y*))
+     ;;(c-display "new-seatracknum:" new-seqtracknum ". now:" seqtracknum)
+     (cond ((< new-seqtracknum seqtracknum)
+            (let loop ((seqtracknum2 seqtracknum))
+              (when (> seqtracknum2 new-seqtracknum)
+                (<ra> :swap-seqtracks (- seqtracknum2 1) seqtracknum2)
+                (loop (- seqtracknum2 1)))))
+           ((> new-seqtracknum seqtracknum)
+            (let loop ((seqtracknum2 seqtracknum))
+              (when (< seqtracknum2 new-seqtracknum)
+                (<ra> :swap-seqtracks seqtracknum2 (+ seqtracknum2 1))
+                (loop (+ seqtracknum2 1))))))
+     (set! seqtracknum new-seqtracknum)
+     (<ra> :set-curr-seqtrack seqtracknum)
+     )
+   (lambda (button x* y* dx dy)
+     (when (and (not (<ra> :is-using-sequencer-timing))
+                (not first-seqtrack-was-audio)
+                (<ra> :seqtrack-for-audiofiles 0))
+       (ask-user-about-first-audio-seqtrack2
+        (lambda (res)
+          (if (string=? res "No")
+              (<ra> :undo))))))
+   )
+  )
 
 (def-area-subclass (<seqtrack-header> :gui :x1 :y1 :x2 :y2
                                       :use-two-rows
@@ -989,14 +1081,11 @@
                             instrument-id
                             seqtracknum)))
 
-  (add-sub-area-plain! (<new> :text-area gui
+  (add-sub-area-plain! (<new> :seqtrack-number gui
                               x1 (+ y1 0)
                               (- x1-split 1) y-split
-                              (<-> seqtracknum)
-                              :text-color "black"
-                              :background-color (lambda () (<gui> :mix-colors "white" (get-background-color #t) 0.02))
-                              :border-rounding 108 ;0 ;;(if use-two-rows 1 8)
-                              ))
+                              seqtracknum
+                              (lambda () (<gui> :mix-colors "white" (get-background-color #t) 0.02))))
   
   (define panner-x2 (if use-two-rows x-meter-split x2-split))
   (define panner-y1 (if use-two-rows
@@ -1234,26 +1323,29 @@
 (<ra> :toggle-full-screen)
 !!#
 
+(define (ask-user-about-first-audio-seqtrack2 callback)
+  (show-async-message (<gui> :get-sequencer-gui)
+                      (<-> "Are you sure?\n"
+                           "\n"
+                           "We use the first seqtrack for timing and grid, but audio seqtracks don't provide this information.\n"
+                           "In order to support timing and grid, we will switch to sequencer timing mode."
+                           )
+                      (list "No" "Yes") ;; yes-dont-show-again)
+                      :is-modal #t
+                      :callback callback))
+
 (define (ask-user-about-first-audio-seqtrack callback)
   (if (<ra> :is-using-sequencer-timing)
       (callback #t)
-      (show-async-message (<gui> :get-sequencer-gui)
-                          (<-> "Are you sure?\n"
-                               "\n"
-                               "We use the first seqtrack for timing and grid, but audio seqtracks don't provide this information.\n"
-                               "In order to support timing and grid, we will switch to sequencer timing mode."
-                               )
-                          (list "No" "Yes") ;; yes-dont-show-again)
-                          :is-modal #t
-                          :callback
-                          (lambda (res)
-                            (define arg (string=? "Yes" res))
-                            (undo-block
-                             (lambda ()                               
-                               (when arg
-                                 (<ra> :undo-sequencer)
-                                 (<ra> :set-using-sequencer-timing #t))
-                               (callback arg)))))))
+      (ask-user-about-first-audio-seqtrack2
+       (lambda (res)
+         (define arg (string=? "Yes" res))
+         (undo-block
+          (lambda ()                               
+            (when arg
+              (<ra> :undo-sequencer)
+              (<ra> :set-using-sequencer-timing #t))
+            (callback arg)))))))
 
 (define (delete-seqtrack-and-maybe-ask seqtracknum)
   (define (deleteit)

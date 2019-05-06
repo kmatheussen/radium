@@ -371,7 +371,7 @@ void swapSeqtracks(int seqtracknum1, int seqtracknum2){
   if (seqtrack2==NULL)
     return;
 
-  ADD_UNDO(Sequencer());
+  //ADD_UNDO(Sequencer());
 
   { 
     radium::PlayerPause pause(is_playing_song());
