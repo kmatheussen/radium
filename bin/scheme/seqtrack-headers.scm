@@ -983,6 +983,7 @@
   
   (add-statusbar-text-handler get-statusbar-text)
 
+  (define was-using-sequencer-timing #f)
   (define first-seqtrack-was-audio #f)
   
   (add-delta-mouse-cycle!
@@ -991,6 +992,7 @@
      ;;(c-display "press" x* y*)
      (set! has-made-undo #f)
      (set! first-seqtrack-was-audio (<ra> :seqtrack-for-audiofiles 0))
+     (set! was-using-sequencer-timing (<ra> :is-using-sequencer-timing))
      (if (= button *left-button*)
          (begin
            #t)
@@ -1015,7 +1017,10 @@
      (<ra> :set-curr-seqtrack seqtracknum)
      )
    (lambda (button x* y* dx dy)
-     (when (and (not (<ra> :is-using-sequencer-timing))
+     ;;(c-display (not was-using-sequencer-timing)
+     ;;           (not first-seqtrack-was-audio)
+     ;;           (<ra> :seqtrack-for-audiofiles 0))
+     (when (and (not was-using-sequencer-timing)
                 (not first-seqtrack-was-audio)
                 (<ra> :seqtrack-for-audiofiles 0))
        (ask-user-about-first-audio-seqtrack2
