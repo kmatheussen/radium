@@ -425,6 +425,7 @@
          :enabled (< seqtracknum (- (<ra> :get-num-seqtracks) 1))
          (lambda ()
            (define (swapit)
+             (<ra> :undo-sequencer)
              (<ra> :swap-seqtracks seqtracknum (1+ seqtracknum)))
            (if (and (= 0 seqtracknum)
                     (<ra> :seqtrack-for-audiofiles 1))
