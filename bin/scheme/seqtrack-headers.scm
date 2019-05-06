@@ -1275,17 +1275,19 @@
 (def-area-subclass (<sequencer-left-part-buttons> :gui :x1 :y1 :x2 :y2)
 
   (define (callback type)
+    (c-display "\n\n\nTYPE:" type "\n\n\n")
     (cond ((eq? type 'InsertE)
            (<ra> :insert-seqtrack #f))
-          ((eq? type 'InsertA)
+          ((or (eq? type 'InsertA)
+               (eq? type 'InsertB))
            (define seqtracknum (<ra> :get-curr-seqtrack))
            (if (and (= 0 seqtracknum)
                     (not (<ra> :seqtrack-for-audiofiles 0)))
                (ask-user-about-first-audio-seqtrack
                 (lambda (doit)
                   (if doit
-                      (<ra> :insert-seqtrack #t seqtracknum))))
-               (<ra> :insert-seqtrack #t seqtracknum)))
+                      (<ra> :insert-seqtrack #t seqtracknum (eq? type 'InsertB)))))
+               (<ra> :insert-seqtrack #t seqtracknum (eq? type 'InsertB))))
           ((eq? type '-)
            (when (> (<ra> :get-num-seqtracks) 1)
              (define seqtracknum (<ra> :get-curr-seqtrack))
@@ -1295,6 +1297,8 @@
            (<ra> :append-seqtrack #f))
           ((eq? type 'AppendA)
            (<ra> :append-seqtrack #t))
+          ((eq? type 'AppendB)
+           (<ra> :append-seqtrack #t #t))
           (else
            (assert #f))))
 
@@ -1310,7 +1314,7 @@
 
   (define b (max 0 (/ (get-fontheight) 6)))
   (horizontally-layout-areas x1 y1 (- x2 2) y2
-                             (list 'InsertE 'InsertA '- 'AppendE 'AppendA)
+                             (list 'InsertE 'InsertA 'InsertB '- 'AppendE 'AppendA 'AppendB)
                              :y1-border 0 ;;(1+ b)
                              :y2-border 0 ;;(1+ b)
                              :spacing b
@@ -1318,18 +1322,22 @@
                              (lambda (type x1 y1 x2 y2)
                                (add-sub-area-plain! (<new> :button gui x1 y1 x2 y2
                                                            :text (cond ((eq? type 'InsertE) "E+")
-                                                                       ((eq? type 'InsertA ) "A+")
+                                                                       ((eq? type 'InsertA) "A+")
+                                                                       ((eq? type 'InsertB) "B+")
                                                                        ((eq? type '-) "-")
                                                                        ((eq? type 'AppendE) "+E")
                                                                        ((eq? type 'AppendA) "+A")
+                                                                       ((eq? type 'AppendB) "+B")
                                                                        (else
                                                                         (assert #f)))
                                                            :statusbar-text (list #t
                                                                                  (cond ((eq? type 'InsertE) "Insert editor seqtrack")
                                                                                        ((eq? type 'InsertA ) "Insert audio seqtrack")
+                                                                                       ((eq? type 'InsertB ) "Insert audio bus")
                                                                                        ((eq? type '-) "Delete current seqtrack")
                                                                                        ((eq? type 'AppendE) "Append editor seqtrack")
                                                                                        ((eq? type 'AppendA) "Append audio seqtrack")
+                                                                                       ((eq? type 'AppendB) "Append audio bus")
                                                                                        (else
                                                                                         (assert #f))))
                                                            :callback-release (lambda ()

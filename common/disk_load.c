@@ -36,8 +36,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "patch_proc.h"
 #include "settings_proc.h"
+#include "instruments_proc.h"
 
 #include "../api/api_seqtracks_proc.h"
+#include "../api/api_proc.h"
 
 #include "../mmd2loader/mmd2load_proc.h"
 
@@ -423,5 +425,14 @@ void NewSong_CurrPos(struct Tracker_Windows *window){
   GFX_SetWindowTitle(root->song->tracker_windows, STRING_create("Radium - New song."));
   
   dc.filename=NULL;
+
+  // set bus colors
+  {
+    const char *color = GFX_get_colorname_from_color(GFX_get_color(INSTRUMENT_BUS_DEFAULT_COLOR_NUM));
+    VECTOR_FOR_EACH(struct Patch *patch, &get_audio_instrument()->patches){
+      if (STRING_ends_with(STRING_create(patch->name), " Bus"))
+        setInstrumentColor(color, patch->id);
+    }END_VECTOR_FOR_EACH;
+  }
 }
 

@@ -633,7 +633,9 @@ enum ColorNums {
   MIXER_SELECTED_OBJECT_COLOR_NUM,
   MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM,
   MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM,
-   
+
+  INSTRUMENT_BUS_DEFAULT_COLOR_NUM,
+
   SEQUENCER_CURRTRACK_BORDER_COLOR_NUM,
   SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM,
   SEQUENCER_LANES_BACKGROUND_COLOR_NUM,
@@ -3014,7 +3016,8 @@ struct SeqTrack{
   scheduler_t *scheduler;
 
   bool for_audiofiles;
-
+  bool is_bus;
+  
   vector_t seqblocks; // Player must be stopped when modifying this variable. Also used for displaying if gfx_seqblocks != NULL.
   vector_t *gfx_seqblocks; // Used for displaying. Might have the same content as this->seqblocks (pointing to &this->seqblocks).
   vector_t gfx_gfx_seqblocks; // When moving several seqblocks. Just for graphics. Player does not have to be stopped when modifying this variable
