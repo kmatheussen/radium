@@ -790,7 +790,7 @@
                     (lambda ()
                       (define (finished new-instrument)
                         ;;(c-display "             first: " (<ra> :get-instrument-name first-instrument-id) ", new:" (and new-instrument (<ra> :get-instrument-name new-instrument)))
-                        (if strips-config
+                        (if (and strips-config (not (strips-config :is-standalone)))
                             (<ra> :set-current-instrument first-instrument-id)))
                       (insert-new-instrument-between curr-plugin-instrument
                                                      (get-instruments-connecting-from-instrument curr-plugin-instrument)
@@ -810,7 +810,7 @@
                         (request-send-instrument instrument-id
                                                  (lambda (create-send-func)
                                                    (create-send-func 0 '())
-                                                   (if strips-config
+                                                   (if (and strips-config (not (strips-config :is-standalone)))
                                                        (<ra> :set-current-instrument first-instrument-id)))))))
 
               ;;(and (not is-send?)
@@ -893,7 +893,7 @@
               (get-global-mixer-strips-popup-entries first-instrument-id strips-config parent-instrument-id)
               )
 
-  (if strips-config
+  (if (and strips-config (not (strips-config :is-standalone)))
       (<ra> :set-current-instrument instrument-id))
   )
     
@@ -1080,7 +1080,7 @@
   
   (add-safe-mouse-callback widget (lambda (button state x y)
                                     ;;(c-display "state:" state)
-                                    (if (and strips-config
+                                    (if (and (and strips-config (not (strips-config :is-standalone)))
                                              (= state *is-pressing*))
                                         (<ra> :set-current-instrument instrument-id))
                                     (define is-left-pressing (and (= button *left-button*)
