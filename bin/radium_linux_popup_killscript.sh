@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# X often freezes if a program crash while a popup menu is open. (at least when running under gdb)
+
+
 echo $$ >/tmp/$1
 
 sleep $2
