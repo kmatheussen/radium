@@ -16,6 +16,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if USE_QT_MENU
 
+#if FOR_LINUX
+#define SAFE_POPUP 1 // X often freezes if a program crash while a popup menu is open. (at least when running under gdb)
+#define CLOSE_TIME 40
+#define KILL_TIME 50
+#else
+#define SAFE_POPUP 0
+#endif
+
+#if SAFE_POPUP
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
 #include <memory>
 
 #include <QStack>
@@ -28,7 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QProxyStyle>
 #include <QStyleFactory>
 
-
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../audio/Envelope.hpp"
@@ -39,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_proc.h"
 
+#include "Timer.hpp"
 #include "EditorWidget.h"
 
 
@@ -485,13 +498,14 @@ namespace{
     }
   };
 
-  struct MyQMenu : public QMenu{
+  struct MyQMenu : public QMenu {
     MyQMenu(QWidget *parent, QString title)
       : QMenu(title, parent)
     {
     }
 
-    ~MyQMenu(){
+    ~MyQMenu()
+    {
       QVector<ClickableAction*> to_remove;
       
       for(auto a : actions()){
@@ -504,10 +518,9 @@ namespace{
         removeAction(a);
         release_clickable_action(a);
       }
-    
     }
-    
-    void keyPressEvent(QKeyEvent *event) {
+
+    void keyPressEvent(QKeyEvent *event) override {
       bool custom_treat
         = ((event->modifiers() & Qt::ShiftModifier) && (event->key()==Qt::Key_Up || event->key()==Qt::Key_Down))
         || (event->key()==Qt::Key_PageUp || event->key()==Qt::Key_PageDown)
@@ -595,32 +608,71 @@ namespace{
     
   };
   
-  struct MyMainQMenu : public MyQMenu{
+  struct MyMainQMenu : public MyQMenu
+#if SAFE_POPUP
+    , radium::Timer
+#endif
+  {
     Q_OBJECT
 
   public:
+
+#if SAFE_POPUP
+    QString _kill_file_name;
+#endif
     
     //func_t *_callback;
 
     MyMainQMenu(QWidget *parent, QString title, bool is_async, func_t *callback)
       : MyQMenu(parent, title)
+#if SAFE_POPUP
+      , radium::Timer(1000)
+#endif
         //, _callback(callback)
     {
+      
+#if SAFE_POPUP
+      _kill_file_name = get_kill_temp_filename();
+      system(talloc_format("\"%s\" %s %d %d &",
+                           OS_get_full_program_file_path("radium_linux_popup_killscript.sh").toUtf8().constData(),
+                           _kill_file_name.toUtf8().constData(),
+                           KILL_TIME,
+                           getpid()
+                           ));
+#endif
       
       R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
       
       //if(_callback!=NULL)
       //  s7extra_protect(_callback);
 
-      connect(this, SIGNAL(hovered(QAction*)), this, SLOT(hovered(QAction*)));
+      connect(this, SIGNAL(hovered(QAction*)), this, SLOT(hovered(QAction*)));      
     }
     
     ~MyMainQMenu(){
       //if(_callback!=NULL)
       //  s7extra_unprotect(_callback);
       //printf("\n\n\n\n\n===============================              MYMAINQMENU deleted\n\n\n\n\n");
+#if SAFE_POPUP
+      printf("Deleting file %s\n", _kill_file_name.toUtf8().constData());
+      system(talloc_format("rm /tmp/%s", _kill_file_name.toUtf8().constData()));
+      printf(" ... %s deleted\n", _kill_file_name.toUtf8().constData());
+#endif
     }
 
+#if SAFE_POPUP
+    double _start_time = TIME_get_ms();
+    void calledFromTimer(void) override {
+      if((TIME_get_ms() - _start_time) > CLOSE_TIME * 1000)
+        delete this;
+    }
+
+    const char *get_kill_temp_filename(void) const {
+      static int num = 0;
+      return talloc_format("radium_pid_%d_%d", getpid(), num++);
+    }
+#endif
+    
     void showEvent(QShowEvent *event) override {
       if (_has_keyboard_focus==false){
         obtain_keyboard_focus_counting();
