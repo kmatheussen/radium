@@ -57,6 +57,9 @@ void API_showInstrumentGui(void);
 void API_hideInstrumentGui(void);
 void API_showSequencerGui(void);
 void API_hideSequencerGui(void);
+
+QWidget *API_get_editGui(void);
+
 #endif
 #endif
 
