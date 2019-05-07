@@ -708,3 +708,12 @@
               "ra.transposeBlock(1)")
 
 
+(define (get-all-lines-in-file wfilename)
+  (let ((file (<ra> :open-file-for-reading wfilename)))
+    (let loop ((ret '()))
+      (if (not (<ra> :file-at-end file))
+          (loop (cons (<ra> :read-line-from-file file)
+                      ret))
+          (begin
+            (<ra> :close-file file)
+            (reverse ret))))))
