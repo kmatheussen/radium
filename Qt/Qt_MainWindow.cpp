@@ -342,6 +342,7 @@ bool GFX_EditorIsVisible(void){
 
 void GFX_ShowEditor(void){
   GL_lock();{
+    setEditorKeyboardFocus(true);
     g_editor->editor_layout_widget->show();
   }GL_unlock();
 
@@ -356,9 +357,10 @@ void GFX_HideEditor(void){
 
 void GFX_showHideEditor(void){
   GL_lock();{
-    if(g_editor->editor_layout_widget->isHidden())
+    if(g_editor->editor_layout_widget->isHidden()){
+      setEditorKeyboardFocus(true);
       g_editor->editor_layout_widget->show();
-    else
+    }else
       g_editor->editor_layout_widget->hide();
   }GL_unlock();
   

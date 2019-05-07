@@ -2035,6 +2035,7 @@ bool GFX_MixerIsVisible(void){
 }
 void GFX_ShowMixer(void){
   GL_lock();{
+    setMixerKeyboardFocus(true);
     g_mixer_widget->show();
   }GL_unlock();
 }
@@ -2045,9 +2046,10 @@ void GFX_HideMixer(void){
 
 void GFX_showHideMixerWidget(void){
   GL_lock();{
-    if(g_mixer_widget->isHidden())
+    if(g_mixer_widget->isHidden()){
+      setMixerKeyboardFocus(true);
       g_mixer_widget->show();
-    else
+    }else
       g_mixer_widget->hide();
   }GL_unlock();
   set_editor_focus();

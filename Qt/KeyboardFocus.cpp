@@ -1,6 +1,7 @@
 
 
 #include "../common/nsmtracker.h"
+#include "../api/api_gui_proc.h"
 
 #include "Qt_Bs_edit_proc.h"
 
@@ -14,11 +15,16 @@ namespace{
   
   struct Obj : public QObject {
 
+    QWidget *_edit_gui = NULL;
+    
     void handle_mouse_pressed_widget(QWidget *w){
       if (w==NULL)
         return;
 
-      else if (w==g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::EDITOR] || w==BS_get())
+      if (_edit_gui==NULL)
+        _edit_gui = API_get_editGui();
+      
+      if (w==g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::EDITOR] || w==_edit_gui || w==BS_get())
         FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, true);
       
       else if (w==g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::MIXER])

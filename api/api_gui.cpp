@@ -7536,6 +7536,10 @@ bool editGuiIsVisible(void){
   return S7CALL2(bool_void, "FROM-C-edit-gui-is-visible");
 }
 
+QWidget *API_get_editGui(void){
+  int64_t gui = S7CALL2(int_void,"FROM-C-get-edit-gui");
+  return API_gui_get_widget(gui);
+}
 
 ///////////////////////////////////////////////
 

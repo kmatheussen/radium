@@ -202,6 +202,7 @@
     ret))
 
 (define (FROM-C-show-sequencer-gui)
+  (<ra> :set-sequencer-keyboard-focus)
   (if *sequencer-window-gui-active*
       (<gui> :show *sequencer-window-gui*)
       (show-lowertab-gui (<gui> :get-sequencer-frame-gui))))
@@ -225,10 +226,14 @@
   (lowertab-gui-is-visible *notem-gui*))
     
 (define (FROM-C-show-edit-gui)
+  (<ra> :set-editor-keyboard-focus)
   (show-lowertab-gui *notem-gui*))
 
 (define (FROM-C-hide-edit-gui)
   (hide-lowertab-gui *notem-gui*))
+
+(define (FROM-C-get-edit-gui)
+  *notem-gui*)
 
     
 
