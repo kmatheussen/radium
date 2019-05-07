@@ -3,190 +3,6 @@
 (my-require 'keybindings.scm)
 
 
-(define (maybe-merge-two-keybindings-2 keybinding1 keybinding2 left right qualifier)
-  (define (removeleftright keybinding)
-    (delete-maybe right
-                  (delete-maybe left keybinding string=?)
-                  string=?))
-  (define without1 (removeleftright keybinding1))
-  (define without2 (removeleftright keybinding2))
-  (if (or (equal? without1 keybinding1)
-          (equal? without2 keybinding2)
-          (not (equal? without1 without2)))
-      (list keybinding1 keybinding2)
-      (list (append without1 (list qualifier)))))
-
-(***assert*** (maybe-merge-two-keybindings-2 '("Z" "CTRL_R") '("Z" "CTRL_L")
-                                             "CTRL_L" "CTRL_R"
-                                             "CTRL")
-              '(("Z" "CTRL")))
-
-(***assert*** (maybe-merge-two-keybindings-2 '("Z" "ALT_R") '("Z" "ALT_L")
-                                             "ALT_L" "ALT_R"
-                                             "ALT")
-              '(("Z" "ALT")))
-
-(***assert*** (maybe-merge-two-keybindings-2 '("Z" "ALT_L" "CTRL_R") '("Z" "CTRL_L")
-                                             "CTRL_L" "CTRL_R"
-                                             "CTRL")
-              '(("Z" "ALT_L" "CTRL_R") ("Z" "CTRL_L")))
-
-
-
-(define *mergable-qualifiers* (list (hash-table :left "CTRL_L"
-                                                :right "CTRL_R"
-                                                :to "CTRL")
-                                    (hash-table :left "ALT_L"
-                                                :right "ALT_R"
-                                                :to "ALT")
-                                    (hash-table :left "SHIFT_L"
-                                                :right "SHIFT_R"
-                                                :to "SHIFT")))
-;;                                    (hash-table :left "EXTRA_L"
-;;                                                :right "EXTRA_R"
-;;-                                                :to "EXTRA")))
-
-(define (maybe-merge-two-keybindings keybinding1 keybinding2)
-  (define thesame (list keybinding1 keybinding2))
-  (let loop ((mergables *mergable-qualifiers*))
-    (if (null? mergables)
-        thesame
-        (let* ((mergable (car mergables))
-               (maybe (maybe-merge-two-keybindings-2 keybinding1 keybinding2
-                                                     (mergable :left) (mergable :right)
-                                                     (mergable :to))))
-          ;;(c-display "MAHBE:" maybe (equal? maybe thesame))
-          (if (equal? maybe thesame)
-              (loop (cdr mergables))
-              maybe)))))
-
-(***assert*** (maybe-merge-two-keybindings '("Z" "ALT_R") '("Z" "ALT_L"))
-              '(("Z" "ALT")))
-
-(***assert*** (maybe-merge-two-keybindings '("Z" "ALT_L" "CTRL_R") '("Z" "CTRL_L"))
-              '(("Z" "ALT_L" "CTRL_R") ("Z" "CTRL_L")))
-
-;; keeps order
-(define (replace-merged-keybinding-in-keybindings keybindings keybindingA keybindingB merged-keybinding)
-  ;;(c-display "MERGED:" merged-keybinding)
-  (let loop ((keybindings keybindings)
-             (A keybindingA)
-             (B keybindingB)
-             (merged-keybinding merged-keybinding))
-    (if (null? keybindings)
-        '()
-        (let ((keybinding (car keybindings)))
-          (cond ((equal? keybinding A)
-                 (let ((rest (loop (cdr keybindings)
-                                   "---"
-                                   B
-                                   #f)))
-                   (if merged-keybinding
-                       (cons merged-keybinding
-                             rest)
-                       rest)))
-                ((equal? keybinding B)
-                 (let ((rest (loop (cdr keybindings)
-                                   A
-                                   "---"
-                                   #f)))
-                   (if merged-keybinding
-                       (cons merged-keybinding
-                             rest)
-                       rest)))
-                (else
-                 (cons keybinding
-                       (loop (cdr keybindings)
-                             A
-                             B
-                             merged-keybinding))))))))
-
-
-(***assert*** (replace-merged-keybinding-in-keybindings '(a b c) 'a 'b 'ab)
-              '(ab c))
-                
-(***assert*** (replace-merged-keybinding-in-keybindings '(a b c) 'a 'c 'ac)
-              '(ac b ))
-                
-                       
-                
-              
-                          
-        
-(define (merge-keybindings keybindings)
-  ;;(c-display "KEYBINDINGS:" keybindings)
-  (let loopA ((keybindingsA keybindings))
-    (define keybindingA (cl-car keybindingsA))
-    (if (not keybindingA)
-        keybindings
-        (let loopB ((keybindingsB (cdr keybindingsA)))
-          (define keybindingB (cl-car keybindingsB))
-          (if (not keybindingB)
-              (loopA (cdr keybindingsA))
-              (let ((org (list keybindingA keybindingB))
-                    (maybe (maybe-merge-two-keybindings keybindingA keybindingB)))
-                (if (equal? org maybe)
-                    (loopB (cdr keybindingsB))
-                    (begin
-                      (assert (= (length maybe) 1))
-                      (merge-keybindings (replace-merged-keybinding-in-keybindings keybindings
-                                                                                   keybindingA
-                                                                                   keybindingB
-                                                                                   (car maybe)))))))))))
-                                       
-(***assert*** (merge-keybindings '(("Z" "ALT_R") ("Z" "ALT_L")))
-              '(("Z" "ALT")))
-
-(***assert*** (merge-keybindings '(("Z" "ALT_L" "CTRL_R")
-                                   ("Z" "CTRL_L")))
-              '(("Z" "ALT_L" "CTRL_R")
-                ("Z" "CTRL_L")))
-
-(***assert*** (merge-keybindings '(("Z" "ALT_R")
-                                   ("Z" "ALT_L")
-                                   ("Z" "CTRL_L")
-                                   ("Z" "CTRL_R")
-                                   ))
-              '(("Z" "ALT")
-                ("Z" "CTRL")))
-
-(***assert*** (merge-keybindings '(("Z" "ALT_R")
-                                   ("X" "CTRL_L")
-                                   ))
-              '(("Z" "ALT_R")
-                ("X" "CTRL_L")))
-
-(***assert*** (merge-keybindings '(("Z" "ALT_R")
-                                   ("Z" "ALT_L")
-                                   ("Y")
-                                   ("X" "CTRL_L")
-                                   ("X" "CTRL_R")
-                                   ))
-              '(("Z" "ALT")
-                ("Y")
-                ("X" "CTRL")))
-
-(***assert*** (merge-keybindings '(("Z" "ALT_R" "CTRL_L")
-                                   ("Z" "ALT_L" "CTRL_L")
-                                   ("Z" "ALT_R" "CTRL_R")
-                                   ("Z" "ALT_L" "CTRL_R")
-                                   ))
-              '(("Z" "ALT" "CTRL")))
-
-
-
-
-(define (get-all-lines-in-file wfilename)
-  (let ((file (<ra> :open-file-for-reading wfilename)))
-    (let loop ((ret '()))
-      (if (not (<ra> :file-at-end file))
-          (loop (cons (<ra> :read-line-from-file file)
-                      ret))
-          (begin
-            (<ra> :close-file file)
-            (reverse ret))))))
-
-
 (define (get-menu-indent-level line)
   (let loop ((level 0)
              (chars (string->list line)))
@@ -204,26 +20,12 @@
   :args
   :keybindings)
 
-(define (get-menu-keybindings command)
-  (define keybindings (get-keybindings-from-command-without-focus-and-mouse command))
-  ;;(c-display "keybindings2:" keybindings2)
-  ;;(c-display "keybindings3:" (merge-keybindings keybindings2))
-  (remove-duplicates-in-sorted-list equal?  ;; call remove-duplicates again since merge-keybindings may have merged into several equal keybindings
-                                    (merge-keybindings keybindings)))
-
-#!!
-(get-menu-keybindings "ra.quantitizeRange")
-(get-menu-keybindings "ra.setEditorKeyboardFocus")
-(for-each c-display (<ra> :get-keybindings-from-command "ra.setEditorKeyboardFocus"))
-(<ra> :get-keybindings-from-command "ra.undo")
-!!#
-
 (define (create-menu-line-from-line line)
   (define parts (map string-strip (string-split line #\|)))
   (define command (cl-cadr parts))
   ;;(c-display "command:" command (and command (to-list (<ra> :get-keybindings-from-command command))))
   (define keybindings (and command
-                           (get-menu-keybindings command)))
+                           (get-displayable-keybindings1 command)))
   
   ;;(c-display "Keybindings:" keybindings)
   (make-menu-line :indentation (get-menu-indent-level line)
@@ -257,14 +59,7 @@
 (define (generate-menu-item-text text keybinding)
   (string-rightjustify text
                        40
-                       (let loop ((qualifiers (cdr keybinding))
-                                  (is-first #t))
-                         (<-> (if is-first "" " + ")
-                              (if (null? qualifiers)
-                                  (car keybinding)
-                                  (<-> (<ra> :get-qualifier-name (car qualifiers))
-                                       (loop (cdr qualifiers)
-                                             #f)))))))
+                       (get-displayable-keybinding2 keybinding)))
 
 (define (generate-menu-item-python-command command)
   (define pos (string-position " " command))
