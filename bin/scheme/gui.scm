@@ -1464,9 +1464,10 @@
 
   (<gui> :add-mouse-callback widget
          (lambda (button state x y)
-           (if (and (= state *is-entering*)
-                    );(<gui> :is-enabled widget))
-               (<ra> :hover-popup-menu-entry entry-id))
+           (when (and (= state *is-entering*)
+                      );(<gui> :is-enabled widget))
+             ;;(c-display "Entering" name)
+             (<ra> :hover-popup-menu-entry entry-id))
            #f))
   
   widget)
