@@ -68,8 +68,8 @@ int64_t g_last_hovered_menu_entry_guinum = -1;
 namespace{
 
   class MyQAction;
-  static int g_myactions_counter = 0;
-  static QHash<int, QPointer<MyQAction>> g_curr_visible_actions;
+  static int64_t g_myactions_counter = 0;
+  static QHash<int64_t, QPointer<MyQAction>> g_curr_visible_actions;
 
   static bool _has_keyboard_focus = false; // Must be global since more than one QMenu may open simultaneously. (not supposed to happen, but it does happen)
 
@@ -293,17 +293,19 @@ namespace{
     
     bool _success = true;
 
+    int64_t _entry_id;
+    
     MyQAction(const QString &text, const QString &shortcut, std::shared_ptr<Callbacker> &callbacker, bool is_checkbox, bool is_checked, bool is_radiobutton, bool is_first, bool is_last, QObject *parent = NULL)
       : QWidgetAction(parent)
       , _callbacker(callbacker)
+      , _entry_id(g_myactions_counter++)
     {
-      int entryid = g_myactions_counter++;
       
-      g_curr_visible_actions[entryid] = this;
+      g_curr_visible_actions[_entry_id] = this;
       
       S7EXTRA_GET_FUNC(s_func, "FROM_C-create-menu-entry-widget");
 
-      _guinum = S7CALL(int_int_charpointer_charpointer_bool_bool_bool_bool_bool, s_func, entryid, text.toUtf8().constData(), shortcut.toUtf8().constData(), is_checkbox, is_checked, is_radiobutton, is_first, is_last);
+      _guinum = S7CALL(int_int_charpointer_charpointer_bool_bool_bool_bool_bool, s_func, _entry_id, text.toUtf8().constData(), shortcut.toUtf8().constData(), is_checkbox, is_checked, is_radiobutton, is_first, is_last);
 
       if (_guinum > 0){
         
@@ -323,6 +325,10 @@ namespace{
       }
     }
 
+    ~MyQAction(){
+      g_curr_visible_actions.remove(_entry_id);
+    }
+    
     // Called by MyQMenu. (workaround for stupid separator behaviour in Qt)
     virtual bool my_clicked(void){
       return false; // don't eat mouse press event
@@ -831,9 +837,6 @@ static QMenu *create_qmenu(
 {
   R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
 
-  g_myactions_counter = 0;
-  g_curr_visible_actions.clear();
-  
   MyMainQMenu *menu = new MyMainQMenu(NULL, "", is_async, callback2);
   menu->setAttribute(Qt::WA_DeleteOnClose);
 
