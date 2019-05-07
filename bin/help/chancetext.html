@@ -11,19 +11,22 @@ Chance text lets you set the probability for this note or pitch to play.
 <p>
   <blockquote>
     <pre>
-1 = lowest chance, ff = highest chance. (hex format)
+
+ <b>0</b> = Only play if the previous note played. For instance if you want to play a chord with same chance.
+ <b>1</b> = 0.004% chance.
+..
+<b>40</b> = 25% chance.
+.. 
+<b>80</b> = 50% chance.
+..
+<b>c0</b> = 75% chance.
+..
+<b>ff</b> = 99.6% chance.
+<b>  </b> = 100% chance. (empty)
     </pre>
   </blockquote>
 <p>
 
-  Examples:
-  <UL>
-    <LI>xx = 80: 128/256 (50%) chance of this note playing
-    <LI>xx =  0: Only play if the previous note played. For instance if wanting to play a chord with same chance.
-    <LI>xx = ff: 255/256 (99.6%) chance of this note playing
-  </UL>
-
-<p>
 
   To remove a chance text (to make sure the note is always played), press DEL.
 <p>
@@ -34,6 +37,6 @@ Chance text lets you set the probability for this note or pitch to play.
   of individual voices in the note duplicator so you don't have to worry about
   the voices not always playing.)
                                  
-  
+
 </body>
 </html>
