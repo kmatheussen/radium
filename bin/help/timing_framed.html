@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<!-- Template by quackit.com -->
+<html><head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>Radium manual</title>
+		<style type="text/css">
+		
+		body{
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			height: 100%; 
+			max-height: 100%; 
+			font-family:Sans-serif;
+			line-height: 1.5em;
+		}
+		
+		#nav{
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+                        right: 0px;
+                        margin: 0px;
+                        padding: 0px;
+			width: 200px; /* Width of navigation frame */
+			height: 100%;
+			/*overflow: hidden;*/ /* Disables scrollbars on the navigation frame. To enable scrollbars, change "hidden" to "scroll" */
+                        overflow-y: auto;
+			background: #eee;
+		}
+		
+		main{
+			margin-left: 0px;
+			padding-left: 10px;
+			padding-right: 10px;
+			position: fixed;
+			top: 0; 
+			left: 200px; /* Set this to the width of the navigation frame */
+			right: 0;
+			bottom: 0;
+			overflow: auto; 
+			background: #fff;
+		}
+		
+		.innertube{
+		    margin: 0px; /* Provides padding for the content */
+                    overflow-y: auto;
+		}
+
+                pre
+                {
+                    background: #eeeeee;
+                    border: solid 1px #19A347;  
+                    color: #191919;  
+                    display: block;  
+                    font-family: monospace;  
+                    font-size: 16px;  
+                    margin: 8px;  
+                    padding: 4px;
+                    white-space: pre;
+                }
+                
+		p {
+			color: #555;
+		}
+
+		nav ul {
+			list-style-type: none;
+			margin: 0px;
+			padding: 10px;
+                        top-border: 0;
+                        bottom-border: 0;
+                        top: 0;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        border-bottom: 1px solid #555;
+		}
+
+                nav li a {
+                    display: block;
+                    color: #000;
+                    padding: 8px 16px;
+                    text-decoration: none;
+                }
+
+                nav li {
+                    border: 1px solid #555;
+                }
+                
+                nav li .active {
+                    background-color: #4CAF50;
+                    color: white;
+                    top-border: 0;
+                    bottom-border: 0;
+                }
+
+                nav li a:hover {
+                    background-color: gray;
+                }
+                
+		margin: 25px;
+		padding: 0px;
+
+
+		/*IE6 fix*/
+		* html body{
+			padding: 0 0 0 230px; /* Set the last value to the width of the navigation frame */
+		}
+		
+		* html main{ 
+			height: 100%; 
+			width: 100%; 
+		}
+
+table {
+font-family: arial, sans-serif;
+font-style: normal;
+border-collapse: collapse;
+}
+
+body{
+font-family: arial, sans-serif;
+}
+
+td, th {
+border: 1px solid #dddddd;
+text-align: left;
+padding: 8px;
+}
+
+tr:nth-child(odd) {
+background-color: #e8e8e8;
+}
+tr:nth-child(even) {
+background-color: #eeeeee;
+}
+
+pre, code {
+/*    white-space: pre-wrap; */
+/*    margin-left: 50px; */
+}
+
+.boxed {
+  border: 1px solid green ;
+}
+
+</style>
+		
+</head>
+	
+	<body>		
+				
+		<main>
+			<div class="innertube">
+<h1>Timing</h1>
+
+<a href="#what">What is timing?</a><br>
+<a href="#usage">What is timing used for in Radium?</a><br>
+<a href="#overview">How is timing controlled?</a><br>
+<a href="#modes">Timing modes</a><br>
+<a href="#defaulttimingvalues">Default Timing values</a><br>
+
+
+<a name="what"></a><h2>What is timing?</h2>
+
+Timing is tempo and rhythm.
+
+<p>
+
+<a name="usage"></a><h2>What is timing used for in Radium?</h2>
+
+<OL>
+  <LI> <b>External plugins</b>
+    (For instance to a make a VST plugin play echo sounds in sync with the music.)
+    <p>
+      <img src="filterscape.png" width=30%>
+      
+    <p>
+      <LI> <b>The metronome</b> (Enabled by the "Click" button in the bottom bar)
+        <p>
+          <img src="clickbutton.png">
+        <p>
+      <LI> <b>Modulators</b>
+        <p>
+          <img src="modulator.png" width=30%>          
+        <p>
+      <LI> <b>The sequencer grid</b>
+        <p>
+          <img src="sequencergrid.png">          
+       <LI> <b>Jack Transport</b>
+         <p>
+           <img src="jack_transport.png">
+         <p>
+           If the "Radium is the Jack Time Master" option is enabled under Edit -> Preferences -> Sequencer -> Jack Transport, Radium will send timing information to Jack Transport, meaning that other Jack Transport clients may use Radium's timing.<p>
+           Note that Radium always uses it's own timing. Radium never asks Jack Transport for timing.
+</OL>
+<pre>
+</pre>
+<p>
+
+
+<a name="overview"></a><h2>How is timing controlled?</h2>
+
+Timing is controlled by tempo events and signature events:
+<UL>
+<LI> <b>Tempos</b> (BPM) specify the duration of a quarter note. Note that BPM stands for <b>B</b>eats <b>P</b>er <b>M</b>inute, which is a misleading name unless your signature is 4/4. <b>QPM</b> (Quarter notes Per Minute) would be more correct.
+<p>
+<LI> <b>Signatures</b> specify rhythm. It does so by specifying number of beats (in a bar) above beat type.
+  For instance, a 4/4 signature means that there are 4 beats in the bar, and that each beat is a quarter.
+  <p>
+    Here are some other common names for the term "signature": time signature, meter signature, meter, metre, measure, and measure signature.
+</UL>
+<p>
+Example 1: If tempo is set to 64 BPM, and the signature is set to 8/8, a new bar will be played every 16 seconds (64/4 * 8/8), and a new beat will be played every 2 seconds (64/4 * 1/8).
+Example 2: If the signature is set to 2/4, a new bar will be played every 8 seconds (64/4 * 2/4), and a new beat will be played every 4 seconds (64/4 * 1/4).
+<pre>
+</pre>
+<p>
+
+
+
+<a name="modes"></a><h2>Timing modes</h2>
+
+There are two timing modes to select from. Only one of them can be enabled at the same time:
+
+<OL>
+<LI><b>Editor timing</b><br>
+<p>
+Editor timing is the default mode. In editor timing mode, tempos and signaturs are provided by the editor blocks placed in the first seqtrack.
+<p>
+Tempos are edited in the tempo tracks in the editor ("BPM"), and signatures are edited in the signature tracks in the editor ("Sign."):
+<p>
+  <img src="editortiming.png">
+<p> 
+In this mode, the tempo and signature lanes in the sequencer are just used for visualization, and editing in any of these two lanes is disabled.
+<p>
+ 
+<LI><b>Sequencer timing</b><br>
+<p>
+In sequencer timing mode, tempos and signatures are provided by the tempo and signature lanes in the sequencer.
+This mode can be set explicitly in the popup menu of the sequencer,
+but it will also be used automatically if the first seqtrack is for audio and not for editor blocks
+<p>
+If you are using Radium mainly for recording and playing back audio files,
+this mode is both simpler, and probably easier to use, than editor timing.
+<p>
+Note that accelerando and ritardando are not supported yet in this mode.
+In addition, signatures must align with bars, and tempos must align with beats.
+Editor timing mode does not have these limitations.
+<p>
+  <img src="sequencertiming.png">
+</OL>
+
+To select timing mode, use the popup menu in the sequencer and either select "Editor timing" or "Sequencer timing".
+Note that if the first seqtrack is for audio files, you are always forced to use sequencer timing.
+
+<a name="defaulttimingvalues"></a><h2>Default Timing values</h2>
+<p>
+  If "BPM track" and "Signature track" are visible you can change the default timing values in the upper left part of the editor:
+<p>
+  <img src="defaulttiming1.png">
+<p>
+  If "BPM track" and "Signature track" are not visible you can change the default timing values in the bottom bar instead:
+<p>
+  <img src="defaulttiming2.png">
+
+<p>
+
+  You change whether "BPM track" and "Signature track" are visible in the main menus under "Editor View".
+
+  
+
+				
+			</div>
+		</main>
+	
+		<nav id="nav">
+		  <div class="innertube">
+                    
+			<ul>
+			  <li><a class="maybeactive" href="home_framed.html">GUI Overview</a>
+                            <ul>
+                              <li><a class="maybeactive" href="mouse_framed.html">Mouse</a></li>
+                            </ul>
+                          </li>
+                          <li><a class="maybeactive" href="editor_framed.html">Editor</a>
+                            <ul>
+			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
+			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
+			      <li><a class="maybeactive" href="velocitytext_framed.html">Velocity text</a></li>
+			      <li><a class="maybeactive" href="fxtext_framed.html">FX text</a></li>
+                            </ul>
+                          </li>
+			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
+			  <li><a class="maybeactive" href="sequencer_framed.html">Sequencer</a></li>
+                          <li><a class="maybeactive" href="instrument_framed.html">Instrument</a>
+                            <ul>
+			      <li><a class="maybeactive" href="faustdev_framed.html">FaustDev</a></li>
+			      <li><a class="maybeactive" href="puredata_framed.html">Pure Data</a></li>
+			      <li><a class="maybeactive" href="sampler_framed.html">Sample player</a></li>
+			      <li><a class="maybeactive" href="instrument_effect_popup_menu_framed.html">Instrument effect popup menu</a></li>
+                            </ul>
+                          </li>
+			  <li><a class="active" href="timing_framed.html">Timing</a></li>
+			  <li><a class="maybeactive" href="modulators_framed.html">Modulators</a></li>
+			  <li><a class="maybeactive" href="common_keybindings_framed.html">Common keybindings</a></li>
+			  <li><a class="maybeactive" href="keybindings_framed.html">How to configure keybindings</a></li>
+			</ul>
+                        
+			</div>
+		</nav>
+	
+	
+
+</body></html>

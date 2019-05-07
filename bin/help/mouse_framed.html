@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<!-- Template by quackit.com -->
+<html><head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>Radium manual</title>
+		<style type="text/css">
+		
+		body{
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			height: 100%; 
+			max-height: 100%; 
+			font-family:Sans-serif;
+			line-height: 1.5em;
+		}
+		
+		#nav{
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+                        right: 0px;
+                        margin: 0px;
+                        padding: 0px;
+			width: 200px; /* Width of navigation frame */
+			height: 100%;
+			/*overflow: hidden;*/ /* Disables scrollbars on the navigation frame. To enable scrollbars, change "hidden" to "scroll" */
+                        overflow-y: auto;
+			background: #eee;
+		}
+		
+		main{
+			margin-left: 0px;
+			padding-left: 10px;
+			padding-right: 10px;
+			position: fixed;
+			top: 0; 
+			left: 200px; /* Set this to the width of the navigation frame */
+			right: 0;
+			bottom: 0;
+			overflow: auto; 
+			background: #fff;
+		}
+		
+		.innertube{
+		    margin: 0px; /* Provides padding for the content */
+                    overflow-y: auto;
+		}
+
+                pre
+                {
+                    background: #eeeeee;
+                    border: solid 1px #19A347;  
+                    color: #191919;  
+                    display: block;  
+                    font-family: monospace;  
+                    font-size: 16px;  
+                    margin: 8px;  
+                    padding: 4px;
+                    white-space: pre;
+                }
+                
+		p {
+			color: #555;
+		}
+
+		nav ul {
+			list-style-type: none;
+			margin: 0px;
+			padding: 10px;
+                        top-border: 0;
+                        bottom-border: 0;
+                        top: 0;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        border-bottom: 1px solid #555;
+		}
+
+                nav li a {
+                    display: block;
+                    color: #000;
+                    padding: 8px 16px;
+                    text-decoration: none;
+                }
+
+                nav li {
+                    border: 1px solid #555;
+                }
+                
+                nav li .active {
+                    background-color: #4CAF50;
+                    color: white;
+                    top-border: 0;
+                    bottom-border: 0;
+                }
+
+                nav li a:hover {
+                    background-color: gray;
+                }
+                
+		margin: 25px;
+		padding: 0px;
+
+
+		/*IE6 fix*/
+		* html body{
+			padding: 0 0 0 230px; /* Set the last value to the width of the navigation frame */
+		}
+		
+		* html main{ 
+			height: 100%; 
+			width: 100%; 
+		}
+
+table {
+font-family: arial, sans-serif;
+font-style: normal;
+border-collapse: collapse;
+}
+
+body{
+font-family: arial, sans-serif;
+}
+
+td, th {
+border: 1px solid #dddddd;
+text-align: left;
+padding: 8px;
+}
+
+tr:nth-child(odd) {
+background-color: #e8e8e8;
+}
+tr:nth-child(even) {
+background-color: #eeeeee;
+}
+
+pre, code {
+/*    white-space: pre-wrap; */
+/*    margin-left: 50px; */
+}
+
+.boxed {
+  border: 1px solid green ;
+}
+
+</style>
+		
+</head>
+	
+	<body>		
+				
+		<main>
+			<div class="innertube">
+    <h3>Mouse</h3>
+    <UL>
+      <LI> <b>Finetuning</b>:
+      <UL>
+        <LI>Linux and Windows: Press the <b>Ctrl</b> key.
+        <LI>macOS: Press the <b>Cmd</b> key.
+      </UL>
+      <LI> <b>Y direction only</b>:
+        <UL>
+          <LI>All systems: Press <b>Shift</b> key.
+        </UL>
+      <LI> <b>X direction only</b>:
+        <UL>
+          <LI>Linux and Windows: Press on of the <b>Windows (Meta)</b> keys.
+          <LI>macOS: Press the <b>Left Alt</b> key.
+        </UL>
+      <LI> <b>Move all automation nodes</b>:
+        <UL>
+          <LI>Linux and Windows: Press the <b>Alt</b> key.
+          <LI>macOS: Press one of the <b>Ctrl</b> keys.
+        </UL>
+      <LI> <b>Reset automation</b>:
+        <UL>
+          <LI>Linux and Windows: Press <b>Shift</b> and <b>Alt</b>, and click <b>Right mouse button</b>.<br>
+          <LI>macOS: Press <b>Shift</b> and <b>Ctrl</b>, and click <b>Right mouse button</b>.<br>
+        </UL>
+      <LI> <b>Break grid</b>:
+        <UL>
+          <LI>Linux and Windows: Press the <b>Ctrl</b> key. (i.e. do finetuning)
+          <LI>macOS: Press the <b>Cmd</b> key. (i.e. do finetuning)
+        </UL>
+      <LI> <b>Delete</b> object under mouse:
+        <UL>
+          <LI>All systems: Press <b>Shift</b> and click <b>Right mouse button</b>.<br>
+            <small>This works for automation node, sound object, plugin, track, block, note, etc.</small>
+        </UL>
+      <LI> <b>Select/unselect</b> something:
+        <UL>
+          <LI> Linux and Windows: Press the <b>Ctrl</b> key and click <b>Left mouse button</b>.
+          <LI> macOS: Press the <b>Cmd</b> key and click <b>Left mouse button</b>.
+        </UL>
+      <LI> <b>Zoom</b> in or out:
+        <UL>
+          <LI> Linux and Windows: Press the <b>Ctrl</b> key and use the <b>Mouse scroll wheel</b>.
+          <LI> macOS: Press the <b>Cmd</b> key and use the <b>Mouse scroll wheel</b>.
+        </UL>
+      <LI> <b>Scroll vertically</b>:
+        <UL>
+          <LI> All systems: Use the <b>Mouse scroll wheel</b>.
+          <LI> Below the timeline area in the sequencer you also need to hold one of the <b>Windows (Meta)</b> keys (OSX: <b>Left Alt</b> key).
+          <LI><small>(Note that the editor works differently. In the editor, the mouse scroll wheel does the same as Arrow Down and Arrow Up, and those keys will zoom lines in/out, or move the cursor 8 steps up/down, depending on which Shift key is pressed. Note that you can configure the keybindings.)</small>
+        </UL>
+      <LI> <b>Scroll horizontally</b>:
+        <UL>
+          <LI>Linux and Windows: Use the <b>Mouse scroll wheel</b> and press on of the <b>Windows (Meta)</b> keys.
+          <LI>macOS: Use the <b>Mouse scroll wheel</b> and press the <b>Left Alt</b> key. 
+          <LI><small>(Note that the editor works differently. In the editor, the mouse scroll wheel does the same as Arrow Down and Arrow Up. By default the Arrow Down and Arrow Up keys are not assigned to any keybinding while holding a Windows key, while on macOS, the alt key is assigned to scroll to the previous or next event on the current track. Note that you can configure the keybindings.)</small>
+        </UL>
+      <LI> <b>Play song</b>
+        <UL>
+          <LI> All systems: Use the <b>Mouse scroll wheel</b> inside the sequencer, or in the sequencer overview in the bottom bars.
+            Move cursor to where you want to play from and <b>Scroll up</b>. <b>Scroll down</b> to stop playing.
+        </UL>
+    </UL>
+  
+
+				
+			</div>
+		</main>
+	
+		<nav id="nav">
+		  <div class="innertube">
+                    
+			<ul>
+			  <li><a class="maybeactive" href="home_framed.html">GUI Overview</a>
+                            <ul>
+                              <li><a class="active" href="mouse_framed.html">Mouse</a></li>
+                            </ul>
+                          </li>
+                          <li><a class="maybeactive" href="editor_framed.html">Editor</a>
+                            <ul>
+			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
+			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
+			      <li><a class="maybeactive" href="velocitytext_framed.html">Velocity text</a></li>
+			      <li><a class="maybeactive" href="fxtext_framed.html">FX text</a></li>
+                            </ul>
+                          </li>
+			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
+			  <li><a class="maybeactive" href="sequencer_framed.html">Sequencer</a></li>
+                          <li><a class="maybeactive" href="instrument_framed.html">Instrument</a>
+                            <ul>
+			      <li><a class="maybeactive" href="faustdev_framed.html">FaustDev</a></li>
+			      <li><a class="maybeactive" href="puredata_framed.html">Pure Data</a></li>
+			      <li><a class="maybeactive" href="sampler_framed.html">Sample player</a></li>
+			      <li><a class="maybeactive" href="instrument_effect_popup_menu_framed.html">Instrument effect popup menu</a></li>
+                            </ul>
+                          </li>
+			  <li><a class="maybeactive" href="timing_framed.html">Timing</a></li>
+			  <li><a class="maybeactive" href="modulators_framed.html">Modulators</a></li>
+			  <li><a class="maybeactive" href="common_keybindings_framed.html">Common keybindings</a></li>
+			  <li><a class="maybeactive" href="keybindings_framed.html">How to configure keybindings</a></li>
+			</ul>
+                        
+			</div>
+		</nav>
+	
+	
+
+</body></html>

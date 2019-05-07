@@ -443,26 +443,26 @@ bool progressWindowIsOpen(void){
 }
 
 void showHomeHelpWindow(void){
-  evalScheme("(FROM-C-show-help-window \"help/home.html\")");
+  evalScheme("(FROM-C-show-help-window \"help/home_framed.html\")");
 }
 void showMixerHelpWindow(void){
-  evalScheme("(FROM-C-show-help-window \"help/mixer.html\")");
+  evalScheme("(FROM-C-show-help-window \"help/mixer_framed.html\")");
 }
 void showChanceHelpWindow(void){
-  evalScheme("(FROM-C-show-help-window \"help/chancetext.html\")");
+  evalScheme("(FROM-C-show-help-window \"help/chancetext_framed.html\")");
 }
 void showVelocityHelpWindow(void){
-  evalScheme("(FROM-C-show-help-window \"help/velocitytext.html\")");
+  evalScheme("(FROM-C-show-help-window \"help/velocitytext_framed.html\")");
 }
 void showFXHelpWindow(void){
-  evalScheme("(FROM-C-show-help-window \"help/fx.html\")");
+  evalScheme("(FROM-C-show-help-window \"help/fx_framed.html\")");
 }
 void showFXTextHelpWindow(void){
-  evalScheme("(FROM-C-show-help-window \"help/fxtext.html\")");
+  evalScheme("(FROM-C-show-help-window \"help/fxtext_framed.html\")");
 }
 void showSwingHelpWindow(void){
-  evalScheme("(FROM-C-show-help-window \"help/swingtext.html\")");
+  evalScheme("(FROM-C-show-help-window \"help/swingtext_framed.html\")");
 }
 void showKeybindingsHelpWindow(void){
-  evalScheme("(FROM-C-show-help-window \"help/keybindings.html\")");
+  evalScheme("(FROM-C-show-help-window \"help/keybindings_framed.html\")");
 }

@@ -1331,7 +1331,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    "-----------------"
    (list "Help"
          (lambda ()
-           (FROM-C-show-help-window "help/instrument_effect_popup_menu.html")))
+           (FROM-C-show-help-window "help/instrument_effect_popup_menu_framed.html")))
    
    ))
   

@@ -1,8 +1,41 @@
 <html>
-<body bgcolor="#ffffff">
+  <body bgcolor="#ffffff">
+
+    <IMG SRC="sequencer.png" ALT="Sequencer" style="border:10px solid transparent" align="right">
+    
 <h1>Sequencer</h1>
 
-(under construction)
+Time area:
+                <UL>
+                  <LI> The sequencer lets you select when a block starts playing.
+                  <LI> Add a new sequencer track ("seqtrack") by clicking one of the "+ ..." buttons in the lower left corner.
+                  <LI> Seqblocks:
+                    <UL> 
+                      <LI> Move a seqblock with the mouse.
+                      <LI> To move several seqblocks, either mark a rectangle, or press Ctrl and click on the seqblocks you want to move.
+                      <LI> To quickly copy a seqblock, hold the <b>Alt</b> key and drag a seqblock. On macOS: Hold the <b>Ctrl</b> key.
+                      <LI> Double-click a seqblock to open a GUI for it.
+                    </UL> 
+                  <LI> Use the popup menu to add effect automations, tempo automations, loop start and end positions, and other operations.
+                  <LI> To quickly start playing at the position of the mouse cursor, scroll the mouse wheel <b>up</b>, and stop by scrolling <b>down</b>.
+                  <LI> To record audio, click the "R" button in the seqtrack header of audio seqtracks, and start playing. To configure number of audio channels and where to get audio from, right-click the "R" button. You might also want to select beforehand when to start and stop recording, and you can do this by by right-clicking in the seqblock area and select the "Punch in/out" option under "Sequencer timeline".
+                  <LI> For information about the different types of fade in and fade out shapes, look in the Ardour manual <A href="http://manual.ardour.org/editing-and-arranging/create-region-fades-and-crossfades/">here</A>.
+                  <LI> Drag seqtrack number to change track order.
+                </UL>
 
+    <p>
+      
+                Timeline:
+                <UL>
+                  <LI> Left-click the <b>G:Bar</b> button to enable/disable grid.
+                  <LI> Right-click the <b>G:Bar</b> button to set grid type.
+                  <LI> Double-click a marker to loop between that marker and the next marker. (If you double-click the last marker, you will be asked to rename that marker instead)
+                </UL>
+
+    <p>
+                Recording:
+                <UL>
+                  <LI> Right-click the "R" button in a seqtrack header to set recording options.
+                </UL>
 </body>
 </html>
