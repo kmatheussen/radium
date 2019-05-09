@@ -262,12 +262,18 @@
   ;;(set! g-total-time2 (+ g-total-time2 (- (time) start)))
   ret)
 
+(define-instrument-memoized (get-pure-buses)
+  (map (lambda (bus-num)
+         (<ra> :get-audio-bus-id bus-num))
+       (iota (length *bus-effect-names*))))
+
+(define-instrument-memoized (get-seqtrack-buses)
+  (keep ra:instrument-is-seqtrack-bus
+        (get-all-audio-instruments)))
+
 (define-instrument-memoized (get-buses)
-  (append (keep ra:instrument-is-seqtrack-bus
-                (get-all-audio-instruments))
-          (map (lambda (bus-num)
-                 (<ra> :get-audio-bus-id bus-num))
-               (iota (length *bus-effect-names*)))))
+  (append (get-seqtrack-buses)
+          (get-pure-buses)))
 
 (define-instrument-memoized (get-instruments-connecting-to-instrument id-instrument)
   (map (lambda (in-connection)

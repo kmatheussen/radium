@@ -694,20 +694,38 @@
 
 (define (request-send-instrument instrument-id callback)
   (define is-bus-descendant (<ra> :instrument-is-bus-descendant instrument-id))
-  (define buses (get-buses))
+  (define pure-buses (get-pure-buses))
+  (define seqtrack-buses (get-seqtrack-buses))
+  (define buses (append pure-buses seqtrack-buses))
   (define (create-entry-text instrument-id)
     (<-> *arrow-text* " " (<ra> :get-instrument-name instrument-id)))
 
   (define (apply-changes changes)
     (<ra> :undo-mixer-connections)
     (<ra> :change-audio-connections changes))
-  
+
+  (define (create-bus-entries instrument-ids)
+    (map (lambda (send-id)
+           (list (create-entry-text send-id)
+                 :enabled (and (not (= send-id instrument-id))
+                               (not (<ra> :has-audio-connection instrument-id send-id))
+                               (> (<ra> :get-num-input-channels send-id) 0))
+                 (lambda ()
+                   (callback (lambda (gain changes)
+                               (push-audio-connection-change! changes (list :type "connect"
+                                                                            :source instrument-id
+                                                                            :target send-id
+                                                                            :connection-type *send-connection-type*
+                                                                            :gain gain))
+                               (apply-changes changes))))))
+         instrument-ids))
+    
   (define args
     (run-instrument-data-memoized
      (lambda()
        (list
      
-        ;; buses
+        ;; pure buses
         (map (lambda (bus-effect-name bus-onoff-effect-name bus-id)
                (list (create-entry-text bus-id)
                      :enabled (and (not is-bus-descendant)
@@ -726,30 +744,21 @@
 
              *bus-effect-names*
              *bus-effect-onoff-names*
-             buses)
+             pure-buses)
+        
+        ;; seqtrack buses
+        (create-bus-entries seqtrack-buses)
         
         "------------"
         
         ;; audio connections
-        (map (lambda (send-id)
-               (list (create-entry-text send-id)
-                     :enabled (and (not (= send-id instrument-id))
-                                   (not (<ra> :has-audio-connection instrument-id send-id))
-                                   (> (<ra> :get-num-input-channels send-id) 0))
-                     (lambda ()
-                       (callback (lambda (gain changes)
-                                   (push-audio-connection-change! changes (list :type "connect"
-                                                                                :source instrument-id
-                                                                                :target send-id
-                                                                                :connection-type *send-connection-type*
-                                                                                :gain gain))
-                                   (apply-changes changes))))))
-             (sort-instruments-by-mixer-position-and-connections
-              (keep (lambda (id)
-                      (not (member id buses)))
-                    (begin
-                      (define ret (get-all-instruments-that-we-can-send-to instrument-id))
-                      ret))))))))
+        (create-bus-entries (sort-instruments-by-mixer-position-and-connections
+                             (keep (lambda (id)
+                                     (not (member id buses)))
+                                   (begin
+                                     (define ret (get-all-instruments-that-we-can-send-to instrument-id))
+                                     ret))))))))
+  
   (apply popup-menu args))
 
 
