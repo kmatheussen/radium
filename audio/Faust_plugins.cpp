@@ -832,7 +832,7 @@ static void FAUST_compile_now(struct SoundPlugin *plugin){
 }
 
 bool FAUST_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_interpreter){
-#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+#if defined(WITHOUT_LLVM_IN_FAUST_DEV)
   R_ASSERT_NON_RELEASE(false);
   return false;
 #endif
