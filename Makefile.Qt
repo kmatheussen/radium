@@ -293,9 +293,9 @@ ifeq ($(BUILDTYPE), RELEASE)
 endif
 
 ifeq ($(BUILDTYPE), RELEASE)
-	OPTIMIZE_O3="-O3" # SmoothDelay.hpp / Fade.hpp / Granulator.hpp runs faster with -O3.
+	OPTIMIZE_O3=-O3 # SmoothDelay.hpp / Fade.hpp / Granulator.hpp runs faster with -O3.
 else
-	OPTIMIZE_O3=""
+	OPTIMIZE_O3=
 endif
 
 
@@ -1908,7 +1908,8 @@ undo_mixer_connections.o: $(QM)undo_mixer_connections.c
 #	$(CC) $(OPT) $(QM)undo_chip_addremove.c
 
 Jack_plugin.o: audio/Jack_plugin.cpp weakjack/weak_libjack.def weakjack/weak_libjack.h weakjack/weak_libjack.c
-	$(CCC) $(QTOPT) audio/Jack_plugin.cpp $(JACKOPT) -Wno-error=deprecated-declarations -Wno-missing-prototypes -Wno-gnu-designator
+	$(CCC) $(QTOPT) audio/Jack_plugin.cpp $(JACKOPT) -Wno-missing-declarations -Wno-deprecated-declarations
+#-Wno-gnu-designator -Wno-missing-field-initializers
 
 find_jack_library.o: windows/find_jack_library.cpp
 	$(CCC) windows/find_jack_library.cpp $(QTOPT)
@@ -1948,6 +1949,7 @@ Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/Gra
 
 FluidSynth_plugin.o: audio/FluidSynth_plugin.cpp
 	$(CCC) $(CPPOPT) $(CPUOPT) audio/FluidSynth_plugin.cpp -Wno-gnu-designator
+#-Wno-missing-field-initializers
 #`$(PKG) --cflags fluidsynth`
 
 Pd_plugin.o: audio/Pd_plugin.cpp

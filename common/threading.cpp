@@ -218,7 +218,7 @@ int64_t THREADING_run_on_main_thread_async(std::function<void(void)> callback, b
     return id;
   }
 }
-
+/*
 int64_t THREADING_run_on_main_thread_async(std::function<void(void)> callback, bool called_from_main_thread){
   R_ASSERT(!PLAYER_current_thread_has_lock());
 
@@ -238,7 +238,7 @@ int64_t THREADING_run_on_main_thread_async(std::function<void(void)> callback, b
     return id;
   }
 }
-
+*/
 void THREADING_run_on_main_thread_and_wait(std::function<void(void)> callback){
   if (THREADING_is_main_thread()){
     R_ASSERT(!PLAYER_current_thread_has_lock());

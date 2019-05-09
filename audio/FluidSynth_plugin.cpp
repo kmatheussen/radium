@@ -611,38 +611,40 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
     return EFFECT_FORMAT_FLOAT;
 }
 
-static SoundPluginType plugin_type = {
- type_name                : "FluidSynth",
- name                     : "FluidSynth",
- info                     : "FluidSynth is a real-time software synthesizer based on the SoundFont 2 specifications.\n\nhttp://www.fluidsynth.org\n\n Note that the Sample Player also supports Soundfonts.",
- category                 : "Synth",
- num_inputs               : 0,
- num_outputs              : 2,
- is_instrument            : true,
- note_handling_is_RT      : false,
- num_effects              : EFF_NUM_EFFECTS,
- get_effect_format        : get_effect_format,
- get_effect_name          : get_effect_name,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
-
- RT_process       : RT_process,
- play_note        : play_note,
- set_note_volume  : set_note_volume,
- stop_note        : stop_note,
- send_raw_midi_message : send_raw_midi_message,
- 
- set_effect_value : set_effect_value,
- get_effect_value : get_effect_value,
- get_display_value_string : get_display_value_string,
-
- recreate_from_state : recreate_from_state,
- create_state        : create_state,
-
- data                     : NULL
-};
+static SoundPluginType plugin_type = {};
 
 void create_fluidsynth_plugin(void){
+  static bool has_inited=false;
+  
+  if (has_inited==false){
+    plugin_type.type_name                = "FluidSynth";
+    plugin_type.name                     = "FluidSynth";
+    plugin_type.info                     = "FluidSynth is a real-time software synthesizer based on the SoundFont 2 specifications.\n\nhttp://www.fluidsynth.org\n\n Note that the Sample Player also supports Soundfonts.";
+    plugin_type.category                 = "Synth";
+    plugin_type.num_inputs               = 0;
+    plugin_type.num_outputs              = 2;
+    plugin_type.is_instrument            = true;
+    plugin_type.note_handling_is_RT      = false;
+    plugin_type.num_effects              = EFF_NUM_EFFECTS;
+    plugin_type.get_effect_format        = get_effect_format;
+    plugin_type.get_effect_name          = get_effect_name;
+    plugin_type.effect_is_RT             = NULL;
+    plugin_type.create_plugin_data       = create_plugin_data;
+    plugin_type.cleanup_plugin_data      = cleanup_plugin_data;
+    
+    plugin_type.RT_process       = RT_process;
+    plugin_type.play_note        = play_note;
+    plugin_type.set_note_volume  = set_note_volume;
+    plugin_type.stop_note        = stop_note;
+    plugin_type.send_raw_midi_message = send_raw_midi_message;
+    
+    plugin_type.set_effect_value = set_effect_value;
+    plugin_type.get_effect_value = get_effect_value;
+    plugin_type.get_display_value_string = get_display_value_string;
+    
+    plugin_type.recreate_from_state = recreate_from_state;
+    plugin_type.create_state        = create_state;
+  }
+  
   PR_add_plugin_type(&plugin_type);
 }
