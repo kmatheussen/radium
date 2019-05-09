@@ -263,9 +263,11 @@
   ret)
 
 (define-instrument-memoized (get-buses)
-  (map (lambda (bus-num)
-         (<ra> :get-audio-bus-id bus-num))
-       (iota (length *bus-effect-names*))))
+  (append (keep ra:instrument-is-seqtrack-bus
+                (get-all-audio-instruments))
+          (map (lambda (bus-num)
+                 (<ra> :get-audio-bus-id bus-num))
+               (iota (length *bus-effect-names*)))))
 
 (define-instrument-memoized (get-instruments-connecting-to-instrument id-instrument)
   (map (lambda (in-connection)

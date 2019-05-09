@@ -1396,6 +1396,28 @@ int64_t getAudioBusId(int bus_num){
   return patch->id;
 }
 
+bool instrumentIsSeqtrackBus(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return true;
+  }
+
+  if (strcmp(plugin->type->type_name, SEQTRACKPLUGIN_NAME))
+    return false;
+  
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    if (seqtrack->patch==patch)
+      return seqtrack->is_bus;
+  }END_VECTOR_FOR_EACH;
+
+  return false;
+}
+
 bool instrumentIsBusDescendant(int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
