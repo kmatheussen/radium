@@ -228,229 +228,185 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   }
 }
 
-static SoundPluginType stereo_in_type = {
- type_name                : "Jack",
- name                     : "Jack Stereo In",
- num_inputs               : 0,
- num_outputs              : 2,
- is_instrument            : false,
- note_handling_is_RT      : false,
- num_effects              : 0,
- will_never_autosuspend   : true,
- get_effect_format        : NULL,
- get_effect_name          : NULL,
- get_display_value_string : NULL,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
+static SoundPluginType stereo_in_type = {};
 
- create_state        : create_state,
+static SoundPluginType stereo_out_type = {};
 
- RT_process       : RT_process,
- play_note        : NULL,
- set_note_volume  : NULL,
- stop_note        : NULL,
- set_effect_value : NULL,
+static SoundPluginType jack8_in_type = {};
 
- data                     : NULL
-};
+static SoundPluginType jack8_out_type = {};
 
-static SoundPluginType stereo_out_type = {
- type_name                : "Jack",
- name                     : "Jack Stereo Out",
- num_inputs               : 2,
- num_outputs              : 0,
- is_instrument            : false,
- note_handling_is_RT      : false,
- num_effects              : 0,
- will_never_autosuspend   : true,
- get_effect_format        : NULL,
- get_effect_name          : NULL,
- get_display_value_string : NULL,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
+static SoundPluginType system_in_type = {};
 
- create_state        : create_state,
+static SoundPluginType system_in_type8 = {};
 
- RT_process       : RT_process,
- play_note        : NULL,
- set_note_volume  : NULL,
- stop_note        : NULL,
- set_effect_value : NULL,
+static SoundPluginType system_out_type = {};
 
- data                     : NULL
-};
+static SoundPluginType system_out_type8 = {};
 
-static SoundPluginType jack8_in_type = {
- type_name                : "Jack",
- name                     : "Jack 8ch In",
- num_inputs               : 0,
- num_outputs              : 8,
- is_instrument            : false,
- note_handling_is_RT      : false,
- num_effects              : 0,
- will_never_autosuspend   : true,
- get_effect_format        : NULL,
- get_effect_name          : NULL,
- get_display_value_string : NULL,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
 
- create_state        : create_state,
+static void init_types(void){
 
- RT_process       : RT_process,
- play_note        : NULL,
- set_note_volume  : NULL,
- stop_note        : NULL,
- set_effect_value : NULL,
+  
+ stereo_in_type.type_name                = "Jack";
+ stereo_in_type.name                     = "Jack Stereo In";
+ stereo_in_type.num_inputs               = 0;
+ stereo_in_type.num_outputs              = 2;
+ stereo_in_type.is_instrument            = false;
+ stereo_in_type.note_handling_is_RT      = false;
+ stereo_in_type.num_effects              = 0;
+ stereo_in_type.will_never_autosuspend   = true;
+ stereo_in_type.create_plugin_data       = create_plugin_data;
+ stereo_in_type.cleanup_plugin_data      = cleanup_plugin_data;
 
- data                     : NULL
-};
+ stereo_in_type.create_state        = create_state;
 
-static SoundPluginType jack8_out_type = {
- type_name                : "Jack",
- name                     : "Jack 8ch Out",
- num_inputs               : 8,
- num_outputs              : 0,
- is_instrument            : false,
- note_handling_is_RT      : false,
- num_effects              : 0,
- will_never_autosuspend   : true,
- get_effect_format        : NULL,
- get_effect_name          : NULL,
- get_display_value_string : NULL,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
+ stereo_in_type.RT_process       = RT_process;
 
- create_state        : create_state,
 
- RT_process       : RT_process,
- play_note        : NULL,
- set_note_volume  : NULL,
- stop_note        : NULL,
- set_effect_value : NULL,
 
- data                     : NULL
-};
-
-static SoundPluginType system_in_type = {
- type_name                : "Jack",
- name                     : "System In",
- num_inputs               : 0,
- num_outputs              : 2,
- is_instrument            : false,
- note_handling_is_RT      : false,
- num_effects              : 0,
- will_never_autosuspend   : true,
- get_effect_format        : NULL,
- get_effect_name          : NULL,
- get_display_value_string : NULL,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
-
- create_state        : create_state,
-
- RT_process       : RT_process,
- play_note        : NULL,
- set_note_volume  : NULL,
- stop_note        : NULL,
- set_effect_value : NULL,
-
- data                     : NULL
-};
-
-static SoundPluginType system_in_type8 = {
- type_name                : "Jack",
- name                     : "System In 8",
- num_inputs               : 0,
- num_outputs              : 8,
- is_instrument            : false,
- note_handling_is_RT      : false,
- num_effects              : 0,
- will_never_autosuspend   : true,
- get_effect_format        : NULL,
- get_effect_name          : NULL,
- get_display_value_string : NULL,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
-
- create_state        : create_state,
-
- RT_process       : RT_process,
- play_note        : NULL,
- set_note_volume  : NULL,
- stop_note        : NULL,
- set_effect_value : NULL,
-
- data                     : NULL
-};
-
-static SoundPluginType system_out_type = {
- type_name                : "Jack",
- name                     : "System Out",
- num_inputs               : 2,
- num_outputs              : 0,
- is_instrument            : false,
- note_handling_is_RT      : false,
- num_effects              : 0,
- will_never_autosuspend   : true,
- get_effect_format        : NULL,
- get_effect_name          : NULL,
- get_display_value_string : NULL,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
-
- called_after_plugin_has_been_created : called_after_system_out_has_been_created,
  
- create_state        : create_state,
+ stereo_out_type.type_name                = "Jack";
+ stereo_out_type.name                     = "Jack Stereo Out";
+ stereo_out_type.num_inputs               = 2;
+ stereo_out_type.num_outputs              = 0;
+ stereo_out_type.is_instrument            = false;
+ stereo_out_type.note_handling_is_RT      = false;
+ stereo_out_type.num_effects              = 0;
+ stereo_out_type.will_never_autosuspend   = true;
+ stereo_out_type.create_plugin_data       = create_plugin_data;
+ stereo_out_type.cleanup_plugin_data      = cleanup_plugin_data;
 
- RT_process       : RT_process,
- play_note        : NULL,
- set_note_volume  : NULL,
- stop_note        : NULL,
- set_effect_value : NULL,
+ stereo_out_type.create_state        = create_state;
 
- data                     : NULL
-};
+ stereo_out_type.RT_process       = RT_process;
 
-static SoundPluginType system_out_type8 = {
- type_name                : "Jack",
- name                     : "System Out 8",
- num_inputs               : 8,
- num_outputs              : 0,
- is_instrument            : false,
- note_handling_is_RT      : false,
- num_effects              : 0,
- will_never_autosuspend   : true,
- get_effect_format        : NULL,
- get_effect_name          : NULL,
- get_display_value_string : NULL,
- effect_is_RT             : NULL,
- create_plugin_data       : create_plugin_data,
- cleanup_plugin_data      : cleanup_plugin_data,
 
- called_after_plugin_has_been_created : called_after_system_out_has_been_created,
+    
+
+ jack8_in_type.type_name                = "Jack";
+ jack8_in_type.name                     = "Jack 8ch In";
+ jack8_in_type.num_inputs               = 0;
+ jack8_in_type.num_outputs              = 8;
+ jack8_in_type.is_instrument            = false;
+ jack8_in_type.note_handling_is_RT      = false;
+ jack8_in_type.num_effects              = 0;
+ jack8_in_type.will_never_autosuspend   = true;
+ jack8_in_type.create_plugin_data       = create_plugin_data;
+ jack8_in_type.cleanup_plugin_data      = cleanup_plugin_data;
+
+ jack8_in_type.create_state        = create_state;
+
+ jack8_in_type.RT_process       = RT_process;
+
+
+    
+
+ jack8_out_type.type_name                = "Jack";
+ jack8_out_type.name                     = "Jack 8ch Out";
+ jack8_out_type.num_inputs               = 8;
+ jack8_out_type.num_outputs              = 0;
+ jack8_out_type.is_instrument            = false;
+ jack8_out_type.note_handling_is_RT      = false;
+ jack8_out_type.num_effects              = 0;
+ jack8_out_type.will_never_autosuspend   = true;
+ jack8_out_type.create_plugin_data       = create_plugin_data;
+ jack8_out_type.cleanup_plugin_data      = cleanup_plugin_data;
+
+ jack8_out_type.create_state        = create_state;
+
+ jack8_out_type.RT_process       = RT_process;
+
+
  
- create_state        : create_state,
 
- RT_process       : RT_process,
- play_note        : NULL,
- set_note_volume  : NULL,
- stop_note        : NULL,
- set_effect_value : NULL,
+ system_in_type.type_name                = "Jack";
+ system_in_type.name                     = "System In";
+ system_in_type.num_inputs               = 0;
+ system_in_type.num_outputs              = 2;
+ system_in_type.is_instrument            = false;
+ system_in_type.note_handling_is_RT      = false;
+ system_in_type.num_effects              = 0;
+ system_in_type.will_never_autosuspend   = true;
+ system_in_type.create_plugin_data       = create_plugin_data;
+ system_in_type.cleanup_plugin_data      = cleanup_plugin_data;
 
- data                     : NULL
-};
+ system_in_type.create_state        = create_state;
 
+ system_in_type.RT_process       = RT_process;
+
+
+ 
+
+ system_in_type8.type_name                = "Jack";
+ system_in_type8.name                     = "System In 8";
+ system_in_type8.num_inputs               = 0;
+ system_in_type8.num_outputs              = 8;
+ system_in_type8.is_instrument            = false;
+ system_in_type8.note_handling_is_RT      = false;
+ system_in_type8.num_effects              = 0;
+ system_in_type8.will_never_autosuspend   = true;
+ system_in_type8.create_plugin_data       = create_plugin_data;
+ system_in_type8.cleanup_plugin_data      = cleanup_plugin_data;
+
+ system_in_type8.create_state        = create_state;
+
+ system_in_type8.RT_process       = RT_process;
+
+
+
+
+ 
+ system_out_type.type_name                = "Jack";
+ system_out_type.name                     = "System Out";
+ system_out_type.num_inputs               = 2;
+ system_out_type.num_outputs              = 0;
+ system_out_type.is_instrument            = false;
+ system_out_type.note_handling_is_RT      = false;
+ system_out_type.num_effects              = 0;
+ system_out_type.will_never_autosuspend   = true;
+ system_out_type.create_plugin_data       = create_plugin_data;
+ system_out_type.cleanup_plugin_data      = cleanup_plugin_data;
+
+ system_out_type.called_after_plugin_has_been_created = called_after_system_out_has_been_created;
+ 
+ system_out_type.create_state        = create_state;
+
+ system_out_type.RT_process       = RT_process;
+
+
+
+
+ 
+ system_out_type8.type_name                = "Jack";
+ system_out_type8.name                     = "System Out 8";
+ system_out_type8.num_inputs               = 8;
+ system_out_type8.num_outputs              = 0;
+ system_out_type8.is_instrument            = false;
+ system_out_type8.note_handling_is_RT      = false;
+ system_out_type8.num_effects              = 0;
+ system_out_type8.create_plugin_data       = create_plugin_data;
+ system_out_type8.cleanup_plugin_data      = cleanup_plugin_data;
+
+ system_out_type8.called_after_plugin_has_been_created = called_after_system_out_has_been_created;
+ 
+ system_out_type8.create_state        = create_state;
+
+ system_out_type8.RT_process       = RT_process;
+
+}
+
+
+ 
 extern jack_client_t *g_jack_client;
 
 void create_jack_plugins(void){
+  static bool has_inited = false;
+  if (has_inited==false){
+    init_types();
+    has_inited = true;
+  }
+  
   stereo_in_type.data = g_jack_client;
   PR_add_plugin_type(&stereo_in_type);
 

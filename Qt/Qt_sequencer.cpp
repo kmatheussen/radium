@@ -2731,7 +2731,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
       
       const struct Beats *beat = block->beats;
           
-      int64_t last_barseqtime = -1;
+      //int64_t last_barseqtime = -1;
       int64_t last_beatseqtime = -1;
       const StaticRatio *last_signature = NULL;
       
@@ -2748,7 +2748,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
         bool is_bar = beat->beat_num==1;
         
         if (is_bar){
-          last_barseqtime = seqtime;          
+          //last_barseqtime = seqtime;          
           barnum++;
         }
         

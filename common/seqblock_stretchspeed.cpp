@@ -58,16 +58,16 @@ static void apply_to_time_conversion_table_double(int num_elements, int64_t *ret
   for(int i=0 ; i<num_elements ; i++, time+=time_inc){
       
     ret[i] = total_automation_time;
-        
+
     double stretch_value = stretch_iterator.get_value(time);
     double stretch = get_stretch_from_automation(stretch_value);
     double stretch_duration = RADIUM_BLOCKSIZE / stretch;
     total_stretch += stretch_duration;
-      
+    
     double speed_value = speed_iterator.get_value(time);
     double speed = get_speed_from_automation(speed_value); 
     double speed_duration = RADIUM_BLOCKSIZE / speed;
-    total_speed += speed_duration;
+    total_speed += speed_duration;  
      
     total_automation_time += RADIUM_BLOCKSIZE / (stretch * speed);
   }
