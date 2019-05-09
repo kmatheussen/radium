@@ -271,7 +271,7 @@ static ReplacementColor g_replacement_color[] = {
   {KEYBOARD_FOCUS_BORDER_COLOR_NUM, QColor("#ff9d00")},
 
   {CURSOR_BORDER_COLOR_NUM, QColor("#50000000")},
-  {CURSOR_CURR_COLUMN_BORDER_COLOR_NUM, QColor("#ffff9d00")},
+  {CURSOR_CURR_COLUMN_BORDER_COLOR_NUM, QColor("#d0ff0000")},
 
   {SLIDER1_COLOR_NUM, QColor(108,65,36)},
   {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},
