@@ -6,7 +6,9 @@
 
 #include <string>
 #include "../bin/packages/faust/architecture/faust/dsp/dsp.h"
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 #include "../bin/packages/faust/architecture/faust/dsp/llvm-dsp.h"
+#endif
 #include "../bin/packages/faust/architecture/faust/dsp/interpreter-dsp.h"
 
 
@@ -186,7 +188,9 @@ namespace{
     QString error_message;
     bool is_instrument = false;
     interpreter_dsp_factory *interpreter_factory = NULL;
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
     llvm_dsp_factory *llvm_factory = NULL;
+#endif
     dsp_factory *factory = NULL;
 
     bool is_empty(void){
@@ -203,8 +207,13 @@ namespace{
 struct Devdata{
   QString code;
   QString options;
-  bool use_interpreter_backend = false;
 
+#if defined(WITHOUT_LLVM_IN_FAUST_DEV)
+  bool use_interpreter_backend = true;
+#else
+  bool use_interpreter_backend = false;
+#endif
+  
   FFF_Reply reply;
 
   bool is_compiling; // <-- Can only be trusted if sending one request at a time. (used by the Faust_Plugin_widget constructor)
@@ -348,7 +357,9 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 
   HASH_put_string(state, "code", STRING_toBase64(STRING_create(devdata->code)));
   HASH_put_string(state, "options", STRING_toBase64(STRING_create(devdata->options)));
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
   HASH_put_bool(state, "use_interpreter_backend", devdata->use_interpreter_backend);
+#endif
 }
 
 
@@ -362,8 +373,10 @@ static void *dev_create_plugin_data(const SoundPluginType *plugin_type, SoundPlu
   if (state!=NULL) {
     devdata->code = STRING_get_qstring(STRING_fromBase64(HASH_get_string(state, "code")));
     devdata->options = STRING_get_qstring(STRING_fromBase64(HASH_get_string(state, "options")));
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
     if(HASH_has_key(state, "use_interpreter_backend"))
       devdata->use_interpreter_backend = HASH_get_bool(state, "use_interpreter_backend");
+#endif
   } else
     devdata->code = DEFAULT_FAUST_DEV_PROGRAM;
 
@@ -819,6 +832,11 @@ static void FAUST_compile_now(struct SoundPlugin *plugin){
 }
 
 bool FAUST_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_interpreter){
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+  R_ASSERT_NON_RELEASE(false);
+  return false;
+#endif
+  
   Devdata *devdata = (Devdata*)plugin->data;
 
   if (use_interpreter != devdata->use_interpreter_backend){

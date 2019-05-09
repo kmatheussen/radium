@@ -38,15 +38,20 @@ namespace{
       : code(code)
       , options(options)
       , optlevel(optlevel)
+#if defined(WITHOUT_LLVM_IN_FAUST_DEV)
+      , use_interpreter(true)
+#else
       , use_interpreter(use_interpreter)
+#endif
     {}
 
     CompileOptions(const Devdata *devdata)
       : CompileOptions(devdata->code, devdata->options, getFaustOptimizationLevel(), devdata->use_interpreter_backend)
     {}
-
+    /*
     CompileOptions(){
     }
+    */
   };
 
   struct Request{
@@ -60,8 +65,9 @@ namespace{
       , opts(opts)
       , please_stop(false)
     {}
-
+    /*
     Request(){}
+    */
   };
 
   class ArgsCreator{
@@ -405,7 +411,10 @@ namespace{
         reply.factory = reply.interpreter_factory;
 
       } else {
-
+#if defined(WITHOUT_LLVM_IN_FAUST_DEV)
+        R_ASSERT(false);
+        return "Compilation error";
+#else
         reply.llvm_factory =
           createDSPFactoryFromString(
                                      "FaustDev",
@@ -417,6 +426,7 @@ namespace{
                                      opts.optlevel
                                      );
         reply.factory = reply.llvm_factory;
+#endif
 
       }
 
@@ -590,9 +600,13 @@ namespace{
     void free_reply_data(FFF_Reply &reply, bool free_now) const {
       R_ASSERT(U_MUTEX==0 || g_faust_mutex.is_locked());
 
-      if (reply.data==NULL && reply.interpreter_factory==NULL && reply.llvm_factory==NULL)
+      if (reply.data==NULL && reply.interpreter_factory==NULL){
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+        if(reply.llvm_factory==NULL)
+#endif
         return;
-
+      }
+      
       auto doit = [reply]{
 
         if (reply.data != NULL)
@@ -600,9 +614,10 @@ namespace{
         
         if(reply.interpreter_factory != NULL)
           deleteInterpreterDSPFactory(reply.interpreter_factory);
-        
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
         if(reply.llvm_factory != NULL)
           deleteDSPFactory(reply.llvm_factory);
+#endif
       };
 
       if (free_now)
@@ -621,23 +636,25 @@ namespace{
 
       while(true){
 
-        QMap<int64_t, Request> code_requests;
+        QMap<int64_t, Request*> code_requests;
 
         // 1. First collect compilation requests. Here we only keep the newest compilation requests for each plugin, i.e. ensure that we only compile latest version.
         do{
           Request *request = g_queue.get();
           if (request->please_stop==true)   // Program exit.
             return;
-         
-          code_requests[request->patch_id] = *request;
+
+          if (code_requests.contains(request->patch_id))
+            delete code_requests[request->patch_id];
           
-          delete request;
+          code_requests[request->patch_id] = request;
+          
         }while(g_queue.size() > 0);
 
         
         // 2. Then do the compilation
         
-        QMapIterator<int64_t, Request> iterator(code_requests);
+        QMapIterator<int64_t, Request*> iterator(code_requests);
 
         {
 #if U_MUTEX
@@ -647,9 +664,11 @@ namespace{
             
             iterator.next();
 
-            const Request &request = iterator.value();
+            const Request *request = iterator.value();
 
-            start_new_job(request.patch_id, request.opts);
+            start_new_job(request->patch_id, request->opts);
+
+            delete request;
           }
         }
 
@@ -667,7 +686,7 @@ static void init_fff(void){
 
   if (has_started==false){
           //#if !RADIUM_FAUST_USE_INTERPRETER
-    startMTDSPFactories(); // Make faust llvm is thread safe
+    startMTDSPFactories(); // Make faust is thread safe
     //#endif
     g_fff_thread.startit();
     //g_fff_thread2.startit();
@@ -678,7 +697,7 @@ static void init_fff(void){
 void FFF_shut_down(void){
   if (g_fff_thread.isRunning()){
     
-    Request *request = new Request();
+    Request *request = new Request(-1, CompileOptions("", "", 0, false));
     request->please_stop = true;
     
     g_queue.put(request);

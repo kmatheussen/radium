@@ -826,6 +826,23 @@ public slots:
       return;
     
 #ifdef WITH_FAUST_DEV
+#if defined(WITHOUT_LLVM_IN_FAUST_DEV)
+    if(val==false){
+      
+      showAsyncMessage("Only the interpreter backend is compiled into this version of Radium.");
+
+      IsAlive is_alive(this);
+      
+      QTimer::singleShot(3000,[is_alive, this]{
+          if (!is_alive)
+            return;
+
+          faust_interpreted->setChecked(true);
+        });
+    }
+    return;
+#endif
+
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if(plugin != NULL){
       faust_compilation_status->setText("&#8987;");

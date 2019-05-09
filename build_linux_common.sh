@@ -140,6 +140,7 @@ else
 fi
 if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
     LLVMLIBS=
+    export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
 fi
 
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_gpl-2.10.8
