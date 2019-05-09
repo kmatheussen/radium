@@ -3532,7 +3532,7 @@ static dyn_t get_editor_tempos(int64_t start_seqtime, int64_t end_seqtime, bool 
             const double bpm = tempo2/(double)curr_lpb;
 
             const int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, time2);
-            R_ASSERT_NON_RELEASE(fabs(seqtime-seqblock->t.time2) < 10);
+            R_ASSERT_NON_RELEASE(llabs(seqtime-seqblock->t.time2) < 10);
 
             const int logtype = LOGTYPE_HOLD;
 

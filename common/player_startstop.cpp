@@ -746,7 +746,7 @@ void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool called_from_jack_
           return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
         });
     
-    if (abs(pc->last_song_starttime - pos) > 1){
+    if (fabs(pc->last_song_starttime - pos) > 1){
       //printf("           SETTING last song starttime 22222\n")      ;
       pc->last_song_starttime = pos;
       SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR);
