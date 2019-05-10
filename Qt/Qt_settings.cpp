@@ -86,7 +86,13 @@ QString OS_get_full_program_file_path(QString filename){
     abort();
   }
 
-  return QDir::toNativeSeparators(info.absoluteFilePath());
+  // Python/Windows32 have screwed up paths that were converted by QDir::toNativeSeparators. (perhaps related to use of backslash)
+  /*
+  QString ret = QDir::toNativeSeparators(info.absoluteFilePath());
+  printf("BEF: -%s-. ret: -%s-\n", info.absoluteFilePath().toUtf8().constData(), ret.toUtf8().constData());
+  */
+  
+  return info.absoluteFilePath();
 }
 
 wchar_t *OS_get_full_program_file_path(const wchar_t *filename){

@@ -3867,7 +3867,7 @@ int main(int argc, char **argv){
     sprintf(temp,"sys.g_program_path = \"\"");
 #else
     // This doesn't work on mingw. Could be a wine problem only.
-    sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%s\"))",argv[0]);
+    sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%S\"))", OS_get_full_program_file_path(L"start.py"));
 #endif
     PyRun_SimpleString(temp);
 
@@ -3876,6 +3876,7 @@ int main(int argc, char **argv){
     PyRun_SimpleString("sys.path = [sys.g_program_path] + sys.path");
     //PyRun_SimpleString("sys.path = [sys.g_program_path]");
 
+    PyRun_SimpleString("print \"hepp sys.path:\",sys.path,24");
     
     // Set sys.argv[0]
     sprintf(temp,"sys.argv=[\"%s\",\"%s\", \"%s\"]",
@@ -3969,6 +3970,7 @@ int main(int argc, char **argv){
   PyRun_SimpleString("execfile(\"start.py\")");
 #else
   PyRun_SimpleString("execfile(os.path.join(sys.g_program_path,\"start.py\"))");
+  //PyRun_SimpleString(talloc_format("execfile(\"%S\")", STRING_create(OS_get_full_program_file_path("start.py")))); //os.path.join(sys.g_program_path,\"start.py\"))");
 #endif
   
   fprintf(stderr,"          ENDING B 1\n");
