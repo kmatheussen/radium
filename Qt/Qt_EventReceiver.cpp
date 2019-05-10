@@ -673,7 +673,7 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){
   
   // If we don't do this, there could be graphical garbage in the tracker headers while resizing.
   window->must_redraw = true;
-  updateEditor();      
+  updateEditor();
 }
 
 #endif // USE_QT_VISUAL
