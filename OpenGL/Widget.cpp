@@ -81,6 +81,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/MovingAverage.hpp"
 #include "../common/player_proc.h"
 
+#include "../mixergui/QM_MixerWidget.h"
+
+#include "../Qt/Qt_Bs_edit_proc.h"
 #include "../Qt/Timer.hpp"
 #include "../Qt/Qt_Fonts_proc.h"
 #include "../Qt/Qt_mix_colors.h"
@@ -1491,12 +1494,42 @@ private:
 
     THREADING_run_on_main_thread_async([is_alive, this]{
 
+#if defined(FOR_MACOSX)
+        // Workaround for sequencer, playlist and mixer not being updated when moving dragger.
+        // Doesn't seem like Qt care very much about macos. There are lots of these types of bugs coming and going for each new version of Qt.
+        
+        //printf(".......Updating it\n");
+        //SEQUENCER_update(SEQUPDATE_EVERYTHING); // This one is also updated in gui_setSplitterSizes, which should take care of most updates.
+
+        
+        //gui_update(gui_getMainXSplitter(),-1,-1,-1,-1);
+        QTimer::singleShot(50, [](){
+          //printf(".......Updating 50\n");
+          gui_updateRecursively(gui_getMainXSplitter()); // Yes, it's necessary to update recursively.
+          //SEQUENCER_update(SEQUPDATE_EVERYTHING);
+        });
+        
+        QTimer::singleShot(250, [](){
+          //printf(".......Updating 250\n");
+          gui_updateRecursively(gui_getMainXSplitter());
+          //SEQUENCER_update(SEQUPDATE_EVERYTHING);
+        });
+        
+        QTimer::singleShot(450, [](){
+          //printf(".......Updating 450\n");
+           gui_updateRecursively(gui_getMainXSplitter());
+           SEQUENCER_update(SEQUPDATE_EVERYTHING); // Must have this one though, in case the y splitter is not updated from the dragger.
+        });
+#endif
+
         if (!is_alive)
           return;
 
-        radium::ScopedMutex lock(_cover_mutex);
-        delete _cover;
-        _cover = NULL;
+        {
+          radium::ScopedMutex lock(_cover_mutex);
+          delete _cover;
+          _cover = NULL;
+        }
       });
   }
 

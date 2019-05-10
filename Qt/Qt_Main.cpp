@@ -2836,7 +2836,7 @@ int radium_main(const char *arg){
           }
           */
         };
-        
+
         void add_mixer_strip(void){
           g_mixerstripparent = new QWidget;
           
