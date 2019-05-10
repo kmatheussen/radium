@@ -544,6 +544,7 @@
     FROM_C-reconfigure-editor-lower-part-gui!
     FROM_C-create-granular-vizualization-gui-for-sample-player
     generate-main-menus
+    ra:set-curr-seqtrack
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

@@ -1540,8 +1540,12 @@ private:
       _cover = new Cover(this, size());
 
       for(int i=0;i<200/30;i++){
-        if(_cover->has_grabbed_image())
+        if(_cover->has_grabbed_image()){
+          if (_cover->_widget != NULL)
+            _cover->_widget->update();
           break;
+        }
+        
         {
           _cover_mutex.unlock();
           msleep(30);
@@ -1563,6 +1567,9 @@ private:
             if (_cover!=NULL && _cover->_widget != NULL){
               _cover->_widget->resize(size());
             }
+
+            if (_cover!=NULL && _cover->_widget != NULL)
+              _cover->_widget->update();
           },
           true);
       }
