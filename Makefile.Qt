@@ -341,7 +341,16 @@ endif
 
 WNO_NULL_POINTER_ARITHMETIC=
 ifneq (,$(findstring clang,$(CC)))
- WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
+
+  CLANG_VERSION:=$(shell $(CC) -dumpversion)
+  CLANG_MAJOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f1)
+  CLANG_MINOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f2)
+  CLANG_SUB:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f3)
+
+  ifeq ($(CLANG_MAJOR),5)
+    WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
+  endif
+
 endif
 
 
@@ -1393,7 +1402,7 @@ Qt_EventReceiver.o:  $(BUILD_DEPENDENCIES) $(P)Qt_EventReceiver.cpp $(P)EditorWi
 	$(CCC) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
 Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp common/visual_proc.h  embedded_scheme/s7extra_proc.h
-	$(CCC) $(P)Qt_colors.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -Wno-overloaded-virtual #
+	$(CCC) $(P)Qt_colors.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -Wno-overloaded-virtual -Wno-unused-function #
 
 $(P)mQt_colors.cpp: $(P)Qt_colors.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_colors.cpp >$(P)mQt_colors.cpp

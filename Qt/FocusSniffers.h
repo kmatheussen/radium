@@ -125,8 +125,8 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
     //printf(" width: %f %d %d\n", width, font.pixelSize(), font.pointSize());
     setMarginWidth(1, ceil(width));
   }
-      
-  void wheelEvent(QWheelEvent *event_) override {                  
+
+  void wheelEvent(QWheelEvent *event_) override {
     if (event_->modifiers() & Qt::ControlModifier){                
       if (event_->delta() > 0){                                     
         zoomIn(1);
@@ -146,6 +146,7 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
       //set_editor_focus();
     }
   }
+
   void keyPressEvent ( QKeyEvent * event_ ) override {
     if(event_->key()==Qt::Key_Escape)
       set_editor_focus();
