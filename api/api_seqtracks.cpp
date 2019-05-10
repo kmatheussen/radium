@@ -298,6 +298,11 @@ void API_curr_seqtrack_has_changed(void){
 }
 
 void setCurrSeqtrack(int seqtracknum){
+  if (seqtracknum < 0)
+    seqtracknum = 0;
+  else if (seqtracknum >= getNumSeqtracks())
+    seqtracknum = getNumSeqtracks() - 1;
+  
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return;
