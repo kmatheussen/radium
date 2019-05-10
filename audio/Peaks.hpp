@@ -34,7 +34,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define SAMPLES_PER_PEAK 64 // TODO: This value must be dynamic and placed in the Peaks class. The value must be set higher than 64 if the sample is so long that a 32 bit int becomes too small to use as index. (Need around a 32 day (maybe +32/-16, haven't calculated exactly) long sample (16 days for 96Khz samples) for this to be a problem though, but you never know)
 
 static inline bool proper_isnormal(float val){
+#if defined(FOR_MACOSX)
+  return val==0.0 || isnormal(val);
+#else
   return val==0.0 || std::isnormal(val);
+#endif
 }
 
 static inline int unit_ceiling(int value, int unit){
