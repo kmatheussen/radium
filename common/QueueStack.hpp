@@ -268,7 +268,7 @@ template <typename T, int SIZE> class VectorStack : public BaseQueueStack<T>{
 
 static inline int get_curr_cpu(void){
 #if defined(FOR_WINDOWS)
-  GetCurrentProcessorNumber();
+  return GetCurrentProcessorNumber();
 #elif defined(FOR_LINUX)
   return sched_getcpu();
 #elif defined(FOR_MACOSX)
