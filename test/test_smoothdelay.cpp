@@ -10,9 +10,9 @@
 
 #include <QThread>
 
-#include "../common/nsmtracker.h"
-
 #define TEST_SMOOTHDELAY 1
+
+#include "../common/nsmtracker.h"
 
 #include "../audio/SmoothDelay.hpp"
 

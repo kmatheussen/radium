@@ -2,6 +2,12 @@
 #ifndef _RADIUM_AUDIO_SMOOTHDELAY_HPP
 #define _RADIUM_AUDIO_SMOOTHDELAY_HPP
 
+#if TEST_SMOOTHDELAY
+static double g_benchmark_time = 0.0;
+static double g_fade_benchmark_time = 0.0;
+#endif
+
+
 #include "../common/LockAsserter.hpp"
 #include "Delay.hpp"
 #include "Juce_plugins_proc.h"
@@ -50,11 +56,6 @@ enum class State{
   }
 
 }
-
-#if TEST_SMOOTHDELAY
-static double g_benchmark_time = 0.0;
-static double g_fade_benchmark_time = 0.0;
-#endif
 
 using namespace SmoothDelayState;
 

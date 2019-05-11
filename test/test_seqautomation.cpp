@@ -4,6 +4,7 @@
 #include "../common/nsmtracker.h"
 #include "../common/SeqAutomation.hpp"
 
+struct Root *root = NULL;
 
 
 // BUILDTYPE=DEBUG ./build_linux.sh test
