@@ -193,7 +193,7 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
 #if DO_DEBUG
             printf("   RT_scheduled_seqblock: Calling GFX_ScheduleEditorRedraw\n");
 #endif
-            GFX_ScheduleEditorRedraw();
+            GFX_ForceScheduleEditorRedraw();
             break;
           }
         }

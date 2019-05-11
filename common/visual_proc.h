@@ -126,20 +126,34 @@ extern DEFINE_ATOMIC(bool, atomic_must_redraw_editor);
 extern DEFINE_ATOMIC(struct Patch*, atomic_must_redraw_instrument);
 extern DEFINE_ATOMIC(bool, atomic_must_calculate_coordinates);
 
+extern bool g_rt_do_rerendering;
+
 // RT function.
-static inline void GFX_ScheduleRedraw(void){
+static inline void GFX_ForceScheduleRedraw(void){
   ATOMIC_SET(atomic_must_redraw, true);
 }
 
 // RT function.
+static inline void GFX_ScheduleRedraw(void){
+  if(g_rt_do_rerendering)
+    ATOMIC_SET(atomic_must_redraw, true);
+}
+
+// RT function.
 static inline void GFX_ScheduleEditorRedraw(void){
+  if(g_rt_do_rerendering)
+    ATOMIC_SET(atomic_must_redraw_editor, true);
+}
+
+// RT function.
+static inline void GFX_ForceScheduleEditorRedraw(void){  
   ATOMIC_SET(atomic_must_redraw_editor, true);
 }
 
 // RT function.
 static inline void GFX_ScheduleEditorRedrawIfCurrentBlockIsVisible(void){
   if(RT_get_curr_visible_block() != NULL)
-    ATOMIC_SET(atomic_must_redraw_editor, true);
+    GFX_ScheduleEditorRedraw();
 }
 
 // RT function.
@@ -154,7 +168,7 @@ static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struc
   const struct Tracks *track = block->tracks;
   while(track != NULL){
     if (track->patch==patch && track->notes!=NULL){
-      ATOMIC_SET(atomic_must_redraw_editor, true);
+      GFX_ScheduleEditorRedraw();
       //printf("Updating\n");
       return;
     }
