@@ -175,13 +175,18 @@
 (define (get-quantitized-place-from-y Button Y)
   (define place (<ra> :get-place-from-y Y))
   (quantitize place (<ra> :get-quantitize)))
+
+(<ra> :get-grid)
+(<ra> :get-line-zoom-block-ratio)
 ||#
 
 (define (get-gridded-place place)
   (if (eq? 'same-place place)
-      place           
-      (* (floor (/ place (<ra> :get-grid)))
-         (<ra> :get-grid))))
+      place
+      (let ((r (/ (<ra> :get-grid)
+                  (<ra> :get-line-zoom-block-ratio))))
+        (* (floor (/ place r))
+           r))))
 
 (define (get-maybe-gridded-place place)
   (if (eq? 'same-place place)
