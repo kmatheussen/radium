@@ -1,3 +1,163 @@
+Changes 5.9.52 -> 5.9.60:
+* Editor: Don't update graphics during playback if
+  "enable_editor_rerendering_during_playback = false"
+  is included in the config file.
+* Editor: Let grid follow graphical line, not tracker
+  line. I.e. don't ignore LZ when using grid.
+* Keybindings: Let up/down key move select previous
+  or next seqtrack when sequencer has keyboard focus.
+* OSX: More workaround for graphics not updating
+  after resizing editor.
+* Windows: Fix paths being screwed up when directory
+  separators are converted to backslashes. Might fix
+  some Python issues.
+* Manual: Various improvements.
+* GUI: Improve keybinding display in the main menus,
+  popup menus, and the edit tab
+* Sequencer: Drag seqtrack number to change seqtrack
+  order. (The numbers inside the circles) 
+* Linux: When running Radium under gdb, close popup
+  menu if it has been open for 40 seconds and kill
+  Radium if a popup menu has been open for at least
+  50 seconds. This to avoid freezing X if program
+  crashes under gdb while a popup menu is open.
+* New song: Make default color of the main pipe blue
+* Sequencer: Rename the lower left buttons.
+* Mixer: Add "1:3", "1:1", and "3:1: radio buttons to
+  the main mixer header and to the mixer popup menus.
+* GUI: Set all bus instrument colors to "Default Bus
+  color" (a configurable color) when starting up.
+* Sequencer: Introduce "Bus" seqtracks. Bus seqtracks
+  are audio seqtracks that pipes input by default.
+  The colors of seqtrack buses are also set to
+  "Default Bus color".
+* Audio: Add "Pipe input" option to audio seqtrack
+  instruments.
+* Sequencer: Minor optimization for the audio file
+  player.
+* Editor: Fix metronome not making any sounds between
+  seqblocks in editor timing mode.
+* Sequencer: Display slightly less erroneous bars
+  and beats between seqblocks in the timeline when
+  the duration of the last bar of the previous played
+  block wasn't a full bar.
+* Initialization: More messages during startup about
+  what's happening.
+* Editor: When creating new a note, pitch, fx,
+  velocity, or tempo with mouse, always let that
+  note/pitch/fx/velocity/tempo start at the
+  beginning of the line the mouse cursor is
+  placed in, not on the next line if mouse cursor was
+  placed below half-way into the line. (blackhole89)
+* Editor: Fix new piano-notes being rounded to the
+  nearest note (whether it's up or down). Before,
+  it was always round down to the nearest note.
+* Audio: Fix audio meter graphical update when an
+  instrument changes number of visible channels.
+* GUI: Fix clicking radio buttons in popup menues
+  when clicking the entry outside the circle.
+* Sequencer: Double-click a marker to loop between
+  that marker and the next.
+* Editor: Show red border around current column
+  inside the cursor (the color is configurable).
+* Editor: Show border around current track. The
+  border has the same color as the keyboard focus
+  border color, and is also shown only if the editor
+  has keyboard focus.
+* Sequencer: Include last marker when calculating
+  song duration.
+* Sequencer: Use all leftmost space when there is
+  only one seqtrack. (There is no current seqtrack
+  border when there is only one seqtrack.)
+* Internal: Update S7 scheme.
+* Menus: Only display "Ctrl" when both left or
+  right control is assigned to a command. Same for
+  alt and shift.
+* Menus: Automatically display several entries when
+  more than one keybinding is assigned to a command.
+* Startup: Fix keybindings sometimes not working on
+  windows. At least I'm pretty sure it's working now.
+* GUI: Speed up opening popup menues. (Content is
+  cached now.)
+* Playlist: Fix crashes that could happen when
+  inserting audio file.
+* Edit: Make sure all text is shown in the "Randomly
+  delete notes" and the "Lightly shuffle pitches"
+  sliders.
+* Keybindings: Redefine almost all keybindings so
+  that they only work when having relevant
+  keyboard focus.
+* GUI: Separate keyboard focus for the editor, the
+  mixer, and the sequencer. Press Ctrl+F5, Ctrl+F7,
+  and Ctrl+F8 to change keyboard focus between the
+  editor, the mixer, and the sequencer.
+* Internal: Display error message when there is an
+  error while finding right keybinding code to
+  execute when a key is pressed.
+* Shut down: Fix crash iwhen program could't start
+  up.
+* Linux: Update URL to nvidia driver
+* Sequencer: Add a "Copy filename to system
+  clipboard" entry to the audio seqblock popup
+  menu.
+* Fluidsynth: Fix erroneously display of
+  sample/bank/preset in the instrument GUI.
+* Editor: Update tooltip for "Edit Lines" ("EL") in
+  the bottom bar.
+* Editor: Fix note not stopping to play when
+  releasing computer keyboard key after adding a
+  note.
+* Editor: Fix note being played when adding notes and
+  "Edit Lines" has a value larger than 0.
+* Audio: Improve CPU usage of fading in and out.
+* Audio: Improve CPU usage of the granulator a little
+  bit.
+* Editor: Make resizing look more professional by
+  covering up some flickering. It's probably not
+  possible to make perfect though, because of OpenGL.
+* Audio: Minor optimization to the multicore
+  scheduler.
+* Load/Save: Remember last used directory when
+  loading/saving song
+* GUI: Fix a division by zero when rendering editor
+  track header. Probably makes no difference in
+  graphics, but might make it run faster.
+* Audio: Add a little bit of release to the Click
+  instruments to avoid noise when unpressing the
+  click button in the bottom bar.
+* Audio: Written new algorithm for smoothing delay.
+  Should improve CPU usage significantly overall.
+* FaustDev: Add support for the interpreter backend.
+* FaustDev: Compile Radium with the option
+  WITHOUT_LLVM_IN_FAUST_DEV to only include the
+  interpreter backend. (Avoids linking with the
+  LLVM libraries.)
+* FaustDev: Make compilation faster.
+* Build: Fix compiling with clang 8.0.
+* API:
+  * New: copyWtextToClipboard, getClipboardWtext,
+    copyTextToClipboard, getClipboardText,
+    gui_getSequencerFrameGui, setEditorKeyboardFocus,
+    setMixerKeyboardFocus, setSequencerKeyboardFocus,
+    gui_setLayoutStretch,
+    gui_getVertRatioInMixerStrips,
+    gui_setVertRatioInMixerStrips, addKeybinding,
+    getKeybindingsFromCommand,
+    instrumentIsSeqtrackBus.
+  * Removed: getKeybindingFromCommand.
+  * Renamed: setKeybinding -> addKeybindingToConfFile,
+    removeKeybinding -> removeKeybindingFromConfFile.
+  * Documentation: Remove erroneous comments for
+    openFileForReading and readLineFromFile. These
+    functions are implemented.
+  * Add optional start and end arguments to
+    setSeqLooping.
+  * Add optional "is_bus" argument to appendSeqtrack
+    and insertSeqtrack
+  * gui_createMixerStrips ha as new optional argument
+    "vert_ratio" (is 1/1 by default).
+  * swapSeqtracks doesn't create undo anymore.
+
 Changes 5.9.51 -> 5.9.52:
 * OSX: Workaround for sequencer graphics not being
   updating in 10.14 when moving the "dragger" (i.e.
