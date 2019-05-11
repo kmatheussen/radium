@@ -4575,6 +4575,13 @@ int64_t gui_getMainXSplitter(void){
   return API_get_gui_from_existing_widget(editor->xsplitter);
 }
 
+/*
+int64_t gui_getMainYSplitter(void){
+  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  return API_get_gui_from_existing_widget(editor->ysplitter);
+}
+*/
+
 int64_t gui_getEditorGui(void){
   static int64_t guinum = -100;
 

@@ -90,6 +90,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/Juce_plugins_proc.h"
 
+#include "../api/api_gui_proc.h"
+
 #include "GfxElements.h"
 #include "T2.hpp"
 #include "Timing.hpp"
@@ -1505,20 +1507,22 @@ private:
         //gui_update(gui_getMainXSplitter(),-1,-1,-1,-1);
         QTimer::singleShot(50, [](){
           //printf(".......Updating 50\n");
-          gui_updateRecursively(gui_getMainXSplitter()); // Yes, it's necessary to update recursively.
+        updateWidgetRecursively(API_get_main_ysplitter()); // This updates everything in the main window. Do this to update the Y splitter widget itself.
+        //gui_updateRecursively(gui_getMainXSplitter()); // Yes, it's necessary to update recursively.
           //SEQUENCER_update(SEQUPDATE_EVERYTHING);
         });
         
         QTimer::singleShot(250, [](){
           //printf(".......Updating 250\n");
-          gui_updateRecursively(gui_getMainXSplitter());
+        updateWidgetRecursively(API_get_main_ysplitter()); // This updates everything in the main window. Do this to update the Y splitter widget itself.
+        //          gui_updateRecursively(gui_getMainXSplitter());
           //SEQUENCER_update(SEQUPDATE_EVERYTHING);
         });
         
         QTimer::singleShot(450, [](){
           //printf(".......Updating 450\n");
-           gui_updateRecursively(gui_getMainXSplitter());
-           SEQUENCER_update(SEQUPDATE_EVERYTHING); // Must have this one though, in case the y splitter is not updated from the dragger.
+          updateWidgetRecursively(API_get_main_ysplitter()); // This updates everything in the main window. Do this to update the Y splitter widget itself.
+          //SEQUENCER_update(SEQUPDATE_EVERYTHING); // Must have this one though, in case the y splitter is not updated from the dragger. (not needed to call this when updating the y splitter)
         });
 #endif
 
