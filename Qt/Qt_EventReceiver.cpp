@@ -88,6 +88,8 @@ DEFINE_ATOMIC(bool, atomic_must_redraw_editor) = false;
 DEFINE_ATOMIC(struct Patch*, atomic_must_redraw_instrument) = NULL;
 DEFINE_ATOMIC(bool, atomic_must_calculate_coordinates) = false;
 
+bool g_rt_do_rerendering = true;
+
 static void transfer_atomic_must_redraws(struct Tracker_Windows *window)
 {
   bool a_must_redraw = ATOMIC_COMPARE_AND_SET_BOOL(atomic_must_redraw, true, false);

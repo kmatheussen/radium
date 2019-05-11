@@ -2751,7 +2751,7 @@ int radium_main(const char *arg){
 
 
   g_audio_block_size = SETTINGS_read_int("audio_block_size",64);
-  
+  g_rt_do_rerendering = SETTINGS_read_bool("enable_editor_rerendering_during_playback",true);
   
   set_default_slider_height();
   
