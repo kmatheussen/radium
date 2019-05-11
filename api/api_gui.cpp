@@ -3353,11 +3353,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         setMaximum(10000);
       }
 
-      {
+      if(_text != ""){
         int m1 = gui_textWidth(QString::number(_min).toUtf8().constData(), -1);
         int m2 = gui_textWidth(QString::number(_max).toUtf8().constData(), -1);
         int m3 = gui_textWidth((_text + "| : |").toUtf8().constData(), -1);
-        setMinimumWidth(m3 + R_MAX(m1,m2));
+        if (orientation==Qt::Vertical)
+          setMinimumHeight(m3 + R_MAX(m1,m2));
+        else
+          setMinimumWidth(m3 + R_MAX(m1,m2));
       }
       
       setGuiValue(DYN_create_float(curr));
