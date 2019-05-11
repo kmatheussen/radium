@@ -5318,7 +5318,7 @@ void SEQUENCER_hide_because_instrument_widget_is_large(void){
   if (sequencerInWindow())
     return;
   
-  g_sequencer_widget->hide();
+  g_sequencer_frame_widget->hide();
   g_sequencer_hidden_because_instrument_widget_is_large = true;
 }
 
@@ -5328,7 +5328,7 @@ void SEQUENCER_show_because_instrument_widget_is_large(void){
   
   if (GFX_SequencerIsVisible()){
     GL_lock(); {
-      g_sequencer_widget->show();
+      g_sequencer_frame_widget->show();
     }GL_unlock();
   }
 
