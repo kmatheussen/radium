@@ -1512,6 +1512,6 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
           (undo-block
            (lambda ()           
              (for-each (lambda (instrument-id)
-                         (set-instrument-solo! instrument-id doit))
+                         (ra:set-instrument-solo instrument-id doit))
                        instruments)))))))
 
