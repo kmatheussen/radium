@@ -719,6 +719,12 @@
 
 (define (ra:gui_do-clipped gui x1 y1 x2 y2 func)
   (define last-clip-rect *curr-clip-rect*)
+
+  (when last-clip-rect
+    (set! x1 (max (last-clip-rect 0) x1))
+    (set! y1 (max (last-clip-rect 1) y1))
+    (set! x2 (min (last-clip-rect 2) x2))
+    (set! y2 (min (last-clip-rect 3) y2)))
   
   (set! *curr-clip-rect* (vector x1 y1 x2 y2))
     
