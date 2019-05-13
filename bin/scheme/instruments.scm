@@ -1505,5 +1505,13 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
     (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
     (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0))))
 
-
+(define (switch-solo-for-selected-instruments)
+  (let ((instruments (to-list (ra:get-selected-instruments))))
+    (if (not (null? instruments))
+        (let ((doit (not (> (ra:get-instrument-effect (car instruments) "System Solo On/Off") 0.5))))
+          (undo-block
+           (lambda ()           
+             (for-each (lambda (instrument-id)
+                         (set-instrument-solo! instrument-id doit))
+                       instruments)))))))
 
