@@ -790,6 +790,37 @@ extern vector_t g_global_roots;
 
 
 #ifdef __cplusplus
+
+template<typename T> 
+static inline T add_gc_root(T root){
+  if(root != NULL)
+    VECTOR_push_back(&g_global_roots, root);
+#if !defined(RELEASE)
+  if(g_global_roots.num_elements > 10000)
+    printf("\n\n\n  ==================   GC_ROOT(1) size: %d =================== \n\n\n\n\n", g_global_roots.num_elements);
+#endif
+  //printf("  Add. gc_root size: %d\n", g_global_roots.num_elements);
+  return root;
+}
+
+static inline void remove_gc_root(const void *root){
+  if(root != NULL){
+    VECTOR_remove(&g_global_roots, root);
+    //printf("  Remove. gc_root size: %d\n", g_global_roots.num_elements);
+  }
+}
+
+template<typename T>
+static inline T replace_gc_root(T old_root, T new_root){
+  if (old_root!=new_root){
+    if(old_root != NULL)
+      remove_gc_root(old_root);
+    if(new_root!=NULL)
+      add_gc_root(new_root);
+  }
+  return new_root;
+}
+
 namespace radium{
   template <typename T>
   struct GcHolder{
@@ -824,36 +855,6 @@ namespace radium{
       return t;
     }
   };
-}
-
-template<typename T> 
-static inline T add_gc_root(T root){
-  if(root != NULL)
-    VECTOR_push_back(&g_global_roots, root);
-#if !defined(RELEASE)
-  if(g_global_roots.num_elements > 10000)
-    printf("\n\n\n  ==================   GC_ROOT(1) size: %d =================== \n\n\n\n\n", g_global_roots.num_elements);
-#endif
-  //printf("  Add. gc_root size: %d\n", g_global_roots.num_elements);
-  return root;
-}
-
-static inline void remove_gc_root(const void *root){
-  if(root != NULL){
-    VECTOR_remove(&g_global_roots, root);
-    //printf("  Remove. gc_root size: %d\n", g_global_roots.num_elements);
-  }
-}
-
-template<typename T>
-static inline T replace_gc_root(T old_root, T new_root){
-  if (old_root!=new_root){
-    if(old_root != NULL)
-      remove_gc_root(old_root);
-    if(new_root!=NULL)
-      add_gc_root(new_root);
-  }
-  return new_root;
 }
 
 #else
