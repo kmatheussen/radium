@@ -116,15 +116,17 @@ namespace{
       
     QPointer<QMenu> qmenu;    
     int num;
+    QString _text; // for logging
     radium::ProtectedS7Extra<func_t*> callback;
     std::function<void(int,bool)> callback3;
     int *result;
 
     bool is_checkable;
 
-    Callbacker(QMenu *qmenu, int num, bool is_async, func_t *callback, std::function<void(int,bool)> callback3, int *result, bool is_checkable)
+    Callbacker(QMenu *qmenu, int num, bool is_async, QString text, func_t *callback, std::function<void(int,bool)> callback3, int *result, bool is_checkable)
       : qmenu(qmenu)
       , num(num)
+      , _text(text)
       , callback(callback)
       , callback3(callback3)
       , result(result)
@@ -188,6 +190,8 @@ namespace{
     }
 
     void run_callbacks(void){
+      EVENTLOG_add_event(talloc_format("popup menu: %s", _text.toUtf8().constData()));
+      
       if (callback.v != NULL){
         if (is_checkable)
           S7CALL(void_int_bool, callback.v, num, checked);
@@ -415,6 +419,10 @@ namespace{
 
   public slots:
     void triggered(){
+      if(callbacker==NULL){
+        R_ASSERT_NON_RELEASE(false);
+        return;
+      }
       callbacker->run_and_delete_clicked(callbacker);
     }
   };
@@ -1028,7 +1036,7 @@ static QMenu *create_qmenu(
         }
 
         double t = TIME_get_ms();
-        auto callbacker = std::shared_ptr<Callbacker>(new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
+        auto callbacker = std::shared_ptr<Callbacker>(new Callbacker(menu, i, is_async, text, callback2, callback3, result, is_checkable));
         callbackdur += TIME_get_ms()-t;
         
         if (!icon.isNull()) {
