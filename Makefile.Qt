@@ -141,6 +141,11 @@ ifeq ($(RADIUM_QT_VERSION),5)
 	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets --libs Qt5WebKit` $(FPIC)
 endif
 
+ifeq ($(GCC_MAJOR),9)
+	QT_CFLAGS += -Wno-deprecated-copy
+endif
+
+
 
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
 GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
@@ -172,7 +177,11 @@ FULL_VERSION ?= 1
 #UNDEFINED_SANITIZE_OPTS= -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=object-size -fsanitize=vptr -fno-sanitize-recover
 #  -fsanitize=alignment
 
-ifeq ($(GCC_MAJOR),8)
+ifeq ($(GCC_MAJOR),9)
+	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+#	UNDEFINED_SANITIZE_OPTS=
+else ifeq ($(GCC_MAJOR),8)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 #	UNDEFINED_SANITIZE_OPTS=
@@ -252,7 +261,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_63_0 -I${HOME}/boost_1_67_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference 
+COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference 
 #-fdelete-null-pointer-checks 
 # -Werror
 
@@ -264,7 +273,6 @@ ifeq (,$(findstring clang,$(CC)))
 else
         COMMONOPT += -Wno-deprecated-register
 endif
-
 
 #ifeq ($(GCC_MAJOR),7)
 #	COMMONOPT += -fstrong-eval-order # Remove this one until all recent compilers support -fstrong-eval-order
@@ -313,6 +321,12 @@ ifeq ($(GCC_MAJOR),8)
 	endif
 endif
 
+ifeq ($(GCC_MAJOR),9)
+	ifeq (,$(findstring clang,$(CC)))
+		CPPOPT += -Wno-class-memaccess  -Wno-parentheses
+	endif
+endif
+
 
 QT_VERSION:=$(shell $(MOC) --version)
 QT_MAJOR:=$(shell echo $(QT_VERSION) | cut -d'.' -f1)
@@ -347,7 +361,7 @@ ifneq (,$(findstring clang,$(CC)))
   CLANG_MINOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f2)
   CLANG_SUB:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f3)
 
-  ifeq ($(CLANG_MAJOR),5)
+  ifneq ($(CLANG_MAJOR),5)
     WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
   endif
 
@@ -366,6 +380,8 @@ QTLINKFLAGS = $(QT_LDFLAGS)
 #$(GTK_LDFLAGS)
 
 #QTOPT = $(CPPOPT) -DUSE_QT4 -DQT_SHARED -DQT3_SUPPORT -I/home/kjetil/site/include/Qt3Support -I/home/kjetil/site/include/QtCore -I/home/kjetil/site/include/QtGui -I/home/kjetil/site/QtNetwork -I/home/kjetil/site/QtSql $(COMMON_QTOPTS)
+
+
 
 #
 # or:
@@ -2368,12 +2384,17 @@ bin/radium_crashreporter: crashreporter/crashreporter.cpp
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
 	@echo
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -Wno-missing-declarations -o crashbin.o
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -Wno-missing-declarations -o crashbin.o -Wno-deprecated-copy
 	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm crashbin.o
 
 bin/radium_addr2line: crashreporter/radium_addr2line.c
 	$(CC_STATIC) crashreporter/radium_addr2line.c -Wall $(ADDR2LINEOPTS) -DPACKAGE -o bin/radium_addr2line -mwindows
+
+
+ifeq ($(GCC_MAJOR),9)
+	CRASHREPORTER_OPTS += -Wno-deprecated-copy
+endif
 
 crashreporter.o: crashreporter/crashreporter.cpp
 	@echo
@@ -2492,7 +2513,10 @@ scheme.o: embedded_scheme/scheme.cpp  bin/packages/s7/s7.c embedded_scheme/s7ext
 
 QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -Wno-null-dereference -D_REENTRANT #-fno-sanitize=undefined
 
-ifeq ($(GCC_MAJOR),8)
+ifeq ($(GCC_MAJOR),9)
+	QHTTPCONNECTIONFLAGS= -fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
+	HTTPPARSERFLAGS=-Wno-implicit-fallthrough
+else ifeq ($(GCC_MAJOR),8)
 	QHTTPCONNECTIONFLAGS= -fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
 	HTTPPARSERFLAGS=-Wno-implicit-fallthrough
 else ifeq ($(GCC_MAJOR),7)

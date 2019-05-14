@@ -856,15 +856,49 @@
                 (set-solo-for-connected-output-instruments! instrument-id is-on)
                 (set-solo-for-connected-input-instruments! instrument-id is-on))))
 
-(define (switch-solo-for-selected-instruments)
-  (let ((instruments (to-list (ra:get-selected-instruments))))
+
+(define (FROM_C-set-solo-for-instruments instruments doit)
+  (undo-block
+   (lambda ()           
+     (for-each (lambda (instrument-id)
+                 (<ra> :set-instrument-solo instrument-id doit))
+               instruments))))
+
+(define (FROM_C-switch-solo-for-selected-instruments)
+  (let ((instruments (to-list (<ra> :get-selected-instruments))))
     (if (not (null? instruments))
-        (let ((doit (not (> (ra:get-instrument-effect (car instruments) "System Solo On/Off") 0.5))))
-          (undo-block
-           (lambda ()           
-             (for-each (lambda (instrument-id)
-                         (ra:set-instrument-solo instrument-id doit))
-                       instruments)))))))
+        (let ((doit (not (> (<ra> :get-instrument-effect (car instruments) "System Solo On/Off") 0.5))))
+          (FROM_C-set-solo-for-instruments instruments doit)))))
+
+
+
+(define (FROM_C-set-mute-for-instruments instruments doit)
+  (undo-block
+   (lambda ()           
+     (for-each (lambda (instrument-id)
+                 (<ra> :set-instrument-mute instrument-id doit))
+               instruments))))
+
+(define (FROM_C-switch-mute-for-selected-instruments)
+  (let ((instruments (to-list (<ra> :get-selected-instruments))))
+    (if (not (null? instruments))
+        (let ((doit (not (< (<ra> :get-instrument-effect (car instruments) "System Volume On/Off") 0.5))))
+          (FROM_C-set-mute-for-instruments instruments doit)))))
+
+
+
+(define (FROM_C-set-bypass-for-instruments instruments doit)
+  (undo-block
+   (lambda ()           
+     (for-each (lambda (instrument-id)
+                 (<ra> :set-instrument-bypass instrument-id doit))
+               instruments))))
+
+(define (FROM_C-switch-bypass-for-selected-instruments)
+  (let ((instruments (to-list (<ra> :get-selected-instruments))))
+    (if (not (null? instruments))
+        (let ((doit (not (< (<ra> :get-instrument-effect (car instruments) "System Effects On/Off") 0.5))))
+          (FROM_C-set-bypass-for-instruments instruments doit)))))
 
 
 (define (set-random-sample-for-all-selected-sampler-instruments)

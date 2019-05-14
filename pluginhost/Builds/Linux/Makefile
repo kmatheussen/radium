@@ -14,6 +14,14 @@ ifeq (,$(findstring clang,$(CXX)))
 	COMMONCPPFLAGS += -Wno-class-memaccess 
 endif
 
+GCC_VERSION:=$(shell $(GCC) -dumpversion)
+GCC_MAJOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f1)
+
+ifeq ($(GCC_MAJOR),9)
+	COMMONCPPFLAGS += -Wno-deprecated-copy
+endif
+
+
 ifeq ($(CONFIG),Debug)
   BINDIR := build
   LIBDIR := build
