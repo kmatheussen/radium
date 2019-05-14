@@ -277,8 +277,13 @@ static void unlock_player(void){
   LOCK_UNLOCK(player_lock);
 }
 
-#define MAX_LOCK_DURATION_MS 0.05
-#define MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS 0.3 // Set this value lower to get more messages about spending too much time holding the player lock.
+#if defined(FOR_MACOSX)
+  #define MAX_LOCK_DURATION_MS 0.15
+  #define MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS 0.9 // Set this value lower to get more messages about spending too much time holding the player lock.
+#else
+  #define MAX_LOCK_DURATION_MS 0.05
+  #define MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS 0.3 // Set this value lower to get more messages about spending too much time holding the player lock.
+#endif
 
 static bool g_signalled_someone = false;
 
@@ -294,7 +299,7 @@ static void RT_lock_player(){
   double start = TIME_get_ms();{
     lock_player();
   }double dur = TIME_get_ms() - start;
-  
+
   if (dur > MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS) {
     //if (elapsed > 1)
     //  abort(); // That's really bad. Need a backtrace. (No, the relevant backtrace is gone now. TODO: fix. When obtaining lock we should store __FILE__ and __LINE__.)

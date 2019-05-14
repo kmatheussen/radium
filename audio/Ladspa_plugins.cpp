@@ -1104,8 +1104,8 @@ static void init_menues(){
 }
 
 void create_ladspa_plugins(void){
-#if !defined(RELEASE) && defined(FOR_WINDOWS)
-  return; // takes long time to load ladspa plugins in gdb.
+#if !defined(RELEASE) && (defined(FOR_WINDOWS) || defined(FOR_MACOSX))
+  return; // takes a long time to load ladspa plugins in gdb under windows and in lldb under macos.
 #endif
 
   

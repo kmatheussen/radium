@@ -141,8 +141,10 @@ ifeq ($(RADIUM_QT_VERSION),5)
 	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets --libs Qt5WebKit` $(FPIC)
 endif
 
+WNO_DEPRECATED_COPY=
 ifeq ($(GCC_MAJOR),9)
-	QT_CFLAGS += -Wno-deprecated-copy
+	WNO_DEPRECATED_COPY=-Wno-deprecated-copy
+	QT_CFLAGS += $(WNO_DEPRECATED_COPY)
 endif
 
 
@@ -361,7 +363,7 @@ ifneq (,$(findstring clang,$(CC)))
   CLANG_MINOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f2)
   CLANG_SUB:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f3)
 
-  ifneq ($(CLANG_MAJOR),5)
+  ifeq ($(CLANG_MAJOR),5)
     WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
   endif
 
@@ -2384,7 +2386,7 @@ bin/radium_crashreporter: crashreporter/crashreporter.cpp
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
 	@echo
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -Wno-missing-declarations -o crashbin.o -Wno-deprecated-copy
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -Wno-missing-declarations -o crashbin.o $(WNO_DEPRECATED_COPY)
 	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm crashbin.o
 
@@ -2393,7 +2395,7 @@ bin/radium_addr2line: crashreporter/radium_addr2line.c
 
 
 ifeq ($(GCC_MAJOR),9)
-	CRASHREPORTER_OPTS += -Wno-deprecated-copy
+	CRASHREPORTER_OPTS += $(WNO_DEPRECATED_COPY)
 endif
 
 crashreporter.o: crashreporter/crashreporter.cpp
