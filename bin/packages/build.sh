@@ -13,6 +13,12 @@ export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -Wno-misleading-indentation -f
 export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing"
 export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing"
 
+DASCC=gcc
+DASCXX=g++
+
+# These two lines should be uncommented if setting CLANG=1 in build_linux_common.sh
+#DASCC=clang
+#DASCXX=clang++
 
 if ! env |grep RADIUM_QT_VERSION ; then
     echo "Must define RADIUM_QT_VERSION to either 4 or 5. For instance: \"RADIUM_QT_VERSION=5 make packages\""
@@ -90,7 +96,7 @@ tar xvzf ../faustlibraries-26d4145859b4a603ddfc78785dc2442be504fd3b.tar.gz
 rm -fr libraries
 mv faustlibraries-26d4145859b4a603ddfc78785dc2442be504fd3b libraries
 patch -p1 <../faust.patch
-VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc`" make most
+VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC`" make most
 cd ..
 
 
@@ -99,11 +105,15 @@ rm -fr Visualization-Library-master
 tar xvzf Visualization-Library-master.tar.gz 
 cd Visualization-Library-master/
 #sed -i s/"VL_ACTOR_USER_DATA 0"/"VL_ACTOR_USER_DATA 1"/ src/vlCore/config.hpp
-export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g" #  -D_GLIBCXX_USE_CXX11_ABI=0
-MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g" #  -D_GLIBCXX_USE_CXX11_ABI=0
+export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g  -Wno-c++11-narrowing" #  -D_GLIBCXX_USE_CXX11_ABI=0
+MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g -Wno-c++11-narrowing" #  -D_GLIBCXX_USE_CXX11_ABI=0
 echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt
 # previously used build type: RelWithDebInfo. Unfortunately, this one enable _DEBUG and various runtime checks.
-CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CC="gcc" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
+
+#CFLAGS="$CPPFLAGS -fPIC -g" CPPFLAGS="$MYFLAGS" CC="clang" CXX="clang++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="clang++ $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
+
+CFLAGS="$CPPFLAGS -fPIC -g" CPPFLAGS="$MYFLAGS" CC="$DASCC" CXX="$DASCXX $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="$DASCXX $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
+
 VERBOSE=1 make -j`nproc`
 cd ..
 
@@ -159,7 +169,7 @@ rm -fr libgig
 tar xvzf libgig.tar.gz
 cd libgig
 make clean
-CFLAGS="-O3 -fno-strict-aliasing" CPPFLAGS="-O3 -fno-strict-aliasing" CXXFLAGS="-O3 -fno-strict-aliasing" ./configure
+CFLAGS="-O3 -fno-strict-aliasing" CPPFLAGS="-O3 -fno-strict-aliasing" CXXFLAGS="-O3 -fno-strict-aliasing" CC=$DASCC CXX=$DASCXX ./configure
 CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j`nproc`
 cd ..
 
