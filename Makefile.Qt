@@ -105,11 +105,17 @@ QT_SYSTEM_CFLAGS ?=
 
 QSCINTILLA_PATH ?= $(shell pwd)/bin/packages/QScintilla_gpl-2.10.8
 
-GCC_VERSION:=$(shell $(GCC) -dumpversion)
-GCC_MAJOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f1)
-GCC_MINOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f2)
-GCC_SUB:=$(shell echo $(GCC_VERSION) | cut -d'.' -f3)
-
+ifeq (,$(findstring clang,$(CC)))
+	GCC_VERSION:=$(shell $(GCC) -dumpversion)
+	GCC_MAJOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f1)
+	GCC_MINOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f2)
+	GCC_SUB:=$(shell echo $(GCC_VERSION) | cut -d'.' -f3)
+else
+	GCC_VERSION:=-1
+	GCC_MAJOR:=-1
+	GCC_MINOR:=-1
+	GCC_SUB:=-1
+endif
 
 
 # qt4
@@ -318,15 +324,11 @@ CPPOPT = $(COMMONOPT) -Wmissing-declarations -DNDEBUG  # NDEBUG must be defined 
 # -Wno-parentheses added because of boost.
 
 ifeq ($(GCC_MAJOR),8)
-	ifeq (,$(findstring clang,$(CC)))
-		CPPOPT += -Wno-class-memaccess  -Wno-parentheses
-	endif
+	CPPOPT += -Wno-class-memaccess  -Wno-parentheses
 endif
 
 ifeq ($(GCC_MAJOR),9)
-	ifeq (,$(findstring clang,$(CC)))
-		CPPOPT += -Wno-class-memaccess  -Wno-parentheses
-	endif
+	CPPOPT += -Wno-class-memaccess  -Wno-parentheses
 endif
 
 
@@ -363,9 +365,7 @@ ifneq (,$(findstring clang,$(CC)))
   CLANG_MINOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f2)
   CLANG_SUB:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f3)
 
-  ifeq ($(CLANG_MAJOR),5)
-    WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
-  endif
+  WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
 
 endif
 
