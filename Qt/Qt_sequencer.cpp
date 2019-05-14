@@ -2587,7 +2587,6 @@ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtra
     int64_t beat_seqtime = end_blockseqtime;
 
     int beatnum = 1;
-    barnum++;
 
     bool is_first_iteration=true;
 
