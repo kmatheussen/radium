@@ -1290,6 +1290,30 @@ void setInstrumentBypass(int64_t instrument_id, bool do_bypass){
   PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 }
 
+
+void setSoloForInstruments(dyn_t instruments, bool doit){
+  S7CALL2(void_dyn_bool, "FROM_C-set-solo-for-instruments", instruments, doit);
+}
+void setMuteForInstruments(dyn_t instruments, bool doit){
+  S7CALL2(void_dyn_bool, "FROM_C-set-mute-for-instruments", instruments, doit);
+}
+void setBypassForInstruments(dyn_t instruments, bool doit){
+  S7CALL2(void_dyn_bool, "FROM_C-set-bypass-for-instruments", instruments, doit);
+}
+
+
+void switchSoloForSelectedInstruments(void){
+  S7CALL2(void_void,"FROM_C-switch-solo-for-selected-instruments");
+}
+
+void switchMuteForSelectedInstruments(void){
+  S7CALL2(void_void,"FROM_C-switch-mute-for-selected-instruments");
+}
+
+void switchBypassForSelectedInstruments(void){
+  S7CALL2(void_void,"FROM_C-switch-bypass-for-selected-instruments");
+}
+
 void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)

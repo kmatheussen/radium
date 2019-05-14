@@ -545,6 +545,9 @@
     FROM_C-create-granular-vizualization-gui-for-sample-player
     generate-main-menus
     ra:set-curr-seqtrack
+    FROM_C-switch-solo-for-selected-instruments
+    FROM_C-switch-mute-for-selected-instruments
+    FROM_C-switch-bypass-for-selected-instruments
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

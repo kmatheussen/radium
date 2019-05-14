@@ -2049,14 +2049,11 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
             }
           }
         }
-        
-        vector_t patches = MW_get_selected_patches();
-        if (VECTOR_is_in_vector(&patches, patch)==false){
-          VECTOR_clean(&patches);
-          VECTOR_push_back(&patches,patch);
-        }
-        
-        MW_solo(patches, !solo_is_on);
+
+        if (instrumentIsSelected(patch->id))
+          setSoloForInstruments(getSelectedInstruments(), !solo_is_on);
+        else
+          setInstrumentSolo(patch->id, !solo_is_on);
         
         /*
         //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
@@ -2099,22 +2096,12 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
             }
           }
         }
-        
-        vector_t patches = MW_get_selected_patches();
-        if (VECTOR_is_in_vector(&patches, patch)==false){
-          VECTOR_clean(&patches);
-          VECTOR_push_back(&patches,patch);
-        }
-        
-        MW_mute(patches, is_on);
-        /*
-          ADD_UNDO(AudioEffect_CurrPos(patch, num_effects+EFFNUM_VOLUME_ONOFF));
-          
-          PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-        */
-        //CHIP_update(plugin);
-        //GFX_update_instrument_widget((struct Patch*)patch);
-        
+
+        if (instrumentIsSelected(patch->id))
+          setMuteForInstruments(getSelectedInstruments(), is_on);
+        else
+          setInstrumentMute(patch->id, is_on);
+
       }UNDO_CLOSE();
 
       set_mute_statusbar(this);
@@ -2147,23 +2134,11 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
             }
           }
         }
-        
-        vector_t patches = MW_get_selected_patches();
-        if (VECTOR_is_in_vector(&patches, patch)==false){
-          VECTOR_clean(&patches);
-          VECTOR_push_back(&patches,patch);
-        }
-        
-        MW_bypass(patches, effects_are_on);
-        
-        /*
-          ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
-          
-          PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-          CHIP_update(plugin);
-          GFX_update_instrument_widget((struct Patch*)patch);
-        */
-        
+
+        if (instrumentIsSelected(patch->id))
+          setBypassForInstruments(getSelectedInstruments(), effects_are_on);
+        else
+          setInstrumentBypass(patch->id, effects_are_on);
       }
 
       set_bypass_statusbar(this);

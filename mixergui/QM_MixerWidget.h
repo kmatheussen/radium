@@ -133,10 +133,6 @@ extern LANGSPEC SoundPluginType *MW_popup_plugin_type_selector(bool must_have_in
 extern LANGSPEC vector_t MW_get_selected_chips(void);
 extern LANGSPEC vector_t MW_get_selected_patches(void);
 
-extern LANGSPEC void MW_solo(const vector_t patches, bool set_on);
-extern LANGSPEC void MW_mute(const vector_t patches, bool do_mute);
-extern LANGSPEC void MW_bypass(const vector_t patches, bool do_bypass);
-
 extern LANGSPEC void MW_copy(void);
 extern LANGSPEC void MW_delete(void);
 extern LANGSPEC void MW_cut(void);

@@ -952,6 +952,24 @@ void s7extra_callFunc2_void_dyn_dyn(const char *funcname, const dyn_t arg1, cons
   s7extra_callFunc_void_dyn_dyn((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
 }
 
+void s7extra_callFunc_void_dyn_bool(const func_t *func, const dyn_t arg1, bool arg2){
+  ScopedEvalTracker eval_tracker;
+  
+  catch_call(s7,
+             s7_list_nl(s7,
+                        3,
+                        (s7_pointer)func,
+                        Protect(s7extra_make_dyn(s7, arg1)).v,
+                        s7_make_boolean(s7, arg2),
+                        NULL
+                        )
+             );
+}
+
+void s7extra_callFunc2_void_dyn_bool(const char *funcname, const dyn_t arg1, bool arg2){
+  s7extra_callFunc_void_dyn_bool((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
+}
+
 void s7extra_callFunc_void_charpointer(const func_t *func, const char* arg1){
   ScopedEvalTracker eval_tracker;
   

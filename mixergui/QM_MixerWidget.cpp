@@ -1109,46 +1109,6 @@ vector_t MW_get_selected_patches(void){
 }
 
 
-void MW_solo(const vector_t patches, bool do_solo){
-
-  if (patches.num_elements==0){
-    GFX_Message2(NULL, true, "No sound object selected");
-    return;
-  }
-
-  VECTOR_FOR_EACH(struct Patch *,patch,&patches){
-    setInstrumentSolo(patch->id, do_solo);
-  }END_VECTOR_FOR_EACH;
-}
-
-void MW_mute(const vector_t patches, bool do_mute){
-
-  if (patches.num_elements==0){
-    GFX_Message2(NULL, true, "No sound object selected");
-    return;
-  }
-
-  UNDO_OPEN_REC();{
-    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
-      setInstrumentMute(patch->id, do_mute);
-    }END_VECTOR_FOR_EACH;
-  }UNDO_CLOSE();
-}
-
-void MW_bypass(const vector_t patches, bool do_bypass){
-
-  if (patches.num_elements==0){
-    GFX_Message2(NULL, true, "No sound object selected");
-    return;
-  }
-
-  UNDO_OPEN_REC();{
-    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
-      setInstrumentBypass(patch->id, do_bypass);
-    }END_VECTOR_FOR_EACH;
-  }UNDO_CLOSE();
-}
-
 void MW_copy(void){
   vector_t patches = get_selected_patches();
 
@@ -1282,8 +1242,10 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int unsolo_several = -1;
   int mute = -1;
   int mute_several = -1;
-  int bypass = -1;
   int unmute_several = -1;
+  int bypass = -1;
+  int bypass_several = -1;
+  int unbypass_several = -1;
   int unsolo_all = -1;
   int mute_all = -1;
   int unmute_all = -1;
@@ -1329,6 +1291,9 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     VECTOR_push_back(&v, "--------");
     mute_several = VECTOR_push_back(&v, "Mute all selected");
     unmute_several = VECTOR_push_back(&v, "Un-mute all selected");
+    VECTOR_push_back(&v, "--------");
+    bypass_several = VECTOR_push_back(&v, "Bypass all selected");
+    unbypass_several = VECTOR_push_back(&v, "Un-bypass all selected");
     VECTOR_push_back(&v, "--------");
     config_color = VECTOR_push_back(&v, "Configure color");
     generate_new_color = VECTOR_push_back(&v, "Generate new color");
@@ -1448,7 +1413,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     patch_ids.push_back(patch->id);
   }END_VECTOR_FOR_EACH;
 
-#define sels connect_to_main_pipe,insert,replace,solo,solo_several,unsolo_several,mute,mute_several,unmute_several,unsolo_all,mute_all,unmute_all,bypass,copy,cut,delete_,load,save,rename,show_mixer_strips,config_color,generate_new_color,show_gui,receive_external_midi,random,instrument_info
+#define sels connect_to_main_pipe,insert,replace,solo,solo_several,unsolo_several,mute,mute_several,unmute_several,unsolo_all,mute_all,unmute_all,bypass,bypass_several,unbypass_several,copy,cut,delete_,load,save,rename,show_mixer_strips,config_color,generate_new_color,show_gui,receive_external_midi,random,instrument_info
   
   GFX_Menu3(v,[is_alive, chip_under, scene, patch_ids, sels, mouse_x, mouse_y, parentguinum](int sel, bool onoff){
       
@@ -1489,44 +1454,52 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
         mouserelease_replace_patch(scene, mouse_x, mouse_y);
         
       } else if (sel==solo) {
-        
-        MW_solo(patches, onoff);
+
+        setSoloForInstruments(getSelectedInstruments(), onoff);
         
       } else if (sel==solo_several) {
-        
-        MW_solo(patches, true);
+
+        setSoloForInstruments(getSelectedInstruments(), true);
         
       } else if (sel==unsolo_several) {
-        
-        MW_solo(patches, false);
+
+        setSoloForInstruments(getSelectedInstruments(), false);
         
       } else if (sel==mute) {
-        
-        MW_mute(patches, onoff);
+
+        setMuteForInstruments(getSelectedInstruments(), onoff);
         
       } else if (sel==bypass) {
-        
-        MW_bypass(patches, onoff);
+
+        setBypassForInstruments(getSelectedInstruments(), onoff);
         
       } else if (sel==mute_several) {
-        
-        MW_mute(patches, true);
+
+        setMuteForInstruments(getSelectedInstruments(), true);
         
       } else if (sel==unmute_several) {
+
+        setMuteForInstruments(getSelectedInstruments(), false);
         
-        MW_mute(patches, false);
+      } else if (sel==bypass_several) {
+
+        setBypassForInstruments(getSelectedInstruments(), true);
+        
+      } else if (sel==unbypass_several) {
+
+        setBypassForInstruments(getSelectedInstruments(), false);
         
       } else if (sel==unsolo_all) {
-        
-        MW_solo(get_audio_instrument()->patches, false);
+
+        setSoloForInstruments(getSelectedInstruments(), false);
         
       } else if (sel==mute_all) {
 
-        MW_mute(get_audio_instrument()->patches, true);
+        setMuteForInstruments(getSelectedInstruments(), true);
         
       } else if (sel==unmute_all) {
-        
-        MW_mute(get_audio_instrument()->patches, false);
+
+        setMuteForInstruments(getSelectedInstruments(), false);
         
       } else if (sel==copy) {
         
