@@ -138,14 +138,14 @@ namespace{
         R_ASSERT(result==NULL);
 
       g_alive_callbackers++;
-      //printf("    Created Callbacker. callbackers: %d. pos: %d\n", g_alive_callbackers, (int)this->callback._pos);
+      //printf("    Created Callbacker %p. callbackers: %d. pos: %d\n", this, g_alive_callbackers, (int)this->callback._pos);
     }
 
     ~Callbacker(){
       R_ASSERT(_waiting_for_callback==false);
       R_ASSERT_NON_RELEASE(g_alive_callbackers > 0);
       g_alive_callbackers--;
-      //printf("            CALLBACKER deleted 2. Alive now: %d. pos: %d. This: %p\n", g_alive_callbackers, (int)callback._pos, this);
+      //printf("            CALLBACKER %p deleted 2. Alive now: %d. pos: %d.\n", this, g_alive_callbackers, (int)callback._pos);
     }
     
   private:
@@ -286,10 +286,10 @@ namespace{
   class MyQAction : public QWidgetAction {
     Q_OBJECT
 
-    std::shared_ptr<Callbacker> _callbacker;
-    
   public:
 
+    std::shared_ptr<Callbacker> _callbacker;
+    
     int64_t _guinum;
     QWidget *_widget = NULL;
     
@@ -304,7 +304,8 @@ namespace{
       , _callbacker(callbacker)
       , _entry_id(g_myactions_counter++)
     {
-      
+
+      //printf("   ...ADDING %p/%p into cache. C: %ld\n", this, _callbacker.get(), _callbacker.use_count());
       g_curr_visible_actions[_entry_id] = this;
       
       S7EXTRA_GET_FUNC(s_func, "FROM_C-create-menu-entry-widget");
@@ -330,7 +331,9 @@ namespace{
     }
 
     ~MyQAction(){
+      //printf("   ...Removing %p/%p from cache. C: %ld\n", this, _callbacker.get(), _callbacker.use_count());
       g_curr_visible_actions.remove(_entry_id);
+      //delete _widget;
     }
     
     // Called by MyQMenu. (workaround for stupid separator behaviour in Qt)
@@ -350,8 +353,6 @@ namespace{
   class CheckableAction : public MyQAction {
     Q_OBJECT
 
-    std::shared_ptr<Callbacker> callbacker;
-    
   public:
 
     ~CheckableAction(){
@@ -360,7 +361,6 @@ namespace{
 
     CheckableAction(const QString & text_b, const QString &shortcut, bool is_on, bool is_radiobutton, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
       : MyQAction(text_b, shortcut, callbacker, true, is_on, is_radiobutton, is_first, is_last, callbacker->qmenu)
-      , callbacker(callbacker)
     {
       setCheckable(true);
       setChecked(is_on);
@@ -375,7 +375,7 @@ namespace{
 
   public slots:
     void toggled(bool checked){
-      callbacker->run_and_delete_checked(checked, callbacker);
+      _callbacker->run_and_delete_checked(checked, _callbacker);
     }
   };
 
@@ -389,8 +389,6 @@ namespace{
     
   public:
     
-    std::shared_ptr<Callbacker> callbacker;
-
     QString _text;
     QString _shortcut;
     bool _is_first, _is_last;
@@ -403,12 +401,12 @@ namespace{
     
     ClickableAction(const QString & text, const QString &shortcut, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
       : MyQAction(text, shortcut, callbacker, false, false, false, is_first, is_last, callbacker->qmenu)
-      , callbacker(callbacker)
       , _text(text)
       , _shortcut(shortcut)
       , _is_first(is_first)
       , _is_last(is_last)
     {
+      //printf("  ___4 count %p: %ld\n", callbacker.get(), callbacker.use_count());
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
     }
 
@@ -419,32 +417,33 @@ namespace{
 
   public slots:
     void triggered(){
-      if(callbacker==NULL){
+      if(_callbacker.get()==NULL){
         R_ASSERT_NON_RELEASE(false);
         return;
       }
-      callbacker->run_and_delete_clicked(callbacker);
+      _callbacker->run_and_delete_clicked(_callbacker);
     }
   };
 
   static void release_clickable_action(ClickableAction *action){    
     action->setParent(NULL);
-    action->callbacker = NULL;
-
+    action->_callbacker = NULL;
+    
     g_clickable_actions.insert(action->_text, action);
 
     //printf("    clickable size: %d\n", g_clickable_actions.size());
   }
   
   static ClickableAction *get_clickable_action(const QString & text, const QString &shortcut, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker){
+
     for(ClickableAction *action : g_clickable_actions.values(text))
       if (action->_shortcut == shortcut && action->_is_first==is_first && action->_is_last==is_last){
         g_clickable_actions.remove(text, action);
-        action->callbacker = callbacker;
+        action->_callbacker = callbacker;
         action->setEnabled(true); // Might have been set to disabled last time.
         return action;
       }
-    
+
     return new ClickableAction(text, shortcut, is_first, is_last, callbacker);
   }
 
@@ -1036,7 +1035,7 @@ static QMenu *create_qmenu(
         }
 
         double t = TIME_get_ms();
-        auto callbacker = std::shared_ptr<Callbacker>(new Callbacker(menu, i, is_async, text, callback2, callback3, result, is_checkable));
+        auto callbacker = std::make_shared<Callbacker>(menu, i, is_async, text, callback2, callback3, result, is_checkable);
         callbackdur += TIME_get_ms()-t;
         
         if (!icon.isNull()) {
@@ -1080,9 +1079,11 @@ static QMenu *create_qmenu(
           action = hepp;
           //printf("   3. Setting action %p to -%s-\n", action, text.toUtf8().constData());
         }
+        
+        //printf("   Finished. Callbacker %p count: %ld\n", callbacker.get(), callbacker.use_count());
       }
 
-
+      
       if (action != NULL){
         //action->setData(i);
         double t = TIME_get_ms();
