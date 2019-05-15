@@ -502,6 +502,28 @@
                                        
 !#
 
+(define (set-new-note-end note new-length)
+  ;;(c-display "Pitches:" (length (note :pitches)) (length (note :velocities)))
+  (define old-length ((last (note :velocities)) :place))
+  ;;(c-display "start:" (* 1.0 (note :place)) ". old-length: " (* 1.0 old-length) ". new-length:" (* 1.0 new-length))
+  (cond (#f
+         note)
+        ((< new-length old-length)
+         (cut-note-keep-start note (+ (note :place) new-length)))
+        ((> new-length old-length)
+         (<copy-note> note
+                      :pitches (append (butlast (note :pitches))
+                                       (list
+                                        (<copy-pitch> (last (note :pitches))
+                                                      :place new-length)))
+                      :velocities (append (butlast (note :velocities))
+                                          (list
+                                           (<copy-velocity> (last (note :velocities))
+                                                            :place new-length)))))
+        (else
+         note)))
+
+
 ;;;;;;;;; SET NOTES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (add-note! note tracknum blocknum)

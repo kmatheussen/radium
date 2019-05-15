@@ -498,6 +498,9 @@
     shuffle-range
     shuffle-track
     shuffle-block
+    distribute-range-evenly
+    distribute-track-evenly
+    distribute-block-evenly
     randomly-delete-notes-range
     randomly-delete-notes-track
     randomly-delete-notes-block

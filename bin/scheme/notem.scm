@@ -265,10 +265,50 @@
 
 
 
+;; distribute notes evenly
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define *default-keep-note-durations* #f)
+
+(define (distribute-notes-evenly! area keep-note-durations)
+  (undo-editor-area area)
+  (define track-notes (map (lambda (track-notes)
+                             (let ((new-note-length (/ (- (area :end-place) (area :start-place))
+                                                       (max 1 (length track-notes)))))
+                               (map (lambda (i note)
+                                      (let ((note (copy-note note
+                                                             :place (* i new-note-length))))
+                                        (if keep-note-durations
+                                            note
+                                            (set-new-note-end note
+                                                              new-note-length))))
+                                    (iota (length track-notes))
+                                    track-notes)))
+                           (get-area-notes area)))  
+  ;;(c-display (pp track-notes))
+  (replace-notes! track-notes area)
+  )
+
+
+(delafina (distribute-range-evenly :keep-note-durations *default-keep-note-durations* :blocknum -1)
+  (if (not (<ra> :has-range blocknum))
+      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+      (distribute-notes-evenly! (get-ranged-editor-area blocknum) keep-note-durations)))
+
+#!!
+(distribute-range-evenly #t)
+(distribute-range-evenly #f)
+!!#
+
+(delafina (distribute-track-evenly :keep-note-durations *default-keep-note-durations* :tracknum -1 :blocknum -1)
+  (distribute-notes-evenly! (get-track-editor-area tracknum blocknum) keep-note-durations))
+
+(delafina (distribute-block-evenly :keep-note-durations *default-keep-note-durations*)
+  (distribute-notes-evenly! (get-block-editor-area) keep-note-durations))
+
+  
 ;; heavy shuffle
 ;;;;;;;;;;;;;;;;
-
-
 
 (define (fullshuffle-notes! area chance)
   (undo-editor-area area)
@@ -529,7 +569,7 @@
                                                                (create-keybinding-button "Track" "ra:eval-scheme" '("(fullshuffle-track)")))
                                                         (<gui> :vertical-layout
                                                                (create-keybinding-button "Block" "ra:eval-scheme" '("(fullshuffle-block)")))))
-  
+
   (define randomize-note-durations-layout (create-notem-layout (<gui> :vertical-layout
                                                                     (create-keybinding-button "Range" "ra:eval-scheme" '("(randomize-note-durations-range)")))
                                                              (<gui> :vertical-layout
@@ -584,12 +624,25 @@
   
   (define monophonic-layout (create-notem-layout (create-keybinding-button "Make track monophonic" "ra:make-track-monophonic")
                                                  (create-keybinding-button "Split track into several monophonic tracks" "ra:split-track-into-monophonic-tracks")))
+
+  (define distribute-notes-evenly-layout (create-notem-layout (<gui> :checkbox "Keep note durations"
+                                                                     *default-keep-note-durations*
+                                                                     (lambda (val)
+                                                                       (set! *default-keep-note-durations* val)))
+                                                              (<gui> :vertical-layout
+                                                                     (create-keybinding-button "Range" "ra:eval-scheme" '("(distribute-range-evenly)")))
+                                                              (<gui> :vertical-layout
+                                                                     (create-keybinding-button "Track" "ra:eval-scheme" '("(distribute-track-evenly)")))
+                                                              (<gui> :vertical-layout
+                                                                     (create-keybinding-button "Block" "ra:eval-scheme" '("(distribute-block-evenly)")))))
+
   (define ret (create-notem-flow-layout (<gui> :group "Expand/shrink Pitch" pitches-layout)
                                         (<gui> :group "Expand/shrink Lines" lines-layout)
                                         (<gui> :group "Invert Pitches" invert-layout)
                                         (<gui> :group "Reverse notes" backwards-layout)
                                         (<gui> :group "Glissando" glissando-layout)
                                         (<gui> :group "Polyphonic tracks" monophonic-layout)
+                                        (<gui> :group "Distribute notes evenly" distribute-notes-evenly-layout)
                                         ))
   
   ;;(<gui> :set-size-policy vertical-layout #t #t)
