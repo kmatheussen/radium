@@ -1,3 +1,42 @@
+Changes 5.9.60 -> 5.9.61:
+* Build: Compile ladspa-plugins without debug symbols
+  to lower startup time if realtime virus scanning is
+  enabled.
+* Windows: Update Qt to V5.12.3. (macOS: Qt was
+  updated to V5.12.3 in Radium 5.9.60. Linux: Qt is
+  still at V5.12.2.)
+* Windows/Linux: Compile Radium with gcc 8.3.0.
+  (Upgraded from gcc 7.4.0.)
+* GUI: Only hardcode F11 to switch full screen for
+  windows which takes care of keyboard events
+  themselves. For instance the help windows.
+* Linux: Fix undefined behavior when setting a window
+  to not be full screen.
+* Edit: Functions to distribute notes evenly in
+  range, track, or block.
+* Sequencer: Display correct bar numbers. (Bug
+  introduced in 5.9.60.)
+* GUI: Fix memory leak in popup menus
+* Mixer: Only make one undo entry for "solo all
+  selected/etc." in the popup menu.
+* Mixer: Add "bypass/unbypass all selected" entries
+  to the popup menu.
+* Build: compilation fixes for gcc9.
+* Mixer: Add function "switch-solo-for-selected-instruments"
+* Sequencer: Fix some minor graphical garbage in the
+  lower-left buttons.
+* GUI: Fix crash that sometimes happened when
+  clicking slighly outside a popup menu entry.
+  (Bug introduced in 5.9.60)
+* Log: Log all clicks on popup menu entries.
+* API: setSoloForInstruments, setMuteForInstruments,
+  setBypassForInstruments,
+  switchSoloForSelectedInstruments,
+  switchMuteForSelectedInstruments (Lydkraft),
+  switchBypassForSelectedInstruments (Lydkraft).
+
+
+
 Changes 5.9.52 -> 5.9.60:
 * Editor: Don't update graphics during playback if
   "enable_editor_rerendering_during_playback = false"
@@ -157,6 +196,8 @@ Changes 5.9.52 -> 5.9.60:
   * gui_createMixerStrips ha as new optional argument
     "vert_ratio" (is 1/1 by default).
   * swapSeqtracks doesn't create undo anymore.
+
+
 
 Changes 5.9.51 -> 5.9.52:
 * OSX: Workaround for sequencer graphics not being
