@@ -1231,7 +1231,9 @@ protected:
       QFocusEvent *fevent = static_cast<QFocusEvent*>(event);
       printf("QEvent::FocusAboutToChange: EventFilter called: %d/%d %d\n", fevent->gotFocus(), fevent->lostFocus(), fevent->reason());
       */
-      OS_SYSTEM_ResetKeysUpDowns();
+
+      // Schedule to run later. Now we could be called from anywhere, for instance a qwidget destructor.
+      QTimer::singleShot(3,OS_SYSTEM_ResetKeysUpDowns);
     }
 
 #elif 0 //FOR_MACOSX
