@@ -1847,7 +1847,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
     
     bool keyPressEvent(QKeyEvent *event){
-      if (event->key()==Qt::Key_F11){
+      if (_take_keyboard_focus && event->key()==Qt::Key_F11){
         event->accept();
         GFX_toggleCurrWindowFullScreen();
         /*
