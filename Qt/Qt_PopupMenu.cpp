@@ -725,10 +725,24 @@ namespace{
 
       MyQAction *myaction = g_last_hovered_myaction.data();
       
-      if (myaction!=NULL && myaction->my_clicked()==true)
-        event->accept();
-      else
-        QMenu::mousePressEvent(event);
+      if (myaction!=NULL && g_curr_visible_actions.contains(myaction->_entry_id) && myaction->my_clicked()==true){
+        
+        if(myaction->_callbacker.get() == NULL){
+          
+          R_ASSERT_NON_RELEASE(false);
+          
+        } else {
+          
+          event->accept();
+          
+        }
+        
+        return;
+        
+      }
+      
+      QMenu::mousePressEvent(event);
+        
     }
     
     /*
