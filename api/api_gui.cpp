@@ -1097,7 +1097,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     6. When the child changes parent, we must delete, or preferably, monitor when to hide and so forth.
     */
   struct FullScreenParent : public QWidget, radium::Timer {
-
+    
     QPointer<QWidget> _child;
     
     bool _had_original_parent;
@@ -4319,7 +4319,7 @@ static void perhaps_collect_a_little_bit_of_gui_garbage(int num_guis_to_check){
     
     if (gui->_widget==NULL){
 
-      printf("        GUI GC: COLLECTING gui garbage. Pos: %d, guinum: %d\n", pos, (int)gui->get_gui_num());
+      printf("        GUI GC: COLLECTING gui garbage. Pos: %d, guinum: %d. Num alive guis: %d\n", pos, (int)gui->get_gui_num(), g_valid_guis.size());
       delete gui;
 
     } else {
@@ -6482,7 +6482,7 @@ void gui_setFullScreen(int64_t guinum, bool enable){
 #endif
 #endif
 
-    fprintf(stderr, "  gui_setFullScreen: Setting FULLSCREEN\n");
+    fprintf(stderr, "  %d: gui_setFullScreen: Setting FULLSCREEN\n", (int)gui->_gui_num);
     
     // I've spent xx hours trying to show full screen work by calling showFullScreen() directly on the widget, but it's not working very well.
     // Creating a new full screen parent works much better.
@@ -6499,9 +6499,14 @@ void gui_setFullScreen(int64_t guinum, bool enable){
     
     if (gui->_full_screen_parent.data() != NULL && gui->_widget != NULL) {
       gui->_full_screen_parent->resetChildToOriginalState();
-    
-      fprintf(stderr, "  Hiding full\n\n");
-      delete gui->_full_screen_parent;
+
+      //fprintf(stderr,"Deleting parent gui. guinum: %d (%d). full_screen_paren: %p. Casted to QWidget: %p. Casted to fullscreenparent: %p. Class name: %s\n", (int)guinum, (int)gui->_gui_num, gui->_full_screen_parent.data(), dynamic_cast<QWidget*>(gui->_full_screen_parent.data()), dynamic_cast<FullScreenParent*>(gui->_full_screen_parent.data()), gui->_full_screen_parent->metaObject()->className());
+      
+      delete gui->_full_screen_parent.data();
+
+      //fprintf(stderr,"Deleting parent gui finished. guinum: %d (%d). full_screen_paren: %p. Casted to QWidget: %p. Casted to fullscreenparent: %p. Class name: %s\n", (int)guinum, (int)gui->_gui_num, gui->_full_screen_parent.data(), dynamic_cast<QWidget*>(gui->_full_screen_parent.data()), dynamic_cast<FullScreenParent*>(gui->_full_screen_parent.data()), gui->_full_screen_parent==NULL ? "<deleted>" : gui->_full_screen_parent->metaObject()->className());
+
+      fprintf(stderr, "  %d: Hiding full\n\n", (int)gui->_gui_num);
       
       gui->_widget->show();
       gui->_widget->setFocus();
@@ -7087,16 +7092,29 @@ QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void){
   QVector<QWidget*> ret;
   QVector<int64_t> to_remove;
 
+  //fprintf(stderr,"   Calling MIXERSTRIPS_get_all_widgets. num guinums: %d\n",g_mixerstrip_guinums.size());
+  
   for(int64_t guinum : g_mixerstrip_guinums){
 
     Gui *gui = g_guis.value(guinum);
+
+    /*
+    if (gui != NULL && gui->_full_screen_parent.data() != NULL){
+      fprintf(stderr,"guinum: %d (%d). full_screen_paren: %p. Casted to QWidget: %p. Casted to fullscreenparent: %p. Class name: %s\n", (int)guinum, (int)gui->_gui_num, gui->_full_screen_parent.data(), dynamic_cast<QWidget*>(gui->_full_screen_parent.data()), dynamic_cast<FullScreenParent*>(gui->_full_screen_parent.data()), gui->_full_screen_parent->metaObject()->className());
+    } else if (gui != NULL){
+      fprintf(stderr, "guinum: %d (%d). full_screen_parent is NULL\n", (int)guinum, (int)gui->_gui_num);
+    }
+    */
     
     if (gui==NULL)     
       to_remove.push_back(guinum);
-    else if (gui->_full_screen_parent != NULL)
+    else if (gui->_full_screen_parent.data() != NULL)
       ret.push_back(gui->_full_screen_parent);
     else
       ret.push_back(gui->_widget);
+
+    //if (gui != NULL && gui->_full_screen_parent.data() != NULL)
+    //  fprintf(stderr,"---gotit\n\n");
   }
 
   for(int64_t guinum : to_remove)
