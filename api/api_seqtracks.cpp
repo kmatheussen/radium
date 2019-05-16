@@ -2203,6 +2203,24 @@ void setCurrSeqblock(int64_t seqblockid){
   if (seqblockid==g_curr_seqblock_id)
     return;
 
+  if (SEQUENCER_getWidget_r0()==NULL){
+    // starting up.
+    g_curr_seqblock_id = seqblockid;
+    return;
+  }
+    
+  static int level = 0;
+
+  level++;
+
+  if(level > 1){
+    R_ASSERT_NON_RELEASE(false);
+  }
+  
+  if(level > 100){
+    return;
+  }
+  
   GET_VARS_FROM_SEQBLOCK_ID(seqblockid, true,);
 
   cancelCurrSeqblock(); // Update GFX of old seqblock.
@@ -2218,6 +2236,10 @@ void setCurrSeqblock(int64_t seqblockid){
     
     S7CALL(void_int_int, func, seqtracknum, seqblocknum);
   }
+
+  BS_SelectPlaylistPosFromSeqblock(seqblock);
+  
+  level--;
 }
 
 int64_t getCurrSeqblockId(void){

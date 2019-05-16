@@ -28,6 +28,7 @@ extern LANGSPEC void BS_UpdatePlayList(void);
 extern LANGSPEC void BS_SelectBlock(struct Blocks *block);
 extern LANGSPEC void BS_SelectBlocklistPos(int pos);
 extern LANGSPEC void BS_SelectPlaylistPos(int pos);
+void BS_SelectPlaylistPosFromSeqblock(struct SeqBlock *seqblock);
 extern LANGSPEC struct SeqBlock *BS_GetPrevPlaylistBlock(void);
 extern LANGSPEC struct SeqBlock *BS_GetNextPlaylistBlock(void);  
 extern LANGSPEC struct SeqBlock *BS_GetSeqBlockFromPos(int pos);

@@ -365,7 +365,9 @@ ifneq (,$(findstring clang,$(CC)))
   CLANG_MINOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f2)
   CLANG_SUB:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f3)
 
-  WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
+  ifeq ($(shell test $(CLANG_MAJOR) -gt 5; echo $$?),0)
+     WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
+  endif
 
 endif
 
