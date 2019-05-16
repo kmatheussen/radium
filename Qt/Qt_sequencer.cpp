@@ -1496,7 +1496,9 @@ public:
 
   void paintSeqblockText(QPainter &p, const QRectF &rect, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type, bool scale_text) const {
 
-    QColor text_color = get_block_qcolor(SEQUENCER_TEXT_COLOR_NUM, type);
+    bool is_current_block = seqblock->block!=NULL && seqblock->block == root->song->tracker_windows->wblock->block;
+
+    QColor text_color = is_current_block ? get_block_qcolor(SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM, type) : get_block_qcolor(SEQUENCER_TEXT_COLOR_NUM, type);
 
     // background
     QColor header_color = get_seqblock_color(seqtrack, seqblock);//.lighter(150);
@@ -1539,9 +1541,9 @@ public:
     
     // Seqblock border
     {
-      bool is_current_block = seqblock->block!=NULL && seqblock->block == root->song->tracker_windows->wblock->block;
+      ///bool is_current_block = seqblock->block!=NULL && seqblock->block == root->song->tracker_windows->wblock->block;
 
-      if (is_current_block){
+      if (false){ // && is_current_block){
         QColor c = get_block_qcolor(CURSOR_EDIT_ON_COLOR_NUM, type);
         //c.setAlpha(150);      
         p.setPen(QPen(c, get_seqtrack_border_width()));
