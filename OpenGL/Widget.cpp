@@ -39,10 +39,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if USE_QT5
 #  if THREADED_OPENGL
 #    include <vlQt5/Qt5ThreadedWidget.hpp>
+#    define USE_COVER 1
 #  else
 #    include <vlQt5/Qt5Widget.cpp> // Note Q_OBJECT must be removed from Qt5Widget
+#    define USE_COVER 0
 #  endif
 #else
+#  error "error"
 #  include <vlQt4/Qt4ThreadedWidget.hpp>
 #endif
 
@@ -1405,6 +1408,7 @@ private:
     //assertHealthyVBlank();
   }
 
+#if USE_COVER
   class Cover : QObject {
     QImage _image;
     radium::Mutex _image_mutex;
@@ -1490,8 +1494,10 @@ private:
 
   radium::Mutex _cover_mutex;
   Cover *_cover = NULL;
-
+#endif
+  
   void hide_cover(void){
+#if USE_COVER
     IsAlive is_alive(this);
 
     THREADING_run_on_main_thread_async([is_alive, this]{
@@ -1535,9 +1541,11 @@ private:
           _cover = NULL;
         }
       });
+#endif
   }
 
   void show_cover(void){
+#if USE_COVER
     radium::ScopedMutex lock(_cover_mutex);
 
     if (_cover == NULL){
@@ -1578,6 +1586,7 @@ private:
           true);
       }
     }
+#endif
   }
 
 public:
@@ -1588,6 +1597,7 @@ public:
   void updateEvent() override {
     //{static double last_time = 0; static int counter =0; double nowtime = TIME_get_ms(); printf("   Counter: %d. Time: %f\n", counter++, nowtime-last_time);last_time = nowtime;}
 
+#if USE_COVER
     {
       radium::ScopedMutex lock(_cover_mutex);
       if (_cover != NULL){
@@ -1595,7 +1605,8 @@ public:
         _cover->maybe_grab_frame_buffer(this);
       }
     }
-
+#endif
+    
     if(ATOMIC_GET(_dont_swap_right_now)){
       msleep(15);
       return;
@@ -1785,12 +1796,14 @@ public:
   void resizeEvent(int w, int h) override {
     //printf("resisizing %d %d\n",w,h);
 
+#if USE_COVER
     if(0){
       radium::ScopedMutex lock(_cover_mutex);
       if (_cover != NULL)
         _cover->maybe_grab_frame_buffer(this);
     }
-
+#endif
+    
     if (w<32)
       w = 32;
     if (h<32)

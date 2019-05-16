@@ -994,6 +994,7 @@ public slots:
         }
       } else {
         abstime = seqblock->t.time;
+        setCurrSeqblock(seqblock->id);
       }      
 
       PLAYER_set_song_pos(abstime, -1, false);
@@ -1262,6 +1263,18 @@ struct SeqBlock *BS_GetNextPlaylistBlock(void){
 struct SeqBlock *BS_GetSeqBlockFromPos(int pos){
   ScopedVisitors v;
   return g_bs->get_seqblock_from_pos(pos);
+}
+
+void BS_SelectPlaylistPosFromSeqblock(struct SeqBlock *seqblock){
+  int i = 0;
+  for(const auto &el : get_playlist_elements()){
+    if (!el.is_pause() && el.seqblock==seqblock){
+      if (el.is_current==false)
+        BS_SelectPlaylistPos(i);
+      return;
+    }
+    i++;
+  }
 }
 
 /*

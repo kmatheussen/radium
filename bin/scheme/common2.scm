@@ -570,7 +570,7 @@
 
 (define-match delafina-args-to-define*-args
   ()                 :> '()
-  (Var . Rest)       :> (error 'delafina-error (<-> "All parameters for a delafina functions must be keywords. '" Var "' is not a keyword"))
+  (Var . Rest)       :> (error 'delafina-error (<-> "All parameters for delafina must be keywords. '" Var "' is not a keyword"))
                         :where (not (keyword? Var))
   (Key)              :> (list (keyword->symbol Key))
   (Key1 Key2 . Rest) :> (cons (keyword->symbol Key1)
