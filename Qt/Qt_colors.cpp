@@ -186,6 +186,7 @@ static const ColorConfig g_colorconfig[] = {
   {SEQTRACKS_BACKGROUND_COLOR_NUM, "seqtracks_background_color", "Seqtracks background color"},
   {SEQUENCER_BORDER_COLOR_NUM, "sequencer_border_color", "Sequencer border color"},
   {SEQUENCER_TEXT_COLOR_NUM, "sequencer_text_color", "Sequencer text color"},
+  {SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM, "sequencer_text_current_block_color", "Sequencer text color, current block"},
   {SEQUENCER_NOTE_COLOR_NUM, "sequencer_note_color", "Sequencer note color"},
   {SEQUENCER_NOTE_START_COLOR_NUM, "sequencer_note_start_color", "Sequencer note start color"},
 
@@ -310,6 +311,7 @@ static ReplacementColor g_replacement_color[] = {
   {SEQTRACKS_BACKGROUND_COLOR_NUM, QColor("#ff3a4844")},
   {SEQUENCER_BORDER_COLOR_NUM, QColor("#ff010101")},
   {SEQUENCER_TEXT_COLOR_NUM, QColor("#ff010101")},
+  {SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM, QColor("#d4d4d4")},
   {SEQUENCER_NOTE_COLOR_NUM, QColor("#960101c8")},
   {SEQUENCER_NOTE_START_COLOR_NUM, QColor("#ff000000")},
 
