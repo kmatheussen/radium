@@ -357,8 +357,8 @@ static void paintMarkerLines(QPainter &p, int64_t start_time, int64_t end_time, 
   
   p.setPen(blue_pen);
   
-  const dynvec_t *markers = SEQUENCER_MARKER_get_state().array;
-  for(const dyn_t &marker : *markers){
+  const dynvec_t markers = SEQUENCER_MARKER_get_state();
+  for(const dyn_t &marker : markers){
     hash_t *hash = marker.hash;
     double time = HASH_get_number(hash, ":time");
     //QString name = HASH_get_qstring(hash, ":name");
@@ -3466,9 +3466,9 @@ public:
 
       float text_height = root->song->tracker_windows->systemfontheight;
 
-      const dynvec_t *markers = SEQUENCER_MARKER_get_state().array;
+      const dynvec_t markers = SEQUENCER_MARKER_get_state();
       int i = 0;
-      for(const dyn_t &marker : *markers){
+      for(const dyn_t &marker : markers){
         i++;
         hash_t *hash = marker.hash;
         double time = HASH_get_number(hash, ":time");

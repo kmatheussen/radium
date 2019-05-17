@@ -487,7 +487,7 @@ void API_clearSoundPluginRegistryCache(void){
   g_known_noncached_entries.clear();
 }
 
-dyn_t getSoundPluginRegistry(bool only_normal_and_containers){
+dynvec_t getSoundPluginRegistry(bool only_normal_and_containers){
   const QVector<PluginMenuEntry> entries = PR_get_menu_entries();
   
   dynvec_t ret = {};
@@ -511,10 +511,10 @@ dyn_t getSoundPluginRegistry(bool only_normal_and_containers){
       get_entry(ret, entry, get_path(dir));
     }
   
-  return DYN_create_array(ret);
+  return ret;
 }
 
-dyn_t populatePluginContainer(dyn_t entry){
+dynvec_t populatePluginContainer(dyn_t entry){
   dynvec_t ret = {};
 
   if (entry.type!=HASH_TYPE){
@@ -561,7 +561,7 @@ dyn_t populatePluginContainer(dyn_t entry){
   }
   
  exit:
-  return DYN_create_array(ret);
+  return ret;
 }
 
 // Note, NOT the same as API_clearSoundPluginRegistryCache.

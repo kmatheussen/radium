@@ -3002,9 +3002,10 @@ double SONG_get_length(void){
     len = R_MAX(2 + (double)ATOMIC_GET_RELAXED(root->song->punching.end) / (double)pc->pfreq, len);
 
 
-  const dynvec_t *markers = SEQUENCER_MARKER_get_state().array;
-  if (markers->num_elements > 0){
-    const dyn_t &mark = markers->elements[markers->num_elements-1];
+  const dynvec_t markers = SEQUENCER_MARKER_get_state();
+  
+  if (markers.num_elements > 0){
+    const dyn_t &mark = markers.elements[markers.num_elements-1];
     double time = HASH_get_number(mark.hash, ":time");
     len = R_MAX(2 + time / (double)pc->pfreq, len);
   }
@@ -3103,7 +3104,7 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
   HASH_put_bool(state, "show_signatures_sequencer_lane", root->song->show_signatures_sequencer_lane);
   HASH_put_bool(state, "show_markers_sequencer_lane", root->song->show_markers_sequencer_lane);
 
-  HASH_put_dyn(state, "sequencer_markers", SEQUENCER_MARKER_get_state());
+  HASH_put_array(state, "sequencer_markers", SEQUENCER_MARKER_get_state());
 
   return state;
 }
@@ -3197,7 +3198,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       SEQUENCER_TIMING_create_from_state(HASH_get_hash(state, "sequencer_timing"), state_samplerate);
 
     if(HASH_has_key(state, "sequencer_markers"))
-      SEQUENCER_MARKER_create_from_state(HASH_get_dyn(state, "sequencer_markers"), state_samplerate);
+      SEQUENCER_MARKER_create_from_state(HASH_get_array(state, "sequencer_markers"), state_samplerate);
 
     if(HASH_has_key(state, "show_bars_and_beats_sequencer_lane")){      
       song->show_bars_and_beats_sequencer_lane = HASH_get_bool(state, "show_bars_and_beats_sequencer_lane");

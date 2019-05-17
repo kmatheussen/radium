@@ -908,17 +908,14 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
   return true;
 }
 
-bool CONNECTIONS_apply_changes(const dyn_t dynchanges){
+bool CONNECTIONS_apply_changes(const dynvec_t dynchanges){
   changes::AudioGraph changes;
 
   auto *scene = get_scene(g_mixer_widget);
     
-  if (!DYN_check_type(dynchanges, ARRAY_TYPE, ""))
-    return false;
-  
-  for(int i = 0 ; i < dynchanges.array->num_elements ; i++){
+  for(int i = 0 ; i < dynchanges.num_elements ; i++){
 
-    const dyn_t &element = dynchanges.array->elements[i];
+    const dyn_t &element = dynchanges.elements[i];
     
     const char *errorstring = talloc_format("Element %d: ", i);
     

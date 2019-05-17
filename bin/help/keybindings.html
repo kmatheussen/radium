@@ -238,7 +238,7 @@ ra.evalScheme('(load "C:\Users\Username\.radium\mystuff.scm")')
 
   </UL>
 
-  Python is less supported than scheme. Functions using the "dyn_t" or "func_t" types are not available from python.
+  Python is less supported than scheme. Functions taking a "dynvec_t", "place", "dyn_t" or "func_t" argument are not available from python, and functions returning any of those types will return "None" in Python.
 
 <p>
   

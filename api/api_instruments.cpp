@@ -208,28 +208,23 @@ void requestLoadInstrumentPreset(int64_t instrument_id, const_char* instrument_d
   S7CALL2(void_int_charpointer_int,"async-load-instrument-preset", instrument_id, instrument_description, parentgui);
 }
 
-void saveInstrumentPreset(dyn_t instrument_ids, int64_t parentgui){
-  if (instrument_ids.type != ARRAY_TYPE){
-    handleError("saveInstrumentPreset: Excpected array as first argument, found %s", DYN_type_name(instrument_ids.type));
-    return;
-  }
-  dynvec_t *dynvec = instrument_ids.array;
+void saveInstrumentPreset(dynvec_t instrument_ids, int64_t parentgui){
 
-  if (dynvec->num_elements<1){
+  if (instrument_ids.num_elements<1){
     handleError("saveInstrumentPreset: \"instrument_ids\" is an empty array");
     return;
   }
 
   vector_t patches = {};
 
-  for(int i=0;i<dynvec->num_elements;i++){
+  for(int i=0;i<instrument_ids.num_elements;i++){
     
-    if (dynvec->elements[i].type != INT_TYPE){
-      handleError("saveInstrumentPreset: Element #%d is not an instrument id. Found: %s", i, DYN_type_name(dynvec->elements[i].type));
+    if (instrument_ids.elements[i].type != INT_TYPE){
+      handleError("saveInstrumentPreset: Element #%d is not an instrument id. Found: %s", i, DYN_type_name(instrument_ids.elements[i].type));
       return;
     }
     
-    struct Patch *patch = getPatchFromNum(dynvec->elements[i].int_number);
+    struct Patch *patch = getPatchFromNum(instrument_ids.elements[i].int_number);
     if(patch==NULL)
       return;
     
@@ -531,7 +526,7 @@ void createInstrumentDescriptionPopupMenu(dyn_t instrconf){
   S7CALL2(void_dyn,"create-instrument-popup-menu", instrconf);
 }
 
-dyn_t getAllSinglePresetsInPath(const_char* path){
+dynvec_t getAllSinglePresetsInPath(const_char* path){
   wchar_t *wpath = (path==NULL || strlen(path)==0) ? NULL : STRING_fromBase64(STRING_create(path));
     
   vector_t rec_presets = PRESET_get_all_rec_files_in_path(wpath);
@@ -542,10 +537,10 @@ dyn_t getAllSinglePresetsInPath(const_char* path){
     DYNVEC_push_back(&ret, DYN_create_string(STRING_toBase64(path)));
   }END_VECTOR_FOR_EACH;
   
-  return DYN_create_array(ret);
+  return ret;
 }
 
-dyn_t getAllMultiPresetsInPath(const_char* path){
+dynvec_t getAllMultiPresetsInPath(const_char* path){
   wchar_t *wpath = (path==NULL || strlen(path)==0) ? NULL : STRING_fromBase64(STRING_create(path));
     
   vector_t rec_presets = PRESET_get_all_mrec_files_in_path(wpath);
@@ -556,7 +551,7 @@ dyn_t getAllMultiPresetsInPath(const_char* path){
     DYNVEC_push_back(&ret, DYN_create_string(STRING_toBase64(path)));
   }END_VECTOR_FOR_EACH;
   
-  return DYN_create_array(ret);
+  return ret;
 }
 
 void requestLoadPresetInstrumentDescription(int64_t parentgui, func_t* callback){
@@ -1291,14 +1286,14 @@ void setInstrumentBypass(int64_t instrument_id, bool do_bypass){
 }
 
 
-void setSoloForInstruments(dyn_t instruments, bool doit){
-  S7CALL2(void_dyn_bool, "FROM_C-set-solo-for-instruments", instruments, doit);
+void setSoloForInstruments(dynvec_t instruments, bool doit){
+  S7CALL2(void_dynvec_bool, "FROM_C-set-solo-for-instruments", instruments, doit);
 }
-void setMuteForInstruments(dyn_t instruments, bool doit){
-  S7CALL2(void_dyn_bool, "FROM_C-set-mute-for-instruments", instruments, doit);
+void setMuteForInstruments(dynvec_t instruments, bool doit){
+  S7CALL2(void_dynvec_bool, "FROM_C-set-mute-for-instruments", instruments, doit);
 }
-void setBypassForInstruments(dyn_t instruments, bool doit){
-  S7CALL2(void_dyn_bool, "FROM_C-set-bypass-for-instruments", instruments, doit);
+void setBypassForInstruments(dynvec_t instruments, bool doit){
+  S7CALL2(void_dynvec_bool, "FROM_C-set-bypass-for-instruments", instruments, doit);
 }
 
 
@@ -1580,7 +1575,7 @@ const_char* getInstrumentInfo(int64_t instrument_id){
   return "";
 }
 
-dyn_t getSelectedInstruments(void){
+dynvec_t getSelectedInstruments(void){
   dynvec_t ret = {};
   vector_t patches = MW_get_selected_patches();
 
@@ -1588,7 +1583,7 @@ dyn_t getSelectedInstruments(void){
     DYNVEC_push_back(&ret, DYN_create_int(patch->id));
   }END_VECTOR_FOR_EACH;
 
-  return DYN_create_array(ret);
+  return ret;
 }
 
 int numSelectedInstruments(void){
@@ -1763,7 +1758,7 @@ void deleteAudioConnection(int64_t source_id, int64_t dest_id){
     handleError("Could not find audio connection between \"%s\" and \"%s\"", source->name, dest->name);
 }
 
-bool changeAudioConnections(dyn_t changes){
+bool changeAudioConnections(dynvec_t changes){
   return CONNECTIONS_apply_changes(changes);
 }
 
@@ -2143,7 +2138,7 @@ const char *getModulatorDescription(int64_t instrument_id, const char *effect_na
   return getModulatorDescription2(instrument_id, effect_num);
 }
 
-dyn_t getModulatorInstruments(void){
+dynvec_t getModulatorInstruments(void){
   dynvec_t dynvec = {};
 
   const dyn_t dynstate = MODULATORS_get_connections_state(); // Using this function as a way to get a list of all modulator instruments. (easier than filtering modulators from the list of all patches)
@@ -2158,22 +2153,24 @@ dyn_t getModulatorInstruments(void){
     DYNVEC_push_back(&dynvec, DYN_create_int(patch_id));
   }
 
-  return DYN_create_array(dynvec);
+  return dynvec;
 }
 
 // Note, called quite often.
-dyn_t getModulatorTargets(int64_t modulator_instrument_id){
+dynvec_t getModulatorTargets(int64_t modulator_instrument_id){
 
+  dynvec_t empty_ret = {};
+  
   struct Patch *patch = getAudioPatchFromNum(modulator_instrument_id);
   if(patch==NULL)
-    return g_empty_dynvec;
+    return empty_ret;
 
   if (!MODULATOR_is_modulator(modulator_instrument_id)){
     handleError("getModulatorTargets: Instrument #%d is not a modulator", (int)modulator_instrument_id);
-    return g_empty_dynvec;
+    return empty_ret;
   }
-    
-  return DYN_create_array(MODULATOR_get_modulator_targets(modulator_instrument_id));
+
+  return MODULATOR_get_modulator_targets(modulator_instrument_id);
 }
 
 void setModulatorEnabled(int64_t instrument_id, const char *effect_name, bool enabled){

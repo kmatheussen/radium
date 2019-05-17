@@ -347,8 +347,28 @@ static dyn_t create_dyn_from_s7(s7_scheme *s7, s7_pointer s, bool undefinedIsErr
 }
 
 dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
-
   return create_dyn_from_s7(s7, s, true);
+}
+
+
+bool s7extra_is_dynvec(s7_pointer dynvec){
+  return s7_is_vector(dynvec) || s7_is_pair(dynvec);
+}
+
+dynvec_t s7extra_dynvec(s7_scheme *s7, s7_pointer s){
+  if (s7_is_vector(s) || s7_is_pair(s))
+    return s7extra_array(s7, s);
+
+  handleError("s7extra_dynvec: Unsupported s7 type");
+
+  dynvec_t ret = {};
+  return ret;
+}
+
+static s7_pointer dynvec_to_s7(s7_scheme *sc, const dynvec_t &dynvec);
+
+s7_pointer s7extra_make_dynvec(s7_scheme *radiums7_sc, const dynvec_t dynvec){
+  return dynvec_to_s7(radiums7_sc, dynvec);
 }
 
 
@@ -433,6 +453,16 @@ func_t *s7extra_get_func(s7_scheme *s7, s7_pointer func, const char **error){
   return (func_t*)func;
 }
 
+dynvec_t s7extra_get_dynvec(s7_scheme *s7, s7_pointer vec, const char **error){
+  if (!s7extra_is_dynvec(vec)){
+    *error = "vector or list";
+    dynvec_t ret = {};
+    return ret;
+  }
+  
+  return s7extra_dynvec(s7, vec);
+}
+
 dyn_t s7extra_get_dyn(s7_scheme *s7, s7_pointer s, const char **error){
   dyn_t ret = create_dyn_from_s7(s7, s, false);
   if (ret.type==UNINITIALIZED_TYPE)
@@ -507,7 +537,6 @@ s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
 
   return s7_make_boolean(radiums7_sc, false);
 }
-
 
 func_t *s7extra_func(s7_scheme *s7, s7_pointer func){
   return (func_t*)func;
@@ -968,6 +997,24 @@ void s7extra_callFunc_void_dyn_bool(const func_t *func, const dyn_t arg1, bool a
 
 void s7extra_callFunc2_void_dyn_bool(const char *funcname, const dyn_t arg1, bool arg2){
   s7extra_callFunc_void_dyn_bool((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
+}
+
+void s7extra_callFunc_void_dynvec_bool(const func_t *func, const dynvec_t arg1, bool arg2){
+  ScopedEvalTracker eval_tracker;
+  
+  catch_call(s7,
+             s7_list_nl(s7,
+                        3,
+                        (s7_pointer)func,
+                        Protect(s7extra_make_dynvec(s7, arg1)).v,
+                        s7_make_boolean(s7, arg2),
+                        NULL
+                        )
+             );
+}
+
+void s7extra_callFunc2_void_dynvec_bool(const char *funcname, const dynvec_t arg1, bool arg2){
+  s7extra_callFunc_void_dynvec_bool((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
 }
 
 void s7extra_callFunc_void_charpointer(const func_t *func, const char* arg1){

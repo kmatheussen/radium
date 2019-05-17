@@ -179,8 +179,7 @@ static TempoAutomationNode create_node_from_state(hash_t *state, double state_sa
                      );
 }
 
-void SEQUENCER_TEMPO_create_from_state(const dyn_t &state, double state_samplerate){
-  R_ASSERT_RETURN_IF_FALSE(state.type==ARRAY_TYPE);
+void SEQUENCER_TEMPO_create_from_state(const dynvec_t &state, double state_samplerate){
   //R_ASSERT_RETURN_IF_FALSE(state.array->num_elements > 0);
 
   radium::SeqAutomation<TempoAutomationNode> tempo_automation;
@@ -212,7 +211,7 @@ static hash_t *get_node_state(const TempoAutomationNode &node, void*){
 }
 
 
-dyn_t SEQUENCER_TEMPO_get_state(void){
+dynvec_t SEQUENCER_TEMPO_get_state(void){
   if(g_tempo_automation.size()==0){
     R_ASSERT(false);
     add_default_node0(root->tempo);
@@ -286,8 +285,7 @@ static SignatureAutomationNode create_signature_node_from_state(hash_t *state, d
                                );
 }
 
-void SEQUENCER_SIGNATURE_create_from_state(const dyn_t &state, double state_samplerate){
-  R_ASSERT_RETURN_IF_FALSE(state.type==ARRAY_TYPE);
+void SEQUENCER_SIGNATURE_create_from_state(const dynvec_t &state, double state_samplerate){
   //R_ASSERT_RETURN_IF_FALSE(state.array->num_elements > 0);
 
   radium::SeqAutomation<SignatureAutomationNode> signature_automation;
@@ -319,7 +317,7 @@ static hash_t *get_node_state(const SignatureAutomationNode &node, void*){
 }
 
 
-dyn_t SEQUENCER_SIGNATURE_get_state(void){
+dynvec_t SEQUENCER_SIGNATURE_get_state(void){
   if(g_signature_automation.size()==0){
     R_ASSERT(false);
     add_default_node0(root->signature);
@@ -792,20 +790,20 @@ static void prepare_signature_and_tempo_automation(QVector<SignatureAutomationNo
             Markers
 *************************************/
 
-static dyn_t g_markers = g_empty_dynvec;
+static dynvec_t g_markers = {};
 
 
-dyn_t SEQUENCER_MARKER_get_state(void){
+dynvec_t SEQUENCER_MARKER_get_state(void){
   return g_markers;
 }
 
-void SEQUENCER_MARKER_create_from_state(dyn_t markers, double state_samplerate){
+void SEQUENCER_MARKER_create_from_state(dynvec_t markers, double state_samplerate){
 
   if(state_samplerate > 0){
 
     if (fabs(state_samplerate-pc->pfreq) > 1) {
       
-      for(const dyn_t &marker : *markers.array){
+      for(const dyn_t &marker : markers){
         hash_t *hash = marker.hash;
         double time = HASH_get_number(hash, ":time");
         
@@ -866,8 +864,8 @@ void SEQUENCER_TIMING_create_from_state(const hash_t *state, double state_sample
 hash_t *SEQUENCER_TIMING_get_state(void){
   hash_t *state = HASH_create(2);
 
-  HASH_put_dyn(state, "tempos", g_tempo_automation.get_state(get_node_state, NULL));
-  HASH_put_dyn(state, "signatures", g_signature_automation.get_state(get_node_state, NULL));
+  HASH_put_array(state, "tempos", g_tempo_automation.get_state(get_node_state, NULL));
+  HASH_put_array(state, "signatures", g_signature_automation.get_state(get_node_state, NULL));
 
   return state;
 }
@@ -1017,7 +1015,7 @@ void SEQUENCER_TIMING_set_default_values(float default_bpm, StaticRatio default_
 
 void SEQUENCER_TIMING_init(float default_bpm, StaticRatio default_signature){
 
-  g_markers = g_empty_dynvec;
+  g_markers = {};
 
   radium::SeqAutomation<SignatureAutomationNode> signature_automation;
   radium::SeqAutomation<TempoAutomationNode> tempo_automation;

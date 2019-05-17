@@ -14,6 +14,10 @@ extern "C" {
   dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s);
   s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn);
 
+  bool s7extra_is_dynvec(s7_pointer dynvec);
+  dynvec_t s7extra_dynvec(s7_scheme *s7, s7_pointer s);  
+  s7_pointer s7extra_make_dynvec(s7_scheme *radiums7_sc, const dynvec_t dynvec);
+
   func_t *s7extra_func(s7_scheme *s7, s7_pointer func);
 
   int64_t s7extra_get_integer(s7_scheme *s7, s7_pointer s, const char **error);
@@ -23,6 +27,7 @@ extern "C" {
   bool s7extra_get_boolean(s7_scheme *s7, s7_pointer s, const char **error);
   Place s7extra_get_place(s7_scheme *s7, s7_pointer s, const char **error);
   func_t *s7extra_get_func(s7_scheme *s7, s7_pointer func, const char **error);
+  dynvec_t s7extra_get_dynvec(s7_scheme *s7, s7_pointer vec, const char **error);
   dyn_t s7extra_get_dyn(s7_scheme *s7, s7_pointer s, const char **error);
 
   #endif
@@ -114,6 +119,9 @@ extern "C" {
 
   void s7extra_callFunc_void_dyn_bool(const func_t *func, const dyn_t arg1, bool arg2);
   void s7extra_callFunc2_void_dyn_bool(const char *funcname, const dyn_t arg1, bool arg2);
+
+  void s7extra_callFunc_void_dynvec_bool(const func_t *func, const dynvec_t arg1, bool arg2);
+  void s7extra_callFunc2_void_dynvec_bool(const char *funcname, const dynvec_t arg1, bool arg2);
 
   void s7extra_callFunc_void_charpointer(const func_t *func, const char* arg1);
   void s7extra_callFunc2_void_charpointer(const char *funcname, const char* arg1);
