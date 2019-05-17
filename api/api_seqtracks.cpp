@@ -1903,6 +1903,7 @@ bool sequencerGridEnabled(void){
 
 void setSequencerGridEnabled(bool val){
   g_sequencer_grid_enabled = val;
+  SEQUENCER_update(SEQUPDATE_HEADERS);
 }
 
 void setPaintSequencerGrid(bool doit){
