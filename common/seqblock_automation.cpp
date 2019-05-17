@@ -338,7 +338,7 @@ public:
 
   dyn_t get_state(void) const {
     hash_t *state = HASH_create(2);
-    HASH_put_dyn(state, ":nodes", _automation.get_state(get_node_state, (void*)(get_value_name())));
+    HASH_put_array(state, ":nodes", _automation.get_state(get_node_state, (void*)(get_value_name())));
     HASH_put_bool(state, ":enabled", _is_enabled);
     return DYN_create_hash(state);
   }

@@ -314,23 +314,17 @@ int simplePopupMenu(const char *texts){
 }
 */
 
-int64_t popupMenu(dyn_t strings, func_t* callback){
+int64_t popupMenu(dynvec_t strings, func_t* callback){
   struct Tracker_Windows *window=getWindowFromNum(-1);
   
-  if (strings.type != ARRAY_TYPE){
-    handleError("popupMenu: Excpected array as first argument, found %s", DYN_type_name(strings.type));
-    return -1;
-  }
-  dynvec_t *dynvec = strings.array;
+  vector_t vec = VECTOR_create(strings.num_elements);
 
-  vector_t vec = VECTOR_create(dynvec->num_elements);
-
-  for(int i=0;i<dynvec->num_elements;i++){
-    if (dynvec->elements[i].type != STRING_TYPE){
-      handleError("popupMenu: Element #%d is not a string. Found: %s", i, DYN_type_name(dynvec->elements[i].type));
+  for(int i=0;i<strings.num_elements;i++){
+    if (strings.elements[i].type != STRING_TYPE){
+      handleError("popupMenu: Element #%d is not a string. Found: %s", i, DYN_type_name(strings.elements[i].type));
       return -1;
     }
-    vec.elements[i] = STRING_get_chars(dynvec->elements[i].string);
+    vec.elements[i] = STRING_get_chars(strings.elements[i].string);
   }
 
   //printf("   NUM_elements: %d\n", vec.num_elements);

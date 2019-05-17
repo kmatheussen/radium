@@ -89,6 +89,8 @@ class Argument:
             return "s7extra_make_place"
         elif self.type_string=="func_t*":
             raise Exception("Returning func is not supported")
+        elif self.type_string=="dynvec_t":
+            return "s7extra_make_dynvec"
         elif self.type_string=="dyn_t":
             return "s7extra_make_dyn"
         else:
@@ -112,6 +114,8 @@ class Argument:
             return "s7extra_place(radiums7_sc, "
         elif self.type_string=="func_t*":
             return "s7extra_func(radiums7_sc, "
+        elif self.type_string=="dynvec_t":
+            return "s7extra_dynvec(radiums7_sc, "
         elif self.type_string=="dyn_t":
             return "s7extra_dyn(radiums7_sc, "
         else:
@@ -135,6 +139,8 @@ class Argument:
             return "s7extra_get_place"
         elif self.type_string=="func_t*":
             return "s7extra_get_func"
+        elif self.type_string=="dynvec_t":
+            return "s7extra_get_dynvec"
         elif self.type_string=="dyn_t":
             return "s7extra_get_dyn"
         else:
@@ -158,6 +164,8 @@ class Argument:
             return "s7extra_is_place"
         elif self.type_string=="func_t*":
             return "s7_is_procedure"
+        elif self.type_string=="dynvec_t":
+            return "s7extra_is_dynvec"
         elif self.type_string=="dyn_t":
             return "s7extra_is_dyn"
         else:
@@ -243,6 +251,17 @@ class Proto:
             if arg.type_string=="Place":
                 self.uses_place = True
 
+        #dynvec
+        if self.proc.type_string=="dynvec_t":
+            self.returns_dynvec = True
+        else:
+            self.returns_dynvec = False
+
+        self.uses_dynvec = False
+        for arg in self.args:
+            if arg.type_string=="dynvec_t":
+                self.uses_dynvec = True
+
         #dyn        
         if self.proc.type_string=="dyn_t":
             self.returns_dyn = True
@@ -283,6 +302,8 @@ class Proto:
 
     def write_python_wrap_proc(self,oh):
         if self.uses_place:
+            return
+        if self.uses_dynvec:
             return
         if self.uses_dyn:
             return
@@ -380,7 +401,7 @@ class Proto:
 
         return_type = self.proc.qualifiers[len(self.proc.qualifiers)-1]
             
-        if (self.returns_dyn or self.returns_func or self.returns_place or len(self.proc.qualifiers)==1 and return_type=="void"):
+        if (self.returns_dynvec or self.returns_dyn or self.returns_func or self.returns_place or len(self.proc.qualifiers)==1 and return_type=="void"):
             oh.write("Py_INCREF(Py_None);\n")
             oh.write("resultobj=Py_None;\n")
         else:
@@ -407,6 +428,8 @@ class Proto:
             
     def write_python_wrap_methodstruct(self,oh):
         if self.uses_place:
+            return
+        if self.uses_dynvec:
             return
         if self.uses_dyn:
             return

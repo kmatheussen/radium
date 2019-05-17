@@ -266,7 +266,7 @@ class Faust_system_compressor : public dsp {
 			/* Vectorizable loop 0 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
-				fZec0[i] = std::fabs((std::fabs(float(input1[i])) + std::fabs(float(input0[i]))));
+				fZec0[i] = std::fabs((std::fabs(float(input0[i])) + std::fabs(float(input1[i]))));
 				
 			}
 			/* Recursive loop 1 */
@@ -377,7 +377,7 @@ class Faust_system_compressor : public dsp {
 			/* Vectorizable loop 0 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
-				fZec0[i] = std::fabs((std::fabs(float(input1[i])) + std::fabs(float(input0[i]))));
+				fZec0[i] = std::fabs((std::fabs(float(input0[i])) + std::fabs(float(input1[i]))));
 				
 			}
 			/* Recursive loop 1 */

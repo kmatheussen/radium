@@ -2066,7 +2066,7 @@ int64_t getAudioFilesGeneration(void){
   return g_sample_reader_filenames_generation;
 }
 
-dyn_t getAudioFiles(void){
+dynvec_t getAudioFiles(void){
   dynvec_t ret = {};
   vector_t filenames = SAMPLEREADER_get_all_filenames();
 
@@ -2074,7 +2074,7 @@ dyn_t getAudioFiles(void){
     DYNVEC_push_back(ret, DYN_create_string(path_to_w_path(filename)));
   }END_VECTOR_FOR_EACH;
 
-  return DYN_create_array(ret);
+  return ret;
 }
 
 
@@ -2382,7 +2382,7 @@ bool seqblockIsAlive(int64_t seqblockid){
   return getSeqblockFromIdB(seqblockid, &seqtrack, seqblocknum, seqtracknum, false)!=NULL;
 }
 
-dyn_t getBlockUsageInSequencer(void){
+dynvec_t getBlockUsageInSequencer(void){
   int num_blocks = root->song->num_blocks;
   int ret[num_blocks];
   memset(ret, 0, sizeof(int)*num_blocks);
@@ -2399,7 +2399,7 @@ dyn_t getBlockUsageInSequencer(void){
   for(int i=0;i<num_blocks;i++)
     DYNVEC_push_back(&dynvec, DYN_create_int(ret[i]));
 
-  return DYN_create_array(dynvec);
+  return dynvec;
 }
 
 void setSeqblockName(const_char* new_name, int seqblocknum, int seqtracknum){
@@ -2847,14 +2847,14 @@ void setSeqblockFadeOut(double fadeout, int seqblocknum, int seqtracknum){
 }
 
 
-dyn_t getFadeShapes(void){
+dynvec_t getFadeShapes(void){
   dynvec_t dynvec = {};
 
   for(int i = 0 ; i<NUM_FADE_SHAPES ; i++)
     if (i != FADE_CUSTOM)
       DYNVEC_push_back(&dynvec, DYN_create_string_from_chars(fade_shape_to_string((enum FadeShape)i)));
 
-  return DYN_create_array(dynvec);
+  return dynvec;
 }
 
 const_char* getFadeShapeIconFilename(const_char* shape, bool is_fadein){
@@ -3060,10 +3060,12 @@ static void remove_unused_seqblocks_from_seqblocks_z_order(struct SeqTrack *seqt
   order.num_elements -= dec;
 }
 
-dyn_t getSeqblocknumZOrder(int seqtracknum){
+dynvec_t getSeqblocknumZOrder(int seqtracknum){
+  dynvec_t ret = {};
+
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
-    return g_empty_dynvec;
+    return ret;
 
   // Create a hash table to avoid O(n^2) when adding the ordered seqblocks.
   QHash<int64_t, int> seqblocks_hash;
@@ -3073,44 +3075,39 @@ dyn_t getSeqblocknumZOrder(int seqtracknum){
   
   QVector<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
 
-  dynvec_t ret = {};
   for(const struct SeqBlock *seqblock : seqblocks)
     DYNVEC_push_back(&ret, DYN_create_int(seqblocks_hash[seqblock->id]));
 
-  return DYN_create_array(ret);
+  return ret;
 }
 
-dyn_t getSeqblockZOrder(int seqtracknum){
+dynvec_t getSeqblockZOrder(int seqtracknum){
+  dynvec_t ret = {};
+  
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
-    return g_empty_dynvec;
+    return ret;
 
   // clean up
   remove_unused_seqblocks_from_seqblocks_z_order(seqtrack);
 
   QVector<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
 
-  dynvec_t ret = {};
   for(const struct SeqBlock *seqblock : seqblocks)
     DYNVEC_push_back(&ret, DYN_create_int(seqblock->id));
 
-  return DYN_create_array(ret);
+  return ret;
 }
 
-void setSeqblockZOrder(dyn_t zorder, int seqtracknum){
+void setSeqblockZOrder(dynvec_t zorder, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return;
 
-  if (zorder.type != ARRAY_TYPE){
-    handleError("setSequencerZOrder: Expected array as first argument, found %s\n", DYN_type_name(zorder));
-    return;
-  }
-
   // clean up
   remove_unused_seqblocks_from_seqblocks_z_order(seqtrack);
 
-  seqtrack->seqblocks_z_order = *zorder.array;
+  seqtrack->seqblocks_z_order = zorder;
 
   SEQTRACK_update(seqtrack);
 }
@@ -3478,7 +3475,7 @@ static void addTempo(dynvec_t &ret, int64_t time, double bpm, int logtype){
 
 //extern void das_printit(struct Blocks *block);
 
-static dyn_t get_editor_tempos(int64_t start_seqtime, int64_t end_seqtime, bool include_all_tempos_needed_to_paint_graph){
+static dynvec_t get_editor_tempos(int64_t start_seqtime, int64_t end_seqtime, bool include_all_tempos_needed_to_paint_graph){
 
   dynvec_t ret = {};
 
@@ -3582,24 +3579,24 @@ static dyn_t get_editor_tempos(int64_t start_seqtime, int64_t end_seqtime, bool 
   if(ret.num_elements==0 && start_seqtime<=0)
     addTempo(ret, 0, root->tempo, LOGTYPE_LINEAR);
   
-  return DYN_create_array(ret);
+  return ret;
 }
 
-dyn_t getSequencerTempos(int64_t start_seqtime, int64_t end_seqtime, bool include_all_tempos_needed_to_paint_graph){
+dynvec_t getSequencerTempos(int64_t start_seqtime, int64_t end_seqtime, bool include_all_tempos_needed_to_paint_graph){
   if (root->song->use_sequencer_tempos_and_signatures)
     return SEQUENCER_TEMPO_get_state();
   else
     return get_editor_tempos(start_seqtime, end_seqtime, include_all_tempos_needed_to_paint_graph);
 }
 
-dyn_t getAllSequencerTempos(void){
+dynvec_t getAllSequencerTempos(void){
   if (root->song->use_sequencer_tempos_and_signatures)
     return SEQUENCER_TEMPO_get_state();
   else
     return get_editor_tempos(0, SONG_get_length(), true);
 }
 
-void setSequencerTempos(dyn_t tempos){
+void setSequencerTempos(dynvec_t tempos){
   if (!root->song->use_sequencer_tempos_and_signatures){
     handleError("setSequencerTempos not supported in sequencer timing mode");
     return;
@@ -3624,7 +3621,7 @@ static void add_signature(dynvec_t &ret, int64_t time, const StaticRatio &ratio)
   DYNVEC_push_back(ret, element2);
 }
 
-static dyn_t get_editor_signatures(int64_t start_seqtime, int64_t end_seqtime){
+static dynvec_t get_editor_signatures(int64_t start_seqtime, int64_t end_seqtime){
 
   dynvec_t ret = {};
 
@@ -3671,24 +3668,24 @@ static dyn_t get_editor_signatures(int64_t start_seqtime, int64_t end_seqtime){
   if(ret.num_elements==0 && start_seqtime<=0)
     add_signature(ret, 0, root->signature);
 
-  return DYN_create_array(ret);
+  return ret;
 }
 
-dyn_t getSequencerSignatures(int64_t start_seqtime, int64_t end_seqtime){
+dynvec_t getSequencerSignatures(int64_t start_seqtime, int64_t end_seqtime){
   if (root->song->use_sequencer_tempos_and_signatures)
     return SEQUENCER_SIGNATURE_get_state();
   else
     return get_editor_signatures(start_seqtime, end_seqtime);
 }
 
-dyn_t getAllSequencerSignatures(void){
+dynvec_t getAllSequencerSignatures(void){
   if (root->song->use_sequencer_tempos_and_signatures)
     return SEQUENCER_SIGNATURE_get_state();
   else
     return get_editor_signatures(0, SONG_get_length());
 }
 
-void setSequencerSignatures(dyn_t signatures){
+void setSequencerSignatures(dynvec_t signatures){
   if (!root->song->use_sequencer_tempos_and_signatures){
     handleError("setSequencerSignatures not supported in sequencer timing mode");
     return;
@@ -3714,11 +3711,11 @@ void setSequencerTiming(dyn_t state){
 
 /***************** Markers ****************/
 
-dyn_t getAllSequencerMarkers(void){
+dynvec_t getAllSequencerMarkers(void){
   return SEQUENCER_MARKER_get_state();
 }
 
-void setSequencerMarkers(dyn_t markers){
+void setSequencerMarkers(dynvec_t markers){
   //ADD_UNDO(Sequencer());
   SEQUENCER_MARKER_create_from_state(markers, -1);
 }

@@ -123,7 +123,7 @@ struct Automation{
     HASH_put_int(state, "patch", patch->id);
     HASH_put_chars(state, "effect_name", effect_num==-1 ? "<effect not found>" : PLUGIN_get_effect_name(plugin, effect_num));
     HASH_put_bool(state, "is_enabled", _is_enabled);
-    HASH_put_dyn(state, "automation", automation.get_state(get_node_state, NULL));
+    HASH_put_array(state, "automation", automation.get_state(get_node_state, NULL));
     return state;
   }
 

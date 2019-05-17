@@ -586,7 +586,7 @@ void unselectNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   theset.remove(note->id);
 }
   
-dyn_t getSelectedNotes(int blocknum, int windownum){
+dynvec_t getSelectedNotes(int blocknum, int windownum){
   dynvec_t ret = {};
 
   const struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
@@ -599,6 +599,6 @@ dyn_t getSelectedNotes(int blocknum, int windownum){
 
   }
 
-  return DYN_create_array(ret);
+  return ret;
 }
 

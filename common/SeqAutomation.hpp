@@ -1178,6 +1178,7 @@ public:
     return _automation;
   }
 
+  // Note: Earlier, dynstate was a hash table. Should probably remove that code now, and rather give message about converting the song using a semi-old version of Radium. It's many years ago now since hash tables were used.
   void create_from_state(const dyn_t &dynstate, const NodeFromStateProvider<T> *nsp, double state_samplerate){
     _automation.clear();
 
@@ -1204,6 +1205,10 @@ public:
     }
   }
   
+  void create_from_state(const dynvec_t &dynstate, const NodeFromStateProvider<T> *nsp, double state_samplerate){
+    create_from_state(DYN_create_array(dynstate), nsp, state_samplerate);
+  }
+  
   void create_from_state(const dyn_t &dynstate, T (*create_node_from_state_func)(hash_t *,double), double state_samplerate){
 
     struct MyProvider : public NodeFromStateProvider<T> {
@@ -1222,16 +1227,20 @@ public:
     
     create_from_state(dynstate, &myprovider, state_samplerate);
   }
+
+  void create_from_state(const dynvec_t &dynstate, T (*create_node_from_state_func)(hash_t *,double), double state_samplerate){
+    create_from_state(DYN_create_array(dynstate), create_node_from_state_func, state_samplerate);
+  }
   
-  dyn_t get_state(hash_t *(*get_node_state)(const T &node, void*), void *data) const {
+  dynvec_t get_state(hash_t *(*get_node_state)(const T &node, void*), void *data) const {
     int size = _automation.size();
     
     dynvec_t ret = {};
     
     for(int i = 0 ; i < size ; i++)
       DYNVEC_push_back(ret, DYN_create_hash(get_node_state(_automation.at(i), data)));
-    
-    return DYN_create_array(ret);
+
+    return ret;
   }
 
 };

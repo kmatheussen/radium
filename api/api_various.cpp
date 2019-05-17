@@ -2338,21 +2338,24 @@ dyn_t getKeybindingsFromCommands(void){
 }
 
 
-dyn_t getKeybindingsFromCommand(const_char *command){
+dynvec_t getKeybindingsFromCommand(const_char *command){
+
+  dynvec_t empty_ret = {};
 
   if (g_keybindings_from_command.type==UNINITIALIZED_TYPE){
     R_ASSERT(false);
-    return g_empty_dynvec;
+    return empty_ret;
   }
 
   hash_t *keybindings = getKeybindingsFromCommands().hash;
   
-  R_ASSERT_RETURN_IF_FALSE2(g_keybindings_from_command.type==HASH_TYPE, g_empty_dynvec);
+  R_ASSERT_RETURN_IF_FALSE2(g_keybindings_from_command.type==HASH_TYPE, empty_ret);
       
   if (HASH_has_key(keybindings,command))
-    return HASH_get_dyn(keybindings, command);
-  else
-    return g_empty_dynvec;
+    return HASH_get_array(keybindings, command);
+  else{
+    return empty_ret;
+  }
 }
 
 const_char* getKeybindingFromKeys(const_char *keys){
@@ -2383,16 +2386,11 @@ void reloadKeybindings(void){
     evalScheme("(FROM_C-keybindings-have-been-reloaded)");
 }
 
-void addKeybindingToConfFile(const_char* keybinding, const_char* funcname, dyn_t arguments){
-
-  if (arguments.type != ARRAY_TYPE){
-    handleError("setKeybinding: Expected array for argument \"arguments\". Found %s", DYN_type_name(arguments.type));
-    return;
-  }
+void addKeybindingToConfFile(const_char* keybinding, const_char* funcname, dynvec_t arguments){
 
   const char *command = funcname;
-  for(int i=0;i<arguments.array->num_elements;i++){
-    dyn_t argument = arguments.array->elements[i];
+  for(int i=0;i<arguments.num_elements;i++){
+    dyn_t argument = arguments.elements[i];
     if (argument.type != STRING_TYPE){
       handleError("setKeybinding: Expected string in argument[%d], found %s", i, DYN_type_name(argument.type));
       return;
@@ -2413,16 +2411,11 @@ void addKeybindingToConfFile(const_char* keybinding, const_char* funcname, dyn_t
 }
 
 
-void removeKeybindingFromConfFile(const_char* keybinding, const_char* funcname, dyn_t arguments){
-
-  if (arguments.type != ARRAY_TYPE){
-    handleError("setKeybinding: Expected for argument \"arguments\". Found %s", DYN_type_name(arguments.type));
-    return;
-  }
+void removeKeybindingFromConfFile(const_char* keybinding, const_char* funcname, dynvec_t arguments){
 
   const char *command = funcname;
-  for(int i=0;i<arguments.array->num_elements;i++){
-    dyn_t argument = arguments.array->elements[i];
+  for(int i=0;i<arguments.num_elements;i++){
+    dyn_t argument = arguments.elements[i];
     if (argument.type != STRING_TYPE){
       handleError("setKeybinding: Expected string in argument[%d], found %s", i, DYN_type_name(argument.type));
       return;
