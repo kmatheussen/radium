@@ -3332,6 +3332,24 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
                                                HASH_get_int(state, "visible_end")
                                                );
 
+  int64_t new_curr_seqblock_id = -1;
+  if(HASH_has_key(state, "curr_seqblock_id"))
+    new_curr_seqblock_id = HASH_get_int(state, "curr_seqblock_id");
+  
+  if(g_is_loading){
+    
+    if (new_curr_seqblock_id==-1){
+      struct SeqTrack *seqtrack = (struct SeqTrack *)song->seqtracks.elements[ATOMIC_GET(root->song->curr_seqtracknum)];
+      if (seqtrack->seqblocks.num_elements > 0)
+        g_curr_seqblock_id = ((struct SeqBlock*)seqtrack->seqblocks.elements[0])->id;
+    } else {
+      g_curr_seqblock_id = new_curr_seqblock_id;
+    }
+    
+  } else {
+    g_curr_seqblock_id = new_curr_seqblock_id;
+  }
+  
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
