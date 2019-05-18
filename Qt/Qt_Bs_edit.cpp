@@ -1245,9 +1245,11 @@ void BS_SelectPlaylistPos(int pos){
     }
     
     g_bs->playlist.setSelected(pos, true);
+
+    g_bs->playlist_itemPressed(NULL);
+
   }
   
-  g_bs->playlist_itemPressed(NULL);
 }
 
 struct SeqBlock *BS_GetPrevPlaylistBlock(void){
