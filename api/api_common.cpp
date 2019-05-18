@@ -693,6 +693,9 @@ static void add_to_ids_hash(int64_t seqblock_id, int seqtracknum, int seqblocknu
 }
 
 static struct SeqBlock *get_seqblock_from_id_a(int64_t seqblock_id, struct SeqTrack **seqtrack, bool use_gfx, int &seqblocknum, int &seqtracknum, bool throw_error = true){
+  if (seqblock_id==-1)
+    seqblock_id = g_curr_seqblock_id;
+  
   const auto &pair = g_seqblock_ids_hash[seqblock_id];
   seqtracknum = pair.first;
   seqblocknum = pair.second;
