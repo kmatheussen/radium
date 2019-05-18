@@ -2248,6 +2248,36 @@ int64_t getCurrSeqblockId(void){
   return g_curr_seqblock_id;
 }
 
+void selectPrevSeqblock(void){
+  struct SeqTrack *seqtrack;
+  int seqblocknum, seqtracknum;
+  struct SeqBlock *curr_seqblock = getSeqblockFromIdB(-1, &seqtrack, seqblocknum, seqtracknum, false);
+  if (curr_seqblock==NULL)
+    return;
+
+  if (seqblocknum==0)
+    return;
+
+  struct SeqBlock *prev_seqblock = getGfxSeqblockFromNum(seqblocknum-1, seqtracknum);
+  setCurrSeqblock(prev_seqblock->id);
+}
+
+void selectNextSeqblock(void){
+  struct SeqTrack *seqtrack;
+  int seqblocknum, seqtracknum;
+  struct SeqBlock *curr_seqblock = getSeqblockFromIdB(-1, &seqtrack, seqblocknum, seqtracknum, false);
+  if (curr_seqblock==NULL)
+    return;
+
+  if (seqblocknum>=seqtrack->seqblocks.num_elements-1){
+    R_ASSERT(seqblocknum==seqtrack->seqblocks.num_elements-1);
+    return;
+  }
+
+  struct SeqBlock *prev_seqblock = getGfxSeqblockFromNum(seqblocknum+1, seqtracknum);
+  setCurrSeqblock(prev_seqblock->id);
+}
+
 void cancelCurrSeqblock(void){
   if (g_curr_seqblock_id==-1)
     return;
