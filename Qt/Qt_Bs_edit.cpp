@@ -1108,7 +1108,7 @@ void BS_UpdatePlayList(void){
   if (root->song->seqtracks.num_elements==0)
     return;
 
-  int orgpos = g_bs->playlist.currentItem();
+  int curr_pos = g_bs->playlist.currentItem();
 
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
   
@@ -1168,8 +1168,23 @@ void BS_UpdatePlayList(void){
   
   for(auto *item : to_remove)
     delete item;
+
+
+  {
+    int pos = 0;
+    for (const auto &pe : get_playlist_elements()){
+      if (pe.is_legal() && !pe.is_pause()){
+        if (getCurrSeqblockId()==pe.seqblock->id){
+          curr_pos = pos;
+          break;
+        }
+      }
+      pos++;
+    }
+  }
   
-  BS_SelectPlaylistPos(orgpos);
+  
+  BS_SelectPlaylistPos(curr_pos);
 }
 
 /*
