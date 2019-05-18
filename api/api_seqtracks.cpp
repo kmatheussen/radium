@@ -2198,7 +2198,7 @@ void applyGfxSeqblocks(int seqtracknum){
 
 // seqblocks
 
-int64_t g_curr_seqblock_id = -1;
+int64_t g_curr_seqblock_id = -2;
 
 void setCurrSeqblock(int64_t seqblockid){
   if (seqblockid==g_curr_seqblock_id)
@@ -2219,6 +2219,7 @@ void setCurrSeqblock(int64_t seqblockid){
   }
   
   if(level > 100){
+    R_ASSERT(false);
     return;
   }
   

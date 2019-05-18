@@ -2027,16 +2027,24 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
   if (seqblock->block==NULL)
     prepare_remove_sample_from_seqblock(seqtrack, seqblock, Seqblock_Type::REGULAR);
 
+  int64_t new_curr_seqblock_id = -1;
+  
   {
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerRecursiveLock lock;
 
     VECTOR_delete(&seqtrack->seqblocks, pos);
 
+    if (pos < seqtrack->seqblocks.num_elements)
+      new_curr_seqblock_id = ((struct SeqBlock*)seqtrack->seqblocks.elements[pos])->id;
+    else if (pos > 0)
+      new_curr_seqblock_id = ((struct SeqBlock*)seqtrack->seqblocks.elements[pos-1])->id;
+          
+    // What's the point of this? (I guess it's old code to convert between seqtime and abstime, but now that seqtime and abstime is the same, it's not needed)
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
       if (iterator666 >= pos){
+        //printf("Moving seqblock %d. Start->end: %f -> %f\n", iterator666, (double)seqblock->t.time / 44100.0, (double)seqtimes[iterator666+1] / 44100.0);
         move_seqblock(seqblock, seqtimes[iterator666+1]);
-        //printf("Skewing %f -> %f\n", (seqblock->t.time-skew) / 44100.0, seqblock->t.time / 44100.0);
       }
     }END_VECTOR_FOR_EACH;
     
@@ -2047,6 +2055,8 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
 
   if (notify_listeners)
     API_seqblock_has_been_deleted(seqblock->id);
+
+  setCurrSeqblock(new_curr_seqblock_id);
   
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 
