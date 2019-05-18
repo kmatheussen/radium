@@ -3051,7 +3051,8 @@ void SONG_init(void){
   const rt_vector_t *rt_seqtracks_vector = VECTOR_create_rt_vector(&root->song->seqtracks, 1);
     
   struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, root->song->blocks, NULL, -1, -1);
-
+  g_curr_seqblock_id = seqblock->id;
+  
   SEQUENCER_init(root->song);
   
   PLAYER_lock();{
@@ -3085,6 +3086,7 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
   HASH_put_bool(state, "contains_seqtime", false); // Earlier, the sequencer had two types if time formats, seqtime and abstime, which complicated things extremely.
 
   HASH_put_int(state, "curr_seqtracknum", ATOMIC_GET(root->song->curr_seqtracknum));
+  HASH_put_int(state, "curr_seqblock_id", getCurrSeqblockId());
 
   // I'm not 100% sure, but I think we need this one since song tempo automation automatically changes length when the song changes length.
   // (modifying song tempo automation is a light operation + that it's atomically real time safe, so it doesn't matter much if we do this)

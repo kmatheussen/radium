@@ -134,13 +134,13 @@ void setShowInstrumentWidgetWhenDoubleClickingSoundObject(bool val){
 }
 
 
-static bool g_showPlaylistDuringStartup = false;
+static bool g_showPlaylistDuringStartup = true;
 
 bool showPlaylistDuringStartup(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_showPlaylistDuringStartup = SETTINGS_read_bool("show_playlist_during_startup", false);
+    g_showPlaylistDuringStartup = SETTINGS_read_bool("show_playlist_during_startup", g_showPlaylistDuringStartup);
     has_inited = true;
   }
 
