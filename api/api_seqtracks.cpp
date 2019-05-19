@@ -2303,6 +2303,10 @@ void setCurrSeqblock(int64_t seqblockid){
   }
 
   BS_SelectPlaylistPosFromSeqblock(seqblock);
+
+  if (!is_playing_song())
+    if (seqblock->block != NULL)
+      selectBlock(seqblock->block->l.num, -1);
   
   level--;
 }
