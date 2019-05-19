@@ -1136,6 +1136,10 @@ void selectBlock(int blocknum, int windownum){
   EVENTLOG_add_event("selectBlock");
                      
   PC_PauseNoMessage();{
+
+     // Note: We stop the player to be able to play the block if already playing.
+    // We don't stop to avoid race conditions (player don't have to be stopped to avoid race condition for doing any of the things in here).
+    
     if(wblock->curr_realline == wblock->num_reallines-1)
       wblock->curr_realline = 0;
 

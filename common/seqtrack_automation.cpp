@@ -857,8 +857,8 @@ bool RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
       }
 
       double value;
-#if !defined(RELEASE) && defined(FOR_WINDOWS)
-      value = 0.0; // Workaround for compiler bug in mingw32. (I"m more than 90% sure it"s a compiler bug. In addition, neither gcc 7.2 on linux, gcc 8, nor clang 5, shows this warning).
+#if !defined(RELEASE) && (defined(FOR_WINDOWS) || defined(FOR_LINUX))
+      value = 0.0; // Workaround for compiler bug in mingw32/gcc7.4 and linux/gcc9.
 #endif
       switch(automation->automation.RT_get_value(seqtime+latency, value)){
 
