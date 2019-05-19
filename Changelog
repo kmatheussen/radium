@@ -1,3 +1,40 @@
+Changes 5.9.61 -> 5.9.62:
+* Sequencer: Fix bar and beat numbers in the
+  sequencer timeline.
+* Edit: Functions to randomize octaves.
+* Scheme: Improve backtrace display.
+* Edit: Fix right-clicking a button to change
+  keybinding for it. Fix for bug introduced in
+  5.9.60.
+* Sequencer: When changing current seqblock, also
+  change current block if seqblock holds editor
+  block.
+* Sequencer: When changing current seqtrack, also
+  change current seqblock.
+* Sequencer: Make left arrow key select previous
+  seqblock and right arrow key select next seqblock.
+* Build: Updated S7.
+* Sequencer: Remember current seqblock when
+  undoing/redoing, and also save to disk.
+* Playlist: Is visible during startup by default.
+* Sequencer: Let delete key delete current seqblock.
+* Sequencer: When current seqblock is deleted, let
+  next seqblock be current seqblock, or previous if
+  there is no next.
+* Sequencer: Paint name of current block with a white
+  pen instead of painting a blue border around the
+  seqblocks.
+* Playlist/Sequencer: Bind current playlist element
+  and current seqblock.
+* API:
+  * New: selectPrevSeqblock, selectNextSeqblock
+  * Update grid button graphics when calling
+    setSequencerGridEnabled.
+  * Add dynvec_t type, and convert most functions
+    storing arrays in dyn_t to use dynvec_t instead.
+
+
+
 Changes 5.9.60 -> 5.9.61:
 * Build: Compile ladspa-plugins without debug symbols
   to lower startup time if realtime virus scanning is
