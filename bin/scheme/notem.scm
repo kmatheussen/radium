@@ -488,7 +488,56 @@
   (randomize-note-durations! (get-block-editor-area)))
 
 
+;; Randomize pitch octave
 
+(define (set-random-octave-pitches! area  min-oct max-oct)
+  (undo-editor-area area)  
+  (replace-notes! (map-area-notes (get-area-notes area)
+                                  (lambda (note)
+                                    (define (changepitch pitch)
+                                      (if (in-editor-area (+ (area :start-place)
+                                                             (note :place)
+                                                             (pitch :place))
+                                                          :area area)
+                                          (begin
+                                            (define pitchvalue (pitch :value))
+                                            (define note pitchvalue)
+                                            (define octave (floor (/ note 12)))
+                                            (define chroma (- note (* octave 12)))                                            
+                                            (define max-note (+ 120 chroma))
+                                            (if (> max-note 127)
+                                                (set! max-note (- max-note 12)))
+                                            ;;(c-display "chroma:" chroma)
+                                            (copy-pitch pitch :value (between (if (< chroma 0.01)
+                                                                                  (+ chroma 12)
+                                                                                  chroma)
+                                                                              (+ pitchvalue (* 12 (floor (myrand min-oct (+ 1 max-oct)))))
+                                                                              max-note)))
+                                          pitch))                                    
+                                    (copy-note note
+                                               :pitches (if (= 0 ((last (note :pitches)) :value))
+                                                            (map-butlast (note :pitches)
+                                                                         changepitch)
+                                                            (map changepitch (note :pitches))))))
+                  area))
+
+(define *default-randomize-min-octave* -1)
+(define *default-randomize-max-octave* 1)
+
+(delafina (set-random-octaves-for-notes-in-range  :min-oct *default-randomize-min-octave* :max-oct *default-randomize-max-octave* :blocknum -1)
+  (if (not (<ra> :has-range blocknum))
+      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+      (set-random-octave-pitches! (get-ranged-editor-area blocknum) min-oct max-oct)))
+
+(delafina (set-random-octaves-for-notes-in-track :min-oct *default-randomize-min-octave* :max-oct *default-randomize-max-octave* :tracknum -1 :blocknum -1)
+  (set-random-octave-pitches! (get-track-editor-area tracknum blocknum) min-oct max-oct))
+
+(delafina (set-random-octaves-for-notes-in-block :min-oct *default-randomize-min-octave* :max-oct *default-randomize-max-octave*)
+  (set-random-octave-pitches! (get-block-editor-area) min-oct max-oct))
+
+#!!
+(set-random-octaves-for-notes-in-block -2 3)
+!!#
 
 ;; randomly-delete
 ;;;;;;;;;;;;;;;;;;;
@@ -636,6 +685,29 @@
                                                               (<gui> :vertical-layout
                                                                      (create-keybinding-button "Block" "ra:eval-scheme" '("(distribute-block-evenly)")))))
 
+  (define distribute-notes-evenly-layout (create-notem-layout (<gui> :checkbox "Keep note durations"
+                                                                     *default-keep-note-durations*
+                                                                     (lambda (val)
+                                                                       (set! *default-keep-note-durations* val)))
+                                                              (<gui> :vertical-layout
+                                                                     (create-keybinding-button "Range" "ra:eval-scheme" '("(distribute-range-evenly)")))
+                                                              (<gui> :vertical-layout
+                                                                     (create-keybinding-button "Track" "ra:eval-scheme" '("(distribute-track-evenly)")))
+                                                              (<gui> :vertical-layout
+                                                                     (create-keybinding-button "Block" "ra:eval-scheme" '("(distribute-block-evenly)")))))
+
+  (define set-random-octaves-for-notes-layout (create-notem-layout (<gui> :text "min/max:")
+                                                                   (<gui> :int-text -10 *default-randomize-min-octave* 10 (lambda (val)
+                                                                                                                            (set! *default-randomize-min-octave* val)))
+                                                                   (<gui> :int-text -10 *default-randomize-max-octave* 10 (lambda (val)
+                                                                                                                            (set! *default-randomize-max-octave* val)))
+                                                                   (<gui> :vertical-layout
+                                                                          (create-keybinding-button "Range" "ra:eval-scheme" '("(set-random-octaves-for-notes-in-range)")))
+                                                                   (<gui> :vertical-layout
+                                                                          (create-keybinding-button "Track" "ra:eval-scheme" '("(set-random-octaves-for-notes-in-track)")))
+                                                                   (<gui> :vertical-layout
+                                                                          (create-keybinding-button "Block" "ra:eval-scheme" '("(set-random-octaves-for-notes-in-block)")))))
+    
   (define ret (create-notem-flow-layout (<gui> :group "Expand/shrink Pitch" pitches-layout)
                                         (<gui> :group "Expand/shrink Lines" lines-layout)
                                         (<gui> :group "Invert Pitches" invert-layout)
@@ -643,6 +715,7 @@
                                         (<gui> :group "Glissando" glissando-layout)
                                         (<gui> :group "Polyphonic tracks" monophonic-layout)
                                         (<gui> :group "Distribute notes evenly" distribute-notes-evenly-layout)
+                                        (<gui> :group "Randomize octaves" set-random-octaves-for-notes-layout)                                        
                                         ))
   
   ;;(<gui> :set-size-policy vertical-layout #t #t)
