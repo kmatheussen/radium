@@ -297,6 +297,67 @@ void API_curr_seqtrack_has_changed(void){
   S7CALL(void_int, func, ATOMIC_GET(root->song->curr_seqtracknum));
 }
 
+static int64_t get_seqblock_closeness(const struct SeqBlock *seqblock1, const struct SeqBlock *seqblock2){
+  const struct SeqBlock *A, *B;
+  
+  if (seqblock1->t.time < seqblock2->t.time){
+    A = seqblock1;
+    B = seqblock2;
+  } else {
+    A = seqblock2;
+    B = seqblock1;
+  }
+
+  //int64_t A_start = A->t.time;
+  int64_t A_end = A->t.time2;
+
+  int64_t B_start = B->t.time;
+  int64_t B_end = B->t.time2;
+
+  if (A_end <= B_start)
+    return A_end - B_start; // No overlap. Return a negative number.
+
+  else if (A_end <= B_end)
+    return A_end - B_start;
+
+  else
+    return B_end - B_start;  
+}
+
+static void change_curr_seqblock_when_curr_seqtrack_has_changed(int new_seqtracknum, const struct SeqTrack *new_seqtrack){
+  radium::Vector_t<const struct SeqBlock, const vector_t> seqblocks(&new_seqtrack->seqblocks);
+  
+  if (seqblocks.size()==0)
+    return;
+  
+  struct SeqTrack *old_seqtrack;
+  int old_seqblocknum, old_seqtracknum;
+  
+  struct SeqBlock *curr_seqblock = getSeqblockFromIdB(-1, &old_seqtrack, old_seqblocknum, old_seqtracknum, false);
+
+  if (curr_seqblock==NULL){
+    setCurrSeqblock(seqblocks.at(0)->id);
+    return;
+  }
+
+  {
+    const SeqBlock *closest_seqblock = NULL;
+    int64_t closest_closeness = 0;
+    
+    for(const SeqBlock *seqblock : seqblocks){
+      int64_t closeness = get_seqblock_closeness(seqblock, curr_seqblock);
+      if (closest_seqblock==NULL || closeness > closest_closeness){
+        closest_closeness = closeness;
+        closest_seqblock = seqblock;
+      }
+      if(seqblock->t.time >= curr_seqblock->t.time2)
+        break;
+    }
+    
+    setCurrSeqblock(closest_seqblock->id);
+  }
+}
+
 void setCurrSeqtrack(int seqtracknum){
   if (seqtracknum < 0)
     seqtracknum = 0;
@@ -316,9 +377,11 @@ void setCurrSeqtrack(int seqtracknum){
     if (old >= 0 && old < root->song->seqtracks.num_elements){
       SEQTRACK_update_with_borders(getSeqtrackFromNum(old));
     }
-      
+
     ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
 
+    change_curr_seqblock_when_curr_seqtrack_has_changed(seqtracknum, seqtrack);
+    
     SEQTRACK_update_with_borders(seqtrack);
     SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_PLAYLIST|SEQUPDATE_BLOCKLIST);
 
@@ -2218,7 +2281,7 @@ void setCurrSeqblock(int64_t seqblockid){
     R_ASSERT_NON_RELEASE(false);
   }
   
-  if(level > 100){
+  if(level > 10){ // don't remove this test. Lots of situations where we could end up in an infinite loop here.
     R_ASSERT(false);
     return;
   }
@@ -2227,12 +2290,12 @@ void setCurrSeqblock(int64_t seqblockid){
 
   cancelCurrSeqblock(); // Update GFX of old seqblock.
 
+  g_curr_seqblock_id = seqblockid;
+
   setCurrSeqtrack(seqtracknum);
     
   SEQBLOCK_update_with_borders(seqtrack, seqblock);
   
-  g_curr_seqblock_id = seqblockid;
-
   if(seqblock->block != NULL){
     S7EXTRA_GET_FUNC(func, "FROM_C-update-seqblock-track-on-off-configuration");
     

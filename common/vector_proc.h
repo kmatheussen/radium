@@ -272,16 +272,16 @@ static inline QVector<T> VECTOR_get_qvector(const vector_t *v){
 #include "LockAsserter.hpp"
 
 namespace radium{
-  template <typename T> 
+  template <typename T, typename V> 
   class Vector_t {
 
-    vector_t *v;
+    V *v;
     
     LockAsserter lockAsserter;
 
   public:
     
-    Vector_t(vector_t *v)
+    Vector_t(V *v)
       : v(v)
     {
       LOCKASSERTER_EXCLUSIVE(&lockAsserter);
@@ -300,25 +300,25 @@ namespace radium{
 private:
   
     T *at_internal(int i) const {
-      R_ASSERT_RETURN_IF_FALSE2(i>=0, v->elements[0]);
-      R_ASSERT_RETURN_IF_FALSE2(i<v->num_elements, v->elements[0]);
+      R_ASSERT_RETURN_IF_FALSE2(i>=0, (T*)v->elements[0]);
+      R_ASSERT_RETURN_IF_FALSE2(i<v->num_elements, (T*)v->elements[0]);
       
       return (T*)v->elements[i];
     }
 
 public:
 
-    const T* begin() const {
+    const T** begin() const {
       LOCKASSERTER_SHARED(&lockAsserter);
       
-      return (T*)&v->elements[0];
+      return (T**)&v->elements[0];
     }
     
     // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
-    const T* end() const {
+    const T** end() const {
       LOCKASSERTER_SHARED(&lockAsserter);
       
-      return (T*)&v->elements[v->num_elements];
+      return (T**)&v->elements[v->num_elements];
     }
     
     int size(void) const {
