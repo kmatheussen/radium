@@ -568,6 +568,9 @@
     distribute-range-evenly
     distribute-track-evenly
     distribute-block-evenly
+    set-random-octaves-for-notes-in-range
+    set-random-octaves-for-notes-in-track
+    set-random-octaves-for-notes-in-block
     randomly-delete-notes-range
     randomly-delete-notes-track
     randomly-delete-notes-block
