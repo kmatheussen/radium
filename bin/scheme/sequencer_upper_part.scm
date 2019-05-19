@@ -799,6 +799,13 @@
               (set! last-painted-x x))
             #t
             ))))
+#!!
+(<ra> :iterate-sequencer-time 0 (<ra> :get-sequencer-visible-end-time) "beat" ;;what-to-iterate
+      (lambda (time barnum beatnum linenum)
+        (if (= 1 beatnum)
+            (c-display "bar:" barnum ". time:" time (/ time 44100.0)))
+        #t))
+!!#
 
 (define (FROM_C-paint-sequencer-grid gui x1 y1 x2 y2)
   (paint-sequencer-grid gui x1 y1 x2 y2))
