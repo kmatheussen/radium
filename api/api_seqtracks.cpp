@@ -3872,6 +3872,8 @@ void iterateSequencerTime(int64_t start_time, int64_t end_time, const_char* grid
                              handleError("   Error: Used more than 5 seconds to iterate timing.");
                              return false;
                            }
+
+                           //fprintf(stderr,"Hepp: %d (%f): %d/%d. Rate: %f\n", (int)seqtime, (double)seqtime/(double)pc->pfreq, barnum, beatnum, (double)pc->pfreq);
                            
                            bool ret = S7CALL(bool_int_int_int_int, callback, seqtime, barnum, beatnum, linenum);
 

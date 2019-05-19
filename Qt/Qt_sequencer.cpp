@@ -2566,6 +2566,8 @@ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtra
                                                    std::function<bool(int64_t,int,int,int)> callback
                                                    )
 {
+
+  //printf("   ITERATE BETWEEN. barnum: %d. end block: %f. start next block: %f. start_seqtime: %f. end_seqtime: %f.\n", barnum, (double)end_blockseqtime / pc->pfreq, (double)next_blockstarttime / pc->pfreq, (double)start_seqtime/pc->pfreq, (double)end_seqtime/pc->pfreq);
   
     if (signature==NULL || signature->numerator <= 0){
       R_ASSERT_NON_RELEASE(false);
@@ -2587,44 +2589,48 @@ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtra
 
     
     int64_t beat_seqtime = end_blockseqtime;
+    int64_t bar_seqtime = end_blockseqtime;
 
     int beatnum = 1;
-
-    bool is_first_iteration=true;
+    barnum++;
 
     for(int i = 0 ; ; i++){
 
       if (i==10000)
         return false;
       
-      if (next_blockstarttime != -1 && R_ABS(beat_seqtime-next_blockstarttime) < 20)
+      if (next_blockstarttime != -1 && beat_seqtime + 20 > next_blockstarttime) {
+        if (bar_seqtime == beat_seqtime)
+          barnum--;
         return true;
-
-      if (beat_seqtime >= end_seqtime)
-        return false;
-
-      if (is_first_iteration){
-        barnum++;
-        is_first_iteration = false;
       }
-        
+
+      if (beat_seqtime >= end_seqtime){
+        if (bar_seqtime == beat_seqtime)
+          barnum--;
+        return false;
+      }
+
       callback(beat_seqtime, barnum, beatnum, -1);
       
       if (what_to_find==GridType::BAR_GRID) {
         
         barnum++;
         beat_seqtime += beat_seqlength * signature->numerator;
+        bar_seqtime = beat_seqtime;
         
       } else {
             
         beatnum++;
-        
+
+        beat_seqtime += beat_seqlength;
+
         if (beatnum==signature->numerator+1){
           beatnum = 1;
           barnum++;
+          bar_seqtime = beat_seqtime;
         }
 
-        beat_seqtime += beat_seqlength;
       }
       
       //printf("  after. abstime: %f\n",(double)abstime/44100.0);
@@ -2735,6 +2741,8 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
       //int64_t last_barseqtime = -1;
       int64_t last_beatseqtime = -1;
       const StaticRatio *last_signature = NULL;
+
+      //printf("   ITERATE block. barnum: %d. start block: %f. end block: %f\n", barnum, (double)start_blockseqtime / pc->pfreq, (double)end_blockseqtime / pc->pfreq);
       
       while(beat!=NULL){
         last_signature = &beat->valid_signature;
@@ -2761,7 +2769,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
         beat = NextBeat(beat);
       }
 
-      //printf("   3. SEQUENCER_iterate_time. start_seqtime: %f. end_seqtime: %f.\n", (double)start_seqtime/pc->pfreq, (double)end_seqtime/pc->pfreq);
+      //printf("   3. SEQUENCER_iterate_time BETWEEN. start_seqtime: %f. end_seqtime: %f.\n", (double)start_seqtime/pc->pfreq, (double)end_seqtime/pc->pfreq);
       
       if (iterate_beats_between_seqblocks(seqtrack,
                                           barnum,
@@ -2770,9 +2778,12 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
                                           end_blockseqtime, next_blockstarttime,
                                           last_signature, last_beatseqtime,
                                           callback)
-          == false)
+          == false){
+        //printf("iterate between ended. barnum: %d\n", barnum);
         return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
-     
+      }
+      //printf("iterate between finished. barnum: %d\n", barnum);
+        
     } else {
 
       R_ASSERT(what_to_find==GridType::LINE_GRID);
@@ -2974,7 +2985,7 @@ struct Timeline_widget : public LightWidget { //: public MouseTrackerQWidget {
               return true;
           }
           
-          //printf("%d: %d/%d.\n", (int)seqtime, barnum, beatnum);
+          //printf("%d (%f): %d/%d.\n", (int)seqtime, (double)seqtime/(double)pc->pfreq, barnum, beatnum);
           
           if (x > last_x + min_pixels_between_text) {
 
