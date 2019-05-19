@@ -356,6 +356,12 @@
 !!#
 
 
+(define (remove-mouse-from-keybinding keybinding)
+  (<-> (string-join (remove (lambda (key)
+                              (string-starts-with? key "MOUSE_"))
+                            (string-split keybinding #\ ))
+                    " ")))
+
 (delafina (add-keybinding-configuration-to-gui :gui
                                                :ra-funcname
                                                :args '())
@@ -394,9 +400,8 @@
     (<gui> :set-modal grab-gui #t)
 
     (<ra> :grab-keybinding
-          (lambda (keybinding)
+          (lambda (keybinding) 
             (set! keybinding (remove-mouse-from-keybinding keybinding))
-            (c-display "KEYBINDING: -" keybinding "-")
             (<gui> :close grab-gui)
             (define (setit!)
               (<ra> :add-keybinding-to-conf-file keybinding (get-python-ra-funcname ra-funcname) (map get-arg-string args)))
