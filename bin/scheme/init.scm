@@ -55,6 +55,70 @@
   (if (defined? 'safe-add-message-window-txt)
       (safe-add-message-window-txt txt)))
 
+;; ow! from stuff.scm with html formatting
+(define (my-ow!)
+  (call-with-output-string
+   (lambda (p)
+     (let ((ow (owlet))
+	   (elist (list (rootlet))))
+       
+       ;; show current error data
+       (format p "error: ~A" (ow 'error-type))
+       (let ((info (ow 'error-data)))
+	 (if (and (pair? info)
+		  (string? (car info)))
+	     (format p ": ~A" (catch #t 
+				(lambda () 
+				  (apply format #f info))
+				(lambda args 
+				  "<error in format>")))
+	     (if (not (null? info))
+		 (format p ": ~A" info))))
+
+       (format p "~%<br>error-code: ~S" (ow 'error-code))
+       (when (ow 'error-line)
+	 (format p "~%<br>error-file/line: ~A[~A]" (ow 'error-file) (ow 'error-line)))
+	   
+       ;; show history, if available
+       (when (pair? (ow 'error-history)) ; a circular list, starts at error-code, entries stored backwards
+	 (let ((history ())
+	       (lines ())
+	       (files ())
+	       (start (ow 'error-history)))
+	   (do ((x (cdr start) (cdr x))
+		(i 0 (+ i 1)))
+	       ((or (eq? x start)
+		    (null? (car x))
+		    (= i (*s7* 'history-size)))
+		(format p "~%<br>error-history:~%<br>    ~S" (car start))
+                (define i2 0)
+		(do ((x history (cdr x))
+		     (line lines (cdr line))
+		     (f files (cdr f))
+                     )
+                    ((null? x))
+                  (set! i2 (+ i2 1))
+		  (format p (if (and (integer? (car line))
+				     (string? (car f))
+				     (not (string=? (car f) "*stdout*")))
+				(values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>~40T;<font color='black'>~A</font>[~A]" i2 (pp (car x)) (car f) (car line))
+				(values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>" i2 (pp (car x))))))
+		(format p "~%<br>"))
+	     (set! history (cons (car x) history))
+	     (set! lines (cons (and (pair? (car x)) (pair-line-number (car x))) lines))
+	     (set! files (cons (and (pair? (car x)) (pair-filename (car x))) files)))))
+       
+       ;; show the enclosing contexts
+       (let ((old-print-length (*s7* 'print-length)))
+	 (set! (*s7* 'print-length) 8)
+	 (do ((e (outlet ow) (outlet e))) 
+	     ((memq e elist)
+	      (set! (*s7* 'print-length) old-print-length))
+	   (if (> (length e) 0)
+	       (format p "~%<br>~{~A~| ~}~%<br>" e))
+	   (set! elist (cons e elist))))))))
+
+
 ;; Note! This function is called from the error handler.
 (define (history-ow!)
   (define history (copy (s7:get-history)))
@@ -92,6 +156,9 @@
            (set! lines (cons (and (pair? (car x)) (pair-line-number (car x))) lines))
            ;;(for-each c-display lines)
            (set! files (cons (and (pair? (car x)) (pair-filename (car x))) files))))))))
+
+
+
 
 ;; Note! This function is called from the error handler.
 (define (safe-history-ow!)
@@ -286,7 +353,7 @@
                                       ((defined? 'safe-ow!)
                                        (safe-display-txt-as-displayable-as-possible (safe-ow!)))
                                       (else
-                                       (display (ow!))))))))
+                                       (display (my-ow!))))))))
               (set! *currently-reloading-file* old-reloading)
               (set! *currently-loading-file* old-loading-filename)
               (if do-rethrow
@@ -311,7 +378,7 @@
       (let ((ret (catch #t
                         (lambda ()
                           (inc! *safe-ow-recursive-level* 1)
-                          (ow!))
+                          (my-ow!))
                         (lambda args
                           (safe-display-history-ow!)
                           (get-as-displayable-string-as-possible (list "ow! failed: " args))))))
