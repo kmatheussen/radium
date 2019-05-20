@@ -92,9 +92,15 @@ public:
   virtual hash_t *create_state(void);
   virtual void init_from_state(hash_t *hash);
 
+  
   bool RT_matching(const symbol_t *port_name, uint32_t msg);
+
+private:
+
   bool RT_maybe_use(const symbol_t *port_name, uint32_t msg);
 
+public:
+  
   virtual bool RT_get_automation_recording_data(struct SoundPlugin **plugin, int *effect_num){
     printf("MidiLearn::RT_get_automation_recording_data. Error: This method is supposed to be overridden.\n");
     return false;
