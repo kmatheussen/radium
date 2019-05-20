@@ -1182,7 +1182,11 @@
                       :id seqblockid
                       :stretch stretch
                       :samples-per-pixel samples-per-pixel))
-    
+
+(define (make-seqblock-info3 seqblockid)
+  (make-seqblock-info2 (<ra> :get-seqblock-seqtrack-num seqblockid)
+                       (<ra> :get-seqblock-seqblock-num seqblockid)))
+  
 (define (get-selected-seqblock-infos)
   (define ret '())
   (for-each-selected-seqblock (lambda (seqtracknum seqblocknum)
@@ -7270,12 +7274,9 @@
                             (push-back! infos (make-seqblock-info2 seqtracknum seqblocknum)))))
   
   (when (null? infos)
-    (define x (<ra> :get-mouse-pointer-x -2))
-    (define y (<ra> :get-mouse-pointer-y -2))
-    (for-each-seqblocknum (lambda (seqtracknum seqblocknum)
-                            ;;(c-display seqtracknum seqblocknum "x/y:" x y "seqblockbox:" (box-to-string (<ra> :get-box seqblock seqblocknum seqtracknum)))
-                            (if (inside-box (<ra> :get-box seqblock seqblocknum seqtracknum) x y)
-                                (push-back! infos (make-seqblock-info2 seqtracknum seqblocknum))))))
+    (define curr-seqblock-id (<ra> :get-curr-seqblock-id))
+    (if (not (= -2 curr-seqblock-id))
+        (push-back! infos (make-seqblock-info3 curr-seqblock-id))))
 
   (copy-blocks-to-clipboard infos))
 
