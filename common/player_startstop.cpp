@@ -708,56 +708,78 @@ void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool called_from_jack_
 
 
   if (is_playing_song()) {
-    
     PlaySong(pos);
-    
-  } else {
-    
-    ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
-    pc->absabstime = absabstime;
-        
-    if (false==called_from_jack_transport && useJackTransport())
-      MIXER_TRANSPORT_set_pos(pos);
+    return;
+  }
 
-    // The if-test is a fix for current line to go back to current sequencer position when stopping playing block.
-    // And it would probably annoying if another program changed line position as well.
-    if(false==called_from_jack_transport)
-      SEQUENCER_iterate_time_seqblocks
-        (pos-1,pos+1,false,
-         [&](const struct SeqTrack *seqtrack,const struct SeqBlock *seqblock, const struct Blocks *block, const struct SeqBlock *next_seqblock){
-          if(pos >= seqblock->t.time && pos < seqblock->t.time2){
+  
+  ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
+  pc->absabstime = absabstime;
+  
+  if (false==called_from_jack_transport && useJackTransport())
+    MIXER_TRANSPORT_set_pos(pos);
+  
+  // The if-test is a fix for current line to go back to current sequencer position when stopping playing block.
+  // And it would probably annoying if another program changed line position as well.
+  if(false==called_from_jack_transport) {
+    
+    struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+    
+    if (seqtrack==NULL){
+      
+      R_ASSERT_NON_RELEASE(false);
+      
+    } else {
+      
+      VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+        
+        if(pos >= seqblock->t.time && pos < seqblock->t.time2){
+          
+          setCurrSeqblock(seqblock->id);
+          
+          const struct Blocks *block = seqblock->block;
+          
+          if (seqblock->block != NULL){
             
             struct Tracker_Windows *window;
             struct WBlocks *wblock = getWBlockFromNumA(-1, &window, block->l.num);
             if(wblock==NULL){
+              
               R_ASSERT(false);
-              return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
+              
+            } else {
+              
+              const int64_t blocktime = seqtime_to_blocktime(seqblock, pos - seqblock->t.time);
+              const Place place = STime2Place(block, blocktime);
+              const int realline = FindRealLineFor(wblock, 0, &place);
+              
+              //SelectWBlock(window, wblock);
+              ScrollEditorToRealLine(window, wblock, realline);
             }
             
-            const int64_t blocktime = seqtime_to_blocktime(seqblock, pos - seqblock->t.time);
-            const Place place = STime2Place(block, blocktime);
-            const int realline = FindRealLineFor(wblock, 0, &place);
-            
-            SelectWBlock(window, wblock);
-            ScrollEditorToRealLine(window, wblock, realline);
-            
-            return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
           }
-          return radium::IterateSeqblocksCallbackReturn::ISCR_CONTINUE;
-        });
-    
-    if (fabs(pc->last_song_starttime - pos) > 1){
-      //printf("           SETTING last song starttime 22222\n")      ;
-      pc->last_song_starttime = pos;
-      SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR);
+          
+          break;
+        }
+        
+      }END_VECTOR_FOR_EACH;
       
-    } else {
-  
-      SEQUENCER_update(SEQUPDATE_TIME);
-
     }
+    
+  }
+    
+  if (fabs(pc->last_song_starttime - pos) > 1){
+    //printf("           SETTING last song starttime 22222\n")      ;
+    pc->last_song_starttime = pos;
+    SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR);
+    
+  } else {
+    
+    SEQUENCER_update(SEQUPDATE_TIME);
+    
   }
 
-
   //printf("       <<< %d: PLAYER_set_song_pos finished\n", l_callnum);
+
 }
+
