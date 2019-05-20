@@ -74,7 +74,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../common/realline_calc_proc.h"
 #include "../common/time_proc.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/OS_Semaphores.h"
 #include "../common/OS_Player_proc.h"

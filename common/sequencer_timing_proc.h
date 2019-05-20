@@ -19,7 +19,7 @@ extern LANGSPEC dynvec_t SEQUENCER_SIGNATURE_get_state(void);
 
 #ifdef __cplusplus
 
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 
 // Note that calling either of these two functions might change both tempos and signatures (required to ensure tempos are aligned with beats, and signatures are aligned with tempos)
 // Use SEQUENCER_TIMING_get_state/SEQUENCER_TIMING_create_from_state instead to avoid this if possible.

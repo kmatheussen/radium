@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mixergui/QM_MixerWidget.h"
 #include "../common/undo_tracks_proc.h"
 #include "../common/visual_proc.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 #include "../config/config.h"
 
 #include "api_common_proc.h"

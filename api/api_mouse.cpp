@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_blocks_proc.h"
 #include "../common/tempos_proc.h"
 #include "../common/undo_tempos_proc.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 #include "../common/sliders_proc.h"
 #include "../common/fxtext_proc.h"
 #include "../common/windows_proc.h"

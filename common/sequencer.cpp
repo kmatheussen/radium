@@ -61,7 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_sequencer_proc.h"
 
 
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 
 
 static int seqblocks_comp(const void *a, const void *b){

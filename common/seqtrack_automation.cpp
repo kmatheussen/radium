@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "hashmap_proc.h"
 #include "patch_proc.h"
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 #include "instruments_proc.h"
 #include "Vector.hpp"
 #include "../Qt/Qt_mix_colors.h"

@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "Beats_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 
 #include "block_properties_proc.h"
 

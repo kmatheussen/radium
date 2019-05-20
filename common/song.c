@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "blocks_proc.h"
 #include "instruments_proc.h"
 #include "vector_proc.h"
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 #include "song_tempo_automation_proc.h"
 
 #include "song_proc.h"

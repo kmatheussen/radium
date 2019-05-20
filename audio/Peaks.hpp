@@ -319,7 +319,7 @@ public:
 #if defined(INCLUDE_SNDFILE_OPEN_FUNCTIONS)
 
 #include "../common/visual_proc.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 #include "../common/QueueStack.hpp"
 #include "../common/Mutex.hpp"
 

@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/scheduler_proc.h"
 //#include "../common/PEQ_LPB_proc.h"
 #include "../common/OS_visual_input.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 #include "../common/sequencer_timing_proc.h"
 #include "../common/settings_proc.h"
 

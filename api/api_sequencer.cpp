@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "../common/nsmtracker.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 #include "../common/seqtrack_automation_proc.h"
 #include "../common/seqblock_automation_proc.h"
 #include "../common/song_tempo_automation_proc.h"

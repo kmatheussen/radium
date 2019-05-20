@@ -1,7 +1,7 @@
 
 
 #include "nsmtracker.h"
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 
 #include "undo.h"
 
