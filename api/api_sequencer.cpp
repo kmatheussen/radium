@@ -373,7 +373,7 @@ static void change_curr_seqblock_when_curr_seqtrack_has_changed(int new_seqtrack
 
 static int g_is_changing_curr_seqtrack = 0;
 
-void setCurrSeqtrack(int seqtracknum){
+static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock){
   radium::ScopedGeneration is_changing(g_is_changing_curr_seqtrack);
     
   if (seqtracknum < 0)
@@ -404,8 +404,9 @@ void setCurrSeqtrack(int seqtracknum){
       
       R_ASSERT_NON_RELEASE(old_seqtrack != seqtrack);
     }
-      
-    change_curr_seqblock_when_curr_seqtrack_has_changed(seqtracknum, seqtrack);
+
+    if (called_from_set_curr_seqblock==false)
+      change_curr_seqblock_when_curr_seqtrack_has_changed(seqtracknum, seqtrack);
     
     SEQTRACK_update_with_borders(seqtrack);
     SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_PLAYLIST|SEQUPDATE_BLOCKLIST);
@@ -423,6 +424,10 @@ void setCurrSeqtrack(int seqtracknum){
     API_curr_seqtrack_has_changed();
   }
 
+}
+
+void setCurrSeqtrack(int seqtracknum){
+  setCurrSeqtrack2(seqtracknum, false);
 }
 
 int getCurrSeqtrack(void){
@@ -2288,7 +2293,7 @@ void applyGfxSeqblocks(int seqtracknum){
 
 int64_t g_curr_seqblock_id = -2;
 
-void setCurrSeqblock(int64_t seqblockid){
+void setCurrSeqblock(int64_t seqblockid){ 
   if (seqblockid==g_curr_seqblock_id)
     return;
 
@@ -2300,13 +2305,13 @@ void setCurrSeqblock(int64_t seqblockid){
     
   static int level = 0;
 
-  level++;
-
-  if(level > 1){
+  if(level != 0){
     R_ASSERT_NON_RELEASE(false);
   }
   
-  if(level > 10){ // don't remove this test. Lots of situations where we could end up in an infinite loop here.
+  radium::ScopedGeneration is_changing(level);
+
+  if(level > 10){ // Even though it works now, don't remove this test. There's lots of situations where we easily could end up in an infinite loop here if code is changed slightly.
     R_ASSERT(false);
     return;
   }
@@ -2317,7 +2322,8 @@ void setCurrSeqblock(int64_t seqblockid){
 
   g_curr_seqblock_id = seqblockid;
 
-  setCurrSeqtrack(seqtracknum);
+  if (g_is_changing_curr_seqtrack==0)
+    setCurrSeqtrack2(seqtracknum, true);
     
   SEQBLOCK_update_with_borders(seqtrack, seqblock);
   
@@ -2338,8 +2344,6 @@ void setCurrSeqblock(int64_t seqblockid){
       seqtrack->last_curr_seqblock_id = -2;
     }END_ALL_SEQTRACKS_FOR_EACH;
   }
-      
-  level--;
 }
 
 bool seqblockIsAlive(int64_t seqblockid){
