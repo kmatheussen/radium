@@ -454,6 +454,27 @@ namespace radium{
       }
     }
   };    
+  class ScopedGeneration{
+    int &_anint;
+    const bool _doit;
+  public:
+    ScopedGeneration(int &anint, const bool doit = true)
+      : _anint(anint)
+      , _doit(doit)
+    {
+      R_ASSERT_NON_RELEASE(_anint >= 0);
+      
+      if(_doit)
+        _anint++;
+    }
+
+    ~ScopedGeneration(){
+      R_ASSERT_NON_RELEASE(_anint >= 1);
+      
+      if(_doit)
+        _anint--;
+    }
+  };    
 };
 #endif
 

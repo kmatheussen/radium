@@ -2342,7 +2342,35 @@ void setCurrSeqblock(int64_t seqblockid){
   level--;
 }
 
+bool seqblockIsAlive(int64_t seqblockid){
+  int seqblocknum, seqtracknum;
+  struct SeqTrack *seqtrack;
+  return getSeqblockFromIdB(seqblockid, &seqtrack, seqblocknum, seqtracknum, false)!=NULL;
+}
+
+
 int64_t getCurrSeqblockId(void){
+  if (g_curr_seqblock_id==-2)
+    return -2;
+      
+  struct SeqTrack *seqtrack;
+  int seqblocknum, seqtracknum;
+  struct SeqBlock *curr_seqblock = getSeqblockFromIdB(g_curr_seqblock_id, &seqtrack, seqblocknum, seqtracknum, false);
+  
+  if (curr_seqblock==NULL) {
+    
+    g_curr_seqblock_id = -2;
+    
+  } else {
+
+    if (g_curr_seqblock_id != curr_seqblock->id){
+      R_ASSERT_NON_RELEASE(g_curr_seqblock_id==-1);
+      R_ASSERT_NON_RELEASE(false);
+      g_curr_seqblock_id = curr_seqblock->id;
+    }
+    
+  }
+  
   return g_curr_seqblock_id;
 }
 
@@ -2504,12 +2532,6 @@ void cancelCurrSeqblockUnderMouse(void){
   //g_curr_seqblock_under_mouse = NULL;
   g_curr_seqblock_id_under_mouse = -1;
 
-}
-
-bool seqblockIsAlive(int64_t seqblockid){
-  int seqblocknum, seqtracknum;
-  struct SeqTrack *seqtrack;
-  return getSeqblockFromIdB(seqblockid, &seqtrack, seqblocknum, seqtracknum, false)!=NULL;
 }
 
 dynvec_t getBlockUsageInSequencer(void){
