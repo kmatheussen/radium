@@ -11,7 +11,10 @@
 
 #include "scheduler_proc.h"
 
-static void setit(struct WBlocks *wblock, int realline){
+static void setit(const struct SeqTrack *seqtrack, struct WBlocks *wblock, int realline){
+  if(seqtrack != RT_get_curr_seqtrack())
+    return;
+
   if (!ATOMIC_GET(root->play_cursor_onoff)){
     
     // Set current realline in main thread (main thread picks up till_curr_realline and sets curr_realline afterwards)
@@ -64,7 +67,7 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
 #endif
 
   // Do thing with the current realline
-  setit(wblock, realline);
+  setit(seqtrack, wblock, realline);
 
   
   // Schedule next realline
@@ -167,7 +170,7 @@ static void reschedule_reallines_because_num_reallines_have_changed_in_wblock3(s
           
           int realline=FindRealLineFor(wblock,0,&place);
 
-          setit(wblock, realline);
+          setit(seqtrack, wblock, realline);
             
           realline++;
           
@@ -200,18 +203,24 @@ void reschedule_reallines_because_num_reallines_have_changed_in_wblock(struct WB
   if (!is_playing())
     return;
 
-  struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
-    
-  if(seqtrack==root->song->block_seqtrack){
+  
+  // I.e. when pressing left shift + up/down while playing.
+  
+  
+  if(pc->playtype==PLAYSONG){
 
-    int64_t curr_seqtrack_time = ATOMIC_DOUBLE_GET_RELAXED(seqtrack->start_time_nonrealtime);
-    
-    reschedule_reallines_because_num_reallines_have_changed_in_wblock3(seqtrack, &g_block_seqtrack_seqblock, wblock, curr_seqtrack_time);
+    VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+      if (seqtrack->for_audiofiles==false)
+        reschedule_reallines_because_num_reallines_have_changed_in_wblock2(seqtrack, wblock);
+    }END_VECTOR_FOR_EACH;
     
   } else {
 
-    if (seqtrack->for_audiofiles==false)
-      reschedule_reallines_because_num_reallines_have_changed_in_wblock2(seqtrack, wblock);
+    struct SeqTrack *curr_seqtrack = root->song->block_seqtrack;
+    
+    int64_t curr_seqtrack_time = ATOMIC_DOUBLE_GET_RELAXED(curr_seqtrack->start_time_nonrealtime);
+    
+    reschedule_reallines_because_num_reallines_have_changed_in_wblock3(curr_seqtrack, &g_block_seqtrack_seqblock, wblock, curr_seqtrack_time);
     
   }
 }
