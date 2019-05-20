@@ -297,6 +297,9 @@ void API_curr_seqtrack_has_changed(void){
   S7CALL(void_int, func, ATOMIC_GET(root->song->curr_seqtracknum));
 }
 
+
+/* Set curr seqtrack */
+
 static int64_t get_seqblock_closeness(const struct SeqBlock *seqblock1, const struct SeqBlock *seqblock2){
   const struct SeqBlock *A, *B;
   
@@ -324,17 +327,24 @@ static int64_t get_seqblock_closeness(const struct SeqBlock *seqblock1, const st
     return B_end - B_start;  
 }
 
+
 static void change_curr_seqblock_when_curr_seqtrack_has_changed(int new_seqtracknum, const struct SeqTrack *new_seqtrack){
   radium::Vector_t<const struct SeqBlock, const vector_t> seqblocks(&new_seqtrack->seqblocks);
   
   if (seqblocks.size()==0)
     return;
+
+  for(const SeqBlock *seqblock : seqblocks)
+    if (seqblock->id == new_seqtrack->last_curr_seqblock_id){
+      setCurrSeqblock(seqblock->id);
+      return;
+    }
   
   struct SeqTrack *old_seqtrack;
   int old_seqblocknum, old_seqtracknum;
   
   struct SeqBlock *curr_seqblock = getSeqblockFromIdB(-1, &old_seqtrack, old_seqblocknum, old_seqtracknum, false);
-
+  
   if (curr_seqblock==NULL){
     setCurrSeqblock(seqblocks.at(0)->id);
     return;
@@ -361,7 +371,11 @@ static void change_curr_seqblock_when_curr_seqtrack_has_changed(int new_seqtrack
   }
 }
 
+static int g_is_changing_curr_seqtrack = 0;
+
 void setCurrSeqtrack(int seqtracknum){
+  radium::ScopedGeneration is_changing(g_is_changing_curr_seqtrack);
+    
   if (seqtracknum < 0)
     seqtracknum = 0;
   else if (seqtracknum >= getNumSeqtracks())
@@ -383,6 +397,14 @@ void setCurrSeqtrack(int seqtracknum){
 
     ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
 
+    {
+      struct SeqTrack *old_seqtrack = getSeqtrackFromNum(old);
+      if (old_seqtrack != NULL)
+        old_seqtrack->last_curr_seqblock_id = g_curr_seqblock_id;
+      
+      R_ASSERT_NON_RELEASE(old_seqtrack != seqtrack);
+    }
+      
     change_curr_seqblock_when_curr_seqtrack_has_changed(seqtracknum, seqtrack);
     
     SEQTRACK_update_with_borders(seqtrack);
@@ -2310,7 +2332,13 @@ void setCurrSeqblock(int64_t seqblockid){
   if (!is_playing_song())
     if (seqblock->block != NULL)
       selectBlock(seqblock->block->l.num, -1);
-  
+
+  if(g_is_changing_curr_seqtrack==0){
+    ALL_SEQTRACKS_FOR_EACH(){
+      seqtrack->last_curr_seqblock_id = -2;
+    }END_ALL_SEQTRACKS_FOR_EACH;
+  }
+      
   level--;
 }
 
