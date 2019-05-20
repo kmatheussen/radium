@@ -94,7 +94,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_pause_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
 #include "../common/data_as_text_proc.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 
 #include "../api/api_proc.h"
 #include "../api/api_gui_proc.h"

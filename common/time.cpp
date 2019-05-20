@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "hashmap_proc.h"
 #include "reltempo_proc.h"
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "Beats_proc.h"
 #include "visual_proc.h"

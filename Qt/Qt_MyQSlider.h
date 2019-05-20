@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/vector_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/placement_proc.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 #include "../common/seqtrack_automation_proc.h"
 
 #include "../audio/undo_audio_effect_proc.h"

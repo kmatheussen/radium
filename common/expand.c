@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_legalize_proc.h"
 #include "visual_proc.h"
 #include "Beats_proc.h"
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 
 #include "expand_proc.h"
 

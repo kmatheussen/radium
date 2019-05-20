@@ -17,7 +17,7 @@
 
 #include "../common/OS_visual_input.h"
 #include "../common/Vector.hpp"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 
 #include "../OpenGL/Widget_proc.h"
 #include "../midi/midi_i_input_proc.h"

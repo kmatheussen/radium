@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/wblocks_proc.h"
 #include "../common/gfx_proc.h"
 #include "../common/settings_proc.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 #include "../common/undo_sequencer_proc.h"
 
 #include "../audio/SampleReader_proc.h"

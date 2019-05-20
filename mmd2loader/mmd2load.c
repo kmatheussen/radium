@@ -78,7 +78,7 @@ typedef uint8_t UBYTE;
 #include "../common/reallines_proc.h"
 #include "../common/undo.h"
 #include "../common/visual_proc.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 #include "../common/disk_load_proc.h"
 #include "../common/time_proc.h"
 #include "../common/Beats_proc.h"

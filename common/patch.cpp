@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_pause_proc.h"
 #include "scheduler_proc.h"
 #include "seqtrack_automation_proc.h"
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 #include "undo_sequencer_proc.h"
 
 #include "undo.h"

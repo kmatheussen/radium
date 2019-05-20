@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "time_proc.h"
 
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 
 
 typedef int64_t (*SchedulerCallback)(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);

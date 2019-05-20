@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "block_delete_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "list_proc.h"
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 
 #include "undo_block_insertdelete_proc.h"
 

@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk_save_proc.h"
 #include "visual_proc.h"
 #include "player_proc.h"
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 #include "undo.h"
 #include "nag.h"
 #include "OS_settings_proc.h"

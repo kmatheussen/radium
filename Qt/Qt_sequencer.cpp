@@ -56,7 +56,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../embedded_scheme/s7extra_proc.h"
 
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 
 #include "Qt_sequencer_proc.h"
 

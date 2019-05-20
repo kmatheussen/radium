@@ -65,7 +65,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_pause_proc.h"
 #include "../common/undo_blocks_proc.h"
 #include "../common/time_proc.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 #include "../common/patch_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
 #include "../OpenGL/Widget_proc.h"

@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/instruments_proc.h"
 #include "../common/undo.h"
 #include "../common/OS_visual_input.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"

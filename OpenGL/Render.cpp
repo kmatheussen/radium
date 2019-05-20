@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/LPB_proc.h"
 #include "../common/tempos_proc.h"
 #include "../common/notestext_proc.h"
-#include "../common/seqtrack_proc.h"
+#include "../common/sequencer_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 

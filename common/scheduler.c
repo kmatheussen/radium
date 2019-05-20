@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "threading.h"
 #include "OS_Player_proc.h"
 #include "OS_visual_input.h"
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 #include "../audio/Mixer_proc.h"
 
 #include "scheduler_proc.h"

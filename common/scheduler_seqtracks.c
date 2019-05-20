@@ -3,7 +3,7 @@
 #include "time_proc.h"
 #include "playerclass.h"
 #include "placement_proc.h"
-#include "seqtrack_proc.h"
+#include "sequencer_proc.h"
 #include "visual_proc.h"
 
 #include "../audio/Mixer_proc.h"
