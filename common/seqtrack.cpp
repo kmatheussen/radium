@@ -58,7 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Peaks.hpp"
 #include "../audio/Envelope.hpp"
 
-#include "../api/api_seqtracks_proc.h"
+#include "../api/api_sequencer_proc.h"
 
 
 #include "seqtrack_proc.h"

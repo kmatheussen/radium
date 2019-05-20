@@ -811,7 +811,7 @@
          (callback result)))))
 
 
-(define (set-instrument-solo! id is-on)
+(define (set-instrument-solo-for-this-instrument-only! id is-on)
   ;;(c-display "     Setting" (<ra> :get-instrument-name id) "solo to" is-on)
   (define current-value (> (<ra> :get-instrument-effect id "System Solo On/Off") 0.5))
   (when (or (and is-on (not current-value))
@@ -825,7 +825,7 @@
   (define output-instruments (get-instruments-connecting-from-instrument instrument-id))
   (if (= 1 (length output-instruments))
       (let ((id (car output-instruments)))
-        (set-instrument-solo! id is-on)
+        (set-instrument-solo-for-this-instrument-only! id is-on)
         (set-solo-for-connected-output-instruments! id is-on))))
 
 ;; This one only set solo if it had just one input, and some mysterious other operations on that instrument. I don't remember the reason for all this...
@@ -837,7 +837,7 @@
       (let ((id (car input-instruments)))
         (define output-instruments (get-instruments-connecting-from-instrument id))
         (if (= 1 (length output-instruments))
-            (set-instrument-solo! id is-on))
+            (set-instrument-solo-for-this-instrument-only! id is-on))
         (set-solo-for-connected-input-instruments! id is-on))))
 
 ;; Edit: Can't do it like this. It's complicated. Need to redo the solo logic later.
@@ -845,14 +845,14 @@
   (define input-instruments (get-instruments-connecting-to-instrument instrument-id))
   ;;(c-display "input-instruments:" (map ra:get-instrument-name input-instruments))
   (map (lambda (instrument-id)
-         (set-instrument-solo! instrument-id is-on)
+         (set-instrument-solo-for-this-instrument-only! instrument-id is-on)
          (set-solo-for-connected-input-instruments! instrument-id is-on))
        input-instruments))         
   
 (define (FROM-C-set-solo! instrument-id is-on)
   ;;(c-display "FROM-C-set-solo!" instrument-id is-on)
   (undo-block (lambda ()
-                (set-instrument-solo! instrument-id is-on)
+                (set-instrument-solo-for-this-instrument-only! instrument-id is-on)
                 (set-solo-for-connected-output-instruments! instrument-id is-on)
                 (set-solo-for-connected-input-instruments! instrument-id is-on))))
 

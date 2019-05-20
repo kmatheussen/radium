@@ -320,7 +320,7 @@
                 (when (and (not (= instrument-id except))
                            (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
                   ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
-                  (set-instrument-solo! instrument-id #f)
+                  (set-instrument-solo-for-this-instrument-only! instrument-id #f)
                   ))
               (get-all-audio-instruments)))
   

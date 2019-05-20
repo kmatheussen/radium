@@ -42,7 +42,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Presets_proc.h"
 #include "../midi/midi_i_input_proc.h"
 
-#include "../api/api_seqtracks_proc.h"
 #include "../api/api_proc.h"
 
 

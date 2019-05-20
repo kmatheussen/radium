@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "api_common_proc.h"
 
-#include "api_seqtracks_proc.h"
+#include "api_sequencer_proc.h"
 #include "radium_proc.h"
 
 extern struct TEvent tevent;
@@ -353,8 +353,11 @@ static void change_curr_seqblock_when_curr_seqtrack_has_changed(int new_seqtrack
       if(seqblock->t.time >= curr_seqblock->t.time2)
         break;
     }
-    
-    setCurrSeqblock(closest_seqblock->id);
+
+    if (closest_seqblock==NULL) // Do this check to avoid compiler warning when compiled with optimization.
+      R_ASSERT(false); // We checked seqblocks.size()==0 above.
+    else
+      setCurrSeqblock(closest_seqblock->id);
   }
 }
 

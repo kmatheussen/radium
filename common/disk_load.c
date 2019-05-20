@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "settings_proc.h"
 #include "instruments_proc.h"
 
-#include "../api/api_seqtracks_proc.h"
+#include "../api/api_sequencer_proc.h"
 #include "../api/api_proc.h"
 
 #include "../mmd2loader/mmd2load_proc.h"

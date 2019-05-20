@@ -928,7 +928,7 @@ void RT_MIDI_handle_play_buffer(void){
       has_inited = true;
     }
     
-    if(through_patch!=NULL ||  num_playing_patches > 0){
+    if(through_patch!=NULL || num_playing_patches > 0){
 
       uint8_t byte1 = MIDI_msg_byte1(msg);
       if (ATOMIC_GET(g_use_track_channel_for_midi_input)){
