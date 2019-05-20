@@ -247,7 +247,8 @@
                                   (ra:add-message message));(ra:get-html-from-text message)))
                                 (lambda args
                                   #t))
-                         (handle-assertion-failure-during-startup message)))
+                         ;;(handle-assertion-failure-during-startup message)
+                         ))
                       ((and *currently-loading-file*
                             (not *currently-reloading-file*))
                        (ra:add-message message));(ra:get-html-from-text message)))
