@@ -3029,10 +3029,12 @@ struct SeqTrack{
   
   struct SeqBlock *curr_seqblock; // curr_seqblock->block and curr_seqblock->time contains the same values as pc->block and pc->seqtime did before introducing seqtrack/seqblock.
   struct SeqBlock *curr_sample_seqblock; // Currently only used for displaying audiofile name in the editor. Note that curr_sample_seqblock->sample_id might not always be valid.
-  
+
   double start_time; // Current seqtime. Can only be accessed from the player thread.
   double end_time;   // Same here. (should be the same as start_time + RADIUM_BLOCKSIZE)
 
+  int64_t last_curr_seqblock_id;
+  
   // These two variables are here only for convenience (and maybe a little bit of efficency) so that we don't have to do atomic operations on start_time and end_time in the player thread.
   // They contain the same values as 'start_time" and 'end_time' above.
   DEFINE_ATOMIC(double, start_time_nonrealtime);
