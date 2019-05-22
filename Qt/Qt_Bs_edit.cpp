@@ -421,15 +421,15 @@ static int get_move_down_button_y2(bool stacked, int width, int height){
 }
 
 
-static int num_visitors = 0;
+static int g_num_visitors = 0;
 
 namespace{
 struct ScopedVisitors{
   ScopedVisitors(){
-    num_visitors++;
+    g_num_visitors++;
   }
   ~ScopedVisitors(){
-    num_visitors--;
+    g_num_visitors--;
   }
 };
 }
@@ -513,13 +513,6 @@ public:
     playlist.insertItem(" "); // Make it possible to put a block at the end of the playlist.
 
     resizeEvent(NULL);
-
-#if USE_QT3
-    connect(&blocklist, SIGNAL(highlighted(int)), this, SLOT(blocklist_highlighted(int)));
-    connect(&blocklist, SIGNAL(selected(int)), this, SLOT(blocklist_selected(int)));
-    connect(&playlist, SIGNAL(highlighted(int)), this, SLOT(playlist_highlighted(int)));
-    connect(&playlist, SIGNAL(selected(int)), this, SLOT(playlist_selected(int)));
-#endif
 
 #if USE_QT4
     connect(&blocklist, SIGNAL(currentRowChanged(int)), this, SLOT(blocklist_highlighted(int)));
@@ -685,6 +678,43 @@ public:
       return NULL;
     
     return pe.seqblock->block;
+  }
+
+  void handle_select_playlist_element(int num){
+    struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+    
+    if (num>=playlist.count()-1) {
+      if (is_playing_song())
+        PlaySong(SEQTRACK_get_length(seqtrack)*MIXER_get_sample_rate()); // why was this line added here?
+      return;
+    }
+    
+    PlaylistElement pe = get_playlist_element(num);
+    if (pe.is_illegal())
+      return;
+    
+    int seqblocknum = pe.seqblocknum;
+    
+    int64_t abstime;
+    
+    //SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
+    
+    struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
+    
+    if (pe.is_pause()) {
+      if (seqblocknum==0) {
+        abstime = 0;
+      } else {
+        struct SeqBlock *prev_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum-1];
+        abstime = prev_seqblock->t.time2;
+      }
+    } else {
+      abstime = seqblock->t.time;
+      setCurrSeqblock(seqblock->id);
+    }      
+    
+    PLAYER_set_song_pos(abstime, -1, false);
+
   }
 
 public slots:
@@ -890,7 +920,7 @@ public slots:
     if(num==-1)
       return;
 
-    if(num_visitors>0) // event created internally
+    if(g_num_visitors>0) // event created internally
       return;
 
     EVENTLOG_add_event("BlockSelector::blocklist_highlighted");
@@ -948,11 +978,12 @@ public slots:
   playlist_itemPressed(NULL);
   }
   */
+
   
   void playlist_itemPressed(QListWidgetItem *){
     //printf("pressed 2: %d\n",(int)QApplication::mouseButtons());
     
-    if(num_visitors>0) // event created internally
+    if(g_num_visitors>0) // event created internally
       return;
 
     if (QApplication::mouseButtons()==Qt::RightButton){
@@ -964,47 +995,11 @@ public slots:
     } else {
 
       int num = playlist.currentItem();
-      
-      struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-      
-      if (num>=playlist.count()-1) {
-        if (is_playing_song())
-          PlaySong(SEQTRACK_get_length(seqtrack)*MIXER_get_sample_rate()); // why was this line added here?
-        return;
-      }
-      
-      PlaylistElement pe = get_playlist_element(num);
-      if (pe.is_illegal())
-        return;
-      
-      int seqblocknum = pe.seqblocknum;
 
-      int64_t abstime;
-      
-      //SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
-
-      struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
-
-      if (pe.is_pause()) {
-        if (seqblocknum==0) {
-          abstime = 0;
-        } else {
-          struct SeqBlock *prev_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum-1];
-          abstime = prev_seqblock->t.time2;
-        }
-      } else {
-        abstime = seqblock->t.time;
-        setCurrSeqblock(seqblock->id);
-      }      
-
-      PLAYER_set_song_pos(abstime, -1, false);
+      handle_select_playlist_element(num);
     }
   }
   
-  void playlist_selected(int num){
-    remove_from_playlist();
-  }
-
   void playlist_doubleclicked(QListWidgetItem *item){
     if (playlist._last_button==Qt::LeftButton)
       remove_from_playlist();
@@ -1261,10 +1256,8 @@ void BS_SelectPlaylistPos(int pos){
     
     g_bs->playlist.setSelected(pos, true);
 
-    g_bs->playlist_itemPressed(NULL);
-
+    g_bs->handle_select_playlist_element(pos);
   }
-  
 }
 
 struct SeqBlock *BS_GetPrevPlaylistBlock(void){
