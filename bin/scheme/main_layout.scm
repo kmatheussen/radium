@@ -235,7 +235,27 @@
 (define (FROM-C-get-edit-gui)
   *notem-gui*)
 
-    
+
+(define (FROM-C-show-edit/quantitize-tab)
+  (define pos (<gui> :get-tab-pos *notem-gui* *quantitize-tab*))
+  (<gui> :set-current-tab *notem-gui* pos)
+  (show-lowertab-gui *notem-gui*))
+
+(define (FROM-C-show-edit/transpose-tab)
+  (define pos (<gui> :get-tab-pos *notem-gui* *transpose-tab*))
+  (<gui> :set-current-tab *notem-gui* pos)
+  (show-lowertab-gui *notem-gui*))
+
+(define (FROM-C-show-edit/randomize-tab)
+  (define pos (<gui> :get-tab-pos *notem-gui* *randomize/skew-notem-tab*))
+  (<gui> :set-current-tab *notem-gui* pos)
+  (show-lowertab-gui *notem-gui*))
+
+(define (FROM-C-show-edit/various-tab)
+  (define pos (<gui> :get-tab-pos *notem-gui* *various-tab*))
+  (<gui> :set-current-tab *notem-gui* pos)
+  (show-lowertab-gui *notem-gui*))
+
 
 #!!
 (FROM-C-sequencer-gui-is-visible)

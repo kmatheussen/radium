@@ -2333,7 +2333,7 @@ void setCurrSeqblock(int64_t seqblockid){
     S7CALL(void_int_int, func, seqtracknum, seqblocknum);
   }
 
-  BS_SelectPlaylistPosFromSeqblock(seqblock);
+  BS_SelectPlaylistPosFromSeqblock(seqblock, false);
 
   if (!is_playing_song())
     if (seqblock->block != NULL)

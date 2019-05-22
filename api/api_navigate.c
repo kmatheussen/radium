@@ -356,11 +356,11 @@ void selectPrevBlock(int windownum){
 }
 
 void selectNextPlaylistBlock(void){
-	SelectNextPlaylistWBlock(root->song->tracker_windows);
+  SelectNextPlaylistWBlock(root->song->tracker_windows, true);
 }
 
 void selectPrevPlaylistBlock(void){
-	SelectPrevPlaylistWBlock(root->song->tracker_windows);
+  SelectPrevPlaylistWBlock(root->song->tracker_windows, true);
 }
 
 void selectTrack(int tracknum,int windownum){

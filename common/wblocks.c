@@ -548,24 +548,24 @@ void SelectNextWBlock(struct Tracker_Windows *window){
   //SelectWBlock(window,NextWBlock(window->wblock));
 }
 
-void SelectPrevPlaylistWBlock(struct Tracker_Windows *window){
+void SelectPrevPlaylistWBlock(struct Tracker_Windows *window, bool change_song_pos_too){
   /*
   struct SeqBlock *seqblock = BS_GetPrevPlaylistBlock();
   if (seqblock==NULL)
     return;
   */
   
-  BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()-1);
+  BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()-1, change_song_pos_too);
 }
 
-void SelectNextPlaylistWBlock(struct Tracker_Windows *window){
+void SelectNextPlaylistWBlock(struct Tracker_Windows *window, bool change_song_pos_too){
   /*
   struct SeqBlock *seqblock = BS_GetNextPlaylistBlock();
   if (seqblock==NULL)
     return;
   */
   
-  BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()+1);
+  BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()+1, change_song_pos_too);
 }
 
 extern size_t allocated;

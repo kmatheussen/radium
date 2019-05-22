@@ -680,7 +680,7 @@ public:
     return pe.seqblock->block;
   }
 
-  void handle_select_playlist_element(int num){
+  void handle_select_playlist_element(int num, bool change_song_pos_too){
     struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
     
     if (num>=playlist.count()-1) {
@@ -712,8 +712,9 @@ public:
       abstime = seqblock->t.time;
       setCurrSeqblock(seqblock->id);
     }      
-    
-    PLAYER_set_song_pos(abstime, -1, false);
+
+    if (change_song_pos_too)
+      PLAYER_set_song_pos(abstime, -1, false);
 
   }
 
@@ -996,7 +997,7 @@ public slots:
 
       int num = playlist.currentItem();
 
-      handle_select_playlist_element(num);
+      handle_select_playlist_element(num, true);
     }
   }
   
@@ -1179,7 +1180,7 @@ void BS_UpdatePlayList(void){
   }
   
   
-  BS_SelectPlaylistPos(curr_pos);
+  BS_SelectPlaylistPos(curr_pos, false);
 }
 
 /*
@@ -1242,7 +1243,7 @@ void BS_SelectBlocklistPos(int pos){
   //printf("selectblocklistpos. Curr pos: %d", g_bs->blocklist.currentRow());
 }
 
-void BS_SelectPlaylistPos(int pos){
+void BS_SelectPlaylistPos(int pos, bool change_song_pos_too){
   {
     ScopedVisitors v;
     //printf("selectplaylistpos %d, %d. Length: %d\n",pos, pos % (g_bs->playlist.count()), g_bs->playlist.count());
@@ -1253,10 +1254,11 @@ void BS_SelectPlaylistPos(int pos){
       pos += g_bs->playlist.count();
       safe--;
     }
-    
-    g_bs->playlist.setSelected(pos, true);
 
-    g_bs->handle_select_playlist_element(pos);
+    if(!change_song_pos_too && !is_playing_song())
+      g_bs->playlist.setSelected(pos, true);
+
+    g_bs->handle_select_playlist_element(pos, change_song_pos_too);
   }
 }
 
@@ -1275,12 +1277,12 @@ struct SeqBlock *BS_GetSeqBlockFromPos(int pos){
   return g_bs->get_seqblock_from_pos(pos);
 }
 
-void BS_SelectPlaylistPosFromSeqblock(struct SeqBlock *seqblock){
+void BS_SelectPlaylistPosFromSeqblock(struct SeqBlock *seqblock, bool change_song_pos_too){
   int i = 0;
   for(const auto &el : get_playlist_elements()){
     if (!el.is_pause() && el.seqblock==seqblock){
       if (el.is_current==false)
-        BS_SelectPlaylistPos(i);
+        BS_SelectPlaylistPos(i, change_song_pos_too);
       return;
     }
     i++;

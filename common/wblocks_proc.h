@@ -80,8 +80,8 @@ extern LANGSPEC void SelectPrevWBlock(struct Tracker_Windows *window);
 
 extern LANGSPEC void SelectNextWBlock(struct Tracker_Windows *window);
 
-extern LANGSPEC void SelectPrevPlaylistWBlock(struct Tracker_Windows *window);
-extern LANGSPEC void SelectNextPlaylistWBlock(struct Tracker_Windows *window);
+extern LANGSPEC void SelectPrevPlaylistWBlock(struct Tracker_Windows *window, bool change_song_pos_too);
+extern LANGSPEC void SelectNextPlaylistWBlock(struct Tracker_Windows *window, bool change_song_pos_too);
 
 extern LANGSPEC void NewWBlock(
 	struct Tracker_Windows *window,

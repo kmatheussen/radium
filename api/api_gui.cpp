@@ -7544,6 +7544,20 @@ QWidget *API_get_editGui(void){
   return API_gui_get_widget(gui);
 }
 
+void showEditQuantitizeTab(void){
+  S7CALL2(void_void, "FROM-C-show-edit/quantitize-tab");
+}
+void showEditTransposeTab(void){
+  S7CALL2(void_void, "FROM-C-show-edit/transpose-tab");
+}
+void showEditRandomizeTab(void){
+  S7CALL2(void_void, "FROM-C-show-edit/randomize-tab");
+}
+void showEditVariousTab(void){
+  S7CALL2(void_void, "FROM-C-show-edit/various-tab");
+}
+
+
 ///////////////////////////////////////////////
 
 void API_showSequencerGui(void){

@@ -216,6 +216,7 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
   
   
   R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
+
 }
 
 static void play_stop(bool called_from_jack_transport){
@@ -236,8 +237,9 @@ static void play_stop(bool called_from_jack_transport){
     PlayStopReally(true, true);
   
 
-  if(was_playing_song)
+  if(was_playing_song){
     SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_NAVIGATOR); // Update start-pos-cursor
+  }
 }
 
 void PlayStop(void){
