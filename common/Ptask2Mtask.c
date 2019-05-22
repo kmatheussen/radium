@@ -147,6 +147,8 @@ void P2MUpdateSongPosCallBack(void){
 
 #else
 
+#error "not used"
+
 static STime last_time = 0;
 
 void P2MUpdateSongPosCallBack(void){

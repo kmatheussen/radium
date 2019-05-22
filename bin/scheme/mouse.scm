@@ -1671,6 +1671,11 @@
                                               (lambda (channelnum)
                                                 (c-display "channelnum2:" channelnum tracknum)
                                                 (<ra> :set-track-midi-channel channelnum tracknum))))))              
+              "-------Edit"
+              (list "Quantization" ra:show-edit-quantitize-tab)
+              (list "Transpose" ra:show-edit-transpose-tab)
+              (list "Randomize/Skew/Shuffle" ra:show-edit-randomize-tab)
+              (list "Various" ra:show-edit-various-tab)
               "-------Help"
               (cadr (swingtext-popup-elements))
               (cadr (centtext-popup-elements))

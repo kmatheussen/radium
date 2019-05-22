@@ -581,6 +581,9 @@
 
 ;; Randomize/skew/shuffle tab
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define *randomize/skew-notem-tab* #f)
+
 (define (create-randomize/skew-notem)
 
   (define random-layout (create-notem-layout (create-keybinding-button "Range" "ra:eval-scheme" '("(replace-with-random-notes-in-range)"))
@@ -647,6 +650,8 @@
                                         (<gui> :group "Lightly shuffle pitches" shuffle-notes-layout)
                                         (<gui> :group "Heavily shuffle pitches" fullshuffle-notes-layout)
                                         ))
+
+  (set! *randomize/skew-notem-tab* ret)
   ret)
 
 
@@ -733,11 +738,11 @@
 ;;         INIT
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define *quanititize-tab* #f)
+(define *quantitize-tab* #f)
 
 (define (add-edit-tabs)
-  (set! *quanititize-tab* (create-quantitize-gui-for-tab))
-  (add-notem-tab "Quantization" *quanititize-tab*)
+  (set! *quantitize-tab* (create-quantitize-gui-for-tab))
+  (add-notem-tab "Quantization" *quantitize-tab*)
   (add-notem-tab "Transpose" (create-transpose-notem))
   (add-notem-tab "Randomize/Skew/Shuffle" (create-randomize/skew-notem))
   (add-notem-tab "Various" (create-various-notem))
@@ -769,7 +774,7 @@
 (<gui> :height *various-tab*)
 (<gui> :height *notem-gui*)
 (<gui> :height *transpose-tab*)
-(<gui> :height *quanititize-tab*)
+(<gui> :height *quantitize-tab*)
 (<gui> :minimize-as-much-as-possible *transpose-tab*)
 
 (begin
