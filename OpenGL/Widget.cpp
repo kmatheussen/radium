@@ -272,6 +272,8 @@ static radium::Mutex draw_mutex(true); // recursive mutex
 
 static __thread int g_gl_lock_visits = 0; // simulate a recursive mutex this way instead of using the QThread::Recursive option since QWaitCondition doesn't work with recursive mutexes. We need recursive mutexes since calls to qsometing->exec() (which are often executed inside the gl lock) can process qt events, which again can call some function which calls gl_lock. I don't know why qt processes qt events inside exec() though. That definitely seems like the wrong desing, or maybe it's even a bug in qt. If there is some way of turning this peculiar behavior off, I would like to know about it. I don't feel that this behaviro is safe.
 
+static QImage g_cover_image;
+static radium::Mutex g_image_mutex(true); // recursive mutex
 
 void GL_lock(void){
 
@@ -1292,9 +1294,36 @@ private:
   int _dont_swap_right_now_downcount = 0; // only accessed from opengl thread
   //double _dont_swap_right_now_last_time = 0.0; // only accessed from opengl thread. Need to use a timer in case waiting for vblank isn't working (and it isn't always working on OSX).
 
+  bool maybe_dont_swap_right_now(void) {
+    if(ATOMIC_GET(_dont_swap_right_now)){
+      msleep(17);
+      return true;
+    }
+    
+    if(_dont_swap_right_now_downcount > 0){
+      msleep(17);
+      _dont_swap_right_now_downcount--;
+      if(_dont_swap_right_now_downcount==0)
+        hide_cover();
+      /*
+      double time = TIME_get_ms();
+      if ((time - _dont_swap_right_now_last_time) > 15){
+        _dont_swap_right_now_downcount--;
+        _dont_swap_right_now_last_time = time;
+      }
+      */
+      return true;
+    }
+
+    return false;
+  }
+  
   // OpenGL thread
   void swap(void){
-    
+
+    if (maybe_dont_swap_right_now())
+      return;
+
     if (USE_GL_LOCK)
       mutex.lock();
 
@@ -1322,18 +1351,14 @@ private:
         now = monotonic_seconds() * 1000.0;
 #endif
         
-        if(ATOMIC_GET(_dont_swap_right_now)) // Check this variable again in case it was set to false in the meantime.
-          msleep(15);
-        else
+        if(!maybe_dont_swap_right_now()) // Check again in case it was set to false in the meantime.
           openglContext()->swapBuffers();
 
       }else{
 #if USE_JUCE_CPU_PROTECTION_LOGIC
         now = monotonic_seconds() * 1000.0;
 #endif
-        if(ATOMIC_GET(_dont_swap_right_now)) // Check this variable again in case it was set to false in the meantime.
-          msleep(15);
-        else
+        if(!maybe_dont_swap_right_now()) // Check again in case it was set to false in the meantime.
           openglContext()->swapBuffers();
       }
 
@@ -1409,17 +1434,20 @@ private:
   }
 
 #if USE_COVER
+  
   class Cover : QObject {
-    QImage _image;
-    radium::Mutex _image_mutex;
+    QImage &_image = g_cover_image;
+    radium::Mutex &_image_mutex = g_image_mutex;
 
     struct CoverWidget : public QWidget {
 
+      //QWidget *_parent;
       Cover *_cover ;
       double _start_time = TIME_get_ms();
 
       CoverWidget(QWidget *parent, Cover *cover)
         : QWidget(parent)
+          //, _parent(parent)
         , _cover(cover)
       {}
     
@@ -1432,7 +1460,7 @@ private:
 
           p.fillRect(rect(), get_qcolor(LOW_EDITOR_BACKGROUND_COLOR_NUM));
 
-          if ((TIME_get_ms() - _start_time) > 50){
+          if (true){ //if ((TIME_get_ms() - _start_time) > 50){
 
             QRect cover_rect = rect().adjusted(rect().width()/4, rect().height()/4, -rect().width()/4, -rect().height()/4);
             
@@ -1454,10 +1482,14 @@ private:
 
     CoverWidget *_widget = NULL;
 
+    QSize _size;
+    
     Cover(QWidget *parent, QSize size)
+      : _size(size)
     {
-      IsAlive is_alive(this);
 
+#if 1
+        IsAlive is_alive(this);
       // We are in the main thread here, but since we are called from the resize event, we don't want to create a new QWidget now.
       // Doing Qt stuff inside event handlers has led to strange and untracable crashes and other strange behaviors in the past.
       THREADING_run_on_main_thread_async([is_alive, this, parent, size]{
@@ -1471,23 +1503,73 @@ private:
           _widget->show();
         },
         true);
+#endif
     }
 
     ~Cover(){
       delete _widget;
     }
 
-    bool has_grabbed_image(void){
+    bool _has_grabbed_image = false;
+    
+    bool has_grabbed_image(void){      
       radium::ScopedMutex lock(_image_mutex);
-      return !_image.isNull();
+      return _has_grabbed_image;
+      //return !_image.isNull();
     }
 
-    void maybe_grab_frame_buffer(QGLWidget *parent){
+    bool maybe_grab_frame_buffer(QGLWidget *parent){
       radium::ScopedMutex lock(_image_mutex);
+      
+      if(_has_grabbed_image==false){
+        
+        if(true){
+          
+          printf("                GRABBING OpenGL frame buffer\n");
+          _image = parent->grabFrameBuffer();
+          //_image = parent->renderPixmap().toImage();
+          _has_grabbed_image = true;
+          
+        }else{
+          
+          IsAlive is_alive(this);
+          
+          THREADING_run_on_main_thread_async([is_alive, this, parent]{
+              if (!is_alive)
+                return;
+              
+              radium::ScopedMutex lock(_image_mutex);
+              if(_has_grabbed_image==false){
+                _image = parent->grab().toImage();
+                _has_grabbed_image = true;
+              }
+            });
+        }
+#if 0
+        IsAlive is_alive(this);
 
-      if (_image.isNull()){
-        _image = parent->grabFrameBuffer();
+        // We are in the main thread here, but since we are called from the resize event, we don't want to create a new QWidget now.
+        // Doing Qt stuff inside event handlers has led to strange and untracable crashes and other strange behaviors in the past.
+        THREADING_run_on_main_thread_async([is_alive, this, parent]{
+            
+            if (!is_alive)
+              return;
+            
+            _widget = new CoverWidget(parent, this);
+            _widget->resize(_size);
+            _widget->move(0,0);
+            _widget->show();
+          });
+#endif
+        
+        return true;
+        
+      } else {
+        
+        return false;
+        
       }
+      
     }
 
   };
@@ -1497,6 +1579,8 @@ private:
 #endif
   
   void hide_cover(void){
+      //return;
+    
 #if USE_COVER
     IsAlive is_alive(this);
 
@@ -1532,27 +1616,35 @@ private:
         });
 #endif
 
-        if (!is_alive)
-          return;
+        QTimer::singleShot(80, [is_alive, this](){
+            if (!is_alive)
+              return;
 
-        {
-          radium::ScopedMutex lock(_cover_mutex);
-          delete _cover;
-          _cover = NULL;
-        }
+            {
+              radium::ScopedMutex lock(_cover_mutex);
+              delete _cover;
+              _cover = NULL;
+            }
+          });
       });
 #endif
   }
 
   void show_cover(void){
+    //return;
+    
 #if USE_COVER
     radium::ScopedMutex lock(_cover_mutex);
 
     if (_cover == NULL){
       _cover = new Cover(this, size());
 
+#if 0
+      if (_cover->_widget != NULL)
+        _cover->_widget->update();
+#else
       for(int i=0;i<200/30;i++){
-        if(_cover->has_grabbed_image()){
+        if(true || _cover->has_grabbed_image()){
           if (_cover->_widget != NULL)
             _cover->_widget->update();
           break;
@@ -1564,7 +1656,7 @@ private:
           _cover_mutex.lock();
         }
       }
-
+#endif
     } else {
       if (_cover->_widget != NULL){
 
@@ -1597,39 +1689,27 @@ public:
   void updateEvent() override {
     //{static double last_time = 0; static int counter =0; double nowtime = TIME_get_ms(); printf("   Counter: %d. Time: %f\n", counter++, nowtime-last_time);last_time = nowtime;}
 
+    const bool handle_current = true;
+    
 #if USE_COVER
     {
       radium::ScopedMutex lock(_cover_mutex);
       if (_cover != NULL){
-        //QGLWidget::makeCurrent();
-        _cover->maybe_grab_frame_buffer(this);
+        if(_cover->maybe_grab_frame_buffer(this)){
+          msleep(15);
+          return;
+        }
       }
     }
 #endif
-    
-    if(ATOMIC_GET(_dont_swap_right_now)){
-      msleep(15);
-      return;
-    }
-    
-    if(_dont_swap_right_now_downcount > 0){
-      msleep(15);
-      _dont_swap_right_now_downcount--;
-      if(_dont_swap_right_now_downcount==0)
-        hide_cover();
-      /*
-      double time = TIME_get_ms();
-      if ((time - _dont_swap_right_now_last_time) > 15){
-        _dont_swap_right_now_downcount--;
-        _dont_swap_right_now_last_time = time;
-      }
-      */
-      return;
-    }
 
+#if FOR_MACOSX
+    if (maybe_dont_swap_right_now()) // Have to do this before doing anything on OSX to avoid crash.
+      return;
+#endif
+    
     radium::ScopedMutex lock(make_current_mutex);
 #if THREADED_OPENGL
-    const bool handle_current = true;
     
     if (handle_current)
       QGLWidget::makeCurrent();  // Not sure about this. updateEvent() is called immediately again after it returns.
@@ -1821,7 +1901,11 @@ public:
     // Doesn't seem necessary on other platforms to avoid crashes, but it seems to lower flickering when resizing.
     //
     // For each time this variable is decremented, we also wait 15ms, so spent_time(10) is effectively between 15ms*10 and 30ms*10 = 150-300ms. (on OSX the value is much much closer to 150ms than 300ms)
+#if FOR_MACOSX
     _dont_swap_right_now_downcount = 10;
+#else
+    _dont_swap_right_now_downcount = 10;
+#endif
     
     ATOMIC_SET(_dont_swap_right_now, false);
 
