@@ -42,7 +42,7 @@ struct LinkParameter{
   int target_ch;
 
   bool must_set_enabled = false;
-  bool is_enabled = true; // Has no purpose if must_set_enabled == false.
+  bool link_is_enabled = true; // Has no purpose if must_set_enabled == false.
 
   float volume = 1.0;
   bool must_set_volume = false;
@@ -62,13 +62,13 @@ struct LinkParameter{
   LinkParameter(SoundProducer *source, int source_ch,
                 SoundProducer *target, int target_ch,
                 float volume = -1.0,
-                bool must_set_enabled = false, bool is_enabled = true)
+                bool must_set_enabled = false, bool link_is_enabled = true)
     : source(source)
     , source_ch(source_ch)
     , target(target)
     , target_ch(target_ch)
     , must_set_enabled(must_set_enabled)
-    , is_enabled(is_enabled)
+    , link_is_enabled(link_is_enabled)
   {
     if(volume >= 0){
       this->volume = volume;
@@ -86,12 +86,12 @@ struct LinkParameters : public QVector<LinkParameter> {
   LinkParameters(){
   }
   
-  void add(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch, float volume = -1.0, bool must_set_enabled = false, bool is_enabled = true){
-    push_back(LinkParameter(source, source_ch, target, target_ch, volume, must_set_enabled, is_enabled));
+  void add(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch, float volume = -1.0, bool must_set_enabled = false, bool link_is_enabled = true){
+    push_back(LinkParameter(source, source_ch, target, target_ch, volume, must_set_enabled, link_is_enabled));
   }
 
   // Implemented in QM_chip.cpp
-  void add(Chip *source, int source_ch, Chip *target, int target_ch, float volume = -1.0, bool must_set_enabled = false, bool is_enabled = true);
+  void add(Chip *source, int source_ch, Chip *target, int target_ch, float volume = -1.0, bool must_set_enabled = false, bool link_is_enabled = true);
 };
 
 }
@@ -136,8 +136,8 @@ struct SoundPlugin;
 extern LANGSPEC float SP_get_link_gain(const struct SoundProducer *target, const struct SoundProducer *source, const char **error); // Don't use this one. Use getAudioConnectionGain instead.
 extern LANGSPEC bool SP_set_link_gain(struct SoundProducer *target, struct SoundProducer *source, float volume, const char **error); // Don't use this one. Use setAudioConnectionGain instead. Returns true if gain was changed.
 
-extern LANGSPEC bool SP_get_link_enabled(const struct SoundProducer *target, const struct SoundProducer *source, const char **error);
-extern LANGSPEC bool SP_set_link_enabled(struct SoundProducer *target, struct SoundProducer *source, bool is_enabled, const char **error);
+//extern LANGSPEC bool SP_get_link_enabled(const struct SoundProducer *target, const struct SoundProducer *source, const char **error); // Link enabled/disabled is kept track of in the AudioConnection class.
+extern LANGSPEC bool SP_set_link_enabled(struct SoundProducer *target, struct SoundProducer *source, bool is_enabled, const char **error); // Only called from AudioConnection->set_enabled().
 
 extern LANGSPEC struct SoundPlugin *SP_get_plugin(const struct SoundProducer *producer);
 extern LANGSPEC struct SoundProducer *SP_get_sound_producer(const struct SoundPlugin *plugin);

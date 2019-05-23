@@ -255,7 +255,7 @@ struct SoundProducerLink {
   int source_ch;
   int target_ch;
 
-  bool link_enabled; // Set by the user.  Only accessed by the main thread. ("is_active" (below) is an internal variable set by the sound engine, not the same)
+  bool link_enabled; // Set by the user.  Only accessed by the main thread when applying changes and in SP_set_link_enabled. ("is_active" (below) is an internal variable set by the sound engine, which is not the same)
   float link_volume;  // Set by the user. Only accessed by the main thread.
 
   bool RT_link_enabled;  // Contains the same value as "link_enabled", but can only be accessed if holding the player lock.
@@ -2186,8 +2186,8 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
 
     if (existing_link != NULL) {
 
-      if (parm.must_set_enabled && existing_link->link_enabled != parm.is_enabled)
-        link_enable_changes.push_back(LinkEnabledChange(existing_link, parm.is_enabled));
+      if (parm.must_set_enabled && existing_link->link_enabled != parm.link_is_enabled)
+        link_enable_changes.push_back(LinkEnabledChange(existing_link, parm.link_is_enabled));
 
       if (parm.must_set_volume && existing_link->link_volume != parm.volume)
         volume_changes.push_back(VolumeChange(existing_link, parm.volume));
@@ -2202,8 +2202,8 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
         link->RT_link_volume = parm.volume;
       }
       if (parm.must_set_enabled){
-        link->link_enabled = parm.is_enabled;
-        link->RT_link_enabled = parm.is_enabled;
+        link->link_enabled = parm.link_is_enabled;
+        link->RT_link_enabled = parm.link_is_enabled;
       }
       to_add.push_back(link);
       
@@ -2301,6 +2301,8 @@ bool SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume
   return ret;
 }
 
+/*
+// Link enabled/disabled is kept track of in the AudioConnection class.
 bool SP_get_link_enabled(const SoundProducer *target, const SoundProducer *source, const char **error){
   for (SoundProducerLink *link : target->_input_links) {
     if(link->source==source){
@@ -2311,7 +2313,10 @@ bool SP_get_link_enabled(const SoundProducer *target, const SoundProducer *sourc
   *error = talloc_strdup("Could not find link");
   return false;
 }
+*/
 
+// Only called from AudioConnection->set_enabled().
+// 'is_enabled' will only be true if AudioConnection::_is_enabled==true && AudioConnection::_is_implicitly_enabled==true.
 bool SP_set_link_enabled(SoundProducer *target, SoundProducer *source, bool is_enabled, const char **error){
   bool ret = false;
   bool found = false;

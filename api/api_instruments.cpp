@@ -1730,6 +1730,7 @@ void undoMixerConnections(void){
   ADD_UNDO(MixerConnections_CurrPos());  
 }
 
+// TODO: Note: Currently never used. changeAudioConnections is used instead. TODO: If used, MW_connect should have a gain argument so that the volume is set immediately. May be used by 3rd parties though, so should probably fix this as soon as possible.
 void createAudioConnection(int64_t source_id, int64_t dest_id, float gain, int connection_type){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
@@ -1820,29 +1821,26 @@ static bool get_connection_gain_enabled(int64_t source_id, int64_t dest_id, floa
   if(dest==NULL)
     return false;
 
-  struct SoundPlugin *source_plugin = (struct SoundPlugin*)source->patchdata;
-  if (source_plugin==NULL){
-    handleError("Instrument #%d has been closed", (int)source_id);
-    return false;
-  }
-
-  struct SoundPlugin *dest_plugin = (struct SoundPlugin*)dest->patchdata;
-  if (dest_plugin==NULL){
-    handleError("Instrument #%d has been closed", (int)dest_id);
-    return false;
-  }
-
-  struct SoundProducer *source_sp = SP_get_sound_producer(source_plugin);
-  struct SoundProducer *dest_sp = SP_get_sound_producer(dest_plugin);
-
   const char *error = NULL;
 
-  if (gain != NULL)
+  AudioConnection *connection = CONNECTION_find_audio_connection(source, dest);
+  if (connection==NULL)
+    error = "Not found";
+
+  if (error==NULL && gain != NULL) {
+    
+    struct SoundProducer *source_sp = connection->from->_sound_producer;
+    struct SoundProducer *dest_sp = connection->to->_sound_producer;
+
     *gain = SP_get_link_gain(dest_sp, source_sp, &error);
+  }
+  
+  if (error==NULL && is_enabled!=NULL) {
 
-  if (error==NULL && is_enabled!=NULL)
-    *is_enabled = SP_get_link_enabled(dest_sp, source_sp, &error);
-
+      *is_enabled = connection->get_enabled();
+      
+  }
+  
   if (error!=NULL){
     if (show_error_if_not_connected)
       handleError("Could not find audio connection between instrument %d (%s) and instrument %d (%s): %s", (int)source_id, source->name, (int)dest_id, dest->name, error);
@@ -1877,38 +1875,32 @@ static void set_connection_gain_enabled(int64_t source_id, int64_t dest_id, cons
   if(dest==NULL)
     return;
 
-  struct SoundPlugin *source_plugin = (struct SoundPlugin*)source->patchdata;
-  if (source_plugin==NULL){
-    handleError("Instrument #%d has been closed", (int)source_id);
-    return;
-  }
-
-  struct SoundPlugin *dest_plugin = (struct SoundPlugin*)dest->patchdata;
-  if (dest_plugin==NULL){
-    handleError("Instrument #%d has been closed", (int)dest_id);
-    return;
-  }
-
-  struct SoundProducer *source_sp = SP_get_sound_producer(source_plugin);
-  struct SoundProducer *dest_sp = SP_get_sound_producer(dest_plugin);
-
-  const char *error = NULL;
   bool changed1 = false;
   bool changed2 = false;
+  
+  const char *error = NULL;
 
-  if (gain != NULL)
+  AudioConnection *connection = CONNECTION_find_audio_connection(source, dest);
+  if (connection==NULL)
+    error = "Not found";
+
+  if (error==NULL && gain != NULL) {
+    struct SoundProducer *source_sp = connection->from->_sound_producer;
+    struct SoundProducer *dest_sp = connection->to->_sound_producer;
     changed1 = SP_set_link_gain(dest_sp, source_sp, *gain, &error);
+  }
+  
+  if (error==NULL && is_enabled)
+    changed2 = connection->set_enabled(*is_enabled, &error);
 
-  if (is_enabled != NULL && error==NULL)
-    changed2 = SP_set_link_enabled(dest_sp, source_sp, *is_enabled, &error);
-
+  
+  if ((changed1||changed2) && redraw_mixer_strips){
+    //printf("       Remake: setAudioConnectionGain\n");
+    redrawMixerStrips(false);
+  }
+    
   if (error!=NULL)
-    handleError("Could not find audio connection between instrument %d and instrument %d", (int)source_id, (int)dest_id);
-  else
-    if ((changed1||changed2) && redraw_mixer_strips){
-      //printf("       Remake: setAudioConnectionGain\n");
-      redrawMixerStrips(false);
-    }
+    handleError("Could not find audio connection between instrument %d (%s) and instrument %d (%s): %s", (int)source_id, source->name, (int)dest_id, dest->name, error);
 }
 
 void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool redraw_mixer_strips){

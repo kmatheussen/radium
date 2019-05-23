@@ -917,7 +917,7 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
       } if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
         //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
         
-        scene->_current_connection = new AudioConnection(scene, NULL, NULL, ConnectionType::IS_SEND);
+        scene->_current_connection = new AudioConnection(scene, NULL, NULL, ConnectionType::IS_SEND, true, true);
         scene->addItem(scene->_current_connection);
         
         scene->_current_connection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
@@ -2055,7 +2055,8 @@ SoundPlugin *get_main_pipe(void){
 
 void MW_connect_plugin_to_main_pipe(SoundPlugin *plugin){
   SoundPlugin *main_pipe = get_main_pipe();
-
+  R_ASSERT_RETURN_IF_FALSE(main_pipe!=NULL);
+  
   if(plugin->type->num_outputs>0)
     CHIP_connect_chips(&g_mixer_widget->scene, plugin, main_pipe, ConnectionType::IS_SEND);
 }
