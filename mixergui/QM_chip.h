@@ -192,6 +192,8 @@ static inline struct SoundProducer *CHIP_get_soundproducer(const Chip *chip){
   return chip->_sound_producer;
 }
 
+struct Patch *CHIP_get_patch(const Chip *chip);
+
 
 extern LANGSPEC bool MW_get_connections_visibility(void);
 
@@ -205,21 +207,62 @@ public:
   bool is_event_connection;
   enum ColorNums color_num;
 
-  
-private:
-  Chip *_from; // Note: If we ever need to set this variable after constructor (we currently don't), we also need to ensure that the new from chip doesn't have more than one PLUGIN connection.
-  Chip *_to;
-  
 
-public:
+private:
+  Chip *_from; // Note: If we ever need to set this variable after constructor (we currently don't), we also need to ensure that the new from-chip doesn't have more than one PLUGIN connection.
+  Chip *_to;
+
+  bool _is_enabled;
+  bool _is_implicitly_enabled; // Set to false if solo has caused this connection to be implicitly disabled.
   
+public:
+
+  bool set_enabled(bool is_enabled, const char **error){
+    //printf("set enabled1 %d -> %d: is_enabled: %d. _is_enabled: %d, is_implicitly_enabled: %d\n", (int)CHIP_get_patch(_from)->id, (int)CHIP_get_patch(_to)->id, is_enabled, _is_enabled, _is_implicitly_enabled);
+    
+    if (_is_enabled==is_enabled)
+      return false;
+
+    _is_enabled = is_enabled;
+    
+    if (_is_implicitly_enabled)
+      SP_set_link_enabled(to->_sound_producer, from->_sound_producer, is_enabled, error);
+
+    //printf("set enabled2 %d -> %d: is_enabled: %d. _is_enabled: %d, is_implicitly_enabled: %d\n", (int)CHIP_get_patch(_from)->id, (int)CHIP_get_patch(_to)->id, is_enabled, _is_enabled, _is_implicitly_enabled);
+
+    return true;
+  }
+
+  bool get_enabled(void) const {
+    return _is_enabled;
+  }
+
+  bool set_implicitly_enabled(bool is_implicitly_enabled, const char **error){
+    if (_is_implicitly_enabled==is_implicitly_enabled)
+      return false;
+
+    _is_implicitly_enabled = is_implicitly_enabled;
+    
+    if (_is_enabled)
+      SP_set_link_enabled(to->_sound_producer, from->_sound_producer, is_implicitly_enabled, error);
+
+    return true;
+  }
+    
+  bool get_implicitly_enabled(void) const {
+    return _is_enabled;
+  }
+
+
   const ChipPointer &from; // Set to const. See comment about _from above.
   const ChipPointer &to;
 
   //bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
-  
+
   QColor getColor(void) {
-    if (is_selected)
+    if (!_is_implicitly_enabled)
+      return Qt::green;
+    else if (is_selected)
       return get_qcolor(color_num).lighter(198);
     else
       return get_qcolor(color_num);
@@ -235,12 +278,13 @@ public:
     pen.setCapStyle(Qt::RoundCap);
     //pen.setColor(QColor(30,25,70,6));
 
-    const char *error = NULL;
-    bool is_enabled = from==NULL||to==NULL ? true : SP_get_link_enabled(CHIP_get_soundproducer(to), CHIP_get_soundproducer(from), &error);
+    //const char *error = NULL;
+    //bool is_enabled = from==NULL||to==NULL ? true : SP_get_link_enabled(CHIP_get_soundproducer(to), CHIP_get_soundproducer(from), &error);
     //R_ASSERT_NON_RELEASE(error==NULL); // link doesn't exist during startup.
     
     QColor c = getColor();
-    if (!is_enabled)
+
+    if (!_is_enabled || !_is_implicitly_enabled)
       c.setAlpha(40);
     else if(is_selected)
       c.setAlpha(250);
@@ -250,13 +294,15 @@ public:
     return pen;
   }
 
-  SuperConnection(QGraphicsScene *parent, Chip *from, Chip *to, bool is_event_connection, enum ColorNums color_num)
+  SuperConnection(QGraphicsScene *parent, Chip *from, Chip *to, bool is_event_connection, enum ColorNums color_num, bool is_enabled, bool is_implicitly_enabled)
     : QGraphicsLineItem()
     , is_selected(false)
     , is_event_connection(is_event_connection)
     , color_num(color_num)
     , _from(from)
     , _to(to)
+    , _is_enabled(is_enabled)
+    , _is_implicitly_enabled(is_implicitly_enabled)
     , from(_from)
     , to(_to)
     , visible_line(this)
@@ -463,8 +509,8 @@ class AudioConnection : public SuperConnection {
 
 public:
   
-  AudioConnection(QGraphicsScene *parent, Chip *from, Chip *to, ConnectionType connection_type)
-    : SuperConnection(parent, from, to, false, MIXER_AUDIO_CONNECTION_COLOR_NUM)
+  AudioConnection(QGraphicsScene *parent, Chip *from, Chip *to, ConnectionType connection_type, bool is_enabled, bool is_implicitly_enabled)
+    : SuperConnection(parent, from, to, false, MIXER_AUDIO_CONNECTION_COLOR_NUM, is_enabled, is_implicitly_enabled)
     , _connection_type(ConnectionType::NOT_SET)
   {
     if (from!=NULL){
@@ -528,7 +574,7 @@ class EventConnection : public SuperConnection {
 public:
 
   EventConnection(QGraphicsScene *parent, Chip *from, Chip *to)
-    : SuperConnection(parent, from, to, true, MIXER_EVENT_CONNECTION_COLOR_NUM)
+    : SuperConnection(parent, from, to, true, MIXER_EVENT_CONNECTION_COLOR_NUM, true, true)
   {
     
     if (from!=NULL){
@@ -592,8 +638,6 @@ void CHIP_autopos(Chip *chip);
 Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch);
 
 void CHIP_update(Chip *chip, SoundPlugin *plugin);
-
-struct Patch *CHIP_get_patch(const Chip *chip);
 
 AudioConnection *CONNECTION_find_audio_connection(const Chip *from, const Chip *to);
 AudioConnection *CONNECTION_find_audio_connection(const struct Patch *from, const struct Patch *to);

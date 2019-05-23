@@ -641,8 +641,8 @@ bool CHIPS_are_econnected(const Chip *from, const Chip *to){
 }
 
 namespace radium{
-  void LinkParameters::add(::Chip *source, int source_ch, ::Chip *target, int target_ch, float volume, bool must_set_enabled, bool enabled){
-    add(source->_sound_producer, source_ch, target->_sound_producer, target_ch, volume, must_set_enabled, enabled);
+  void LinkParameters::add(::Chip *source, int source_ch, ::Chip *target, int target_ch, float volume, bool must_set_enabled, bool link_enabled){ // 
+    add(source->_sound_producer, source_ch, target->_sound_producer, target_ch, volume, must_set_enabled, link_enabled);
   }
 }
 
@@ -657,17 +657,34 @@ namespace{
     float _volume = 1.0;
 
     bool _must_set_enabled = false;
-    bool _is_enabled = true;
 
+  private:
+    bool _is_enabled = true;
+    bool _is_implicitly_enabled = true;
+
+  public:
+    bool link_is_enabled(void) const {
+      return _is_enabled && _is_implicitly_enabled;
+    }
+
+    bool is_enabled(void) const {
+      return _is_enabled;
+    }
+    
+    bool is_implicitly_enabled(void) const {
+      return _is_implicitly_enabled;
+    }
+    
     ConnectionType _connection_type;
 
   public:
     
-    Parm(Chip *from, Chip *to, float volume, bool must_set_enabled, bool is_enabled, ConnectionType connection_type)
+    Parm(Chip *from, Chip *to, float volume, bool must_set_enabled, bool is_enabled, bool is_implicitly_enabled, ConnectionType connection_type)
       : _from(from)
       , _to(to)
       , _must_set_enabled(must_set_enabled)
       , _is_enabled(is_enabled)
+      , _is_implicitly_enabled(is_implicitly_enabled)
       , _connection_type(connection_type)
     {
       if (from!=NULL && to!=NULL){
@@ -681,7 +698,7 @@ namespace{
     }
 
     Parm(Chip *from, Chip *to)
-      : Parm(from, to, -1.0, false, true, ConnectionType::NOT_SET)
+      : Parm(from, to, -1.0, false, true, true, ConnectionType::NOT_SET)
     {
     }
 
@@ -720,12 +737,12 @@ namespace{
       return -1;
     }
 
-    void add(Chip *from, Chip *to, float volume, bool must_set_enabled, bool is_enabled, ConnectionType connection_type){
+    void add(Chip *from, Chip *to, float volume, bool must_set_enabled, bool is_enabled, bool is_implicitly_enabled, ConnectionType connection_type){
       int pos = find_pos(to_remove, from, to);
       if (pos >= 0)
         to_remove.remove(pos); // This way we don't need to implement an AudioGraph 'diff' function. Instead we just remove all existing connections and add all connections in a state.
       
-      to_add.push_back(Parm(from, to, volume, must_set_enabled, is_enabled, connection_type)); // Although the link might already be there, volume and enabled might have different values.
+      to_add.push_back(Parm(from, to, volume, must_set_enabled, is_enabled, is_implicitly_enabled, connection_type)); // Although the link might already be there, volume and enabled might have different values.
     }
     
     void remove(Chip *from, Chip *to){
@@ -745,8 +762,8 @@ namespace{
     Connect(){
     }
     
-    Connect(Chip *from, Chip *to, ConnectionType connection_type, float volume = -1.0, bool must_set_enabled = false, bool is_enabled = true){
-      add(from, to, volume, must_set_enabled, is_enabled, connection_type);
+    Connect(Chip *from, Chip *to, ConnectionType connection_type, float volume = -1.0, bool must_set_enabled = false, bool is_enabled = true, bool is_implicitly_enabled = true){
+      add(from, to, volume, must_set_enabled, is_enabled, is_implicitly_enabled, connection_type);
     }
   };
   
@@ -787,14 +804,14 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
 
       if(from_is_mono==true){
         for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++)
-          add_linkparameters.add(from, 0, to, to_portnum, parm._volume, parm._must_set_enabled, parm._is_enabled);
+          add_linkparameters.add(from, 0, to, to_portnum, parm._volume, parm._must_set_enabled, parm.link_is_enabled());
       }else if(to_is_mono==true){
         for(int from_portnum=0 ; from_portnum<from->_num_outputs ; from_portnum++){
-          add_linkparameters.add(from, from_portnum, to, 0, parm._volume, parm._must_set_enabled, parm._is_enabled);
+          add_linkparameters.add(from, from_portnum, to, 0, parm._volume, parm._must_set_enabled, parm.link_is_enabled());
         }
       }else{
         for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++)
-          add_linkparameters.add(from, portnum, to, portnum, parm._volume, parm._must_set_enabled, parm._is_enabled);
+          add_linkparameters.add(from, portnum, to, portnum, parm._volume, parm._must_set_enabled, parm.link_is_enabled());
       }
     }
   }
@@ -862,7 +879,7 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
         mixerstrips_to_remake.insert(CHIP_get_patch(parm._from));
         mixerstrips_to_remake.insert(CHIP_get_patch(parm._to));
         
-        AudioConnection *connection = new AudioConnection(scene, parm._from, parm._to, parm._connection_type);
+        AudioConnection *connection = new AudioConnection(scene, parm._from, parm._to, parm._connection_type, parm.is_enabled(), parm.is_implicitly_enabled());
         
         scene->addItem(connection);
       }
@@ -954,6 +971,7 @@ bool CONNECTIONS_apply_changes(const dynvec_t dynchanges){
     float gain = -1.0;
     bool must_set_enabled = false;
     bool is_enabled = true;
+    bool is_implicitly_enabled = true;
 
     if (STRING_equals(type_name, "connect")){
       
@@ -980,11 +998,21 @@ bool CONNECTIONS_apply_changes(const dynvec_t dynchanges){
         is_enabled = dynenabled.bool_number;
       }
 
+      if (HASH_has_key(element.hash, ":implicitly-enabled")){
+        const dyn_t dynimplicitlyenabled = HASH_get_dyn(element.hash, ":implicitly-enabled");
+        if (dynimplicitlyenabled.type!=BOOL_TYPE){
+          handleError("Element %d[\"implicitly-enabled\"]: Expected bool, found \"%s\"", i, DYN_type_name(dynimplicitlyenabled));
+          return false;
+        }
+        must_set_enabled = true;
+        is_implicitly_enabled = dynimplicitlyenabled.bool_number;
+      }
+
       ConnectionType connection_type = ConnectionType::NOT_SET;
       if (HASH_has_key(element.hash, ":connection-type"))
         connection_type = get_connection_type_from_int(HASH_get_int32(element.hash, ":connection-type"));
             
-      changes.add(source, target, gain, must_set_enabled, is_enabled, connection_type);
+      changes.add(source, target, gain, must_set_enabled, is_enabled, is_implicitly_enabled, connection_type);
       
     } else if (STRING_equals(type_name, "disconnect")){
 
@@ -1084,29 +1112,32 @@ void CONNECTIONS_remove_all(QGraphicsScene *scene){
 void CHIP_remove_chip_from_connection_sequence(QGraphicsScene *scene, Chip *before, Chip *middle, Chip *after){
 
   ConnectionType connection_type = ConnectionType::NOT_SET;
+  bool new_is_enabled = true;
+  bool new_is_implicitly_enabled = true;
 
-  {
-    const AudioConnection *connection1 = CONNECTION_find_audio_connection(before, middle);
-    const AudioConnection *connection2 = CONNECTION_find_audio_connection(middle, after);
-    R_ASSERT_NON_RELEASE(connection1 != NULL);
-    R_ASSERT_NON_RELEASE(connection2 != NULL);
-    
-    
-    if (connection1 != NULL && connection2 != NULL){
-    
-      if (connection1->get_connection_type()==ConnectionType::IS_SEND || connection2->get_connection_type()==ConnectionType::IS_SEND)
-        connection_type = ConnectionType::IS_SEND;
-      
-      else if (connection1->get_connection_type()==ConnectionType::IS_PLUGIN && connection2->get_connection_type()==ConnectionType::IS_PLUGIN)
-        connection_type = ConnectionType::IS_PLUGIN;
-      
-    }
-  }
+  const AudioConnection *connection1 = CONNECTION_find_audio_connection(before, middle);
+  const AudioConnection *connection2 = CONNECTION_find_audio_connection(middle, after);
+  R_ASSERT_NON_RELEASE(connection1 != NULL);
+  R_ASSERT_NON_RELEASE(connection2 != NULL);
   
+  
+  if (connection1 != NULL && connection2 != NULL){
+    
+    if (connection1->get_connection_type()==ConnectionType::IS_SEND || connection2->get_connection_type()==ConnectionType::IS_SEND)
+      connection_type = ConnectionType::IS_SEND;
+    
+    else if (connection1->get_connection_type()==ConnectionType::IS_PLUGIN && connection2->get_connection_type()==ConnectionType::IS_PLUGIN)
+      connection_type = ConnectionType::IS_PLUGIN;
+    
+    new_is_enabled = connection1->get_enabled() && connection2->get_enabled();
+    new_is_implicitly_enabled = connection1->get_implicitly_enabled() && connection2->get_implicitly_enabled();
+  }
+
   changes::AudioGraph changes;
   changes.remove(before, middle);
   changes.remove(middle, after);
-  changes.add(before, after, -1.0, false, true, connection_type);
+  changes.add(before, after, -1.0, true, new_is_enabled, new_is_implicitly_enabled, connection_type);
+  
   CONNECTIONS_apply_changes(scene, changes);
 }
 
@@ -1114,17 +1145,22 @@ void CHIP_remove_chip_from_connection_sequence(QGraphicsScene *scene, Chip *befo
 void CHIP_add_chip_to_connection_sequence(QGraphicsScene *scene, Chip *before, Chip *middle, Chip *after){
   const ConnectionType connection_type1 = ConnectionType::IS_PLUGIN;
   ConnectionType connection_type2 = ConnectionType::NOT_SET;
+  bool new_is_enabled = true;
+  bool new_is_implicitly_enabled = true;
 
   {
     const AudioConnection *connection = CONNECTION_find_audio_connection(before, after);
     R_ASSERT_NON_RELEASE(connection != NULL);
-    if (connection != NULL)
+    if (connection != NULL){
       connection_type2 = connection->get_connection_type();
+      new_is_enabled = connection->get_enabled();
+      new_is_implicitly_enabled = connection->get_implicitly_enabled();
+    }
   }
   
   changes::AudioGraph changes;
-  changes.add(before, middle, -1.0, false, true, connection_type1);
-  changes.add(middle, after, -1.0, false, true, connection_type2);
+  changes.add(before, middle, -1.0, true, new_is_enabled, new_is_implicitly_enabled, connection_type1);
+  changes.add(middle, after, -1.0, true, new_is_enabled, new_is_implicitly_enabled, connection_type2);
   changes.remove(before, after);
   CONNECTIONS_apply_changes(scene, changes);
 }
@@ -1398,10 +1434,10 @@ void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip)
   for (AudioConnection *connection : left_chip->audio_connections)
     if(connection->from==left_chip){
       changes.remove(connection);
-      changes.add(right_chip, connection->to, -1.0, false, true, connection->get_connection_type());
+      changes.add(right_chip, connection->to, -1.0, true, true, connection->get_implicitly_enabled(), connection->get_connection_type());
     }
 
-  changes.add(left_chip, right_chip, -1.0, false, true, ConnectionType::IS_PLUGIN);
+  changes.add(left_chip, right_chip, -1.0, false, true, true, ConnectionType::IS_PLUGIN);
 
   CONNECTIONS_apply_changes(scene, changes);
 }
@@ -1413,10 +1449,10 @@ void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip
   for (AudioConnection *connection : right_chip->audio_connections)
     if(connection->to==right_chip){
       changes.remove(connection);
-      changes.add(connection->from, left_chip, -1.0, false, true, connection->get_connection_type());
+      changes.add(connection->from, left_chip, -1.0, true, true, connection->get_implicitly_enabled(), connection->get_connection_type());
     }
 
-  changes.add(left_chip, right_chip, -1.0, false, true, ConnectionType::IS_PLUGIN);
+  changes.add(left_chip, right_chip, -1.0, false, true, true, ConnectionType::IS_PLUGIN);
 
   CONNECTIONS_apply_changes(scene, changes);
 }
@@ -2403,10 +2439,13 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
     else
       HASH_put_int(state, ":connection-type", get_int_from_connection_type(audio_connection->get_connection_type()));
   }
-  HASH_put_bool(state, "enabled", getConnectionEnabled(from->id, to->id, true));
+  HASH_put_bool(state, "enabled", connection->get_enabled());
+  HASH_put_bool(state, ":implicitly-enabled", connection->get_implicitly_enabled());
 
   return state;
 }
+
+
 
 static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioGraph &changes, const hash_t *state,
                                           int64_t patch_id_old, int64_t patch_id_new,
@@ -2444,21 +2483,32 @@ static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioG
   if(HASH_has_key(state, "is_event_connection") && HASH_get_bool(state, "is_event_connection")) // .rad files before 1.9.31 did not have event connections.
     CHIP_econnect_chips(scene, from_chip, to_chip);
   else {
-    bool must_set_enabled = false;
-    bool is_enabled = true;
     float gain = -1.0;
+    
     if (HASH_has_key(state, "gain"))
       gain = HASH_get_float(state, "gain");
+
+    bool must_set_enabled = false;
+
+    bool is_enabled = true;
+    
     if (HASH_has_key(state, "enabled")){
       must_set_enabled = true;
       is_enabled = HASH_get_bool(state, "enabled");
+    }
+
+    bool is_implicitly_enabled = true;
+
+    if (HASH_has_key(state, ":implicitly-enabled")){
+      must_set_enabled = true;
+      is_implicitly_enabled = HASH_get_bool(state, ":implicitly-enabled");
     }
 
     ConnectionType connection_type = ConnectionType::NOT_SET;
     if (HASH_has_key(state, ":connection-type"))
       connection_type = get_connection_type_from_int(HASH_get_int32(state, ":connection-type"));
 
-    changes.add(from_chip, to_chip, gain, must_set_enabled, is_enabled, connection_type);
+    changes.add(from_chip, to_chip, gain, must_set_enabled, is_enabled, is_implicitly_enabled, connection_type);
   }
 }
   
