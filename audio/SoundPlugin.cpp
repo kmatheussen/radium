@@ -295,12 +295,6 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System Aux 2",
   "System Aux 3",
   
-  "System Reverb On/Off",
-  "System Chorus On/Off",
-  "System Aux 1 On/Off",
-  "System Aux 2 On/Off",
-  "System Aux 3 On/Off",
-
   "System Pan",
   "System Pan On/Off",
 
@@ -492,8 +486,10 @@ SoundPlugin *PLUGIN_create(struct Patch *patch, SoundPluginType *plugin_type, ha
 
   ATOMIC_SET(plugin->input_volume_is_on, true);
   ATOMIC_SET(plugin->output_volume_is_on, true);
-  ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, false);
-  ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, false);
+  
+  //for(int i=0;i<5;i++)
+  //  ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, i, true);
+
   ATOMIC_SET(plugin->effects_are_on, true);
              
   //plugin->volume = 1.0f;
@@ -1235,28 +1231,20 @@ static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFor
   }
 
 #define SET_BUS_VOLUME(busnum)                                          \
-  set_gain_store_value(store_value_native, store_value_scaled, value_format);        \
-  safe_float_write(&plugin->bus_volume[busnum], store_value_native);    \
+  set_gain_store_value(store_value_native, store_value_scaled, value_format); \
+  {                                                                     \
+    float old_value = safe_float_read(&plugin->bus_volume[busnum]);       \
+    if(old_value != store_value_native){                                \
+      safe_float_write(&plugin->bus_volume[busnum], store_value_native); \
+      volatile struct Patch *patch = plugin->patch;                     \
+      RT_schedule_mixer_strips_redraw();                                \
+      update_instrument_gui(const_cast<struct Patch*>(patch));          \
+    }                                                                   \
+  }                                                                     \
   break;
 
 #define GET_BUS_VOLUME(busnum, value_format)    \
   get_gain_value(safe_float_read(&plugin->bus_volume[busnum]), value_format)
-
-static void set_bus_onoff(struct SoundPlugin *plugin, float value, int busnum){
-  bool newval = value >= 0.5f;
-  bool oldval = ATOMIC_SET_RETURN_OLD_ARRAY(plugin->bus_volume_is_on, busnum, newval);
-  if (oldval != newval){
-    volatile struct Patch *patch = plugin->patch;
-    if (patch==NULL)
-      RT_schedule_mixer_strips_remake(-1);
-    else
-      RT_schedule_mixer_strips_remake(patch->id);
-#if !defined(RELEASE)
-    printf("       Remake: BUS_ONOFF %d. On: %d\n", busnum, newval);
-#endif
-    update_instrument_gui(plugin);
-  }
-}
 
 // Only called once (when starting to play)
 void PLUGIN_call_me_before_starting_to_play_song_END(SoundPlugin *plugin){
@@ -1639,22 +1627,6 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       
     case EFFNUM_BUS5:
       SET_BUS_VOLUME(4);
-      
-    case EFFNUM_BUS1_ONOFF:
-      set_bus_onoff(plugin, value, 0);
-      break;
-    case EFFNUM_BUS2_ONOFF:
-      set_bus_onoff(plugin, value, 1);
-      break;
-    case EFFNUM_BUS3_ONOFF:
-      set_bus_onoff(plugin, value, 2);
-      break;
-    case EFFNUM_BUS4_ONOFF:
-      set_bus_onoff(plugin, value, 3);
-      break;
-    case EFFNUM_BUS5_ONOFF:
-      set_bus_onoff(plugin, value, 4);
-      break;
 
       
     case EFFNUM_PAN:
@@ -2033,17 +2005,6 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
   case EFFNUM_BUS5:
     return GET_BUS_VOLUME(4, value_format);
       
-  case EFFNUM_BUS1_ONOFF:
-    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 0)==true ? 1.0 : 0.0f;
-  case EFFNUM_BUS2_ONOFF:
-    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 1)==true ? 1.0 : 0.0f;
-  case EFFNUM_BUS3_ONOFF:
-    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 2)==true ? 1.0 : 0.0f;
-  case EFFNUM_BUS4_ONOFF:
-    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 3)==true ? 1.0 : 0.0f;
-  case EFFNUM_BUS5_ONOFF:
-    return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 4)==true ? 1.0 : 0.0f;
-
   case EFFNUM_PAN:
     return SMOOTH_get_target_value(&plugin->pan); // pan is 0-1 both for native and scaled. TODO: Native format should definitely be -90 -> 90. (not efficient though. Ideally, there should be a STORAGE_FORMAT as well.)
   case EFFNUM_PAN_ONOFF:
@@ -2189,7 +2150,6 @@ hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
     }
     
   }
-  
 #endif
   
   return effects;
@@ -2661,6 +2621,21 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
     */
   }
 
+
+  // 2.5. Load bus on/off effects in older songs
+  if (HASH_has_key(effects, "System Reverb On/Off")){
+  
+    plugin->bus_on_off = (bool*)V_calloc(sizeof(bool), NUM_BUSES);
+    
+    plugin->bus_on_off[0] = HASH_get_float(effects, "System Reverb On/Off") >= 0.5;
+    plugin->bus_on_off[1] = HASH_get_float(effects, "System Chorus On/Off") >= 0.5;
+    plugin->bus_on_off[2] = HASH_get_float(effects, "System Aux 1 On/Off") >= 0.5;
+    plugin->bus_on_off[3] = HASH_get_float(effects, "System Aux 2 On/Off") >= 0.5;
+    plugin->bus_on_off[4] = HASH_get_float(effects, "System Aux 3 On/Off") >= 0.5;
+    
+  }
+
+  
   // 3. Store custom effects
   if (type->state_contains_effect_values == false) {
 

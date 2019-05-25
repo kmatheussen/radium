@@ -370,7 +370,17 @@
          <string>Show connections</string>
         </property>
         <property name="text">
-         <string>C</string>
+         <string>C1</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="bus_connections_visibility">
+        <property name="toolTip">
+         <string>Show bus connections</string>
+        </property>
+        <property name="text">
+         <string>C2</string>
         </property>
        </widget>
       </item>
@@ -464,9 +474,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
-  <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup_4"/>
   <buttongroup name="buttonGroup_5"/>
  </buttongroups>

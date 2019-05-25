@@ -249,7 +249,8 @@ struct SoundProducerLink {
   SoundProducer *target;
 
   const bool is_event_link;
-  bool is_bus_link;
+  int _bus_num;
+  bool _is_bus_link;
   
   // fields below only used by audio links
   int source_ch;
@@ -318,14 +319,9 @@ struct SoundProducerLink {
     else if (!RT_link_enabled)
       return 0.0f;
     
-    else if (is_bus_link){
+    else if (_is_bus_link){
       
-      int bus_num = SP_get_bus_num(target);
-      
-      if (ATOMIC_GET_ARRAY(source_plugin->bus_volume_is_on, bus_num))
-        return source_plugin->bus_volume[bus_num]; // * plugin_volume; // The links are invisible here, so it doesn't make sense multiplying with link_volume (don't need two bus volumes)
-      else
-        return 0.0f;
+      return source_plugin->bus_volume[_bus_num];
       
     } else {
     
@@ -347,13 +343,6 @@ struct SoundProducerLink {
       R_ASSERT_NON_RELEASE(is_active==true);
 
     } else {
-
-      if (is_bus_link) {
-        if (SP_get_bus_descendant_type(source)==IS_BUS_DESCENDANT) {
-          is_active = false; // Deactivate since a bus descendant can not send sound to a bus (that would be a recursive connection, which is not supported).
-          return;
-        }
-      }
 
       SMOOTH_set_target_value(&volume, get_total_link_volume());
       SMOOTH_update_target_audio_will_be_modified_value(&volume);
@@ -384,7 +373,8 @@ struct SoundProducerLink {
     : source(source)
     , target(target)
     , is_event_link(is_event_link)
-    , is_bus_link(false)
+    , _bus_num(SP_get_bus_num(target))
+    , _is_bus_link(_bus_num >= 0)
     , source_ch(0)
     , target_ch(0)
     , link_enabled(true)
@@ -803,7 +793,6 @@ struct SoundProducer {
 
   bool _is_bus;
   int _bus_num;
-  enum BusDescendantType _bus_descendant_type; // Is 'IS_BUS_DESCENDANT' for all descendants of bus plugins. To prevent accidental feedback loops.
 
   LatencyCompensatorDelay *_dry_sound_latencycompensator_delays;
   
@@ -818,7 +807,7 @@ struct SoundProducer {
   DEFINE_ATOMIC(bool, is_processed) = false;
 #endif
 
-  DEFINE_ATOMIC(int, _num_active_input_links_left);  // = num_active_input_links + (is_bus ? num_not_bus_descendants : 0). Decreased during processing. When the number is zero, it is scheduled for processing. 
+  DEFINE_ATOMIC(int, _num_active_input_links_left);  // Decreased during processing. When the number is zero, it is scheduled for processing. 
   int _num_active_input_links;
 
 #if 0
@@ -835,8 +824,6 @@ struct SoundProducer {
   radium::Vector<SoundProducerLink*> _input_links;
   radium::Vector<SoundProducerLink*> _output_links; // Used by MultiCore.
 
-  radium::Vector<SoundProducerLink*> _linkbuses; // These are all ouput links.
-
   SoundProducer(const SoundProducer&) = delete;
   SoundProducer& operator=(const SoundProducer&) = delete;
 
@@ -850,7 +837,7 @@ struct SoundProducer {
   
 public:
   
-  SoundProducer(SoundPlugin *plugin, int num_frames, Buses buses) // buses.bus1 and buses.bus2 must be NULL if the plugin itself is a bus.
+  SoundProducer(SoundPlugin *plugin, int num_frames, Buses buses)
     : _id(id_counter++)
     , _plugin(plugin)
     , _latency(0)
@@ -893,12 +880,6 @@ public:
       R_ASSERT(buses.bus5!=NULL);
     }
 
-    if(_is_bus)
-      _bus_descendant_type = IS_BUS_DESCENDANT;
-    else
-      _bus_descendant_type = IS_BUS_PROVIDER;
-
-
     if(_num_inputs>0)
       _num_dry_sounds = _num_inputs;
     else
@@ -910,87 +891,10 @@ public:
     
     MIXER_add_SoundProducer(this);
 
-    if (!_is_bus && _num_outputs>0){
-      SoundProducerLink *linkbus1a = new SoundProducerLink(this, buses.bus1, false);
-      SoundProducerLink *linkbus1b = new SoundProducerLink(this, buses.bus1, false);
-      SoundProducerLink *linkbus2a = new SoundProducerLink(this, buses.bus2, false);
-      SoundProducerLink *linkbus2b = new SoundProducerLink(this, buses.bus2, false);
-      SoundProducerLink *linkbus3a = new SoundProducerLink(this, buses.bus3, false);
-      SoundProducerLink *linkbus3b = new SoundProducerLink(this, buses.bus3, false);
-      SoundProducerLink *linkbus4a = new SoundProducerLink(this, buses.bus4, false);
-      SoundProducerLink *linkbus4b = new SoundProducerLink(this, buses.bus4, false);
-      SoundProducerLink *linkbus5a = new SoundProducerLink(this, buses.bus5, false);
-      SoundProducerLink *linkbus5b = new SoundProducerLink(this, buses.bus5, false);
-
-      linkbus1a->is_bus_link = true;
-      linkbus1b->is_bus_link = true;
-      linkbus2a->is_bus_link = true;
-      linkbus2b->is_bus_link = true;
-      linkbus3a->is_bus_link = true;
-      linkbus3b->is_bus_link = true;
-      linkbus4a->is_bus_link = true;
-      linkbus4b->is_bus_link = true;
-      linkbus5a->is_bus_link = true;
-      linkbus5b->is_bus_link = true;
-
-      // ch 1
-      linkbus1a->source_ch = 0;
-      linkbus1a->target_ch = 0;
-      linkbus2a->source_ch = 0;
-      linkbus2a->target_ch = 0;
-      linkbus3a->source_ch = 0;
-      linkbus3a->target_ch = 0;
-      linkbus4a->source_ch = 0;
-      linkbus4a->target_ch = 0;
-      linkbus5a->source_ch = 0;
-      linkbus5a->target_ch = 0;
-
-      // ch 2
-      if (_num_outputs==1) {
-        linkbus1b->source_ch = 0;
-        linkbus2b->source_ch = 0;
-        linkbus3b->source_ch = 0;
-        linkbus4b->source_ch = 0;
-        linkbus5b->source_ch = 0;
-      } else {
-        linkbus1b->source_ch = 1;
-        linkbus2b->source_ch = 1;
-        linkbus3b->source_ch = 1;
-        linkbus4b->source_ch = 1;
-        linkbus5b->source_ch = 1;
-      }
-      
-      linkbus1b->target_ch = 1;
-      linkbus2b->target_ch = 1;
-      linkbus3b->target_ch = 1;
-      linkbus4b->target_ch = 1;
-      linkbus5b->target_ch = 1;
-
-      SoundProducer::add_link(linkbus1a);
-      SoundProducer::add_link(linkbus1b);
-      SoundProducer::add_link(linkbus2a);
-      SoundProducer::add_link(linkbus2b);
-      SoundProducer::add_link(linkbus3a);
-      SoundProducer::add_link(linkbus3b);
-      SoundProducer::add_link(linkbus4a);
-      SoundProducer::add_link(linkbus4b);
-      SoundProducer::add_link(linkbus5a);
-      SoundProducer::add_link(linkbus5b);
-
-      _linkbuses.push_back(linkbus1a);
-      _linkbuses.push_back(linkbus1b);
-      _linkbuses.push_back(linkbus2a);
-      _linkbuses.push_back(linkbus2b);
-      _linkbuses.push_back(linkbus3a);
-      _linkbuses.push_back(linkbus3b);
-      _linkbuses.push_back(linkbus4a);
-      _linkbuses.push_back(linkbus4b);
-      _linkbuses.push_back(linkbus5a);
-      _linkbuses.push_back(linkbus5b);
-    }    
-
+#if !defined(RELEASE)
     printf("*** Finished... New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
     //getchar();
+#endif
   }
 
   // Called from SP_delete
@@ -998,9 +902,6 @@ public:
     R_ASSERT(THREADING_is_main_thread());
 
     if (PLAYER_is_running()) {
-      if (!_linkbuses.is_empty())
-        SoundProducer::remove_links(_linkbuses);
-
       R_ASSERT(_input_links.size()==0);
       R_ASSERT(_output_links.size()==0);
     }
@@ -1015,64 +916,6 @@ public:
   }
   
   void free_sound_buffers(){
-  }
-
-  void RT_set_descendant_types_to_bus_descendant(void){
-    R_ASSERT_NON_RELEASE(_bus_descendant_type == IS_BUS_PROVIDER);
-    
-    _bus_descendant_type = IS_BUS_DESCENDANT;
-
-    for (SoundProducerLink *link : _output_links){      
-      auto *target = link->target;
-      if (target->_bus_descendant_type != IS_BUS_DESCENDANT)
-        target->RT_set_descendant_types_to_bus_descendant();
-    }
-  }
-    
-  static void RT_set_bus_descendant_types(const radium::PlayerLock &lock){
-    R_ASSERT_NON_RELEASE(lock._enable);
-    
-    radium::Time time;
-
-    const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
-
-    // Dummy operation to try warming the cache a little bit since in debug mode we often gets a message about this function taking a long time.
-    // Hopefully this does more good than bad.
-    if(lock._can_pause){
-      int i = 0;
-      for (SoundProducer *sp : sp_all){
-        // Hopefully the compiler doesn't optimize this away.
-        volatile enum BusDescendantType descendant_type = sp->_bus_descendant_type;
-        volatile enum BusDescendantType *to = &sp->_bus_descendant_type;
-        sp->_bus_descendant_type = IS_BUS_PROVIDER;
-        *to = descendant_type;
-        lock.maybe_pause_lock_a_little_bit(i++);
-      }
-    }
-    
-    for (SoundProducer *sp : sp_all)
-      sp->_bus_descendant_type = IS_BUS_PROVIDER;
-      
-    Buses buses = MIXER_get_buses();
-
-    buses.bus1->RT_set_descendant_types_to_bus_descendant();
-
-    if (buses.bus2->_bus_descendant_type != IS_BUS_DESCENDANT) // If bus1 linked an output to bus2, bus2 is already done. (and so forth, below) (might also avoid infinte loop with this test)
-      buses.bus2->RT_set_descendant_types_to_bus_descendant();
-
-    if (buses.bus3->_bus_descendant_type != IS_BUS_DESCENDANT)
-      buses.bus3->RT_set_descendant_types_to_bus_descendant();
-
-    if (buses.bus4->_bus_descendant_type != IS_BUS_DESCENDANT)
-      buses.bus4->RT_set_descendant_types_to_bus_descendant();
-
-    if (buses.bus5->_bus_descendant_type != IS_BUS_DESCENDANT)
-      buses.bus5->RT_set_descendant_types_to_bus_descendant();
-    
-    g_rt_set_bus_descendant_types_duration = time.elapsed();
-    
-    //printf("Time1: %f. Time2: %f. Diff: %f%%\n", time1, time2, 100*(time1-time2)/time2);
-
   }
 
   void allocate_sound_buffers(int num_frames){
@@ -1096,9 +939,8 @@ public:
       return true;
 
     for (SoundProducerLink *link : _input_links)
-      if (!link->is_bus_link)
-        if(link->source->is_recursive(start_producer)==true)
-          return true;
+      if(link->source->is_recursive(start_producer)==true)
+        return true;
 
     return false;
   }
@@ -1147,7 +989,6 @@ public:
 
       bool is_recursive = true
         && link->target == this
-        && !link->is_bus_link
         && !links_that_must_be_removed_first.contains(link)
         && link->source->is_recursive(to_add, to_remove, links_that_must_be_removed_first, visited, already_checked);
 
@@ -1313,9 +1154,6 @@ public:
         volume_change.link->link_volume = volume_change.new_volume;
         volume_change.link->RT_link_volume = volume_change.new_volume;
       }
-
-      if (to_add.size() > 0)
-        SoundProducer::RT_set_bus_descendant_types(lock);
     }
 
 
@@ -1383,7 +1221,7 @@ public:
     }
     */
 
-    // 7. REMOVING: Remove the 'to_remove' links from the graph, and update bus descendant types.
+    // 7. REMOVING: Remove the 'to_remove' links from the graph.
     //
     if (to_remove.size() > 0){
       radium::PlayerLock lock;
@@ -1394,8 +1232,6 @@ public:
         link->target->_input_links.remove(link);
         link->source->_output_links.remove(link);
       }
-
-      SoundProducer::RT_set_bus_descendant_types(lock); // We might call RT_set_bus_descendant_types two times now, but I'm not sure if it's safe not to let them be updated immediately after changing the graph.
     }
 
     // 8. REMOVING: Deallocate the 'to_remove' links.
@@ -1470,7 +1306,7 @@ public:
   }
 
   static void remove_links(radium::Vector<SoundProducerLink*> &links){
-    radium::Vector<SoundProducerLink*> to_add;
+    radium::Vector<SoundProducerLink*> to_add; // empty
     
     add_and_remove_links(to_add, links);
   }
@@ -1494,16 +1330,9 @@ public:
   }
 
   SoundProducerLink *find_input_link(const SoundProducer *source, bool may_return_null = false){
-    for (SoundProducerLink *link : _input_links) {
-
-      if(true
-         && link->is_bus_link==false
-         && link->source==source
-         )
-        {
-          return link;
-        }
-    }
+    for (SoundProducerLink *link : _input_links)
+      if(link->source==source)
+        return link;
 
     if (may_return_null==false)
       RError("Could not find input link. Size: %d. source: %p.\n",_input_links.size(), source);
@@ -1515,7 +1344,6 @@ public:
     for (SoundProducerLink *link : _input_links) {
 
       if(true
-         && link->is_bus_link==false
          && link->is_event_link==false
          && link->source==source
          && link->source_ch==source_ch
@@ -2142,7 +1970,7 @@ public:
 };
 
 
-
+// Only called from audio/audio_instrument.cpp/AUDIO_InitPatch2.
 SoundProducer *SP_create(SoundPlugin *plugin, Buses buses){
   return new SoundProducer(plugin, MIXER_get_buffer_size(), buses);
 }
@@ -2240,7 +2068,6 @@ void SP_remove_link(SoundProducer *target, int target_ch, const SoundProducer *s
 
 
 // Removes all links, both audio and event.
-// Does NOT delete the bus links. Those are deleted in the SoundProducer destructor.
 void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers){
 
   radium::Vector<SoundProducerLink *> links_to_delete;
@@ -2248,8 +2075,7 @@ void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers){
   // Find all non-bus links
   for(auto soundproducer : soundproducers)
     for(auto link : soundproducer->_input_links)
-      if (link->is_bus_link==false)
-        links_to_delete.push_back(link);
+      links_to_delete.push_back(link);
   
   SoundProducer::remove_links(links_to_delete);
 }
@@ -2268,28 +2094,55 @@ void SP_remove_all_elinks(const radium::Vector<SoundProducer*> &soundproducers){
 }
 
 float SP_get_link_gain(const SoundProducer *target, const SoundProducer *source, const char **error){
-  for (SoundProducerLink *link : target->_input_links) {
-    if(link->is_bus_link==false && link->is_event_link==false && link->source==source){
-      //printf("   Found %f (%p)\n", safe_float_read(&link->link_volume), link);
-      return link->link_volume;
-    }
+  {
+    int bus_num = get_bus_num(target->_plugin);
+    if(bus_num >= 0)
+      return safe_float_read(&source->_plugin->bus_volume[bus_num]);
   }
+  
+  for (SoundProducerLink *link : target->_input_links)
+    if(link->is_event_link==false && link->source==source)
+      return link->link_volume;
 
   *error = talloc_strdup("Could not find link");
   return 0.0;
 }
 
 bool SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume, const char **error){
+  {
+    if(target->_is_bus){
+
+      int bus_num = target->_bus_num;
+    
+      SoundPlugin *plugin = source->_plugin;
+      const SoundPluginType *type = plugin->type;
+      int effect_num = type->num_effects + EFFNUM_BUS1 + bus_num;
+
+      //printf("Setting bus volume for %d to %f\n", bus_num, volume);
+      
+      PLUGIN_set_effect_value(plugin, -1, effect_num, volume, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+
+      return true;
+    }
+  }
+  
   bool ret = false;
   bool found = false;
-
+ 
   for (SoundProducerLink *link : target->_input_links) {
-    if(link->is_bus_link==false && link->is_event_link==false && link->source==source){
+    if(link->is_event_link==false && link->source==source){
+
       found=true;
+      
       //printf("   Setting to %f (%p)\n", volume, link);
+
       if (link->link_volume != volume){
+
+        //printf("Setting link volume to %f\n", volume);
+        
         link->link_volume = volume;
         safe_float_write(&link->RT_link_volume, volume);
+
         ret = true;
       }
     }
@@ -2402,7 +2255,7 @@ void SP_write_mixer_tree_to_disk(QFile *file){
     volatile Patch *patch = plugin==NULL ? NULL : plugin->patch;
     const char *name = patch==NULL ? "<null>" : patch->name;
     
-    file->write(QString().sprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d\n",num++,sp,name,sp->_num_active_input_links,ATOMIC_GET(sp->_num_active_input_links_left), sp->_output_links.size(), sp->_bus_descendant_type==IS_BUS_PROVIDER).toUtf8());
+    file->write(QString().sprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d\n",num++,sp,name,sp->_num_active_input_links,ATOMIC_GET(sp->_num_active_input_links_left), sp->_output_links.size()).toUtf8());
     
     for (SoundProducerLink *link : sp->_output_links){
       SoundPlugin *plugin = link->target->_plugin;
@@ -2419,16 +2272,14 @@ void SP_print_tree(void){
   const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
   
   for (const SoundProducer *sp : sp_all){
-    fprintf(stderr,"%d (%d): sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d.\n",
+    fprintf(stderr,"%d (%d): sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d.\n",
             num++,
             sp->_plugin->patch==NULL?-1:(int)sp->_plugin->patch->id,
             sp,
             sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,
             sp->_num_active_input_links,
             ATOMIC_GET(sp->_num_active_input_links_left),
-            sp->_output_links.size(),
-            sp->_bus_descendant_type==IS_BUS_PROVIDER
-            
+            sp->_output_links.size()
             );
     /*
     fprintf(stderr,"  inputs:\n");
@@ -2487,14 +2338,6 @@ struct SoundProducer *SP_get_sound_producer(const struct SoundPlugin *plugin){
 
 int SP_get_bus_num(const SoundProducer *sp){
   return sp->_bus_num;
-}
-
-enum BusDescendantType SP_get_bus_descendant_type(const SoundProducer *sp){
-  if(sp==NULL){
-    RError("SP_get_bus_descendant_type: sp==NULL\n");
-    return IS_BUS_PROVIDER;
-  }
-  return sp->_bus_descendant_type;
 }
 
 #if 0

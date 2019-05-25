@@ -199,6 +199,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     show_modular_mixer_widgets(true);
     
     connections_visibility->setChecked(MW_get_connections_visibility());
+    bus_connections_visibility->setChecked(MW_get_bus_connections_visibility());
 
     if (instrumentWidgetIsInMixer()){
       verticalLayout->addWidget(getInstrumentsWidget(), 0);
@@ -285,6 +286,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     mixer_direction_menu_button->setVisible(is_modular);
     show_cpu_usage->setVisible(is_modular);
     connections_visibility->setVisible(is_modular);
+    bus_connections_visibility->setVisible(is_modular);
 
     strips_layout_widget->setVisible(!is_modular);
   }
@@ -720,6 +722,11 @@ public slots:
   void on_connections_visibility_toggled(bool val){
     if (initing==false)
       MW_set_connections_visibility(val);
+  }
+
+  void on_bus_connections_visibility_toggled(bool val){
+    if (initing==false)
+      MW_set_bus_connections_visibility(val);
   }
 
   void on_mixer_direction_menu_button_released() {

@@ -13,10 +13,6 @@
                                           "System Aux 2"
                                           "System Aux 3"))
 
-(define-constant *bus-effect-onoff-names* (map (lambda (bus-effect-name)
-                                                 (<-> bus-effect-name " On/Off"))
-                                               *bus-effect-names*))
-
 (define-constant *send-connection-type* 0)
 (define-constant *plugin-connection-type* 1)
 (define-constant *auto-connection-type* 2)
@@ -171,7 +167,6 @@
 
 ;; TODO: Around 30% of the time used to create a mixer is spent here. Memoization helped a lot (14X speedup), but there's probably more than can be done.
 ;; Making "visited" global made the function run around 10% slower.
-;; "get-instruments-and-buses-connecting-from-instrument" only uses around 2% of the total time creating a mixer, and it's called from another place as well.
 (define g-total-time 0)
 (define g-total-num-calls 0)
 (define-instrument-memoized (instrument-eventually-connects-to i1 i2)
@@ -185,16 +180,11 @@
             #f
             (begin
               (hash-table-set! visited i1 #t)
-              ;;(c-display "  instrument-eventually" (<ra> :get-instrument-name i1) "->" (<ra> :get-instrument-name i2) ":" (any? (lambda (to)
-              ;;                                                                                                                    (if (= to i2)
-              ;;                                                                                                                        #t
-              ;;                                                                                                                        (loop to)))
-              ;;                                                                                                                  (get-instruments-and-buses-connecting-from-instrument i1)))
               (any? (lambda (to)
                       (if (= to i2)
                           #t
                           (loop to)))
-                    (get-instruments-and-buses-connecting-from-instrument i1)))))))
+                    (get-instruments-connecting-from-instrument i1)))))))
   (set! g-total-time (+ g-total-time (- (time) start)))
   ret)
 
@@ -242,27 +232,6 @@
 !!#
 
 
-(define g-total-time2 0)
-(define-instrument-memoized (get-buses-connecting-from-instrument id-instrument include-0db-buses?)
-  (define ret
-    (if (= 0 (<ra> :get-num-output-channels id-instrument))
-        '()
-        (let loop ((bus-num 0)
-                   (bus-onoff-names *bus-effect-onoff-names*)
-                   (bus-effect-names *bus-effect-names*))
-          (if (null? bus-onoff-names)
-              '()
-              (let ((rest (loop (1+ bus-num)
-                                (cdr bus-onoff-names)
-                                (cdr bus-effect-names))))
-                (if (and (>= (<ra> :get-instrument-effect id-instrument (car bus-onoff-names)) 0.5)
-                         (or include-0db-buses?
-                             (> (<ra> :get-instrument-effect id-instrument (car bus-effect-names)) 0)))
-                    (cons bus-num rest)
-                    rest))))))
-  ;;(set! g-total-time2 (+ g-total-time2 (- (time) start)))
-  ret)
-
 (define-instrument-memoized (get-pure-buses)
   (map (lambda (bus-num)
          (<ra> :get-audio-bus-id bus-num))
@@ -286,16 +255,6 @@
          (<ra> :get-audio-connection-dest-instrument in-connection id-instrument))
        (iota (<ra> :get-num-out-audio-connections id-instrument))))
 
-(define-instrument-memoized (get-instruments-and-buses-connecting-from-instrument id-instrument)
-  (define start (time))
-  (define ret (append (map (lambda (in-connection)
-                             (<ra> :get-audio-connection-dest-instrument in-connection id-instrument))
-                           (iota (<ra> :get-num-out-audio-connections id-instrument)))
-                      (map ra:get-audio-bus-id (get-buses-connecting-from-instrument id-instrument #f))))
-  (set! g-total-time2 (+ g-total-time2 (- (time) start)))
-  ret)
-  
-  
 (define-instrument-memoized (get-instruments-econnecting-to-instrument id-instrument)
   (map (lambda (in-connection)
          (<ra> :get-event-connection-source-instrument in-connection id-instrument))
@@ -333,7 +292,7 @@
                 (else
                  (hash-table-set! visited id #t)
                  (any? loop
-                       (get-instruments-and-buses-connecting-from-instrument id))))))
+                       (get-instruments-connecting-from-instrument id))))))
       (begin
         (define visited (make-hash-table 16 =))
         (let loop ((id id))

@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPluginRegistry_proc.h"
 #include "SoundProducer_proc.h"
 #include "Delay.hpp"
+#include "audio_instrument_proc.h"
 
 #include "../mixergui/undo_chip_position_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
@@ -100,14 +101,14 @@ struct ModulatorTarget{
   const struct Patch *patch;
   int effect_num;
   bool enabled;
-  
+
   ModulatorTarget(const struct Patch *patch, int effect_num, bool enabled)
     : patch(patch)
     , effect_num(effect_num)
     , enabled(enabled)
   {}
 
-  ModulatorTarget(const dyn_t dynstate)
+  ModulatorTarget(const dyn_t dynstate, const struct Patch *modulator_patch)
     : ModulatorTarget(NULL, EFFNUM_INPUT_VOLUME, true)
   {    
     if (dynstate.type!=HASH_TYPE){
@@ -121,16 +122,25 @@ struct ModulatorTarget{
     patch = PATCH_get_from_id(patch_id);
 
     if (HASH_has_key(state, ":effect-name")){
+
+      const char *effect_name = HASH_get_chars(state, ":effect-name");
+      
+      if (AUDIO_maybe_warn_about_automating_bus_onoff(patch, effect_name, "modulation", talloc_format(" by \"%s\"", modulator_patch->name))){
+        patch = NULL;
+        return;
+      }
       
       char *error_message = NULL;
-      effect_num = PATCH_get_effect_num(patch, HASH_get_chars(state, ":effect-name"), &error_message);
+      effect_num = PATCH_get_effect_num(patch, effect_name, &error_message);
       if (effect_num==-1){
         GFX_Message(NULL, "%s", error_message);
         effect_num = 0; // to avoid crash.
       }
-      
+        
     } else {
 
+      // Note: We are only here when loading older songs.
+      
       effect_num = HASH_get_int32(state, ":effect-num");
 
       // Workaround. The sample player changed number of effects.
@@ -148,6 +158,8 @@ struct ModulatorTarget{
               }
             }
           }
+
+          //AUDIO_maybe_warn_about_automating_bus_onoff(patch, effect_num, "modulating", talloc_format(" by \"%s\"", modulator_patch->name));
         }
       }
     }
@@ -571,13 +583,11 @@ public:
 
   void apply_state(const hash_t *state){
     // Assert that the state is for this modulator.
-    {
-      const volatile struct Patch *modulator_patch = _plugin->patch;
-      R_ASSERT_RETURN_IF_FALSE(modulator_patch != NULL);
-      
-      int64_t patch_id = HASH_get_int(state, "modulator_patch_id");
-      R_ASSERT_RETURN_IF_FALSE(patch_id==modulator_patch->id);
-    }
+    const struct Patch *modulator_patch = const_cast<const struct Patch*>(_plugin->patch);
+    R_ASSERT_RETURN_IF_FALSE(modulator_patch != NULL);
+    
+    int64_t patch_id = HASH_get_int(state, "modulator_patch_id");
+    R_ASSERT_RETURN_IF_FALSE(patch_id==modulator_patch->id);
 
     radium::Vector<ModulatorTarget*> *new_targets = new radium::Vector<ModulatorTarget*>;
 
@@ -587,7 +597,7 @@ public:
     const dynvec_t *targets = dyntargets.array;
 
     for(const dyn_t &target : targets){
-      auto *new_target = new ModulatorTarget(target);//targets->elements[i]);
+      auto *new_target = new ModulatorTarget(target, modulator_patch);//targets->elements[i]);
       if (new_target->patch != NULL)
         new_targets->push_back(new_target);
     }

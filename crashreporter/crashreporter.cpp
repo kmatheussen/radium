@@ -74,8 +74,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define mysleep(ms) QThread::msleep(ms)
 #endif
 
-double g_rt_set_bus_descendant_types_duration;
-
 #if !defined(CRASHREPORTER_BIN)
 static const char *g_no_plugin_name = "<noplugin>";
 static DEFINE_ATOMIC(bool, g_dont_report) = false;
@@ -872,7 +870,6 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "Running plugins: " + plugin_names + "\n\n";
   tosend += "Running time: " + QString::number(time/1000.0) + " seconds.\n\n";
   tosend += "Last painter: " + QString(g_qt_is_painting_where) + "\n\n";
-  tosend += "Last g_rt_set_bus_descendant_types_duration: " + QString::number(g_rt_set_bus_descendant_types_duration) + "ms\n\n";
   tosend += "Time since last received MIDI message: " + QString::number(time - g_last_midi_receive_time) + "ms\n\n";
   tosend += "\n\n";
 

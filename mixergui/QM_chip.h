@@ -192,10 +192,11 @@ static inline struct SoundProducer *CHIP_get_soundproducer(const Chip *chip){
   return chip->_sound_producer;
 }
 
-struct Patch *CHIP_get_patch(const Chip *chip);
+struct Patch *CHIP_get_patch(const Chip *chip); // (fast)
 
 
 extern LANGSPEC bool MW_get_connections_visibility(void);
+extern LANGSPEC bool MW_get_bus_connections_visibility(void);
 
 typedef Chip* ChipPointer;
 
@@ -207,14 +208,13 @@ public:
   bool is_event_connection;
   enum ColorNums color_num;
 
-
 private:
   Chip *_from; // Note: If we ever need to set this variable after constructor (we currently don't), we also need to ensure that the new from-chip doesn't have more than one PLUGIN connection.
   Chip *_to;
 
   bool _is_enabled;
   bool _is_implicitly_enabled; // Set to false if solo has caused this connection to be implicitly disabled.
-  
+
 public:
 
   bool set_enabled(bool is_enabled, const char **error){
@@ -328,7 +328,7 @@ public:
     visible_line.setPen(getPen());
     parent->addItem(&visible_line);
 
-    setVisibility(MW_get_connections_visibility());    
+    update_visibility();
   }
 
   /*
@@ -345,7 +345,16 @@ public:
     printf("       Remake: ~SuperConnectin\n");
     //remakeMixerStrips(-1);
   }
-      
+
+  void update_visibility(void){
+    if (to==NULL)
+      setVisibility(true);
+    else if (!is_event_connection && SP_get_bus_num(to->_sound_producer) >= 0)
+      setVisibility(MW_get_connections_visibility() && MW_get_bus_connections_visibility());
+    else
+      setVisibility(MW_get_connections_visibility());
+  }
+  
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
              QWidget *widget)
     override
@@ -517,31 +526,32 @@ public:
       R_ASSERT_RETURN_IF_FALSE(to!=NULL);
 
       {
-        bool gotit = false;
+        bool already_gotit = false;
         
         for(auto *connection : from->audio_connections){
           if(connection->from==from && connection->to==to){
             R_ASSERT(false);
-            gotit = true;
+            already_gotit = true;
           }
         }
         
-        if (gotit==false)
+        if (already_gotit==false){
           from->audio_connections.push_back(this);
+        }
       }
 
       
       {
-        bool gotit = false;
+        bool already_gotit = false;
         
         for(auto *connection : to->audio_connections){
           if(connection->from==from && connection->to==to){
             R_ASSERT(false);
-            gotit = true;
+            already_gotit = true;
           }
         }
         
-        if (gotit==false)
+        if (already_gotit==false)          
           to->audio_connections.push_back(this);
       }
     }
@@ -576,7 +586,7 @@ public:
   EventConnection(QGraphicsScene *parent, Chip *from, Chip *to)
     : SuperConnection(parent, from, to, true, MIXER_EVENT_CONNECTION_COLOR_NUM, true, true)
   {
-    
+
     if (from!=NULL){
       R_ASSERT_RETURN_IF_FALSE(to!=NULL);
       
@@ -588,8 +598,6 @@ public:
     
   }
 
-
-  
   void update_position(void) override;
 };
 
@@ -613,6 +621,10 @@ extern void CONNECTION_delete_an_event_connection_where_all_links_have_been_remo
 extern void CONNECTION_delete_audio_connection(AudioConnection *connection);
 extern void CONNECTION_delete_event_connection(EventConnection *connection);
 extern void CONNECTION_delete_connection(SuperConnection *connection);
+extern bool CONNECTION_are_connected_somehow(const Chip *source, const Chip *target); // Returns true if source sends sound to target, either directly or via middle-chips.
+extern bool CONNECTION_can_connect(const Chip *source, const Chip *target); // Returns true if 'source' can send audio to 'target' without creating a recursive connection.
+extern bool CONNECTION_can_connect(struct Patch *source, struct Patch *target);
+
 extern void CONNECTION_update(struct Patch *source, struct Patch *target);
   
 extern void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
@@ -669,9 +681,12 @@ struct Patch;
 
 extern LANGSPEC void CHIP_autopos(struct Patch *patch);
 
-extern LANGSPEC void CHIP_create(struct SoundProducer *sound_producer, float x, float y);
-extern LANGSPEC void CHIP_delete(struct Patch *patch);
-  
+#ifdef __cplusplus
+extern Chip* CHIP_create(struct SoundProducer *sound_producer, float x, float y);
+extern void CHIP_delete(struct Patch *patch);
+extern void CHIP_create_bus_connections(Chip *chip, Buses &dasbuses); // Used when loading older songs.
+#endif
+
 //extern LANGSPEC void CHIP_init_because_it_has_new_plugin(struct SoundPlugin *plugin);
 
 extern LANGSPEC void CHIP_create_from_state(hash_t *state, Buses buses);
