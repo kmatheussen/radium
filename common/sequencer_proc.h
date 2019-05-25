@@ -452,7 +452,7 @@ extern LANGSPEC hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, cons
 extern LANGSPEC int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowAPIException error_type);
 extern LANGSPEC void SEQBLOCK_replace_seqblock(hash_t *hash, bool must_replace_same_id, enum ShowAssertionOrThrowAPIException error_type);
 
-extern LANGSPEC struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_samplerate, bool for_audiofiles, bool is_bus);
+extern LANGSPEC struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, int seqtracknum, double state_samplerate, bool for_audiofiles, bool is_bus);
 extern LANGSPEC struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len);
 
 

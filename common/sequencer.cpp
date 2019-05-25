@@ -1603,7 +1603,7 @@ void SEQBLOCK_replace_seqblock(hash_t *hash, bool must_replace_same_id, enum Sho
 }
 
 
-struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_samplerate, bool for_audiofiles, bool is_bus){
+struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, int seqtracknum, double state_samplerate, bool for_audiofiles, bool is_bus){
   if(!for_audiofiles)
     R_ASSERT(is_bus==false);
   
@@ -1620,7 +1620,7 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_sa
   
   seqtrack->scheduler = SCHEDULER_create();
 
-  auto *seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, automation_state, state_samplerate);
+  auto *seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, automation_state, seqtracknum, state_samplerate);
   seqtrack->seqtrackautomation = seqtrackautomation;
 
   seqtrack->note_gain = 1.0;
@@ -1860,7 +1860,7 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
       is_bus = HASH_get_bool(state, "is_bus");
   }
   
-  struct SeqTrack *seqtrack = SEQTRACK_create(automation_state, state_samplerate, for_audiofiles, is_bus);
+  struct SeqTrack *seqtrack = SEQTRACK_create(automation_state, seqtracknum, state_samplerate, for_audiofiles, is_bus);
   struct SeqTrack *seqtrack_extra = NULL; // For loading older songs. In older songs, both audiofiles and editor blocks could be placed in all seqtracks. (and they still can, probably, but it makes very little sense to allow it)
 
   if(seqtrack->for_audiofiles==false) R_ASSERT(seqtrack->patch==NULL);
@@ -1931,7 +1931,7 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
       R_ASSERT(false==for_audiofiles);
       
       if (seqtrack_extra==NULL){
-        seqtrack_extra = SEQTRACK_create(NULL, state_samplerate, true, is_bus);
+        seqtrack_extra = SEQTRACK_create(NULL, seqtracknum, state_samplerate, true, is_bus);
         seqtrack_extra->gfx_seqblocks = &gfx_seqblocks_extra;
 
         R_ASSERT(patch!=NULL);
@@ -1992,7 +1992,7 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
 struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
   vector_t seqblocks = {};
   
-  struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1, false, false);
+  struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1, -1, false, false);
     
   for(int pos=0;pos<len;pos++)
     VECTOR_push_back(&seqblocks,
@@ -2744,7 +2744,7 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_
     R_ASSERT(new_seqtrack->for_audiofiles==for_audiofiles);
 
   if (new_seqtrack==NULL)
-    new_seqtrack = SEQTRACK_create(NULL, -1, for_audiofiles, is_bus);
+    new_seqtrack = SEQTRACK_create(NULL, pos, -1, for_audiofiles, is_bus);
 
   const rt_vector_t *rt_vector = VECTOR_create_rt_vector(&root->song->seqtracks, 1);
 
@@ -3027,7 +3027,7 @@ double SONG_get_length(void){
 // Called from SONG_create()
 void SEQUENCER_init(struct Song *song){
   TEMPOAUTOMATION_reset();
-  song->block_seqtrack = SEQTRACK_create(NULL, -1, false, false);
+  song->block_seqtrack = SEQTRACK_create(NULL, 0, -1, false, false);
   ATOMIC_SET(song->looping.start, 0);
   ATOMIC_SET(song->punching.start, 0);
 
@@ -3045,7 +3045,7 @@ void SEQUENCER_init(struct Song *song){
 // Only called during program startup
 void SONG_init(void){
 
-  struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1, false, false); // for editor blocks
+  struct SeqTrack *seqtrack = SEQTRACK_create(NULL, 0, -1, false, false); // for editor blocks
 
   const rt_vector_t *rt_seqblocks_vector = VECTOR_create_rt_vector(&seqtrack->seqblocks, 1);
   const rt_vector_t *rt_seqtracks_vector = VECTOR_create_rt_vector(&root->song->seqtracks, 1);
@@ -3378,7 +3378,7 @@ void SEQUENCER_create_automations_from_state(hash_t *state){
     struct SeqTrack *seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[i];
 
     auto *old_seqtrackautomation = seqtrack->seqtrackautomation;
-    auto *new_seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, HASH_get_hash_at(state, "seqtrackautomations", i), -1);
+    auto *new_seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, HASH_get_hash_at(state, "seqtrackautomations", i), i, -1);
 
     {
       radium::PlayerLock lock;

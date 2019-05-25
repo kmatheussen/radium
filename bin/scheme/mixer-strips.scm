@@ -693,7 +693,7 @@
 !!#
 
 (define (request-send-instrument instrument-id callback)
-  (define is-bus-descendant (<ra> :instrument-is-bus-descendant instrument-id))
+  ;;(define is-bus-descendant (<ra> :instrument-is-bus-descendant instrument-id))
   (define pure-buses (get-pure-buses))
   (define seqtrack-buses (get-seqtrack-buses))
   (define buses (append pure-buses seqtrack-buses))
@@ -707,9 +707,8 @@
   (define (create-bus-entries instrument-ids)
     (map (lambda (send-id)
            (list (create-entry-text send-id)
-                 :enabled (and (not (= send-id instrument-id))
-                               (not (<ra> :has-audio-connection instrument-id send-id))
-                               (> (<ra> :get-num-input-channels send-id) 0))
+                 :enabled (and (> (<ra> :get-num-input-channels send-id) 0)
+                               (<ra> :can-audio-connect instrument-id send-id))
                  (lambda ()
                    (callback (lambda (gain changes)
                                (push-audio-connection-change! changes (list :type "connect"
@@ -724,30 +723,7 @@
     (run-instrument-data-memoized
      (lambda()
        (list
-     
-        ;; pure buses
-        (map (lambda (bus-effect-name bus-onoff-effect-name bus-id)
-               (list (create-entry-text bus-id)
-                     :enabled (and (not is-bus-descendant)
-                                   (< (<ra> :get-instrument-effect instrument-id bus-onoff-effect-name) 0.5))
-                     (lambda ()
-                       (callback (lambda (gain changes)
-                                   (undo-block (lambda ()
-                                                 ;;(c-display "GAIN: " gain ", db: " *min-db* (<ra> :gain-to-db gain) *max-db*)
-                                                 (<ra> :undo-instrument-effect instrument-id bus-onoff-effect-name)
-                                                 (if gain
-                                                     (<ra> :undo-instrument-effect instrument-id bus-effect-name))
-                                                 (<ra> :set-instrument-effect instrument-id bus-onoff-effect-name 1.0)
-                                                 (if gain
-                                                     (<ra> :set-instrument-effect instrument-id bus-effect-name (db-to-radium-normalized (<ra> :gain-to-db gain))))
-                                                 (apply-changes changes))))))))
-
-             *bus-effect-names*
-             *bus-effect-onoff-names*
-             pure-buses)
-        
-        ;; seqtrack buses
-        (create-bus-entries seqtrack-buses)
+        (create-bus-entries buses)
         
         "------------"
         
@@ -1509,62 +1485,6 @@
   horiz)
 
 
-(define (create-mixer-strip-bus-send gui first-instrument-id instrument-id strips-config bus-num)
-  (define effect-name (list-ref *bus-effect-names* bus-num))
-  (define on-off-effect-name (list-ref *bus-effect-onoff-names* bus-num))
-
-  (define bus-id (<ra> :get-audio-bus-id bus-num))
-
-  (define (make-undo)
-    (<ra> :undo-instrument-effect instrument-id effect-name))
-
-  (define send-gui #f)
-  
-  (define (delete)
-    (<gui> :hide send-gui)
-    (<ra> :undo-instrument-effect instrument-id on-off-effect-name)
-    (<ra> :set-instrument-effect instrument-id on-off-effect-name 0))
-
-  (define (replace)
-    (request-send-instrument instrument-id
-                             (lambda (create-send-func)
-                               (undo-block
-                                (lambda ()
-                                  (define db (get-db-value))
-                                  (define gain (<ra> :db-to-gain db))
-                                  (delete)
-                                  (create-send-func gain '()))))))
-  (define (get-db-value)
-    (radium-normalized-to-db (<ra> :get-stored-instrument-effect instrument-id effect-name)))
-
-  (define (set-db-value db)
-    (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized db)))
-  
-  (define (add-monitor slider callback)
-    (add-gui-effect-monitor slider instrument-id effect-name #t #t
-                            (lambda (radium-normalized automation)
-                              (callback (and radium-normalized (radium-normalized-to-db radium-normalized))
-                                        automation
-                                        ))))
-  
-  (set! send-gui (create-mixer-strip-send gui
-                                          first-instrument-id
-                                          instrument-id
-                                          bus-id
-                                          strips-config
-                                          make-undo
-                                          get-db-value
-                                          set-db-value
-                                          add-monitor
-                                          (<ra> :get-instrument-effect-color instrument-id effect-name)
-                                          delete
-                                          replace
-                                          first-instrument-id ;; midi-learn-instrument-id
-                                          effect-name
-                                          #t))
-  send-gui)
-
-
 (define *send-callbacks* '())
 
 (define (create-mixer-strip-audio-connection-send gui first-instrument-id source-id target-id strips-config)
@@ -1664,10 +1584,6 @@
       instrument-id))
 
 (define (get-mixer-strip-path-instruments instrument-id kont)
-  (define bus-nums (if (<ra> :instrument-is-bus-descendant instrument-id)
-                       '()
-                       (get-buses-connecting-from-instrument instrument-id #t)))
-  
   (define out-instruments (sort-instruments-by-mixer-position
                            (get-instruments-connecting-from-instrument instrument-id)))
   (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
@@ -1677,8 +1593,7 @@
                                        (not (= next-plugin-instrument out-instrument))))
                                  out-instruments))
   
-  (kont bus-nums
-        instrument-sends
+  (kont instrument-sends
         next-plugin-instrument))
 
 
@@ -1694,17 +1609,9 @@
                                     strips-config))
   
   (get-mixer-strip-path-instruments instrument-id
-                                    (lambda (bus-sends instrument-sends next-plugin-instrument)
+                                    (lambda (instrument-sends next-plugin-instrument)
                                       ;;(c-display "    next-plugin-instrument:" (and next-plugin-instrument (<ra> :get-instrument-name next-plugin-instrument)))
                                       ;;(c-display "    instrument-sends:" (map ra:get-instrument-name instrument-sends))
-                                      (for-each (lambda (bus-num)
-                                                  (create-mixer-strip-bus-send gui
-                                                                               instrument-id
-                                                                               instrument-id
-                                                                               strips-config
-                                                                               bus-num))
-                                                bus-sends)
-                                      
                                       (for-each (lambda (out-instrument)
                                                   (if (= 0 (<ra> :get-num-output-channels out-instrument))
                                                       (create-sink out-instrument)
@@ -1729,9 +1636,8 @@
 
 (define (get-all-instruments-used-in-mixer-strip instrument-id)
   (get-mixer-strip-path-instruments instrument-id
-                                    (lambda (bus-sends instrument-sends next-plugin-instrument)
+                                    (lambda (instrument-sends next-plugin-instrument)
                                       (append (list instrument-id)
-                                              bus-sends
                                               instrument-sends
                                               (if next-plugin-instrument
                                                   (get-all-instruments-used-in-mixer-strip next-plugin-instrument)
@@ -2570,10 +2476,8 @@
   (let loop ((instrument-id instrument-id)
              (result-so-far *min-mixer-strip-without-plugins-width*))
     (get-mixer-strip-path-instruments instrument-id
-                                      (lambda (bus-sends instrument-sends next-plugin-instrument)
-                                        (cond ((not (null? bus-sends))
-                                               *min-mixer-strip-with-sends-width*)
-                                              ((not (null? instrument-sends))
+                                      (lambda (instrument-sends next-plugin-instrument)
+                                        (cond ((not (null? instrument-sends))
                                                *min-mixer-strip-with-sends-width*)
                                               (next-plugin-instrument
                                                (loop next-plugin-instrument
@@ -3025,7 +2929,6 @@
           (else
            (define start-time (time))
            (set! g-total-time 0)
-           (set! g-total-time2 0)
            (set! g-total-num-calls 0)
            (set! g-total-sort-time 0)
            
@@ -3057,7 +2960,7 @@
                                 (<gui> :enable-updates gui)
                                 #f))
            
-           (c-display "   remake-gui duration: " (- (time) start-time) g-total-time "("g-total-num-calls ")" g-total-time2 g-total-sort-time)
+           (c-display "   remake-gui duration: " (- (time) start-time) g-total-time "("g-total-num-calls ")" g-total-sort-time)
            )))
 
 
@@ -3295,7 +3198,6 @@
 (remake-mixer-strips)
 
 (get-instrument-from-name "Sample Player 1")
-(get-buses-connecting-from-instrument (get-instrument-from-name "Sample Player 1") #t)
 
 
 (get-all-audio-instruments)

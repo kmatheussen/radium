@@ -125,12 +125,6 @@ enum{
   EFFNUM_BUS4,
   EFFNUM_BUS5,
 
-  EFFNUM_BUS1_ONOFF,
-  EFFNUM_BUS2_ONOFF,
-  EFFNUM_BUS3_ONOFF,
-  EFFNUM_BUS4_ONOFF,
-  EFFNUM_BUS5_ONOFF,
-
   EFFNUM_PAN,
   EFFNUM_PAN_ONOFF,
 
@@ -239,7 +233,8 @@ enum{
   NUM_SYSTEM_EFFECTS
 };
 
-#define NUM_BUSES (EFFNUM_BUS1_ONOFF - EFFNUM_BUS1)
+  
+#define NUM_BUSES 5
 
 
 enum{
@@ -433,12 +428,6 @@ typedef struct SystemFilter{
   int fade_pos;
 } SystemFilter;
 
-enum BusDescendantType{
-  IS_BUS_DESCENDANT,
-  IS_BUS_PROVIDER,
-  MAYBE_A_BUS_DESCENDANT, // not used anymore
-};
-
 enum AutoSuspendBehavior{ // The numbers below can not be changed since they are saved in state.
   DEFAULT_AUTOSUSPEND_BEHAVIOR = 0,
   AUTOSUSPEND_ENABLED = 1,
@@ -495,6 +484,8 @@ typedef struct SoundPlugin{
   float *initial_effect_values_scaled; // Used when resetting.
   bool *do_random_change;       // Used when selecting "Random".
 
+  bool *bus_on_off; // Used when loading older songs.
+  
   struct SongInitAutomationHelper *songinit_automation_helper; // Used when starting to play in the middle of a song.
   
   linked_note_t *playing_voices; // To keep track of voices scheduled into the future because of latency compensation

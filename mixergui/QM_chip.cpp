@@ -882,6 +882,17 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
         AudioConnection *connection = new AudioConnection(scene, parm._from, parm._to, parm._connection_type, parm.is_enabled(), parm.is_implicitly_enabled());
         
         scene->addItem(connection);
+
+        {
+          int bus_num = SP_get_bus_num(parm._to->_sound_producer);
+          
+          if (bus_num >= 0){
+            struct Patch *patch = CHIP_get_patch(parm._from);
+            if (patch==g_currpatch)
+              GFX_PP_Update(patch, false);
+          }
+        }
+
       }
     }
   }
@@ -1308,6 +1319,16 @@ void CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(Aud
   to->audio_connections.remove(connection);
 
   delete connection;
+
+  {
+    int bus_num = SP_get_bus_num(to->_sound_producer);
+    
+    if (bus_num >= 0){
+      struct Patch *patch = CHIP_get_patch(from);
+      if (patch==g_currpatch)
+        GFX_PP_Update(patch, false);
+    }
+  }
 }
 
 
@@ -1356,6 +1377,34 @@ void CONNECTION_delete_connection(SuperConnection *connection){
   }
 }
 
+bool CONNECTION_are_connected_somehow(const Chip *source, const Chip *target){
+  if (source==target)
+    return true;
+  
+  for(const AudioConnection *source_connection : source->audio_connections) {
+
+    bool is_output_connection = source_connection->from==source;
+    
+    if(is_output_connection)
+      if (CONNECTION_are_connected_somehow(source_connection->to, target)==true)
+        return true;
+
+  }
+  
+  return false;
+}
+  
+bool CONNECTION_can_connect(const Chip *source, const Chip *target){
+  return !CONNECTION_are_connected_somehow(target, source);
+}
+  
+bool CONNECTION_can_connect(struct Patch *source, struct Patch *target){
+  Chip *start = CHIP_get(get_scene(g_mixer_widget), source);
+  Chip *end = CHIP_get(get_scene(g_mixer_widget), target);
+
+  return CONNECTION_can_connect(start, end);
+}
+  
 void CONNECTION_update(struct Patch *source, struct Patch *target){
   Chip *from = CHIP_get(get_scene(g_mixer_widget), source);
   Chip *to = CHIP_get(get_scene(g_mixer_widget), target);
@@ -1544,8 +1593,8 @@ void CHIP_autopos(struct Patch *patch){
   CHIP_autopos(CHIP_get(get_scene(g_mixer_widget), patch));
 }
 
-void CHIP_create(SoundProducer *sound_producer, float x, float y){
-  new Chip(get_scene(g_mixer_widget), sound_producer, x, y);
+Chip *CHIP_create(SoundProducer *sound_producer, float x, float y){
+  return new Chip(get_scene(g_mixer_widget), sound_producer, x, y);
 }
 
 Chip::~Chip(){
@@ -1570,6 +1619,64 @@ void CHIP_delete(Patch *patch){
   printf("     Deleting chip %p (%s)\n",chip,CHIP_get_patch(chip)->name);
   delete chip;
 }
+
+static bool is_bus_provider(Chip *chip, const QVector<SoundProducer*> &buses){
+  for(SoundProducer *bus : buses){
+    Chip *bus_chip = CHIP_get(get_scene(g_mixer_widget), const_cast<struct Patch*>(SP_get_plugin(bus)->patch));
+    if (CONNECTION_are_connected_somehow(bus_chip, chip))
+      return false;
+  }
+
+  return true;
+}
+
+// Used when loading old songs.
+void CHIP_create_bus_connections(Chip *chip, Buses &dasbuses){
+  int num_outputs = chip->_num_outputs;
+  
+  if (num_outputs<=0){
+    R_ASSERT(num_outputs==0);
+    return;
+  }
+  
+  SoundPlugin *chip_plugin = SP_get_plugin(chip->_sound_producer);
+
+  if (chip_plugin->bus_on_off==NULL)
+    return;
+
+  bool bus_on_off[NUM_BUSES];
+  memcpy(bus_on_off, chip_plugin->bus_on_off, sizeof(bool)*NUM_BUSES);
+  
+  V_free(chip_plugin->bus_on_off);
+  chip_plugin->bus_on_off = NULL;
+
+  int bus_num = SP_get_bus_num(chip->_sound_producer);
+  if (bus_num >= 0)
+    return;
+
+  QVector<SoundProducer*> buses;
+  buses.push_back(dasbuses.bus1);
+  buses.push_back(dasbuses.bus2);
+  buses.push_back(dasbuses.bus3);
+  buses.push_back(dasbuses.bus4);
+  buses.push_back(dasbuses.bus5);
+
+  QGraphicsScene *scene = get_scene(g_mixer_widget);
+  
+  for(int i=0;i<NUM_BUSES;i++){
+    
+    if (bus_on_off[i] && is_bus_provider(chip, buses)) {
+      
+      SoundProducer *bus = buses.at(i);
+      SoundPlugin *bus_plugin = SP_get_plugin(bus);
+      
+      CHIP_connect_chips(scene, chip_plugin, bus_plugin, ConnectionType::IS_SEND);
+
+    }
+    
+  }
+}
+
 
 QRectF Chip::boundingRect() const
 {

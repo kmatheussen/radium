@@ -562,7 +562,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
   CHIP_create(sound_producer, x, y);
   //MW_move_chip_to_slot(patch, x, y);
   MW_cleanup_chip_positions();
-  
+
   // Create instrument widget
   InstrumentWidget_create_audio_instrument_widget(patch, is_loading_song ? false : set_as_current);
   
@@ -1010,32 +1010,84 @@ end:
         return NULL;
 }
 
-extern struct Root *root;
+bool AUDIO_maybe_warn_about_automating_bus_onoff(const struct Patch *patch, const char *effect_name, const char *what, const char *info){
+  R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
+  R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(), false);
+  R_ASSERT_RETURN_IF_FALSE2(patch->patchdata!=NULL, false);
 
-void DLoadAudioInstrument(void){
-  struct Blocks *block = root->song->blocks;
+  bool gotit
+    =  !strcmp(effect_name, "System Reverb On/Off")
+    || !strcmp(effect_name, "System Chorus On/Off")
+    || !strcmp(effect_name, "System Aux 1 On/Off")
+    || !strcmp(effect_name, "System Aux 2 On/Off")
+    || !strcmp(effect_name, "System Aux 3 On/Off");
+
+  if (gotit) {
+    GFX_addMessage("Note: The %s of \"%s\" for the instrument \"%s\"%s could not be loaded. "
+                   "This effect has been removed from Radium.",
+                   what,
+                   effect_name,
+                   patch->name,
+                   info);
+    /*
+    GFX_addMessage("Note: This song is %s \"%s\" for the instrument \"%s\"%s. "
+                   "You might have to manually enable the send connection for the bus, for the automation to have effect. (This is only an issue when playing older songs.)",
+                   what,
+                   PLUGIN_get_effect_name(plugin, effect_num),
+                   patch->name,
+                   info);                   
+    */
+    return true;
+  }
+
+  return false;
+}
+
+void DLoadAudioInstrument(struct Root *newroot, struct Song *song){
+  struct Blocks *block = song->blocks;
   while(block!=NULL){
     struct Tracks *track = block->tracks;
     while(track!=NULL){
       struct Patch *patch = track->patch;
 
       if (patch!=NULL && patch->instrument == get_audio_instrument()) {
+        
+        QVector<struct FXs*> to_remove;
+        
         VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
           struct FX *fx = fxs->fx;
           struct Patch *fx_patch = fx->patch;
           
           SoundPlugin *plugin = (SoundPlugin *)fx_patch->patchdata;
+          
           if(plugin!=NULL){
-            fx->name = PLUGIN_get_new_name_if_name_has_changed(plugin, fx->name);
-            int effect_num = PLUGIN_get_effect_num(plugin, fx->name, NULL);
-            if (effect_num >= 0)
-              fx->effect_num = effect_num;
+
+            if (AUDIO_maybe_warn_about_automating_bus_onoff(fx->patch, fx->name, "automation", talloc_format(" in block %d, track %d", block->l.num, track->l.num))){
+              
+              to_remove.push_back(fxs);
+              
+            } else {
+
+              fx->name = PLUGIN_get_new_name_if_name_has_changed(plugin, fx->name);
+              
+              int effect_num = PLUGIN_get_effect_num(plugin, fx->name, NULL);
+              if (effect_num >= 0){
+                
+                fx->effect_num = effect_num;
+                
+              }
             
-            fx->color = get_effect_color(plugin, fx->effect_num);
+              fx->color = get_effect_color(plugin, fx->effect_num);
+
+            }
                           
           }
           
         }END_VECTOR_FOR_EACH;
+
+        for(struct FXs *fxs : to_remove){
+          VECTOR_remove(&track->fxs, fxs);
+        }
       }
       
       track = NextTrack(track);

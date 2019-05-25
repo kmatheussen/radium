@@ -1437,25 +1437,6 @@ bool instrumentIsSeqtrackBus(int64_t instrument_id){
   return false;
 }
 
-bool instrumentIsBusDescendant(int64_t instrument_id){
-  struct Patch *patch = getPatchFromNum(instrument_id);
-  if(patch==NULL)
-    return false;
-
-  if (patch->instrument == get_audio_instrument()){
-    struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
-    if (plugin==NULL){
-      handleError("Instrument #%d has been closed", (int)instrument_id);
-      return true;
-    }
-
-    struct SoundProducer *sp = SP_get_sound_producer(plugin);
-    R_ASSERT_RETURN_IF_FALSE2(sp!=NULL, false);
-    return SP_get_bus_descendant_type(sp)==IS_BUS_DESCENDANT;
-  }else
-    return false;
-}
-
 bool instrumentIsPermanent(int64_t instrument_id){  
   if (g_is_replacing_main_pipe==true) // hack
     return false;
@@ -1798,6 +1779,18 @@ void deleteEventConnection(int64_t source_id, int64_t dest_id){
 
   if (MW_edisconnect(source, dest)==false)
     handleError("Could not find audio connection between \"%s\" and \"%s\"", source->name, dest->name);
+}
+
+bool canAudioConnect(int64_t source_id, int64_t dest_id){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return false;
+
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return false;
+
+  return CONNECTION_can_connect(source, dest);
 }
 
 bool hasEventConnection(int64_t source_id, int64_t dest_id){

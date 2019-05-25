@@ -142,8 +142,6 @@ extern LANGSPEC bool SP_set_link_enabled(struct SoundProducer *target, struct So
 extern LANGSPEC struct SoundPlugin *SP_get_plugin(const struct SoundProducer *producer);
 extern LANGSPEC struct SoundProducer *SP_get_sound_producer(const struct SoundPlugin *plugin);
 
-extern LANGSPEC enum BusDescendantType SP_get_bus_descendant_type(const struct SoundProducer *sp);
-
 extern LANGSPEC struct SoundProducer *SP_create(struct SoundPlugin *plugin, Buses buses);
 extern LANGSPEC void SP_delete(struct SoundProducer *producer);
 

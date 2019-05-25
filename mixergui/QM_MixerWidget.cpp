@@ -1182,19 +1182,34 @@ bool MW_has_mouse_pointer(void){
 }
 
 static bool g_connections_are_visible = true;
+static bool g_bus_connections_are_visible = false;
+
+static void update_connections_visibility(void){  
+  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  for(auto *item : das_items){
+    SuperConnection *connection = dynamic_cast<SuperConnection*>(item);
+    if (connection != NULL){
+      connection->update_visibility();
+    }
+  }
+}
+
 bool MW_get_connections_visibility(void){
   return g_connections_are_visible;
 }
 
 void MW_set_connections_visibility(bool show){
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
-  for(auto *item : das_items){
-    SuperConnection *connection = dynamic_cast<SuperConnection*>(item);
-    if (connection != NULL){
-      connection->setVisibility(show);
-    }
-  }
   g_connections_are_visible=show;
+  update_connections_visibility();
+}
+
+bool MW_get_bus_connections_visibility(void){
+  return g_bus_connections_are_visible;
+}
+
+void MW_set_bus_connections_visibility(bool show){
+  g_bus_connections_are_visible=show;
+  update_connections_visibility();
 }
 
 static const char *get_displayable_keybinding(const char *prefix, const char *racommand, const dynvec_t &args){
@@ -2591,7 +2606,7 @@ hash_t *MW_get_state(const vector_t *patches, bool include_ab){
   return state;
 }
 
-// Only used when loading song
+// Compatibility with old songs.
 static void MW_create_chips_from_full_state(hash_t *chips, Buses buses, bool is_loading){
 
   R_ASSERT(is_loading);
@@ -2612,6 +2627,17 @@ static void MW_create_chips_from_full_state(hash_t *chips, Buses buses, bool is_
       GFX_ShowProgressMessage(talloc_format("Creating instrument %d / %d: %s", i, (int)num_chips, patch->name), true);
 
     PATCH_init_audio_when_loading_song(patch, state);
+  }
+}
+
+// Only used when loading old songs
+static void MW_create_bus_connections_for_all_chips(Buses &buses){
+  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+
+  for (int i = 0; i < das_items.size(); ++i) {
+    Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+    if(chip!=NULL)
+      CHIP_create_bus_connections(chip, buses);
   }
 }
 
@@ -2787,6 +2813,8 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
     GFX_ShowProgressMessage("Creating connections between sound objects", true);
 
   CONNECTIONS_create_from_state(&g_mixer_widget->scene, HASH_get_hash(state, "connections"), -1, -1, -1, -1);
+
+  MW_create_bus_connections_for_all_chips(new_buses); // compatibility with old songs
 
   if (HASH_has_key(state, "ab_state"))
     MW_recreate_ab_from_state(HASH_get_hash(state, "ab_state"));

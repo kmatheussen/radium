@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundProducer_proc.h"
+#include "../audio/audio_instrument_proc.h"
 
 #include "song_tempo_automation_proc.h"
 
@@ -145,7 +146,7 @@ struct Automation{
     color = get_qcolor(get_effect_color(plugin, effect_num));
   }
 
-  Automation(hash_t *state, double state_samplerate){
+  Automation(hash_t *state, double state_samplerate, int seqtracknum){
     if(HASH_has_key(state, "is_enabled"))
       _is_enabled = HASH_get_bool(state, "is_enabled");
     
@@ -157,6 +158,11 @@ struct Automation{
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
 
+    if (AUDIO_maybe_warn_about_automating_bus_onoff(patch, effect_name, "automation", talloc_format(" in seqtrack %d", seqtracknum))){
+      effect_num = -1;
+      return;
+    }
+    
     const SoundPluginType *type=plugin->type;
     int i;
     
@@ -207,7 +213,7 @@ public:
   struct SeqTrack *_seqtrack;
   radium::Vector<Automation*> _automations;
   
-  SeqtrackAutomation(struct SeqTrack *seqtrack, double state_samplerate, const hash_t *state = NULL)
+  SeqtrackAutomation(struct SeqTrack *seqtrack, double state_samplerate, const hash_t *state = NULL, int seqtracknum = -1)
     :_seqtrack(seqtrack)
   {
     SEQTRACK_AUTOMATION_cancel_curr_automation();
@@ -216,9 +222,11 @@ public:
       int size = HASH_get_array_size(state, "automation");
       
       for(int i = 0 ; i < size ; i++){
-        Automation *automation = new Automation(HASH_get_hash_at(state, "automation", i), state_samplerate);
+        Automation *automation = new Automation(HASH_get_hash_at(state, "automation", i), state_samplerate, seqtracknum);
         if (automation->effect_num >= 0)
           _automations.push_back(automation);
+        //else
+        //  delete automation; Nah. We sacrifice some memory to avoid having to deal with proper destruction of non-valid object.
       }
     }
   }
@@ -473,8 +481,8 @@ public:
 };
  
 
-struct SeqtrackAutomation *SEQTRACK_AUTOMATION_create(struct SeqTrack *seqtrack, const hash_t *automation_state, double state_samplerate){
-  return new SeqtrackAutomation(seqtrack, state_samplerate, automation_state);
+struct SeqtrackAutomation *SEQTRACK_AUTOMATION_create(struct SeqTrack *seqtrack, const hash_t *automation_state, int seqtracknum, double state_samplerate){
+  return new SeqtrackAutomation(seqtrack, state_samplerate, automation_state, seqtracknum);
 }
 
 void SEQTRACK_AUTOMATION_free(struct SeqtrackAutomation *seqtrackautomation){

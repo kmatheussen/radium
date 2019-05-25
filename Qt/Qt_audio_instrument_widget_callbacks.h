@@ -351,16 +351,6 @@ public:
       return mute_button;
     case EFFNUM_OUTPUT_VOLUME_ONOFF:
       return output_volume_onoff;
-    case EFFNUM_BUS1_ONOFF:
-      return bus1_onoff;
-    case EFFNUM_BUS2_ONOFF:
-      return bus2_onoff;
-    case EFFNUM_BUS3_ONOFF:
-      return bus3_onoff;
-    case EFFNUM_BUS4_ONOFF:
-      return bus4_onoff;
-    case EFFNUM_BUS5_ONOFF:
-      return bus5_onoff;
     case EFFNUM_PAN_ONOFF:
       return panning_onoff;
     case EFFNUM_EFFECTS_ONOFF:
@@ -462,17 +452,6 @@ public:
     //  volume_slider->setEnabled(val);
     if(system_effect==EFFNUM_OUTPUT_VOLUME_ONOFF)
       output_volume_slider->setEnabled(val);
-    if(system_effect==EFFNUM_BUS1_ONOFF)
-      bus1_slider->setEnabled(val);
-    if(system_effect==EFFNUM_BUS2_ONOFF)
-      bus2_slider->setEnabled(val);
-    if(system_effect==EFFNUM_BUS3_ONOFF)
-      bus3_slider->setEnabled(val);
-    if(system_effect==EFFNUM_BUS4_ONOFF)
-      bus4_slider->setEnabled(val);
-    if(system_effect==EFFNUM_BUS5_ONOFF)
-      bus5_slider->setEnabled(val);
-
     if(system_effect==EFFNUM_LOWPASS_ONOFF)
       lowpass_freq_slider->setEnabled(val);
     if(system_effect==EFFNUM_HIGHPASS_ONOFF)
@@ -499,7 +478,38 @@ public:
     }
   }
 
+  void updateBusChecked(QAbstractButton* checkwidget, QSlider* bus_slider, SoundProducer *bus){
+    if(bus==NULL){
+      R_ASSERT_NON_RELEASE(g_is_loading);
+      return;
+    }
 
+    struct Patch *from = _patch.data();
+    struct Patch *to = const_cast<Patch*>(SP_get_plugin(bus)->patch);
+
+    if(instrumentIsOpenAndAudio(from->id)==false){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+    
+    if(instrumentIsOpenAndAudio(to->id)==false){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+    
+    bool are_connected = MW_are_connected(from, to);
+    checkwidget->setChecked(are_connected);
+    bus_slider->setEnabled(are_connected);
+
+    if(are_connected)
+      checkwidget->setEnabled(true);
+    else{
+      bool can_connect = CONNECTION_can_connect(from, to);
+      //printf("   %s => %s legal: %d\n", from->name, to->name, can_connect);
+      checkwidget->setEnabled(can_connect);
+    }
+  }
+    
   QTime time_of_last_minheight_inc;
   int number_of_minheight_incs = 0;
   
@@ -612,8 +622,8 @@ public:
       }
     }
   }
-  
-  void updateWidgets(){
+
+  void updateWidgets(void){
     //printf("updateWidgets %s\n", _patch->name);
     set_arrow_style(controlsArrow, false);
     set_arrow_style(arrow2, false);
@@ -677,12 +687,14 @@ public:
     updateChecked(input_volume_onoff, EFFNUM_INPUT_VOLUME_ONOFF);
     updateChecked(mute_button, EFFNUM_VOLUME_ONOFF);
     updateChecked(output_volume_onoff, EFFNUM_OUTPUT_VOLUME_ONOFF);
-    updateChecked(bus1_onoff, EFFNUM_BUS1_ONOFF);
-    updateChecked(bus2_onoff, EFFNUM_BUS2_ONOFF);
-    updateChecked(bus3_onoff, EFFNUM_BUS3_ONOFF);
-    updateChecked(bus4_onoff, EFFNUM_BUS4_ONOFF);
-    updateChecked(bus5_onoff, EFFNUM_BUS5_ONOFF);
 
+    Buses buses = MIXER_get_buses();
+    updateBusChecked(bus1_onoff, bus1_slider, buses.bus1);
+    updateBusChecked(bus2_onoff, bus2_slider, buses.bus2);
+    updateBusChecked(bus3_onoff, bus3_slider, buses.bus3);
+    updateBusChecked(bus4_onoff, bus4_slider, buses.bus4);
+    updateBusChecked(bus5_onoff, bus5_slider, buses.bus5);
+    
     updateChecked(panning_onoff, EFFNUM_PAN_ONOFF);
     updateChecked(bypass_button, EFFNUM_EFFECTS_ONOFF);
     updateChecked(solo_button, EFFNUM_SOLO_ONOFF);
@@ -718,14 +730,6 @@ public:
     }
 
     update_all_ab_buttons();
-    
-    bool is_bus_provider = SP_get_bus_descendant_type(plugin->sp)==IS_BUS_PROVIDER;
-
-    bus1_widget->setEnabled(is_bus_provider);
-    bus2_widget->setEnabled(is_bus_provider);
-    bus3_widget->setEnabled(is_bus_provider);
-    bus4_widget->setEnabled(is_bus_provider);
-    bus5_widget->setEnabled(is_bus_provider);
 
 #if 0 //ndef RELEASE
     static int checknum;
@@ -821,6 +825,22 @@ public:
     updateSliderString(system_effect);
   }
 
+  void set_bus_value(SoundProducer *bus, bool val){
+    if (is_starting==true)
+      return;
+
+    if (bus==NULL){
+      R_ASSERT_NON_RELEASE(g_is_starting_up);
+      return;
+    }
+
+    ADD_UNDO(MixerConnections_CurrPos());
+    
+    if (val)
+      MW_connect(_patch.data(), const_cast<Patch*>(SP_get_plugin(bus)->patch), ConnectionType::IS_SEND);
+    else
+      MW_disconnect(_patch.data(), const_cast<Patch*>(SP_get_plugin(bus)->patch));
+  }
   
 private:
   
@@ -1162,27 +1182,29 @@ public slots:
     output_volume_slider->setEnabled(val);
   }
 
+  
   void on_bus1_onoff_toggled(bool val){
-    set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS1_ONOFF);
+    set_bus_value(MIXER_get_buses().bus1, val);
     bus1_slider->setEnabled(val);
   }
   void on_bus2_onoff_toggled(bool val){
-    set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS2_ONOFF);
+    set_bus_value(MIXER_get_buses().bus2, val);
     bus2_slider->setEnabled(val);
   }
   void on_bus3_onoff_toggled(bool val){
-    set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS3_ONOFF);
+    set_bus_value(MIXER_get_buses().bus3, val);
     bus3_slider->setEnabled(val);
   }
   void on_bus4_onoff_toggled(bool val){
-    set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS4_ONOFF);
+    set_bus_value(MIXER_get_buses().bus4, val);
     bus4_slider->setEnabled(val);
   }
   void on_bus5_onoff_toggled(bool val){
-    set_plugin_value(val==true ? 10000 : 0, EFFNUM_BUS5_ONOFF);
+    set_bus_value(MIXER_get_buses().bus5, val);
     bus5_slider->setEnabled(val);
   }
 
+  
   void on_bus1_slider_valueChanged(int val){
     set_plugin_value(val, EFFNUM_BUS1);
   }

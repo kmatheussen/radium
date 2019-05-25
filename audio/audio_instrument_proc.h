@@ -27,7 +27,8 @@ extern LANGSPEC int AUDIO_initInstrumentPlugIn(struct Instruments *instrument);
 
 extern LANGSPEC void AUDIO_stop_all_notes(struct Patch *patch);
 
-extern LANGSPEC void DLoadAudioInstrument(void);
+extern LANGSPEC bool AUDIO_maybe_warn_about_automating_bus_onoff(const struct Patch *patch, const char *effect_name, const char *what, const char *info);
+extern LANGSPEC void DLoadAudioInstrument(struct Root *newroot, struct Song *song);
 
 //extern LANGSPEC struct Patch *AUDIO_get_patch_for_plugin(struct SoundPlugin *plugin);
 

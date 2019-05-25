@@ -67,7 +67,7 @@ struct Song *SONG_create(void){
   
   reset_recording_config(&song->default_recording_config);
 
-  VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL, -1, false, false));
+  VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL, 0, -1, false, false));
 
   SEQUENCER_init(song);
   

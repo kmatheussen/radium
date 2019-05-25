@@ -143,6 +143,9 @@ extern LANGSPEC bool MW_has_mouse_pointer(void);
 extern LANGSPEC bool MW_get_connections_visibility(void);
 extern LANGSPEC void MW_set_connections_visibility(bool show);
 
+extern LANGSPEC bool MW_get_bus_connections_visibility(void);
+extern LANGSPEC void MW_set_bus_connections_visibility(bool show);
+
 extern LANGSPEC void MW_connect_plugin_to_main_pipe(SoundPlugin *plugin);
 
 #ifdef __cplusplus
