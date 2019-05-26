@@ -926,7 +926,7 @@
   ;;(maybe-start-debug-pulse)
   (define html-message (string-append "<h4>" (<ra> :get-date-string) " " (<ra> :get-time-string) ":</h4>"
                                       "<blockquote>"
-                                      (format #f "~S" message)
+                                      (format #f "~A" message)
                                       "</blockquote>"))
   (show-message-gui (string-append "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd\">"
                                    "<html><head>" 
