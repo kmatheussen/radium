@@ -1023,10 +1023,10 @@ bool AUDIO_maybe_warn_about_automating_bus_onoff(const struct Patch *patch, cons
     || !strcmp(effect_name, "System Aux 3 On/Off");
 
   if (gotit) {
-    GFX_addMessage("Note: The %s of \"%s\" for the instrument \"%s\"%s could not be loaded. "
-                   "This effect has been removed from Radium.",
-                   what,
+    GFX_addMessage("Note: The effect \"%s\" has been removed from Radium.<br>"
+                   "The %s of this effect for the instrument named \"%s\"%s could not be loaded.",
                    effect_name,
+                   what,
                    patch->name,
                    info);
     /*
