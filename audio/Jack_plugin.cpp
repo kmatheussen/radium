@@ -437,18 +437,26 @@ void create_jack_plugins(void){
 const char *JACK_get_name(SoundPlugin *plugin, int portnum){
   Data *data = static_cast<Data*>(plugin->data);
 
-  if(plugin->type->num_outputs>0)
-    return jack_port_short_name(data->input_ports[portnum]);
-  else
-    return jack_port_short_name(data->output_ports[portnum]);
+  if(plugin->type->num_outputs>0){
+    if (data->input_ports[portnum]!=NULL)
+      return jack_port_short_name(data->input_ports[portnum]);
+  } else {
+    if (data->output_ports[portnum] != NULL)
+      return jack_port_short_name(data->output_ports[portnum]);
+  }
+
+  return "jack port could not be registered";
 }
 
 void JACK_set_name(SoundPlugin *plugin, int portnum, const char *new_name){
   Data *data = static_cast<Data*>(plugin->data);
 
-  if(plugin->type->num_inputs>0)
-    jack_port_set_name(data->output_ports[portnum], new_name);
-  else
-    jack_port_set_name(data->input_ports[portnum], new_name);
+  if(plugin->type->num_inputs>0){
+    if (data->output_ports[portnum] != NULL)
+      jack_port_set_name(data->output_ports[portnum], new_name);
+  }else{
+    if (data->output_ports[portnum] != NULL)
+      jack_port_set_name(data->input_ports[portnum], new_name);
+  }
 }
 
