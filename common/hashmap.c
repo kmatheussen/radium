@@ -80,18 +80,6 @@ typedef struct _hash_element_t{
   dyn_t a;
 } hash_element_t;
 
-static hash_element_t *copy_element(hash_element_t *element){
-  hash_element_t *element_copy = tcopy(element, sizeof(hash_element_t));
-  //element_copy->key = talloc_strdup(element->key); // is this necessary? The key is already allocated by bdwgc, and it is never changed as far as I know.
-  
-  if (element->a.type==HASH_TYPE)
-    element_copy->a.hash = HASH_copy(element->a.hash);
-  
-  //else if (element->a.type==STRING_TYPE)
-  //  element_copy->string = STRING_copy(element->string); // This is probably not necessary since strings are copied before inserted into the hash table.
-
-  return element_copy;
-}
 
 static bool elements_are_equal(const hash_element_t *el1, const hash_element_t *el2){
   R_ASSERT_NON_RELEASE(el1->i==el2->i);
@@ -154,7 +142,7 @@ hash_t *HASH_create(int approx_size){
   return hash;
 }
 
-static void put2(hash_t *hash, const char *key, int i, hash_element_t *element);
+static void put2(hash_t *hash, const char *key, int i, const dyn_t dyn);
 
 hash_t *HASH_shallow_copy(const hash_t *hash){
   hash_t *copy = tcopy(hash, sizeof(hash_t) + (hash->elements_size*sizeof(hash_element_t*)));
@@ -168,11 +156,16 @@ hash_t *HASH_copy(const hash_t *hash){
 
   int i;
   for(i=0;i<hash->elements_size;i++){
+    
     hash_element_t *element = hash->elements[i];
+    
     while(element!=NULL){
-      hash_element_t *element_copy = copy_element(element);
 
-      put2(ret, element->key, element->i, element_copy);
+      put2(ret,
+           element->key,
+           element->i,
+           DYN_copy(element->a)
+           );
         
       element=element->next;
     }
@@ -266,7 +259,7 @@ bool HASH_remove(hash_t *hash, const char *raw_key){
   return HASH_remove_at(hash, raw_key, 0);
 }
 
-static void put2(hash_t *hash, const char *key, int i, hash_element_t *element){
+static void put2(hash_t *hash, const char *key, int i, const dyn_t dyn){
 #if !defined(RELEASE)
   if (strcmp(NOTUSED_EFFECT_NAME, key)) // <- The pd and faust instruments create effect names called "NOTUSED" for unused effects.
     R_ASSERT(!HASH_has_key_at(hash, key, i)); // NOTE. Hitting this one is not necessarily a bug. But since it's so seldom that we overwrite hash table elements, it seems like a good idea to have this line here.
@@ -275,26 +268,45 @@ static void put2(hash_t *hash, const char *key, int i, hash_element_t *element){
   unsigned int index = oat_hash(key,i) % hash->elements_size;
   //fprintf(stderr,"put %p. index: %u\n",hash,index);
 
-  element->key=key;
-  element->i=i;
+  // First check if we should replace.
+  {
+    hash_element_t *element=hash->elements[index];
+    while(element!=NULL){
+      if (element->i == i && !strcmp(key,element->key)){
+#if !defined(RELEASE)
+        if (strcmp(NOTUSED_EFFECT_NAME, key)) // <- The pd and faust instruments create effect names called "NOTUSED" for unused effects.
+          R_ASSERT(false); // NOTE. Hitting this one is not necessarily a bug. But since it's so seldom that we overwrite hash table elements, it seems like a good idea to have this line here.
+#endif
+        element->a = dyn;
+        return;
+      }
+      element = element->next;
+    }
+  }
 
-  hash->num_elements++;
 
-  element->next = hash->elements[index];
-  hash->elements[index] = element;
+  {
+    hash_element_t *element = talloc(sizeof(hash_element_t));
+    element->a = dyn;
+    
+    element->key=key;
+    element->i=i;
+    
+    hash->num_elements++;
+    
+    element->next = hash->elements[index];
+    hash->elements[index] = element;
+  }
 }
 
-static void put(hash_t *hash, const char *raw_key, int i, hash_element_t *element){
+static void put(hash_t *hash, const char *raw_key, int i, const dyn_t dyn){
   const char *key = STRING_get_utf8_chars(raw_key);
 
-  put2(hash, key, i, element);
+  put2(hash, key, i, dyn);
 }
 
 static void put_dyn(hash_t *hash, const char *key, int i, const dyn_t dyn){
-  hash_element_t *element = talloc(sizeof(hash_element_t));
-  element->a = dyn;
-
-  put(hash,key,i,element);
+  put(hash,key,i,dyn);
 }
 
 static void put_string(hash_t *hash, const char *key, int i, const wchar_t *val){
