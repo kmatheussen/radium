@@ -485,6 +485,10 @@ public:
     }
 
     struct Patch *from = _patch.data();
+    
+    if(instrumentIsOpen(from->id)==false) // happens when creating new instrument.
+      return;
+    
     struct Patch *to = const_cast<Patch*>(SP_get_plugin(bus)->patch);
 
     if(instrumentIsOpenAndAudio(from->id)==false){
