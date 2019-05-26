@@ -25,6 +25,23 @@ static inline const dyn_t* end(const dynvec_t *v) {
 extern void DYN_save(disk_t *file, const dyn_t dyn);
 extern dyn_t DYN_load(disk_t *file, bool *success);
 
+static inline dyn_t DYN_copy(const dyn_t a);
+
+static inline dynvec_t DYNVEC_copy(const dynvec_t *v){
+  dynvec_t ret;
+  
+  ret.num_elements_allocated = v->num_elements_allocated;
+  ret.num_elements = v->num_elements;
+  
+  ret.elements = (dyn_t*)talloc(ret.num_elements_allocated*(int)sizeof(dyn_t));
+  
+  for(int i=0;i<ret.num_elements;i++){
+    ret.elements[i] = DYN_copy(v->elements[i]);
+  }
+
+  return ret;
+}
+
 extern LANGSPEC bool DYNVEC_equal(dynvec_t *v1, dynvec_t *v2);
 
 extern LANGSPEC void DYNVEC_save(disk_t *file, const dynvec_t dynvec);

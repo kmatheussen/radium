@@ -1220,6 +1220,17 @@ static inline dyn_t DYN_create_array(const dynvec_t dynvec){
   return a;
 }
 
+static inline dyn_t DYN_copy(const dyn_t a){
+  if (a.type==HASH_TYPE)
+    return DYN_create_hash(HASH_copy(a.hash));
+  else if (a.type==ARRAY_TYPE)
+    return DYN_create_array(DYNVEC_copy(a.array));
+  else if (a.type==RATIO_TYPE)
+    return DYN_create_ratio(*a.ratio);
+  else
+    return a;
+}
+
 
 
 /*********************************************************************
