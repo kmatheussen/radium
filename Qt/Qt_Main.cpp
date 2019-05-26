@@ -2800,7 +2800,7 @@ int radium_main(const char *arg){
   BS_UpdateBlockList();
   BS_UpdatePlayList();
   BS_SelectBlock(root->song->blocks);
-  BS_SelectPlaylistPos(0);
+  BS_SelectPlaylistPos(0, false);
 
   struct Tracker_Windows *window = root->song->tracker_windows;
 
