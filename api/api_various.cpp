@@ -899,7 +899,8 @@ void openAboutWindow(void){
               "<A href=\"http://users.notam02.no/~kjetism/radium/development.php\">Credits</A>"
               "<p>"
               "Jack samplerate: %d<br>"
-              "Monitor refresh rate: %s"
+              "Monitor refresh rate: %s<br>"
+              "Control port: %d"
               "<p>"
               "Song length: %02d : %02d : %02d"
               "<p>"
@@ -912,6 +913,7 @@ void openAboutWindow(void){
               GFX_qVersion(),
               (int)MIXER_get_sample_rate(),
               vblank < 0 ? "Refresh rate not detected" : talloc_format("%.2f", 1000.0 / vblank),
+              SCHEME_get_webserver_port(),
               minutes, seconds, s2
               );
 }
