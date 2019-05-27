@@ -1857,17 +1857,23 @@
                       (else
                        (assert #f))))
 
-  (define is-implicitly-muted (and (eq? type 'mute)
-                                   instrument-id
-                                   (>= instrument-id 0)
-                                   (<ra> :instrument-is-implicitly-muted instrument-id)))
+  (define is-implicitly (cond ((and (eq? type 'mute)
+                                    instrument-id
+                                    (>= instrument-id 0))
+                               (<ra> :instrument-is-implicitly-muted instrument-id))
+                              ((and (eq? type 'solo)
+                                    instrument-id
+                                    (>= instrument-id 0))
+                               (<ra> :instrument-is-implicitly-soloed instrument-id))
+                              (else
+                               #f)))
 
   ;;(c-display "background-color:" background-color)
   (draw-checkbox gui text is-selected x1 y1 x2 y2 color
                  :x-border border
                  :y-border border
                  :background-color background-color                 
-                 :paint-implicit-border is-implicitly-muted
+                 :paint-implicit-border is-implicitly
                  :implicit-border-width implicit-border
                  :box-rounding 2)
   )
@@ -3031,6 +3037,9 @@
                                      (get-all-audio-instruments)))
 (length (get-all-audio-instruments))
 (<gui> :show gui)
+(every? (lambda (b)
+       #t)
+     (list 1 2 3))
 !!#
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)
@@ -3039,9 +3048,8 @@
   ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " (sort list-of-modified-instrument-ids <) (length *mixer-strips-objects*) "\n\n\n")
   ;;(c-display "all:" (sort (get-all-audio-instruments) <))
   (let ((list-of-modified-instrument-ids (cond ((or (null? list-of-modified-instrument-ids)
-                                                    (not (null? ((<new> :container (get-all-audio-instruments)) ;;i.e. if a modified instrument is deleted.
-                                                                 :set-difference
-                                                                 list-of-modified-instrument-ids))))
+                                                    (not ((<new> :container (get-all-audio-instruments)) ;;i.e. if a modified instrument is deleted.
+                                                          :has-all? list-of-modified-instrument-ids)))
                                                 :non-are-valid)
                                                ((true-for-all? (lambda (id)
                                                                  (= id -2))

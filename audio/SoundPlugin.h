@@ -629,6 +629,9 @@ typedef struct SoundPlugin{
 
   bool is_dpi_aware; // If false, we call SetThreadDPIAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE) before opening GUI.
 
+  bool is_implicitly_muted;
+  bool is_implicitly_soloed;
+  
 } SoundPlugin;
 
   

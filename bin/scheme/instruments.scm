@@ -105,11 +105,29 @@
 (define-macro (push-audio-connection-change! changes rest)
   `(push-back! ,changes (create-audio-connection-change ,@(cdr rest))))
 
+
 #!!
 (macroexpand (push-audio-connection-change! changes (list :type "connect"
                                                           :source from-instrument
                                                           :target id-new-instrument
                                                           :gain (<ra> :get-audio-connection-gain from-instrument id-old-instrument))))
+
+!!#
+
+(delafina (create-audio-connection-implicitly-enabled-change :source
+                                                             :target
+                                                             :implicitly-enabled)
+  (assert (integer? source))
+  (assert (integer? target))
+  (hash-table :type "connect" :source source :target target :implicitly-enabled (if implicitly-enabled 1 0)))
+
+(define-macro (push-audio-connection-implicitly-enabled-change! changes rest)
+  `(push-back! ,changes (create-audio-connection-implicitly-enabled-change ,@(cdr rest))))
+
+#!!
+(macroexpand (push-audio-connection-implicitly-enabled-change! changes (list :source from-instrument
+                                                                             :target id-new-instrument
+                                                                             :implicitly-enabled #t)))
 
 !!#
                
@@ -769,53 +787,6 @@
 
      (if result
          (callback result)))))
-
-
-(define (set-instrument-solo-for-this-instrument-only! id is-on)
-  ;;(c-display "     Setting" (<ra> :get-instrument-name id) "solo to" is-on)
-  (define current-value (> (<ra> :get-instrument-effect id "System Solo On/Off") 0.5))
-  (when (or (and is-on (not current-value))
-            (and (not is-on) current-value))            
-    (if (<ra> :do-undo-solo)
-        (<ra> :undo-instrument-effect id "System Solo On/Off"))
-    (<ra> :set-instrument-effect id "System Solo On/Off" (if is-on 1.0 0.0))))
-
-
-(define (set-solo-for-connected-output-instruments! instrument-id is-on)
-  (define output-instruments (get-instruments-connecting-from-instrument instrument-id))
-  (if (= 1 (length output-instruments))
-      (let ((id (car output-instruments)))
-        (set-instrument-solo-for-this-instrument-only! id is-on)
-        (set-solo-for-connected-output-instruments! id is-on))))
-
-;; This one only set solo if it had just one input, and some mysterious other operations on that instrument. I don't remember the reason for all this...
-;; Edit: No, it has a purpose, but it's not good. Need to redo the solo logic later, but keep this one for now.
-(define (set-solo-for-connected-input-instruments! instrument-id is-on)  
-  (define input-instruments (get-instruments-connecting-to-instrument instrument-id))
-  ;;(c-display "input-instruments:" (map ra:get-instrument-name input-instruments))
-  (if (= 1 (length input-instruments))
-      (let ((id (car input-instruments)))
-        (define output-instruments (get-instruments-connecting-from-instrument id))
-        (if (= 1 (length output-instruments))
-            (set-instrument-solo-for-this-instrument-only! id is-on))
-        (set-solo-for-connected-input-instruments! id is-on))))
-
-;; Edit: Can't do it like this. It's complicated. Need to redo the solo logic later.
-(define (set-solo-for-connected-input-instruments-new! instrument-id is-on)  
-  (define input-instruments (get-instruments-connecting-to-instrument instrument-id))
-  ;;(c-display "input-instruments:" (map ra:get-instrument-name input-instruments))
-  (map (lambda (instrument-id)
-         (set-instrument-solo-for-this-instrument-only! instrument-id is-on)
-         (set-solo-for-connected-input-instruments! instrument-id is-on))
-       input-instruments))         
-  
-(define (FROM-C-set-solo! instrument-id is-on)
-  ;;(c-display "FROM-C-set-solo!" instrument-id is-on)
-  (undo-block (lambda ()
-                (set-instrument-solo-for-this-instrument-only! instrument-id is-on)
-                (set-solo-for-connected-output-instruments! instrument-id is-on)
-                (set-solo-for-connected-input-instruments! instrument-id is-on))))
-
 
 (define (FROM_C-set-solo-for-instruments instruments doit)
   (undo-block

@@ -299,19 +299,12 @@ struct SoundProducerLink {
     should_be_turned_off = true;
   }
 
-  bool turn_off_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(void) const {
-    return SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(source);
-  }
-  
   float get_total_link_volume(void) const {
     const SoundPlugin *source_plugin = SP_get_plugin(source);
 
     //bool do_bypass      = !ATOMIC_GET(source_plugin->effects_are_on);
 
     //float plugin_volume = do_bypass ? 1.0 : source_plugin->volume;  // (Note that plugin->volume==0 when plugin->volume_onoff==false, so we don't need to test for that)
-
-    if (turn_off_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis())
-      return 0.0f;
 
     if (should_be_turned_off)
       return 0.0f;
@@ -2013,10 +2006,13 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
     SoundProducerLink *existing_link = parm.target->find_input_audio_link(parm.source, parm.source_ch, parm.target_ch, true);
 
     if (existing_link != NULL) {
-
-      if (parm.must_set_enabled && existing_link->link_enabled != parm.link_is_enabled)
-        link_enable_changes.push_back(LinkEnabledChange(existing_link, parm.link_is_enabled));
-
+      
+      if (parm.enable_type != radium::EnableType::DONT_CHANGE) {
+        bool link_is_enabled = parm.enable_type==radium::EnableType::DISABLE ? false : true;
+        if (existing_link->link_enabled != link_is_enabled)
+          link_enable_changes.push_back(LinkEnabledChange(existing_link, link_is_enabled));
+      }
+      
       if (parm.must_set_volume && existing_link->link_volume != parm.volume)
         volume_changes.push_back(VolumeChange(existing_link, parm.volume));
       
@@ -2029,9 +2025,10 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
         link->link_volume = parm.volume;
         link->RT_link_volume = parm.volume;
       }
-      if (parm.must_set_enabled){
-        link->link_enabled = parm.link_is_enabled;
-        link->RT_link_enabled = parm.link_is_enabled;
+      if (parm.enable_type != radium::EnableType::DONT_CHANGE) {
+        bool link_is_enabled = parm.enable_type==radium::EnableType::DISABLE ? false : true;
+        link->link_enabled = link_is_enabled;
+        link->RT_link_enabled = link_is_enabled;
       }
       to_add.push_back(link);
       
@@ -2383,34 +2380,6 @@ double SP_get_running_time(const SoundProducer *sp){
 
 bool SP_has_input_links(const SoundProducer *sp){
   return sp->_input_links.size() > 0;
-}
-
-// Note: Might be called from any thread, both main thread and an audio thread.
-bool SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(SoundProducer *sp) {
-
-  if (!MIXER_someone_has_solo())
-    return false;
-    
-    
-  SoundPlugin *plugin = SP_get_plugin(sp);
-
-  
-  if (ATOMIC_GET(plugin->solo_is_on))
-    return false;
-
-  
-  // Very special situation. When several sound objects are selected, we run local solo behaviour for those objects only. All other are playing. I don't remember what this was good for...
-  if (MIXER_at_least_two_soundproducers_are_selected())    
-    if (ATOMIC_GET(plugin->is_selected))
-      return true;
-
-  
-  if (SP_has_audio_input_link(sp)==false)
-    if (SP_get_bus_num(sp) == -1)            
-      return true;
-
-  
-  return false;
 }
 
 int SP_get_max_input_channels_from_audio_input_links(const struct SoundProducer *sp){

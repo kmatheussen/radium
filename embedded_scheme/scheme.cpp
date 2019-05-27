@@ -352,7 +352,7 @@ dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
 
 
 bool s7extra_is_dynvec(s7_pointer dynvec){
-  return s7_is_vector(dynvec) || s7_is_pair(dynvec);
+  return s7_is_vector(dynvec) || s7_is_list(s7, dynvec);
 }
 
 dynvec_t s7extra_dynvec(s7_scheme *s7, s7_pointer s){
