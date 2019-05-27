@@ -134,7 +134,7 @@ public:
 
   float _last_updated_volume = -1;
   bool _last_updated_mute = false;
-  bool _last_updated_implicitly_mute = false;
+  //bool _last_updated_implicitly_mute = false;
   bool _last_updated_solo = false;
   bool _last_updated_bypass = false;
   bool _last_updated_recording = false;
