@@ -760,17 +760,66 @@ bool instrumentIsImplicitlyMuted(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
-  
+
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
     handleError("Instrument #%d has been closed", (int)instrument_id);
     return false;
   }
 
-  struct SoundProducer *sp = SP_get_sound_producer(plugin);
-  R_ASSERT_RETURN_IF_FALSE2(sp!=NULL, false);
+  return plugin->is_implicitly_muted;
+}
+
+void setInstrumentIsImplicitlyMuted(int64_t instrument_id, bool doit){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+
+  if (plugin->is_implicitly_muted == doit)
+    return;
   
-  return SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(sp);
+  plugin->is_implicitly_muted = doit;
+  CHIP_update(plugin);
+}
+
+bool instrumentIsImplicitlySoloed(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+
+  return plugin->is_implicitly_soloed;
+}
+
+void setInstrumentIsImplicitlySoloed(int64_t instrument_id, bool doit){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+
+
+  if (plugin->is_implicitly_soloed == doit)
+    return;
+  
+  plugin->is_implicitly_soloed = doit;
+  CHIP_update(plugin);
+  SEQUENCER_update(SEQUPDATE_HEADERS);
 }
 
 
@@ -1307,6 +1356,16 @@ void switchMuteForSelectedInstruments(void){
 
 void switchBypassForSelectedInstruments(void){
   S7CALL2(void_void,"FROM_C-switch-bypass-for-selected-instruments");
+}
+
+bool atLeastOneInstrumentHasSolo(void){
+  VECTOR_FOR_EACH(struct Patch *, patch, &get_audio_instrument()->patches){
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    if (plugin!=NULL && ATOMIC_GET(plugin->solo_is_on))
+      return true;
+  }END_VECTOR_FOR_EACH;
+
+  return false;
 }
 
 void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){

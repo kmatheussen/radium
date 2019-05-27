@@ -250,25 +250,36 @@ public:
   }
     
   bool get_implicitly_enabled(void) const {
-    return _is_enabled;
+    return _is_implicitly_enabled;
   }
 
-
+  void set_enabled_only_dont_update_link(bool is_enabled, bool is_implicitly_enabled){
+    //printf(".............Setting %s -> %s to %d/%d (%d / %d)\n", CHIP_get_patch(_from)->name, CHIP_get_patch(_to)->name, is_enabled, is_implicitly_enabled, _is_enabled, _is_implicitly_enabled);
+           
+    if(_is_enabled != is_enabled){
+      _is_enabled = is_enabled;
+      update();
+    }
+    if (_is_implicitly_enabled != is_implicitly_enabled){
+      _is_implicitly_enabled = is_implicitly_enabled;
+      update();
+    }
+  }    
+  
   const ChipPointer &from; // Set to const. See comment about _from above.
   const ChipPointer &to;
 
   //bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
 
-  QColor getColor(void) {
-    if (!_is_implicitly_enabled)
-      return Qt::green;
-    else if (is_selected)
-      return get_qcolor(color_num).lighter(198);
+  QColor getColor(void) const {
+    QColor col = get_qcolor(color_num); // !_is_implicitly_enabled ? Qt::green : 
+    if (is_selected)
+      return col.lighter(198);
     else
-      return get_qcolor(color_num);
+      return col;
   }
   
-  QPen getPen(){
+  QPen getPen() const {
     QPen pen(Qt::gray, 50);
     if (is_selected)
       pen.setWidthF(2.2);
@@ -285,7 +296,7 @@ public:
     QColor c = getColor();
 
     if (!_is_enabled || !_is_implicitly_enabled)
-      c.setAlpha(40);
+      c.setAlpha(30);
     else if(is_selected)
       c.setAlpha(250);
     else
@@ -685,6 +696,10 @@ extern LANGSPEC void CHIP_autopos(struct Patch *patch);
 extern Chip* CHIP_create(struct SoundProducer *sound_producer, float x, float y);
 extern void CHIP_delete(struct Patch *patch);
 extern void CHIP_create_bus_connections(Chip *chip, Buses &dasbuses); // Used when loading older songs.
+/*
+extern bool CHIP_is_implicitly_muted(Chip *chip);
+extern bool CHIP_is_implicitly_muted(Patch *patch);
+*/
 #endif
 
 //extern LANGSPEC void CHIP_init_because_it_has_new_plugin(struct SoundPlugin *plugin);

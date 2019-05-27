@@ -509,6 +509,7 @@
 ;;(my-require 'mouse.scm)
 
 (my-require 'instruments.scm)
+(my-require 'solo.scm)
 
 (my-require 'fxrange.scm)
 
