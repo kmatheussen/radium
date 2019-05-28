@@ -1318,7 +1318,7 @@ void RT_play_click_note(struct SeqTrack *seqtrack, int64_t time, int note_num){
   //printf("   rt_play_click_note. seqtrack: %p\n", seqtrack);
   
   for (int i=0 ; i<num_patches ; i++){
-    //printf("Playing click note. seqtrack: %p\n", seqtrack);
+    //printf("  %d. Playing click note. seqtrack: %p\n", note_num, seqtrack);
     RT_PATCH_play_note(seqtrack,
                        patches[i],
                        create_note_t(NULL,
