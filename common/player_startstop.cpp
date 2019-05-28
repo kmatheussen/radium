@@ -174,25 +174,28 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
   
   ATOMIC_ADD(pc->play_id, 1);
   
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  struct WBlocks *wblock = window->wblock;
-
-  //printf("  Setting realline to %d\n", wblock->curr_realline);
-  ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
-  
-  R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
-  
-#if !USE_OPENGL
-  DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
-  UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
-#endif
-  
 #if STOP_GC_WHILE_PLAYING
   printf("[hb gakkgakk: %d\n",GC_dont_gc);
 #endif
 
   R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
-  
+
+  {
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+    
+    printf("  Setting realline to %d\n", wblock->curr_realline);
+    ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
+    
+    R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
+    
+#if !USE_OPENGL
+    DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
+    UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
+#endif
+  }
+
+
 #if STOP_GC_WHILE_PLAYING
 #error "must make gc_dont_gc thread safe"
   //while(GC_is_disabled())
