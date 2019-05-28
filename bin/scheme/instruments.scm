@@ -458,9 +458,9 @@
                                    buses-plugin-buses)
                            =))
 
-  (define instrument-plugins (remove (lambda (id)
-                                       (> (<ra> :get-num-in-audio-connections id) 0))
-                                     (apply append (map find-all-nonbus-plugins-used-in-mixer-strip instruments))))
+  (define instrument-plugins (keep (lambda (id)
+                                     (> (<ra> :get-num-in-audio-connections id) 0))
+                                   (apply append (map find-all-nonbus-plugins-used-in-mixer-strip instruments))))
 
   (define buses-plugins (apply append (map find-all-plugins-used-in-mixer-strip (all-buses :list))))
 
