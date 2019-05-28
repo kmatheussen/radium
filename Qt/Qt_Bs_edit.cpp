@@ -175,9 +175,10 @@ namespace{
 
   public:
 
-    static PlaylistElement last(void){
+    static PlaylistElement last(bool is_current){
       PlaylistElement pe;
       pe.is_last = true;
+      pe.is_current = is_current;
       return pe;
     }
     
@@ -267,6 +268,10 @@ static QVector<PlaylistElement> get_playlist_elements(void){
     last_end_seq_time = next_last_end_seq_time;
     
   }END_VECTOR_FOR_EACH;
+
+  bool is_current = current_seq_time >= last_end_seq_time;
+  PlaylistElement pe = PlaylistElement::last(is_current);
+  ret.push_back(pe);
 
   return ret;
 }
@@ -682,40 +687,60 @@ public:
 
   void handle_select_playlist_element(int num, bool change_song_pos_too){
     struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-    
-    if (num>=playlist.count()-1) {
+
+    if (num > playlist.count()-1) {
+      R_ASSERT_NON_RELEASE(false);
       if (is_playing_song())
         PlaySong(SEQTRACK_get_length(seqtrack)*MIXER_get_sample_rate()); // why was this line added here?
       return;
     }
-    
+
     PlaylistElement pe = get_playlist_element(num);
-    if (pe.is_illegal())
-      return;
-    
-    int seqblocknum = pe.seqblocknum;
-    
+
     int64_t abstime;
     
-    //SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
-    
-    struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
-    
-    if (pe.is_pause()) {
-      if (seqblocknum==0) {
-        abstime = 0;
-      } else {
-        struct SeqBlock *prev_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum-1];
-        abstime = prev_seqblock->t.time2;
+    if (pe.is_last){
+      
+      abstime = 0;
+      int num_seqblocks = seqtrack->seqblocks.num_elements;
+      if (num_seqblocks > 0){
+        struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[num_seqblocks-1];
+        abstime = seqblock->t.time2;
       }
+      
     } else {
-      abstime = seqblock->t.time;
-      setCurrSeqblock(seqblock->id);
-    }      
+    
+      if (pe.is_illegal()){
+        R_ASSERT_NON_RELEASE(false);
+        printf("    pe is illegal. Pos: %d\n", num);
+        return;
+      }
+      
+      int seqblocknum = pe.seqblocknum;
+      
+      //SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
+      
+      struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
+      
+      if (pe.is_pause()) {
+        if (seqblocknum==0) {
+          abstime = 0;
+        } else {
+          struct SeqBlock *prev_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum-1];
+          abstime = prev_seqblock->t.time2;
+        }
+      } else {
+        abstime = seqblock->t.time;
+        setCurrSeqblock(seqblock->id);
+      }      
 
-    if (change_song_pos_too)
+    }
+    
+    
+    if (change_song_pos_too){
+      //printf("    Time: %f\n", (double)abstime/44100.0);
       PLAYER_set_song_pos(abstime, -1, false);
-
+    }
   }
 
 public slots:
@@ -1112,10 +1137,6 @@ void BS_UpdatePlayList(void){
   int justify_playlist = num_seqblocks==0 ? 1 : (log10(num_seqblocks) + 1);
   
   QVector<PlaylistElement> elements = get_playlist_elements();
-  {
-    PlaylistElement pe = PlaylistElement::last();
-    elements.push_back(pe);
-  }
   
   int num_elements = elements.size();
   int num_items = g_bs->playlist.count();
@@ -1247,6 +1268,14 @@ void BS_SelectPlaylistPos(int pos, bool change_song_pos_too){
   {
     ScopedVisitors v;
     //printf("selectplaylistpos %d, %d. Length: %d\n",pos, pos % (g_bs->playlist.count()), g_bs->playlist.count());
+
+    //int orgpos = pos;
+
+    if (g_bs->playlist.count()==0){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+    
     pos = pos % int(g_bs->playlist.count());
 
     int safe = 1000;
@@ -1255,7 +1284,9 @@ void BS_SelectPlaylistPos(int pos, bool change_song_pos_too){
       safe--;
     }
 
-    if(!change_song_pos_too && !is_playing_song())
+    //printf("Setting pos to %d. (%d). Size: %d. Change song pos: %d\n", pos, orgpos, g_bs->playlist.count(), change_song_pos_too);
+    
+    if(!is_playing_song() || change_song_pos_too)
       g_bs->playlist.setSelected(pos, true);
 
     g_bs->handle_select_playlist_element(pos, change_song_pos_too);
