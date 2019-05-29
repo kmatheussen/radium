@@ -662,33 +662,6 @@
 
 
 #!!
-(begin
-  (display "a")
-  (display "a2")
-  (display "a3")
-  (display "a4")
-  (display "a5")
-  (display "a6")
-  (display "a7")
-  (display "a8")
-  (display "a9")
-  (display "aa")
-  (display "ab")
-  (display "ac")
-  (display "ad")
-  (display "ae")
-  (display "af")
-  (display "ag")
-  (display "ah")
-  (display "ai")
-  (display "aj")
-  (display "ak")
-  (display "al")
-  (display "am")
-  (gakk)
-  (<ra> :get-audio-instrument-id 12341239 wefr)
-  (display "an"))
-
 (define id (<ra> :get-audio-instrument-id 7))
 (<ra> :get-instrument-x 17)
 (<ra> :get-instrument-y 17)
@@ -809,10 +782,7 @@
                                    (push-audio-connection-change! changes (list :type "connect"
                                                                                 :source new-instrument
                                                                                 :target out-id
-                                                                                :gain gain
-                                                                                :connection-type (if (not instrument-id1)
-                                                                                                     *auto-connection-type*
-                                                                                                     (<ra> :get-audio-connection-type instrument-id1 out-id)))))
+                                                                                :gain gain)))
                                  out-list
                                  gain-list)
 
