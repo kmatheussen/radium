@@ -354,18 +354,11 @@ public:
   bool need_to_create_volume_change(float new_volume) const {
     ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
 
-    if (_is_bus_link){
-      
-      if (source_ch==0 && target_ch==0)
-        return true;
-      else
+    if (_is_bus_link)
+      if (source_ch > 0 || target_ch > 0)
         return false;
-      
-    } else {
-      
-      return new_volume != link_volume;
 
-    }
+    return get_link_volume() != new_volume;
   }
   
   void request_turn_off(void){
