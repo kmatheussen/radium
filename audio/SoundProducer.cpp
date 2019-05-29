@@ -257,12 +257,18 @@ struct SoundProducerLink {
   int target_ch;
 
   bool link_enabled; // Set by the user.  Only accessed by the main thread when applying changes and in SP_set_link_enabled. ("is_active" (below) is an internal variable set by the sound engine, which is not the same)
-  float link_volume;  // Set by the user. Only accessed by the main thread.
 
   bool RT_link_enabled;  // Contains the same value as "link_enabled", but can only be accessed if holding the player lock.
-  float RT_link_volume;  // Contains the same value as "link_volume", but can only be accessed if holding the player lock.
+
   Smooth volume; // volume.target_value = link_volume * source->output_volume * source->volume
 
+private:
+  
+  float RT_link_volume;  // Contains the same value as "link_volume", but can only be accessed if holding the player lock.
+  float link_volume;  // Set by the user. Only accessed by the main thread.
+  
+public:
+  
   bool is_active; // this is an internal variable used for whether the link should run or not. It's not the same as "link_enabled" above (naturally).
 
   bool should_be_turned_off = false;
@@ -293,13 +299,81 @@ struct SoundProducerLink {
   static bool equal(SoundProducerLink *a, SoundProducerLink *b){
     return a->equals(b);
   }
+
+  bool set_link_volume(float volume){
+    if (_is_bus_link){
+      
+      if (source_ch==0 && target_ch==0){
+        
+        SoundPlugin *plugin = SP_get_plugin(source);
+        const SoundPluginType *type = plugin->type;
+        int effect_num = type->num_effects + EFFNUM_BUS1 + _bus_num;
+        
+        //printf("Setting bus volume for %d to %f\n", bus_num, volume);
+        
+        PLUGIN_set_effect_value(plugin, -1, effect_num, volume, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+
+        return true;
+      }
+
+    } else {
+
+      if (link_volume != volume){
+        
+        link_volume = volume;
+        safe_float_write(&RT_link_volume, volume);
+
+        return true;
+      }
+      
+    }
+
+    return false;
+  }
+
+  float get_link_volume(void) const {
+    ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
+    
+    if (_is_bus_link){
+      
+      SoundPlugin *plugin = SP_get_plugin(source);
+      const SoundPluginType *type = plugin->type;
+      int effect_num = type->num_effects + EFFNUM_BUS1 + _bus_num;
+      
+      //printf("Setting bus volume for %d to %f\n", bus_num, volume);
+      
+      return PLUGIN_get_effect_value2(plugin, effect_num, VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE); // From storage, so we can't just return plugin->bus_volume[_bus_num]. Reading from storage is extremely efficient though, so it doesn't matter.
+
+    } else {
+
+      return link_volume;
+      
+    }
+  }
+    
+  bool need_to_create_volume_change(float new_volume) const {
+    ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
+
+    if (_is_bus_link){
+      
+      if (source_ch==0 && target_ch==0)
+        return true;
+      else
+        return false;
+      
+    } else {
+      
+      return new_volume != link_volume;
+
+    }
+  }
   
   void request_turn_off(void){
     R_ASSERT_NON_RELEASE(should_be_turned_off==false);
     should_be_turned_off = true;
   }
 
-  float get_total_link_volume(void) const {
+  float RT_get_total_link_volume(void) const {
     const SoundPlugin *source_plugin = SP_get_plugin(source);
 
     //bool do_bypass      = !ATOMIC_GET(source_plugin->effects_are_on);
@@ -337,7 +411,7 @@ struct SoundProducerLink {
 
     } else {
 
-      SMOOTH_set_target_value(&volume, get_total_link_volume());
+      SMOOTH_set_target_value(&volume, RT_get_total_link_volume());
       SMOOTH_update_target_audio_will_be_modified_value(&volume);
 
       is_active = volume.target_audio_will_be_modified;
@@ -371,9 +445,9 @@ struct SoundProducerLink {
     , source_ch(0)
     , target_ch(0)
     , link_enabled(true)
-    , link_volume(1.0)
     , RT_link_enabled(true)
     , RT_link_volume(1.0)
+    , link_volume(1.0)
     , is_active(is_event_link)
   {
     //SMOOTH_init(&volume, get_total_link_volume(), MIXER_get_buffer_size());
@@ -1144,9 +1218,9 @@ public:
 
       // Change volume
       for(const auto &volume_change : volume_changes){
-        volume_change.link->link_volume = volume_change.new_volume;
-        volume_change.link->RT_link_volume = volume_change.new_volume;
+        volume_change.link->set_link_volume(volume_change.new_volume);
       }
+      
     }
 
 
@@ -1990,6 +2064,8 @@ const radium::LinkParameters g_empty_linkparameters;
 // Should simultaneously fade out the old and fade in the new.
 // Only audio links.
 bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove){
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
+  
   if (PLAYER_is_running()==false)
     return false;
 
@@ -2013,7 +2089,7 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
           link_enable_changes.push_back(LinkEnabledChange(existing_link, link_is_enabled));
       }
       
-      if (parm.must_set_volume && existing_link->link_volume != parm.volume)
+      if (parm.must_set_volume && existing_link->need_to_create_volume_change(parm.volume))
         volume_changes.push_back(VolumeChange(existing_link, parm.volume));
       
     } else {
@@ -2021,15 +2097,16 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
       SoundProducerLink *link = new SoundProducerLink(parm.source, parm.target, false);
       link->source_ch = parm.source_ch;
       link->target_ch = parm.target_ch;
-      if (parm.must_set_volume){
-        link->link_volume = parm.volume;
-        link->RT_link_volume = parm.volume;
-      }
+      
+      if (parm.must_set_volume)
+        link->set_link_volume(parm.volume);
+
       if (parm.enable_type != radium::EnableType::DONT_CHANGE) {
         bool link_is_enabled = parm.enable_type==radium::EnableType::DISABLE ? false : true;
         link->link_enabled = link_is_enabled;
         link->RT_link_enabled = link_is_enabled;
       }
+      
       to_add.push_back(link);
       
     }
@@ -2091,38 +2168,17 @@ void SP_remove_all_elinks(const radium::Vector<SoundProducer*> &soundproducers){
 }
 
 float SP_get_link_gain(const SoundProducer *target, const SoundProducer *source, const char **error){
-  {
-    int bus_num = get_bus_num(target->_plugin);
-    if(bus_num >= 0)
-      return safe_float_read(&source->_plugin->bus_volume[bus_num]);
-  }
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
   
   for (SoundProducerLink *link : target->_input_links)
     if(link->is_event_link==false && link->source==source)
-      return link->link_volume;
+      return link->get_link_volume();
 
   *error = talloc_strdup("Could not find link");
   return 0.0;
 }
 
 bool SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume, const char **error){
-  {
-    if(target->_is_bus){
-
-      int bus_num = target->_bus_num;
-    
-      SoundPlugin *plugin = source->_plugin;
-      const SoundPluginType *type = plugin->type;
-      int effect_num = type->num_effects + EFFNUM_BUS1 + bus_num;
-
-      //printf("Setting bus volume for %d to %f\n", bus_num, volume);
-      
-      PLUGIN_set_effect_value(plugin, -1, effect_num, volume, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-
-      return true;
-    }
-  }
-  
   bool ret = false;
   bool found = false;
  
@@ -2130,18 +2186,9 @@ bool SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume
     if(link->is_event_link==false && link->source==source){
 
       found=true;
-      
-      //printf("   Setting to %f (%p)\n", volume, link);
 
-      if (link->link_volume != volume){
-
-        //printf("Setting link volume to %f\n", volume);
-        
-        link->link_volume = volume;
-        safe_float_write(&link->RT_link_volume, volume);
-
+      if(link->set_link_volume(volume))
         ret = true;
-      }
     }
   }
 

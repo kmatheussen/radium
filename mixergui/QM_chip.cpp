@@ -655,8 +655,7 @@ namespace{
     Chip *_from;
     Chip *_to;
 
-    bool _must_set_volume = false;
-    float _volume = 1.0;
+    float _volume;
 
   private:
     radium::EnableType _enable_type = radium::EnableType::DONT_CHANGE;
@@ -716,6 +715,7 @@ namespace{
     Parm(Chip *from, Chip *to, float volume, radium::EnableType enable_type, radium::EnableType implicitly_enable_type, ConnectionType connection_type)
       : _from(from)
       , _to(to)
+      , _volume(volume)
       , _enable_type(enable_type)
       , _implicitly_enable_type(implicitly_enable_type)
       , _connection_type(connection_type)
@@ -723,10 +723,6 @@ namespace{
       if (from!=NULL && to!=NULL){
         R_ASSERT(from!=NULL);
         R_ASSERT(to!=NULL);
-      }
-      if(volume >= 0){
-        _volume = volume;
-        _must_set_volume = true;
       }
     }
 
@@ -2685,9 +2681,11 @@ static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioG
     CHIP_econnect_chips(scene, from_chip, to_chip);
   else {
     float gain = -1.0;
+
+    int bus_num = SP_get_bus_num(to_chip->_sound_producer);
     
-    if (HASH_has_key(state, "gain"))
-      gain = HASH_get_float(state, "gain");
+    if (bus_num < 0 && HASH_has_key(state, "gain"))
+      gain = HASH_get_float(state, "gain"); // Don't set gain for bus sends. It's not necessary since the value is stored in the plugin and not in the connection, plus that old songs may have wrong values (not quite sure).
 
     bool is_enabled = true;
     
