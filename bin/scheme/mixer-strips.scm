@@ -1460,16 +1460,8 @@
   (if add-monitor
       (add-monitor slider
                    (lambda (new-db automation-normalized)
-                     (when new-db
-                       (define new-slider-value (db-to-slider new-db))
-                       ;;(c-display "1111. new-slider-value: " new-slider-value ". new-db:" new-db)
-                       (when (not (= new-slider-value (<gui> :get-value slider)))
-                         (set! doit #f)
-                         ;;(c-display "new-slider-value: " new-slider-value ". new-db:" new-db)
-                         ;;(set! last-value new-slider-value)
-                         (<gui> :set-value slider new-slider-value)
-                         (<gui> :update slider)
-                         (set! doit #t)))
+                     (if new-db
+                         (update-slider-value (db-to-slider new-db)))
                      (when automation-normalized
                        (set! automation-value (if (< automation-normalized 0)
                                                   #f
