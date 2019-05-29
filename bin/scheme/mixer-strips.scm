@@ -1404,50 +1404,69 @@
 
   (define last-value (get-db-value))
 
-  (define slider (strip-slider first-instrument-id
-                               parent-instrument-id
-                               target-instrument-id
-                               strips-config
-                               #t #f is-bus ;; is-send is-sink is-bus
-                               
-                               make-undo
+  (define slider #f)
 
-                               ;; get-scaled-value
-                               (lambda ()
-                                 (db-to-slider (if add-monitor ;; minor optimization.
-                                                   (or (get-db-value)
-                                                       last-value)
-                                                   last-value)))
+  (define (update-slider-value new-slider-value)
+    (when (not (= new-slider-value (<gui> :get-value slider)))
+      (set! doit #f)
+      ;;(c-display "new-slider-value: " new-slider-value ". new-db:" new-db)
+      ;;(set! last-value new-slider-value)
+      (<gui> :set-value slider new-slider-value)
+      (<gui> :update slider)
+      (set! doit #t)))
 
-                               ;; get-value-text
-                               (lambda (slider-value)                                 
-                                 (db-to-text (slider-to-db slider-value) #t))
-
-                               ;; set-value
-                               (lambda (new-slider-value)
-                                 (define db (slider-to-db new-slider-value))
-                                 ;;(c-display "new-db:" db ", old-db:" last-value)
-                                 (when (and doit (not (= last-value db)))
-                                   (set! last-value db)
-                                   (set-db-value db)))
-
-                               get-automation-data
-                               
-                               delete
-                               replace
-                               reset
-
-                               midi-learn-instrument-id
-                               effect-name
-                               ))
+  (define (get-scaled-value)
+    (let ((scaled-value (db-to-slider (get-db-value))))
+      (if (and slider
+               scaled-value)
+          (<ra> :schedule 0 ;; The send monitor doesn't cover changing values by undo/redo, so we do this thing. (if not slider jumps after trying to move it after undo/redo).
+                (lambda ()
+                  (update-slider-value (db-to-slider (get-db-value)))
+                  #f)))
+      scaled-value))
+  
+  (set! slider (strip-slider first-instrument-id
+                             parent-instrument-id
+                             target-instrument-id
+                             strips-config
+                             #t #f is-bus ;; is-send is-sink is-bus
+                             
+                             make-undo
+                             
+                             get-scaled-value
+                             
+                             ;; get-value-text
+                             (lambda (slider-value)                                 
+                               (db-to-text (slider-to-db slider-value) #t))
+                             
+                             ;; set-value
+                             (lambda (new-slider-value)
+                               (define db (slider-to-db new-slider-value))
+                               ;;(c-display "new-db:" db ", old-db:" last-value)
+                               (when (and doit (not (= last-value db)))
+                                 (set! last-value db)
+                                 (set-db-value db)))
+                             
+                             get-automation-data
+                             
+                             delete
+                             replace
+                             reset
+                             
+                             midi-learn-instrument-id
+                             effect-name
+                             ))
   
   (if add-monitor
       (add-monitor slider
                    (lambda (new-db automation-normalized)
                      (when new-db
                        (define new-slider-value (db-to-slider new-db))
+                       ;;(c-display "1111. new-slider-value: " new-slider-value ". new-db:" new-db)
                        (when (not (= new-slider-value (<gui> :get-value slider)))
                          (set! doit #f)
+                         ;;(c-display "new-slider-value: " new-slider-value ". new-db:" new-db)
+                         ;;(set! last-value new-slider-value)
                          (<gui> :set-value slider new-slider-value)
                          (<gui> :update slider)
                          (set! doit #t)))
@@ -1489,10 +1508,10 @@
                                   (create-send-func gain changes))))))
   
   (define (get-db-value)
-    (if bus-effect-name
-        (radium-normalized-to-db (<ra> :get-stored-instrument-effect source-id bus-effect-name))
-        (and (<ra> :has-audio-connection source-id target-id)
-             (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id)))))
+    (let ((ret (and (<ra> :has-audio-connection source-id target-id)
+                    (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id)))))
+      ;;(c-display "ret:" ret)
+      ret))
 
   (define (set-db-value db)
     ;;(c-display "setting db to" db (<ra> :db-to-gain db))
