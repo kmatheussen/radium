@@ -684,6 +684,7 @@ void PATCH_handle_editor_and_automation_when_replacing_patch(struct Patch *old_p
     PC_StopPause(window);
 }
 
+// i.e. remove and delete.
 static void make_inactive(struct Patch *patch, bool force_removal){
 
   R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());

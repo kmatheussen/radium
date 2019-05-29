@@ -1420,8 +1420,7 @@ void CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(Aud
     
     if (bus_num >= 0){
       struct Patch *patch = CHIP_get_patch(from);
-      if (patch==g_currpatch)
-        GFX_PP_Update(patch, false);
+      GFX_ScheduleInstrumentRedraw(patch); // We schedule it so that it only run once after all audio graph changes are finished.
     }
   }
 }
