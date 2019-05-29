@@ -797,6 +797,37 @@
      (if result
          (callback result)))))
 
+(define (FROM_C-remove-instrument-from-connection-path parent-instrument-id instrument-id)
+  (define child-ids (get-instruments-connecting-from-instrument instrument-id))
+  (define child-gains (map (lambda (to)
+                             (<ra> :get-audio-connection-gain instrument-id to))
+                           child-ids))
+  (define changes '())
+  
+  ;; Disconnect parent -> me
+  (push-audio-connection-change! changes (list :type "disconnect"
+                                               :source parent-instrument-id
+                                               :target instrument-id))
+  
+  (for-each (lambda (child-id child-gain)
+              
+              ;; Disconnect me -> child
+              (push-audio-connection-change! changes (list :type "disconnect"
+                                                           :source instrument-id
+                                                           :target child-id))
+              ;; Connect parent -> child
+              (push-audio-connection-change! changes (list :type "connect"
+                                                           :source parent-instrument-id
+                                                           :target child-id
+                                                           :connection-type (<ra> :get-audio-connection-type instrument-id child-id)
+                                                                     :gain child-gain)))
+            child-ids
+            child-gains)
+  
+  (<ra> :change-audio-connections changes)) ;; Apply all changes simultaneously
+
+
+
 (define (FROM_C-set-solo-for-instruments instruments doit)
   (undo-block
    (lambda ()           

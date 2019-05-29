@@ -1144,7 +1144,6 @@
   widget)
 
 
-
 (define (create-mixer-strip-plugin gui first-instrument-id parent-instrument-id instrument-id strips-config)
   (define (get-drywet)
     (<ra> :get-stored-instrument-effect instrument-id "System Dry/Wet"))
@@ -1152,43 +1151,19 @@
   (define (delete-instrument)
 
     (c-display "HIDING" slider)
-    (<gui> :hide slider)
+    (<gui> :hide slider) ;; Not necessary, but it looks much better if the slider disappears immediately.
 
-    (<ra> :schedule 10 ;; Wait for slider to be removed, and (for some reason) it also prevents some flickering. Looks much better if the slider disappears immediately.
+    (<ra> :schedule 10 ;; Wait for slider to be removed, and (for some reason) scheduling also prevents some flickering.
           (lambda ()
             
-            (define child-ids (get-instruments-connecting-from-instrument instrument-id))
-            (define child-gains (map (lambda (to)
-                                       (<ra> :get-audio-connection-gain instrument-id to))
-                                     child-ids))
+
             (undo-block
              (lambda ()
-               (define changes '())
-
-               ;; Disconnect parent -> me
-               (push-audio-connection-change! changes (list :type "disconnect"
-                                                            :source parent-instrument-id
-                                                            :target instrument-id))
-               
-               (for-each (lambda (child-id child-gain)
-
-                           ;; Disconnect me -> child
-                           (push-audio-connection-change! changes (list :type "disconnect"
-                                                                        :source instrument-id
-                                                                        :target child-id))
-                           ;; Connect parent -> child
-                           (push-audio-connection-change! changes (list :type "connect"
-                                                                        :source parent-instrument-id
-                                                                        :target child-id
-                                                                        :connection-type (<ra> :get-audio-connection-type instrument-id child-id)
-                                                                        :gain child-gain)))
-                         child-ids
-                         child-gains)
                
                (<ra> :undo-mixer-connections)
                
-               (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
-
+               (FROM_C-remove-instrument-from-connection-path parent-instrument-id instrument-id)
+               
                (if (= 0 (<ra> :get-num-in-audio-connections instrument-id))
                    (<ra> :delete-instrument instrument-id))
                
