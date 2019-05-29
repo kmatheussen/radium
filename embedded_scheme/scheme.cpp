@@ -651,9 +651,7 @@ void s7extra_add_history(const char *funcname, const char *info){
 
   ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
 
-#if !defined(RELEASE)
   s7_add_to_history(s7, s7_make_string(s7, info));
-#endif
   s7_add_to_history(s7, s7_make_string(s7, funcname));
 }
 
