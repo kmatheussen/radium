@@ -2682,10 +2682,8 @@ static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioG
   else {
     float gain = -1.0;
 
-    int bus_num = SP_get_bus_num(to_chip->_sound_producer);
-    
-    if (bus_num < 0 && HASH_has_key(state, "gain"))
-      gain = HASH_get_float(state, "gain"); // Don't set gain for bus sends. It's not necessary since the value is stored in the plugin and not in the connection, plus that old songs may have wrong values (not quite sure).
+    if (HASH_has_key(state, "gain"))
+      gain = HASH_get_float(state, "gain");
 
     bool is_enabled = true;
     
