@@ -1494,6 +1494,8 @@
 
   (define send-gui #f)
 
+  (define bus-effect-name (get-bus-effect-name-from-target-instrument target-id))
+  
   (define (delete)
     (<gui> :hide send-gui)
     (<ra> :undo-mixer-connections)
@@ -1512,8 +1514,10 @@
                                   (create-send-func gain changes))))))
   
   (define (get-db-value)
-    (and (<ra> :has-audio-connection source-id target-id)
-         (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id))))
+    (if bus-effect-name
+        (radium-normalized-to-db (<ra> :get-stored-instrument-effect source-id bus-effect-name))
+        (and (<ra> :has-audio-connection source-id target-id)
+             (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id)))))
 
   (define (set-db-value db)
     ;;(c-display "setting db to" db (<ra> :db-to-gain db))
@@ -1525,7 +1529,7 @@
               *send-callbacks*)
     )
   
-  (define (add-monitor slider callback)
+  (define (add-send-monitor slider callback)
     (define send-callback
       (lambda (maybe-gui maybe-source-id maybe-target-id db)
         (if (and (not (= gui maybe-gui))
@@ -1544,7 +1548,7 @@
                    (remove (lambda (callback)
                              (equal? callback send-callback))
                            *send-callbacks*)))))
-    
+
   ;; Also works fine, but is less efficient. (cleaner code though)
   ;(define (add-monitor slider callback)
   ;  (<ra> :schedule (random 1000) (lambda ()
@@ -1556,6 +1560,20 @@
   ;                                        100)
   ;                                      #f))))
 
+  (define (add-pure-bus-monitor slider callback) 
+    (add-gui-effect-monitor slider source-id bus-effect-name #t #t
+                            (lambda (radium-normalized automation)
+                              ;;(c-display "val:" radium-normalized)
+                              (callback (and radium-normalized (radium-normalized-to-db radium-normalized))
+                                        automation
+                                        ))))
+  
+    
+  (define add-monitor (if bus-effect-name
+                          add-pure-bus-monitor
+                          add-send-monitor))
+  
+  
   ;;(set! add-monitor #f)
 
   (set! send-gui (create-mixer-strip-send gui
@@ -1567,12 +1585,15 @@
                                           get-db-value
                                           set-db-value
                                           add-monitor
-                                          "white" ;; not used (automation color)
+                                          (if bus-effect-name
+                                              (<ra> :get-instrument-effect-color source-id bus-effect-name)
+                                              "white") ;; not used (automation color)
                                           delete
                                           replace
-                                          #f ;; midi-learn-instrument-id
-                                          #f ;; automation not supported
-                                          #f ;; is bus
+                                          (and bus-effect-name ;; midi-learn-instrument-id
+                                               source-id)
+                                          bus-effect-name 
+                                          #f ;;bus-effect-name
                                           ))
   send-gui)
 
