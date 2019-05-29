@@ -1417,8 +1417,7 @@
 
   (define (get-scaled-value)
     (let ((scaled-value (db-to-slider (get-db-value))))
-      (if (and slider
-               scaled-value)
+      (if scaled-value
           (<ra> :schedule 0 ;; The send monitor doesn't cover changing values by undo/redo, so we do this thing. (if not slider jumps after trying to move it after undo/redo).
                 (lambda ()
                   (update-slider-value (db-to-slider (get-db-value)))
@@ -1500,10 +1499,11 @@
                                   (create-send-func gain changes))))))
   
   (define (get-db-value)
-    (let ((ret (and (<ra> :has-audio-connection source-id target-id)
-                    (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id)))))
-      ;;(c-display "ret:" ret)
-      ret))
+    (if (and (<ra> :instrument-is-open-and-audio source-id)
+             (<ra> :instrument-is-open-and-audio target-id)
+             (<ra> :has-audio-connection source-id target-id))
+        (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id))
+        0.0))  ;; It's not always here right after creation, and right after deletion.
 
   (define (set-db-value db)
     ;;(c-display "setting db to" db (<ra> :db-to-gain db))
