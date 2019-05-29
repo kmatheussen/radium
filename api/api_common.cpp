@@ -46,8 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_common_proc.h"
 
 
-extern struct Root *root;
-
+const char *g_last_api_entry_func_name = NULL;
 
 
 /* Hmm, well, okey, I put the init_radium function here. */
@@ -175,15 +174,16 @@ void handleError_internal(const char *fmt,...){
   va_end(argp);
 
   if (is_called_from_scheme)
-    g_error_message = talloc_strdup(message); // Set this value before calling SCHEME_get_history and GFX_Message, so that we won't get into an infinite loop.
+    g_error_message = talloc_format("<br>\nLast API entry: %s.<br>\nError: %s", g_last_api_entry_func_name, message);
+  //g_error_message = talloc_strdup(message); // Set this value before calling SCHEME_get_history and GFX_Message, so that we won't get into an infinite loop.
     
   printException(message);
 
-  const char *backtrace = SCHEME_get_history();
-  puts(backtrace);
-
 
   if (!is_called_from_scheme) {
+
+    const char *backtrace = SCHEME_get_history();
+    puts(backtrace);
 
     const char *message2 = V_strdup(talloc_format("%s:%s\n", message, backtrace));
     
