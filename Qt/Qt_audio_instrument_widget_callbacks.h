@@ -47,7 +47,7 @@ class Audio_instrument_widget : public QWidget, public Ui::Audio_instrument_widg
 
 public:
 
-  bool is_starting;
+  int _is_updating = 0;
   
   radium::GcHolder<struct Patch> _patch;
 
@@ -95,7 +95,6 @@ public:
 
  Audio_instrument_widget(QWidget *parent,struct Patch *patch)
     : QWidget(parent)
-    , is_starting(true)
     , _patch(patch)
     , _plugin_widget(NULL)
     , _sample_requester_widget(NULL)
@@ -103,7 +102,8 @@ public:
     , _size_type(SIZETYPE_NORMAL)
     , _size_type_before_hidden(SIZETYPE_NORMAL)
   {
-
+    radium::ScopedGeneration scoped_update(_is_updating);
+    
     setupUi(this);    
 
     scrollArea->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
@@ -262,8 +262,6 @@ public:
     
     updateWidgets();
     setupPeakAndAutomationStuff();
-
-    is_starting = false;
   }
 
   void enterEvent(QEvent *event) override{
@@ -628,6 +626,8 @@ public:
   }
 
   void updateWidgets(void){
+    radium::ScopedGeneration scoped_update(_is_updating);
+    
     //printf("updateWidgets %s\n", _patch->name);
     set_arrow_style(controlsArrow, false);
     set_arrow_style(arrow2, false);
@@ -823,14 +823,14 @@ public:
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + system_effect;
 
-    if (is_starting==false)
+    if (_is_updating==0)
       PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 
     updateSliderString(system_effect);
   }
 
   void set_bus_value(SoundProducer *bus, bool val){
-    if (is_starting==true)
+    if (_is_updating > 0)
       return;
 
     if (bus==NULL){
@@ -995,6 +995,8 @@ public:
 
 
   void update_all_ab_buttons(void){
+    radium::ScopedGeneration scoped_update(_is_updating);
+    
     update_ab_button(ab0, 0);
     update_ab_button(ab1, 1);
     update_ab_button(ab2, 2);
@@ -1011,6 +1013,8 @@ public:
   int _ab_checkbox_width = -1;
 
   void update_ab_button(QCheckBox *checkbox, int num){
+    radium::ScopedGeneration scoped_update(_is_updating);
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     QString c = QString("ABCDEFGH"[num]);
@@ -1045,6 +1049,9 @@ public:
   bool arrgh = false;
   
   void ab_pressed(int num, bool val){
+    if (_is_updating > 0)
+      return;
+    
     MyQCheckBox *checkbox = get_ab_checkbox(num);
     
     if (arrgh==false) {
@@ -1087,6 +1094,9 @@ public:
   }
 
   void ab_rightclicked(int num){
+    if (_is_updating > 0)
+      return;
+    
     if (get_ab_checkbox(num)->_last_pressed_button==Qt::RightButton){
       _plugin_widget->ab_rightclicked(num);
       update_all_ab_buttons();
@@ -1105,6 +1115,9 @@ public slots:
   void on_ab7_clicked(){ab_rightclicked(6);}
 
   void on_ab_reset_button_clicked(){
+    if (_is_updating > 0)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     PLUGIN_reset_ab(plugin,-1);
     update_all_ab_buttons();
@@ -1137,6 +1150,9 @@ public slots:
 #endif
 
   void on_show_browser_toggled(bool val){
+    if (_is_updating > 0)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_BROWSER_SHOW_GUI;
@@ -1146,6 +1162,9 @@ public slots:
   }
 
   void on_show_controls_toggled(bool val){
+    if (_is_updating > 0)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_CONTROLS_SHOW_GUI;
@@ -1155,6 +1174,9 @@ public slots:
   }
 
   void on_show_equalizer_toggled(bool val){
+    if (_is_updating > 0)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_EQ_SHOW_GUI;
@@ -1163,6 +1185,9 @@ public slots:
   }
 
   void on_show_compressor_toggled(bool val){
+    if (_is_updating > 0)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_COMP_SHOW_GUI;
@@ -1228,7 +1253,7 @@ public slots:
   // effects onoff / dry_wet
 
   void on_bypass_button_toggled(bool val){
-    if(is_starting==false)
+    if(_is_updating==0)
       setInstrumentBypass(_patch->id, val);
     /*
     SoundPlugin *plugin = (SoundPlugin*)(_patch->patchdata);
@@ -1246,7 +1271,7 @@ public slots:
   }
 
   void on_solo_button_toggled(bool val){
-    if(is_starting==false)
+    if(_is_updating==0)
       setInstrumentSolo(_patch->id, val);
   }
 
@@ -1255,6 +1280,9 @@ public slots:
   }
 
   void on_input_volume_slider_valueChanged(int val){
+    if (_is_updating > 0)
+      return;
+    
     if(_patch->patchdata != NULL) { // temp fix
       set_plugin_value(val, EFFNUM_INPUT_VOLUME);
 
@@ -1266,6 +1294,9 @@ public slots:
   }
 
   void on_volume_slider_valueChanged(int val){
+    if (_is_updating > 0)
+      return;
+    
     set_plugin_value(val, EFFNUM_VOLUME);
     CHIP_update((SoundPlugin*)_patch->patchdata);
   }
