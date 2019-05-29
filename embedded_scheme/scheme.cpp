@@ -1750,7 +1750,7 @@ void s7extra_unprotect(void *v, int64_t pos){
 
 void s7extra_disable_history(void){
   g_s7_history_disabled++;
-
+  
   if(g_s7_history_disabled==1){
     R_ASSERT_NON_RELEASE(s7_history_enabled(s7)==true);
     s7_set_history_enabled(s7, false);
@@ -1765,8 +1765,9 @@ void s7extra_enable_history(void){
 
   R_ASSERT_NON_RELEASE(s7_history_enabled(s7)==false);
 
-  if(g_s7_history_disabled == 0)
+  if(g_s7_history_disabled == 0){
     s7_set_history_enabled(s7, true);
+  }
 }
 
 bool s7extra_is_defined(const char* funcname){
@@ -2127,9 +2128,12 @@ dyn_t SCHEME_eval_withreturn(const char *code){
 // called from s7webserver.
 s7_pointer RADIUM_SCHEME_eval2(const char *code){
 
-  SCHEME_eval("(if *message-gui* (<gui> :hide *message-gui*))");   // For developing.
-    
+  s7extra_disable_history();{
+    SCHEME_eval("(if *message-gui* (<gui> :hide *message-gui*))");   // For developing.
+  }s7extra_enable_history();
+  
   s7extra_add_history(__func__, CR_FORMATEVENT("========== RADIUM_SCHEME_eval2 (Code from s7webserver.)\n\n"));
+  
   return catch_call(s7,
                     s7_list_nl(s7,
                                3,
