@@ -13,6 +13,8 @@
                                           "System Aux 2"
                                           "System Aux 3"))
 
+         
+
 (define-constant *send-connection-type* 0)
 (define-constant *plugin-connection-type* 1)
 (define-constant *auto-connection-type* 2)
@@ -254,6 +256,17 @@
   (map (lambda (bus-num)
          (<ra> :get-audio-bus-id bus-num))
        (iota (length *bus-effect-names*))))
+
+(define-instrument-memoized (get-bus-effect-name-from-target-instrument target-id)
+  (let loop ((bus-num 0)
+             (bus-effect-names *bus-effect-names*))
+    (if (null? bus-effect-names)
+        #f
+        (if (= target-id (<ra> :get-audio-bus-id bus-num))
+            (car bus-effect-names)
+            (loop (+ 1 bus-num)
+                  (cdr bus-effect-names))))))
+  
 
 (define-instrument-memoized (get-seqtrack-buses)
   (keep ra:instrument-is-seqtrack-bus

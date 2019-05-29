@@ -802,7 +802,7 @@
               ;;     (list
               ;;      "----------Plugin"
 
-              (if is-send?
+              (and is-send?
                   (list "------------Send-slider"
                         (list "Delete"
                               :enabled (and is-send? delete-func)
@@ -816,18 +816,19 @@
                         (list "Set to 0.0 dB"
                               :enabled (and is-send? reset-func)
                               (lambda ()
-                                (reset-func))))
-                  (and effect-name
-                       (list
-                        ;;"------------Plugin-slider"
-                        (get-effect-popup-entries midi-learn-instrument-id
-                                                  effect-name
-                                                  :automation-error-message (if effect-name
-                                                                                #f
-                                                                                "(Connection gain automation not supported yet)")
-                                                  :modulation-error-message (if effect-name
-                                                                                #f
-                                                                                "(Connection gain modulation not supported yet)")))))
+                                (reset-func)))))
+              
+              (and effect-name
+                   (list
+                    ;;"------------Plugin-slider"
+                    (get-effect-popup-entries midi-learn-instrument-id
+                                              effect-name
+                                              :automation-error-message (if effect-name
+                                                                            #f
+                                                                            "(Connection gain automation not supported yet)")
+                                              :modulation-error-message (if effect-name
+                                                                            #f
+                                                                            "(Connection gain modulation not supported yet)"))))
               ;;"----------"
               ;;"Convert to standalone strip" (lambda ()
               ;;                                #t)
