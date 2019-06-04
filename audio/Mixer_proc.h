@@ -100,9 +100,6 @@ extern LANGSPEC int MIXER_get_remaining_num_jackblock_frames(void);
 extern LANGSPEC struct SoundPlugin *MIXER_get_soundplugin(const char *type_name, const char *name);
 extern LANGSPEC struct Patch *MIXER_get_bus(int bus_num);
 
-extern LANGSPEC bool MIXER_someone_has_solo(void);
-extern LANGSPEC bool MIXER_at_least_two_soundproducers_are_selected(void);
-
 extern LANGSPEC void MIXER_called_regularly_by_main_thread(void);
 
 extern LANGSPEC void MIXER_set_all_plugins_to_not_recording(void);

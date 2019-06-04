@@ -802,7 +802,7 @@
               ;;     (list
               ;;      "----------Plugin"
 
-              (if is-send?
+              (and is-send?
                   (list "------------Send-slider"
                         (list "Delete"
                               :enabled (and is-send? delete-func)
@@ -816,18 +816,19 @@
                         (list "Set to 0.0 dB"
                               :enabled (and is-send? reset-func)
                               (lambda ()
-                                (reset-func))))
-                  (and effect-name
-                       (list
-                        ;;"------------Plugin-slider"
-                        (get-effect-popup-entries midi-learn-instrument-id
-                                                  effect-name
-                                                  :automation-error-message (if effect-name
-                                                                                #f
-                                                                                "(Connection gain automation not supported yet)")
-                                                  :modulation-error-message (if effect-name
-                                                                                #f
-                                                                                "(Connection gain modulation not supported yet)")))))
+                                (reset-func)))))
+              
+              (and effect-name
+                   (list
+                    ;;"------------Plugin-slider"
+                    (get-effect-popup-entries midi-learn-instrument-id
+                                              effect-name
+                                              :automation-error-message (if effect-name
+                                                                            #f
+                                                                            "(Connection gain automation not supported yet)")
+                                              :modulation-error-message (if effect-name
+                                                                            #f
+                                                                            "(Connection gain modulation not supported yet)"))))
               ;;"----------"
               ;;"Convert to standalone strip" (lambda ()
               ;;                                #t)
@@ -1143,7 +1144,6 @@
   widget)
 
 
-
 (define (create-mixer-strip-plugin gui first-instrument-id parent-instrument-id instrument-id strips-config)
   (define (get-drywet)
     (<ra> :get-stored-instrument-effect instrument-id "System Dry/Wet"))
@@ -1151,43 +1151,19 @@
   (define (delete-instrument)
 
     (c-display "HIDING" slider)
-    (<gui> :hide slider)
+    (<gui> :hide slider) ;; Not necessary, but it looks much better if the slider disappears immediately.
 
-    (<ra> :schedule 10 ;; Wait for slider to be removed, and (for some reason) it also prevents some flickering. Looks much better if the slider disappears immediately.
+    (<ra> :schedule 10 ;; Wait for slider to be removed, and (for some reason) scheduling also prevents some flickering.
           (lambda ()
             
-            (define child-ids (get-instruments-connecting-from-instrument instrument-id))
-            (define child-gains (map (lambda (to)
-                                       (<ra> :get-audio-connection-gain instrument-id to))
-                                     child-ids))
+
             (undo-block
              (lambda ()
-               (define changes '())
-
-               ;; Disconnect parent -> me
-               (push-audio-connection-change! changes (list :type "disconnect"
-                                                            :source parent-instrument-id
-                                                            :target instrument-id))
-               
-               (for-each (lambda (child-id child-gain)
-
-                           ;; Disconnect me -> child
-                           (push-audio-connection-change! changes (list :type "disconnect"
-                                                                        :source instrument-id
-                                                                        :target child-id))
-                           ;; Connect parent -> child
-                           (push-audio-connection-change! changes (list :type "connect"
-                                                                        :source parent-instrument-id
-                                                                        :target child-id
-                                                                        :connection-type (<ra> :get-audio-connection-type instrument-id child-id)
-                                                                        :gain child-gain)))
-                         child-ids
-                         child-gains)
                
                (<ra> :undo-mixer-connections)
                
-               (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
-
+               (FROM_C-remove-instrument-from-connection-path parent-instrument-id instrument-id)
+               
                (if (= 0 (<ra> :get-num-in-audio-connections instrument-id))
                    (<ra> :delete-instrument instrument-id))
                
@@ -1428,53 +1404,63 @@
 
   (define last-value (get-db-value))
 
-  (define slider (strip-slider first-instrument-id
-                               parent-instrument-id
-                               target-instrument-id
-                               strips-config
-                               #t #f is-bus ;; is-send is-sink is-bus
-                               
-                               make-undo
+  (define slider #f)
 
-                               ;; get-scaled-value
-                               (lambda ()
-                                 (db-to-slider (if add-monitor ;; minor optimization.
-                                                   (or (get-db-value)
-                                                       last-value)
-                                                   last-value)))
+  (define (update-slider-value new-slider-value)
+    (when (not (= new-slider-value (<gui> :get-value slider)))
+      (set! doit #f)
+      ;;(c-display "new-slider-value: " new-slider-value ". new-db:" new-db)
+      ;;(set! last-value new-slider-value)
+      (<gui> :set-value slider new-slider-value)
+      (<gui> :update slider)
+      (set! doit #t)))
 
-                               ;; get-value-text
-                               (lambda (slider-value)                                 
-                                 (db-to-text (slider-to-db slider-value) #t))
-
-                               ;; set-value
-                               (lambda (new-slider-value)
-                                 (define db (slider-to-db new-slider-value))
-                                 ;;(c-display "new-db:" db ", old-db:" last-value)
-                                 (when (and doit (not (= last-value db)))
-                                   (set! last-value db)
-                                   (set-db-value db)))
-
-                               get-automation-data
-                               
-                               delete
-                               replace
-                               reset
-
-                               midi-learn-instrument-id
-                               effect-name
-                               ))
+  (define (get-scaled-value)
+    (let ((scaled-value (db-to-slider (get-db-value))))
+      (if scaled-value
+          (<ra> :schedule 0 ;; The send monitor doesn't cover changing values by undo/redo, so we do this thing. (if not slider jumps after trying to move it after undo/redo).
+                (lambda ()
+                  (update-slider-value (db-to-slider (get-db-value)))
+                  #f)))
+      scaled-value))
+  
+  (set! slider (strip-slider first-instrument-id
+                             parent-instrument-id
+                             target-instrument-id
+                             strips-config
+                             #t #f is-bus ;; is-send is-sink is-bus
+                             
+                             make-undo
+                             
+                             get-scaled-value
+                             
+                             ;; get-value-text
+                             (lambda (slider-value)                                 
+                               (db-to-text (slider-to-db slider-value) #t))
+                             
+                             ;; set-value
+                             (lambda (new-slider-value)
+                               (define db (slider-to-db new-slider-value))
+                               ;;(c-display "new-db:" db ", old-db:" last-value)
+                               (when (and doit (not (= last-value db)))
+                                 (set! last-value db)
+                                 (set-db-value db)))
+                             
+                             get-automation-data
+                             
+                             delete
+                             replace
+                             reset
+                             
+                             midi-learn-instrument-id
+                             effect-name
+                             ))
   
   (if add-monitor
       (add-monitor slider
                    (lambda (new-db automation-normalized)
-                     (when new-db
-                       (define new-slider-value (db-to-slider new-db))
-                       (when (not (= new-slider-value (<gui> :get-value slider)))
-                         (set! doit #f)
-                         (<gui> :set-value slider new-slider-value)
-                         (<gui> :update slider)
-                         (set! doit #t)))
+                     (if new-db
+                         (update-slider-value (db-to-slider new-db)))
                      (when automation-normalized
                        (set! automation-value (if (< automation-normalized 0)
                                                   #f
@@ -1493,6 +1479,8 @@
 
   (define send-gui #f)
 
+  (define bus-effect-name (get-bus-effect-name-from-target-instrument target-id))
+  
   (define (delete)
     (<gui> :hide send-gui)
     (<ra> :undo-mixer-connections)
@@ -1511,8 +1499,11 @@
                                   (create-send-func gain changes))))))
   
   (define (get-db-value)
-    (and (<ra> :has-audio-connection source-id target-id)
-         (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id))))
+    (if (and (<ra> :instrument-is-open-and-audio source-id)
+             (<ra> :instrument-is-open-and-audio target-id)
+             (<ra> :has-audio-connection source-id target-id))
+        (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id))
+        0.0))  ;; It's not always here right after creation, and right after deletion.
 
   (define (set-db-value db)
     ;;(c-display "setting db to" db (<ra> :db-to-gain db))
@@ -1524,7 +1515,7 @@
               *send-callbacks*)
     )
   
-  (define (add-monitor slider callback)
+  (define (add-send-monitor slider callback)
     (define send-callback
       (lambda (maybe-gui maybe-source-id maybe-target-id db)
         (if (and (not (= gui maybe-gui))
@@ -1543,7 +1534,7 @@
                    (remove (lambda (callback)
                              (equal? callback send-callback))
                            *send-callbacks*)))))
-    
+
   ;; Also works fine, but is less efficient. (cleaner code though)
   ;(define (add-monitor slider callback)
   ;  (<ra> :schedule (random 1000) (lambda ()
@@ -1555,6 +1546,20 @@
   ;                                        100)
   ;                                      #f))))
 
+  (define (add-pure-bus-monitor slider callback) 
+    (add-gui-effect-monitor slider source-id bus-effect-name #t #t
+                            (lambda (radium-normalized automation)
+                              ;;(c-display "val:" radium-normalized)
+                              (callback (and radium-normalized (radium-normalized-to-db radium-normalized))
+                                        automation
+                                        ))))
+  
+    
+  (define add-monitor (if bus-effect-name
+                          add-pure-bus-monitor
+                          add-send-monitor))
+  
+  
   ;;(set! add-monitor #f)
 
   (set! send-gui (create-mixer-strip-send gui
@@ -1566,12 +1571,15 @@
                                           get-db-value
                                           set-db-value
                                           add-monitor
-                                          "white" ;; not used (automation color)
+                                          (if bus-effect-name
+                                              (<ra> :get-instrument-effect-color source-id bus-effect-name)
+                                              "white") ;; not used (automation color)
                                           delete
                                           replace
-                                          #f ;; midi-learn-instrument-id
-                                          #f ;; automation not supported
-                                          #f ;; is bus
+                                          (and bus-effect-name ;; midi-learn-instrument-id
+                                               source-id)
+                                          bus-effect-name 
+                                          #f ;;bus-effect-name
                                           ))
   send-gui)
 
@@ -1857,17 +1865,23 @@
                       (else
                        (assert #f))))
 
-  (define is-implicitly-muted (and (eq? type 'mute)
-                                   instrument-id
-                                   (>= instrument-id 0)
-                                   (<ra> :instrument-is-implicitly-muted instrument-id)))
+  (define is-implicitly (cond ((and (eq? type 'mute)
+                                    instrument-id
+                                    (>= instrument-id 0))
+                               (<ra> :instrument-is-implicitly-muted instrument-id))
+                              ((and (eq? type 'solo)
+                                    instrument-id
+                                    (>= instrument-id 0))
+                               (<ra> :instrument-is-implicitly-soloed instrument-id))
+                              (else
+                               #f)))
 
   ;;(c-display "background-color:" background-color)
   (draw-checkbox gui text is-selected x1 y1 x2 y2 color
                  :x-border border
                  :y-border border
                  :background-color background-color                 
-                 :paint-implicit-border is-implicitly-muted
+                 :paint-implicit-border is-implicitly
                  :implicit-border-width implicit-border
                  :box-rounding 2)
   )
@@ -3031,6 +3045,9 @@
                                      (get-all-audio-instruments)))
 (length (get-all-audio-instruments))
 (<gui> :show gui)
+(every? (lambda (b)
+       #t)
+     (list 1 2 3))
 !!#
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)
@@ -3039,9 +3056,8 @@
   ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " (sort list-of-modified-instrument-ids <) (length *mixer-strips-objects*) "\n\n\n")
   ;;(c-display "all:" (sort (get-all-audio-instruments) <))
   (let ((list-of-modified-instrument-ids (cond ((or (null? list-of-modified-instrument-ids)
-                                                    (not (null? ((<new> :container (get-all-audio-instruments)) ;;i.e. if a modified instrument is deleted.
-                                                                 :set-difference
-                                                                 list-of-modified-instrument-ids))))
+                                                    (not ((<new> :container (get-all-audio-instruments)) ;;i.e. if a modified instrument is deleted.
+                                                          :has-all? list-of-modified-instrument-ids)))
                                                 :non-are-valid)
                                                ((true-for-all? (lambda (id)
                                                                  (= id -2))

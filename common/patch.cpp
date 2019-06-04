@@ -66,6 +66,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../Qt/Qt_instruments_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 
 #include "patch_proc.h"
 
@@ -526,6 +528,8 @@ static struct Patch *create_audio_patch(const char *type_name, const char *plugi
 
   printf("       PATCH create audio\n");
   remakeMixerStrips(patch->id);
+
+  S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
   
   return patch;
 }
@@ -680,6 +684,7 @@ void PATCH_handle_editor_and_automation_when_replacing_patch(struct Patch *old_p
     PC_StopPause(window);
 }
 
+// i.e. remove and delete.
 static void make_inactive(struct Patch *patch, bool force_removal){
 
   R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
@@ -731,7 +736,9 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   PATCH_remove_from_instrument(patch);
 
   API_remove_effect_monitors_for_instrument(patch);
-  
+
+  S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
+
   printf("       PATCH make inactive\n");
 }
 
@@ -1312,7 +1319,7 @@ void RT_play_click_note(struct SeqTrack *seqtrack, int64_t time, int note_num){
   //printf("   rt_play_click_note. seqtrack: %p\n", seqtrack);
   
   for (int i=0 ; i<num_patches ; i++){
-    //printf("Playing click note. seqtrack: %p\n", seqtrack);
+    //printf("  %d. Playing click note. seqtrack: %p\n", note_num, seqtrack);
     RT_PATCH_play_note(seqtrack,
                        patches[i],
                        create_note_t(NULL,

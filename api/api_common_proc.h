@@ -34,6 +34,7 @@ extern void printExceptionIfError(void);
 extern void throwExceptionIfError(void); // Warning, is likely to cause a longjmp!
 extern void clearErrorMessage(void); // Should be called before running code that might call handleError followed by throwExceptionIfError.
 
+extern const char *g_last_api_entry_func_name;
 
 #ifdef RADIUM_COMMON_NSMTRACKER_H
 

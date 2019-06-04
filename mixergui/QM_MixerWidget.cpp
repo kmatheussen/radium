@@ -106,6 +106,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/CpuUsage.hpp"
 #include "../audio/Sampler_plugin_proc.h"
 
+#include "../api/api_common_proc.h"
+
 #include "../embedded_scheme/s7extra_proc.h"
 
 
@@ -826,53 +828,38 @@ static Chip *get_chip_with_port_at(QGraphicsScene *scene,int x, int y){
   return NULL;
 }
 
-// Returns false if there are more than one before or after chip.
-// Also returns false if there are 0 before chips, or 0 after chips.
-// Neither 'before' nor 'after' is set if the function returns false.
-static bool get_before_and_after_chip(Chip *chip, Chip **before, Chip **after){
-  if(chip->audio_connections.size()!=2)
-    return false;
-
-  if(chip->audio_connections[0]->to==chip && chip->audio_connections[1]->to==chip)
-    return false;
-
-  if(chip->audio_connections[0]->from==chip && chip->audio_connections[1]->from==chip)
-    return false;
-
-  if(chip->audio_connections[0]->to==chip){
-    *before = chip->audio_connections[0]->from;
-    *after  = chip->audio_connections[1]->to;
-  }else{
-    *before = chip->audio_connections[1]->from;
-    *after  = chip->audio_connections[0]->to;
+static void delete_instrument(struct Patch *patch){
+  struct Patch *parent = NULL;
+  
+  if (getNumInAudioConnections(patch->id)==1){
+    int64_t parent_id = getAudioConnectionSourceInstrument(0, patch->id);
+    parent = getAudioPatchFromNum(parent_id);
   }
-
-  return true;
+  
+  {
+    radium::ScopedUndo undo;
+    if (parent != NULL){
+      ADD_UNDO(MixerConnections_CurrPos());
+      S7CALL2(void_int_int, "FROM_C-remove-instrument-from-connection-path", parent->id, patch->id);
+    }
+    
+    deleteInstrument(patch->id);
+  }
 }
-
+                        
 static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mouse_x, float mouse_y){
   printf("Going to delete\n");
   Chip *chip = dynamic_cast<Chip*>(item);
   if(chip!=NULL){
     printf("Got chip\n");
 
-    Chip *before=NULL;
-    Chip *after=NULL;
-    bool is_slash_was_connected = get_before_and_after_chip(chip, &before, &after);
+    struct Patch *patch = CHIP_get_patch(chip);
 
-    UNDO_OPEN_REC();{
-
-      if(is_slash_was_connected){
-        ADD_UNDO(MixerConnections_CurrPos());
-        CHIP_remove_chip_from_connection_sequence(scene, before, chip, after);
-      }
+    if (patch != NULL){
+      delete_instrument(patch);
+      return true;
+    }
       
-      struct Patch *patch = CHIP_get_patch(chip);
-      deleteInstrument(patch->id);
-      
-    }UNDO_CLOSE();
-    
-    return true;
   }
 
   return false;
@@ -881,7 +868,7 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mo
 static void delete_several_chips(const vector_t &patches){
   UNDO_OPEN_REC();{
     VECTOR_FOR_EACH(struct Patch *,patch,&patches){
-      deleteInstrument(patch->id);
+      delete_instrument(patch);
     }END_VECTOR_FOR_EACH;
   }UNDO_CLOSE();
 }
@@ -1122,12 +1109,7 @@ void MW_copy(void){
 
 static void MW_delete2(float mouse_x, float mouse_y, bool has_mouse_coordinates){
   vector_t patches = get_selected_patches();
-  
-  if (patches.num_elements==1)
-    mousepress_delete_chip(&g_mixer_widget->scene, get_selected_chips()[0], mouse_x, mouse_y);
-  else {
-    delete_several_chips(patches);
-  }  
+  delete_several_chips(patches);
 }
 
 void MW_delete(void){
@@ -1918,7 +1900,7 @@ namespace{
 
                 float volume = chip->get_slider_volume();
                 bool is_muted = !ATOMIC_GET_RELAXED(plugin->volume_is_on);
-                bool is_implicitly_muted = SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
+                //bool is_implicitly_muted = SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
                 bool is_solo = ATOMIC_GET_RELAXED(plugin->solo_is_on);
                 bool is_bypass = !ATOMIC_GET_RELAXED(plugin->effects_are_on);
                 bool is_recording = ATOMIC_GET_RELAXED(patch->is_recording);
@@ -1934,11 +1916,14 @@ namespace{
                   chip->update();
                   chip->_last_updated_mute = is_muted;
                 }
-                
+
+                /*
+                // CHIP_update() should be called manually when implicit mute changes.
                 if (chip->_last_updated_implicitly_mute != is_implicitly_muted){
                   chip->update();
                   chip->_last_updated_implicitly_mute = is_implicitly_muted;
                 }
+                */
                 
                 if (chip->_last_updated_solo != is_solo){
                   chip->update();

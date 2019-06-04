@@ -1,3 +1,91 @@
+Changes 5.9.64 -> 5.9.65:
+* Mixer: Fix quirky behavior in send-sliders when
+  trying to set new value after undoing or redoing.
+* Modular Mixer: When deleting a sound object with
+  exactly one input connection, transfer the output
+  connection settings to the parent sound object.
+  This behaviour is similar to what happens when
+  deleting a plugin in a mixer strip.
+* New song template: Remove chorus and reverb sends
+  from the "Click" instrument.
+* Mixer: Fix bus send values sometimes being set to
+  -inf dB or 0dB in various situations.
+* Mixer strips: Fix error messages sometimes popping
+  up in 5.9.64 when inserting / removing plugins.
+* Mixer strips: Fix slow gfx update in 5.9.64 when
+  editing bus send sliders.
+* Mixer strips: Display automation/modulation values
+  again for the bus send sliders, which disappeared
+  in 5.9.64.
+* Mixer strips: Include the "Effect:" section in the
+  popup menu for bus send sliders.
+* Instrument widget: Optimize graphical updates.
+* API: Various improvements for debugging scheme
+  code.
+
+
+
+Changes 5.9.62 -> 5.9.64:
+* Mixer: Fix bug not making it possible to show mixer
+  strips for plugins.
+* Metronome: Don't play extra sounds when playing
+  block. Fix for bug introduced in 5.9.62.
+* Editor: Avoid jumping cursor when stopping to play.
+* Player: Fix selecting correct current seqblock and
+  current block after stopping to play.
+* Audio: Make Solo behave more generally. For
+  instance, setting solo for a bus only makes the
+  buses mute, not all instruments.
+* Mixer/Sequencer: Display non-filled yellow border
+  around solo buttons for implicitly soloed
+  instruments.
+* Jack: Don't crash, and don't show assertion window
+  if saving state or setting port name when jack port
+  could not be registered.
+* About window: Include control port number.
+* Message window: Fix quotations
+* Audio Removed all bus on/off effects. Instead,
+  audio connections are created / deleted. This
+  improves CPU usage by around 5% and cleans up the
+  code a bit.
+* Mixer: Added "C2" button to show/hide bus
+  connections. (Hidden by default.)
+* Editor: Add "Edit" entries to the track popup menu.
+* Editor: Make resize faster, and reduce chance of
+  seing framed black editor while resizing.
+* Internal: Updated S7.
+* Editor: Fix minor graphical glitches when a block
+  is played in more than one seqtrack.
+* Sequencer: When setting cursor position when not
+  playing, set current seqblock to the one under the
+  cursor of the current seqtrack, if there is one.
+* Sequencer: Fix single-click in the timeline to set
+  cursor position (red cursor).
+* Sequencer: When pressing Ctrl+C and no seqblocks
+  are selected, copy the current seqblock and not the
+  seqblock under mouse pointer.
+* Sequencer: Remember current seqblock when changing
+  seqtrack.
+* Editor: Not necesarry to place the mouse cursor
+  inside the editor when copying and pasting blocks.
+* Init: Don't show assertion reporter window when a
+  scheme function is redefined. It's enough showing
+  the warning window.
+* API:
+  * New: showEditQuantitizeTab, showEditTransposeTab,
+    showEditRandomizeTab, showEditVariousTab,
+    canAudioConnect, setInstrumentIsImplicitlyMuted,
+    instrumentIsImplicitlySoloed,
+    setInstrumentIsImplicitlySoloed,
+    atLeastOneInstrumentHasSolo
+  * Removed instrumentIsBusDescendant.
+  * Fix selectPrevPlaylistBlock and
+    selectNextPlaylistBlock when playing song.
+    Broken in 5.9.62.
+  * Don't pretty-print backtrace code. Takes up
+    too much space.
+
+
 Changes 5.9.61 -> 5.9.62:
 * Sequencer: Fix bar and beat numbers in the
   sequencer timeline.

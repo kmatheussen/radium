@@ -1183,14 +1183,7 @@ for .emacs:
                 (2)
                 (3)))
 
-(define (true-for-all? pred elements)
-  (cond ((null? elements)
-         #t)
-        ((pred (car elements))
-         (true-for-all? pred (cdr elements)))
-        (else
-         #f)))
-               
+(define true-for-all? every?)               
 
 (***assert*** (true-for-all? even? '())
               #t)
@@ -1548,76 +1541,138 @@ for .emacs:
 ;;;;;;;;;;;;; container ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-class (<container> :elements ;; <-- elements must be either a list or a vector
-                           :eq-func #f)
+(define-class (<container> :elements ;; <-- elements must be either a list, a vector, or a hash table (only the keys are used in the hash table, the values must not be #f (impossible in s7)).
+                           :eq-func #f) ;; <-- #if #f, automatically determined, but should be set anyway. If elements is a hash table, eq-func is not used.
   
   (define vector #f)
   (define list #f)
   (define hash #f)
-  (define num-elements (length elements))
+  
+  (define num-elements #f)
 
-  (define (clear! elements)
-    (set! elements elements)
-    (set! vector #f)
-    (set! list #f)
-    (set! hash #f)
-    (set! num-elements (length elements)))
+  (define (clear! new-elements new-vector new-list new-hash new-num-elements)
+    (set! elements new-elements)
+    (set! vector (if new-vector
+                     vector
+                     (if (vector? new-elements)
+                         new-elements
+                         #f)))
+    (set! list (if new-list
+                   new-list
+                   (if (pair? new-elements)
+                       new-elements
+                       #f)))
+    (set! hash (if new-hash
+                   new-hash
+                   (if (hash-table? new-elements)
+                       new-elements
+                       #f)))
     
-  (when (not eq-func)
-    (set! eq-func 
-          (if (null? elements)
-              eq?
-              (let ((el0 (elements 0)))
-                (cond ((symbol? el0)
-                       eq?)
-                      ((number? el0)
-                       =)
-                      ((string? el0)
-                       string=?)
-                      ((pair? el0)
-                       equal?)
-                      (else
-                       morally-equal?))))))
+    (set! num-elements (if new-num-elements
+                           new-num-elements
+                           (cond (vector
+                                  (vector-length new-elements))
+                                 (hash
+                                  (hash-table-entries hash))
+                                 (else
+                                  #f)))))
+                                  
+
+  (clear! elements #f #f #f #f)
+
+  (define (get-eq-func)
+    (when (not eq-func)
+      (set! eq-func (if (= 0 (get-size))
+                        morally-equal?
+                        (let ((el0 (elements 0)))
+                          (cond ((symbol? el0)
+                                 eq?)
+                                ((number? el0)
+                                 =)
+                                ((string? el0)
+                                 string=?)
+                                ((pair? el0)
+                                 equal?)
+                                (else
+                                 morally-equal?))))))
+    eq-func)
 
   (define (get-vector)
-    (if (not vector)
-        (set! vector (to-vector elements)))
+    (when (not vector)
+      (if (vector? elements)
+          (set! vector elements)
+          (set! vector (to-vector (get-list)))))
     vector)
 
   (define (get-list)
-    (if (not list)
-        (set! list (to-list elements)))
+    (when (not list)
+      (if (hash-table? elements)
+          (set! list (map car elements))
+          (set! list (to-list elements))))
     list)
 
   (define (get-hash)
     (when (not hash)
-      (set! hash (make-hash-table (max 1 num-elements) eq-func))
+      ;;(c-display "================ elements:" elements ". num:" (get-size) "====================")
+      (set! hash (make-hash-table (max 1 (get-size)) (get-eq-func)))
       (for-each (lambda (element)
                   (set! (hash element) #t))
                 elements))
     hash)
-      
+  
+  (define (get-size)
+    (when (not num-elements)
+      (if hash
+          (set! num-elements (hash-table-entries hash))
+          (set! num-elements (vector-length (get-vector)))))
+    num-elements)
+    
   :contains (key)
   ((get-hash) key)
 
   :intersection (elements2)
-  (map (lambda (el2)
-         (this->contains el2))
+  (keep (lambda (el2)
+          (this->contains el2))
         elements2)
 
   :set-difference (elements2) ;; returns all elements in 'elements2' that are not in 'this'.
-  (map (lambda (el2)
-         (not (this->contains el2)))
-       elements2)
+  (let ((elements2 (if (pair? elements2)
+                       (<new> :container elements2)
+                       elements2)))
+    (if (hash-table? (elements2 :elements))
+        (let ((ret (copy (elements2 :elements))))
+          (this->for-each (lambda (el2)
+                            (hash-table-set! ret (car el2) #f)))
+          (<new> :container ret))
+        (<new> :container (remove (lambda (el2)
+                                    (if (pair? el2)
+                                        (this->contains (car el2))
+                                        (this->contains el2)))                                          
+                                  (elements2 :elements)))))
 
+  :has-all? (elements2)
+  (every? (lambda (el2)
+            (this->contains el2))
+          elements2)
+
+  :for-each (func)
+  (cond (list
+         (for-each func list))
+        (vector
+         (for-each func vector))
+        (else
+         (for-each (lambda (el)
+                     (func (car el)))
+                   hash)))
+                   
   :num-elements ()
-  num-elements
+  (get-size)
 
   :size ()
-  num-elements
+  (get-size)
 
   :length ()
-  num-elements
+  (get-size)
 
   :vector ()
   (get-vector)
@@ -1625,15 +1680,34 @@ for .emacs:
   :list ()
   (get-list)
 
+  :hash ()
+  (get-hash)
+  
+  :elements ()
+  elements
+  
   :get (pos)
   ((get-vector) pos)
 
-  :add! (element)
-  (clear! (cons element (get-list)))
-
-  :add-unique! (element)
-  (if (not (this->contains element))
-      (this->add! element))
+  :add! (element) ;; Very inefficient if primary format is hash-table.
+  (let ((elements (cons element (get-list))))
+    (clear! elements
+            #f
+            elements
+            #f
+            (and num-elements
+                 (+ 1 num-elements))))
+  
+  :add-unique! (element) ;; Very inefficient if primary format is not hash-table.
+  (when (not (this->contains element))
+    (set! (hash element) #t)
+    (clear! hash
+            #f
+            (and list
+                 (cons element list))
+            hash
+            (and num-elements
+                 (+ 1 num-elements))))
 
   :cons (element)
   (<new> :container (cons element (get-list))))
