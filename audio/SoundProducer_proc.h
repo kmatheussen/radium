@@ -35,14 +35,38 @@ class Chip;
 
 namespace radium{
 
+enum class EnableType{
+  DONT_CHANGE = -1,
+  DISABLE = 0,
+  ENABLE = 1,
+};
+
+static inline EnableType get_enable_type_from_int(int e){
+  if(e < 0){
+    R_ASSERT_NON_RELEASE(e==-1);
+    return EnableType::DONT_CHANGE;
+  }else if (e==0)
+    return EnableType::DISABLE;
+  else{
+    R_ASSERT_NON_RELEASE(e==1);
+    return EnableType::ENABLE;
+  }
+}
+
+static inline EnableType get_enable_type_from_bool(bool enable){
+  if(enable)
+    return EnableType::ENABLE;
+  else
+    return EnableType::DISABLE;
+}
+   
 struct LinkParameter{
   SoundProducer *source;
   int source_ch;
   SoundProducer *target;
   int target_ch;
 
-  bool must_set_enabled = false;
-  bool link_is_enabled = true; // Has no purpose if must_set_enabled == false.
+  EnableType enable_type = EnableType::ENABLE;
 
   float volume = 1.0;
   bool must_set_volume = false;
@@ -62,13 +86,12 @@ struct LinkParameter{
   LinkParameter(SoundProducer *source, int source_ch,
                 SoundProducer *target, int target_ch,
                 float volume = -1.0,
-                bool must_set_enabled = false, bool link_is_enabled = true)
+                EnableType enable_type = EnableType::ENABLE)
     : source(source)
     , source_ch(source_ch)
     , target(target)
     , target_ch(target_ch)
-    , must_set_enabled(must_set_enabled)
-    , link_is_enabled(link_is_enabled)
+    , enable_type(enable_type)
   {
     if(volume >= 0){
       this->volume = volume;
@@ -78,7 +101,7 @@ struct LinkParameter{
 
   // QVector requires an empty constructor in LinkParameters::add
   LinkParameter()
-    :LinkParameter(NULL, -1, NULL, -1, -1.0, false)
+    :LinkParameter(NULL, -1, NULL, -1)
   {}
 };
 
@@ -86,12 +109,12 @@ struct LinkParameters : public QVector<LinkParameter> {
   LinkParameters(){
   }
   
-  void add(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch, float volume = -1.0, bool must_set_enabled = false, bool link_is_enabled = true){
-    push_back(LinkParameter(source, source_ch, target, target_ch, volume, must_set_enabled, link_is_enabled));
+  void add(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch, float volume = -1.0, EnableType enable_type = EnableType::ENABLE){
+    push_back(LinkParameter(source, source_ch, target, target_ch, volume, enable_type));
   }
 
   // Implemented in QM_chip.cpp
-  void add(Chip *source, int source_ch, Chip *target, int target_ch, float volume = -1.0, bool must_set_enabled = false, bool link_is_enabled = true);
+  void add(Chip *source, int source_ch, Chip *target, int target_ch, float volume = -1.0, EnableType enable_type = EnableType::ENABLE);
 };
 
 }

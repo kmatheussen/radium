@@ -86,9 +86,9 @@ static int64_t RT_scheduled_play_click_between_seqblocks(struct SeqTrack *seqtra
   g_rt_beatnum = beatnum;
   g_rt_barnum = barnum;
     
-  if (ATOMIC_GET(root->clickonoff))
+  if (ATOMIC_GET(root->clickonoff)){
     RT_play_click_note(seqtrack, time, is_bar ? c_bar_note_num : c_beat_note_num);
-
+  }
   
   // 2. Prepare next
   //
@@ -294,7 +294,7 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
     (void)next_seqblock;
     (void)RT_schedule_beats_between_seqblocks;
 #else
-    if (is_a_timing_seqtrack)
+    if (is_a_timing_seqtrack && seqtrack != root->song->block_seqtrack)
       RT_schedule_beats_between_seqblocks2(seqtrack, seqblock->t.time2, seqblock, next_seqblock, iterator->last_valid_signature, time, 1, 1);
 #endif
 

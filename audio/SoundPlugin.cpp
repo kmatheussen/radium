@@ -1237,11 +1237,12 @@ static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFor
     if(old_value != store_value_native){                                \
       safe_float_write(&plugin->bus_volume[busnum], store_value_native); \
       volatile struct Patch *patch = plugin->patch;                     \
-      RT_schedule_mixer_strips_redraw();                                \
       update_instrument_gui(const_cast<struct Patch*>(patch));          \
     }                                                                   \
   }                                                                     \
   break;
+
+//RT_schedule_mixer_strips_redraw();
 
 #define GET_BUS_VOLUME(busnum, value_format)    \
   get_gain_value(safe_float_read(&plugin->bus_volume[busnum]), value_format)

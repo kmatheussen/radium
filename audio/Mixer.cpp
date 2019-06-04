@@ -532,8 +532,10 @@ static void init_player_lock(void){
 }
 
 
+/*
 static void RT_MIXER_check_if_someone_has_solo(void);
 static void RT_MIXER_check_if_at_least_two_soundproducers_are_selected(void);
+*/
 
 jack_time_t g_jackblock_delta_time = 0;
 
@@ -940,9 +942,6 @@ struct Mixer{
         
       RT_lock_player();
       
-      RT_MIXER_check_if_someone_has_solo();
-      RT_MIXER_check_if_at_least_two_soundproducers_are_selected();
-
       jackblock_variables_protector.write_start();{
 
         struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
@@ -1879,43 +1878,6 @@ struct Patch *MIXER_get_bus(int bus_num){
   struct SoundPlugin *plugin = SP_get_plugin(producer);
   
   return (struct Patch*)plugin->patch;
-}
-
-static DEFINE_ATOMIC(bool, g_someone_has_solo) = false;
-static DEFINE_ATOMIC(bool, g_someone_is_selected) = false;
-
-// May be called from a realtime thread
-bool MIXER_someone_has_solo(void){
-  return ATOMIC_GET_RELAXED(g_someone_has_solo); // It's fine using RELAXED here. If called from a realtime thread, access to g_someone_has_solo is already protected by semaphores.
-}
-
-static void RT_MIXER_check_if_someone_has_solo(void){
-  for (SoundProducer *sp : g_mixer->_sound_producers)
-    if (ATOMIC_GET(SP_get_plugin(sp)->solo_is_on)){
-      ATOMIC_SET_RELAXED(g_someone_has_solo, true);
-      return;
-    }
-
-  ATOMIC_SET_RELAXED(g_someone_has_solo, false);
-}
-
-// May be called from a realtime thread.
-bool MIXER_at_least_two_soundproducers_are_selected(void){
-  return ATOMIC_GET_RELAXED(g_someone_is_selected);
-}
-
-static void RT_MIXER_check_if_at_least_two_soundproducers_are_selected(void){
-  int num = 0;
-  for (SoundProducer *sp : g_mixer->_sound_producers)
-    if (ATOMIC_GET(SP_get_plugin(sp)->is_selected)){
-      num++;
-      if (num==2){
-        ATOMIC_SET_RELAXED(g_someone_is_selected, true);
-        return;
-      }
-    }
-
-  ATOMIC_SET_RELAXED(g_someone_is_selected, false);
 }
 
 void MIXER_called_regularly_by_main_thread(void){

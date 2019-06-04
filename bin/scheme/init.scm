@@ -92,17 +92,24 @@
 		    (= i (*s7* 'history-size)))
 		(format p "~%<br>error-history:~%<br>    ~S" (car start))
                 (define i2 0)
+                (define is-finished #f)
 		(do ((x history (cdr x))
 		     (line lines (cdr line))
 		     (f files (cdr f))
                      )
                     ((null? x))
                   (set! i2 (+ i2 1))
-		  (format p (if (and (integer? (car line))
-				     (string? (car f))
-				     (not (string=? (car f) "*stdout*")))
-				(values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>~40T;<font color='black'>~A</font>[~A]" i2 (pp (car x)) (car f) (car line))
-				(values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>" i2 (pp (car x))))))
+                  (if (or is-finished
+                          (equal? (car x)
+                                  '(if (and rethrow maybe-rethrow) (throw *try-finally-rethrown*) ret)))
+                      (begin
+                        (set! is-finished #t)
+                        "")                          
+                      (format p (if (and (integer? (car line))
+                                         (string? (car f))
+                                         (not (string=? (car f) "*stdout*")))
+                                    (values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>~40T;<font color='black'>~A</font>[~A]" i2 (car x) (car f) (car line))
+                                    (values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>" i2 (car x))))))
 		(format p "~%<br>"))
 	     (set! history (cons (car x) history))
 	     (set! lines (cons (and (pair? (car x)) (pair-line-number (car x))) lines))
@@ -249,9 +256,9 @@
                                   #t))
                          ;;(handle-assertion-failure-during-startup message)
                          ))
-                      ((and *currently-loading-file*
-                            (not *currently-reloading-file*))
-                       (ra:add-message message));(ra:get-html-from-text message)))
+                      ;;((and *currently-loading-file*
+                      ;;      (not *currently-reloading-file*))
+                      ;; (ra:add-message message));(ra:get-html-from-text message)))
                       ((defined? 'c-display (rootlet))
                        (c-display message))
                       (else
@@ -335,6 +342,7 @@
         (let ((loaded-names (make-hash-table 39 string=?)))
           (lambda (filename . args)
             (set! filename (get-full-path-of-scm-file filename))
+            (define is-first-time (loaded-names filename))
             (define env (if (null? args) #f (car args)))
             (define old-loading-filename *currently-loading-file*)
             (define old-reloading *currently-reloading-file*)
@@ -348,7 +356,7 @@
                                     (org-load filename env)
                                     (org-load filename)))
                               (lambda args
-                                (set! do-rethrow #t)
+                                (set! do-rethrow (not is-first-time))
                                 (cond ((defined? 'safe-display-ow!)
                                        (safe-display-ow!))
                                       ((defined? 'safe-ow!)
@@ -357,7 +365,7 @@
                                        (display (my-ow!))))))))
               (set! *currently-reloading-file* old-reloading)
               (set! *currently-loading-file* old-loading-filename)
-              (if do-rethrow
+              (if (and #f do-rethrow)
                   (error 'loading-failed)
                   ret))))))
 
@@ -509,6 +517,7 @@
 ;;(my-require 'mouse.scm)
 
 (my-require 'instruments.scm)
+(my-require 'solo.scm)
 
 (my-require 'fxrange.scm)
 

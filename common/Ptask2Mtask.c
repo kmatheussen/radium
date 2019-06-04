@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Bs_edit_proc.h"
 #include "gfx_proc.h"
 #include "settings_proc.h"
+#include "player_proc.h"
 
 
 extern PlayerClass *pc;
@@ -65,7 +66,101 @@ int default_scrolls_per_second = 20;
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "Ptask2Mtask_proc.h"
+
+
+static struct SeqTrack *find_first_seqtrack_with_block(const struct Blocks *block){
+  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+    VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+      if (seqblock->block==block)
+        return seqtrack;
+    }END_VECTOR_FOR_EACH;
+  }END_VECTOR_FOR_EACH;
+
+  return NULL;
+}
+
+static struct SeqBlock *find_seqblock_with_block_at_pos(const struct SeqTrack *seqtrack, int64_t pos, const struct Blocks *block){
+  VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+    if (pos >= seqblock->t.time && pos <= seqblock->t.time2)
+      return seqblock;    
+  }END_VECTOR_FOR_EACH;
+
+  //  printf("             Could not find seqblock at pos\n");
+  
+  return NULL;
+}
+
+static bool seqtrack_has_block(const struct SeqTrack *seqtrack, const struct Blocks *block){
+  VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+    if (seqblock->block==block)
+      return true;
+  }END_VECTOR_FOR_EACH;
+
+  return false;
+}
+
+static struct SeqBlock *find_first_seqblock(void){
+  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+    VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+      return seqblock;
+    }END_VECTOR_FOR_EACH;
+  }END_VECTOR_FOR_EACH;
+
+  return NULL;
+}
+
+static void set_current_seqblock_and_block_after_stop_playing(struct Tracker_Windows *window, struct WBlocks *wblock){
+#if !defined(RELEASE)
+  printf(" ------------- Stopped playing song. Setting curr seqtrack/seqblock -------------- \n");
+#endif
+    
+  // First check if current seqblock holds audio.
+  {
+    int64_t curr_seqblock_id = getCurrSeqblockId();
+    if (curr_seqblock_id >= 0){
+      if (seqblockHoldsSample(getSeqblockSeqblockNum(curr_seqblock_id), getSeqblockSeqtrackNum(curr_seqblock_id), true)){
+        SelectWBlock(window, wblock);
+        return;
+      }
+    }
+  }
+    
+    
+  struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+    
+  if (seqtrack==NULL){
+      
+    R_ASSERT_NON_RELEASE(false);
+      
+    seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[0];
+      
+  }
+    
+  if (!seqtrack_has_block(seqtrack, wblock->block))
+    seqtrack = find_first_seqtrack_with_block(wblock->block);
+    
+  struct SeqBlock *seqblock;
+    
+  if (seqtrack==NULL){
+      
+    seqblock = find_first_seqblock();
+      
+  } else {
+      
+    seqblock = find_seqblock_with_block_at_pos(seqtrack, getSongPos(), wblock->block);
+    
+  }
+    
+  if (seqblock != NULL){
+    setCurrSeqblock(seqblock->id);    
+  }
+  
+  if (window->curr_block!=wblock->l.num)
+    SelectWBlock(window, wblock);
+}
 
 
 // Simpler version when using opengl
@@ -122,23 +217,40 @@ void P2MUpdateSongPosCallBack(void){
   }
 
   
+  if (isplaying){
 
-  if(window->curr_block!=curr_block_num){
-
+    if(window->curr_block!=curr_block_num){
+      
 #if 0
-    if (ATOMIC_GET(root->editonoff)==false)
-      GL_create(window); // <-- Faster update (no, doesn't seem to make a difference), but it's also complicated to avoid calling GL_create twice when doing this. (need separate update variables for editor and non-editor)
+      if (ATOMIC_GET(root->editonoff)==false)
+        GL_create(window); // <-- Faster update (no, doesn't seem to make a difference), but it's also complicated to avoid calling GL_create twice when doing this. (need separate update variables for editor and non-editor)
 #endif
+      
+      //printf("Bef. w: %d\n",window->curr_block);
+      //printf("                 GOT IT\n");
+      
+      SelectWBlock(window, wblock);
+      goto gotit;
+    }
 
-    //printf("Bef. w: %d\n",window->curr_block);
+  } else {
 
-    SelectWBlock(
-                 window,
-                 wblock
-                 );
+    static int64_t last_play_id = -1;
+    int64_t now_play_id = ATOMIC_GET_RELAXED(pc->play_id);
     
+    if (last_play_id==now_play_id)
+      goto gotit;
+
+    last_play_id = now_play_id;
+    
+    set_current_seqblock_and_block_after_stop_playing(window, wblock);
+  }
+  
+ gotit:
+    
+  R_ASSERT_NON_RELEASE(window->curr_block==curr_block_num);
+
     //printf("Aft. w: %d\n",window->curr_block);
-  }      
 
   //GE_set_curr_realline(wblock->curr_realline);
   //  printf("till_curr_realline: %d\n",wblock->till_curr_realline);

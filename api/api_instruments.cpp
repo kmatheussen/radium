@@ -760,17 +760,66 @@ bool instrumentIsImplicitlyMuted(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
-  
+
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
     handleError("Instrument #%d has been closed", (int)instrument_id);
     return false;
   }
 
-  struct SoundProducer *sp = SP_get_sound_producer(plugin);
-  R_ASSERT_RETURN_IF_FALSE2(sp!=NULL, false);
+  return plugin->is_implicitly_muted;
+}
+
+void setInstrumentIsImplicitlyMuted(int64_t instrument_id, bool doit){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+
+  if (plugin->is_implicitly_muted == doit)
+    return;
   
-  return SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(sp);
+  plugin->is_implicitly_muted = doit;
+  CHIP_update(plugin);
+}
+
+bool instrumentIsImplicitlySoloed(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+
+  return plugin->is_implicitly_soloed;
+}
+
+void setInstrumentIsImplicitlySoloed(int64_t instrument_id, bool doit){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+
+
+  if (plugin->is_implicitly_soloed == doit)
+    return;
+  
+  plugin->is_implicitly_soloed = doit;
+  CHIP_update(plugin);
+  SEQUENCER_update(SEQUPDATE_HEADERS);
 }
 
 
@@ -1309,6 +1358,16 @@ void switchBypassForSelectedInstruments(void){
   S7CALL2(void_void,"FROM_C-switch-bypass-for-selected-instruments");
 }
 
+bool atLeastOneInstrumentHasSolo(void){
+  VECTOR_FOR_EACH(struct Patch *, patch, &get_audio_instrument()->patches){
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    if (plugin!=NULL && ATOMIC_GET(plugin->solo_is_on))
+      return true;
+  }END_VECTOR_FOR_EACH;
+
+  return false;
+}
+
 void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -1737,7 +1796,7 @@ void deleteAudioConnection(int64_t source_id, int64_t dest_id){
     return;
 
   if (MW_disconnect(source, dest)==false)
-    handleError("Could not find audio connection between \"%s\" and \"%s\"", source->name, dest->name);
+    handleError("deleteAudioConnection: Could not find audio connection between \"%s\" and \"%s\"", source->name, dest->name);
 }
 
 bool changeAudioConnections(dynvec_t changes){
@@ -1778,7 +1837,7 @@ void deleteEventConnection(int64_t source_id, int64_t dest_id){
     return;
 
   if (MW_edisconnect(source, dest)==false)
-    handleError("Could not find audio connection between \"%s\" and \"%s\"", source->name, dest->name);
+    handleError("deleteEventConnection: Could not find event connection between \"%s\" and \"%s\"", source->name, dest->name);
 }
 
 bool canAudioConnect(int64_t source_id, int64_t dest_id){
@@ -1805,7 +1864,7 @@ bool hasEventConnection(int64_t source_id, int64_t dest_id){
   return MW_are_econnected(source, dest);
 }
 
-static bool get_connection_gain_enabled(int64_t source_id, int64_t dest_id, float *gain, bool *is_enabled, bool show_error_if_not_connected){
+static bool get_connection_gain_enabled(const char *funcname, int64_t source_id, int64_t dest_id, float *gain, bool *is_enabled, bool show_error_if_not_connected){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return false;
@@ -1836,7 +1895,7 @@ static bool get_connection_gain_enabled(int64_t source_id, int64_t dest_id, floa
   
   if (error!=NULL){
     if (show_error_if_not_connected)
-      handleError("Could not find audio connection between instrument %d (%s) and instrument %d (%s): %s", (int)source_id, source->name, (int)dest_id, dest->name, error);
+      handleError("%s: Could not find audio connection between instrument %d (%s) and instrument %d (%s): %s", funcname, (int)source_id, source->name, (int)dest_id, dest->name, error);
     return false;
   }
 
@@ -1845,7 +1904,7 @@ static bool get_connection_gain_enabled(int64_t source_id, int64_t dest_id, floa
 
 float getAudioConnectionGain(int64_t source_id, int64_t dest_id, bool show_error_if_not_connected){
   float ret;
-  if (get_connection_gain_enabled(source_id, dest_id, &ret, NULL, show_error_if_not_connected))
+  if (get_connection_gain_enabled("getAudioConnectionGain", source_id, dest_id, &ret, NULL, show_error_if_not_connected))
     return ret;
   else
     return 0.0;
@@ -1853,13 +1912,13 @@ float getAudioConnectionGain(int64_t source_id, int64_t dest_id, bool show_error
 
 bool getConnectionEnabled(int64_t source_id, int64_t dest_id, bool show_error_if_not_connected){
   bool ret;
-  if (get_connection_gain_enabled(source_id, dest_id, NULL, &ret, show_error_if_not_connected))
+  if (get_connection_gain_enabled("getConnectioEnabled", source_id, dest_id, NULL, &ret, show_error_if_not_connected))
     return ret;
   else
     return false;
 }
 
-static void set_connection_gain_enabled(int64_t source_id, int64_t dest_id, const float *gain, const bool *is_enabled, bool redraw_mixer_strips){
+static void set_connection_gain_enabled(const char *funcname, int64_t source_id, int64_t dest_id, const float *gain, const bool *is_enabled, bool redraw_mixer_strips){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -1893,15 +1952,15 @@ static void set_connection_gain_enabled(int64_t source_id, int64_t dest_id, cons
   }
     
   if (error!=NULL)
-    handleError("Could not find audio connection between instrument %d (%s) and instrument %d (%s): %s", (int)source_id, source->name, (int)dest_id, dest->name, error);
+    handleError("%s: Could not find audio connection between instrument %d (%s) and instrument %d (%s): %s", funcname, (int)source_id, source->name, (int)dest_id, dest->name, error);
 }
 
 void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool redraw_mixer_strips){
-  set_connection_gain_enabled(source_id, dest_id, &gain, NULL, redraw_mixer_strips);
+  set_connection_gain_enabled("setAudioConnectionGain", source_id, dest_id, &gain, NULL, redraw_mixer_strips);
 }
 
 void setConnectionEnabled(int64_t source_id, int64_t dest_id, bool is_enabled, bool redraw_mixer_strips){
-  set_connection_gain_enabled(source_id, dest_id, NULL, &is_enabled, redraw_mixer_strips);
+  set_connection_gain_enabled("setConnectionEnabled", source_id, dest_id, NULL, &is_enabled, redraw_mixer_strips);
 }
 
 void undoConnectionEnabled(int64_t source_id, int64_t dest_id){

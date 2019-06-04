@@ -65,11 +65,21 @@ if [[ $4 == "test_build" ]] ; then
     fi
 fi
 
-if grep -e "\ \*" api/protos.conf ; then
-    echo "The above line in api/protos.conf is wrongly formatted. Must use \"<type>*\", not \"<type> *\""
-    echo
-    exit 5
-fi
+input="api/protos.conf"
+while IFS= read -r line
+do
+    #echo $line
+    if [[ "$line" == \#* ]] ; then
+        true
+    else       
+        if echo "$line" | grep -e "\ \*" ; then
+            echo "This line in api/protos.conf is wrongly formatted. Must use \"<type>*\", not \"<type> *\""
+            echo
+            exit 5
+        fi
+    fi
+done < "$input"
+
 
 if grep int\ seqblockid api/protos.conf ; then
     echo "The above line(s) in api/protos.conf is/are wrong. seqblock id is 64 bit"
