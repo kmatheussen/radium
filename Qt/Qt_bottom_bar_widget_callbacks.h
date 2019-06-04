@@ -98,9 +98,10 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
     if (this->edit_onoff->isChecked() != ATOMIC_GET(root->editonoff))
       this->edit_onoff->setChecked(ATOMIC_GET(root->editonoff));
-    
-    if (this->click_onoff->isChecked() != ATOMIC_GET(root->clickonoff))
-      this->click_onoff->setChecked(ATOMIC_GET(root->clickonoff));
+
+    bool clickonoff = ATOMIC_GET_RELAXED(root->clickonoff);
+    if (this->click_onoff->isChecked() != clickonoff)
+      this->click_onoff->setChecked(clickonoff);
     
     if (this->play_cursor_onoff->isChecked() != ATOMIC_GET(root->play_cursor_onoff))
       this->play_cursor_onoff->setChecked(ATOMIC_GET(root->play_cursor_onoff));
