@@ -622,6 +622,7 @@
     FROM_C-switch-solo-for-selected-instruments
     FROM_C-switch-mute-for-selected-instruments
     FROM_C-switch-bypass-for-selected-instruments
+    ra:enable-metronome
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

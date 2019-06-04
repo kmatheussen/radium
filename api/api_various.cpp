@@ -500,6 +500,10 @@ void enableMetronome(bool onoff){
     PATCH_silence_click_instruments();
 }
 
+bool metronomeEnabled(void){
+  return ATOMIC_GET_RELAXED(root->clickonoff);
+}
+
 void enablePlayCursor(bool onoff){
   ATOMIC_SET(root->play_cursor_onoff, onoff);
   
