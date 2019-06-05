@@ -16,6 +16,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+void CB_ClearTrack_Force(
+                         struct Blocks *block,
+                         struct Tracks *track
+                         );
 
 void CB_CutTrack_Force(
 	struct WBlocks *wblock,
@@ -32,6 +36,9 @@ extern void CB_CutTrack_CurrPos(
 	struct Tracker_Windows *window
 );
 
+extern void CB_ClearTrack_CurrPos(
+                                  struct Tracker_Windows *window
+                                  );
 
 
 

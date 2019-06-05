@@ -2863,7 +2863,7 @@ void setFxEnabled(bool is_enabled, int fxnum, int tracknum, int blocknum, int wi
     fxs->fx->is_enabled = is_enabled;
   }
 
-  window->must_redraw = true;
+  window->must_redraw = true; // fx must always use must_redraw, not must_redraw_editor, to update lower scrollbar and legalize cursor pos.
 }
 
 const char* getFxName(int fxnum, int tracknum, int blocknum, int windownum){
@@ -3024,7 +3024,7 @@ int addFxnode(float value, Place place, int fxnum, int tracknum, int blocknum, i
     return -1;
   }
 
-  window->must_redraw_editor = true;
+  window->must_redraw = true; // fx must always use must_redraw, not must_redraw_editor, to update lower scrollbar and legalize cursor pos.
 
   return ret;
 }
@@ -3139,9 +3139,7 @@ void deleteFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int wind
   struct Node *node = (struct Node *)nodes->elements[fxnodenum];
   struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
   
-  DeleteFxNodeLine(window, wtrack, fxs, fxnodeline); // DeleteFxNodeLine locks player / stops playing
-
-  window->must_redraw_editor = true;
+  DeleteFxNodeLine(window, wtrack, fxs, fxnodeline); // DeleteFxNodeLine locks player / stops playing, and so forth.
 }
 
 
@@ -3376,9 +3374,13 @@ void clearTrackFX(int tracknum, int blocknum, int windownum){
 
   struct Tracks *track = wtrack->track;
 
+  ADD_UNDO(FXs(window, wblock->block, track, wblock->curr_realline));
+  
   PC_Pause();{
     VECTOR_clean(&track->fxs);
   }PC_StopPause(window);
+
+  window->must_redraw = true; // trigger call to UpdateWBlockCoordinates and ValidateCursorPos.
 }
 
 

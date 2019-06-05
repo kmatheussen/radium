@@ -194,7 +194,7 @@ void EditorWidget::updateEditor(){
     int x2_before = getReltempoSliderX2();
     int skew_before = this->window->wblock->skew_x;
     */
-    
+
     UpdateWBlockCoordinates(this->window, this->window->wblock);
     GFX_UpdateUpperLeft(window, window->wblock);
     UpdateAllPianoRollHeaders(window, window->wblock);

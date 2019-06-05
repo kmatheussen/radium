@@ -371,7 +371,7 @@ int addNote(float notevalue,
                                   MAX_VELOCITY*velocity,
                                   true);
 
-  window->must_redraw=true;
+  window->must_redraw=true; // must use must_redraw and not must_redraw_editor since polyphony might have changed.
 
   return ListFindElementPos3(&wtrack->track->notes->l,&note->l);
 }
@@ -426,8 +426,9 @@ void deleteAllNotesInTrack(int tracknum, int blocknum, int windownum){
     SCOPED_PLAYER_LOCK_IF_PLAYING();
     wtrack->track->notes = NULL;
   }
-  
-  window->must_redraw=true;
+
+
+  window->must_redraw=true; // must use must_redraw and not must_redraw_editor since polyphony might have changed.
 }
 
 void deleteAllNotesAndStopsInTrack(int tracknum, int blocknum, int windownum){
@@ -444,8 +445,8 @@ void deleteAllNotesAndStopsInTrack(int tracknum, int blocknum, int windownum){
     wtrack->track->notes = NULL;
     wtrack->track->stops = NULL;
   }
-  
-  window->must_redraw=true;
+
+  window->must_redraw=true; // must use must_redraw and not must_redraw_editor since polyphony might have changed.
 }
 
 void deleteAllStopsInTrack(int tracknum, int blocknum, int windownum){
@@ -461,8 +462,8 @@ void deleteAllStopsInTrack(int tracknum, int blocknum, int windownum){
     SCOPED_PLAYER_LOCK_IF_PLAYING();
     wtrack->track->stops = NULL;
   }
-  
-  window->must_redraw=true;
+
+  window->must_redraw_editor=true;
 }
 
 // notes

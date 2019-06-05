@@ -322,8 +322,9 @@ void UpdateWBlockCoordinates(
 	UpdateAllWTracksCoordinates(window,wblock);
 
         GFX_PositionUpperLeftArea(window, wblock);
-
-        //window->must_redraw = true;
+        
+        if (window->wblock==wblock)
+          ValidateCursorPos(window);
 }
 
 void UpdateAllWBlockCoordinates(

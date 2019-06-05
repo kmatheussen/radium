@@ -2685,9 +2685,19 @@ static void create_cursor(const struct Tracker_Windows *window, const struct WBl
   
   const GE_Conf conf(Z_STATIC, NOMASK_Y, NO_SCISSORS);
   GE_Context *c = GE_z(GE_alpha(GE_get_rgb(ATOMIC_GET(root->editonoff)?CURSOR_EDIT_ON_COLOR_NUM:CURSOR_EDIT_OFF_COLOR_NUM), 0.2), conf);
-  
+
   NInt track    = window->curr_track;
   int  subtrack = window->curr_track_sub;
+
+  if(window->wblock!=wblock){
+    track = 0;
+    subtrack = -1;
+  }
+
+  if (track >= wblock->block->num_tracks){
+    R_ASSERT_NON_RELEASE(false);
+    track = wblock->block->num_tracks - 1;
+  }
   
   int xb1 = GetXSubTrack_B1(wblock,track,subtrack)-1;
   int xb2 = GetXSubTrack_B2(wblock,track,subtrack)+1;

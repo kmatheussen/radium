@@ -1,6 +1,7 @@
-#||
 ;; Standard binary search. Used in common/SeqAutomation.hpp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#||
+
 
 (define (binsearch vector value low high)
   (c-display low high)
@@ -11,8 +12,10 @@
             (binsearch vector value low (1- mid))
             (binsearch vector value (1+ mid) high)))))
 
-(binsearch (vector 0.5 2.3 4.5) 4.5 0 2))
-
+(binsearch (vector 1 3 8 12 22)
+           -1
+           0
+           4))
 
 
 
