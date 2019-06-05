@@ -1611,6 +1611,8 @@
               "Delete Track" :shortcut (list ra:delete-tracks 1) (lambda ()
                                                                     (<ra> :delete-track tracknum)
                                                                     (set-current-track-num! X Y))
+              "Clear Track" :shortcut ra:clear-track (lambda ()
+                                                       (<ra> :clear-track tracknum))
               "----------"
               "Load Track (BETA!)" :shortcut ra:load-track (lambda ()
                                                              (<ra> :load-track "" tracknum))

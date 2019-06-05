@@ -77,7 +77,43 @@ void cutTrack(int tracknum, int blocknum, int windownum){
     
     cb_wtrack = CB_CutTrack(window, wblock, wtrack);
 
+    TIME_block_swings_have_changed(wblock->block);
+    
     window->must_redraw_editor = true;
+  }
+}
+
+void clearTrack(int tracknum, int blocknum, int windownum){
+  if (tracknum==-1 && blocknum==-1){
+    
+    struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+    CB_ClearTrack_CurrPos(window);
+    
+  } else {
+
+    struct Tracker_Windows *window=NULL;
+    struct WTracks *wtrack;
+    struct WBlocks *wblock;
+    
+    wtrack=getWTrackFromNumA(
+                             windownum,
+                             &window,
+                             blocknum,
+                             &wblock,
+                             tracknum
+                             );
+
+    if(wtrack==NULL) return;
+
+    ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
+
+    PC_Pause();{
+      CB_ClearTrack_Force(wblock->block, wtrack->track);
+    }PC_StopPause(window);
+
+    TIME_block_swings_have_changed(wblock->block);
+    
+    window->must_redraw = true;
   }
 }
 
@@ -152,6 +188,8 @@ void pasteTrack(int tracknum, int blocknum, int windownum){
       ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
       co_CB_PasteTrack(wblock, cb_wtrack, wtrack);
     }UNDO_CLOSE();
+
+    TIME_block_swings_have_changed(wblock->block);
   }
     
   window->must_redraw = true;
