@@ -167,6 +167,8 @@ void InsertTracks_CurrPos(
 #endif
 	SetCursorPosConcrete(window,wblock,curr_track,-1);
 
+        ValidateCursorPos(root->song->tracker_windows);
+        
 	window->must_redraw = true;
 
 }
