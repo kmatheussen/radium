@@ -420,6 +420,8 @@ void deleteAllNotesInTrack(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
+  undoNotes(tracknum, blocknum);
+  
   wtrack->track->notes = NULL;
   
   window->must_redraw=true;
