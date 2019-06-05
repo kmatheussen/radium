@@ -72,9 +72,11 @@ void cutTrack(int tracknum, int blocknum, int windownum){
 
     if(wtrack==NULL) return;
 
+    ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
+    
     cb_wtrack = CB_CutTrack(window, wblock, wtrack);
 
-    window->must_redraw = true;
+    window->must_redraw_editor = true;
   }
 }
 
