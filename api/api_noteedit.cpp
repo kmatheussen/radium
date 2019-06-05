@@ -422,7 +422,45 @@ void deleteAllNotesInTrack(int tracknum, int blocknum, int windownum){
 
   undoNotes(tracknum, blocknum);
   
-  wtrack->track->notes = NULL;
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
+    wtrack->track->notes = NULL;
+  }
+  
+  window->must_redraw=true;
+}
+
+void deleteAllNotesAndStopsInTrack(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  undoNotes(tracknum, blocknum);
+  
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
+    wtrack->track->notes = NULL;
+    wtrack->track->stops = NULL;
+  }
+  
+  window->must_redraw=true;
+}
+
+void deleteAllStopsInTrack(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  undoNotes(tracknum, blocknum);
+  
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
+    wtrack->track->stops = NULL;
+  }
   
   window->must_redraw=true;
 }
