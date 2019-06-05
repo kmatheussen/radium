@@ -56,21 +56,31 @@ extern struct TempoNodes *cb_temponode;
 
 extern struct WTracks *cb_wtrack;
 
-// called from mmd2load
+// called from clearTrack, cut_track, CB_CutTrack_Force, and CB_ClearOrCutTrack_CurrPos.
+void CB_ClearTrack_Force(
+	struct Blocks *block,
+	struct Tracks *track
+){
+	track->notes=NULL;
+	track->stops=NULL;
+        track->swings=NULL;
+
+        VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+          (*fxs->fx->closeFX)(fxs->fx,track);
+        }END_VECTOR_FOR_EACH;
+
+	VECTOR_clean(&track->fxs);
+
+        //ValidateCursorPos(root->song->tracker_windows);
+}
+
 void CB_CutTrack_Force(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
         cb_wtrack=CB_CopyTrack(wblock,wtrack);
-	wtrack->track->notes=NULL;
-	wtrack->track->stops=NULL;
-        wtrack->track->swings=NULL;
 
-        VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
-          (*fxs->fx->closeFX)(fxs->fx,wtrack->track);
-        }END_VECTOR_FOR_EACH;
-
-	VECTOR_clean(&wtrack->track->fxs);
+        CB_ClearTrack_Force(wblock->block, wtrack->track);
 }
 
 static struct WTracks *cut_track(
@@ -92,15 +102,7 @@ static struct WTracks *cut_track(
 
     if (always_cut_all_fxs || (*only_one_fxs_was_cut)==false) {
 
-      wtrack->track->notes=NULL;
-      wtrack->track->stops=NULL;
-      wtrack->track->swings = NULL;
-      
-      VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
-        (*fxs->fx->closeFX)(fxs->fx,wtrack->track);
-      }END_VECTOR_FOR_EACH;
-    
-      VECTOR_clean(&wtrack->track->fxs);
+      CB_ClearTrack_Force(wblock->block, wtrack->track);
       
     } else {
 
@@ -131,8 +133,9 @@ struct WTracks *CB_CutTrack(
   return ret;
 }
 
-void CB_CutTrack_CurrPos(
-	struct Tracker_Windows *window
+static void CB_ClearOrCutTrack_CurrPos(
+                                       struct Tracker_Windows *window,
+                                       bool do_cut
 ){
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
@@ -143,13 +146,13 @@ void CB_CutTrack_CurrPos(
 	switch(window->curr_track){
 		case SWINGTRACK:
                   ADD_UNDO(Swings_CurrPos(window));
-                        cb_swing=CB_CopySwings(block->swings, NULL);
+                        if (do_cut) cb_swing=CB_CopySwings(block->swings, NULL);
 			block->swings=NULL;
                         TIME_block_swings_have_changed(block);
 			break;
 		case SIGNATURETRACK:
                   ADD_UNDO(Signatures_CurrPos(window));
-			cb_signature=CB_CopySignatures(block->signatures);
+			if (do_cut) cb_signature=CB_CopySignatures(block->signatures);
 			block->signatures=NULL;
                         TIME_block_signatures_have_changed(block);
                         UpdateWBlockWidths(window, wblock);
@@ -158,20 +161,20 @@ void CB_CutTrack_CurrPos(
 			break;
 		case LPBTRACK:
                   ADD_UNDO(LPBs_CurrPos(window));
-			cb_lpb=CB_CopyLPBs(block->lpbs);
+			if (do_cut) cb_lpb=CB_CopyLPBs(block->lpbs);
 			block->lpbs=NULL;
                         TIME_block_LPBs_have_changed(block);
 			//UpdateWLPBs(window,wblock);
 			break;
 		case TEMPOTRACK:
                   ADD_UNDO(Tempos_CurrPos(window));
-			cb_tempo=CB_CopyTempos(block->tempos);
+			if (do_cut) cb_tempo=CB_CopyTempos(block->tempos);
 			block->tempos=NULL;
                         TIME_block_tempos_have_changed(block);
 			break;
 		case TEMPONODETRACK:
                   ADD_UNDO(TempoNodes_CurrPos(window));
-			cb_temponode=CB_CopyTempoNodes(block->temponodes);
+			if (do_cut) cb_temponode=CB_CopyTempoNodes(block->temponodes);
 			block->temponodes=NULL;
 			LegalizeTempoNodes(block);
                         TIME_block_tempos_have_changed(block);
@@ -179,11 +182,15 @@ void CB_CutTrack_CurrPos(
 		default:
                   ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
                   if (SWINGTEXT_subsubtrack(window, wtrack) != -1){
-                    cb_swing = wtrack->track->swings;
+                    if (do_cut) cb_swing = wtrack->track->swings;
                     wtrack->track->swings = NULL;
                     TIME_block_swings_have_changed(block);
                   } else {
-			cb_wtrack = cut_track(window, wblock, wtrack, false, &cb_wtrack_only_contains_one_fxs);
+			if (do_cut)
+                          cb_wtrack = cut_track(window, wblock, wtrack, false, &cb_wtrack_only_contains_one_fxs);
+                        else
+                          CB_ClearTrack_Force(wblock->block, wtrack->track);
+                        
                         //#if !USE_OPENGL
 			UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 				window,
@@ -191,7 +198,6 @@ void CB_CutTrack_CurrPos(
 				window->curr_track,
 				window->curr_track
 			);
-                        SetNotePolyphonyAttributes(wtrack->track);
                         ValidateCursorPos(window);
                         TIME_block_swings_have_changed(block);
                         //#endif
@@ -204,4 +210,17 @@ void CB_CutTrack_CurrPos(
         window->must_redraw=true;
 }
 
+
+
+void CB_ClearTrack_CurrPos(
+	struct Tracker_Windows *window
+){
+  CB_ClearOrCutTrack_CurrPos(window, false);
+}
+
+void CB_CutTrack_CurrPos(
+	struct Tracker_Windows *window
+){
+  CB_ClearOrCutTrack_CurrPos(window, true);
+}
 

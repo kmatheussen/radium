@@ -112,6 +112,8 @@
   ret)
 
 #!!
+(<ra> :get-connection-enabled 0 1)
+(hepp)
 (get-all-connections-in-mixer (get-all-audio-instruments))
 !!#
 
@@ -224,7 +226,7 @@
 
   ;;(c-display "\n\nchanges:" (pp changes))
   (<ra> :change-audio-connections changes)
-
+  
   (update-implicite-instrument-solo/mutes! all-instruments all-solo-instruments)
   )
                    

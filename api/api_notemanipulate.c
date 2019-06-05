@@ -134,7 +134,7 @@ void backwardsTrack(int windownum){
   if(window==NULL) return;
 
   BackWardsTrack_CurrPos(window);
-  window->must_redraw = true;
+  window->must_redraw = true; // polyphony might have changed
 }
 
 void backwardsBlock(int windownum){
@@ -142,7 +142,7 @@ void backwardsBlock(int windownum){
   if(window==NULL) return;
 
   BackWardsBlock_CurrPos(window);
-  window->must_redraw = true;
+  window->must_redraw = true; // polyphony might have changed
 }
 
 void backwardsRange(int windownum){
@@ -150,7 +150,7 @@ void backwardsRange(int windownum){
   if(window==NULL) return;
 
   BackWardsRange_CurrPos(window);
-  window->must_redraw = true;
+  window->must_redraw = true; // polyphony might have changed
 }
 
 
@@ -162,7 +162,7 @@ void quantitizeTrack(int windownum){
   if(window==NULL) return;
 
   Quantitize_track_CurrPos(window);
-  window->must_redraw = true;
+  window->must_redraw = true; // polyphony might have changed
 }
 
 // quantitize notes if placed in the notes subtrack, fxs if placed in fx subtrack. (cents and velocities not supported yet)
@@ -180,7 +180,7 @@ void generalTrackQuantitize(int windownum){
     quantitizeTrack(windownum);
   else {
     Quantitize_fxs(window, wblock, wtrack, to_fxs);
-    window->must_redraw = true;
+    window->must_redraw_editor = true;
   }
 }
 
@@ -189,7 +189,7 @@ void quantitizeBlock(int windownum){
   if(window==NULL) return;
 
   Quantitize_block_CurrPos(window);
-  window->must_redraw = true;
+  window->must_redraw = true; // polyphony might have changed
 }
 
 void quantitizeRange(int windownum){
@@ -197,7 +197,7 @@ void quantitizeRange(int windownum){
   if(window==NULL) return;
 
   Quantitize_range_CurrPos(window);
-  window->must_redraw = true;
+  window->must_redraw = true; // polyphony might have changed
 }
 
 // TODO. Should return ratio
@@ -247,6 +247,6 @@ void glissando(int windownum){
   if(window==NULL) return;
 
   Glissando_CurrPos(window);
-  window->must_redraw = true;
+  window->must_redraw = true; // polyphony might have changed
 }
 

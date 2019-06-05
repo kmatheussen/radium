@@ -57,6 +57,13 @@ int GetXSubTrack1(
   if(subtrack==-1)
     return wtrack->notearea.x;
 
+  int num_subtracks = WTRACK_num_subtracks(wtrack);
+  if (subtrack >= num_subtracks){
+    R_ASSERT_NON_RELEASE(false);
+    subtrack = num_subtracks - 1;
+    root->song->tracker_windows->must_redraw = true; // trigger call to ValidateCursorPos.
+  }
+
   int fontwidth = (wtrack->veltextarea.x2 - wtrack->veltextarea.x) /  3;
   
   int sn = 0;
@@ -116,7 +123,7 @@ int GetXSubTrack1(
       sn += 3;
     }
   }
-  
+
   int polyphony_num = subtrack - sn;
   return wtrack->fxarea.x + GetPolyX1(wtrack,polyphony_num);
 }
@@ -154,6 +161,13 @@ int GetXSubTrack2(
 ){
     R_ASSERT_RETURN_IF_FALSE2(wtrack, 200);
     if(subtrack==-1) return wtrack->notearea.x2;
+
+    int num_subtracks = WTRACK_num_subtracks(wtrack);
+    if (subtrack >= num_subtracks){
+      R_ASSERT_NON_RELEASE(false);
+      subtrack = num_subtracks - 1;
+      root->song->tracker_windows->must_redraw = true; // trigger call to ValidateCursorPos.
+    }
 
     int fontwidth = (wtrack->veltextarea.x2 - wtrack->veltextarea.x) / 3;
   
@@ -214,7 +228,7 @@ int GetXSubTrack2(
         sn += 3;
       }
     }
-    
+
     int polyphony_num = subtrack - sn;
     return wtrack->fxarea.x + GetPolyX2(wtrack,polyphony_num);
 }

@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/fxlines_proc.h"
+#include "../common/windows_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/scheduler_proc.h"
 #include "../common/player_pause_proc.h"
@@ -1270,6 +1271,8 @@ static void AUDIO_handle_fx_when_a_patch_has_been_replaced(const struct Patch *o
     }END_FOR_EACH_TRACK;
     
   }
+
+  ValidateCursorPos(root->song->tracker_windows);
 }
 
 hash_t *AUDIO_get_audio_patch_state(struct Patch *patch){

@@ -239,6 +239,8 @@ void PATCH_handle_fx_when_theres_a_new_patch_for_track(struct Blocks *block, str
     }
 
     VECTOR_clean(&track->fxs);
+
+    root->song->tracker_windows->must_redraw = true; // Update coordinates and so forth.
     return;
   }
 
@@ -628,6 +630,8 @@ void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch, bool keep_
     }END_VECTOR_FOR_EACH;
       
   }END_FOR_EACH_TRACK;
+
+  root->song->tracker_windows->must_redraw = true; // Update coordinates and so forth.
 }
 
 

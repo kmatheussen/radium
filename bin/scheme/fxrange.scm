@@ -858,8 +858,10 @@
   ;;(c-display "blocknum/tracknum/fxs/instrument" blocknum tracknum fxs instrument)
   (if (< instrument 0)
       #t
-      (let ((effect-names  (get-fxnames instrument)))  
-        (<ra> :clear-track-fx tracknum blocknum)
+      (let ((effect-names  (get-fxnames instrument)))
+        (ignore-undo-block
+         (lambda ()
+           (<ra> :clear-track-fx tracknum blocknum)))
         ;;(c-display "effect-names" effect-names)
 
         (define num-lines (<ra> :get-num-lines blocknum))

@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_pause_proc.h"
 #include "OS_visual_input.h"
 #include "instruments_proc.h"
+#include "windows_proc.h"
 #include "wblocks_proc.h"
 #include "wtracks_proc.h"
 #include "common_proc.h"
@@ -401,7 +402,6 @@ static void AddNewTypeOfFxNodeLine(struct Tracker_Windows *window, const struct 
   PlaceCopy(&fxnodeline->l.p,p2);
   ListAddElement3(&fxs->fxnodelines,&fxnodeline->l);
 
-  UpdateAllWBlockCoordinates(window);
   window->must_redraw = true;
 }
 
@@ -466,6 +466,8 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
 	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 #endif
+
+        window->must_redraw = true; // fx must always use must_redraw, not must_redraw_editor, to update lower scrollbar and legalize cursor pos.
         
         return;
 }
@@ -568,7 +570,7 @@ void DeleteFxNodeLine(struct Tracker_Windows *window, struct WTracks *wtrack, st
       
     }PC_StopPause(NULL);
     
-    UpdateAllWBlockCoordinates(window);
-    window->must_redraw = true;
   }
+
+  window->must_redraw = true; // fx must always use must_redraw, not must_redraw_editor, to update lower scrollbar and legalize cursor pos.
 }
