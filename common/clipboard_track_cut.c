@@ -61,6 +61,8 @@ void CB_ClearTrack_Force(
 	struct Blocks *block,
 	struct Tracks *track
 ){
+        R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock() || is_playing()==false); // Making it NON_RELEASE because: If "track" is not alive we would get a false assertion here.
+  
 	track->notes=NULL;
 	track->stops=NULL;
         track->swings=NULL;
@@ -70,8 +72,6 @@ void CB_ClearTrack_Force(
         }END_VECTOR_FOR_EACH;
 
 	VECTOR_clean(&track->fxs);
-
-        //ValidateCursorPos(root->song->tracker_windows);
 }
 
 void CB_CutTrack_Force(
