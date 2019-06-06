@@ -1462,7 +1462,7 @@ Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/E
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
 
-Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp $(P)mQt_Bs_edit.cpp Qt/Qt_MyQScrollBar.hpp
+Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp Qt/Qt_MyQScrollBar.hpp $(P)mQt_Bs_edit.cpp 
 	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT) #-fno-sanitize=undefined
 
 $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)

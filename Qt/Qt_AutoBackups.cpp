@@ -99,8 +99,14 @@ void BACKUP_call_very_often(void){
   if (!editor_has_keyboard_focus()) // If showing popup menu, editing text widgets, etc. we don't want to disturb the user.
     return;
 
-  if (QApplication::mouseButtons() != Qt::NoButton) // Wait until user doesn't use the mouse.
-    return;
+  // Wait until we are sure the user doesn't use the mouse.
+  {
+    if (QApplication::mouseButtons() != Qt::NoButton)
+      return;
+
+    if (MOUSE_CYCLE_get_mouse_buttons() != Qt::NoButton)
+      return;
+  }
   
   static bool is_playing = false;
   

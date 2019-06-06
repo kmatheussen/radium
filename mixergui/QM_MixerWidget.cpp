@@ -173,7 +173,7 @@ class MyScene : public QGraphicsScene{
 };
 
 
-class MixerWidget : public radium::KeyboardFocusFrame
+class MixerWidget : public radium::KeyboardFocusFrame, public radium::MouseCycleFix
 {
     Q_OBJECT
 public:
@@ -218,6 +218,17 @@ public:
     return false;
   }
   */
+
+  void fix_mousePressEvent(QMouseEvent *event) override {
+  }
+
+  void	fix_mouseMoveEvent(QMouseEvent *event) override{
+  }
+  
+  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
+  }
+
+  MOUSE_CYCLE_CALLBACKS_FOR_QT;
 
 };
 
@@ -1640,6 +1651,15 @@ static bool g_is_pressed = false; // Workaround for nasty Qt bug.
 void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
   
+  {
+    QMouseEvent e(QEvent::MouseButtonRelease,
+                  event->scenePos(),
+                  event->button(),
+                  event->buttons(),
+                  event->modifiers());
+    MOUSE_CYCLE_register(g_mixer_widget, &e);
+  }
+  
   if (g_is_pressed==true)
     return;
 
@@ -1724,6 +1744,8 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 }
 
 void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
+  MOUSE_CYCLE_unregister(g_mixer_widget);
+  
   g_is_pressed = false;
 
   printf("mouse release: %p\n",_current_connection);
