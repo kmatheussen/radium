@@ -1114,22 +1114,7 @@ void BS_UpdateBlockList(void){
   }
 }
 
-void BS_UpdatePlayList(void){
-  ScopedVisitors v;
-
-  //printf("  updateplaylist start\n");
-
-  // Must update if hidden because of BS_GetCurrPlaylistklistPos()
-  //if (g_is_hidden)
-  //  return;
-  
-  if (g_bs==NULL)
-    return;
-  
-  if (root->song->seqtracks.num_elements==0)
-    return;
-
-  int curr_pos = g_bs->playlist.currentItem();
+static void update_playlist(void){
 
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
   
@@ -1187,6 +1172,27 @@ void BS_UpdatePlayList(void){
     delete item;
 
 
+}
+  
+void BS_UpdatePlayList(void){
+  ScopedVisitors v;
+
+  //printf("  updateplaylist start\n");
+
+  // Must update if hidden because of BS_GetCurrPlaylistklistPos()
+  //if (g_is_hidden)
+  //  return;
+  
+  if (g_bs==NULL)
+    return;
+  
+  if (root->song->seqtracks.num_elements==0)
+    return;
+
+  int curr_pos = g_bs->playlist.currentItem();
+  
+  update_playlist();
+  
   {
     int pos = 0;
     for (const auto &pe : get_playlist_elements()){
@@ -1199,8 +1205,7 @@ void BS_UpdatePlayList(void){
       pos++;
     }
   }
-  
-  
+
   BS_SelectPlaylistPos(curr_pos, false);
 }
 
@@ -1271,6 +1276,9 @@ void BS_SelectPlaylistPos(int pos, bool change_song_pos_too){
 
     //int orgpos = pos;
 
+    if (g_bs->playlist.count() != get_playlist_elements().size())
+      update_playlist();
+      
     if (g_bs->playlist.count()==0){
       R_ASSERT_NON_RELEASE(false);
       return;
