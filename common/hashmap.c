@@ -370,7 +370,7 @@ static const int prime_numbers[] = {
 };
 
 static const int num_prime_numbers = sizeof(prime_numbers) / sizeof(int);
-static const int last_prime_number = prime_numbers[num_prime_numbers-1];
+static const int last_prime_number = 25600013; // insert 25600013 manually since gcc 8.1.0 didn't compile "prime_numbers[num_prime_numbers-1]".
 
 /*
 (define (binsearch vector number low high)
