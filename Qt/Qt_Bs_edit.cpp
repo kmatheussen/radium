@@ -71,7 +71,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 namespace{
 
-class QListBox : public QListWidget{
+class QListBox : public QListWidget, public radium::MouseCycleFix{
 public:
   bool is_blocklist;
   
@@ -114,7 +114,7 @@ public:
   Qt::MouseButton _last_button =  Qt::NoButton;
   
   // popup menu
-  void mousePressEvent(QMouseEvent *event) override {
+  void fix_mousePressEvent(QMouseEvent *event) override {
 
     _last_button = event->button();
       
@@ -137,6 +137,14 @@ public:
     }
 
   }
+
+  void	fix_mouseMoveEvent(QMouseEvent *event) override{
+  }
+  
+  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
+  }
+
+  MOUSE_CYCLE_CALLBACKS_FOR_QT;
 
 };
 }
@@ -466,8 +474,7 @@ void set_default_slider_height(void){
 }
 
 namespace{
-class BlockSelector : public QWidget
-{
+class BlockSelector : public QWidget, public radium::MouseCycleFix{
   Q_OBJECT
   
 public:
@@ -1030,6 +1037,18 @@ public slots:
     if (playlist._last_button==Qt::LeftButton)
       remove_from_playlist();
   }
+
+  void fix_mousePressEvent(QMouseEvent *event) override {
+  }
+  
+  void	fix_mouseMoveEvent(QMouseEvent *event) override{
+  }
+  
+  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
+  }
+
+  MOUSE_CYCLE_CALLBACKS_FOR_QT;
+
 };
 }
 

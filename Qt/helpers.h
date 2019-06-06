@@ -475,6 +475,7 @@ bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event);
 bool MOUSE_CYCLE_move(QWidget *widget, QMouseEvent *event);
 bool MOUSE_CYCLE_unregister(QWidget *widget);
 void MOUSE_CYCLE_schedule_unregister_all(void); // Can safely be called at any moment when we know that the current mouse cycle should not run (schedules a call to mouseReleaseEvent if there is a mouse event).
+Qt::MouseButtons MOUSE_CYCLE_get_mouse_buttons(void); // Use this one instead of QApplication::mouseButtons() to avoid getting false positives. (It will always return Qt::NoButton for non-mousecycle widgets though)
 
 namespace radium{
 
@@ -585,7 +586,7 @@ namespace radium{
     }
 
     void timerEvent ( QTimerEvent * e ) override {
-      if (QGuiApplication::mouseButtons()==Qt::LeftButton)
+      if (MOUSE_CYCLE_get_mouse_buttons()==Qt::LeftButton)
         left_mouse_is_down = true;
       else if (left_mouse_is_down){
         left_mouse_is_down = false;

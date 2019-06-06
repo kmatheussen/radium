@@ -220,7 +220,7 @@ extern bool doquit;
 extern bool g_show_key_codes;
 
 bool g_do_grey_editor = false;
-static bool editor_has_keyboard = true;
+static bool editor_has_keyboard = true; // "editor" means radium.
 static int someone_else_has_keyboard_counting = 0;
 bool g_radium_runs_custom_exec = false;
 bool g_and_its_not_safe_to_paint = true;
@@ -297,6 +297,7 @@ void RT_schedule_mixer_strips_redraw(void){
   ATOMIC_SET(g_mixer_strips_needs_redraw, true);
 }
 
+// "editor" means radium.
 bool editor_has_keyboard_focus(void){
   return editor_has_keyboard && someone_else_has_keyboard_counting==0;
 }
@@ -626,6 +627,14 @@ namespace{
 
 static MouseCycle g_curr_mouse_cycle;
 
+Qt::MouseButtons MOUSE_CYCLE_get_mouse_buttons(void){
+  if (g_curr_mouse_cycle.widget.data()==NULL)
+    return Qt::NoButton;
+  
+  return g_curr_mouse_cycle.buttons;
+}
+
+  
 static void MOUSE_CYCLE_unregister_all(int64_t id);
 
 static void set_curr_mouse_cycle(QMouseEvent *event){
@@ -994,8 +1003,16 @@ protected:
             if(modifier==g_last_pressed_key && modifier==EVENT_ALT_R) {
               PlayBlockFromStart(window,true); // true == do_loop
             }
+
+            /*
+            if (modifier==EVENT_SHIFT_R){
+              printf("modifier==g_last_pressed_key: %d. modifier==EVENT_SHIFT_R: %d. Undo_num_undos()==last_pressed_undo_num: %d. QGuiApplication::mouseButtons()==Qt::NoButton: %d. QGuiApplication::mouseButtons(): %d. cycle buttons: %d\n",
+                     modifier==g_last_pressed_key, modifier==EVENT_SHIFT_R, Undo_num_undos()==last_pressed_undo_num, QGuiApplication::mouseButtons()==Qt::NoButton, (int)QGuiApplication::mouseButtons(), (int)MOUSE_CYCLE_get_mouse_buttons()
+                     );
+            }
+            */
             
-            if(modifier==g_last_pressed_key && modifier==EVENT_SHIFT_R && Undo_num_undos()==last_pressed_undo_num && QGuiApplication::mouseButtons()==Qt::NoButton) {
+            if(modifier==g_last_pressed_key && modifier==EVENT_SHIFT_R && Undo_num_undos()==last_pressed_undo_num && MOUSE_CYCLE_get_mouse_buttons()==Qt::NoButton) {
               PlayBlockFromStart(window,true); // true == do_loop
             }
             
@@ -2266,7 +2283,7 @@ static bool ShiftPressed(Qt::KeyboardModifiers modifiers){
 }
 
 bool ShiftPressed(void){
-  if (editor_has_keyboard_focus()==true && QGuiApplication::mouseButtons()==Qt::NoButton)
+  if (editor_has_keyboard_focus()==true && MOUSE_CYCLE_get_mouse_buttons()==Qt::NoButton)
     return AnyShift(tevent.keyswitch);
   else
     return ShiftPressed(QApplication::keyboardModifiers());
@@ -2395,7 +2412,7 @@ void MoveAbsPointer(struct Tracker_Windows *tvisual, float x, float y){
 
 uint64_t GetMouseButtons(void){
   uint64_t ret = 0;
-  uint64_t hepp = (uint64_t)QApplication::mouseButtons();
+  uint64_t hepp = (uint64_t)MOUSE_CYCLE_get_mouse_buttons(); //QApplication::mouseButtons();
 
   R_ASSERT(TR_LEFTMOUSEDOWN < 64);
   R_ASSERT(TR_RIGHTMOUSEDOWN < 64);
