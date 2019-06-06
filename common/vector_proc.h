@@ -19,25 +19,39 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <string.h>
 
-static inline void VECTOR_ensure_space_for_one_more_element(vector_t *v){
-  const int num_elements = v->num_elements;
+static inline void VECTOR_reserve(vector_t *v, int n){
+  if(n <= v->num_elements_allocated)
+    return;
 
-  if(num_elements==v->num_elements_allocated){
-    if(num_elements==0){
+  if(v->num_elements_allocated==0){
+    
 #ifdef TEST_VECTOR
-      const int num_init = 2;
+    const int num_init = R_MAX(n, 2);
 #else
-      const int num_init = 8;
+    const int num_init = R_MAX(n, 8);
 #endif
-      v->num_elements_allocated = num_init;
-      v->elements = (void**)talloc(num_init*(int)sizeof(void*));
-    }else{
-      const int num_elements_allocated = num_elements * 2;
-      v->num_elements_allocated = num_elements_allocated;
-      v->elements = (void**)talloc_realloc(v->elements,num_elements_allocated*(int)sizeof(void*));
+    
+    v->num_elements_allocated = num_init;
+    void **new_elements = (void**)talloc(num_init*(int)sizeof(void*));
+
+    if (v->num_elements > 0){
+      R_ASSERT_RETURN_IF_FALSE(v->elements!=NULL);
+      R_ASSERT_RETURN_IF_FALSE(v->num_elements <= n);
+      memcpy(new_elements, v->elements, v->num_elements*(int)sizeof(void*));
     }
+
+    v->elements = new_elements;
+    
+  }else{
+    
+    v->num_elements_allocated = R_MAX(n, v->num_elements_allocated * 2);
+    v->elements = (void**)talloc_realloc(v->elements,v->num_elements_allocated*(int)sizeof(void*));
+    
   }
-  
+}
+
+static inline void VECTOR_ensure_space_for_one_more_element(vector_t *v){
+  VECTOR_reserve(v, v->num_elements + 1);
 }
 
 // Might save some cpu cycles if creating a large vector with known size (firstmost in the memory allocator). It probably makes no practicaly difference though.
@@ -162,8 +176,9 @@ extern LANGSPEC vector_t *VECTOR_move(vector_t *from);
 extern LANGSPEC vector_t *VECTOR_copy(const vector_t *from);
 extern LANGSPEC void VECTOR_copy_elements(const vector_t *from, int from_pos, int num_elements_to_copy, vector_t *to);
 extern LANGSPEC void VECTOR_clean(vector_t *v);
-extern LANGSPEC vector_t *VECTOR_append(vector_t *v1, const vector_t *v2);
+extern LANGSPEC void VECTOR_append(vector_t *v1, const vector_t *v2); // appends all elements in v2 to the end of v1.
 extern LANGSPEC void VECTOR_delete(vector_t *v, int pos); //keeps order
+extern LANGSPEC void VECTOR_delete_ignore_order(vector_t *v, int pos);
 extern LANGSPEC int VECTOR_find_pos(const vector_t *v, const void *element);
 extern LANGSPEC bool VECTOR_is_in_vector(const vector_t *v, const void *element);
 static inline bool VECTOR_contains(const vector_t *v, const void *element){

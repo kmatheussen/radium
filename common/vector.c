@@ -85,11 +85,17 @@ void VECTOR_copy_elements(const vector_t *from, int from_pos, int num_elements_t
   memcpy(to->elements, &from->elements[from_pos], sizeof(void*)*num_elements_to_copy);
 }
 
-vector_t *VECTOR_append(vector_t *v1, const vector_t *v2){
-  int i;
-  for(i=0;i<v2->num_elements;i++)
-    VECTOR_push_back(v1,v2->elements[i]);
-  return v1;
+void VECTOR_append(vector_t *v1, const vector_t *v2){
+  if (v2->num_elements==0)
+    return;
+  
+  int new_size = v1->num_elements + v2->num_elements;
+  
+  VECTOR_reserve(v1, new_size);
+  
+  memcpy(v1->elements + v1->num_elements, v2->elements, v2->num_elements*sizeof(void*));
+
+  v1->num_elements = new_size;
 }
 
 // must keep order
@@ -100,6 +106,15 @@ void VECTOR_delete(vector_t *v, int pos){
   for(i=pos;i<v->num_elements;i++)
     v->elements[i]=v->elements[i+1];
 
+  v->elements[v->num_elements]=NULL;
+}
+
+void VECTOR_delete_ignore_order(vector_t *v, int pos){
+  v->num_elements--;
+
+  if (pos != v->num_elements)
+    v->elements[pos] = v->elements[v->num_elements];
+  
   v->elements[v->num_elements]=NULL;
 }
 

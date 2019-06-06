@@ -479,7 +479,6 @@ static unsigned int oat_hash(const char *key, int i_i)
 
 
 typedef struct _hash_element_t{
-  struct _hash_element_t *next;
   const char *key;
   int i;
   dyn_t a;
@@ -493,6 +492,11 @@ static bool elements_are_equal(const hash_element_t *el1, const hash_element_t *
   return DYN_equal(el1->a, el2->a);
 }
 
+typedef struct{
+  vector_t v;
+  void *element; // first element.
+} hash_vector_t;
+  
 struct _hash_t{
   int num_array_elements;
   int num_elements;
@@ -500,14 +504,16 @@ struct _hash_t{
   int version;
 
   int elements_size;
-  hash_element_t *elements[];
+  
+  //hash_element_t *elements[];
+  hash_vector_t elements[];
 }; // hash_t;
 
 
 void HASH_clear(hash_t *hash){
   hash->num_elements=0;
   hash->num_array_elements=0;
-  memset(hash->elements, 0, hash->elements_size*sizeof(hash_element_t*));
+  memset(hash->elements, 0, hash->elements_size*sizeof(hash_vector_t)); //hash_element_t*));
 }
   
 static hash_element_t *HASH_get_no_complaining(const hash_t *hash, const char *raw_key, int i);
@@ -517,9 +523,8 @@ bool HASH_equal(const hash_t *h1, const hash_t *h2){
     return false;
   
   for(int i=0;i<h1->elements_size;i++){
-    const hash_element_t *el1 = h1->elements[i];
     
-    while (el1 != NULL){
+    VECTOR_FOR_EACH(const hash_element_t *el1, &h1->elements[i].v){
       const hash_element_t *el2 = HASH_get_no_complaining(h2, el1->key, el1->i);
     
       if(el2==NULL)
@@ -527,9 +532,9 @@ bool HASH_equal(const hash_t *h1, const hash_t *h2){
       
       if (elements_are_equal(el1, el2)==false)
         return false;
-
-      el1=el1->next;
-    }
+      
+    }END_VECTOR_FOR_EACH;
+    
   }
 
   return true;
@@ -538,7 +543,7 @@ bool HASH_equal(const hash_t *h1, const hash_t *h2){
 hash_t *HASH_create(int approx_size){
   int elements_size = find_next_prime_number(approx_size*3/2);
 
-  hash_t *hash=talloc(sizeof(hash_t) + sizeof(hash_element_t*)*elements_size);
+  hash_t *hash=talloc(sizeof(hash_t) + sizeof(hash_vector_t)*elements_size);
 
   hash->elements_size = elements_size;
 
@@ -550,7 +555,7 @@ hash_t *HASH_create(int approx_size){
 static void put2(hash_t *hash, const char *key, int i, const dyn_t dyn);
 
 hash_t *HASH_shallow_copy(const hash_t *hash){
-  hash_t *copy = tcopy(hash, sizeof(hash_t) + (hash->elements_size*sizeof(hash_element_t*)));
+  hash_t *copy = tcopy(hash, sizeof(hash_t) + (hash->elements_size*sizeof(hash_vector_t)));
   return copy;
 }
   
@@ -559,21 +564,18 @@ hash_t *HASH_copy(const hash_t *hash){
   hash_t *ret = HASH_create(hash->num_elements);
   ret->version = hash->version;
 
-  int i;
-  for(i=0;i<hash->elements_size;i++){
-    
-    hash_element_t *element = hash->elements[i];
-    
-    while(element!=NULL){
+  for(int i=0;i<hash->elements_size;i++){
 
+    VECTOR_FOR_EACH(const hash_element_t *element, &hash->elements[i].v){
+      
       put2(ret,
            element->key,
            element->i,
            DYN_copy(element->a)
            );
-        
-      element=element->next;
-    }
+      
+    }END_VECTOR_FOR_EACH;
+    
   }
 
   return ret;
@@ -599,11 +601,9 @@ hash_t *HASH_get_keys_in_hash(const hash_t *hash){
   int pos=0;
   int i;
   for(i=0;i<hash->elements_size;i++){
-    hash_element_t *element = hash->elements[i];
-    while(element!=NULL){
+    VECTOR_FOR_EACH(const hash_element_t *element, &hash->elements[i].v){
       HASH_put_chars_at(keys,"key",pos++,element->key);
-      element=element->next;
-    }
+    }END_VECTOR_FOR_EACH;
   }
   return keys;
 }
@@ -612,11 +612,9 @@ vector_t HASH_get_keys(const hash_t *hash){
   vector_t vector = {0};
   int i;
   for(i=0;i<hash->elements_size;i++){
-    hash_element_t *element = hash->elements[i];
-    while(element!=NULL){
+    VECTOR_FOR_EACH(const hash_element_t *element, &hash->elements[i].v){
       VECTOR_push_back(&vector, element->key);
-      element=element->next;
-    }
+    }END_VECTOR_FOR_EACH;
   }
   return vector; 
 }
@@ -625,12 +623,10 @@ dynvec_t HASH_get_values(const hash_t *hash){
   dynvec_t vector = {0};
   int i;
   for(i=0;i<hash->elements_size;i++){
-    hash_element_t *element = hash->elements[i];
-    while(element!=NULL){
+    VECTOR_FOR_EACH(const hash_element_t *element, &hash->elements[i].v){
       //R_ASSERT_RETURN_IF_FALSE2(element->a.type==HASH_TYPE, vector);
       DYNVEC_push_back(&vector, element->a);
-      element=element->next;
-    }
+    }END_VECTOR_FOR_EACH;
   }
   return vector; 
 }
@@ -638,26 +634,19 @@ dynvec_t HASH_get_values(const hash_t *hash){
 bool HASH_remove_at(hash_t *hash, const char *raw_key, int i){
   const char *key = STRING_get_utf8_chars(raw_key);
   unsigned int index = oat_hash(key,i) % hash->elements_size;
-  hash_element_t *element=hash->elements[index];
 
-  hash_element_t *prev = NULL;
+  VECTOR_FOR_EACH(const hash_element_t *element, &hash->elements[index].v){
+    if (element->i==i && !strcmp(key, element->key)){
+
+      VECTOR_delete_ignore_order(&hash->elements[index].v, iterator666);
   
-  while(element!=NULL && (element->i!=i || strcmp(key,element->key))) {
-    prev=element;
-    element=element->next;
-  }
-
-  if (element==NULL)
-    return false;
-
-  hash->num_elements--;
+      hash->num_elements--;
   
-  if (prev==NULL)
-    hash->elements[index] = element->next;
-  else
-    prev->next = element->next;
+      return true;
+    }
+  }END_VECTOR_FOR_EACH;
 
-  return true;
+  return false;
 }
 
 bool HASH_remove(hash_t *hash, const char *raw_key){
@@ -674,21 +663,16 @@ static void put2(hash_t *hash, const char *key, int i, const dyn_t dyn){
   //fprintf(stderr,"put %p. index: %u\n",hash,index);
 
   // First check if we should replace.
-  {
-    hash_element_t *element=hash->elements[index];
-    while(element!=NULL){
-      if (element->i == i && !strcmp(key,element->key)){
+  VECTOR_FOR_EACH(hash_element_t *element, &hash->elements[index].v){
+    if (element->i==i && !strcmp(key, element->key)){
 #if !defined(RELEASE)
-        if (strcmp(NOTUSED_EFFECT_NAME, key)) // <- The pd and faust instruments create effect names called "NOTUSED" for unused effects.
-          R_ASSERT(false); // NOTE. Hitting this one is not necessarily a bug. But since it's so seldom that we overwrite hash table elements, it seems like a good idea to have this line here.
+      if (strcmp(NOTUSED_EFFECT_NAME, key)) // <- The pd and faust instruments create effect names called "NOTUSED" for unused effects.
+        R_ASSERT(false); // NOTE. Hitting this one is not necessarily a bug. But since it's so seldom that we overwrite hash table elements, it seems like a good idea to have this line here.
 #endif
-        element->a = dyn;
-        return;
-      }
-      element = element->next;
+      element->a = dyn;
+      return;
     }
-  }
-
+  }END_VECTOR_FOR_EACH;
 
   {
     hash_element_t *element = talloc(sizeof(hash_element_t));
@@ -696,11 +680,32 @@ static void put2(hash_t *hash, const char *key, int i, const dyn_t dyn){
     
     element->key=key;
     element->i=i;
+
+    if (hash->elements[index].v.num_elements_allocated==0 && hash->elements[index].v.num_elements==0){
+      
+      hash->elements[index].v.num_elements = 1;
+      
+      hash->elements[index].v.elements = &hash->elements[index].element;
+      hash->elements[index].element = element;
+      
+    } else {
+
+      VECTOR_push_back(&hash->elements[index].v, element);
+
+#if !defined(RELEASE)
+      R_ASSERT(hash->elements[index].v.num_elements >= 2);
+      if(hash->elements[index].element != NULL){
+        R_ASSERT(hash->elements[index].v.num_elements==2);
+        R_ASSERT(hash->elements[index].element !=NULL);
+        R_ASSERT(hash->elements[index].v.elements[0]==hash->elements[index].element);
+      }
+#endif
+      
+      hash->elements[index].element = NULL;      
+      
+    }
     
     hash->num_elements++;
-    
-    element->next = hash->elements[index];
-    hash->elements[index] = element;
   }
 }
 
@@ -859,16 +864,14 @@ static hash_element_t *HASH_get_no_complaining(const hash_t *hash, const char *r
   const char *key = STRING_get_utf8_chars(raw_key);
     
   unsigned int index = oat_hash(key,i) % hash->elements_size;
-  hash_element_t *element=hash->elements[index];
 
   //fprintf(stderr,"start searching\n");
-  while(element!=NULL && (element->i!=i || strcmp(key,element->key))) {
-    //fprintf(stderr,"key: -%s- (-%s-), i: %d (%d)\n",element->key,key,element->i,i);
-    element=element->next;
-  }
-  //fprintf(stderr,"end searching\n");
+  VECTOR_FOR_EACH(hash_element_t *element, &hash->elements[index].v){
+    if (element->i==i && !strcmp(key, element->key))
+      return element;
+  }END_VECTOR_FOR_EACH;
 
-  return element;
+  return NULL;
 }
 
 // Returns the stored pointed, if it needs to be reused.
@@ -1097,14 +1100,13 @@ hash_t *HASH_get_hash_at(const hash_t *hash, const char *key, int i){
 
 static vector_t get_elements(const hash_t *hash){
   vector_t vector = {0};
-  int i;
-  for(i=0;i<hash->elements_size;i++){
-    hash_element_t *element = hash->elements[i];
-    while(element!=NULL){
-      VECTOR_push_back(&vector, element);
-      element=element->next;
-    }
+  
+  VECTOR_reserve(&vector, hash->num_elements);
+  
+  for(int i=0;i<hash->elements_size;i++){
+    VECTOR_append(&vector, &hash->elements[i].v);
   }
+  
   return vector; 
 }
 
