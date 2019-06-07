@@ -99,18 +99,29 @@
                      )
                     ((null? x))
                   (set! i2 (+ i2 1))
-                  (if (or is-finished
-                          (equal? (car x)
-                                  '(if (and rethrow maybe-rethrow) (throw *try-finally-rethrown*) ret)))
-                      (begin
-                        (set! is-finished #t)
-                        "")                          
-                      (format p (if (and (integer? (car line))
-                                         (string? (car f))
-                                         (not (string=? (car f) "*stdout*")))
-                                    (values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>~40T;<font color='black'>~A</font>[~A]" i2 (car x) (car f) (car line))
-                                    (values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>" i2 (car x))))))
-		(format p "~%<br>"))
+                  (define is-call (and (pair? (car x))
+                                       (or (procedure? (car (car x)))
+                                           (symbol? (car (car x))))))
+                  (define call-func-name (and is-call
+                                              (string->symbol (format #f "~A" (car (car x))))))
+                  (cond ((or is-finished
+                             (equal? (car x)
+                                     '(if (and rethrow maybe-rethrow) (throw *try-finally-rethrown*) ret))
+                             (and is-call
+                                  (eq? call-func-name 'FROM-C-catch-all-errors-and-display-backtrace-automatically)))
+                         (set! is-finished #t)
+                         "")
+                        ((and is-call
+                              (memq call-func-name
+                                    '(let define define* delafina lambda catch begin else cond if do or and format display c-display)))
+                         "")
+                        (else
+                         (format p (if (and (integer? (car line))
+                                            (string? (car f))
+                                            (not (string=? (car f) "*stdout*")))
+                                       (values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>~40T;<font color='black'>~A</font>[~A]" i2 (car x) (car f) (car line))
+                                       (values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>" i2 (car x)))))))
+                (format p "~%<br>"))
 	     (set! history (cons (car x) history))
 	     (set! lines (cons (and (pair? (car x)) (pair-line-number (car x))) lines))
 	     (set! files (cons (and (pair? (car x)) (pair-filename (car x))) files)))))
