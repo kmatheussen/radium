@@ -581,19 +581,30 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
             oh.write("  EVENTLOG_add_event(\"" + self.proc.varname + " [sc]\"); ")
         else:
             oh.write("  ");
-            
-        oh.write("g_is_going_to_call_throwExceptionIfError = true;\n  ");
+
+        oh.write("#if !defined(RELEASE)\n");
+        oh.write("  s_is_calling = true;\n");
+        oh.write("  #endif\n");
         
+        oh.write("  g_is_going_to_call_throwExceptionIfError = true;\n  ");
+
         callstring = "  " + self.proc.varname+"("+self.get_arg_list(self.args)+")"
         #sys.stderr.write("CASLLTSTITN: "+callstring+"\n")
         if self.proc.type_string=="void":
-            oh.write(callstring+"; throwExceptionIfError() ; return s7_undefined(radiums7_sc);\n")
+            oh.write(callstring+";\n")
+            oh.write("#if !defined(RELEASE)\n");
+            oh.write("  s_is_calling = false;\n");
+            oh.write("#endif\n");
+            oh.write("  throwExceptionIfError() ; return s7_undefined(radiums7_sc);\n")
         else:
             conversion_function = self.proc.get_s7_make_type_function()
-            oh.write("s7_pointer radium_return_value_value = "+conversion_function+"(radiums7_sc, "+callstring+"); ");
-            oh.write("throwExceptionIfError(); ");
+            oh.write("s7_pointer radium_return_value_value = "+conversion_function+"(radiums7_sc, "+callstring+");\n");
+            oh.write("#if !defined(RELEASE)\n");
+            oh.write("  s_is_calling = false;\n");
+            oh.write("#endif\n");
+            oh.write("  throwExceptionIfError(); ");
             #oh.write("s7_gc_unprotect(radiums7_sc, radiums7_args);\n"); # just testing
-            oh.write("return radium_return_value_value;\n");
+            oh.write("  return radium_return_value_value;\n");
 
     def write_s7_func(self,oh):
         if "PyObject*" in map(lambda arg: arg.type_string, self.args):
@@ -603,6 +614,11 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         
         oh.write("static s7_pointer radium_s7_"+self.proc.varname+"(s7_scheme *radiums7_sc, s7_pointer radiums7_args){\n")
 
+        oh.write("#if !defined(RELEASE)\n");
+        oh.write("  static bool s_is_calling = false;\n");
+        oh.write("  if(s_is_calling)abort();\n");
+        oh.write("#endif\n");
+        
         oh.write("  g_last_api_entry_func_name = \""+self.proc.varname+"\";\n")
         oh.write("  clearErrorMessage();\n")
         
