@@ -194,11 +194,13 @@
                   all-explicit-solo-instruments)
         
         (for-each (lambda (instrument-id)
-                    (when (not (all-solo-instruments instrument-id))
-                      (<ra> :set-instrument-is-implicitly-muted instrument-id #t)
-                      (<ra> :set-instrument-is-implicitly-soloed instrument-id #f)
-                      ;;(c-display "******** solo / implicit mute: " (<ra> :get-instrument-name instrument-id))
-                      )
+                    (if (not (all-solo-instruments instrument-id))
+                        (begin
+                          (<ra> :set-instrument-is-implicitly-muted instrument-id #t)
+                          (<ra> :set-instrument-is-implicitly-soloed instrument-id #f)
+                          ;;(c-display "******** solo / implicit mute: " (<ra> :get-instrument-name instrument-id))
+                          )
+                        (<ra> :set-instrument-is-implicitly-muted instrument-id #f))
                     )
                   all-instruments)))
   )
