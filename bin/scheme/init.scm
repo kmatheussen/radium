@@ -63,21 +63,21 @@
 	   (elist (list (rootlet))))
        
        ;; show current error data
-       (format p "error: <font color='black'>~A</font><br>" (ow 'error-type))
+       (format p "error: ~A " (ow 'error-type))
        (let ((info (ow 'error-data)))
 	 (if (and (pair? info)
 		  (string? (car info)))
-	     (format p ": <font color='black'>~A</font>" (catch #t 
+	     (format p " <font color='black' font size=\"+2\">~A</font><br>" (catch #t 
 				(lambda () 
 				  (apply format #f info))
 				(lambda args 
 				  "<error in format>")))
 	     (if (not (null? info))
-		 (format p ": ~A" info))))
+		 (format p "~A: " info))))
 
-       (format p "~%<br>error-code: <font color='black'>~S</font>" (ow 'error-code))
+       (format p "~%<br>error-code: <font color='black' font size=\"+2\">~S</font><br>" (ow 'error-code))
        (when (ow 'error-line)
-	 (format p "~%<br>error-file/line: <font color='black'>~A[~A]</font>" (ow 'error-file) (ow 'error-line)))
+	 (format p "~%<br>error-file/line: <font color='black'>~A[~A]</font><br>" (ow 'error-file) (ow 'error-line)))
 	   
        ;; show history, if available
        (when (pair? (ow 'error-history)) ; a circular list, starts at error-code, entries stored backwards
@@ -90,7 +90,7 @@
 	       ((or (eq? x start)
 		    (null? (car x))
 		    (= i (*s7* 'history-size)))
-		(format p "~%<br>error-history:~%<br><br>~S" (car start))
+		(format p "~%<br>error-history: ~%<br><br>~S<br>" (car start))
                 (define i2 0)
                 (define is-finished #f)
 		(do ((x history (cdr x)) ;; x))) ;;(cdr x))
