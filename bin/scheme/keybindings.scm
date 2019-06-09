@@ -183,6 +183,7 @@
 #!!
 (get-displayable-keybindings1 "ra.quantitizeRange")
 (get-displayable-keybindings1 "ra.setEditorKeyboardFocus")
+(get-displayable-keybindings1 "ra.evalScheme \"(replace-with-random-velocities-in-track)\"")
 (for-each c-display (<ra> :get-keybindings-from-command "ra.setEditorKeyboardFocus"))
 (<ra> :get-keybindings-from-command "ra.undo")
 !!#
@@ -249,9 +250,27 @@
 (define (get-displayable-keybindings command)
   (map get-displayable-keybinding2
        (get-displayable-keybindings1 command)))
-    
+
+(define (remove-focus-and-mouse-from-keybinding keybinding)
+  (let* ((keys (if (list? keybinding)
+                   keybinding
+                   (string-split keybinding #\space)))
+         (key (car keys))
+         (qualifiers (cdr keys)))
+
+    (cons key
+          (remove (lambda (keybinding)
+                    (or (string-starts-with? keybinding "FOCUS_")
+                        (string-starts-with? keybinding "MOUSE_")))
+                  qualifiers))))
+     
+(define (get-displayable-keybinding-from-keybinding keybinding)
+  (get-displayable-keybinding2 (remove-focus-and-mouse-from-keybinding keybinding)))
+
+  
 #!!
 (get-displayable-keybindings "ra.quantitizeRange")
+(get-displayable-keybinding2 (list "F2" "FOCUS_EDITOR" "MOUSE_EDITOR"))
 (get-displayable-keybindings "ra.undo")
 (get-displayable-keybindings "ra.setEditorKeyboardFocus")
 (for-each c-display (<ra> :get-keybindings-from-command "ra.setEditorKeyboardFocus"))
@@ -362,6 +381,17 @@
                             (string-split keybinding #\ ))
                     " ")))
 
+(define (add-qualifier-to-keybinding keybinding qualifier)
+  (let* ((keys (if (list? keybinding)
+                   keybinding
+                   (string-split keybinding #\space)))
+         (key (car keys))
+         (qualifiers (cdr keys)))    
+    (string-join (cons key (sort (cons qualifier
+                                       qualifiers)
+                                 string<?))
+                 " ")))
+
 (delafina (add-keybinding-configuration-to-gui :gui
                                                :ra-funcname
                                                :args '())
@@ -405,7 +435,8 @@
             (<gui> :close grab-gui)
             (define (setit!)
               (<ra> :add-keybinding-to-conf-file keybinding (get-python-ra-funcname ra-funcname) (map get-arg-string args)))
-            (define existing-command (<ra> :get-keybinding-from-keys keybinding))
+            (define existing-command (<ra> :get-keybinding-from-keys (add-qualifier-to-keybinding keybinding "MOUSE_EDITOR")))
+            (c-display "KEYBINDING:" keybinding ". EXISTING:" existing-command)
             (if (string=? "" existing-command)
                 (setit!)
                 (show-async-message :text (<-> "Keybinding \"" (get-displayable-keybinding-from-keybinding keybinding) "\" already bound to \"" existing-command "\". Override?")
@@ -432,12 +463,8 @@
                          (lambda ()
                            (define python-ra-funcname (get-python-ra-funcname ra-funcname))
                            (<ra> :remove-keybinding-from-conf-file
-                                 (let* ((keybinding (last (get-keybindings-from-command-without-focus-and-mouse (get-keybindings-command python-ra-funcname args))))
-                                        (key (car keybinding)))
-                                   (define ret (string-join (cons key (sort (cons "FOCUS_EDITOR"
-                                                                                  (cdr keybinding))
-                                                                            string<?))
-                                                            " "))
+                                 (let ((keybinding (last (get-keybindings-from-command-without-focus-and-mouse (get-keybindings-command python-ra-funcname args)))))
+                                   (define ret (add-qualifier-to-keybinding keybinding "FOCUS_EDITOR"))
                                    (c-display "RET:" ret)
                                    ret)
                                  python-ra-funcname
