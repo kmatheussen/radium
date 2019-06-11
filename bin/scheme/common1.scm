@@ -83,7 +83,17 @@
 (hash-table-to-string (hash-table* 'b 2 'c 3))
 ||#
 
-(define-expansion (define2 name correct-type? value)
+(declare-overridable 'and-let*)
+
+(c-define-macro (*and-let** vars . body)
+  (let loop ((vars vars))
+    (if (null? vars)
+        `(begin ,@body)
+        `(let (,(car vars))
+           (and ,(car (car vars))
+                ,(loop (cdr vars)))))))
+
+(c-define-expansion (*define2* name correct-type? value)
   (define s (gensym "s"))
   (define v (gensym "v"))
   (if (<ra> :release-mode)
@@ -116,11 +126,12 @@
     (apply funcname (append args args2))))
 
 ;; Small one-arg function
-(define-expansion (L-> body)
+(c-define-expansion (*L->* body)
   `(lambda (_)
      ,body))
 
 (define (curry-or . funcs)
+  (<declare-variable> _)
   (L-> (let loop ((funcs funcs))
          (if (null? funcs)
              #f
@@ -144,10 +155,22 @@
          "#t")
         ((equal? #f a)
          "#f")
-        ((list? a)
-         (<-> "(" (apply <-> (map (lambda (b) (<-> (to-displayable-string b) " ")) a)) ")"))
         ((pair? a)
-         (<-> "(" (to-displayable-string (car a)) " . " (to-displayable-string (cdr a)) ")"))
+         (<-> "(" (let loop ((as a)
+                             (is-first #t))
+                    (cond ((null? as)
+                           "")
+                          ((pair? as)
+                           (<-> (if is-first
+                                    ""
+                                    " ")
+                                (to-displayable-string (car as))
+                                (loop (cdr as) #f)))
+                          (else
+                           (<-> " . " (to-displayable-string as)))))
+              ")"))
+        ((null? a)
+         "()")
         ((vector? a)
          (<-> "[" (apply <-> (map (lambda (b) (<-> (to-displayable-string b) " ")) (vector->list a))) "]"))
         ;;((hash-table? a)
@@ -163,6 +186,8 @@
 
 
 #||
+(to-displayable-string (cons 1 2))
+(to-displayable-string (list 1 2 '()))
 
 (define (provoceit)
   (define (delete-note2)
@@ -234,6 +259,7 @@
         ((procedure? a)
          (catch #t
                 (lambda ()
+                  (<declare-variable> event-to-string)
                   (event-to-string a))
                 (lambda args
                   (format #f "func:~S" a))))
@@ -246,24 +272,11 @@
 (c-display "args:" x)
 !!#
 
-(define-expansion (with-history-disabled . code)
-  `(begin
-     (ra:disable-scheme-history)
-     (try-finally :try (lambda ()
-                         ,@code)
-                  :finally ra:enable-scheme-history)))
-
 ;; Note! This function is called from the error handler.
-(define (<-> . args)
-  (apply string-append (map to-string args)))
+(set! <->
+      (lambda args
+        (apply string-append (map to-string args))))
 
-(define (<_> . args)
-  (let ((s (apply <-> args)))
-    (if (string=? "" s)
-        *empty-symbol*
-        (string->symbol s))))
-
-               
 (define (<-displayable-> . args) (apply string-append (map to-displayable-string args)))
 
 #||
@@ -284,15 +297,17 @@
 (<-displayable-> :'ga)
 ||#
 
-(define (c-display . args)
-  (for-each (lambda (arg)
-              (display (to-displayable-string arg))
-              (display " "))
-            args)
-  (newline))
+(set! c-display
+      (lambda args
+        (for-each (lambda (arg)
+                    (display (to-displayable-string arg))
+                    (display " "))
+                  args)
+        (newline)))
 
 
 (define (common1-finished-loading)
+  (<declare-variable> with-history-disabled)
   (let ((old-<-> <->))
     (set! <-> (lambda x
                 (with-history-disabled
@@ -329,15 +344,6 @@
   (if (procedure? m)
       (m)
       m))
-
-(define (last das-list) ;; Wouldn't be surprised if this version is slower than '(car (reverse das-list))' though... (but no, this one is much faster with the test below)
-  ;;(c-display "last//// " das-list)
-  (let loop ((a (car das-list))
-             (b (cdr das-list)))
-    (if (null? b)
-        a
-        (loop (car b)
-              (cdr b)))))
 
 #||
 (define (last2 das-list)
@@ -464,12 +470,6 @@
 (***assert*** (sublist '(1 2 3) 2 3)
               '(3))
 
-(define (delete el l comp)
-  (if (comp el (car l))
-      (cdr l)
-      (cons (car l)
-            (delete el (cdr l) comp))))
-      
 (define (delete-maybe el l comp)
   (cond ((null? l)
          '())

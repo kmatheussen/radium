@@ -11,7 +11,35 @@
 
 (set! (*s7* 'history-size) 80)
 
+(define *is-initializing* #t)
+
+
+
+(define-constant *eat-errors-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
+
+(define (FROM-C-catch-all-errors-and-display-backtrace-automatically func . args)
+  (catch #t
+         (lambda ()
+           (apply func args))
+         (lambda args
+           ;;(display "    FROM_C_catch2. args:") (display args) (newline)
+           (when (not (catch-args-are-from-try-finally args)) ;; if it is from try-finally, we don't need to display backtrace.
+             (display "FROM-C-catch-all-errors-and-display-backtrace-automatically: func failed. Args:")(newline)(display "    ")(display args)(newline)
+             (if (defined? 'safe-display-ow!)
+                 (catch #t
+                        safe-display-ow!
+                        (lambda args
+                          (display "    FROM_C_catch3")(newline)
+                          (display "safe-display-ow! failed:")(newline)
+                          (display args)
+                          (newline))))
+             *eat-errors-failed-return-value*))))
+
+
+
 (define-constant morally-equal? equivalent?)
+
+
 
 ;;
 ;; Important: Radium has not been initialized when this file is loaded.
@@ -22,8 +50,6 @@
 ;; in the end of this function.
 ;;
 
-
-(define *is-initializing* #t)
 
 (define (eq2? a b)
   (when (not (<ra> :release-mode))
@@ -50,13 +76,9 @@
            (newline)
            (fallback))))
 
-(define (safe-display-txt-as-displayable-as-possible txt)
-  (display txt)
-  (if (defined? 'safe-add-message-window-txt)
-      (safe-add-message-window-txt txt)))
-
 ;; ow! from stuff.scm with html formatting
 (define (my-ow!)
+  (newline)(newline)(newline)
   (call-with-output-string
    (lambda (p)
      (let ((ow (owlet))
@@ -69,7 +91,7 @@
 		  (string? (car info)))
 	     (format p " <font color='black' font size=\"+2\">~A</font><br>" (catch #t 
 				(lambda () 
-				  (apply format #f info))
+				  (ra:get-html-from-text (apply format #f info)))
 				(lambda args 
 				  "<error in format>")))
 	     (if (not (null? info))
@@ -90,7 +112,7 @@
 	       ((or (eq? x start)
 		    (null? (car x))
 		    (= i (*s7* 'history-size)))
-		(format p "~%<br>error-history: ~%<br><br>~S<br>" (car start))
+		(format p "~%<br>error-history: ~%<br><br>~S<br>" (ra:get-html-from-text (format #f "~A" (car start))))
                 (define i2 0)
                 (define is-finished #f)
 		(do ((x history (cdr x)) ;; x))) ;;(cdr x))
@@ -119,12 +141,22 @@
                          (format p (if (and (integer? (car line))
                                             (string? (car f))
                                             (not (string=? (car f) "*stdout*")))
-                                       (values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>~40T;<font color='black'>~A</font>[~A]" i2 (car x) (car f) (car line))
-                                       (values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>" i2 (car x)))))))
+                                       (values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>~40T;<font color='black'>~A</font>[~A]"
+                                               i2
+                                               (ra:get-html-from-text (format #f "~A" (car x)))
+                                               (car f)
+                                               (car line))
+                                       (values "~%<br><font color='black'>~A:</font>&nbsp;&nbsp;&nbsp;    <pre>~S</pre>"
+                                               i2
+                                               (ra:get-html-from-text (format #f "~A" (car x)))))))))
                 (format p "~%<br>"))
 	     (set! history (cons (car x) history))
-	     (set! lines (cons (and (pair? (car x)) (pair-line-number (car x))) lines))
-	     (set! files (cons (and (pair? (car x)) (pair-filename (car x))) files)))))
+	     (set! lines (cons (and (pair? (car x))
+                                    (pair-line-number (car x)))
+                               lines))
+	     (set! files (cons (and (pair? (car x))
+                                    (pair-filename (car x)))
+                               files)))))
        
        ;; show the enclosing contexts
        (let ((old-print-length (*s7* 'print-length)))
@@ -201,14 +233,28 @@
 #!!
 (safe-history-ow!)
 (+ a b)
+(arity handle-assertion-failure-during-startup)
+(aritable? handle-assertion-failure-during-startup 2)
+(aritable? handle-assertion-failure-during-startup 1)
+(aritable? handle-assertion-failure-during-startup 0)
+(signature handle-assertion-failure-during-startup)
+(signature ra:change-audio-connections)
+(signature ra:has-audio-connection)
+(signature round)
+(signature +)
+(signature string->symbol)
+(signature list)
 !!#
 
 (define (safe-display-history-ow!)
-  (safe-display-txt-as-displayable-as-possible (safe-history-ow!)))
+  (define bt (safe-history-ow!))
+  (when *is-initializing*
+    (display (ra:get-text-from-html bt)))
+  (safe-display-txt-as-displayable-as-possible bt))
 
 (define (handle-assertion-failure-during-startup info)
   (when *is-initializing*
-    (display info)(newline)
+    ;;(display (ra:get-text-from-html (format #f "~A" info)))(newline)
     (catch #t
            (lambda ()
              (define infostring (get-as-displayable-string-as-possible info))
@@ -220,7 +266,8 @@
              )
            (lambda args
              (display "(Something failed 1. This is not good.)")(display args)(display (defined? 'ra:show-error))(newline)
-             (safe-display-ow!)))
+             (if (defined? 'safe-display-ow!)
+                 (safe-display-ow!))))
     (exit)))
 
 
@@ -247,36 +294,50 @@
 (define *currently-loading-file* #f)
 (define *currently-reloading-file* #f)
 
+(define *overridable-funcs* '())
+(define (declare-overridable funcname)
+  (push! *overridable-funcs* funcname))
+
+(define (delete el l comp)
+  (if (comp el (car l))
+      (cdr l)
+      (cons (car l)
+            (delete el (cdr l) comp))))
+
 (set! (hook-functions *rootlet-redefinition-hook*)
       (list (lambda (hook)
-              (let ((message (string-append "Warning: Redefining "
-                                            (format #f "~A ~A~%" (hook 'name) (hook 'value))
-                                            ;;(symbol->string (hook 'symbol))
-                                            (if *currently-loading-file*
-                                                (string-append " while loading " *currently-loading-file*)
-                                                "."))))
-                (cond (*is-initializing*
-                       (when (not (eq? (hook 'name) 'define-class))
-                         (display "Error during initializationg: ")
-                         (display message)
-                         (newline)
-                         (catch #t
-                                (lambda ()
-                                  (ra:add-message message));(ra:get-html-from-text message)))
-                                (lambda args
-                                  #t))
-                         ;;(handle-assertion-failure-during-startup message)
-                         ))
-                      ;;((and *currently-loading-file*
-                      ;;      (not *currently-reloading-file*))
-                      ;; (ra:add-message message));(ra:get-html-from-text message)))
-                      ((defined? 'c-display (rootlet))
-                       (c-display message))
-                      (else
-                       (display message)
-                       (newline)))))))
+              (define name (hook 'name)) ;;(string->symbol (format #f "~A" (hook 'name))))
+              (if (memq name *overridable-funcs*)
+                  (delete name *overridable-funcs* eq?)
+                  (let ((message (string-append "Warning: Redefining "
+                                                (format #f "~A ~A~%" name (hook 'value))
+                                                ;;(symbol->string (hook 'symbol))
+                                                (if *currently-loading-file*
+                                                    (string-append " while loading " *currently-loading-file*)
+                                                    "."))))
+                    (cond (*is-initializing*                       
+                           (when (not (eq? name 'define-class))
+                             (display "Error during initializationg: ")
+                             (display message)
+                             (newline)
+                             (catch #t
+                                    (lambda ()
+                                      (ra:add-message message));(ra:get-html-from-text message)))
+                                    (lambda args
+                                      #t))
+                             ;;(handle-assertion-failure-during-startup message)
+                             ))
+                          ;;((and *currently-loading-file*
+                          ;;      (not *currently-reloading-file*))
+                          ;; (ra:add-message message));(ra:get-html-from-text message)))
+                          ((defined? 'c-display (rootlet))
+                           (c-display message))
+                          (else
+                           (display message)
+                           (newline))))))))
 
 
+              
 (define (my-equal? a b)
   (morally-equal? a b))
 #||
@@ -320,7 +381,9 @@
             (begin
               (newline)
               (pretty-print "Correct: ")
-              (pretty-print (to-displayable-string A))
+              (if (defined? 'to-displayable-string)
+                  (pretty-print (to-displayable-string A))
+                  (pretty-print A))
               (pretty-print "")
               (newline)
               #t)
@@ -371,11 +434,15 @@
                                 (cond ((defined? 'safe-display-ow!)
                                        (safe-display-ow!))
                                       ((defined? 'safe-ow!)
-                                       (safe-display-txt-as-displayable-as-possible (safe-ow!)))
+                                       (safe-display-txt-as-displayable-as-possible (ra:get-text-from-html (safe-ow!))))
                                       (else
-                                       (display (my-ow!))))))))
+                                       (display (ra:get-text-from-html (my-ow!)))))
+                                (handle-assertion-failure-during-startup (string-append "Loading failed for \"" filename "\"."))))))
               (set! *currently-reloading-file* old-reloading)
               (set! *currently-loading-file* old-loading-filename)
+
+              (mylint-file filename)
+        
               (if (and #f do-rethrow)
                   (error 'loading-failed)
                   ret))))))
@@ -391,13 +458,13 @@
       (begin
         (display "====== detected possible infinite recursion in safe-ow! ========")
         (newline)
-        (<ra> :schedule 1000
+        (ra:schedule 1000
               (lambda ()
                 (set! *safe-ow-recursive-level* 0)))
         "safe-ow!-recursion-detected")
       (let ((ret (catch #t
                         (lambda ()
-                          (inc! *safe-ow-recursive-level* 1)
+                          (set! *safe-ow-recursive-level* (+ *safe-ow-recursive-level* 1))
                           (my-ow!))
                         (lambda args
                           (safe-display-history-ow!)
@@ -409,9 +476,15 @@
 
   
 (define (safe-display-ow!)
-  (safe-display-txt-as-displayable-as-possible (safe-ow!)))
+  (define bt (safe-ow!))
+  (when *is-initializing*
+    (display (ra:get-text-from-html bt))
+    (newline))
+  (safe-display-txt-as-displayable-as-possible bt))
+
 
 (require write.scm)
+
 
 (define-constant go-wrong-finished-called-because-something-went-wrong 0)
 (define-constant go-wrong-finished-called-because-it-was-excplicitly-called 1)
@@ -423,6 +496,8 @@
 (set! (hook-functions *error-hook*) 
       (list (lambda (hook)
               (define backtrace-txt (safe-ow!))
+              ;;(when *is-initializing*
+              ;;  (display (ra:get-text-from-html backtrace-txt)))
               (safe-display-txt-as-displayable-as-possible backtrace-txt)
               (catch #t
                      (lambda ()
@@ -442,35 +517,27 @@
 ;;(+ a 90)
 
 
-(define-expansion (inc! var how-much)
-  `(set! ,var (+ ,var ,how-much)))
 
-(define-expansion (push! list el)
-  `(set! ,list (cons ,el ,list)))
-
-(define-expansion (push-back! list . elements)
-  `(set! ,list (append ,list (list ,@elements))))
+(load "mylint.scm")
 
 
-(define (delete-from das-list element)
-  (assert (not (null? das-list)))
-  (if (eqv? (car das-list) element)
-      (cdr das-list)
-      (cons (car das-list)
-            (delete-from (cdr das-list) element))))
+'(set! (hook-functions *load-hook*)
+      (list (lambda (hook)
+              (mylint-file (hook 'name)))))
 
-(define (delete-from2 das-list element)
-  (assert (not (null? das-list)))
-  (if (equal? (car das-list) element)
-      (cdr das-list)
-      (cons (car das-list)
-            (delete-from (cdr das-list) element))))
 
-(define (delete-list-from das-list elements)
-  (if (null? elements)
-      das-list
-      (delete-list-from (delete-from das-list (car elements))
-                        (cdr elements))))
+(load "semi-primitives.scm")
+
+(define (<_> . args)
+  (let ((s (apply <-> args)))
+    (if (string=? "" s)
+        *empty-symbol*
+        (string->symbol s))))
+
+(c-define-expansion (*<ra>* command . args)
+  `( ,(<_> 'ra: (keyword->symbol command)) ,@args))
+
+
 
 ;; This cleanup function will either be called when 'finished' is explicitly called,
 ;; or an exception happens. 'reason' will be the value of go-wrong-finished-called-because-something-went-wrong
@@ -511,7 +578,6 @@
 (define-constant *logtype-hold* (ra:get-logtype-hold))
 (define-constant *logtype-linear* 0)
 
-
 (load "common1.scm")
 
 (define (my-require what)
@@ -522,6 +588,18 @@
 (my-require 'define-match.scm)
 
 (my-require 'common2.scm)
+
+
+
+(<declare-variable> show-async-message)
+(<declare-variable> popup-menu)
+(<declare-variable> get-popup-menu-args)
+(<declare-variable> popup-menu-from-args)
+(<declare-variable> show-instrument-color-dialog)
+(<declare-variable> pmg-start)
+(<declare-variable> FROM-C-show-help-window)
+
+(my-require 'gui.scm)
 
 (my-require 'nodes.scm)
 
@@ -673,20 +751,28 @@
 (define (init-step-2)
 
   (set! *is-initializing* #t)
-  
+
   ;; gui.scm can be loaded this late since expansion macros now can be defined after they are used.
   ;; Prev comment: Must be loaded early since it creates the <gui> expansion macro.
-  (my-require 'gui.scm)
+
 
   ;; Evaluate before loading main_layout.scm since main_layout creates the edit tab, which uses keybindings.
-  (<ra> :reload-keybindings)
+  (ra:reload-keybindings)
 
+  (my-require 'popupmenu.scm)
+  
   (my-require 'main_layout.scm)
+
+  (my-require 'mixer-strips.scm)
+
+  (my-require 'sequencer_upper_part.scm)
+  (my-require 'seqtrack-headers.scm)
+  (my-require 'sequencer_right_part.scm)
+  (my-require 'seqblock-paint.scm)
+  (my-require 'seqblock_audio.scm)
   
   (my-require 'mouse.scm)
-  (my-require 'mixer-strips.scm)
   (my-require 'pluginmanager.scm)
-  (my-require 'seqblock_audio.scm)
   (my-require 'editor_lower_part.scm)
 
   (assert-functions-called-from-evalScheme)

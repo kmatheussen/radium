@@ -1,5 +1,7 @@
 (provide 'instruments.scm)
 
+(my-require 'gui.scm)
+
 
 (define (get-instrument-volume-on/off-effect-name instrument-id)
   (if (= 0 (<ra> :get-num-output-channels instrument-id))
@@ -19,6 +21,53 @@
 (define-constant *plugin-connection-type* 1)
 (define-constant *auto-connection-type* 2)
 
+
+(define (mixer-normalized-to-slider mixer-normalized) ;; TODO: Rename "scaled" into "normalized" in the whole program.
+  (* mixer-normalized mixer-normalized)) ;; Seems to work okay
+
+(define (radium-normalized-to-mixer-normalized radium-normalized)
+  (db-to-mixer-normalized
+   (radium-normalized-to-db
+    radium-normalized)))
+         
+(define (radium-normalized-to-slider radium-normalized)
+  (mixer-normalized-to-slider (radium-normalized-to-mixer-normalized radium-normalized)))
+
+(define (radium-normalized-to-db radium-normalized)
+  (scale radium-normalized 0 1 *min-db* *max-db*))
+
+(define (mixer-normalized-to-db mixer-normalized)
+  (scale mixer-normalized 0 1 *min-db* *max-mixer-db*))
+
+(define (db-to-mixer-normalized db)
+  (scale db *min-db* *max-mixer-db* 0 1))
+
+(define (db-to-radium-normalized db)
+  (scale db *min-db* *max-db* 0 1))
+
+(define (db-to-slider db)
+  (if (<= db *min-db*)
+      0
+      (mixer-normalized-to-slider (db-to-mixer-normalized db))))
+
+(define (slider-to-mixer-normalized slider)
+  (sqrt slider)) ;; Seems to work okay
+
+(define (slider-to-db slider)
+  (define mixer-normalized (slider-to-mixer-normalized slider))
+  (mixer-normalized-to-db mixer-normalized))
+
+(define (db-to-text db add-dB-string)
+  (if  (<= db *min-db*)
+       "~inf"
+       (let* ((val1 (one-decimal-string db))
+              (val (if (string=? val1 "-0.0") "0.0" val1)))
+         (if add-dB-string
+             (<-> val " dB")
+             val))))
+
+
+
 (define *instrument-memoized-generation* 0)
 (define *using-instrument-memoization* #f)
 
@@ -35,7 +84,7 @@
                               (set! *using-instrument-memoization* #f)))))
 
 
-(define-macro (define-instrument-memoized name&arg . body)
+(c-define-macro (*define-instrument-memoized* name&arg . body)
   (let ((args (cdr name&arg))
         (func (gensym "func"))
         (args-name (gensym "args"))
@@ -104,7 +153,7 @@
                   (number? gain))))  
   (hash-table :type type :source source :target target :gain gain :connection-type connection-type))
 
-(define-macro (push-audio-connection-change! changes rest)
+(c-define-macro (*push-audio-connection-change!* changes rest)
   `(push-back! ,changes (create-audio-connection-change ,@(cdr rest))))
 
 
@@ -123,7 +172,7 @@
   (assert (integer? target))
   (hash-table :type "connect" :source source :target target :implicitly-enabled (if implicitly-enabled 1 0)))
 
-(define-macro (push-audio-connection-implicitly-enabled-change! changes rest)
+(c-define-macro (*push-audio-connection-implicitly-enabled-change!* changes rest)
   `(push-back! ,changes (create-audio-connection-implicitly-enabled-change ,@(cdr rest))))
 
 #!!
@@ -905,7 +954,7 @@
                 x y
                 connect-to-main-pipe
                 do-autoconnect include-load-preset must-have-inputs must-have-outputs
-                (<gui> :get-parent-window parentgui) ;; Improves plugin menu caching performance.
+                (<ra> :gui_get-parent-window parentgui) ;; Improves plugin menu caching performance.
                 ))
 
 
@@ -1519,3 +1568,116 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
     (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
     (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0))))
 
+
+(define (get-instrument-background-color gui instrument-id)
+  (if (>= instrument-id 0)
+      (<gui> :mix-colors
+             (<ra> :get-instrument-color instrument-id)
+             (<gui> :get-background-color gui)
+             0.3)
+      "#666660"))
+
+(define (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id)
+  (define background-color (get-instrument-background-color gui instrument-id))
+  (<gui> :filled-box gui background-color x1 y1 x2 y2))
+
+(delafina (draw-mutesolo :gui
+                         :type
+                         :instrument-id
+                         :x1 :y1 :x2 :y2
+                         :is-selected 'undefined
+                         :use-single-letters 
+                         :background-color #f
+                         :border 0
+                         :implicit-border 1)
+
+  (define (get-muted)
+    (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
+    (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
+  (define (get-soloed)
+    (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
+  (define (get-recording)
+    ;;(<ra> :seqtrack-is-recording seqtracknum)) We don't have seqtracknum here.
+    (if (not (<ra> :release-mode))
+        (assert #f))
+    #f)
+  
+  (if (eq? is-selected 'undefined)
+      (set! is-selected (cond ((eq? type 'height)
+                               (if (not (<ra> :release-mode))
+                                   (assert #f)))
+                              ((eq? type 'record)
+                               (get-recording))
+                              ((eq? type 'solo)
+                               (get-soloed))
+                              ((eq? type 'mute)
+                               (get-muted))
+                              (else
+                               (assert #f)))))
+  
+  (define text (cond ((eq? type 'height)
+                      (if use-single-letters
+                          "H"
+                          "Height"))
+                     ((eq? type 'record)
+                      (if use-single-letters
+                          "R"
+                          "Record"))                      
+                     ((eq? type 'mute)
+                      (if use-single-letters
+                          "M"
+                          "Mute"))
+                     ((eq? type 'solo)
+                      (if use-single-letters
+                          "S"
+                          "Solo"))
+                     (else
+                      (assert #f))))
+  
+  (define color (cond ((eq? type 'height)
+                       "blue")
+                      ((eq? type 'record)
+                       "red")
+                      ((eq? type 'mute)
+                       "green")
+                      ((eq? type 'solo)
+                       "yellow")
+                      (else
+                       (assert #f))))
+
+  (define is-implicitly (cond ((and (eq? type 'mute)
+                                    instrument-id
+                                    (>= instrument-id 0))
+                               (<ra> :instrument-is-implicitly-muted instrument-id))
+                              ((and (eq? type 'solo)
+                                    instrument-id
+                                    (>= instrument-id 0))
+                               (<ra> :instrument-is-implicitly-soloed instrument-id))
+                              (else
+                               #f)))
+
+  ;;(c-display "background-color:" background-color)
+  (draw-checkbox gui text is-selected x1 y1 x2 y2 color
+                 :x-border border
+                 :y-border border
+                 :background-color background-color                 
+                 :paint-implicit-border is-implicitly
+                 :implicit-border-width implicit-border
+                 :box-rounding 2)
+  )
+
+(define (paint-horizontal-instrument-slider widget instrument-id value text is-enabled is-current get-automation-data text-x1 x1 y1 x2 y2 color)
+  (paint-horizontal-slider :widget widget
+                           :value value
+                           :text text
+                           :x1 x1
+                           :y1 y1
+                           :x2 x2
+                           :y2 y2
+                           :color color
+                           :is-enabled is-enabled
+                           :is-current is-current
+                           :get-automation-data get-automation-data
+                           :text-x1 text-x1
+                           ))
+  

@@ -28,6 +28,7 @@
 
 (provide 'area.scm)
 
+(my-require 'mouse-primitives.scm)
 (my-require 'gui.scm)
 
 
@@ -52,7 +53,7 @@
 
 (define *area-id-counter* 0)
 
-(define-expansion (def-area-subclass def . body)
+(c-define-expansion (*def-area-subclass* def . body)
 
   (define body-methods '())
   (let ((temp (split-list body keyword?)))
@@ -251,7 +252,7 @@
                        (lambda (x1 y1 x2 y2 width height)
                          (add-sub-area! sub-area x2 y1))))
      
-     (define (add-sub-area-below! above-sub-area sub-area)
+     (define (add-sub-area-below! sub-area-above sub-area)
        (sub-area-above :get-position
                        (lambda (x1 y1 x2 y2 width height)
                          (add-sub-area! sub-area x1 y2))))
@@ -617,7 +618,7 @@
      :add-sub-area! x (apply add-sub-area! x)
      :add-sub-area-above! x (apply add-sub-area-above! x)
      :add-sub-area-below! x (apply add-sub-area-below! x)
-     :remove-sub-area! x (apply remove-sub! x)
+     :remove-sub-area! x (apply remove-sub-area! x)
      :remove-sub-areas! x (apply remove-sub-areas! x)
      :lift-sub-area! x (apply lift-sub-area! x)
      :lift-me! x (apply lift-me! x)
@@ -625,8 +626,8 @@
      :get-state  x (apply get-state x)
      :apply-state! x (apply apply-state! x)
 
-     :key-pressed-internal! x (apply key-pressed-internal! x)
-     :key-released-internal! x (apply key-released-internal! x)
+     :key-pressed-internal! x (apply key-pressed-internal x)
+     :key-released-internal! x (apply key-released-internal x)
      :mouse-wheel-moved-internal! x (apply mouse-wheel-moved-internal! x)
      :add-mouse-cycle! x (apply add-mouse-cycle! x)
      :get-mouse-cycle x (apply get-mouse-cycle x)
@@ -720,6 +721,7 @@
 
 
 (define *use-testgui* #f)
+(<declare-variable> *testgui*)
 
 
 #!!

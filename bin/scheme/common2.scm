@@ -1,7 +1,7 @@
 (provide 'common2.scm)
 
 #!!
-(define-expansion (match-old args . matchers)
+(c-define-expansion (*match-old* args . matchers)
   (define matcher-func (gensym "matcher-func"))
   (eval
    `(let ()
@@ -10,9 +10,10 @@
       (apply ,matcher-func ,args))))
 !!#
 
-(define-expansion (match args . matchers)
+(c-define-expansion (*match* args . matchers)
   `(begin
      (eval (create-matcher-func 'matcher-func-temp-name ',matchers))
+     (<declare-variable> matcher-func-temp-name)
      (apply matcher-func-temp-name ,args)))
 
 
@@ -44,124 +45,18 @@
   (*s7* 'cpu-time))
 
 
-(define (keep func list)
-  (if (null? list)
-      '()
-      (if (func (car list))
-          (cons (car list)
-                (keep func (cdr list)))
-          (keep func (cdr list)))))
-
-;;(keep (lambda (x) (= x 1)) (list 1 3 1 5))
-
-(define (remove func list)
-  (if (null? list)
-      '()
-      (if (func (car list))
-          (remove func (cdr list))
-          (cons (car list)
-                (remove func (cdr list))))))
-
-(define (sort sequence less?)
-  (sort! (copy sequence) less?))
-
-(define (flatten l)
-  (cond ((null? l)
-         '())
-        ((pair? l)
-         (append (flatten (car l))
-                 (flatten (cdr l))))
-        (else
-         (list l))))
-
-(define (list-position list is-this-it?)
-  (let loop ((n 0)
-             (l list))
-    (cond ((null? l)
-           -1)
-          ((is-this-it? (car l))
-           n)
-          (else
-           (loop (1+ n)
-                 (cdr l))))))
-  
-(define (vector-position list is-this-it?)
-  (let loop ((n 0))
-    (cond ((= n (vector-length list))
-           -1)
-          ((is-this-it? (list n))
-           n)
-          (else
-           (loop (1+ n))))))
-  
-(define (get-bool something)
-  (if something
-      #t
-      #f))
-
-(define (scale x x1 x2 y1 y2)
-  (+ y1 (/ (* (- x x1)
-              (- y2 y1))
-           (- x2 x1))))
-
 (define (safe-scale x x1 x2 y1 y2)
   (let ((div (- x2 x1)))
     (if (= div 0)
         (begin
+          (<declare-variable> safe-add-message-window-txt)
           (safe-add-message-window-txt (string-append "Error. Almost divided by zero in safe-scale: (= (- x2 x1) 0) " (number->string x2) " " (number->string x1)))
           0)
         (+ y1 (/ (* (- x x1)
                     (- y2 y1))
                  (- x2 x1))))))
 
-(define (average . numbers)
-  (/ (apply + numbers)
-     (length numbers)))
-
-(define (X/Y a b x y)
-  (+ a (/ (* x (- b a))
-          y)))
-
-(define (onethird a b)
-  (X/Y a b 1 3))
-(define (twothirds a b)
-  (X/Y a b 2 3))
-         
-(define (twofifths a b)
-  (X/Y a b 2 5))
-(define (threefifths a b)
-  (X/Y a b 3 5))
-         
-;; fix max, which is buggy in s7 (the bug is most likely fixed now if you read this though)
-#||
-(define (max a . rest)
-  (if (null? rest)
-      a
-      (let ((b (apply max rest)))
-        (if (< a b)
-            b
-            a))))
-||#
-
 (assert (= 0 (max 0 -1/2)))
-
-(define (between Min Try-it Max)
-  (cond ((< Try-it Min)
-         Min)
-        ((> Try-it Max)
-         Max)
-        (else
-         Try-it)))     
-
-(define (myrand low high)
-  (scale (random 100000) 0 100000 low high))
-
-(define (integer-myrand low high)
-  (+ low (random (1+ (- high low)))))
-
-#!!
-(integer-myrand 0 1)
-!!#
 
 (define (random-shuffle seq)
   (define v (to-vector seq))
@@ -330,7 +225,7 @@
 
 
 ;; force and delay are missing from s7. Simple implementation below.
-(define-expansion (delay . body)
+(c-define-expansion (*delay* . body)
   `(vector #f
            #f
            (lambda ()
@@ -418,7 +313,7 @@
   new-table)
 
 
-(define-expansion (define-struct name . args)
+(c-define-expansion (*define-struct* name . args)
   (define define-args (keyvalues-to-define-args args))
   (define keys (map car define-args))
   (define keys-length (length keys))
@@ -579,7 +474,7 @@
   (Key Value . Rest) :> (cons (list (keyword->symbol Key) Value)
                               (delafina-args-to-define*-args Rest)))
 
-(define-expansion (delafina def . body)
+(c-define-expansion (*delafina* def . body)
   `(define* (,(car def) ,@(delafina-args-to-define*-args (cdr def)))
      ,@body))
 
@@ -639,29 +534,13 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 
 
 (define-constant *try-finally-rethrown* (gensym "try-finally-rethrown"))
-(define-constant *eat-errors-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
+
 
 (define (catch-args-are-from-try-finally args)
   (and (not (null? args))
        (symbol? (car args))
        (eq? *try-finally-rethrown* (car args))))
 
-(define (FROM-C-catch-all-errors-and-display-backtrace-automatically func . args)
-  (catch #t
-         (lambda ()
-           (apply func args))
-         (lambda args
-           ;;(display "    FROM_C_catch2. args:") (display args) (newline)
-           (when (not (catch-args-are-from-try-finally args)) ;; if it is from try-finally, we don't need to display backtrace.
-             (display "FROM-C-catch-all-errors-and-display-backtrace-automatically: func failed. Args:")(newline)(display "    ")(display args)(newline)
-             (catch #t
-                    safe-display-ow!
-                    (lambda args
-                      (display "    FROM_C_catch3")(newline)
-                      (display "safe-display-ow! failed:")(newline)
-                      (display args)
-                      (newline))))
-           *eat-errors-failed-return-value*)))
 #!!
 (+ notanumber1 notanumber2)
 (error *try-finally-rethrown*)
@@ -756,9 +635,13 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
   (***assert*** (let ((should-be-somethingspecial somethingspecial))
                   (eat-errors :try (lambda ()
                                      (try-finally :try (lambda ()
+                                                         (<declare-variable> weofij)
+                                                         (<declare-variable> oiwgrjoewrgi)
                                                          (+ weofij oiwgrjoewrgi)))
                                      (ra:play-block-from-start)
                                      (set! should-be-somethingspecial 'not-so-special)
+                                     (<declare-variable> aoregijoaija)
+                                     (<declare-variable> aeorgijaoirgje)
                                      (+ aoregijoaija aeorgijaoirgje))
                               :finally (lambda ()
                                          50))
@@ -804,13 +687,15 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
   (***assert*** is-finalized #t)
   (***assert*** is-catched #f))
 
+(<declare-variable> *undefined-var*)
+(<declare-variable> *undefined-var2*)
 
 ;; Test failure in 'try'. Returns #f by default.
 (let ((is-finalized #f))
   (define result (eat-errors :try (lambda ()
                                      (c-display "returning 5")
                                      (***assert*** is-finalized #f)
-                                     (+ a 3))
+                                     (+ *undefined-var* 3))
                               :failure-return-value 281
                               :finally (lambda ()
                                          (c-display "finally")
@@ -824,7 +709,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
   (define result (eat-errors :try (lambda ()
                                      (c-display "returning 5")
                                      (***assert*** is-finalized #f)
-                                     (+ a 3))
+                                     (+ *undefined-var* 3))
                               :finally (lambda ()
                                          (c-display "finally")
                                          (set! is-finalized #t))))
@@ -839,7 +724,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
   (define result (eat-errors :try (lambda ()
                                      (c-display "returning 5")
                                      (***assert*** is-finalized #f)
-                                     (+ a 3))
+                                     (+ *undefined-var* 3))
                               :failure (lambda ()
                                          (c-display "catching")
                                          (***assert*** is-finalized #f)
@@ -860,7 +745,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
   (define result (eat-errors :try (lambda ()
                                      (c-display "returning 5")
                                      (***assert*** is-finalized #f)
-                                     (+ a 3))
+                                     (+ *undefined-var* 3))
                               :failure-return-value 281
                               :failure (lambda ()
                                          (c-display "catching")
@@ -882,12 +767,12 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
   (define result (eat-errors :try (lambda ()
                                      (c-display "returning 5")
                                      (***assert*** is-finalized #f)
-                                     (+ a 3))
+                                     (+ *undefined-var* 3))
                               :failure (lambda ()
                                          (c-display "catching")
                                          (***assert*** is-finalized #f)
                                          (set! is-catched #t)
-                                         (+ b 4)
+                                         (+ *undefined-var2* 4)
                                          'failed)
                               :finally (lambda ()
                                          (c-display "finally")
@@ -906,17 +791,18 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
                           (eat-errors :try (lambda ()
                                               (c-display "returning 5")
                                               (***assert*** is-finalized #f)
-                                              (+ a 3))
+                                              (+ *undefined-var* 3))
                                        :failure (lambda ()
                                                   (c-display "catching")
                                                   (***assert*** is-finalized #f)
                                                   (set! is-catched #t)
-                                                  (+ b 4)
+                                                  (+ *undefined-var2* 4)
                                                   'failed)
                                        :finally (lambda ()
                                                   (c-display "finally")
                                                   (***assert*** is-catched #t)
                                                   (set! is-finalized #t)
+                                                  (<declare-variable> c)
                                                   (+ c 5))))
                         (lambda args
                           (set! finally-failed #t)
@@ -931,6 +817,15 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 (c-display "\n\n\n\n=======================================================================================================")
 (c-display "    FINISHED testing try-catch-failure. Lots of backtrace was printed, but nothing is wrong, hopefully.")
 (c-display "=======================================================================================================\n\n\n\n")
+
+
+
+(c-define-expansion (*with-history-disabled* . code)
+  `(begin
+     (ra:disable-scheme-history)
+     (try-finally :try (lambda ()
+                         ,@code)
+                  :finally ra:enable-scheme-history)))
 
 
 
@@ -950,13 +845,13 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
             :width (- $x2 $x1)
             :height (- $y2 $y1)))
   
-(define-macro (ra:get-box prefix . rest)
+(c-define-macro (*ra:get-box* prefix . rest)
   `(make-box2 ( ,(<_> 'ra:get- prefix '-x1) ,@rest)
               ( ,(<_> 'ra:get- prefix '-y1) ,@rest)
               ( ,(<_> 'ra:get- prefix '-x2) ,@rest)
               ( ,(<_> 'ra:get- prefix '-y2) ,@rest)))
 
-(define-expansion (ra:get-box2 prefix . rest)
+(c-define-expansion (*ra:get-box2* prefix . rest)
   `(make-box2 ( ,(<_> 'ra:get- prefix '-x1) ,@rest)
               ( ,(<_> 'ra:get- prefix '-y1) ,@rest)
               ( ,(<_> 'ra:get- prefix '-x2) ,@rest)
@@ -1078,7 +973,7 @@ for .emacs:
   ____________ _________________________ :> #f)
   
 
-(define-expansion (lazy . body)
+(c-define-expansion (*lazy* . body)
   ;;(c-display "EXPSNDFING lazy macro")
   
   (define lazy-vals (keep is-define-lazy body))
@@ -1151,9 +1046,6 @@ for .emacs:
               (+ a b)))
 ||#
 
-
-(define-expansion (<ra> command . args)
-  `( ,(<_> 'ra: (keyword->symbol command)) ,@args))
 
                               
 
@@ -1250,13 +1142,6 @@ for .emacs:
 
 (define (cl-cadddr a)
   (cl-car (cl-cdr (cl-cdr (cl-cdr a)))))
-
-(define (butlast elements)
-  (let ((rest (cdr elements)))
-    (if (null? rest)
-        '()
-        (cons (car elements)
-              (butlast rest)))))
 
 (***assert*** (butlast '(2)) '())
 (***assert*** (butlast '(2 3)) '(2))
@@ -1393,7 +1278,7 @@ for .emacs:
                 (hash-table-set! methods_of_list-and-set :set this->set)
                 this))
 
-(define-expansion (<define-class-with-custom-definer> definer signature . rest)
+(c-define-expansion (*<define-class-with-custom-definer>* definer signature . rest)
   (define class-name (string->symbol (list->string (butlast (cdr (string->list (symbol->string (car signature))))))))
   (define new-class-name (<_> 'new_instance_of_ class-name))
   (define args (cdr signature))
@@ -1428,11 +1313,11 @@ for .emacs:
           body
           (define-class-helper class-name hash-table-name methods)))
 
-(define-expansion (define-class signature . rest)
+(c-define-expansion (*define-class* signature . rest)
   (append '(<define-class-with-custom-definer>) '(delafina) (list signature)
           rest))
 
-(define-expansion (<new> class-name . args)
+(c-define-expansion (*<new>* class-name . args)
   `(,(<_> 'new_instance_of_ (keyword->symbol class-name)) ,@args))
 
 
@@ -1746,334 +1631,6 @@ for .emacs:
 
 
 
-
-;;;;;;;;;; popup menu
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-(define (parse-popup-menu-options args)
-  ;;(c-display "\n\n\n>>----- args:")
-  ;;(pretty-print args)
-  ;;(newline)
-  ;;(c-display "<<--------\n\n\n")
-  (if (null? args)
-      '()
-      (cond ((and (list? (car args))
-                  (not (null? (car args)))
-                  (eq? (car (car args)) :radio-buttons))
-             (let ((radiobuttons (car args)))
-               ;;(c-display "REST:->>>" radiobuttons "<<<-")
-               (append (list "[radiobuttons start]"
-                             (lambda () #t))
-                       (parse-popup-menu-options (cdr (car args)))
-                       (list "[radiobuttons end]"
-                             (lambda () #t))
-                       (parse-popup-menu-options (cdr args)))))
-             
-            ((list? (car args))
-             (parse-popup-menu-options (append (car args)
-                                               (cdr args))))
-            ((not (car args))
-             (parse-popup-menu-options (cdr args)))
-            
-            ((string-starts-with? (car args) "---")
-             (cons (car args)
-                   (cons (lambda _ #t)
-                         (parse-popup-menu-options (cdr args)))))
-            (else
-             (assert (not (null? (cdr args))))
-             (let ((text (car args))
-                   (arg2 (cadr args)))
-               (cond ((eq? :check arg2)
-                      (let ((check-on (caddr args)))
-                        (parse-popup-menu-options (cons (<-> (if check-on "[check on]" "[check off]") text)
-                                                        (cdddr args)))))                      
-                     ((eq? :enabled arg2)
-                      (let ((enabled (caddr args)))
-                        (if enabled
-                            (parse-popup-menu-options (cons text
-                                                            (cdddr args)))
-                            (parse-popup-menu-options (cons (<-> "[disabled]" text)
-                                                            (cdddr args))))))
-                     ((eq? :icon arg2)
-                      (let ((filename (caddr args)))
-                        ;;(c-display (<-> "stext: -" text "-" " rest:" (cdddr args)))
-                        (parse-popup-menu-options (cons (<-> "[icon]" filename " " text)
-                                                        (cdddr args)))))
-                     ((eq? :shortcut arg2)
-                      (let ((shortcut (caddr args)))
-                        (if (or (list? shortcut)
-                                (procedure? shortcut))
-                            (let ((keybinding (if (list? shortcut)
-                                                  (get-displayable-keybinding (get-procedure-name (car shortcut)) (cdr shortcut))
-                                                  (get-displayable-keybinding (get-procedure-name shortcut) '()))))
-                              (if (not (string=? keybinding ""))
-                                  (parse-popup-menu-options (cons (<-> "[shortcut]" keybinding "[/shortcut]" text)
-                                                                  (cdddr args)))
-                                  (begin
-                                    (c-display "Note: No keybinding found for procedure \"" (get-procedure-name shortcut) "\"")
-                                    ;;(c-display "REST:" (cddr args))
-                                    (parse-popup-menu-options (cons text
-                                                                    (cdddr args))))))
-                            (begin
-                              ;;(c-display "SHORTCUT:" shortcut)
-                              (parse-popup-menu-options (cons (<-> "[shortcut]" shortcut "[/shortcut]" text)
-                                                              (cdddr args)))))))
-                     ((procedure? arg2)
-                      (let ((keybinding (get-displayable-keybinding (get-procedure-name arg2) '())))
-                        (cons (if (not (string=? keybinding ""))
-                                  (<-> "[shortcut]" keybinding "[/shortcut]" text)
-                                  text)
-                              (cons arg2
-                                    (parse-popup-menu-options (cddr args))))))
-                     ((list? arg2)
-                      (append (list (<-> "[submenu start]" text)
-                                    (lambda () #t))
-                              (parse-popup-menu-options arg2)
-                              (list "[submenu end]"
-                                    (lambda () #t))
-                              (parse-popup-menu-options (cddr args))))))))))
-
-#!!
-
-(parse-popup-menu-options (list                           
-                           "?copytrack?"
-                           :shortcut "aiai"
-                           :enabled #f
-                           (lambda () (c-display "clicked"))))
-
-(parse-popup-menu-options (list                           
-                           "?copytrack?"
-                           :shortcut (lambda () 50)
-                           (lambda () (c-display "clicked"))))
-
-(parse-popup-menu-options (list                           
-                           "?copytrack?"
-                           :shortcut ra:copy-block
-                           (lambda () (c-display "clicked"))))
-
-(parse-popup-menu-options (list
-                           (list
-                            "?copytrack?"
-                            :enabled #f
-                            ra:copy-track)
-                           (list
-                            "?copytrack?2wefwefawefawefawef"
-                            ra:copy-track)))
-
-(popup-menu (list "?copytrack?"
-                  :enabled #f
-                  ra:copy-track)
-            (list "?copytrack?2aewfas"
-                  ra:copy-track))
-
-(popup-menu (list "hello"
-                  :shortcut (list ra:eval-scheme "(FROM_C-split-sample-seqblock-under-mouse #f)")
-                  (lambda ()
-                    2)))
-
-(get-displayable-keybinding "" '())
-
-(get-procedure-name ra:copy-track)
-
-(documentation c-display)
-
-(<ra> :get-html-from-text "<-rightjustify>")
-
-
-(documentation ra:copy-track)
-(documentation (lambda ()
-                 (ra:copy-track)))
-
-
-(parse-popup-menu-options (list 
-                           "hello6"
-                           :icon (<ra> :to-base64 "<<<<<<<<<<envelope_icon^Constant Power^fadein")
-                           (lambda ()
-                             (c-display "gakk4"))))
-(<ra> :to-base64 "<<<<<<<<<<envelope_icon^Constant Power^fadein")
-
-(parse-popup-menu-options (list "hello1" 
-                                :enabled #f
-                                :icon (<ra> :to-base64 "/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png")
-                                (lambda ()
-                                  6)))
-(<ra> :to-base64 "/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png")
-
-(parse-popup-menu-options (list (list "bbb" (lambda ()
-                                              6))
-                                "------"))
-
-(parse-popup-menu-options (list "hello1" :enabled #t (lambda ()
-                                                       (c-display "hepp1"))
-                                "hello2" :enabled #f (lambda ()
-                                                       (c-display "hepp2"))                                
-                                "hello4" (lambda ()
-                                           (c-display "hepp4"))))
-
-(parse-popup-menu-options (list "hello1" :check #t (lambda ()
-                                                     (c-display "hepp1"))                                
-                                "hello4" (lambda ()
-                                           (c-display "hepp4"))))
-
-(parse-popup-menu-options (list "hello1" :check #f (lambda ()
-                                                     (c-display "hepp1"))                                
-                                "hello4" (lambda ()
-                                           (c-display "hepp4"))))
-
-(parse-popup-menu-options (list "hello1" (lambda ()
-                                           (c-display "hepp1"))                                
-                                "submenu" (list
-                                           "hello2" (lambda ()
-                                                      (c-display "hepp2"))
-                                           "hello3" (lambda ()
-                                                      (c-display "hepp3")))
-                                "hello4" (lambda ()
-                                           (c-display "hepp4"))))
-
-!!#
-
-(define (get-popup-menu-args args)
-  (define options (parse-popup-menu-options args))
-  ;;(c-display "bbb")
-  ;;(c-display "optinos:" options)
-  
-  (define relations (make-assoc-from-flat-list options))
-  (define strings (map car relations))
-  ;;(define strings (list->vector (map car relations)))
-  ;;
-  ;;(define popup-arg (let loop ((strings (vector->list strings)))
-  ;;                    ;;(c-display "strings" strings)
-  ;;                    (if (null? strings)
-  ;;                        ""
-  ;;                        (<-> (car strings) " % " (loop (cdr strings))))))
-  
-  ;;(c-display "   relations: " relations)
-  ;;(for-each c-display relations (iota (length relations)))
-  ;;(c-display "strings: " strings)
-  ;;(for-each c-display strings)
-  ;;(c-display "popup-arg: " popup-arg)
-  
-  (define (get-func n)
-    ;;(c-display "N: " n)
-    ;;(define result-string (vector-ref strings n))
-    ;;(cadr (assoc result-string relations))
-    (cadr (relations n))
-    )
-
-  (list strings
-        (lambda (n . checkboxval)
-          (define result-string (strings n))
-          (if (null? checkboxval)
-              ((get-func n))
-              ((get-func n) (car checkboxval))))))
-
-(define (popup-menu-from-args popup-menu-args)
-  ;;(c-display "ARGS:") (pretty-print popup-menu-args)
-  (apply ra:popup-menu popup-menu-args)  
-  )
-        
-;; Async only. Use ra:simple-popup-menu for sync.
-(define (popup-menu . args)
-  (popup-menu-from-args (get-popup-menu-args args)))
-
-
-#!!
-(popup-menu (list "Select"
-                  :shortcut "Alt + B"
-                  (lambda x
-                    x))
-            "------------"
-            (list "Select2"
-                  :shortcut ra:copy-block
-                  (lambda x
-                    x))
-            "------------"
-            (list "Select2"
-                  :shortcut ra:copy-block
-                  ra:copy-track)
-            "------------"
-            (list "Select2"
-                  :shortcut "Alt + 7"
-                  ra:copy-track)
-            "------------"
-            (list "Select2"
-                  ra:copy-track)
-            "------------"
-            (list "Test2"
-                  :shortcut (lambda () (c-display "hello"))
-                  ra:copy-block))
-
-(popup-menu (list (list "aaa" (lambda ()
-                                5))
-                  "----"
-                  (list "bbb" (lambda ()
-                                6))
-                  "----------"))
-
-(popup-menu "aaa" (lambda ()
-                    (c-display "main menu"))
-            "bbb" (list "aaa"
-                        (lambda ()
-                          (c-display "submenu"))))
-
-(popup-menu "hello" :check #t (lambda (ison)
-                                (c-display "gakk1" ison))
-            "hello2" :enabled #t (lambda ()
-                                   (c-display "gakk2"))
-            "hello3" :enabled #f (lambda ()
-                                   (c-display "gakk3"))
-            (list 
-             "hello4"
-             :check #t
-             :enabled #f
-             (lambda (ison)
-               (c-display "gakk4" ison)))
-            (list 
-             "hello5"
-             :icon (<ra> :to-base64 "/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png")
-             (lambda ()
-               (c-display "gakk4" ison)))
-            (list 
-             "hello6"
-             :icon (<ra> :to-base64 "<<<<<<<<<<envelope_icon^Constant Power^fadein")
-             (lambda ()
-               (c-display "gakk4" ison)))
-            )
-!!#
-            
-#||
-(popup-menu "[check on] gakk1 on" (lambda (ison)
-                                   (c-display "gakk1 " ison))
-            "[check off] gakk2 off" (lambda (ison)
-                                     (c-display "gakk2 " ison))
-            "hepp1" (lambda ()
-                     (c-display "hepp1"))
-            "hepp2" (lambda ()
-                     (c-display "hepp2"))
-            )
-
-(popup-menu "hello" (lambda ()
-                      (c-display "hepp"))
-            "[submenu start]Gakk gakk-" (lambda () #t)
-            "[submenu start]Gakk gakk-" (lambda () #t)
-            "hello2" (lambda ()
-                       (c-display "hepp2"))
-            "[submenu end]" (lambda () #t)
-            "[submenu end]" (lambda () #t)
-            "hepp" (lambda ()
-                     (c-display "hepp3")))
-(popup-menu "hello" (lambda ()
-                      (c-display "hepp"))
-            "Gakk gakk" (list
-                         "Gakk gakk2" (list
-                                       "hello2" (lambda ()
-                                                  (c-display "hepp2"))
-                                       "hello3" (lambda ()
-                                                  (c-display "hepp3"))))
-            "hepp" (lambda ()
-                     (c-display "hepp3")))
-||#
 
 (define-constant *num-radium-ticks* (<ra> :get-highest-legal-place-denominator))
 (define-constant *smallest-radium-tick* (/ 1 *num-radium-ticks*))

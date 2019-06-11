@@ -1,12 +1,33 @@
 (provide 'gui.scm)
 
+(my-require 'mouse-primitives.scm)
+
+
 (define-constant *min-db* (<ra> :get-min-db))
 (define-constant *max-db* (<ra> :get-max-db))
 (define-constant *max-mixer-db* 6)
 
+(define (get-fontheight)
+  (+ 4 (<gui> :get-system-fontheight))) ;; If changing this one, change the "font_height" variable in Seqtracks_widget::get_heights, and paintVamps in api_gui.cpp, too.
+
+(define-constant *text-color* "#cccccc")
+
+
 (define-constant *mixer-strip-border-color* "#bb222222")
 (define-constant *mixer-strip-background-color* "#222222")
 (define *current-mixer-strip-border-color* "mixerstrips_selected_object_color_num")
+
+
+(define *last-statusbar-id* -1)
+
+(define (set-editor-statusbar text)
+  (set! *last-statusbar-id* (<ra> :set-statusbar-text text)))
+
+(define (set-statusbar-value val)
+  (set-editor-statusbar (<-> val)))
+
+(define (set-velocity-statusbar-text value)
+  (set-editor-statusbar (<-> "Velocity: " (one-decimal-percentage-string value) "%")))
 
 
 
@@ -115,27 +136,27 @@
 
 (define (mybutton text background-color pressed-color text-color callback)
   (define button (<gui> :button text callback))
-  (add-safe-paint-callback button
-                           (lambda (width height)
-                             (define is-down (<gui> :get-value button))
-                             (<gui> :filled-box
-                                    button
-                                    background-color
-                                    0 0 width height)
-                             (if is-down
-                                 (<gui> :filled-box
-                                        button
-                                        pressed-color
-                                        2 1 (- width 2) (- height 1)))
-                             (<gui> :my-draw-text
-                                    button
-                                    text-color
-                                    text
-                                    3 2 (- width 3) (- height 2)
-                                    #f
-                                    #f
-                                    #f
-                                    0)))
+  (<gui> :add-callback button
+         (lambda (width height)
+           (define is-down (<gui> :get-value button))
+           (<gui> :filled-box
+                  button
+                  background-color
+                  0 0 width height)
+           (if is-down
+               (<gui> :filled-box
+                      button
+                      pressed-color
+                      2 1 (- width 2) (- height 1)))
+           (<gui> :my-draw-text
+                  button
+                  text-color
+                  text
+                  3 2 (- width 3) (- height 2)
+                  #f
+                  #f
+                  #f
+                  0)))
   button)
 
 #!!
@@ -869,7 +890,7 @@
 
             (set! *message-gui-text-edit* (<gui> :text-edit "" #t))
             (define gui (<gui> :vertical-layout *message-gui-text-edit* buttonlayout))
-            (<gui> :set-window-title *pluginmanager-gui* "Message Window")
+            (<gui> :set-window-title gui "Message Window")
             (<gui> :set-layout-spacing gui 2 2 2 2 2)
             
             (<gui> :set-size gui
@@ -1171,11 +1192,11 @@
               (<gui> :add parent part)
               (<gui> :show part)
               
-              (add-safe-paint-callback
-               part
-               (lambda (width height)
-                 (if (is-enabled-func)
-                     (<gui> :filled-box part color 0 0 width height)))))
+              (<gui> :add-callback part
+                     part
+                     (lambda (width height)
+                       (if (is-enabled-func)
+                           (<gui> :filled-box part color 0 0 width height)))))
             (list top right bottom left))
 
   (lambda (x1 y1 x2 y2)

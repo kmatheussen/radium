@@ -214,7 +214,7 @@
   (define changes '())
 
   (define no-one-has-solo (null? all-solo-instruments))
-  
+
   ;; TODO: Don"t set connection-type. (It seems to be set to *auto-connection-type* now. This must be fixed in create-audio-connection-change though.
   
   (all-connections :for-each

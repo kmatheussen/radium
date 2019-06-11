@@ -6,6 +6,8 @@
 (my-require 'instruments.scm)
 (my-require 'area.scm)
 (my-require 'sequencer.scm)
+(my-require 'main_layout.scm)
+(my-require 'sequencer_upper_part.scm)
 
 
 ;;(define *curr-seqtrack-color* "#7c3a3a")
@@ -27,7 +29,7 @@
           (get-instrument-background-color gui -1))
       (begin
         (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
-        (let ((background-color (get-mixer-strip-background-color gui instrument-id)))
+        (let ((background-color (get-instrument-background-color gui instrument-id)))
           (if (= seqtracknum (<ra> :get-curr-seqtrack))
               (<gui> :make-color-lighter (<ra> :get-instrument-color instrument-id) 1.3)
 ;              (<gui> :mix-colors
@@ -58,12 +60,6 @@
               (popup-menu (get-sequencer-header-popup-menu-entries seqtracknum instrument-id effect-name parentgui))
               #f))))
 
-(define *sequencer-window-gui* (if (defined? '*sequencer-window-gui*)
-                                   *sequencer-window-gui*
-                                   #f))
-(define *sequencer-window-gui-active* (if (defined? '*sequencer-window-gui-active*)
-                                          *sequencer-window-gui-active*
-                                          #f))
 (define *lower-tabs-height-before-full-or-active* 10)
 
 (define (remember-lower-tabs-height)
@@ -75,74 +71,6 @@
   (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) *lower-tabs-height-before-full-or-active*))
   
 
-;; Remove from main tabs, and open in new window
-(define (move-sequencer-to-window)
-  (assert (not *sequencer-window-gui-active*))
-  (set! *sequencer-window-gui-active* #t)
-  
-  (let* ((sequencer-gui (<gui> :get-sequencer-frame-gui))
-         (has-window *sequencer-window-gui*)
-         (window (if has-window
-                     *sequencer-window-gui*
-                     (let ((window (<gui> :vertical-layout)))
-                       (<gui> :set-size
-                              window
-                              (<gui> :width (<gui> :get-parent-window sequencer-gui))
-                              (+ (floor (* (get-fontheight) 1.5))
-                                 (<gui> :height sequencer-gui)))
-                       (<gui> :set-takes-keyboard-focus window #f)
-                       window))))
-    
-    (<gui> :remove-parent sequencer-gui)
-    
-    (define bottom-bar (if has-window
-                           (let ((bottom-bar (<gui> :child window "bottom-bar")))
-                             (<gui> :remove-parent bottom-bar)
-                             bottom-bar)
-                           (let ((bottom-bar (<gui> :bottom-bar #f #f)))
-                             (<gui> :set-name bottom-bar "bottom-bar")
-                             bottom-bar)))
-    
-    (<gui> :add window sequencer-gui)
-    (<gui> :add window bottom-bar)
-    
-    (<gui> :set-as-window window (if (<ra> :sequencer-window-is-child-of-main-window)
-                                     -1
-                                     -3
-                                     ))
-    (<gui> :show sequencer-gui)
-    (<gui> :show window)
-    
-    (when (not has-window)
-
-      (<gui> :add-close-callback window
-             (lambda (radium-runs-custom-exec)
-               ;;(move-sequencer-to-main-tabs)
-               (<gui> :hide window)
-               #f))
-      
-      (set! *sequencer-window-gui* window))
-    
-    ))
-
-
-;; Remove from sequencer window, add to main tabs, hide sequencer window gui.
-(define (move-sequencer-to-main-tabs)
-  (assert *sequencer-window-gui-active*)    
-  (set! *sequencer-window-gui-active* #f)
-    
-  (let ((sequencer-gui (<gui> :get-sequencer-frame-gui))
-        (window *sequencer-window-gui*))
-    (<gui> :remove-parent sequencer-gui)
-    (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-gui 0)
-    (<gui> :set-current-tab *lowertab-gui* 0)
-    (<gui> :hide window)))
-
-
-#!!
-(<ra> :show-upper-part-of-main-window)
-(<ra> :hide-upper-part-of-main-window)
-!!#
 
 
 (define *has-shown-record-message* #t)
@@ -1146,19 +1074,6 @@
   ;;(define vam2 (<gui> :add-vertical-audio-meter gui instrument-id (- x2 8) y1 x2 y2))
   
   ;;(<gui> :remove-vertical-audio-meter vam)
-
-
-  (when (and #f for-blocks) ;; Disable this. Too confusing.
-    (add-sub-area-plain! (<new> :block-seqtrack-volume-slider gui
-                                x1 vol-y1
-                                vol-x2 vol-y2
-                                seqtracknum
-                                :display-seqtrack-name (not use-two-rows)
-                                :get-color (lambda ()
-                                             (get-seqtrack-background-color gui seqtracknum))
-                                )))
-    
-
   
   (define-override (paint)
     (if (= seqtracknum (<ra> :get-curr-seqtrack))
@@ -1169,7 +1084,7 @@
         (<ra> :instrument-is-open-and-audio instrument-id)))
   
   '(set! paint (lambda ()
-                 ;;(define background-color (get-mixer-strip-background-color gui instrument-id))
+                 ;;(define background-color (get-instrument-background-color gui instrument-id))
                  (define background-color (<gui> :get-background-color gui))
                  ;;(define background-color (<ra> :generate-new-color))
                  (<gui> :filled-box gui background-color x1 y1 x2 y2)
@@ -1177,7 +1092,7 @@
          )
   
   '(set! post-paint (lambda ()
-                     (define background-color (get-mixer-strip-background-color gui instrument-id))
+                     (define background-color (get-instrument-background-color gui instrument-id))
                      (define background-color (<ra> :generate-new-color))
                      (<gui> :do-alpha gui 0.65
                             (lambda ()
@@ -1330,30 +1245,6 @@
 (<ra> :toggle-full-screen)
 !!#
 
-(define (ask-user-about-first-audio-seqtrack2 callback)
-  (show-async-message (<gui> :get-sequencer-gui)
-                      (<-> "Are you sure?\n"
-                           "\n"
-                           "We use the first seqtrack for timing and grid, but audio seqtracks don't provide this information.\n"
-                           "In order to support timing and grid, we will switch to sequencer timing mode."
-                           )
-                      (list "No" "Yes") ;; yes-dont-show-again)
-                      :is-modal #t
-                      :callback callback))
-
-(define (ask-user-about-first-audio-seqtrack callback)
-  (if (<ra> :is-using-sequencer-timing)
-      (callback #t)
-      (ask-user-about-first-audio-seqtrack2
-       (lambda (res)
-         (define arg (string=? "Yes" res))
-         (undo-block
-          (lambda ()                               
-            (when arg
-              (<ra> :undo-sequencer)
-              (<ra> :set-using-sequencer-timing #t))
-            (callback arg)))))))
-
 (define (delete-seqtrack-and-maybe-ask seqtracknum)
   (define (deleteit)
     (<ra> :delete-seqtrack seqtracknum)
@@ -1390,6 +1281,7 @@
           ((eq? type '-)
            (when (> (<ra> :get-num-seqtracks) 1)
              (define seqtracknum (<ra> :get-curr-seqtrack))
+             (<declare-variable> *current-seqblock-info*)
              (set! *current-seqblock-info* #f)
              (delete-seqtrack-and-maybe-ask seqtracknum)))
           ((eq? type 'AppendE)
@@ -1720,10 +1612,8 @@
   (kont (header-box :x1) (header-box :y1)
         (header-box :x2) (header-box :y2)))
 
-(define *had-sequencer-paint-callback* (defined? '*sequencer-left-part-area*))
-
-(define *sequencer-left-part-area* #f)
-(define *sequencer-right-part-area* #f)
+(define *had-sequencer-paint-callback* (defined? '*seqtrack-headers-has-run*))
+(define *seqtrack-headers-has-run* #t)
 
 (define (get-sequencer-left-part-area)
   (when (not *sequencer-left-part-area*)

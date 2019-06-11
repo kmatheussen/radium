@@ -1,12 +1,8 @@
 
 (provide 'main_layout.scm)
 
-
 (my-require 'notem.scm)
-(my-require 'seqtrack-headers.scm)
-(my-require 'sequencer_right_part.scm)
-(my-require 'sequencer_upper_part.scm)
-(my-require 'seqblock-paint.scm)
+(my-require 'sequencer.scm)
 
 
 
@@ -182,6 +178,77 @@
       
 (define (FROM-C-hide-instrument-gui)
   (hide-lowertab-gui (<gui> :get-instrument-gui)))
+
+
+;; Remove from main tabs, and open in new window
+(define (move-sequencer-to-window)
+  (assert (not *sequencer-window-gui-active*))
+  (set! *sequencer-window-gui-active* #t)
+  
+  (let* ((sequencer-gui (<gui> :get-sequencer-frame-gui))
+         (has-window *sequencer-window-gui*)
+         (window (if has-window
+                     *sequencer-window-gui*
+                     (let ((window (<gui> :vertical-layout)))
+                       (<gui> :set-size
+                              window
+                              (<gui> :width (<gui> :get-parent-window sequencer-gui))
+                              (+ (floor (* (get-fontheight) 1.5))
+                                 (<gui> :height sequencer-gui)))
+                       (<gui> :set-takes-keyboard-focus window #f)
+                       window))))
+    
+    (<gui> :remove-parent sequencer-gui)
+    
+    (define bottom-bar (if has-window
+                           (let ((bottom-bar (<gui> :child window "bottom-bar")))
+                             (<gui> :remove-parent bottom-bar)
+                             bottom-bar)
+                           (let ((bottom-bar (<gui> :bottom-bar #f #f)))
+                             (<gui> :set-name bottom-bar "bottom-bar")
+                             bottom-bar)))
+    
+    (<gui> :add window sequencer-gui)
+    (<gui> :add window bottom-bar)
+    
+    (<gui> :set-as-window window (if (<ra> :sequencer-window-is-child-of-main-window)
+                                     -1
+                                     -3
+                                     ))
+    (<gui> :show sequencer-gui)
+    (<gui> :show window)
+    
+    (when (not has-window)
+
+      (<gui> :add-close-callback window
+             (lambda (radium-runs-custom-exec)
+               ;;(move-sequencer-to-main-tabs)
+               (<gui> :hide window)
+               #f))
+      
+      (set! *sequencer-window-gui* window))
+    
+    ))
+
+
+;; Remove from sequencer window, add to main tabs, hide sequencer window gui.
+(define (move-sequencer-to-main-tabs)
+  (assert *sequencer-window-gui-active*)    
+  (set! *sequencer-window-gui-active* #f)
+    
+  (let ((sequencer-gui (<gui> :get-sequencer-frame-gui))
+        (window *sequencer-window-gui*))
+    (<gui> :remove-parent sequencer-gui)
+    (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-gui 0)
+    (<gui> :set-current-tab *lowertab-gui* 0)
+    (<gui> :hide window)))
+
+
+#!!
+(<ra> :show-upper-part-of-main-window)
+(<ra> :hide-upper-part-of-main-window)
+!!#
+
 
 (define (FROM-C-sequencer-set-gui-in-window! doit)
   (cond ((and doit

@@ -554,6 +554,27 @@ func_t *s7extra_get_func_from_funcname(const char *funcname){
 int g_scheme_nested_level = 0;
 
 static s7_pointer catch_call(s7_scheme *sc, const s7_pointer args){
+  static s7_pointer s_catchallerrors_func = s7_undefined(sc);
+  
+#if defined(RELEASE)
+  if (!s7_is_procedure(s_catchallerrors_func))
+    s_catchallerrors_func = find_and_protect_scheme_value("FROM-C-catch-all-errors-and-display-backtrace-automatically");
+#else
+  s_catchallerrors_func = find_scheme_value(s7, "FROM-C-catch-all-errors-and-display-backtrace-automatically");
+#endif
+
+  if (!s7_is_procedure(s_catchallerrors_func)){
+    if (s_catchallerrors_func != s7_undefined(sc)){
+      fprintf(stderr, "NOTE: FROM-C-catch-all-errors-and-display-backtrace-automatically is not a procedure and not undefined. (?)\n");
+#if !defined(RELEASE)
+      abort();
+#endif
+    }
+    fprintf(stderr, "NOTE: FROM-C-catch-all-errors-and-display-backtrace-automatically not defined yet. Won't eval scheme now.\n");
+    return s7_make_string(sc, "NOTE: FROM-C-catch-all-errors-and-display-backtrace-automatically not defined yet. Won't eval scheme now.\n");
+  }
+             
+
   g_scheme_failed=false;
 
   ASSERT_IS_NONRT_MAIN_THREAD();
@@ -568,16 +589,6 @@ static s7_pointer catch_call(s7_scheme *sc, const s7_pointer args){
   int curr_level = g_scheme_nested_level;
 #endif
 
-  static s7_pointer s_catchallerrors_func = NULL;
-
-#if defined(RELEASE)
-  if (s_catchallerrors_func==NULL)
-    s_catchallerrors_func = find_and_protect_scheme_value("FROM-C-catch-all-errors-and-display-backtrace-automatically");
-#else
-  s_catchallerrors_func = find_scheme_value(s7, "FROM-C-catch-all-errors-and-display-backtrace-automatically");
-#endif
-
-  
   s7_pointer ret = s7_call(sc, s_catchallerrors_func, args);
 
   R_ASSERT_NON_RELEASE(curr_level==g_scheme_nested_level); // Assert that g_catchallerros_func is working. (we don't want any longjmp in the C part)
@@ -2029,12 +2040,12 @@ const char *SCHEME_get_history(void){
   //SCHEME_eval("(throw \'get-backtrace)"); // Fill in error-lines and so forth into s7. (no, then we risk longjmp a place we don't want to longjmp. We don't want to longjmp at all actually.)
 
   if (s7 == NULL)
-    return "";
+    return strdup("");
   
   const char *funcname = "safe-history-ow!";
   
   if (!s7_is_defined(s7, funcname))
-    return "";
+    return strdup("");
 
   s7extra_disable_history();
 
@@ -2045,8 +2056,11 @@ const char *SCHEME_get_history(void){
                               );
 
   s7extra_enable_history();
+
+  if (!s7_is_string(s7s))
+    return strdup("...Unable to run 'safe-history-ow!'...");
   
-  return s7_string(s7s);
+  return strdup(s7_string(s7s));
 }
 
 
