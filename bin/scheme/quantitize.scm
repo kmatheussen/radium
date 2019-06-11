@@ -1,5 +1,8 @@
 (provide 'quantitize.scm)
 
+(my-require 'keybindings.scm)
+
+
 (define *curr-quantitize-gui* #f)
 
 (define (quantitize Place Q)

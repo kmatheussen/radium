@@ -48,7 +48,7 @@
                         (<ra> :add-bpm value place)))
             (reset-tempo-multiplier))))))
 
-
+#!!
 (define (apply-bpm-glide bpmnum)
   (undo-block
    (lambda ()
@@ -61,7 +61,7 @@
      (set! temponodes (nodelist-mix temponodes (list (create-node (car bpm1) 0)
                                                      (create-node (-line (car bpm2)) 2)))) ;; Fix 2.
      )))
-
+!!#
 
 (define (show-reltempo-slider-popup-menu)
   (define reltempo (<ra> :get-reltempo))

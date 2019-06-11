@@ -900,7 +900,9 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "\n\n";
 
   if (crash_type!=CT_CRASH && THREADING_is_main_thread()){
-    tosend += QString(SCHEME_get_history()) + "\n\n";
+    const char *history = SCHEME_get_history();
+    tosend += QString(history) + "\n\n";
+    free((void*)history);
   }
   
 

@@ -1,6 +1,24 @@
 
 (provide 'sequencer.scm)
 
+(define *sequencer-left-part-area* #f)
+(define *sequencer-right-part-area* #f)
+
+(define *sequencer-window-gui* (if (defined? '*sequencer-window-gui*)
+                                   (begin
+                                     (<declare-variable> *sequencer-window-gui*)
+                                     *sequencer-window-gui*)
+                                   #f))
+
+(define *sequencer-window-gui-active* (if (defined? '*sequencer-window-gui-active*)
+                                          (begin
+                                            (<declare-variable> *sequencer-window-gui-active*)
+                                            *sequencer-window-gui-active*)
+                                          #f))
+
+(define2 *current-seqtrack-num* (curry-or not integer?) #f)
+
+
 (define (for-each-seqtracknum func)
   (let loop ((seqtracknum 0))
     (when (< seqtracknum (<ra> :get-num-seqtracks))
@@ -275,6 +293,30 @@
      (<ra> :get-seqblock-interior-start seqblocknum seqtracknum)))
       
 
+(define *old-selected-box-seqblocknum* -1)
+(define *old-selected-box-seqtracknum* -1)
+(define (set-seqblock-selected-box which-one seqblocknum seqtracknum)
+  ;;(c-display "   setting " which-one seqblocknum seqtracknum " old: " *old-selected-box-seqblocknum* *old-selected-box-seqtracknum*)
+  (when (and #t ;;#f
+             (or (not (= seqblocknum *old-selected-box-seqblocknum*))
+                 (not (= seqtracknum *old-selected-box-seqtracknum*)))
+             (>= *old-selected-box-seqtracknum* 0)
+             (< *old-selected-box-seqtracknum* (<ra> :get-num-seqtracks))
+             (>= *old-selected-box-seqblocknum* 0)
+             (< *old-selected-box-seqblocknum* (<ra> :get-num-seqblocks *old-selected-box-seqtracknum*)))
+    ;;(c-display (history-ow!))
+    ;;(c-display "UNSETTING ")
+    (<ra> :set-seqblock-selected-box (get-selected-box-num 'non) *old-selected-box-seqblocknum* *old-selected-box-seqtracknum*))
+  
+  (set! *old-selected-box-seqblocknum* seqblocknum)
+  (set! *old-selected-box-seqtracknum* seqtracknum)
+
+  (when (>= seqblocknum 0)
+    ;;(if (eq? which-one 'non)
+    ;;    (c-display "UNSETTING2 " which-one)
+    ;;    (c-display "SETTING2 " which-one))
+    (<ra> :set-seqblock-selected-box (get-selected-box-num which-one) seqblocknum seqtracknum)))
+
 
 ;; see enum SeqblockBoxSelected in nsmtracker.h
 (define (get-selected-box-num boxname)
@@ -419,6 +461,30 @@
         (set-seqblock-selected-box 'fade-right seqblocknum seqtracknum)
         (set-editor-statusbar (get-fade-string-right seqblocknum seqtracknum)))))
 
+(define (ask-user-about-first-audio-seqtrack2 callback)
+  (show-async-message (<gui> :get-sequencer-gui)
+                      (<-> "Are you sure?\n"
+                           "\n"
+                           "We use the first seqtrack for timing and grid, but audio seqtracks don't provide this information.\n"
+                           "In order to support timing and grid, we will switch to sequencer timing mode."
+                           )
+                      (list "No" "Yes") ;; yes-dont-show-again)
+                      :is-modal #t
+                      :callback callback))
+
+(define (ask-user-about-first-audio-seqtrack callback)
+  (if (<ra> :is-using-sequencer-timing)
+      (callback #t)
+      (ask-user-about-first-audio-seqtrack2
+       (lambda (res)
+         (define arg (string=? "Yes" res))
+         (undo-block
+          (lambda ()                               
+            (when arg
+              (<ra> :undo-sequencer)
+              (<ra> :set-using-sequencer-timing #t))
+            (callback arg)))))))
+
 (define (get-seqtrack-popup-menu-entries seqtracknum)
   (list
    (list "Swap with next seqtrack"
@@ -437,4 +503,85 @@
    (list "Set height"
          (lambda ()
            (show-select-both-seqtrack-size-types-gui seqtracknum)))))
+
+
+(define (get-sequencer-conf-menues)
+  (list 
+        "-------- Sequencer timeline"
+        (list
+         :radio-buttons
+         (list "Free"
+               :check (and (not (<ra> :is-seqlooping))
+                           (not (<ra> :is-seqpunching)))
+               (lambda (val)
+                 (c-display "new no-looping-or-punch:" val)))
+         (list "Looping"
+               :check (<ra> :is-seqlooping)
+               (lambda (val)
+                 (<ra> :set-seqlooping val)))
+         (list "Punch in/out (recording)"
+               :check (<ra> :is-seqpunching)
+               (lambda (val)
+                 (<ra> :set-seqpunching val)
+                 (c-display "new punch in/out:" val))))
+        ;;"------- Sequencer configuration" ;;Various"
+        "------- Sequencer lanes"
+        (list "Song tempo automation"
+              :check (<ra> :seqtempo-visible)
+              (lambda (doit)
+                (<ra> :set-seqtempo-visible doit)))
+        (list "Time"
+              :check (<ra> :show-time-sequencer-lane)
+              :enabled (or #t
+                           (not (<ra> :show-time-sequencer-lane))
+                           (<ra> :show-bars-and-beats-sequencer-lane))
+              (lambda (doit)
+                (if (and (not doit)
+                         (not (<ra> :show-bars-and-beats-sequencer-lane)))
+                    (<ra> :set-show-bars-and-beats-sequencer-lane #t))
+                    ;;(show-async-message (<gui> :get-sequencer-gui)
+                    ;;                    "Either the time lane or the bars+beats lane must be visible")
+                (<ra> :set-show-time-sequencer-lane doit)))
+        (list "Bars and beats"
+              :check (<ra> :show-bars-and-beats-sequencer-lane)
+              :enabled (or #t
+                           (not (<ra> :show-bars-and-beats-sequencer-lane))
+                           (<ra> :show-time-sequencer-lane))
+              (lambda (doit)
+                (if (and (not doit)
+                         (not (<ra> :show-time-sequencer-lane)))
+                    (<ra> :set-show-time-sequencer-lane #t))
+                    ;;(show-async-message (<gui> :get-sequencer-gui)
+                    ;;                    "Either the time lane or the bars+beats lane must be visible")
+                (<ra> :set-show-bars-and-beats-sequencer-lane doit)))
+        (list "Tempos"
+              :check (<ra> :show-tempos-sequencer-lane)
+              (lambda (doit)
+                (<ra> :set-show-tempos-sequencer-lane doit)))
+        (list "Signatures"
+              :check (<ra> :show-signatures-sequencer-lane)
+              (lambda (doit)
+                (<ra> :set-show-signatures-sequencer-lane doit)))
+        (list "Markers"
+              :check (<ra> :show-markers-sequencer-lane)
+              (lambda (doit)
+                (<ra> :set-show-markers-sequencer-lane doit)))
+        "-------"
+        (list :radio-buttons
+              (list "Use sequencer timing"
+                    :check (<ra> :is-using-sequencer-timing)
+                    :enabled (not (<ra> :seqtrack-for-audiofiles 0))
+                    (lambda (doit)
+                      (if doit
+                          (<ra> :set-using-sequencer-timing #t))))
+              (list "Use editor timing"
+                    :check (not (<ra> :is-using-sequencer-timing))
+                    :enabled (not (<ra> :seqtrack-for-audiofiles 0))
+                    (lambda (doit)
+                      (when doit
+                        (<ra> :set-using-sequencer-timing #f)))))
+        "-------"
+        (list "Preferences"
+              (lambda ()
+                (<ra> :open-sequencer-preferences-dialog)))))
 

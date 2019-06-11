@@ -6885,6 +6885,14 @@ const_char *getTimeString(const_char* time_format){
   return talloc_strdup(QTime::currentTime().toString(time_format).toUtf8().constData());
 }
 
+const_char *getTextFromHtml(const_char* html){
+  QTextDocument document;
+  
+  document.setHtml(html);
+
+  return talloc_strdup(document.toPlainText().toUtf8().constData());
+}
+  
 const_char *getHtmlFromText(const_char* text){
   QString html = QTextDocumentFragment::fromPlainText(text).toHtml("UTF-8");
 
@@ -6893,19 +6901,30 @@ const_char *getHtmlFromText(const_char* text){
   html.remove("<!--EndFragment-->");
   
   // Only keep what's inbetween <body>
-  int pos1 = html.indexOf("<body>");
-  int pos2 = html.lastIndexOf("</body>");
-
-  if (pos1>= 0 && pos2>5){
-    pos1 += QString("<body>").size();
-    if (pos2>pos1){
-      auto ref = html.midRef(pos1, pos2-pos1).toString();
-      return talloc_strdup(ref.toUtf8().constData());
+  {
+    int pos1 = html.indexOf("<body>");
+    int pos2 = html.lastIndexOf("</body>");
+    
+    if (pos1>= 0 && pos2>5){
+      pos1 += QString("<body>").size();
+      if (pos2>pos1){
+        html = html.midRef(pos1, pos2-pos1).toString();
+      }
     }
   }
 
-  printf("html: %s\n", html.toUtf8().constData());
-  R_ASSERT_NON_RELEASE(false);
+  // Remove <p> tags.
+  // <p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">&lt;hello&gt;</p>
+  {
+    int pos1 = html.indexOf("\">") + 2;
+    int pos2 = html.indexOf("</p>");
+    if (pos2 > pos1){
+      html = html.midRef(pos1, pos2-pos1).toString();
+    }
+  }
+  
+  //printf("html: %s\n", html.toUtf8().constData());
+  //R_ASSERT_NON_RELEASE(false);
 
   return talloc_strdup(html.toUtf8().constData());
 }

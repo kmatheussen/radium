@@ -9,7 +9,7 @@ extern LANGSPEC bool quantitize_note(const struct Blocks *block, struct Notes *n
 
 extern LANGSPEC void SCHEME_throw_catch(const char *symbol, const char *message); // Call this one to display backtrace into the message log. It throws, but it also catches its own exception. In practice, it jdoes the same as GFX_addMessage(SCHEME_get_history()), but in a different way, and less efficiently.
 extern LANGSPEC void SCHEME_throw(const char *symbol, const char *message);
-extern LANGSPEC const char *SCHEME_get_history(void);
+extern LANGSPEC const char *SCHEME_get_history(void); // The returned value should be freed with call to free().
 extern LANGSPEC bool SCHEME_mousepress(int button, float x, float y);
 extern LANGSPEC bool SCHEME_mousemove(int button, float x, float y);
 extern LANGSPEC bool SCHEME_mouserelease(int button, float x, float y);

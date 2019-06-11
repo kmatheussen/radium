@@ -428,6 +428,7 @@
                      :velocities (cut-pitchvelocity-keep-start velocities dplace #t)
                      :continues-next-block #f))))
 
+#||
 (define (split-notes notes place)
   (let loop ((bef '())
              (notes notes))
@@ -461,6 +462,8 @@
          (append (car (split-notes notes1 start2))
                  notes2
                  (cadr (split-notes notes1 end2))))))
+
+||#
 
 #!
 (pretty-print

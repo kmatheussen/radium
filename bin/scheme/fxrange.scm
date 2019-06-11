@@ -59,7 +59,7 @@
 (define (fxnodes->lists fxnodes)
   (map (lambda (fxnode)
          (list (fxnode :place) (fxnode :value) (fxnode :logtype)))
-       fxnodes0))
+       fxnodes))
 
 
 (define (find-fx fxs fxname)

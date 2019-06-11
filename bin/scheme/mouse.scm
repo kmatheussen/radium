@@ -2,37 +2,8 @@
 
 (my-require 'sequencer.scm)
 (my-require 'seqblock_editor.scm)
-
-(define-constant *left-button* 1) ;; TR_LEFTMOUSE
-(define-constant *middle-button* 3) ;; TR_MIDDLEMOUSE
-(define-constant *right-button* 5) ;; TR_RIGHTMOUSE
-
-(define-constant *is-pressing* 1) ;; API_MOUSE_PRESSING
-(define-constant *is-moving* 2) ;; API_MOUSE_MOVING
-(define-constant *is-releasing* 3)  ;; API_MOUSE_RELEASING
-(define-constant *is-leaving* 4)  ;; API_MOUSE_LEAVING (mouse has left the qt widget)
-(define-constant *is-entering* 5)  ;; API_MOUSE_ENTERING (mouse has entered the qt widget)
-
-(define (select-button? Button)
-  (= *left-button* Button))
-
-(define (menu-button? Button)
-  (= *right-button* Button))
-
-(define (left-or-right-button? Button)
-  (or (= *left-button* Button)
-      (= *right-button* Button)))
-
-(define *last-statusbar-id* -1)
-
-(define (set-editor-statusbar text)
-  (set! *last-statusbar-id* (<ra> :set-statusbar-text text)))
-
-(define (set-statusbar-value val)
-  (set-editor-statusbar (<-> val)))
-
-(define (set-velocity-statusbar-text value)
-  (set-editor-statusbar (<-> "Velocity: " (one-decimal-percentage-string value) "%")))
+(my-require 'seqblock_audio.scm)
+(my-require 'mouse-primitives.scm)
 
 (define-constant *shift-right-mouse* "Shift + Right Mouse")
 
@@ -234,15 +205,8 @@
 
 ;; Mouse cycles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define-struct mouse-cycle
-  :press-func 
-  :drag-func #f
-  :release-func #f
-  :inside? #f ;; used by the nonpress-mouse-cycle in area.scm
-  )
 
 (define2 *mouse-cycles* list? '())
-(define2 *current-mouse-cycle* (curry-or not hash-table?) #f)
 
 (define (add-mouse-cycle $mouse-cycle)
   (push-back! *mouse-cycles*
@@ -256,8 +220,6 @@
   (find-if (lambda (cycle)
              ((cycle :press-func) $button $x $y))
            *mouse-cycles*))
-
-(define *check-mouse-horizontal-modifier* #t)
 
 (define (create-new-seqblock?)
   (if #t
@@ -277,15 +239,6 @@
       (<ra> :alt2-pressed)
       (<ra> :control-pressed)))
       
-
-(define (only-y-direction)
-  (and *check-mouse-horizontal-modifier*
-       (not (<ra> :horizontal-modifier-pressed))
-       (<ra> :vertical-modifier-pressed)))
-
-(define (only-x-direction)
-  (and (not (<ra> :vertical-modifier-pressed))
-       (<ra> :horizontal-modifier-pressed)))
 
 (delafina (add-delta-mouse-handler :press :move-and-release :release #f :mouse-pointer-is-hidden-func #f)
   (define prev-x #f)
@@ -487,16 +440,6 @@
   (set! current-pianonote-has-been-set #t)
   (<ra> :set-current-pianonote pianonotenum notenum tracknum))
 ;;  (set-editor-statusbar (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pianonotenum tracknum)))))
-
-(define2 mouse-pointer-has-been-set boolean? #f)
-(define2 mouse-pointer-guinum number? -4)
-(define (set-mouse-pointer func guinum)
-  ;;(c-display "  setting mouse func to" func)
-  (set! mouse-pointer-has-been-set #t)
-  (set! mouse-pointer-guinum guinum)
-  ;;(c-display "  setting mouse func to" func)
-  (func guinum)
-  )
 
 ;; TODO: block->is_dirty is set unnecessarily often to true this way.
 (define (cancel-current-stuff)
@@ -1087,7 +1030,7 @@
                           :Forgiving-box #f
                           ))
                                   
-
+#||
 (delafina (add-vertical-handler :Get-handler-data
                                 :Get-y1
                                 :Get-y2
@@ -1143,15 +1086,15 @@
                                        (if Publicize
                                            (Publicize (Info :handler-data))))
                           :Get-pixels-per-value-unit (lambda (Info)
-                                                       (/ (- (Get-x2 (Info :handler-data))
-                                                             (Get-x1 (Info :handler-data)))
+                                                       (/ (- (Get-y2 (Info :handler-data))
+                                                             (Get-y1 (Info :handler-data)))
                                                           (- (Get-max-value (Info :handler-data))
                                                              (Get-min-value (Info :handler-data)))))
                           :Mouse-pointer-func Mouse-pointer-func
                           :Get-guinum Get-guinum
                           :Forgiving-box #f
                           ))
-                                  
+||#                                  
 
 
 
@@ -1259,30 +1202,6 @@
 
 ;; status bar and Update mouse pointer shape when moved above various things
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define *old-selected-box-seqblocknum* -1)
-(define *old-selected-box-seqtracknum* -1)
-(define (set-seqblock-selected-box which-one seqblocknum seqtracknum)
-  ;;(c-display "   setting " which-one seqblocknum seqtracknum " old: " *old-selected-box-seqblocknum* *old-selected-box-seqtracknum*)
-  (when (and #t ;;#f
-             (or (not (= seqblocknum *old-selected-box-seqblocknum*))
-                 (not (= seqtracknum *old-selected-box-seqtracknum*)))
-             (>= *old-selected-box-seqtracknum* 0)
-             (< *old-selected-box-seqtracknum* (<ra> :get-num-seqtracks))
-             (>= *old-selected-box-seqblocknum* 0)
-             (< *old-selected-box-seqblocknum* (<ra> :get-num-seqblocks *old-selected-box-seqtracknum*)))
-    ;;(c-display (history-ow!))
-    ;;(c-display "UNSETTING ")
-    (<ra> :set-seqblock-selected-box (get-selected-box-num 'non) *old-selected-box-seqblocknum* *old-selected-box-seqtracknum*))
-  
-  (set! *old-selected-box-seqblocknum* seqblocknum)
-  (set! *old-selected-box-seqtracknum* seqtracknum)
-
-  (when (>= seqblocknum 0)
-    ;;(if (eq? which-one 'non)
-    ;;    (c-display "UNSETTING2 " which-one)
-    ;;    (c-display "SETTING2 " which-one))
-    (<ra> :set-seqblock-selected-box (get-selected-box-num which-one) seqblocknum seqtracknum)))
 
 (add-mouse-move-handler
  :move (lambda ($button X Y)
@@ -4381,86 +4300,6 @@
 
 
 
-(define (get-sequencer-conf-menues)
-  (list 
-        "-------- Sequencer timeline"
-        (list
-         :radio-buttons
-         (list "Free"
-               :check (and (not (<ra> :is-seqlooping))
-                           (not (<ra> :is-seqpunching)))
-               (lambda (val)
-                 (c-display "new no-looping-or-punch:" val)))
-         (list "Looping"
-               :check (<ra> :is-seqlooping)
-               (lambda (val)
-                 (<ra> :set-seqlooping val)))
-         (list "Punch in/out (recording)"
-               :check (<ra> :is-seqpunching)
-               (lambda (val)
-                 (<ra> :set-seqpunching val)
-                 (c-display "new punch in/out:" val))))
-        ;;"------- Sequencer configuration" ;;Various"
-        "------- Sequencer lanes"
-        (list "Song tempo automation"
-              :check (<ra> :seqtempo-visible)
-              (lambda (doit)
-                (<ra> :set-seqtempo-visible doit)))
-        (list "Time"
-              :check (<ra> :show-time-sequencer-lane)
-              :enabled (or #t
-                           (not (<ra> :show-time-sequencer-lane))
-                           (<ra> :show-bars-and-beats-sequencer-lane))
-              (lambda (doit)
-                (if (and (not doit)
-                         (not (<ra> :show-bars-and-beats-sequencer-lane)))
-                    (<ra> :set-show-bars-and-beats-sequencer-lane #t))
-                    ;;(show-async-message (<gui> :get-sequencer-gui)
-                    ;;                    "Either the time lane or the bars+beats lane must be visible")
-                (<ra> :set-show-time-sequencer-lane doit)))
-        (list "Bars and beats"
-              :check (<ra> :show-bars-and-beats-sequencer-lane)
-              :enabled (or #t
-                           (not (<ra> :show-bars-and-beats-sequencer-lane))
-                           (<ra> :show-time-sequencer-lane))
-              (lambda (doit)
-                (if (and (not doit)
-                         (not (<ra> :show-time-sequencer-lane)))
-                    (<ra> :set-show-time-sequencer-lane #t))
-                    ;;(show-async-message (<gui> :get-sequencer-gui)
-                    ;;                    "Either the time lane or the bars+beats lane must be visible")
-                (<ra> :set-show-bars-and-beats-sequencer-lane doit)))
-        (list "Tempos"
-              :check (<ra> :show-tempos-sequencer-lane)
-              (lambda (doit)
-                (<ra> :set-show-tempos-sequencer-lane doit)))
-        (list "Signatures"
-              :check (<ra> :show-signatures-sequencer-lane)
-              (lambda (doit)
-                (<ra> :set-show-signatures-sequencer-lane doit)))
-        (list "Markers"
-              :check (<ra> :show-markers-sequencer-lane)
-              (lambda (doit)
-                (<ra> :set-show-markers-sequencer-lane doit)))
-        "-------"
-        (list :radio-buttons
-              (list "Use sequencer timing"
-                    :check (<ra> :is-using-sequencer-timing)
-                    :enabled (not (<ra> :seqtrack-for-audiofiles 0))
-                    (lambda (doit)
-                      (if doit
-                          (<ra> :set-using-sequencer-timing #t))))
-              (list "Use editor timing"
-                    :check (not (<ra> :is-using-sequencer-timing))
-                    :enabled (not (<ra> :seqtrack-for-audiofiles 0))
-                    (lambda (doit)
-                      (when doit
-                        (<ra> :set-using-sequencer-timing #f)))))
-        "-------"
-        (list "Preferences"
-              (lambda ()
-                (<ra> :open-sequencer-preferences-dialog)))))
-
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)                                
                                 (if (and (= Button *right-button*)
@@ -4509,8 +4348,6 @@
              :start-time (+ (seqblock :start-time) delta-time)
              :end-time (+ (seqblock :end-time) delta-time)
              :seqtracknum (+ (seqblock :seqtracknum) delta-tracknum)))
-
-(define2 *current-seqtrack-num* (curry-or not integer?) #f)
 
 (define (get-seqtracknum X Y)
   (define num-seqtracks (<ra> :get-num-seqtracks))
@@ -4883,6 +4720,7 @@
   ;;(c-display "Nt2: " Nt2 ". Ni2:" Ni2 ". stretch:" stretch ". new-i2:" new-i2 ". min-new-i2:" (+ (max 16 (* *min-seqblock-width* samples-per-pixel)) i1))
   (list Nt2 Ni2))
 
+#||
 (define (get-new-start seqblock-info mousex)
   (if use-grid
       (<ra> :get-seq-gridded-time (round mousex))
@@ -4892,7 +4730,7 @@
   (if use-grid
       (<ra> :get-seq-gridded-time (round mousex))
       mousex))
-
+||#
 
 (define gakkgakk-has-moved-left-interior #f)
 (define gakkgakk-left-interior-value 0)
@@ -5057,9 +4895,8 @@
                                      (<ra> :undo-seqblock seqblocknum seqtracknum))
                         
                         :Create-new-node (lambda (X seqtracknum callback)
-                                           (define seqtracknum (seqblock-info :seqtracknum))
-                                           (define seqblocknum (seqblock-info :seqblocknum))
-                                           (<ra> :undo-seqblock seqblocknum seqtracknum))
+                                           (if (not (<ra> :release-mode))
+                                               (assert #f)))
                         
                         :Release-node (lambda (seqblock-info)
                                         (when gakkgakk-has-moved-right-interior
@@ -5356,10 +5193,12 @@
          0 width
          0 duration))
 
+#||
 (define (get-max-seqblock-start-pos min-num-pixels seqtracknum seqblocknum)
   (define end-time (<ra> :get-seqblock-end-time seqblocknum seqtracknum))
   (- end-time (get-min-seqblock-duration min-num-pixels seqblock-info))
   )
+||#
 
 (define (get-min-seqblock-end-pos min-num-pixels seqblock-info)
   (define seqtracknum (seqblock-info :seqtracknum))
