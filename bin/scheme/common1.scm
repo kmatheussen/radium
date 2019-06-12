@@ -515,18 +515,7 @@
               "abc")
 
 
-(define (string-starts-with? string startswith)
-  (define (loop string startswith)
-    (cond ((null? startswith)
-           #t)
-          ((null? string)
-           #f)
-          ((char=? (car string) (car startswith))
-           (loop (cdr string) (cdr startswith)))
-          (else
-           #f)))
-  (loop (string->list string)
-        (string->list startswith)))
+;; string-starts-with? is moved to mylint.scm.
 
 (***assert*** (string-starts-with? "" "") #t)
 (***assert*** (string-starts-with? "asdf" "as") #t)

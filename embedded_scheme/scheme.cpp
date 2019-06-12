@@ -2151,7 +2151,7 @@ s7_pointer RADIUM_SCHEME_eval2(const char *code){
   return catch_call(s7,
                     s7_list_nl(s7,
                                3,
-                               Protect(find_scheme_value(s7, "eval-string")).v,
+                               Protect(find_scheme_value(s7, "mylint-and-eval-string")).v,
                                Protect(s7_make_string(s7, code)).v,
                                s7_rootlet(s7), // Eval in global environment
                                NULL

@@ -267,7 +267,7 @@
 !!#
                      
 (define (select-seqtrack-size-type seqtracknum is-min)
-  (define gui (get-select-seqtrack-size-type-gui seqtracknum is-min))
+  (define gui (get-select-seqtrack-size-type-gui seqtracknum is-min #f))
   (<gui> :set-parent gui (<gui> :get-sequencer-gui))
   (<gui> :show gui))
   

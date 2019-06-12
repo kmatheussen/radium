@@ -28,6 +28,19 @@
         (loop (car b)
               (cdr b)))))
 
+(define (string-starts-with? string startswith)
+  (define (loop string startswith)
+    (cond ((null? startswith)
+           #t)
+          ((null? string)
+           #f)
+          ((char=? (car string) (car startswith))
+           (loop (cdr string) (cdr startswith)))
+          (else
+           #f)))
+  (loop (string->list string)
+        (string->list startswith)))
+
 ;; redefined later
 (define (<-> . args)
   (apply string-append (map (lambda (something)
@@ -549,17 +562,22 @@
 
 !!#
 
+;;(define (find-number-of-args-for-function-call)
+  
+
 (define (mylint code)
   (define (warn what)
     (define message (<-> "==========\"READER Warning\": " what "========="))
     (newline)
     (newline)
     (display message)
-    (if (ra:release-mode)
-        (safe-display-txt-as-displayable-as-possible message)
-        (begin
-          (error message)))
-    )
+    (when *is-initializing*
+      (if (ra:release-mode)
+          (safe-display-txt-as-displayable-as-possible message)
+          (begin
+            (error message)))
+      ))
+  
   (define (warn-not-defined what for)
     (warn (<-> "\"" what "\" has not been defined " for)))
 
@@ -595,10 +613,21 @@
                                         ((not (is-defined? funcname))
                                          (warn-not-defined funcname (<-> "in function call " expr)))
                                         (else
-                                         (check-atoms-in-expr expr))))
+                                         (check-atoms-in-expr expr)))
+                                  (if (and (defined? funcname)
+                                           (not (memq funcname *schemecodeparser-global-declarations*))
+                                           (not (memq funcname (schemecodeparser-get-varlist))))
+                                      (let ((func (eval funcname)))
+                                        (when (and (procedure? func)
+                                                 (not (aritable? func (- (length expr) 1)))
+                                                 (not (string-starts-with? (symbol->string funcname) "ra:gui_")) ;; because of the the <gui> macro. TODO: Fix the <gui> macro.
+                                                 (or (null? (procedure-source func))
+                                                     (not (eq? 'lambda* (car (procedure-source func)))))) ;; TODO: Fix this. define*/lambda*/delafina are not checked now.
+                                          ;;(c-display "varlist:")
+                                          ;;(for-each c-display (schemecodeparser-get-varlist))
+                                          (warn (<-> "Wrong number of arguments for \"" funcname "\" in " expr ". Arity:" (arity func)))))))
                                 '_schemecodeparser-elsefunc-rejected-it)))
                                          
-
 
 #!!
 
@@ -658,14 +687,51 @@
           (if (eof-object? expr)
               #t
               (begin
-                (display filename) (display ": ") (display expr)
-                (newline)
+                (when *is-initializing*
+                  (display filename) (display ": ") (display expr)
+                  (newline))
                 (mylint expr)
                 (loop))))))))
-
 
 #!!
 (load "mylint.scm")
 (get-expression-from-file "/home/kjetil/radium/bin/scheme/define-match.scm")
 (mylint-file "/home/kjetil/radium/bin/scheme/common1.scm")
+!!#
+
+
+(define (mylint-string string)
+  (call-with-input-string
+   string
+   (lambda (f)
+     (let loop ((ret #<undefined>))
+       (let ((expr (read f)))                 
+         (if (eof-object? expr)
+             ret
+             (begin
+               (display expr)
+               (newline)
+               (loop (mylint expr)))))))))
+
+(define (mylint-and-eval-string string . envlist)
+  (define env (if (null? envlist)
+                  (rootlet)
+                  (car envlist)))
+  (call-with-input-string
+   string
+   (lambda (f)
+     (let loop ((ret #<undefined>))
+       (let ((expr (read f)))                 
+         (if (eof-object? expr)
+             ret
+             (begin
+               ;;(display expr) (newline)
+               (mylint expr)
+               (loop (eval expr env)))))))))
+  
+#!!
+(mylint-and-eval-string "(c-display 'hello sdf)")
+(lambda (a)
+  (+ w bg w  ewr ))
+(c-display "a")
 !!#
