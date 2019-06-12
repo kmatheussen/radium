@@ -2264,6 +2264,19 @@ void evalScheme(const_char *code){
   SCHEME_eval(code);
 }
 
+static bool g_error_check_eval_scheme = false;
+
+bool errorCheckEvalScheme(void){
+#if !defined(RELEASE)
+  return true;
+#endif
+  return g_error_check_eval_scheme;
+}
+
+void setErrorCheckEvalScheme(bool error_check){
+  g_error_check_eval_scheme = error_check;
+}
+
 void evalPython(const_char *code){
   PyRun_SimpleString(code);
 }

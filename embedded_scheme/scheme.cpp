@@ -2136,7 +2136,10 @@ bool SCHEME_mouserelease(int button, float x, float y){
 dyn_t SCHEME_eval_withreturn(const char *code){
   ScopedEvalTracker eval_tracker;
 
-  return S7CALL2(dyn_charpointer,"eval-string",code);
+  if(errorCheckEvalScheme())
+    return S7CALL2(dyn_charpointer,"mylint-and-eval-string",code);
+  else
+    return S7CALL2(dyn_charpointer,"eval-string",code);
 }
 
 // called from s7webserver.
@@ -2162,7 +2165,10 @@ s7_pointer RADIUM_SCHEME_eval2(const char *code){
 void SCHEME_eval(const char *code){
   ScopedEvalTracker eval_tracker;
 
-  S7CALL2(void_charpointer,"eval-string",code);
+  if(errorCheckEvalScheme())
+    S7CALL2(void_charpointer,"mylint-and-eval-string",code);
+  else
+    S7CALL2(void_charpointer,"eval-string",code);
 }
 
 int SCHEME_get_webserver_port(void){
