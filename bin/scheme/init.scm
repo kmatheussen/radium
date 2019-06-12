@@ -407,8 +407,11 @@
   (test a b))
 
 
+;; Takes a lot of time. Don't want to run every time.
+(define-constant *mylint-load-file-during-startup* (and (not (ra:release-mode))
+                                                        (= (random 10) 0)))
 
-
+  
 ;; Redefine load so that we can show a warning window if redefining a symbol when loading a file for the first time
 ;;
 (let ((org-load load))
@@ -441,7 +444,9 @@
               (set! *currently-reloading-file* old-reloading)
               (set! *currently-loading-file* old-loading-filename)
 
-              (mylint-file filename)
+              (if (or (not *is-initializing*)
+                      *mylint-load-file-during-startup*)
+                  (mylint-file filename))
         
               (if (and #f do-rethrow)
                   (error 'loading-failed)

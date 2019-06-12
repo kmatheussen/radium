@@ -708,9 +708,6 @@
                                             :get-color
                                             :seqtracknum)
 
-  (define (pan-enabled?)
-    (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))
-
   (define (get-pan-slider-value normalized-value)
     (floor (scale normalized-value
                   0 1
@@ -729,7 +726,7 @@
   (define-override (paint)
     (define value (get-pan))
     (set! last-painted-normalized-pan (scale value -90 90 0 1))
-    (define is-on (pan-enabled?))
+    (define is-on (pan-enabled? instrument-id))
     ;;(<gui> :filled-box gui (get-color) x1 y1 x2 y2)
     (define background-color (get-color))
     (define background (if is-on
@@ -797,7 +794,7 @@
     (<ra> :set-instrument-effect instrument-id "System Pan" (scale pan -90 90 0 1)))
 
   (define (enable! onoff)
-    (when (not (eq? onoff (pan-enabled?)))
+    (when (not (eq? onoff (pan-enabled? instrument-id)))
       (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
       (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0))))
 
@@ -806,7 +803,7 @@
   (define (show-popup)
     (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
           (lambda ()
-            (define pan-enabled (pan-enabled?))
+            (define pan-enabled (pan-enabled? instrument-id))
             (popup-menu ;;(list "Reset Pan" (lambda ()
              ;;                (<ra> :undo-instrument-effect instrument-id "System Pan")
              ;;                (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))

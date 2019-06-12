@@ -409,7 +409,7 @@
 ||#
 
 
-(define-expansion (<gui> command . args)
+(c-define-expansion (*<gui>* command . args)
   (define (get-funcname) (<_> 'ra:gui_ (keyword->symbol command)))
 
   (cond ((eq? command :group)
@@ -773,7 +773,7 @@
 (define (disable-gui-updates-block gui block)
   (if (not (<gui> :is-open gui))
       (let ((message (<-> "Error! disable-gui-updates-block: GUI " gui " is closed.")))
-        (display "\n\n\n ==============   " message " ===============\n\n\n")
+        (c-display "\n\n\n ==============   " message " ===============\n\n\n")
         (<ra> :show-message message)
         (c-display (safe-history-ow!))
         (assert #f))
