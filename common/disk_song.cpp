@@ -315,6 +315,6 @@ void DLoadSong(struct Root *newroot,struct Song *song){
 
         if (disk_load_version<0.875)
           DLoadPlayList(newroot,song);
-        
+
         song->tracker_windows->must_redraw = true;
 }
