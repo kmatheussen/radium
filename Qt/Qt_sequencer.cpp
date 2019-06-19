@@ -5174,7 +5174,10 @@ void SEQBLOCK_update(const struct SeqTrack *seqtrack, const struct SeqBlock *seq
 
   if (seqtracknum < 0)
     return;
-  
+
+  if (ATOMIC_GET_RELAXED(g_needs_update) != 0)
+    SEQUENCER_update(0);
+      
   const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, seqblock->id==g_curr_seqblock_id);
   w.update_seqblock(seqblock);
 }
@@ -5207,9 +5210,11 @@ void SEQUENCER_update(uint32_t what){
          );
 });
 
-  if (THREADING_is_main_thread()==false || g_sequencer_widget==NULL || PLAYER_current_thread_has_lock() || g_qt_is_painting){
-    R_ASSERT_NON_RELEASE( (what & SEQUPDATE_HEADERS)==false);
-    R_ASSERT_NON_RELEASE( (what & SEQUPDATE_TRACKORDER)==false);
+  if (THREADING_is_main_thread()==false || g_sequencer_widget==NULL || PLAYER_current_thread_has_lock() || g_qt_is_painting || g_is_loading){
+    if (!g_is_loading){
+      R_ASSERT_NON_RELEASE( (what & SEQUPDATE_HEADERS)==false);
+      R_ASSERT_NON_RELEASE( (what & SEQUPDATE_TRACKORDER)==false);
+    }
     ATOMIC_OR_RETURN_OLD_RELAXED(g_needs_update, what);
     return;
   }
