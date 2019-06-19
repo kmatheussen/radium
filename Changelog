@@ -1,3 +1,57 @@
+Changes 5.9.65 -> 5.9.67:
+* Load: Fix probable memory corruption. Seems to
+  rarely have had any consequences though.
+* Windows: Fix crashreporter. Probably broken since
+  Radium 5.9.61.
+* Mixer: Pressing the Delete key deletes all selected
+  mixer objects.
+* Scripting: Optionally check S7 scheme code for
+  unknown symbols and wrong number of arguments
+  before evaluating. Call errorCheckEvalScheme to
+  enable. (Always enabled in debug mode)
+* Edit: Fix missing warning about overriding
+  keybinding. Probably broken around 5.9.60.
+* Scripting: Improve S7 error display.
+* GUI: Never display a solo-ed instrument as
+  implicitly muted.
+* GUI: Fix right shift not always working for playing
+  current block. For instance after using a popup
+  menu.
+* Mixer: Possible fix for hanging mixer-direction
+  popup menu.
+* Instrument widget: Possible fix for hanging
+  auto-suspend popup menu.
+* Sequencer: Fix wrong seqblock being set as current
+  seqblock after adding a new seqblock from the
+  seqblock browser.
+* Editor: Fix track paste and track cut not updating
+  swing when selected from the popup menu.
+* Editor Add "Clear track" option to the main menus
+  under "Editor Edit" -> "Track", and to the track
+  popup menu.
+* Editor: Add Left Alt + Delete as keybinding for
+  clearing track.
+* Editor: Fix various situations that could make
+  illegal cursor position.
+* Internal: Optimize hash tables a little bit
+* Editor: Fix undo in "Cut track" in the track popup
+  menu.
+* Scripting: Update S7
+* API:
+  * New: deleteAllNotesAndStopsInTrack,
+    deleteAllStopsInTrack, metronomeEnabled,
+    clearTrack, errorCheckEvalScheme,
+    setErrorCheckEvalScheme, getTextFromHtml
+  * Make undo in deleteAllNotesInTrack
+  * Make undo in clearTrackFX
+  * Document when isLeftMousePressed,
+    isRightMousePressed, and isMiddleMousePressed
+    works.
+  * Remove the surrounding p-tags from the result
+    of calling getHtmlFromText.
+
+
+
 Changes 5.9.64 -> 5.9.65:
 * Mixer: Fix quirky behavior in send-sliders when
   trying to set new value after undoing or redoing.
