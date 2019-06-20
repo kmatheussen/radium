@@ -884,8 +884,9 @@
                  (<ra> :set-instrument-solo instrument-id doit))
                instruments))))
 
+         
 (define (FROM_C-switch-solo-for-selected-instruments)
-  (let ((instruments (to-list (<ra> :get-selected-instruments))))
+  (let ((instruments (to-list (<ra> :get-extended-selected-instruments))))
     (if (not (null? instruments))
         (let ((doit (not (> (<ra> :get-instrument-effect (car instruments) "System Solo On/Off") 0.5))))
           (FROM_C-set-solo-for-instruments instruments doit)))))
@@ -900,7 +901,7 @@
                instruments))))
 
 (define (FROM_C-switch-mute-for-selected-instruments)
-  (let ((instruments (to-list (<ra> :get-selected-instruments))))
+  (let ((instruments (to-list (<ra> :get-extended-selected-instruments))))
     (if (not (null? instruments))
         (let ((doit (not (< (<ra> :get-instrument-effect (car instruments) "System Volume On/Off") 0.5))))
           (FROM_C-set-mute-for-instruments instruments doit)))))
@@ -915,18 +916,26 @@
                instruments))))
 
 (define (FROM_C-switch-bypass-for-selected-instruments)
-  (let ((instruments (to-list (<ra> :get-selected-instruments))))
+  (let ((instruments (to-list (<ra> :get-extended-selected-instruments))))
     (if (not (null? instruments))
         (let ((doit (not (< (<ra> :get-instrument-effect (car instruments) "System Effects On/Off") 0.5))))
           (FROM_C-set-bypass-for-instruments instruments doit)))))
 
 
+;(define (delete-all-selected-instruments)
+;  (undo-block (lambda ()
+;                (for-each (lambda (id-instrument)
+;                            
+;                            (if (string=? "Sample Player" (<ra> :get-instrument-type-name id-instrument))
+;                                (<ra> :set-random-instrument-sample id-instrument)))
+;                          (<ra> :get-extended-selected-instruments)))))
+                
 (define (set-random-sample-for-all-selected-sampler-instruments)
   (undo-block (lambda ()
                 (for-each (lambda (id-instrument)
                             (if (string=? "Sample Player" (<ra> :get-instrument-type-name id-instrument))
                                 (<ra> :set-random-instrument-sample id-instrument)))
-                          (<ra> :get-selected-instruments)))))
+                          (<ra> :get-extended-selected-instruments)))))
 
 
 #||

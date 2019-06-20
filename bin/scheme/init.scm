@@ -407,9 +407,24 @@
   (test a b))
 
 
+(define-macro (***assert-error*** a what)
+  `(***assert*** (let ((ret #f))
+                   (catch #t
+                          (lambda ()
+                            ,a)
+                          (lambda args
+                            (if (eq? ,what (car args))
+                                (set! ret #t))))
+                   ret)
+                 #t))
+
+
+
 ;; Takes a lot of time. Don't want to run every time.
 (define-constant *mylint-load-file-during-startup* (and (not (ra:release-mode))
-                                                        (= (random 10) 0)))
+                                                        (= (random 10) 0)
+                                                        (not (string=? (ra:get-os-name) "windows")) ;; Takes a very long time on windows, at least if running in normal console.
+                                                        ))
 
   
 ;; Redefine load so that we can show a warning window if redefining a symbol when loading a file for the first time
