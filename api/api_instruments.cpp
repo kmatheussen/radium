@@ -1292,8 +1292,42 @@ void startRecordingInstrumentAutomationInEditor(int64_t instrument_id, const_cha
   PLUGIN_set_recording_automation(plugin, effect_num, do_start_recording_not_stop_recording);
 }
 
+bool getInstrumentSolo(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+  
+  return ATOMIC_GET(plugin->solo_is_on);
+}
+
 void setInstrumentSolo(int64_t instrument_id, bool do_solo){
   S7CALL2(void_int_bool,"FROM-C-set-solo!", instrument_id, do_solo);
+}
+
+bool switchInstrumentSolo(int64_t instrument_id){
+  bool set_to = !getInstrumentSolo(instrument_id);
+  setInstrumentSolo(instrument_id, set_to);
+  return set_to;
+}
+  
+bool getInstrumentMute(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+  
+  return !ATOMIC_GET(plugin->volume_is_on);
 }
 
 void setInstrumentMute(int64_t instrument_id, bool do_mute){
@@ -1309,6 +1343,26 @@ void setInstrumentMute(int64_t instrument_id, bool do_mute){
   ADD_UNDO(AudioEffect_CurrPos(patch, effect_num));
 
   PLUGIN_set_effect_value(plugin, -1, effect_num, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+}
+
+bool switchInstrumentMute(int64_t instrument_id){
+  bool set_to = !getInstrumentMute(instrument_id);
+  setInstrumentMute(instrument_id, set_to);
+  return set_to;
+}
+  
+bool getInstrumentBypass(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+
+  return PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_PLUGIN) < 0.5;
 }
 
 void setInstrumentBypass(int64_t instrument_id, bool do_bypass){
@@ -1334,6 +1388,12 @@ void setInstrumentBypass(int64_t instrument_id, bool do_bypass){
   PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 }
 
+bool switchInstrumentBypass(int64_t instrument_id){
+  bool set_to = !getInstrumentBypass(instrument_id);
+  setInstrumentBypass(instrument_id, set_to);
+  return set_to;
+}
+  
 
 void setSoloForInstruments(dynvec_t instruments, bool doit){
   S7CALL2(void_dynvec_bool, "FROM_C-set-solo-for-instruments", instruments, doit);
@@ -1625,6 +1685,21 @@ dynvec_t getSelectedInstruments(void){
 
   return ret;
 }
+
+dynvec_t getExtendedSelectedInstruments(void){
+  dynvec_t ret = getSelectedInstruments();
+
+  if (ret.num_elements==0){
+
+    int64_t curr = getCurrentInstrument();
+    if (curr >= 0)
+      DYNVEC_push_back(&ret, DYN_create_int(curr));
+
+  }
+  
+  return ret;
+}
+    
 
 int numSelectedInstruments(void){
   int ret = 0;

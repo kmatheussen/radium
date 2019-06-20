@@ -1286,7 +1286,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
     cut = create_menu_entry(&v, "Cut", "ra:cut-selected-mixer-objects");
     
-    delete_ = VECTOR_push_back(&v, "Delete"); // sound objects");
+    delete_ = create_menu_entry(&v, "Delete", "ra:delete-selected-mixer-objects"); // sound objects");
 
     VECTOR_push_back(&v, "--------");
     
@@ -1294,14 +1294,14 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     VECTOR_push_back(&v, "--------");
     show_mixer_strips = VECTOR_push_back(&v, "Create new mixer strips window for the selected objects");
     VECTOR_push_back(&v, "--------");
-    solo_several = VECTOR_push_back(&v, "Solo all selected");
-    unsolo_several = VECTOR_push_back(&v, "Un-solo all selected");
+    solo_several = create_menu_entry(&v, "Solo all selected", "ra:switch-solo-for-selected-instruments");
+    unsolo_several = create_menu_entry(&v, "Un-solo all selected", "ra:switch-solo-for-selected-instruments");
     VECTOR_push_back(&v, "--------");
-    mute_several = VECTOR_push_back(&v, "Mute all selected");
-    unmute_several = VECTOR_push_back(&v, "Un-mute all selected");
+    mute_several = create_menu_entry(&v, "Mute all selected", "ra:switch-mute-for-selected-instruments");
+    unmute_several = create_menu_entry(&v, "Un-mute all selected", "ra:switch-mute-for-selected-instruments");
     VECTOR_push_back(&v, "--------");
-    bypass_several = VECTOR_push_back(&v, "Bypass all selected");
-    unbypass_several = VECTOR_push_back(&v, "Un-bypass all selected");
+    bypass_several = create_menu_entry(&v, "Bypass all selected", "ra:switch-bypass-for-selected-instruments");
+    unbypass_several = create_menu_entry(&v, "Un-bypass all selected", "ra:switch-bypass-for-selected-instruments");
     VECTOR_push_back(&v, "--------");
     config_color = VECTOR_push_back(&v, "Configure color");
     generate_new_color = VECTOR_push_back(&v, "Generate new color");
@@ -1334,33 +1334,33 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     copy = create_menu_entry(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Copy" : "Copy", "ra:copy-selected-mixer-objects");
     
     cut = create_menu_entry(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Cut" : "Cut", "ra:cut-selected-mixer-objects");
-    
-    delete_ = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Delete" : "Delete"); // sound object");
+
+    delete_ = create_menu_entry(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Delete" : "Delete", "ra:delete-selected-mixer-objects");
 
     VECTOR_push_back(&v, "--------");
 
     if (ATOMIC_GET(plugin->solo_is_on)){
-      solo = VECTOR_push_back(&v, "[check on]Solo");    
+      solo = create_menu_entry(&v, "[check on]Solo", "ra:switch-solo-for-selected-instruments");
       //unsolo = VECTOR_push_back(&v, "Un-solo");
     }else{
-      solo = VECTOR_push_back(&v, "[check off]Solo");    
+      solo = create_menu_entry(&v, "[check off]Solo", "ra:switch-solo-for-selected-instruments");
       //unsolo = VECTOR_push_back(&v, "[disabled]Un-solo");
     }
 
     VECTOR_push_back(&v, "--------");
         
     if (!ATOMIC_GET(plugin->volume_is_on)){
-      mute = VECTOR_push_back(&v, "[check on]Mute");
+      mute = create_menu_entry(&v, "[check on]Mute", "ra:switch-mute-for-selected-instruments");
       //unmute = VECTOR_push_back(&v, "Un-mute");
     }else{
-      mute = VECTOR_push_back(&v, "[check off]Mute");
+      mute = create_menu_entry(&v, "[check off]Mute", "ra:switch-mute-for-selected-instruments");
       //unmute = VECTOR_push_back(&v, "[disabled]Un-mute");
     }
 
     if (PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_PLUGIN) < 0.5){
-      bypass = VECTOR_push_back(&v, "[check on]Bypass");
+      bypass = create_menu_entry(&v, "[check on]Bypass", "ra:switch-bypass-for-selected-instruments");
     }else{
-      bypass = VECTOR_push_back(&v, "[check off]Bypass");
+      bypass = create_menu_entry(&v, "[check off]Bypass", "ra:switch-bypass-for-selected-instruments");
     }
 
     VECTOR_push_back(&v, talloc_format("--------Instrument: \"%s\"", patch->name));

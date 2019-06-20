@@ -41,9 +41,6 @@
                (map car audio-connections)
                audio-connections))))
 
-(define (get-instrument-solo instrument-id)
-  (> (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
-
 (define (get-all-solo-connections-in-mixer solo-instrument-id-or-ids)
   (define ret (make-audio-connection-hash-table solo-instrument-id-or-ids))
   
@@ -119,7 +116,7 @@
 
 
 (define (get-all-solo-instruments all-instruments)
-  (keep get-instrument-solo all-instruments))
+  (keep ra:get-instrument-solo all-instruments))
 
 #!!
 (get-all-solo-instruments (get-all-audio-instruments))
@@ -243,7 +240,7 @@
 
 (define (set-instrument-solo-for-this-instrument-only! id is-on)
   ;;(c-display "     Setting" (<ra> :get-instrument-name id) "solo to" is-on)
-  (define current-value (get-instrument-solo id))
+  (define current-value (ra:get-instrument-solo id))
   (when (or (and is-on (not current-value))
             (and (not is-on) current-value))            
     (if (<ra> :do-undo-solo)
