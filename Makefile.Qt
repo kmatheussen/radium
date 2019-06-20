@@ -441,7 +441,7 @@ OBJ9= Ptask2Mtask.o player.o scheduler.o scheduler_seqtracks.o scheduler_notes.o
 OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_signatures.o disk_swing.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_saveload_blocktrack.o disk_instrument.o disk_patches.o disk_slider.o
 
 #Undo
-OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_swings.o undo_lpbs.o undo_signatures.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_sequencer.o undo_song_tempo_automation.o undo_patchvoice.o undo_patchname.o undo_chip_position.o
+OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_swings.o undo_lpbs.o undo_signatures.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_sequencer.o undo_song_tempo_automation.o undo_patchvoice.o undo_patchname.o undo_instrument_color.o undo_chip_position.o 
 
 #X11 Spesific
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
@@ -1283,6 +1283,9 @@ undo_patchvoice.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchvoice.c
 
 undo_patchname.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchname.c
 	$(CC) $(CD)undo_patchname.c $(OPT)
+
+undo_instrument_color.o:  $(BUILD_DEPENDENCIES) $(CD)undo_instrument_color.c
+	$(CC) $(CD)undo_instrument_color.c $(OPT)
 
 window_config.o:  $(BUILD_DEPENDENCIES) $(CD)window_config.cpp
 	$(CCC) $(CD)window_config.cpp $(CPPOPT)
