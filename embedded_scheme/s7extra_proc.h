@@ -111,6 +111,9 @@ extern "C" {
   void s7extra_callFunc2_void_bool(const char *funcname, bool arg1);
   void s7extra_callFunc_void_bool(const func_t *func, bool arg1);
 
+  void s7extra_callFunc2_void_float(const char *funcname, double arg1);
+  void s7extra_callFunc_void_float(const func_t *func, double arg1);
+
   void s7extra_callFunc_void_dyn(const func_t *func, const dyn_t arg1);
   void s7extra_callFunc2_void_dyn(const char *funcname, const dyn_t arg1);
 
@@ -150,29 +153,29 @@ extern "C" {
   void s7extra_callFunc_void_int_dyn(const func_t *func, int64_t arg1, const dyn_t arg2);
   void s7extra_callFunc2_void_int_dyn(const char *funcname, int64_t arg1, const dyn_t arg2);
 
-  void s7extra_callFunc_void_int_float_float(const func_t *func, int64_t arg1, float arg2, float arg3);
-  void s7extra_callFunc2_void_int_float_float(const char *funcname, int64_t arg1, float arg2, float arg3);
+  void s7extra_callFunc_void_int_float_float(const func_t *func, int64_t arg1, double arg2, double arg3);
+  void s7extra_callFunc2_void_int_float_float(const char *funcname, int64_t arg1, double arg2, double arg3);
 
-  void s7extra_callFunc_void_int_float_float_float_float(const func_t *func, int64_t arg1, float arg2, float arg3, float arg4, float arg5);
-  void s7extra_callFunc2_void_int_float_float_float_float(const char *funcname, int64_t arg1, float arg2, float arg3, float arg4, float arg5);
+  void s7extra_callFunc_void_int_float_float_float_float(const func_t *func, int64_t arg1, double arg2, double arg3, double arg4, double arg5);
+  void s7extra_callFunc2_void_int_float_float_float_float(const char *funcname, int64_t arg1, double arg2, double arg3, double arg4, double arg5);
 
-  void s7extra_callFunc_void_int_int_float_float(const func_t *func, int64_t arg1, int64_t arg2, float arg3, float arg4);
-  void s7extra_callFunc2_void_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, float arg3, float arg4);
+  void s7extra_callFunc_void_int_int_float_float(const func_t *func, int64_t arg1, int64_t arg2, double arg3, double arg4);
+  void s7extra_callFunc2_void_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, double arg3, double arg4);
 
-  bool s7extra_callFunc_bool_int_int_float_float(const func_t *func, int64_t arg1, int64_t arg2, float arg3, float arg4);
-  bool s7extra_callFunc2_bool_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, float arg3, float arg4);
+  bool s7extra_callFunc_bool_int_int_float_float(const func_t *func, int64_t arg1, int64_t arg2, double arg3, double arg4);
+  bool s7extra_callFunc2_bool_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, double arg3, double arg4);
 
   bool s7extra_callFunc_bool_int_int_int_int(const func_t *func, int64_t arg1, int64_t arg2, int arg3, int arg4);
   bool s7extra_callFunc2_bool_int_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int arg3, int arg4);
 
-  bool s7extra_callFunc_bool_int_float_float(const func_t *func, int64_t arg1, float arg2, float arg3);
-  bool s7extra_callFunc2_bool_int_float_float(const char *funcname, int64_t arg1, float arg2, float arg3);
+  bool s7extra_callFunc_bool_int_float_float(const func_t *func, int64_t arg1, double arg2, double arg3);
+  bool s7extra_callFunc2_bool_int_float_float(const char *funcname, int64_t arg1, double arg2, double arg3);
 
   bool s7extra_callFunc_bool_bool(const func_t *func, bool arg1);
   bool s7extra_callFunc2_bool_bool(const char *funcname, bool arg1);
 
-  bool s7extra_callFunc_bool_bool_float_float(const func_t *func, bool arg1, float arg2, float arg3);
-  bool s7extra_callFunc2_bool_bool_float_float(const char *funcname, bool arg1, float arg2, float arg3);
+  bool s7extra_callFunc_bool_bool_float_float(const func_t *func, bool arg1, double arg2, double arg3);
+  bool s7extra_callFunc2_bool_bool_float_float(const char *funcname, bool arg1, double arg2, double arg3);
 
   bool s7extra_callFunc_bool_bool_dyn(const func_t *func, bool arg1, dyn_t arg2);
   bool s7extra_callFunc2_bool_bool_dyn(const char *funcname, bool arg1, dyn_t arg2);

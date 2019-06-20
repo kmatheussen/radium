@@ -174,7 +174,8 @@ static const ColorConfig g_colorconfig[] = {
   {MIXER_EVENT_CONNECTION_COLOR_NUM, "mixer_event_connection_color", "Mixer: Event connection color"},
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, "mixer_audio_connection_color", "Mixer: Audio connection color"},
   {MIXER_AUTOSUSPENSION_COLOR_NUM, "mixer_autosuspension_color", "Mixer: Auto-suspension sound object color"},
-  {MIXER_SELECTED_OBJECT_COLOR_NUM, "mixer_selected_object_color_num", "Mixer: Selected sound object color"},
+  //{MIXER_SELECTED_OBJECT_COLOR_NUM, "mixer_selected_object_color_num", "Mixer: Selected sound object color"},
+  {MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM, "mixer_current_object_border_color_num", "Mixer: Current sound object border color"},
   {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, "mixer_selected_object_border_color_num", "Mixer: Selected sound object border color"},
   {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, "mixerstrips_selected_object_color_num", "Mixer strips: Current instrument border color"},
   
@@ -299,8 +300,8 @@ static ReplacementColor g_replacement_color[] = {
   {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor(30,95,70,140)},
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor(50,25,70,140)},
   {MIXER_AUTOSUSPENSION_COLOR_NUM, QColor("#3ca6a6a6")},
-  {MIXER_SELECTED_OBJECT_COLOR_NUM, QColor("#54071780")},
-  {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, QColor("#ff080a81")},
+  {MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM, QColor("#ff041da7")},
+  {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, QColor("#ff81080a")},
   {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, QColor("#ff337755")},
 
   {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, QColor("#146302")},

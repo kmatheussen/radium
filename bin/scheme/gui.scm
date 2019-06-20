@@ -17,7 +17,6 @@
 (define-constant *mixer-strip-background-color* "#222222")
 (define *current-mixer-strip-border-color* "mixerstrips_selected_object_color_num")
 
-
 (define *last-statusbar-id* -1)
 
 (define (set-editor-statusbar text)
