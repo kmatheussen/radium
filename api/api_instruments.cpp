@@ -746,6 +746,15 @@ void setInstrumentColor(const_char *colorname, int64_t instrument_id){
   root->song->tracker_windows->must_redraw=true;
 }
 
+void generateNewInstrumentColor(int64_t instrument_id, float mix_background){
+  const char *new_color = generateNewColor(mix_background);
+  setInstrumentColor(new_color, instrument_id);
+}
+  
+void generateNewColorForAllSelectedInstruments(float mix_background){
+  S7CALL2(void_float,"FROM-C-generate-new-color-for-all-selected-instruments", mix_background);
+}
+  
 const char *getInstrumentColor(int64_t instrument_id, bool get_displayed_color){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)

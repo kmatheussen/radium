@@ -1304,7 +1304,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     unbypass_several = create_menu_entry(&v, "Un-bypass all selected", "ra:switch-bypass-for-selected-instruments");
     VECTOR_push_back(&v, "--------");
     config_color = VECTOR_push_back(&v, "Configure color");
-    generate_new_color = VECTOR_push_back(&v, "Generate new color");
+    generate_new_color = create_menu_entry(&v, "Generate new color", "ra:generate-new-color-for-all-selected-instruments");
 
     VECTOR_push_back(&v, "--------Mixer");
     unsolo_all = VECTOR_push_back(&v, "Un-solo all");
@@ -1376,7 +1376,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     VECTOR_push_back(&v, "---------");
         
     config_color = VECTOR_push_back(&v, "Configure color");
-    generate_new_color = VECTOR_push_back(&v, "Generate new color");
+    generate_new_color = create_menu_entry(&v, "Generate new color", "ra:generate-new-color-for-all-selected-instruments");
     
     VECTOR_push_back(&v, "--------");
 
@@ -1562,13 +1562,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
         
       } else if (sel==generate_new_color) {
 
-        const char *new_color = generateNewColor(0.9);
-        
-        VECTOR_FOR_EACH(struct Patch *,patch,&patches){
-          QString command = QString("(ra:set-instrument-color \"") + new_color + "\" " + QString::number(patch->id) + ")";
-          evalScheme(talloc_strdup(command.toUtf8().constData()));
-        }END_VECTOR_FOR_EACH;
-
+        generateNewColorForAllSelectedInstruments(0.9);
         
       } else if (sel==instrument_info) {
         

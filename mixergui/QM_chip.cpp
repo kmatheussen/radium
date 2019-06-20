@@ -1996,11 +1996,12 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     //    if(is_current_patch==true){
       //}
-    if (is_current_patch) { ///is_current_patch) {
-      QColor c = get_qcolor(MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM);
-      c.setAlpha(150);
-      painter->setPen(QPen(c, 3));
-      painter->drawRoundedRect(x1-1,y1-1,x2-x1+1,y2-y1+1,7,7);
+    if (is_current_patch || is_selected){      
+      QColor c = is_current_patch
+        ? (is_selected ? mix_colors(get_qcolor(MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM), get_qcolor(MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM), 0.5) : get_qcolor(MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM))
+        : get_qcolor(MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM);
+      painter->setPen(QPen(c, 4));
+      painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,6,6);
     } else {
       painter->setPen(QPen(border_color, 1));
       painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,1,1);
@@ -2014,14 +2015,16 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       painter->drawLine(x1, y2-name_height, x2, y2-name_height);
     }
 
+    /*
     // Greying if selected
-    if (is_selected){// && !is_current_patch){
+    if (false && is_selected){// && !is_current_patch){
       QColor c = get_qcolor(MIXER_SELECTED_OBJECT_COLOR_NUM); //(40,40,40,100);
       painter->setPen(Qt::NoPen);
       painter->setBrush(c);      
       painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,1,1);
       painter->setBrush(Qt::NoBrush);
     }
+    */
     
     // Bluing if autosuspending
     if (_last_updated_autosuspending) { //SP_is_autosuspending(plugin->sp)){

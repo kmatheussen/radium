@@ -937,6 +937,13 @@
                                 (<ra> :set-random-instrument-sample id-instrument)))
                           (<ra> :get-extended-selected-instruments)))))
 
+(define (FROM-C-generate-new-color-for-all-selected-instruments mix-background)
+  (define new-color (<ra> :generate-new-color mix-background))
+  (undo-block (lambda ()
+                (for-each (lambda (id-instrument)
+                            (<ra> :set-instrument-color new-color id-instrument))
+                          (<ra> :get-extended-selected-instruments)))))
+
 
 #||
 ;; Use ra:create-new-instrument-conf instead.
