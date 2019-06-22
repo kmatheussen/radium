@@ -906,7 +906,7 @@
           (<gui> :update widget)
           )
         (begin
-          (<ra> :set-instrument-bypass instrument-id (not (not is-enabled)))
+          (<ra> :set-instrument-bypass (not (not is-enabled)) instrument-id)
           (<gui> :update widget))))
   ;;(<gui> :update (<gui> :get-parent-gui widget)))))
 
@@ -1788,7 +1788,7 @@
                                                   (lambda (is-muted)
                                                     (undo-block
                                                      (lambda ()
-                                                       (<ra> :set-instrument-mute instrument-id is-muted)
+                                                       (<ra> :set-instrument-mute is-muted instrument-id)
                                                        ;;(c-display "mute: " is-muted)
                                                        (if (<ra> :control-pressed)
                                                            (turn-off-all-mute instrument-id))
@@ -1837,7 +1837,7 @@
                                                      (lambda ()
                                                        ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
                                         ;(<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
-                                                       (<ra> :set-instrument-solo instrument-id is-selected)
+                                                       (<ra> :set-instrument-solo is-selected instrument-id)
                                                        (if (<ra> :control-pressed)
                                                            (turn-off-all-solo instrument-id))
                                                        )))

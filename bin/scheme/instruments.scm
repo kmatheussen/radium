@@ -881,7 +881,7 @@
   (undo-block
    (lambda ()           
      (for-each (lambda (instrument-id)
-                 (<ra> :set-instrument-solo instrument-id doit))
+                 (<ra> :set-instrument-solo doit instrument-id))
                instruments))))
 
          
@@ -897,7 +897,7 @@
   (undo-block
    (lambda ()           
      (for-each (lambda (instrument-id)
-                 (<ra> :set-instrument-mute instrument-id doit))
+                 (<ra> :set-instrument-mute doit instrument-id))
                instruments))))
 
 (define (FROM_C-switch-mute-for-selected-instruments)
@@ -912,7 +912,7 @@
   (undo-block
    (lambda ()           
      (for-each (lambda (instrument-id)
-                 (<ra> :set-instrument-bypass instrument-id doit))
+                 (<ra> :set-instrument-bypass doit instrument-id))
                instruments))))
 
 (define (FROM_C-switch-bypass-for-selected-instruments)
@@ -1315,7 +1315,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
          :enabled effect-name
          (lambda ()
            (if is-solo
-               (<ra> :set-instrument-solo instrument-id #f)
+               (<ra> :set-instrument-solo #f instrument-id)
                (<ra> :reset-instrument-effect instrument-id effect-name))))
          
    "-------------" ;;Midi Learn"

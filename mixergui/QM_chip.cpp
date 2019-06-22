@@ -2286,7 +2286,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         if (instrumentIsSelected(patch->id))
           setSoloForInstruments(getSelectedInstruments(), !solo_is_on);
         else
-          setInstrumentSolo(patch->id, !solo_is_on);
+          setInstrumentSolo(!solo_is_on, patch->id);
         
         /*
         //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
@@ -2333,7 +2333,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         if (instrumentIsSelected(patch->id))
           setMuteForInstruments(getSelectedInstruments(), is_on);
         else
-          setInstrumentMute(patch->id, is_on);
+          setInstrumentMute(is_on, patch->id);
 
       }UNDO_CLOSE();
 
@@ -2371,7 +2371,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         if (instrumentIsSelected(patch->id))
           setBypassForInstruments(getSelectedInstruments(), effects_are_on);
         else
-          setInstrumentBypass(patch->id, effects_are_on);
+          setInstrumentBypass(effects_are_on, patch->id);
       }
 
       set_bypass_statusbar(this);

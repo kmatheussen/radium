@@ -318,12 +318,12 @@
                                                        (<ra> :set-seqtrack-is-recording seqtracknum is-selected)))
                                                 )
                                                ((eq? type 'solo)
-                                                (<ra> :set-instrument-solo instrument-id is-selected)
+                                                (<ra> :set-instrument-solo is-selected instrument-id)
                                                 (if (<ra> :control-pressed)
                                                     (turn-off-all-solo instrument-id)))
                                                ((eq? type 'mute)
                                                 (if for-audiofiles
-                                                    (<ra> :set-instrument-mute instrument-id is-selected)
+                                                    (<ra> :set-instrument-mute is-selected instrument-id)
                                                     (<ra> :set-editor-seqtrack-muted is-selected seqtracknum))
                                                 ;;(c-display "mute: " is-muted)
                                                 (if (and for-audiofiles
