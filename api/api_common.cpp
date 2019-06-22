@@ -558,6 +558,9 @@ struct Patch *getAudioPatchFromNum(int64_t instrument_id){ // TODO: Rename to ge
 }
 
 struct SeqTrack *getSeqtrackFromNum_R0(int seqtracknum){
+  if (seqtracknum==-1)
+    return SEQUENCER_get_curr_seqtrack();
+  
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements)
     return NULL;
   
