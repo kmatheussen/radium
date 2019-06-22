@@ -1324,13 +1324,13 @@ bool getInstrumentSolo(int64_t instrument_id){
   return ATOMIC_GET(plugin->solo_is_on);
 }
 
-void setInstrumentSolo(int64_t instrument_id, bool do_solo){
+void setInstrumentSolo(bool do_solo, int64_t instrument_id){
   S7CALL2(void_int_bool,"FROM-C-set-solo!", instrument_id, do_solo);
 }
 
 bool switchInstrumentSolo(int64_t instrument_id){
   bool set_to = !getInstrumentSolo(instrument_id);
-  setInstrumentSolo(instrument_id, set_to);
+  setInstrumentSolo(set_to, instrument_id);
   return set_to;
 }
   
@@ -1348,7 +1348,7 @@ bool getInstrumentMute(int64_t instrument_id){
   return !ATOMIC_GET(plugin->volume_is_on);
 }
 
-void setInstrumentMute(int64_t instrument_id, bool do_mute){
+void setInstrumentMute(bool do_mute, int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1365,7 +1365,7 @@ void setInstrumentMute(int64_t instrument_id, bool do_mute){
 
 bool switchInstrumentMute(int64_t instrument_id){
   bool set_to = !getInstrumentMute(instrument_id);
-  setInstrumentMute(instrument_id, set_to);
+  setInstrumentMute(set_to, instrument_id);
   return set_to;
 }
   
@@ -1383,7 +1383,7 @@ bool getInstrumentBypass(int64_t instrument_id){
   return PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_PLUGIN) < 0.5;
 }
 
-void setInstrumentBypass(int64_t instrument_id, bool do_bypass){
+void setInstrumentBypass(bool do_bypass, int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1408,7 +1408,7 @@ void setInstrumentBypass(int64_t instrument_id, bool do_bypass){
 
 bool switchInstrumentBypass(int64_t instrument_id){
   bool set_to = !getInstrumentBypass(instrument_id);
-  setInstrumentBypass(instrument_id, set_to);
+  setInstrumentBypass(set_to, instrument_id);
   return set_to;
 }
   

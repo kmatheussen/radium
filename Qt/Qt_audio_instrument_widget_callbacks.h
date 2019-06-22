@@ -1254,7 +1254,7 @@ public slots:
 
   void on_bypass_button_toggled(bool val){
     if(_is_updating==0)
-      setInstrumentBypass(_patch->id, val);
+      setInstrumentBypass(val, _patch->id);
     /*
     SoundPlugin *plugin = (SoundPlugin*)(_patch->patchdata);
         
@@ -1272,7 +1272,7 @@ public slots:
 
   void on_solo_button_toggled(bool val){
     if(_is_updating==0)
-      setInstrumentSolo(_patch->id, val);
+      setInstrumentSolo(val, _patch->id);
   }
 
   void on_drywet_slider_valueChanged(int val){
