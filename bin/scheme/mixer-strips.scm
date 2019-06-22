@@ -1797,13 +1797,8 @@
                                                   min-height
                                                   :effect-name "System Volume On/Off"
                                                   :hovered-callback (lambda (button state x y)
-                                                                      (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": "
-                                                                                                     (cond ((get-muted)
-                                                                                                            "Mute On")
-                                                                                                           (implicitly-muted
-                                                                                                            "Mute Implicitly on")
-                                                                                                           (else
-                                                                                                            "Mute Off")))))
+                                                                      (FROM_C-display-mute-status-in-statusbar instrument-id))
+ 
                                                   ))
 
   ;;(add-safe-mouse-callback (cadr mute)
@@ -1845,7 +1840,7 @@
                                                   min-height
                                                   :effect-name "System Solo On/Off"
                                                   :hovered-callback (lambda (button state x y)
-                                                                      (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": " (if (get-soloed) "Solo on" "Solo off"))))
+                                                                      (FROM_C-display-solo-status-in-statusbar instrument-id))
                                                   ))
   
   (add-gui-effect-monitor (cadr mute) instrument-id volume-on-off-name #t #t

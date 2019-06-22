@@ -740,6 +740,12 @@
     FROM_C-switch-solo-for-selected-instruments
     FROM_C-switch-mute-for-selected-instruments
     FROM_C-switch-bypass-for-selected-instruments
+    FROM_C-display-solo-status-in-statusbar
+    FROM_C-display-mute-status-in-statusbar
+    FROM_C-display-bypass-status-in-statusbar
+    FROM_C-set-mute-for-instruments
+    FROM_C-set-solo-for-instruments
+    FROM_C-set-bypass-for-instruments
     ra:enable-metronome
     ))
 

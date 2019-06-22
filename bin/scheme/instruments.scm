@@ -1,6 +1,7 @@
 (provide 'instruments.scm)
 
 (my-require 'gui.scm)
+(my-require 'keybindings.scm)
 
 
 (define (get-instrument-volume-on/off-effect-name instrument-id)
@@ -920,6 +921,48 @@
     (if (not (null? instruments))
         (let ((doit (not (< (<ra> :get-instrument-effect (car instruments) "System Effects On/Off") 0.5))))
           (FROM_C-set-bypass-for-instruments instruments doit)))))
+
+;; Note: Must return status bar id.
+(define (FROM_C-display-mute-status-in-statusbar instrument-id)  
+  (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": "
+                                 (cond ((<ra> :get-instrument-mute instrument-id)
+                                        "Mute On")
+                                       ((<ra> :instrument-is-implicitly-muted instrument-id)
+                                        "Mute Implicitly on")
+                                       (else
+                                        "Mute Off"))
+                                 (let ((keybinding (or (get-displayable-keybinding-from-shortcut ra:switch-instrument-mute)
+                                                       (get-displayable-keybinding-from-shortcut ra:switch-mute-for-selected-instruments))))
+                                   (if keybinding
+                                       (<-> " (" keybinding ")")
+                                       "")))))
+
+;; Note: Must return status bar id.
+(define (FROM_C-display-solo-status-in-statusbar instrument-id)  
+  (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": "
+                                 (cond ((<ra> :get-instrument-solo instrument-id)
+                                        "Solo On")
+                                       ((<ra> :instrument-is-implicitly-soloed instrument-id)
+                                        "Solo Implicitly on")
+                                       (else
+                                        "Solo Off"))
+                                 (let ((keybinding (or (get-displayable-keybinding-from-shortcut ra:switch-instrument-solo)
+                                                       (get-displayable-keybinding-from-shortcut ra:switch-solo-for-selected-instruments))))
+                                   (if keybinding
+                                       (<-> " (" keybinding ")")
+                                       "")))))
+
+;; Note: Must return status bar id.
+(define (FROM_C-display-bypass-status-in-statusbar instrument-id)  
+  (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": "
+                                 (if (<ra> :get-instrument-bypass instrument-id)
+                                     "Bypass On"
+                                     "Bypass Off")
+                                 (let ((keybinding (or (get-displayable-keybinding-from-shortcut ra:switch-instrument-bypass)
+                                                       (get-displayable-keybinding-from-shortcut ra:switch-bypass-for-selected-instruments))))
+                                   (if keybinding
+                                       (<-> " (" keybinding ")")
+                                       "")))))
 
 
 ;(define (delete-all-selected-instruments)
