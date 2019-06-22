@@ -54,9 +54,6 @@ IF YOU ARE DEVELOPING RADIUM
      
         export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
 
-     If you don't want to compile in the llvm backend for the faustdev instrument, run this line first:
-     
-        export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
 
 
 INTRODUCTION
