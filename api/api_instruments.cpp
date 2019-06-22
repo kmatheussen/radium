@@ -2436,7 +2436,7 @@ void internalReplaceMainPipe(int64_t new_main_pipe_id){
 }
 
 bool instrumentIsOpenAndAudio(int64_t instrument_id){
-  const struct Patch *patch = PATCH_get_from_id(instrument_id);
+  const struct Patch *patch = instrument_id==-1 ? g_currpatch : PATCH_get_from_id(instrument_id);
   if (patch==NULL)
     return false;
 
@@ -2444,7 +2444,7 @@ bool instrumentIsOpenAndAudio(int64_t instrument_id){
 }
 
 bool instrumentIsOpen(int64_t instrument_id){
-  return PATCH_get_from_id(instrument_id) != NULL;
+  return (instrument_id==-1 ? g_currpatch : PATCH_get_from_id(instrument_id)) != NULL;
 }
 
 const_char* getSampleBookmarks(int num){
