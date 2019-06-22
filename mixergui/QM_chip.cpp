@@ -2152,31 +2152,15 @@ static bool in_slider(const QPointF &pos){
 static int64_t g_statusbar_id = -1;
 
 static void set_solo_statusbar(const Chip *chip){
-  const SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
-  const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
-  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
-  
-  bool solo_is_on = ATOMIC_GET_RELAXED(plugin->solo_is_on);
-  g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, solo_is_on ? "Solo On" : "Solo Off"));
+  g_statusbar_id = S7CALL2(int_int, "FROM_C-display-solo-status-in-statusbar", CHIP_get_patch(chip)->id);
 }
 
 static void set_mute_statusbar(const Chip *chip){
-  const SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
-  const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
-  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
-
-  bool is_implicitly_muted = instrumentIsImplicitlyMuted(patch->id);
-  
-  g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, is_implicitly_muted ? "Implicitly muted" : is_muted_relaxed(plugin) ? "Mute On" : "Mute Off"));
+  g_statusbar_id = S7CALL2(int_int, "FROM_C-display-mute-status-in-statusbar", CHIP_get_patch(chip)->id);
 }
 
 static void set_bypass_statusbar(const Chip *chip){
-  const SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
-  const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
-  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
-
-  bool effects_are_on = ATOMIC_GET_RELAXED(plugin->effects_are_on);
-  g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, effects_are_on ? "Bypass Off" : "Bypass On"));
+  g_statusbar_id = S7CALL2(int_int, "FROM_C-display-bypass-status-in-statusbar", CHIP_get_patch(chip)->id);
 }
 
 static void set_slider_statusbar(const Chip *chip){
@@ -2574,7 +2558,7 @@ void Chip::mySetSelected(bool selected) {
 struct Patch *CHIP_get_patch(const Chip *chip){
   const SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
   volatile struct Patch *patch = plugin->patch;
-  R_ASSERT(patch!=NULL);
+  R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, g_currpatch);
   return (struct Patch*)patch;
 }
 

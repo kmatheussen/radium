@@ -374,6 +374,26 @@
 (pretty-print (<ra> :get-keybindings-from-commands))
 !!#
 
+;; "shortcut"s are used in popup menues and things.
+#!!
+Examples:
+:shortcut (list func arg1 arg2)
+:shortcut ra:show-hide-swingtext
+:shortcut "SHIFT + A"
+!!!#
+(define (get-displayable-keybinding-from-shortcut shortcut)
+  (if (or (list? shortcut)
+          (procedure? shortcut))
+      (let ((keybinding (if (list? shortcut)
+                            (get-displayable-keybinding (get-procedure-name (car shortcut)) (cdr shortcut))
+                            (get-displayable-keybinding (get-procedure-name shortcut) '()))))
+        (if (not (string=? keybinding ""))
+            keybinding
+            (begin
+              ;;(c-display "Note: No keybinding found for procedure \"" (get-procedure-name shortcut) "\"")
+              #f)))
+      (<-> shortcut)))
+
 
 (define (remove-mouse-from-keybinding keybinding)
   (<-> (string-join (remove (lambda (key)
