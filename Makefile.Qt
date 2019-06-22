@@ -264,6 +264,9 @@ OS_LDFLAGS2 ?=
 OS_DEPS ?=
 OS_OBJS ?=
 
+RADIUM_BFD_CFLAGS ?=
+RADIUM_BFD_LDFLAGS ?=
+
 REQTYPE_TYPE = -DUSE_QT_REQTYPE=1 -DUSE_GTK_REQTYPE=0
 MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
@@ -730,7 +733,7 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 
 
 bin/radium_plugin_scanner: $(PLUGINHOSTSCANNERLIB)
-	$(LINKER) $(PLUGINHOSTSCANNERLIB) -o bin/radium_plugin_scanner $(OS_JUCE_LDFLAGS) `$(PKG) --libs freetype2`
+	$(LINKER) $(PLUGINHOSTSCANNERLIB) -o bin/radium_plugin_scanner $(OS_JUCE_LDFLAGS) $(RADIUM_BFD_LDFLAGS) `$(PKG) --libs freetype2`
 
 
 
@@ -1392,7 +1395,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
 
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
-Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp
+Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
 
@@ -1670,7 +1673,7 @@ bin/radium_check_jack_status: audio/KillJackd.cpp Jack_plugin.o find_jack_librar
 	$(LINKER) `cat buildtype.opt` radium_check_jack_status.o find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) -o bin/radium_check_jack_status $(FPIC)
 	rm radium_check_jack_status.o
 
-bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp
+bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp common/Process.hpp
 	$(CCC) -Wall -Werror OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o
 	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt5OpenGL`
 	rm radium_check_opengl.o
@@ -2386,7 +2389,7 @@ audio/system_compressor.cpp: audio/system_compressor.dsp
 	$(FAUST) -I `pwd`/audio -vec -cn Faust_system_compressor audio/system_compressor.dsp -o audio/system_compressor.cpp
 	./fix_faust_code.sh Faust_system_compressor $@
 
-bin/radium_crashreporter: crashreporter/crashreporter.cpp 
+bin/radium_crashreporter: crashreporter/crashreporter.cpp common/Process.hpp
 	@echo
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
@@ -2403,7 +2406,7 @@ ifeq ($(GCC_MAJOR),9)
 	CRASHREPORTER_OPTS += $(WNO_DEPRECATED_COPY)
 endif
 
-crashreporter.o: crashreporter/crashreporter.cpp
+crashreporter.o: crashreporter/crashreporter.cpp common/Process.hpp
 	@echo
 	@echo "Changed (crashreporter.o):"
 	@echo $?

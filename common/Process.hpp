@@ -46,6 +46,8 @@ private:
   
   bool _start_has_been_called = false;
 
+  double _start_time;
+  
   void connect_signals(void){
     {
       IsAlive is_alive(this);
@@ -73,7 +75,11 @@ private:
                            _exit_status = exitStatus;
                            _exit_code = exitCode;
                          }
-                         process->deleteLater();
+
+                         if(get_qprocess() == NULL){
+                           R_ASSERT_NON_RELEASE(false);
+                         }else
+                           process->deleteLater();
                        });
     }
   }
@@ -91,7 +97,9 @@ public:
   
   void start(QString program){
     R_ASSERT_RETURN_IF_FALSE(_start_has_been_called==false);
-    
+
+    R_ASSERT_RETURN_IF_FALSE(get_qprocess() != NULL);
+
     _start_has_been_called = true;
     
 #if defined(FOR_LINUX) || defined(FOR_MACOSX)
@@ -105,6 +113,8 @@ public:
 #else
     _process->start(program);
 #endif
+    
+    _start_time = TIME_get_ms();
   }
 
   enum class Status{
@@ -121,12 +131,41 @@ public:
   bool error_has_occured(void) const {
     return _error_occured;
   }
+
+  double get_running_time(double start_time) const {
+    R_ASSERT_RETURN_IF_FALSE2(_start_has_been_called, -1);
+
+    return TIME_get_ms() - start_time;
+  }
+
+  double get_running_time(void) const {
+    return get_running_time(_start_time);
+  }
+    
+  bool has_timed_out(double timeout, double start_time) const {
+    if (timeout < 0)
+      return false;
+    
+    return get_running_time() >= timeout;
+  }
+
+  bool has_timed_out(double timeout) const {
+    return has_timed_out(timeout, _start_time);
+  }
   
-  Status get_status(void) const {
+  Status get_status(double timeout = -1) {
     if (!_start_has_been_called)
       return Status::NOT_STARTED;
 
+    //printf("   timeout: %d. running_time: %d. Finished? (%d && %d). Error_occured: %d\n", (int)timeout, (int)get_running_time(), timeout >= 0, (get_running_time() >= timeout), _error_occured);
+    if (has_timed_out(timeout)){
+      handle_timedout(timeout, _start_time);
+      if (!_error_occured)
+        _proc_error = QProcess::Timedout;
+    }
+      
     if (_error_occured){
+
       if(_proc_error==QProcess::Crashed)
         return Status::CRASHED;
       else if(_proc_error==QProcess::FailedToStart)
@@ -152,10 +191,10 @@ public:
     return Status::OTHER_ERROR;    
   }
 
-  QString get_status_string(void) const {
+  QString get_status_string(double timeout = -1) {
     R_ASSERT_RETURN_IF_FALSE2(_start_has_been_called==true, "");
     
-    switch(get_status()){
+    switch(get_status(timeout)){
       case Status::NOT_STARTED: return "has not started";
       case Status::RUNNING: return "is running";
       case Status::NOT_FINISHED: return "has not finished";
@@ -170,11 +209,56 @@ public:
     return "(something is wrong)";
   }
 
-  int get_exit_code(void) const{
+  int get_exit_code(void) {
     R_ASSERT(_start_has_been_called==true);
     R_ASSERT(get_status()==Status::FINISHED);
     return _exit_code;
   }
+
+  void kill(void){
+    if (get_qprocess() == NULL)
+      return;
+    
+    if (_process->state() != QProcess::NotRunning)
+      _process->kill();
+  }
+  
+private:
+
+  void handle_timedout(double timeout, double start_time) {
+    R_ASSERT_RETURN_IF_FALSE(get_qprocess() != NULL);
+    
+    if(_has_exited==false){ // Yes, QProcess::waitForFinished returns false also if the program exited normally. (!$%^!#$%!#$%)
+
+      // The errorOccured signal does not seem to be called while calling waitForFinished(), so we have to do this check.
+      if (_error_occured==false){          
+        _error_occured = true;
+        
+        _proc_error = _process->error();
+        
+        //printf("C: %f %f. _proc_error: %d\n",TIME_get_ms(), start_time, _proc_error);
+        
+        if(_proc_error == QProcess::UnknownError){
+
+          if (has_timed_out(timeout, start_time)) {
+            
+            _proc_error = QProcess::Timedout;
+            
+          } else {
+            
+            _proc_error = QProcess::Crashed;
+            
+          }
+          
+          
+        }
+      }
+      
+    }
+      
+  }
+  
+public:
   
   void wait_for_finished(int msecs){
     R_ASSERT_RETURN_IF_FALSE(_start_has_been_called==true);
@@ -185,37 +269,13 @@ public:
       return;
     }
 
-    double start_time = TIME_get_ms();
+    R_ASSERT_RETURN_IF_FALSE(get_qprocess() != NULL);
     
+    double start_time = TIME_get_ms();
+
     if (_process->waitForFinished(msecs)==false){
 
-      if(_has_exited==false){ // Yes, QProcess::waitForFinished returns false also if the program exited normally. (!$%^!#$%!#$%)
-
-        // The errorOccured signal does not seem to be called while calling waitForFinished(), so we have to do this check.
-        if (_error_occured==false){          
-          _error_occured = true;
-          
-          _proc_error = _process->error();
-
-          //printf("C: %f %f. _proc_error: %d\n",TIME_get_ms(), start_time, _proc_error);
-
-          if(_proc_error == QProcess::UnknownError){
-
-            if ((TIME_get_ms() - start_time) >= msecs){
-              
-              _proc_error = QProcess::Timedout;
-              
-            } else {
-
-              _proc_error = QProcess::Crashed;
-              
-            }
-            
-
-          }
-        }
-
-      }
+      handle_timedout(msecs, start_time);
       
       //fprintf(stderr,"5. Waiting. Error: %d. State: %d. has_exited: %d\n", (int)_process->error(), (int)_process->state(), _has_exited);
     }
