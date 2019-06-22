@@ -587,7 +587,7 @@ void CHIP_kick_right(Chip *chip){
 }
 
 static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id, bool patch_is_always_supposed_to_be_here = true){
-  struct Patch *patch = PATCH_get_from_id(patch_id);
+  struct Patch *patch = patch_id==-1 ? g_currpatch : PATCH_get_from_id(patch_id);
 
   if (patch==NULL){
     if (patch_is_always_supposed_to_be_here)
@@ -596,6 +596,11 @@ static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id, boo
     return NULL;
   }
 
+  if (patch->instrument != get_audio_instrument()){
+    RError("Found patch from id #%d, but it is a MIDI instrument", (int)patch_id);    
+    return NULL;
+  }
+  
   return CHIP_get(scene, patch);
 }
 

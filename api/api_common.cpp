@@ -535,7 +535,7 @@ struct FXs *getFXsFromNum(int windownum,int blocknum,int tracknum,int fxnum){
 }
 
 struct Patch *getPatchFromNum(int64_t instrument_id){
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
+  struct Patch *patch = instrument_id==-1 ? g_currpatch : PATCH_get_from_id(instrument_id);
   if(patch==NULL)
     handleError("instrument %d not found", (int)instrument_id);
   
@@ -543,7 +543,7 @@ struct Patch *getPatchFromNum(int64_t instrument_id){
 }
 
 struct Patch *getAudioPatchFromNum(int64_t instrument_id){ // TODO: Rename to getAudioPatchFromId
-  struct Patch *patch = PATCH_get_from_id(instrument_id);
+  struct Patch *patch = instrument_id==-1 ? g_currpatch : PATCH_get_from_id(instrument_id);
   if(patch==NULL) {
     handleError("instrument %d not found", (int)instrument_id);
     return NULL;
