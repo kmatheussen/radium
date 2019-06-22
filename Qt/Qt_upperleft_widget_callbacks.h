@@ -302,13 +302,13 @@ public slots:
   }
 
   void ShowLZPopup(const QPoint&){
-    evalScheme("(show-bars-and-beats-or-line-numbers-popup-menu)");
+    S7CALL2(void_void,"show-bars-and-beats-or-line-numbers-popup-menu");
   }
   
   void ShowSwingPopup(const QPoint& pos)
   {
     printf("GOTIT swing\n");
-    evalScheme("(show-global-swing-track-popup-menu)");
+    S7CALL2(void_void,"show-global-swing-track-popup-menu");
   }
 
   void on_swing_onoff_toggled(bool val){

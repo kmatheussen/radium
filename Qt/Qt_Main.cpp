@@ -2177,7 +2177,7 @@ protected:
         }
 
         //printf("          (remake called from qt main)\n");
-        evalScheme("(remake-mixer-strips)");
+        S7CALL2(void_void,"remake-mixer-strips");
 
       } else if (g_mixer_strips_needing_remake.empty()==false) {
         
@@ -2560,7 +2560,7 @@ void GFX_toggleCurrWindowFullScreen(void){
   QVector<QWidget*> all_windows = MIXERSTRIPS_get_all_widgets();
   for(auto *window : all_windows){
     if (window==toplevel){
-      evalScheme("(toggle-current-mixer-strips-fullscreen)");
+      S7CALL2(void_void,"toggle-current-mixer-strips-fullscreen");
       return;
     }
   }
@@ -2996,7 +2996,7 @@ int radium_main(const char *arg){
                       );
 
   GFX_ShowProgressMessage("Creating main menus", true);
-  evalScheme("(generate-main-menus)");
+  S7CALL2(void_void,"generate-main-menus");
     
   //getchar();
 

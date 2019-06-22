@@ -600,7 +600,7 @@ private:
       }
 #endif
     if (type==SIZETYPE_NORMAL)
-      evalScheme("(minimize-lowertab)");
+      S7CALL2(void_void,"minimize-lowertab");
   }
 
   int _ab_checkbox_width = -1;

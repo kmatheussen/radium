@@ -1204,11 +1204,11 @@ void setAudiofileColor(const_char* colorname, const_char* w_audiofilename){
 
 
 void showBlocklistGui(void){
-  evalScheme("(FROM_C-create-blocks-table-gui)");
+  S7CALL2(void_void, "FROM_C-create-blocks-table-gui");
 }
 
 void showInstrumentListGui(void){
-  evalScheme("(FROM_C-create-instruments-table-gui)");
+  S7CALL2(void_void, "FROM_C-create-instruments-table-gui");
 }
 
 void setTrackNoteShowType(int type,int tracknum,int blocknum,int windownum){
@@ -2257,7 +2257,7 @@ void evalScheme(const_char *code){
       code2 = code2.left(pos);
       code2 = code2.trimmed();
       printf("   CODE2: -%s-\n", code2.toUtf8().constData());
-      S7CALL2(void_charpointer,"FROM-C-assert-that-function-can-be-called-from-evalScheme",code2.toUtf8().constData());
+      S7CALL2(void_charpointer,"FROM-C-assert-that-function-can-be-called-from-C",code2.toUtf8().constData());
     }
   }
 #endif
@@ -2406,7 +2406,7 @@ void reloadKeybindings(void){
   evalPython("keybindingsparser.parse_and_show_errors()");
 
   if(!first_time)
-    evalScheme("(FROM_C-keybindings-have-been-reloaded)");
+    S7CALL2(void_void, "FROM_C-keybindings-have-been-reloaded");
 }
 
 void addKeybindingToConfFile(const_char* keybinding, const_char* funcname, dynvec_t arguments){

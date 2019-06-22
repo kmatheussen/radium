@@ -12,6 +12,211 @@
 (set! (*s7* 'history-size) 80)
 
 (define *is-initializing* #t)
+;;(define *all-files-loaded #f)
+
+
+
+(define-constant *functions-and-symbols-used-by-C*
+  '(show-global-swing-track-popup-menu
+    minimize-lowertab
+    remake-mixer-strips
+    FROM_C-redraw-mixer-strips
+    toggle-current-mixer-strips-fullscreen
+    show-async-message
+    FROM_C-cut-all-selected-seqblocks
+    FROM_C-paste-sequencer-blocks
+    FROM_C-copy-all-selected-seqblocks
+    FROM_C-delete-all-selected-seqblocks
+    pmg-start
+    make-instrument-conf
+    add-protracker-trackline         ;; import_mod.scm isn't loaded until we need it.
+    start-adding-protracker-events!  ;;
+    set-protracker-instrumentlist!   ;;
+    set-protracker-playlist!         ;;
+    set-protracker-pattern-format    ;;
+    ra:schedule
+    ra:add-message
+    show/hide-instrument-gui
+    system
+    create-change-editor-font-requester
+    create-change-system-font-requester
+    for-each
+    line-zoom-in-exponentially
+    line-zoom-out-exponentially
+    begin
+    c-display
+    moduloskew-track
+    replace-with-random-notes-in-range
+    replace-with-random-notes-in-track
+    replace-with-random-notes-in-block
+    replace-with-random-velocities-in-range
+    replace-with-random-velocities-in-track
+    replace-with-random-velocities-in-block
+    moduloskew-range
+    moduloskew-track
+    moduloskew-block
+    shuffle-range
+    shuffle-track
+    shuffle-block
+    distribute-range-evenly
+    distribute-track-evenly
+    distribute-block-evenly
+    set-random-octaves-for-notes-in-range
+    set-random-octaves-for-notes-in-track
+    set-random-octaves-for-notes-in-block
+    randomly-delete-notes-range
+    randomly-delete-notes-track
+    randomly-delete-notes-block
+    fullshuffle-range
+    fullshuffle-track
+    fullshuffle-block
+    randomize-note-durations-range
+    randomize-note-durations-track
+    randomize-note-durations-block
+    show-bars-and-beats-or-line-numbers-popup-menu
+    popup-menu
+    delete-all-unused-MIDI-instruments
+    ra:request-load-instrument-preset
+    ra:request-load-preset-instrument-description
+    FROM_C-update-seqblock-track-on-off-configuration
+    randomly-delete-notes-range
+    randomly-delete-notes-track
+    randomly-delete-notes-block
+    FROM_C-split-sample-seqblock-under-mouse
+    if
+    ra:set-instrument-color
+    load
+    show-instrument-color-dialog
+    generate-main-menus
+    ra:set-curr-seqtrack
+    
+    safe-history-ow!
+
+    
+    ;; git grep s7extra_get_func_from_funcname|cut -f2 -d"\""
+create-block-timings
+create-filledout-swings2
+
+    ;;git grep find_and_protect_scheme_value|cut -f2 -d"\""
+FROM-C-catch-all-errors-and-display-backtrace-automatically
+safe-scale
++
+-
+*
+/
++
+-
+*
+/
+quantitize
+error
+*eat-errors-failed-return-value*
+
+    ;; git grep S7EXTRA_GET_FUNC|cut -f2 -d"\""
+FROM_C-create-menu-entry-widget
+FROM_C-paint-seqblock-stuff
+FROM_C-paint-sequencer-grid
+FROM_C-call-me-when-curr-seqtrack-has-changed
+
+    ;; git grep S7CALL2|cut -f2 -d"\""
+FROM_C-call-me-when-num-seqtracks-might-have-changed
+FROM_C-reconfigure-editor-lower-part-gui!
+FROM_C-reconfigure-editor-lower-part-gui!
+FROM_C-redraw-mixer-strips
+FROM_C-create-editor-lower-part-gui
+FROM_C-reconfigure-sequencer-left-part
+FROM_C-reconfigure-sequencer-right-part
+FROM_C-reconfigure-sequencer-timing-part
+mid-horizontal-layout
+create-mixer-strips-gui
+mixer-strips-get-num-rows
+mixer-strips-change-num-rows
+mixer-strips-get-vert-ratio
+mixer-strips-change-vert-ratio
+mixer-strips-reset-configuration!
+mixer-strips-get-configuration
+mixer-strips-set-configuration!
+FROM-C-get-main-y-splitter
+FROM-C-get-lowertab-gui
+FROM-C-set-lowertab-includes-instrument
+FROM-C-show-instrument-gui
+FROM-C-hide-instrument-gui
+FROM-C-instrument-gui-is-visible
+FROM-C-show-edit-gui
+FROM-C-hide-edit-gui
+FROM-C-edit-gui-is-visible
+FROM-C-get-edit-gui
+FROM-C-show-edit/quantitize-tab
+FROM-C-show-edit/transpose-tab
+FROM-C-show-edit/randomize-tab
+FROM-C-show-edit/various-tab
+FROM-C-show-sequencer-gui
+FROM-C-hide-sequencer-gui
+FROM-C-sequencer-gui-is-visible
+create-standalone-mixer-strip
+select-track-instrument
+async-replace-instrument
+async-load-instrument-preset
+create-instrument-popup-menu
+FROM-C-generate-new-color-for-all-selected-instruments
+FROM-C-set-solo!
+FROM_C-set-solo-for-instruments
+FROM_C-set-mute-for-instruments
+FROM_C-set-bypass-for-instruments
+FROM_C-switch-solo-for-selected-instruments
+FROM_C-switch-mute-for-selected-instruments
+FROM_C-switch-bypass-for-selected-instruments
+FROM_C-redraw-mixer-strips
+FROM_C-copy-editor-track-on/off-to-seqblock
+FROM_C-copy-seqblock-track-on/off-to-editor
+;;FROM_C-jump-to-mark
+;;FROM_C-jump-prev-mark
+;;FROM_C-jump-next-mark
+FROM-C-sequencer-set-gui-in-window!
+FROM-C-sequencer-gui-in-window
+FROM-C-assert-that-function-can-be-called-from-C
+FROM_C-create-modulator-gui
+FROM_C-create-granular-vizualization-gui-for-sample-player
+FROM_C-update-implicit-solo-connections!
+FROM_C-update-implicit-solo-connections!
+radium-mouse-press
+radium-mouse-move
+radium-mouse-release
+mylint-and-eval-string
+eval-string
+mylint-and-eval-string
+eval-string
+FROM_C-remove-instrument-from-connection-path
+FROM_C-get-displayable-keybinding
+FROM_C-request-rename-instrument
+FROM_C-update-implicit-solo-connections!
+FROM_C-display-solo-status-in-statusbar
+FROM_C-display-mute-status-in-statusbar
+FROM_C-display-bypass-status-in-statusbar
+FROM_C-set-current-seqblock!
+FROM_C-show-blocklist-popup-menu
+FROM_C-show-playlist-popup-menu
+minimize-lowertab
+remake-mixer-strips
+toggle-current-mixer-strips-fullscreen
+generate-main-menus
+FROM_C-show-effect-popup-menu
+show-bars-and-beats-or-line-numbers-popup-menu
+show-global-swing-track-popup-menu
+set-random-sample-for-all-selected-sampler-instruments
+FROM-C-show-help-window
+FROM_C-create-blocks-table-gui
+FROM_C-create-instruments-table-gui
+FROM_C-keybindings-have-been-reloaded
+))
+
+(define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*
+  '(add-protracker-trackline         ;; import_mod.scm isn't loaded until we need it.
+    start-adding-protracker-events!  ;; -------- '' --------
+    set-protracker-instrumentlist!   ;; -------- '' --------
+    set-protracker-playlist!         ;; -------- '' --------
+    set-protracker-pattern-format    ;; -------- '' --------
+    ))
 
 
 
@@ -638,135 +843,22 @@
 
 (my-require 'main_menus.scm)
 
+(define (FROM-C-assert-that-function-can-be-called-from-C funcname)
+  (define sym (string->symbol funcname))
+  (when (and (not (memq sym *functions-and-symbols-used-by-C*))
+             (not (memq sym *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*)))
+    (define message (string-append "The function \"" funcname "\" has not been added to the list of functions that can be called from C"))
+    (display message)(newline)
+    (ra:show-error message)))
 
-(define-constant *functions-called-from-evalScheme* 
-  '(show-global-swing-track-popup-menu
-    minimize-lowertab
-    remake-mixer-strips
-    FROM_C-redraw-mixer-strips
-    toggle-current-mixer-strips-fullscreen
-    set-random-sample-for-all-selected-sampler-instruments
-    show-async-message
-    FROM-C-show-help-window
-    FROM_C-cut-all-selected-seqblocks
-    FROM_C-paste-sequencer-blocks
-    FROM_C-copy-all-selected-seqblocks
-    FROM_C-delete-all-selected-seqblocks
-    pmg-start
-    make-instrument-conf
-    FROM_C-keybindings-have-been-reloaded
-    add-protracker-trackline         ;; import_mod.scm isn't loaded until we need it.
-    start-adding-protracker-events!  ;;
-    set-protracker-instrumentlist!   ;;
-    set-protracker-playlist!         ;;
-    set-protracker-pattern-format    ;;
-    ra:schedule
-    ra:add-message
-    show/hide-instrument-gui
-    system
-    create-change-editor-font-requester
-    create-change-system-font-requester
-    for-each
-    line-zoom-in-exponentially
-    line-zoom-out-exponentially
-    begin
-    c-display
-    moduloskew-track
-    replace-with-random-notes-in-range
-    replace-with-random-notes-in-track
-    replace-with-random-notes-in-block
-    replace-with-random-velocities-in-range
-    replace-with-random-velocities-in-track
-    replace-with-random-velocities-in-block
-    moduloskew-range
-    moduloskew-track
-    moduloskew-block
-    shuffle-range
-    shuffle-track
-    shuffle-block
-    distribute-range-evenly
-    distribute-track-evenly
-    distribute-block-evenly
-    set-random-octaves-for-notes-in-range
-    set-random-octaves-for-notes-in-track
-    set-random-octaves-for-notes-in-block
-    randomly-delete-notes-range
-    randomly-delete-notes-track
-    randomly-delete-notes-block
-    fullshuffle-range
-    fullshuffle-track
-    fullshuffle-block
-    randomize-note-durations-range
-    randomize-note-durations-track
-    randomize-note-durations-block
-    show-bars-and-beats-or-line-numbers-popup-menu
-    popup-menu
-    delete-all-unused-MIDI-instruments
-    FROM_C-create-modulator-gui
-    FROM_C-create-blocks-table-gui
-    FROM_C-create-instruments-table-gui
-    ra:request-load-instrument-preset
-    ra:request-load-preset-instrument-description
-    FROM_C-update-seqblock-track-on-off-configuration
-    randomly-delete-notes-range
-    randomly-delete-notes-track
-    randomly-delete-notes-block
-    FROM_C-split-sample-seqblock-under-mouse
-    if
-    FROM_C-call-me-when-num-seqtracks-might-have-changed
-    ra:set-instrument-color
-    FROM_C-reconfigure-sequencer-left-part
-    FROM_C-reconfigure-sequencer-right-part
-    FROM_C-show-blocklist-popup-menu
-    FROM_C-show-playlist-popup-menu
-    load
-    FROM_C-set-current-seqblock!
-    FROM_C-call-me-when-curr-seqtrack-has-changed
-    FROM-C-sequencer-gui-in-window
-    FROM_C-create-menu-entry-widget
-    FROM_C-reconfigure-sequencer-timing-part
-    FROM_C-paint-sequencer-grid
-    FROM_C-show-effect-popup-menu
-    show-instrument-color-dialog
-    ;;FROM_C-prepare-seqblock-stretch-automation-for-interface2
-    FROM_C-request-rename-instrument
-    FROM_C-copy-editor-track-on/off-to-seqblock
-    FROM_C-copy-seqblock-track-on/off-to-editor
-    FROM_C-create-editor-lower-part-gui
-    FROM_C-reconfigure-editor-lower-part-gui!
-    FROM_C-create-granular-vizualization-gui-for-sample-player
-    generate-main-menus
-    ra:set-curr-seqtrack
-    FROM_C-switch-solo-for-selected-instruments
-    FROM_C-switch-mute-for-selected-instruments
-    FROM_C-switch-bypass-for-selected-instruments
-    FROM_C-display-solo-status-in-statusbar
-    FROM_C-display-mute-status-in-statusbar
-    FROM_C-display-bypass-status-in-statusbar
-    FROM_C-set-mute-for-instruments
-    FROM_C-set-solo-for-instruments
-    FROM_C-set-bypass-for-instruments
-    ra:enable-metronome
-    ))
-
-(define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
-  '(add-protracker-trackline         ;; import_mod.scm isn't loaded until we need it.
-    start-adding-protracker-events!  ;; -------- '' --------
-    set-protracker-instrumentlist!   ;; -------- '' --------
-    set-protracker-playlist!         ;; -------- '' --------
-    set-protracker-pattern-format    ;; -------- '' --------
-    ))
-
-(define (FROM-C-assert-that-function-can-be-called-from-evalScheme funcname)
-  (if (not (memq (string->symbol funcname) *functions-called-from-evalScheme*))
-      (ra:show-error (<-> "The function -" funcname "- has not been added to the list of functions that can be called from evalScheme"))))
-
-(define (assert-functions-called-from-evalScheme)
+(define (assert-functions-and-symbols-called-from-C)
   (for-each (lambda (funcname)
               (c-display "CHECKING that" funcname "is defined")
-              (if (not (memq funcname *functions-called-from-evalScheme-that-are-not-available-at-program-startup*))
+              (if (not (memq funcname *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*))
                   (assert (defined? funcname))))
-            *functions-called-from-evalScheme*))
+            *functions-and-symbols-used-by-C*)
+  (display "(assert-functions-and-symbols-called-from-C) finished")
+  (newline))
               
 
 ;; Called during startup. Will be overridden later.
@@ -801,11 +893,14 @@
   (my-require 'pluginmanager.scm)
   (my-require 'editor_lower_part.scm)
 
-  (assert-functions-called-from-evalScheme)
+  (assert-functions-and-symbols-called-from-C)
 
   (common1-finished-loading)
   
-  (set! *is-initializing* #f))
+  (set! *is-initializing* #f)
+  ;;(set! *all-files-loaded #t)
+  )
+
 
 
 (set! *is-initializing* #f)

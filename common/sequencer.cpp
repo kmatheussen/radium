@@ -48,6 +48,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "undo_sequencer_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "../api/api_proc.h"
 
 #include "../audio/Mixer_proc.h"
@@ -2493,8 +2495,9 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
   int seqtracknum = get_seqtracknum(seqtrack);
   if (seqtracknum >= 0){    
     //setCurrSeqtrack(seqtracknum);
-    //setCurrSeqblock(seqblock->id); // setCurrSeqblock also sets curr seqtrack    
-    evalScheme(talloc_format("(FROM_C-set-current-seqblock! %d %" PRId64 ")", seqtracknum, seqblock->id)); // This one also fixes the z order.
+    //setCurrSeqblock(seqblock->id); // setCurrSeqblock also sets curr seqtrack
+
+    S7CALL2(void_int_int, "FROM_C-set-current-seqblock!", seqtracknum, seqblock->id); // This one also fixes the z order.
   }
   
   
@@ -2761,7 +2764,7 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_
 
   ensure_seqtrack_has_instrument(new_seqtrack);
                                  
-  evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements+1));
+  S7CALL2(void_int, "FROM_C-call-me-when-num-seqtracks-might-have-changed", root->song->seqtracks.num_elements+1);
 
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
@@ -2847,7 +2850,7 @@ void SEQUENCER_delete_seqtrack(int pos){
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
   
   call_me_after_seqtrack_has_been_removed(old_seqtrack);
-  evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements-1));
+  S7CALL2(void_int, "FROM_C-call-me-when-num-seqtracks-might-have-changed", root->song->seqtracks.num_elements-1);
 
 #if !defined(RELEASE)
   //memset(old_seqtrack, 0, sizeof(struct SeqTrack));
@@ -3067,7 +3070,7 @@ void SONG_init(void){
 
   }PLAYER_unlock();
 
-  evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements));
+  S7CALL2(void_int, "FROM_C-call-me-when-num-seqtracks-might-have-changed", root->song->seqtracks.num_elements);  
 }
 
 
@@ -3298,7 +3301,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
 
     
     if (root->song==song)
-      evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", song->seqtracks.num_elements));
+      S7CALL2(void_int, "FROM_C-call-me-when-num-seqtracks-might-have-changed", song->seqtracks.num_elements);
 
     if(HASH_has_key(state, "loop_start")) {
       ATOMIC_SET(song->looping.start, HASH_get_int(state, "loop_start"));

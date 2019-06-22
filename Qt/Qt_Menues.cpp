@@ -321,7 +321,7 @@ QMenu *GFX_GetActiveMenu(void){
   //return current_menu->base->activeAction() != NULL;
   if (GFX_MenuActive()){
     if (g_curr_menu.isEmpty()){
-      R_ASSERT_NON_RELEASE(false);
+      //R_ASSERT_NON_RELEASE(false); // Happens sometimes if "trying_to_make_menu_active" is true.
       return NULL;
     } else {
       return g_curr_menu.top();

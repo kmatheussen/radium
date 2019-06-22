@@ -1,3 +1,7 @@
+
+#ifndef _RADIUM_EMBEDDED_SCHEME_S7EXTRA_PROC_H
+#define _RADIUM_EMBEDDED_SCHEME_S7EXTRA_PROC_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -92,6 +96,9 @@ extern "C" {
 
   dyn_t s7extra_callFunc_dyn_dyn_int(const func_t *func, const dyn_t arg1, int64_t arg2);
   dyn_t s7extra_callFunc2_dyn_dyn_int(const char *funcname, const dyn_t arg1, int64_t arg2);
+
+  dyn_t s7extra_callFunc_dyn_int_charpointer(const func_t *func, int64_t arg1, const char *arg2);
+  dyn_t s7extra_callFunc2_dyn_int_charpointer(const char *funcname, int64_t arg1, const char *arg2);
 
   void s7extra_callFunc_void_int_charpointer_dyn(const func_t *func, int64_t arg1, const char* arg2, const dyn_t arg3);
   void s7extra_callFunc2_void_int_charpointer_dyn(const char *funcname, int64_t arg1, const char* arg2, const dyn_t arg3);
@@ -510,3 +517,4 @@ namespace radium{
 
 #endif
 
+#endif

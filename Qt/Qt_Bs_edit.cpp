@@ -124,9 +124,9 @@ public:
 
       if (shiftPressed()==false){
         if(is_blocklist)
-          evalScheme("(FROM_C-show-blocklist-popup-menu)");
+          S7CALL2(void_void, "FROM_C-show-blocklist-popup-menu");
         else
-          evalScheme("(FROM_C-show-playlist-popup-menu)");
+          S7CALL2(void_void, "FROM_C-show-playlist-popup-menu");
       }
 
       event->accept();

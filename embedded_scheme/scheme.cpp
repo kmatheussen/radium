@@ -94,11 +94,29 @@ namespace{
 }
 
 static s7_pointer find_scheme_value(s7_scheme *s7, const char *funcname){
-  R_ASSERT_NON_RELEASE(s7_is_defined(s7, funcname));
+  
+#if !defined(RELEASE)
+  R_ASSERT(s7_is_defined(s7, funcname));
+  {
+    static s7_pointer s_func = s7_undefined(s7);
+    if (!s7_is_procedure(s_func)){
+      s7_pointer symbol = s7_make_symbol(s7, "FROM-C-assert-that-function-can-be-called-from-C");
+      s_func = s7_symbol_local_value(s7, symbol, s7_rootlet(s7));
+      s7_gc_protect(s7, s_func);
+    }
+    s7_pointer args = s7_list_nl(s7,
+                                 1,
+                                 s7_make_string(s7, funcname),
+                                 NULL
+                                 );    
+    s7_call(s7, s_func, args);
+  }
+#endif
+  
   s7_pointer symbol = s7_make_symbol(s7, funcname);
-  s7_pointer scheme_func = s7_symbol_local_value(s7, symbol, s7_rootlet(s7));
+  s7_pointer value = s7_symbol_local_value(s7, symbol, s7_rootlet(s7));
      
-  return scheme_func;  
+  return value;  
 }
 
 static s7_pointer find_and_protect_scheme_value(const char *funcname){
@@ -823,6 +841,28 @@ dyn_t s7extra_callFunc_dyn_dyn_int(const func_t *func, const dyn_t arg1, int64_t
 
 dyn_t s7extra_callFunc2_dyn_dyn_int(const char *funcname, const dyn_t arg1, int64_t arg2){
   return s7extra_callFunc_dyn_dyn_int((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
+}
+
+
+dyn_t s7extra_callFunc_dyn_int_charpointer(const func_t *func, int64_t arg1, const char *arg2){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list_nl(s7,
+                                         3,
+                                         (s7_pointer)func,
+                                         s7_make_integer(s7, arg1),
+                                         s7_make_string(s7, arg2),
+                                         NULL
+                                         )
+                              );
+  
+
+  return s7extra_dyn(s7, ret);
+}
+
+dyn_t s7extra_callFunc2_dyn_int_charpointer(const char *funcname, int64_t arg1, const char *arg2){
+  return s7extra_callFunc_dyn_int_charpointer((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
 }
 
 
