@@ -41,6 +41,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Pd_plugin_proc.h"
 #include "../audio/Modulator_plugin_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "../api/api_proc.h"
 
 #include "Qt_instruments_proc.h"
@@ -344,7 +346,7 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 
           _popup_menu_is_visible = true;
 
-          dyn_t ret = evalSchemeWithReturn(talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"%s\")", _patch->id, PLUGIN_get_effect_name(plugin, _effect_num)));
+          dyn_t ret = S7CALL2(dyn_int_charpointer,"FROM_C-show-effect-popup-menu", _patch->id, PLUGIN_get_effect_name(plugin, _effect_num));
           if (ret.type==INT_TYPE){
             set_unhovered_when_popupmenu_is_closed(ret.int_number);
           }

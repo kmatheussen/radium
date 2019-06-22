@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/wblocks_proc.h"
 #include "../common/OS_settings_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "EditorWidget.h"
 
 #include "../OpenGL/GfxElements.h"
@@ -251,7 +253,7 @@ void GFX_SetSystemFont(QFont font){
   }
 
   remakeMixerStrips(-1);
-  evalScheme("(minimize-lowertab)");
+  S7CALL2(void_void,"minimize-lowertab");
 }
 
 void GFX_SetSystemFont(const char *fontdescr){

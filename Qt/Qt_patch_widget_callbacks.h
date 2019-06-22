@@ -190,9 +190,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     return talloc_format("System %s Voice %d", name, voicenum+1);
   }
 
-  const char *get_popup(const char *name, int voicenum){
-    int64_t id = _patch->id;
-    return talloc_format("(FROM_C-show-effect-popup-menu %" PRId64 "\"%s\")", id, get_effect_name(name, voicenum));
+  void show_popup(const char *name, int voicenum){
+    S7CALL2(dyn_int_charpointer,"FROM_C-show-effect-popup-menu", _patch->id, get_effect_name(name, voicenum));
   }
 
   template <class SpinBox> void set_popup_and_stuff(SpinBox *spinbox, const char *name, int voicenum){
@@ -208,7 +207,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       if (!is_alive)
         return;
       
-      evalScheme(get_popup(name, voicenum));
+      show_popup(name, voicenum);
       set_editor_focus();
     };    
   }
@@ -225,7 +224,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
         if (!is_alive)
           return;
       
-        evalScheme(get_popup("On/Off", i));
+        show_popup("On/Off", i);
         set_editor_focus();
       };
 

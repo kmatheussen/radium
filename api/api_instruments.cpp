@@ -647,7 +647,7 @@ void setRandomInstrumentSample(int64_t instrument_id, const_char *path){
 }
 
 void setRandomSampleForAllSelectedInstruments(void){
-  evalScheme("(set-random-sample-for-all-selected-sampler-instruments)");
+  S7CALL2(void_void, "set-random-sample-for-all-selected-sampler-instruments");
 }
   
 void setInstrumentLoopData(int64_t instrument_id, int64_t start, int64_t length){
