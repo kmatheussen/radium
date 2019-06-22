@@ -16,9 +16,11 @@ export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing"
 DASCC=gcc
 DASCXX=g++
 
-# These two lines should be uncommented if setting CLANG=1 in build_linux_common.sh
-#DASCC=clang
-#DASCXX=clang++
+if [[ $RADIUM_USE_CLANG == 1 ]]
+then
+    DASCC=clang
+    DASCXX=clang++
+fi
 
 if ! env |grep RADIUM_QT_VERSION ; then
     echo "Must define RADIUM_QT_VERSION to either 4 or 5. For instance: \"RADIUM_QT_VERSION=5 make packages\""

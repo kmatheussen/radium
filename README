@@ -14,7 +14,10 @@ HOW TO MAKE IT RUN
           QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` bin/radium
           "
 
+          If you have gcc9, see https://github.com/kmatheussen/radium/issues/1222
           
+          If you want to use clang instead of gcc, first run this line before running "make packages":
+          export RADIUM_USE_CLANG=1
 
 
 IF YOU GOT THE SOURCE FROM GIT
@@ -36,11 +39,24 @@ IF YOU GOT THE SOURCE FROM GIT
 
 
 IF YOU ARE DEVELOPING RADIUM
-         # Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.
-         export RADIUM_QT_VERSION=5
-         export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
-         ./make_and_run_linux.sh
+     Run these lines:
+     
+        # Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.
+        export RADIUM_QT_VERSION=5
+        export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
+        ./make_and_run_linux.sh
 
+     If you want to use clang instead of gcc, first run this line before running "make packages" and ./make_and_run_linux.sh:
+     
+        export RADIUM_USE_CLANG=1
+
+     If you don't want to compile in the llvm backend for the faustdev instrument, run this line first:
+     
+        export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
+
+     If you don't want to compile in the llvm backend for the faustdev instrument, run this line first:
+     
+        export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
 
 
 INTRODUCTION
