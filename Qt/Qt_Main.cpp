@@ -95,6 +95,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_wtrackheaders_proc.h"
 #include "../common/data_as_text_proc.h"
 #include "../common/sequencer_proc.h"
+#include "../common/Process.hpp"
 
 #include "../api/api_proc.h"
 #include "../api/api_gui_proc.h"
@@ -776,7 +777,48 @@ void MOUSE_CYCLE_schedule_unregister_all(void){
   }    
 }
 
+
+namespace{
+
+  static radium::Process g_check_backtrace_process;
+  static bool g_check_backtrace_process_finished = false;
   
+  static void start_check_backtrace_process(void){
+#if FOR_WINDOWS  
+    g_check_backtrace_process.start(OS_get_full_program_file_path("radium_plugin_scanner.exe") + " test_backtrace");
+#else
+    g_check_backtrace_process.start(OS_get_full_program_file_path("radium_plugin_scanner") + " test_backtrace");
+#endif
+  }
+  
+  static void checkup_on_check_backtrace_process(void){
+    if (g_check_backtrace_process_finished)
+      return;
+    
+    radium::Process::Status status = g_check_backtrace_process.get_status(30000);
+
+    //printf("Status: %d. %s\n", (int)status, g_check_backtrace_process.get_status_string().toUtf8().constData());
+    
+    if (status == radium::Process::Status::RUNNING)
+      return;
+    
+    g_check_backtrace_process_finished = true;
+    
+    if (status == radium::Process::Status::FINISHED)
+      return;
+        
+#if defined(FOR_LINUX) && !defined(IS_LINUX_BINARY)
+    SYSTEM_show_error_message(talloc_format("Error: Unable to get backtrace: \"Bactracing %s\".\nPlease check that Radium is compiled and installed properly.", g_check_backtrace_process.get_status_string().toUtf8().constData()));
+#else
+    SYSTEM_show_error_message(talloc_format("Error: Unable to get backtrace: \"Bactracing %s\".\nPlease report this to k.s.matheussen@notam02.no", g_check_backtrace_process.get_status_string().toUtf8().constData()));
+#endif
+
+    g_check_backtrace_process.kill();
+  }
+
+}
+
+
 class MyApplication
   : public QApplication
 #if USE_QT5
@@ -2197,6 +2239,9 @@ protected:
       static_cast<EditorWidget*>(window->os_visual.widget)->callCustomEvent();
     }
 #endif
+
+    if (is_called_every_ms(5000))
+      checkup_on_check_backtrace_process();
   }
 };
 }
@@ -2687,6 +2732,7 @@ void GFX_set_bottom_widget_height(int new_height){
   }
 }
 
+
 //extern void updateAllFonts(QWidget *widget);
 
 static bool g_load_new_song=true;
@@ -3134,6 +3180,8 @@ int radium_main(const char *arg){
   CalledPeriodically periodic_timer;
 
   FOCUSFRAMES_init();
+
+  start_check_backtrace_process();
   
 #if USE_QT_VISUAL
   qapplication->exec();

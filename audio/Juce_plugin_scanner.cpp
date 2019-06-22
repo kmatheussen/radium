@@ -188,6 +188,12 @@ int main(int argc, char **argv){
   juce::MemoryOutputStream b(1024);
   
   //show_alert("testing alerting");
+
+  if (argc == 2 && !strcmp(argv[1], "test_backtrace")){
+    juce::SystemStats::getStackBacktrace();
+    //juce::Thread::sleep(1000*100);
+    return 0;
+  }
   
   if (argc != 3){
     show_alert(juce::String("Wrong number of arguments. Expected 2, found ") + juce::String::formatted("%d.", argc-1));

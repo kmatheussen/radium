@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef SAFE_POPUP
   #if FOR_LINUX
-    #define SAFE_POPUP 1 // X often freezes if a program crash while a popup menu is open. (at least when running under gdb)
+    #define SAFE_POPUP 1 // X often freezes if a program crashes while running under gdb and a popup menu is open, and other situations where the Qt main loop is blocked from being called.
   #else
     #define SAFE_POPUP 0
   #endif
