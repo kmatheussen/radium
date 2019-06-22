@@ -788,7 +788,7 @@ bool instrumentIsImplicitlyMuted(int64_t instrument_id){
   return plugin->is_implicitly_muted;
 }
 
-void setInstrumentIsImplicitlyMuted(int64_t instrument_id, bool doit){
+void setInstrumentIsImplicitlyMuted(bool doit, int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -820,7 +820,7 @@ bool instrumentIsImplicitlySoloed(int64_t instrument_id){
   return plugin->is_implicitly_soloed;
 }
 
-void setInstrumentIsImplicitlySoloed(int64_t instrument_id, bool doit){
+void setInstrumentIsImplicitlySoloed(bool doit, int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
