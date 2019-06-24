@@ -236,21 +236,3 @@
 (define (FROM_C-update-implicit-solo-connections!)
   (update-implicit-solo-connections! (get-all-audio-instruments)))
 
-
-
-(define (set-instrument-solo-for-this-instrument-only! id is-on)
-  ;;(c-display "     Setting" (<ra> :get-instrument-name id) "solo to" is-on)
-  (define current-value (ra:get-instrument-solo id))
-  (when (or (and is-on (not current-value))
-            (and (not is-on) current-value))            
-    (if (<ra> :do-undo-solo)
-        (<ra> :undo-instrument-effect id "System Solo On/Off"))
-    (<ra> :set-instrument-effect id "System Solo On/Off" (if is-on 1.0 0.0))))
-
-
-(define (FROM-C-set-solo! instrument-id is-on)
-  ;;(c-display "FROM-C-set-solo!" instrument-id is-on)
-  (undo-block (lambda ()
-                (set-instrument-solo-for-this-instrument-only! instrument-id is-on)))
-  (update-implicit-solo-connections! (get-all-audio-instruments)))
-

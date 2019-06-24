@@ -1764,11 +1764,8 @@
   
   (define (turn-off-all-solo except)
     (for-each (lambda (instrument-id)
-                (when (and (not (= instrument-id except))
-                           (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
-                  ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
-                  (set-instrument-solo-for-this-instrument-only! instrument-id #f)
-                  ))
+                (if (not (= instrument-id except))
+                    (<ra> :set-instrument-solo #f instrument-id #f)))
               (get-all-audio-instruments)))
 
   
