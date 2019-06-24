@@ -170,16 +170,16 @@ namespace{
   //
   struct PlaylistElement{
 
-    struct SeqBlock *seqblock;
-    int seqblocknum;
+    struct SeqBlock *seqblock = NULL;
+    int seqblocknum = -1;
 
-    bool is_current;
+    bool is_current = false;
 
     bool is_last = false;
     
   private:
     
-    int64_t _pause;
+    int64_t _pause = 0;
 
   public:
 
@@ -792,7 +792,8 @@ public slots:
     } else {
 
       // Insert block
-      
+
+      R_ASSERT_RETURN_IF_FALSE(pe.seqblock!=NULL);
       int64_t seqtime = pe.seqblock->t.time;
       
       if (pe.is_pause())
@@ -857,6 +858,7 @@ public slots:
     if (pe.is_pause())
       SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -pe.get_pause());
     else{
+      R_ASSERT_RETURN_IF_FALSE(pe.seqblock!=NULL);
       int64_t seqblock_duration = SEQBLOCK_get_seq_duration(pe.seqblock);
       SEQTRACK_delete_seqblock(SEQUENCER_get_curr_seqtrack(), pe.seqblock, true);
       SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -1 * seqblock_duration);
@@ -1216,6 +1218,7 @@ void BS_UpdatePlayList(void){
     int pos = 0;
     for (const auto &pe : get_playlist_elements()){
       if (pe.is_legal() && !pe.is_pause()){
+        R_ASSERT_RETURN_IF_FALSE(pe.seqblock!=NULL);
         if (getCurrSeqblockId()==pe.seqblock->id){
           curr_pos = pos;
           break;
