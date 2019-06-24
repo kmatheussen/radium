@@ -963,7 +963,7 @@ void resetInstrumentEffect(int64_t instrument_id, const char *effect_name){
   int effect_num = get_effect_num(patch, effect_name);
   if (effect_num < 0)
     return;
-  
+
   PLUGIN_reset_one_effect(plugin, effect_num);
 
   post_set_effect(patch, plugin, effect_name);

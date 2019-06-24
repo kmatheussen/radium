@@ -2029,7 +2029,7 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
   if (seqblock->block==NULL)
     prepare_remove_sample_from_seqblock(seqtrack, seqblock, Seqblock_Type::REGULAR);
 
-  int64_t new_curr_seqblock_id = -1;
+  int64_t new_curr_seqblock_id = -2;
   
   {
     radium::PlayerPause pause(is_playing_song());
