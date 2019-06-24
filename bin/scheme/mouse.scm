@@ -7528,6 +7528,12 @@
                                                   (show-record-popup-menu seqtracknum)))
                                                ))
                                           
+                                          "--------------------"
+                                          (list "Select previous seqblock"
+                                                ra:select-prev-seqblock)
+                                          (list "Select next seqblock"
+                                                ra:select-next-seqblock)
+                                          
                                           (if (and #f (not seqblock-info))
                                               #f
                                               (let* ((is-selected (and seqblocknum

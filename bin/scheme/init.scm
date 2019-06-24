@@ -208,6 +208,9 @@ FROM-C-show-help-window
 FROM_C-create-blocks-table-gui
 FROM_C-create-instruments-table-gui
 FROM_C-keybindings-have-been-reloaded
+FROM_C-jump-next-mark
+FROM_C-jump-prev-mark
+FROM_C-jump-to-mark
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

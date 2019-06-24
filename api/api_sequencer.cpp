@@ -3978,6 +3978,17 @@ void setPaintVerticalMarkersInSequencer(bool doit){
   SEQUENCER_update(SEQUPDATE_TIME);
 }
 
+void jumpToSequencerMark(int marknum){
+  S7CALL2(void_int, "FROM_C-jump-to-mark", marknum);
+}
+
+void jumpPrevSequencerMark(void){
+  S7CALL2(void_void, "FROM_C-jump-prev-mark");
+}
+
+void jumpNextSequencerMark(void){
+  S7CALL2(void_void, "FROM_C-jump-next-mark");
+}
 
 /***************** set/get using sequencer timing ****************/
 
