@@ -100,12 +100,9 @@ sequencer_multiselect_block_background_color = #ffff4811
 sequencer_grid_color = #99281980
 sequencer_tempo_automation_color = #ffbaab88
 scroll_bar_color = #69b8b8b8
-mixer_selected_object_border_color_num = #ff080a81
 mixerstrips_selected_object_color_num = #ff1dbe58
 sequencer_block_interface_color = #ff041ae0
 sequencer_block_audio_file_background_color = #64eeeeee
 sequencer_waveform_color = #c8000000
 sequencer_marker_color = #ff0a0632
 
-color_instrument_saturation = 0.6669999957084656
-color_block_saturation = 1.0
