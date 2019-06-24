@@ -1768,7 +1768,7 @@
   (define (turn-off-all-solo except)
     (for-each (lambda (instrument-id)
                 (if (not (= instrument-id except))
-                    (<ra> :set-instrument-solo #f instrument-id #f)))
+                    (<ra> :set-instrument-solo #f instrument-id)))
               (get-all-audio-instruments)))
 
   
