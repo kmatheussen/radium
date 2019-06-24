@@ -154,7 +154,6 @@ void handleError_internal(const char *fmt,...){
       return;
     }
   */
-
   R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
     
   bool is_called_from_scheme = g_scheme_nested_level > 0;

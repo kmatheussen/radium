@@ -323,7 +323,7 @@ class ParamWidget : public QWidget {
 
     void checkBoxPressed(){
       printf("checkbox pressed\n");
-      ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num)); // Undo for sliders is taken care of in MyQSlider.h.
+      ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num, AE_NO_FLAGS)); // Undo for sliders is taken care of in MyQSlider.h.
     }
 
     void checkBoxValueToggled(bool toggle){

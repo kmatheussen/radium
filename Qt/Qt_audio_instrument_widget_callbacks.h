@@ -1255,19 +1255,6 @@ public slots:
   void on_bypass_button_toggled(bool val){
     if(_is_updating==0)
       setInstrumentBypass(val, _patch->id);
-    /*
-    SoundPlugin *plugin = (SoundPlugin*)(_patch->patchdata);
-        
-    if (doUndoBypass()){
-      const SoundPluginType *type = plugin->type;
-      ADD_UNDO(AudioEffect_CurrPos(_patch.data(), type->num_effects + EFFNUM_EFFECTS_ONOFF));
-    }
-    
-    set_plugin_value(val==false ? 10000 : 0, EFFNUM_EFFECTS_ONOFF);
-    drywet_slider->setEnabled(!val);
-    CHIP_update(plugin);
-    updateWidgets();
-    */
   }
 
   void on_solo_button_toggled(bool val){

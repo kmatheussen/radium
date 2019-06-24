@@ -1342,7 +1342,7 @@ static void add_eud_undo(QVector<EffectUndoData> &s_euds, QHash<int64_t, QSet<in
       
       if (patch != NULL) {
         //printf("    EUD undo %d: %f\n", eud.effect_num, eud.effect_value);
-        ADD_UNDO(AudioEffect_CurrPos2(patch, eud.effect_num, eud.effect_value));
+        ADD_UNDO(AudioEffect_CurrPos2(patch, eud.effect_num, eud.effect_value, AE_ALWAYS_CREATE_SOLO_AND_BYPASS_UNDO));
       }
     }
   }
@@ -3101,7 +3101,7 @@ void PLUGIN_reset(SoundPlugin *plugin){
   if (type->num_effects==0)
     return;
       
-  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1));
+  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1, AE_NO_FLAGS));
 
   // system effects (no, we don't reset those, only plugin effects)
   /*
@@ -3133,8 +3133,22 @@ void PLUGIN_reset(SoundPlugin *plugin){
 void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
   volatile struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+  int system_effect = effect_num - plugin->type->num_effects;
   
-  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
+  bool is_solo = system_effect == EFFNUM_SOLO_ONOFF;
+    
+  if (is_solo) {
+    if (plugin->patch != NULL){
+      setInstrumentSolo(false, plugin->patch->id);
+      return;
+    }else{
+      R_ASSERT_NON_RELEASE(false);
+    }    
+  }
+
+  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num, AE_NO_FLAGS));
+
   PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values_native[effect_num], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 }
 
@@ -3157,7 +3171,7 @@ void PLUGIN_random(SoundPlugin *plugin){
   //if (type->num_effects==0)
   //  return;
   
-  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1));
+  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1, AE_ALWAYS_CREATE_SOLO_AND_BYPASS_UNDO));
 
   float values[type->num_effects+NUM_SYSTEM_EFFECTS];
   for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)

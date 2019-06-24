@@ -1358,7 +1358,7 @@ void setInstrumentMute(bool do_mute, int64_t instrument_id){
 
   float new_val = do_mute ? 0.0 : 1.0;
   
-  ADD_UNDO(AudioEffect_CurrPos(patch, effect_num));
+  ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
 
   PLUGIN_set_effect_value(plugin, -1, effect_num, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 }
@@ -1399,8 +1399,7 @@ void setInstrumentBypass(bool do_bypass, int64_t instrument_id){
   if(is_bypassed==do_bypass)
     return;
      
-  if(doUndoBypass())
-    ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
+  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num, AE_NO_FLAGS));
   
   float new_val = do_bypass ? 0.0 : 1.0;
   PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
@@ -1461,7 +1460,7 @@ void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
   if (effect_num==-1)
     return;
   
-  ADD_UNDO(AudioEffect_CurrPos(patch, effect_num));
+  ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
 }
 
 #if 0
