@@ -354,8 +354,7 @@
                                                                                (show-sequencer-header-popup-menu seqtracknum instrument-id "System Volume On/Off" gui)
                                                                                (popup-menu "Reset"
                                                                                            (lambda ()
-                                                                                             (<ra> :set-editor-seqtrack-muted #f seqtracknum)
-                                                                                             (update-me!)))))
+                                                                                             (<ra> :set-editor-seqtrack-muted #f seqtracknum)))))
                                                                           (else
                                                                            (assert #f))))))
 
