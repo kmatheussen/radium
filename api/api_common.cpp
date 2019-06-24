@@ -174,7 +174,7 @@ void handleError_internal(const char *fmt,...){
   va_end(argp);
 
   if (is_called_from_scheme)
-    g_error_message = talloc_format("<br>\nLast API entry: %s.<br>\nError: %s", g_last_api_entry_func_name, message);
+    g_error_message = talloc_format("<br>\nLast API entry: %s.<br>\nError: %s", g_last_api_entry_func_name, getHtmlFromText(message));
   //g_error_message = talloc_strdup(message); // Set this value before calling SCHEME_get_history and GFX_Message, so that we won't get into an infinite loop.
     
   printException(message);

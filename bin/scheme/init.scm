@@ -296,7 +296,8 @@ FROM_C-keybindings-have-been-reloaded
 		  (string? (car info)))
 	     (format p " <font color='black' font size=\"+2\">~A</font><br>" (catch #t 
 				(lambda () 
-				  (ra:get-html-from-text (apply format #f info)))
+				  (apply format #f info))
+                                  ;;(ra:get-html-from-text (apply format #f info)))
 				(lambda args 
 				  "<error in format>")))
 	     (if (not (null? info))
