@@ -2294,6 +2294,12 @@ void applyGfxSeqblocks(int seqtracknum){
 int64_t g_curr_seqblock_id = -2;
 
 void setCurrSeqblock(int64_t seqblockid){ 
+  if (seqblockid < 0 && seqblockid!=-2){
+    handleError("setCurrSeqblock: Illegal id: %d. Must be -2, 0, or higher", (int)seqblockid);
+    return;
+  }
+    
+  
   if (seqblockid==g_curr_seqblock_id)
     return;
 
@@ -2313,6 +2319,12 @@ void setCurrSeqblock(int64_t seqblockid){
 
   if(level > 10){ // Even though it works now, don't remove this test. There's lots of situations where we easily could end up in an infinite loop here if code is changed slightly.
     R_ASSERT(false);
+    return;
+  }
+
+  if (seqblockid==-2){
+    cancelCurrSeqblock(); // Update GFX of old seqblock.
+    g_curr_seqblock_id = seqblockid;
     return;
   }
   
