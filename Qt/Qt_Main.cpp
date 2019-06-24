@@ -778,17 +778,14 @@ void MOUSE_CYCLE_schedule_unregister_all(void){
 }
 
 
+#if !defined(FOR_WINDOWS)
 namespace{
 
   static radium::Process g_check_backtrace_process;
   static bool g_check_backtrace_process_finished = false;
   
   static void start_check_backtrace_process(void){
-#if FOR_WINDOWS  
-    g_check_backtrace_process.start(OS_get_full_program_file_path("radium_plugin_scanner.exe") + " test_backtrace");
-#else
     g_check_backtrace_process.start(OS_get_full_program_file_path("radium_plugin_scanner") + " test_backtrace");
-#endif
   }
   
   static void checkup_on_check_backtrace_process(void){
@@ -817,6 +814,8 @@ namespace{
   }
 
 }
+#endif
+
 
 
 class MyApplication
@@ -2240,8 +2239,10 @@ protected:
     }
 #endif
 
+#if !defined(FOR_WINDOWS)    
     if (is_called_every_ms(5000))
       checkup_on_check_backtrace_process();
+#endif
   }
 };
 }
@@ -3181,7 +3182,9 @@ int radium_main(const char *arg){
 
   FOCUSFRAMES_init();
 
+#if !defined(FOR_WINDOWS)
   start_check_backtrace_process();
+#endif
   
 #if USE_QT_VISUAL
   qapplication->exec();
