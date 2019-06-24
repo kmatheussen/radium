@@ -2264,8 +2264,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
             SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
             if (thispatch != patch && plugin!=NULL && ATOMIC_GET(plugin->solo_is_on)) {
               int num_effects = plugin->type->num_effects;
-              if(doUndoSolo())
-                ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
+              ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF, AE_NO_FLAGS));
               PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, 0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
               //CHIP_update(plugin);
             }
@@ -2278,7 +2277,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
           setInstrumentSolo(!solo_is_on, patch->id);
         
         /*
-        //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
+        //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF, AE_NOT_ALWAYS_CREATE_SOLO_AND_BYPASS_UNDO));
         
         PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, new_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
         //CHIP_update(plugin);
@@ -2312,7 +2311,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
             SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
             if (thispatch != patch && plugin!=NULL && is_muted_relaxed(plugin)){
               int effect_num = get_mute_effectnum(plugin->type);
-              ADD_UNDO(AudioEffect_CurrPos(thispatch, effect_num));
+              ADD_UNDO(AudioEffect_CurrPos(thispatch, effect_num, AE_NO_FLAGS));
               PLUGIN_set_effect_value(plugin, -1, effect_num, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
               //CHIP_update(plugin);
             }
@@ -2349,8 +2348,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
             SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
             if (thispatch != patch && plugin!=NULL && !ATOMIC_GET(plugin->effects_are_on)) {
               int num_effects = plugin->type->num_effects;
-              if(doUndoBypass())
-                ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_EFFECTS_ONOFF));
+              ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_EFFECTS_ONOFF, AE_NO_FLAGS));
               PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
               CHIP_update(plugin);
             }
@@ -2381,7 +2379,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         
         
         _has_made_volume_effect_undo=false;
-        //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
+        //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num, AE_NO_FLAGS));
         
         vector_t chips = MW_get_selected_chips();
         if (VECTOR_is_in_vector(&chips, this)==false){
@@ -2503,7 +2501,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
       int effect_num = get_volume_effect_num();
       
       if (_has_made_volume_effect_undo==false)
-        ADD_UNDO(AudioEffect_CurrPos(patch, effect_num));
+        ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
       
       PLUGIN_set_effect_value(plugin, -1, effect_num, value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
       

@@ -25,10 +25,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../Qt/Qt_instruments_proc.h"
 
+#include "../api/api_proc.h"
+
+
 #include "undo_audio_effect_proc.h"
 
-
-extern struct Root *root;
 
 struct Undo_AudioEffect{
   struct Patch *patch;
@@ -59,7 +60,8 @@ static void Undo_AudioEffect(
                              int effect_num, // if -1, all values are stored.
                              bool has_value,
                              bool only_system_effects,
-                             float value
+                             float value,
+                             enum AE_flags flags
                              )
 {
   if (has_value)
@@ -67,7 +69,21 @@ static void Undo_AudioEffect(
 
   struct Undo_AudioEffect *undo_ae=talloc(sizeof(struct Undo_AudioEffect));
   SoundPlugin *plugin = patch->patchdata;
-  
+
+  if (flags != AE_ALWAYS_CREATE_SOLO_AND_BYPASS_UNDO) {
+    int system_effect_num = effect_num - plugin->type->num_effects;
+    
+    bool is_solo = system_effect_num == EFFNUM_SOLO_ONOFF;
+      
+    if (is_solo && !doUndoSolo())
+      return;
+    
+    bool is_bypass = system_effect_num == EFFNUM_EFFECTS_ONOFF;
+    
+    if (is_bypass && !doUndoBypass())
+      return;
+  }
+    
   undo_ae->patch = patch;
   undo_ae->effect_num = effect_num;
   undo_ae->only_system_effects = only_system_effects;
@@ -96,23 +112,23 @@ static void Undo_AudioEffect(
 
 }
 
-void ADD_UNDO_FUNC(AudioEffect_CurrPos(struct Patch *patch, int effect_num)){
+void ADD_UNDO_FUNC(AudioEffect_CurrPos(struct Patch *patch, int effect_num, enum AE_flags flags)){
   struct Tracker_Windows *window = root->song->tracker_windows;
   //printf("Undo_AudioEffect_CurrPos\n");
-  Undo_AudioEffect(window,window->wblock, patch, effect_num, false, false, 0);
+  Undo_AudioEffect(window,window->wblock, patch, effect_num, false, false, 0, flags);
 }
 
-void ADD_UNDO_FUNC(AudioEffect_CurrPos2(struct Patch *patch, int effect_num, float value)){
+void ADD_UNDO_FUNC(AudioEffect_CurrPos2(struct Patch *patch, int effect_num, float value, enum AE_flags flags)){
   struct Tracker_Windows *window = root->song->tracker_windows;
   //printf("Undo_AudioEffect_CurrPos\n");
-  Undo_AudioEffect(window,window->wblock, patch, effect_num, true, false, value);
+  Undo_AudioEffect(window,window->wblock, patch, effect_num, true, false, value, flags);
 }
 
-void ADD_UNDO_FUNC(OnlySystemEffects(struct Patch *patch)){
+void ADD_UNDO_FUNC(OnlySystemEffects(struct Patch *patch, enum AE_flags flags)){
   struct Tracker_Windows *window = root->song->tracker_windows;
   //printf("Undo_AudioEffect_CurrPos\n");
 
-  Undo_AudioEffect(window,window->wblock, patch, -1, false, true, 0);
+  Undo_AudioEffect(window,window->wblock, patch, -1, false, true, 0, flags);
 }
 
 static void *Undo_Do_AudioEffect(

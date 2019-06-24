@@ -771,7 +771,7 @@ struct Comp
     if(in_box.inside(x,y)){
 #ifdef COMPILING_RADIUM
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      ADD_UNDO(AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_THRESHOLD));
+      ADD_UNDO(AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_THRESHOLD, AE_NO_FLAGS));
 #endif
 
       curr_slider = THRESHOLD_SLIDER;
@@ -781,7 +781,7 @@ struct Comp
     }else if(out_box.inside(x,y)){
 #ifdef COMPILING_RADIUM
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      ADD_UNDO(AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_RATIO));
+      ADD_UNDO(AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_RATIO, AE_NO_FLAGS));
 #endif
 
       curr_slider = RATIO_SLIDER;
@@ -794,7 +794,7 @@ struct Comp
     }else if(vol_box.inside(x,y)){
 #ifdef COMPILING_RADIUM
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      ADD_UNDO(AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_OUTPUT_VOLUME));
+      ADD_UNDO(AudioEffect_CurrPos(_patch, plugin->type->num_effects+EFFNUM_COMP_OUTPUT_VOLUME, AE_NO_FLAGS));
 #endif
 
       curr_slider = MAKEUPGAIN_SLIDER;

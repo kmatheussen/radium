@@ -274,7 +274,7 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
         if(_is_patchvoice_onoff_button==true)
           ADD_UNDO(PatchVoice_CurrPos(_patch.data(), _patchvoicenum));
         else if(_patch.data()!=NULL  && _patch->instrument==get_audio_instrument())
-          ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num));
+          ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num, AE_NO_FLAGS));
       }
 #endif
       //handle_mouse_event(event);

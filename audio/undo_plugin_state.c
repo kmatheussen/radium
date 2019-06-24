@@ -97,11 +97,11 @@ void ADD_UNDO_FUNC(PluginState(struct Patch *patch, hash_t *state_or_null)){
 
     if (type->state_contains_effect_values) {
       
-      CALL_ADD_UNDO_FUNC(OnlySystemEffects(patch));
+      CALL_ADD_UNDO_FUNC(OnlySystemEffects(patch, AE_ALWAYS_CREATE_SOLO_AND_BYPASS_UNDO));
       
     } else {
       
-      CALL_ADD_UNDO_FUNC(AudioEffect_CurrPos(patch, -1));
+      CALL_ADD_UNDO_FUNC(AudioEffect_CurrPos(patch, -1, AE_ALWAYS_CREATE_SOLO_AND_BYPASS_UNDO));
       
     }
     

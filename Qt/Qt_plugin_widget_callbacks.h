@@ -1186,7 +1186,7 @@ public slots:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin != NULL){
       int num_effects = plugin->type->num_effects;
-      //ADD_UNDO(AudioEffect_CurrPos(_patch, num_effects+EFFNUM_SOLO_ONOFF));
+      //ADD_UNDO(AudioEffect_CurrPos(_patch, num_effects+EFFNUM_SOLO_ONOFF, AE_NO_FLAGS));
       PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, val ? 1 : 0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
       //}
       //ATOMIC_SET(plugin->solo_is_on, val);
