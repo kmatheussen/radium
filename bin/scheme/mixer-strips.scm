@@ -208,12 +208,15 @@
 
 
 (define (get-mixer-strip-name instrument-id strips-config)
-  (let ((name (<ra> :get-instrument-name instrument-id)))
-    (if (or (not strips-config)
-            (strips-config :is-unique instrument-id)
-            (strips-config :is-standalone instrument-id))            
-        name
-        (<-> "[" name "]"))))
+  (let* ((name (<ra> :get-instrument-name instrument-id))
+         (name2 (if (or (not strips-config)
+                        (strips-config :is-unique instrument-id)
+                        (strips-config :is-standalone instrument-id))            
+                    name
+                    (<-> "[" name "]"))))
+    (if (<ra> :instrument-is-selected instrument-id)
+        (<-> name2 " (S)")
+        name2)))
 
 
 ;; STRIPS-CONFIG
@@ -2227,10 +2230,10 @@
 
 (define (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip border-width)
   ;;(c-display "    Draw mixer strips border called for " instrument-id)
-  (if (= (<ra> :get-current-instrument) instrument-id)
-      (if (not is-standalone-mixer-strip)
-          (mydrawbox gui *current-mixer-strip-border-color* 0 0 width height border-width 0)
-          )))
+  (when (not is-standalone-mixer-strip)
+    (define color (get-instrument-border-color instrument-id))
+    (if color           
+        (mydrawbox gui color 0 0 width height border-width 0))))
 
 (define (create-current-instrument-border gui instrument-id)
   (define rubberband-resize (gui-rubberband gui 5 "#bb111144" (lambda ()

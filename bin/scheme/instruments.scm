@@ -1206,7 +1206,7 @@
    "Configure color" (lambda ()
                        (show-instrument-color-dialog parentgui instrument-id))
    "Generate new color" (lambda ()
-                          (<ra> :set-instrument-color (<ra> :generate-new-color 0.9) instrument-id))
+                          (<ra> :generate-new-instrument-color instrument-id))
 
    "--------"
    
@@ -1631,6 +1631,20 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
              0.3)
       "#666660"))
 
+(define (get-instrument-border-color instrument-id)
+  (define color #f)
+  (if (= (<ra> :get-current-instrument) instrument-id)
+      (set! color *current-mixer-strip-border-color*))
+  (if (<ra> :instrument-is-selected instrument-id)
+      ;;(let ((selcolor "#8888ee"))
+      (let ((selcolor "#999999"))
+        (if color
+            (set! color (<gui> :mix-colors color selcolor 0.5))
+            (set! color selcolor))))
+  color)
+
+
+
 (define (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id)
   (define background-color (get-instrument-background-color gui instrument-id))
   (<gui> :filled-box gui background-color x1 y1 x2 y2))
@@ -1733,5 +1747,6 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                            :is-current is-current
                            :get-automation-data get-automation-data
                            :text-x1 text-x1
+                           :border-color (get-instrument-border-color instrument-id)
                            ))
   

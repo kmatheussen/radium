@@ -557,6 +557,9 @@
                                    :wrap-lines #t
                                    )
 
+  (if (not border-color)
+      (set! border-color "gray"))
+  
   (define pos (scale value 0 1 x1 x2))
   ;;(<gui> :filled-box widget (<gui> :get-background-color widget) x1 y1 x2 y2)
   (if color2
@@ -600,11 +603,11 @@
 
   ;; border
   (if (> border-width 0)
-      (if is-current
-          (<gui> :draw-box widget *current-mixer-strip-border-color* (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 rounding rounding) ;; "#aa111144"
-          (<gui> :do-clipped widget x1 y1 x2 y2
-                 (lambda ()
-                   (<gui> :draw-box widget border-color  x1 y1 x2 y2 border-width rounding rounding)))))
+      (<gui> :do-clipped widget x1 y1 x2 y2
+             (lambda ()
+               (if is-current
+                   (<gui> :draw-box widget border-color (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 rounding rounding) ;; "#aa111144"
+                   (<gui> :draw-box widget border-color x1 y1 x2 y2 border-width rounding rounding)))))
 
   ret
   )
