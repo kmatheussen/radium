@@ -530,15 +530,15 @@ const_char *getSeqtrackName(int seqtracknum){
 }
 
 void undoSeqtrackNoteGain(int seqtracknum){
-  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  struct SeqTrack *seqtrack = getBlockSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return;
   
-  ADD_UNDO(EditorSeqtrackVolume(seqtracknum));
+  ADD_UNDO(EditorSeqtrackVolume(get_seqtracknum(seqtrack)));
 }
 
 void setSeqtrackNoteGain(float gain, int seqtracknum){
-  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  struct SeqTrack *seqtrack = getBlockSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return;
 
@@ -550,7 +550,7 @@ void setSeqtrackNoteGain(float gain, int seqtracknum){
 }
 
 float getSeqtrackNoteGain(int seqtracknum){
-  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  struct SeqTrack *seqtrack = getBlockSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return 1.0;
 
@@ -558,7 +558,7 @@ float getSeqtrackNoteGain(int seqtracknum){
 }
 
 void setEditorSeqtrackMuted(bool muteit, int seqtracknum){
-  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  struct SeqTrack *seqtrack = getBlockSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return;
 
@@ -567,13 +567,15 @@ void setEditorSeqtrackMuted(bool muteit, int seqtracknum){
   if (muteit==old_value)
     return;
 
-  ADD_UNDO(EditorSeqtrackVolume(seqtracknum));
+  ADD_UNDO(EditorSeqtrackVolume(get_seqtracknum(seqtrack)));
   
   {
     radium::PlayerLock lock(is_playing_song());
     seqtrack->note_gain_muted = muteit ? 0.0 : 1.0;
     seqtrack->note_gain_has_changed_this_block = true;
   }
+
+  SEQUENCER_update(SEQUPDATE_HEADERS);
 }
 
 bool getEditorSeqtrackMuted(int seqtracknum){
@@ -584,6 +586,83 @@ bool getEditorSeqtrackMuted(int seqtracknum){
   return seqtrack->note_gain_muted < 0.1 ? true : false;
 }
 
+bool getSeqtrackMute(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  if (!seqtrack->for_audiofiles){
+
+    return getEditorSeqtrackMuted(seqtracknum);
+    
+  } else {
+
+    struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+    R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, false);
+
+    return !ATOMIC_GET(plugin->volume_is_on);
+  }
+}
+
+void setSeqtrackMute(bool do_mute, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  if (seqtrack->for_audiofiles){
+
+    setInstrumentMute(do_mute, seqtrack->patch->id);
+
+  } else {
+
+    setEditorSeqtrackMuted(do_mute, seqtracknum);
+    
+  }
+}
+
+bool switchSeqtrackMute(int seqtracknum){
+  bool new_value = !getSeqtrackMute(seqtracknum);
+  setSeqtrackMute(new_value, seqtracknum);
+  return new_value;
+}
+
+bool getSeqtrackSolo(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  if (!seqtrack->for_audiofiles){
+
+    return false;
+    
+  } else {
+
+    return getInstrumentSolo(seqtrack->patch->id);
+    
+  }
+}
+
+void setSeqtrackSolo(bool do_solo, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  if (!seqtrack->for_audiofiles)
+    return;
+
+  setInstrumentSolo(do_solo, seqtrack->patch->id);
+}
+
+bool switchSeqtrackSolo(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  if (!seqtrack->for_audiofiles)
+    return false;
+
+  return switchInstrumentSolo(seqtrack->patch->id);
+}
 
 // Recording
 //////////////////////////////////////////

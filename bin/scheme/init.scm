@@ -36,6 +36,7 @@
     set-protracker-pattern-format    ;;
     ra:schedule
     ra:add-message
+    add-message-window-message
     show/hide-instrument-gui
     system
     create-change-editor-font-requester
