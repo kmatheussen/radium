@@ -98,6 +98,10 @@ int64_t getSongPos(void){
   return ATOMIC_DOUBLE_GET(pc->song_abstime);
 }
 
+void incSongPos(double inc){
+  setSongPos(R_BOUNDARIES(0, ATOMIC_DOUBLE_GET(pc->song_abstime) + (inc*pc->pfreq), getSongLengthInFrames()));
+}
+
 int64_t getLastSongPosStart(void){
   return pc->last_song_starttime;
 }

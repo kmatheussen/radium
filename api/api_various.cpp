@@ -2503,10 +2503,10 @@ void grabKeybinding(func_t *callback){
 const_char* getQualifierName(const_char *qualifier){
 #if FOR_LINUX
   const char *g_left_meta = "Left Meta";
-  const char *g_right_meta = "Menu";
+  const char *g_right_meta = "Right Meta";
 #elif FOR_WINDOWS
   const char *g_left_meta = "Left Win";
-  const char *g_right_meta = "Menu";
+  const char *g_right_meta = "Right Win";
 #elif FOR_MACOSX
   const char *g_left_meta = "Left Cmd";
   const char *g_right_meta = "Right Cmd";
