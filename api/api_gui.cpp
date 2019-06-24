@@ -6885,6 +6885,7 @@ const_char *getTimeString(const_char* time_format){
   return talloc_strdup(QTime::currentTime().toString(time_format).toUtf8().constData());
 }
 
+// Note! This function is called from the error handler.
 const_char *getTextFromHtml(const_char* html){
   QTextDocument document;
   
@@ -6892,9 +6893,12 @@ const_char *getTextFromHtml(const_char* html){
 
   return talloc_strdup(document.toPlainText().toUtf8().constData());
 }
+
+static QString get_html_from_textline(QString line){
+  if (line=="")
+    return ""; // QTextDocumentFragment::fromPlainText().toHtml returns "<br/>" for empty lines, for some reason.
   
-const_char *getHtmlFromText(const_char* text){
-  QString html = QTextDocumentFragment::fromPlainText(text).toHtml("UTF-8");
+  QString html = QTextDocumentFragment::fromPlainText(line).toHtml("UTF-8");
 
   // Remove <!--StartFragment--> and <!--EndFragment-->
   html.remove("<!--StartFragment-->");
@@ -6926,7 +6930,27 @@ const_char *getHtmlFromText(const_char* text){
   //printf("html: %s\n", html.toUtf8().constData());
   //R_ASSERT_NON_RELEASE(false);
 
-  return talloc_strdup(html.toUtf8().constData());
+  return html;
+}
+
+
+// Note! This function is likely to be called from the error handler somewhere.
+const_char *getHtmlFromText(const_char* text){
+  QString ret;
+
+  bool is_first = true;
+  for (auto line : QString(text).split("\n")){
+    QString html = get_html_from_textline(line);
+    printf("LINE: -%s- HTML: -%s-\n", line.toUtf8().constData(), html.toUtf8().constData());
+    if (is_first)
+      ret = html;
+    else
+      ret = ret + "<br>" + html;
+    is_first = false;
+  }
+
+  printf("LINE: -%s-\n", ret.toUtf8().constData());
+  return talloc_strdup(ret.toUtf8().constData());
 }
 
 // audio meter
