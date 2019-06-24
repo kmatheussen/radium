@@ -159,7 +159,6 @@ async-replace-instrument
 async-load-instrument-preset
 create-instrument-popup-menu
 FROM-C-generate-new-color-for-all-selected-instruments
-FROM-C-set-solo!
 FROM_C-set-solo-for-instruments
 FROM_C-set-mute-for-instruments
 FROM_C-set-bypass-for-instruments

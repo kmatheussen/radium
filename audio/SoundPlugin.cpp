@@ -64,6 +64,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SmoothDelay.hpp"
 #include "Modulator_plugin_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "../api/api_gui_proc.h"
 
 
@@ -1247,6 +1249,7 @@ static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFor
 #define GET_BUS_VOLUME(busnum, value_format)    \
   get_gain_value(safe_float_read(&plugin->bus_volume[busnum]), value_format)
 
+
 // Only called once (when starting to play)
 void PLUGIN_call_me_before_starting_to_play_song_END(SoundPlugin *plugin){
 
@@ -1355,6 +1358,12 @@ static void add_eud_undo(QVector<EffectUndoData> &s_euds, QHash<int64_t, QSet<in
   s_last_undo_num = Undo_num_undos();
 }
 
+static DEFINE_ATOMIC(bool, g_atomic_must_update_solo_gui_stuff);
+
+static void update_solo_gui_stuff(void){
+  S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
+}
+
 void PLUGIN_call_me_very_often_from_main_thread(void){
 
   static double s_last_time = 0;
@@ -1393,7 +1402,12 @@ void PLUGIN_call_me_very_often_from_main_thread(void){
   }
 
   if (is_old && s_euds.size() > 0) // || Undo_num_undos() != s_last_undo_num)
-    add_eud_undo(s_euds, s_stored_effect_nums, curr_time, s_last_time, s_last_undo_num);    
+    add_eud_undo(s_euds, s_stored_effect_nums, curr_time, s_last_time, s_last_undo_num);
+
+  if (!g_is_starting_up && !g_is_loading)
+    if (ATOMIC_GET_RELAXED(g_atomic_must_update_solo_gui_stuff))
+      if (ATOMIC_SET_RETURN_OLD(g_atomic_must_update_solo_gui_stuff, false)==true)
+        update_solo_gui_stuff();
 }
 
                                                      
@@ -1584,6 +1598,10 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       
     case EFFNUM_SOLO_ONOFF:
       SET_ATOMIC_ON_OFF(plugin->solo_is_on, value);
+      if (THREADING_is_main_thread() && PLAYER_current_thread_has_lock()==false && !g_is_starting_up && !g_is_loading)
+        update_solo_gui_stuff();
+      else
+        ATOMIC_SET(g_atomic_must_update_solo_gui_stuff, true);
       break;
 
 

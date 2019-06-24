@@ -1325,7 +1325,25 @@ bool getInstrumentSolo(int64_t instrument_id){
 }
 
 void setInstrumentSolo(bool do_solo, int64_t instrument_id){
-  S7CALL2(void_int_bool,"FROM-C-set-solo!", instrument_id, do_solo);
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+  
+  bool new_value = do_solo ? 1.0 : 0.0;
+  if (new_value==ATOMIC_GET(plugin->solo_is_on))
+    return;
+  
+  int effect_num = plugin->type->num_effects + EFFNUM_SOLO_ONOFF;
+
+  ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
+  
+  PLUGIN_set_effect_value(plugin, -1, effect_num, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 }
 
 bool switchInstrumentSolo(int64_t instrument_id){
