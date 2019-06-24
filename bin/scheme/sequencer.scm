@@ -585,3 +585,44 @@
               (lambda ()
                 (<ra> :open-sequencer-preferences-dialog)))))
 
+
+(define (FROM_C-jump-to-mark marknum)
+  (c-display "marknum:" marknum)
+  (define markers (<ra> :get-all-sequencer-markers))
+  (cond ((= marknum 0)
+         (ra:set-song-pos 0))
+        ((> marknum (length markers))
+         (ra:set-song-pos (ra:get-song-length-in-frames)))
+        (else
+         (ra:set-song-pos (floor (markers (- marknum 1) :time))))))
+
+(define (FROM_C-jump-next-mark)
+  (let loop ((markers (to-list (ra:get-all-sequencer-markers))))
+    (if (null? markers)
+        (ra:set-song-pos (ra:get-song-length-in-frames))
+        (let ((marktime (floor (markers 0 :time))))
+          (if (> marktime (ra:get-song-pos))
+              (ra:set-song-pos marktime)
+              (loop (cdr markers)))))))
+
+(define (FROM_C-jump-prev-mark)
+  (define is-playing-song (<ra> :is-playing-song))
+  (define (get-fuzzy-song-pos)
+    (define songpos (<ra> :get-song-pos))
+    (if is-playing-song
+        (- songpos (/ (<ra> :get-sample-rate) 1)) ;; 1000ms fuzz
+        songpos))
+  (define fuzzy-song-pos (get-fuzzy-song-pos))
+  ;;(c-display "fuzzy:" is-playing-song (/ fuzzy-song-pos 44100.0) ". songpos:" (/ (<ra> :get-song-pos) 44100.0))
+  (let loop ((markers (reverse (to-list (ra:get-all-sequencer-markers)))))
+    (if (null? markers)
+        (ra:set-song-pos 0)
+        (let ((marktime (floor (markers 0 :time))))
+          (if (< marktime fuzzy-song-pos)
+              (ra:set-song-pos marktime)
+              (loop (cdr markers)))))))
+
+#!!
+(pretty-print (<ra> :get-all-sequencer-markers))
+(<ra> :get-sample-rate)
+!!#

@@ -690,6 +690,18 @@
                           (request-marker x* curr-marker
                                              (lambda (marker)
                                                (area :replace-curr-entry! marker)))))
+                  "-------------------"
+                  (list "Jump prev marker"
+                        ra:jump-prev-sequencer-mark)
+                  (list "Jump next marker"
+                        ra:jump-next-sequencer-mark)
+                  (list "Jump to marker #"
+                        (map (lambda (marker-num)
+                               (list (<-> marker-num)
+                                     :shortcut (list ra:jump-to-sequencer-mark marker-num)
+                                     (lambda ()
+                                       (<ra> :jump-to-sequencer-mark marker-num))))
+                             (iota 11)))
                   (get-sequencer-timing-popup-menu-entries)
                   ))
                :entry-color "sequencer_marker_color" ;;"#66004488"

@@ -2543,6 +2543,11 @@ static struct SeqBlock *create_sample_seqblock(struct SeqTrack *seqtrack, int se
   if (seqblock==NULL)
     return NULL;
 
+  if (end_seqtime==-1){
+    R_ASSERT(type==Seqblock_Type::REGULAR);
+    end_seqtime = seqtime + seqblock->t.default_duration;
+  }
+
   if (type==Seqblock_Type::RECORDING) {
     
     int64_t duration = end_seqtime - seqtime;
@@ -2556,11 +2561,6 @@ static struct SeqBlock *create_sample_seqblock(struct SeqTrack *seqtrack, int se
   
   R_ASSERT_RETURN_IF_FALSE2(seqblock->t.default_duration > 0, NULL);
   
-  if (end_seqtime==-1){
-    R_ASSERT(type==Seqblock_Type::REGULAR);
-    end_seqtime = seqtime + seqblock->t.default_duration;
-  }
-
   return seqblock;
 }
 
@@ -3252,14 +3252,19 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
         seqtracknum += seqtracks_for_seqtrack.size();
       }
 
-
-      if (song->use_sequencer_tempos_and_signatures==false && ((struct SeqTrack*)seqtracks.elements[0])->for_audiofiles){
-        R_ASSERT_NON_RELEASE(false);
-        {
-          radium::PlayerPause pause(song==root->song && is_playing_song());
-          radium::PlayerLock lock(song==root->song);
-          song->use_sequencer_tempos_and_signatures = true;
-        }
+      {        
+        struct SeqTrack *first_seqtrack = (struct SeqTrack*)seqtracks.elements[0];
+        if (first_seqtrack==NULL)
+          R_ASSERT(false);
+        else
+          if (song->use_sequencer_tempos_and_signatures==false && first_seqtrack->for_audiofiles){
+            R_ASSERT_NON_RELEASE(false);
+            {
+              radium::PlayerPause pause(song==root->song && is_playing_song());
+              radium::PlayerLock lock(song==root->song);
+              song->use_sequencer_tempos_and_signatures = true;
+            }
+          }
       }
     }
     
