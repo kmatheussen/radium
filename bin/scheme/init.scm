@@ -92,7 +92,8 @@
     ra:set-curr-seqtrack
     
     safe-history-ow!
-
+    ra:enable-metronome
+    
     
     ;; git grep s7extra_get_func_from_funcname|cut -f2 -d"\""
 create-block-timings

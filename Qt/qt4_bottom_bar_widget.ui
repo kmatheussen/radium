@@ -3698,7 +3698,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>Enable metronome</string>
+         <string>Enable/disable metronome - CTRL + SHIFT + M</string>
         </property>
         <property name="text">
          <string>Click</string>

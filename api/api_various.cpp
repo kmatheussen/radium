@@ -504,6 +504,12 @@ bool metronomeEnabled(void){
   return ATOMIC_GET_RELAXED(root->clickonoff);
 }
 
+bool switchMetronome(void){
+  bool new_value = !metronomeEnabled();
+  enableMetronome(new_value);
+  return new_value;
+}
+
 void enablePlayCursor(bool onoff){
   ATOMIC_SET(root->play_cursor_onoff, onoff);
   
