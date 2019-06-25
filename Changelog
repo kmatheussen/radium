@@ -1,3 +1,86 @@
+Changes 5.9.67 -> 5.9.69:
+* Playlist: Fix a crash that could happen in
+  various situations, for instance when creating a
+  new seqtrack. 
+* Menus: Fix the "Set Default Colors 1/2" entries
+  under "Edit".
+* Mixer: Paint gray border around mixer strips for
+  instruments that are selected.
+* Sequencer: Make Alt + left/right key move cursor to
+  prev/next mark.
+* Sequencer: Make left/right key move cursor 1 second
+  back/forward. (This keybinding will be changed
+  later to jump 1 bar bacward/forward.)
+* Sequencer: Make Shift + left/right key move cursor
+  10 seconds back/forward. (This keybinding will be
+  changed later to jump 4 bars backward/forward)
+  change later.)
+* Sequencer: Make Win/Meta/Meta + left/right key
+  select previous / next seqblock in current
+  seqtrack.
+* Sequencer: Make Alt + 1 move cursor to mark 1,
+  Alt + 2 move cursor to mark 2, and so forth.
+* Sequencer: Make 1L1 move cursor to start.
+* Menus: Name the EXTRA_R key "Right Meta" (linux)
+  and "Right Win" (windows), not "Menu".
+* Sequencer: Bind the "M" key to switch mute for the
+  current seqtrack.
+* Sequencer: Bind the "S" key to switch solo for the
+  current seqtrack
+* GUI: Make sure implicit mute/solo status is always
+  updated.
+* Audio: Make sure undo is never created for
+  solo/bypass when undo for solo/bypass is disabled.
+* Sequencer: Fix assertion window popping up when
+  moving more than one seqblock.
+* Scripting: Fix error message sometimes being
+  screwed up.
+* Instruments: Create undo when changing instrument
+  color(s).
+* Mixer: Bind "C" key to change color for all
+  selected sound objects.
+* Mixer: Paint red border around selected instruments
+  instead of making them bluish.
+* Mixer: If an object is both current and selected,
+  paint purple border color (i.e. mix current color
+  and selected color).
+* Audio: Make switch solo/mute/bypass for selected
+  instruments operate on the current instrument if no
+  instrument is selected.
+* Audio: Make setting random sample for all selected
+  instruments operate on the current instrument if no
+  instrument is selected.
+* Mixer: Bind the "B" key to switch bypass.
+* Mixer: Bind the "S" key to switch solo.
+* Mixer: Bind the "M" key to switch mute.
+* API:
+  * New functions: getInstrumentSolo,
+    getInstrumentMute, getInstrumentBypass,
+    switchInstrumentSolo, switchInstrumentMute,
+    switchInstrumentBypass,
+    getExtendedSelectedInstruments,
+    generateNewInstrumentColor,
+    generateNewColorForAllSelectedInstruments,
+    getSeqtrackMute, setSeqtrackMute,
+    switchSeqtrackMute, getSeqtrackSolo,
+    setSeqtrackSolo, switchSeqtrackSolo, incSongPos,
+    jumpToSequencerMark, jumpPrevSequencerMark, and
+    jumpNextSequencerMark.
+  * Use current seqtrack if seqtracknum is set to -1.
+  * Switch argument order for setInstrumentSolo,
+    setInstrumentMute, setInstrumentBypass,
+    setInstrumentIsImplicitlyMuted, and
+    setInstrumentIsImplicitlySoloed.
+  * In getInstrumentSolo, getInstrumentMute,
+    getInstrumentBypass, setInstrumentSolo,
+    setInstrumentMute, setInstrumentBypass,
+    switchInstrumentSolo, switchInstrumentMute, and
+    switchInstrumentBypass, set default value for the
+    "instrument_id" parameter to -1.
+  * Fix getHtmlFromText function which screwed up
+    lineshifts and empty lines.
+
+
 Changes 5.9.65 -> 5.9.67:
 * Load: Fix probable memory corruption. Seems to
   rarely have had any consequences though.
