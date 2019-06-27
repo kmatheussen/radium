@@ -1534,14 +1534,14 @@
 !!#
 
 (def-area-subclass (<sequencer-drag-entry-area> :gui :x1 :y1 :x2 :y2
-                                         :is-current
-                                         :entry-num
-                                         :file-info #f
-                                         :blocknum #f
-                                         :allow-dragging #f
-                                         :background-color #f
-                                         :callback #f)
-
+                                                :is-current
+                                                :entry-num
+                                                :file-info #f
+                                                :blocknum #f
+                                                :allow-dragging #f
+                                                :background-color #f
+                                                :callback #f)
+  
   (assert (or file-info blocknum))
 
   (define text-color (cond (blocknum

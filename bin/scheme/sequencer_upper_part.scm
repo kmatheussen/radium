@@ -704,9 +704,9 @@
                              (iota 11)))
                   (get-sequencer-timing-popup-menu-entries)
                   ))
+               :get-entry-info-string get-entry-info-string
                :entry-color "sequencer_marker_color" ;;"#66004488"
                :curr-entry-color "#ff002244"
-               :get-entry-info-string get-entry-info-string
                :do-grid #t
                :double-click-callback doubleclick-marker
                :is-marker #t
@@ -863,24 +863,24 @@
       (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 tempo-y2
                                   :text "Tempos"
                                   :background-color "sequencer_background_color"
-                                  :paint-border #f
                                   :align-right #t
+                                  :paint-border #f
                                   )))
 
   (if (<ra> :show-signatures-sequencer-lane)
       (add-sub-area-plain! (<new> :text-area gui x1 tempo-y2 x2 signature-y2
                                   :text "Signatures"
                                   :background-color "sequencer_background_color"
-                                  :paint-border #f
                                   :align-right #t
+                                  :paint-border #f
                                   )))
 
   (if (<ra> :show-markers-sequencer-lane)
       (add-sub-area-plain! (<new> :text-area gui x1 signature-y2 x2 y2
                                   :text "Markers"
                                   :background-color "sequencer_background_color"
-                                  :paint-border #f
                                   :align-right #t
+                                  :paint-border #f
                                   )))
   )
 

@@ -1726,9 +1726,9 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
   ;;(c-display "background-color:" background-color)
   (draw-checkbox gui text is-selected x1 y1 x2 y2 color
-                 :x-border border
-                 :y-border border
                  :background-color background-color                 
+                 :y-border border
+                 :x-border border
                  :paint-implicit-border is-implicitly
                  :implicit-border-width implicit-border
                  :box-rounding 2)

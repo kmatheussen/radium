@@ -611,7 +611,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 
 
 (delafina (try-finally :try
-                       :failure
+                       :failure #f
                        :failure-return-value *eat-errors-false-unless-failure-is-overridden*
                        :finally (lambda ()
                                   #f))
@@ -1121,15 +1121,8 @@ for .emacs:
 (define (vector-copy vector)
   (copy vector))
 
-(define (cl-car a)
-  (if (pair? a)
-      (car a)
-      #f))
-
-(define (cl-cdr a)
-  (if (pair? a)
-      (cdr a)
-      #f))
+;; cl-car and cl-cdr moved to mylint.scm
+;;
 
 (define (cl-cddr a)
   (cl-cdr (cl-cdr a)))
@@ -1746,4 +1739,9 @@ for .emacs:
   (set! (coroutine :please-stop-me) #f)
   (set! (coroutine :func) coroutine-helper) ;; Not currently used for anything.
   (schedule-next! args 0))
+
+
+(let ()
+  (<declare-variable> notdefined)
+  (***assert-error*** (+ notdefined) 'unbound-variable))
 

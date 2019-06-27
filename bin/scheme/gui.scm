@@ -321,6 +321,7 @@
     (<ra> :set-statusbar-text text)
     (<gui> :tool-tip text)))
 
+#||
 (define (<gui-helper> command . args)
   ;;(c-display "****" command args)
   (cond ((eq? command :group)
@@ -380,6 +381,7 @@
            (when (and last-arg (procedure? last-arg))
              (<ra> :gui_add-callback gui last-arg))
            gui))))
+||#
 
 #||
         ((eq? command :add-callback)
@@ -1513,3 +1515,38 @@
               (c-display "clicked2")))
 !#
 
+
+(when (not (<ra> :release-mode))
+  (let ((html ""))
+    (***assert*** html
+                  (<ra> :get-html-from-text (<ra> :get-text-from-html html))))
+  (let ((html "<br>"))
+    (***assert*** html
+                  (<ra> :get-html-from-text (<ra> :get-text-from-html html))))
+  (let ((html "<br><br>"))
+    (***assert*** html
+                  (<ra> :get-html-from-text (<ra> :get-text-from-html html))))
+  (let ((html "<br>hello<br><br>hello2"))
+    (***assert*** html
+                  (<ra> :get-html-from-text (<ra> :get-text-from-html html))))
+  (let ((text ""))
+    (***assert*** text
+                  (<ra> :get-text-from-html (<ra> :get-html-from-text text))))
+  (let ((text "\n"))
+    (***assert*** text
+                  (<ra> :get-text-from-html (<ra> :get-html-from-text text))))
+  (let ((text "\n\n"))
+    (***assert*** text
+                  (<ra> :get-text-from-html (<ra> :get-html-from-text text))))
+  (let ((text "\nhello"))
+    (***assert*** text
+                  (<ra> :get-text-from-html (<ra> :get-html-from-text text))))
+  (let ((text "\nhello\n"))
+    (***assert*** text
+                  (<ra> :get-text-from-html (<ra> :get-html-from-text text))))
+  
+  )
+
+#!!
+(<ra> :get-html-from-text "\n ")
+!!#

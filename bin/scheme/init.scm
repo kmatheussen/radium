@@ -11,6 +11,8 @@
 
 (set! (*s7* 'history-size) 80)
 
+              
+
 (define *is-initializing* #t)
 ;;(define *all-files-loaded #f)
 
@@ -222,8 +224,6 @@ FROM_C-jump-to-mark
     set-protracker-pattern-format    ;; -------- '' --------
     ))
 
-
-
 (define-constant *eat-errors-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
 
 (define (FROM-C-catch-all-errors-and-display-backtrace-automatically func . args)
@@ -243,6 +243,7 @@ FROM_C-jump-to-mark
                           (display args)
                           (newline))))
              *eat-errors-failed-return-value*))))
+
 
 
 
@@ -547,7 +548,6 @@ FROM_C-jump-to-mark
                            (newline))))))))
 
 
-              
 (define (my-equal? a b)
   (morally-equal? a b))
 #||
@@ -583,40 +583,54 @@ FROM_C-jump-to-mark
 (assert (eqv? assert ((lambda () assert))))
 
 
-(define (***assert*** a b)
+(define (***assert-custom-comp*** comp? a b)
   (define (test -__Arg1 -__Arg2)
     (define (-__Func1)
       (let ((A -__Arg1))
-        (if (my-equal? A -__Arg2)
-            (begin
-              (newline)
-              (pretty-print "Correct: ")
-              (if (defined? 'to-displayable-string)
-                  (pretty-print (to-displayable-string A))
-                  (pretty-print A))
-              (pretty-print "")
-              (newline)
-              #t)
-            (-__Func2))))
-    (define (-__Func2)
-      (let ((A -__Arg1))
-        (let ((B -__Arg2))
-          (begin
-            (newline)
-            (c-display ". Correct: ")
-            (c-display (pp B))
-            (c-display "Wrong. Result: ")
-            (c-display (pp A))
-            (handle-assertion-failure-during-startup (list "***assert*** failed. Result:" A ". Expected:" B))
-            (newline)
-            (if *is-initializing*
-                (error 'assert-failed))
-            #f))))
+        (catch #t
+               (lambda ()
+                 (if (comp? A -__Arg2)
+                     (begin
+                       (newline)
+                       (pretty-print "Correct: ")
+                       (if (defined? 'to-displayable-string)
+                           (pretty-print (to-displayable-string A))
+                           (pretty-print A))
+                       (pretty-print "")
+                       (newline)
+                       #t)
+                     (-__Func2 a b)))
+               (lambda (error . args)
+                 ;;(c-display "ARGS:" args)
+                 (-__Func2 (list (symbol->keyword error) (apply format (cons #f (car args))) (cdr args))
+                           (list a b))))))
+    (define (-__Func2 A B)
+      (newline)
+      (c-display "Wrong. Result:\n  " (pp A))
+      (c-display "  Expected:\n  " (pp B))
+      (handle-assertion-failure-during-startup (list "***assert*** failed. Result:" A ". Expected:" B))
+      (newline)
+      (if *is-initializing*
+          (error 'assert-failed))
+      #f)
     (-__Func1))
 
   (test a b))
-
-
+  
+(define (***assert*** a b)
+  (***assert-custom-comp*** my-equal? a b))
+  
+(define (***assert-map*** func a b)
+  (catch #t
+         (lambda ()
+           (***assert*** (func a) b))
+         (lambda args
+           (newline)
+           (c-display "Wrong. Result: " (pp a))
+           (c-display "  Expected: " (pp b))
+           (handle-assertion-failure-during-startup (list "***assert-map*** failed. Result:" result ". Expected:" b))
+           'failed)))
+    
 (define-macro (***assert-error*** a what)
   `(***assert*** (let ((ret #f))
                    (catch #t
@@ -624,16 +638,18 @@ FROM_C-jump-to-mark
                             ,a)
                           (lambda args
                             (if (eq? ,what (car args))
-                                (set! ret #t))))
+                                (set! ret #t)
+                                (c-display "...expected " ,what ", not " (car args)))))
                    ret)
                  #t))
 
+        
 
 
-;; Takes a lot of time. Don't want to run every time.
+
 (define-constant *mylint-load-file-during-startup* (and (not (ra:release-mode))
-                                                        (= (random 10) 0)
-                                                        (not (string=? (ra:get-os-name) "windows")) ;; Takes a very long time on windows, at least if running in normal console.
+                                                        (= (random 10) 0) ;; Takes a lot of time. Don't want to run every time.
+                                                        (not (string=? (ra:get-os-name) "windows")) ;; Takes even more time, a lot more time, on windows, at least if running in normal console.
                                                         ))
 
   
@@ -702,7 +718,6 @@ FROM_C-jump-to-mark
         (set! *safe-ow-recursive-level* 0)
         ret)))
         
-        
 
   
 (define (safe-display-ow!)
@@ -745,7 +760,6 @@ FROM_C-jump-to-mark
 
 ;; Test startup crash: (crash reporter should show up, and program exit). Startup crashes before this point (i.e. before the error hook is added, are not handled.)
 ;;(+ a 90)
-
 
 
 (load "mylint.scm")

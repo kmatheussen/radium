@@ -102,8 +102,11 @@ static s7_pointer find_scheme_value(s7_scheme *s7, const char *funcname){
     if (!s7_is_procedure(s_func)){
       s7_pointer symbol = s7_make_symbol(s7, "FROM-C-assert-that-function-can-be-called-from-C");
       s_func = s7_symbol_local_value(s7, symbol, s7_rootlet(s7));
+      if (!s7_is_procedure(s_func))
+        abort();
       s7_gc_protect(s7, s_func);
     }
+    
     s7_pointer args = s7_list_nl(s7,
                                  1,
                                  s7_make_string(s7, funcname),
@@ -1817,10 +1820,12 @@ void s7extra_unprotect(void *v, int64_t pos){
 }
 
 void s7extra_disable_history(void){
+  //printf("\n\n\n\n =================================== >>>>>>>> DISABLE: %d (enabled: %d) ===============================\n\n\n", g_s7_history_disabled, s7_history_enabled(s7));
   g_s7_history_disabled++;
   
   if(g_s7_history_disabled==1){
     R_ASSERT_NON_RELEASE(s7_history_enabled(s7)==true);
+    //printf("\n\n\n\n ========================================================= Disabling history\n");
     s7_set_history_enabled(s7, false);
   }else{
     R_ASSERT_NON_RELEASE(s7_history_enabled(s7)==false);
@@ -1828,12 +1833,15 @@ void s7extra_disable_history(void){
 }
   
 void s7extra_enable_history(void){
+  //printf("\n\n\n\n =================================== <<< ENABLE: %d (enabled: %d) ===============================\n\n\n", g_s7_history_disabled, s7_history_enabled(s7));
+  
   R_ASSERT_RETURN_IF_FALSE(g_s7_history_disabled > 0);
   g_s7_history_disabled--;
 
   R_ASSERT_NON_RELEASE(s7_history_enabled(s7)==false);
 
   if(g_s7_history_disabled == 0){
+    //printf("\n\n\n\n ==================================================== Enabling history\n");
     s7_set_history_enabled(s7, true);
   }
 }

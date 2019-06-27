@@ -1746,7 +1746,7 @@
                                        :background-color 
                                        :min-height 
                                        :use-single-letters 
-                                       :stack-horizontally 
+                                       :stack-horizontally
                                        :set-fixed-size #t)
   
   (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
@@ -1871,6 +1871,16 @@
 
   gui
   )
+
+#!!
+(if #f
+    (create-mixer-strip-mutesolo "instrument-id"
+                                 "strips-config"
+                                 "background-color"
+                                 "mutesolo-height"
+                                 ":use-single-letters"
+                                 ":stack-horizontally"))
+!!#
 
 (define (create-mixer-strip-volume instrument-id meter-instrument-id strips-config background-color is-minimized)
   (define fontheight (get-fontheight))
@@ -2273,7 +2283,12 @@
   (define mutesolo-height (ceiling (* 0.9 (get-fontheight) *pan-mutesolo-voltext-scale-factor*)))
 
   (<gui> :add gui label 1)
-  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color mutesolo-height #t #f))
+  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id
+                                               strips-config
+                                               background-color
+                                               mutesolo-height
+                                               #t
+                                               #f))
 
   (define meter-instrument-id (find-meter-instrument-id instrument-id))
 
@@ -2827,9 +2842,9 @@
 
     
   (define mixer-strips-object (make-mixer-strips-object :gui gui
-                                                        :is-full-screen is-full-screen
                                                         :remake remake
                                                         :strips-config strips-config
+                                                        :is-full-screen is-full-screen
                                                         :pos pos))
   (remake :non-are-valid)
   
