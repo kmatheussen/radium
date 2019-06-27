@@ -93,6 +93,7 @@
   * Grain jitter (%). 100: Very random position of grains. 0: Same distance between each grain.
 ||#
 
+;; Need comment what this is about...
 (if (not (defined? '*seqblock-guis*))
     (<ra> :add-undo-redo-callback
           (lambda ()

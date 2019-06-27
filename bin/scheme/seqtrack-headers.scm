@@ -856,8 +856,8 @@
                                       :get-color)
   (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 y2
                               (<-> seqtracknum)
-                              :text-color "black"
                               :background-color get-color
+                              :text-color "black"
                               :border-rounding 108 ;0 ;;(if use-two-rows 1 8)
                               ))
 
@@ -1040,7 +1040,7 @@
                                   panner-x2 panner-y2
                                   instrument-id
                                   :get-color get-background-color
-                                  seqtracknum
+                                  :seqtracknum seqtracknum
                                   )))
 
   (if for-audiofiles
@@ -1051,7 +1051,7 @@
                                   :effect-name "System Volume"
                                   :display-instrument-name (not use-two-rows)
                                   :get-color get-background-color
-                                  seqtracknum
+                                  :seqtracknum seqtracknum
                                   ))
       (add-sub-area-plain! (<new> :editor-seqtrack-volume-slider gui
                                   (if (not use-two-rows) x1-split x1) vol-y1
@@ -1694,7 +1694,9 @@
         
         (*sequencer-left-part-area* :add-sub-area-plain! (<new> :sequencer-left-part gui
                                                                 20 30 
-                                                                210 (+ 30 height))))
+                                                                210 (+ 30 height)
+                                                                10
+                                                                )))
       (get-sequencer-left-part-position
        (lambda (x1 y1 x2 y2)         
          (*sequencer-left-part-area* :reset! 0 y1 x2 y2)        

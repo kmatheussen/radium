@@ -3803,7 +3803,7 @@ int main(int argc, char **argv){
                 "Fortunately, the bug is usually only hit during startup, and not every time."
                 );
   } else if (QSysInfo::productVersion()=="10.15" || QSysInfo::productVersion()=="10.16" || QSysInfo::productVersion()=="10.17"){
-    GFX_Message(NULL, "Radium has not been tested on this version of macOS. Latest supported version of macOS is 10.13. Radium is likely to misbehave on this operating system. It might also freeze, crash, or not run at all. But we will try to run anyway.");
+    GFX_Message(NULL, "Radium has not been tested on this version of macOS. Latest supported version of macOS is 10.14. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.");
   }
 #endif
 

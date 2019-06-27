@@ -200,8 +200,8 @@
                                                             :selected-color
                                                             (and (>= instrument-id 0)
                                                                  (<ra> :get-instrument-color instrument-id))
-                                                            :box-rounding 2.5
                                                             :border-width 1
+                                                            :box-rounding 2.5
                                                             ))
                                          (area :add-sub-area-plain! box)))))
       

@@ -93,6 +93,13 @@
                   ;;;(set! color (<gui> :make-color-lighter color 1.5))
                     (set! color (<gui> :set-alpha-for-color color 0.5))
                     (<new> :sequencer-drag-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
+                           :is-current (= (<ra> :current-block) blocknum)
+                           :entry-num blocknum
+                           :blocknum blocknum
+                           :allow-dragging #t
+                           :background-color color ;(if (= (<ra> :current-block) blocknum)
+                                        ;(<gui> :mix-colors color "green" 0.1)
+                                               ;color)
                            :callback (lambda (button x y entry-num)
                                        (if (and (<ra> :shift-pressed)
                                                 (= button *right-button*))
@@ -100,14 +107,7 @@
                                            (if (not (<ra> :is-playing-song))
                                                (<ra> :select-block blocknum)))
                                        (update)
-                                       #f)
-                           :is-current (= (<ra> :current-block) blocknum)
-                           :entry-num blocknum
-                           :blocknum blocknum
-                           :background-color color ;(if (= (<ra> :current-block) blocknum)
-                                        ;(<gui> :mix-colors color "green" 0.1)
-                                               ;color)
-                           :allow-dragging #t))
+                                       #f)))
                   (iota (<ra> :get-num-blocks)))))
     (if state
         (area :apply-state! state))

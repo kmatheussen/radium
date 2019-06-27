@@ -797,10 +797,9 @@
  :mouse-pointer-is-hidden-func (lambda () *mouse-pointer-is-currently-hidden*)
  ) 
 
-   
 (delafina (add-node-mouse-handler :Get-area-box
                                   :Get-existing-node-info
-                                  :Get-min-value
+                                  :Get-min-value #f
                                   :Get-max-value
                                   :Get-release-x #f ;; Only used when releasing mouse button
                                   :Get-release-y #f ;; Only used when releasing mouse button
@@ -1011,13 +1010,13 @@
                                        (Make-undo (Info :handler-data)))
                           :Create-new-node (lambda (Value Place callback)
                                              #f)
-                          :Release-node (lambda x
-                                          (if Release
-                                              (Release)))
                           :Move-node (lambda (Info Value Place)
                                        (Move (Info :handler-data)
                                              Value)
                                        Info)
+                          :Release-node (lambda x
+                                          (if Release
+                                              (Release)))
                           :Publicize (lambda (Info)
                                        (Publicize (Info :handler-data)))
                           :Get-pixels-per-value-unit (lambda (Info)
@@ -1379,8 +1378,6 @@
                                      #f)
                         :Use-Place #f
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
-                        :Get-pixels-per-value-unit #f ;;(lambda (_)
-                        ;;1)
                         :Forgiving-box #f
                         )                        
 
@@ -2445,10 +2442,6 @@
                                                                               )
                                                          Value
                                                          (<ra> :get-y-from-place Next-Place))))
-                        :Publicize (lambda (pianonote-info)
-                                     (set-current-pianonote (pianonote-info :pianonotenum)
-                                                            (pianonote-info :notenum)
-                                                            (pianonote-info :tracknum)))
                         :Move-node (lambda (pianonote-info Value Place)
                                      (define pianonotenum (pianonote-info :pianonotenum))
                                      (define notenum (pianonote-info :notenum))
@@ -2543,13 +2536,17 @@
                                                                    (<ra> :get-track-midi-channel *current-track-num*)
                                                                    instrument-id)))))
 
-                        :Use-Grid-Place #t
-                        
+                        :Publicize (lambda (pianonote-info)
+                                     (set-current-pianonote (pianonote-info :pianonotenum)
+                                                            (pianonote-info :notenum)
+                                                            (pianonote-info :tracknum)))
                         :Get-pixels-per-value-unit (lambda (_)
                                                      (<ra> :get-pianoroll-low-key *current-track-num*)
                                                      (<ra> :get-pianoroll-high-key *current-track-num*)
                                                      (<ra> :get-half-of-node-width))
 
+                        :Use-Grid-Place #t
+                        
                         :Forgiving-box #f
                         )
 
@@ -2831,9 +2828,9 @@
                                :value #f
                                :place #f
                                :logtype #f)
-  (make-velocity-info :velocitynum velocitynum
+  (make-velocity-info :tracknum tracknum
                       :notenum notenum
-                      :tracknum tracknum
+                      :velocitynum velocitynum
                       :value (or value (<ra> :get-velocity-value velocitynum notenum tracknum))
                       :place (or place (<ra> :get-velocity-place velocitynum notenum tracknum))
                       :logtype (or logtype (<ra> :get-velocity-logtype velocitynum notenum tracknum))
@@ -3005,9 +3002,6 @@
                                          (if (move-all-nodes?)
                                              1.0
                                              (- 1.0 (info :value))))
-                        :Get-pixels-per-value-unit (lambda (editormove)
-                                                     (- (<ra> :get-track-fx-x2)
-                                                        (<ra> :get-track-fx-x1)))
                         :Get-release-x (lambda (editormove)
                                  (define info (editormove :nodes (editormove :Num)))
                                  (<ra> :get-velocity-x
@@ -3043,15 +3037,6 @@
                                                                                             :start-Place Place
                                                                                             :notenum *current-note-num*)
                                                                 0)))))
-                        :Publicize (lambda (editormove)
-                                     (define velocity-info (editormove :nodes (editormove :Num)))
-                                     (set-indicator-velocity-node (velocity-info :velocitynum)
-                                                                  (editormove :notenum)
-                                                                  (velocity-info :tracknum))
-                                     (define value (<ra> :get-velocity-value (velocity-info :velocitynum)
-                                                         (editormove :notenum)
-                                                         (velocity-info :tracknum)))
-                                     (set-velocity-statusbar-text value))
                         :Move-node (lambda (editormove delta-Value Place)
                                      (define-constant delta-Place (if (eq? 'same-place Place)
                                                                       Place
@@ -3078,6 +3063,20 @@
                         
                                      (copy-hash editormove
                                                 :notenum notenum))
+                        
+                        :Publicize (lambda (editormove)
+                                     (define velocity-info (editormove :nodes (editormove :Num)))
+                                     (set-indicator-velocity-node (velocity-info :velocitynum)
+                                                                  (editormove :notenum)
+                                                                  (velocity-info :tracknum))
+                                     (define value (<ra> :get-velocity-value (velocity-info :velocitynum)
+                                                         (editormove :notenum)
+                                                         (velocity-info :tracknum)))
+                                     (set-velocity-statusbar-text value))
+                        
+                        :Get-pixels-per-value-unit (lambda (editormove)
+                                                     (- (<ra> :get-track-fx-x2)
+                                                        (<ra> :get-track-fx-x1)))
                         )
 
     
@@ -3360,9 +3359,9 @@
                                                       (highest-rated-fxnode-info Y
                                                                                  (list (get-fxnode-2 X Y Tracknum Fxnum (1+ Fxnodenum) Total-Fxnodes)
                                                                                        (and (inside-box box X Y)
-                                                                                            (make-fxnode-info :fxnodenum Fxnodenum
+                                                                                            (make-fxnode-info :tracknum Tracknum
                                                                                                               :fxnum Fxnum
-                                                                                                              :tracknum Tracknum
+                                                                                                              :fxnodenum Fxnodenum
                                                                                                               :value (<ra> :get-fxnode-value Fxnodenum Fxnum Tracknum)
                                                                                                               :place (<ra> :get-fxnode-place Fxnodenum Fxnum Tracknum)
                                                                                                               :y (box :y)
@@ -3539,13 +3538,6 @@
                                                                                                                      *current-track-num*)
                                                                                             :start-Place Place)
                                                                 0)))))
-                        :Publicize (lambda (editormove)
-                                     (define fxnode-info (editormove :nodes (editormove :Num)))
-                                     (set-indicator-fxnode (fxnode-info :fxnodenum)
-                                                           (fxnode-info :fxnum)
-                                                           (fxnode-info :tracknum))
-                                     (set-editor-statusbar (<ra> :get-fx-string (fxnode-info :fxnodenum) (fxnode-info :fxnum) (fxnode-info :tracknum))))
-
                         :Move-node (lambda (editormove delta-Value Place)
                                      (define-constant delta-Place (if (eq? 'same-place Place)
                                                                       Place
@@ -3570,6 +3562,14 @@
                                          (doit fxnode-info))
 
                                      editormove)
+                        
+                        :Publicize (lambda (editormove)
+                                     (define fxnode-info (editormove :nodes (editormove :Num)))
+                                     (set-indicator-fxnode (fxnode-info :fxnodenum)
+                                                           (fxnode-info :fxnum)
+                                                           (fxnode-info :tracknum))
+                                     (set-editor-statusbar (<ra> :get-fx-string (fxnode-info :fxnodenum) (fxnode-info :fxnum) (fxnode-info :tracknum))))
+
                         )
 
 (define (delete-all-fxnodes fxnum tracknum)
@@ -4052,8 +4052,6 @@
                                                                                     :Num Num
                                                                                     :start-Y Y)
                                                            0))))
-                        :Release-node (lambda (seqmove)
-                                        (paint-grid! #f))
                         :Move-node (lambda (seqmove Time Y)
                                      (define-constant seqmove seqmove)
                                      (define-constant Time Time)
@@ -4080,18 +4078,22 @@
                                          (doit (seqmove :Num) (nodes (seqmove :Num))))
                                      
                                      seqmove)
+                        
+                        :Release-node (lambda (seqmove)
+                                        (paint-grid! #f))
+                        
                         :Publicize (lambda (seqmove) ;; this version works though. They are, or at least, should be, 100% functionally similar.
                                      (set-editor-statusbar (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value (seqmove :Num)))))
                                      ;;(<ra> :set-curr-seqtemponode Num)
                                      #f)
                         
-                        :Use-Place #f
-                        :Mouse-pointer-func ra:set-normal-mouse-pointer
-                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         :Get-pixels-per-value-unit (lambda (seqmove)
                                                      (/ ((<ra> :get-box sequencer) :width)
                                                         (- (<ra> :get-sequencer-visible-end-time)
                                                            (<ra> :get-sequencer-visible-start-time))))
+                        :Use-Place #f
+                        :Mouse-pointer-func ra:set-normal-mouse-pointer
+                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         )                        
 
 
@@ -4260,6 +4262,8 @@
                                            (<ra> :get-sequencer-visible-end-time))
                           :Get-value (lambda (Value)
                                        Value)
+                          :Make-undo (lambda (_)
+                                       50)
                           :Release (lambda ()
                                      (paint-grid! #f)
                                      (when (= 0 gakkgakk-seqloop-handler-num-moves)
@@ -4271,8 +4275,6 @@
                                        ;;(<ra> :play-song-from-pos (floor time))
                                        (<ra> :set-song-pos (floor time))
                                        ))
-                          :Make-undo (lambda (_)
-                                       50)
                           :Move (lambda (_ Value)
                                   ;;(c-display "Value: " Value)
                                   (inc! gakkgakk-seqloop-handler-num-moves 1)
@@ -4530,9 +4532,6 @@
                                              (assert #f)
                                              #f)
                           
-                          :Release-node (lambda (seqblock-info)
-                                          #f)
-
                           :Move-node (lambda (seqblock-info Value Y)
                                        (define seqtracknum (seqblock-info :seqtracknum))
                                        (define seqblocknum (seqblock-info :seqblocknum))
@@ -4546,6 +4545,9 @@
                                            (<ra> :set-seqblock-fade-out (- 1 Value) seqblocknum seqtracknum))
                                        
                                        seqblock-info)
+
+                          :Release-node (lambda (seqblock-info)
+                                          #f)
 
                           :Publicize (lambda (seqblock-info)
                                        (define seqtracknum (seqblock-info :seqtracknum))
@@ -4780,16 +4782,6 @@
                                            (assert #f)
                                            #f)
 
-                        :Release-node (lambda (seqblock-info)
-                                        (when gakkgakk-has-moved-left-interior
-                                          (define seqtracknum (seqblock-info :seqtracknum))
-                                          ;;(apply-seqblock-interior-start seqblock-info #t))
-                                          (try-finally :try (lambda ()
-                                                              (<ra> :apply-gfx-seqblocks seqtracknum))
-                                                       :failure (lambda ()
-                                                                  (<ra> :cancel-gfx-seqblocks seqtracknum)))))
-                        
-                        
                         :Move-node (lambda (seqblock-info mousex Y)
                                      (define seqtracknum (seqblock-info :seqtracknum))
                                      (define seqblocknum (seqblock-info :seqblocknum))
@@ -4822,6 +4814,16 @@
 
                                      (paint-grid! #t)
                                      seqblock-info)
+                        
+                        :Release-node (lambda (seqblock-info)
+                                        (when gakkgakk-has-moved-left-interior
+                                          (define seqtracknum (seqblock-info :seqtracknum))
+                                          ;;(apply-seqblock-interior-start seqblock-info #t))
+                                          (try-finally :try (lambda ()
+                                                              (<ra> :apply-gfx-seqblocks seqtracknum))
+                                                       :failure (lambda ()
+                                                                  (<ra> :cancel-gfx-seqblocks seqtracknum)))))
+                        
                         
                         :Publicize (lambda (seqblock-info)
                                      (set-left-interior-status-bar2 #f #f gakkgakk-left-interior-value)
@@ -4898,13 +4900,6 @@
                                            (if (not (<ra> :release-mode))
                                                (assert #f)))
                         
-                        :Release-node (lambda (seqblock-info)
-                                        (when gakkgakk-has-moved-right-interior
-                                          (define seqtracknum (seqblock-info :seqtracknum))
-                                          (try-finally :try (lambda ()
-                                                              (<ra> :apply-gfx-seqblocks seqtracknum))
-                                                       :failure (lambda ()
-                                                                  (<ra> :cancel-gfx-seqblocks seqtracknum)))))
                         :Move-node (lambda (seqblock-info mousex Y)
                                      
                                      (define seqtracknum (seqblock-info :seqtracknum))
@@ -4940,6 +4935,13 @@
                                      (paint-grid! #t)
                                      seqblock-info)
                         
+                        :Release-node (lambda (seqblock-info)
+                                        (when gakkgakk-has-moved-right-interior
+                                          (define seqtracknum (seqblock-info :seqtracknum))
+                                          (try-finally :try (lambda ()
+                                                              (<ra> :apply-gfx-seqblocks seqtracknum))
+                                                       :failure (lambda ()
+                                                                  (<ra> :cancel-gfx-seqblocks seqtracknum)))))
                         :Publicize (lambda (seqblock-info)
                                      (define seqtracknum (seqblock-info :seqtracknum))
                                      (define seqblocknum (seqblock-info :seqblocknum))
@@ -5446,13 +5448,13 @@
                                              (assert #f)
                                              #f)
                           
-                          :Release-node (lambda (set-speedstretch)
-                                          (set-speedstretch :release))
-                          
                           :Move-node (lambda (set-speedstretch Value Y)
                                        (set-speedstretch :move Value Y)
                                        set-speedstretch)
                           
+                          
+                          :Release-node (lambda (set-speedstretch)
+                                          (set-speedstretch :release))
                           
                           :Publicize (lambda (set-speedstretch)
                                        (set-speedstretch :publicize))
@@ -5898,6 +5900,8 @@
         (<ra> :cancel-gfx-seqblocks seqtracknum)))
   )
 
+                          
+
 
 ;; Move single seqblock
 (add-node-mouse-handler :Get-area-box (lambda()
@@ -5968,17 +5972,20 @@
                                      #f)
                         :Create-new-node (lambda (X seqtracknum callback)
                                            #f)
-                        :Publicize (lambda (move-single)
-                                     (set-editor-statusbar (two-decimal-string (/ (move-single :curr-pos)
-                                                                                      (<ra> :get-sample-rate)))))
-                        
-                        :Release-node (lambda (move-single)
-                                        (move-single :release))                        
-                        
                         :Move-node (lambda (move-single Value Y)
                                      ;;(c-display "Y:" Y)
                                      (move-single :move Value Y)
                                      move-single)
+
+                        :Release-node (lambda (move-single)
+                                        (move-single :release))                        
+                        
+                        :Publicize (lambda (move-single)
+                                     (set-editor-statusbar (two-decimal-string (/ (move-single :curr-pos)
+                                                                                      (<ra> :get-sample-rate)))))
+                        
+                        :Get-pixels-per-value-unit (lambda (move-single)
+                                                     (get-sequencer-pixels-per-value-unit))
 
                         :Use-Place #f
 
@@ -5986,9 +5993,6 @@
                         :Get-guinum (lambda() (<gui> :get-sequencer-gui))
                         ;;:Mouse-pointer-func ra:set-blank-mouse-pointer
                         
-                        :Get-pixels-per-value-unit (lambda (move-single)
-                                                     (get-sequencer-pixels-per-value-unit))
-
                         :Forgiving-box #f
                         :Check-horizontal-modifier #t
                         )
@@ -6084,11 +6088,19 @@
                         :Create-new-node (lambda (X seqtracknum callback)
                                            #f)
 
-                        :Publicize (lambda (seqblock-info)
-                                     (set-editor-statusbar (two-decimal-string (/ gakkgakk-really-last-inc-time
-                                                                                      (<ra> :get-sample-rate)))))
+                        :Move-node (lambda (seqblock-infos Value Y)
+                                     (set! gakkgakk-last-value (list Value Y))
 
-                        
+                                     (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y)
+                                                                 (if (<= Y (<ra> :get-seqtrack-y1 0))
+                                                                     0
+                                                                     (<ra> :get-num-seqtracks))))
+                                     (define inctrack (- new-seqtracknum gakkgakk-startseqtracknum))
+                                     ;;(c-display new-seqtracknum gakkgakk-startseqtracknum inctrack)
+                                     (delete-all-gfx-gfx-seqblocks)
+                                     (create-gfx-gfx-seqblocks seqblock-infos (floor Value) inctrack)
+                                     seqblock-infos)
+                                          
                         :Release-node (lambda (seqblock-infos)
                                         (define has-moved (and gakkgakk-last-value (not (morally-equal? gakkgakk-start-pos gakkgakk-last-value))))
                                         (delete-all-gfx-gfx-seqblocks)
@@ -6104,31 +6116,22 @@
 
                                         seqblock-infos)
 
-                        :Move-node (lambda (seqblock-infos Value Y)
-                                     (set! gakkgakk-last-value (list Value Y))
+                        :Publicize (lambda (seqblock-info)
+                                     (set-editor-statusbar (two-decimal-string (/ gakkgakk-really-last-inc-time
+                                                                                      (<ra> :get-sample-rate)))))
 
-                                     (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y)
-                                                                 (if (<= Y (<ra> :get-seqtrack-y1 0))
-                                                                     0
-                                                                     (<ra> :get-num-seqtracks))))
-                                     (define inctrack (- new-seqtracknum gakkgakk-startseqtracknum))
-                                     ;;(c-display new-seqtracknum gakkgakk-startseqtracknum inctrack)
-                                     (delete-all-gfx-gfx-seqblocks)
-                                     (create-gfx-gfx-seqblocks seqblock-infos (floor Value) inctrack)
-                                     seqblock-infos)
-                                          
-                        :Use-Place #f
-
-                        :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
-                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
-                        ;;:Mouse-pointer-func ra:set-blank-mouse-pointer
-                        
                         :Get-pixels-per-value-unit (lambda (seqblock-infos)
                                                      (/ (- (<ra> :get-sequencer-x2)
                                                            (<ra> :get-sequencer-x1))
                                                         (- (<ra> :get-sequencer-visible-end-time)
                                                            (<ra> :get-sequencer-visible-start-time))))
 
+                        :Use-Place #f
+
+                        :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
+                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
+                        ;;:Mouse-pointer-func ra:set-blank-mouse-pointer
+                        
                         :Forgiving-box #f
                         )
 
@@ -6279,11 +6282,12 @@
              (if (<= dist *seqnode-min-distance*)
                  (min-seqautomation/distance (make-seqautomation/distance :seqtrack seqtracknum
                                                                           :automation-num automationnum
+                                                                          :seqblock seqblocknum
+                                                                          :seqblockid seqblock-id
                                                                           :distance (begin
                                                                                       ;;(c-display " DIST volume envelope:" dist)
                                                                                       dist)
-                                                                          :seqblock seqblocknum
-                                                                          :seqblockid seqblock-id)
+                                                                          )
                                              (next))
                  (next))))
                                         ;((> x (+ x2) width/2)
@@ -6537,13 +6541,13 @@
                                      seqmove)
                         :Publicize (lambda (seqmove)
                                      (set-seqnode-statusbar-text (seqmove :Num)))
-                        :Use-Place #f
-                        :Mouse-pointer-func ra:set-normal-mouse-pointer
-                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         :Get-pixels-per-value-unit (lambda (seqmove)
                                                      (/ ((<ra> :get-box seqtracks) :width)
                                                         (- (<ra> :get-sequencer-visible-end-time)
                                                            (<ra> :get-sequencer-visible-start-time))))
+                        :Use-Place #f
+                        :Mouse-pointer-func ra:set-normal-mouse-pointer
+                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         )         
   
 
@@ -6891,8 +6895,6 @@
                                                                                     :Num Num
                                                                                     :start-Y Y)
                                                            0)))))
-                        :Release-node (lambda (seqmove)
-                                        (paint-grid! #f))
                         :Move-node (lambda (seqmove Time Y)
                                      (define-constant seqmove seqmove)
                                      (define-constant Time Time)
@@ -6933,17 +6935,19 @@
                                                      nodes)
                                            (doit Num (nodes Num))))
                                      seqmove)
+                        :Release-node (lambda (seqmove)
+                                        (paint-grid! #f))
                         :Publicize (lambda (seqmove)
                                      (set-seqblock-automation-node-statusbar-text (seqmove :Num))
                                      ;;(<ra> :set-curr-seqtemponode Num)
                                      #f)                        
-                        :Use-Place #f
-                        :Mouse-pointer-func ra:set-normal-mouse-pointer
-                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         :Get-pixels-per-value-unit (lambda (seqmove)
                                                      (/ ((<ra> :get-box seqtracks) :width)
                                                         (- (<ra> :get-sequencer-visible-end-time)
                                                            (<ra> :get-sequencer-visible-start-time))))
+                        :Use-Place #f
+                        :Mouse-pointer-func ra:set-normal-mouse-pointer
+                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         )         
 #!!
 (pretty-print (<ra> :get-seqblocks-state 1))
