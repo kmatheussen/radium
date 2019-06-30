@@ -38,6 +38,28 @@
         (loop (car b)
               (cdr b)))))
 
+(define (map-improper-list func elements)
+  (let loop ((elements elements))
+    ;;(c-display "elements:" (object->string elements))
+    (cond ((null? elements)
+           '())
+          ((pair? elements)
+           (cons (func (car elements))
+                 (loop (cdr elements))))
+          (else
+           (func elements)))))
+  
+(define (for-each-improper-list func elements)
+  (let loop ((elements elements))
+    ;;(c-display "elements:" (object->string elements))
+    (cond ((null? elements)
+           '())
+          ((pair? elements)
+           (func (car elements))
+           (loop (cdr elements)))
+          (else
+           (func elements)))))
+  
 (define (string-starts-with? string startswith)
   (define (loop string startswith)
     (cond ((null? startswith)
@@ -52,18 +74,31 @@
         (string->list startswith)))
 
 ;; redefined later
-(define (<-> . args)
-  (apply string-append (map (lambda (something)
-                              (format #f "~A" something))
-                            args)))
+(define <-> (if (defined? '<->)
+                <->
+                (lambda args
+                  ;;(display "ARGS:")(display args)(newline)
+                  (apply string-append (map (lambda (something)
+                                              (format #f "~A" something))
+                                            args)))))
 
 ;; redefined later
-(define (c-display . args)
-  (for-each (lambda (arg)
-              (display (format #f "~A" arg))
-              (display " "))
-            args)
-  (newline))
+(define c-display (if (defined? 'c-display)
+                      c-display
+                      (lambda args
+                        (for-each (lambda (arg)
+                                    (display (format #f "~A" arg))
+                                    (display " "))
+                                  args)
+                        (newline))))
+
+(define (<_> . args)
+  (let ((s (apply <-> args)))
+    (if (string=? "" s)
+        *empty-symbol*
+        (string->symbol s))))
+
+
 
 
 (define *mylint-linenum* #f)
@@ -84,18 +119,112 @@
          (push! *schemecodeparser-global-declarations* ',name ))
      (declare-variable ',name)))
 
+(define *optional-func-have-varargs* 'optional-func-have-varargs)
+
+(define (<optional-func-func> parameters)
+  #f)
+
+(define (<optional-hash-table>)
+  #f)
+
+(define (is-optional-hash-table? table)
+  (or (eq? #f table)
+      (hash-table? table)))
+
+(define (is-optional-func? func)
+  (or (eq? #f func)
+      (procedure? func)))
+
+
+
 (define (safe-display-txt-as-displayable-as-possible txt)
   (display (ra:get-text-from-html (format #f "~A" txt)))(newline)
   (<declare-variable> safe-add-message-window-txt)
   (if (defined? 'safe-add-message-window-txt)
       (safe-add-message-window-txt txt)))
 
+(define-constant *schemecodeparser-var-var-type* 'schemecodeparser-define-var-type)
+(define-constant *schemecodeparser-var-func-type* 'schemecodeparser-define-func-type)
+(define-constant *schemecodeparser-var-declared-type* 'schemecodeparser-define-declared-type)
+(define-constant *schemecodeparser-var-parameter-type* 'schemecodeparser-define-parameter-type)
 
+(define (schemecodeparser-assert-symbol varname errorhandler)
+  ;;(c-display "        VARNAME/SYMBOL?" varname (symbol? varname) ". error-handler:" errorhandler ". " (procedure-source errorhandler))
+  (when (not (symbol? varname))
+    (errorhandler 'schemecodeparser-varname-not-a-symbol varname)))
+  
+(define (schemecodeparser-create-func-var varname signature errorhandler)
+  ;;(c-display "create-func SIGNATURE:" varname (object->string signature))
+  (schemecodeparser-assert-symbol varname errorhandler)
+  (list varname *schemecodeparser-var-func-type* signature))
+
+(define (schemecodeparser-create-var-var varname value errorhandler)
+  ;;(c-display "create-var-var VALUE:" (object->string value))
+  (schemecodeparser-assert-symbol varname errorhandler)  
+  (if (and (pair? value)
+           (not (null? value))
+           (memq (car value) '(lambda lambda* <optional-func-func> <optional-hash-table> make-hash-table hash-table copy-hash)))
+      (cond ((eq? (car value) '<optional-hash-table>)
+             (schemecodeparser-create-func-var varname (cons 'key 'args) errorhandler))
+            ((eq? (car value) '<optional-func-func>)
+             (assert (pair? (cadr value)))
+             (let ((func (cadr value)))
+               (assert (eq? 'lambda* (car func)))
+               (schemecodeparser-create-func-var varname (cadr func) errorhandler)))
+            ((memq (car value) '(make-hash-table hash-table copy-hash))
+             (schemecodeparser-create-func-var varname (cons 'key 'args) errorhandler))
+            (else
+             (schemecodeparser-create-func-var varname (cadr value) errorhandler)))
+      (list varname *schemecodeparser-var-var-type* value)))
+         
+(define (schemecodeparser-create-declared-var varname errorhandler)
+  (schemecodeparser-assert-symbol varname errorhandler)
+  (list varname *schemecodeparser-var-declared-type*))
+
+(define (schemecodeparser-create-parameter-var varname errorhandler)
+  ;;(c-display "VARNAME:" varname)
+  ;;(c-display "ERRORHANDLER:" errorhandler)
+  (schemecodeparser-assert-symbol varname errorhandler)
+  (list varname *schemecodeparser-var-parameter-type*))
+
+(define (schemecodeparser-get-var-type var)
+  (car var))
+  
+(define (schemecodeparser-get-var-var-value var)
+  (assert (eq? (schemecodeparser-get-var-type var) *schemecodeparser-var-var-type*))
+  (cadr var))
+  
+(define (schemecodeparser-get-var-func-signature var)
+  (assert (eq? (schemecodeparser-get-var-type var) *schemecodeparser-var-func-type*))
+  (cadr var))
+  
 (define schemecodeparser-varlist '())
 
-(define (schemecodeparser-get-varlist)
-  schemecodeparser-varlist)
+(define (schemecodeparser-get-varnames)
+  (map car schemecodeparser-varlist))
 
+(define (schemecodeparser-get-var varname)
+  (let ((entry (assq varname schemecodeparser-varlist)))
+    (and entry
+         (cdr entry))))
+
+(define* (schemecodeparser-has-varname? varname (varlist schemecodeparser-varlist))
+  (assq varname varlist))
+
+(define (schemecodeparser-warn-about-defined-vars new-vars old-vars)
+  (for-each (lambda (var)
+              (define varname (car var))
+              (define old-var (schemecodeparser-get-var varname))
+              (if old-var
+                  (c-display "*************** NOTE: schemecodeparser: \"" varname "\" has already been defined locally. "
+                             "Old:" old-var
+                             ". New:" var
+                             ". Line:" *mylint-linenum*)
+                  (if (and ;;(not (null? old-vars)) ;; Don't need to give warning when redefining a global symbol.
+                           (defined? varname (rootlet)))
+                      (c-display "*************** WARNING! schemecodeparser: \"" varname "\" has already been defined globally. Line:" *mylint-linenum*))))
+            new-vars))
+                                 
 
 (define* (schemecodeparser2 expr
                             (elsefunc #f)
@@ -108,24 +237,36 @@
                             (customsymbolhandler #f)
                             (blockhandler #f)
                             (symbolhandler #f)
+                            (errorhandler (lambda x (c-display "Schemecodeparser error: " x)))
+                            (assert-variable-errors #t)
                             (varlist '()))
 
   (define (warn expr . args)
     (define message (<-> "==========\"schemecodeparser2 Warning" (if *mylint-linenum* (<-> " line " *mylint-linenum*) "") "\": " (apply <-> args) " for expression " expr "========="))
     (if (ra:release-mode)
         (safe-display-txt-as-displayable-as-possible message)
-        (error message)))
-  
-  (if (not (proper-list? expr))
-      
+        (error 'schemecodeparser-error message)))
+
+  (if (and (not (proper-list? expr))
+           (or (null? expr)
+               (not (symbol? (car expr)))))
+               ;;;(not (*all-c-macros* (car expr)))
+               ;;;(not (eq? '<optional-func2> (car expr)))))
       (begin
         (warn expr "Expected proper list")
         expr)
       
       (let parse ((varlist varlist)
                   (expr expr))
-        
-        ;;(c-display "PARSING:" (pp expr) varlist)
+
+        (when #f
+          (c-display "\nPARSING:" (length varlist))
+          (if (keyword? expr)
+              (display expr)
+              (pretty-print expr))              
+          (newline)
+          ;;(display varlist)
+          )
         
         (define (blockhandlerfunc varlist expr) ;; expr is a list of expr. Called for the body of lambda, begin, when, etc.
 
@@ -144,30 +285,44 @@
                       
           (define defines
             (map (lambda (def)
+                   ;;(c-display "DEF:" (object->string def))
                    (if (pair? (cadr def))
-                       (let ((name (car (cadr def))))
-                         (if (memq (car def) '(c-define-macro c-define-expansion))
-                             (string->symbol (list->string (cdr (butlast (string->list (symbol->string name))))))
-                             name))
-                       (cadr def)))
+                       (let* ((name1 (car (cadr def)))
+                              (name (if (memq (car def) '(c-define-macro c-define-expansion))
+                                        (string->symbol (list->string (cdr (butlast (string->list (symbol->string name1))))))
+                                        name1))
+                              (signature (cdr (cadr def))))
+                         (schemecodeparser-create-func-var name signature errorhandler))
+                       (let ((name (cadr def))
+                             (value (caddr def)))
+                         (schemecodeparser-create-var-var name value errorhandler))))
                  (keep (lambda (expr)
                          (and (pair? expr)
                               (memq (car expr) '(define define* define-constant c-define-macro define-macro c-define-expansion define-expansion))))
                        expr)))
+
+          ;;(c-display "IM HERE")
           
           (define declared (map (lambda (declaration)
                                   (define declared (cadr declaration))
                                   ;;(c-display "DECL:" declared)
-                                  (if (pair? declared)
-                                      (cadr declared)
-                                      declared))
+                                  (schemecodeparser-create-declared-var (if (pair? declared)
+                                                                            (cadr declared)
+                                                                            declared)
+                                                                        errorhandler))
                                 (keep (lambda (expr)
                                         (and (pair? expr)
                                              (memq (car expr) '(declare-variable <declare-variable>))))
                                       expr)))
 
+          ;;(c-display "blockhandlerfunc expr:" expr)
+          ;;(c-display "DEFINES:" defines)
           ;;(if (pair? declared)
           ;;    (c-display "DECLARED:" declared))
+
+          ;;(schemecodeparser-warn-about-defined-vars declared varlist)
+          (if assert-variable-errors
+              (schemecodeparser-warn-about-defined-vars defines varlist))
           
           (define new-varlist (append declared defines varlist))
           
@@ -182,17 +337,22 @@
   
         (define (add-parameters-to-varlist parameters varlist)
           (define (treatpar par)
-            (if (pair? par)
-                (car par)
-                par))
-          (append (let append ((parameters parameters))
-                    (cond ((null? parameters)
-                           '())
-                          ((not (pair? parameters))
-                           (list (treatpar parameters)))
-                          (else
-                           (cons (treatpar (car parameters))
-                                 (append (cdr parameters))))))
+            (schemecodeparser-create-parameter-var (if (pair? par)
+                                                       (car par)
+                                                       par)
+                                                   errorhandler))
+          (define new-vars (let append ((parameters parameters))
+                             (cond ((null? parameters)
+                                    '())
+                                   ((not (pair? parameters))
+                                    (list (treatpar parameters)))
+                                   (else
+                                    (cons (treatpar (car parameters))
+                                          (append (cdr parameters)))))))
+          ;;(c-display "NEW-VARS:" new-vars)
+          (if assert-variable-errors
+              (schemecodeparser-warn-about-defined-vars new-vars varlist))
+          (append new-vars
                   varlist))
         
         (set! schemecodeparser-varlist varlist)
@@ -231,7 +391,20 @@
                (if (null? (cddr expr))
                    (warn expr (car expr) ": Empty body"))
                `(,(car expr) ,(cadr expr)
-                 ,@(blockhandlerfunc (add-parameters-to-varlist (cadr expr) varlist)
+                 ,@(blockhandlerfunc (if (pair? (cadr expr))
+                                         (let* ((varname (car (cadr expr)))
+                                                (parameters (cdr (cadr expr)))
+                                                (varlist2 (if (or #f (null? varlist)) ;; TODO: Fix. If toplevel, the function itself has not previously been added to "defines" in "blockhandlerfunc".
+                                                              (cons (schemecodeparser-create-func-var varname parameters errorhandler)
+                                                                    varlist)
+                                                              (begin
+                                                                (when (and assert-variable-errors
+                                                                           (not (schemecodeparser-has-varname? varname varlist)))
+                                                                  (c-display "VARNAME:" varname "VARLIST:" varlist ". expr:" expr)
+                                                                  (assert #f))
+                                                                varlist))))
+                                           (add-parameters-to-varlist parameters varlist2))
+                                         varlist)
                                      (cddr expr))))
               ((memq (car expr) '(declare-variable <declare-variable>))
                expr)
@@ -242,7 +415,12 @@
                `(when (parse varlist (cadr expr))
                   ,@(blockhandlerfunc varlist (cddr expr))))
               ((eq? 'do (car expr))
-               (let* ((newvars (append (map car (cadr expr)) varlist))
+               (let* ((newvars (let ((das-new-vars (map (lambda (dovar)
+                                                          (schemecodeparser-create-var-var (car dovar) (cadr dovar) errorhandler))
+                                                        (cadr expr))))
+                                 (if assert-variable-errors
+                                     (schemecodeparser-warn-about-defined-vars das-new-vars varlist))
+                                 (append das-new-vars varlist)))
                       (first (map (lambda (a)
                                     (let ((second (parse varlist (cadr a))))
                                       `(,(car a) ,second ,@(blockhandlerfunc newvars (cddr a)))))
@@ -252,8 +430,15 @@
               ;; named let
               ((and (eq? 'let (car expr))
                     (symbol? (cadr expr)))
-               (let* ((newvars (append (cons (cadr expr) (map car (caddr expr)))
-                                       varlist))
+               (let* ((newvars (let ((das-new-vars (cons (schemecodeparser-create-func-var (cadr expr)
+                                                                                           (map car (caddr expr))
+                                                                                           errorhandler)
+                                                         (map (lambda (letvar)
+                                                                (schemecodeparser-create-var-var (car letvar) (cadr letvar) errorhandler))
+                                                              (caddr expr)))))
+                                 (if assert-variable-errors
+                                     (schemecodeparser-warn-about-defined-vars das-new-vars varlist))
+                                 (append das-new-vars varlist)))
                       (vars (map (lambda (a)
                                    `(,(car a) ,@(blockhandlerfunc varlist (cdr a))))
                                  (caddr expr))))
@@ -263,24 +448,37 @@
                (let ((vars (map (lambda (a)			      
                                   `(,(car a) ,@(blockhandlerfunc varlist (cdr a))))
                                 (cadr expr))))
+                 (define new-vars (map (lambda (letvar)
+                                         (schemecodeparser-create-var-var (car letvar) (cadr letvar) errorhandler))
+                                       (cadr expr)))
+                 ;;(c-display "NEW:" new-vars)
+                 ;;(c-display "OLD:" varlist)
+                 (if assert-variable-errors
+                     (schemecodeparser-warn-about-defined-vars new-vars varlist))
                  `(let ,vars
-                    ,@(blockhandlerfunc (append (map car (cadr expr))
-                                                varlist)
+                    ,@(blockhandlerfunc (append new-vars varlist)
                                         (cddr expr)))))
               ((eq? 'let* (car expr))
                (let* ((newvars varlist)
-                      (let*vars (map (lambda (a)
-                                       (let ((ret `(,(car a) ,@(blockhandlerfunc newvars (cdr a)))))
-                                         (push! newvars (car a))
+                      (let*vars (map (lambda (let*var)
+                                       (let* ((ret `(,(car let*var) ,@(blockhandlerfunc newvars (cdr let*var))))
+                                              (new-var (schemecodeparser-create-var-var (car let*var) (cadr let*var) errorhandler)))
+                                         (if assert-variable-errors
+                                             (schemecodeparser-warn-about-defined-vars (list new-var) newvars))
+                                         (push! newvars new-var)
                                          ret))
                                      (cadr expr))))
                  `(let* ,let*vars
-                    ,@(blockhandlerfunc (append (map car let*vars)
-                                                newvars)
+                    ,@(blockhandlerfunc newvars ;;(append (map car let*vars) newvars)
                                         (cddr expr)))))
               ((memq (car expr) '(letrec letrec*))
-               (let* ((newvars (append (map car (cadr expr))
-                                       varlist))
+               (let* ((newvars (let ((dasnewvars (map (lambda (letrecvar)
+                                                        (schemecodeparser-create-var-var (car letrecvar) (cadr letrecvar) errorhandler))
+                                                      (cadr expr))))
+                                 (if assert-variable-errors
+                                     (schemecodeparser-warn-about-defined-vars dasnewvars varlist))
+                                 (append dasnewvars
+                                         varlist)))
                       (vars (map (lambda (a)
                                    `(,(car a) ,@(blockhandlerfunc newvars (cdr a)))) ;; Not entirely correct for letrec...
                                  (cadr expr)))) 
@@ -343,20 +541,34 @@
                     (eq? (car expr) (car symbolhandler)))
                ((cadr symbolhandler) expr))
               (else
-               (define (parseithere)
-                 `(,(parse varlist (car expr)) ,@(map (lambda (expr)
-                                                        (parse varlist expr))
-                                                      (cdr expr))))
+               (define (parseithere expr)
+                 (map (lambda (expr)
+                        (parse varlist expr))
+                      expr))
+;                 `(,(parse varlist (car expr)) ,@(map (lambda (expr)
+;                                                        (parse varlist expr))
+;                                                      (cdr expr))))
                (if elsefunc
-                   (let ((ret (elsefunc expr)))
-                     (if (eq? ret '_schemecodeparser-elsefunc-rejected-it)
-                         (parseithere)
-                         ret))
-                   (parseithere)))))))
+                   (let ((result (elsefunc expr)))
+                     (if (or (eq? result expr)
+                             (and (pair? result)
+                                  (not (null? result))
+                                  (eq? (car result) (car expr))))
+                         (parseithere result)
+                         (parse varlist result)))
+                   (parseithere expr)))))))
 
 
 #!
+(schemecodeparser 50)
 (schemecodeparser '(begin `(+ ,a 3)))
+(schemecodeparser '(begin
+                     (let ((list 50))
+                       (lambda (list2)
+                         20))))
+
+(schemecodeparser '(let ((list 50)) 20))
+
 (pp(schemecodeparser '(let ()
 		     (define ((a)) 9)
 		     (+ 2 3 a)
@@ -372,12 +584,15 @@
                                           (customsymbolhandler #f)
                                           (blockhandler #f)
                                           (symbolhandler #f)
+                                          (errorhandler #f)
+                                          (assert-variable-errors #t)
                                           (varlist '()))
   atomfunc)
 
 #!!
 (schemecodeparser-find-atom-func schemecodeparser)
 (schemecodeparser-find-atom-func :elsefunc #t :atomfunc 50)
+(+ 2 3)
 !!#
 
 
@@ -396,34 +611,36 @@
                   :atomfunc (lambda (atom)
                               (c-display "got atom:" atom)
                               'gotit))
+(schemecodeparser '((define ())))
+(schemecodeparser '((c-define-macro (*a*))))
 !!#
 
-(when (not (ra:release-mode))
+(when (and #t (not (ra:release-mode)))
   (***assert-error*** (schemecodeparser '((lambda ())))
-                      'no-catch)
+                      'schemecodeparser-error)
   (***assert-error*** (schemecodeparser '((lambda* ())))
-                      'no-catch)
-  (***assert-error*** (schemecodeparser '((define ())))
-                      'no-catch)
-  (***assert-error*** (schemecodeparser '((define* ())))
-                      'no-catch)
-  (***assert-error*** (schemecodeparser '((define-constant ())))
-                      'no-catch)
-  (***assert-error*** (schemecodeparser '((c-define-macro ())))
-                      'no-catch)
-  (***assert-error*** (schemecodeparser '((define-macro ())))
-                      'no-catch)
-  (***assert-error*** (schemecodeparser '((c-define-expansion ())))
-                      'no-catch)
-  (***assert-error*** (schemecodeparser '((define-expansion ())))
-                      'no-catch)
+                      'schemecodeparser-error)
+  (***assert-error*** (schemecodeparser '((define (a))))
+                      'schemecodeparser-error)
+  (***assert-error*** (schemecodeparser '((define* (a))))
+                      'schemecodeparser-error)
+  (***assert-error*** (schemecodeparser '((define-constant (a))))
+                      'schemecodeparser-error)
+  (***assert-error*** (schemecodeparser '((c-define-macro (*a*))))
+                      'schemecodeparser-error)
+  (***assert-error*** (schemecodeparser '((define-macro (a))))
+                      'schemecodeparser-error)
+  (***assert-error*** (schemecodeparser '((c-define-expansion (*a*))))
+                      'schemecodeparser-error)
+  (***assert-error*** (schemecodeparser '((define-expansion (a))))
+                      'schemecodeparser-error)
   )
 
-(when (not (ra:release-mode))
+(when (and #t (not (ra:release-mode)))
   (***assert-error*** (schemecodeparser (cons 1 2))
-                      'no-catch))
+                      'schemecodeparser-error))
 
-(when (not (ra:release-mode))
+(when (and #t (not (ra:release-mode)))
   (***assert*** (schemecodeparser (list 1 2))
                 (list 1 2)))
 
@@ -468,7 +685,7 @@
 
 (c-define-expansion (*testexp* a b)
   (c-display "expanding testexp2")
-  `(+ woeijfwe (oijnna) 2 ,a ,b)))
+  `(+ woeijfwe (oijnna) 2 ,a ,b))
 
 (define (test-testexp)
   (let ((woeijfwe 5)
@@ -488,38 +705,139 @@
 !!#
 
 
+(c-define-expansion (*define2* name correct-type? value)
+  (define s (gensym "s"))
+  (define v (gensym "v"))
+  (if (ra:release-mode)
+      `(define ,name ,value)
+      `(begin     
+         (define ,name (let ((,v ,value))
+                         (if (,correct-type? ,v)
+                             ,v
+                             (error 'wrong-type (list "For " ',name ': ,v)))))
+         (set! (setter ',name)
+               (lambda (,s ,v)
+                 (if (,correct-type? ,v)
+                     ,v
+                     (error 'wrong-type (list "For " ',name "New value:" ,v "Prev value:" ,name))))))))
+
+(c-define-expansion (*define2-without-init-check* name correct-type? value)
+  (define s (gensym "s"))
+  (define v (gensym "v"))
+  (if (ra:release-mode)
+      `(define ,name ,value)
+      `(begin     
+         (define ,name ,value)
+         (set! (setter ',name)
+               (lambda (,s ,v)
+                 (if (,correct-type? ,v)
+                     ,v
+                     ;;(list "For " ',name "New value:" ,v "Prev value:" ,name))))))))
+                     (error 'wrong-type (list "For " ',name "New value:" ,v "Prev value:" ,name))))))))
+#!!
+(let ((list (lambda args
+              (for-each c-display args))))
+  (define2-without-init-check hello string? "hel")
+  (set! hello "gakk")
+  hello)
+
+(eval
+ (c-macroexpand 
+  '(let ()
+     (define2-without-init-check hello string? "hel")
+     (set! hello 50)
+     hello)))
+
+(let ((a 3))
+  (define-macro (mac b)
+    `(with-let (inlet 'b ,b (funclet mac))
+       (+ a b)))       ; definition-time "a", call-time "b"
+  (define-macro (mac-1 b)
+    `(+ a ,b))         ; call-time "a" and "b"
+  (let ((a 32))
+    (list (mac 1) 
+	  (mac-1 1))))
+
+(let ()
+  (varlet (curlet) 'daslistsym list)
+  (curlet)
+  (daslistsym 2 3 4))
+
+!!#
+ 
+(c-define-expansion (*<optional-func>* parameters)
+  `(<optional-func-func> (lambda* ,parameters #f)))
+;  (if (and (not (null? parameters))
+;           (let ((l (last parameters)))
+;             (and (not (pair? l))
+;                  (eq? :rest l))))
+;      (if (null? (cdr parameters))
+;          `(<optional-func-func> (lambda rest #t))
+;          `(<optional-func-func> (lambda (,@(butlast parameters) . rest) #t)))
+;      `(<optional-func-func> (lambda ,parameters #t))))
+
+(define-expansion (define-optional-hash-table name)
+  `(define2-without-init-check ,name is-optional-hash-table? (<optional-hash-table>)))
+         
+(define-expansion (define-optional-func name args)
+  `(define2-without-init-check ,name is-optional-func? (<optional-func> ,args)))
+         
+
+#!!
+(c-macroexpand '(<optional-func> a 2 :rest))
+(c-macroexpand '(<optional-func>))
+(c-macroexpand '(<optional-func> a 9 c))
+!!#
+
+
 (c-define-expansion (*push!* list el)
   `(set! ,list (cons ,el ,list)))
 
 
-;; Returns expr (the exact same one as the input), unless its transformed
-(define (c-macroexpand-1 expr)
+;; Returns 'c-macroexpand-1-same-as-input unless its transformed
+(define (c-macroexpand-2 expr)
+  ;;(c-display "c-macro2:" expr)
   (if (or (not (pair? expr))
 	  (null? expr)
 	  (not (symbol? (car expr))))
-      expr
+      'c-macroexpand-1-same-as-input
       (let ((qua (hash-table-ref *all-c-macros* (car expr))))
 	(if (not qua)
 	    (begin
 	      ;;(c-display "Error in expand-a-macro. Macro for " expr " Not found.")
-	      expr)
-	    (apply qua (cdr expr))))))
+	      ;;expr
+              'c-macroexpand-1-same-as-input
+              )
+            (apply qua (let loop ((parameters (cdr expr)))
+                         (cond ((null? parameters)
+                                '())
+                               ((not (pair? parameters))
+                                (list :c-macroexpand-rest parameters))
+                               (else
+                                (cons (car parameters)
+                                      (loop (cdr parameters)))))))))))
+
+(define (c-macroexpand-1 expr)
+  (let ((topexpand (c-macroexpand-2 expr)))
+    ;;(c-display "      expr:" topexpand "\ntoexpand:" topexpand "\n\n")
+    (if (and (symbol? topexpand)
+             (eq? topexpand 'c-macroexpand-1-same-as-input))
+        expr
+        (c-macroexpand-1 topexpand))))
 
 #!!
 (c-macroexpand-1 '(dosomething 50))
 (hash-table-ref *all-c-macros* '<declare-variable>)
 !!#
 
-(define (c-macroexpand expr)
+(define (c-macroexpand expr . errorhandler)
   ;;(c-display "a-mac" expr)
   (schemecodeparser expr
-		    :elsefunc (lambda (expr)
-                                ;;(c-display "    Elsefunc:" expr)
-                                (let ((topexpand (c-macroexpand-1 expr)))
-                                  ;;(c-display "      expr/topexpand" expr topexpand)
-                                  (if (eq? expr topexpand)
-                                      `(,(car expr) ,@(map c-macroexpand (cdr expr)))
-                                      (c-macroexpand topexpand))))))
+                    :errorhandler (if (null? errorhandler)
+                                      c-display
+                                      (car errorhandler))
+                    :assert-variable-errors #f
+                    :elsefunc c-macroexpand-1))
 
 #!!
 
@@ -609,20 +927,30 @@
 ;;(define (find-number-of-args-for-function-call)
 
 
-(define (mylint-lambda*-call funcname funccall)
+(define (mylint-lambda*-call full-parameters funccall)
   (call-with-exit
    (lambda (return)
 
+     ;;(c-display "full-parameters1:" full-parameters)
+     
+     ;; quick-fix for dotted args
+     (if (not (proper-list? full-parameters))
+         (set! full-parameters (let loop ((parameters full-parameters))
+                                 (if (symbol? parameters)
+                                     (list parameters)
+                                     (cons (car parameters)
+                                           (loop (cdr parameters)))))))
+
+     ;;(c-display "full-parameters:" full-parameters)
+     
      (define (get-parnames parameters)
        (map (lambda (parameter)
               (if (symbol? parameter)
                   parameter
                   (car parameter)))
             parameters))
-     
-     (define func (eval funcname))
-     (define source (procedure-source func))
-     (define full-parameters (cadr source))
+
+     (define funcname (car funccall))
      (define args (cdr funccall))
      (define parameter-names (get-parnames full-parameters))
      
@@ -688,7 +1016,7 @@
          (assert-keyword-in-parameters arg)
          (if (not (memq (keyword->symbol arg) (get-parnames parameters)))
              (fail "Keyword " arg " is in wrong position. It should have been defined earlier. Correct order: " (map symbol->keyword parameter-names) ".")))
-       
+
        (cond ((null? parameters)
               (if (not (null? args))
                   (fail "Too many arguments")
@@ -722,6 +1050,15 @@
      "")))
 
 
+(define (mylint-lambda*-call2 funcname funccall)
+  (define func (eval funcname))
+  (define source (procedure-source func))
+  (define full-parameters (cadr source))
+  (mylint-lambda*-call full-parameters funccall))
+  
+      
+  
+
 (define* (test-define*func d c (a 2) e)
   a)
 
@@ -741,7 +1078,8 @@
                             (set-fixed-size #t))
   50)
 
-(***assert*** (mylint-lambda*-call test-define*func3 '(test-define*func3 "instrument-id"
+
+(***assert*** (mylint-lambda*-call2 test-define*func3 '(test-define*func3 "instrument-id"
                                                                          "strips-config"
                                                                          "background-color"
                                                                          "min-height"
@@ -751,140 +1089,481 @@
               "")
 
 (***assert-custom-comp*** string-starts-with?
-                          (mylint-lambda*-call test-define*func2 '(test-define*func2 :b 1
+                          (mylint-lambda*-call2 test-define*func2 '(test-define*func2 :b 1
                                                                                      :c 2
                                                                                      :e 3
                                                                                      :d 4))
                           "Keyword :d is in wrong position. It should have been defined earlier. Correct order:")
 
 (***assert-custom-comp*** string-starts-with?
-                          (mylint-lambda*-call test-define*func '(test-define*func 1 2 :a 20 9))
+                          (mylint-lambda*-call2 test-define*func '(test-define*func 1 2 :a 20 9))
                           "Argument #3 is not a keyword")
 
-(***assert*** (mylint-lambda*-call test-define*func '(test-define*func 1 2 :e 50))
+(***assert*** (mylint-lambda*-call2 test-define*func '(test-define*func 1 2 :e 50))
               "")
 
 (***assert-custom-comp*** string-starts-with?
-                          (mylint-lambda*-call test-define*func '(test-define*func 1 2 :e 20 :a 9))
+                          (mylint-lambda*-call2 test-define*func '(test-define*func 1 2 :e 20 :a 9))
                           "Keyword :a is in wrong position. It should have been defined earlier. Correct order:")
   
 (***assert-custom-comp*** string-starts-with?
-                          (mylint-lambda*-call test-define*func '(test-define*func 1 2 :e 20 :a 9))
+                          (mylint-lambda*-call2 test-define*func '(test-define*func 1 2 :e 20 :a 9))
                           "Keyword :a is in wrong position. It should have been defined earlier. Correct order:")
 
 (***assert-custom-comp*** string-starts-with?
-                          (mylint-lambda*-call test-define*func '(test-define*func :a 20 9))
+                          (mylint-lambda*-call2 test-define*func '(test-define*func :a 20 9))
                           "Keyword :a is in wrong position. Expected :d.")
 
 (***assert-custom-comp*** string-starts-with?
-                          (mylint-lambda*-call test-define*func '(test-define*func 1 :wef 20 9))
+                          (mylint-lambda*-call2 test-define*func '(test-define*func 1 :wef 20 9))
                           "Unknown keyword :wef in call to")
 
 (***assert-custom-comp*** string-starts-with?
-                          (mylint-lambda*-call test-define*func '(test-define*func 1 2 :a 20 :a 9))
+                          (mylint-lambda*-call2 test-define*func '(test-define*func 1 2 :a 20 :a 9))
                           "Keyword :a set more than once in call to")
 
 (***assert-custom-comp*** string-starts-with?
-                          (mylint-lambda*-call test-define*func '(test-define*func 1 2 :a 20 :d 9))
+                          (mylint-lambda*-call2 test-define*func '(test-define*func 1 2 :a 20 :d 9))
                           "Keyword :d is in wrong position. It should have been defined earlier. Correct order:")
 
 (***assert-custom-comp*** string-starts-with?
-                          (mylint-lambda*-call test-define*func '(test-define*func :f 20))
+                          (mylint-lambda*-call2 test-define*func '(test-define*func :f 20))
                           "Unknown keyword :f in call to")
 
 (***assert-custom-comp*** string-starts-with?
-                          (mylint-lambda*-call test-define*func '(test-define*func 1))
+                          (mylint-lambda*-call2 test-define*func '(test-define*func 1))
                           "Missing argument :c in call to")
 
-(***assert*** (mylint-lambda*-call test-define*func '(test-define*func 1 2))
+(***assert*** (mylint-lambda*-call2 test-define*func '(test-define*func 1 2))
               "")
 
-(***assert*** (mylint-lambda*-call test-define*func '(test-define*func 1 2 :a 20))
+(***assert*** (mylint-lambda*-call2 test-define*func '(test-define*func 1 2 :a 20))
               "") ;;Missing argument for :e in call to")
 
-(***assert*** (mylint-lambda*-call test-define*func '(test-define*func 2 3 4))
+(***assert*** (mylint-lambda*-call2 test-define*func '(test-define*func 2 3 4))
               "")
 
 (***assert-custom-comp*** string-starts-with?
-                          (mylint-lambda*-call test-define*func '(test-define*func 2 3 4 5 6))
+                          (mylint-lambda*-call2 test-define*func '(test-define*func 2 3 4 5 6))
                           "Too many arguments in call to")
 
 
 
 
 
+(define (mylint-lambda-call signature funccall)
+  (call-with-exit
+   (lambda (return)
+     (define funcname (car funccall))
+     (define call (cdr funccall))
+     (define num-args (length call))
+     (define allows-infinite-args #f)
+     (define min-args (let loop ((signature signature)
+                                 (n 0))
+                        (if (null? signature)
+                            n
+                            (if (pair? signature)
+                                (let ((varname (car signature)))
+                                  (if (not (symbol? varname))
+                                      (return (<-> "Error in function \"" funcname "\": Parameter #" n " is not a symbol. Signature '" (object->string `(lambda ,signature ...)) "'")))
+                                  (loop (cdr signature)
+                                        (+ n 1)))
+                                (begin
+                                  (set! allows-infinite-args #t)
+                                  n)))))
+     '(c-display (not allows-infinite-args)
+                 (not (= num-args min-args))
+                 num-args min-args)
+     
+     (cond ((and (not allows-infinite-args)
+                 (not (= num-args min-args)))
+            (<-> "Expected " min-args " argument(s) for call to " funcname ", found " num-args " args in " (object->string funccall)))
+           ((< num-args min-args)
+            (<-> "Expected at least " min-args " argument(s) for call to " funcname ", found " num-args " args in " (object->string funccall)))
+           (else
+            "")))))
+     
 
-(define (mylint code)
-  (define (warn what)
+(***assert*** (mylint-lambda-call '() '(call))
+              "")
+
+(***assert-custom-comp*** string-starts-with?
+                          (mylint-lambda-call '(5) '(call))
+                          "Error in function \"call\": Parameter #0 is not a symbol. Signature '(lambda (5) ...)'")
+
+(***assert-custom-comp*** string-starts-with?
+                          (mylint-lambda-call '(a) '(call))
+                          "Expected 1 argument(s) for call to call, found 0 args in (call)")
+
+(***assert-custom-comp*** string-starts-with?
+                          (mylint-lambda-call '() '(call 1 2))
+                          "Expected 0 argument(s) for call to call, found 2 args in (call 1 2)")
+
+(***assert-custom-comp*** string-starts-with?
+                          (mylint-lambda-call '(a) '(call 1 2))
+                          "Expected 1 argument(s) for call to call, found 2 args in (call 1 2)")
+
+(***assert*** (mylint-lambda-call '(a . b) '(call 2))
+              "")
+
+(***assert-custom-comp*** string-starts-with?
+                          (mylint-lambda-call '(a . b) '(call))
+                          "Expected at least 1 argument(s) for call to call, found 0 args in (call)")
+
+(***assert*** (mylint-lambda-call '(a . b) '(call 1 2))
+              "")
+
+(define (mylint-lambda-call4 funccall var)
+  ;;(c-display "Linting" funccall ". VAR:" var)
+  (define (signature-is-for-lambda* signature)
+    (cond ((null? signature)
+           #f)
+          ((symbol? signature)
+           #f)
+          ((pair? (car signature))
+           #t)
+          (else
+           (signature-is-for-lambda* (cdr signature)))))           
+  (define type (schemecodeparser-get-var-type var))
+  (cond ((eq? type *schemecodeparser-var-var-type*)
+         (let ((value (schemecodeparser-get-var-var-value var)))
+           (if (or (symbol? value)
+                   (and (pair? value)
+                        (symbol? (car value))))
+               (begin
+                 (if (or (symbol? value)
+                         (not (string-starts-with? (symbol->string (car value)) "new_instance_of_")))
+                     (c-display (<-> "******* Note from mylint: The function '" (car funccall) "' has the value '" (pp value) "', which looks suspicious. Expression: '" (pp funccall) "'. Line: " *mylint-linenum* ".")))
+                 "")
+               (<-> "The function '" (car funccall) "' is not a function. Value: '" (pp value) "'. Expression: '" (pp funccall) "'."))))
+        ((eq? type *schemecodeparser-var-func-type*)
+         (let ((signature (schemecodeparser-get-var-func-signature var)))
+           (if (signature-is-for-lambda* signature)
+               (mylint-lambda*-call signature
+                                    funccall)
+               (mylint-lambda-call signature
+                                   funccall))))
+        ((eq? type *schemecodeparser-var-parameter-type*)
+         (c-display (<-> "******* Note from mylint: Higher order function call detected for expression: '" (pp funccall) "'. Line: " *mylint-linenum* "."))
+         "")
+        (else
+         "")))
+
+  
+(define (mylint code . force-throw)
+  (define (warn tag what)
+    (c-display "WARN called")
     (define message (<-> "==========\"READER Warning" (if *mylint-linenum* (<-> " line " *mylint-linenum*) "") "\": " what "========="))
     (newline)
     (newline)
     (display message)
     (newline)
-    (when *is-initializing*
+    (when (or *is-initializing*
+              (and (not (null? force-throw))
+                   (car force-throw)))
       (if (ra:release-mode)
           (safe-display-txt-as-displayable-as-possible message)
           (begin
-            (error message)))
+            (error (<_> 'mylint- tag) message)))
       ))
   
-  (define (warn-not-defined what for)
-    (warn (<-> "\"" what "\" has not been defined " for)))
+  (define (warn-undefined what for)
+    (c-display "varlist:" schemecodeparser-varlist)
+    (warn 'undefined (<-> "\"" what "\" has not been defined " for)))
 
   (define (is-defined? symbol)
     ;;(c-display "CALLING defined? for" symbol ". is-symbol?" (symbol? symbol))
     ;;(c-display "GLOBALS:" *schemecodeparser-global-declarations*)
     ;;(c-display "varlist:" (schemecodeparser-get-varlist))
-    (or (defined? symbol)
+    (or (defined? symbol (rootlet))
         (memq symbol *schemecodeparser-global-declarations*)
-        (memq symbol (schemecodeparser-get-varlist))))
+        (schemecodeparser-has-varname? symbol)))
 
   (define (check-atom atom . extrainfo)
     (if (and (symbol? atom)
              (not (is-defined? atom)))
-        (warn-not-defined atom (<-> "when parsing atom" (if (null? extrainfo) "" (car extrainfo)))))
+        (warn-undefined atom (<-> "when parsing atom" (if (null? extrainfo) "" (car extrainfo)))))
     atom)
   
   (define (check-atoms-in-expr expr)
     (if (not (proper-list? expr))
-        (warn (<-> "Expected proper list for " expr))
+        (warn 'inproper-list (<-> "Expected proper list for " expr))
         (let loop ((args (cdr expr)))
           (when (not (null? args))
             (check-atom (car args) (<-> " in " expr))
             (loop (cdr args))))))
   
-  (schemecodeparser (c-macroexpand code)
+  (schemecodeparser (c-macroexpand code) ;; Not possible to avoid having to macroexpand everything before checking if variables are defined.
                     :atomfunc check-atom
                     :elsefunc (lambda (expr)
                                 ;;(c-display "ELSE:" expr)
-                                (let ((funcname (car expr)))
-                                  (cond ((not (symbol? funcname))
-                                         (warn (<-> "\"" funcname "\" is not a symbol=========")))
-                                        ((not (is-defined? funcname))
-                                         (warn-not-defined funcname (<-> "in function call " expr)))
-                                        (else
-                                         (check-atoms-in-expr expr)))
-                                  (if (and (defined? funcname)
-                                           (not (memq funcname *schemecodeparser-global-declarations*))
-                                           (not (memq funcname (schemecodeparser-get-varlist))))
-                                      (let ((func (eval funcname)))
-                                        (when (and (procedure? func)                                                   
-                                                   (not (string-starts-with? (symbol->string funcname) "ra:gui_"))) ;; because of the the <gui> macro. TODO: Fix the <gui> macro.
-                                          ;;(c-display "varlist:")
-                                          ;;(for-each c-display (schemecodeparser-get-varlist))
-                                          (let ((error-string (cond ((and (not (null? (procedure-source func)))
-                                                                          (eq? 'lambda* (car (procedure-source func))))
-                                                                     (mylint-lambda*-call func expr))
-                                                                    ((not (aritable? func (- (length expr) 1)))
-                                                                     (<-> "Wrong number of arguments for \"" funcname "\" in " expr ". Arity:" (arity func)))
-                                                                    (else
-                                                                     ""))))
-                                            (if (not (string=? "" error-string))
-                                                (warn error-string)))))))
-                                '_schemecodeparser-elsefunc-rejected-it)))
-                                         
+                                (define funcname (car expr))
+                                
+                                (if (not (symbol? (car expr)))
+                                    (warn 'not-a-symbol (<-> "\"" funcname "\" is not a symbol=========")))
+                                
+                                (if (not (is-defined? funcname))
+                                    (warn-undefined funcname (<-> "in function call " expr))
+                                    (check-atoms-in-expr expr))
+                                (define error-string "")
+                                (define local-var (schemecodeparser-get-var funcname))
+                                (if local-var
+                                    (set! error-string (mylint-lambda-call4 expr local-var))
+                                    (if (and (defined? funcname (rootlet))
+                                             (not (memq funcname *schemecodeparser-global-declarations*))
+                                             (not (schemecodeparser-has-varname? funcname)))
+                                        (let ((func (eval funcname)))
+                                          (when (and (procedure? func)                                                   
+                                                     (not (string-starts-with? (symbol->string funcname) "ra:gui_"))) ;; because of the the <gui> macro. TODO: Fix the <gui> macro.
+                                            ;;(c-display "varlist:")
+                                            (set! error-string (cond ((and (not (null? (procedure-source func)))
+                                                                           (eq? 'lambda* (car (procedure-source func))))
+                                                                      (mylint-lambda*-call2 func expr))
+                                                                     ((not (aritable? func (- (length expr) 1)))
+                                                                      (<-> "Wrong number of arguments for \"" funcname "\" in " expr ". Arity:" (arity func)))
+                                                                     (else
+                                                                      "")))))))
+                                (if (not (string=? "" error-string))
+                                    (warn 'illegal-function-call error-string))
+                                expr)
+                    :errorhandler (lambda (tag . info)
+                                    (c-display "ERROR-handler called")
+                                    (warn tag (apply <-> (append (list tag ": ")
+                                                                 info))))))
+
+(***assert-error*** (mylint '(let ((a 50)) b) #t)
+                    'mylint-undefined)
+
+(***assert-error*** (mylint '(lambda (a) b) #t)
+                    'mylint-undefined)
+
+(***assert-error*** (mylint '(lambda* (a) b) #t)
+                    'mylint-undefined)
+
+(***assert-error*** (mylint '(define (a) b) #t)
+                    'mylint-undefined)
+
+(***assert-error*** (mylint '(define* (a) b) #t)
+                    'mylint-undefined)
+
+(***assert-error*** (mylint '(define* (a c) (a b)) #t)
+                    'mylint-undefined)
+
+(***assert-error*** (mylint '(define* (a c) (a (a b))) #t)
+                    'mylint-undefined)
+
+(***assert-error*** (mylint '(define* (a) (a 1)) #t)
+                    'mylint-illegal-function-call)
+
+(***assert-error*** (mylint '(define* (a) (a (a))) #t)
+                    'mylint-illegal-function-call)
+
+(***assert*** (mylint '(define* (a b) (a (a b))) #t)
+              '(define* (a b) (a (a b))))
+
+(if (defined? 'delafina)
+    (***assert-error*** (mylint '(delafina (a) b) #t)
+                        'mylint-undefined))
+
+(***assert-error*** (mylint '(let () (let ((a 50)) a) a) #t)
+                    'mylint-undefined)
+
+(***assert*** (mylint '(let () (let ((a 50)) a) 9) #t)
+              '(let () (let ((a 50)) a) 9))
+
+(***assert-error*** (mylint '(gakkgakk) #t)
+                    'mylint-undefined)
+
+(***assert-error*** (mylint 'gakkgakk #t)
+                    'mylint-undefined)
+
+(***assert-error*** (mylint '(eq?) #t)
+                    'mylint-illegal-function-call)
+
+(***assert-error*** (mylint '(eq? 'a 'b 'c) #t)
+                    'mylint-illegal-function-call)
+
+(***assert*** (mylint '(eq? 'a 'b) #t)
+              '(eq? 'a 'b))
+
+(if (defined? 'delafina)
+    (***assert*** (mylint '(delafina (ai :a :b 2) #t))
+                  '(define* (ai a (b 2)) #t)))
+
+(***assert-error*** (mylint '(let loop () (loop 2)) #t)
+                    'mylint-illegal-function-call)
+
+(***assert-error*** (mylint '(let ((loop 50)) (loop 2)) #t)
+                    'mylint-illegal-function-call)
+
+(***assert*** (mylint '(let ((loop eq?)) (loop 'a 'b)) #t)
+              '(let ((loop eq?)) (loop 'a 'b)))
+
+;; Currently the linter doesn't check result type of function calls, so it doesn't see that this is an error.
+;; The linter should print a note though:
+(***assert*** (mylint '(let ((loop (ra:release-mode))) (loop 'a 'b)) #t)
+              '(let ((loop (ra:release-mode))) (loop 'a 'b)))
+
+;; Also display a warning for plainer higher order function:
+(***assert*** (mylint '(lambda (a) (a 2)))
+              '(lambda (a) (a 2)))
+
+(***assert-error*** (mylint '(lambda () (let loop () (loop 2))) #t)
+                    'mylint-illegal-function-call)
+
+(***assert-error*** (mylint '(let () (define (a b) b) (a)) #t)
+                    'mylint-illegal-function-call)
+
 
 #!!
+(mylint '(define (a 100) (a2)) #t)
+!!#
+(***assert-error*** (mylint '(define (a 100) (a)) #t)
+                    'mylint-schemecodeparser-varname-not-a-symbol)
+
+(***assert*** (mylint '(define (a . b) (a)) #t)
+              '(define (a . b) (a)))
+
+(***assert*** (mylint '(begin
+                         (define (a . b) (a)))
+                      #t)
+              '(begin
+                 (define (a . b) (a))))
+
+(***assert*** (mylint '(lambda (a . b) (a)) #t)
+              '(lambda (a . b) (a)))
+
+(***assert*** (mylint '(lambda* (a . b) (a)) #t)
+              '(lambda* (a . b) (a)))
+
+(let ((code '(let ()
+               (define (hellofunc) #t)
+               (define paint-voltext (<optional-func> ()))
+               (paint-voltext))))
+  (mylint code)
+  (***assert*** (mylint code #t)
+                code))
+
+(let ((code '(let ()
+               (define paint-voltext (<optional-func> ((a #f))))
+               (paint-voltext))))
+  (***assert*** (mylint code #t)
+                code))
+
+(let ((code '(let ()
+               (define (hellofunc) #t)
+               (define paint-voltext (<optional-func> rest))
+               (paint-voltext))))
+  (***assert*** (mylint code #t)
+                code))
+
+(let ((code '(let ()
+               (define (hellofunc) #t)
+               (define paint-voltext (<optional-func> rest))
+               (paint-voltext 2 3 4 5))))
+  (***assert*** (mylint code #t)
+                code))
+
+(let ((code '(let ()
+               (define (hellofunc) #t)
+               (define paint-voltext (<optional-func> (a . rest)))
+               (paint-voltext 2 3 4 5))))
+  (***assert*** (mylint code #t)
+                code))
+
+(let ((code '(let ()
+               (define paint-voltext (<optional-func> (a . rest)))
+               (paint-voltext))))
+  (***assert-error*** (mylint code #t)                      
+                      'mylint-illegal-function-call))
+
+(let ((code '(let ()
+               (define paint-voltext (<optional-func> (a b)))
+               (paint-voltext))))
+  (***assert-error*** (mylint code #t)                      
+                      'mylint-illegal-function-call))
+
+(let ((code '(let ()
+               (define paint-voltext (<optional-func> (a (b #f))))
+               (paint-voltext))))
+  (***assert-error*** (mylint code #t)                      
+                      'mylint-illegal-function-call))
+
+
+(let ((code '(let ()
+               (define (hellofunc) #t)
+               (define-optional-func paint-voltext (a . rest))
+               (paint-voltext 2 3 4 5))))
+  (***assert*** (mylint code #t)
+                (c-macroexpand code)))
+
+(let ((code '(let ()
+               (define-optional-func  paint-voltext (a . rest))
+               (paint-voltext))))
+  (***assert-error*** (mylint code #t)                      
+                      'mylint-illegal-function-call))
+
+(let ((code '(let ()
+               (define-optional-func paint-voltext (a b))
+               (paint-voltext))))
+  (***assert-error*** (mylint code #t)                      
+                      'mylint-illegal-function-call))
+
+(let ((code '(let ()
+               (define-optional-func paint-voltext (a (b #f)))
+               (paint-voltext))))
+  (***assert-error*** (mylint code #t)                      
+                      'mylint-illegal-function-call))
+
+
+(let ((code '(let ()
+               (define tablet (make-hash-table 5 eq?))
+               (tablet 'hello))))
+  (***assert*** (mylint code #t)
+                code))
+
+(let ((code '(let ()
+               (define tablet (hash-table))
+               (tablet 'hello 2 3)))) ;; more than one argument happens (the stored value might be a vector/list/hash table).
+  (***assert*** (mylint code #t)
+                code))
+
+(let ((code '(let ()
+               (define tablet (make-hash-table 5 eq?))
+               (tablet))))
+  (***assert-error*** (mylint code #t)                      
+                      'mylint-illegal-function-call))
+
+
+#!!
+
+(c-define-expansion (*testmacro*)
+  `(list 2 3 4))
+(c-define-expansion (*testmacro2*)
+  `(list 2 3 4))
+
+(mylint '(begin (testmacro2)))
+(mylint '(testmacro))
+(c-macroexpand-1 '(testmacro))
+
+(catch #t
+       (lambda ()
+         ;;(schemecodeparser-create-declared-var 50)
+         ;;(error 'hello2)
+         (error 'hello3)
+         (mylint '(define (a 100) (a)) #t)
+         ;;(throw 'hello23)
+         )
+       (lambda (tag . rest)
+         (if (eq? tag 'hello2)
+             (c-display "hepp")
+             (error tag rest))))
+!!#
+
+#!!
+
+(cdr (assq 'wef '((b 2) (c 9) (a . 5) (d 100))))
+(assq 'wef '((b 2) (c 9) (a . 5) (d 100)))
 
 (mylint
  '(define (dosmething a b c)
@@ -906,8 +1585,10 @@
 (mylint '(let ((a 50))
            (aloijwef)
            (testexp a rijoije)
-           (+ 2 3 a :e 'd d schemecodeparser)))
+           (+ 2 3 a :e 'd d schemecodeparser))
+        #t)
 
+(error 'hello "hello2 hello3")
 !!#
 
 (define (get-expression-from-file filename)
@@ -932,7 +1613,8 @@
 #!!
 (define (mylint-file filename)
   (mylint `(begin
-             ,@(reverse (get-expression-from-file filename)))))
+             ,@(reverse (get-expression-from-file filename)))
+          #t))
 !!#
 (define (mylint-file filename)
   (catch #t
@@ -948,7 +1630,7 @@
                          (when *is-initializing*
                            (display filename) (display ": ") (display expr)
                            (newline))
-                         (mylint expr)
+                         (mylint expr #t)
                          (loop))))))))
          (lambda args
            (set! *mylint-linenum* #f)
@@ -958,13 +1640,303 @@
 #!!
 (load "mylint.scm")
 (get-expression-from-file "/home/kjetil/radium/bin/scheme/define-match.scm")
-(mylint-file "/home/kjetil/radium/bin/scheme/common1.scm")
+(mylint-file "/home/kjetil/radium/bin/scheme/import_mod.scm")
+(mylint-file "/home/kjetil/radium/bin/scheme/api_autotesting.scm")
+(begin
+  (mylint-file "/home/kjetil/radium/bin/scheme/mylint.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/mixer-strips.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/mouse.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/area.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/instruments.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/seqtrack-headers.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/timing.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/gui.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/common2.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/fxrange.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/notem.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/sequencer_upper_part.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/notes.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/init.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/various.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/seqblock_audio.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/sequencer.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/pluginmanager.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/define-match-bootstrapped.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/keybindings.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/common1.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/randomize-note-durations.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/popupmenu.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/main_layout.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/seqblock_editor.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/solo.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/editor_lower_part.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/quantitize.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/main_menus.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/seqblock-paint.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/semi-primitives.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/nodes.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/mouse-primitives.scm")
+  )
+
+(mylint-file "/home/kjetil/radium/bin/scheme/.scm")
+
+(pp
+ (c-macroexpand
+  '(delafina (make-qtarea :width 100 :height 100 :sub-area-creation-callback #f :enable-mouse-callbacks #t)
+  (define gui (<gui> :widget width height))  
+  (define x1 0)
+  (define y1 0)
+  (define x2 width)
+  (define y2 height)
+  (def-area-subclass (<qtarea>)
+    (<gui> :add-paint-callback gui
+           (lambda (width height)
+             (paint-internal 0 0 width height)))
+
+    (when enable-mouse-callbacks
+      (<gui> :add-mouse-callback gui
+             (lambda (button state x y)
+               (mouse-callback-internal button state x y)
+               ;;(c-display "has-mouse:" (and (defined? 'has-mouse) (has-mouse)))
+               ;;50))
+               (has-mouse)))
+      (<gui> :add-mouse-wheel-callback gui mouse-wheel-moved-internal!))
+
+    (define-optional-func the-sub-area (key . rest))
+    
+    (when sub-area-creation-callback
+      (define (recreate width* height*)
+        (resize! width* height*)
+        (define state (and the-sub-area
+                           (the-sub-area :get-state)))
+        (remove-sub-areas!)
+        (set! the-sub-area (sub-area-creation-callback gui width height state))
+        (if state
+            (the-sub-area :apply-state! state))
+        (add-sub-area-plain! the-sub-area))
+      
+      (<gui> :add-resize-callback gui recreate)
+      (recreate width height))
+    )
+
+  (define area (<new> :qtarea))
+
+  (area :add-method! :get-gui (lambda ()
+                                gui))
+
+  area)
+  ))
+
+(mylint
+ '(let ()
+    (define (a)
+      (a))
+    (a)))
+
+(pp
+ (mylint
+  '(delafina (make-qtarea :width 100 :height 100 :sub-area-creation-callback #f :enable-mouse-callbacks #t)
+     (def-area-subclass (<qtarea>)
+       #t)
+     50)))
+
+(pp
+ (mylint
+  '(let ()
+     (define (hepp)
+       (def-area-subclass (<qtarea>)
+         #t)))))
+
+(pp
+ (mylint
+  '(define (hepp)
+     (def-area-subclass (<qtarea>)
+       #t))))
+
+(c-macroexpand 
+ '(def-area-subclass (<qtarea>)
+   #t))
+
+(mylint '(define (a)
+           (define (b)
+             50)
+           (b)))
+
+(pp (c-macroexpand '(define area (<new> :qtarea))))
+
+(c-define-macro (*macro4*)
+  `(macro5))
+
+(c-define-macro (*macro3* b)
+  `(macro6 ,b))
+
+(c-define-macro (*macro2* b)
+  `(macro3 ,b))
+
+(c-define-macro (*macro1* b)
+  `(macro2 ,b))
+
+(c-macroexpand '(begin
+                  (macro1 (macro4))))
+
+('define-match 'get-track-num-0 'X '_ '___ 'X1 '__ '__________ #:'> #f #:'where
+  ('< 'X 'X1) 'X '_ 'Num 'X1 'X2 '__________ #:'> 'Num #:'where ('and ('>= 'X 'X1)
+                                                                      ('< 'X 'X2))
+  '_ '_ 'Num '__ '__ 'Num-tracks #:'> #f #:'where ('= ('1+ 'Num) 'Num-tracks)
+  'X 'Y 'Num 'X1 'X2 'Num-tracks #:'>
+  ('get-track-num-0 'X 'Y ('1+ 'Num)
+                    'X2 ('if ('= 'Num ('- 'Num-tracks 2))
+                             ('ra:get-track-x2 ('1+ 'Num))
+                             ('ra:get-track-x1 ('+ 2 'Num)))
+                    'Num-tracks))
+
+('define ('get-track-num-0 '-__Arg1 '-__Arg2 '-__Arg3 '-__Arg4 '-__Arg5 '-__Arg6)
+  ('define ('-__Func1) ('let (('X '-__Arg1)) ('let (('X1 '-__Arg4)) ('if ('< 'X 'X1) #f ('-__Func2)))))
+  ('define ('-__Func2) ('let (('X '-__Arg1)) ('let (('Num '-__Arg3)) ('let (('X1 '-__Arg4)) ('let (('X2 '-__Arg5)) ('if ('and ('>= 'X 'X1) ('< 'X 'X2)) 'Num ('-__Func3)))))))
+  ('define ('-__Func3) ('let (('Num '-__Arg3)) ('let (('Num-tracks '-__Arg6)) ('if ('= ('1+ 'Num) 'Num-tracks) #f ('-__Func4)))))
+  ('define ('-__Func4) ('let (('X '-__Arg1)) ('let (('Y '-__Arg2))
+                                               ('let (('Num '-__Arg3))
+                                                 ('let (('X1 '-__Arg4)) ('let (('X2 '-__Arg5))
+                                                                          ('let (('Num-tracks '-__Arg6))
+                                                                            ('get-track-num-0 'X 'Y ('1+ 'Num) 'X2 ('if ('= 'Num ('- 'Num-tracks 2))
+                                                                                                                        ('ra:get-track-x2 ('1+ 'Num))
+                                                                                                                        ('ra:get-track-x1 ('+ 2 'Num)))
+                                                                                              'Num-tracks)))))))) ('-__Func1)) 
+
+
+
+(mylint '(begin (define s (gensym "s"))))
+
+(mylint '(let ()
+           (define (get-vector)
+             (get-vector))
+           #t))
+
+(mylint '(define (get-vector)
+           (get-vector)))
+
+(mylint '(let ()
+           (define-class (<hepp>)
+             (define (get-vector)
+               50)
+             #t)))
+
+(pretty-print (c-macroexpand '(let ()
+                  (define-class (<hepp>)
+                    (define (get-vector)
+                      50)
+                    #t))))
+
+(mylint '(let ()
+           (define paint-voltext (<optional-func> (a b)))
+           (paint-voltext)))
+
+(c-macroexpand '(<optional-func> a b . c))
+
+(let ((daslist list))
+  `(,daslist 50))
+
+(define (hepp . rest)
+  (quasiquote ,rest))
+
+(hepp hepp hepp . hepp)
+
+(quote '(a . b))
+
+(lambda (a b)
+  (+ swefoi)
+  hepp)
+
+(proper-list? (cons 'a 'b))
+(let loop ((parameters (cons 'a 'b)))
+  (if (symbol? parameters)
+      (list parameters)
+      (cons (car parameters)
+            (loop (cdr parameters)))))
+
+(let ((def '(define s (gensym "s"))))
+  (if (pair? (cadr def))
+      (let* ((name1 (car (cadr def)))
+             (name (if (memq (car def) '(c-define-macro c-define-expansion))
+                       (string->symbol (list->string (cdr (butlast (string->list (symbol->string name1))))))
+                       name1))
+             (signature (cdr (cadr def))))
+        (c-display "name:" name ". sig:" signature)
+        ;;(schemecodeparser-create-func-var name signature)
+        )
+      (let ((name (cadr def))
+            (value (caddr def)))
+        (c-display "name:" name ". value:" value)
+        (schemecodeparser-create-var-var name value errorhandler)
+        )))
+
+(let ()
+  (define (signature-is-for-lambda* signature)
+    (cond ((null? signature)
+           #f)
+          ((symbol? signature)
+           #f)
+          ((pair? (car signature))
+           #t)
+          (else
+           (signature-is-for-lambda* (cdr signature)))))
+  (signature-is-for-lambda* (cdr '(lambda {original}-9612 . {arguments}-9613))))
+
+  
+
+(pp
+ (c-macroexpand
+  '(define-struct conf
+     :instrument-id
+     :is-bus
+     :row-num
+     :is-enable)))
+     :is-unique))
+
+(pp
+ (c-macroexpand
+  '(define-struct event
+  :patternnum
+  :channel
+  :linenum
+  :type
+  :value
+  :value2 0
+  :instrumentnum 0
+  :tick 0
+  :is-pattern-delay-line #f)))
+
+(pp
+ (c-macroexpand
+  '(delafina (m-e-0 :type type
+                    :pattern 0
+                 :channel 0
+                 :instrumentnum 0
+                 :line 0
+                 :value 0
+                 :value2 0
+                 :tick 0
+                 :is-pattern-delay-line #f                 
+                 )
+  ;;(c-display "gakk gakk" pattern channel line type value value2 instrumentnum tick is-pattern-delay-line)
+  (make-event-nokeywords pattern
+                         channel              
+                         line
+                         type
+                         value
+                         value2
+                         instrumentnum
+                         tick
+                         is-pattern-delay-line
+                         ))
+  ))
+
 !!#
 
 
-(define (mylint-string string)
+(define (mylint-string string*)
   (call-with-input-string
-   string
+   string*
    (lambda (f)
      (let loop ((ret #<undefined>))
        (let ((expr (read f)))                 
@@ -975,12 +1947,12 @@
                (newline)
                (loop (mylint expr)))))))))
 
-(define (mylint-and-eval-string string . envlist)
+(define (mylint-and-eval-string string* . envlist)
   (define env (if (null? envlist)
                   (rootlet)
                   (car envlist)))
   (call-with-input-string
-   string
+   string*
    (lambda (f)
      (let loop ((ret #<undefined>))
        (let ((expr (read f)))                 
@@ -988,7 +1960,8 @@
              ret
              (begin
                ;;(display expr) (newline)
-               (mylint expr)
+               (with-history-disabled
+                (mylint expr))
                (loop (eval expr env)))))))))
   
 #!!

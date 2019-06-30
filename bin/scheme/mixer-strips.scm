@@ -1604,7 +1604,7 @@
   
   (define doit #t)
 
-  (define paint #f)
+  (define-optional-func paint ())
 
   (define last-slider-val (get-pan))
 
@@ -1906,13 +1906,13 @@
 
   (define doit #f)
 
-  (define paint-voltext #f)
-  (define paint-peaktext #f)
+  (define-optional-func paint-voltext ())
+  (define-optional-func paint-peaktext ())
 
   (define voltext (and show-voltext (<gui> :widget)))
   (define peaktext (and show-peaktext (<gui> :widget)))
 
-  (define paint-slider #f)
+  (define-optional-func paint-slider ())
 
   (define last-vol-slider-db-value (get-volume))
   (define volslider (<gui> :vertical-slider
@@ -1928,7 +1928,7 @@
                                (if paint-voltext
                                    (<gui> :update voltext)
                                    )))))
-
+  
   (<gui> :set-size-policy volslider #t #t)
   ;;(<gui> :set-min-width volslider 1) ;; ?? Why is this necessary?
   (<gui> :set-min-height volslider (* (get-fontheight) 2)) ;; This is strange. If we don't do this, min-height will be set to approx something that looks very good, but I don't find the call doing that.

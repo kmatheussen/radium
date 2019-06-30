@@ -16,6 +16,8 @@
 (define *is-initializing* #t)
 ;;(define *all-files-loaded #f)
 
+(define-constant *empty-symbol* '___empty_symbol) ;; s7 doesn't allow converting empty string to symbol
+
 
 
 (define-constant *functions-and-symbols-used-by-C*
@@ -340,15 +342,22 @@ FROM_C-jump-to-mark
                   (cond ((or is-finished
                              (equal? (car x)
                                      '(if (and rethrow maybe-rethrow) (throw *try-finally-rethrown*) ret))
+                             ;(and is-call
+                             ;     (eq? call-func-name 'FROM-C-catch-all-errors-and-display-backtrace-automatically))
                              (and is-call
-                                  (eq? call-func-name 'FROM-C-catch-all-errors-and-display-backtrace-automatically)))
+                                  (eq? call-func-name 'eval-string))
+                             )
                          (set! is-finished #t)
                          "")
                         ((and is-call
+                              ;;(not (integer? (car line)))
                               (memq call-func-name
-                                    '(let define define* delafina lambda catch begin else cond if do or and format display c-display)))
+                                    '(let define define* delafina lambda catch begin else cond if do or and format display c-display when call-with-exit)))
                          "")
                         (else
+                         (if (and is-call
+                                  (eq? call-func-name 'FROM-C-catch-all-errors-and-display-backtrace-automatically))
+                             (set! is-finished #t))
                          (format p (if (and (integer? (car line))
                                             (string? (car f))
                                             (not (string=? (car f) "*stdout*")))
@@ -600,9 +609,9 @@ FROM_C-jump-to-mark
                        (newline)
                        #t)
                      (-__Func2 a b)))
-               (lambda (error . args)
+               (lambda (error* . args)
                  ;;(c-display "ARGS:" args)
-                 (-__Func2 (list (symbol->keyword error) (apply format (cons #f (car args))) (cdr args))
+                 (-__Func2 (list (symbol->keyword error*) (apply format (cons #f (car args))) (cdr args))
                            (list a b))))))
     (define (-__Func2 A B)
       (newline)
@@ -628,7 +637,7 @@ FROM_C-jump-to-mark
            (newline)
            (c-display "Wrong. Result: " (pp a))
            (c-display "  Expected: " (pp b))
-           (handle-assertion-failure-during-startup (list "***assert-map*** failed. Result:" result ". Expected:" b))
+           (handle-assertion-failure-during-startup (list "***assert-map*** failed. Result:" a ". Expected:" b))
            'failed)))
     
 (define-macro (***assert-error*** a what)
@@ -637,9 +646,11 @@ FROM_C-jump-to-mark
                           (lambda ()
                             ,a)
                           (lambda args
+                            (display "ret:")(display ret)(newline)
                             (if (eq? ,what (car args))
                                 (set! ret #t)
-                                (c-display "...expected " ,what ", not " (car args)))))
+                                (c-display "...expected " ,what ", not " (car args)))
+                            ))
                    ret)
                  #t))
 
@@ -647,7 +658,8 @@ FROM_C-jump-to-mark
 
 
 
-(define-constant *mylint-load-file-during-startup* (and (not (ra:release-mode))
+(define-constant *mylint-load-file-during-startup* (and #t
+                                                        (not (ra:release-mode))
                                                         (= (random 10) 0) ;; Takes a lot of time. Don't want to run every time.
                                                         (not (string=? (ra:get-os-name) "windows")) ;; Takes even more time, a lot more time, on windows, at least if running in normal console.
                                                         ))
@@ -685,7 +697,8 @@ FROM_C-jump-to-mark
               (set! *currently-reloading-file* old-reloading)
               (set! *currently-loading-file* old-loading-filename)
 
-              (if (or (not *is-initializing*)
+              (if (or #f
+                      (not *is-initializing*)
                       *mylint-load-file-during-startup*)
                   (mylint-file filename))
         
@@ -771,12 +784,6 @@ FROM_C-jump-to-mark
 
 
 (load "semi-primitives.scm")
-
-(define (<_> . args)
-  (let ((s (apply <-> args)))
-    (if (string=? "" s)
-        *empty-symbol*
-        (string->symbol s))))
 
 (c-define-expansion (*<ra>* command . args)
   `( ,(<_> 'ra: (keyword->symbol command)) ,@args))

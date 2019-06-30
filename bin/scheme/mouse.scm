@@ -4230,8 +4230,8 @@
 (define (create-seqlooppunch-mouse-handler base-name in-use? get-start get-end set-start! set-end!)
   (define gakkgakk-seqloop-handler-num-moves 0)
   (define gakkgakk-seqloop-handler-start-X #f)
-  (define getter #f)
-  (define setter! #f)
+  (define-optional-func getter ())
+  (define-optional-func setter! (new-value))
   (define name #f)
   (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                               (and (in-use?)
@@ -4277,6 +4277,7 @@
                                        ))
                           :Move (lambda (_ Value)
                                   ;;(c-display "Value: " Value)
+                                  (assert setter!)
                                   (inc! gakkgakk-seqloop-handler-num-moves 1)
                                   (set! Value (floor Value))
                                   (if (not (<ra> :control-pressed))
@@ -4284,6 +4285,7 @@
                                   (setter! Value))
                           
                           :Publicize (lambda (Value)
+                                       (assert getter)
                                        (set-statusbar-looppunch-info name getter))
                           
                           :Mouse-pointer-func ra:set-normal-mouse-pointer

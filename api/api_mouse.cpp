@@ -1158,7 +1158,7 @@ void setCurrentTemponode(int num, int blocknum){
   
   struct TempoNodes *temponode = (struct TempoNodes *)ListFindElement3_num(&block->temponodes->l, num);
 
-  setCurrentNode(&temponode->l);
+  setCurrentNode(temponode==NULL ? NULL : &temponode->l);
 }
 
 void setIndicatorTemponode(int num, int blocknum){
@@ -1170,7 +1170,7 @@ void setIndicatorTemponode(int num, int blocknum){
   
   struct TempoNodes *temponode = (struct TempoNodes *)ListFindElement3_num(&block->temponodes->l, num);
 
-  setIndicatorNode(&temponode->l);
+  setIndicatorNode(temponode==NULL ? NULL : &temponode->l);
 }
 
 

@@ -1376,7 +1376,7 @@
           (else
            "Bar")))
   
-  (define grid-checkbox #f)
+  (define-optional-func grid-checkbox (key . rest))
   
   (set! grid-checkbox
         (<new> :checkbox gui gridbutton-x1 y1 (+ gridbutton-x1 gridbutton-width) y2
@@ -1593,7 +1593,7 @@
 (if *use-testgui*
     (<gui> :add-deleted-callback *testgui*
            (lambda (radium-runs-custom-exec)
-             (*testarea* :i-am-removed!))))
+             (*testarea* :about-to-be-removed-internal!))))
 
 
 (if *use-testgui*

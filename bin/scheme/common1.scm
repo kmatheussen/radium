@@ -93,22 +93,6 @@
            (and ,(car (car vars))
                 ,(loop (cdr vars)))))))
 
-(c-define-expansion (*define2* name correct-type? value)
-  (define s (gensym "s"))
-  (define v (gensym "v"))
-  (if (<ra> :release-mode)
-      `(define ,name ,value)
-      `(begin     
-         (define ,name (let ((,v ,value))
-                         (if (,correct-type? ,v)
-                             ,v
-                             (error 'wrong-type (list "For " ',name ': ,v)))))
-         (set! (setter ',name)
-               (lambda (,s ,v)
-                 (if (,correct-type? ,v)
-                     ,v
-                     (error 'wrong-type (list "For " ',name "New value:" ,v "Prev value:" ,name))))))))
-
 #!!
 (pp (macroexpand (define2 add9 integer? 50)))
 
@@ -240,8 +224,6 @@
 
 ||#
 
-(define-constant *empty-symbol* '___empty_symbol) ;; s7 doesn't allow converting empty string to symbol
-
 ;; Note! This function is called from the error handler.
 (define (to-string a)
   (cond ((symbol? a)
@@ -326,8 +308,8 @@
 (define (identity a)
   a)
 
-(define (nth n list)
-  (list-ref list (- n 1)))
+(define (nth n list*)
+  (list-ref list* (- n 1)))
 
 #||
 (define (1+ n)
@@ -481,35 +463,35 @@
       
 ;; string
 
-(define (string-split string ch)
-  (if (string=? string "")
+(define (string-split string* ch)
+  (if (string=? string* "")
       '()
-      (let ((splitted (split-list (string->list string)
+      (let ((splitted (split-list (string->list string*)
                                   (lambda (ch2)
                                     (char=? ch ch2)))))
         (cond ((null? (cadr splitted))
-               (list string))
+               (list string*))
               ((null? (car splitted))
                (string-split (list->string (cdr (cadr splitted))) ch))
               (else
                (cons (list->string (car splitted))
                      (string-split (list->string (cdr (cadr splitted))) ch)))))))
 
-(define (string-take string pos)
-  (substring string 0 pos))
+(define (string-take string* pos)
+  (substring string* 0 pos))
 
 (***assert*** (string-take "1234" 2)
               "12")
 
 ;; Other variants (not implemented): string-take, string-drop-right, string-take-right
-(define (string-drop string pos)
-  (substring string pos))
+(define (string-drop string* pos)
+  (substring string* pos))
 
 (***assert*** (string-drop "abcd" 1)
               "bcd")
 
-(define (string-drop-right string num)
-  (string-take string (- (string-length string) num)))
+(define (string-drop-right string* num)
+  (string-take string* (- (string-length string*) num)))
 
 (***assert*** (string-drop-right "abcd" 1)
               "abc")
@@ -525,17 +507,17 @@
 (***assert*** (string-starts-with? "a" "b") #f)
 (***assert*** (string-starts-with? "ab" "a") #t)
 
-(define (string-ends-with? string endswith)
-  (define (loop string startswith)
+(define (string-ends-with? string* endswith)
+  (define (loop string* startswith)
     (cond ((null? startswith)
            #t)
-          ((null? string)
+          ((null? string*)
            #f)
-          ((char=? (car string) (car startswith))
-           (loop (cdr string) (cdr startswith)))
+          ((char=? (car string*) (car startswith))
+           (loop (cdr string*) (cdr startswith)))
           (else
            #f)))
-  (loop (reverse (string->list string))
+  (loop (reverse (string->list string*))
         (reverse (string->list endswith))))
 
 (***assert*** (string-ends-with? "" "") #t)
@@ -603,30 +585,30 @@
 (***assert*** (string-join (list "a" "bb" "ccc") " + ")
               "a + bb + ccc")
 
-(define (is-whitespace? char)
-  (or (char=? char #\newline)
-      (char=? char #\space)
-      (char=? char #\tab)))
+(define (is-whitespace? char*)
+  (or (char=? char* #\newline)
+      (char=? char* #\space)
+      (char=? char* #\tab)))
 
-(define (string-strip-right string)
+(define (string-strip-right string*)
   (list->string
    (reverse
-    (remove-while (reverse (string->list string))
+    (remove-while (reverse (string->list string*))
                   is-whitespace?))))
 
 (***assert*** (string-strip-right "   as dfasdf \n\n ")
               "   as dfasdf")
 
-(define (string-strip-left string)
+(define (string-strip-left string*)
   (list->string
-   (remove-while (string->list string)
+   (remove-while (string->list string*)
                   is-whitespace?)))
 
 (***assert*** (string-strip-left "   as dfasdf \n\n ")
               "as dfasdf \n\n ")
 
-(define (string-strip string)
-  (string-strip-left (string-strip-right string)))
+(define (string-strip string*)
+  (string-strip-left (string-strip-right string*)))
 
 (define (string-rightjustify string1 string2pos string2)
   (define len1 (string-length string1))

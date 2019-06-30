@@ -817,22 +817,22 @@
 
 ;;;;;;;;; TESTING ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (reverse-velocity velocity length)
+(define (reverse-velocity velocity length*)
   (<copy-velocity> velocity
-                   :place (scale (velocity :place) 0 length length 0)))
+                   :place (scale (velocity :place) 0 length* length* 0)))
 
-(define (reverse-velocities velocities length)
+(define (reverse-velocities velocities length*)
   (map (lambda (velocity)
-         (reverse-velocity velocity length))
+         (reverse-velocity velocity length*))
        (reverse velocities)))
 
-(define (reverse-pitch pitch length)
+(define (reverse-pitch pitch length*)
   (<copy-pitch> pitch
-                :place (scale (pitch :place) 0 length length 0)))
+                :place (scale (pitch :place) 0 length* length* 0)))
 
-(define (reverse-pitches pitches length)
-  (define first-pitch (reverse-pitch (first pitches) length))
-  (define last-pitch (reverse-pitch (last pitches) length))
+(define (reverse-pitches pitches length*)
+  (define first-pitch (reverse-pitch (first pitches) length*))
+  (define last-pitch (reverse-pitch (last pitches) length*))
   
   ;;(c-display "bef first-pitch:" first-pitch length)
   ;;(c-display "bef last-pitch:" last-pitch length)
@@ -846,14 +846,14 @@
 
   (append (list last-pitch)
           (map (lambda (pitch)
-                 (reverse-pitch pitch length))
+                 (reverse-pitch pitch length*))
                (reverse (cdr (butlast pitches))))
           (list first-pitch)))
 
-(define (reverse-note note length)
+(define (reverse-note note length*)
   (let ((duration (get-note-duration note)))
     (<copy-note> note
-                 :place (scale (get-note-end note) 0 length length 0)
+                 :place (scale (get-note-end note) 0 length* length* 0)
                  :pitches (reverse-pitches (note :pitches) duration)
                  :velocities (reverse-velocities (note :velocities) duration)
                  )))

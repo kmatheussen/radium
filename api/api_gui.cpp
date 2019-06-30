@@ -6941,7 +6941,7 @@ const_char *getHtmlFromText(const_char* text){
   bool is_first = true;
   for (auto line : QString(text).split("\n")){
     QString html = get_html_from_textline(line);
-    printf("LINE: -%s- HTML: -%s-\n", line.toUtf8().constData(), html.toUtf8().constData());
+    //printf("LINE: -%s- HTML: -%s-\n", line.toUtf8().constData(), html.toUtf8().constData());
     if (is_first)
       ret = html;
     else
@@ -6949,7 +6949,7 @@ const_char *getHtmlFromText(const_char* text){
     is_first = false;
   }
 
-  printf("LINE: -%s-\n", ret.toUtf8().constData());
+  //printf("LINE: -%s-\n", ret.toUtf8().constData());
   return talloc_strdup(ret.toUtf8().constData());
 }
 

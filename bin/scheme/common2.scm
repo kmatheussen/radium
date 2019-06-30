@@ -1118,8 +1118,8 @@ for .emacs:
               (org-iota n)))))
 
 
-(define (vector-copy vector)
-  (copy vector))
+(define (vector-copy vector*)
+  (copy vector*))
 
 ;; cl-car and cl-cdr moved to mylint.scm
 ;;
@@ -1422,20 +1422,20 @@ for .emacs:
 (define-class (<container> :elements ;; <-- elements must be either a list, a vector, or a hash table (only the keys are used in the hash table, the values must not be #f (impossible in s7)).
                            :eq-func #f) ;; <-- #if #f, automatically determined, but should be set anyway. If elements is a hash table, eq-func is not used.
   
-  (define vector #f)
-  (define list #f)
-  (define hash #f)
+  (define vector* #f)
+  (define list* #f)
+  (define-optional-hash-table hash)
   
   (define num-elements #f)
 
   (define (clear! new-elements new-vector new-list new-hash new-num-elements)
     (set! elements new-elements)
-    (set! vector (if new-vector
-                     vector
+    (set! vector* (if new-vector
+                     vector*
                      (if (vector? new-elements)
                          new-elements
                          #f)))
-    (set! list (if new-list
+    (set! list* (if new-list
                    new-list
                    (if (pair? new-elements)
                        new-elements
@@ -1448,7 +1448,7 @@ for .emacs:
     
     (set! num-elements (if new-num-elements
                            new-num-elements
-                           (cond (vector
+                           (cond (vector*
                                   (vector-length new-elements))
                                  (hash
                                   (hash-table-entries hash))
@@ -1476,18 +1476,18 @@ for .emacs:
     eq-func)
 
   (define (get-vector)
-    (when (not vector)
+    (when (not vector*)
       (if (vector? elements)
-          (set! vector elements)
-          (set! vector (to-vector (get-list)))))
-    vector)
+          (set! vector* elements)
+          (set! vector* (to-vector (get-list)))))
+    vector*)
 
   (define (get-list)
-    (when (not list)
+    (when (not list*)
       (if (hash-table? elements)
-          (set! list (map car elements))
-          (set! list (to-list elements))))
-    list)
+          (set! list* (map car elements))
+          (set! list* (to-list elements))))
+    list*)
 
   (define (get-hash)
     (when (not hash)
@@ -1534,10 +1534,10 @@ for .emacs:
           elements2)
 
   :for-each (func)
-  (cond (list
-         (for-each func list))
-        (vector
-         (for-each func vector))
+  (cond (list*
+         (for-each func list*))
+        (vector*
+         (for-each func vector*))
         (else
          (for-each (lambda (el)
                      (func (car el)))
@@ -1581,8 +1581,8 @@ for .emacs:
     (set! (hash element) #t)
     (clear! hash
             #f
-            (and list
-                 (cons element list))
+            (and list*
+                 (cons element list*))
             hash
             (and num-elements
                  (+ 1 num-elements))))
