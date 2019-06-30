@@ -96,7 +96,7 @@
                                                     :can-be-edited-in-sequencer-timing-mode #f
                                                     )
   
-  (define curr-entry #f)
+  (define curr-entry (<optional-hash-table>))
   (define curr-pos #f)
   (define curr-id #f)
 
@@ -364,7 +364,7 @@
     (let loop ((entries (reverse paint-entries))
                (n (- (length paint-entries) 1))
                (max-x2 10000000000000000000000)
-               (prev-entry #f))
+               (prev-entry (<optional-hash-table>)))
       (when (not (null? entries))
         (define entry (car entries))
         (define text (<-> (get-entry-info-string entry n #f #f)
@@ -454,7 +454,7 @@
       (one-decimal-string bpm)))
 
 (define (create-sequencer-tempo-area gui x1 y1 x2 y2)
-  (define area #f)
+  (define-optional-func area (key . rest))
 
   (define (request-tempo x old-tempo callback)
     (<ra> :schedule 0
@@ -542,7 +542,7 @@
 
 
 (define (create-sequencer-signature-area gui x1 y1 x2 y2)
-  (define area #f)
+  (define-optional-func area (key . rest))
 
   (define (get-entry-info-string signature n _a _b)
     (<-> (signature :numerator)
@@ -619,7 +619,7 @@
 
 
 (define (create-sequencer-marker-area gui x1 y1 x2 y2)
-  (define area #f)
+  (define-optional-func area (key . rest))
 
   (define (get-entry-info-string marker n _a _b)
     (if (> n -1)

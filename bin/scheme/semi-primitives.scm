@@ -1,10 +1,10 @@
-(define (remove func list)
-  (if (null? list)
+(define (remove func list*)
+  (if (null? list*)
       '()
-      (if (func (car list))
-          (remove func (cdr list))
-          (cons (car list)
-                (remove func (cdr list))))))
+      (if (func (car list*))
+          (remove func (cdr list*))
+          (cons (car list*)
+                (remove func (cdr list*))))))
 
 (define (sort sequence less?)
   (sort! (copy sequence) less?))
@@ -18,9 +18,9 @@
         (else
          (list l))))
 
-(define (list-position list is-this-it?)
+(define (list-position list* is-this-it?)
   (let loop ((n 0)
-             (l list))
+             (l list*))
     (cond ((null? l)
            -1)
           ((is-this-it? (car l))
@@ -29,11 +29,11 @@
            (loop (1+ n)
                  (cdr l))))))
   
-(define (vector-position list is-this-it?)
+(define (vector-position list* is-this-it?)
   (let loop ((n 0))
-    (cond ((= n (vector-length list))
+    (cond ((= n (vector-length list*))
            -1)
-          ((is-this-it? (list n))
+          ((is-this-it? (list* n))
            n)
           (else
            (loop (1+ n))))))
@@ -89,8 +89,8 @@
 (c-define-expansion (*inc!* var how-much)
   `(set! ,var (+ ,var ,how-much)))
 
-(c-define-expansion (*push-back!* list . elements)
-  `(set! ,list (append ,list (list ,@elements))))
+(c-define-expansion (*push-back!* list* . elements)
+  `(set! ,list* (append ,list* (list ,@elements))))
 
 
 (define (delete-from das-list element)

@@ -12,7 +12,7 @@
 
 ;; Subclasses of def-area must define x1, y1, x2, y2, and gui. All of these would usually be provided as class parameters.
 
-;; Subclasses can implement the following virtual methods: ismoved, key-pressed, paint, post-paint, etc.
+;; Subclasses can implement the following virtual methods: has-been-moved-callback, about-to-be-removed-callback, key-pressed, paint, post-paint, etc.
 ;; Areas only holding sub areas will often not implement any of these, and for those areas, we can simply
 ;; use the ready-made (and ultimately simple) <area> class instead (see below).
 
@@ -41,7 +41,6 @@
   ;;a
   (floor a)
   )
-
 
 (define-expansion (define-override def . body)
   (let* ((funcname (car def))
@@ -125,7 +124,7 @@
 	    (> y2* y1)
 	    (< y1* y2)))
 
-     (define ismoved #f)
+     (define-optional-func has-been-moved ()) ;; Called after being moved.
 
      (define (move-internal! dx dy)
        (set! i-x1 #f)
@@ -136,8 +135,8 @@
        (for-each (lambda (sub-area)
 		   (sub-area :move-internal! dx dy))
 		 sub-areas)
-       (if ismoved
-	   (ismoved)))
+       (if has-been-moved
+	   (has-been-moved)))
      
      (define (move! dx dy)
        (let ((old-x1 x1)
@@ -202,16 +201,16 @@
        (set! effect-monitors '())
 
        (for-each (lambda (sub-area)
-                   (sub-area :i-am-removed-internal!))
+                   (sub-area :about-to-be-removed-internal!))
                  sub-areas)
        (set! sub-areas '())
        (set! top-area #f))
 
-     (define i-am-removed! #f)
+     (define-optional-func about-to-be-removed-callback ())
 
-     (define (i-am-removed-internal!)
-       (if i-am-removed!
-           (i-am-removed!))
+     (define (about-to-be-removed-internal!)
+       (if about-to-be-removed-callback
+           (about-to-be-removed-callback))
        (remove-sub-areas!)
        (set! is-alive #f))
 
@@ -221,7 +220,7 @@
        (set! parent-area #f)
        (update-me!))
 
-     (define parent-area #f)
+     (define-optional-func parent-area (key . rest))
 
      ;; Sub areas
      (define sub-areas '())
@@ -258,7 +257,7 @@
                          (add-sub-area! sub-area x1 y2))))
      
      (define (remove-sub-area! sub-area)
-       (sub-area :i-am-removed-internal!)
+       (sub-area :about-to-be-removed-internal!)
        (set! sub-areas (delete sub-area sub-areas eq?))
        (set! top-area
 	     (if (null? sub-areas)
@@ -275,7 +274,6 @@
                    (lambda (x* y* x2* y2* with* height*)
                      (update x* y* x2* y2*)))))
 
-     
      (define (lift-me!)
        (if parent-area
            (parent-area :lift-sub-area! this)))
@@ -284,12 +282,12 @@
      (define (get-state)
        #f)
 
-     (define (apply-state! hash-table)
+     (define (apply-state! a-hash-table)
        #t)
 
      ;; Keyboard listener
      ;;;;;;;;;;;;;;;;;;;;;;;;
-     (define key-pressed #f)
+     (define-optional-func key-pressed (key-event))
      (define (key-pressed-internal key-event)
        (call-with-exit
 	(lambda (return)
@@ -311,7 +309,7 @@
      
      ;; Mouse wheel
      ;;;;;;;;;;;;;;;;;;;;;;;;
-     (define mouse-wheel-moved #f)
+     (define-optional-func mouse-wheel-moved (is-up x y))
      (define (mouse-wheel-moved-internal! is-up x* y*)
        (and (inside? x* y*)
             (call-with-exit
@@ -329,9 +327,8 @@
      ;; Mouse cycles
      ;;;;;;;;;;;;;;;;;;;;;;;;
      
-     (define curr-nonpress-mouse-cycle #f)
-     (define curr-mouse-cycle #f)
-
+     (define-optional-hash-table curr-nonpress-mouse-cycle)
+     (define-optional-hash-table curr-mouse-cycle)
 
      (define mouse-cycles '())
      (define nonpress-mouse-cycles '())
@@ -480,7 +477,7 @@
        ;;    (c-display "..mouse-release-internal for" class-name ". y:" y*))
        ;;(c-display "mouse-release enter" curr-mouse-cycle)
        (let ((mouse-cycle curr-mouse-cycle))
-         (set! curr-mouse-cycle #f)
+         (set! curr-mouse-cycle (<optional-hash-table>))
          ;;(c-display "===------ Unsetting curr-mouse-cycle");
          (if mouse-cycle
              (mouse-cycle :release-func button x* y*)))
@@ -519,7 +516,8 @@
 
      (define (has-mouse)
        ;;(c-display "has-mouse:" class-name curr-mouse-cycle curr-nonpress-mouse-cycle)
-       (get-bool (or curr-mouse-cycle curr-nonpress-mouse-cycle)))
+       (get-bool (or curr-mouse-cycle
+                     curr-nonpress-mouse-cycle)))
      
      ;; Status bar
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -640,7 +638,7 @@
      :has-mouse () (has-mouse)
      :is-alive () is-alive
      :reset! x (apply reset! x)
-     :i-am-removed-internal! x (apply i-am-removed-internal! x)
+     :about-to-be-removed-internal! x (apply about-to-be-removed-internal! x)
      :add-statusbar-text-handler x (apply add-statusbar-text-handler x)
      ))
  
@@ -695,12 +693,13 @@
                (has-mouse)))
       (<gui> :add-mouse-wheel-callback gui mouse-wheel-moved-internal!))
 
-    (define the-sub-area #f)
+    (define-optional-func the-sub-area (key . rest))
     
     (when sub-area-creation-callback
       (define (recreate width* height*)
         (resize! width* height*)
-        (define state (and the-sub-area (the-sub-area :get-state)))
+        (define state (and the-sub-area
+                           (the-sub-area :get-state)))
         (remove-sub-areas!)
         (set! the-sub-area (sub-area-creation-callback gui width height state))
         (if state
@@ -1756,7 +1755,7 @@
   (define entries '())
   (define file-browser-entries '())
 
-  (define vertical-list-area #f)
+  (define-optional-func vertical-list-area (key . rest))
 
   (define states (make-vector num-settings-buttons #f))
 
@@ -2008,7 +2007,7 @@
                      (+ y1 tab-bar-height)
                      y1))
 
-  (define tab-area #f)
+  (define-optional-func tab-area (key . rest))
 
   (define tab-states (make-vector num-tabs #f))
 

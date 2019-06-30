@@ -1455,7 +1455,7 @@ Done during input reading instead.
 ;; <strike>It also makes sure that a break-lin starts with the break event.</strike> Not needed, break events are always inserted in the previous line.
 (define (fix-break-events events)
   (let loop ((events events)
-             (break-event #f))
+             (break-event (<optional-hash-table>)))
     ;;(c-display "events: " (map event-to-string events))
     ;;(c-display "break-event: " (and break-event (event-to-string break-event)))
     (if (null? events)

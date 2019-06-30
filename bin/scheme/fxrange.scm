@@ -91,7 +91,7 @@
   (assert (> endplace startplace))
   
   (let loop ((fxnodes fxnodes)
-             (last-fxnode #f))
+             (last-fxnode (<optional-hash-table>)))
     ;;(c-display "fxnodes:" fxnodes)
     ;;(c-display "last:" last-fxnode)
     ;;(c-display)
@@ -336,7 +336,7 @@
 (define (scissor-fxnodes-keep-inside fxnodes startplace endplace)
   (assert (> endplace startplace))
   (let loop ((fxnodes fxnodes)
-             (last-fxnode #f))
+             (last-fxnode (<optional-hash-table>)))
     ;;(c-display "fxnodes:" fxnodes)
     ;;(c-display "last:" last-fxnode)
     ;;(c-display)
@@ -547,7 +547,7 @@
          (define fxname (<_> (<ra> :get-fxrange-name fxnum rangetracknum)))
          (define num-fxnodes (<ra> :get-num-fxrangenodes fxnum rangetracknum))
          (define fxnodes (let loop ((fxnodenum 0)
-                                    (last-fxnode #f))
+                                    (last-fxnode (<optional-hash-table>)))
                            (if (= fxnodenum num-fxnodes)
                                '()
                                (begin

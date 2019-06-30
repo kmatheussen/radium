@@ -282,7 +282,7 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
   ;;(define orgbars bars)
   (let loop ((bars bars)
              (prev-bar #f)
-             (curr-swing #f)
+             (curr-swing (<optional-hash-table>))
              (global-swings global-swings) ;;(group-swing-by-bar bars global-swing num-lines))
              (track-swings track-swings)) ;;(group-swing-by-bar bars track-swing num-lines)))
     (cond ((null? bars)
