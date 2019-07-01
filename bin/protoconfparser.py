@@ -72,6 +72,39 @@ class Argument:
         self.full_type_string = reduce(lambda x,y: x+" "+y, self.qualifiers)
 
 
+    def get_s7_signature_symbol_name(self, is_return_type):
+        if self.type_string=="int":
+            return "s_integer"
+        elif self.type_string=="int64_t":
+            return "s_integer"
+        elif self.type_string=="float":
+            return "s_real"
+        elif self.type_string=="double":
+            return "s_real"
+        elif self.type_string=="const_char*":
+            return "s_string"
+        elif self.type_string=="bool":
+            return "s_boolean"
+        elif self.type_string=="Place":
+            return "s_rational"
+        elif self.type_string=="func_t*":
+            return "s_procedure"
+        elif self.type_string=="dynvec_t":
+            if is_return_type:
+                return "s_vector"
+            else:
+                return "s_dynvec_arg"
+        elif self.type_string=="dyn_t":
+            if is_return_type:
+                return "s_dyn_ret";
+            else:
+                return "s_dyn_arg";
+        elif self.type_string=="void" and is_return_type:
+            return "s_unspecified"
+        else:
+            sys.stderr.write("Unknown type '"+self.type_string+"'")
+            raise Exception("Unknown type '"+self.type_string+"'")
+
     def get_s7_make_type_function(self):
         if self.type_string=="int":
             return "s7_make_integer"
@@ -666,7 +699,17 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         self.write_s7_call_c_function(oh, include_label) # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
         oh.write("}\n")
         oh.write("\n")
+
+    def make_s7_make_signature_string(self):
+        num_args = len(self.args) + 1
+
+        ret = "  s7_make_signature(s7, "+str(num_args)+", "+self.proc.get_s7_signature_symbol_name(True)
         
+        for arg in self.args:
+            ret = ret + ", " + arg.get_s7_signature_symbol_name(False)
+
+        return ret + ")"
+
     def write_s7_define(self,oh):
         if "PyObject*" in map(lambda arg: arg.type_string, self.args):
             return
@@ -677,8 +720,9 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         num_optional_args = len(self.args) - num_required_args
         has_rest_arg      = "false"
         description       = "("+scheme_funcname+" "+self.get_arg_list(self.args," ")+")"
+        signature         = self.make_s7_make_signature_string()
 
-        oh.write('  s7_define_function(s7, "'+scheme_funcname+'", '+c_funcname+", "+str(num_required_args)+", "+str(num_optional_args)+", "+has_rest_arg+', "'+description+'");\n')
+        oh.write('  s7_define_unsafe_typed_function(s7, "'+scheme_funcname+'", '+c_funcname+", "+str(num_required_args)+", "+str(num_optional_args)+", "+has_rest_arg+', "'+description+'", ' + signature + ');\n')
 
     def write_scheme_proto(self, oh):
         oh.write("  (")
@@ -763,6 +807,23 @@ class Protos:
         for proto in self.protos:
             proto.write_s7_func(oh)
     def write_s7_defines(self,oh):
+        oh.write('  s7_pointer s_integer = s7_make_symbol(s7, "integer?");\n')
+        oh.write('  s7_pointer s_real = s7_make_symbol(s7, "real?");\n')
+        oh.write('  s7_pointer s_string = s7_make_symbol(s7, "string?");\n')
+        oh.write('  s7_pointer s_boolean = s7_make_symbol(s7, "boolean?");\n')
+        oh.write('  s7_pointer s_rational = s7_make_symbol(s7, "rational?");\n')
+        oh.write('  s7_pointer s_procedure = s7_make_symbol(s7, "procedure?");\n')
+        oh.write('  s7_pointer s_list = s7_make_symbol(s7, "list?");\n')
+        oh.write('  s7_pointer s_vector = s7_make_symbol(s7, "vector?");\n')
+        oh.write('  s7_pointer s_hashtable = s7_make_symbol(s7, "hash-table?");\n')
+        oh.write('  s7_pointer s_unspecified = s7_make_symbol(s7, "unspecified?");\n')
+        oh.write('  s7_pointer s_dynvec_arg = s7_list_nl(s7, 2, s_list, s_vector, NULL);\n')
+        oh.write('  s7_pointer s_dyn_arg = s7_list_nl(s7, 7, s_integer, s_real, s_string, s_boolean, s_vector, s_list, s_hashtable, NULL);\n')
+        oh.write('  s7_pointer s_dyn_ret = s7_list_nl(s7, 8, s_integer, s_real, s_string, s_boolean, s_procedure, s_vector, s_list, s_hashtable, NULL);\n')
+        oh.write('  s7_gc_protect(s7, s_dynvec_arg);\n')
+        oh.write('  s7_gc_protect(s7, s_dyn_arg);\n')
+        oh.write('  s7_gc_protect(s7, s_dyn_ret);\n')
+        
         for proto in self.protos:
             proto.write_s7_define(oh)
 
