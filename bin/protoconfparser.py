@@ -86,7 +86,7 @@ class Argument:
         elif self.type_string=="bool":
             return "s_boolean"
         elif self.type_string=="Place":
-            return "s_rational"
+            return "s_place"
         elif self.type_string=="func_t*":
             return "s_procedure"
         elif self.type_string=="dynvec_t":
@@ -812,14 +812,15 @@ class Protos:
         oh.write('  s7_pointer s_string = s7_make_symbol(s7, "string?");\n')
         oh.write('  s7_pointer s_boolean = s7_make_symbol(s7, "boolean?");\n')
         oh.write('  s7_pointer s_rational = s7_make_symbol(s7, "rational?");\n')
+        oh.write('  s7_pointer s_place = s7_make_symbol(s7, "place?");\n')
         oh.write('  s7_pointer s_procedure = s7_make_symbol(s7, "procedure?");\n')
         oh.write('  s7_pointer s_list = s7_make_symbol(s7, "list?");\n')
         oh.write('  s7_pointer s_vector = s7_make_symbol(s7, "vector?");\n')
         oh.write('  s7_pointer s_hashtable = s7_make_symbol(s7, "hash-table?");\n')
         oh.write('  s7_pointer s_unspecified = s7_make_symbol(s7, "unspecified?");\n')
         oh.write('  s7_pointer s_dynvec_arg = s7_list_nl(s7, 2, s_list, s_vector, NULL);\n')
-        oh.write('  s7_pointer s_dyn_arg = s7_list_nl(s7, 7, s_integer, s_real, s_string, s_boolean, s_vector, s_list, s_hashtable, NULL);\n')
-        oh.write('  s7_pointer s_dyn_ret = s7_list_nl(s7, 8, s_integer, s_real, s_string, s_boolean, s_procedure, s_vector, s_list, s_hashtable, NULL);\n')
+        oh.write('  s7_pointer s_dyn_arg = s7_list_nl(s7, 9, s_integer, s_real, s_string, s_boolean, s_rational, s_place, s_vector, s_list, s_hashtable, NULL);\n')
+        oh.write('  s7_pointer s_dyn_ret = s7_list_nl(s7, 10, s_integer, s_real, s_string, s_boolean, s_rational, s_place, s_procedure, s_vector, s_list, s_hashtable, NULL);\n')
         oh.write('  s7_gc_protect(s7, s_dynvec_arg);\n')
         oh.write('  s7_gc_protect(s7, s_dyn_arg);\n')
         oh.write('  s7_gc_protect(s7, s_dyn_ret);\n')

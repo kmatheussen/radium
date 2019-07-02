@@ -264,7 +264,7 @@
   (define start (time))
   
   (define container (<new> :container instruments))
-  (define done (make-hash-table (max 1 (container :length)) =))
+  (define done (make-hash-table (i-max 1 (container :length)) =))
   
   ;; topological sort, plus keep as much as possible of the order
   ;; from 'sort-instruments-by-mixer-position'.

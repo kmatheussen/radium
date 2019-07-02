@@ -2274,6 +2274,7 @@ static bool g_error_check_eval_scheme = false;
 
 bool errorCheckEvalScheme(void){
 #if !defined(RELEASE)
+  //return false;
   return true;
 #endif
   return g_error_check_eval_scheme;

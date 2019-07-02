@@ -544,7 +544,7 @@
                            (note :pitches 0 :value)
                            (note :velocities 0 :value)
                            (note :place)
-                           (min num-lines (get-note-end note))
+                           (i-min num-lines (get-note-end note))
                            tracknum
                            blocknum))
      

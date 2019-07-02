@@ -1492,7 +1492,7 @@ for .emacs:
   (define (get-hash)
     (when (not hash)
       ;;(c-display "================ elements:" elements ". num:" (get-size) "====================")
-      (set! hash (make-hash-table (max 1 (get-size)) (get-eq-func)))
+      (set! hash (make-hash-table (i-max 1 (get-size)) (get-eq-func)))
       (for-each (lambda (element)
                   (set! (hash element) #t))
                 elements))

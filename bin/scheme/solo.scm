@@ -160,7 +160,7 @@
 (define (update-implicite-instrument-solo/mutes! all-instruments all-explicit-solo-instruments)
   (define len (length all-instruments))
 
-  (define all-solo-instruments (make-hash-table (max 1 len) =))
+  (define all-solo-instruments (make-hash-table (i-max 1 len) =))
   
   ;;(for-each (lambda (instrument-id)
   ;;            (hash-table-set! all-solo-instruments instrument-id #t))
