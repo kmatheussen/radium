@@ -38,6 +38,15 @@
         (loop (car b)
               (cdr b)))))
 
+(define (flatten l)
+  (cond ((null? l)
+         '())
+        ((pair? l)
+         (append (flatten (car l))
+                 (flatten (cdr l))))
+        (else
+         (list l))))
+
 (define (map-improper-list func elements)
   (let loop ((elements elements))
     ;;(c-display "elements:" (object->string elements))
@@ -102,6 +111,7 @@
 
 
 (define *mylint-linenum* #f)
+(define *mylint-filename* #f)
 
 
 (define *schemecodeparser-global-declarations* (if (defined? '*schemecodeparser-global-declarations*)
@@ -143,48 +153,83 @@
   (if (defined? 'safe-add-message-window-txt)
       (safe-add-message-window-txt txt)))
 
+(define* (make-schemecodeparser-conf (errorhandler #f)
+                                     (num-overriding-local-variables-to-display 1)
+                                     (num-overriding-global-variables-to-display 3)
+                                     (assert-variable-errors #t))
+  (if (not errorhandler)
+      (set! errorhandler (lambda (tag . info)
+                           (define message (<-> "==========\"Schemecodeparser error: " info "========="))
+                           (c-display message)
+                           (error tag message))))
+  (define (display-overriding is-local info)
+    (define key (if is-local
+                    :num-overriding-local-variables-to-display
+                    :num-overriding-global-variables-to-display))
+    (set! (conf key) (- (conf key) 1))
+    (when (>= (conf key) 0)
+      (display info)
+      (when #f
+        (display "   num:")
+        (display (conf key))
+        (display ". key:")
+        (display key)
+        (display ". is-local?")(display is-local))
+      (if (= (conf key) 0)
+          (display "....(suppressing rest)....."))
+      (newline)))
+  (define conf (hash-table :errorhandler errorhandler
+                           :num-overriding-local-variables-to-display num-overriding-local-variables-to-display
+                           :num-overriding-global-variables-to-display num-overriding-global-variables-to-display
+                           :assert-variable-errors assert-variable-errors
+                           :display-overriding display-overriding))
+  conf)
+
+                              
+         
+
 (define-constant *schemecodeparser-var-var-type* 'schemecodeparser-define-var-type)
 (define-constant *schemecodeparser-var-func-type* 'schemecodeparser-define-func-type)
 (define-constant *schemecodeparser-var-declared-type* 'schemecodeparser-define-declared-type)
 (define-constant *schemecodeparser-var-parameter-type* 'schemecodeparser-define-parameter-type)
 
-(define (schemecodeparser-assert-symbol varname errorhandler)
+(define (schemecodeparser-assert-symbol varname conf)
   ;;(c-display "        VARNAME/SYMBOL?" varname (symbol? varname) ". error-handler:" errorhandler ". " (procedure-source errorhandler))
   (when (not (symbol? varname))
-    (errorhandler 'schemecodeparser-varname-not-a-symbol varname)))
+    (conf :errorhandler 'schemecodeparser-varname-not-a-symbol varname)))
   
-(define (schemecodeparser-create-func-var varname signature errorhandler)
+(define (schemecodeparser-create-func-var varname signature conf)
   ;;(c-display "create-func SIGNATURE:" varname (object->string signature))
-  (schemecodeparser-assert-symbol varname errorhandler)
+  (schemecodeparser-assert-symbol varname conf)
   (list varname *schemecodeparser-var-func-type* signature))
 
-(define (schemecodeparser-create-var-var varname value errorhandler)
+(define (schemecodeparser-create-var-var varname value conf)
   ;;(c-display "create-var-var VALUE:" (object->string value))
-  (schemecodeparser-assert-symbol varname errorhandler)  
+  (schemecodeparser-assert-symbol varname conf)  
   (if (and (pair? value)
            (not (null? value))
            (memq (car value) '(lambda lambda* <optional-func-func> <optional-hash-table> make-hash-table hash-table copy-hash)))
       (cond ((eq? (car value) '<optional-hash-table>)
-             (schemecodeparser-create-func-var varname (cons 'key 'args) errorhandler))
+             (schemecodeparser-create-func-var varname (cons 'key 'args) conf))
             ((eq? (car value) '<optional-func-func>)
              (assert (pair? (cadr value)))
              (let ((func (cadr value)))
                (assert (eq? 'lambda* (car func)))
-               (schemecodeparser-create-func-var varname (cadr func) errorhandler)))
+               (schemecodeparser-create-func-var varname (cadr func) conf)))
             ((memq (car value) '(make-hash-table hash-table copy-hash))
-             (schemecodeparser-create-func-var varname (cons 'key 'args) errorhandler))
+             (schemecodeparser-create-func-var varname (cons 'key 'args) conf))
             (else
-             (schemecodeparser-create-func-var varname (cadr value) errorhandler)))
+             (schemecodeparser-create-func-var varname (cadr value) conf)))
       (list varname *schemecodeparser-var-var-type* value)))
          
-(define (schemecodeparser-create-declared-var varname errorhandler)
-  (schemecodeparser-assert-symbol varname errorhandler)
+(define (schemecodeparser-create-declared-var varname conf)
+  (schemecodeparser-assert-symbol varname conf)
   (list varname *schemecodeparser-var-declared-type*))
 
-(define (schemecodeparser-create-parameter-var varname errorhandler)
+(define (schemecodeparser-create-parameter-var varname conf)
   ;;(c-display "VARNAME:" varname)
   ;;(c-display "ERRORHANDLER:" errorhandler)
-  (schemecodeparser-assert-symbol varname errorhandler)
+  (schemecodeparser-assert-symbol varname conf)
   (list varname *schemecodeparser-var-parameter-type*))
 
 (define (schemecodeparser-get-var-type var)
@@ -203,28 +248,127 @@
 (define (schemecodeparser-get-varnames)
   (map car schemecodeparser-varlist))
 
-(define (schemecodeparser-get-var varname)
-  (let ((entry (assq varname schemecodeparser-varlist)))
+(define* (schemecodeparser-get-var varname (varlist schemecodeparser-varlist))
+  (let ((entry (assq varname varlist)))
     (and entry
          (cdr entry))))
 
 (define* (schemecodeparser-has-varname? varname (varlist schemecodeparser-varlist))
   (assq varname varlist))
 
-(define (schemecodeparser-warn-about-defined-vars new-vars old-vars)
+(define (schemecodeparser-warn-about-defined-vars new-vars old-vars conf)
   (for-each (lambda (var)
               (define varname (car var))
               (define old-var (schemecodeparser-get-var varname))
               (if old-var
-                  (c-display "*************** NOTE: schemecodeparser: \"" varname "\" has already been defined locally. "
-                             "Old:" old-var
-                             ". New:" var
-                             ". Line:" *mylint-linenum*)
+                  (conf :display-overriding
+                        #t
+                        (<-> "*************** NOTE: schemecodeparser: \"" varname "\" has already been defined locally. "
+                             "Old: " old-var
+                             ". New: " var
+                             *mylint-filename* ": " *mylint-linenum*))
                   (if (and ;;(not (null? old-vars)) ;; Don't need to give warning when redefining a global symbol.
-                           (defined? varname (rootlet)))
-                      (c-display "*************** WARNING! schemecodeparser: \"" varname "\" has already been defined globally. Line:" *mylint-linenum*))))
+                       (defined? varname (rootlet)))
+                      (conf :display-overriding
+                            #f
+                            (<-> "*************** WARNING! schemecodeparser: \"" varname "\" has already been defined globally. " *mylint-filename* ": " *mylint-linenum*)))))
             new-vars))
-                                 
+
+
+(define (schemecodeparser-get-type-for-pair expr varlist)
+  ;;(c-display "get-type-for-pair:" expr varlist)
+  (define funcname (car expr))
+  (cond ((pair? funcname)
+         (schemecodeparser-get-type-for-pair funcname varlist))
+        ((symbol? funcname)
+         (let ((var (schemecodeparser-get-var funcname varlist)))
+           ;;(c-display "FUNCNAME:" funcname)
+           (cond (var
+                  (if (eq? (schemecodeparser-get-var-type var) *schemecodeparser-var-func-type*)
+                      (begin
+                        ;;(schemecodeparser-get-func-return-type var)
+                        #f)
+                      #f))
+                 ((eq? funcname 'quote)
+                  (if (pair? (cadr expr))
+                      'list?
+                      'symbol?))
+                 (else
+                  (let ((signature (and (defined? funcname)
+                                        (signature (eval funcname (rootlet))))))
+                    ;;(c-display "SIGN:" signature)
+                    (if (not signature)
+                        #f
+                        (car signature)))))))
+        (else
+         (c-display "*************** WARNING! schemecodeparser-get-type-for-pair: Unknown type for:" expr)
+         #f)))
+
+(define* (schemecodeparser-get-type expr (varlist schemecodeparser-varlist))
+  ;;(c-display "get-type:" expr varlist)
+  (cond ((null? expr)
+         'null?)
+        ((pair? expr)
+         (schemecodeparser-get-type-for-pair expr varlist))
+        ((symbol? expr)
+         (if #t
+             #f
+             (let ((var (schemecodeparser-get-var expr varlist)))
+               (cond (var
+                      #f)
+                     (cond ((eq? (schemecodeparser-get-var-type var) *schemecodeparser-var-var-type*)
+                            (schemecodeparser-get-type (schemecodeparser-get-var-var-value var) varlist))
+                           ((eq? (schemecodeparser-get-var-type var) *schemecodeparser-var-func-type*)
+                            'procedure?)
+                           ((eq? (schemecodeparser-get-var-type var) *schemecodeparser-var-declared-type*)
+                            #f)
+                           ((eq? (schemecodeparser-get-var-type var) *schemecodeparser-var-parameter-type*)
+                            #f)
+                           (else
+                            (assert #f)))
+                     ((defined? expr (rootlet))
+                      (schemecodeparser-get-type (eval expr) '()))
+                     (else
+                      #f)))))
+        ((string? expr)
+         'string?)
+        ((char? expr)
+         'char?)
+        ((eq? expr #t)
+         'boolean?)
+        ((eq? expr #f)
+         'boolean?)
+        ((vector? expr)
+         'vector?)
+        ((undefined? expr)
+         'undefined?)
+        ((unspecified? expr)
+         'unspecified?)
+        ((integer? expr)
+         'integer?)
+        ((real? expr)
+         'real?)
+        ((rational? expr)
+         'rational?)        
+        ((procedure? expr)
+         'procedure?)
+        ((hash-table? expr)
+         'hash-table?)
+        (else
+         ;;(c-display "schemecodeparser-get-type: Unknown type: " (object->string expr))
+         ;;(c-display "varlist:" varlist)
+         (error 'schemecodeparser-unknown-type expr))))
+
+#!!
+(schemecodeparser-get-type 'a '())
+!!#
+
+(***assert*** (schemecodeparser-get-type '(+ 2 3) (list (schemecodeparser-create-func-var '+ '(a b) (make-schemecodeparser-conf))))
+              #f)
+
+(***assert*** (schemecodeparser-get-type '(+ 2 3) (list (schemecodeparser-create-func-var '- '(a b) (make-schemecodeparser-conf))))
+              'number?)
+
 
 (define* (schemecodeparser2 expr
                             (elsefunc #f)
@@ -237,12 +381,11 @@
                             (customsymbolhandler #f)
                             (blockhandler #f)
                             (symbolhandler #f)
-                            (errorhandler (lambda x (c-display "Schemecodeparser error: " x)))
-                            (assert-variable-errors #t)
+                            (conf (make-schemecodeparser-conf))
                             (varlist '()))
 
   (define (warn expr . args)
-    (define message (<-> "==========\"schemecodeparser2 Warning" (if *mylint-linenum* (<-> " line " *mylint-linenum*) "") "\": " (apply <-> args) " for expression " expr "========="))
+    (define message (<-> "==========\"schemecodeparser2 Warning " *mylint-filename* ": " *mylint-linenum* ": " (apply <-> args) " for expression " expr "========="))
     (if (ra:release-mode)
         (safe-display-txt-as-displayable-as-possible message)
         (error 'schemecodeparser-error message)))
@@ -292,10 +435,10 @@
                                         (string->symbol (list->string (cdr (butlast (string->list (symbol->string name1))))))
                                         name1))
                               (signature (cdr (cadr def))))
-                         (schemecodeparser-create-func-var name signature errorhandler))
+                         (schemecodeparser-create-func-var name signature conf))
                        (let ((name (cadr def))
                              (value (caddr def)))
-                         (schemecodeparser-create-var-var name value errorhandler))))
+                         (schemecodeparser-create-var-var name value conf))))
                  (keep (lambda (expr)
                          (and (pair? expr)
                               (memq (car expr) '(define define* define-constant c-define-macro define-macro c-define-expansion define-expansion))))
@@ -309,7 +452,7 @@
                                   (schemecodeparser-create-declared-var (if (pair? declared)
                                                                             (cadr declared)
                                                                             declared)
-                                                                        errorhandler))
+                                                                        conf))
                                 (keep (lambda (expr)
                                         (and (pair? expr)
                                              (memq (car expr) '(declare-variable <declare-variable>))))
@@ -321,8 +464,7 @@
           ;;    (c-display "DECLARED:" declared))
 
           ;;(schemecodeparser-warn-about-defined-vars declared varlist)
-          (if assert-variable-errors
-              (schemecodeparser-warn-about-defined-vars defines varlist))
+          (schemecodeparser-warn-about-defined-vars defines varlist conf)
           
           (define new-varlist (append declared defines varlist))
           
@@ -340,7 +482,7 @@
             (schemecodeparser-create-parameter-var (if (pair? par)
                                                        (car par)
                                                        par)
-                                                   errorhandler))
+                                                   conf))
           (define new-vars (let append ((parameters parameters))
                              (cond ((null? parameters)
                                     '())
@@ -350,8 +492,7 @@
                                     (cons (treatpar (car parameters))
                                           (append (cdr parameters)))))))
           ;;(c-display "NEW-VARS:" new-vars)
-          (if assert-variable-errors
-              (schemecodeparser-warn-about-defined-vars new-vars varlist))
+          (schemecodeparser-warn-about-defined-vars new-vars varlist conf)
           (append new-vars
                   varlist))
         
@@ -395,10 +536,10 @@
                                          (let* ((varname (car (cadr expr)))
                                                 (parameters (cdr (cadr expr)))
                                                 (varlist2 (if (or #f (null? varlist)) ;; TODO: Fix. If toplevel, the function itself has not previously been added to "defines" in "blockhandlerfunc".
-                                                              (cons (schemecodeparser-create-func-var varname parameters errorhandler)
+                                                              (cons (schemecodeparser-create-func-var varname parameters conf)
                                                                     varlist)
                                                               (begin
-                                                                (when (and assert-variable-errors
+                                                                (when (and (conf :assert-variable-errors)
                                                                            (not (schemecodeparser-has-varname? varname varlist)))
                                                                   (c-display "VARNAME:" varname "VARLIST:" varlist ". expr:" expr)
                                                                   (assert #f))
@@ -416,10 +557,9 @@
                   ,@(blockhandlerfunc varlist (cddr expr))))
               ((eq? 'do (car expr))
                (let* ((newvars (let ((das-new-vars (map (lambda (dovar)
-                                                          (schemecodeparser-create-var-var (car dovar) (cadr dovar) errorhandler))
+                                                          (schemecodeparser-create-var-var (car dovar) (cadr dovar) conf))
                                                         (cadr expr))))
-                                 (if assert-variable-errors
-                                     (schemecodeparser-warn-about-defined-vars das-new-vars varlist))
+                                 (schemecodeparser-warn-about-defined-vars das-new-vars varlist conf)
                                  (append das-new-vars varlist)))
                       (first (map (lambda (a)
                                     (let ((second (parse varlist (cadr a))))
@@ -432,12 +572,11 @@
                     (symbol? (cadr expr)))
                (let* ((newvars (let ((das-new-vars (cons (schemecodeparser-create-func-var (cadr expr)
                                                                                            (map car (caddr expr))
-                                                                                           errorhandler)
+                                                                                           conf)
                                                          (map (lambda (letvar)
-                                                                (schemecodeparser-create-var-var (car letvar) (cadr letvar) errorhandler))
+                                                                (schemecodeparser-create-var-var (car letvar) (cadr letvar) conf))
                                                               (caddr expr)))))
-                                 (if assert-variable-errors
-                                     (schemecodeparser-warn-about-defined-vars das-new-vars varlist))
+                                 (schemecodeparser-warn-about-defined-vars das-new-vars varlist conf)
                                  (append das-new-vars varlist)))
                       (vars (map (lambda (a)
                                    `(,(car a) ,@(blockhandlerfunc varlist (cdr a))))
@@ -449,12 +588,11 @@
                                   `(,(car a) ,@(blockhandlerfunc varlist (cdr a))))
                                 (cadr expr))))
                  (define new-vars (map (lambda (letvar)
-                                         (schemecodeparser-create-var-var (car letvar) (cadr letvar) errorhandler))
+                                         (schemecodeparser-create-var-var (car letvar) (cadr letvar) conf))
                                        (cadr expr)))
                  ;;(c-display "NEW:" new-vars)
                  ;;(c-display "OLD:" varlist)
-                 (if assert-variable-errors
-                     (schemecodeparser-warn-about-defined-vars new-vars varlist))
+                 (schemecodeparser-warn-about-defined-vars new-vars varlist conf)
                  `(let ,vars
                     ,@(blockhandlerfunc (append new-vars varlist)
                                         (cddr expr)))))
@@ -462,9 +600,8 @@
                (let* ((newvars varlist)
                       (let*vars (map (lambda (let*var)
                                        (let* ((ret `(,(car let*var) ,@(blockhandlerfunc newvars (cdr let*var))))
-                                              (new-var (schemecodeparser-create-var-var (car let*var) (cadr let*var) errorhandler)))
-                                         (if assert-variable-errors
-                                             (schemecodeparser-warn-about-defined-vars (list new-var) newvars))
+                                              (new-var (schemecodeparser-create-var-var (car let*var) (cadr let*var) conf)))
+                                         (schemecodeparser-warn-about-defined-vars (list new-var) newvars conf)
                                          (push! newvars new-var)
                                          ret))
                                      (cadr expr))))
@@ -473,10 +610,9 @@
                                         (cddr expr)))))
               ((memq (car expr) '(letrec letrec*))
                (let* ((newvars (let ((dasnewvars (map (lambda (letrecvar)
-                                                        (schemecodeparser-create-var-var (car letrecvar) (cadr letrecvar) errorhandler))
+                                                        (schemecodeparser-create-var-var (car letrecvar) (cadr letrecvar) conf))
                                                       (cadr expr))))
-                                 (if assert-variable-errors
-                                     (schemecodeparser-warn-about-defined-vars dasnewvars varlist))
+                                 (schemecodeparser-warn-about-defined-vars dasnewvars varlist conf)
                                  (append dasnewvars
                                          varlist)))
                       (vars (map (lambda (a)
@@ -584,8 +720,7 @@
                                           (customsymbolhandler #f)
                                           (blockhandler #f)
                                           (symbolhandler #f)
-                                          (errorhandler #f)
-                                          (assert-variable-errors #t)
+                                          (conf #f)
                                           (varlist '()))
   atomfunc)
 
@@ -830,14 +965,14 @@
 (hash-table-ref *all-c-macros* '<declare-variable>)
 !!#
 
-(define (c-macroexpand expr . errorhandler)
-  ;;(c-display "a-mac" expr)
+(define* (c-macroexpand expr (errorhandler #f))
+  ;;(c-display "   MACROEXP: " expr)
   (schemecodeparser expr
-                    :errorhandler (if (null? errorhandler)
-                                      c-display
-                                      (car errorhandler))
-                    :assert-variable-errors #f
-                    :elsefunc c-macroexpand-1))
+                    :elsefunc c-macroexpand-1
+                    :conf (make-schemecodeparser-conf :errorhandler errorhandler
+                                                      :num-overriding-local-variables-to-display 0
+                                                      :num-overriding-global-variables-to-display 0
+                                                      :assert-variable-errors #f)))
 
 #!!
 
@@ -1213,7 +1348,7 @@
 (***assert*** (mylint-lambda-call '(a . b) '(call 1 2))
               "")
 
-(define (mylint-lambda-call4 funccall var)
+(define (mylint-lambda-call4 funccall var conf)
   ;;(c-display "Linting" funccall ". VAR:" var)
   (define (signature-is-for-lambda* signature)
     (cond ((null? signature)
@@ -1230,11 +1365,17 @@
            (if (or (symbol? value)
                    (and (pair? value)
                         (symbol? (car value))))
-               (begin
-                 (if (or (symbol? value)
-                         (not (string-starts-with? (symbol->string (car value)) "new_instance_of_")))
-                     (c-display (<-> "******* Note from mylint: The function '" (car funccall) "' has the value '" (pp value) "', which looks suspicious. Expression: '" (pp funccall) "'. Line: " *mylint-linenum* ".")))
-                 "")
+               (cond ((and (any? keyword? (cdr funccall))
+                           (pair? value)
+                           (symbol? (car value))
+                           (memq (car value) '(+ - * / make-vector list vector make-list)))
+                      (<-> "******* Mylint: The function '" (car funccall) "' has the value '" (pp value) "', which looks suspicious. Expression: '" (pp funccall) "'. " *mylint-filename* ": " *mylint-linenum* "."))
+                     ((or (symbol? value)
+                          (not (string-starts-with? (symbol->string (car value)) "new_instance_of_")))
+                      (c-display (<-> "******* Note from mylint: The function '" (car funccall) "' has the value '" (pp value) "', which looks suspicious. Expression: '" (pp funccall) "'. " *mylint-filename* ": " *mylint-linenum* "."))
+                      "")
+                     (else
+                      ""))
                (<-> "The function '" (car funccall) "' is not a function. Value: '" (pp value) "'. Expression: '" (pp funccall) "'."))))
         ((eq? type *schemecodeparser-var-func-type*)
          (let ((signature (schemecodeparser-get-var-func-signature var)))
@@ -1244,23 +1385,33 @@
                (mylint-lambda-call signature
                                    funccall))))
         ((eq? type *schemecodeparser-var-parameter-type*)
-         (c-display (<-> "******* Note from mylint: Higher order function call detected for expression: '" (pp funccall) "'. Line: " *mylint-linenum* "."))
+         (set! (conf :num-higher-order-notices) (- (conf :num-higher-order-notices) 1))
+         (if (>= (conf :num-higher-order-notices) 0)
+             (c-display (<-> "******* Note from mylint: Higher order function call detected for expression: '" (pp funccall) "'. " *mylint-filename* ": " *mylint-linenum*
+                             (if (= 0 (conf :num-higher-order-notices))
+                                 "...(suppressing rest)..."
+                                 ""))))
          "")
         (else
          "")))
 
   
-(define (mylint code . force-throw)
+(define* (mylint2 code (force-throw #f) (conf (make-schemecodeparser-conf)))
+  ;;(c-display "   MYLINT: " code)
+  
   (define (warn tag what)
-    (c-display "WARN called")
-    (define message (<-> "==========\"READER Warning" (if *mylint-linenum* (<-> " line " *mylint-linenum*) "") "\": " what "========="))
+    (c-display "WARN called. force-throw: " force-throw ". conf:" conf)
+    (define message (<-> "========== READER Warning: "
+                         (if *mylint-linenum*
+                             (<-> " " *mylint-filename* ": " *mylint-linenum*)
+                             "")
+                         ": " what "========="))
     (newline)
     (newline)
     (display message)
     (newline)
     (when (or *is-initializing*
-              (and (not (null? force-throw))
-                   (car force-throw)))
+              force-throw)
       (if (ra:release-mode)
           (safe-display-txt-as-displayable-as-possible message)
           (begin
@@ -1268,7 +1419,7 @@
       ))
   
   (define (warn-undefined what for)
-    (c-display "varlist:" schemecodeparser-varlist)
+    ;;(c-display "varlist:" schemecodeparser-varlist)
     (warn 'undefined (<-> "\"" what "\" has not been defined " for)))
 
   (define (is-defined? symbol)
@@ -1292,6 +1443,88 @@
           (when (not (null? args))
             (check-atom (car args) (<-> " in " expr))
             (loop (cdr args))))))
+
+  (define (flatten-types types is-parameter)
+    ;;(c-display "TYPES:" types
+    ;;           (if (symbol? types)
+    ;;               (list types)
+    ;;               types))
+    (map (lambda (parmtype)
+           (if (or (eq? parmtype 'proper-list?)
+                   (eq? parmtype 'pair?))
+               'list?
+               parmtype))
+         (flatten (map (lambda (parmtype)
+                         ;;(c-display "parmtype:" parmtype)
+                         (cond ((eq? parmtype 'number?)
+                                '(real? integer? rational?))
+                               ((eq? parmtype 'sequence?)
+                                (if is-parameter
+                                    '(list? null? vector? hash-table?)
+                                    '(list? vector? hash-table?)))
+                               (is-parameter
+                                (cond ((eq? parmtype 'real?)
+                                       '(real? integer? rational?))
+                                      ((eq? parmtype 'rational?)
+                                       '(rational? integer?))
+                                      ((eq? parmtype 'place?)
+                                       '(rational? integer? symbol?))
+                                      ((memq parmtype '(list? proper-list? pair?))
+                                       '(list? null?))
+                                      (else
+                                       parmtype)))
+                               ((eq? parmtype 'place?)
+                                '(rational? integer?))
+                               (else
+                                parmtype)))
+                       (if (symbol? types)
+                           (list types)
+                           types)))))
+  
+  (define (check-arguments-for-global-function func expr)
+    (let ((signature (signature func)))
+      (if (not signature)
+          ""
+          (let loop ((arguments (cdr expr))
+                     (parameters (cdr signature))
+                     (argnum 1))
+            (if (null? arguments)
+                ""
+                (if (or (eq? #t (car parameters))
+                        (and (symbol? (car parameters))
+                             (memq (car parameters) '(values integer:any?))))
+                    (loop (cdr arguments)
+                          (cdr parameters)
+                          (+ argnum 1))                    
+                    (let ((argtypes (schemecodeparser-get-type (car arguments))))
+                      ;;(c-display "ARGYPTES:" argtypes "arguments:" (car arguments))
+                      (if (or (not argtypes)
+                              (eq? #t argtypes)
+                              (eq? 'values argtypes))
+                          (loop (cdr arguments)
+                                (cdr parameters)
+                                (+ argnum 1))
+                          (let ((parmtypes (flatten-types (car parameters) #t))
+                                (argtypes (flatten-types argtypes #f)))
+                            (if (any? (lambda (argtype)
+                                        (memq argtype parmtypes))
+                                      argtypes)
+                                (loop (cdr arguments)
+                                      (cdr parameters)
+                                      (+ argnum 1))
+                                (begin
+                                  ;;(c-display "SIGNATURE:" signature)
+                                  (warn 'wrong-argument-type (<-> "Expected one of " parmtypes " for argument #" argnum ". Found " argtypes ". Expr: " expr))
+                                  "")))))))))))
+
+  (if (not (conf :num-higher-order-notices))
+      (set! (conf :num-higher-order-notices) 2))
+  
+  (set! (conf :errorhandler)
+        (lambda (tag . info)
+          (c-display "ERROR-handler called")
+          (warn tag (apply <-> (append (list tag ": ")
+                                       info)))))
   
   (schemecodeparser (c-macroexpand code) ;; Not possible to avoid having to macroexpand everything before checking if variables are defined.
                     :atomfunc check-atom
@@ -1299,7 +1532,8 @@
                                 ;;(c-display "ELSE:" expr)
                                 (define funcname (car expr))
                                 
-                                (if (not (symbol? (car expr)))
+                                (if (or (not (symbol? (car expr)))
+                                        (keyword? (car expr)))
                                     (warn 'not-a-symbol (<-> "\"" funcname "\" is not a symbol=========")))
                                 
                                 (if (not (is-defined? funcname))
@@ -1308,7 +1542,7 @@
                                 (define error-string "")
                                 (define local-var (schemecodeparser-get-var funcname))
                                 (if local-var
-                                    (set! error-string (mylint-lambda-call4 expr local-var))
+                                    (set! error-string (mylint-lambda-call4 expr local-var conf))
                                     (if (and (defined? funcname (rootlet))
                                              (not (memq funcname *schemecodeparser-global-declarations*))
                                              (not (schemecodeparser-has-varname? funcname)))
@@ -1322,14 +1556,40 @@
                                                                      ((not (aritable? func (- (length expr) 1)))
                                                                       (<-> "Wrong number of arguments for \"" funcname "\" in " expr ". Arity:" (arity func)))
                                                                      (else
-                                                                      "")))))))
+                                                                      (check-arguments-for-global-function func expr))))))))
                                 (if (not (string=? "" error-string))
                                     (warn 'illegal-function-call error-string))
                                 expr)
-                    :errorhandler (lambda (tag . info)
-                                    (c-display "ERROR-handler called")
-                                    (warn tag (apply <-> (append (list tag ": ")
-                                                                 info))))))
+                    :conf conf))
+
+(define (mylint expr . args)
+  (if (keyword? expr)
+      expr
+      (apply mylint2 (cons expr args))))
+
+(***assert*** (mylint '(provide 'a) #t)
+              '(provide 'a))
+
+(***assert-error*** (mylint '(provide '(a)) #t)
+                    'mylint-wrong-argument-type)
+
+(***assert*** (mylint '(+ 2 3 (ra:get-quantitize)) #t)
+              '(+ 2 3 (ra:get-quantitize)))
+
+(***assert-error*** (mylint '(ra:get-quantitize "hello") #t)
+                    'mylint-wrong-argument-type)
+
+(***assert*** (mylint '(ra:get-quantitize #t) #t)
+              '(ra:get-quantitize #t))
+
+(***assert*** (mylint '(ra:get-quantitize #f) #t)
+              '(ra:get-quantitize #f))
+
+(***assert-error*** (mylint '(+ 2 3 '(2 3)) #t)
+                    'mylint-wrong-argument-type)
+
+(***assert-error*** (mylint '(+ 2 3 "") #t)
+                    'mylint-wrong-argument-type)
 
 (***assert-error*** (mylint '(let ((a 50)) b) #t)
                     'mylint-undefined)
@@ -1419,7 +1679,7 @@
 (mylint '(define (a 100) (a2)) #t)
 !!#
 (***assert-error*** (mylint '(define (a 100) (a)) #t)
-                    'mylint-schemecodeparser-varname-not-a-symbol)
+                    'schemecodeparser-varname-not-a-symbol)
 
 (***assert*** (mylint '(define (a . b) (a)) #t)
               '(define (a . b) (a)))
@@ -1534,6 +1794,12 @@
   (***assert-error*** (mylint code #t)                      
                       'mylint-illegal-function-call))
 
+(let ((code '(lambda ()
+               (let ((a (make-vector 5)))
+                 (a :hello)))))
+  (***assert-error*** (mylint code #t)
+                      'mylint-illegal-function-call))
+
 
 #!!
 
@@ -1617,6 +1883,8 @@
           #t))
 !!#
 (define (mylint-file filename)
+  (define conf (make-schemecodeparser-conf))
+  (set! *mylint-filename* filename)
   (catch #t
          (lambda ()
            (call-with-input-file filename
@@ -1630,18 +1898,45 @@
                          (when *is-initializing*
                            (display filename) (display ": ") (display expr)
                            (newline))
-                         (mylint expr #t)
+                         ;;(c-display "             MYLINT-FILE" expr)
+                         (mylint expr #t conf)
                          (loop))))))))
          (lambda args
            (set! *mylint-linenum* #f)
+           (set! *mylint-filename* #f)
            (apply throw args)))
-  (set! *mylint-linenum* #f))
+  (set! *mylint-linenum* #f)
+  (set! *mylint-filename* #f))
 
 #!!
+(signature apply-values)
+(signature cdr)
+(signature >=)
+(signature =)
+(signature map)
+(signature for-each)
+(signature map)
+(signature floor)
+(signature max)
+(signature i-max)
+(signature floor)
+
+
 (load "mylint.scm")
 (get-expression-from-file "/home/kjetil/radium/bin/scheme/define-match.scm")
 (mylint-file "/home/kjetil/radium/bin/scheme/import_mod.scm")
 (mylint-file "/home/kjetil/radium/bin/scheme/api_autotesting.scm")
+(begin integer:any?)
+  
+(signature vector-set!)
+(signature list-set!)
+(signature list-ref)
+(signature length)
+
+(let ((v (vector 1 2 34)))
+  (vector-set! v 0 5)
+  v)
+
 (begin
   (mylint-file "/home/kjetil/radium/bin/scheme/mylint.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/mixer-strips.scm")
@@ -1890,8 +2185,8 @@
      :instrument-id
      :is-bus
      :row-num
-     :is-enable)))
-     :is-unique))
+     :is-enable
+     :is-unique)))
 
 (pp
  (c-macroexpand
@@ -1935,6 +2230,7 @@
 
 
 (define (mylint-string string*)
+  (define conf (make-schemecodeparser-conf))
   (call-with-input-string
    string*
    (lambda (f)
@@ -1945,9 +2241,10 @@
              (begin
                (display expr)
                (newline)
-               (loop (mylint expr)))))))))
+               (loop (mylint expr :conf conf)))))))))
 
 (define (mylint-and-eval-string string* . envlist)
+  (define conf (make-schemecodeparser-conf))
   (define env (if (null? envlist)
                   (rootlet)
                   (car envlist)))
@@ -1959,9 +2256,12 @@
          (if (eof-object? expr)
              ret
              (begin
+               (<declare-variable> with-history-disabled)
                ;;(display expr) (newline)
+               ;;(c-display "             MYLINT-AND_EVAL:" expr)
                (with-history-disabled
-                (mylint expr))
+                (mylint expr :conf conf)
+                )
                (loop (eval expr env)))))))))
   
 #!!

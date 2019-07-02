@@ -103,6 +103,13 @@
 (set! anint2 'b)
 !!#
 
+(define i-max (let ((+signature+ '(integer? integer? integer?)))
+                (lambda (a b)
+                  (max a b))))
+
+(define i-min (let ((+signature+ '(integer? integer? integer?)))
+                (lambda (a b)
+                  (min a b))))
 
 ;; Partial application
 (define (P-> funcname . args)
@@ -124,11 +131,10 @@
 
 ;; Note! This function is called from the error handler.
 (define (to-displayable-string a)
-  ;;(display "____ a: ")(display a)(newline)
   (cond ((keyword? a)
-         (<-> "#:" (to-displayable-string (keyword->symbol a))))
+         (string-append "#:" (to-displayable-string (keyword->symbol a))))
         ((symbol? a)
-         (<-> "'" (symbol->string a)))
+         (string-append "'" (symbol->string a)))
         ((string? a)
          a)
         ((char? a)
@@ -140,23 +146,32 @@
         ((equal? #f a)
          "#f")
         ((pair? a)
-         (<-> "(" (let loop ((as a)
-                             (is-first #t))
-                    (cond ((null? as)
-                           "")
-                          ((pair? as)
-                           (<-> (if is-first
-                                    ""
-                                    " ")
-                                (to-displayable-string (car as))
-                                (loop (cdr as) #f)))
-                          (else
-                           (<-> " . " (to-displayable-string as)))))
-              ")"))
+         (if (infinite? (length a))
+             "(Infinite list)"
+             (string-append "(" (let loop ((as a)
+                                           (is-first #t))
+                                  ;;(display "as: ")(display as) (display ". is-first: ") (display is-first)(display ". pair?: ")(display (pair? as))
+                                  ;;(newline)
+                                  (cond ((null? as)
+                                         "")
+                                        ((pair? as)
+                                         ;;(display "car: ")(display (car as)) (display ". cdr:") (display (cdr as))(newline)
+                                         (string-append (if is-first
+                                                            ""
+                                                            " ")
+                                                        (to-displayable-string (car as))
+                                                        (loop (cdr as) #f)))
+                                        (else
+                                         (string-append " . " (to-displayable-string as)))))
+                            ")")))
         ((null? a)
          "()")
         ((vector? a)
-         (<-> "[" (apply <-> (map (lambda (b) (<-> (to-displayable-string b) " ")) (vector->list a))) "]"))
+         (string-append "[" (apply string-append
+                                   (map (lambda (b)
+                                          (string-append (to-displayable-string b) " "))
+                                        (vector->list a)))
+                        "]"))
         ;;((hash-table? a)
         ;; (<-> 
         ((procedure? a)

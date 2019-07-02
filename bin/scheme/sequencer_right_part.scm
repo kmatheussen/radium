@@ -82,7 +82,6 @@
   (<gui> :show (testarea :get-gui)))
 !!#
 
-
 (define (create-blocks-browser-area gui x1 y1 x2 y2 state)
 
   (define (recreate x1 y1 x2 y2 state)

@@ -779,8 +779,8 @@ FROM_C-jump-to-mark
 
 
 '(set! (hook-functions *load-hook*)
-      (list (lambda (hook)
-              (mylint-file (hook 'name)))))
+       (list (lambda (hook)
+               (mylint-file (hook 'name)))))
 
 
 (load "semi-primitives.scm")

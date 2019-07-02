@@ -6380,9 +6380,9 @@
                                             ": "
                                             (<ra> :get-seqblock-automation-display-string 
                                                   (<ra> :get-seqblock-automation-value-for-time
-                                                        (max 0
-                                                             (floor (/ (- mouse-time seqblock-time)
-                                                                       (<ra> :get-seqblock-stretch-speed seqblockid))))
+                                                        (i-max 0
+                                                               (floor (/ (- mouse-time seqblock-time)
+                                                                         (<ra> :get-seqblock-stretch-speed seqblockid))))
                                                         automationnum seqblocknum seqtracknum)
                                                   automationnum seqblocknum seqtracknum)))
                  ;;(c-display "------------Setting"          
@@ -7921,7 +7921,7 @@
                                 ;;(c-display "       Move" Value (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
                                 (define start-time (<ra> :get-sequencer-visible-start-time))
                                 ;;(c-display "new-end-time:" (/ new-end-time 48000.0) Value)
-                                (<ra> :set-sequencer-visible-end-time (min song-length (max (1+ start-time) new-end-time))))
+                                (<ra> :set-sequencer-visible-end-time (i-min song-length (i-max (1+ start-time) new-end-time))))
                         :Publicize (lambda (_)
                                      (set-editor-statusbar (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
                                                                     " -> "
@@ -7962,7 +7962,7 @@
                                                                      0 song-length)))
                                 ;;(c-display "       Move" Value (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
                                 (define end-time (<ra> :get-sequencer-visible-end-time))
-                                (<ra> :set-sequencer-visible-start-time (max 0 (min (1- end-time) new-start-time))))
+                                (<ra> :set-sequencer-visible-start-time (i-max 0 (i-min (1- end-time) new-start-time))))
                         :Publicize (lambda (_)
                                      (set-editor-statusbar (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
                                                                     " -> "
@@ -8074,11 +8074,11 @@
                                                                             0 song-length)))
                                        ;;(c-display "       Move" X (/ new-start-time 48000.0) "x1:" (<ra> :get-seqnav-x1) "x2:" (<ra> :get-seqnav-x2) "end:" (/ (<ra> :get-sequencer-visible-end-time) 48000.0))
                                        (define end-time (<ra> :get-sequencer-visible-end-time))
-                                       (define new-start-time2 (max 0 (min (1- end-time) new-start-time)))
+                                       (define new-start-time2 (i-max 0 (i-min (1- end-time) new-start-time)))
                                        
                                        (define diff (- new-start-time2 old-start-time))
                                        (define new-end-time (+ end-time diff))
-                                       (define new-end-time2 (min song-length (max (1+ new-start-time2) new-end-time)))
+                                       (define new-end-time2 (i-min song-length (i-max (1+ new-start-time2) new-end-time)))
                                        
                                        (<ra> :set-sequencer-visible-start-time new-start-time2)
                                        (<ra> :set-sequencer-visible-end-time new-end-time2)
