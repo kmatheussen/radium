@@ -1346,7 +1346,15 @@ void GE_text(GE_Context *c, const char *text, int x, int y){
   c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
 }
 
+void GE_text2(GE_Context *c, QString text, int x, int y){
+  c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
+}
+
 void GE_text_halfsize(GE_Context *c, const char *text, int x, int y){
+  c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
+}
+
+void GE_text_halfsize2(GE_Context *c, QString text, int x, int y){
   c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
 }
 
