@@ -2803,9 +2803,9 @@ static void create_playcursor(const struct Tracker_Windows *window, const struct
   }
 }
 
-static void create_message(const struct Tracker_Windows *window, const char *message){
+static void create_message(const struct Tracker_Windows *window, QString message){
 
-  int width = (int)strlen(message) * window->fontwidth;
+  int width = message.length() * window->fontwidth;
   int height = window->fontheight;
   
   int middle_x = window->width / 2;
@@ -2829,7 +2829,7 @@ static void create_message(const struct Tracker_Windows *window, const char *mes
   int y = middle_y - height/2;
   
   GE_Context *text_color = GE_z(White_rgb(), conf);
-  GE_text(text_color, message, x, y);
+  GE_text2(text_color, message, x, y);
 }
 
 static void create_lacking_keyboard_focus_greyed_out(const struct Tracker_Windows *window){
@@ -2912,8 +2912,10 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
           if (filename==NULL){
             R_ASSERT(false);
             new_message = "error";
-          }else
-            new_message = talloc_format("Playing %S.", filename);
+          }else{
+            create_message(window, QString("Playing ") + STRING_get_qstring(filename));
+            goto gotit;
+          }
         }else
           new_message = is_pausing_message;
       }
@@ -2921,7 +2923,9 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
       if (new_message != NULL)
         create_message(window, new_message);
     }
-    
+
+ gotit:
+  
     create_lacking_keyboard_focus_greyed_out(window);
     
   } GE_end_writing(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM));

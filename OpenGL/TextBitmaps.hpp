@@ -57,19 +57,19 @@ struct ImageHolder {
 };
 
 static QFont g_qfont;
-static QHash<char,ImageHolder> *g_imageholders; // It's a pointer to avoid auto-desctruction at program exit.
+static QHash<QChar,ImageHolder> *g_imageholders; // It's a pointer to avoid auto-desctruction at program exit.
 
 static QFont g_qfont_halfsize;
-static QHash<char,ImageHolder> *g_imageholders_halfsize; // It's a pointer to avoid auto-desctruction at program exit.
+static QHash<QChar,ImageHolder> *g_imageholders_halfsize; // It's a pointer to avoid auto-desctruction at program exit.
 
-static QHash<QString, QHash<char,ImageHolder>* > g_imageholderss;
+static QHash<QString, QHash<QChar,ImageHolder>* > g_imageholderss;
 
 static QSet<QString> g_imageholder_fonts;
    
 
 static SpinlockIMutex image_mutex;
 
-static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imageholders, const char *chars){
+static inline void GE_add_imageholder(QFont qfont, QHash<QChar,ImageHolder> *imageholders, QString chars){
   QFontMetrics metrics(qfont);
 
   int real_width = metrics.width("#");
@@ -93,8 +93,8 @@ static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imag
   FreeType freeType(font_path, qfont.pointSize());
 #endif
   
-  for(int i=0;i<(int)strlen(chars);i++){
-    char c = chars[i];
+  for(QChar c : chars){ //for(int i=0;i<chars.length();i++){
+    //QString c = chars.mid(i,1); //char c = chars[i];
 
 #if USE_FREETYPE
     QImage qtgl_image = freeType.draw(c,width,height);
@@ -109,7 +109,7 @@ static inline void GE_add_imageholder(QFont qfont, QHash<char,ImageHolder> *imag
 
   
     QRect rect(0,0,width,height);
-    p.drawText(rect, Qt::AlignVCenter, QString(QChar(c)));
+    p.drawText(rect, Qt::AlignVCenter, c);
 
     QImage qtgl_image = qt_image;
 #endif
@@ -145,13 +145,13 @@ static const QString qfont_key(const QFont &font){ // From the qt documentation,
   return font.toString()+"#"+font.styleName();
 }
 
-static inline QHash<char,ImageHolder> *add_new_font(const QFont &font){
-  const char *chars="CDEFGABcdefgabhlo0123456789.,-MULR# m/|xPlsWtSvkupwinry()T:qH"; // Prerender characters we know could be used.
+static inline QHash<QChar,ImageHolder> *add_new_font(const QFont &font){
+  const QString chars="CDEFGABcdefgabhlo0123456789.,-MULR# m/|xPlsWtSvkupwinry()T:qH"; // Prerender characters we know could be used.
   //const char *chars="";
 
   const QString key = qfont_key(font);
   if (!g_imageholderss.contains(key)) {
-    QHash<char,ImageHolder> *imageholders = new QHash<char,ImageHolder>;
+    QHash<QChar,ImageHolder> *imageholders = new QHash<QChar,ImageHolder>;
     g_imageholderss[key] = imageholders;
     GE_add_imageholder(font, imageholders, chars);
   }
@@ -207,10 +207,10 @@ static inline void GE_set_new_font(const QFont &nonscaled_font){
 
 
 struct TextBitmaps{
-  QHash<char, std::vector<vl::dvec2> > points;
+  QHash<QChar, std::vector<vl::dvec2> > points;
 
   QFont qfont;
-  QHash<char,ImageHolder> *imageholders;
+  QHash<QChar,ImageHolder> *imageholders;
 
   TextBitmaps(bool halfsize)
     : qfont(halfsize ? g_qfont_halfsize : g_qfont)
@@ -219,13 +219,13 @@ struct TextBitmaps{
 
   // called from Main thread (not used)
   void clearCharBoxes(){
-    QHash<char, std::vector<vl::dvec2> >::iterator i;
+    QHash<QChar, std::vector<vl::dvec2> >::iterator i;
     for (i = points.begin(); i != points.end(); ++i)
       i.value().clear();
   }
 
   // called from Main thread  
-  float addCharBox(char c, float x, float y){
+  float addCharBox(QChar c, float x, float y){
     //fprintf(stderr,"adding %c\n",c);
 
     x = (int)x;
@@ -235,12 +235,9 @@ struct TextBitmaps{
 #if !defined(RELEASE)
       // Soundfile names are displayed now.
       //RWarning("TextBitmaps.hpp: '%c' was not precomputed\n",c);
-      printf("\n\n ******** TextBitmaps.hpp: '%c' was not precomputed ******** \n\n\n",c);
+      printf("\n\n ******** TextBitmaps.hpp: '%c' was not precomputed ******** \n\n\n",c.toLatin1());
 #endif
-      char chars[2];
-      chars[0] = c;
-      chars[1] = 0;
-      GE_add_imageholder(qfont, imageholders, chars);
+      GE_add_imageholder(qfont, imageholders, QString(c));
     }
 
     ImageHolder holder = imageholders->value(c);
@@ -266,6 +263,12 @@ struct TextBitmaps{
       x = addCharBox(text[i], x, y);
   }
 
+  // called from Main thread
+  void addCharBoxes(QString text, float x, float y){
+    for(QChar c : text)
+      x = addCharBox(c, x, y);
+  }
+  
 
 #if RADIUM_DRAW_FONTS_DIRECTLY
 
@@ -273,7 +276,7 @@ struct TextBitmaps{
   // This one looks slightly better than the "ImageHolder" version below, and the code is a billion times simpler too (approx.), but it uses too much CPU. (needs more work though, can't just be enabled. By far, the biggest problem is to get a font file name from a QFont.)
   void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform, bool set_mask, PaintingData *painting_data, enum UseScissors use_scissors) const {
       
-    QHash<char, std::vector<vl::dvec2> >::iterator i;
+    QHash<QChar, std::vector<vl::dvec2> >::iterator i;
     for (i = points.begin(); i != points.end(); ++i) {
       char c = i.key();
       std::vector<vl::dvec2> pointspoints = i.value();
@@ -307,7 +310,7 @@ struct TextBitmaps{
     
     //QHash<char, std::vector<vl::dvec2> >::iterator i;
     for (auto i = points.begin(); i != points.end(); ++i) {
-      char c = i.key();
+      QChar c = i.key();
       std::vector<vl::dvec2> pointspoints = i.value();
       ImageHolder holder = (*imageholders)[c];
 

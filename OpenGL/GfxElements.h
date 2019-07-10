@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifdef __cplusplus
 #include <QColor>
 #include <QFont>
+#include <QString>
 #endif
 
 #include "../api/api_proc.h"
@@ -261,7 +262,13 @@ void GE_unset_x_scissor(void);
   
 void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);
 void GE_text(GE_Context *c, const char *text, int x, int y);
+#ifdef __cplusplus
+void GE_text2(GE_Context *c, QString text, int x, int y);
+#endif
 void GE_text_halfsize(GE_Context *c, const char *text, int x, int y);
+#ifdef __cplusplus
+void GE_text_halfsize2(GE_Context *c, QString text, int x, int y);
+#endif
 void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width);
 
 static inline void GE_box_without_left(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
