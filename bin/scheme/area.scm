@@ -1338,10 +1338,13 @@
   (define-override (apply-state! state)
     (if load-areas-from-state
         (set! areas (state :areas)))
-    (define dy (+ (state :start-y1) (- y1 (state :y1))))
-    ;;(c-display "     apply-state!. Position dy:" dy)
-    (scrollbar :set-slider-pos! (state :slider-pos) #f)
-    (position-areas! dy))
+    
+    (when (or load-areas-from-state
+              (not all-fits))
+      (define dy (+ (state :start-y1) (- y1 (state :y1))))
+      ;;(c-display "     apply-state!. Position dy:" dy)
+      (scrollbar :set-slider-pos! (state :slider-pos) #f)
+      (position-areas! dy)))
 
   (define (position-areas! start-y1)
     (remove-sub-areas!)
