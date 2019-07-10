@@ -1468,11 +1468,8 @@ Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/E
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
 
-Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp Qt/Qt_MyQScrollBar.hpp $(P)mQt_Bs_edit.cpp 
+Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp
 	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT) #-fno-sanitize=undefined
-
-$(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
-	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
 
 INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp common/Vector.hpp

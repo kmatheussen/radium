@@ -1592,7 +1592,7 @@ void MIXER_call_very_often(void){
       int64_t absabstime = (int64_t)pos.frame;
 
       if (absabstime != pc->absabstime)
-        PLAYER_set_song_pos(-1, absabstime, true);
+        PLAYER_set_song_pos(-1, absabstime, true, true);
     }
   }
 

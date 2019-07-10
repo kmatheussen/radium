@@ -1454,8 +1454,8 @@ public:
           }
         }END_VECTOR_FOR_EACH;
         if (num != 1){
-          abort();
           fprintf(stderr,"NUM: %d (%d)\n", num, num != 1);
+          abort();
           getchar(); //abort();
         }
       }

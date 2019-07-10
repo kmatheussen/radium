@@ -344,15 +344,17 @@ void selectNextBlock(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-	SelectNextWBlock(window);
+        selectBlock(R_MIN(getNumBlocks()-1, currentBlock(windownum)+1), windownum);
+	//SelectNextWBlock(window);
 }
 
 void selectPrevBlock(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-        EVENTLOG_add_event("selectPrevBlock");
-	SelectPrevWBlock(window);
+        //EVENTLOG_add_event("selectPrevBlock");        
+	//SelectPrevWBlock(window);
+        selectBlock(R_MAX(0, currentBlock(windownum)-1), windownum);
 }
 
 void selectNextPlaylistBlock(void){

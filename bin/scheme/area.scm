@@ -326,7 +326,7 @@
      
      ;; Mouse cycles
      ;;;;;;;;;;;;;;;;;;;;;;;;
-     
+
      (define-optional-hash-table curr-nonpress-mouse-cycle)
      (define-optional-hash-table curr-mouse-cycle)
 
@@ -459,6 +459,7 @@
        (set! curr-mouse-cycle (get-mouse-cycle button x* y*))
        ;;(c-display "====-------Setting curr-mouse-cycle to:" curr-mouse-cycle)
        ;;(<ra> :show-warning "gakk")
+
        curr-mouse-cycle)
      
      (define (mouse-move-internal button x* y*)
@@ -612,6 +613,7 @@
      :set-parent-area! (new-parent-area) (begin
                                            (assert new-parent-area)
                                            (set! parent-area new-parent-area))
+     :get-parent-area x parent-area
      :add-sub-area-plain! (sub-area) (add-sub-area-plain! sub-area)
      :add-sub-area! x (apply add-sub-area! x)
      :add-sub-area-above! x (apply add-sub-area-above! x)
@@ -640,6 +642,12 @@
      :reset! x (apply reset! x)
      :about-to-be-removed-internal! x (apply about-to-be-removed-internal! x)
      :add-statusbar-text-handler x (apply add-statusbar-text-handler x)
+     :override-method! (funcname func) (let* ((org (<_> "super:" funcname)))
+                                         (eval `(let ((,org ,funcname))
+                                                  ;;(c-display "FUNCNAME:" ',funcname ". old:" ,funcname)
+                                                  (set! ,funcname ,func)
+                                                  )))
+     :class-name () class-name
      ))
  
 
@@ -695,23 +703,26 @@
 
     (define-optional-func the-sub-area (key . rest))
     
+    (define (recreate width* height*)
+      (resize! width* height*)
+      (define state (and the-sub-area
+                         (the-sub-area :get-state)))
+      (remove-sub-areas!)
+      (set! the-sub-area (sub-area-creation-callback gui width height state))
+      (if state
+          (the-sub-area :apply-state! state))
+      (add-sub-area-plain! the-sub-area))
+
     (when sub-area-creation-callback
-      (define (recreate width* height*)
-        (resize! width* height*)
-        (define state (and the-sub-area
-                           (the-sub-area :get-state)))
-        (remove-sub-areas!)
-        (set! the-sub-area (sub-area-creation-callback gui width height state))
-        (if state
-            (the-sub-area :apply-state! state))
-        (add-sub-area-plain! the-sub-area))
-      
       (<gui> :add-resize-callback gui recreate)
       (recreate width height))
+
+    (add-method! :recreate (lambda ()
+                             (recreate width height)))
     )
-
+  
   (define area (<new> :qtarea))
-
+  
   (area :add-method! :get-gui (lambda ()
                                 gui))
 
@@ -1113,7 +1124,7 @@
                                 :background-color #f
                                 :paint-border #t
                                 :border-color "black"
-                                :border-rounding 2
+                                :border-rounding 0
                                 :slider-color "#400010"
                                 :slider-pressed-color #f
                                 :border-width #f
@@ -1156,8 +1167,7 @@
                          slider-color)
                      slider-color
                      b
-                     border-rounding
-                     #t))
+                     border-rounding))
 
   (define (report!)
     (callback slider-pos
@@ -1210,11 +1220,11 @@
 
   (add-nonpress-mouse-cycle!
    :enter-func (lambda (x* y)
-                 (c-display "ENTER DRAGGER" class-name)
+                 ;;(c-display "ENTER DRAGGER" class-name)
                  (set-mouse-pointer ra:set-open-hand-mouse-pointer gui)
                  #t)
    :leave-func (lambda (button-was-pressed)
-                 (c-display "LEAVE DRAGGER")
+                 ;;(c-display "LEAVE DRAGGER")
                  (set-mouse-pointer ra:set-normal-mouse-pointer gui)
                  #f))
 
@@ -1264,7 +1274,6 @@
 !!#
 
      
-
 (def-area-subclass (<vertical-list-area> :gui :x1 :y1 :x2 :y2
                                          :areas
                                          :scrollbar-color "#400010"
@@ -1272,13 +1281,6 @@
                                          :expand-area-widths #t
                                          :load-areas-from-state #f
                                          )
-
-  (define scrollbar-width (between 1
-                                   (/ width 10)
-                                   (min (get-fontheight)
-                                        (/ width 2))))
-
-  (define scrollbar-x1 (- x2 scrollbar-width))
 
   (define (get-areas)
     (if (list? areas)
@@ -1294,6 +1296,17 @@
                             1
                             (min 1 (/ height total-area-height))))
   
+  (define all-fits (>= slider-length 1))
+  
+  (define scrollbar-width (if all-fits
+                              0
+                              (between 1
+                                       (/ width 10)
+                                       (min (average (<gui> :text-width "Xx")
+                                                     (<gui> :text-width "x"))
+                                            (/ width 2)))))
+  
+  (define scrollbar-x1 (- x2 scrollbar-width))
 
   (define (scrollbar-callback pos1 pos2)
     (define pos1 (scale pos1
@@ -1373,9 +1386,11 @@
            (area :get-position
                  (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
                    (define (doit dy)
+                     ;;(set! dy (* dy 4))
                      (define new-first-y1 (+ first-y1 dy))
                      (define new-last-y2 (+ last-y2 dy))
                      (position-areas! new-first-y1)
+                     ;;(c-display "scrolling" n new-first-y1 new-last-y2)
                      (scrollbar :set-slider-pos!
                                 (scale y1
                                        new-first-y1
@@ -1532,7 +1547,7 @@
 (<ra> :iterate-directory "L3RtcA==" #f c-display)
 !!#
 
-(def-area-subclass (<sequencer-drag-entry-area> :gui :x1 :y1 :x2 :y2
+(def-area-subclass (<seqblock-table-entry-area> :gui :x1 :y1 :x2 :y2
                                                 :is-current
                                                 :entry-num
                                                 :file-info #f
@@ -1561,7 +1576,7 @@
   (define is-soundfile (and file-info (file-info :is-audiofile)))
 
   (define name-text (if blocknum
-                        (<ra> :to-base64 (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum)))
+                        (<ra> :to-base64 (get-block-table-entry-text blocknum))
                         (let ((filename (file-info :filename)))
                           (if (and is-dir
                                    ;;(not (string=? "." filename))
@@ -1888,7 +1903,7 @@
 
     (set! file-browser-entries
           (map (lambda (entry entry-num)
-                 (<new> :sequencer-drag-entry-area gui 
+                 (<new> :seqblock-table-entry-area gui 
                         0 0 10 (* 1.2 (get-fontheight))
                         (= entry-num curr-entry-num)
                         entry-num

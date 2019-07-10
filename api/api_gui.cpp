@@ -145,7 +145,8 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   void fix_mousePressEvent(QMouseEvent *event) override{                \
     ScopedEventHandlerTracker event_handler_tracker;                    \
     g_last_pressed_widget = this;                                       \
-    if (_mouse_callback.v==NULL){                                         \
+    mousePressEvent_handle_double_click();                              \
+    if (_mouse_callback.v==NULL){                                       \
       CALL_PARENT_MOUSEPRESS(classname);                                \
       return;                                                           \
     }                                                                   \
@@ -1625,6 +1626,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     int _currentButton = 0;
     double _mouse_event_failed = -1;
     QPoint _last_mouse_pos = QPoint(0,0);
+    bool _is_double_clicking = false;
+    double _last_press_time = -1;
     
     int getMouseButtonEventID(QMouseEvent *qmouseevent) const {
       if(qmouseevent->button()==Qt::LeftButton)
@@ -1637,14 +1640,22 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return 0;
     }
 
+    void mousePressEvent_handle_double_click(void){
+      double time = TIME_get_ms();
+      _is_double_clicking = (time - _last_press_time) < getDoubleClickInterval();
+      _last_press_time = time;
+    }
+    
     bool mousePressEvent(QMouseEvent *event){
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback.v!=NULL, false);
 
-      if ((_mouse_event_failed - TIME_get_ms()) > 0){
+      double time = TIME_get_ms();
+      
+      if ((_mouse_event_failed - time) > 0){
         printf("mouse_event failed last time. Won't try again for a couple of seconds\n");
         return false;
       }
-      
+
       event->accept();
 
       _currentButton = getMouseButtonEventID(event);
@@ -4762,6 +4773,15 @@ void gui_addDoubleClickCallback(int64_t guinum, func_t* func){
       return;
 }
 
+bool gui_isDoubleClicking(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return false;
+
+  return gui->_is_double_clicking;
+}
+                          
 void gui_addCloseCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
 
@@ -6883,6 +6903,10 @@ const_char *getDateString(const_char* date_format){
 // Note! This function is called from the error handler.
 const_char *getTimeString(const_char* time_format){
   return talloc_strdup(QTime::currentTime().toString(time_format).toUtf8().constData());
+}
+
+const_char *getTimeStringFromFrames(int64_t num_frames){
+  return talloc_strdup(radium::get_time_string(num_frames).toUtf8().constData());
 }
 
 // Note! This function is called from the error handler.

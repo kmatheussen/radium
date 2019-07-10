@@ -2861,12 +2861,14 @@ int radium_main(const char *arg){
   
   QWidget *block_selector = BS_get();
 
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
+
   BS_UpdateBlockList();
   BS_UpdatePlayList();
-  BS_SelectBlock(root->song->blocks);
+  //BS_SelectBlock(root->song->blocks);
+  SelectWBlock(window, window->wblocks);
   BS_SelectPlaylistPos(0, false);
-
-  struct Tracker_Windows *window = root->song->tracker_windows;
 
   QWidget *main_window = static_cast<QWidget*>(window->os_visual.main_window);
 

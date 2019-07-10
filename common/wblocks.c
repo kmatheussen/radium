@@ -538,6 +538,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
       g_assert_not_stopping_player--;
 }
 
+/*
 void SelectPrevWBlock(struct Tracker_Windows *window){
   EVENTLOG_add_event("SelectPrevWBlock");
   BS_SelectBlocklistPos(BS_GetCurrBlocklistPos()-1);
@@ -548,6 +549,7 @@ void SelectNextWBlock(struct Tracker_Windows *window){
   BS_SelectBlocklistPos(BS_GetCurrBlocklistPos()+1);
   //SelectWBlock(window,NextWBlock(window->wblock));
 }
+*/
 
 void SelectPrevPlaylistWBlock(struct Tracker_Windows *window, bool change_song_pos_too){
   /*
@@ -556,7 +558,7 @@ void SelectPrevPlaylistWBlock(struct Tracker_Windows *window, bool change_song_p
     return;
   */
   
-  BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()-1, change_song_pos_too);
+  BS_SelectPlaylistPos(getCurrPlaylistPos()-1, change_song_pos_too);
 }
 
 void SelectNextPlaylistWBlock(struct Tracker_Windows *window, bool change_song_pos_too){
@@ -566,7 +568,7 @@ void SelectNextPlaylistWBlock(struct Tracker_Windows *window, bool change_song_p
     return;
   */
   
-  BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()+1, change_song_pos_too);
+  BS_SelectPlaylistPos(getCurrPlaylistPos()+1, change_song_pos_too);
 }
 
 extern size_t allocated;

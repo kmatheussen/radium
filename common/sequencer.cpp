@@ -979,9 +979,9 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
       HASH_put_string(state, ":sample", OS_saving_get_relative_path_if_possible(filename));
     else {
       HASH_put_string(state, ":sample", filename);
-#if defined(FOR_WINDOWS)
+      //#if defined(FOR_WINDOWS)
       HASH_put_string(state, ":sample-base64", STRING_toBase64(filename)); // char* can"t be used for filenames in windows
-#endif
+      //#endif
     }
     
 #if !defined(RELEASE)
@@ -1763,6 +1763,16 @@ dyn_t SEQTRACK_get_seqblocks_state(const struct SeqTrack *seqtrack){
   dynvec_t vec = {};
 
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+    DYNVEC_push_back(&vec, DYN_create_hash(SEQBLOCK_get_state(seqtrack, seqblock, true)));
+  }END_VECTOR_FOR_EACH;
+
+  return DYN_create_array(vec);
+}
+
+dyn_t SEQTRACK_get_gfx_seqblocks_state(const struct SeqTrack *seqtrack){
+  dynvec_t vec = {};
+
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
     DYNVEC_push_back(&vec, DYN_create_hash(SEQBLOCK_get_state(seqtrack, seqblock, true)));
   }END_VECTOR_FOR_EACH;
 
