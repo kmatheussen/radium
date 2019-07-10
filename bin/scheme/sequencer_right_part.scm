@@ -623,7 +623,9 @@
   (add-sub-area-plain! blocklist)
   (add-sub-area-plain! playlist)
 
-  (<gui> :set-background-color gui "color9")
+  ;;(<gui> :set-background-color gui "color9") doesn't work on osx. (really strange)
+  (define-override (paint) ;; workaround for osx.
+    (<gui> :filled-box gui "color9" x1 y1 x2 y2 0 0 #t))
 
   (define-override (get-state)
     (hash-table :blocklist-class-name (blocklist :class-name)
