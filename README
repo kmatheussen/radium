@@ -50,7 +50,7 @@ IF YOU ARE DEVELOPING RADIUM
      
         export RADIUM_USE_CLANG=1
 
-     If you don't want to compile in the llvm backend for the faustdev instrument, run this line first:
+     If you don't want to include the llvm backend for the faustdev instrument (for instance if you don't have llvm), run this line first:
      
         export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
 

@@ -647,6 +647,9 @@
   (set! *block-and-playlist-area* thatthing)
 
   (define gui (thatthing :get-gui))
+
+  (define width (<gui> :text-width "0: 0/Pretty long name"))
+  (set-fixed-width gui (ceiling width))
   
   gui)
 
