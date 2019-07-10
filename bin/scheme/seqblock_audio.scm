@@ -634,7 +634,7 @@
   (<gui> :minimize-as-much-as-possible main-layout)
   ||#
 
-  (<gui> :set-window-title window (<ra> :get-seqblock-name seqblockid))
+  (<gui> :set-window-title window (<ra> :get-seqblock-name seqblockid) #t)
 
   (if (not (<gui> :is-visible window))
       (<gui> :show window)) ;; There's a slight flicker when opening the window. I've tried to delay opening, minimize, etc. but this Qt bug is probably almost impossible to workaround.

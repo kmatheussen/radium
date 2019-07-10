@@ -91,7 +91,7 @@
   (define seqblockid #f)
   
   (define window (<gui> :vertical-layout))
-  (<gui> :set-size window 100 200)
+  (<gui> :set-size window 100 200)  
 
   (define area (make-qtarea))
   
@@ -169,9 +169,7 @@
       (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
       (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
 
-      (if (or (not old-seqblockid)
-              (not (= old-seqblockid seqblockid)))
-          (<gui> :set-window-title window (<ra> :get-seqblock-name seqblockid)))
+      (<gui> :set-window-title window (<ra> :get-seqblock-name seqblockid) #t)
 
       (area :get-position
             (lambda (x1 y1 x2 y2 width height)

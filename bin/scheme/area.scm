@@ -830,6 +830,7 @@
                                 :scale-font-size #t
                                 :cut-text-to-fit #f
                                 :only-show-left-part-if-text-dont-fit #t ;; only make sense to set #f if both scale-font-size and cut-text-to-fit is #f.
+                                :text-is-base64 #f
                                 )
 
   (define (get-text)
@@ -884,6 +885,7 @@
              0 ;; rotate
              cut-text-to-fit
              scale-font-size
+             text-is-base64
              ))
 
     (when paint-border
