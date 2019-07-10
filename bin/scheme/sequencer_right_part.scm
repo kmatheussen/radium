@@ -86,7 +86,9 @@
                                :callback mouse-callback
                                )
                         (let ((text-area (<new> :text-area gui 10 0 100 (* 0.8 (get-fontheight))
-                                                (<-> (if (< i 10) " " "") i ": " (<ra> :from-base64 (file-info :filename)))
+                                                (<ra> :append-base64-strings
+                                                      (<ra> :to-base64 (<-> (if (< i 10) " " "") i ": "))
+                                                      (file-info :filename))
                                                 :background-color (lambda ()
                                                                     (let ((base (<gui> :set-alpha-for-color color 0.05)))
                                                                       (if (is-current?)
@@ -99,6 +101,7 @@
                                                 :align-left #t
                                                 :paint-border #f
                                                 :cut-text-to-fit #t
+                                                :text-is-base64 #t
                                                 )))
                           (text-area :add-mouse-cycle! mouse-callback)
                           text-area)))
@@ -257,15 +260,17 @@
 
 (define (get-playlist-entry-text entry)
   (cond ((eq? (entry :type) 'pause)
-         (<-> "  P: " (<ra> :get-time-string-from-frames (entry :duration))))
+         (<ra> :to-base64 (<-> "  P: " (<ra> :get-time-string-from-frames (entry :duration)))))
         ((or (eq? (entry :type) 'block)
              (eq? (entry :type) 'audiofile))
-         (<-> (entry :num)
-              ": "
-              (if (entry :blocknum)
-                  (<-> (entry :blocknum) "/")
-                  "")
-              (entry :seqblock-name)))
+         (<ra> :append-base64-strings
+               (<ra> :to-base64
+                     (<-> (entry :num)
+                          ": "
+                          (if (entry :blocknum)
+                              (<-> (entry :blocknum) "/")
+                              "")))
+               (entry :seqblock-name)))
         ((eq? (entry :type) 'last)
          "")
         (else
@@ -368,6 +373,7 @@
                       :align-left #t
                       :paint-border #f
                       :cut-text-to-fit #t
+                      :text-is-base64 #t
                       ))
 
   (area :add-mouse-cycle! (lambda (button x* y*)

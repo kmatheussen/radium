@@ -5772,12 +5772,15 @@ const_char* gui_className(int64_t guinum){
   return talloc_strdup(gui->_class_name.toUtf8().constData()); //widget->metaObject()->className(); // ->metaObject()->className() is always supposed to work though.
 }
 
-void gui_setWindowTitle(int64_t guinum, const_char *value){
+void gui_setWindowTitle(int64_t guinum, const_char *value, bool name_is_base64){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->_widget->setWindowTitle(value);
+  if (name_is_base64)    
+    gui->_widget->setWindowTitle(w_to_qstring(value));
+  else
+    gui->_widget->setWindowTitle(value);
 }
 
 void gui_setToolTip(int64_t guinum, const_char *value){

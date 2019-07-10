@@ -2902,7 +2902,7 @@ dynvec_t getBlockUsageInSequencer(void){
   return dynvec;
 }
 
-void setSeqblockName(const_char* new_name, int64_t seqblockid){
+void setSeqblockName(const_char* new_name, int64_t seqblockid, bool name_is_base64){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
   if (seqblock==NULL)
@@ -2911,12 +2911,15 @@ void setSeqblockName(const_char* new_name, int64_t seqblockid){
   if (seqblock->block==NULL) {
 
     UNDO_SEQBLOCK_2(seqblockid);
-    seqblock->name = STRING_create(new_name);
+    if (name_is_base64)
+      seqblock->name = w_path_to_path(new_name);
+    else
+      seqblock->name = STRING_create(new_name);
     
   } else {
 
     ADD_UNDO(Block_CurrPos(root->song->tracker_windows));
-    seqblock->block->name = talloc_strdup(new_name);
+    seqblock->block->name = talloc_strdup(name_is_base64 ? fromBase64(new_name) : new_name);
 
   }
 
@@ -2928,16 +2931,16 @@ const_char* getSeqblockName(int64_t seqblockid){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
   if (seqblock==NULL)
-    return "";
+    return toBase64("");
 
   if (seqblock->name != NULL)
-    return STRING_get_chars(seqblock->name);
+    return path_to_w_path(seqblock->name);
   
   else if (seqblock->block==NULL)
-    return STRING_get_chars(get_seqblock_sample_name(seqtrack, seqblock, false));
+    return path_to_w_path(get_seqblock_sample_name(seqtrack, seqblock, false));
   
   else
-    return seqblock->block->name;
+    return toBase64(seqblock->block->name);
 }
 
 int getNumSeqblocks(int seqtracknum){

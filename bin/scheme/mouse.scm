@@ -7608,10 +7608,10 @@
                                                   :enabled seqblock-info
                                                   (lambda ()
                                                     (let* ((old-name (<ra> :get-seqblock-name seqblockid))
-                                                           (new-name (<ra> :request-string "New name:" #t old-name)))
-                                                      (when (and (not (string=? new-name ""))
+                                                           (new-name (<ra> :request-w-string "New name:" #t old-name)))
+                                                      (when (and (not (string=? (<ra> :from-base64 new-name) ""))
                                                                  (not (string=? new-name old-name)))
-                                                        (<ra> :set-seqblock-name new-name seqblockid)))))
+                                                        (<ra> :set-seqblock-name new-name seqblockid #t)))))
                                                  
                                                  (list "Configure color"
                                                        :enabled seqblock-info
