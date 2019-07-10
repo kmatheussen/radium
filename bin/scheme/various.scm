@@ -740,6 +740,7 @@
                          (<ra> :set-block-color color blocknum))))))
      
      (list "Generate new color"
+           :shortcut ra:generate-new-color-for-all-selected-seqblocks
            (lambda ()
              (let ((color (<ra> :generate-new-block-color 1.0)))
                (<ra> :set-block-color color blocknum))))
@@ -779,6 +780,7 @@
    
    (list "Generate new color"
          :enabled filename
+         :shortcut ra:generate-new-color-for-all-selected-seqblocks
          (lambda ()
            (let ((color (<ra> :generate-new-block-color 1.0)))
              (<ra> :set-audiofile-color color filename))))
@@ -847,6 +849,51 @@
 (pp (delete-all-pauses-in-seqtrack 1))
 !#
 
+(delafina (delete-pause-in-seqtrack :seqtracknum
+                                    :pause-time
+                                    :duration #f)
+  (define new-seqblocks
+    (let loop ((seqblocks (to-list (<ra> :get-seqblocks-state seqtracknum)))
+               (last-end 0)
+               (sub-time 0))
+      (if (null? seqblocks)
+          '()
+          (let* ((seqblock (car seqblocks))
+                 (start (seqblock :start-time))
+                 (end (seqblock :end-time)))
+            (cond ((and (= sub-time 0)
+                        (>= pause-time last-end)
+                        (< pause-time start)
+                        (> start last-end))
+                   (loop seqblocks
+                         end
+                         (or duration
+                             (- start last-end))))
+                  ((> sub-time 0)
+                   (cons (copy-hash seqblock
+                                    :start-time (- start sub-time)
+                                    :end-time (- end sub-time))
+                         (loop (cdr seqblocks)
+                               end
+                               sub-time)))
+                  (else
+                   (cons seqblock
+                         (loop (cdr seqblocks)
+                               end
+                               sub-time))))))))
+  (try-finally
+   :try (lambda ()
+          (<ra> :create-gfx-seqblocks-from-state new-seqblocks seqtracknum)
+          (<ra> :undo-sequencer)
+          (<ra> :apply-gfx-seqblocks seqtracknum))
+   :failure (lambda ()
+              (<ra> :cancel-gfx-seqblocks seqtracknum)))
+  )
+
+#!
+(pp (delete-pause-in-seqtrack -1 0))
+!#
+
 (define (get-delete-all-pauses-menu-entry seqtracknum)
   (list
    "Delete all pauses"
@@ -868,7 +915,19 @@
   
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Various
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 (define (place-to-string place)
   (if (eq? 'same-place place)
       'same-place
       (<-> (* 1.0 place))))
+
+
+(define (get-block-table-entry-text blocknum)
+  (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum)))
+
+  
+

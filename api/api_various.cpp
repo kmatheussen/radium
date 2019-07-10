@@ -1172,7 +1172,7 @@ void setBlockColor(const_char *colorname, int blocknum, int windownum){
   wblock->block->color = color;
   g_editor_blocks_generation++;
 
-  SEQUENCER_update(SEQUPDATE_TIME);
+  SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_PLAYLIST|SEQUPDATE_BLOCKLIST);
 }
 
 const char *getBlockColor(int blocknum, int windownum, bool displayed_color){
@@ -1205,7 +1205,7 @@ void setAudiofileColor(const_char* colorname, const_char* w_audiofilename){
   SAMPLEREADER_set_sample_color(w_path_to_path(w_audiofilename), color);
 
   g_sample_reader_filenames_generation++; // update audio file browser in the right part of sequencer.
-  SEQUENCER_update(SEQUPDATE_TIME);
+  SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_PLAYLIST|SEQUPDATE_BLOCKLIST);
 }
 
 

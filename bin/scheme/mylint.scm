@@ -1567,17 +1567,20 @@
       expr
       (apply mylint2 (cons expr args))))
 
+
 (***assert*** (mylint '(provide 'a) #t)
               '(provide 'a))
 
-(***assert-error*** (mylint '(provide '(a)) #t)
-                    'mylint-wrong-argument-type)
+(if (not (ra:release-mode))
+    (***assert-error*** (mylint '(provide '(a)) #t)
+                        'mylint-wrong-argument-type))
 
 (***assert*** (mylint '(+ 2 3 (ra:get-quantitize)) #t)
               '(+ 2 3 (ra:get-quantitize)))
 
-(***assert-error*** (mylint '(ra:get-quantitize "hello") #t)
-                    'mylint-wrong-argument-type)
+(if (not (ra:release-mode))
+    (***assert-error*** (mylint '(ra:get-quantitize "hello") #t)
+                        'mylint-wrong-argument-type))
 
 (***assert*** (mylint '(ra:get-quantitize #t) #t)
               '(ra:get-quantitize #t))
@@ -1585,63 +1588,67 @@
 (***assert*** (mylint '(ra:get-quantitize #f) #t)
               '(ra:get-quantitize #f))
 
-(***assert-error*** (mylint '(+ 2 3 '(2 3)) #t)
-                    'mylint-wrong-argument-type)
+(when (not (ra:release-mode))
+  (***assert-error*** (mylint '(+ 2 3 '(2 3)) #t)
+                      'mylint-wrong-argument-type)
+  
+  (***assert-error*** (mylint '(+ 2 3 "") #t)
+                      'mylint-wrong-argument-type)
+  
+  (***assert-error*** (mylint '(let ((a 50)) b) #t)
+                      'mylint-undefined)
+  
+  (***assert-error*** (mylint '(lambda (a) b) #t)
+                      'mylint-undefined)
 
-(***assert-error*** (mylint '(+ 2 3 "") #t)
-                    'mylint-wrong-argument-type)
+  (***assert-error*** (mylint '(lambda* (a) b) #t)
+                      'mylint-undefined)
+  
+  (***assert-error*** (mylint '(define (a) b) #t)
+                      'mylint-undefined)
 
-(***assert-error*** (mylint '(let ((a 50)) b) #t)
-                    'mylint-undefined)
-
-(***assert-error*** (mylint '(lambda (a) b) #t)
-                    'mylint-undefined)
-
-(***assert-error*** (mylint '(lambda* (a) b) #t)
-                    'mylint-undefined)
-
-(***assert-error*** (mylint '(define (a) b) #t)
-                    'mylint-undefined)
-
-(***assert-error*** (mylint '(define* (a) b) #t)
-                    'mylint-undefined)
-
-(***assert-error*** (mylint '(define* (a c) (a b)) #t)
-                    'mylint-undefined)
-
-(***assert-error*** (mylint '(define* (a c) (a (a b))) #t)
-                    'mylint-undefined)
-
-(***assert-error*** (mylint '(define* (a) (a 1)) #t)
-                    'mylint-illegal-function-call)
-
-(***assert-error*** (mylint '(define* (a) (a (a))) #t)
-                    'mylint-illegal-function-call)
+  (***assert-error*** (mylint '(define* (a) b) #t)
+                      'mylint-undefined)
+  
+  (***assert-error*** (mylint '(define* (a c) (a b)) #t)
+                      'mylint-undefined)
+  
+  (***assert-error*** (mylint '(define* (a c) (a (a b))) #t)
+                      'mylint-undefined)
+  
+  (***assert-error*** (mylint '(define* (a) (a 1)) #t)
+                      'mylint-illegal-function-call)
+  
+  (***assert-error*** (mylint '(define* (a) (a (a))) #t)
+                      'mylint-illegal-function-call))
 
 (***assert*** (mylint '(define* (a b) (a (a b))) #t)
               '(define* (a b) (a (a b))))
 
-(if (defined? 'delafina)
-    (***assert-error*** (mylint '(delafina (a) b) #t)
-                        'mylint-undefined))
+(if (not (ra:release-mode))
+    (if (defined? 'delafina)
+        (***assert-error*** (mylint '(delafina (a) b) #t)
+                            'mylint-undefined)))
 
-(***assert-error*** (mylint '(let () (let ((a 50)) a) a) #t)
-                    'mylint-undefined)
+(when (not (ra:release-mode))
+  (***assert-error*** (mylint '(let () (let ((a 50)) a) a) #t)
+                      'mylint-undefined))
 
 (***assert*** (mylint '(let () (let ((a 50)) a) 9) #t)
               '(let () (let ((a 50)) a) 9))
 
-(***assert-error*** (mylint '(gakkgakk) #t)
-                    'mylint-undefined)
-
-(***assert-error*** (mylint 'gakkgakk #t)
-                    'mylint-undefined)
-
-(***assert-error*** (mylint '(eq?) #t)
-                    'mylint-illegal-function-call)
-
-(***assert-error*** (mylint '(eq? 'a 'b 'c) #t)
-                    'mylint-illegal-function-call)
+(when (not (ra:release-mode))
+  (***assert-error*** (mylint '(gakkgakk) #t)
+                      'mylint-undefined)
+  
+  (***assert-error*** (mylint 'gakkgakk #t)
+                      'mylint-undefined)
+  
+  (***assert-error*** (mylint '(eq?) #t)
+                      'mylint-illegal-function-call)
+  
+  (***assert-error*** (mylint '(eq? 'a 'b 'c) #t)
+                      'mylint-illegal-function-call))
 
 (***assert*** (mylint '(eq? 'a 'b) #t)
               '(eq? 'a 'b))
@@ -1650,11 +1657,12 @@
     (***assert*** (mylint '(delafina (ai :a :b 2) #t))
                   '(define* (ai a (b 2)) #t)))
 
-(***assert-error*** (mylint '(let loop () (loop 2)) #t)
-                    'mylint-illegal-function-call)
-
-(***assert-error*** (mylint '(let ((loop 50)) (loop 2)) #t)
-                    'mylint-illegal-function-call)
+(when (not (ra:release-mode))
+  (***assert-error*** (mylint '(let loop () (loop 2)) #t)
+                      'mylint-illegal-function-call)
+  
+  (***assert-error*** (mylint '(let ((loop 50)) (loop 2)) #t)
+                      'mylint-illegal-function-call))
 
 (***assert*** (mylint '(let ((loop eq?)) (loop 'a 'b)) #t)
               '(let ((loop eq?)) (loop 'a 'b)))
@@ -1668,18 +1676,21 @@
 (***assert*** (mylint '(lambda (a) (a 2)))
               '(lambda (a) (a 2)))
 
-(***assert-error*** (mylint '(lambda () (let loop () (loop 2))) #t)
-                    'mylint-illegal-function-call)
-
-(***assert-error*** (mylint '(let () (define (a b) b) (a)) #t)
-                    'mylint-illegal-function-call)
+(when (not (ra:release-mode))
+  (***assert-error*** (mylint '(lambda () (let loop () (loop 2))) #t)
+                      'mylint-illegal-function-call)
+  
+  (***assert-error*** (mylint '(let () (define (a b) b) (a)) #t)
+                      'mylint-illegal-function-call))
 
 
 #!!
 (mylint '(define (a 100) (a2)) #t)
 !!#
-(***assert-error*** (mylint '(define (a 100) (a)) #t)
-                    'schemecodeparser-varname-not-a-symbol)
+
+(when (not (ra:release-mode))
+  (***assert-error*** (mylint '(define (a 100) (a)) #t)
+                      'schemecodeparser-varname-not-a-symbol))
 
 (***assert*** (mylint '(define (a . b) (a)) #t)
               '(define (a . b) (a)))
@@ -1730,24 +1741,24 @@
                (paint-voltext 2 3 4 5))))
   (***assert*** (mylint code #t)
                 code))
+(when (not (ra:release-mode))
+  (let ((code '(let ()
+                 (define paint-voltext (<optional-func> (a . rest)))
+                 (paint-voltext))))
+    (***assert-error*** (mylint code #t)                      
+                        'mylint-illegal-function-call))
 
-(let ((code '(let ()
-               (define paint-voltext (<optional-func> (a . rest)))
-               (paint-voltext))))
-  (***assert-error*** (mylint code #t)                      
-                      'mylint-illegal-function-call))
-
-(let ((code '(let ()
-               (define paint-voltext (<optional-func> (a b)))
-               (paint-voltext))))
-  (***assert-error*** (mylint code #t)                      
-                      'mylint-illegal-function-call))
-
-(let ((code '(let ()
-               (define paint-voltext (<optional-func> (a (b #f))))
-               (paint-voltext))))
-  (***assert-error*** (mylint code #t)                      
-                      'mylint-illegal-function-call))
+  (let ((code '(let ()
+                 (define paint-voltext (<optional-func> (a b)))
+                 (paint-voltext))))
+    (***assert-error*** (mylint code #t)                      
+                        'mylint-illegal-function-call))
+  
+  (let ((code '(let ()
+                 (define paint-voltext (<optional-func> (a (b #f))))
+                 (paint-voltext))))
+    (***assert-error*** (mylint code #t)                      
+                        'mylint-illegal-function-call)))
 
 
 (let ((code '(let ()
@@ -1757,24 +1768,25 @@
   (***assert*** (mylint code #t)
                 (c-macroexpand code)))
 
-(let ((code '(let ()
-               (define-optional-func  paint-voltext (a . rest))
-               (paint-voltext))))
-  (***assert-error*** (mylint code #t)                      
-                      'mylint-illegal-function-call))
+(when (not (ra:release-mode))
+  (let ((code '(let ()
+                 (define-optional-func  paint-voltext (a . rest))
+                 (paint-voltext))))
+    (***assert-error*** (mylint code #t)                      
+                        'mylint-illegal-function-call))
 
-(let ((code '(let ()
-               (define-optional-func paint-voltext (a b))
-               (paint-voltext))))
-  (***assert-error*** (mylint code #t)                      
-                      'mylint-illegal-function-call))
-
-(let ((code '(let ()
-               (define-optional-func paint-voltext (a (b #f)))
-               (paint-voltext))))
-  (***assert-error*** (mylint code #t)                      
-                      'mylint-illegal-function-call))
-
+  (let ((code '(let ()
+                 (define-optional-func paint-voltext (a b))
+                 (paint-voltext))))
+    (***assert-error*** (mylint code #t)                      
+                        'mylint-illegal-function-call))
+  
+  (let ((code '(let ()
+                 (define-optional-func paint-voltext (a (b #f)))
+                 (paint-voltext))))
+    (***assert-error*** (mylint code #t)                      
+                        'mylint-illegal-function-call))
+  )
 
 (let ((code '(let ()
                (define tablet (make-hash-table 5 eq?))
@@ -1788,17 +1800,19 @@
   (***assert*** (mylint code #t)
                 code))
 
-(let ((code '(let ()
-               (define tablet (make-hash-table 5 eq?))
-               (tablet))))
-  (***assert-error*** (mylint code #t)                      
-                      'mylint-illegal-function-call))
-
-(let ((code '(lambda ()
-               (let ((a (make-vector 5)))
-                 (a :hello)))))
-  (***assert-error*** (mylint code #t)
-                      'mylint-illegal-function-call))
+(when (not (ra:release-mode))
+  (let ((code '(let ()
+                 (define tablet (make-hash-table 5 eq?))
+                 (tablet))))
+    (***assert-error*** (mylint code #t)                      
+                        'mylint-illegal-function-call))
+  
+  (let ((code '(lambda ()
+                 (let ((a (make-vector 5)))
+                   (a :hello)))))
+    (***assert-error*** (mylint code #t)
+                        'mylint-illegal-function-call))
+  )
 
 
 #!!

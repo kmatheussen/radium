@@ -819,14 +819,14 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
         if (!is_playing_song())
           PlaySong(pos);
         else
-          PLAYER_set_song_pos(pos, -1, false);
+          PLAYER_set_song_pos(pos, -1, false, true);
         
       }else {
         
         if (is_playing_song())
           PlayStop();
 
-        PLAYER_set_song_pos(pos, -1, false);
+        PLAYER_set_song_pos(pos, -1, false, true);
         
       }
 

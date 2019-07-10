@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/SampleReader_proc.h"
 
+#include "../api/api_gui_proc.h"
+#include "../api/api_sequencer_proc.h"
 #include "../api/api_proc.h"
 
 #include "EditorWidget.h"
@@ -52,117 +54,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qsplitter.h>
 #include <qapplication.h>
 
-#if 0
-#include <qwidget.h>
-#include <qmainwindow.h>
-#endif
-
-#ifdef USE_QT3
-#include "qlistbox.h"
-#endif
-
-#ifdef USE_QT4
-#include <QListWidget>
-#include <QListWidgetItem>
 
 
+//static const int xborder = 0;
+//static const int yborder = 0;
 
-
-
-namespace{
-
-class QListBox : public QListWidget, public radium::MouseCycleFix{
-public:
-  bool is_blocklist;
-  
-  QListBox(QWidget *parent, bool is_blocklist)
-    : QListWidget(parent)
-    , is_blocklist(is_blocklist)
-  {
-    setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
-    setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
-  }
-  void insertItem(QString text){
-    QListWidget::addItem(text);
-  }
-  void insertItem(const char *text){
-    insertItem(QString(text));
-  }
-  int currentItem(){
-    return QListWidget::currentRow();
-  }
-  QString currentText(){
-    if(QListWidget::currentItem()==NULL)
-      return "";
-    return QListWidget::currentItem()->text();
-  }
-  void setSelected(int pos, bool something){
-    QListWidget::setCurrentRow(pos);
-  }
-  void removeItem(int pos){
-    QListWidget::takeItem(pos);
-  }
-
-  void keyPressEvent ( QKeyEvent * event ) override {
-    event->ignore();
-  }
-
-  void enterEvent(QEvent *event) override {
-    setCursor(Qt::ArrowCursor);
-  }
-
-  Qt::MouseButton _last_button =  Qt::NoButton;
-  
-  // popup menu
-  void fix_mousePressEvent(QMouseEvent *event) override {
-
-    _last_button = event->button();
-      
-    QListWidget::mousePressEvent(event);
-
-    if(_last_button==Qt::RightButton) { // Prevent Qt from emiting doubleclick signals when right-clicking.
-
-      if (shiftPressed()==false){
-        if(is_blocklist)
-          S7CALL2(void_void, "FROM_C-show-blocklist-popup-menu");
-        else
-          S7CALL2(void_void, "FROM_C-show-playlist-popup-menu");
-      }
-
-      event->accept();
-      
-    } else {
-      
-
-    }
-
-  }
-
-  void	fix_mouseMoveEvent(QMouseEvent *event) override{
-  }
-  
-  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
-  }
-
-  MOUSE_CYCLE_CALLBACKS_FOR_QT;
-
-};
-}
-
-#define QValueList QList
-#endif
-
-
-
-extern struct Root *root;
-extern PlayerClass *pc;
-
-
-static const int xborder = 0;
-static const int yborder = 0;
-
-static int button_height = 30;
-static int button_width = 50;
+//static int button_height = 30;
+//static int button_width = 50;
 
 namespace{
 
@@ -183,6 +81,16 @@ namespace{
 
   public:
 
+    //auto operator<=>(const Point&) const = default; 
+    bool equal_to(const PlaylistElement &b) const {
+      return
+        seqblock==b.seqblock &&
+        seqblocknum==b.seqblocknum &&
+        is_current==b.is_current &&
+        is_last==b.is_last &&
+        _pause==b._pause;
+    }
+    
     static PlaylistElement last(bool is_current){
       PlaylistElement pe;
       pe.is_last = true;
@@ -244,7 +152,11 @@ namespace{
   };
 }
 
+static inline bool operator==(const PlaylistElement &a, const PlaylistElement &b){
+  return a.equal_to(b);
+}
 
+  
 static QVector<PlaylistElement> get_playlist_elements(void){
 
   QVector<PlaylistElement> ret;
@@ -302,138 +214,6 @@ static PlaylistElement get_playlist_element(int num){
 }
   
 
-static int get_blocklist_x2(bool stacked, int width, int height);
-
-// Returns true if the playlist should be placed above the blocklist.
-static bool do_stack(int width, int height){
-  return get_blocklist_x2(false, width, height) < 150;
-}
-
-static int get_blocklist_x1(bool stacked, int width, int height){
-  return xborder;
-}
-
-static int get_blocklist_y1(bool stacked, int width, int height){
-  return yborder;
-}
-
-static int get_add_button_y1(bool stacked, int width, int height);
-static int get_blocklist_y2(bool stacked, int width, int height){
-  if(stacked)
-    return get_add_button_y1(stacked,width,height) - yborder;
-  else
-    return height;//-yborder;
-}
-
-static int get_blocklist_x2(bool stacked, int width, int height){
-  if(stacked)
-    return width-xborder;
-  else
-    return width/2 - button_width/2 - xborder;
-}
-
-static int get_playlist_x1(bool stacked, int width, int height){
-  if(stacked)
-    return xborder;
-  else
-    return width/2 + button_width/2 + xborder;
-}
-
-static int get_add_button_y2(bool stacked, int width, int height);
-static int get_playlist_y1(bool stacked, int width, int height){
-  if(stacked)
-    return get_add_button_y2(true,width,height) + xborder;
-  else
-    return yborder;
-}
-
-static int get_playlist_x2(bool stacked, int width, int height){
-  return width-xborder;
-}
-
-static int get_playlist_y2(bool stacked, int width, int height){
-  return height-button_height + 2;//-yborder;
-}
-
-static int get_add_button_x1(bool stacked, int width, int height){
-  if(stacked)
-    return xborder; //width/2 - button_width - xborder;
-  else
-    return width/2 - button_width/2;
-}
-
-static int get_add_button_y1(bool stacked, int width, int height){
-  if(stacked)
-    return height/2 - button_height/2;
-  else
-    return height/2 - button_height - yborder/2;
-}
-
-static int get_add_button_x2(bool stacked, int width, int height){
-  if(stacked)
-    return width/2 - xborder/2;
-  else
-    return get_add_button_x1(stacked,width,height) + button_width;
-}
-
-static int get_add_button_y2(bool stacked, int width, int height){
-  return get_add_button_y1(stacked,width,height) + button_height + 5;
-}
-
-static int get_remove_button_x1(bool stacked, int width, int height){
-  if(stacked)
-    return width/2 + xborder/2;
-  else
-    return get_add_button_x1(stacked,width,height);
-}
-
-static int get_remove_button_y1(bool stacked, int width, int height){
-  if(stacked)
-    return get_add_button_y1(stacked,width,height);
-  else
-    return get_add_button_y1(stacked,width,height) + button_height + yborder;
-}
-
-static int get_remove_button_x2(bool stacked, int width, int height){
-  if(stacked)
-    return width-xborder;
-  else
-    return get_remove_button_x1(stacked,width,height) + button_width;
-}
-
-static int get_remove_button_y2(bool stacked, int width, int height){
-  return get_remove_button_y1(stacked,width,height) + button_height + 5;
-}
-
-// move up button
-static int get_move_up_button_x1(bool stacked, int width, int height){
-  return get_add_button_x1(stacked, width, height);
-}
-static int get_move_up_button_x2(bool stacked, int width, int height){
-  return get_add_button_x2(stacked, width, height);
-}
-static int get_move_up_button_y1(bool stacked, int width, int height){
-  return get_playlist_y2(stacked, width, height);
-}
-static int get_move_up_button_y2(bool stacked, int width, int height){
-  return height;
-}
-
-// move down button
-static int get_move_down_button_x1(bool stacked, int width, int height){
-  return get_remove_button_x1(stacked, width, height);
-}
-static int get_move_down_button_x2(bool stacked, int width, int height){
-  return get_remove_button_x2(stacked, width, height);
-}
-static int get_move_down_button_y1(bool stacked, int width, int height){
-  return get_move_up_button_y1(stacked, width, height);
-}
-static int get_move_down_button_y2(bool stacked, int width, int height){
-  return get_move_up_button_y2(stacked, width, height);
-}
-
-
 static int g_num_visitors = 0;
 
 namespace{
@@ -447,20 +227,6 @@ struct ScopedVisitors{
 };
 }
 
-#define MAX(a,b) (((a)>(b))?(a):(b))
-#define MIN(a,b) (((a)<(b))?(a):(b))
-
-#define MOVE_WIDGET(widget) do{ \
-  int x1=get_##widget##_x1(stacked,width,height); \
-  int y1=get_##widget##_y1(stacked,width,height); \
-  int x2=get_##widget##_x2(stacked,width,height); \
-  int y2=get_##widget##_y2(stacked,width,height); \
-  widget.move(MAX(xborder,x1),MAX(yborder,y1));    \
-  int daswidth = MIN(x2-x1,width-xborder);            \
-  int dasheight = MIN(y2-y1,height-yborder);          \
-  if (daswidth>0 && dasheight>0) widget.setFixedSize(daswidth,dasheight); \
-  }while(0);
-
 
 int g_default_slider_height = 20;
 
@@ -473,609 +239,31 @@ void set_default_slider_height(void){
   g_default_slider_height = bs_font.pointSize()+4;
 }
 
-namespace{
-class BlockSelector : public QWidget, public radium::MouseCycleFix{
-  Q_OBJECT
-  
-public:
 
-  int _last_selected_audiofilenum = 0;
 
-  BlockSelector(QWidget *parent)
-    : QWidget(parent) //, Qt::Dialog)
-    , add_button("Insert",this)
-    , remove_button("Remove",this)
-    , move_down_button(QString::fromUtf8("\u21e9"), this)
-    , move_up_button(QString::fromUtf8("\u21e7"), this)
-    , playlist(this, false)
-    , blocklist(this, true)
-    , last_shown_width(0) // frustrating: SETTINGS_read_int((char*)"blocklist_width",0))
-  {
-    
-    //blocklist.setFont(bs_font);
-    //playlist.setFont(bs_font);
-
-    /*
-    {
-      QFont font2 = add_button.font();
-      font2.setPointSize(bs_font.pointSize()-4);
-      add_button.setFont(font2);
-      remove_button.setFont(font2);
-    }
-    */
-    
-    move_down_button.setFont(bs_font);
-    move_up_button.setFont(bs_font);
-
-    add_button.setMaximumHeight(g_default_slider_height);
-    remove_button.setMaximumHeight(g_default_slider_height);
-    move_down_button.setMaximumHeight(g_default_slider_height-2);
-    move_up_button.setMaximumHeight(g_default_slider_height-2 );
-
-    button_width = add_button.width();
-    button_height = add_button.height();
-
-    blocklist.show();
-    playlist.show();
-    add_button.show();
-    remove_button.show();
-    move_down_button.show();
-    move_up_button.show();
-
-    playlist.insertItem(" "); // Make it possible to put a block at the end of the playlist.
-
-    resizeEvent(NULL);
-
-#if USE_QT4
-    connect(&blocklist, SIGNAL(currentRowChanged(int)), this, SLOT(blocklist_highlighted(int)));
-    connect(&blocklist, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(blocklist_doubleclicked(QListWidgetItem*)));
-    //connect(&playlist, SIGNAL(currentRowChanged(int)), this, SLOT(playlist_highlighted(int)));
-    connect(&playlist, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(playlist_doubleclicked(QListWidgetItem*)));
-#endif
-
-    connect(&blocklist, SIGNAL(itemPressed(QListWidgetItem*)), this, SLOT(blocklist_itemPressed(QListWidgetItem*)));
-    connect(&playlist, SIGNAL(itemPressed(QListWidgetItem*)), this, SLOT(playlist_itemPressed(QListWidgetItem*)));
-      
-    connect(&add_button, SIGNAL(pressed()), this, SLOT(add_to_playlist()));
-    connect(&remove_button, SIGNAL(pressed()), this, SLOT(remove_from_playlist()));
-
-    connect(&move_down_button, SIGNAL(pressed()), this, SLOT(move_down()));
-    connect(&move_up_button, SIGNAL(pressed()), this, SLOT(move_up()));
-
-    setWidgetColors(this);
-
-    {
-      QFontMetrics fm(QApplication::font());
-      int width = fm.width("0: 0/Pretty long name");
-      setFixedWidth(width);
-
-      add_button.setMaximumWidth(width/2);
-      remove_button.setMaximumWidth(width/2);
-      move_down_button.setMaximumWidth(width/2);
-      move_up_button.setMaximumWidth(width/2);
-    }
-
-    button_width = add_button.width();
-
-    //qApp->installEventFilter(this);
-  }
-
-  /*
-  Qt::MouseButton _last_button =  Qt::NoButton;
-  void mousePressEvent( QMouseEvent *qmouseevent) override {
-    _last_button = qmouseevent->button();
-    QWidget::mousePressEvent(qmouseevent);
-  }
-  */
-  /*
-  bool isChildWidget(QWidget *w){
-    if (w==NULL)
-      return false;
-    
-    else if (w==this)
-      return true;
-
-    else
-      return isChildWidget(w->parentWidget());
-  }
-
-  bool eventFilter(QObject *obj, QEvent *event) override {
-    if (event->type()==QEvent::GraphicsSceneMousePress || event->type()==QEvent::MouseButtonPress){
-      if (isChildWidget(dynamic_cast<QWidget*>(obj))){
-        FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, true);
-        //printf("    CLICKED\n");
-      }
-    }
-    
-    return false;
-  }
-  */
-  
-  void enterEvent(QEvent *event) override {
-    setCursor(Qt::ArrowCursor);
-  }
-
-  void resizeEvent(QResizeEvent *qresizeevent) override {
-    radium::ScopedResizeEventTracker resize_event_tracker;
-    
-    //fprintf(stderr,"I am resized\n");
-
-    int width = this->width();
-    int height = this->height();
-    bool stacked = do_stack(width, height);
-
-    if(width<=0 || height<=0){
-      printf("Warning: %d<=0 || %d<=0\n",width,height);
-      return;
-    }
-
-    MOVE_WIDGET(blocklist);
-    MOVE_WIDGET(playlist);
-    MOVE_WIDGET(add_button);
-    MOVE_WIDGET(remove_button);
-    MOVE_WIDGET(move_down_button);
-    MOVE_WIDGET(move_up_button);
-  }
-  
-  void call_very_often(void){
-    //struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-
-    if (is_playing() && pc->playtype==PLAYSONG) {
-      QVector<PlaylistElement> elements = get_playlist_elements();
-
-      int i;
-      
-      for(i = 0 ; i < elements.size() ; i++){
-        const PlaylistElement &el = elements.at(i);
-        if (el.is_current==true)
-          break;
-      }
-      
-      if (i != playlist.currentRow()){
-        playlist.setSelected(i, true);
-      }
-    }
-  }
-
-
-#if 0
-  QPushButton add_button;
-  QPushButton remove_button;
-  QPushButton move_down_button;
-  QPushButton move_up_button;
-#else
-  MyQButton add_button;
-  MyQButton remove_button;
-  MyQButton move_down_button;
-  MyQButton move_up_button;
-#endif
-  QListBox playlist;
-  QListBox blocklist;
-
-  int last_shown_width;
-
-  struct SeqBlock *get_prev_playlist_block(void){
-    QVector<PlaylistElement> elements = get_playlist_elements();
-    
-    for(int pos = playlist.currentRow() - 1 ; pos > 0 ; pos--)
-      if (elements.at(pos).is_pause()==false)
-        return elements.at(pos).seqblock;
-    
-    return NULL;
-  }
-                           
-  struct SeqBlock *get_next_playlist_block(void){
-    QVector<PlaylistElement> elements = get_playlist_elements();
-    
-    for(int pos = playlist.currentRow() + 1 ; pos < elements.size()  ; pos++)
-      if (elements.at(pos).is_pause()==false)
-        return elements.at(pos).seqblock;
-    
-    return NULL;
-  }
-
-  struct SeqBlock *get_seqblock_from_pos(int pos){
-    const PlaylistElement pe = get_playlist_element(pos);
-    
-    if (pe.is_illegal())
-      return NULL;
-    
-    return pe.seqblock;
-  }
-
-  struct Blocks *get_block_from_pos(int pos){
-    const PlaylistElement pe = get_playlist_element(pos);
-    
-    if (pe.is_illegal())
-      return NULL;
-    
-    return pe.seqblock->block;
-  }
-
-  void handle_select_playlist_element(int num, bool change_song_pos_too){
-    struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-
-    if (num > playlist.count()-1) {
-      R_ASSERT_NON_RELEASE(false);
-      if (is_playing_song())
-        PlaySong(SEQTRACK_get_length(seqtrack)*MIXER_get_sample_rate()); // why was this line added here?
-      return;
-    }
-
-    PlaylistElement pe = get_playlist_element(num);
-
-    int64_t abstime;
-    
-    if (pe.is_last){
-      
-      abstime = 0;
-      int num_seqblocks = seqtrack->seqblocks.num_elements;
-      if (num_seqblocks > 0){
-        struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[num_seqblocks-1];
-        abstime = seqblock->t.time2;
-      }
-      
-    } else {
-    
-      if (pe.is_illegal()){
-        R_ASSERT_NON_RELEASE(false);
-        printf("    pe is illegal. Pos: %d\n", num);
-        return;
-      }
-      
-      int seqblocknum = pe.seqblocknum;
-      
-      //SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
-      
-      struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
-      
-      if (pe.is_pause()) {
-        if (seqblocknum==0) {
-          abstime = 0;
-        } else {
-          struct SeqBlock *prev_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum-1];
-          abstime = prev_seqblock->t.time2;
-        }
-      } else {
-        abstime = seqblock->t.time;
-        setCurrSeqblock(seqblock->id);
-      }      
-
-    }
-    
-    
-    if (change_song_pos_too){
-      //printf("    Time: %f\n", (double)abstime/44100.0);
-      PLAYER_set_song_pos(abstime, -1, false);
-    }
-  }
-
-public slots:
-
-  void add_to_playlist(void){
-
-    struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-    
-#ifdef USE_QT3
-    int pos = playlist.currentItem();
-#else
-    int pos = playlist.currentRow();
-#endif
-    const PlaylistElement pe = get_playlist_element(pos);
-
-    radium::ScopedUndo undo; // This line prevents the audio file from being deleted in the call to ADD_UNDO(Sequencer()) if the file in the call to SEQTRACK_insert_sample is marked as deletable.
-    
-    ADD_UNDO(Sequencer());
-    
-    if (pe.is_illegal()) {
-      
-      // Append block
-
-      const struct SeqBlock *last_seqblock = (const struct SeqBlock*)VECTOR_last(&seqtrack->seqblocks);
-      int64_t seqtime = last_seqblock==NULL ? 0 : SEQBLOCK_get_seq_endtime(last_seqblock);
-
-      if (seqtrack->for_audiofiles) {
-        vector_t filenames = SAMPLEREADER_get_all_filenames();
-        if (filenames.num_elements > 0) {
-          SEQTRACK_insert_sample(seqtrack, get_seqtracknum(seqtrack), (wchar_t*)filenames.elements[filenames.num_elements-1], seqtime, -1);
-        }
-        
-      } else {
-
-        if (blocklist.currentItem() < root->song->num_blocks){
-          struct Blocks *block = getBlockFromNum(blocklist.currentItem());
-          SEQTRACK_insert_block(seqtrack, block, seqtime, -1);
-        }
-
-      }
-      
-    } else {
-
-      // Insert block
-
-      R_ASSERT_RETURN_IF_FALSE(pe.seqblock!=NULL);
-      int64_t seqtime = pe.seqblock->t.time;
-      
-      if (pe.is_pause())
-        seqtime -= pe.get_pause();
-      
-      // Uncomment this line to keep same pause time if adding the block to a pause entry:
-      //
-      // SEQTRACK_insert_silence(seqtrack, seqtime, getBlockSTimeLength(block));
-      
-      if (seqtrack->for_audiofiles) {
-        
-        vector_t filenames = SAMPLEREADER_get_all_filenames();
-        
-        if (blocklist.currentItem() < filenames.num_elements){
-          
-          wchar_t *filename = (wchar_t*)filenames.elements[blocklist.currentItem()];
-          
-          if (filename != NULL){
-            
-            QFileInfo info(STRING_get_qstring(filename));
-            if (blocklist.currentText().endsWith(QString(info.fileName()))) {
-              
-              double samplerate = SAMPLEREADER_get_samplerate(filename);
-              int64_t duration = SAMPLEREADER_get_sample_duration(filename);
-              
-              if (fabs(samplerate-pc->pfreq) > 1)
-                duration = (double)duration * pc->pfreq / samplerate;
-              
-              SEQTRACK_insert_silence(seqtrack, seqtime, duration);
-              SEQTRACK_insert_sample(seqtrack, get_seqtracknum(seqtrack), filename, seqtime, -1);
-              
-            }
-          }
-
-        } else {
-          
-          R_ASSERT_NON_RELEASE(false);
-          
-        }
-        
-      } else {
-
-        if (blocklist.currentItem() < root->song->num_blocks){
-          struct Blocks *block = getBlockFromNum(blocklist.currentItem());
-          SEQTRACK_insert_block(seqtrack, block, seqtime, -1);
-        }
-      }
-    }
-    
-    playlist.setSelected(pos+1, true);
-  }
-
-  void remove_from_playlist(void){
-    int pos = playlist.currentItem();
-
-    const PlaylistElement pe = get_playlist_element(pos);
-    if (pe.is_illegal())
-      return;
-
-    ADD_UNDO(Sequencer());
-    
-    if (pe.is_pause())
-      SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -pe.get_pause());
-    else{
-      R_ASSERT_RETURN_IF_FALSE(pe.seqblock!=NULL);
-      int64_t seqblock_duration = SEQBLOCK_get_seq_duration(pe.seqblock);
-      SEQTRACK_delete_seqblock(SEQUENCER_get_curr_seqtrack(), pe.seqblock, true);
-      SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -1 * seqblock_duration);
-    }
-    
-      //BL_deleteCurrPos(num);
-
-    //BS_UpdatePlayList();
-    
-    printf("remove from playlist\n");
-  }
-
-  void swap(int pos1, int pos2){
-    struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-      
-    QVector<PlaylistElement> elements = get_playlist_elements();
-
-    R_ASSERT_RETURN_IF_FALSE(pos1 >= 0);
-    R_ASSERT_RETURN_IF_FALSE(pos1 < elements.size());
-    R_ASSERT_RETURN_IF_FALSE(pos2 >= 0);
-    R_ASSERT_RETURN_IF_FALSE(pos2 < elements.size());
-    
-    const PlaylistElement &element1 = elements.at(pos1);
-    const PlaylistElement &element2 = elements.at(pos2);
-
-    struct SeqBlock *seqblock1 = element1.seqblock;
-    struct SeqBlock *seqblock2 = element2.seqblock;
-
-    ADD_UNDO(Sequencer());
-        
-    if (element2.is_pause()){
-      
-      SEQTRACK_move_seqblock(seqtrack, seqblock1, seqblock1->t.time + element2.get_pause());
-      
-    } else if (element1.is_pause()){
-
-      SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock2->t.time - element1.get_pause());
-      
-    } else {
-
-      //printf("Bef: %f %f\n", (double)seqblock1->time/MIXER_get_sample_rate(), (double)seqblock2->time/MIXER_get_sample_rate());
-
-      hash_t *seqblock1_state = SEQBLOCK_get_state(seqtrack, seqblock1, true);
-      HASH_put_int(seqblock1_state, ":seqtracknum", get_seqtracknum(seqtrack));
-      HASH_remove(seqblock1_state, ":start-time");
-      HASH_remove(seqblock1_state, ":end-time");
-      int64_t new_start_time1 = seqblock1->t.time + seqblock2->t.time2-seqblock2->t.time;
-      HASH_put_int(seqblock1_state, ":start-time", new_start_time1);
-      HASH_put_int(seqblock1_state, ":end-time", new_start_time1 + SEQBLOCK_get_seq_duration(seqblock1));
-                   
-      {
-        radium::PlayerPause pause; // Not necessary for correct operation, but to avoid restart the player more than once.
-
-        int64_t seqblock1_time = seqblock1->t.time;
-        SEQTRACK_delete_seqblock(seqtrack, seqblock1, false);
-        SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock1_time);
-        SEQBLOCK_insert_seqblock_from_state(seqblock1_state, SHOW_ASSERTION);
-        //SEQTRACK_insert_seqblock(seqtrack, seqblock1, SEQBLOCK_get_seq_endtime(seqblock2), -1);
-      }
-
-      //printf("Aft2: %f %f\n", (double)seqblock1->time/MIXER_get_sample_rate(), (double)seqblock2->time/MIXER_get_sample_rate());
-            
-    }
-
-    SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);
-  }
-
-  void move_down(void){
-    int pos= playlist.currentItem();
-    if(pos==-1)
-      return;
-    if (pos>=playlist.count()-2)
-      return;
-
-    swap(pos, pos+1);
-    
-    playlist.setSelected(pos+1, true);
-    
-  }
-  
-  void move_up(void){
-    int pos = playlist.currentItem();
-    if(pos<=0)
-      return;
-    if (pos==playlist.count()-1)
-      return;
-
-    swap(pos-1, pos);
-        
-    playlist.setSelected(pos-1, true);
-  }
-  
-  void blocklist_highlighted(int num){
-    if(num==-1)
-      return;
-
-    if(g_num_visitors>0) // event created internally
-      return;
-
-    EVENTLOG_add_event("BlockSelector::blocklist_highlighted");
-    //printf("block high num: %d\n",num);
-
-    struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-    R_ASSERT_RETURN_IF_FALSE(seqtrack!=NULL);
-    
-    if (seqtrack->for_audiofiles==true)
-      _last_selected_audiofilenum = num;
-    else
-      if (!is_playing_song())
-        selectBlock(num, -1);
-  }
-
-  void blocklist_doubleclicked(QListWidgetItem *item){
-    if (blocklist._last_button==Qt::LeftButton)
-      add_to_playlist();
-  }
-
-  void blocklist_itemPressed(QListWidgetItem * item){
-    printf("pressed: %d\n",(int)QApplication::mouseButtons());
-    
-    if (QApplication::mouseButtons()==Qt::RightButton){
-      
-      // First make sure this one is selected.
-      int pos = blocklist.currentItem();
-      blocklist_highlighted(pos);
-      
-      if (shiftPressed()){
-        struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-        if (seqtrack->for_audiofiles) {
-
-          vector_t filenames = SAMPLEREADER_get_all_filenames();
-          if (pos < filenames.num_elements) {
-
-            const wchar_t *filename = static_cast<const wchar_t*>(filenames.elements[pos]);
-            
-            SEQUENCER_remove_sample_from_song(filename);
-            SAMPLEREADER_remove_filename_from_filenames(filename);
-            
-          }
-          
-        } else {
-          
-          deleteBlock(pos,-1);
-          
-        }
-      }
-    }
-  }
-
-  /*
-  void playlist_highlighted(int num){
-  playlist_itemPressed(NULL);
-  }
-  */
-
-  
-  void playlist_itemPressed(QListWidgetItem *){
-    //printf("pressed 2: %d\n",(int)QApplication::mouseButtons());
-    
-    if(g_num_visitors>0) // event created internally
-      return;
-
-    if (QApplication::mouseButtons()==Qt::RightButton){
-      
-      if (shiftPressed()){
-        remove_from_playlist();
-      }
-
-    } else {
-
-      int num = playlist.currentItem();
-
-      handle_select_playlist_element(num, true);
-    }
-  }
-  
-  void playlist_doubleclicked(QListWidgetItem *item){
-    if (playlist._last_button==Qt::LeftButton)
-      remove_from_playlist();
-  }
-
-  void fix_mousePressEvent(QMouseEvent *event) override {
-  }
-  
-  void	fix_mouseMoveEvent(QMouseEvent *event) override{
-  }
-  
-  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
-  }
-
-  MOUSE_CYCLE_CALLBACKS_FOR_QT;
-
-};
-}
-
-
-static BlockSelector *g_bs = NULL;
+//static BlockSelector *g_bs = NULL;
 static bool g_is_hidden = false;
+
+static QWidget  *g_block_and_playlist = NULL;
 
 
 QWidget *BS_get(void){
   ScopedVisitors v;
 
+  /*
   if(g_bs==NULL)
     g_bs = new BlockSelector (NULL);
 
-  return g_bs;
-}
+    return g_bs;
+  */
+  
+  if (g_block_and_playlist==NULL){
+    int64_t guinum = S7CALL2(int_void, "FROM_C-create-bock-and-playlist-gui");
 
-void PLAYLIST_insert(void){
-  ScopedVisitors v;
-  g_bs->add_to_playlist();
-}
+    g_block_and_playlist = API_gui_get_widget(guinum);
+  }
 
-void PLAYLIST_remove(void){
-  ScopedVisitors v;
-  g_bs->remove_from_playlist();
+  return g_block_and_playlist;
 }
 
 void BS_resizewindow(void){
@@ -1085,114 +273,36 @@ void BS_resizewindow(void){
 void BS_UpdateBlockList(void){
   ScopedVisitors v;
 
-  // Must update if hidden because of BS_GetCurrBlocklistklistPos()
-  //if (g_is_hidden)
-  //  return;
+  S7CALL2(void_void, "FROM_C-recreate-block/audio-list-guis");
 
-  while(g_bs->blocklist.count()>0){
-    delete g_bs->blocklist.takeItem(0);
-  }
-
-  struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-
-  if (seqtrack->for_audiofiles){
-
-    vector_t filenames = SAMPLEREADER_get_all_filenames();
-    int justify = filenames.num_elements==0 ? 1 : log10(filenames.num_elements) + 1;
-
-    VECTOR_FOR_EACH(const wchar_t*, filename, &filenames){
-
-      QFileInfo info(STRING_get_qstring(filename));
-      g_bs->blocklist.insertItem(QString::number(iterator666).rightJustified(justify, ' ')+": "+info.fileName());
-      
-    }END_VECTOR_FOR_EACH;
-
-    if (filenames.num_elements > 0){
-      g_bs->_last_selected_audiofilenum = R_MIN(filenames.num_elements-1, g_bs->_last_selected_audiofilenum);
-      g_bs->blocklist.setCurrentRow(g_bs->_last_selected_audiofilenum);
-    }
-    
-  } else {
-    
-    int justify = log10(root->song->num_blocks) + 1;
-    //printf("justify: %d\n", justify);
-    
-    struct Blocks *block=root->song->blocks;
-    while(block!=NULL){
-      g_bs->blocklist.insertItem(QString::number(block->l.num).rightJustified(justify, ' ')+": "+QString(block->name));
-      block=NextBlock(block);
-    }
-
-    //PyRun_SimpleString(temp);
-
-    if(root != NULL
-       && root->song != NULL
-       && root->song->tracker_windows != NULL
-       && root->song->tracker_windows->wblock != NULL
-       && root->song->tracker_windows->wblock->block != NULL
-       )
-      BS_SelectBlock(root->song->tracker_windows->wblock->block);
-  }
 }
 
 static void update_playlist(void){
 
-  struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+  //struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
   
-  int num_seqblocks = gfx_seqblocks(seqtrack)->num_elements;
-  int justify_playlist = num_seqblocks==0 ? 1 : (log10(num_seqblocks) + 1);
+  static QVector<PlaylistElement> prev_elements;
   
   QVector<PlaylistElement> elements = get_playlist_elements();
+
+  if (prev_elements.size() != elements.size())
+    goto update_it;
   
-  int num_elements = elements.size();
-  int num_items = g_bs->playlist.count();
-  int num_iterations = R_MAX(num_elements, num_items);
+  for(int i=0;i<elements.size();i++){    
+    const PlaylistElement &element_a = prev_elements.at(i);
+    const PlaylistElement &element_b = elements.at(i);
 
-  bool has_modified = false;
-  
-  QVector<QListWidgetItem*> to_remove;
-  
-  int pos = 0;
-  for(int i=0;i<num_iterations;i++){
-    const PlaylistElement *element = i < num_elements ? &elements.at(i) : NULL;
-    QListWidgetItem *item = i < num_items ? g_bs->playlist.item(i) : NULL;
-
-    if (element==NULL) {
-
-      to_remove.push_back(item);
-      has_modified = true;
-      
-    } else {
-
-      QString new_text;
-      if (element->is_last) {
-        new_text = " "; // Make it possible to put a block at the end of the playlist.
-      } else if (element->is_pause()){
-        new_text = " pause: "+radium::get_time_string(element->get_pause());
-      } else {
-        QString seqblockname = get_seqblock_name(seqtrack, element->seqblock, "/", true);
-        new_text = QString::number(pos).rightJustified(justify_playlist, ' ') + ": " + seqblockname;
-        pos++;
-      }
-      
-      if (item==NULL) {
-        g_bs->playlist.insertItem(new_text);
-        has_modified = true;
-      } else if (new_text != item->text()) {
-        item->setText(new_text);
-        has_modified = true;
-      }
-    }
-
+    if (!(element_a==element_b))
+      goto update_it;
   }
 
-  if (has_modified==false)
-    return;
-  
-  for(auto *item : to_remove)
-    delete item;
+  goto finish;
 
+ update_it:
+  S7CALL2(void_void, "FROM_C-recreate-playlist-area");
 
+ finish:
+  prev_elements = elements;
 }
   
 void BS_UpdatePlayList(void){
@@ -1204,91 +314,21 @@ void BS_UpdatePlayList(void){
   //if (g_is_hidden)
   //  return;
   
-  if (g_bs==NULL)
+  if (g_block_and_playlist==NULL)
     return;
   
   if (root->song->seqtracks.num_elements==0)
     return;
 
-  int curr_pos = g_bs->playlist.currentItem();
-  
   update_playlist();
-  
-  {
-    int pos = 0;
-    for (const auto &pe : get_playlist_elements()){
-      if (pe.is_legal() && !pe.is_pause()){
-        R_ASSERT_RETURN_IF_FALSE(pe.seqblock!=NULL);
-        if (getCurrSeqblockId()==pe.seqblock->id){
-          curr_pos = pos;
-          break;
-        }
-      }
-      pos++;
-    }
-  }
-
-  BS_SelectPlaylistPos(curr_pos, false);
 }
-
-/*
-void BS_UpdatePlayList_old(void){
-  ScopedVisitors v;
-
-  int pos = bs->playlist.currentItem();//root->curr_playlist;
-
-  while(bs->playlist.count()>0)
-    bs->playlist.removeItem(0);
-
-  int lokke=0;
-  struct Blocks *block=BL_GetBlockFromPos(lokke);
-
-  int justify_playlist = log10(root->song->length) + 1;
-  int justify_blocklist = log10(root->song->num_blocks) + 1;
-    
-  while(block!=NULL){    
-    bs->playlist.insertItem(QString::number(lokke).rightJustified(justify_playlist, ' ')+": "+QString::number(block->l.num).rightJustified(justify_blocklist, ' ')+"/"+QString(block->name));
-
-    lokke++;
-    block=BL_GetBlockFromPos(lokke);
-  }
-
-  bs->playlist.insertItem(" "); // Make it possible to put a block at the end of the playlist.
-
-  BS_SelectPlaylistPos(pos);
-}
-*/
 
 void BS_SelectBlock(struct Blocks *block){
   ScopedVisitors v;
-  g_bs->blocklist.setSelected(block->l.num, true);
-}
-
-void BS_SelectBlocklistPos(int pos){
-  {
-    ScopedVisitors v;
-    //printf("selectblocklistpos %d, %d. Length: %d\n",pos, pos % (g_bs->blocklist.count()), g_bs->blocklist.count());
-
-    pos = pos % int(g_bs->blocklist.count());
-
-    int safe = 1000;
-    while(pos < 0 && safe > 0){
-      pos += g_bs->blocklist.count();
-      safe--;
-    }
-
-    EVENTLOG_add_event("BS_SelectBlocklistPos 1");
-    
-    g_bs->blocklist.setSelected(pos, true);
-  }
-
-  EVENTLOG_add_event("BS_SelectBlocklistPos 2");
-  
-  g_bs->blocklist_highlighted(pos);
-  //selectBlock(pos, -1);
-  //g_bs->blocklist.setSelected(pos, true);
-  
-  //printf("selectblocklistpos. Curr pos: %d", g_bs->blocklist.currentRow());
+  //g_bs->blocklist.setSelected(block->l.num, true);
+  // TODO: Update blocklists. Call scheme.
+  R_ASSERT_NON_RELEASE(currentBlock(-1)==block->l.num);
+  BS_UpdateBlockList();
 }
 
 void BS_SelectPlaylistPos(int pos, bool change_song_pos_too){
@@ -1298,73 +338,21 @@ void BS_SelectPlaylistPos(int pos, bool change_song_pos_too){
 
     //int orgpos = pos;
 
-    if (g_bs->playlist.count() != get_playlist_elements().size())
-      update_playlist();
+    //update_playlist();
       
-    if (g_bs->playlist.count()==0){
-      R_ASSERT_NON_RELEASE(false);
-      return;
-    }
-    
-    pos = pos % int(g_bs->playlist.count());
-
-    int safe = 1000;
-    while(pos < 0 && safe > 0){
-      pos += g_bs->playlist.count();
-      safe--;
-    }
-
-    //printf("Setting pos to %d. (%d). Size: %d. Change song pos: %d\n", pos, orgpos, g_bs->playlist.count(), change_song_pos_too);
-    
-    if(!is_playing_song() || change_song_pos_too)
-      g_bs->playlist.setSelected(pos, true);
-
-    g_bs->handle_select_playlist_element(pos, change_song_pos_too);
+    if(change_song_pos_too || !is_playing_song())
+      setCurrPlaylistPos(pos, true, change_song_pos_too);
   }
 }
 
-struct SeqBlock *BS_GetPrevPlaylistBlock(void){
+struct SeqBlock *BS_GetSeqBlockFromPos(int pos){ 
   ScopedVisitors v;
-  return g_bs->get_prev_playlist_block();
-}
+  const PlaylistElement pe = get_playlist_element(pos);
   
-struct SeqBlock *BS_GetNextPlaylistBlock(void){
-  ScopedVisitors v;
-  return g_bs->get_next_playlist_block();
-}
-
-struct SeqBlock *BS_GetSeqBlockFromPos(int pos){
-  ScopedVisitors v;
-  return g_bs->get_seqblock_from_pos(pos);
-}
-
-void BS_SelectPlaylistPosFromSeqblock(struct SeqBlock *seqblock, bool change_song_pos_too){
-  int i = 0;
-  for(const auto &el : get_playlist_elements()){
-    if (!el.is_pause() && el.seqblock==seqblock){
-      if (el.is_current==false)
-        BS_SelectPlaylistPos(i, change_song_pos_too);
-      return;
-    }
-    i++;
-  }
-}
-
-/*
-struct Blocks *BS_GetBlockFromPos(int pos){
-  ScopedVisitors v;
-  return g_bs->get_block_from_pos(pos);
-}
-*/
-
-int BS_GetCurrBlocklistPos(void){
-  ScopedVisitors v;
-  return g_bs->blocklist.currentRow();
-}
-
-int BS_GetCurrPlaylistPos(void){
-  ScopedVisitors v;
-  return g_bs->playlist.currentRow();
+  if (pe.is_illegal())
+    return NULL;
+  
+  return pe.seqblock;
 }
 
 void BS_call_very_often(void){
@@ -1373,23 +361,13 @@ void BS_call_very_often(void){
   //  return;
   
   ScopedVisitors v;
-  if (is_called_every_ms(70))
-    return g_bs->call_very_often();
-}
+  
+  if (is_called_every_ms(70)){
 
-#if 0
-static void set_widget_width(int width){
-  QWidget *main_window = static_cast<QWidget*>(root->song->tracker_windows->os_visual.main_window);
-  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-  radium::Splitter *splitter = editor->xsplitter;
-
-  QValueList<int> currentSizes = splitter->sizes();
-  g_bs->last_shown_width = currentSizes[1];
-  currentSizes[0] = main_window->width()-width;
-  currentSizes[1] = width;
-  splitter->setSizes(currentSizes);
+    if (is_playing() && pc->playtype==PLAYSONG)
+      API_setCurrPlaylistPos_while_playing();
+  }
 }
-#endif
 
 bool GFX_PlaylistWindowIsVisible(void){
   return !g_is_hidden;
@@ -1398,51 +376,23 @@ bool GFX_PlaylistWindowIsVisible(void){
 void GFX_PlayListWindowToFront(void){
   ScopedVisitors v;
 
-  /*
-   not necessary to call these two since both blocklist and playlist are updated when playlist is not visible.
-  BS_UpdateBlockList();
-  BS_UpdatePlayList();
-  */
+  g_block_and_playlist->show();
   
-  //set_widget_width(g_bs->last_shown_width > 30 ? g_bs->last_shown_width : 200);
-  g_bs->show();
-  
-#if 0
-  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-  radium::Splitter *splitter = editor->xsplitter;
-  splitter->addWidget(g_bs);
-#endif
-
   g_is_hidden = false;
 }
 
 void GFX_PlayListWindowToBack(void){
   ScopedVisitors v;
 
-#if 0
-  // Perhaps a value in percentage of screen would work. But the default size (200) is best anyway.
-  if(g_bs->width() > 30)
-    SETTINGS_write_int((char*)"blocklist_width",g_bs->width());
-#endif
-
-  //set_widget_width(0);
-  g_bs->hide();
+  g_block_and_playlist->hide();
   g_is_hidden = true;
 }
 
 void GFX_showHidePlaylist(struct Tracker_Windows *window){
   ScopedVisitors v;
 
-#if 0
-  if(g_bs->width() < 10)
-    GFX_PlayListWindowToFront();
-  else
-    GFX_PlayListWindowToBack();
-#endif
   if(g_is_hidden)
     GFX_PlayListWindowToFront();
   else
     GFX_PlayListWindowToBack();
 }
-
-#include "mQt_Bs_edit.cpp"

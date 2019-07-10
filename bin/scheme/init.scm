@@ -124,7 +124,13 @@ FROM_C-paint-seqblock-stuff
 FROM_C-paint-sequencer-grid
 FROM_C-call-me-when-curr-seqtrack-has-changed
 
-    ;; git grep S7CALL2|cut -f2 -d"\""
+;; git grep S7CALL2|cut -f2 -d"\""
+FROM_C-playlist-insert!
+FROM_C-playlist-remove!
+FROM_C-recreate-block/audio-list-guis
+FROM_C-update-playlist-area
+FROM_C-recreate-playlist-area
+FROM_C-create-bock-and-playlist-gui
 FROM_C-call-me-when-num-seqtracks-might-have-changed
 FROM_C-reconfigure-editor-lower-part-gui!
 FROM_C-reconfigure-editor-lower-part-gui!
@@ -164,6 +170,7 @@ select-track-instrument
 async-replace-instrument
 async-load-instrument-preset
 create-instrument-popup-menu
+FROM-C-generate-new-color-for-all-selected-seqblocks
 FROM-C-generate-new-color-for-all-selected-instruments
 FROM_C-set-solo-for-instruments
 FROM_C-set-mute-for-instruments
@@ -264,7 +271,7 @@ FROM_C-jump-to-mark
 
 
 (define (eq2? a b)
-  (when (not (<ra> :release-mode))
+  (when (not (ra:release-mode))
     (assert (symbol? a))
     (assert (symbol? b)))
   (eq? a b))

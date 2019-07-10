@@ -63,6 +63,85 @@
                             (func seqtracknum seqblocknum)))))
   
 
+(define (move-seqblock! seqblockid new-start-time)
+  (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
+  (define seqblocks (to-list (<ra> :get-seqblocks-state seqtracknum)))
+  (define new-seqblocks
+    (let loop ((seqblocks seqblocks))
+      (if (null? seqblocks)
+          '()
+          (let ((seqblock (car seqblocks)))
+            (if (= (seqblock :id) seqblockid)
+                (let* ((start-time (seqblock :start-time))
+                       (diff (- new-start-time start-time)))
+                  (cons (copy-hash seqblock
+                                   :start-time new-start-time
+                                   :end-time (+ (seqblock :end-time) diff))
+                        (cdr seqblocks)))
+                (cons seqblock
+                      (loop (cdr seqblocks))))))))
+  (try-finally
+   :try (lambda ()
+          (<ra> :create-gfx-seqblocks-from-state new-seqblocks seqtracknum)
+          (<ra> :undo-sequencer)
+          (<ra> :apply-gfx-seqblocks seqtracknum))
+   :failure (lambda ()
+              (<ra> :cancel-gfx-seqblocks seqtracknum))))
+
+(define (swap-seqblock-with-next! id1)
+  (define seqtracknum (<ra> :get-seqblock-seqtrack-num id1))
+  (define seqblocks (to-list (<ra> :get-seqblocks-state seqtracknum)))
+  (define new-seqblocks
+    (let loop ((seqblocks seqblocks))
+      (if (or (null? seqblocks)
+              (null? (cdr seqblocks)))
+          seqblocks
+          (let ((seqblock1 (car seqblocks)))
+            (if (= (seqblock1 :id) id1)
+                (let* ((seqblock2 (cadr seqblocks))
+                       (start1 (seqblock1 :start-time))
+                       (end1 (seqblock1 :end-time))
+                       (start2 (seqblock2 :start-time))
+                       (end2 (seqblock2 :end-time)))
+                  (cons (copy-hash seqblock2
+                                   :start-time start1
+                                   :end-time (+ start1 (- end2 start2)))
+                        (cons (copy-hash seqblock1
+                                         :start-time start2
+                                         :end-time (+ start2 (- end1 start1)))
+                              (cddr seqblocks))))
+                (cons seqblock1
+                      (loop (cdr seqblocks))))))))
+  (try-finally
+   :try (lambda ()
+          (<ra> :create-gfx-seqblocks-from-state new-seqblocks seqtracknum)
+          (<ra> :undo-sequencer)
+          (<ra> :apply-gfx-seqblocks seqtracknum))
+   :failure (lambda ()
+              (<ra> :cancel-gfx-seqblocks seqtracknum))))
+
+(define (insert-pause-in-seqtrack! seqtracknum pos duration)
+  (define seqblocks (to-list (<ra> :get-seqblocks-state seqtracknum)))
+  (define new-seqblocks
+    (let loop ((seqblocks seqblocks))
+      (if (null? seqblocks)
+          seqblocks
+          (let ((seqblock (car seqblocks)))            
+            (cons (if (>= (seqblock :start-time) pos)
+                      (copy-hash seqblock
+                                 :start-time (+ (seqblock :start-time) duration)
+                                 :end-time (+ (seqblock :end-time) duration))
+                      seqblock)
+                  (loop (cdr seqblocks)))))))
+  (try-finally
+   :try (lambda ()
+          (<ra> :create-gfx-seqblocks-from-state new-seqblocks seqtracknum)
+          (<ra> :undo-sequencer)
+          (<ra> :apply-gfx-seqblocks seqtracknum))
+   :failure (lambda ()
+              (<ra> :cancel-gfx-seqblocks seqtracknum))))
+  
+         
 
 ;; see enum SeqtrackHeightType in nsmtracker.h
 (define (get-seqtrack-height-type boxname)
@@ -282,11 +361,15 @@
 (define (set-max-seqtrack-size seqtracknum)
   (select-seqtrack-size-type seqtracknum #f))
 
+(define *block-and-playlist-area* #f)
+
 (define (FROM_C-call-me-when-curr-seqtrack-has-changed seqtracknum)
   (if (and *curr-seqtrack-size-type-gui*
            (<gui> :is-open *curr-seqtrack-size-type-gui*)
            (<gui> :is-visible *curr-seqtrack-size-type-gui*))
-      (show-select-both-seqtrack-size-types-gui seqtracknum)))
+      (show-select-both-seqtrack-size-types-gui seqtracknum))
+  (if *block-and-playlist-area*
+      (*block-and-playlist-area* :recreate)))
 
 (define (get-nonstretched-seqblock-duration seqblocknum seqtracknum)
   (- (<ra> :get-seqblock-interior-end seqblocknum seqtracknum)

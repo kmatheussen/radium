@@ -624,9 +624,9 @@
                            :color
                            :border-color #f
                            :border 0.5
-                           :border-rounding 2
+                           :border-rounding 0
                            :paint-border #t)
-  (define b border)
+  (define b (min 2 (round border)))
   (define slider-length (- slider-pos2 slider-pos1))
 
   (if (not border-color)

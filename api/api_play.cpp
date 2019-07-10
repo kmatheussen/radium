@@ -91,7 +91,7 @@ void setSongPos(int64_t pos){
     return;
   }
 
-  PLAYER_set_song_pos(pos, -1, false);
+  PLAYER_set_song_pos(pos, -1, false, true);
 }
 
 int64_t getSongPos(void){

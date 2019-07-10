@@ -473,6 +473,8 @@
 
                           (for-each-seqtracknum (lambda (seqtracknum) ;; cancel everyone just in case, plus that seqtracknum may chang when moving things to another seqtrack.
                                                   (<ra> :cancel-gfx-seqblocks seqtracknum)))
+
+                          (<ra> :lock-curr-playlist-pos-to-curr-seqblock #f)
                           
                           (when *current-seqblock-info*
                             (c-display "\n\n\n  ************** CANCELLING **********\n\n\n\n")
@@ -5661,7 +5663,8 @@
   (set! *current-seqblocks-state* seqblocks)
 
   (set-current-seqblock! seqtracknum (seqblock :id))
-
+  (<ra> :lock-curr-playlist-pos-to-curr-seqblock #t)
+   
   (define start-pos (seqblock :start-time))
   (define curr-pos start-pos)
 
@@ -5893,6 +5896,7 @@
 
   :release ()
   (begin
+    (<ra> :lock-curr-playlist-pos-to-curr-seqblock #f)
     (if has-moved
         (try-finally :try (lambda ()
                             (maybe-make-undo)
@@ -7603,11 +7607,11 @@
                                                   "Rename"
                                                   :enabled seqblock-info
                                                   (lambda ()
-                                                    (let* ((old-name (<ra> :get-seqblock-name seqblocknum seqtracknum))
+                                                    (let* ((old-name (<ra> :get-seqblock-name seqblockid))
                                                            (new-name (<ra> :request-string "New name:" #t old-name)))
                                                       (when (and (not (string=? new-name ""))
                                                                  (not (string=? new-name old-name)))
-                                                        (<ra> :set-seqblock-name new-name seqblocknum seqtracknum)))))
+                                                        (<ra> :set-seqblock-name new-name seqblockid)))))
                                                  
                                                  (list "Configure color"
                                                        :enabled seqblock-info
@@ -7623,6 +7627,7 @@
                                                  
                                                  (list "Generate new color"
                                                        :enabled seqblock-info
+                                                       :shortcut ra:generate-new-color-for-all-selected-seqblocks
                                                        (lambda ()
                                                          (let ((color (<ra> :generate-new-block-color 1.0)))
                                                            (if blocknum

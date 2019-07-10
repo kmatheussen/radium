@@ -171,7 +171,7 @@
 
       (if (or (not old-seqblockid)
               (not (= old-seqblockid seqblockid)))
-          (<gui> :set-window-title window (<ra> :get-seqblock-name seqblocknum seqtracknum)))
+          (<gui> :set-window-title window (<ra> :get-seqblock-name seqblockid)))
 
       (area :get-position
             (lambda (x1 y1 x2 y2 width height)

@@ -645,7 +645,7 @@ void PlaySongCurrPos(void){
   
   struct WBlocks *wblock=root->song->tracker_windows->wblock;
   
-  int playlistpos = BS_GetCurrPlaylistPos();
+  int playlistpos = getCurrPlaylistPos(); //BS_GetCurrPlaylistPos();
 
   struct SeqBlock *seqblock = BS_GetSeqBlockFromPos(playlistpos);
   if (seqblock==NULL){
@@ -681,7 +681,7 @@ void PlaySongFromStart(void){
     PlaySong(0);
 }
 
-void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool called_from_jack_transport){
+void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool called_from_jack_transport, bool update_curr_seqblock){
   
   //static int callnum = 0; int l_callnum = callnum++; printf("        >>> %d: PLAYER_set_song_pos called: abs: %d. absabs: %d. From jack transport: %d\n", l_callnum, (int)pos, (int)absabstime, called_from_jack_transport);
 
@@ -739,8 +739,9 @@ void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool called_from_jack_
       VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, &seqtrack->seqblocks){
         
         if(pos >= seqblock->t.time && pos < seqblock->t.time2){
-          
-          setCurrSeqblock(seqblock->id);
+
+          if (update_curr_seqblock)
+            setCurrSeqblock(seqblock->id);
           
           const struct Blocks *block = seqblock->block;
           

@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/settings_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/player_pause_proc.h"
+#include "../common/player_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -53,6 +54,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "radium_proc.h"
 
 extern struct TEvent tevent;
+
+int64_t g_curr_seqblock_id = -2;
 
 
 
@@ -293,7 +296,6 @@ void deleteSeqtrack(int seqtracknum){
 
 void API_curr_seqtrack_has_changed(void){
   S7EXTRA_GET_FUNC(func, "FROM_C-call-me-when-curr-seqtrack-has-changed");
-  
   S7CALL(void_int, func, ATOMIC_GET(root->song->curr_seqtracknum));
 }
 
@@ -2119,13 +2121,213 @@ void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
   SEQTRACK_insert_silence(seqtrack, pos, duration);
 }
 
+static int g_curr_playlist_pos = 0;
+
+#if 0
+static int get_num_playlist_entries(const struct SeqTrack *seqtrack){
+  int ret = 0;
+  
+  int64_t last_end_seq_time = 0;
+  
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
+    
+    int64_t next_last_end_seq_time = seqblock->t.time2;
+    
+    int64_t pause_time = seqblock->t.time - last_end_seq_time;
+    
+    if (pause_time > 0)
+      ret++;
+
+    ret++;
+    
+    last_end_seq_time = next_last_end_seq_time;
+    
+  }END_VECTOR_FOR_EACH;
+
+  return ret + 1;
+}
+#endif
+
+static bool g_curr_playlist_pos_locked_to_seqblock = false;
+
+int getCurrPlaylistPos(void){
+  
+  if (g_curr_playlist_pos_locked_to_seqblock)
+    return getPlaylistPosForSeqblock(g_curr_seqblock_id);
+  
+  if (is_playing() && pc->playtype==PLAYSONG) {
+    
+    struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+    
+    double current_seq_time = ATOMIC_DOUBLE_GET_RELAXED(seqtrack->start_time_nonrealtime);
+    
+    int64_t last_end_seq_time = 0;
+
+    int ret = 0;
+    
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
+      
+      int64_t next_last_end_seq_time = seqblock->t.time2;
+      
+      int64_t pause_time = seqblock->t.time - last_end_seq_time;
+        
+        if (pause_time > 0){
+          if (current_seq_time >= last_end_seq_time && current_seq_time < seqblock->t.time){
+            return ret;
+          }
+
+          ret++;
+        }
+        
+        {
+          if (current_seq_time >= seqblock->t.time && current_seq_time < next_last_end_seq_time){
+            return ret;
+          }
+        }
+
+        ret++;
+        
+        last_end_seq_time = next_last_end_seq_time;
+        
+    }END_VECTOR_FOR_EACH;
+  }
+
+  return g_curr_playlist_pos;
+}
+
+// not an API function.
+void API_setCurrPlaylistPos_while_playing(void){
+  int new_pos = getCurrPlaylistPos();
+  
+  if (g_curr_playlist_pos==new_pos)
+    return;
+  
+  g_curr_playlist_pos = new_pos;
+
+  S7CALL2(void_void, "FROM_C-update-playlist-area");
+}
+
+static void set_curr_seqblock(int64_t seqblockid, bool update_playlist);
+
+static void set_curr_playlist_pos(int new_pos, bool update_seqblock, bool also_set_new_song_pos){
+
+  if (new_pos < 0)
+    new_pos = 0;
+
+  //  int num_entries = get_num_playlist_entries(SEQUENCER_get_curr_seqtrack());
+    
+  const struct SeqBlock *seqblock_at_pos = NULL;
+  int64_t time_at_pos = 0;
+  
+  {
+    int64_t last_end_seq_time = 0;
+    
+    int pos = 0;
+
+    const struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+        
+    VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
+      
+      int64_t next_last_end_seq_time = seqblock->t.time2;
+      
+      int64_t pause_time = seqblock->t.time - last_end_seq_time;
+      
+      if (pause_time > 0){
+        if (pos==new_pos)
+          goto gotit;
+        
+        pos++;
+      }
+
+      time_at_pos = seqblock->t.time;
+      
+      if (pos==new_pos){
+        seqblock_at_pos = seqblock;
+        goto gotit;
+      }
+      
+      pos++;
+      
+      last_end_seq_time = next_last_end_seq_time;
+      time_at_pos = last_end_seq_time;
+      
+    }END_VECTOR_FOR_EACH;
+    
+    new_pos = pos; // make sure new_pos has a legal value
+  }
+
+  
+ gotit:
+  
+  if (new_pos == g_curr_playlist_pos)
+    return;
+
+  g_curr_playlist_pos = new_pos;
+
+  if (update_seqblock) {
+    
+    if (seqblock_at_pos != NULL)
+      set_curr_seqblock(seqblock_at_pos->id, false);
+  }
+
+  if (also_set_new_song_pos)
+    PLAYER_set_song_pos(time_at_pos, -1, false, false);
+  
+  S7CALL2(void_void, "FROM_C-update-playlist-area");
+}
+
+void setCurrPlaylistPos(int new_pos, bool also_set_curr_seqblock, bool also_set_new_song_pos){
+  set_curr_playlist_pos(new_pos, also_set_curr_seqblock, also_set_new_song_pos);
+}
+
+void lockCurrPlaylistPosToCurrSeqblock(bool doit){
+  g_curr_playlist_pos_locked_to_seqblock = doit;
+}
+
+int64_t getPlaylistPosTime(int daspos){
+  if (daspos==-1)
+    daspos = getCurrPlaylistPos();
+
+  {
+    int64_t last_end_seq_time = 0;
+    
+    int pos = 0;
+    
+    const struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+    
+    VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
+      
+      int64_t next_last_end_seq_time = seqblock->t.time2;
+      
+      int64_t pause_time = seqblock->t.time - last_end_seq_time;
+      
+      if (pause_time > 0){
+        if (pos==daspos)
+          return last_end_seq_time;
+        
+        pos++;
+      }
+
+      if (pos==daspos)
+        return seqblock->t.time;
+      
+      pos++;
+      
+      last_end_seq_time = next_last_end_seq_time;
+      
+    }END_VECTOR_FOR_EACH;
+
+    return last_end_seq_time;
+  }
+
+}
 
 void playlistInsert(void){
-  PLAYLIST_insert();
+  S7CALL2(void_void, "FROM_C-update-playlist-area");
 }
 
 void playlistRemove(void){
-  PLAYLIST_remove();
+  S7CALL2(void_void, "FROM_C-playlist-remove!");
 }
 
 static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
@@ -2210,6 +2412,9 @@ int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
 }
 
 int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, int64_t endpos){
+  if (pos==-1)
+    pos = getSongPos();
+  
   VALIDATE_TIME(pos, -1);
   
   struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
@@ -2312,6 +2517,16 @@ dyn_t getSeqblocksState(int seqtracknum){
   return SEQTRACK_get_seqblocks_state(seqtrack);
 }
 
+dyn_t getGfxSeqblocksState(int seqtracknum){
+  const struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL){
+    handleError("getSeqblocksState: No sequencer track %d", seqtracknum);
+    return g_empty_dynvec;
+  }
+
+  return SEQTRACK_get_gfx_seqblocks_state(seqtrack);
+}
+
 void createGfxSeqblocksFromState(dyn_t seqblocks_state, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL){
@@ -2367,12 +2582,43 @@ void applyGfxSeqblocks(int seqtracknum){
   R_ASSERT_NON_RELEASE(seqtrack->gfx_seqblocks==NULL);
 }
 
+int getPlaylistPosForSeqblock(int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return 0;
+
+  int ret = 0;
+  int64_t last_end_seq_time = 0;
+  
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
+    
+    int64_t next_last_end_seq_time = seqblock->t.time2;
+    
+    int64_t pause_time = seqblock->t.time - last_end_seq_time;
+    
+    if (pause_time > 0)
+      ret++;
+
+    if (seqblock->id == seqblockid)
+      return ret;
+
+    ret++;
+    
+    last_end_seq_time = next_last_end_seq_time;
+    
+  }END_VECTOR_FOR_EACH;
+
+  R_ASSERT_NON_RELEASE(false);
+  
+  return 0;
+}
+
 
 // seqblocks
 
-int64_t g_curr_seqblock_id = -2;
+static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
 
-void setCurrSeqblock(int64_t seqblockid){ 
   if (seqblockid < 0 && seqblockid!=-2){
     handleError("setCurrSeqblock: Illegal id: %d. Must be -2, 0, or higher", (int)seqblockid);
     return;
@@ -2415,7 +2661,7 @@ void setCurrSeqblock(int64_t seqblockid){
 
   if (g_is_changing_curr_seqtrack==0)
     setCurrSeqtrack2(seqtracknum, true);
-    
+
   SEQBLOCK_update_with_borders(seqtrack, seqblock);
   
   if(seqblock->block != NULL){
@@ -2424,8 +2670,11 @@ void setCurrSeqblock(int64_t seqblockid){
     S7CALL(void_int_int, func, seqtracknum, seqblocknum);
   }
 
-  BS_SelectPlaylistPosFromSeqblock(seqblock, false);
-
+  if(update_playlist){
+    int pos = getPlaylistPosForSeqblock(seqblock->id);
+    set_curr_playlist_pos(pos, false, false);
+  }
+  
   if (!is_playing_song())
     if (seqblock->block != NULL)
       selectBlock(seqblock->block->l.num, -1);
@@ -2435,6 +2684,10 @@ void setCurrSeqblock(int64_t seqblockid){
       seqtrack->last_curr_seqblock_id = -2;
     }END_ALL_SEQTRACKS_FOR_EACH;
   }
+}
+
+void setCurrSeqblock(int64_t seqblockid){
+  set_curr_seqblock(seqblockid, true);
 }
 
 bool seqblockIsAlive(int64_t seqblockid){
@@ -2649,15 +2902,15 @@ dynvec_t getBlockUsageInSequencer(void){
   return dynvec;
 }
 
-void setSeqblockName(const_char* new_name, int seqblocknum, int seqtracknum){
+void setSeqblockName(const_char* new_name, int64_t seqblockid){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, false);
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
   if (seqblock==NULL)
     return;
 
   if (seqblock->block==NULL) {
-    
-    undoSeqblock(seqblocknum, seqtracknum);
+
+    UNDO_SEQBLOCK_2(seqblockid);
     seqblock->name = STRING_create(new_name);
     
   } else {
@@ -2671,9 +2924,9 @@ void setSeqblockName(const_char* new_name, int seqblocknum, int seqtracknum){
   SEQUENCER_update(SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST);
 }
   
-const_char* getSeqblockName(int seqblocknum, int seqtracknum){
+const_char* getSeqblockName(int64_t seqblockid){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, false);
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
   if (seqblock==NULL)
     return "";
 
@@ -3577,6 +3830,10 @@ bool isSeqblockSelected(int seqblocknum, int seqtracknum){
     return false;
 
   return seqblock->is_selected;
+}
+
+void generateNewColorForAllSelectedSeqblocks(float mix_background){
+  S7CALL2(void_float, "FROM-C-generate-new-color-for-all-selected-seqblocks", mix_background);
 }
 
 void unsetAllSelectedSeqblocks(void){

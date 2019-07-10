@@ -458,6 +458,7 @@ extern LANGSPEC struct SeqTrack *SEQTRACK_create_from_playlist(const int *playli
 
 extern LANGSPEC void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struct SeqTrack *seqtrack, const int seqtracknum, enum ShowAssertionOrThrowAPIException error_type);
 extern LANGSPEC dyn_t SEQTRACK_get_seqblocks_state(const struct SeqTrack *seqtrack);
+extern LANGSPEC dyn_t SEQTRACK_get_gfx_seqblocks_state(const struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_cancel_gfx_seqblocks(struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtracknum, bool seqtrack_is_live);
 
