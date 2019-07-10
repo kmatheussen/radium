@@ -1,3 +1,52 @@
+Changes 5.9.69 -> 5.9.71:
+* Editor: Fix displaying sample filenames with
+  non-ascii characters when current seqtrack is for
+  audio files.
+* Sequencer: Fix displaying window title for track
+  on/off-window when opened the first time.
+* GUI: Don't apply scrollbar state to vertical list
+  area when scrollbar is not visible.
+* Scripting: Update S7.
+* Playlist: Rewritten:
+  * Somewhat nicer graphics
+  * The assertion window should not popup anymore in
+    various situations.    
+* Sequencer: Bind C key to change color for all
+  selected seqblocks.
+* GUI: Make scrollbars look slightly better.
+* GUI: Don't show scrollbars if everything fits. 
+* Scripting: Make linter check arguments for some
+  types when calling global functions.
+* Scripting: Add signatures for the ra: functions.
+* Scripting: Make linter check arguments for local
+  functions, not only global functions.
+* Sequencer: Let the keybinding F + SHIFT_L append
+  block, R + CTRL_L to delete block, and I + CTRL_L
+  to insert block. The same keybindings are in the
+  editor. Added because the sequencer has a block
+  browser.
+* Scripting: Arity-check calls to functions defined
+  by lambda* and define*, not only lambda and define.
+* Audio: Let Shift + Ctrl + M switch metronome
+  on/off.
+* API:
+  * New: switchMetronome, gui_isDoubleClicking,
+    getTimeStringFromFrames, getCurrPlaylistPos,
+    setCurrPlaylistPos,
+    lockCurrPlaylistPosToCurrSeqblock,
+    getPlaylistPosTime, getPlaylistPosForSeqblock,
+    generateNewColorForAllSelectedSeqblocks.
+  * Change setSeqblockName and getSeqblockName to
+    take seqblockid as argument instead of
+    seqblocknum+seqtracknum.
+  * Let -1 (current position) be the default
+    argument for "pos" in createSampleSeqblock.
+  * setSeqblockName takes base64 string by default.
+  * getSeqblockName now returns base64 string.
+  * gui_setWindowTitle takes optional argument
+    'name_is_base64'. Argument is false by default.
+
+
 Changes 5.9.67 -> 5.9.69:
 * Playlist: Fix a crash that could happen in
   various situations, for instance when creating a
