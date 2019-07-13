@@ -1664,8 +1664,15 @@ static hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_
     HASH_put_float(state, "custom_max_height", seqtrack->custom_max_height);
 
   if (seqtrack->for_audiofiles){
+    
     HASH_put_bool(state, "use_custom_recording_config", seqtrack->use_custom_recording_config);
     HASH_put_hash(state, "recording_config", get_state_from_recording_config(seqtrack->custom_recording_config));
+    
+  } else {
+
+    HASH_put_float(state, "note_gain", seqtrack->note_gain);
+    HASH_put_bool(state, "note_gain_muted", seqtrack->note_gain_muted < 0.5);
+    
   }
   
   return state;
@@ -1896,9 +1903,21 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
   }
 
   if(seqtrack->for_audiofiles){
+    
     R_ASSERT(has_for_audiofiles_key);
     R_ASSERT(patch!=NULL);
     seqtrack->patch = patch;
+    
+  } else {
+
+    if (HASH_has_key(state, "note_gain")) {
+      
+      seqtrack->note_gain = HASH_get_float(state, "note_gain");
+      seqtrack->note_gain_muted = HASH_get_bool(state, "note_gain_muted") ? 0.0 : 1.0;
+      seqtrack->note_gain_has_changed_this_block = true;
+
+    }
+    
   }
   
   if (HASH_has_key(state, "name"))
