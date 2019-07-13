@@ -359,10 +359,12 @@
                                               (set! color (<gui> :set-alpha-for-color color 0.1)))
                                           (cond ;((eq? (entry :type) 'pause)
                                         ; "color9");;#f) ;;"#666666")
-                                                ((is-current?)
-                                                 "color11")
-                                                (else
-                                                 color)))
+                                           ((is-current?)
+                                            (if color
+                                                (<gui> :mix-colors "color11" color 0.95)
+                                                "color11"))
+                                           (else
+                                            color)))
                       :text-color (lambda ()
                                     (cond ((is-current?)
                                            *text-color*)
