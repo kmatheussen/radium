@@ -1,3 +1,15 @@
+Changes 5.9.71 -> 5.9.72:
+* Playlist: Fix background color for current entry.
+* Editor: Add option in the Preferences GUI to
+  disable updating waveforms during playback.
+* Build: Check that Qt is at least V5.10 before
+  starting to compile.
+* Sequencer: Fix saving editor seqtrack volume and
+  mute to disk.
+* GUI: Ensure new windows are placed on the same
+  screen as the main window.
+
+
 Changes 5.9.69 -> 5.9.71:
 * Editor: Fix displaying sample filenames with
   non-ascii characters when current seqtrack is for
