@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>7</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -1807,7 +1807,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>40</height>
+           <height>20</height>
           </size>
          </property>
         </spacer>
@@ -2324,6 +2324,14 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="text">
           <string>Colored tracks</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="update_waveforms_during_playback">
+         <property name="text">
+          <string>Update waveforms during playback
+(Workaround for slow graphical performance when e.g. automating Finetune)</string>
          </property>
         </widget>
        </item>

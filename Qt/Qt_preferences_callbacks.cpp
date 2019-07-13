@@ -534,6 +534,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
       colorTracksOnoff->setChecked(GL_get_colored_tracks());
 
+      update_waveforms_during_playback->setChecked(SETTINGS_read_bool("enable_editor_rerendering_during_playback",true));
+
       scrollplay_onoff->setChecked(doScrollPlay());
 
       multiplyscrollbutton->setChecked(doScrollEditLines());
@@ -732,6 +734,13 @@ public slots:
   void on_colorTracksOnoff_toggled(bool val){
     if (_initing==false)
       GL_set_colored_tracks(val);
+  }
+  
+  void on_update_waveforms_during_playback_toggled(bool val){
+    if (_initing==false){
+      SETTINGS_write_bool("enable_editor_rerendering_during_playback",val);
+      g_rt_do_rerendering = val;
+    }
   }
   
   void on_show_playlist_during_startup_toggled(bool val){
