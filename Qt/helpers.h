@@ -5,11 +5,11 @@
 #include <QMenu>
 #include <QTimer>
 #include <QTime>
-//#include <QSplashScreen>
 #include <QApplication>
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <QGuiApplication>
+#include <QScreen>
 #include <QPointer>
 #include <QDesktopWidget>
 #include <QMouseEvent>
@@ -147,12 +147,39 @@ static inline QPoint getCentrePosition(QWidget *parent, int width, int height, Q
 
   if (parentRect.isNull() || parentRect.isEmpty() || !parentRect.isValid()) {
     
-    if (parent==NULL || parent->isVisible()==false)
-      // Move to middle of screen instead.
-      parentRect = QApplication::desktop()->availableGeometry();
-    else
+    if (parent==NULL || parent->isVisible()==false) {
+      
+      if (g_main_window != NULL) {
+        
+        // Move to middle of main window.
+        parentRect = g_main_window->window()->frameGeometry();
+        
+      } else {
+        
+        // Move to middle of screen instead.
+        QScreen *screen = QApplication::screens().first();
+        
+        if(screen != NULL) {
+          
+          parentRect = screen->availableGeometry();
+          
+        } else {
+          
+          fprintf(stderr, "Warning: No screens found\n");
+#if !defined(RELEASE)
+          abort();
+#endif
+          return QPoint(100,100);
+          
+        }
+        
+      }
+      
+    } else {
+      
       parentRect = parent->window()->frameGeometry();
-    
+
+    }
   }
   
   int x = parentRect.x() + (parentRect.width() - width)/2;
