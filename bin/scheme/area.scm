@@ -1145,16 +1145,19 @@
     (if (procedure? slider-length)
         (slider-length)
         slider-length))
-  
+
+  (define (set-legal-slider-pos! new-pos call-callback?)
+    (set! slider-pos (between 0
+                              new-pos
+                              (- 1.0 (get-slider-length))))
+    (if call-callback?
+        (report!))
+    (update-me!))
+
   (add-method! :get-slider-pos (lambda () slider-pos))
 
-  (add-method! :set-slider-pos!
-               (lambda (new-slider-pos call-callback?)
-                 (set! slider-pos new-slider-pos)
-                 (if call-callback?
-                     (report!))
-                 (update-me!)))
-  
+  (add-method! :set-slider-pos! set-legal-slider-pos!)
+                 
   (define is-moving #f)
   
   (define-override (paint)
@@ -1190,26 +1193,14 @@
             (update-me!)
             #t)))
    (lambda (button x* y* dx dy)
-     ;;(define bef-slider-pos slider-pos)
-     (set! slider-pos (between 0
-                               (+ start-mouse-pos
-                                  (scale (if vertical dy dx)
-                                         0 (if vertical
-                                               (- height (* b 2))
-                                               (- width (* b 2)))
-                                         0 1))
-                               (- 1.0 (get-slider-length))))
-     ;;(c-display "  MOVE. y:" y* ". dy:" dy ". bef slider-pos:" bef-slider-pos ". slider-pos:" slider-pos)
-
-     ;;(c-display "move"
-     ;;           :slider-pos slider-pos
-     ;;           :start-mouse-pos start-mouse-pos
-     ;;           :scale (scale (if vertical dy dx)
-     ;;                         0 (if vertical height width)
-     ;;                         0 1))
-     (report!)
-     (update-me!)
-     )
+     (set-legal-slider-pos! (+ start-mouse-pos
+                               (scale (if vertical dy dx)
+                                      0 (if vertical
+                                            (- height (* b 2))
+                                            (- width (* b 2)))
+                                      0 1))
+                            #t))
+   
    (lambda (button x* y* dx dy)
      (set-mouse-pointer ra:set-open-hand-mouse-pointer gui)
      (set! is-moving #f)
@@ -1345,8 +1336,8 @@
               (not all-fits))
       (define dy (+ (state :start-y1) (- y1 (state :y1))))
       ;;(c-display "     apply-state!. Position dy:" dy)
-      (scrollbar :set-slider-pos! (state :slider-pos) #f)
-      (position-areas! dy)))
+      (scrollbar :set-slider-pos! (state :slider-pos) #t)))
+;;      (position-areas! dy)))
 
   (define (position-areas! start-y1)
     (remove-sub-areas!)
