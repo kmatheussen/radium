@@ -378,6 +378,8 @@
                       :text-is-base64 #t
                       ))
 
+  (area :add-method! :is-current? is-current?)
+                                    
   (area :add-mouse-cycle! (lambda (button x* y*)
                             ;;(if (entry :seqblockid)
                             ;;    (<ra> :set-curr-seqblock (entry :seqblockid)))
@@ -407,24 +409,40 @@
 
 (define (create-playlist-area gui x1 y1 x2 y2 state)
 
+  (define entry-areas '())
+  
   (define (recreate x1 y1 x2 y2 state)
-    (define area
-      (<new> :vertical-list-area gui x1 y1 x2 y2
-             :areas (let ((entries (get-playlist-entries -1)))
-                      ;;(c-display "RECREATING. len:" (length entries))
-                      (map (lambda (entry playlist-pos)
-                             (get-playlist-entry-area gui entry playlist-pos))
-                           entries
-                           (iota (length entries))))))
+    (define curr-entry-area #f)
+    (set! entry-areas (let ((entries (get-playlist-entries -1)))
+                        ;;(c-display "RECREATING. len:" (length entries))
+                        (map (lambda (entry playlist-pos)
+                               (define entry-area (get-playlist-entry-area gui entry playlist-pos))
+                               (if (entry-area :is-current?)
+                                   (set! curr-entry-area entry-area))
+                               entry-area)                             
+                             entries
+                             (iota (length entries)))))
+    (define area (<new> :vertical-list-area gui x1 y1 x2 y2
+                        :areas entry-areas))
     ;;(c-display "STASTE:" state)
     (if state
         (area :apply-state! state))
+
+    (if curr-entry-area
+        (ensure-entry-area-visible-in-playlist area curr-entry-area))
+    
     area)
   
+  (define (ensure-entry-area-visible-in-playlist playlist-area curr-entry-area)
+    (playlist-area :ensure-area-is-visible curr-entry-area))
+
   (define area (<new> :use-first-subarea-state-as-state-area gui x1 y1 x2 y2))
-  
+
   (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state))
 
+  (define (get-vertical-list-area)
+    (car (area :get-sub-areas)))
+  
   (area :add-mouse-cycle! (lambda (button x* y*)
                             (and (not (<ra> :shift-pressed))
                                  (= button *right-button*)
@@ -440,7 +458,15 @@
                                        (lambda (x1 y1 x2 y2 width height)
                                          (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state)))))
         )
-  
+
+  (area :add-method! :ensure-curr-entry-is-visible (lambda ()
+                                                     (let loop ((entry-areas entry-areas))
+                                                       (when (not (null? entry-areas))
+                                                         (define entry-area (car entry-areas))
+                                                         (if (entry-area :is-current?)
+                                                             (ensure-entry-area-visible-in-playlist (get-vertical-list-area) entry-area)
+                                                             (loop (cdr entry-areas)))))))
+                                                     
   area
   )
 
@@ -452,8 +478,10 @@
                                 #f))
 
 (define (FROM_C-update-playlist-area)
-  (if *playlist-area*
-      (*playlist-area* :update-me!)))
+  ;;o(c-display "HEPP. update playlist")
+  (when *playlist-area*
+    (*playlist-area* :ensure-curr-entry-is-visible)
+    (*playlist-area* :update-me!)))
 
 ;;(define (FROM_C-set-curr-playlist-pos pos)
 ;;  (when (not (= *curr-playlist-pos* pos))

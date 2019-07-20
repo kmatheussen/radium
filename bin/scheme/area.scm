@@ -1279,7 +1279,9 @@
     (if (list? areas)
         areas
         (areas)))
-    
+
+  (add-method! :get-areas get-areas)
+  
   (define total-area-height (apply + (map (lambda (area)
                                             (area :get-position (lambda (x1 y1 x2 y2 width height)
                                                                   height)))
@@ -1320,14 +1322,14 @@
   (define-override (get-state)
     (define areas (get-areas))
     (hash-table :areas areas
-                 :y1 y1
-                 :start-y1 (if (null? areas)
-                               0
-                               ((car areas) :get-position
-                                (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
-                                  a-y1)))
-                 :slider-pos (scrollbar :get-slider-pos)))
-
+                :y1 y1
+                :start-y1 (if (null? areas)
+                              0
+                              ((car areas) :get-position
+                               (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                                 a-y1)))
+                :slider-pos (scrollbar :get-slider-pos)))
+  
   (define-override (apply-state! state)
     (if load-areas-from-state
         (set! areas (state :areas)))
@@ -1358,7 +1360,58 @@
 
   (position-areas! y1)
 
-  (define-override (mouse-wheel-moved-internal! is-up x* y*)
+  (define (get-total-areas-height)
+    (apply + (map (lambda (area)
+                    (area :get-position
+                          (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                            a-height)))
+                  (get-areas))))
+  
+  (define (scroll-area-to-top area)
+    (scrollbar :set-slider-pos!
+               (scale (area :get-position
+                            (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                              a-y1))
+                      ((car (get-areas)) :get-position
+                       (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                         a-y1))
+                      ((last (get-areas)) :get-position
+                       (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                         a-y2))
+                      ;;(get-total-areas-height)
+                      0 1)
+               #t))
+
+  (add-method! :ensure-area-is-visible
+               (lambda (area)
+                 (define (a-y1)
+                   (area :get-position
+                         (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                           a-y1)))
+                 (define (a-y2)
+                   (area :get-position
+                         (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
+                           a-y2)))
+                 (define (test-y1)
+                   (< (a-y1) y1))
+                 (define (test-y2)
+                   (> (a-y2) y2))
+                 
+                 (define (run-loop test direction)
+                   (let loop ((last (scrollbar :get-slider-pos))
+                              (n 0))
+                     (when (test)
+                       (scroll! direction)
+                       (let ((now (scrollbar :get-slider-pos)))
+                         (if (and (not (= last now))
+                                  (< n 10000))
+                             (loop now (+ n 1)))))))                 
+                 (cond ((test-y1)
+                        (run-loop test-y1 #t))
+                       ((test-y2)
+                        (run-loop test-y2 #f)))))
+
+  (define (scroll! is-up)
     (define areas (get-areas))
     (define is-down (not is-up))
     (define first-y1 (and (not (null? areas))
@@ -1406,7 +1459,10 @@
                            (doit (- dy)))))))
            (loop (cdr areas)
                  (1+ n)
-                 )))))
+                 ))))))
+    
+  (define-override (mouse-wheel-moved-internal! is-up x* y*)
+    (scroll! is-up)
     #t)
   )
 
