@@ -1610,15 +1610,24 @@
   
   (assert (or file-info blocknum))
 
-  (define text-color (cond (blocknum
-                            "black")
-                           ((file-info :is-dir)
-                            *text-color*)
-                           (background-color
-                            "black")
-                           (else
-                            "soundfile"
-                            )))
+  (define (is-current?)
+    (if (procedure? is-current)
+        (is-current)
+        is-current))
+  
+  (define (get-text-color)
+    (cond ((is-current?)
+           *text-color*)
+          (blocknum
+           "black")
+          ((file-info :is-dir)
+           *text-color*)
+          (background-color
+           "black")
+          (else
+           "soundfile"
+           )))
+  
   (define ch-color "black")
   (define size-color (if background-color
                          "black"
@@ -1736,7 +1745,7 @@
     (<gui> :filled-box gui entry-background-color (+ 1 x1) y1 x2 y2 4 4 (if background-color #t #f))
 
     ;; name
-    (<gui> :draw-text gui text-color name-text
+    (<gui> :draw-text gui (get-text-color) name-text
            (+ 2 x1) y1
            (if is-dir x2 name-x2) y2
            #f ;; wrap lines
@@ -1787,9 +1796,7 @@
                   #f ;; scale-font-size
                   )))
 
-    (when (if (procedure? is-current)
-              (is-current)
-              is-current)
+    (when (is-current?)
 
       ;; Why was this line here?
       ;;(<gui> :set-clip-rect gui (+ x1 1) y1 x2 y2)
