@@ -167,7 +167,7 @@ There are two ways to add custom keybindings:
     
     <p>
       <UL>
-        <LI> On Windows, create this file: <i>C:Users&lt;Username&gt;.radiumkeybindings.conf</i>
+        <LI> On Windows, create this file: <i>C:&bsol;Users&bsol;&lt;Username&gt;&bsol;.radium&bsol;keybindings.conf</i>
         <LI> On macOS, create this file: <i>/Users/&lt;Username&gt;/.radium/keybindings.conf</i>
         <LI> On Linux, create this file: <i>/home/&lt;Username&gt;/.radium/keybindings.conf</i>
       </UL>
@@ -385,14 +385,14 @@ To load custom Scheme code during startup, you can call <i>ra.evalScheme</i> ins
   <blockquote>
     <pre>
 *
-ra.evalScheme('(load "C:UsersUsername.radiummystuff.scm")')
+ra.evalScheme('(load "C:&bsol;Users&bsol;Username&bsol;.radium&bsol;mystuff.scm")')
 *
     </pre>
   </blockquote>
 
   </UL>
 
-  Python is less supported than scheme. Functions using the "dyn_t" or "func_t" types are not available from python.
+  Python is less supported than scheme. Functions taking a "dynvec_t", "place", "dyn_t" or "func_t" argument are not available from python, and functions returning any of those types will return "None" in Python.
 
 <p>
   
