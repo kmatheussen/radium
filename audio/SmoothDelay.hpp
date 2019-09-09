@@ -233,7 +233,7 @@ public:
       memcpy(output, _buffer + IOTA, num_frames*sizeof(T));
       memcpy(_buffer + IOTA, input, num_frames*sizeof(T));
       IOTA += num_frames;
-      if (IOTA >= _delay_size)
+      if (IOTA >= _delay_size) // Don't need to use 'while' here since 'can_memcpy' returns false if _delay_size < num_frames.
         IOTA -= _delay_size;
 
     } else {
