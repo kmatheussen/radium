@@ -18,8 +18,6 @@
 
 (define-constant *empty-symbol* '___empty_symbol) ;; s7 doesn't allow converting empty string to symbol
 
-
-
 (define-constant *functions-and-symbols-used-by-C*
   '(show-global-swing-track-popup-menu
     minimize-lowertab
@@ -761,13 +759,17 @@ FROM_C-jump-to-mark
 (set! (hook-functions *error-hook*) 
       (list (lambda (hook)
               (define backtrace-txt (safe-ow!))
+              ;;(display backtrace-txt)
               ;;(when *is-initializing*
               ;;  (display (ra:get-text-from-html backtrace-txt)))
               (safe-display-txt-as-displayable-as-possible backtrace-txt)
               (catch #t
                      (lambda ()
+                       ;;(display go-wrong-hooks)(newline)
                        (let ((gwhs go-wrong-hooks))
                          (set! go-wrong-hooks '())
+                         ;;(display gwhs)(newline)
+                         ;;(display go-wrong-hooks)(newline)
                          (for-each (lambda (go-wrong-hook)
                                      (go-wrong-hook))
                                    gwhs)))
@@ -776,14 +778,13 @@ FROM_C-jump-to-mark
                        (get-as-displayable-string-as-possible (list "Custom error hook catch failed:\n"))))
               (handle-assertion-failure-during-startup (list "error-hook failed\n" backtrace-txt)))))
 
--;;(handle-assertion-failure-during-startup "hello")
+;;(handle-assertion-failure-during-startup "hello")
 
 ;; Test startup crash: (crash reporter should show up, and program exit). Startup crashes before this point (i.e. before the error hook is added, are not handled.)
 ;;(+ a 90)
 
 
 (load "mylint.scm")
-
 
 '(set! (hook-functions *load-hook*)
        (list (lambda (hook)
@@ -794,8 +795,6 @@ FROM_C-jump-to-mark
 
 (c-define-expansion (*<ra>* command . args)
   `( ,(<_> 'ra: (keyword->symbol command)) ,@args))
-
-
 
 ;; This cleanup function will either be called when 'finished' is explicitly called,
 ;; or an exception happens. 'reason' will be the value of go-wrong-finished-called-because-something-went-wrong

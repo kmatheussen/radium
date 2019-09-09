@@ -7807,7 +7807,7 @@
                                                           "Split audio file"
                                                           :enabled (and seqblocknum
                                                                         (not blocknum))
-                                                          :shortcut (list ra:eval-scheme "(FROM_C-split-sample-seqblock-under-mouse #f)")
+                                                          :shortcut (list ra:eval-scheme "(FROM_C-split-sample-seqblock-under-mouse (ra:sequencer-grid-enabled))")
                                                           (lambda ()
                                                             (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
                                                               (split-sample-seqblock pos seqtracknum seqblocknum))))                                               
