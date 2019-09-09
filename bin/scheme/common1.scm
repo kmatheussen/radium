@@ -693,7 +693,7 @@
 (***assert*** (get-python-ra-funccall "ra:transpose-block" (list 1))
               "ra.transposeBlock(1)")
 
-
+  
 (define (get-all-lines-in-file wfilename)
   (let ((file (<ra> :open-file-for-reading wfilename)))
     (let loop ((ret '()))

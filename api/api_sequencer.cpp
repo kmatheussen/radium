@@ -2152,8 +2152,15 @@ static bool g_curr_playlist_pos_locked_to_seqblock = false;
 
 int getCurrPlaylistPos(void){
   
-  if (g_curr_playlist_pos_locked_to_seqblock)
-    return getPlaylistPosForSeqblock(g_curr_seqblock_id);
+  if (g_curr_playlist_pos_locked_to_seqblock){
+    struct SeqTrack *seqtrack;
+    int seqblocknum;
+    int seqtracknum;
+    if (getGfxSeqblockFromIdB(g_curr_seqblock_id, &seqtrack, seqblocknum, seqtracknum, false)==NULL)
+      return -1;
+    else
+      return getPlaylistPosForSeqblock(g_curr_seqblock_id);
+  }
   
   if (is_playing() && pc->playtype==PLAYSONG) {
     
@@ -2584,7 +2591,7 @@ void applyGfxSeqblocks(int seqtracknum){
 
 int getPlaylistPosForSeqblock(int64_t seqblockid){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
+  struct SeqBlock *seqblock = getGfxSeqblockFromIdA(seqblockid, &seqtrack);
   if (seqblock==NULL)
     return 0;
 
@@ -2929,7 +2936,7 @@ void setSeqblockName(const_char* new_name, int64_t seqblockid, bool name_is_base
   
 const_char* getSeqblockName(int64_t seqblockid){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
+  struct SeqBlock *seqblock = getGfxSeqblockFromIdA(seqblockid, &seqtrack);
   if (seqblock==NULL)
     return toBase64("");
 
