@@ -980,10 +980,12 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
     else {
       HASH_put_string(state, ":sample", filename);
       //#if defined(FOR_WINDOWS)
-      HASH_put_string(state, ":sample-base64", STRING_toBase64(filename)); // char* can"t be used for filenames in windows
+      //HASH_put_string(state, ":sample-base64", STRING_toBase64(filename)); // char* can"t be used for filenames in windows
       //#endif
     }
-    
+
+    HASH_put_string(state, ":sample-base64", STRING_toBase64(filename)); // For displaying soundfile name in the sequencer and playlist. Using base64 since char* can"t be used for filenames in windows
+
 #if !defined(RELEASE)
     QFileInfo info(STRING_get_qstring(filename));
     if (!info.isAbsolute())
