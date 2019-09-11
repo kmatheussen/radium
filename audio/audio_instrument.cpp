@@ -795,45 +795,48 @@ static struct FX *AUDIO_createFX(const struct Tracks *track, struct Patch *patch
   return fx;
 }
 
-typedef struct{
+struct PatchEffect{
   struct Patch *patch;
   int effect_num;
-} PatchEffect;
+  QString name;
+  
+  PatchEffect(struct Patch *patch, int effect_num, const char *name)
+    : patch(patch)
+    , effect_num(effect_num)
+    , name(name)
+  {}
 
-static PatchEffect *create_patch_effect(struct Patch *patch, int effect_num){
-  PatchEffect *pe=(PatchEffect *)talloc(sizeof(PatchEffect));
-  pe->patch = patch;
-  pe->effect_num = effect_num;
-  return pe;
+  PatchEffect()
+    : PatchEffect(NULL, 0, NULL)
+  {}
+};
+
+static void add_patch_effects_to_menu2(vector_t *menu, QVector<PatchEffect> &patch_effects, const char *name, struct Patch *patch = NULL, int effect_num = 0){
+  VECTOR_push_back(menu,name);
+  patch_effects.push_back(PatchEffect(patch, effect_num, name));
 }
 
-
-static void add_patch_effects_to_menu(vector_t *menu, vector_t *patch_effects, struct Patch *patch){
+static void add_patch_effects_to_menu(vector_t *menu, QVector<PatchEffect> &patch_effects, struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   const SoundPluginType *plugin_type = plugin->type;
   //int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
     
   for(int i=0;i<EFFNUM_VOICE1_ONOFF;i++) {
-    if (i>0 && i==plugin_type->num_effects){
-      VECTOR_push_back(menu, "----------System effects");
-      VECTOR_push_back(patch_effects, NULL);
-    }
+    if (i>0 && i==plugin_type->num_effects)      
+      add_patch_effects_to_menu2(menu, patch_effects, "----------System effects");
+    
     const char *name = PLUGIN_get_effect_name(plugin, i);
-    if (strncmp(name, NOTUSED_EFFECT_NAME, strlen(NOTUSED_EFFECT_NAME))) {
-      VECTOR_push_back(menu,name);
-      VECTOR_push_back(patch_effects, create_patch_effect(patch, i));
-    }
+    if (strncmp(name, NOTUSED_EFFECT_NAME, strlen(NOTUSED_EFFECT_NAME)))
+      add_patch_effects_to_menu2(menu, patch_effects, name, patch, i);
   }
 
-  VECTOR_push_back(menu, "----------Note duplicator effects");
-  VECTOR_push_back(patch_effects, NULL);
+  add_patch_effects_to_menu2(menu, patch_effects, "----------Note duplicator effects");
   
   const int num_voice_effects = (NUM_SYSTEM_EFFECTS-EFFNUM_VOICE1_ONOFF) / NUM_PATCH_VOICES; // = 2
       
   for(int voicenum=0;voicenum<NUM_PATCH_VOICES;voicenum++){
 
-    VECTOR_push_back(menu, (const char*)talloc_format("[submenu start]Voice %d",voicenum+1));
-    VECTOR_push_back(patch_effects, NULL);
+    add_patch_effects_to_menu2(menu, patch_effects, talloc_format("[submenu start]Voice %d",voicenum+1));
     
     for(int i=0;i<num_voice_effects;i++){
 
@@ -853,14 +856,11 @@ static void add_patch_effects_to_menu(vector_t *menu, vector_t *patch_effects, s
       int effect_num = plugin_type->num_effects + EFFNUM_VOICE1_ONOFF + i*NUM_PATCH_VOICES + voicenum;
     
       const char *name = PLUGIN_get_effect_name(plugin, effect_num);
-      if (strncmp(name, NOTUSED_EFFECT_NAME, strlen(NOTUSED_EFFECT_NAME))) {
-        VECTOR_push_back(menu,name);
-        VECTOR_push_back(patch_effects, create_patch_effect(patch, effect_num));
-      }
+      if (strncmp(name, NOTUSED_EFFECT_NAME, strlen(NOTUSED_EFFECT_NAME)))
+        add_patch_effects_to_menu2(menu, patch_effects, name, patch, effect_num);
     }
 
-    VECTOR_push_back(menu, "[submenu end]");
-    VECTOR_push_back(patch_effects, NULL);
+    add_patch_effects_to_menu2(menu, patch_effects, "[submenu end]");
   }
 }
 
@@ -868,7 +868,7 @@ static void AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *trac
   //const char *menutitle="Select FX";
 
   vector_t v = {};
-  vector_t patch_effects = {};
+  QVector<PatchEffect> patch_effects;
   
 
 #if 1 // Enable selecting fx from other instruments
@@ -876,31 +876,26 @@ static void AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *trac
   vector_t all_patches = get_audio_instrument()->patches;
 
   if (all_patches.num_elements > 1){
-    
-    VECTOR_push_back(&v, "[submenu start]Other instruments");
-    VECTOR_push_back(&patch_effects, NULL);
+
+    add_patch_effects_to_menu2(&v, patch_effects, "[submenu start]Other instruments");
     
     VECTOR_FOR_EACH(struct Patch *, patch,&all_patches){
 
       if (patch != track->patch){
         
-        VECTOR_push_back(&v, talloc_format("[submenu start]%s",patch->name));
-        VECTOR_push_back(&patch_effects, NULL);
-        
-        add_patch_effects_to_menu(&v, &patch_effects, patch);
+        add_patch_effects_to_menu2(&v, patch_effects, talloc_format("[submenu start]%s",patch->name));
+                                   
+        add_patch_effects_to_menu(&v, patch_effects, patch);
 
-        VECTOR_push_back(&v, "[submenu end]");
-        VECTOR_push_back(&patch_effects, NULL);
+        add_patch_effects_to_menu2(&v, patch_effects, "[submenu end]");
       }
 
     }END_VECTOR_FOR_EACH;
-    
-    VECTOR_push_back(&v, "[submenu end]");
-    VECTOR_push_back(&patch_effects, NULL);
+
+    add_patch_effects_to_menu2(&v, patch_effects, "[submenu end]");
   }
 
-  VECTOR_push_back(&v, "---------Instrument effects");
-  VECTOR_push_back(&patch_effects, NULL);
+  add_patch_effects_to_menu2(&v, patch_effects, "---------Instrument effects");
 
 #else
 
@@ -920,34 +915,33 @@ static void AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *trac
 
 #endif
   
-  add_patch_effects_to_menu(&v, &patch_effects, track->patch);
+  add_patch_effects_to_menu(&v, patch_effects, track->patch);
 
-  GFX_Menu3(v,[v, patch_effects, callback](int selection, bool onoff){
+  GFX_Menu3(v,[patch_effects, callback](int selection, bool onoff){
       
       if(-1==selection)
         return;
       
-      PatchEffect *pe = (PatchEffect *)patch_effects.elements[selection];
-      R_ASSERT(pe!=NULL);
+      if(selection<0 || selection>=patch_effects.size()){
+        R_ASSERT(false);
+        return;
+      }
+      
+      const PatchEffect &pe = patch_effects.at(selection);
 
-      if (pe!=NULL){
+      R_ASSERT(pe.patch != NULL);
 
+      if (pe.patch != NULL){
         struct FX *fx = (struct FX*)talloc(sizeof(struct FX));
         
-        fx->patch = pe->patch;
+        fx->patch = pe.patch;
         
-        const char *name = (const char*)v.elements[selection];
-        //if (pe->patch != track->patch)
-        //  name = talloc_format("%s (%s)",name, pe->patch->name);
-        
-        init_fx(fx,pe->effect_num, name, (struct SoundPlugin*)(pe->patch->patchdata));
+        init_fx(fx,pe.effect_num, pe.name.toUtf8().constData(), (struct SoundPlugin*)(pe.patch->patchdata));
         
         return callback(fx);
-        
       }
 
     });
-    
 }
 
 static void AUDIO_save_FX(struct FX *fx,const struct Tracks *track){

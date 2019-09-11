@@ -331,7 +331,7 @@ static int64_t get_seqblock_closeness(const struct SeqBlock *seqblock1, const st
 
 
 static void change_curr_seqblock_when_curr_seqtrack_has_changed(int new_seqtracknum, const struct SeqTrack *new_seqtrack){
-  radium::Vector_t<const struct SeqBlock, const vector_t> seqblocks(&new_seqtrack->seqblocks);
+  radium::Vector_t<const struct SeqBlock> seqblocks(new_seqtrack->seqblocks);
   
   if (seqblocks.size()==0)
     return;

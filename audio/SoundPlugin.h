@@ -362,7 +362,7 @@ typedef struct SoundPluginType{
 
   int (*get_effect_format)(struct SoundPlugin *plugin, int effect_num); // Must return one of the EFFECT_* values above.
 
-  const char *(*get_effect_name)(struct SoundPlugin *plugin, int effect_num); // The effect name is used as effect id. Two effects can not have the same name.
+  const char *(*get_effect_name)(struct SoundPlugin *plugin, int effect_num); // The effect name is used as effect id. Two effects can not have the same name. The returned name is already stored somewhere in memory so we don't have to care about gc-safety.
 
   // This functions is called if SoundPluginType->effect_is_RT(effect_num) returns false
   void (*set_effect_value)(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when); // Can be called from any thread. Player lock is held.
