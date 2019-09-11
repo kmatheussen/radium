@@ -1,3 +1,26 @@
+Changes 5.9.72 -> 5.9.74:
+* Editor: Fix rare crash when adding selecting
+  "New FX".
+* Sequencer: Let CTRL + S be the default keybinding
+  to split audio file. The old keybinding ("S") was
+  recently overridden by the seqtrack solo on/off
+  keybinding.
+* Sequencer: Let "split audio" split by sequencer
+  grid if sequencer grid is enabled.
+* Sequencer: Fix error messages popping up when
+  moving seqblock to a new seqtrack.
+* Sequencer: Fix error messages popping up when
+  splitting audio file.
+* Sequencer: Fix error message showing up after
+  loading if current seqtrack is for audio files.
+* Help: Minor fixes.
+* Sequencer: Paint white seqblock names in the block
+  browser and the audio file browser.
+* Playlist: Make sure current entry is always
+  visible.
+* GUI: Make sure scrollbar position is always legal.
+
+
 Changes 5.9.71 -> 5.9.72:
 * Playlist: Fix background color for current entry.
 * Editor: Add option in the Preferences GUI to
