@@ -878,6 +878,15 @@ namespace radium{
       return t;
     }
   };
+
+  template <typename T>
+  struct GcVector_t : public Vector_t<T>{
+    GcHolder<T> _holder;
+    GcVector_t(const vector_t &v)
+      : Vector_t<T>(v)
+      , _holder(v.elements)
+    {}
+  };
 }
 
 #else
