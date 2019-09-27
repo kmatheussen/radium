@@ -1860,8 +1860,14 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
   }END_VECTOR_FOR_EACH;
   
   R_ASSERT(len1==seqtrack->seqblocks.num_elements);
-  SEQTRACK_update(seqtrack);
-  SEQUENCER_update(SEQUPDATE_PLAYLIST|SEQUPDATE_NAVIGATOR);
+  
+  if (seqtracknum==0 && !isUsingSequencerTiming()) {
+    SEQUENCER_update(SEQUPDATE_TIME);
+  } else {
+    SEQTRACK_update(seqtrack);
+    SEQUENCER_update(SEQUPDATE_PLAYLIST|SEQUPDATE_NAVIGATOR);
+  }
+  
   R_ASSERT(len1==seqtrack->seqblocks.num_elements);
 }
 
