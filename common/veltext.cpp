@@ -86,6 +86,19 @@ static void add_note(const struct WBlocks *wblock, VelText_trss &veltexts, struc
 }
 
 
+static void move_veltexts_to_unique_reallines(const struct WBlocks *wblock, VelText_trss &veltexts){
+  for(int realline=0;realline<wblock->num_reallines-1;realline++){
+    VelText_trs &trs1 = veltexts[realline];
+    VelText_trs &trs2 = veltexts[realline+1];
+
+    if (trs1.size() > 1 && trs2.size() == 0){
+      trs2.push_back(trs1.takeFirst());
+
+      std::swap(veltexts[realline], veltexts[realline+1]);
+    }
+  }
+}
+
 // Returns a pointer to AN ARRAY of vectors (one vector for each realline), not a pointer to a vector (as one would think).
 const VelText_trss VELTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
   VelText_trss veltexts;
@@ -96,6 +109,8 @@ const VelText_trss VELTEXTS_get(const struct WBlocks *wblock, const struct WTrac
     note = NextNote(note);
   }
 
+  move_veltexts_to_unique_reallines(wblock, veltexts);
+    
   return veltexts;
 }
 

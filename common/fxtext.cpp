@@ -49,6 +49,19 @@ static void add_fxtext(const struct WBlocks *wblock, FXText_trss &fxtexts, const
   TRS_INSERT_PLACE(v, fxtext);
 }
 
+static void move_fxtexts_to_unique_reallines(const struct WBlocks *wblock, FXText_trss &fxtexts){
+  for(int realline=0;realline<wblock->num_reallines-1;realline++){
+    FXText_trs &trs1 = fxtexts[realline];
+    FXText_trs &trs2 = fxtexts[realline+1];
+
+    if (trs1.size() > 1 && trs2.size() == 0){
+      trs2.push_back(trs1.takeFirst());
+
+      std::swap(fxtexts[realline], fxtexts[realline+1]);
+    }
+  }
+}
+
 
 // Returns a pointer to AN ARRAY of vectors (one vector for each realline), not a pointer to a vector (as one would think).
 const FXText_trss FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
@@ -60,6 +73,8 @@ const FXText_trss FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks
     fxnodeline = NextFXNodeLine(fxnodeline);
   }
 
+  move_fxtexts_to_unique_reallines(wblock, fxtexts);
+  
   return fxtexts;
 }
 
