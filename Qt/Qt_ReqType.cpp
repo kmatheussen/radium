@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_proc.h"
 
 #include "FocusSniffers.h"
+#include "ScrollArea.hpp"
 
 #include "EditorWidget.h"
 
@@ -229,7 +230,20 @@ static void legalize_pos(MyReqType *reqtype){
   }
 }
       
-      
+
+static inline void setNoFocusRecursively(QWidget *widget){
+  if (widget != NULL){
+    widget->setFocusPolicy(Qt::NoFocus);
+    
+    for(auto *c : widget->children()){
+      QWidget *w = dynamic_cast<QWidget*>(c);      
+      if (w && w->isWindow()==false)
+        setNoFocusRecursively(w);
+    }
+  }
+}
+
+
 static QString ReadString(ReqType das_reqtype, bool program_state_is_valid){
 
   /*
@@ -265,28 +279,74 @@ static QString ReadString(ReqType das_reqtype, bool program_state_is_valid){
   QStringList lines = reqtype->label_text.split('\n', QString::KeepEmptyParts);
   
   if (lines.size() > 0 ){
-    for(int i = 0 ; i < lines.size() ; i++){
-      QString line = lines[i];
-      printf("line: -%s-\n", line.toUtf8().constData());
 
-      QLabel *label;
+    if (lines.size() < 10) {
       
-      GL_lock(); {
-        label = new QLabel(line,reqtype->frame);
-        label->move(x_margin,reqtype->y + 3);
-        label->show();
-        label->adjustSize();
-        legalize_pos(reqtype);
-      }GL_unlock();
+      for(int i = 0 ; i < lines.size() ; i++){
+        QString line = lines[i];
+        printf("line: -%s-\n", line.toUtf8().constData());
+        
+        QLabel *label;
+        
+        GL_lock(); {
+          label = new QLabel(line,reqtype->frame);
+          label->move(x_margin,reqtype->y + 3);
+          label->show();
+          label->adjustSize();
+          legalize_pos(reqtype);
+        }GL_unlock();
+      
+        x = x_margin + label->width() + 5;
+        
+        if(lines.size() > 1 && i==lines.size()-2)
+          reqtype->y += edit->height() * spacing; // i.e. i == second last line.
+        else if (i < lines.size() - 1)
+          reqtype->y += label->height() * spacing;
 
-      x = x_margin + label->width() + 5;
+      }
+      
+    } else {
+        
+      auto *scroll = new radium::VerticalScroll(reqtype->frame);
+      scroll->setContentsMargins(0,0,0,0);
+      scroll->setFocusPolicy(Qt::NoFocus);
+      
+      int height_ = 0;
 
-      if(lines.size() > 1 && i==lines.size()-2)
-        reqtype->y += edit->height() * spacing; // i.e. i == second last line.
-      else if (i < lines.size() - 1)
-        reqtype->y += label->height() * spacing;
-    
+      for(int i = 0 ; i < lines.size() ; i++){
+        QString line = lines[i];
+        printf("line: -%s-\n", line.toUtf8().constData());
+        
+        QLabel *label;
+        
+        GL_lock(); {
+          label = new QLabel(line,scroll);
+          label->setFocusPolicy(Qt::NoFocus);
+          scroll->addWidget(label);
+        }GL_unlock();
+
+        height_ += label->height();
+        
+      }
+
+      x = x_margin; // + label->width() + 5;
+
+      height_ = R_MAX(40, 9 * height_ / lines.size());
+      
+      scroll->move(R_MAX(0, x ), reqtype->y + 3);
+      //scroll->resize(reqtype->frame->width(), height_);
+      scroll->setMinimumHeight(height_);
+      scroll->setMaximumHeight(height_);      
+      scroll->show();
+      scroll->adjustSize();
+      scroll->updateGeometry();
+      legalize_pos(reqtype);
+
+      setNoFocusRecursively(scroll);
+        
+      reqtype->y += height_;
     }
+
   } else {
     
   }
