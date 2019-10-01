@@ -53,17 +53,20 @@ int getScrollMultiplication(void){
 }
 
 bool ScrollEditorDown(struct Tracker_Windows *window,int num_lines, const struct Notes *dont_play_this_note){
-	struct WBlocks *wblock;
+	struct WBlocks *wblock = window->wblock;
 
+	if(num_lines==0){
+          int start_realline = wblock->curr_realline;
+          int end_realline = wblock->curr_realline + 1;
+          Scroll_play_down(wblock,start_realline,end_realline, dont_play_this_note);
+          return true;
+        }
+        
         bool ret = false;
         
-	if(num_lines==0) return ret;
-
-	wblock=window->wblock;
-
 	if(
 		wblock->curr_realline<wblock->num_reallines-1 &&
-		wblock->curr_realline+num_lines>wblock->num_reallines-1
+		wblock->curr_realline+num_lines > wblock->num_reallines-1
 	){
 		num_lines=wblock->num_reallines - wblock->curr_realline;
 	}
