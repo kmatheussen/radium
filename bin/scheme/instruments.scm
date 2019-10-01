@@ -1515,6 +1515,93 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 (delete-all-unused-MIDI-instruments)
 !#
 
+(define (find-instrument-in-coordinate-relation-to goal-instrument-id better?)
+  (define x (<ra> :get-instrument-x goal-instrument-id))
+  (define y (<ra> :get-instrument-y goal-instrument-id))
+  (let loop ((instruments (get-all-audio-instruments))
+             (best-instrument-id #f)
+             (best-dx 1000000000000)
+             (best-dy 1000000000000))
+    (define instrument-id (cl-car instruments))
+    (if (not instrument-id)
+        best-instrument-id
+        (let* ((x2 (<ra> :get-instrument-x instrument-id))
+               (y2 (<ra> :get-instrument-y instrument-id))
+               (dx (abs (- x x2)))
+               (dy (abs (- y y2))))
+          (if (better? x y x2 y2 dx dy best-dx best-dy)
+              (loop (cdr instruments)
+                    instrument-id
+                    dx
+                    dy)
+              (loop (cdr instruments)
+                    best-instrument-id
+                    best-dx
+                    best-dy))))))
+
+(define* (find-instrument-to-the-left-of (goal-instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-coordinate-relation-to goal-instrument-id
+                                             (lambda (x y x2 y2 dx dy best-dx best-dy)
+                                               (and (< x2 x)
+                                                    (or (< dy best-dy)
+                                                        (and (= dy best-dy)
+                                                             (< dx best-dx)))))))
+                      
+(define* (find-instrument-to-the-right-of (goal-instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-coordinate-relation-to goal-instrument-id
+                                             (lambda (x y x2 y2 dx dy best-dx best-dy)
+                                               (and (> x2 x)
+                                                    (or (< dy best-dy)
+                                                        (and (= dy best-dy)
+                                                             (< dx best-dx)))))))
+                      
+(define* (find-instrument-to-the-up-of (goal-instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-coordinate-relation-to goal-instrument-id
+                                             (lambda (x y x2 y2 dx dy best-dx best-dy)
+                                               (and (< y2 y)
+                                                    (or (< dx best-dx)
+                                                        (and (= dx best-dx)
+                                                             (< dy best-dy)))))))
+                      
+(define* (find-instrument-to-the-down-of (goal-instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-coordinate-relation-to goal-instrument-id
+                                             (lambda (x y x2 y2 dx dy best-dx best-dy)
+                                               (and (> y2 y)
+                                                    (or (< dx best-dx)
+                                                        (and (= dx best-dx)
+                                                             (< dy best-dy)))))))
+                      
+
+#!!
+(and-let* ((res (<ra> :get-current-instrument)))
+          (<ra> :get-instrument-name res))
+(and-let* ((res (find-instrument-to-the-left-of)))
+          (<ra> :get-instrument-name res))
+(and-let* ((res (find-instrument-to-the-right-of)))
+          (<ra> :get-instrument-name res))
+(and-let* ((res (find-instrument-to-the-up-of)))
+          (<ra> :get-instrument-name res))
+(and-let* ((res (find-instrument-to-the-down-of)))
+          (<ra> :get-instrument-name res))
+!!#
+
+(define (FROM_C-move-current-instrument-left)
+  (and-let* ((res (find-instrument-to-the-left-of)))
+            (<ra> :set-current-instrument res)))
+  
+(define (FROM_C-move-current-instrument-right)
+  (and-let* ((res (find-instrument-to-the-right-of)))
+            (<ra> :set-current-instrument res)))
+  
+(define (FROM_C-move-current-instrument-up)
+  (and-let* ((res (find-instrument-to-the-up-of)))
+            (<ra> :set-current-instrument res)))
+  
+(define (FROM_C-move-current-instrument-down)
+  (and-let* ((res (find-instrument-to-the-down-of)))
+            (<ra> :set-current-instrument res)))
+  
+
 (define (get-select-track-instrument-popup-entries tracknum)
   (define midi-instruments (get-all-midi-instruments))
   (define instruments-before (get-all-audio-instruments))

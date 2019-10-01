@@ -2562,10 +2562,10 @@ struct Patch *CHIP_get_patch(const Chip *chip){
 
 Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch){
   R_ASSERT_RETURN_IF_FALSE2(patch != NULL, NULL);
-  
+
   const SoundPlugin *plugin = (const SoundPlugin*)patch->patchdata;
 
-  const QList<QGraphicsItem *> &das_items = scene->items();
+  const QList<QGraphicsItem *> &das_items = scene==NULL ? get_scene(g_mixer_widget)->items() : scene->items();
   for (int i = 0; i < das_items.size(); ++i){
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL){

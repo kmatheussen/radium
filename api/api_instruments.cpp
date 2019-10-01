@@ -2729,14 +2729,48 @@ void setCurrentInstrument(int64_t instrument_id, bool show_instrument_window_if_
   if(patch==NULL)
     return;
 
-  if (patch==g_currpatch)
+  struct Patch *old_currpatch = g_currpatch;
+
+  if (patch==old_currpatch)
     return;
 
   //if(showInstrumentWidgetWhenDoubleClickingSoundObject())
   if(show_instrument_window_if_not_visible)
     GFX_InstrumentWindowToFront();
-
+  
   patch->instrument->PP_Update(patch->instrument, patch, false);
+
+  if (instrumentIsOpenAndAudio(instrument_id)){
+    Chip *chip = CHIP_get(NULL, patch);
+    R_ASSERT(chip!=NULL);
+    if (chip!=NULL)
+      MW_set_selected_chip(chip); // To unselect previously selected chip. (if not the program looks buggy)
+  }
+                       
+  /*
+  if(old_currpatch!=NULL && instrumentIsOpenAndAudio(old_currpatch->id)){
+    struct SoundPlugin *plugin = (struct SoundPlugin*)old_currpatch->patchdata;
+    R_ASSERT(plugin!=NULL);
+    if (plugin!=NULL)
+      CHIP_update(plugin);
+  }
+  */
+}
+
+void setCurrentInstrumentLeft(void){
+  S7CALL2(void_void,"FROM_C-move-current-instrument-left");
+}
+
+void setCurrentInstrumentRight(void){
+  S7CALL2(void_void,"FROM_C-move-current-instrument-right");
+}
+
+void setCurrentInstrumentUp(void){
+  S7CALL2(void_void,"FROM_C-move-current-instrument-up");
+}
+
+void setCurrentInstrumentDown(void){
+  S7CALL2(void_void,"FROM_C-move-current-instrument-down");
 }
 
 void showInstrumentInfo(dyn_t instrument_id_or_description, int64_t parentgui){
