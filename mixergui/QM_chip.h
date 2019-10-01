@@ -658,7 +658,7 @@ bool CHIP_is_at_input_eport(Chip *chip, int x, int y);
 bool CHIP_is_at_output_eport(Chip *chip, int x, int y);
 
 void CHIP_autopos(Chip *chip);
-Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch);
+Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch); // scene can be NULL
 
 void CHIP_update(Chip *chip, SoundPlugin *plugin);
 
