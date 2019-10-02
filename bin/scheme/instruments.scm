@@ -1515,7 +1515,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 (delete-all-unused-MIDI-instruments)
 !#
 
-(define (find-instrument-in-coordinate-relation-to goal-instrument-id better?)
+(define (find-instrument-in-modular-mixer-coordinate-relation-to goal-instrument-id better?)
   (define x (<ra> :get-instrument-x goal-instrument-id))
   (define y (<ra> :get-instrument-y goal-instrument-id))
   (let loop ((instruments (get-all-audio-instruments))
@@ -1539,37 +1539,242 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                     best-dx
                     best-dy))))))
 
+(define (find-instrument-in-mixer-strips-coordinate-relation-to goal-instrument-id better?)
+  (<declare-variable> mixer-strips-get-configuration)
+  (define gui (<gui> :get-mixer-strips-gui-in-active-window))
+  (if (< gui 0)
+      #f
+      (let ()
+        (define instrument-settings (keep (lambda (s)
+                                            (s :is-enabled))
+                                          ((mixer-strips-get-configuration gui) :instrument-settings)))
+        (define instrument-guis (apply hash-table
+                                       (flatten (map (lambda (s)
+                                                       (list (s :instrument-id) (s :gui-id)))
+                                                     instrument-settings))))
+        (define (get-box instrument-id)
+          (define x1 (<gui> :get-global-x (instrument-guis instrument-id)))
+          (define y1 (<gui> :get-global-y (instrument-guis instrument-id)))
+          (make-box2 x1
+                     y1
+                     (+ x1 (<gui> :width (instrument-guis instrument-id)))
+                     (+ y1 (<gui> :height (instrument-guis instrument-id)))))
+        
+        (define (make-instrument-data instrument-id)
+          (hash-table :box (get-box instrument-id)
+                      :instrument-id instrument-id))
+        
+        (if (not (instrument-guis goal-instrument-id))
+            #f
+            (let ()
+              (define goal-box (get-box goal-instrument-id))
+              (let loop ((datas (map (lambda (s)
+                                       (make-instrument-data (s :instrument-id)))
+                                     instrument-settings))
+                         (best-data (<optional-hash-table>)))
+                (define data (cl-car datas))
+                (cond ((not data)
+                       (and best-data
+                            (best-data :instrument-id)))
+                      ((and (not (= (data :instrument-id)
+                                    goal-instrument-id))
+                            (better? goal-box
+                                     best-data
+                                     data))
+                       (loop (cdr datas)
+                             data))
+                      (else
+                       (loop (cdr datas)
+                             best-data)))))))))
+
+(define* (find-instrument-in-mixer-strips-to-the-up-of (instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-mixer-strips-coordinate-relation-to
+   instrument-id
+   (lambda (box best-data data)
+     (define box2 (data :box))
+     (define y (box :y))
+     (define maybe-y (box2 :y))
+     (define best-box (and best-data
+                           (best-data :box)))
+     (define best-y (and best-box
+                         (best-box :y)))
+     (and (< maybe-y y)
+          (inside-box? box2 (box :x) (box2 :y))
+          (or (not best-y)
+              (> maybe-y best-y))))))
+                                                                        
+(define* (find-instrument-in-mixer-strips-to-the-down-of (instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-mixer-strips-coordinate-relation-to
+   instrument-id
+   (lambda (box best-data data)
+     (define box2 (data :box))
+     (define y (box :y))
+     (define maybe-y (box2 :y))
+     (define best-box (and best-data
+                           (best-data :box)))
+     (define best-y (and best-box
+                         (best-box :y)))
+     (and (> maybe-y y)
+          (inside-box? box2 (box :x) (box2 :y))
+          (or (not best-y)
+              (< maybe-y best-y))))))
+                                                                        
+(define* (find-instrument-in-mixer-strips-to-the-left-of (instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-mixer-strips-coordinate-relation-to
+   instrument-id
+   (lambda (box best-data data)
+     (define box2 (data :box))
+     (define x (box :x))
+     (define maybe-x (box2 :x))
+     (define y (box :y))
+     (define maybe-y (box2 :y))
+     (define best-box (and best-data
+                           (best-data :box)))
+     (define best-x (and best-box
+                         (best-box :x)))
+     (define best-y (and best-box
+                         (best-box :y)))
+     
+     (define in-same-row (inside-box? box2 (box2 :x) (box :y)))
+     (define best-in-same-row-as-box (and best-box
+                                          (inside-box? best-box (best-box :x) (box :y))))
+     (define best-in-same-row-as-box2 (and best-box
+                                           (inside-box? best-box (best-box :x) (box2 :y))))
+
+     ;;(c-display (<ra> :get-instrument-name (data :instrument-id)) ". in-same:" in-same-row ". best-in-same-as-box:" best-in-same-row-as-box ". best-in-same-as-box2:" best-in-same-row-as-box2)
+     (cond (in-same-row
+            (and (< maybe-x x)
+                 (or (not best-x)
+                     (not best-in-same-row-as-box)
+                     (> maybe-x best-x))))
+           ((< maybe-y y)
+            (cond ((not best-box)
+                   #t)
+                  (best-in-same-row-as-box2
+                   (> maybe-x best-x))
+                  (else
+                   (> maybe-y best-y))))
+           (else
+            #f)))))
+
+(define* (find-instrument-in-mixer-strips-to-the-right-of (instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-mixer-strips-coordinate-relation-to
+   instrument-id
+   (lambda (box best-data data)
+     (define box2 (data :box))
+     (define x (box :x))
+     (define maybe-x (box2 :x))
+     (define y (box :y))
+     (define maybe-y (box2 :y))
+     (define best-box (and best-data
+                           (best-data :box)))
+     (define best-x (and best-box
+                         (best-box :x)))
+     (define best-y (and best-box
+                         (best-box :y)))
+     
+     (define in-same-row (inside-box? box2 (box2 :x) (box :y)))
+     (define best-in-same-row-as-box (and best-box
+                                          (inside-box? best-box (best-box :x) (box :y))))
+     (define best-in-same-row-as-box2 (and best-box
+                                           (inside-box? best-box (best-box :x) (box2 :y))))
+
+     ;;(c-display (<ra> :get-instrument-name (data :instrument-id)) ". in-same:" in-same-row ". best-in-same-as-box:" best-in-same-row-as-box ". best-in-same-as-box2:" best-in-same-row-as-box2)
+     (cond (in-same-row
+            (and (> maybe-x x)
+                 (or (not best-x)
+                     (not best-in-same-row-as-box)
+                     (< maybe-x best-x))))
+           ((> maybe-y y)
+            (cond ((not best-box)
+                   #t)
+                  (best-in-same-row-as-box2
+                   (< maybe-x best-x))
+                  (else
+                   (< maybe-y best-y))))
+           (else
+            #f)))))
+                                                                        
+#!!
+(and-let* ((res (find-instrument-in-mixer-strips-to-the-up-of)))
+          (<ra> :get-instrument-name res))
+(and-let* ((res (find-instrument-in-mixer-strips-to-the-down-of)))
+          (<ra> :get-instrument-name res))
+(and-let* ((res (find-instrument-in-mixer-strips-to-the-left-of)))
+          (<ra> :get-instrument-name res))
+(and-let* ((res (find-instrument-in-mixer-strips-to-the-right-of)))
+          (<ra> :get-instrument-name res))
+
+(<ra> :schedule 1000
+      (lambda ()
+        (c-display "curr:" (<gui> :get-mixer-strips-gui-with-mouse-pointer-above-it))
+        #f))
+(<ra> :schedule 1000
+      (lambda ()
+        (c-display "curr:" (<gui> :get-mixer-strips-gui-in-active-window))
+        #f))
+!!#
+
+
+(define* (find-instrument-in-modular-mixer-to-the-left-of (goal-instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-modular-mixer-coordinate-relation-to goal-instrument-id
+                                                                      (lambda (x y x2 y2 dx dy best-dx best-dy)
+                                                                        (and (< x2 x)
+                                                                             (or (< dy best-dy)
+                                                                                 (and (= dy best-dy)
+                                                                                      (< dx best-dx)))))))
+                      
+(define* (find-instrument-in-modular-mixer-to-the-right-of (goal-instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-modular-mixer-coordinate-relation-to goal-instrument-id
+                                                                      (lambda (x y x2 y2 dx dy best-dx best-dy)
+                                                                        (and (> x2 x)
+                                                                             (or (< dy best-dy)
+                                                                                 (and (= dy best-dy)
+                                                                                      (< dx best-dx)))))))
+                      
+(define* (find-instrument-in-modular-mixer-to-the-up-of (goal-instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-modular-mixer-coordinate-relation-to goal-instrument-id
+                                                                      (lambda (x y x2 y2 dx dy best-dx best-dy)
+                                                                        (and (< y2 y)
+                                                                             (or (< dx best-dx)
+                                                                                 (and (= dx best-dx)
+                                                                                      (< dy best-dy)))))))
+                      
+(define* (find-instrument-in-modular-mixer-to-the-down-of (goal-instrument-id (ra:get-current-instrument)))
+  (find-instrument-in-modular-mixer-coordinate-relation-to goal-instrument-id
+                                                                      (lambda (x y x2 y2 dx dy best-dx best-dy)
+                                                                        (and (> y2 y)
+                                                                             (or (< dx best-dx)
+                                                                                 (and (= dx best-dx)
+                                                                                      (< dy best-dy)))))))
+                      
+
+(define* (find-instrument-to-the-X-of modular-func strips-func (goal-instrument-id (ra:get-current-instrument)))
+  (if (and (<gui> :is-active-window  (<gui> :get-main-mixer-gui))
+           (<ra> :main-mixer-is-modular))
+      (modular-func goal-instrument-id)
+      (strips-func goal-instrument-id)))
+
 (define* (find-instrument-to-the-left-of (goal-instrument-id (ra:get-current-instrument)))
-  (find-instrument-in-coordinate-relation-to goal-instrument-id
-                                             (lambda (x y x2 y2 dx dy best-dx best-dy)
-                                               (and (< x2 x)
-                                                    (or (< dy best-dy)
-                                                        (and (= dy best-dy)
-                                                             (< dx best-dx)))))))
-                      
+  (find-instrument-to-the-X-of find-instrument-in-modular-mixer-to-the-left-of
+                               find-instrument-in-mixer-strips-to-the-left-of
+                               goal-instrument-id))
+
 (define* (find-instrument-to-the-right-of (goal-instrument-id (ra:get-current-instrument)))
-  (find-instrument-in-coordinate-relation-to goal-instrument-id
-                                             (lambda (x y x2 y2 dx dy best-dx best-dy)
-                                               (and (> x2 x)
-                                                    (or (< dy best-dy)
-                                                        (and (= dy best-dy)
-                                                             (< dx best-dx)))))))
-                      
+  (find-instrument-to-the-X-of find-instrument-in-modular-mixer-to-the-right-of
+                               find-instrument-in-mixer-strips-to-the-right-of
+                               goal-instrument-id))
+
 (define* (find-instrument-to-the-up-of (goal-instrument-id (ra:get-current-instrument)))
-  (find-instrument-in-coordinate-relation-to goal-instrument-id
-                                             (lambda (x y x2 y2 dx dy best-dx best-dy)
-                                               (and (< y2 y)
-                                                    (or (< dx best-dx)
-                                                        (and (= dx best-dx)
-                                                             (< dy best-dy)))))))
-                      
+  (find-instrument-to-the-X-of find-instrument-in-modular-mixer-to-the-up-of
+                               find-instrument-in-mixer-strips-to-the-up-of
+                               goal-instrument-id))
+
 (define* (find-instrument-to-the-down-of (goal-instrument-id (ra:get-current-instrument)))
-  (find-instrument-in-coordinate-relation-to goal-instrument-id
-                                             (lambda (x y x2 y2 dx dy best-dx best-dy)
-                                               (and (> y2 y)
-                                                    (or (< dx best-dx)
-                                                        (and (= dx best-dx)
-                                                             (< dy best-dy)))))))
+  (find-instrument-to-the-X-of find-instrument-in-modular-mixer-to-the-down-of
+                               find-instrument-in-mixer-strips-to-the-down-of
+                               goal-instrument-id))
+
                       
 
 #!!
@@ -1583,6 +1788,8 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
           (<ra> :get-instrument-name res))
 (and-let* ((res (find-instrument-to-the-down-of)))
           (<ra> :get-instrument-name res))
+
+(<ra> :switch-main-mixer-is-modular)
 !!#
 
 (define (FROM_C-move-current-instrument-left)

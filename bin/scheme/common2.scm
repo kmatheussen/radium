@@ -882,7 +882,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
  ((ra:get-box reltempo-slider) :height))
 ||#
 
-(define (inside-box box x y)
+(define (inside-box? box x y)
   ;;(c-display "Whtas the box:" box)
   (and (>= x (box :x1))
        (<  x (box :x2))
@@ -892,7 +892,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 #||
 ||#
 
-(define (inside-box-forgiving Box X Y) ;; Inside a box, inluding half the width of a node.
+(define (inside-box-forgiving? Box X Y) ;; Inside a box, inluding half the width of a node.
   (define width/2 (1+ (ra:get-half-of-node-width)))
   (and (>= X (- (Box :x1) width/2))
        (<  X (+ (Box :x2) width/2))
