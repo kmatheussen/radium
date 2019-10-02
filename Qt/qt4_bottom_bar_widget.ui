@@ -2558,7 +2558,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Drunk velocity: Inserted notes will be given a velocity between min vel and max vel using a random walk algorithm.</string>
+         <string>Standard velocity</string>
         </property>
         <property name="maximum">
          <number>10000</number>
