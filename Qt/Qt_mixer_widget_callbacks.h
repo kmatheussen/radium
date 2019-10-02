@@ -196,7 +196,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     zoomout_button->hide();
     
     update_ab_buttons(true);
-    show_modular_mixer_widgets(true);
+    
+    set_modular_mixer_type(true);
     
     connections_visibility->setChecked(MW_get_connections_visibility());
     bus_connections_visibility->setChecked(MW_get_bus_connections_visibility());
@@ -279,8 +280,9 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     }
   }
 
-  
-  void show_modular_mixer_widgets(bool is_modular){
+ private:
+
+  void show_modular_mixer_widget_widgets(bool is_modular){
     zoomreset_button->setVisible(is_modular);
     //zoom_slider->setVisible(is_modular);
     mixer_direction_menu_button->setVisible(is_modular);
@@ -289,6 +291,89 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     bus_connections_visibility->setVisible(is_modular);
 
     strips_layout_widget->setVisible(!is_modular);
+  }
+
+  bool _modular_is_visible = false;
+  
+public:
+  
+  bool modular_mixer_is_visible(void) const {
+    return _modular_is_visible;
+  }
+  
+  void set_modular_mixer_type(bool show_modular){
+    if (_modular_is_visible==show_modular)
+      return;
+
+    {
+      initing=true;
+      this->show_modular->setChecked(show_modular);
+      initing=false;
+    }
+    
+    _modular_is_visible=show_modular;
+  
+    g_pause_scroll_area_updates_when_resizing = true;
+    //g_mixer_widget->setUpdatesEnabled(false); // <- This causes graphics not to be updated after switching when running in separate window. Need to resize a little bit first.
+    setUpdatesEnabled(false);
+    
+    pauseUpdatesALittleBit(); // Prevent some flickering.
+
+    if (show_modular){
+
+      view->show();
+
+      if(_mixer_strips_gui != -1){
+        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        //mixer_layout->removeWidget(w); // I've tried very hard to use replaceWidget instead of showing/hiding the 'view' widget, but Qt refuses to behave as I want.
+        w->hide();
+        //gui_close(_mixer_strips_gui);
+        //_mixer_strips_gui = -1;
+        
+      }
+      show_modular_mixer_widget_widgets(true);
+      
+    } else {
+
+      if (_mixer_strips_gui == -1){
+
+        _mixer_strips_gui = gui_createMixerStrips(_num_rows, DYN_create_ratio(_vert_ratio), g_uninitialized_dyn);
+
+        if (_mixer_strips_gui != -1){
+          show_modular_mixer_widget_widgets(false);
+          QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+          //w->setParent(bottom_widget);
+          //w->setFixedSize(width(), height()-50);
+          verticalLayout->insertWidget(1, w, 1);
+          view->hide();
+          /*
+            mixer_layout->update();
+            verticalLayout->update();
+            updateGeometry();
+          */
+        }
+
+      } else {
+
+        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+        w->setUpdatesEnabled(false);
+        show_modular_mixer_widget_widgets(false);        
+        view->hide();
+        w->show();
+        w->setUpdatesEnabled(true);
+
+      }
+
+      if (_mixer_strip_configuration.data() != NULL){
+        gui_setMixerStripsConfiguration(_mixer_strips_gui, *_mixer_strip_configuration.data());
+        _mixer_strip_configuration.set(NULL);
+      }
+    }
+    
+    //setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
+
+    if(include_instrument_widget->isChecked())
+      GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }
 
   void change_num_mixerstrips_rows(int num_rows){
@@ -591,74 +676,14 @@ public slots:
     if(include_instrument_widget->isChecked())
       GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }
-  
+
   void on_show_modular_toggled(bool show_modular){
     if (initing)
       return;
-
-    g_pause_scroll_area_updates_when_resizing = true;
-    //g_mixer_widget->setUpdatesEnabled(false); // <- This causes graphics not to be updated after switching when running in separate window. Need to resize a little bit first.
-    setUpdatesEnabled(false);
     
-    pauseUpdatesALittleBit(); // Prevent some flickering.
-
-    if (show_modular){
-
-      view->show();
-
-      if(_mixer_strips_gui != -1){
-        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
-        //mixer_layout->removeWidget(w); // I've tried very hard to use replaceWidget instead of showing/hiding the 'view' widget, but Qt refuses to behave as I want.
-        w->hide();
-        //gui_close(_mixer_strips_gui);
-        //_mixer_strips_gui = -1;
-        
-      }
-      show_modular_mixer_widgets(true);
-      
-    } else {
-
-      if (_mixer_strips_gui == -1){
-
-        _mixer_strips_gui = gui_createMixerStrips(_num_rows, DYN_create_ratio(_vert_ratio), g_uninitialized_dyn);
-
-        if (_mixer_strips_gui != -1){
-          show_modular_mixer_widgets(false);
-          QWidget *w = API_gui_get_widget(_mixer_strips_gui);
-          //w->setParent(bottom_widget);
-          //w->setFixedSize(width(), height()-50);
-          verticalLayout->insertWidget(1, w, 1);
-          view->hide();
-          /*
-            mixer_layout->update();
-            verticalLayout->update();
-            updateGeometry();
-          */
-        }
-
-      } else {
-
-        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
-        w->setUpdatesEnabled(false);
-        show_modular_mixer_widgets(false);        
-        view->hide();
-        w->show();
-        w->setUpdatesEnabled(true);
-
-      }
-
-      if (_mixer_strip_configuration.data() != NULL){
-        gui_setMixerStripsConfiguration(_mixer_strips_gui, *_mixer_strip_configuration.data());
-        _mixer_strip_configuration.set(NULL);
-      }
-    }
-    
-    //setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
-
-    if(include_instrument_widget->isChecked())
-      GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
+    set_modular_mixer_type(show_modular);
   }
-
+  
   void on_include_instrument_widget_toggled(bool include_instrument_widget){
     if (initing)
       return;
@@ -853,6 +878,18 @@ void MW_apply_mixer_strips_state(dyn_t state){
     g_mixer_widget2->_mixer_strip_configuration.set((dyn_t*)tcopy(&state, sizeof(dyn_t)));
     
   }
+}
+
+int64_t MW_get_mixer_strips_guinum(void){
+  return g_mixer_widget2->_mixer_strips_gui;
+}
+
+bool MW_modular_mixer_is_visible(void){
+  return g_mixer_widget2->modular_mixer_is_visible();
+}
+
+void MW_set_modular_mixer_type(bool show_modular){
+  return g_mixer_widget2->set_modular_mixer_type(show_modular);
 }
 
 #if 0

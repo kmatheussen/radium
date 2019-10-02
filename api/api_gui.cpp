@@ -82,6 +82,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_MyQScrollBar.hpp"
 #include "../Qt/FileRequester.hpp"
 
+#include "../mixergui/QM_MixerWidget.h"
+
 #include "../common/visual_proc.h"
 #include "../common/sequencer_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
@@ -4619,6 +4621,14 @@ int64_t gui_getInstrumentGui(void){
   return API_get_gui_from_existing_widget(getInstrumentsWidget());
 }
 
+int64_t gui_getMainMixerGui(void){
+  return API_get_gui_from_widget(get_qwidget(g_mixer_widget));
+}
+
+int64_t gui_getMainMixerStripsGui(void){
+  return MW_get_mixer_strips_guinum();
+}
+
 double gui_getEditorDistanceX(int64_t guinum){
   Gui *gui = get_gui(guinum);
   
@@ -6358,6 +6368,26 @@ int gui_getY(int64_t guinum){
   return gui->_widget->y();
 }
 
+int gui_getGlobalX(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return 0;
+
+  const QWidget *w = gui->_widget;
+
+  return w->mapToGlobal(QPoint(0,0)).x();
+}
+
+int gui_getGlobalY(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return 0;
+
+  const QWidget *w = gui->_widget;
+
+  return w->mapToGlobal(QPoint(0,0)).y();
+}
+
 void gui_moveToCentreOf(int64_t guinum, int64_t window_to_move_in_centre_of){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -7231,6 +7261,35 @@ bool MIXERSTRIPS_has_mouse_pointer(void){
   return MIXERSTRIPS_get_curr_widget() != NULL;  
 }
 
+int64_t gui_getMixerStripsGuiInActiveWindow(void){
+  int64_t main_guinum = MW_get_mixer_strips_guinum();
+  for(int64_t guinum : g_mixerstrip_guinums){
+    Gui *gui = get_gui(guinum);
+    if (gui!=NULL){
+      if(gui->_widget->isActiveWindow()){
+        if (guinum==main_guinum) {
+          if(mainMixerIsModular())
+            return -1;
+          else
+            return guinum;
+        } else {
+          return guinum;
+        }
+      }
+    }
+  }
+  
+    /*
+  QWidget *w = MIXERSTRIPS_get_curr_widget();
+  if(w==NULL)
+    return -1;
+  else
+    return API_get_gui_from_widget(w);
+    */
+
+  return -1;
+}
+
 ///////////////// Drawing
 /////////////////////////////
 
@@ -7485,6 +7544,14 @@ bool gui_hasKeyboardFocus(int64_t guinum){
     return false;
 
   return gui->_widget->hasFocus();
+}
+
+bool gui_isActiveWindow(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return false;
+
+  return gui->_widget->isActiveWindow();
 }
 
 ////////////

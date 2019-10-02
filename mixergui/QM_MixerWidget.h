@@ -125,6 +125,9 @@ extern LANGSPEC void MW_show_non_instrument_widgets(void);
 
 extern LANGSPEC dyn_t MW_get_mixer_strips_state(void);
 extern LANGSPEC void MW_apply_mixer_strips_state(dyn_t state);
+extern LANGSPEC int64_t MW_get_mixer_strips_guinum(void);
+extern LANGSPEC bool MW_modular_mixer_is_visible(void);
+extern LANGSPEC void MW_set_modular_mixer_type(bool show_modular);
 
 extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
 extern LANGSPEC const char *MW_popup_plugin_selector2(bool must_have_inputs, bool must_have_outputs);

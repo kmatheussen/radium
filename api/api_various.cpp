@@ -115,6 +115,18 @@ void setMixerRotate(float rotate){
   MW_set_rotate(rotate);
 }
 
+bool mainMixerIsModular(void){
+  return MW_modular_mixer_is_visible();
+}
+
+void setMainMixerIsModular(bool show_modular){
+  MW_set_modular_mixer_type(show_modular);
+}
+
+void switchMainMixerIsModular(void){
+  setMainMixerIsModular(!mainMixerIsModular());
+}
+
 static bool g_showInstrumentWidgetWhenDoubleClickingSoundObject = false;
 
 bool showInstrumentWidgetWhenDoubleClickingSoundObject(void){

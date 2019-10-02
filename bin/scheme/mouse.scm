@@ -661,7 +661,7 @@
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (set! *current-subtrack-num* (and *current-track-num*
-                                           (inside-box (<ra> :get-box track-fx *current-track-num*) $x $y)
+                                           (inside-box? (<ra> :get-box track-fx *current-track-num*) $x $y)
                                            (get-subtrack-from-x $x *current-track-num*)))))
 
 
@@ -691,7 +691,7 @@
          (list 'new-box 0))
         (else
          (define box ($get-node-box $num))
-         (cond ((inside-box box $x $y)
+         (cond ((inside-box? box $x $y)
                 (list 'existing-box $num box))
                ((and (= 0 $num)
                      (< $y (box :y1)))
@@ -713,7 +713,7 @@
          (list 'new-box 0))
         (else
          (define box ($get-node-box $num))
-         (cond ((inside-box box $x $y)
+         (cond ((inside-box? box $x $y)
                 (list 'existing-box $num box))
                ((and (= 0 $num)
                      (< $x (box :x1)))
@@ -831,11 +831,11 @@
     (set! *check-mouse-horizontal-modifier* Check-horizontal-modifier)
     (and (Existing-button? Button)
          (let ((area-box (Get-area-box)))
-           ;;(c-display X Y "area-box" (and area-box (box-to-string area-box)) (and area-box (inside-box-forgiving area-box X Y)) (box-to-string (<ra> :get-box reltempo-slider)))
+           ;;(c-display X Y "area-box" (and area-box (box-to-string area-box)) (and area-box (inside-box-forgiving? area-box X Y)) (box-to-string (<ra> :get-box reltempo-slider)))
            (and area-box
                 (if Forgiving-box
-                    (inside-box-forgiving area-box X Y)
-                    (inside-box area-box X Y))))
+                    (inside-box-forgiving? area-box X Y)
+                    (inside-box? area-box X Y))))
          (Get-existing-node-info X
                                  Y
                                  (lambda (Node-info Value Node-y)
@@ -855,7 +855,7 @@
              (and (not Create-button) (Existing-button? Button)))
          (let ((area-box (Get-area-box)))
            (and area-box
-                (inside-box area-box X Y)))))
+                (inside-box? area-box X Y)))))
     
   (define (press-and-create-new-node Button X Y)
     (set! *check-mouse-horizontal-modifier* Check-horizontal-modifier)
@@ -1143,9 +1143,9 @@
     (if (null? seqblocknums)
         maybe
         (let ((box (ra:get-box2 seqblock (car seqblocknums) seqtracknum)))
-          (if (inside-box-forgiving box X Y)
+          (if (inside-box-forgiving? box X Y)
               (let ((info (make-seqblock-info2 seqtracknum (car seqblocknums))))
-                (if (inside-box box X Y)
+                (if (inside-box? box X Y)
                     info
                     (loop (cdr seqblocknums)
                           info)))
@@ -1155,8 +1155,8 @@
 (define (get-seqblock-info X Y)
   (let ((seqtracknum *current-seqtrack-num*))
     (and seqtracknum
-         (inside-box (<ra> :get-box seqtracks) X Y)
-         ;;(begin (c-display "seqtracknum:" seqtracknum X Y (inside-box (ra:get-box2 seqtrack 1) X Y)) #t)
+         (inside-box? (<ra> :get-box seqtracks) X Y)
+         ;;(begin (c-display "seqtracknum:" seqtracknum X Y (inside-box? (ra:get-box2 seqtrack 1) X Y)) #t)
          (get-seqblock-info2 seqtracknum X Y))))
 
 (define2 *current-seqblock-info* (curry-or not hash-table?) #f)
@@ -1210,22 +1210,22 @@
 
          ;;(c-display X Y (box-to-string (get-seqnav-move-box)))
          (cond ((and *current-track-num*
-                     (inside-box (<ra> :get-box track-pan-slider *current-track-num*) X Y))
+                     (inside-box? (<ra> :get-box track-pan-slider *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-horizontal-split-mouse-pointer (<gui> :get-editor-gui))
                 (show-track-pan-in-statusbar *current-track-num*))
                
                ((and *current-track-num*
-                     (inside-box (<ra> :get-box track-volume-slider *current-track-num*) X Y))
+                     (inside-box? (<ra> :get-box track-volume-slider *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer (<gui> :get-editor-gui))
                 (show-track-volume-in-statusbar *current-track-num*))
                
                ((and *current-track-num*
-                     (inside-box (<ra> :get-box track-pan-on-off *current-track-num*) X Y))
+                     (inside-box? (<ra> :get-box track-pan-on-off *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
                 (set-editor-statusbar (<-> "Track panning slider " (if (<ra> :get-track-pan-on-off *current-track-num*) "on" "off"))))
                
                ((and *current-track-num*
-                     (inside-box (<ra> :get-box track-volume-on-off *current-track-num*) X Y))
+                     (inside-box? (<ra> :get-box track-volume-on-off *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
                 (set-editor-statusbar (<-> "Track volume slider " (if (<ra> :get-track-volume-on-off *current-track-num*) "on" "off"))))
 
@@ -1234,7 +1234,7 @@
                 (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
                 (set-editor-statusbar (<-> "Select instrument for track " *current-track-num*)))
 
-               ((and (inside-box (<ra> :get-box sequencer) X Y)
+               ((and (inside-box? (<ra> :get-box sequencer) X Y)
                      (not *current-seqautomation/distance*))
                 (if (not *current-seqblock-info*)
                     (set-seqblock-selected-box 'non -1 -1))
@@ -1245,43 +1245,43 @@
                        (define seqblockid (seqblock-info :id))
                        (define holds-block (<ra> :seqblock-holds-block seqblocknum seqtracknum))
                        (define holds-sample (not holds-block))
-                       (cond ((inside-box (<ra> :get-box seqblock-left-fade seqblocknum seqtracknum) X Y)
+                       (cond ((inside-box? (<ra> :get-box seqblock-left-fade seqblocknum seqtracknum) X Y)
                               (set-fade-status-bar #t seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
-                             ((inside-box (<ra> :get-box seqblock-right-fade seqblocknum seqtracknum) X Y)
+                             ((inside-box? (<ra> :get-box seqblock-right-fade seqblocknum seqtracknum) X Y)
                               (set-fade-status-bar #f seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
-                             ((inside-box (<ra> :get-box seqblock-right-stretch seqblocknum seqtracknum) X Y)
+                             ((inside-box? (<ra> :get-box seqblock-right-stretch seqblocknum seqtracknum) X Y)
                               (set-editor-statusbar (get-stretch-string seqblockid))
                               (set-seqblock-selected-box 'stretch-right seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
-                             ((inside-box (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y)
+                             ((inside-box? (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y)
                               (set-editor-statusbar (get-stretch-string seqblockid))
                               (set-seqblock-selected-box 'stretch-left seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
                              ((and holds-sample
-                                   (inside-box (<ra> :get-box seqblock-right-speed seqblocknum seqtracknum) X Y))
+                                   (inside-box? (<ra> :get-box seqblock-right-speed seqblocknum seqtracknum) X Y))
                               (set-editor-statusbar (get-speed-string seqblockid))
                               (set-seqblock-selected-box 'speed-right seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
                              ((and holds-sample
-                                   (inside-box (<ra> :get-box seqblock-left-speed seqblocknum seqtracknum) X Y))
+                                   (inside-box? (<ra> :get-box seqblock-left-speed seqblocknum seqtracknum) X Y))
                               (set-editor-statusbar (get-speed-string seqblockid))
                               (set-seqblock-selected-box 'speed-left seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
                              ((and holds-sample
-                                   (inside-box (<ra> :get-box seqblock-left-interior seqblocknum seqtracknum) X Y))
+                                   (inside-box? (<ra> :get-box seqblock-left-interior seqblocknum seqtracknum) X Y))
                               (set-left-interior-status-bar seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
                              ((and holds-sample
-                                   (inside-box (<ra> :get-box seqblock-right-interior seqblocknum seqtracknum) X Y))
+                                   (inside-box? (<ra> :get-box seqblock-right-interior seqblocknum seqtracknum) X Y))
                               (set-right-interior-status-bar seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
@@ -1293,18 +1293,18 @@
                               (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))))
                        ;;(c-display "hepp")
                        )
-                      ((inside-box (get-seqnav-move-box) X Y)
+                      ((inside-box? (get-seqnav-move-box) X Y)
                        (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))
                        )
-                      ((inside-box (<ra> :get-box seqnav-left-size-handle) X Y)
+                      ((inside-box? (<ra> :get-box seqnav-left-size-handle) X Y)
                        (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
-                      ((inside-box (<ra> :get-box seqnav-right-size-handle) X Y)
+                      ((inside-box? (<ra> :get-box seqnav-right-size-handle) X Y)
                        (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                       (else
                        ;;(c-display "normal1" *current-seqblock-info*)
                        (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui)))))
                
-               ((inside-box (<ra> :get-box editor-scrollbar) X Y)
+               ((inside-box? (<ra> :get-box editor-scrollbar) X Y)
                 (<ra> :set-open-hand-mouse-pointer (<gui> :get-editor-gui)))
                
                ((not *current-track-num*)
@@ -1349,7 +1349,7 @@
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (<ra> :get-box editor-scrollbar))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  ;;(c-display "hep" X Y (box-to-string (<ra> :get-box editor-scrollbar-scroller)) (inside-box (<ra> :get-box editor-scrollbar-scroller) X Y))
+                                                  ;;(c-display "hep" X Y (box-to-string (<ra> :get-box editor-scrollbar-scroller)) (inside-box? (<ra> :get-box editor-scrollbar-scroller) X Y))
                                                   (<ra> :set-editor-scrollbar-is-moving #t)
                                                   (callback (<ra> :get-curr-realline)
                                                             (<ra> :get-curr-realline)
@@ -1634,7 +1634,7 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
-                                            (inside-box (<ra> :get-box track-pan-on-off *current-track-num*) X Y))
+                                            (inside-box? (<ra> :get-box track-pan-on-off *current-track-num*) X Y))
                                        (<ra> :undo-track-pan *current-track-num*)
                                        (<ra> :set-track-pan-on-off (not (<ra> :get-track-pan-on-off *current-track-num*))
                                                                 *current-track-num*)
@@ -1648,7 +1648,7 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
-                                            (inside-box (<ra> :get-box track-volume-on-off *current-track-num*) X Y))
+                                            (inside-box? (<ra> :get-box track-volume-on-off *current-track-num*) X Y))
                                        (<ra> :undo-track-volume *current-track-num*)
                                        (<ra> :set-track-volume-on-off (not (<ra> :get-track-volume-on-off *current-track-num*))
                                                                    *current-track-num*)
@@ -1675,7 +1675,7 @@
 ;; slider
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                             (and *current-track-num*
-                                                 (inside-box (<ra> :get-box track-pan-slider *current-track-num*) X Y)
+                                                 (inside-box? (<ra> :get-box track-pan-slider *current-track-num*) X Y)
                                                  *current-track-num*))
                         :Get-x1 ra:get-track-pan-slider-x1
                         :Get-x2 ra:get-track-pan-slider-x2
@@ -1698,7 +1698,7 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
-                                            (inside-box (<ra> :get-box track-pan-slider *current-track-num*) X Y))
+                                            (inside-box? (<ra> :get-box track-pan-slider *current-track-num*) X Y))
                                        (<ra> :undo-track-pan *current-track-num*)
                                        (<ra> :set-track-pan 0.0 *current-track-num*)
                                        #t)
@@ -1723,7 +1723,7 @@
 ;; slider
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                             (and *current-track-num*
-                                                 (inside-box (<ra> :get-box track-volume-slider *current-track-num*) X Y)
+                                                 (inside-box? (<ra> :get-box track-volume-slider *current-track-num*) X Y)
                                                  *current-track-num*))
                         :Get-x1 ra:get-track-volume-slider-x1
                         :Get-x2 ra:get-track-volume-slider-x2
@@ -1747,7 +1747,7 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (cond ((and *current-track-num*
-                                            (inside-box (<ra> :get-box track-volume-slider *current-track-num*) X Y))
+                                            (inside-box? (<ra> :get-box track-volume-slider *current-track-num*) X Y))
                                        (<ra> :undo-track-volume *current-track-num*)
                                        (<ra> :set-track-volume 0.8 *current-track-num*)
                                        #t)
@@ -1762,7 +1762,7 @@
 #||
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
-         (if (inside-box (<ra> :get-box temponode-area) $x $y)
+         (if (inside-box? (<ra> :get-box temponode-area) $x $y)
              (c-display "inside" $x $y))))
 ||#
 
@@ -1875,7 +1875,7 @@
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
                      (<ra> :reltempo-track-visible)
-                     (inside-box (<ra> :get-box temponode-area) $x $y)
+                     (inside-box? (<ra> :get-box temponode-area) $x $y)
                      (if (<ra> :alt2-pressed)
                          (undo-block
                           (lambda ()
@@ -1896,7 +1896,7 @@
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and (<ra> :reltempo-track-visible)
-              (inside-box-forgiving (<ra> :get-box temponode-area) $x $y)
+              (inside-box-forgiving? (<ra> :get-box temponode-area) $x $y)
               (match (list (find-node $x $y get-temponode-box (<ra> :get-num-temponodes)))
                      (existing-box Num Box) :> (begin
                                                  (set-mouse-track-to-reltempo)
@@ -2174,7 +2174,7 @@
                 (and (= $button *right-button*)
                      (<ra> :shift-pressed)
                      *current-track-num*
-                     (inside-box (<ra> :get-box track-notes *current-track-num*) $x $y)
+                     (inside-box? (<ra> :get-box track-notes *current-track-num*) $x $y)
                      (match (list (find-node $x $y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*)))
                             (existing-box Num Box) :> (let ((notenum (<ra> :get-notenum-for-pitchnum Num *current-track-num*)))
                                                         (if (<ra> :alt2-pressed)
@@ -2200,7 +2200,7 @@
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
                      *current-track-num*
-                     (inside-box (<ra> :get-box track-notes *current-track-num*) $x $y)
+                     (inside-box? (<ra> :get-box track-notes *current-track-num*) $x $y)
                      (match (list (find-node $x $y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*)))
                             (existing-box Num Box) :> (begin
                                                         (define (delete-pitch)
@@ -2221,7 +2221,7 @@
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and *current-track-num*
-              (inside-box (<ra> :get-box track-notes *current-track-num*) $x $y)
+              (inside-box? (<ra> :get-box track-notes *current-track-num*) $x $y)
               (match (list (find-node $x $y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*)))
                      (existing-box Num Box) :> (begin
                                                  (set-indicator-pitchnum Num *current-track-num*)
@@ -2291,7 +2291,7 @@
 
 (define (get-pianonote-info4 $x $y $tracknum $notenum $pianonotenum)
   (define box (get-pianonote-box $tracknum $notenum $pianonotenum))
-  (and (inside-box box $x $y)
+  (and (inside-box? box $x $y)
        (let ((move-type (get-pianonote-move-type $y (box :y1) (box :y2))))
          (make-pianonote-info :tracknum $tracknum
                               :notenum $notenum
@@ -2558,7 +2558,7 @@
  :move (lambda ($button $x $y)
          (and *current-track-num*
               (<ra> :pianoroll-visible *current-track-num*)
-              (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
+              (inside-box? (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
               ;;(c-display "current-tracknum:" *current-track-num*)
               (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
                 '(c-display $x $y pianonote-info
@@ -2592,7 +2592,7 @@
                      (<ra> :shift-pressed)
                      *current-track-num*
                      (<ra> :pianoroll-visible *current-track-num*)
-                     (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
+                     (inside-box? (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
                      (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
                        (and pianonote-info
                             (let ((notenum (pianonote-info :notenum))
@@ -2615,7 +2615,7 @@
                 (and (= $button *right-button*)
                      *current-track-num*
                      (<ra> :pianoroll-visible *current-track-num*)
-                     (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
+                     (inside-box? (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
                      (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
                        (and pianonote-info
                             (begin
@@ -2782,7 +2782,7 @@
                                   (and (= $button *right-button*)
                                        *current-track-num*
                                        (<ra> :pianoroll-visible *current-track-num*)
-                                       (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
+                                       (inside-box? (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
                                        (not (get-pianonote-info $x $y *current-track-num*))
                                        (set-mouse-pointer ra:set-blank-mouse-pointer (<gui> :get-editor-gui))
                                        (move-pianoroll-eraser $button 0 0 (hash-table :x $x
@@ -2890,7 +2890,7 @@
                                                              #f
                                                              (highest-rated-velocity-info Y
                                                                                           (list (get-velocity-2 X Y Tracknum Notenum (1+ Velocitynum) Total-Velocities)
-                                                                                                (and (inside-box box X Y)
+                                                                                                (and (inside-box? box X Y)
                                                                                                      (make-velocity-info2 Velocitynum Notenum Tracknum (box :x) (box :y))))))))
 
 (define-match get-velocity-1
@@ -3090,7 +3090,7 @@
                 (and (= Button *right-button*)
                      (<ra> :shift-pressed)
                      *current-track-num*
-                     (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
+                     (inside-box-forgiving? (<ra> :get-box track *current-track-num*) X Y)
                      (begin
                        (define velocity-info (get-velocity-info X Y *current-track-num*))
                        ;;(c-display "got velocity info " velocity-info)
@@ -3120,7 +3120,7 @@
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      *current-track-num*
-                     (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
+                     (inside-box-forgiving? (<ra> :get-box track *current-track-num*) X Y)
                      (begin
                        (define velocity-info (get-velocity-info X Y *current-track-num*))
                        ;;(c-display "got velocity info " velocity-info)
@@ -3185,7 +3185,7 @@
 (add-mouse-move-handler
  :move (lambda (Button X Y)
          (and *current-track-num*
-              (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
+              (inside-box-forgiving? (<ra> :get-box track *current-track-num*) X Y)
               (begin
                 (define velocity-info (get-velocity-info X Y *current-track-num*))
                 (c-display "got velocity info " velocity-info)
@@ -3238,7 +3238,7 @@
   X Y Tracknum :> (get-resize-point-track X Y (1+ Tracknum)))
 
 (define (get-trackwidth-info X Y)
-  (and (inside-box (<ra> :get-box editor) X Y)
+  (and (inside-box? (<ra> :get-box editor) X Y)
        (begin
          (define resize-point-track (get-resize-point-track X Y 0))
          (and resize-point-track
@@ -3360,7 +3360,7 @@
                                                       #f
                                                       (highest-rated-fxnode-info Y
                                                                                  (list (get-fxnode-2 X Y Tracknum Fxnum (1+ Fxnodenum) Total-Fxnodes)
-                                                                                       (and (inside-box box X Y)
+                                                                                       (and (inside-box? box X Y)
                                                                                             (make-fxnode-info :tracknum Tracknum
                                                                                                               :fxnum Fxnum
                                                                                                               :fxnodenum Fxnodenum
@@ -3586,7 +3586,7 @@
                 (and (= $button *right-button*)
                      (<ra> :shift-pressed)
                      *current-track-num*
-                     (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
+                     (inside-box-forgiving? (<ra> :get-box track *current-track-num*) X Y)
                      (begin
                        (define fxnode-info (get-fxnode-info X Y *current-track-num*))
                        (and fxnode-info
@@ -3608,7 +3608,7 @@
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      *current-track-num*
-                     (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
+                     (inside-box-forgiving? (<ra> :get-box track *current-track-num*) X Y)
                      (begin
                        (define fxnode-info (get-fxnode-info X Y *current-track-num*))
                        ;;(c-display "got fx info " fxnode-info)
@@ -3662,7 +3662,7 @@
                      *current-track-num*
                      (<ra> :alt2-pressed)
                      (<ra> :shift-pressed)
-                     (inside-box (<ra> :get-box track-fx *current-track-num*) X Y)                     
+                     (inside-box? (<ra> :get-box track-fx *current-track-num*) X Y)                     
                      (let ((fxnum (<ra> :get-mouse-fx *current-track-num*)))
                        (and ;;*current-fx/distance*
                         (>= fxnum 0)
@@ -3690,23 +3690,23 @@
                 (and *current-track-num*
                      (= Button *right-button*)
                      (cond ((and (<ra> :swingtext-visible *current-track-num*)
-                                 (inside-box (<ra> :get-box swingtext *current-track-num*) X Y))
+                                 (inside-box? (<ra> :get-box swingtext *current-track-num*) X Y))
                             (popup-menu (swingtext-popup-elements))
                             #t)
                            ((and (<ra> :centtext-visible *current-track-num*)
-                                 (inside-box (<ra> :get-box centtext *current-track-num*) X Y))
+                                 (inside-box? (<ra> :get-box centtext *current-track-num*) X Y))
                             (popup-menu (centtext-popup-elements))
                             #t)
                            ((and (<ra> :chancetext-visible *current-track-num*)
-                                 (inside-box (<ra> :get-box chancetext *current-track-num*) X Y))
+                                 (inside-box? (<ra> :get-box chancetext *current-track-num*) X Y))
                             (popup-menu (chancetext-popup-elements))
                             #t)
                            ((and (<ra> :veltext-visible *current-track-num*)
-                                 (inside-box (<ra> :get-box velocitytext *current-track-num*) X Y))
+                                 (inside-box? (<ra> :get-box velocitytext *current-track-num*) X Y))
                             (popup-menu (velocitytext-popup-elements))
                             #t)
                            ((and (<ra> :fxtext-visible *current-track-num*)
-                                 (inside-box (<ra> :get-box fxtext *current-track-num*) X Y))
+                                 (inside-box? (<ra> :get-box fxtext *current-track-num*) X Y))
                             (popup-menu (fxtext-popup-elements))
                             #t)
                            (else
@@ -3721,14 +3721,14 @@
          (define resize-mouse-pointer-is-set #f)
          (define result
            (and *current-track-num*
-                (inside-box-forgiving (<ra> :get-box track *current-track-num*) X Y)
+                (inside-box-forgiving? (<ra> :get-box track *current-track-num*) X Y)
                 (lazy
                   (define-lazy velocity-info (get-velocity-info X Y *current-track-num*))
                   (define-lazy fxnode-info (get-fxnode-info X Y *current-track-num*))
                   (define-lazy velocity-dist (get-shortest-velocity-distance X Y))
                   (define-lazy fx-dist (get-closest-fx X Y))
                   
-                  (define-lazy is-in-fx-area (inside-box (<ra> :get-box track-fx *current-track-num*) X Y))
+                  (define-lazy is-in-fx-area (inside-box? (<ra> :get-box track-fx *current-track-num*) X Y))
                   
                   (define-lazy velocity-dist-is-shortest
                     (cond ((not velocity-dist)
@@ -3756,19 +3756,19 @@
                   ;;(c-display "curr" *current-track-num* *current-track-num-all-tracks*)
                   
                   (cond ((and (<ra> :swingtext-visible *current-track-num*)
-                              (inside-box (<ra> :get-box swingtext *current-track-num*) X Y))
+                              (inside-box? (<ra> :get-box swingtext *current-track-num*) X Y))
                          (set-editor-statusbar (<-> "Swing text for track #" *current-track-num*)))
                         ((and (<ra> :centtext-visible *current-track-num*)
-                              (inside-box (<ra> :get-box centtext *current-track-num*) X Y))
+                              (inside-box? (<ra> :get-box centtext *current-track-num*) X Y))
                          (set-editor-statusbar (<-> "Cent text for track #" *current-track-num*)))
                         ((and (<ra> :chancetext-visible *current-track-num*)
-                              (inside-box (<ra> :get-box chancetext *current-track-num*) X Y))
+                              (inside-box? (<ra> :get-box chancetext *current-track-num*) X Y))
                          (set-editor-statusbar (<-> "Chance text for track #" *current-track-num*)))
                         ((and (<ra> :veltext-visible *current-track-num*)
-                              (inside-box (<ra> :get-box velocitytext *current-track-num*) X Y))
+                              (inside-box? (<ra> :get-box velocitytext *current-track-num*) X Y))
                          (set-editor-statusbar (<-> "Velocity text for track #" *current-track-num*)))
                         ((and (<ra> :fxtext-visible *current-track-num*)
-                              (inside-box (<ra> :get-box fxtext *current-track-num*) X Y))
+                              (inside-box? (<ra> :get-box fxtext *current-track-num*) X Y))
                          (define instrument-id (<ra> :get-instrument-for-track  *current-track-num*))
                          (when (>= instrument-id 0)
                            (define fxnum (<ra> :get-fxtext-fxnum-from-x X *current-track-num*))
@@ -3814,7 +3814,7 @@
                       (< Y (<ra> :get-reltempo-slider-y1))
                       *current-track-num*
                       (or (not (<ra> :pianoroll-visible *current-track-num*))
-                          (not (inside-box (<ra> :get-box track-pianoroll *current-track-num*) X Y))))
+                          (not (inside-box? (<ra> :get-box track-pianoroll *current-track-num*) X Y))))
                  (begin
                    ;;(c-display "normal3")
                    (<ra> :set-normal-mouse-pointer (<gui> :get-editor-gui)))))
@@ -3828,7 +3828,7 @@
                 ;;(c-display "HEPP X Y")
                 (and (= Button *right-button*)
                      *current-track-num*
-                     (inside-box (<ra> :get-box track *current-track-num*) X Y)
+                     (inside-box? (<ra> :get-box track *current-track-num*) X Y)
                      (if (<ra> :shift-pressed)
                          (<ra> :delete-track *current-track-num*)
                          (track-configuration-popup-async X Y))
@@ -3844,7 +3844,7 @@
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
                 (and ;(= Button *middle-button*)
-                 (inside-box (<ra> :get-box editor) X Y)
+                 (inside-box? (<ra> :get-box editor) X Y)
                  *current-track-num*
                  (<ra> :select-track *current-track-num*)
                  #t))))
@@ -4105,7 +4105,7 @@
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
                      (<ra> :seqtempo-visible)                     
-                     (inside-box (<ra> :get-box seqtempo-area) $x $y)
+                     (inside-box? (<ra> :get-box seqtempo-area) $x $y)
                      (if (and (<ra> :shift-pressed)
                               (<ra> :alt2-pressed))
                          (begin
@@ -4181,8 +4181,8 @@
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and (<ra> :seqtempo-visible)
-              ;;(or (c-display "---" $x $y (box-to-string (<ra> :get-box seqtempo-area)) (inside-box-forgiving (<ra> :get-box seqtempo-area) $x $y)) #t)
-              (inside-box-forgiving (<ra> :get-box seqtempo-area) $x $y)
+              ;;(or (c-display "---" $x $y (box-to-string (<ra> :get-box seqtempo-area)) (inside-box-forgiving? (<ra> :get-box seqtempo-area) $x $y)) #t)
+              (inside-box-forgiving? (<ra> :get-box seqtempo-area) $x $y)
               (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
                      (existing-box Num Box) :> (begin
                                                  ;;(c-display "hepp" Num)
@@ -4218,7 +4218,7 @@
   (add-mouse-move-handler
    :move (lambda ($button $x $y)
            (and (in-use?)
-                (inside-box (<ra> :get-box seqtimeline-area) $x $y)
+                (inside-box? (<ra> :get-box seqtimeline-area) $x $y)
                 (let* ((start-x (get-sequencer-x (get-start)))
                        (end-x (get-sequencer-x (get-end)))
                        (mid (average start-x end-x)))
@@ -4237,7 +4237,7 @@
   (define name #f)
   (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                               (and (in-use?)
-                                                   (inside-box (<ra> :get-box seqtimeline-area) X Y)
+                                                   (inside-box? (<ra> :get-box seqtimeline-area) X Y)
                                                    (let* ((start-x (get-sequencer-x (get-start)))
                                                           (end-x (get-sequencer-x (get-end)))
                                                           (mid (average start-x end-x)))
@@ -4309,7 +4309,7 @@
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)                                
                                 (if (and (= Button *right-button*)
-                                         (inside-box (<ra> :get-box seqtimeline-area) X Y))
+                                         (inside-box? (<ra> :get-box seqtimeline-area) X Y))
                                     (begin
                                       (popup-menu (append
                                                    ;;(list "-------- Time format" ;;Display bars and beats"
@@ -4586,8 +4586,8 @@
                      (not *current-seqautomation/distance*)
                      (let* ((seqtracknum (*current-seqblock-info* :seqtracknum))
                             (seqblocknum (*current-seqblock-info* :seqblocknum))
-                            (is-fade-in (inside-box (<ra> :get-box seqblock-left-fade seqblocknum seqtracknum) X Y))
-                            (is-fade-out (inside-box (<ra> :get-box seqblock-right-fade seqblocknum seqtracknum) X Y)))
+                            (is-fade-in (inside-box? (<ra> :get-box seqblock-left-fade seqblocknum seqtracknum) X Y))
+                            (is-fade-out (inside-box? (<ra> :get-box seqblock-right-fade seqblocknum seqtracknum) X Y)))
                        (and (or is-fade-in
                                 is-fade-out)
                             (begin
@@ -6159,9 +6159,9 @@
    
    (make-mouse-cycle
     :press-func (lambda ($button $x $y)
-                  ;;(c-display "in-sequencer: " (inside-box (<ra> :get-box seqtracks) $x $y) (< $y (<ra> :get-seqnav-y1)))
+                  ;;(c-display "in-sequencer: " (inside-box? (<ra> :get-box seqtracks) $x $y) (< $y (<ra> :get-seqnav-y1)))
                   (and (= $button *left-button*)
-                       (inside-box (<ra> :get-box seqtracks) $x $y)
+                       (inside-box? (<ra> :get-box seqtracks) $x $y)
                        (< $y (<ra> :get-seqnav-y1))
                        (begin
                          (set! *selection-rectangle-start-x* $x)
@@ -6304,7 +6304,7 @@
 (define (get-closest-seqblock-automation Seqtracknum Seqblocknum Automation-Num X Y)
   (apply min-seqautomation/distance
          (map-all-seqblocks (lambda (Seqtracknum Seqblocknum)
-                              (and (inside-box-forgiving (<ra> :get-box seqblock Seqblocknum Seqtracknum) X Y)
+                              (and (inside-box-forgiving? (<ra> :get-box seqblock Seqblocknum Seqtracknum) X Y)
                                    (begin
                                      (define seqblock-id (<ra> :get-seqblock-id Seqblocknum Seqtracknum))
                                      (define num-automations (<ra> :get-num-seqblock-automations Seqblocknum Seqtracknum))
@@ -6320,7 +6320,7 @@
   (define (get-closest-seqtrack-automation seqtracknum)
     (and (>= seqtracknum 0)
          (< seqtracknum (<ra> :get-num-seqtracks))
-         (inside-box-forgiving (<ra> :get-box seqtrack seqtracknum) X Y)
+         (inside-box-forgiving? (<ra> :get-box seqtrack seqtracknum) X Y)
          (get-closest-seqautomation-0 seqtracknum 0 (<ra> :get-num-seqtrack-automations seqtracknum) X Y)))
   (min-seqautomation/distance (and *current-seqtrack-num*
                                    (min-seqautomation/distance (get-closest-seqtrack-automation (- *current-seqtrack-num* 1))
@@ -7177,7 +7177,7 @@
                 #t)
                ((= seqblocknum (<ra> :get-num-seqblocks seqtracknum))
                 (loop 0 (1+ seqtracknum)))
-               ((inside-box (<ra> :get-box seqblock seqblocknum seqtracknum) x y)
+               ((inside-box? (<ra> :get-box seqblock seqblocknum seqtracknum) x y)
                 (<ra> :delete-seqblock (<ra> :get-seqblock-id seqblocknum seqtracknum))
                 (set! *current-seqblock-info* #f)
                 (loop seqblocknum seqtracknum))
@@ -7250,10 +7250,10 @@
                      (let* ((seqtracknum (*current-seqblock-info* :seqtracknum))
                             (seqblocknum (*current-seqblock-info* :seqblocknum))
                             (seqblockid (*current-seqblock-info* :id))
-                            (is-left (inside-box (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y))
+                            (is-left (inside-box? (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y))
                             (is-right (not is-left)))
                        (and (or is-left
-                                (inside-box (<ra> :get-box seqblock-right-stretch seqblocknum seqtracknum) X Y))
+                                (inside-box? (<ra> :get-box seqblock-right-stretch seqblocknum seqtracknum) X Y))
                             (begin
                               (popup-menu (list "Reset stretch"
                                                 :enabled (not (= 1.0 (<ra> :get-seqblock-stretch seqblockid)))
@@ -7299,11 +7299,11 @@
                      (let* ((seqtracknum (*current-seqblock-info* :seqtracknum))                            
                             (seqblocknum (*current-seqblock-info* :seqblocknum))
                             (seqblockid (*current-seqblock-info* :id))
-                            (is-left (inside-box (<ra> :get-box seqblock-left-speed seqblocknum seqtracknum) X Y))
+                            (is-left (inside-box? (<ra> :get-box seqblock-left-speed seqblocknum seqtracknum) X Y))
                             (is-right (not is-left)))
                        (and (<ra> :seqtrack-for-audiofiles seqtracknum)
                             (or is-left
-                                (inside-box (<ra> :get-box seqblock-right-speed seqblocknum seqtracknum) X Y))
+                                (inside-box? (<ra> :get-box seqblock-right-speed seqblocknum seqtracknum) X Y))
                             (begin
                               (popup-menu (list "Reset speed"
                                                 :enabled (not (= 1.0 (<ra> :get-seqblock-speed seqblockid)))
@@ -7891,10 +7891,10 @@
                                             (define left-box (<ra> :get-box seqnav-left-size-handle))
                                             (define box (<ra> :get-box seqnav-right-size-handle))
                                             ;;(c-display "  RIGHT box" box
-                                            ;;           (inside-box box X Y)
+                                            ;;           (inside-box? box X Y)
                                             ;;           (<ra> :get-seqnav-right-size-handle-x2))
-                                            (and (or (inside-box box X Y)
-                                                     (and (inside-box left-box X Y) ;; To avoid forcing the user to zoom out to move the navigator.
+                                            (and (or (inside-box? box X Y)
+                                                     (and (inside-box? left-box X Y) ;; To avoid forcing the user to zoom out to move the navigator.
                                                           (< (box :x1)
                                                              (left-box :x2))
                                                           (<= (left-box :x1)
@@ -7939,9 +7939,9 @@
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                             (define box (<ra> :get-box seqnav-left-size-handle))
                                             ;;(c-display "  LEFT box" box
-                                            ;;           (inside-box box X Y)
+                                            ;;           (inside-box? box X Y)
                                             ;;           (<ra> :get-seqnav-left-size-handle-x1))
-                                            (and (inside-box box X Y)
+                                            (and (inside-box? box X Y)
                                                  (<ra> :get-seqnav-left-size-handle-x1)))
                         :Get-x1 (lambda (_)
                                   (<ra> :get-seqnav-x1))

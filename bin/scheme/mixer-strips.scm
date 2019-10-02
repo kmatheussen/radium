@@ -479,7 +479,8 @@
       (assert conf)
       (set! (confs instrument-id) (<copy-conf> conf keyword new-value))))
                    
-
+  (define instrument-id-guis (hash-table))
+  
   (define this
     (dilambda (lambda (keyword . rest)
                 ;;(c-display "THIS called. keyword:" keyword)
@@ -504,8 +505,11 @@
                                                                         (define instrument-id (car entry))
                                                                         (if (<ra> :instrument-is-open-and-audio instrument-id) ;; When saving song, conf can include deleted instruments.
                                                                             (let ((conf (cdr entry)))
+                                                                              ;;(c-display "instrument-id-guis:" instrument-id-guis)
                                                                               (hash-table :instrument-id instrument-id
-                                                                                          :is-enabled (conf :is-enabled)))
+                                                                                          :is-enabled (conf :is-enabled)
+                                                                                          :gui-id (and (conf :is-enabled)
+                                                                                                       (instrument-id-guis instrument-id))))
                                                                             #f))
                                                                       confs))))
                   ((:set!) (let ((settings (car rest)))
@@ -518,6 +522,10 @@
                                              (set-conf-var! instrument-id :is-enabled (conf :is-enabled))))
                                        (to-list (settings :instrument-settings)))
                              (remake '())));;:non-are-valid)))
+                  ((:set-instrument-id-guis!)
+                   (set! instrument-id-guis (car rest))
+                   ;;(c-display "instrument-id-guis:" instrument-id-guis)
+                   )
                   (else
                    (error (<-> "Unknown keyword1 " keyword)))))
               (lambda (keyword first-arg . rest-args)
@@ -2655,9 +2663,9 @@
   (define num-visible-strips (length (keep (lambda (id)
                                              (strips-config :is-enabled id))
                                            (get-all-audio-instruments))))
-
+  
   (define num-strips-per-row (ceiling (/ num-visible-strips num-rows)))
-
+  
   (define (add-strips id-instruments)
     (map (lambda (instrument-id)
            (set! (strips-config :row-num instrument-id) row-num)
@@ -2673,7 +2681,7 @@
            
            (if stored-valid?
                (<gui> :remove-parent mixer-strip)) ;; remove existing parent of stored mixer strip.
-
+           
            (<gui> :add horizontal-layout mixer-strip)
            
            (set! column-num (1+ column-num))
@@ -2805,17 +2813,18 @@
               (create-mixer-strips (strips-config :num-rows) das-stored-mixer-strips strips-config list-of-modified-instrument-ids
                                    (lambda (new-mixer-strips new-mixer-strips-gui)
                                      (if das-mixer-strips-gui
-                                    (begin
-                                      (<gui> :replace gui das-mixer-strips-gui new-mixer-strips-gui)
-                                      (<gui> :close das-mixer-strips-gui))
-                                    (begin
-                                      (<gui> :add gui new-mixer-strips-gui)
-                                      ;;(<gui> :show mixer-strips-gui)
-                                      ))
+                                         (begin
+                                           (<gui> :replace gui das-mixer-strips-gui new-mixer-strips-gui)
+                                           (<gui> :close das-mixer-strips-gui))
+                                         (begin
+                                           (<gui> :add gui new-mixer-strips-gui)
+                                           ;;(<gui> :show mixer-strips-gui)
+                                           ))
                                      
                                      ;;(c-display "...scan2")
                                      ;;(strips-config :scan-instruments!) ;; :scan-instruments! was called in 'create-mixer-strips'.
                                      (strips-config :recreate-config-gui-content)
+                                     (strips-config :set-instrument-id-guis! (apply hash-table (flatten new-mixer-strips)))
                                      (set! das-stored-mixer-strips new-mixer-strips)
                                      (set! das-mixer-strips-gui new-mixer-strips-gui)
                                      ))
@@ -3003,6 +3012,10 @@
     (if object
         (object :strips-config :set! configuration))))
   
+#!!
+(pretty-print (mixer-strips-get-configuration (<gui> :get-main-mixer-strips-gui)))
+((hash-table  10 1 11 2) 10)
+!!#
 
 (define (toggle-all-mixer-strips-fullscreen)
   (define set-to 0)
