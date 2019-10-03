@@ -587,7 +587,7 @@ static void Undo_Add_internal(
     entry->blocknum         = blocknum;
     entry->tracknum         = tracknum;
     entry->realline         = realline;
-    entry->current_patch    = g_currpatch;
+    entry->current_patch    = PATCH_get_current();
     entry->pointer          = pointer;
     entry->function         = undo_function;
     entry->stop_playing     = stop_playing_when_undoing;

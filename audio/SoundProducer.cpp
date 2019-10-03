@@ -1299,8 +1299,7 @@ public:
     for(auto *link : to_remove)
       delete link;
 
-    if (g_currpatch != NULL)
-      GFX_ScheduleInstrumentRedraw(g_currpatch);
+    GFX_ScheduleInstrumentRedraw(PATCH_get_current());
 
     return true;
   }

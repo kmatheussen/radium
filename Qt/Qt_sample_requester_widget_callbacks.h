@@ -840,12 +840,12 @@ public slots:
       else
         name = item->text();
 
-      R_ASSERT(g_currpatch==_patch.data());
+      R_ASSERT_NON_RELEASE(PATCH_get_current()==_patch.data());
 
       //audio_instrument_widget->on_name_widget_editingFinished()
       file_list->setCurrentItem(NULL);
 
-      R_ASSERT(g_currpatch==_patch.data());
+      R_ASSERT_NON_RELEASE(PATCH_get_current()==_patch.data());
 
       if (tab_name_has_changed(_instrument_widget,name)) {
         _instrument_name_widget->update(); //setText(name);

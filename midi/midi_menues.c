@@ -36,12 +36,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-extern struct Patch *g_currpatch;
-
 #define APP_GetVars()                                            \
-  struct Patch *patch=g_currpatch;                               \
+  struct Patch *patch=PATCH_get_current();                       \
   do{                                                            \
-    if(patch==NULL || patch->instrument!=get_MIDI_instrument()) \
+    if(patch->instrument!=get_MIDI_instrument())                 \
       return 0;                                                  \
   }while(0);
 

@@ -2046,8 +2046,16 @@ void GFX_showHideMixerWidget(void){
 
 static const int g_main_pipe_patch_id = 0;
 
+struct Patch *get_main_pipe_patch(void){
+  return PATCH_get_from_id(g_main_pipe_patch_id);
+}
+  
+int64_t get_main_pipe_patch_id(void){
+  return g_main_pipe_patch_id;
+}
+  
 SoundPlugin *get_main_pipe(void){
-  struct Patch *patch = PATCH_get_from_id(g_main_pipe_patch_id);
+  struct Patch *patch = get_main_pipe_patch();
   if (patch==NULL)
     return NULL;
   

@@ -194,6 +194,8 @@ extern LANGSPEC void MW_set_chip_position(struct Patch *patch, float x, float y)
 extern LANGSPEC float MW_get_chip_x(const struct Patch *patch);
 extern LANGSPEC float MW_get_chip_y(struct Patch *patch);
 
+extern LANGSPEC struct Patch *get_main_pipe_patch(void);
+extern LANGSPEC int64_t get_main_pipe_patch_id(void);
 extern LANGSPEC SoundPlugin *get_main_pipe(void);
 
 #endif // QM_MIXERWIDGET_H

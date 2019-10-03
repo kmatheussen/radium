@@ -2137,7 +2137,7 @@ void setAudioConnectionType(int64_t source_id, int64_t dest_id, int audio_connec
 // modulators
 
 int64_t createModulator(void){
-  //struct Patch *curr_patch = g_currpatch;
+  //struct Patch *curr_patch = PATCH_get_current();
   
   int64_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0, false);
   if (instrument_id==-1){
@@ -2240,7 +2240,7 @@ void removeModulator(int64_t instrument_id, const char *effect_name){
 
   MODULATOR_remove_target(modulator_id, patch, effect_num);
 
-  if(patch==g_currpatch)
+  if(patch==PATCH_get_current())
     patch->instrument->PP_Update(patch->instrument, patch, false);
 }
 
@@ -2453,7 +2453,7 @@ void internalReplaceMainPipe(int64_t new_main_pipe_id){
 }
 
 bool instrumentIsOpenAndAudio(int64_t instrument_id){
-  const struct Patch *patch = instrument_id==-1 ? g_currpatch : PATCH_get_from_id(instrument_id);
+  const struct Patch *patch = instrument_id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id);
   if (patch==NULL)
     return false;
 
@@ -2461,7 +2461,7 @@ bool instrumentIsOpenAndAudio(int64_t instrument_id){
 }
 
 bool instrumentIsOpen(int64_t instrument_id){
-  return (instrument_id==-1 ? g_currpatch : PATCH_get_from_id(instrument_id)) != NULL;
+  return (instrument_id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id)) != NULL;
 }
 
 const_char* getSampleBookmarks(int num){
@@ -2622,7 +2622,7 @@ bool showInstrumentGui(int64_t instrument_id, int64_t parentgui, bool show_instr
   if(patch==NULL)
     return false;
 
-  //struct Patch *currpatch_before = g_currpatch;
+  //struct Patch *currpatch_before = PATCH_get_current();
   
   bool instrument_window_was_visible = GFX_InstrumentWindowIsVisible();
     
@@ -2648,7 +2648,7 @@ bool showInstrumentGui(int64_t instrument_id, int64_t parentgui, bool show_instr
       if (!instrument_window_was_visible && instrument_window_is_visible)
         show_message = false;
       
-      //else if (instrument_window_is_visible && currpatch_before != g_currpatch)
+      //else if (instrument_window_is_visible && currpatch_before != PATCH_get_current())
       //  show_message = true;
 
       //printf("was: %d, is: %d. show: %d\n", instrument_window_was_visible, instrument_window_is_visible, show_message);
@@ -2719,9 +2719,7 @@ void internal_instrumentGuiHasBeenHidden(int64_t instrument_id){
 }
 
 int64_t getCurrentInstrument(void){
-  if (g_currpatch==NULL)
-    return -1;
-  return g_currpatch->id;
+  return PATCH_get_current()->id;
 }
 
 void setCurrentInstrument(int64_t instrument_id, bool show_instrument_window_if_not_visible){
@@ -2729,7 +2727,7 @@ void setCurrentInstrument(int64_t instrument_id, bool show_instrument_window_if_
   if(patch==NULL)
     return;
 
-  struct Patch *old_currpatch = g_currpatch;
+  struct Patch *old_currpatch = PATCH_get_current();
 
   if (patch==old_currpatch)
     return;

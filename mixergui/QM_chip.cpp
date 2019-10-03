@@ -587,7 +587,7 @@ void CHIP_kick_right(Chip *chip){
 }
 
 static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id, bool patch_is_always_supposed_to_be_here = true){
-  struct Patch *patch = patch_id==-1 ? g_currpatch : PATCH_get_from_id(patch_id);
+  struct Patch *patch = patch_id==-1 ? PATCH_get_current() : PATCH_get_from_id(patch_id);
 
   if (patch==NULL){
     if (patch_is_always_supposed_to_be_here)
@@ -965,7 +965,7 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
           
           if (bus_num >= 0){
             struct Patch *patch = CHIP_get_patch(parm._from);
-            if (patch==g_currpatch)
+            if (patch==PATCH_get_current())
               GFX_PP_Update(patch, false);
           }
         }
@@ -2556,7 +2556,7 @@ void Chip::mySetSelected(bool selected) {
 struct Patch *CHIP_get_patch(const Chip *chip){
   const SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
   volatile struct Patch *patch = plugin->patch;
-  R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, g_currpatch);
+  R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, PATCH_get_current());
   return (struct Patch*)patch;
 }
 

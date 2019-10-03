@@ -107,8 +107,8 @@ static void make_patches_usable(struct Tracks *track){
 
     if (track->patch->patchdata==NULL){
       R_ASSERT(track->patch->instrument == get_MIDI_instrument()); // This can happen if deleting all unused midi instruments.
-      if (g_currpatch == track->patch)
-        g_currpatch = NULL;
+      if (PATCH_get_current() == track->patch)
+        PATCH_remove_current();
       track->patch = NULL;
       return;
     }
