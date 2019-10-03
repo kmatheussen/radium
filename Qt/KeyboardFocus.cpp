@@ -51,7 +51,7 @@ namespace{
 
 
 void FOCUSFRAMES_init(void){
-  bool has_installed_event_filter=false;
+  static bool has_installed_event_filter=false;
   
   if (has_installed_event_filter==false){
     has_installed_event_filter=true;
