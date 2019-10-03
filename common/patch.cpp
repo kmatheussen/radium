@@ -59,6 +59,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 //#include "../mixergui/undo_chip_addremove_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
+#include "../mixergui/QM_MixerWidget.h"
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
@@ -77,7 +78,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static QHash<int64_t, struct Patch*> g_patchhash;
 
-struct Patch *g_currpatch=NULL;
+static struct Patch *g_main_pipe_patch = NULL;
+static struct Patch *g_curr_patch = NULL;
+static struct Patch *g_last_resort_curr_patch = NULL; // Always set to last created patch.
 
 //const symbol_t *g_raw_midi_message_port_name = NULL;
 
@@ -121,6 +124,9 @@ void PATCH_clean_unused_patches(void){
 void PATCH_remove_from_instrument(struct Patch *patch){
   //R_ASSERT(patch->patchdata == NULL); (not true for MIDI)
 
+  if (patch==g_curr_patch)
+    g_curr_patch = g_main_pipe_patch;
+
   API_instrument_call_me_when_instrument_is_deleted(patch); // In this world, "patch" is the same as "instrument" in the API world. "instrument" in this world is either audio or midi.
 
   {
@@ -130,11 +136,22 @@ void PATCH_remove_from_instrument(struct Patch *patch){
   
   VECTOR_push_back(&g_unused_patches, patch);
   R_ASSERT(g_patchhash.remove(patch->id)==1);
+
+  if (patch->id==get_main_pipe_patch_id()){
+    
+    if (g_curr_patch!=NULL && g_curr_patch->id==get_main_pipe_patch_id())
+      g_curr_patch = NULL;
+    
+    g_main_pipe_patch = NULL;
+    
+  }
 }
 
 void PATCH_add_to_instrument(struct Patch *patch){
   R_ASSERT(patch->instrument==get_audio_instrument() || patch->instrument==get_MIDI_instrument());
 
+  g_last_resort_curr_patch = patch;
+    
   if (VECTOR_is_in_vector(&g_unused_patches, patch))
     VECTOR_remove(&g_unused_patches, patch);
 
@@ -146,6 +163,15 @@ void PATCH_add_to_instrument(struct Patch *patch){
   }
   
   g_patchhash[patch->id] = patch;
+
+  if (patch->id==get_main_pipe_patch_id()){
+    
+    if (g_curr_patch!=NULL && g_curr_patch->id==get_main_pipe_patch_id())
+      g_curr_patch = patch;
+    
+    g_main_pipe_patch = patch;
+    
+  }
 }
 
 static vector_t *get_all_patches(void){
@@ -193,6 +219,82 @@ struct Patch *PATCH_get_from_id(int64_t id){
   return NULL;
 #endif
 }
+
+void PATCH_remove_current(void){
+  radium::PlayerLock lock;
+  g_curr_patch = g_main_pipe_patch;
+}
+
+void PATCH_set_current(struct Patch *patch){
+  R_ASSERT(!PLAYER_current_thread_has_lock());
+  
+  if (patch==NULL){
+    R_ASSERT(false);
+    return;
+  }
+
+  if (PATCH_get_from_id(patch->id) == NULL){
+    R_ASSERT(false);
+    return;
+  }
+
+  {
+    radium::PlayerLock lock;
+    g_curr_patch = patch;
+  }
+}
+
+struct Patch *PATCH_get_current(void){
+  if (g_curr_patch==NULL){
+    radium::PlayerRecursiveLock lock;
+      
+    g_curr_patch = g_main_pipe_patch;
+
+    R_ASSERT_NON_RELEASE(g_curr_patch!=NULL);
+    R_ASSERT_NON_RELEASE(PATCH_get_from_id(g_curr_patch->id)!=NULL);
+    
+    if (g_curr_patch==NULL){
+      
+      if (get_audio_instrument()->patches.num_elements > 0){
+        g_curr_patch = (struct Patch*)get_audio_instrument()->patches.elements[0];
+        R_ASSERT_NON_RELEASE(g_curr_patch!=NULL);
+      }
+      
+      if(g_curr_patch==NULL){
+        
+        if (get_MIDI_instrument()->patches.num_elements > 0){
+          g_curr_patch = (struct Patch*)get_MIDI_instrument()->patches.elements[0];
+          R_ASSERT_NON_RELEASE(g_curr_patch!=NULL);
+        }
+        
+        if(g_curr_patch==NULL){
+        
+          R_ASSERT(false);
+          g_curr_patch = (struct Patch*)get_audio_instrument()->patches.elements[0];
+          
+          if (g_curr_patch==NULL)
+            g_curr_patch = (struct Patch*)get_MIDI_instrument()->patches.elements[0];
+          
+          if (g_curr_patch==NULL)
+            g_curr_patch = g_last_resort_curr_patch;
+          
+          if (g_curr_patch==NULL){
+            
+            R_ASSERT(false);
+            g_curr_patch = (struct Patch*)talloc(sizeof(struct Patch*)); // The real last resort.
+            
+          }
+
+        }
+        
+      }
+    }
+  }
+  
+  return g_curr_patch;
+}
+
+
 
 int PATCH_get_effect_num(const struct Patch *patch, const char *effect_name, char **error_message){
   if (patch->patchdata==NULL){
@@ -717,8 +819,8 @@ static void make_inactive(struct Patch *patch, bool force_removal){
 
   bool is_current_patch = false;
   
-  if (patch==g_currpatch){
-    g_currpatch = NULL;
+  if (patch==g_curr_patch){
+    PATCH_remove_current();
     is_current_patch = true;
   }
   
@@ -875,7 +977,7 @@ void PATCH_reset(void){
   //PATCH_clean_unused_patches();
 
   MIDI_SetThroughPatch(NULL);
-  g_currpatch = NULL;
+  PATCH_remove_current();
 
   reset_unused_linked_notes();
 }
@@ -2094,7 +2196,7 @@ static struct Patch *get_curr_patch(struct Tracker_Windows *window, struct Track
     return patch;
   }
 
-  return g_currpatch;
+  return PATCH_get_current();
 }
 
 void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id){

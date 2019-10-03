@@ -158,7 +158,7 @@ void EditorWidget::updateEditor(){
 
   {
     struct Patch *patch = ATOMIC_GET(atomic_must_redraw_instrument);
-    if (patch!=NULL && patch == g_currpatch){
+    if (patch!=NULL && patch == PATCH_get_current()){
       ATOMIC_SET(atomic_must_redraw_instrument, NULL);
       GFX_update_instrument_widget(patch);//GFX_update_instrument_patch_gui(patch);
     }

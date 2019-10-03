@@ -887,7 +887,7 @@ void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect
 
               if (command==create_new){
 
-                //struct Patch *curr_patch = g_currpatch;
+                //struct Patch *curr_patch = PATCH_get_current();
 
                 int64_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0, false);
                 if (instrument_id==-1)

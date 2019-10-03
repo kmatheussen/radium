@@ -747,7 +747,7 @@ void GFX_update_instrument_widget(struct Patch *patch){
 }
 
 void GFX_update_current_instrument_widget(void){
-  GFX_update_instrument_widget(g_currpatch);
+  GFX_update_instrument_widget(PATCH_get_current());
 }
 /*
 void GFX_force_update_current_instrument_widget(bool force_update){
@@ -798,7 +798,7 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
   printf("GFX_PP_Update %s\n", patch==NULL?"(null)":patch->name);
   
   called_from_pp_update = true;{
-    //if(g_currpatch==patch)
+    //if(PATCH_get_current()==patch)
     //  goto exit;
     if(patch==NULL){
 
@@ -844,10 +844,10 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
     // background color for editor tracks assigned to current instrument are slightly different than background color for non-current instruments.
     if(patch!=NULL && patch_used_in_current_editor_block(patch))
       root->song->tracker_windows->must_redraw = true;
-    else if (g_currpatch != NULL && patch_used_in_current_editor_block(g_currpatch))
+    else if (patch_used_in_current_editor_block(PATCH_get_current()))
       root->song->tracker_windows->must_redraw = true;
-    
-    g_currpatch = patch;
+
+    PATCH_set_current(patch);
     redrawMixerStrips(false);
 
   }
@@ -904,9 +904,8 @@ void GFX_update_instrument_patch_gui(struct Patch *patch){
 }
 
 static bool tab_name_has_changed(QWidget *tab, QString new_name) {
-  R_ASSERT_RETURN_IF_FALSE2(g_currpatch != NULL, false);
   
-  if (g_currpatch->name_is_edited)
+  if (PATCH_get_current()->name_is_edited)
     return false;
 
   if(new_name==""){
@@ -916,7 +915,7 @@ static bool tab_name_has_changed(QWidget *tab, QString new_name) {
 
   {
     printf("         tab_name_has_changed -%s-\n", new_name.toUtf8().constData());
-    PATCH_set_name(g_currpatch, new_name.toUtf8().constData());
+    PATCH_set_name(PATCH_get_current(), new_name.toUtf8().constData());
 
     struct Tracker_Windows *window = root->song->tracker_windows;
     window->must_redraw = true; // update track headers to the new name
@@ -941,14 +940,14 @@ static void tab_selected(){
     return;
 
   if(midi_instrument!=NULL){
-    g_currpatch = midi_instrument->patch.data();
+    PATCH_set_current(midi_instrument->patch.data());
   }else
-    g_currpatch = audio_instrument->_patch.data();
+    PATCH_set_current(audio_instrument->_patch.data());
 
 #if 0
 
   if(midi_instrument!=NULL)
-    MIDI_SetThroughPatch(g_currpatch);
+    MIDI_SetThroughPatch(PATCH_get_current());
 
   {
     struct Tracker_Windows *window = root->song->tracker_windows;
@@ -956,7 +955,7 @@ static void tab_selected(){
     struct WTracks *wtrack = wblock->wtrack;
 
     DO_GFX(
-           wtrack->track->patch = g_currpatch;
+           wtrack->track->patch = PATCH_get_current();
            DrawWTrackHeader(window,wblock,wtrack);
            );
 
@@ -1067,14 +1066,14 @@ void MIXERSTRIP_call_regularly(void){
     return;
   }
 
-  if (g_currpatch != NULL && g_currpatch != last_patch && patch_can_be_used_for_mixer_strip(g_currpatch)){
+  if (PATCH_get_current() != last_patch && patch_can_be_used_for_mixer_strip(PATCH_get_current())){
 
     last_patch = NULL;
 
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
     int height = editor->height();
 
-    int64_t new_guinum = gui_createSingleMixerStrip(g_currpatch->id, 100, height);
+    int64_t new_guinum = gui_createSingleMixerStrip(PATCH_get_current()->id, 100, height);
     //R_ASSERT(new_guinum != -1);
     
     if(new_guinum != -1){
@@ -1093,7 +1092,7 @@ void MIXERSTRIP_call_regularly(void){
           //printf("    ********* Adding %d\n", (int)new_guinum);
           g_mixerstriplayout->addWidget(new_mixerstrip_widget);
           //new_mixerstrip_widget->show();
-          last_patch = g_currpatch;
+          last_patch = PATCH_get_current();
           
         } else {
 
@@ -1103,7 +1102,7 @@ void MIXERSTRIP_call_regularly(void){
           
           if (old_item != NULL) { // Always the case though. (see R_ASSERT above)
             delete old_item;
-            last_patch = g_currpatch;
+            last_patch = PATCH_get_current();
             //delete old_mixerstrip_widget;
             old_mixerstrip_widget = NULL;
           }

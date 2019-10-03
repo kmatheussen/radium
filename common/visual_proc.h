@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef RADIUM_VISUAL_PROC_H
 #define RADIUM_VISUAL_PROC_H
 
+#include "patch_proc.h"
 #include "OS_visual_input.h"
 
 #define TEXT_IGNORE_WIDTH -99999 // Can be used instead of width, not a flag
@@ -176,11 +177,9 @@ static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struc
   }
 }
 
-extern struct Patch *g_currpatch;
-
 // RT function.
 static inline void GFX_ScheduleInstrumentRedraw(struct Patch *patch){
-  if (patch==g_currpatch)
+  if (patch==PATCH_get_current())
     ATOMIC_SET(atomic_must_redraw_instrument, patch);
 }
 

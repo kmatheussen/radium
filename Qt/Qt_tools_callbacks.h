@@ -77,10 +77,8 @@ public:
   }
 
   void update_midi_learn_gui_things(void){
-    if (g_currpatch != NULL) {
-      ATOMIC_SET(g_currpatch->widget_needs_to_be_updated, true);
-      SEQUENCER_update(SEQUPDATE_HEADERS);
-    }
+    ATOMIC_SET(PATCH_get_current()->widget_needs_to_be_updated, true);
+    SEQUENCER_update(SEQUPDATE_HEADERS);
   }
   
 public slots:

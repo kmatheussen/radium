@@ -17,8 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef QT_INSTRUMENTS_PROC_H
 #define QT_INSTRUMENTS_PROC_H
 
-extern struct Patch *g_currpatch;
-
 enum SizeType{
   SIZETYPE_NORMAL,
   SIZETYPE_HALF,

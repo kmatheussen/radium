@@ -44,7 +44,7 @@ void MIDIGetEvents(
 		   )
 {
   struct Tracker_Windows *window=root->song->tracker_windows;
-  struct Patch *patch=g_currpatch;
+  struct Patch *patch=PATCH_get_current();
   struct PatchData *patchdata;
   int channel;
 
@@ -57,11 +57,7 @@ void MIDIGetEvents(
     return;
     break;
   case MIDIEVENT_SETSTANDARDVEL:
-    if(g_currpatch==NULL){
-      root->standardvel=arg1;
-    }else{
-      g_currpatch->standardvel=arg1;
-    }
+    PATCH_get_current()->standardvel=arg1;
     break;
   case MIDIEVENT_CHANGECURRENTPATCH:
     {
@@ -86,8 +82,6 @@ void MIDIGetEvents(
   default:
     break;
   }
-
-  if(g_currpatch==NULL) return;
 
   patchdata=(struct PatchData *)patch->patchdata;
   channel=patchdata->channel;
