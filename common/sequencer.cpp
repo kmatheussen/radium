@@ -2823,7 +2823,13 @@ static void call_me_after_seqtrack_has_been_removed(struct SeqTrack *seqtrack){
       
     }END_VECTOR_FOR_EACH;
 
-    deleteInstrument(patch->id);
+    UNDO_OPEN_REC();{
+      
+      PATCH_make_inactive(patch);
+      
+    }UNDO_CLOSE();
+
+    root->song->tracker_windows->must_redraw=true;
   }
 
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){

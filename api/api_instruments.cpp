@@ -2427,6 +2427,35 @@ void deleteInstrument(int64_t instrument_id){
   if(patch==NULL)
     return;
 
+  if (patch->instrument==get_audio_instrument()){
+
+    /*
+      No point. This check only prevents seqtrack with seqblocks from being deleted, which there is no reason to prevent here.
+
+    if (AUDIO_is_permanent_patch(patch)==true){
+      handleError("Instrument \"%s\" can not be deleted", patch->name);;
+      return;
+    }
+    */
+    
+    SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+    if (plugin==NULL){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+
+    // Check if instrument is a seqtrack instrument. If so, we delete the seqtrack instead of deleting the instrument directly.
+    if (!strcmp(plugin->type->type_name, SEQTRACKPLUGIN_NAME)){
+      
+      int seqtracknum = get_seqtracknum_from_patch(patch);
+      R_ASSERT_RETURN_IF_FALSE(seqtracknum>=0);
+      
+      deleteSeqtrack(seqtracknum);
+      return;
+      
+    }
+  }
+  
   UNDO_OPEN_REC();{
 
     PATCH_make_inactive(patch);
