@@ -98,6 +98,9 @@ tar xvzf ../faustlibraries-26d4145859b4a603ddfc78785dc2442be504fd3b.tar.gz
 rm -fr libraries
 mv faustlibraries-26d4145859b4a603ddfc78785dc2442be504fd3b libraries
 patch -p1 <../faust.patch
+if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
+    patch -p1 <../faust_nollvm.patch
+fi
 VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC`" make most
 cd ..
 

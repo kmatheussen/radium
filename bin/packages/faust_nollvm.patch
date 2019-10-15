@@ -1,0 +1,11 @@
+--- a/build/backends/most.cmake	2019-10-15 12:35:57.803364082 +0200
++++ b/build/backends/most.cmake	2019-10-15 12:44:20.882880242 +0200
+@@ -13,7 +13,7 @@
+ set ( FIR_BACKEND    OFF       CACHE STRING  "Include FIR backend"       FORCE )
+ set ( INTERP_BACKEND STATIC                           CACHE STRING  "Include INTERPRETER backend" FORCE )
+ set ( JAVA_BACKEND   OFF        CACHE STRING  "Include JAVA backend"      FORCE )
+-set ( LLVM_BACKEND   STATIC        CACHE STRING  "Include LLVM backend"      FORCE )
++set ( LLVM_BACKEND   OFF        CACHE STRING  "Include LLVM backend"      FORCE )
+ set ( OLDCPP_BACKEND OFF         CACHE STRING  "Include old CPP backend"   FORCE )
+ set ( RUST_BACKEND   OFF       CACHE STRING  "Include RUST backend"      FORCE )
+ set ( SOUL_BACKEND   OFF         CACHE STRING  "Include SOUL backend"      FORCE )
