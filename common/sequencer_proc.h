@@ -538,6 +538,17 @@ static inline int get_seqtracknum(const struct SeqTrack *seqtrack){
   return VECTOR_find_pos(&root->song->seqtracks, seqtrack);
 }
 
+static inline int get_seqtracknum_from_patch(Patch *patch){
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    if (seqtrack->patch==patch)
+      return iterator666;
+  }END_VECTOR_FOR_EACH;
+
+  return -1;
+}
+
+
+
 static inline int get_seqblocknum(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
   return VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
 }
