@@ -82,14 +82,15 @@
 
 (def-area-subclass (<reltempo-slider> :gui :x1 :y1 :x2 :y2)
 
+  (define blocknum -1)
   (define has-made-undo #f)
   
   (define (maybe-make-undo)
     (when (not has-made-undo)
       (set! has-made-undo #t)
-      (<ra> :undo-reltempo)))
+      (<ra> :undo-reltempo blocknum)))
 
-  (define (get-slider-value)
+  (define* (get-curr-slider-value)
     (define reltempo (<ra> :get-reltempo))
     (if (< reltempo 1.0) ;; check if this is correct
         (scale reltempo 0 1 0.0 0.5)
@@ -100,13 +101,13 @@
         (scale slider-value 0 0.5 0 1)
         (scale slider-value 0.5 1.0 1 6)))
 
-  (define (get-statusbar-text)
+  (define (get-curr-statusbar-text)
     (<-> "Tempo multiplier: " (two-decimal-string (<ra> :get-reltempo))))
   
   (define-override (paint)
     (paint-horizontal-slider gui
-                             (get-slider-value)
-                             (get-statusbar-text)
+                             (get-curr-slider-value)
+                             (get-curr-statusbar-text)
                              (+ 1 x1) (+ y1 0.0)
                              (- x2 1) (- y2 0.0)
                              :color "color12"
@@ -131,8 +132,9 @@
             'eat-mouse-cycle)
            ((= button *left-button*)
             (set! *ignore-reconf* #t)
-            (set! start-mouse-value (get-slider-value))
-            (set-statusbar-text! (get-statusbar-text))
+            (set! blocknum (<ra> :current-block))
+            (set! start-mouse-value (get-curr-slider-value))
+            (set-statusbar-text! (get-curr-statusbar-text))
             #t)
            (else
             #f)))
@@ -142,8 +144,8 @@
      (define slider-value (between 0 (+ start-mouse-value
                                         (scale dx 0 width 0 1))
                                    1))
-     (<ra> :set-reltempo (get-reltempo slider-value))
-     (set-statusbar-text! (get-statusbar-text))
+     (<ra> :set-reltempo (get-reltempo slider-value) blocknum)
+     (set-statusbar-text! (get-curr-statusbar-text))
      (update-me!)
      )
    (lambda (button x* y* dx dy)
