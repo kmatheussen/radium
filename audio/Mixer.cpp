@@ -100,7 +100,7 @@ DEFINE_ATOMIC(bool, g_currently_processing_dsp) = false;
 DEFINE_ATOMIC(double, g_curr_song_tempo_automation_tempo) = 1.0;
 
 
-jack_client_t *g_jack_client;
+jack_client_t *g_jack_client = NULL;
 static int g_jack_client_priority;
 struct CpuUsage g_cpu_usage;
 
@@ -116,6 +116,10 @@ void THREADING_acquire_player_thread_priority(void){
 #if 1
   static bool has_shown_warning = false;
 
+  // If we haven't started jack yet, we don"t have a proper value for g_jack_client_priority. And it's probably no any point setting realtime priority for a thread either.
+  if (g_jack_client==NULL)
+    return;
+    
   int err = jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(), g_jack_client_priority);
   if (err != 0 && has_shown_warning==false) {
 #if 0 //def FOR_MACOSX
