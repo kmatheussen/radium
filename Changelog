@@ -1,3 +1,51 @@
+Changes 5.9.74 -> 5.9.76:
+* Editor: Only change the tempo multiplier value of
+  the initial block when dragging the tempo
+  multiplier slider. This also fixes undo.
+* Undo: Don't start at undo level 5 when loading
+  song.
+* Mixer: Also delete corresponding seqtrack if
+  deleting a seqtrack instrument. (Earlier, the
+  instrument was just recreated immediately right
+  after being deleted.)
+* Build: Fix building faust when the
+  INCLUDE_FAUSTDEV_BUT_NOT_LLVM environment variable
+  is set.
+* Mixer: Change default color for the border of
+  current mixer strip from green to white.
+* General: Make sure there is always a current
+  instrument.
+* Bottom bar: Fix tooltip for the standard velocity
+  slider.
+* Mixer: Let arrow keys change current instrument.
+* Editor: Play notes in other tracks as well when
+  "Edit lines" is 0 and we add a note.
+* Menus: Add "Set Edit Lines 6/7/8" to
+  Editor Edit -> Note.
+* Editor: Let CTRL_L + 1L1 set "Edit Lines" to 0.
+* Editor: Change keybinding for Switch Scroll Play
+  from CTRL_L + 1L1 to SHIFT_L + 1L1.
+* Editor: Show velocity text and fx text on line
+  under, if free, to avoid "xxx" entries.
+* Editor: Remove the default ALT_L + T and CTRL_L + T
+  keybindings. (The function
+  "switchTrackNoteShowType" isn't very useful
+  anymore.)
+* API:
+  * New: setCurrentInstrumentLeft,
+    setCurrentInstrumentRight,
+    setCurrentInstrumentUp, setCurrentInstrumentDown,
+    mainMixerIsModular, setMainMixerIsModular,
+    switchMainMixerIsModular, gui_getGlobalX,
+    gui_getGlobalY, gui_getMainMixerGui,
+    gui_getMainMixerStripsGui,
+    gui_getMixerStripsGuiInActiveWindow,
+    gui_isActiveWindow.
+  * Add optional arguments 'blocknum' and
+    'windownum' to undoReltempo and setReltempo.
+
+
+
 Changes 5.9.72 -> 5.9.74:
 * Editor: Fix rare crash when adding selecting
   "New FX".
@@ -19,6 +67,7 @@ Changes 5.9.72 -> 5.9.74:
 * Playlist: Make sure current entry is always
   visible.
 * GUI: Make sure scrollbar position is always legal.
+
 
 
 Changes 5.9.71 -> 5.9.72:
