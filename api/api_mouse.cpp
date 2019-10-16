@@ -291,18 +291,20 @@ double getReltempo(int blocknum, int windownum){
     return ATOMIC_DOUBLE_GET(wblock->block->reltempo);
 }
 
-void undoReltempo(void){
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  ADD_UNDO(RelTempoSlider(window,window->wblock));
+void undoReltempo(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return;
+  
+  ADD_UNDO(RelTempoSlider(window,wblock));
 }
 
-void setReltempo(double reltempo){
-  //skew_x = scale(reltempo, 0, 6, 0, -1000);
-
-  //printf("   skew_x: %f\n", skew_x);
-  struct Tracker_Windows *window = root->song->tracker_windows;
-
-  struct WBlocks *wblock = window->wblock;
+void setReltempo(double reltempo, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return;
   
   double new_reltempo = R_BOUNDARIES(
     MINBLOCKRELTIME,
