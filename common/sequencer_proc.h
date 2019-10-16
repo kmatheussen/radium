@@ -617,12 +617,14 @@ static inline void reset_recording_config(struct SeqtrackRecordingConfig *config
   config->matrix[1][1] = true;
 }
 
+#ifdef __cplusplus
 static inline struct SeqtrackRecordingConfig *get_seqtrack_recording_config(struct SeqTrack *seqtrack){
   if (seqtrack->use_custom_recording_config)
     return &seqtrack->custom_recording_config;
   else
     return &root->song->default_recording_config;
 }
+#endif
 
 #endif
 
