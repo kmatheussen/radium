@@ -538,6 +538,7 @@ static inline int get_seqtracknum(const struct SeqTrack *seqtrack){
   return VECTOR_find_pos(&root->song->seqtracks, seqtrack);
 }
 
+#ifdef __cplusplus
 static inline int get_seqtracknum_from_patch(Patch *patch){
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
     if (seqtrack->patch==patch)
@@ -546,7 +547,7 @@ static inline int get_seqtracknum_from_patch(Patch *patch){
 
   return -1;
 }
-
+#endif
 
 
 static inline int get_seqblocknum(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
@@ -617,14 +618,12 @@ static inline void reset_recording_config(struct SeqtrackRecordingConfig *config
   config->matrix[1][1] = true;
 }
 
-#ifdef __cplusplus
 static inline struct SeqtrackRecordingConfig *get_seqtrack_recording_config(struct SeqTrack *seqtrack){
   if (seqtrack->use_custom_recording_config)
     return &seqtrack->custom_recording_config;
   else
     return &root->song->default_recording_config;
 }
-#endif
 
 #endif
 
