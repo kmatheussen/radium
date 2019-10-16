@@ -215,7 +215,7 @@ void BLOCKS_called_very_often(void){
   
   double reltempo = ATOMIC_DOUBLE_SET_RETURN_OLD(g_midi_learned_block_multiplier, -1);
   if (reltempo >= 0){
-    setReltempo(reltempo);
+    setReltempo(reltempo, -1, -1);
   }
 }
 
