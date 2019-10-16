@@ -151,10 +151,16 @@ void THREADING_acquire_player_thread_priority(void){
 
 static void PLAYER_acquire_same_priority(void){
   //printf("Setting real time priority temporarily for %p.\n",(void*)pthread_self());
+  if (g_jack_client==NULL)
+    return;
+
   THREADING_acquire_player_thread_priority();
 }	
 
 void THREADING_drop_player_thread_priority(void){
+  if (g_jack_client==NULL)
+    return;
+    
   jack_drop_real_time_scheduling(GET_CURRENT_THREAD());
 }
 
@@ -264,10 +270,14 @@ static void print_backtrace(void){
 }
 #endif
 
+static bool g_player_locks_initialized = false;
+
 
 static void lock_player(void){
   R_ASSERT(!PLAYER_current_thread_has_lock()); // the player lock is reentrant, just in case, but reentrancy is not supposed to be used.
 
+  R_ASSERT_NON_RELEASE(g_player_locks_initialized==true);
+  
   LOCK_LOCK(player_lock);
   g_current_thread_has_player_lock = true;
   g_someone_has_player_lock = true;
@@ -276,6 +286,8 @@ static void lock_player(void){
 static void unlock_player(void){
   R_ASSERT_RETURN_IF_FALSE(PLAYER_current_thread_has_lock());
 
+  R_ASSERT_NON_RELEASE(g_player_locks_initialized==true);
+    
   g_someone_has_player_lock = false;
   g_current_thread_has_player_lock = false;
   LOCK_UNLOCK(player_lock);
@@ -504,8 +516,11 @@ bool PLAYER_someone_has_player_lock(void){
   return g_someone_has_player_lock;
 }
 
-static void init_player_lock(void){
 
+void THREADING_init_player_locks(void){
+
+  R_ASSERT(g_player_locks_initialized==false);
+    
   LOCK_INITIALIZE(player_runner_lock); // Don't have to do anything special. The player_runner_lock is always called from a realtime thread, and never recursively.
 
 #if defined(FOR_WINDOWS) || USE_SPINLOCK_FOR_PLAYER_LOCK
@@ -533,6 +548,8 @@ static void init_player_lock(void){
     GFX_Message(NULL, "pthread_mutex_init failed: %d\n",s4);
 
 #endif
+
+  g_player_locks_initialized = true;
 }
 
 
@@ -1439,7 +1456,6 @@ bool MIXER_start(void){
   
   SampleRecorder_Init();
     
-  init_player_lock();
   g_freewheeling_has_started = RSEMAPHORE_create(0);
   g_player_stopped_semaphore = RSEMAPHORE_create(0);
 

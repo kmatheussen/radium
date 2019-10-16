@@ -3700,7 +3700,8 @@ int main(int argc, char **argv){
 #endif
 
   THREADING_init_main_thread_type();
-
+  THREADING_init_player_locks();
+  
 #ifdef USE_QT5
   qInstallMessageHandler(myMessageOutput);
 #else
