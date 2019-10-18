@@ -226,64 +226,80 @@ static bool plays_same_seqblock_completely_later_in_seqtrack(struct SeqTrack *se
   return false;
 }
 
-static int get_busnum(struct SeqTrack *seqtrack){
+static int get_busnum(int seqtracknum){
   int busnum = 1;
-  
-  VECTOR_FOR_EACH(struct SeqTrack *, maybe_seqtrack, &root->song->seqtracks){
-    if(maybe_seqtrack==seqtrack)
-      return busnum;
-    if (maybe_seqtrack->is_bus)
-      busnum++;
+
+  VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    if (seqtrack->is_bus){
+      if (seqtrack->patch==NULL){
+        R_ASSERT(false);
+      } else {
+        QString name(seqtrack->patch->name);
+        QList<QString> names = QString(name).split(" ");
+        if (names.length() > 0){
+          int num = names.last().toInt();
+          if (num >= busnum)
+            busnum = num+1;
+        }
+      }
+    }
   }END_VECTOR_FOR_EACH;
-  
+
   return busnum;
 }
 
-static bool ensure_seqtrack_has_instrument(struct SeqTrack *seqtrack){
-  if (seqtrack->for_audiofiles==false)
-    return false;
+static struct Patch *create_seqtrack_patch(bool is_bus, int seqtracknum){
+  radium::ScopedUndo scoped_undo;
+    
+  const char *name;
+  if (is_bus){
+    int busnum = get_busnum(seqtracknum);
+    name = talloc_format("Bus %d", busnum);
+  } else {
+    //int seqtracknum = get_seqtracknum(seqtrack);
+    name = talloc_format("Seqtrack %d", seqtracknum);
+  }
+  int64_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, name, 0, 0, true);
+  R_ASSERT_RETURN_IF_FALSE2(patch_id >= 0, NULL);
   
-  if (seqtrack->patch == NULL || seqtrack->patch->patchdata==NULL) { // seqtrack->patch == NULL when seqtrack never has played an audio file, and seqtrack->patch->patchdata is null if the seqtrack plugin was deleted manually.
-    
-    radium::ScopedIgnoreUndo ignore_undo; // Because we can't delete seqtrack plugin when it has samples.
+  struct Patch *patch = PATCH_get_from_id(patch_id);
+  R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, NULL);
+  
+  if (is_bus){
+    patch->color = GFX_get_color(INSTRUMENT_BUS_DEFAULT_COLOR_NUM);
+    setInstrumentEffect(patch_id, "Enable piping", 1);
+  }
+  
+  connectAudioInstrumentToMainPipe(patch_id);
+  autopositionInstrument(patch_id);
 
-    const char *name;
-    if (seqtrack->is_bus){
-      int busnum = get_busnum(seqtrack);
-      name = talloc_format("Bus %d", busnum);
-    } else {
-      int seqtracknum = get_seqtracknum(seqtrack);
-      name = talloc_format("Seqtrack %d", seqtracknum);
-    }
-    int64_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, name, 0, 0, true);
-    R_ASSERT_RETURN_IF_FALSE2(patch_id >= 0, false);
-    
-    struct Patch *patch = PATCH_get_from_id(patch_id);
-    R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
+  return patch;
+}
 
-    if (seqtrack->is_bus){
-      patch->color = GFX_get_color(INSTRUMENT_BUS_DEFAULT_COLOR_NUM);
-      setInstrumentEffect(patch_id, "Enable piping", 1);
-    }
+static void ensure_seqtrack_has_instrument(const struct SeqTrack *seqtrack){ // seqtrack is 'const' since we are not really supposed to do anything here. It's just in case there is a bug in the program.
+  if (seqtrack->for_audiofiles==false)
+    return;
+  
+  if (seqtrack->patch == NULL || seqtrack->patch->patchdata==NULL) {
+
+    R_ASSERT(false);
     
-    connectAudioInstrumentToMainPipe(patch_id);
-    autopositionInstrument(patch_id);
+    struct Patch *patch = create_seqtrack_patch(seqtrack->is_bus, get_seqtracknum(seqtrack));
 
     {
       radium::PlayerLock lock;
-      seqtrack->patch = patch;
+      ((struct SeqTrack*)seqtrack)->patch = patch;
     }
   }
-
-  return true;
 }
-
 
 void SEQTRACK_call_me_very_often(void){
   if (is_called_every_ms(500)) {
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
 
-      if (ensure_seqtrack_has_instrument(seqtrack)==true){
+      if (seqtrack->for_audiofiles){
+
+        ensure_seqtrack_has_instrument(seqtrack);
 
         if (seqtrack->for_audiofiles)
           R_ASSERT(seqtrack->patch!=NULL);
@@ -530,8 +546,8 @@ static struct SeqBlock *SEQBLOCK_create_sample(const struct SeqTrack *seqtrack, 
   if (seqtrack->for_audiofiles==false)
     return NULL;
  
-  //if (ensure_seqtrack_has_instrument(seqtrack)==false)
-  //  return NULL;
+  ensure_seqtrack_has_instrument(seqtrack);
+
   R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch != NULL && seqtrack->patch->patchdata!=NULL, NULL);
     
   R_ASSERT(state_samplerate!=0);
@@ -2778,13 +2794,22 @@ void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 }
 
-void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_audiofiles, bool is_bus){
+// Note: Creates undo.
+void SEQUENCER_insert_seqtrack(int pos, bool for_audiofiles, bool is_bus){
 
-  if(new_seqtrack!=NULL)
-    R_ASSERT(new_seqtrack->for_audiofiles==for_audiofiles);
+  if(is_bus)
+    R_ASSERT_RETURN_IF_FALSE(for_audiofiles);
+  
+  radium::ScopedUndo scoped_undo;
+  
+  struct Patch *patch = NULL;
+  
+  if (for_audiofiles)
+    patch = create_seqtrack_patch(is_bus, pos);
 
-  if (new_seqtrack==NULL)
-    new_seqtrack = SEQTRACK_create(NULL, pos, -1, for_audiofiles, is_bus);
+  ADD_UNDO(Sequencer());
+  
+  struct SeqTrack *seqtrack = SEQTRACK_create(NULL, pos, -1, for_audiofiles, is_bus);
 
   const rt_vector_t *rt_vector = VECTOR_create_rt_vector(&root->song->seqtracks, 1);
 
@@ -2796,19 +2821,16 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_
       if (root->song->use_sequencer_tempos_and_signatures==false && for_audiofiles)
         root->song->use_sequencer_tempos_and_signatures = true;
             
-    RT_VECTOR_insert(&root->song->seqtracks, new_seqtrack, pos, rt_vector);
+    seqtrack->patch = patch;
+    
+    RT_VECTOR_insert(&root->song->seqtracks, seqtrack, pos, rt_vector);
   }
 
-  ensure_seqtrack_has_instrument(new_seqtrack);
-                                 
   S7CALL2(void_int, "FROM_C-call-me-when-num-seqtracks-might-have-changed", root->song->seqtracks.num_elements+1);
 
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
-void SEQUENCER_append_seqtrack(struct SeqTrack *new_seqtrack, bool for_audiofiles, bool is_bus){
-  SEQUENCER_insert_seqtrack(new_seqtrack, root->song->seqtracks.num_elements, for_audiofiles, is_bus);
-}
 
 static void call_me_after_seqtrack_has_been_removed(struct SeqTrack *seqtrack){
   struct Patch *patch = seqtrack->patch;

@@ -468,8 +468,14 @@ extern LANGSPEC void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block)
 extern LANGSPEC hash_t *SEQUENCER_get_state(void /*bool get_old_format*/);
 extern LANGSPEC void SEQUENCER_create_from_state(hash_t *state, struct Song *song);
 //extern LANGSPEC void SEQUENCER_update_all_seqblock_start_and_end_times(void);
-extern LANGSPEC void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_audiofiles, bool is_bus);
-extern LANGSPEC void SEQUENCER_append_seqtrack(struct SeqTrack *new_seqtrack, bool for_audiofiles, bool is_bus);
+
+// Note: Creates undo.
+extern LANGSPEC void SEQUENCER_insert_seqtrack(int pos, bool for_audiofiles, bool is_bus);
+
+static inline void SEQUENCER_append_seqtrack(bool for_audiofiles, bool is_bus){
+  SEQUENCER_insert_seqtrack(root->song->seqtracks.num_elements, for_audiofiles, is_bus);
+}
+
 extern LANGSPEC void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos);
 extern LANGSPEC void SEQUENCER_delete_seqtrack(int pos);
 

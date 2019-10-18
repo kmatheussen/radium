@@ -252,13 +252,6 @@ float getSeqnavRightSizeHandleY2(void){
   return getSeqnavY2();
 }
 
-void appendSeqtrack(bool for_audiofiles, bool is_bus){
-  ADD_UNDO(Sequencer());
-  SEQUENCER_append_seqtrack(NULL, for_audiofiles, is_bus);
-
-  setCurrSeqtrack(root->song->seqtracks.num_elements - 1);
-}
-
 void insertSeqtrack(bool for_audiofiles, int pos, bool is_bus){
   if (pos==-1)
     pos = ATOMIC_GET(root->song->curr_seqtracknum);
@@ -268,10 +261,15 @@ void insertSeqtrack(bool for_audiofiles, int pos, bool is_bus){
     return;
   }
 
-  ADD_UNDO(Sequencer());
-  SEQUENCER_insert_seqtrack(NULL, pos, for_audiofiles, is_bus);
+  SEQUENCER_insert_seqtrack(pos, for_audiofiles, is_bus);
 
   setCurrSeqtrack(pos);
+}
+
+void appendSeqtrack(bool for_audiofiles, bool is_bus){
+  SEQUENCER_append_seqtrack(for_audiofiles, is_bus);
+
+  setCurrSeqtrack(root->song->seqtracks.num_elements - 1);
 }
 
 void deleteSeqtrack(int seqtracknum){
