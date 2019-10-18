@@ -519,7 +519,7 @@ static bool maybe_scroll_down(struct Tracker_Windows *window, const struct Notes
 }
 
 // return true if it was scroll-playing (i.e. may have played the note)
-bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyphonic, float velocity){
+bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyphonic, float org_velocity){
   
   if(notenum<0.001 || notenum>127.9) return false;
 
@@ -530,6 +530,8 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
   struct Tracks  *track         = wtrack->track;
   int             curr_realline = wblock->curr_realline;
 
+  int velocity = org_velocity < 0.0 ? NOTE_get_velocity(wtrack->track) : org_velocity*MAX_VELOCITY;
+    
   const Trs &trs = TRS_get(wblock, wtrack, curr_realline);
 
   if (polyphonic==false && trs.size() > 0) {
@@ -548,6 +550,12 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
         tr2.note->pitch_end = notenum;
       else
         tr2.note->note = notenum;
+
+      if (org_velocity >= 0){
+        tr2.note->velocity = velocity;
+        if (tr2.note->velocities==NULL)
+          tr2.note->velocity_end = velocity;
+      }
       
       return maybe_scroll_down(window, tr2.note);
     }
@@ -563,7 +571,7 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
   
   struct Notes *note = InsertNote(
                                   wblock,wtrack,&realline->l.p,NULL,notenum,
-                                  velocity < 0.0 ? NOTE_get_velocity(wtrack->track) : velocity*MAX_VELOCITY,
+                                  velocity,
                                   polyphonic
                                   );
 
