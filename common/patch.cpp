@@ -268,8 +268,10 @@ struct Patch *PATCH_get_current(void){
         }
         
         if(g_curr_patch==NULL){
-        
-          R_ASSERT(false);
+
+          if (g_is_loading==false)
+            R_ASSERT(false);
+          
           g_curr_patch = (struct Patch*)get_audio_instrument()->patches.elements[0];
           
           if (g_curr_patch==NULL)
@@ -279,10 +281,13 @@ struct Patch *PATCH_get_current(void){
             g_curr_patch = g_last_resort_curr_patch;
           
           if (g_curr_patch==NULL){
-            
-            R_ASSERT(false);
-            g_curr_patch = (struct Patch*)talloc(sizeof(struct Patch*)); // The real last resort.
-            
+
+            if (g_is_loading==false)              
+              R_ASSERT(false);
+            else
+              R_ASSERT_NON_RELEASE(false);
+              
+            g_curr_patch = (struct Patch*)talloc(sizeof(struct Patch*)); // The real last resort.            
           }
 
         }
