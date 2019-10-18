@@ -530,6 +530,8 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
   struct Tracks  *track         = wtrack->track;
   int             curr_realline = wblock->curr_realline;
 
+  R_ASSERT_RETURN_IF_FALSE2(curr_realline >= 0 && curr_realline<wblock->num_reallines, false);
+  
   int velocity = org_velocity < 0.0 ? NOTE_get_velocity(wtrack->track) : org_velocity*MAX_VELOCITY;
     
   const Trs &trs = TRS_get(wblock, wtrack, curr_realline);
