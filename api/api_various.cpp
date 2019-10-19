@@ -1157,8 +1157,9 @@ void selectBlock(int blocknum, int windownum){
                                              );
   if(wblock==NULL) return;
 
-  EVENTLOG_add_event("selectBlock");
-                     
+  if (window->wblock==wblock)
+    return;
+  
   PC_PauseNoMessage();{
 
      // Note: We stop the player to be able to play the block if already playing.
