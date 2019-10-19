@@ -98,6 +98,7 @@ tar xvzf ../faustlibraries-26d4145859b4a603ddfc78785dc2442be504fd3b.tar.gz
 rm -fr libraries
 mv faustlibraries-26d4145859b4a603ddfc78785dc2442be504fd3b libraries
 patch -p1 <../faust.patch
+patch -p1 <../faust_llvm9.patch
 if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
     patch -p1 <../faust_nollvm.patch
 fi
