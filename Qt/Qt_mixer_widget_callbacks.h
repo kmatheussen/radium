@@ -170,8 +170,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
   Q_OBJECT
 
  public:
-  bool initing;
-
+  radium::Initing _initing;
+  
   Mixer_Direction_Menu _mixer_direction_menu;
 
   radium::GcHolder<dyn_t> _mixer_strip_configuration;
@@ -187,7 +187,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
    , _mixer_direction_menu(this)
    , _mytimer(this)
   {
-    initing = true;
+    radium::ScopedIniting initing(_initing);
     
     setupUi(this);
     
@@ -216,8 +216,6 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
       
     verticalLayout->insertWidget(-1, _bottom_bar, 0);
     _bottom_bar->hide();
-    
-    initing = false;
   }
 
   void enterEvent(QEvent *event) override {
@@ -306,9 +304,8 @@ public:
       return;
 
     {
-      initing=true;
+      radium::ScopedIniting initing(_initing);
       this->show_modular->setChecked(show_modular);
-      initing=false;
     }
     
     _modular_is_visible=show_modular;
@@ -377,7 +374,7 @@ public:
   }
 
   void change_num_mixerstrips_rows(int num_rows){
-    if(!initing && _mixer_strips_gui!=-1 && num_rows!=_num_rows){
+    if(_initing.can_access() && _mixer_strips_gui!=-1 && num_rows!=_num_rows){
       gui_setNumRowsInMixerStrips(_mixer_strips_gui, num_rows);
       /*
       int64_t old_gui = _mixer_strips_gui;
@@ -395,7 +392,7 @@ public:
   }
     
   void change_mixerstrips_vert_ratio(const Ratio &vert_ratio){
-    if(!initing && _mixer_strips_gui!=-1 && RATIO_get_intratio(_vert_ratio) != RATIO_get_intratio(vert_ratio)){
+    if(_initing.can_access() && _mixer_strips_gui!=-1 && RATIO_get_intratio(_vert_ratio) != RATIO_get_intratio(vert_ratio)){
       _vert_ratio = vert_ratio;
       gui_setVertRatioInMixerStrips(_mixer_strips_gui, DYN_create_ratio(vert_ratio));
     }
@@ -481,18 +478,16 @@ public:
       int new_num_rows = gui_getNumRowsInMixerStrips(_mixer_strips_gui);
       if (new_num_rows != _num_rows){
 
-        initing = true;{
+        radium::ScopedIniting initing(_initing);
 
-          if(new_num_rows==1)
-            rows1->setChecked(true);
-          else if (new_num_rows==2)
-            rows2->setChecked(true);
-          else if (new_num_rows==3)
-            rows3->setChecked(true);
-          else if (new_num_rows==4)
-            rows4->setChecked(true);
-
-        }initing = false;
+        if(new_num_rows==1)
+          rows1->setChecked(true);
+        else if (new_num_rows==2)
+          rows2->setChecked(true);
+        else if (new_num_rows==3)
+          rows3->setChecked(true);
+        else if (new_num_rows==4)
+          rows4->setChecked(true);
         
       }
 
@@ -515,27 +510,25 @@ public:
         //printf("1: %d. 2: %d\n", curr_intratio, intratio);
         
         if (curr_intratio != intratio){
-          
-          initing = true;{
-            
-            if (intratio==-3)
-              ratio13->setChecked(true);
-            
-            else if (intratio==1)
-              ratio1->setChecked(true);
-            
-            else if (intratio==3)
-              ratio31->setChecked(true);
-            
-            else{
-              ratio13->setChecked(false);
-              ratio1->setChecked(false);
-              ratio31->setChecked(false);
-            }
 
-            _vert_ratio = RATIO_create_from_intratio(intratio);
+          radium::ScopedIniting initing(_initing);
             
-          }initing = false;
+          if (intratio==-3)
+            ratio13->setChecked(true);
+          
+          else if (intratio==1)
+            ratio1->setChecked(true);
+          
+          else if (intratio==3)
+            ratio31->setChecked(true);
+          
+          else{
+            ratio13->setChecked(false);
+            ratio1->setChecked(false);
+            ratio31->setChecked(false);
+          }
+          
+          _vert_ratio = RATIO_create_from_intratio(intratio);
           
         }
       }
@@ -555,7 +548,7 @@ public slots:
     
   void on_ab_a_toggled(bool val){
     printf("  CHECK A. val: %d\n", val);
-    if (val && !initing){
+    if (val && _initing.can_access()){
       MW_change_ab(0);
       update_ab_buttons(false);
     }
@@ -563,49 +556,49 @@ public slots:
   
   void on_ab_b_toggled(bool val){
     printf("  CHECK B. val: %d\n", val);
-    if (val && !initing){
+    if (val && _initing.can_access()){
       MW_change_ab(1);
       update_ab_buttons(false);
     }
   }
   
   void on_ab_c_toggled(bool val){
-    if (val && !initing){
+    if (val && _initing.can_access()){
       MW_change_ab(2);
       update_ab_buttons(false);
     }
   }
   
   void on_ab_d_toggled(bool val){
-    if (val && !initing){
+    if (val && _initing.can_access()){
       MW_change_ab(3);
       update_ab_buttons(false);
     }
   }
   
   void on_ab_e_toggled(bool val){
-    if (val && !initing){
+    if (val && _initing.can_access()){
       MW_change_ab(4);
       update_ab_buttons(false);
     }
   }
   
   void on_ab_f_toggled(bool val){
-    if (val && !initing){
+    if (val && _initing.can_access()){
       MW_change_ab(5);
       update_ab_buttons(false);
     }
   }
   
   void on_ab_g_toggled(bool val){
-    if (val && !initing){
+    if (val && _initing.can_access()){
       MW_change_ab(6);
       update_ab_buttons(false);
     }
   }
   
   void on_ab_h_toggled(bool val){
-    if (val && !initing){
+    if (val && _initing.can_access()){
       MW_change_ab(7);
       update_ab_buttons(false);
     }
@@ -617,7 +610,7 @@ public slots:
   }
 
   void on_window_mode_toggled(bool show_window){
-    if(initing)
+    if(!_initing.can_access())
       return;
 
     QWidget *w = get_qwidget(g_mixer_widget);
@@ -678,14 +671,14 @@ public slots:
   }
 
   void on_show_modular_toggled(bool show_modular){
-    if (initing)
+    if (!_initing.can_access())
       return;
     
     set_modular_mixer_type(show_modular);
   }
   
   void on_include_instrument_widget_toggled(bool include_instrument_widget){
-    if (initing)
+    if (!_initing.can_access())
       return;
     
     if(include_instrument_widget){
@@ -745,12 +738,12 @@ public slots:
   }
 
   void on_connections_visibility_toggled(bool val){
-    if (initing==false)
+    if (_initing.can_access())
       MW_set_connections_visibility(val);
   }
 
   void on_bus_connections_visibility_toggled(bool val){
-    if (initing==false)
+    if (_initing.can_access())
       MW_set_bus_connections_visibility(val);
   }
 
