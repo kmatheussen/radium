@@ -474,7 +474,23 @@ namespace radium{
       if(_doit)
         _anint--;
     }
-  };    
+  };
+  class ScopedIniting;
+  class Initing{
+    friend ScopedIniting;
+    int _counter = 0;
+  public :
+    bool can_access(void) const {
+      return _counter==0;
+    }
+  };
+  class ScopedIniting{
+    ScopedGeneration _scoped_generation;
+  public:
+    ScopedIniting(Initing &initing)
+      : _scoped_generation(initing._counter)
+    {}
+  };
 };
 #endif
 
