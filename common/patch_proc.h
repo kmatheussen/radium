@@ -28,7 +28,7 @@ extern LANGSPEC int PATCH_get_effect_num(const struct Patch *patch, const char *
 
 extern LANGSPEC void PATCH_remove_current(void);
 extern LANGSPEC void PATCH_set_current(struct Patch *patch);
-extern LANGSPEC struct Patch *PATCH_get_current(void) __attribute__((returns_nonnull));
+extern LANGSPEC struct Patch *PATCH_get_current(void); // Can only return NULL during startup.
 
 extern LANGSPEC void PATCH_handle_fx_when_theres_a_new_patch_for_track(struct Blocks *block, struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch, bool *has_paused);
 extern LANGSPEC void PATCH_handle_editor_and_automation_when_replacing_patch(struct Patch *old_patch, struct Patch *new_patch);
