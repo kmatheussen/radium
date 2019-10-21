@@ -287,7 +287,8 @@ struct Patch *PATCH_get_current(void){
             else
               R_ASSERT_NON_RELEASE(false);
               
-            g_curr_patch = (struct Patch*)talloc(sizeof(struct Patch*)); // The real last resort.            
+            //g_curr_patch = (struct Patch*)talloc(sizeof(struct Patch*)); // The real last resort.
+            return NULL; // Seems better to return NULL.
           }
 
         }
