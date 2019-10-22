@@ -1,3 +1,25 @@
+Changes 5.9.76 -> 5.9.77:
+* Mixer: Fix crash during startup if instrument
+  widget was positioned inside mixer. (Bug introduced
+  in 5.9.76).
+* Sequencer: Don't pause player when moving a
+  seqblock while playing block.
+* Build: Make Faust compile with LLVM9. (Teteros)
+* Editor: When overriding a note from MIDI input,
+  also change the velocity when "Always use velocity
+  from MIDI..." is enabled.
+* Sequencer: Make sure seqtrack instrument is always
+  deleted/created when corresponding seqtrack is
+  deleted/created, and vice versa. (Fix for undo/redo
+  creating/deleting seqtrack and seqtrack instrument).
+* Sequencer: More intelligent algorithm to create
+  names for seqtrack buses.
+* Load/New: Fix assertion window sometimes popping up
+  because main pipe instrument doesn't exist. (Bug
+  introduced in 5.9.76).
+
+
+
 Changes 5.9.74 -> 5.9.76:
 * Editor: Only change the tempo multiplier value of
   the initial block when dragging the tempo
