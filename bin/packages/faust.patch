@@ -17,7 +17,7 @@ diff --git a/build/backends/most.cmake b/build/backends/most.cmake
 index c6333e550..0589c5d41 100644
 --- a/build/backends/most.cmake
 +++ b/build/backends/most.cmake
-@@ -8,13 +8,13 @@
+@@ -8,14 +8,14 @@
  #    WASM      embed the backend in the faust wasm library
  #    SOUL      embed the backend in the faust wasm library
  
