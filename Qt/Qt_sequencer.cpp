@@ -3098,13 +3098,8 @@ struct CursorPainter : public LightWidget {
   const double cursor_width = 2.7;
 
   
-private:
-  
-  mutable double _last_painted_cursor_x = 0.0f;
-
 public:
 
-  
   bool _was_playing_smooth_song = false;
 
   double &_start_time;
@@ -3114,6 +3109,9 @@ public:
     : _start_time(start_time)
     , _end_time(end_time)
   {}
+
+  
+private:
   
   double get_curr_cursor_x(int frames_to_add) const {
     if (is_playing() && pc->playtype==PLAYSONG && smooth_scrolling())
@@ -3122,7 +3120,22 @@ public:
       return scale_double(ATOMIC_DOUBLE_GET(pc->song_abstime)+frames_to_add, _start_time, _end_time, t_x1, t_x2);
   }
 
+  double _curr_cursor_x = 0.0;
 
+  QRect _curr_line_rect;
+  mutable QRect _last_painted_line_rect;
+  
+  QRect get_line_rect(double x){
+    int x1 = floor(x-cursor_width/2.0) - 1; // Must decrement by 1. 'floor' is not enough, for some reason
+    int x2 = floor(x+cursor_width/2.0) + 1; // Must increment by 1. 'ceil' is not enough, for some reason
+    int y1 = ceil(t_y1) - 1;
+    int y2 = ceil(t_y2) + 1;
+    return QRect(x1, y1, x2-x1, y2-y1);
+  }
+
+  
+public:
+  
   void update_cursor(QWidget *parent){
     if (is_playing() && pc->playtype==PLAYSONG) {
 
@@ -3145,17 +3158,19 @@ public:
         
       } else {
 
-        double x = get_curr_cursor_x(1 + MIXER_get_sample_rate() * 60.0 / 1000.0);
-        
-        double x_min = R_MIN(x-cursor_width/2.0, _last_painted_cursor_x-cursor_width/2.0) - 2;
-        double x_max = R_MAX(x+cursor_width/2.0, _last_painted_cursor_x+cursor_width/2.0) + 2;
-        
-        //printf("x_min -> x_max: %f -> %f\n",x_min,x_max);
-        double y1 = t_y1; //_songtempoautomation_widget.t_y1;
-        double y2 = t_y2; //height(); //t_y2; //get_cursor_y2() + 1;
+        double new_curr_cursor_x = get_curr_cursor_x(0);
 
-        parent->update(floor(x_min), floor(y1), ceil(1+x_max-x_min), ceil(y2-y1));
+        if (fabs(new_curr_cursor_x-_curr_cursor_x) > 0.01) { // don't paint new cursor if it has moved less than 1/100 pixel since last time.
 
+          _curr_cursor_x = new_curr_cursor_x;
+        
+          _curr_line_rect = get_line_rect(_curr_cursor_x);
+        
+          parent->update(_curr_line_rect);
+          parent->update(_last_painted_line_rect);
+
+        }
+        
         if (autoscrollSequencerToMakePlaycursorVisible()) {
           
           if (song_abstime < _start_time) {
@@ -3219,8 +3234,9 @@ public:
 
     // red cursor
     {
-      _last_painted_cursor_x = get_curr_cursor_x(0);
-      paintCursor2(p, get_qcolor(SEQUENCER_CURSOR_COLOR_NUM), _last_painted_cursor_x);
+      paintCursor2(p, get_qcolor(SEQUENCER_CURSOR_COLOR_NUM), _curr_cursor_x);
+
+      _last_painted_line_rect = _curr_line_rect;
     }
     
   }
@@ -3716,14 +3732,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     radium::ScopedBoolean s(_called_from_my_update);
     
     update(region);
-    update_cursor();
   }
   
   void my_update(const QRect &rect){
     radium::ScopedBoolean s(_called_from_my_update);
     
     update(rect);
-    update_cursor();
   }
   
   void my_update(const QRectF &rect){
