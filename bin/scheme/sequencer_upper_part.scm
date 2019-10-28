@@ -86,7 +86,7 @@
                                                     :set-all-entries!
                                                     :popup-menu*
                                                     :get-entry-info-string
-                                                    :entry-color"#66ff0000"
+                                                    :entry-color "#66ff0000"
                                                     :curr-entry-color "#660000ff"
                                                     :do-grid #f
                                                     :double-click-callback #f
@@ -119,6 +119,13 @@
 
   (define (update-curr-entry-pos! entries curr-entry)
     (set! curr-pos (list-position entries (lambda (maybe) (morally-equal? maybe curr-entry))))
+
+    (<ra> :set-seq-indicator
+          (round (max 0 (round (curr-entry :time))))
+          -1
+          1
+          curr-entry-color)
+  
     (when (= curr-pos -1)
       (set! curr-pos 0)
       (c-display "curr-entry:" (pp curr-entry))
@@ -298,6 +305,23 @@
        ;;(update-parent!)
        #f
        )
+     ;;(c-display "curr-entry:" curr-entry)
+     (let ((time (round (max 0
+                             (if curr-entry
+                                 (curr-entry :time)
+                                 (get-sequencer-time-from-x x* x1 x2))))))
+       (<ra> :set-seq-indicator
+             (if (or  curr-entry
+                      (<ra> :control-pressed))
+                 time
+                 (<ra> :get-seq-gridded-time time))
+             -1
+             (if curr-entry
+                 1
+                 0)
+             (if curr-entry
+                 curr-entry-color
+                 "")))
      #t)
    :leave-func
    (lambda (button-was-pressed)
@@ -893,7 +917,7 @@
   (define show-markers (<ra> :show-markers-sequencer-lane))
 
   (assert (or show-tempos show-signatures show-markers))
-  
+
   (if show-tempos
       (add-sub-area-plain! (create-sequencer-tempo-area gui x1 y1 x2 tempo-y2)))
 
@@ -931,7 +955,7 @@
     ;; paint grid
     ;;(paint-sequencer-grid gui x1 y1 x2 y2)
     )
-
+  
   )
                        
 

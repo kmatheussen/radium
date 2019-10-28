@@ -541,6 +541,8 @@
      (get-bool *current-mouse-cycle*))))
 
 (define (radium-mouse-move $button $x $y)
+  ;;(c-display "--Cancel")
+  ;;(<ra> :cancel-seq-indicator)  
   ;;(c-display "X:" $x ". seq_x1/x2:" (<ra> :get-sequencer-x1) (<ra> :get-sequencer-x2))
   (handling-nodes
    *is-moving*
@@ -1207,9 +1209,14 @@
                       (not (morally-equal? new old)))
                   ;;(c-display "set-normal")
                   ;;(<ra> :set-normal-mouse-pointer)
-                  (<ra> :set-curr-seqblock-under-mouse (new :id))
+                  (define id (new :id))
+                  ;;(set-custom-seq-indicator (<ra> :get-seqblock-start-time (new :seqblocknum) (new :seqtracknum))
+                  ;;                          -1
+                  ;;                          (<ra> :get-seqblock-color id))
+                  (<ra> :set-curr-seqblock-under-mouse id)
                   (set! *current-seqblock-info* new))
                  (else
+                  ;;(c-display "old/new:" (if old #t #f) (if new #t #f))
                   #f)))))
 
 
