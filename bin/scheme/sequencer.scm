@@ -460,12 +460,16 @@
     (not (= value 0.0))))
 
 (define (set-left-interior-status-bar2 seqblocknum seqtracknum value)
-  (if (and seqblocknum seqtracknum)
-      (set-seqblock-selected-box 'interior-left seqblocknum seqtracknum))
+  (set-custom-seq-indicator (<ra> :get-seqblock-start-time seqblocknum seqtracknum #t)
+                            -1
+                            "blue")
   (set-editor-statusbar (get-left-interior-string2 value)))
 
 (define (set-left-interior-status-bar seqblocknum seqtracknum)
-  (set-left-interior-status-bar2 seqblocknum seqtracknum (<ra> :get-seqblock-interior-start seqblocknum seqtracknum #t)))
+  (define value (<ra> :get-seqblock-interior-start seqblocknum seqtracknum #t))
+  ;;(c-display "gakk:" (<ra> :get-seqblock-start-time seqblocknum seqtracknum #t) value)
+  (set-seqblock-selected-box 'interior-left seqblocknum seqtracknum)
+  (set-left-interior-status-bar2 seqblocknum seqtracknum value))
 
 (define (get-right-interior-string2 seqblocknum seqtracknum right-interior-value)
   (<-> "|----: " (get-interior-displayable-string (- (<ra> :get-seqblock-default-duration seqblocknum seqtracknum)
@@ -492,10 +496,13 @@
     (not (= value (<ra> :get-seqblock-default-duration seqblocknum seqtracknum)))))
   
 (define (set-right-interior-status-bar2 seqblocknum seqtracknum right-interior-value)
-  (set-seqblock-selected-box 'interior-right seqblocknum seqtracknum)
+  (set-custom-seq-indicator (<ra> :get-seqblock-end-time seqblocknum seqtracknum #t)
+                            -1
+                            "blue")
   (set-editor-statusbar (get-right-interior-string2 seqblocknum seqtracknum right-interior-value)))
 
 (define (set-right-interior-status-bar seqblocknum seqtracknum)
+  (set-seqblock-selected-box 'interior-right seqblocknum seqtracknum)
   (set-right-interior-status-bar2 seqblocknum seqtracknum (<ra> :get-seqblock-interior-end seqblocknum seqtracknum #t)))
 
 (define (get-speed-string2 value)
@@ -556,9 +563,23 @@
 (define (set-fade-status-bar is-left seqblocknum seqtracknum)
   (if is-left
       (begin
+        (define time (round (scale (<ra> :get-seqblock-fade-in seqblocknum seqtracknum)
+                                   0 1
+                                   (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
+                                   (<ra> :get-seqblock-end-time seqblocknum seqtracknum))))
+        (set-custom-seq-indicator time
+                                  -1
+                                   "green")
         (set-seqblock-selected-box 'fade-left seqblocknum seqtracknum)
         (set-editor-statusbar (get-fade-string-left seqblocknum seqtracknum)))
       (begin
+        (define time (round (scale (<ra> :get-seqblock-fade-out seqblocknum seqtracknum)
+                                   1 0
+                                   (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
+                                   (<ra> :get-seqblock-end-time seqblocknum seqtracknum))))
+        (set-custom-seq-indicator time
+                                  -1
+                                  "green")
         (set-seqblock-selected-box 'fade-right seqblocknum seqtracknum)
         (set-editor-statusbar (get-fade-string-right seqblocknum seqtracknum)))))
 

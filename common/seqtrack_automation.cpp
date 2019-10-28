@@ -537,6 +537,11 @@ int SEQTRACK_AUTOMATION_get_effect_num(struct SeqtrackAutomation *seqtrackautoma
   return seqtrackautomation->_automations[automationnum]->effect_num;
 }
 
+const char *SEQTRACK_AUTOMATION_get_color(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0);
+  return talloc_strdup(seqtrackautomation->_automations[automationnum]->color.name(QColor::HexArgb).toUtf8());
+}
+
 bool SEQTRACK_AUTOMATION_is_enabled(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
   R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), false);
   return seqtrackautomation->is_enabled(seqtrackautomation->_automations[automationnum]);

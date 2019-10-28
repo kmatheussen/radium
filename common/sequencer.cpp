@@ -1815,7 +1815,7 @@ void SEQTRACK_cancel_gfx_seqblocks(struct SeqTrack *seqtrack){
   SEQUENCER_update(SEQUPDATE_PLAYLIST|SEQUPDATE_NAVIGATOR);
 }
 
-void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtracknum, bool seqtrack_is_live){
+void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtracknum, const bool seqtrack_is_live){
 
   R_ASSERT_RETURN_IF_FALSE(seqtrack->gfx_seqblocks != NULL);
   

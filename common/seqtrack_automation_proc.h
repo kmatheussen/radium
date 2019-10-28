@@ -9,6 +9,7 @@ extern LANGSPEC int SEQTRACK_AUTOMATION_add_automation(struct SeqtrackAutomation
 extern LANGSPEC int SEQTRACK_AUTOMATION_get_num_automations(struct SeqtrackAutomation *seqtrackautomation);
 extern LANGSPEC struct Patch *SEQTRACK_AUTOMATION_get_patch(struct SeqtrackAutomation *seqtrackautomation, int automationnum);
 extern LANGSPEC int SEQTRACK_AUTOMATION_get_effect_num(struct SeqtrackAutomation *seqtrackautomation, int automationnum);
+extern LANGSPEC const char *SEQTRACK_AUTOMATION_get_color(struct SeqtrackAutomation *seqtrackautomation, int automationnum);
 extern LANGSPEC bool SEQTRACK_AUTOMATION_is_enabled(struct SeqtrackAutomation *seqtrackautomation, int automationnum);
 extern LANGSPEC void SEQTRACK_AUTOMATION_set_enabled(struct SeqtrackAutomation *seqtrackautomation, int automationnum, bool is_enabled);
 extern LANGSPEC double SEQTRACK_AUTOMATION_get_value(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum);

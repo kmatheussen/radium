@@ -1661,7 +1661,10 @@
                             (*sequencer-right-part-area* :has-mouse))
                        (and *sequencer-timing-area*
                             (*sequencer-timing-area* :has-mouse)))
-                   #t
+                   (begin
+                     ;;(c-display "----cancel 2")
+                     (<ra> :cancel-seq-indicator)
+                     #t)
                    #f)))
       ;(<gui> :add-resize-callback gui ;; TODO: I think this resize callback can be removed.
       ;       (lambda (width height)

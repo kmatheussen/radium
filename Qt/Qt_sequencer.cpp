@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MyQSlider.h"
 #include "Qt_Bs_edit_proc.h"
 #include "Qt_Fonts_proc.h"
+#include "Qt_colors_proc.h"
 #include "KeyboardFocusFrame.hpp"
 
 #include "../embedded_scheme/scheme_proc.h"
@@ -208,11 +209,11 @@ static const GlyphpathAndWidth &getGlyphpathAndWidth(const QFont &font, const QC
 static bool g_is_drawing_sequencer_time = false;
 static bool g_is_drawing_sequencer_gfx_block = false;
 
-bool myDrawText(QPainter *painter, QRectF rect, QString text, int flags, bool wrap_lines, int rotate, bool scale_font_size, bool cut_text_to_fit){
+bool myDrawText(QPainter &p, QRectF rect, QString text, int flags, bool wrap_lines, int rotate, bool scale_font_size, bool cut_text_to_fit){
   QFont font;
 
   rect.adjust(0,-1,0,0); // strange.
-  
+
   if (scale_font_size) {
     
     if (cut_text_to_fit){
@@ -231,7 +232,7 @@ bool myDrawText(QPainter *painter, QRectF rect, QString text, int flags, bool wr
       
     }
     
-    painter->setFont(font);
+    p.setFont(font);
   }
 
   QString org_text = text;
@@ -248,15 +249,15 @@ bool myDrawText(QPainter *painter, QRectF rect, QString text, int flags, bool wr
 
   if (rotate != 0) {
 
-    painter->save();
+    p.save();
     
-    painter->rotate(rotate);
+    p.rotate(rotate);
     
     // Not good enough. Need some trigonometry here to get it correct for all rotate values, but we have only used 90 and 270 degrees in the code so far.
     if (rotate==270){
-      painter->translate(-rect.y()-rect.height(), rect.x());
+      p.translate(-rect.y()-rect.height(), rect.x());
     } else if (rotate==90){
-      painter->translate(rect.y(), -rect.x()-rect.width());
+      p.translate(rect.y(), -rect.x()-rect.width());
     }else{
       handleError("Only rotate values of 90 and 270 are supported. (It's probably not hard to fix this though.)");
     }
@@ -264,7 +265,7 @@ bool myDrawText(QPainter *painter, QRectF rect, QString text, int flags, bool wr
     rect = QRect(0,0,rect.height(),rect.width());
   }
 
-  
+
   if (g_is_drawing_sequencer_gfx_block || (g_is_drawing_sequencer_time && is_playing() && pc->playtype==PLAYSONG && smooth_scrolling())){
 
     R_ASSERT_NON_RELEASE(g_is_drawing_sequencer_time);
@@ -275,7 +276,7 @@ bool myDrawText(QPainter *painter, QRectF rect, QString text, int flags, bool wr
     double x = rect.x();
     double y = rect.y();
 
-    //const QFont &font = painter->font();
+    //const QFont &font = p.font();
 
     QFontMetrics fm(font);      
     y += fm.ascent();
@@ -284,47 +285,33 @@ bool myDrawText(QPainter *painter, QRectF rect, QString text, int flags, bool wr
       y += (rect.height()-fm.height()) / 2.0;
     }
     
-    QBrush brush = painter->pen().brush();
+    QBrush brush = p.pen().brush();
 
-    bool was_clipping = painter->hasClipping();
-    const QRegion &old_clipregion = painter->clipRegion();
-
-    if (was_clipping)
-      painter->setClipRegion(old_clipregion.intersected(rect.toRect()));
-    else
-      painter->setClipRect(rect.toRect());
+    radium::ScopedQClipRect scoped_rect(p, rect);
     
-    if(was_clipping==false)
-      painter->setClipping(true);
-        
     for(int i=0; i<len; i++){
       const GlyphpathAndWidth &g = getGlyphpathAndWidth(font, text.at(i));
-      painter->save();
-      painter->translate(x, y);
-      painter->fillPath(g.path,brush);
-      painter->restore();
+      p.save();
+      p.translate(x, y);
+      p.fillPath(g.path,brush);
+      p.restore();
       
       x += g.width;
     }
-
-    if (was_clipping)
-      painter->setClipRegion(old_clipregion);
-    else
-      painter->setClipping(false);
     
   } else {
 
     QTextOption option((Qt::Alignment)flags);
     option.setWrapMode(QTextOption::NoWrap);
-    painter->drawText(rect, text, option);
+    p.drawText(rect, text, option);
     
   }
 
   if (rotate != 0)
-    painter->restore();
+    p.restore();
   
   if(scale_font_size)
-    painter->setFont(QFont());
+    p.setFont(QFont());
 
   return org_text==draw_text;
 }
@@ -600,6 +587,10 @@ static QColor get_seqblock_color(const SeqTrack *seqtrack, const SeqBlock *seqbl
     return get_sample_color(seqtrack, seqblock);
   else
     return get_block_color(seqblock->block);
+}
+
+const char* SEQBLOCK_get_color(const SeqTrack *seqtrack, const SeqBlock *seqblock){
+  return talloc_strdup(get_seqblock_color(seqtrack,seqblock).name(QColor::HexArgb).toUtf8());
 }
 
 static double get_visible_song_length(void){
@@ -1507,7 +1498,7 @@ public:
 
     // name
     p.setPen(text_color);
-    myDrawText(&p, rect.adjusted(2,0,-4,0), get_seqblock_name(seqtrack, seqblock),
+    myDrawText(p, rect.adjusted(2,0,-4,0), get_seqblock_name(seqtrack, seqblock),
                Qt::AlignLeft | Qt::AlignVCenter,
                0, // rotate
                false, // wrap
@@ -2993,7 +2984,7 @@ struct Timeline_widget : public LightWidget { //: public MouseTrackerQWidget {
               p.setPen(text_color);
               
               QRectF rect(x + 2, t_y1 + 2, t_x2-(x+2), t_y2 - (t_y1+2));
-              myDrawText(&p, rect, QString::number(barnum), Qt::AlignVCenter);
+              myDrawText(p, rect, QString::number(barnum), Qt::AlignVCenter);
             }
 
             last_x = x;
@@ -3066,7 +3057,7 @@ struct Timeline_widget : public LightWidget { //: public MouseTrackerQWidget {
           p.setBrush(Qt::NoBrush);
         
           QRectF rect(x + t1 + 4, t_y1+2, t_x2 - (x+t1+4), t_y2-(t_y1+2));
-          myDrawText(&p, rect, seconds_to_timestring(time), Qt::AlignVCenter);
+          myDrawText(p, rect, seconds_to_timestring(time), Qt::AlignVCenter);
         }
 
         time += inc_time;
@@ -3094,8 +3085,15 @@ struct Timeline_widget : public LightWidget { //: public MouseTrackerQWidget {
 
 };
 
+static int64_t g_sequencer_indicator_x_pos = NO_INDICATOR;
+static double g_sequencer_indicator_y = NO_INDICATOR;
+static double g_sequencer_indicator_type = -1;
+static QColor g_sequencer_indicator_color("#123456");
+
 struct CursorPainter : public LightWidget {
-  const double cursor_width = 2.7;
+  const double _cursor_width = 2.7;
+  const double _indicator0_width = _cursor_width * 2.0 / 4.0;
+  const double _indicator1_width = _cursor_width * 4.0 / 4.0;
 
   
 public:
@@ -3105,36 +3103,134 @@ public:
   double &_start_time;
   double &_end_time;
 
-  CursorPainter(double &start_time, double &end_time)
+  const bool _is_main_sequencer;
+
+  CursorPainter(double &start_time, double &end_time, const bool is_main_sequencer)
     : _start_time(start_time)
     , _end_time(end_time)
+    , _is_main_sequencer(is_main_sequencer)
   {}
 
   
 private:
   
+  double get_x(int64_t frames) const {
+    return scale_double(frames, _start_time, _end_time, t_x1, t_x2);
+  }
+
+  double get_y(double sequencer_y) const {
+    if (_is_main_sequencer)
+      return sequencer_y;
+    
+    QWidget *seqwidget = SEQUENCER_WIDGET_get_widget();
+    return scale_double(sequencer_y, 0, seqwidget->height(), t_y1, t_y2);
+  }
+
   double get_curr_cursor_x(int frames_to_add) const {
     if (is_playing() && pc->playtype==PLAYSONG && smooth_scrolling())
       return t_x2 / 2.0;
     else
-      return scale_double(ATOMIC_DOUBLE_GET(pc->song_abstime)+frames_to_add, _start_time, _end_time, t_x1, t_x2);
+      return get_x(ATOMIC_DOUBLE_GET(pc->song_abstime)+frames_to_add);
   }
 
   double _curr_cursor_x = 0.0;
-
   QRect _curr_line_rect;
   mutable QRect _last_painted_line_rect;
+
+  double _curr_indicator_x = -1;
+  QRect _curr_indicator_x_rect;
+  mutable QRect _last_painted_indicator_x_rect;
+
+  double _curr_indicator_y = -1;
+  QRect _curr_indicator_y_rect;
+  mutable QRect _last_painted_indicator_y_rect;
+
+  int _curr_indicator_type = 0;
+  double _curr_indicator_width;
+  QColor _curr_indicator_color;  
   
-  QRect get_line_rect(double x){
-    int x1 = floor(x-cursor_width/2.0) - 1; // Must decrement by 1. 'floor' is not enough, for some reason
-    int x2 = floor(x+cursor_width/2.0) + 1; // Must increment by 1. 'ceil' is not enough, for some reason
+  QRect get_line_rect_x(double x, const double width){
+    int x1 = floor(x-width/2.0) - 1; // Must decrement by 1. 'floor' is not enough, for some reason
+    int x2 = floor(x+width/2.0) + 1; // Must increment by 1. 'ceil' is not enough, for some reason
     int y1 = ceil(t_y1) - 1;
     int y2 = ceil(t_y2) + 1;
     return QRect(x1, y1, x2-x1, y2-y1);
   }
 
+  QRect get_line_rect_y(double y, const double width){
+    int y1 = floor(y-width/2.0) - 1; // Must decrement by 1. 'floor' is not enough, for some reason
+    int y2 = floor(y+width/2.0) + 1; // Must increment by 1. 'ceil' is not enough, for some reason
+    int x1 = ceil(t_x1) - 1;
+    int x2 = ceil(t_x2) + 1;
+    return QRect(x1, y1, x2-x1, y2-y1);
+  }
+
   
 public:
+
+  void update_indicator_type(QWidget *parent){
+    if (g_sequencer_indicator_type != _curr_indicator_type || g_sequencer_indicator_color != _curr_indicator_color){
+      _curr_indicator_type = g_sequencer_indicator_type;
+      _curr_indicator_width = _curr_indicator_type==0 ? _indicator0_width : _indicator1_width;
+      _curr_indicator_color = g_sequencer_indicator_color;
+      
+      parent->update(_last_painted_indicator_x_rect);
+      parent->update(_curr_indicator_x_rect);
+      
+      parent->update(_last_painted_indicator_y_rect);
+      parent->update(_curr_indicator_y_rect);
+    }
+  }
+    
+  void update_indicator_x(QWidget *parent){
+    if (g_sequencer_indicator_x_pos == NO_INDICATOR) {
+
+      _curr_indicator_x = NO_INDICATOR;
+      _curr_indicator_x_rect = QRect();
+      R_ASSERT_NON_RELEASE(_curr_indicator_x_rect.isNull());
+
+      if (!_last_painted_indicator_x_rect.isNull())
+        parent->update(_last_painted_indicator_x_rect);
+
+    } else {
+      
+      double new_indicator_x = get_x(g_sequencer_indicator_x_pos);
+
+      if (fabs(new_indicator_x-_curr_indicator_x) > 0.01) { // don't paint new cursor if it has moved less than 1/100 pixel since last time.
+        _curr_indicator_x = new_indicator_x;
+        _curr_indicator_x_rect = get_line_rect_x(_curr_indicator_x, _curr_indicator_width);
+        parent->update(_curr_indicator_x_rect);
+        if (!_last_painted_indicator_x_rect.isNull())
+          parent->update(_last_painted_indicator_x_rect);
+      }
+    }
+
+  }
+  
+  void update_indicator_y(QWidget *parent){
+    if (g_sequencer_indicator_y <= 0) {
+
+      _curr_indicator_y = NO_INDICATOR;
+      _curr_indicator_y_rect = QRect();
+      R_ASSERT_NON_RELEASE(_curr_indicator_y_rect.isNull());
+
+      if (!_last_painted_indicator_y_rect.isNull())
+        parent->update(_last_painted_indicator_y_rect);
+
+    } else {
+      
+      double new_indicator_y = get_y(g_sequencer_indicator_y);
+
+      if (fabs(new_indicator_y-_curr_indicator_y) > 0.01) { // don't paint new cursor if it has moved less than 1/100 pixel since last time.
+        _curr_indicator_y = new_indicator_y;
+        _curr_indicator_y_rect = get_line_rect_y(_curr_indicator_y, _curr_indicator_width);
+        parent->update(_curr_indicator_y_rect);
+        if (!_last_painted_indicator_y_rect.isNull())
+          parent->update(_last_painted_indicator_y_rect);
+      }
+    }
+
+  }
   
   void update_cursor(QWidget *parent){
     if (is_playing() && pc->playtype==PLAYSONG) {
@@ -3164,7 +3260,7 @@ public:
 
           _curr_cursor_x = new_curr_cursor_x;
         
-          _curr_line_rect = get_line_rect(_curr_cursor_x);
+          _curr_line_rect = get_line_rect_x(_curr_cursor_x, _cursor_width);
         
           parent->update(_curr_line_rect);
           parent->update(_last_painted_line_rect);
@@ -3209,11 +3305,11 @@ public:
     }    
   }
   
-  void paintCursor2(QPainter &p, QColor color, double x) const {
+  void paintCursorX(QPainter &p, QColor color, double x, const double width) const {
     if(x >= t_x1 && x < t_x2) {
 
       QPen pen(color);
-      pen.setWidthF(cursor_width);
+      pen.setWidthF(width);
       
       QLineF line(x, t_y1, x, t_y2);
       
@@ -3224,21 +3320,56 @@ public:
     }
   }
   
+  void paintCursorY(QPainter &p, QColor color, double y, const double width) const {
+    if(y >= t_y1 && y < t_y2) {
+
+      QPen pen(color);
+      pen.setWidthF(width);
+      
+      QLineF line(t_x1, y, t_x2, y);
+      
+      //printf("   line: %f, %f -> %f, %f\n", _last_painted_cursor_x, y1, _last_painted_cursor_x, y2);
+      p.setPen(pen);
+      p.drawLine(line);
+      
+    }
+  }
+  
   void paintCursor(const QRegion &update_region, QPainter &p) const {
 
+    radium::ScopedQClipRect scoped_clip_rect(p, t_rect);
+    
     // Start-pos cursor (blue)
     {
       double x = scale_double(pc->last_song_starttime, _start_time, _end_time, t_x1, t_x2);
-      paintCursor2(p, Qt::blue, x);
+      paintCursorX(p, Qt::blue, x, _cursor_width);
     }
 
     // red cursor
     {
-      paintCursor2(p, get_qcolor(SEQUENCER_CURSOR_COLOR_NUM), _curr_cursor_x);
+      paintCursorX(p, get_qcolor(SEQUENCER_CURSOR_COLOR_NUM), _curr_cursor_x, _cursor_width);
 
       _last_painted_line_rect = _curr_line_rect;
     }
-    
+
+    // indicator x
+    {      
+      if (!_curr_indicator_x_rect.isNull())
+        paintCursorX(p, _curr_indicator_color, _curr_indicator_x, _curr_indicator_width);
+      /*
+      else
+        printf("....................curr_indicator_x_rect isNULL\n");
+      */
+      _last_painted_indicator_x_rect = _curr_indicator_x_rect;
+    }
+
+    // indicator y
+    {      
+      if (!_curr_indicator_y_rect.isNull())
+        paintCursorY(p, _curr_indicator_color, _curr_indicator_y, _curr_indicator_width);
+
+      _last_painted_indicator_y_rect = _curr_indicator_y_rect;
+    }
   }
   
 };
@@ -3265,7 +3396,7 @@ struct Seqtracks_navigator_painter : public LightWidget{
     , _end_time(end_time)
     , _seqtracks_widget(seqtracks_widget)
     , _paint_zoom_interface(!is_standalone)
-    , _cursor_painter(_cursor_start_time, _cursor_end_time)
+    , _cursor_painter(_cursor_start_time, _cursor_end_time, false)
   {
     printf("    ADDING Navigator\n");
     g_navigator_painters.push_back(this);
@@ -3385,7 +3516,7 @@ public:
               if(rect.height() > 5){
                 p.setPen(text_color);
                 
-                myDrawText(&p, rect.adjusted(2,1,-1,-1), get_seqblock_name(seqtrack, seqblock), Qt::AlignLeft | Qt::AlignVCenter,
+                myDrawText(p, rect.adjusted(2,1,-1,-1), get_seqblock_name(seqtrack, seqblock), Qt::AlignLeft | Qt::AlignVCenter,
                            false, //wrap
                            0, //rotate
                            true, //scale
@@ -3517,7 +3648,7 @@ public:
           myFillRoundedRect(p, text_rect, filled_color, 5);
           
           p.setPen(text_pen);
-          myDrawText(&p, text_rect, name,
+          myDrawText(p, text_rect, name,
                      Qt::AlignHCenter | Qt::AlignVCenter,
                      0, // rotate
                      false, // wrap
@@ -3641,7 +3772,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     , _bars_and_beats_widget(this, _start_time, _end_time, false)
     , _seqtracks_widget(_start_time, _end_time)
     , _navigator_painter(this, _start_time, _end_time, _seqtracks_widget, false)
-    , _cursor_painter(_start_time, _end_time)
+    , _cursor_painter(_start_time, _end_time, true)
       //, _main_reltempo(this)
   {
     setAcceptDrops(true);
@@ -4367,7 +4498,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   
-  void seqtracks_and_timeline(QPaintEvent *ev, float seqtracks_y_max){
+  void paint_seqtracks_and_timeline(QPaintEvent *ev, float seqtracks_y_max){
 
     // Need to put TRACK_PAINT in a different scope than the call to API_run_paint_event_for_custom_widget.
     TRACK_PAINT();
@@ -4460,7 +4591,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     // Paint seqblocks and seqtrack backround
     //
     if(seqtracks_are_painted || timelanes_are_painted)
-      seqtracks_and_timeline(ev, seqtracks_y_max);
+      paint_seqtracks_and_timeline(ev, seqtracks_y_max);
     
     {
       TRACK_PAINT();
@@ -4470,16 +4601,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       // Paint seqtrack borders.
       //
       if (seqtracks_are_painted || left_part_is_painted){
-        p.setClipRect(QRectF(0, 0, _seqtracks_widget.t_x2, seqtracks_y_max));
-        p.setClipping(true);
-
+        
+        radium::ScopedQClipRect scoped_rect(p, 0, 0, _seqtracks_widget.t_x2, seqtracks_y_max);
+            
         paintSeqtrackBorders(p);
 
         p.setRenderHints(QPainter::Antialiasing,true);
         
         paintCurrentSeqtrackBorder(p);
-
-        p.setClipping(false);
       }
 
       // Paint border around current seqblock, seqtrack automation
@@ -4490,14 +4619,11 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
         paintMarkerGrid(p);
 
-        p.setClipRect(QRectF(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1, _seqtracks_widget.t_width, seqtracks_y_max - _seqtracks_widget.t_y1));
-        p.setClipping(true);
+        radium::ScopedQClipRect scoped_rect(p, QRectF(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1, _seqtracks_widget.t_width, seqtracks_y_max - _seqtracks_widget.t_y1));
 
         _seqtracks_widget.paint_curr_seqblock_border(ev->region(), p);
 
         _seqtracks_widget.paint_automation(ev->region(), p);    
-
-        p.setClipping(false);
       }
 
       
@@ -4510,12 +4636,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       // Paint navigator
       //
       if(_navigator_painter.intersects(ev->region())){
-        p.setClipRect(QRectF(_navigator_painter.t_x1, _navigator_painter.t_y1, _navigator_painter.t_width, _navigator_painter.t_height));
-        p.setClipping(true);
+        radium::ScopedQClipRect scoped_rect(p, _navigator_painter.t_rect);
 
         _navigator_painter.paint(ev->region(), p);
-        
-        p.setClipping(false);
       }
       
       // Debugging update.
@@ -4545,6 +4668,84 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
 
 }
+
+// vertical mouse indicator lines. Those vertical lines that are drawn on top of the timeline and navigators when moving the mouse around, following grid if grid is enabled.
+//
+static void update_indicators_x(void){
+  g_sequencer_widget->_cursor_painter.update_indicator_x(g_sequencer_widget);
+  for(auto *navigator_widget : g_navigator_painters)
+    navigator_widget->_cursor_painter.update_indicator_x(navigator_widget->_widget);
+}
+
+static void update_indicators_y(void){
+  g_sequencer_widget->_cursor_painter.update_indicator_y(g_sequencer_widget);
+  for(auto *navigator_widget : g_navigator_painters)
+    navigator_widget->_cursor_painter.update_indicator_y(navigator_widget->_widget);
+}
+
+static void update_indicators_type(void){
+  g_sequencer_widget->_cursor_painter.update_indicator_type(g_sequencer_widget);
+  for(auto *navigator_widget : g_navigator_painters)
+    navigator_widget->_cursor_painter.update_indicator_type(navigator_widget->_widget);
+}
+
+void SEQUENCER_set_sequencer_indicator(int64_t indicator_x_pos, double indicator_y, int type, const char *colorname2){
+  R_ASSERT_RETURN_IF_FALSE(indicator_x_pos==NO_INDICATOR || indicator_x_pos >= 0);
+  R_ASSERT_RETURN_IF_FALSE(indicator_y >= (NO_INDICATOR-0.01));
+
+  //printf("              SEQUENCER_set_sequencer_indicator: %d - %f\n", (int)indicator_x_pos, indicator_y);
+
+  QString colorname(colorname2);
+  QColor color = colorname.isEmpty() ? g_sequencer_indicator_type==0 ? Qt::white : Qt::yellow : get_config_qcolor(colorname);
+  
+  if (g_sequencer_indicator_type != type || g_sequencer_indicator_color != color){
+    
+    g_sequencer_indicator_type = type;
+    g_sequencer_indicator_color = color;
+    g_sequencer_indicator_x_pos = indicator_x_pos;
+    g_sequencer_indicator_y = indicator_y;
+    
+    update_indicators_type();
+    update_indicators_y();
+    update_indicators_x();
+    
+  } else {
+
+    if (g_sequencer_indicator_x_pos != indicator_x_pos){
+      g_sequencer_indicator_x_pos = indicator_x_pos;
+      update_indicators_x();
+    }
+    
+    if (fabs(g_sequencer_indicator_y - indicator_y) > 0.01) {
+      g_sequencer_indicator_y = indicator_y;
+      update_indicators_y();
+    }
+    
+  }
+
+}
+ 
+void SEQUENCER_cancel_sequencer_indicator(void){
+  //printf("      SEQUENCER_cancel_sequencer_indicator\n");
+  SEQUENCER_set_sequencer_indicator(NO_INDICATOR, NO_INDICATOR, 0, "");
+}
+ 
+bool SEQUENCER_indicator_enabled(void){
+  return g_sequencer_indicator_x_pos != NO_INDICATOR || g_sequencer_indicator_y >= 0;
+}
+ 
+int64_t SEQUENCER_get_indicator_x_pos(void){
+  return g_sequencer_indicator_x_pos;
+}
+ 
+double SEQUENCER_get_indicator_y(void){
+  return g_sequencer_indicator_y;
+}
+ 
+int SEQUENCER_get_indicator_type(void){
+  return g_sequencer_indicator_type;
+}
+ 
 
 /*
 static void g_position_widgets(void){
