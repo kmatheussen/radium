@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QSet>
 #include <QUuid>
 
-
 #include "../common/nsmtracker.h"
 #include "../common/sequencer_proc.h"
 #include "../common/seqtrack_automation_proc.h"
@@ -40,6 +39,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/player_pause_proc.h"
 #include "../common/player_proc.h"
+
+#include "../Qt/Qt_colors_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -952,6 +953,16 @@ int getSeqAutomationEffectNum(int automationnum, int seqtracknum){
   return SEQTRACK_AUTOMATION_get_effect_num(seqtrack->seqtrackautomation, automationnum);
 }
 
+const_char* getSeqAutomationColor(int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return "";
+
+  VALIDATE_AUTOMATIONNUM("");
+
+  return SEQTRACK_AUTOMATION_get_color(seqtrack->seqtrackautomation, automationnum);
+}
+
 float getSeqAutomationValue(int nodenum, int automationnum, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
@@ -1383,6 +1394,16 @@ const_char* getSeqblockAutomationName(int automationnum){
   return sat_to_string((enum Seqblock_Automation_Type)automationnum);
 }
 
+const_char* getSeqblockAutomationColor(int automationnum){
+  if (automationnum < 0 || automationnum >= NUM_SATS){
+    handleError("There is no automationnum #%d", automationnum);
+    return "";
+  }
+
+  QColor color = get_qcolor((enum ColorNums)(AUTOMATION1_COLOR_NUM + automationnum));
+  return talloc_strdup(color.name(QColor::HexArgb).toUtf8());
+}
+
 bool getSeqblockAutomationEnabled(int automationnum, int64_t seqblockid){
   struct SeqBlock *seqblock = getSeqblockFromId(seqblockid);
   if (seqblock==NULL)
@@ -1748,6 +1769,40 @@ float getSeqtimelineAreaY2(void){
   return SEQTIMELINE_get_y2();
 }
 
+
+// indicator
+
+bool seqIndicatorEnabled(void){
+  return SEQUENCER_indicator_enabled();
+}
+  
+void setSeqIndicator(int64_t indicator_x_pos, double indicator_y, int type, const_char* color){
+  if (indicator_x_pos < 0 && indicator_x_pos!=NO_INDICATOR){
+    handleError("setSeqIndicatorPos: indicator_x_pos must be -1 or 0 or larger: %d", (int)indicator_x_pos);
+    return;
+  }
+  if (indicator_y < (NO_INDICATOR-0.01)) {
+    handleError("setSeqIndicatorPos: indicator_y must be -1 or 0 or larger: %f", indicator_y);
+    return;
+  }
+  SEQUENCER_set_sequencer_indicator(indicator_x_pos, indicator_y, type, color);
+}
+
+void cancelSeqIndicator(void){
+  SEQUENCER_cancel_sequencer_indicator();
+}
+
+int64_t getSeqIndicatorXPos(void){
+  return SEQUENCER_get_indicator_x_pos();
+}
+
+double getSeqIndicatorY(void){
+  return SEQUENCER_get_indicator_y();
+}
+
+int getSeqIndicatorType(void){
+  return SEQUENCER_get_indicator_type();
+}
 
 // loop
 void setSeqlooping(bool do_loop, int64_t start, int64_t end){
@@ -3027,6 +3082,15 @@ float getSeqblockY2(int seqblocknum, int seqtracknum){
 
 float getSeqblockHeaderY2(int seqblocknum, int seqtracknum){
   return getSeqblockLeftFadeY1(seqblocknum, seqtracknum);
+}
+
+const_char* getSeqblockColor(int seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return "";
+
+  return SEQBLOCK_get_color(seqtrack, seqblock);
 }
 
 // seqblock left fade area

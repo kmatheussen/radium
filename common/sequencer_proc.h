@@ -140,7 +140,17 @@ extern LANGSPEC void SONG_call_me_before_starting_to_play_song(int64_t abstime);
 
 // 'seqblock' must be nulled out before calling.
 extern LANGSPEC void SEQBLOCK_init(const struct SeqTrack *from_seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const hash_t *seqblock_state, double state_samplerate, bool *track_is_disabled, int64_t time);
-  
+
+
+// vertical mouse indicator lines
+#define NO_INDICATOR -1
+extern LANGSPEC void SEQUENCER_set_sequencer_indicator(int64_t indicator_x_pos, double indicator_y, int type, const char *color); // indicator_x_pos and/or indicator_y can have the value NO_INDICATOR.
+extern LANGSPEC void SEQUENCER_cancel_sequencer_indicator(void); // same as SEQUENCER_set_sequencer_indicator(NO_INDICATOR, NO_INDICATOR)
+extern LANGSPEC bool SEQUENCER_indicator_enabled(void); // returns false if both indicator_x_pos and indicator_y is set to NO_INDICATOR.
+extern LANGSPEC int64_t SEQUENCER_get_indicator_x_pos(void);
+extern LANGSPEC double SEQUENCER_get_indicator_y(void);
+extern LANGSPEC int SEQUENCER_get_indicator_type(void);
+
 // sequencer gfx
 #ifdef USE_QT4
 #include <QWidget>
@@ -270,6 +280,7 @@ extern LANGSPEC float SEQBLOCK_get_x2(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_y1(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_header_height(void); // name of block, etc.
+extern LANGSPEC const char* SEQBLOCK_get_color(const SeqTrack *seqtrack, const SeqBlock *seqblock);
 
 #if __cplusplus
 float SEQBLOCK_get_x1(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
@@ -460,7 +471,7 @@ extern LANGSPEC void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblo
 extern LANGSPEC dyn_t SEQTRACK_get_seqblocks_state(const struct SeqTrack *seqtrack);
 extern LANGSPEC dyn_t SEQTRACK_get_gfx_seqblocks_state(const struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_cancel_gfx_seqblocks(struct SeqTrack *seqtrack);
-extern LANGSPEC void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtracknum, bool seqtrack_is_live);
+extern LANGSPEC void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtracknum, const bool seqtrack_is_live);
 
 
 // sequencer

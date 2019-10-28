@@ -417,6 +417,15 @@
   (set! indicator-node-has-been-set #t)
   (<ra> :set-indicator-fxnode fxnodenum notenum tracknum))
 
+(define2 custom-seq-indicator-has-been-set boolean? #f)
+(delafina (set-custom-seq-indicator :time
+                                    :y
+                                    :color "")
+  (when (>= y -1)
+    (set! custom-seq-indicator-has-been-set #t)
+    ;;(c-display "setting seq indicator to" time y)
+    (<ra> :set-seq-indicator time y 1 color)))
+
 (define2 current-node-has-been-set boolean? #f)
 (define (set-current-temponode num)
   (set! current-node-has-been-set #t)
@@ -457,10 +466,11 @@
   (set! mouse-track-has-been-set #f)
   (set! mouse-note-has-been-set #f)
   (set! indicator-node-has-been-set #f)
+  (set! custom-seq-indicator-has-been-set #f)
   (set! current-node-has-been-set #f)
   (set! current-pianonote-has-been-set #f)
   (set! mouse-pointer-has-been-set #f)
-  
+
   ;;(set-editor-statusbar "")
   ;;(c-display "   LAST_ID:" *last-statusbar-id*)
   (<ra> :remove-statusbar-text *last-statusbar-id*)
@@ -498,6 +508,9 @@
                           (if (not indicator-node-has-been-set)
                               (<ra> :cancel-indicator-node))
                           
+                          ;;(if (not custom-seq-indicator-has-been-set)
+                          ;;    (<ra> :cancel-seq-indicator))
+                          
                           (if (not current-node-has-been-set)
                               (<ra> :cancel-current-node))
                           
@@ -508,7 +521,6 @@
 
                           (if (= state *is-releasing*)
                               (<ra> :hide-pianoroll-eraser))
-
                           )))
 
 
@@ -1254,23 +1266,35 @@
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
                              ((inside-box? (<ra> :get-box seqblock-right-stretch seqblocknum seqtracknum) X Y)
+                              (set-custom-seq-indicator (<ra> :get-seqblock-end-time seqblocknum seqtracknum #t)
+                                                        -1
+                                                        "yellow")
                               (set-editor-statusbar (get-stretch-string seqblockid))
                               (set-seqblock-selected-box 'stretch-right seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
                              ((inside-box? (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y)
+                              (set-custom-seq-indicator (<ra> :get-seqblock-start-time seqblocknum seqtracknum #t)
+                                                        -1
+                                                        "yellow")
                               (set-editor-statusbar (get-stretch-string seqblockid))
                               (set-seqblock-selected-box 'stretch-left seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
                              ((and holds-sample
                                    (inside-box? (<ra> :get-box seqblock-right-speed seqblocknum seqtracknum) X Y))
+                              (set-custom-seq-indicator (<ra> :get-seqblock-end-time seqblocknum seqtracknum #t)
+                                                        -1
+                                                        "red")
                               (set-editor-statusbar (get-speed-string seqblockid))
                               (set-seqblock-selected-box 'speed-right seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
                              ((and holds-sample
                                    (inside-box? (<ra> :get-box seqblock-left-speed seqblocknum seqtracknum) X Y))
+                              (set-custom-seq-indicator (<ra> :get-seqblock-start-time seqblocknum seqtracknum #t)
+                                                        -1
+                                                        "red")
                               (set-editor-statusbar (get-speed-string seqblockid))
                               (set-seqblock-selected-box 'speed-left seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
@@ -4003,6 +4027,16 @@
                     (<ra> :get-seqtempo-value n))
                   (iota (<ra> :get-num-seqtemponodes)))))
 
+(define (set-curr-seqtemponode num)
+  (<ra> :set-curr-seqtemponode num)
+  ;;  (c-display "setcurr: " num)
+  (if (>= num 0)      
+      (set-custom-seq-indicator (floor (<ra> :get-seqtempo-abstime num))
+                                (- (floor (<ra> :get-seqtemponode-y num))
+                                   (<ra> :get-sequencer-y1))
+                                "sequencer_tempo_automation_color")))
+
+
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and (<ra> :seqtempo-visible)
                                              (<ra> :get-box seqtempo-area)))
@@ -4022,7 +4056,6 @@
                                                                                                                                               get-seqtemponode-box
                                                                                                                                               num-nodes)))
                                                                                           (paint-grid! #t)
-                                                                                          (<ra> :set-curr-seqtemponode closest-node-num)
                                                                                           (callback (make-seqautomation-move :nodes (get-seqtempo-nodes)
                                                                                                                              :Num closest-node-num
                                                                                                                              :start-Y Y)
@@ -4049,7 +4082,7 @@
                                                #f
                                                (begin
                                                  (paint-grid! #t)
-                                                 (<ra> :set-curr-seqtemponode Num)
+                                                 ;;(set-curr-seqtemponode Num)
                                                  (callback (make-seqautomation-move :nodes (get-seqtempo-nodes)
                                                                                     :Num Num
                                                                                     :start-Y Y)
@@ -4082,11 +4115,17 @@
                                      seqmove)
                         
                         :Release-node (lambda (seqmove)
+                                        (<ra> :cancel-seq-indicator)
                                         (paint-grid! #f))
                         
                         :Publicize (lambda (seqmove) ;; this version works though. They are, or at least, should be, 100% functionally similar.
-                                     (set-editor-statusbar (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value (seqmove :Num)))))
-                                     ;;(<ra> :set-curr-seqtemponode Num)
+                                     (define num (seqmove :Num))
+                                     (set-editor-statusbar (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value num))))
+                                     '(<ra> :set-seq-indicator
+                                           (floor (<ra> :get-seqtempo-abstime num))
+                                           (- (floor (<ra> :get-seqtemponode-y num))
+                                              (<ra> :get-sequencer-y1)))
+                                     (set-curr-seqtemponode num)
                                      #f)
                         
                         :Get-pixels-per-value-unit (lambda (seqmove)
@@ -4187,13 +4226,36 @@
                      (existing-box Num Box) :> (begin
                                                  ;;(c-display "hepp" Num)
                                                  (set-editor-statusbar (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value Num))))
-                                                 (<ra> :set-curr-seqtemponode Num)
+                                                 (set-curr-seqtemponode Num)
                                                  #t)
                      A                      :> (begin
                                                  ;;(c-display "**Didnt get it:" A)
-                                                 (<ra> :set-curr-seqtemponode -1)
+                                                 (set-curr-seqtemponode -1)
                                                  #f)))))
 
+
+(add-mouse-move-handler
+ :move (lambda (Button X Y)
+         (if (and (not custom-seq-indicator-has-been-set)
+                  (>= X (<ra> :get-seqtracks-x1))
+                  (< X (<ra> :get-seqtracks-x2))
+                  (>= Y (<ra> :get-sequencer-y1))
+                  (< Y (<ra> :get-seqtracks-y2)))
+             (let ()
+               (define Time (get-sequencer-time X))
+               (define PositionTime (if (<ra> :control-pressed)
+                                        (floor Time)
+                                        (<ra> :get-seq-gridded-time (floor Time))))
+               (if (>= PositionTime 0)
+                   (begin
+                     ;;(c-display "TIME:" PositionTime (/ PositionTime 44100.0))
+                     (<ra> :set-seq-indicator PositionTime)
+                     #t)
+                   #f))
+             (let ()
+               (if (not custom-seq-indicator-has-been-set)
+                   (<ra> :cancel-seq-indicator))
+               #f))))
 
 
 ;; sequencer timeline
@@ -4551,6 +4613,7 @@
                                        seqblock-info)
 
                           :Release-node (lambda (seqblock-info)
+                                          (<ra> :cancel-seq-indicator)
                                           #f)
 
                           :Publicize (lambda (seqblock-info)
@@ -4830,7 +4893,9 @@
                         
                         
                         :Publicize (lambda (seqblock-info)
-                                     (set-left-interior-status-bar2 #f #f gakkgakk-left-interior-value)
+                                     (set-left-interior-status-bar2 (seqblock-info :seqblocknum)
+                                                                    (seqblock-info :seqtracknum)
+                                                                    gakkgakk-left-interior-value)
                                      )
                         
                         :Get-pixels-per-value-unit (lambda (seqblock-info)
@@ -5386,8 +5451,19 @@
                                (seqblock :start-time)))
                         (- (seqblock :interior-end)
                            (seqblock :interior-start)))))
+        (set-custom-seq-indicator (if is-left
+                                      (<ra> :get-seqblock-start-time seqblocknum seqtracknum #t)
+                                      (<ra> :get-seqblock-end-time seqblocknum seqtracknum #t))
+                                  -1
+                                  "yellow")
         (set-editor-statusbar (get-stretch-string2 stretch)))
-      (set-editor-statusbar (get-speed-string2 curr-speed)))
+      (begin
+        (set-custom-seq-indicator (if is-left
+                                      (<ra> :get-seqblock-start-time seqblocknum seqtracknum #t)
+                                      (<ra> :get-seqblock-end-time seqblocknum seqtracknum #t))
+                                  -1
+                                  "red")
+        (set-editor-statusbar (get-speed-string2 curr-speed))))
   
   :move (Value Y)
   (begin
@@ -5984,11 +6060,16 @@
                                      move-single)
 
                         :Release-node (lambda (move-single)
+                                        (<ra> :cancel-seq-indicator)
                                         (move-single :release))                        
                         
                         :Publicize (lambda (move-single)
+                                     (define seqblock (move-single :seqblock))
+                                     (set-custom-seq-indicator (move-single :curr-pos)
+                                                               -1
+                                                               (<ra> :get-seqblock-color (seqblock :id)))
                                      (set-editor-statusbar (two-decimal-string (/ (move-single :curr-pos)
-                                                                                      (<ra> :get-sample-rate)))))
+                                                                                  (<ra> :get-sample-rate)))))
                         
                         :Get-pixels-per-value-unit (lambda (move-single)
                                                      (get-sequencer-pixels-per-value-unit))
@@ -6380,7 +6461,7 @@
                  (define automationnum (*current-seqautomation/distance* :automation-num))
                  (define mouse-time (get-sequencer-time X))
                  (define seqblock-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
-                 (set-editor-statusbar (<-> (<ra> :get-seqblock-automation-name automationnum)                                             
+                 (set-editor-statusbar (<-> (<ra> :get-seqblock-automation-name automationnum)
                                             ": "
                                             (<ra> :get-seqblock-automation-display-string 
                                                   (<ra> :get-seqblock-automation-value-for-time
@@ -6414,6 +6495,10 @@
          (instrument-name (<ra> :get-instrument-name instrument-id))
          (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
          (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
+    (set-custom-seq-indicator (floor (<ra> :get-seq-automation-time Num automationnum seqtracknum))
+                              (- (floor (<ra> :get-seq-automation-node-y Num automationnum seqtracknum))
+                                 (<ra> :get-sequencer-y1))
+                              (<ra> :get-seq-automation-color automationnum seqtracknum))
     (set-editor-statusbar (<-> instrument-name "/" effect-name ": "
                                (two-decimal-string (<ra> :get-seq-automation-value Num automationnum seqtracknum))))))
 
@@ -6516,6 +6601,7 @@
                                                                                       :start-Y Y)
                                                              0)))))
                         :Release-node (lambda (seqmove)
+                                        (<ra> :cancel-seq-indicator)
                                         (paint-grid! #f))
                         :Move-node (lambda (seqmove Time Y)
                                      ;;(c-display "MOVE-Nod:" seqmove)
@@ -6805,7 +6891,13 @@
   (let* ((seqblocknum (*current-seqautomation/distance* :seqblock))
          (seqtracknum (*current-seqautomation/distance* :seqtrack))
          (automationnum (*current-seqautomation/distance* :automation-num)))
-    (set-editor-statusbar (<-> (<ra> :get-seqblock-automation-name automationnum) ": "
+    ;;(c-display "3b")
+    (set-curr-seqblock-automation-node Num
+                                       automationnum
+                                       seqblocknum
+                                       seqtracknum)
+    (set-editor-statusbar (<-> (<ra> :get-seqblock-automation-name automationnum)
+                               ": "
                                (let ((value (<ra> :get-seqblock-automation-value Num automationnum seqblocknum seqtracknum)))
                                  (<ra> :get-seqblock-automation-display-string value automationnum seqblocknum seqtracknum))))))
 ;                                 (<-> ;(<ra> :get-seqblock-automation-value Num seqblocknum seqtracknum)
@@ -6824,6 +6916,14 @@
   (map (lambda (nodenum)
          (get-seqblock-automation-node nodenum automationnum seqblocknum seqtracknum))
        (iota (<ra> :get-num-seqblock-automation-nodes automationnum seqblocknum seqtracknum))))
+
+(define (set-curr-seqblock-automation-node node-num automationnum seqblocknum seqtracknum)
+  (set-custom-seq-indicator (floor (<ra> :get-seqblock-automation-time node-num automationnum seqblocknum seqtracknum))
+                            (- (floor (<ra> :get-seqblock-automation-node-y node-num automationnum seqblocknum seqtracknum))
+                               (<ra> :get-sequencer-y1))
+                            (<ra> :get-seqblock-automation-color automationnum))
+  (<ra> :set-curr-seqblock-automation-node node-num automationnum seqblocknum seqtracknum))
+
 
 ;; move and create seqblock automation
 (add-node-mouse-handler :Get-area-box (lambda ()
@@ -6853,7 +6953,7 @@
                                                                                                                                                 get-nodebox
                                                                                                                                                 num-nodes)))
                                                                                             (paint-grid! #t)
-                                                                                            (<ra> :set-curr-seqblock-automation-node closest-node-num automationnum seqblocknum seqtracknum)
+                                                                                            (set-curr-seqblock-automation-node closest-node-num automationnum seqblocknum seqtracknum)
                                                                                             (callback (make-seqautomation-move :nodes (get-seqblock-automation-nodes automationnum seqblocknum seqtracknum)
                                                                                                                                :Num closest-node-num
                                                                                                                                :start-Y Y)
@@ -6896,7 +6996,7 @@
                                                (begin
                                                  (paint-grid! #t)
                                                  (set-current-seqblock! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
-                                                 (<ra> :set-curr-seqblock-automation-node Num automationnum seqblocknum seqtracknum)
+                                                 (set-curr-seqblock-automation-node Num automationnum seqblocknum seqtracknum)
                                                  (callback (make-seqautomation-move :nodes (get-seqblock-automation-nodes automationnum seqblocknum seqtracknum)
                                                                                     :Num Num
                                                                                     :start-Y Y)
@@ -6942,6 +7042,7 @@
                                            (doit Num (nodes Num))))
                                      seqmove)
                         :Release-node (lambda (seqmove)
+                                        (<ra> :cancel-seq-indicator)
                                         (paint-grid! #f))
                         :Publicize (lambda (seqmove)
                                      (set-seqblock-automation-node-statusbar-text (seqmove :Num))
@@ -7049,7 +7150,7 @@
                 (match (list (find-node-horizontal $x $y get-nodebox (<ra> :get-num-seqblock-automation-nodes automationnum seqblocknum seqtracknum)))
                        (existing-box Num Box) :> (begin
                                                    (set-seqblock-automation-node-statusbar-text Num)
-                                                   (<ra> :set-curr-seqblock-automation-node Num automationnum seqblocknum seqtracknum)
+                                                   (set-curr-seqblock-automation-node Num automationnum seqblocknum seqtracknum)
                                                    #t)
                        A                      :> (begin
                                                    ;;(c-display "**Didnt get it:" A)

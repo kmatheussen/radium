@@ -1272,4 +1272,39 @@ static inline void safeShowOrExec(QDialog *widget, bool program_state_is_valid){
     safeShow(widget);
 }
 
+namespace radium{
+  class ScopedQClipRect{
+    QPainter &_p;
+
+    const bool _was_clipping;
+    const QRegion _prev_clip_region;
+
+  public:
+    
+    ScopedQClipRect(QPainter &p, const QRectF &rect)
+      : _p(p)
+      , _was_clipping(p.hasClipping())
+      , _prev_clip_region(_was_clipping ? p.clipRegion() : QRegion())
+    {
+      if (_was_clipping)
+        p.setClipRect(rect, Qt::IntersectClip);
+      else{
+        p.setClipRect(rect, Qt::ReplaceClip);      
+        p.setClipping(true);
+      }
+    }
+
+    ScopedQClipRect(QPainter &p, qreal x1, qreal y1, qreal x2, qreal y2)
+      : ScopedQClipRect(p, QRectF(x1, y1, x2-x1, y2-y1))
+    {}
+    
+    ~ScopedQClipRect(){
+      if(_was_clipping)
+        _p.setClipRegion(_prev_clip_region);
+      else      
+        _p.setClipping(false);
+    }
+  };
+}
+
 #endif // RADIUM_QT_HELPERS

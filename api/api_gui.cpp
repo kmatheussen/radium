@@ -2576,7 +2576,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       else
         flags |= Qt::AlignHCenter;
 
-      bool ret = myDrawText(painter, rect, text, flags, wrap_lines, rotate, scale_font_size, cut_text_to_fit);
+      bool ret = myDrawText(*painter, rect, text, flags, wrap_lines, rotate, scale_font_size, cut_text_to_fit);
       
       if (_current_painter==NULL)
         myupdate(x1, y1, x2, y2);
