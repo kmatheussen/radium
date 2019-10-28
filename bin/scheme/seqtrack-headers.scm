@@ -1655,15 +1655,25 @@
                (if *sequencer-right-part-area*
                    (*sequencer-right-part-area* :mouse-callback-internal button state x y))
                (if *sequencer-timing-area*
-                   (*sequencer-timing-area* :mouse-callback-internal button state x y))
+                   (let ((ret (*sequencer-timing-area* :mouse-callback-internal button state x y)))
+                     ;;(c-display "timing area mouse ret:" ret)
+                     ret))
                (if (or (*sequencer-left-part-area* :has-mouse)
                        (and *sequencer-right-part-area*
                             (*sequencer-right-part-area* :has-mouse))
                        (and *sequencer-timing-area*
                             (*sequencer-timing-area* :has-mouse)))
                    (begin
-                     ;;(c-display "----cancel 2")
-                     (<ra> :cancel-seq-indicator)
+                     ;;(c-display "----cancel 2. left/right/timing:"
+                     ;;           (*sequencer-left-part-area* :has-mouse)
+                     ;;           (and *sequencer-right-part-area*
+                     ;;                (*sequencer-right-part-area* :has-mouse))
+                     ;;           (and *sequencer-timing-area*
+                     ;;                (*sequencer-timing-area* :has-mouse)))
+                     (if (or (*sequencer-left-part-area* :has-mouse)
+                             (and *sequencer-right-part-area*
+                                  (*sequencer-right-part-area* :has-mouse)))
+                         (<ra> :cancel-seq-indicator))
                      #t)
                    #f)))
       ;(<gui> :add-resize-callback gui ;; TODO: I think this resize callback can be removed.

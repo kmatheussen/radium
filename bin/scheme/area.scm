@@ -463,8 +463,8 @@
        curr-mouse-cycle)
      
      (define (mouse-move-internal button x* y*)
-       ;;(c-display "..mouse-move-internal for" class-name ". y:" y*)
-       (cond (curr-mouse-cycle
+       ;;(c-display "..mouse-move-internal for" class-name ". y:" y* ". has-curr:" (to-boolean curr-mouse-cycle)  ". has_nonpress:" (to-boolean curr-nonpress-mouse-cycle))
+       (let ((ret (cond (curr-mouse-cycle
               (curr-mouse-cycle :drag-func button x* y*))
              (curr-nonpress-mouse-cycle
               ;;(c-display "inside?" class-name y1 y2 (curr-nonpress-mouse-cycle :inside? x* y*))
@@ -472,7 +472,12 @@
                   (curr-nonpress-mouse-cycle :drag-func x* y*) ;; still inside
                   (end-nonpress-mouse-cycle! #f))) ;; not inside any more
              (else
+              ;;(c-display "hepp")
               (start-nonpress-mouse-cycle! (get-nonpress-mouse-cycle x* y*)))))
+
+             )
+         ;;(c-display "ret:" ret)
+         ret))
      (define (mouse-release-internal button x* y*)
        ;;(if curr-mouse-cycle
        ;;    (c-display "..mouse-release-internal for" class-name ". y:" y*))

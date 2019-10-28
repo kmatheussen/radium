@@ -155,6 +155,9 @@
 (define (to-integer A)
   (inexact->exact (floor A)))
 
+(define (to-boolean A)
+  (if A #t #f))
+
 (define (to-list A)
   (if (vector? A)
       (vector->list A)
