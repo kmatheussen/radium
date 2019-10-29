@@ -280,7 +280,7 @@ extern LANGSPEC float SEQBLOCK_get_x2(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_y1(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_header_height(void); // name of block, etc.
-extern LANGSPEC const char* SEQBLOCK_get_color(const SeqTrack *seqtrack, const SeqBlock *seqblock);
+extern LANGSPEC const char* SEQBLOCK_get_color(const SeqTracks *seqtrack, const SeqBlocks *seqblock);
 
 #if __cplusplus
 float SEQBLOCK_get_x1(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
