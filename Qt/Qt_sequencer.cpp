@@ -167,6 +167,9 @@ static Sequencer_widget *g_sequencer_widget = NULL;
  static radium::KeyboardFocusFrame *g_sequencer_frame_widget = NULL;
 }
 
+static double get_seqtrack_y1(int seqtracknum);
+static double get_seqtrack_y2(int seqtracknum);
+static double get_seqtracks_y1(void);
 
 /* Custom font drawing code */
 
@@ -3092,8 +3095,8 @@ static QColor g_sequencer_indicator_color("#123456");
 
 struct CursorPainter : public LightWidget {
   const double _cursor_width = 2.7;
-  const double _indicator0_width = _cursor_width * 2.0 / 4.0;
-  const double _indicator1_width = _cursor_width * 4.0 / 4.0;
+  const double _indicator0_width = 0.7;
+  const double _indicator1_width = 1.4;
 
   
 public:
@@ -3122,8 +3125,15 @@ private:
     if (_is_main_sequencer)
       return sequencer_y;
     
-    QWidget *seqwidget = SEQUENCER_WIDGET_get_widget();
-    return scale_double(sequencer_y, 0, seqwidget->height(), t_y1, t_y2);
+    //QWidget *seqwidget = SEQUENCER_WIDGET_get_widget();
+    
+    if (sequencer_y < get_seqtracks_y1())
+      return NO_INDICATOR;
+    
+    double y1 = get_seqtrack_y1(0); //SEQTRACK_get_y1(0);
+    double y2 = get_seqtrack_y2(root->song->seqtracks.num_elements-1);
+    //printf("seq_y1: %f. Y1/Y2: %f / %f. t_y1/t_y2: %f / %f. Result: %f\n", sequencer_y, y1, y2, t_y1, t_y2, scale_double(sequencer_y, y1, y2, t_y1, t_y2));
+    return scale_double(sequencer_y, y1, y2, t_y1, t_y2);
   }
 
   double get_curr_cursor_x(int frames_to_add) const {
@@ -3208,7 +3218,9 @@ public:
   }
   
   void update_indicator_y(QWidget *parent){
-    if (g_sequencer_indicator_y <= 0) {
+    double new_indicator_y = g_sequencer_indicator_y <= 0 ? NO_INDICATOR : get_y(g_sequencer_indicator_y);
+
+    if (new_indicator_y <= 0) {
 
       _curr_indicator_y = NO_INDICATOR;
       _curr_indicator_y_rect = QRect();
@@ -3219,8 +3231,6 @@ public:
 
     } else {
       
-      double new_indicator_y = get_y(g_sequencer_indicator_y);
-
       if (fabs(new_indicator_y-_curr_indicator_y) > 0.01) { // don't paint new cursor if it has moved less than 1/100 pixel since last time.
         _curr_indicator_y = new_indicator_y;
         _curr_indicator_y_rect = get_line_rect_y(_curr_indicator_y, _curr_indicator_width);
@@ -4806,8 +4816,12 @@ float SEQTRACKS_get_x2(void){
   return mapToEditorX(g_sequencer_widget, g_sequencer_widget->_seqtracks_widget.t_x2);
 }
 
+static double get_seqtracks_y1(void){
+  return g_sequencer_widget->_seqtracks_widget.t_y1;
+}
+ 
 float SEQTRACKS_get_y1(void){
-  return mapToEditorY(g_sequencer_widget, g_sequencer_widget->_seqtracks_widget.t_y1);
+  return mapToEditorY(g_sequencer_widget, get_seqtracks_y1());
 }
 
 float SEQTRACKS_get_y2(void){
@@ -5302,16 +5316,22 @@ float SEQTRACK_get_x2(int seqtracknum){
   return mapToEditorX(g_sequencer_widget, g_sequencer_widget->_seqtracks_widget.t_x2);
 }
 
-float SEQTRACK_get_y1(int seqtracknum){
+static double get_seqtrack_y1(int seqtracknum){
   const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, true);
+  return w.t_y1;
+}
 
-  return mapToEditorY(g_sequencer_widget, w.t_y1);
+float SEQTRACK_get_y1(int seqtracknum){
+  return mapToEditorY(g_sequencer_widget, get_seqtrack_y1(seqtracknum));
+}
+
+static double get_seqtrack_y2(int seqtracknum){
+  const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, true);
+  return w.t_y2;
 }
 
 float SEQTRACK_get_y2(int seqtracknum){
-  const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, true);
-
-  return mapToEditorY(g_sequencer_widget, w.t_y2);
+  return mapToEditorY(g_sequencer_widget, get_seqtrack_y2(seqtracknum));
 }
 
 int SEQUENCER_get_lowest_reasonable_topmost_seqtracknum(void){
