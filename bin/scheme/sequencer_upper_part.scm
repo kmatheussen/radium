@@ -293,7 +293,7 @@
                                                next-entry
                                                (<= x* next-triangle-x)
                                                (= *logtype-linear* (entry :logtype))))
-                                               
+                   (update-parent!)
                    (<ra> :set-statusbar-text (<-> value-type-name ": "
                                                   (get-entry-info-string entry n
                                                                          (and use-next-entry next-entry)
@@ -548,6 +548,8 @@
                  (bpm->string (if next-tempo
                                   (scale percentage-first 0 100 (tempo :bpm) (next-tempo :bpm))
                                   (tempo :bpm))))
+               :entry-color "#66ff0000"
+               :curr-entry-color "#ffff4444"
                :double-click-callback
                (lambda (x* curr-tempo)
                  (if (not (<ra> :is-using-sequencer-timing))
@@ -627,7 +629,7 @@
                   ))
                :get-entry-info-string get-entry-info-string
                :entry-color "#ccff8800"
-               :curr-entry-color "#22ffff00"
+               :curr-entry-color "#ffffff00"
                :double-click-callback
                (lambda (x* curr-signature)
                  (if (not (<ra> :is-using-sequencer-timing))
@@ -730,7 +732,7 @@
                   ))
                :get-entry-info-string get-entry-info-string
                :entry-color "sequencer_marker_color" ;;"#66004488"
-               :curr-entry-color "#ff002244"
+               :curr-entry-color (<gui> :make-color-lighter "sequencer_marker_color" 5)
                :do-grid #t
                :double-click-callback doubleclick-marker
                :is-marker #t
