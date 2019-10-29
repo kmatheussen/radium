@@ -462,7 +462,7 @@
 (define (set-left-interior-status-bar2 seqblocknum seqtracknum value)
   (set-custom-seq-indicator (<ra> :get-seqblock-start-time seqblocknum seqtracknum #t)
                             -1
-                            "blue")
+                            "sequencer_block_interior_box_color")
   (set-editor-statusbar (get-left-interior-string2 value)))
 
 (define (set-left-interior-status-bar seqblocknum seqtracknum)
@@ -498,7 +498,7 @@
 (define (set-right-interior-status-bar2 seqblocknum seqtracknum right-interior-value)
   (set-custom-seq-indicator (<ra> :get-seqblock-end-time seqblocknum seqtracknum #t)
                             -1
-                            "blue")
+                            "sequencer_block_interior_box_color")
   (set-editor-statusbar (get-right-interior-string2 seqblocknum seqtracknum right-interior-value)))
 
 (define (set-right-interior-status-bar seqblocknum seqtracknum)
@@ -569,7 +569,7 @@
                                    (<ra> :get-seqblock-end-time seqblocknum seqtracknum))))
         (set-custom-seq-indicator time
                                   -1
-                                   "green")
+                                   "sequencer_block_fade_box_color")
         (set-seqblock-selected-box 'fade-left seqblocknum seqtracknum)
         (set-editor-statusbar (get-fade-string-left seqblocknum seqtracknum)))
       (begin
@@ -579,7 +579,7 @@
                                    (<ra> :get-seqblock-end-time seqblocknum seqtracknum))))
         (set-custom-seq-indicator time
                                   -1
-                                  "green")
+                                  "sequencer_block_fade_box_color")
         (set-seqblock-selected-box 'fade-right seqblocknum seqtracknum)
         (set-editor-statusbar (get-fade-string-right seqblocknum seqtracknum)))))
 
