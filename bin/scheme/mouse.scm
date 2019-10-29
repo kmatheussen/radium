@@ -4279,11 +4279,15 @@
          (<ra> :get-seqtimeline-area-x1) (<ra> :get-seqtimeline-area-x2)
          (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
   
-(define (set-statusbar-looppunch-info name getter)
-  (set-editor-statusbar (<-> name " : " (two-decimal-string (/ (getter) (<ra> :get-sample-rate))))))
+(define (set-statusbar-looppunch-info name color getter)
+  (define value (getter))
+  (set-custom-seq-indicator value
+                            -1
+                            color)
+  (set-editor-statusbar (<-> name " : " (two-decimal-string (/ value (<ra> :get-sample-rate))))))
 
 ;; highlight loop start / loop end
-(define (create-seqlooppunch-highlighter name in-use? get-start get-end)
+(define (create-seqlooppunch-highlighter name color in-use? get-start get-end)
   (add-mouse-move-handler
    :move (lambda ($button $x $y)
            (and (in-use?)
@@ -4292,13 +4296,13 @@
                        (end-x (get-sequencer-x (get-end)))
                        (mid (average start-x end-x)))
                   (apply set-statusbar-looppunch-info (if (< $x mid)
-                                                          (list (<-> name " start") get-start)
-                                                          (list (<-> name " end") get-end)))
+                                                          (list (<-> name " start") color get-start)
+                                                          (list (<-> name " end") color get-end)))
                   #t)))))
 
 
 ;; Set loop start and end and set cursor pos
-(define (create-seqlooppunch-mouse-handler base-name in-use? get-start get-end set-start! set-end!)
+(define (create-seqlooppunch-mouse-handler base-name color in-use? get-start get-end set-start! set-end!)
   (define gakkgakk-seqloop-handler-num-moves 0)
   (define gakkgakk-seqloop-handler-start-X #f)
   (define-optional-func getter ())
@@ -4357,21 +4361,21 @@
                           
                           :Publicize (lambda (Value)
                                        (assert getter)
-                                       (set-statusbar-looppunch-info name getter))
+                                       (set-statusbar-looppunch-info name color getter))
                           
                           :Mouse-pointer-func ra:set-normal-mouse-pointer
                           :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                           ))
 
-(define (create-seqlooppunch-mouse-handlers name in-use? get-start get-end set-start! set-end!)
-  (create-seqlooppunch-highlighter   name in-use? get-start get-end)
-  (create-seqlooppunch-mouse-handler name in-use? get-start get-end set-start! set-end!))
+(define (create-seqlooppunch-mouse-handlers name color in-use? get-start get-end set-start! set-end!)
+  (create-seqlooppunch-highlighter   name color in-use? get-start get-end)
+  (create-seqlooppunch-mouse-handler name color in-use? get-start get-end set-start! set-end!))
   
 (define (show-timeline-looping?)
   (not (<ra> :is-seqpunching)))
 
-(create-seqlooppunch-mouse-handlers "Loop"  show-timeline-looping? ra:get-seqlooping-start   ra:get-seqlooping-end  ra:set-seqlooping-start   ra:set-seqlooping-end)
-(create-seqlooppunch-mouse-handlers "Punch" ra:is-seqpunching      ra:get-seqpunching-start  ra:get-seqpunching-end ra:set-seqpunching-start  ra:set-seqpunching-end)
+(create-seqlooppunch-mouse-handlers "Loop"  "blue" show-timeline-looping? ra:get-seqlooping-start   ra:get-seqlooping-end  ra:set-seqlooping-start   ra:set-seqlooping-end)
+(create-seqlooppunch-mouse-handlers "Punch" "red" ra:is-seqpunching      ra:get-seqpunching-start  ra:get-seqpunching-end ra:set-seqpunching-start  ra:set-seqpunching-end)
 
 
 
