@@ -3084,7 +3084,7 @@ float getSeqblockHeaderY2(int seqblocknum, int seqtracknum){
   return getSeqblockLeftFadeY1(seqblocknum, seqtracknum);
 }
 
-const_char* getSeqblockColor(int seqblockid){
+const_char* getSeqblockColor(int64_t seqblockid){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
   if (seqblock==NULL)
