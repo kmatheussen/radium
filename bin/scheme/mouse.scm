@@ -5462,14 +5462,14 @@
                                       (<ra> :get-seqblock-start-time seqblocknum seqtracknum #t)
                                       (<ra> :get-seqblock-end-time seqblocknum seqtracknum #t))
                                   -1
-                                  "yellow")
+                                  "sequencer_block_stretch_box_color")
         (set-editor-statusbar (get-stretch-string2 stretch)))
       (begin
         (set-custom-seq-indicator (if is-left
                                       (<ra> :get-seqblock-start-time seqblocknum seqtracknum #t)
                                       (<ra> :get-seqblock-end-time seqblocknum seqtracknum #t))
                                   -1
-                                  "red")
+                                  "sequencer_block_speed_box_color")
         (set-editor-statusbar (get-speed-string2 curr-speed))))
   
   :move (Value Y)

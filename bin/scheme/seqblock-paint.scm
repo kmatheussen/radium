@@ -95,10 +95,10 @@
               get-left-interior-string get-right-interior-string
               (get-speed-string) (get-speed-string)
               (get-stretch-string) (get-stretch-string))
-            '("green" "green"
-              "blue" "blue"
-              "red" "red"
-              "yellow" "yellow")
+            '("sequencer_block_fade_box_color" "sequencer_block_fade_box_color"
+              "sequencer_block_interior_box_color" "sequencer_block_interior_box_color"
+              "sequencer_block_speed_box_color" "sequencer_block_speed_box_color"
+              "sequencer_block_stretch_box_color" "sequencer_block_stretch_box_color")
             )))
 
 
