@@ -25,12 +25,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/playerclass.h"
 #include "../common/player_proc.h"
 #include "../common/instruments_proc.h"
-#include "../audio/SoundPlugin.h"
-#include "../audio/Sampler_plugin_proc.h"
 
+#include "SoundPlugin.h"
+#include "Sampler_plugin_proc.h"
 #include "Mixer_proc.h"
 
+#include "../api/api_proc.h"
+
+
 #include "SoundfileSaver_proc.h"
+
 
 extern struct Root *root;
 extern PlayerClass *pc;
@@ -47,13 +51,15 @@ static int g_num_ch;
 
 
 enum SaveState{
-  BEFORE_WRITING,
+  BEFORE_STARTING_PLAYER,
+  WAITING_FOR_PLAYER_TO_START, // This state is needed when using jack transport since is_playing() doesn't return true right after starting to play when using jack transport.
   IS_WRITING,
   POST_WRITING,
   AFTER_WRITING
 };
 
 static volatile enum SaveState g_save_state;
+static int g_num_times_waiting_for_player_to_start = 0;
 
 static DEFINE_ATOMIC(bool, stop_requested) = false;
 
@@ -124,10 +130,18 @@ bool SOUNDFILESAVER_write(float **outputs, int num_ch, int num_frames){
    stop_writing(true);
    return false;
  }
-   
-  if(g_save_state==BEFORE_WRITING && is_playing()==false)
+
+  if(g_save_state==BEFORE_STARTING_PLAYER && is_playing()==false)
     return true;
 
+  if(g_save_state==WAITING_FOR_PLAYER_TO_START){
+    if (is_playing()==false && g_num_times_waiting_for_player_to_start < 5*44100/RADIUM_BLOCKSIZE){
+      g_num_times_waiting_for_player_to_start++;
+      return true;
+    }else
+      g_save_state=IS_WRITING;
+  }
+ 
   if(g_save_state==AFTER_WRITING)
     return true;
 
@@ -201,7 +215,7 @@ bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_
   MIXER_set_all_non_realtime(true);
   
 
-  g_save_state=BEFORE_WRITING; PaUtil_FullMemoryBarrier();
+  g_save_state=BEFORE_STARTING_PLAYER; PaUtil_FullMemoryBarrier();
   {
     MIXER_start_saving_soundfile();
     if(what_to_save==SAVE_SONG)
@@ -210,8 +224,9 @@ bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_
       PlayBlockFromStart(root->song->tracker_windows,false);
     else
       PlayRangeFromStart(root->song->tracker_windows);
+    g_num_times_waiting_for_player_to_start = 0;
   }
-  PaUtil_FullMemoryBarrier(); g_save_state=IS_WRITING;
+  PaUtil_FullMemoryBarrier(); g_save_state=WAITING_FOR_PLAYER_TO_START;
 
   return true;
 }
