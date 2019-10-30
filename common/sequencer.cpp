@@ -266,8 +266,14 @@ static struct Patch *create_seqtrack_patch(bool is_bus, int seqtracknum){
   R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, NULL);
   
   if (is_bus){
+    
     patch->color = GFX_get_color(INSTRUMENT_BUS_DEFAULT_COLOR_NUM);
     setInstrumentEffect(patch_id, "Enable piping", 1);
+    
+  } else {
+
+    patch->color = GFX_get_color(SEQTRACK_INSTRUMENT_DEFAULT_COLOR_NUM);
+        
   }
   
   connectAudioInstrumentToMainPipe(patch_id);
