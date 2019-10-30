@@ -1,3 +1,41 @@
+Changes 5.9.77 -> 5.9.79:
+* Sequencer: Let all new audio seqtracks have the
+  same initial color. This color is configurable.
+* Sequencer: Fix making auto-crossfades when changing
+  interior values for a seqblock.
+* Audio: Fix export soundfile when jack transport is
+  enabled.
+* Sequencer: Tweak colors for bpms, signatures, and
+  markers.
+* Sequencer: Change default keybinding to split audio
+  file from CTRL + S to S. S is a more common
+  operation, and this also fixes keybinding clash
+  with saving file (which was very unfortunate).
+* Sequencer: Change default keybinding to switch Solo
+  from S to Shift + S.
+* Mixer: Add a default keybinding Shift + S to
+  switch solo of the selected instruments.
+* Sequencer: Made the seqblock boxes lighter by
+  default (fade/interior/speed/stretch), and also
+  made these colors configurable.
+* Sequencer: Paint horizontal and vertical indicator
+  lines when moving automation nodes.
+* Sequencer: Paint horizontal lines across all tracks
+  and lanes when mouse pointer is above a movable
+  object, to better show where the objects are placed
+  in time.
+* Sequencer: Always paint a thin horizontal line
+  under the mouse pointer to show grid and to better
+  visualize where objects are placed in time.
+* Sequencer: Optimize drawing cursors.
+* API: getSeqAutomationColor,
+  getSeqblockAutomationColor, setSeqIndicator,
+  cancelSeqIndicator, seqIndicatorEnabled,
+  getSeqIndicatorXPos, getSeqIndicatorY,
+  getSeqIndicatorType, getSeqblockColor.
+
+
+
 Changes 5.9.76 -> 5.9.77:
 * Mixer: Fix crash during startup if instrument
   widget was positioned inside mixer. (Bug introduced
