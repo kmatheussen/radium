@@ -4882,6 +4882,8 @@
                                      ;;(c-display "\n\n mouse-x:" mousex "\n\n")
                                      ;;(<ra> :apply-gfx-seqblocks new-seqblocks-state)
 
+                                     (set! new-seqblocks-state (maybe-add-autofades new-seqblocks-state seqblocknum))
+                                     
                                      (set! gakkgakk-has-moved-left-interior #t)
                                      (set! gakkgakk-left-interior-value new-interior-start)
                                      
@@ -5005,6 +5007,8 @@
                                      ;;(c-display "new:" (pp new-seqblocks-state))
                                      ;;(<ra> :apply-gfx-seqblocks new-seqblocks-state)
 
+                                     (set! new-seqblocks-state (maybe-add-autofades new-seqblocks-state seqblocknum))
+                                     
                                      (set! gakkgakk-has-moved-right-interior #t)
                                      (set! gakkgakk-right-interior-value new-interior-end)
                                      (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
