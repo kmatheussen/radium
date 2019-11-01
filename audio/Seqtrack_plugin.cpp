@@ -1287,7 +1287,7 @@ struct Recorder : public radium::SampleRecorderInstance{
     }
   }
  
-  void is_finished(bool success, wchar_t *filename){
+  void is_finished(bool success, wchar_t *filename) override {
     struct SeqTrack *seqtrack = _seqtrack.data();
     
     printf("-------------------------        recorder IS_FINISHED start %d / %d  (%p)\n", (int)seqtrack->recording_generation, (int)_seqtrack_recording_generation, this);
@@ -1356,7 +1356,7 @@ private:
   
 public:
   
-  void add_recorded_peak(int ch, float min_peak, float max_peak){
+  void add_recorded_peak(int ch, float min_peak, float max_peak) override {
 
     _peaks[ch]->add(radium::Peak(min_peak, max_peak));
 

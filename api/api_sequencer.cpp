@@ -530,6 +530,27 @@ const_char *getSeqtrackName(int seqtracknum){
     return seqtrack->name == NULL ? "" : seqtrack->name;
 }
 
+void setSeqtrackVisible(int seqtracknum, bool is_visible){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  if (seqtrack->is_visible==is_visible)
+    return;
+  
+  seqtrack->is_visible = is_visible;
+
+  SEQUENCER_update(SEQUPDATE_TRACKORDER);
+}
+  
+bool getSeqtrackVisible(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  return seqtrack->is_visible;
+}
+
 void undoSeqtrackNoteGain(int seqtracknum){
   struct SeqTrack *seqtrack = getBlockSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)

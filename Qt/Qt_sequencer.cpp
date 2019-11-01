@@ -702,6 +702,16 @@ public:
   }
 };
 
+static int get_last_visible_seqtrack(void){
+  int ret = -1;
+  VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    if (seqtrack->is_visible)
+      ret = iterator666;
+  }END_VECTOR_FOR_EACH;
+
+  return ret;
+}
+ 
 static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, double start_play_time, double end_play_time) {
 
   double pos = R_MAX(0, scale_double(e->x(), x1, x2, start_play_time, end_play_time));
@@ -791,7 +801,7 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
     int vu_width = root->song->tracker_windows->systemfontheight;
     if (VerticalModifierPressed(e->modifiers()) || mapToEditorX(widget, e->x()) < SEQTRACK_get_x1(0)-vu_width) {
 
-      int lowest_reasonable_topmost_seqtracknum = root->song->seqtracks.num_elements-1;
+      int lowest_reasonable_topmost_seqtracknum = get_last_visible_seqtrack();
       int seqtracknum = root->song->topmost_visible_seqtrack;
       
       if (e->delta() > 0){
@@ -2194,6 +2204,9 @@ public:
         
 
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+      if (!seqtrack->is_visible)
+        continue;
+      
       Seqblocks_widget seqblocks_widget = get_seqblocks_widget(iterator666, true);
 
       if (seqblocks_widget.t_y2 > y_min){
@@ -2210,6 +2223,9 @@ public:
     if(workingQRegionIntersects(update_region, t_rect)){
       
       VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+        if (!seqtrack->is_visible)
+          continue;
+
         int seqtracknum = iterator666;
         
         VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
@@ -2243,6 +2259,9 @@ public:
       float y_max = get_seqtracks_y2();
         
       VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+        if (!seqtrack->is_visible)
+          continue;
+
         Seqblocks_widget seqblocks_widget = get_seqblocks_widget(iterator666, true);
         
         if (seqblocks_widget.t_y2 > y_min){
@@ -2263,25 +2282,34 @@ public:
     
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
 
-      switch(get_min ? seqtrack->min_height_type : seqtrack->max_height_type){
-      case SHT_CUSTOM:
-        heights[iterator666] = 2*border_width + root->song->tracker_windows->systemfontheight * (get_min ? seqtrack->custom_min_height : seqtrack->custom_max_height);
-        break;
-      case SHT_1ROW:
-        heights[iterator666] = 2*border_width + 2.0*font_height;
-        break;
-      case SHT_2ROWS:
-        heights[iterator666] = 2*border_width + 4.0*font_height; // If changing 2.6, also change 2.5 in seqtrack-headers.scm
-        break;
-      case SHT_3ROWS:
-        heights[iterator666] = 2*border_width + 8.0*font_height; // If changing 4.0, also change 3.5 in seqtrack-headers.scm
-        break;
-      case SHT_UNLIMITED:
-        heights[iterator666] = get_min ? (2*border_width + 0.5*font_height) : -1;
-        break;
-      default:
-        R_ASSERT(false);
-        break;
+      if (!seqtrack->is_visible) {
+        
+        heights[iterator666] = 0;
+
+      } else {
+        
+        switch(get_min ? seqtrack->min_height_type : seqtrack->max_height_type){
+          case SHT_CUSTOM:
+            heights[iterator666] = 2*border_width + root->song->tracker_windows->systemfontheight * (get_min ? seqtrack->custom_min_height : seqtrack->custom_max_height);
+            break;
+          case SHT_1ROW:
+            heights[iterator666] = 2*border_width + 2.0*font_height;
+            break;
+          case SHT_2ROWS:
+            heights[iterator666] = 2*border_width + 4.0*font_height; // If changing 2.6, also change 2.5 in seqtrack-headers.scm
+            break;
+          case SHT_3ROWS:
+            heights[iterator666] = 2*border_width + 8.0*font_height; // If changing 4.0, also change 3.5 in seqtrack-headers.scm
+            break;
+          case SHT_UNLIMITED:
+            heights[iterator666] = get_min ? (2*border_width + 0.5*font_height) : -1;
+            break;
+          default:
+            R_ASSERT(false);
+            break;
+
+        }
+        
       }
 
     }END_VECTOR_FOR_EACH;
@@ -2306,14 +2334,18 @@ public:
     int num_seqtracks_to_increase = 0;
     bool has_increased[num_seqtracks];
     
-    for(int i=0;i<num_seqtracks;i++)
-      if (max_heights[i]==-1 || max_heights[i] > heights[i]){
-        num_seqtracks_to_increase++;
-        has_increased[i] = false;
-      } else {
-        has_increased[i] = true;
+    VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+      if (seqtrack->is_visible){
+        int i = iterator666;
+        if (max_heights[i]==-1 || max_heights[i] > heights[i]){
+          num_seqtracks_to_increase++;
+          has_increased[i] = false;
+        } else {
+          has_increased[i] = true;
+        }
       }
-
+    }END_VECTOR_FOR_EACH;
+    
     if(num_seqtracks_to_increase==0)
       return;
             
@@ -2325,37 +2357,41 @@ public:
 
       average_inc_height = space_left / (double)num_seqtracks_to_increase;
       
-      for(int i=0;i<num_seqtracks;i++){
-        
-        if (max_heights[i] != -1){
+      VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+        if (seqtrack->is_visible){
           
-          if (has_increased[i]==false){
-
-            double dx = max_heights[i] - heights[i];
+          int i = iterator666;
+          
+          if (max_heights[i] != -1){
             
-            if (dx <= average_inc_height){
+            if (has_increased[i]==false){
               
-              heights[i] = max_heights[i];
+              double dx = max_heights[i] - heights[i];
               
-              has_increased[i] = true;
-              space_left -= dx;
-              num_seqtracks_to_increase--;
-
-              if (num_seqtracks_to_increase==0)
-                return;
-
-              if(space_left <= 0){
-                R_ASSERT_NON_RELEASE(false);
-                return;
+              if (dx <= average_inc_height){
+                
+                heights[i] = max_heights[i];
+                
+                has_increased[i] = true;
+                space_left -= dx;
+                num_seqtracks_to_increase--;
+                
+                if (num_seqtracks_to_increase==0)
+                  return;
+                
+                if(space_left <= 0){
+                  R_ASSERT_NON_RELEASE(false);
+                  return;
+                }
+                
+                if (dx < average_inc_height)
+                  goto again; // average_inc_height can be increased now, so we need to check everyone again.
+                
               }
-
-              if (dx < average_inc_height)
-                goto again; // average_inc_height can be increased now, so we need to check everyone again.
-              
             }
           }
         }
-      }
+      }END_VECTOR_FOR_EACH;
     }
 
 
@@ -2364,10 +2400,12 @@ public:
     
     // 3. Then increase the remaining.
     //
-    for(int i=0;i<num_seqtracks;i++){
-      if (has_increased[i]==false)
-        heights[i] += average_inc_height;
-    }
+    VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+      if (seqtrack->is_visible){
+        if (has_increased[iterator666]==false)
+          heights[iterator666] += average_inc_height;
+      }
+    }END_VECTOR_FOR_EACH;
   }
 
   double get_y1_from_heights(const double heights[], int seqtracknum) const {
@@ -2443,6 +2481,7 @@ public:
     double height = 0;
     
     for(int seqtracknum=num_seqtracks-1;seqtracknum>=0;seqtracknum--){
+      //const struct SeqTrack *seqtrack = (const struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];      
       height += heights[seqtracknum];
       //printf("%d: height %f. sum: %f. available_space: %f\n",seqtracknum,height,heights[seqtracknum], available_space);
       if(height > available_space)
@@ -3487,6 +3526,9 @@ public:
         double y1 = scale_double(seqtracknum,   0, num_seqtracks, 3, height()-3);
         double y2 = scale_double(seqtracknum+1, 0, num_seqtracks, 3, height()-3);
         */
+
+        if(seqtrack->is_visible==false)
+          continue;
         
         double y1 = scale_double(seqtrack->y1, seqtrack0_y1, seqtrackN_y2, t_y1 + 3, t_y2 - 3);
         double y2 = scale_double(seqtrack->y2, seqtrack0_y1, seqtrackN_y2, t_y1 + 3, t_y2 - 3);
@@ -4050,6 +4092,16 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     return maybe;
   }
 
+  int get_num_visible_seqtracks(void) const {
+    int ret = 0;
+    VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
+      if (seqtrack->is_visible)
+        ret++;
+    }END_VECTOR_FOR_EACH;
+    
+    return ret;
+  }
+  
   void position_widgets(void){
     //R_ASSERT_RETURN_IF_FALSE(_seqtracks_widget._seqtrack_widgets.size() > 0);
 
@@ -4068,12 +4120,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     const int x1 = get_sequencer_left_part_width(); //p.x() + mute_button->width();
     const int x1_width = R_MAX(systemfontheight*1.5, width() - x1 - right_part_width);
 
-    const int min_bottom_height = systemfontheight*2;
-    const int max_bottom_height = systemfontheight*6;//height() / 3;
-    if(max_bottom_height <= min_bottom_height)
+    const int min_navigator_height = systemfontheight*2;
+    const int max_navigator_height = systemfontheight*6;//height() / 3;
+    if(max_navigator_height <= min_navigator_height)
       return;
     
-    const int bottom_height = R_BOUNDARIES(min_bottom_height, root->song->seqtracks.num_elements * (systemfontheight/2), max_bottom_height);
+    const int navigator_height = R_BOUNDARIES(min_navigator_height, get_num_visible_seqtracks() * (systemfontheight/2), max_navigator_height);
 
     const int timeline_widget_height = systemfontheight*1.3 + 2;
  
@@ -4141,7 +4193,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     // sequencer tracks
     //
     {
-      int y2 = height() - bottom_height;
+      int y2 = height() - navigator_height;
       /*
       _seqtracks_widget.setGeometry(0, y1,
                                     width()-1, y2 - y1);
@@ -4172,7 +4224,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     
     /*
     _main_reltempo.setGeometry(0, y1,
-                               x1, bottom_height);
+                               x1, navigator_height);
     */
 
     _seqtracks_widget.calculate_seqtrack_coordinates();
@@ -4451,36 +4503,50 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   void paintSeqtrackBorders(QPainter &p) {
     bool is_first_seqtrack = true;
     int num_elements = root->song->seqtracks.num_elements;
-    for(int seqtracknum=0 ; seqtracknum<=num_elements ; seqtracknum++){
-      bool is_last = seqtracknum==num_elements;
+    int last_visible_seqtrack = get_last_visible_seqtrack();
+
+    VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
+
+      int seqtracknum = iterator666;
+      
+      bool is_last = seqtracknum==last_visible_seqtrack + 1;
+      
       const Seqblocks_widget w = get_seqblocks_widget(R_MIN(num_elements-1,seqtracknum), false);
-      double y = floor(is_last ? w.t_y2 : w.t_y1) - 1;
+      double y = floor(seqtracknum==num_elements ? w.t_y2 : w.t_y1) - 1;
 
       if (y >= _seqtracks_widget.t_y2)
         break;
       
       if (y > _seqtracks_widget.t_y1 - 2) {
       
-        float x1 = is_first_seqtrack ? 0 : SEQUENCER_get_left_part_x1();//w.t_x1; //get_seqtrack_border_width()+3;//w.t_x1; //;
-        float x2 = w.t_x2; //width();
+        if (seqtrack->is_visible || is_last) {
+          
+          float x1 = is_first_seqtrack ? 0 : SEQUENCER_get_left_part_x1();//w.t_x1; //get_seqtrack_border_width()+3;//w.t_x1; //;
+          float x2 = w.t_x2; //width();
 
-        is_first_seqtrack = false;
-        
-        {
-          QColor color("#000000");
-          QPen pen(color);
-          pen.setWidthF(1);
-          p.setPen(pen);
-          p.drawLine(x1, y, x2, y);
-        }
-        {
-          QPen pen(QColor("#777777"));
-          pen.setWidthF(1);
-          p.setPen(pen);
-          p.drawLine(x1, y+1, x2, y+1);
+          is_first_seqtrack = false;
+
+          {
+            QColor color("#000000");
+            QPen pen(color);
+            pen.setWidthF(1);
+            p.setPen(pen);
+            p.drawLine(x1, y, x2, y);
+          }
+          {
+            QPen pen(QColor("#777777"));
+            pen.setWidthF(1);
+            p.setPen(pen);
+            p.drawLine(x1, y+1, x2, y+1);
+          }
+          
         }
       }
-    }
+
+      if (is_last)
+        break;
+      
+    }END_VECTOR_FOR_EACH;
   }
   
   void paintCurrentSeqtrackBorder(QPainter &p) {
@@ -5063,8 +5129,10 @@ void SEQUENCER_unset_selection_rectangle(void){
     int seqtrack1 = getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y()));
     int seqtrack2 = getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y()+old_rect.height()));
     
-    for(int seqtracknum=seqtrack1 ; seqtracknum < seqtrack2+1 ; seqtracknum++)
-      SEQTRACK_update((struct SeqTrack*)root->song->seqtracks.elements[seqtracknum]);
+    for(int seqtracknum=seqtrack1 ; seqtracknum < seqtrack2+1 ; seqtracknum++){
+      struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+      SEQTRACK_update(seqtrack);
+    }
   }
   
   // This one is needed (after the above updates of seqtracks) to update seqtrack borders.
@@ -5379,23 +5447,28 @@ static void update(const struct SeqTrack *seqtrack, bool also_update_borders, bo
 }
 
 void SEQTRACK_update_with_nodes(const struct SeqTrack *seqtrack, int64_t start_time, int64_t end_time){
-  update(seqtrack, true, true, start_time, end_time);
+  if(seqtrack->is_visible)
+    update(seqtrack, true, true, start_time, end_time);
 }
 
 void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack, int64_t start_time, int64_t end_time){
-  update(seqtrack, true, false, start_time, end_time);
+  if(seqtrack->is_visible)
+    update(seqtrack, true, false, start_time, end_time);
 }
 
 void SEQTRACK_update(const struct SeqTrack *seqtrack, int64_t start_time, int64_t end_time){
-  update(seqtrack, false, false, start_time, end_time);
+  if(seqtrack->is_visible)
+    update(seqtrack, false, false, start_time, end_time);
 }
 
 void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack){
-  update(seqtrack, true, false, -1, -1);
+  if(seqtrack->is_visible)
+    update(seqtrack, true, false, -1, -1);
 }
 
 void SEQTRACK_update(const struct SeqTrack *seqtrack){
-  update(seqtrack, false, false, -1, -1);
+  if(seqtrack->is_visible)
+    update(seqtrack, false, false, -1, -1);
 }
 
 
@@ -5405,6 +5478,9 @@ static void my_update_sequencer_widget(const QRect &rect){
 
 
 void SEQBLOCK_update(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  if(!seqtrack->is_visible)
+    return;
+  
   int seqtracknum = get_seqtracknum(seqtrack);
 
   if (seqtracknum < 0)
@@ -5418,6 +5494,9 @@ void SEQBLOCK_update(const struct SeqTrack *seqtrack, const struct SeqBlock *seq
 }
 
 void SEQBLOCK_update2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int64_t start_time, int64_t end_time){
+  if(!seqtrack->is_visible)
+    return;
+  
   int seqtracknum = get_seqtracknum(seqtrack);
   
   const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, seqblock->id==g_curr_seqblock_id);
@@ -5425,6 +5504,9 @@ void SEQBLOCK_update2(const struct SeqTrack *seqtrack, const struct SeqBlock *se
 }
 
 void SEQBLOCK_update_with_borders(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  if(!seqtrack->is_visible)
+    return;
+  
   //SEQTRACK_update_with_borders(seqtrack);
       
   int seqtracknum = get_seqtracknum(seqtrack);

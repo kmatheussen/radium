@@ -3119,7 +3119,8 @@ struct SeqTrack{
   bool note_gain_has_changed_this_block; // set to false after each audio block. Only used when for_audiofiles==false.
   
   const char *name; // Not used when for_audiofiles==true. (then we use patch->name instead)
-
+  bool is_visible;
+  
   enum SeqtrackHeightType min_height_type;
   enum SeqtrackHeightType max_height_type;
 

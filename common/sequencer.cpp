@@ -1651,6 +1651,8 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, int seqtracknum
 
   seqtrack->note_gain = 1.0;
   seqtrack->note_gain_muted = 1.0;
+
+  seqtrack->is_visible = true;
   
   GC_register_finalizer(seqtrack, seqtrackgcfinalizer, NULL, NULL, NULL);
   
@@ -1680,6 +1682,8 @@ static hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_
   if (seqtrack->name != NULL)
     HASH_put_chars(state, "name", seqtrack->name);
 
+  HASH_put_bool(state, "is_visible", seqtrack->is_visible);
+  
   HASH_put_chars(state, "min_height_type", get_string_from_seqtrack_height_type(seqtrack->min_height_type));
   HASH_put_chars(state, "max_height_type", get_string_from_seqtrack_height_type(seqtrack->max_height_type));
   if(seqtrack->min_height_type==SHT_CUSTOM)
@@ -1949,6 +1953,9 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
     }
     
   }
+
+  if (HASH_has_key(state, "is_visible"))
+    seqtrack->is_visible = HASH_get_bool(state, "is_visible");
   
   if (HASH_has_key(state, "name"))
     seqtrack->name = HASH_get_chars(state, "name");
