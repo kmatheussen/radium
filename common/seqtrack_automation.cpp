@@ -1000,6 +1000,8 @@ float SEQTRACK_AUTOMATION_get_node_y(struct SeqtrackAutomation *seqtrackautomati
 
 void SEQTRACK_AUTOMATION_paint(QPainter *p, const struct SeqTrack *seqtrack, float x1, float y1, float x2, float y2, double start_time, double end_time){
 
+  R_ASSERT_NON_RELEASE(seqtrack->is_visible);
+  
   for(auto *automation : seqtrack->seqtrackautomation->_automations){
     QColor color = automation->color;
     if(!automation->_is_enabled)
