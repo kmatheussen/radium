@@ -538,6 +538,8 @@ void setSeqtrackVisible(int seqtracknum, bool is_visible){
   if (seqtrack->is_visible==is_visible)
     return;
   
+  ADD_UNDO(Sequencer());
+  
   seqtrack->is_visible = is_visible;
 
   SEQUENCER_update(SEQUPDATE_TRACKORDER);
