@@ -1954,7 +1954,7 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
     
   }
 
-  if (g_is_loading && HASH_has_key(state, "is_visible"))
+  if (HASH_has_key(state, "is_visible"))
     seqtrack->is_visible = HASH_get_bool(state, "is_visible");
   
   if (HASH_has_key(state, "name"))
