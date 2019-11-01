@@ -1756,7 +1756,7 @@
 
     ;; name
     (<gui> :draw-text gui (get-text-color) name-text
-           (+ 2 x1) y1
+           (+ 4 x1) y1
            (if is-dir x2 name-x2) y2
            #f ;; wrap lines
            #f ;; align-top
