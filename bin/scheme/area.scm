@@ -188,14 +188,19 @@
      (define effect-monitors '())
 
      (define (add-area-effect-monitor! instrument-id effect-name monitor-stored monitor-automation callback)
-       (push-back! effect-monitors (<ra> :add-effect-monitor effect-name instrument-id monitor-stored monitor-automation
-                                         (lambda (radium-normalized automation)
-                                           (if (<gui> :is-open gui)
-                                               (callback radium-normalized automation)
-                                               (c-display "---" ',(car def) "add-area-effect-monitor!: Warning! gui" gui " has been closed"))))))
+       (define effect-monitor #f)
+       (set! effect-monitor (<ra> :add-effect-monitor effect-name instrument-id monitor-stored monitor-automation
+                                  (lambda (radium-normalized automation)
+                                    (if (<gui> :is-open gui)
+                                        (callback radium-normalized automation)
+                                        (begin                                                 
+                                          (c-display (<-> "Warning! In " ',(car def) "::add-area-effect-monitor!: Warning! gui #" gui " has been closed. (removing the effect monitor)"))
+                                          (<ra> :remove-effect-monitor effect-monitor #t))))))
+       (push-back! effect-monitors effect-monitor))
 
      (define (remove-sub-areas!)
        (for-each (lambda (effect-monitor)
+                   (c-display "Note: In" ',(car def) ", the effect monitor" effect-monitor "was automatically removed")
                    (<ra> :remove-effect-monitor effect-monitor #f))
                  effect-monitors)
        (set! effect-monitors '())
