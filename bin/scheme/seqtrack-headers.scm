@@ -917,7 +917,7 @@
      (if (= button *left-button*)
          (begin
            #t)
-         (else
+         (begin
           #f)))
    (lambda (button x* y* dx dy)
      ;;(c-display "move" x* y*)
