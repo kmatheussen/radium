@@ -73,13 +73,6 @@
 
 
 
-(define *has-shown-record-message* #t)
-(define (maybe-show-record-message)
-  (when (not *has-shown-record-message*)
-    (show-async-message :text "Recording audio is a technology preview. It seems to work fine, but it could have some bugs.<p>Current limitations:<UL><LI>You can only record from the input connections of the seqtrack instrument,<br>not from the main inputs of the program. (For now you have to manually<br>connect a \"System In\" object to the seqtrack instrument.)<LI>You can only record stereo files.<LI>There is no punch in and punch out yet.</UL>")
-    (set! *has-shown-record-message* #t)))
-
-
 (define (get-num-recording-channels seqtracknum)
   (define ret 0)
   (for-each (lambda (input-channel)
@@ -303,9 +296,6 @@
                                          (cond ((eq? type 'height)
                                                 (show-seqtrack-height-gui seqtracknum #t))
                                                ((eq? type 'record)
-                                                (if (and (not (get-recording))
-                                                         (not (*open-record-config-windows* seqtracknum)))
-                                                    (maybe-show-record-message))
                                                 (cond ((= 0 (get-num-recording-channels seqtracknum))
                                                        (<ra> :show-async-message "Must select at least one recording channel"))
                                                       ((and (<ra> :release-mode)
