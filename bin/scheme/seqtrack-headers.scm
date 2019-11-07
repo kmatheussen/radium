@@ -286,8 +286,8 @@
                :spacing -1
                :callback
                (lambda (type x1 y1 x2 y2)
-                 ;;(c-display "   BOX:" type x1 y1 x2 y2)
-                 (define box (<new> :checkbox gui x1 y1 x2 y2
+                 (define-optional-func box (methodname . args))
+                 (set! box (<new> :checkbox gui x1 y1 x2 y2
                                     (lambda ()
                                       (get-selected type))
                                     (lambda (is-selected)
@@ -348,10 +348,21 @@
                                                                           (else
                                                                            (assert #f))))))
 
+                 (if (eq? type 'height)
+                     (box :override-method! 'mouse-wheel-moved
+                          (lambda (is-up x y)
+                            (define height-type (<ra> :get-seqtrack-min-height-type seqtracknum))
+                            (if (and (< height-type 3)
+                                     (not is-up))
+                                (<ra> :set-seqtrack-min-height-type seqtracknum (+ height-type 1))
+                                (if (and (> height-type 1)
+                                         is-up)
+                                    (<ra> :set-seqtrack-min-height-type seqtracknum (- height-type 1)))))))
+
                  (cond ((eq? type 'record)
                         (box :add-statusbar-text-handler "Record audio. Right-click to configure recording options."))
                        ((eq? type 'height)
-                        (box :add-statusbar-text-handler "Set seqtrack height"))
+                        (box :add-statusbar-text-handler "Set seqtrack height (Tip: use scroll wheel)"))
                        ((eq? type 'solo)
                         (box :add-statusbar-text-handler "Enable/disable Solo"))
                        ((eq? type 'mute)
