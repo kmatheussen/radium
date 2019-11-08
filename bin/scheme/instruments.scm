@@ -1951,7 +1951,8 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                          :use-single-letters 
                          :background-color #f
                          :border 0
-                         :implicit-border 1)
+                         :implicit-border 1
+                         :seqtracknum #f) ;; needs to be set if type is 'height
 
   (define (get-muted)
     (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
@@ -1979,7 +1980,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
   
   (define text (cond ((eq? type 'height)
                       (if use-single-letters
-                          "H"
+                          (<-> "H" ((vector -1 1 2 3 0) (<ra> :get-seqtrack-min-height-type seqtracknum)))
                           "Height"))
                      ((eq? type 'record)
                       (if use-single-letters

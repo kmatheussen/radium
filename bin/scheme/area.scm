@@ -325,6 +325,7 @@
      ;; Mouse wheel
      ;;;;;;;;;;;;;;;;;;;;;;;;
      (define-optional-func mouse-wheel-moved (is-up x y))
+     (define-optional-func mouse-wheel-moved-last (is-up x y))
      (define (mouse-wheel-moved-internal! is-up x* y*)
        (and (inside? x* y*)
             (call-with-exit
@@ -332,11 +333,15 @@
                (if mouse-wheel-moved
                    (let ((ret (mouse-wheel-moved is-up x* y*)))
                      (if ret
-                         (return #t)))
-                   (for-each (lambda (sub-area)
-                               (if (sub-area :mouse-wheel-moved-internal! is-up x* y*)
-                                   (return #t)))
-                             sub-areas))
+                         (return #t))))
+               (for-each (lambda (sub-area)
+                           (if (sub-area :mouse-wheel-moved-internal! is-up x* y*)
+                               (return #t)))
+                         sub-areas)
+               (if mouse-wheel-moved-last
+                   (let ((ret (mouse-wheel-moved-last is-up x* y*)))
+                     (if ret
+                         (return #t))))
                #f))))
      
      ;; Mouse cycles
@@ -1525,7 +1530,7 @@
                  (1+ n)
                  ))))))
     
-  (define-override (mouse-wheel-moved-internal! is-up x* y*)
+  (define-override (mouse-wheel-moved-last is-up x* y*)
     (scroll! is-up)
     (scroll! is-up)
     (scroll! is-up)
@@ -1747,7 +1752,7 @@
         (scroll-up!)
         (scroll-down!)))
     
-  (define-override (mouse-wheel-moved-internal! is-up x* y*)
+  (define-override (mouse-wheel-moved-last is-up x* y*)
     (scroll! is-up)
     #t)
   )

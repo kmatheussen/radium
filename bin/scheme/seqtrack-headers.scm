@@ -323,6 +323,7 @@
                                                      :background-color (get-seqtrack-background-color gui seqtracknum)
                                                      :border 0
                                                      :implicit-border 3
+                                                     :seqtracknum seqtracknum
                                                      ))
                                     :right-mouse-clicked-callback (lambda ()
                                                                     (cond ((eq? type 'height)
@@ -340,16 +341,18 @@
                                                                           (else
                                                                            (assert #f))))))
 
+                 (define seqtrack-height-conv1 (vector 4 1 2 3))
+                 (define seqtrack-height-conv2 (vector -1 1 2 3 0))
                  (if (eq? type 'height)
                      (box :override-method! 'mouse-wheel-moved
                           (lambda (is-up x y)
-                            (define height-type (<ra> :get-seqtrack-min-height-type seqtracknum))
+                            (define height-type (seqtrack-height-conv2 (<ra> :get-seqtrack-min-height-type seqtracknum)))
                             (if (and (< height-type 3)
                                      (not is-up))
-                                (<ra> :set-seqtrack-min-height-type seqtracknum (+ height-type 1))
-                                (if (and (> height-type 1)
+                                (<ra> :set-seqtrack-min-height-type seqtracknum (seqtrack-height-conv1 (+ height-type 1)))
+                                (if (and (> height-type 0)
                                          is-up)
-                                    (<ra> :set-seqtrack-min-height-type seqtracknum (- height-type 1))))
+                                    (<ra> :set-seqtrack-min-height-type seqtracknum (seqtrack-height-conv1 (- height-type 1)))))
                             #t)))
 
                  (cond ((eq? type 'record)
