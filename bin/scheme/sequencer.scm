@@ -460,6 +460,7 @@
     (not (= value 0.0))))
 
 (define (set-left-interior-status-bar2 seqblocknum seqtracknum value)
+  (<declare-variable> set-custom-seq-indicator)
   (set-custom-seq-indicator (<ra> :get-seqblock-start-time seqblocknum seqtracknum #t)
                             -1
                             "sequencer_block_interior_box_color")
@@ -496,6 +497,7 @@
     (not (= value (<ra> :get-seqblock-default-duration seqblocknum seqtracknum)))))
   
 (define (set-right-interior-status-bar2 seqblocknum seqtracknum right-interior-value)
+  (<declare-variable> set-custom-seq-indicator)
   (set-custom-seq-indicator (<ra> :get-seqblock-end-time seqblocknum seqtracknum #t)
                             -1
                             "sequencer_block_interior_box_color")
@@ -561,6 +563,7 @@
     (not (= value 0))))
 
 (define (set-fade-status-bar is-left seqblocknum seqtracknum)
+  (<declare-variable> set-custom-seq-indicator)
   (if is-left
       (begin
         (define time (round (scale (<ra> :get-seqblock-fade-in seqblocknum seqtracknum)

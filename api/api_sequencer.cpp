@@ -410,7 +410,7 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
       change_curr_seqblock_when_curr_seqtrack_has_changed(seqtracknum, seqtrack);
     
     SEQTRACK_update_with_borders(seqtrack);
-    SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_PLAYLIST|SEQUPDATE_BLOCKLIST);
+    SEQUENCER_update(SEQUPDATE_HEADERS | SEQUPDATE_PLAYLIST | SEQUPDATE_BLOCKLIST | SEQUPDATE_RIGHT_PART);
 
     struct Patch *patch = seqtrack->patch;
     if(patch!=NULL)
@@ -437,6 +437,16 @@ int getCurrSeqtrack(void){
 
 int getNumSeqtracks(void){
   return root->song->seqtracks.num_elements;
+}
+
+int getLowestVisibleSeqtrack(void){
+
+  for(int i=getTopmostVisibleSeqtrack() ; i < root->song->seqtracks.num_elements ; i++){
+    if (SEQTRACK_get_y2(i) >= SEQTRACKS_get_y2())
+      return i;
+  }
+
+  return root->song->seqtracks.num_elements-1;
 }
 
 int getTopmostVisibleSeqtrack(void){
@@ -553,6 +563,43 @@ bool getSeqtrackVisible(int seqtracknum){
   return seqtrack->is_visible;
 }
 
+#if 0
+dyn_t getSeqtrackConfig(void){
+  return g_uninitialized_dyn;
+}
+
+void setSeqtrackConfig(dyn_t config){
+}
+#endif
+
+void resetSeqtrackConfig(void){
+  ADD_UNDO(SeqtrackConfig());
+  SEQTRACKS_reset_config();
+}
+
+void setCurrSeqtrackConfigNum(int num){
+  if (num < 0 || num >= NUM_SEQTRACKS_CONFIGS){
+    handleError("setCurrSeqtrackConfigNum: Wrong number: %d", num);
+    return;
+  }
+
+  ADD_UNDO(SeqtrackConfig());
+
+  {
+    radium::ScopedIgnoreUndo scoped_ignore_undo;    
+
+    SEQTRACKS_set_curr_config(num);
+  }
+}
+
+int getCurrSeqtrackConfigNum(void){
+  return SEQTRACKS_get_curr_config();
+}
+
+bool seqtrackConfigIsUsed(int num){
+  return SEQTRACKS_config_is_used(num);
+}
+
 void undoSeqtrackNoteGain(int seqtracknum){
   struct SeqTrack *seqtrack = getBlockSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
@@ -586,20 +633,12 @@ void setEditorSeqtrackMuted(bool muteit, int seqtracknum){
   if (seqtrack==NULL)
     return;
 
-  bool old_value = seqtrack->note_gain_muted < 0.1 ? true : false;
-  
-  if (muteit==old_value)
+  if (muteit==SEQTRACK_get_editor_seqtrack_muted(seqtrack))
     return;
 
   ADD_UNDO(EditorSeqtrackVolume(get_seqtracknum(seqtrack)));
-  
-  {
-    radium::PlayerLock lock(is_playing_song());
-    seqtrack->note_gain_muted = muteit ? 0.0 : 1.0;
-    seqtrack->note_gain_has_changed_this_block = true;
-  }
 
-  SEQUENCER_update(SEQUPDATE_HEADERS);
+  SEQTRACK_set_editor_seqtrack_muted(seqtrack, muteit);
 }
 
 bool getEditorSeqtrackMuted(int seqtracknum){
@@ -607,7 +646,7 @@ bool getEditorSeqtrackMuted(int seqtracknum){
   if (seqtrack==NULL)
     return false;
 
-  return seqtrack->note_gain_muted < 0.1 ? true : false;
+  return SEQTRACK_get_editor_seqtrack_muted(seqtrack);
 }
 
 bool getSeqtrackMute(int seqtracknum){

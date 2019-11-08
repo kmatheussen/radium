@@ -493,7 +493,21 @@ extern LANGSPEC void SEQUENCER_delete_seqtrack(int pos);
 extern LANGSPEC vector_t SEQUENCER_get_all_used_audiofile_names_note_USED(void);
 extern LANGSPEC vector_t SEQUENCER_get_all_unused_audiofile_names_note_UNUSED(void);
 extern LANGSPEC void SEQUENCER_make_all_used_audio_files_undeletable(void);
-  
+
+extern LANGSPEC bool SEQTRACK_get_editor_seqtrack_muted(struct SeqTrack *seqtrack);
+extern LANGSPEC void SEQTRACK_set_editor_seqtrack_muted(struct SeqTrack *seqtrack, bool muteit);
+extern LANGSPEC void SEQTRACK_set_muted(struct SeqTrack *seqtrack, bool muteit);
+extern LANGSPEC void SEQTRACK_set_soloed(struct SeqTrack *seqtrack, bool soloit);
+
+#define NUM_SEQTRACKS_CONFIGS 8
+
+extern LANGSPEC void SEQTRACKS_set_curr_config(int confignum);
+extern LANGSPEC int SEQTRACKS_get_curr_config(void);
+extern LANGSPEC bool SEQTRACKS_config_is_used(int confignum);
+extern LANGSPEC void SEQTRACKS_set_config(int confignum, hash_t *config);
+extern LANGSPEC hash_t *SEQTRACKS_get_config(int confignum);
+extern LANGSPEC void SEQTRACKS_reset_config(void);
+
 // song
 extern LANGSPEC double SONG_get_length(void);
 extern LANGSPEC void SEQUENCER_init(struct Song *song);

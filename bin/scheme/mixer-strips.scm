@@ -199,14 +199,34 @@
         checkbox))
 
 
-  
+
 (define (add-gui-effect-monitor gui instrument-id effect-name monitor-stored monitor-automation callback)
-  (let ((effect-monitor (<ra> :add-effect-monitor effect-name instrument-id monitor-stored monitor-automation callback)))
-    (<gui> :add-deleted-callback gui
-           (lambda (radium-runs-custom-exec)
-             (<ra> :remove-effect-monitor effect-monitor #f))))) ;; This function should be safe to call also when 'radium-runs-custom-exec' is true.
+  (if (<gui> :supports-callbacks gui)
+      (let ((effect-monitor (<ra> :add-effect-monitor effect-name instrument-id monitor-stored monitor-automation callback)))
+        (<gui> :add-deleted-callback gui
+               (lambda (radium-runs-custom-exec)
+                 (<ra> :remove-effect-monitor effect-monitor #f)))) ;; This function should be safe to call also when 'radium-runs-custom-exec' is true.
+      (let ((effect-monitor #f))
+        (set! effect-monitor (<ra> :add-effect-monitor effect-name instrument-id monitor-stored monitor-automation
+                                   (lambda (radium-normalized automation)
+                                     (if (<gui> :is-open gui)
+                                         (callback radium-normalized automation)
+                                         (begin
+                                           (c-display (<-> "Warning! In add-gui-effetc-monitor: Warning! gui #" gui " has been closed. (removing the effect monitor)"))
+                                           (<ra> :remove-effect-monitor effect-monitor #t)))))))))
 
 
+(define *update-gui-effect-monitors* (make-hash-table 100 equal?))
+
+;; updates gui when effect is changed. FIX: Legg til callback som henter x1/y1/x2/y2.
+(define (add-update-gui-effect-monitor gui instrument-id effect-name monitor-stored monitor-automation)
+  (define key (list gui instrument-id effect-name monitor-stored monitor-automation))
+  (when (not (*update-gui-effect-monitors* key))
+    (set! (*update-gui-effect-monitors* key) #t)
+    (add-gui-effect-monitor gui instrument-id effect-name monitor-stored monitor-automation
+                            (lambda (on/off automation)
+                              (<gui> :update gui)))))
+  
 (define (get-mixer-strip-name instrument-id strips-config)
   (let* ((name (<ra> :get-instrument-name instrument-id))
          (name2 (if (or (not strips-config)
@@ -1084,9 +1104,7 @@
   (<gui> :set-size-policy widget #t #t)
   
   (if (not is-send?)
-      (add-gui-effect-monitor widget instrument-id "System Effects On/Off" #t #t
-                              (lambda (on/off automation)
-                                (<gui> :update widget))))
+      (add-update-gui-effect-monitor widget instrument-id "System Effects On/Off" #t #t))
   
   widget)
 
@@ -1694,9 +1712,7 @@
                                   (set! automation-slider-value (get-pan-slider-value automation)))
                               (<gui> :update slider))))
   
-  (add-gui-effect-monitor slider instrument-id "System Pan On/Off" #t #t
-                          (lambda (on/off automation)
-                            (<gui> :update slider)))
+  (add-update-gui-effect-monitor slider instrument-id "System Pan On/Off" #t #t)
 
   (define has-made-undo #t)
 

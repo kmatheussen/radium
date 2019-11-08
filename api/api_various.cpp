@@ -3208,6 +3208,14 @@ static void release_event(ScheduledEvent *event){
 }
 
 static void schedule(ScheduledEvent *event){
+#if !defined(RELEASE)
+  static int largest_size = 0;
+  if (g_scheduled_events.size() > largest_size){
+    largest_size = g_scheduled_events.size();
+    printf("   Soft scheduler: Num used events: %d\n", g_scheduled_events.size());
+  }
+#endif
+  
   if (g_scheduled_events.add(event)==false){
     handleError("Can not schedule event. Queue is full.");
     release_event(event);

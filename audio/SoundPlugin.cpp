@@ -3017,6 +3017,35 @@ bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num){
   return plugin->do_random_change[effect_num];
 }
 
+
+bool PLUGIN_get_muted(SoundPlugin *plugin){
+  return !ATOMIC_GET(plugin->volume_is_on);
+}
+
+void PLUGIN_set_muted(SoundPlugin *plugin, bool muteit){
+  if (muteit==PLUGIN_get_muted(plugin))
+    return;
+
+  float new_val = muteit ? 0.0 : 1.0;
+  int effect_num = get_mute_effectnum(plugin->type);
+  
+  PLUGIN_set_effect_value(plugin, -1, effect_num, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+}
+
+bool PLUGIN_get_soloed(SoundPlugin *plugin){
+  return ATOMIC_GET(plugin->solo_is_on);
+}
+
+void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit){
+  if (soloit==PLUGIN_get_soloed(plugin))
+    return;
+
+  float new_value = soloit ? 1.0 : 0.0;
+  int effect_num = plugin->type->num_effects + EFFNUM_SOLO_ONOFF;
+
+  PLUGIN_set_effect_value(plugin, -1, effect_num, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+}
+
 // only called from Soundproducer.cpp, one time per soundcard block per instrument
 bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time){
 

@@ -4783,6 +4783,15 @@ void gui_addDoubleClickCallback(int64_t guinum, func_t* func){
       return;
 }
 
+bool gui_supportsCallbacks(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return false;
+  
+  return !gui->_created_from_existing_widget;
+}
+
 bool gui_isDoubleClicking(int64_t guinum){
   Gui *gui = get_gui(guinum);
 

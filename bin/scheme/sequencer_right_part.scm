@@ -2,6 +2,7 @@
 
 (my-require 'gui.scm)
 (my-require 'area.scm)
+(my-require 'seqtracks_config.scm)
 
 
 ;; Note: Playlist/blocklist is also here.
@@ -39,75 +40,83 @@
   (c-display "CRETING")
   
   (define curr-audiofile #f)
-
+  
   (define (recreate x1 y1 x2 y2 state)
-    (define audiofiles (to-list (<ra> :get-audio-files)))
-    (define area
-      (<new> :vertical-list-area gui x1 y1 x2 y2
-             (map (lambda (i audiofile)
-                    (define color (<ra> :get-audiofile-color audiofile))
-                    (define col1 color)
-                    ;;(set! color (<gui> :make-color-lighter color 1.5))
-                    (set! color (<gui> :set-alpha-for-color color 0.5))
-                    ;;(c-display "With alpha:" col1 ". without:" color)
-                    (define file-info (<ra> :get-file-info audiofile))
-                    (define (mouse-callback button x y . rest)
-                      (set! curr-audiofile audiofile)
-                      (set! *curr-audiofile-num* i)
-                      ;;(c-display "HEPP:" (<ra> :from-base64 audiofile) i *curr-audiofile-num*)
-                      (area :update-me!)
-                      (cond ((= button *right-button*)
-                             (show-audiolist-popup-menu audiofile)
-                             #t)
-                            ((and (= button *left-button*)
-                                  (<gui> :is-double-clicking gui))
-                             (undo-block
-                              (lambda ()
-                                (let ((pos (<ra> :get-playlist-pos-time)))
-                                  (insert-pause-in-seqtrack! -1 pos (<ra> :get-sample-length audiofile))
-                                  (<ra> :create-sample-seqblock -1 audiofile pos))))
-                             #t)
-                            (else
-                             #f)))
-                    (define (is-current?)
-                      ;;(c-display "curr:" curr-audiofile i *curr-audiofile-num*)
-                      ;;(and curr-audiofile
-                      ;;     (string=? audiofile curr-audiofile))
-                      (and *curr-audiofile-num*
-                           (= i *curr-audiofile-num*)))
-                    
-                    (if draggable
-                        (<new> :seqblock-table-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
-                               :is-current is-current?
-                               :entry-num i
-                               :file-info file-info
-                               :allow-dragging #t
-                               :background-color color
-                               :callback mouse-callback
-                               )
-                        (let ((text-area (<new> :text-area gui 10 0 100 (* 0.8 (get-fontheight))
-                                                (<ra> :append-base64-strings
-                                                      (<ra> :to-base64 (<-> (if (< i 10) " " "") i ": "))
-                                                      (file-info :filename))
-                                                :background-color (lambda ()
-                                                                    (let ((base (<gui> :set-alpha-for-color color 0.05)))
-                                                                      (if (is-current?)
-                                                                          (<gui> :mix-colors "color11" base 0.95)
-                                                                          base)))
-                                                :text-color (lambda ()
-                                                              (if (is-current?)
-                                                                  *text-color*
-                                                                  "black"))
-                                                :align-left #t
-                                                :paint-border #f
-                                                :cut-text-to-fit #t
-                                                :text-is-base64 #t
-                                                )))
-                          (text-area :add-mouse-cycle! mouse-callback)
-                          text-area)))
+    (define entry-height (round (if draggable
+                                    (* 1.2 (get-fontheight))
+                                    (* 0.8 (get-fontheight)))))
+    (define audiofiles (<ra> :get-audio-files))
 
-                  (iota (length audiofiles))
-                  audiofiles)))
+    (define (create-entry i x1 x2)
+      (define audiofile (audiofiles i))
+      (define color (<ra> :get-audiofile-color audiofile))
+      (define col1 color)
+      ;;(set! color (<gui> :make-color-lighter color 1.5))
+      (set! color (<gui> :set-alpha-for-color color 0.5))
+      ;;(c-display "With alpha:" col1 ". without:" color)
+      (define file-info (<ra> :get-file-info audiofile))
+      (define (mouse-callback button x y . rest)
+        (set! curr-audiofile audiofile)
+        (set! *curr-audiofile-num* i)
+        ;;(c-display "HEPP:" (<ra> :from-base64 audiofile) i *curr-audiofile-num*)
+        (area :update-me!)
+        (cond ((= button *right-button*)
+               (show-audiolist-popup-menu audiofile)
+               #t)
+              ((and (= button *left-button*)
+                    (<gui> :is-double-clicking gui))
+               (undo-block
+                (lambda ()
+                  (let ((pos (<ra> :get-playlist-pos-time)))
+                    (insert-pause-in-seqtrack! -1 pos (<ra> :get-sample-length audiofile))
+                    (<ra> :create-sample-seqblock -1 audiofile pos))))
+               #t)
+              (else
+               #f)))
+      (define (is-current?)
+        ;;(c-display "curr:" curr-audiofile i *curr-audiofile-num*)
+        ;;(and curr-audiofile
+        ;;     (string=? audiofile curr-audiofile))
+        (and *curr-audiofile-num*
+             (= i *curr-audiofile-num*)))
+      
+      (if draggable
+          (<new> :seqblock-table-entry-area gui x1 0 x2 entry-height
+                 :is-current is-current?
+                 :entry-num i
+                 :file-info file-info
+                 :allow-dragging #t
+                 :background-color color
+                 :callback mouse-callback
+                 )
+          (let ((text-area (<new> :text-area gui x1 0 x2 entry-height
+                                  (<ra> :append-base64-strings
+                                        (<ra> :to-base64 (<-> (if (< i 10) " " "") i ": "))
+                                        (file-info :filename))
+                                  :background-color (lambda ()
+                                                      (let ((base (<gui> :set-alpha-for-color color 0.05)))
+                                                        (if (is-current?)
+                                                            (<gui> :mix-colors "color11" base 0.95)
+                                                            base)))
+                                  :text-color (lambda ()
+                                                (if (is-current?)
+                                                    *text-color*
+                                                    "black"))
+                                  :align-left #t
+                                  :paint-border #f
+                                  :cut-text-to-fit #t
+                                  :text-is-base64 #t
+                                  )))
+            (text-area :add-mouse-cycle! mouse-callback)
+            text-area)))
+    
+    (define area
+      (<new> :vertical-list-area2 gui x1 y1 x2 y2
+             :num-sub-areas (length audiofiles)
+             :get-sub-area-height entry-height
+             :create-sub-area create-entry
+             :sub-areas-can-be-cached #t
+             ))
     (if state
         (area :apply-state! state))
     area)
@@ -149,6 +158,9 @@
   (<gui> :show (testarea :get-gui)))
 !!#
 
+
+
+
 (define (doubleclick-or-shift-rightclick? gui button)
   (or (and (= button *left-button*)
            (<gui> :is-double-clicking gui))
@@ -160,50 +172,51 @@
   (define (recreate x1 y1 x2 y2 state)
     (define area
       (<new> :vertical-list-area gui x1 y1 x2 y2
-             (map (lambda (blocknum)
-                    (define color (<ra> :get-block-color blocknum))
+             (lambda (x1 x2)
+               (map (lambda (blocknum)
+                      (define color (<ra> :get-block-color blocknum))
                   ;;;(set! color (<gui> :make-color-lighter color 1.5))
-                    (set! color (<gui> :set-alpha-for-color color 0.5))
-                    (define is-current (= (<ra> :current-block) blocknum))
-                    (define (mouse-callback button x y . rest)
-                      (cond ((and (= button *right-button*)
-                                  (<ra> :shift-pressed))
-                             (<ra> :delete-block blocknum))
-                            ((and (= button *left-button*)
-                                  (<gui> :is-double-clicking gui))
-                             (<ra> :create-seqblock -1 blocknum))
-                            ((not (<ra> :is-playing-song))
-                             (<ra> :select-block blocknum)))
-                      (update)
-                      #f)
-
-                    (if draggable
-                        (<new> :seqblock-table-entry-area gui 10 0 100 (* 1.2 (get-fontheight))
-                               :is-current is-current
-                               :entry-num blocknum
-                               :blocknum blocknum
-                               :allow-dragging #t
-                               :background-color color ;(if (= (<ra> :current-block) blocknum)
+                      (set! color (<gui> :set-alpha-for-color color 0.5))
+                      (define is-current (= (<ra> :current-block) blocknum))
+                      (define (mouse-callback button x y . rest)
+                        (cond ((and (= button *right-button*)
+                                    (<ra> :shift-pressed))
+                               (<ra> :delete-block blocknum))
+                              ((and (= button *left-button*)
+                                    (<gui> :is-double-clicking gui))
+                               (<ra> :create-seqblock -1 blocknum))
+                              ((not (<ra> :is-playing-song))
+                               (<ra> :select-block blocknum)))
+                        (update)
+                        #f)
+                      
+                      (if draggable
+                          (<new> :seqblock-table-entry-area gui 10 0 100 (round (* 1.2 (get-fontheight)))
+                                 :is-current is-current
+                                 :entry-num blocknum
+                                 :blocknum blocknum
+                                 :allow-dragging #t
+                                 :background-color color ;(if (= (<ra> :current-block) blocknum)
                                         ;(<gui> :mix-colors color "green" 0.1)
                                         ;color)
-                               :callback mouse-callback)
-                        (let ()
-                          (let ((text-area (<new> :text-area gui 10 0 100 (* 0.8 (get-fontheight))
-                                                  (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum))
-                                                  :background-color (let ((base (<gui> :set-alpha-for-color color 0.05)))
-                                                                      (if is-current
-                                                                          (<gui> :mix-colors "color11" base 0.95)
-                                                                          base))
-                                                  :text-color (if is-current
-                                                                  *text-color*
-                                                                  "black")
-                                                  :align-left #t
-                                                  :paint-border #f
-                                                  :cut-text-to-fit #t
-                                                  )))
-                            (text-area :add-mouse-cycle! mouse-callback)
-                            text-area))))
-                  (iota (<ra> :get-num-blocks)))))
+                                 :callback mouse-callback)
+                          (let ()
+                            (let ((text-area (<new> :text-area gui 10 0 100 (round (* 0.8 (get-fontheight)))
+                                                    (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum))
+                                                    :background-color (let ((base (<gui> :set-alpha-for-color color 0.05)))
+                                                                        (if is-current
+                                                                            (<gui> :mix-colors "color11" base 0.95)
+                                                                            base))
+                                                    :text-color (if is-current
+                                                                    *text-color*
+                                                                    "black")
+                                                    :align-left #t
+                                                    :paint-border #f
+                                                    :cut-text-to-fit #t
+                                                    )))
+                              (text-area :add-mouse-cycle! mouse-callback)
+                              text-area))))
+                    (iota (<ra> :get-num-blocks))))))
     (if state
         (area :apply-state! state))
     area)
@@ -346,7 +359,7 @@
   ;  (equal? (entry :seqblockid)
   ;          (<ra> :get-curr-seqblock-id)))
 
-  (define area (<new> :text-area gui 10 0 100 (* 0.8 (get-fontheight))
+  (define area (<new> :text-area gui 10 0 100 (round (* 0.8 (get-fontheight)))
                       (get-playlist-entry-text entry)
                       :background-color (lambda ()
                                           (define color (cond ((eq? (entry :type) 'block)
@@ -423,7 +436,9 @@
                              entries
                              (iota (length entries)))))
     (define area (<new> :vertical-list-area gui x1 y1 x2 y2
-                        :areas entry-areas))
+                        
+                        (lambda (x1 x2)
+                          entry-areas)))
     ;;(c-display "STASTE:" state)
     (if state
         (area :apply-state! state))
@@ -554,8 +569,8 @@
 
 (def-area-subclass (<block-and-playlist-area> :gui :x1 :y1 :x2 :y2 :state)
 
-  (define button-height (min (/ height 4)
-                             (* 0.8 (get-fontheight))))
+  (define button-height (round (min (/ height 4)
+                                    (* 0.8 (get-fontheight)))))
 
   (define button-mid (average x1 x2))
   
@@ -701,7 +716,6 @@
 (push-back! *block/audio/list-recreate-callbacks* recreate-block/audio-list)
 
 
-  
 (if (defined? 'FROM_C-reconfigure-sequencer-right-part)
     (let ((gui (FROM_C-create-bock-and-playlist-gui)))
       (<gui> :show gui)))
@@ -723,7 +737,7 @@
     (define list-area (<new> :tabs gui x1 y1 x2 y2
                              :is-horizontal #f
                              :curr-tab-num 0
-                             :tab-names '("Hide" "Blocks" "Sounds" "Browser")
+                             :tab-names '("Hide" "Blocks" "Sounds" "Files" "Tracks")
                              :state state
                              :get-tab-area-func
                              (lambda (tab-num x1 y1 x2 y2 state)
@@ -747,7 +761,9 @@
                                              :id-text "sequencer-right-part"
                                              :only-audio-files #t
                                              :state state
-                                             ))))
+                                             ))
+                                     ((= tab-num 4)
+                                      (create-seqtracks-config-area gui x1 y1 x2 y2 state))))
                              ))
 
     (list-area :add-nonpress-mouse-cycle!
@@ -804,5 +820,9 @@
      (*sequencer-right-part-area* :reset! x1 y1 x2 y2)
      (*sequencer-right-part-area* :add-sub-area-plain! (create-sequencer-right-part-area gui x1 y1 x2 y2 state))
      ))
+
+  (if (and (defined? 'recreate-seqtracks-config-area)
+           recreate-seqtracks-config-area)
+      (recreate-seqtracks-config-area))
   )
 

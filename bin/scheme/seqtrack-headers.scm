@@ -205,6 +205,11 @@
 
 
 
+(define (get-mutesolo-width for-audiofiles)
+  (myfloor (* 1.8 (<gui> :text-width (if for-audiofiles
+                                         "H R M S "
+                                         "M H ")))))
+
 ;; There's a lot of copy-paste code from mixer-strip.scm:create-mixer-strip-mutesolo here, but I hope this code will eventually replace mixer-strip.scm:create-mixer-strip-mutesolo some day
 (def-area-subclass (<mute-solo-buttons> :gui :x1 :y1 :x2 :y2
                                         :instrument-id
@@ -244,25 +249,11 @@
   
   (define last-drawn-implicitly-muted (and for-audiofiles
                                            (<ra> :instrument-is-implicitly-muted instrument-id)))
-  
+
   (when for-audiofiles
-    (<ra> :schedule (random 1000) (lambda ()
-                                    (and is-alive (<gui> :is-open gui) (<ra> :instrument-is-open-and-audio instrument-id)
-                                         (begin
-                                           (if (not (eq? last-drawn-implicitly-muted
-                                                         (<ra> :instrument-is-implicitly-muted instrument-id)))
-                                               (update-me!))
-                                           100))))
+    (add-update-gui-effect-monitor gui instrument-id volume-on-off-name #t #t)
+    (add-update-gui-effect-monitor gui instrument-id "System Solo On/Off" #t #t))
     
-    (add-area-effect-monitor! instrument-id volume-on-off-name #t #t
-                              (lambda (on/off automation)
-                                (update-me!)))
-    
-    (add-area-effect-monitor! instrument-id "System Solo On/Off" #t #t
-                              (lambda (on/off automation)
-                                ;;(c-display "Solo changed for" instrument-id)
-                                (update-me!))))
-  
   (define (get-selected type)
     (cond ((eq? type 'height)
            (seqtrack-size-gui-open? seqtracknum))
@@ -319,7 +310,8 @@
                                                (else
                                                 (assert #f))))))
                                     :paint-func
-                                    (lambda (is-selected)
+                                    (lambda (gui x1 y1 x2 y2 is-selected)
+                                      ;;(c-display "DRAWING mutesolo" instrument-id type (* 1.0 x1) (* 1.0 y1) (* 1.0 x2) (* 1.0 y2))
                                       (if (eq? type 'solo)
                                           (set! last-drawn-implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id)))
                                       (draw-mutesolo gui
@@ -357,7 +349,8 @@
                                 (<ra> :set-seqtrack-min-height-type seqtracknum (+ height-type 1))
                                 (if (and (> height-type 1)
                                          is-up)
-                                    (<ra> :set-seqtrack-min-height-type seqtracknum (- height-type 1)))))))
+                                    (<ra> :set-seqtrack-min-height-type seqtracknum (- height-type 1))))
+                            #t)))
 
                  (cond ((eq? type 'record)
                         (box :add-statusbar-text-handler "Record audio. Right-click to configure recording options."))
@@ -1101,7 +1094,7 @@
 
   (define-override (get-mouse-cycle button x* y*)
     (when (inside? x* y*)
-      ;;(c-display "____HEADER seqtracknum:" seqtracknum)
+      ;;(c-display "2222222222222____HEADER seqtracknum:" seqtracknum)
       (<ra> :set-curr-seqtrack seqtracknum))
     (super:get-mouse-cycle button x* y*))
 

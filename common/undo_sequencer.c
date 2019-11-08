@@ -416,3 +416,67 @@ static void *Undo_Do_EditorSeqtrackVolume(
   return ret;
 }
 
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// 6. Undo seqtrack config
+/////////////////////////////////////////////////////////////////////////////////////////
+
+static void *Undo_Do_SeqtrackConfig(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+);
+
+struct SeqtrackConfig{
+  int num;
+  hash_t *configs[NUM_SEQTRACKS_CONFIGS];
+};
+
+static struct SeqtrackConfig *create_curr_seqtrack_config(void){
+  struct SeqtrackConfig *seqtrack_config = talloc(sizeof(struct SeqtrackConfig));
+  seqtrack_config->num = root->song->curr_seqtrack_config_num;
+
+  for(int i=0;i<NUM_SEQTRACKS_CONFIGS;i++)
+    seqtrack_config->configs[i] = SEQTRACKS_get_config(i);
+
+  return seqtrack_config;
+}
+
+void ADD_UNDO_FUNC(SeqtrackConfig(void)){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  
+  struct SeqtrackConfig *seqtrack_config = create_curr_seqtrack_config();
+    
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             window->wblock->l.num,
+                             window->curr_track,
+                             window->wblock->curr_realline,
+                             seqtrack_config,
+                             Undo_Do_SeqtrackConfig,
+                             "SeqtrackConfig"
+                             );
+}
+
+static void *Undo_Do_SeqtrackConfig(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+){
+  struct SeqtrackConfig *seqtrack_config = pointer;
+
+  struct SeqtrackConfig *ret = create_curr_seqtrack_config();
+
+  for(int i=0;i<NUM_SEQTRACKS_CONFIGS;i++)
+    SEQTRACKS_set_config(i, seqtrack_config->configs[i]);
+
+  SEQTRACKS_set_curr_config(seqtrack_config->num);
+
+  return ret;
+}
+
