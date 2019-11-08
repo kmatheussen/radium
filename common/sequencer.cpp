@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QFileInfo>
 #include <QSet>
+#include <QUuid>
 
 #include "nsmtracker.h"
 #include "player_proc.h"
@@ -54,6 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/Mixer_proc.h"
 #include "../audio/SoundPlugin.h"
+#include "../audio/SoundPlugin_proc.h"
 #include "../audio/Seqtrack_plugin_proc.h"
 #include "../audio/Juce_plugins_proc.h"
 #include "../audio/SampleReader_proc.h"
@@ -1634,6 +1636,8 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, int seqtracknum
     R_ASSERT(is_bus==false);
   
   struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
+
+  seqtrack->uuid = talloc_strdup(QUuid::createUuid().toString().toUtf8().constData());
   
   seqtrack->min_height_type = SHT_2ROWS;
   seqtrack->max_height_type = SHT_UNLIMITED;
@@ -1657,6 +1661,75 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, int seqtracknum
   GC_register_finalizer(seqtrack, seqtrackgcfinalizer, NULL, NULL, NULL);
   
   return seqtrack;
+}
+
+bool SEQTRACK_get_editor_seqtrack_muted(struct SeqTrack *seqtrack){
+  R_ASSERT_NON_RELEASE(seqtrack->for_audiofiles==false);
+
+  return seqtrack->note_gain_muted < 0.1 ? true : false;
+}
+  
+void SEQTRACK_set_editor_seqtrack_muted(struct SeqTrack *seqtrack, bool muteit){
+  R_ASSERT_NON_RELEASE(seqtrack->for_audiofiles==false);
+  
+  if (muteit==SEQTRACK_get_editor_seqtrack_muted(seqtrack))
+    return;
+  
+  {
+    radium::PlayerLock lock(is_playing_song());
+    seqtrack->note_gain_muted = muteit ? 0.0 : 1.0;
+    seqtrack->note_gain_has_changed_this_block = true;
+  }
+  
+  SEQUENCER_update(SEQUPDATE_HEADERS);
+}
+
+void SEQTRACK_set_muted(struct SeqTrack *seqtrack, bool muteit){
+  if (seqtrack->for_audiofiles==false){
+    SEQTRACK_set_editor_seqtrack_muted(seqtrack, muteit);
+    return;
+  }
+
+  struct Patch *patch = seqtrack->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+  PLUGIN_set_muted(plugin, muteit);
+}
+
+void SEQTRACK_set_soloed(struct SeqTrack *seqtrack, bool soloit){
+  R_ASSERT_RETURN_IF_FALSE(seqtrack->for_audiofiles);
+
+  struct Patch *patch = seqtrack->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+  PLUGIN_set_soloed(plugin, soloit);
+}
+
+
+static void put_seqtrack_height_state(hash_t *state, const struct SeqTrack *seqtrack){
+  HASH_put_chars(state, "min_height_type", get_string_from_seqtrack_height_type(seqtrack->min_height_type));
+  HASH_put_chars(state, "max_height_type", get_string_from_seqtrack_height_type(seqtrack->max_height_type));
+  if(seqtrack->min_height_type==SHT_CUSTOM)
+    HASH_put_float(state, "custom_min_height", seqtrack->custom_min_height);
+  if(seqtrack->max_height_type==SHT_CUSTOM)
+    HASH_put_float(state, "custom_max_height", seqtrack->custom_max_height);
+}
+
+static void apply_seqtrack_height_state(struct SeqTrack *seqtrack, const hash_t *state){
+  if (HASH_has_key(state, "min_height_type")){
+    seqtrack->min_height_type = get_seqtrack_height_type_from_string(HASH_get_chars(state, "min_height_type"));
+    seqtrack->max_height_type = get_seqtrack_height_type_from_string(HASH_get_chars(state, "max_height_type"));
+    if(seqtrack->min_height_type==SHT_CUSTOM)
+      seqtrack->custom_min_height = HASH_get_float(state, "custom_min_height");
+    if(seqtrack->max_height_type==SHT_CUSTOM)
+      seqtrack->custom_max_height = HASH_get_float(state, "custom_max_height");
+  }
 }
 
 static hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_old_format */){
@@ -1683,13 +1756,11 @@ static hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_
     HASH_put_chars(state, "name", seqtrack->name);
 
   HASH_put_bool(state, "is_visible", seqtrack->is_visible);
+
+  put_seqtrack_height_state(state, seqtrack);
+
+  HASH_put_chars(state, "uuid", seqtrack->uuid);
   
-  HASH_put_chars(state, "min_height_type", get_string_from_seqtrack_height_type(seqtrack->min_height_type));
-  HASH_put_chars(state, "max_height_type", get_string_from_seqtrack_height_type(seqtrack->max_height_type));
-  if(seqtrack->min_height_type==SHT_CUSTOM)
-    HASH_put_float(state, "custom_min_height", seqtrack->custom_min_height);
-  if(seqtrack->max_height_type==SHT_CUSTOM)
-    HASH_put_float(state, "custom_max_height", seqtrack->custom_max_height);
 
   if (seqtrack->for_audiofiles){
     
@@ -1897,7 +1968,6 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
   R_ASSERT(len1==seqtrack->seqblocks.num_elements);
 }
 
-  
 static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<int64_t> &unavailable_seqblock_ids, double state_samplerate, int seqtracknum, enum ShowAssertionOrThrowAPIException error_type, const struct Song *song){
  const hash_t *automation_state = NULL;
   if (HASH_has_key(state, "automation"))
@@ -1916,6 +1986,9 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
   struct SeqTrack *seqtrack = SEQTRACK_create(automation_state, seqtracknum, state_samplerate, for_audiofiles, is_bus);
   struct SeqTrack *seqtrack_extra = NULL; // For loading older songs. In older songs, both audiofiles and editor blocks could be placed in all seqtracks. (and they still can, probably, but it makes very little sense to allow it)
 
+  if (HASH_has_key(state, "uuid"))
+    seqtrack->uuid = HASH_get_chars(state, "uuid");
+  
   if(seqtrack->for_audiofiles==false) R_ASSERT(seqtrack->patch==NULL);
   
   if (HASH_has_key(state, "use_custom_recording_config"))
@@ -1960,15 +2033,8 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
   if (HASH_has_key(state, "name"))
     seqtrack->name = HASH_get_chars(state, "name");
 
-  if (HASH_has_key(state, "min_height_type")){
-    seqtrack->min_height_type = get_seqtrack_height_type_from_string(HASH_get_chars(state, "min_height_type"));
-    seqtrack->max_height_type = get_seqtrack_height_type_from_string(HASH_get_chars(state, "max_height_type"));
-    if(seqtrack->min_height_type==SHT_CUSTOM)
-      seqtrack->custom_min_height = HASH_get_float(state, "custom_min_height");
-    if(seqtrack->max_height_type==SHT_CUSTOM)
-      seqtrack->custom_max_height = HASH_get_float(state, "custom_max_height");
-  }
-  
+  apply_seqtrack_height_state(seqtrack, state);
+    
   R_ASSERT(seqtrack->gfx_seqblocks==NULL);  
   vector_t gfx_seqblocks = {};
   seqtrack->gfx_seqblocks = &gfx_seqblocks;
@@ -2137,6 +2203,173 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
 
 void SEQTRACK_delete_gfx_gfx_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
   VECTOR_remove(&seqtrack->gfx_gfx_seqblocks, seqblock);
+}
+
+
+/***************************************/
+/* Seqtracks config (a/b/c/d/e/f/g/h) */
+/*************************************/
+
+static hash_t *g_seqtracks_configs[NUM_SEQTRACKS_CONFIGS] = {0};
+
+static hash_t *get_seqtrack_config(const struct SeqTrack *seqtrack){
+  hash_t *config = HASH_create(10);
+
+  HASH_put_bool(config, "is_visible", seqtrack->is_visible);
+
+  put_seqtrack_height_state(config, seqtrack);
+
+  int seqtracknum = get_seqtracknum(seqtrack);
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum >= 0, config);
+
+  HASH_put_bool(config, "mute", getSeqtrackMute(seqtracknum));
+  HASH_put_bool(config, "solo", getSeqtrackSolo(seqtracknum));
+  
+  //printf("    ------------------ Storing Solo %d: %d/%d. uuid: %s. seqtrack: %p. state: %p\n", seqtracknum, getSeqtrackSolo(seqtracknum), HASH_get_bool(config, "solo"), seqtrack->uuid, seqtrack, config);
+  
+  return config;
+}
+
+static hash_t *get_curr_seqtracks_config(void){
+  hash_t *config = HASH_create(root->song->seqtracks.num_elements);
+  
+  VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    
+    HASH_put_hash(config, seqtrack->uuid, get_seqtrack_config(seqtrack));
+    
+    if (iterator666==ATOMIC_GET(root->song->curr_seqtracknum))
+      HASH_put_chars(config, "curr_seqtrack", seqtrack->uuid);
+  
+  }END_VECTOR_FOR_EACH;
+
+  return config;
+}
+
+static void apply_seqtrack_config(const hash_t *config, struct SeqTrack *seqtrack){
+  bool new_val = HASH_get_bool(config, "is_visible");
+  if (new_val != seqtrack->is_visible){
+    //printf("---Making seqtrack %d %svisible\n", get_seqtracknum(seqtrack), new_val ? "" : "NOT ");
+    seqtrack->is_visible = new_val;
+  }
+
+  SEQTRACK_set_muted(seqtrack, HASH_get_bool(config, "mute"));
+
+  if (seqtrack->for_audiofiles)
+    SEQTRACK_set_soloed(seqtrack, HASH_get_bool(config, "solo"));
+
+  //printf("    ------------------------------ Setting Solo %d: %d/%d. uuid: %s. seqtrack: %p. instrument: %d. state: %p\n", seqtracknum, getSeqtrackSolo(seqtracknum), HASH_get_bool(config, "solo"), seqtrack->uuid, seqtrack, seqtrack->for_audiofiles ? (int)seqtrack->patch->id : -1, config);
+  
+  apply_seqtrack_height_state(seqtrack, config);
+}
+
+static void apply_seqtracks_config(int confignum){
+  //printf("   -------------------------------- Setting %d:\n", confignum);
+  
+  const hash_t *config = g_seqtracks_configs[confignum];
+
+  int curr_seqtracknum = -1;
+  
+  if (config != NULL) {
+
+    const char *curr_seqtrack_uuid = HASH_has_key(config, "curr_seqtrack") ? HASH_get_chars(config, "curr_seqtrack") : "";
+
+    VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+
+      if (HASH_has_key(config, seqtrack->uuid))
+        apply_seqtrack_config(HASH_get_hash(config, seqtrack->uuid), seqtrack);
+
+      if (!strcmp(curr_seqtrack_uuid, seqtrack->uuid))
+        curr_seqtracknum = iterator666;
+      
+    }END_VECTOR_FOR_EACH;
+  }
+  
+  root->song->curr_seqtrack_config_num = confignum;
+
+  SEQUENCER_update(SEQUPDATE_TRACKORDER | SEQUPDATE_TRACKCOORDINATES | SEQUPDATE_RIGHT_PART); // Must be called before setCurrSeqtrack to ensure coordinates are updated first.
+
+  if (curr_seqtracknum != -1)
+    setCurrSeqtrack(curr_seqtracknum);    
+}
+
+void SEQTRACKS_set_curr_config(int confignum){
+  R_ASSERT_RETURN_IF_FALSE(confignum>=0 && confignum < NUM_SEQTRACKS_CONFIGS);
+
+  g_seqtracks_configs[SEQTRACKS_get_curr_config()] = get_curr_seqtracks_config();
+
+  apply_seqtracks_config(confignum);
+}
+
+int SEQTRACKS_get_curr_config(void){
+  return root->song->curr_seqtrack_config_num;
+}
+
+bool SEQTRACKS_config_is_used(int confignum){
+  R_ASSERT_RETURN_IF_FALSE2(confignum>=0 && confignum < NUM_SEQTRACKS_CONFIGS, false);
+
+  if (confignum==root->song->curr_seqtrack_config_num)
+    return true;
+  
+  return g_seqtracks_configs[confignum] != NULL;
+}
+
+void SEQTRACKS_set_config(int confignum, hash_t *config){
+  if (confignum<0 || confignum >= NUM_SEQTRACKS_CONFIGS){
+    R_ASSERT(false);
+    return;
+  }
+
+  g_seqtracks_configs[confignum] = config;
+}
+
+hash_t *SEQTRACKS_get_config(int confignum){
+  if (confignum<0 || confignum >= NUM_SEQTRACKS_CONFIGS){
+    confignum=0;
+    R_ASSERT(false);
+  }
+  
+  return g_seqtracks_configs[confignum];
+}
+
+void SEQTRACKS_reset_config(void){
+  for(int i=0;i<NUM_SEQTRACKS_CONFIGS;i++)
+    g_seqtracks_configs[i] = NULL;
+
+  root->song->curr_seqtrack_config_num = 0;
+
+  S7CALL2(void_void, "FROM_C-reconfigure-sequencer-right-part"); // radiobuttons store current value locally, and not by checking external variable when painting, so it needs to be recreated not just redrawn.
+  //SEQUENCER_update(SEQUPDATE_RIGHT_PART);
+}
+
+static hash_t *SEQTRACKS_get_config_state(void){
+  hash_t *state = HASH_create(2);
+  
+  dynvec_t states = {};
+  for(int i=0;i<NUM_SEQTRACKS_CONFIGS;i++)
+    if(g_seqtracks_configs[i])
+      DYNVEC_push_back(&states, DYN_create_hash(g_seqtracks_configs[i]));
+    else
+      DYNVEC_push_back(&states, DYN_create_bool(false));
+  
+  HASH_put_array(state, "configs", states);
+  HASH_put_int(state, "curr_config_num", root->song->curr_seqtrack_config_num);
+
+  return state;
+}
+
+static void SEQTRACKS_apply_config_state(hash_t *state){
+  const dynvec_t *states = HASH_get_dyn(state, "configs").array;
+
+  int i=0;
+  for(const dyn_t &state : states){
+    if (state.type==HASH_TYPE)
+      g_seqtracks_configs[i] = state.hash;
+    else
+      g_seqtracks_configs[i] = NULL;
+    i++;
+  }
+
+  root->song->curr_seqtrack_config_num = HASH_get_int(state, "curr_config_num");
 }
 
 /*
@@ -3104,7 +3337,6 @@ double SONG_get_length(void){
   return len;
 }
 
-
 // Called from SONG_create()
 void SEQUENCER_init(struct Song *song){
   TEMPOAUTOMATION_reset();
@@ -3199,6 +3431,9 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
 
   HASH_put_array(state, "sequencer_markers", SEQUENCER_MARKER_get_state());
 
+  if(g_is_saving)
+    HASH_put_hash(state, "seqtrack_config", SEQTRACKS_get_config_state());
+  
   return state;
 }
 
@@ -3431,11 +3666,14 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     } else {
       g_curr_seqblock_id = new_curr_seqblock_id;
     }
-    
+
   } else {
     g_curr_seqblock_id = new_curr_seqblock_id;
   }
-  
+
+  if (HASH_has_key(state, "seqtrack_config"))
+    SEQTRACKS_apply_config_state(HASH_get_hash(state, "seqtrack_config"));
+
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 

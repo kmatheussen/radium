@@ -3082,6 +3082,8 @@ static inline const char *get_string_from_seqtrack_height_type(enum SeqtrackHeig
 struct SeqTrack{
   scheduler_t *scheduler;
 
+  const char *uuid; // Used for seqtracks config.
+  
   bool for_audiofiles;
   bool is_bus;
   
@@ -3188,6 +3190,8 @@ struct Song{
         struct LoopingOrPunching punching;
         DEFINE_ATOMIC(int, curr_seqtracknum);
         int topmost_visible_seqtrack;
+
+        int curr_seqtrack_config_num;
         vector_t seqtracks; // New playlist. Player must both be stopped and locked when modifying this variable, or any of the contents.
 
         bool use_sequencer_tempos_and_signatures;

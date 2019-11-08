@@ -134,6 +134,11 @@ extern LANGSPEC enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(const S
 extern LANGSPEC void PLUGIN_set_random_behavior(SoundPlugin *plugin, const int effect_num, bool do_random);
 extern LANGSPEC bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num);
 
+extern LANGSPEC bool PLUGIN_get_muted(SoundPlugin *plugin);
+extern LANGSPEC void PLUGIN_set_muted(SoundPlugin *plugin, bool muteit);
+extern LANGSPEC bool PLUGIN_get_soloed(SoundPlugin *plugin);
+extern LANGSPEC void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit);
+
 static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
   //  if (plugin->patch!=NULL && !strcmp(plugin->patch->name,"Test"))
   //    printf("Touching %s\n",plugin->patch==NULL ? "(null)" : plugin->patch->name);

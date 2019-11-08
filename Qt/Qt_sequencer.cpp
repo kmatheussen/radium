@@ -375,6 +375,18 @@ static int get_seqtracks_total_height(void){
 }
 */
 
+
+static int get_num_visible_seqtracks(void) {
+  int ret = 0;
+  VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    if (seqtrack->is_visible)
+      ret++;
+  }END_VECTOR_FOR_EACH;
+  
+  return ret;
+}
+  
+
 static double get_seqtrack_border_width(void){
   int ret = ceil(root->song->tracker_windows->systemfontheight / 5.0);
   if ((ret % 2)==0)
@@ -2544,11 +2556,15 @@ public:
     if(seqtracknum >= 0){
 
       const struct SeqTrack *seqtrack = (const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
-      
-      R_ASSERT_NON_RELEASE(seqtrack->y2 > seqtrack->y1);
+
+      if (seqtrack->is_visible){
+        
+        R_ASSERT_NON_RELEASE(seqtrack->y2 > seqtrack->y1);
     
-      y1 = seqtrack->y1 + border;
-      y2 = seqtrack->y2 - border;
+        y1 = seqtrack->y1 + border;
+        y2 = seqtrack->y2 - border;
+
+      }
 
     }
     
@@ -3598,7 +3614,7 @@ public:
 
     // Navigator
     //
-    if (_paint_zoom_interface){
+    if (_paint_zoom_interface && get_num_visible_seqtracks() > 0){
       double seqtracks_y1 = _seqtracks_widget.get_seqtracks_y1();
       double seqtracks_y2 = _seqtracks_widget.get_seqtracks_y2();
 
@@ -4092,16 +4108,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     return maybe;
   }
 
-  int get_num_visible_seqtracks(void) const {
-    int ret = 0;
-    VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
-      if (seqtrack->is_visible)
-        ret++;
-    }END_VECTOR_FOR_EACH;
-    
-    return ret;
-  }
-  
   void position_widgets(void){
     //R_ASSERT_RETURN_IF_FALSE(_seqtracks_widget._seqtrack_widgets.size() > 0);
 
@@ -4559,9 +4565,11 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     if(curr_seqtracknum < root->song->topmost_visible_seqtrack)
       return;
-          
-    //const SeqTrack *seqtrack = (const struct SeqTrack*)root->song->seqtracks.elements[curr_seqtracknum];
 
+    const SeqTrack *seqtrack = (const struct SeqTrack*)root->song->seqtracks.elements[curr_seqtracknum];
+    if (!seqtrack->is_visible)
+      return;
+    
     {
       const Seqblocks_widget w = get_seqblocks_widget(curr_seqtracknum, false);
 

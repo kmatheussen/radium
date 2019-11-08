@@ -804,6 +804,7 @@ void setInstrumentIsImplicitlyMuted(bool doit, int64_t instrument_id){
   
   plugin->is_implicitly_muted = doit;
   CHIP_update(plugin);
+  SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_RIGHT_PART);
 }
 
 bool instrumentIsImplicitlySoloed(int64_t instrument_id){
@@ -837,7 +838,7 @@ void setInstrumentIsImplicitlySoloed(bool doit, int64_t instrument_id){
   
   plugin->is_implicitly_soloed = doit;
   CHIP_update(plugin);
-  SEQUENCER_update(SEQUPDATE_HEADERS);
+  SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_RIGHT_PART);
 }
 
 
@@ -1321,7 +1322,7 @@ bool getInstrumentSolo(int64_t instrument_id){
     return false;
   }
   
-  return ATOMIC_GET(plugin->solo_is_on);
+  return PLUGIN_get_soloed(plugin);
 }
 
 void setInstrumentSolo(bool do_solo, int64_t instrument_id){
@@ -1334,16 +1335,15 @@ void setInstrumentSolo(bool do_solo, int64_t instrument_id){
     handleError("Instrument #%d has been closed", (int)instrument_id);
     return;
   }
-  
-  bool new_value = do_solo ? 1.0 : 0.0;
-  if (new_value==ATOMIC_GET(plugin->solo_is_on))
+
+  if (do_solo==PLUGIN_get_soloed(plugin))
     return;
-  
+
   int effect_num = plugin->type->num_effects + EFFNUM_SOLO_ONOFF;
 
   ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
-  
-  PLUGIN_set_effect_value(plugin, -1, effect_num, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+
+  PLUGIN_set_soloed(plugin, do_solo);
 }
 
 bool switchInstrumentSolo(int64_t instrument_id){
@@ -1363,7 +1363,7 @@ bool getInstrumentMute(int64_t instrument_id){
     return false;
   }
   
-  return !ATOMIC_GET(plugin->volume_is_on);
+  return PLUGIN_get_muted(plugin);
 }
 
 void setInstrumentMute(bool do_mute, int64_t instrument_id){
@@ -1374,11 +1374,9 @@ void setInstrumentMute(bool do_mute, int64_t instrument_id){
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   int effect_num = get_mute_effectnum(plugin->type);
 
-  float new_val = do_mute ? 0.0 : 1.0;
-  
   ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
 
-  PLUGIN_set_effect_value(plugin, -1, effect_num, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+  PLUGIN_set_muted(plugin, do_mute);
 }
 
 bool switchInstrumentMute(int64_t instrument_id){
@@ -2950,6 +2948,10 @@ int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, bool mo
 
   g_effect_monitors.push_back(effect_monitor);
 
+#if !defined(RELEASE)
+  printf("   addEffectMonitor: Size: %d\n", g_effect_monitors.size());
+#endif
+  
   return effect_monitor->id;
 }
 

@@ -225,6 +225,7 @@ FROM_C-move-current-instrument-left
 FROM_C-move-current-instrument-right
 FROM_C-move-current-instrument-up
 FROM_C-move-current-instrument-down
+recreate-seqtracks-config-area
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*
@@ -233,6 +234,7 @@ FROM_C-move-current-instrument-down
     set-protracker-instrumentlist!   ;; -------- '' --------
     set-protracker-playlist!         ;; -------- '' --------
     set-protracker-pattern-format    ;; -------- '' --------
+    recreate-seqtracks-config-area
     ))
 
 (define-constant *eat-errors-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))

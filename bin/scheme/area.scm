@@ -198,9 +198,14 @@
                                           (<ra> :remove-effect-monitor effect-monitor #t))))))
        (push-back! effect-monitors effect-monitor))
 
+     (define (shallow-remove-sub-areas!)
+       ;;(assert #f)
+       (set! sub-areas '())
+       (set! top-area #f))
+     
      (define (remove-sub-areas!)
        (for-each (lambda (effect-monitor)
-                   (c-display "Note: In" ',(car def) ", the effect monitor" effect-monitor "was automatically removed")
+                   ;;(c-display "Note: In" ',(car def) ", the effect monitor" effect-monitor "was automatically removed")
                    (<ra> :remove-effect-monitor effect-monitor #f))
                  effect-monitors)
        (set! effect-monitors '())
@@ -208,6 +213,7 @@
        (for-each (lambda (sub-area)
                    (sub-area :about-to-be-removed-internal!))
                  sub-areas)
+       
        (set! sub-areas '())
        (set! top-area #f))
 
@@ -235,9 +241,13 @@
        (push-back! sub-areas sub-area)
        (set! top-area sub-area)
        (sub-area :set-parent-area! this)
-       (sub-area :update-me!))
+       (sub-area :update-me!)
+       ;;(if (eq? ',(car def) '<seqtrack-config-entry>)
+       ;;    (c-display "add-sub-area-pain!" ',(car def) ": " (length sub-areas)))
+       )
 
-     (define (add-sub-area! sub-area x y)
+
+     (define (add-sub-area! sub-area x y)       
        ;;(c-display " THIS10:" this x y ". sub-area:" sub-area)
        (sub-area :set-position! x y)
 
@@ -576,7 +586,7 @@
 
        (when (and (paint?)
                   (<gui> :area-needs-painting gui x1 y1 x2 y2));;overlaps? x1* y1* x2* y2*))
-
+         
          ;;(c-display "paint-internal hepp" ',(car def) paint "sub-areas" sub-areas)
          (let ((cx1 (max x1 px1))
                (cy1 (max y1 py1))
@@ -585,7 +595,7 @@
 
            (when (and (> cx2 cx1)
                       (> cy2 cy1))
-
+             
              (<gui> :do-clipped gui cx1 cy1 cx2 cy2
                     (lambda ()
                       (define (paintit)
@@ -627,8 +637,9 @@
      :add-sub-area-plain! (sub-area) (add-sub-area-plain! sub-area)
      :add-sub-area! x (apply add-sub-area! x)
      :add-sub-area-above! x (apply add-sub-area-above! x)
-     :add-sub-area-below! x (apply add-sub-area-below! x)
+     :add-sub-area-below! x (apply add-sub-area-below! x)     
      :remove-sub-area! x (apply remove-sub-area! x)
+     :shallow-remove-sub-areas! x (apply shallow-remove-sub-areas! x) ;; Only sets sub-areas to empty list. Does not remove sub areas from sub areas and so forth.
      :remove-sub-areas! x (apply remove-sub-areas! x)
      :lift-sub-area! x (apply lift-sub-area! x)
      :lift-me! x (apply lift-me! x)
@@ -686,7 +697,11 @@
 
 (def-area-subclass (<use-first-subarea-state-as-state-area> :gui :x1 :y1 :x2 :y2)
   (define-override (get-state)
-    ((car sub-areas) :get-state))
+    (if (null? sub-areas)
+        (begin
+          (c-display "Warning: No sub areas in use-first-subarea-state-as-state-area area")
+          (hash-table))
+        ((car sub-areas) :get-state)))
   (define-override (apply-state! state)
     ((car sub-areas) :apply-state! state)))
 
@@ -702,6 +717,10 @@
            (lambda (width height)
              (paint-internal 0 0 width height)))
 
+    (<gui> :add-deleted-callback gui
+           (lambda (radium-runs-custom-exec)
+             (remove-sub-areas!))) ;; clean-up.
+    
     (when enable-mouse-callbacks
       (<gui> :add-mouse-callback gui
              (lambda (button state x y)
@@ -971,7 +990,7 @@
 
   (define-override (paint)
     (if paint-func
-        (paint-func (is-selected-func))
+        (paint-func gui x1 y1 x2 y2 (is-selected-func))
         (begin
           (<gui> :filled-box gui (<gui> :get-background-color gui) x1 y1 x2 y2 3 3)
           (draw-checkbox gui
@@ -1018,7 +1037,7 @@
   (define layout-func (if layout-horizontally
                           horizontally-layout-areas
                           vertically-layout-areas))
-  
+
   (layout-func x1 y1 x2 y2
                (iota num-buttons)
                :spacing 2
@@ -1037,8 +1056,8 @@
                            (update-me!)
                            )
                          :paint-func (and paint-func
-                                          (lambda ()
-                                            (paint-func num)))
+                                          (lambda (gui x1 y1 x2 y2 is-on)
+                                            (paint-func gui x1 y1 x2 y2 num is-on)))
                          :text (if text-func
                                    (text-func num)
                                    "o")
@@ -1093,11 +1112,12 @@
     (if is-pressing
         (<gui> :draw-box gui background-color (+ x1 r/2) (+ y1 r/2) (- x2 r/2) (- y2 r/2) b r r))
 
-    (<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 r r))
+    (<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 r r)
+    )
     
   (define-override (paint)
     (if paint-func
-        paint-func
+        (paint-func gui x1 y1 x2 y2)
         (mypaint)))
 
   (if statusbar-text
@@ -1144,6 +1164,8 @@
                                 :mouse-release-callback #f
                                 )
 
+  (assert slider-length)
+  
   (if (not slider-pressed-color)
       (set! slider-pressed-color (<gui> :mix-colors "#fefefe" slider-color 0.1)))
 
@@ -1276,61 +1298,84 @@
   )
 !!#
 
-     
+
+;; Deprecated. Use vertical-list-area2 instead.
 (def-area-subclass (<vertical-list-area> :gui :x1 :y1 :x2 :y2
-                                         :areas
+                                         :create-areas
                                          :scrollbar-color "#400010"
                                          :background-color #f
                                          :expand-area-widths #t
-                                         :load-areas-from-state #f
                                          )
 
-  (define (get-areas)
-    (if (list? areas)
-        areas
-        (areas)))
+  (define areas #f)
+  
+  (add-method! :get-areas (lambda ()
+                            areas))
+  
+  (define total-area-height #f)
+  (define slider-length 10)
+  (define all-fits #t)  
+  (define scrollbar-width 0)
+  (define scrollbar-x1 x2)
+  (define-optional-func scrollbar (key . rest))
+  
+  (define (scrollbar-callback pos1 pos2)
+    (define pos1 (scale pos1
+                        0 1
+                        0 total-area-height))
+    ;;(c-display "scrollbar-callback" pos1 pos2)
+    (position-areas! (+ y1 (- pos1))))
 
-  (add-method! :get-areas get-areas)
-  
-  (define total-area-height (apply + (map (lambda (area)
-                                            (area :get-position (lambda (x1 y1 x2 y2 width height)
-                                                                  height)))
-                                          (get-areas))))
-  
-  (define slider-length (if (= 0 total-area-height)
-                            1
-                            (min 1 (/ height total-area-height))))
-  
-  (define all-fits (>= slider-length 1))
-  
-  (define scrollbar-width (if all-fits
+  (define* (reload-areas! (num-tries 0))
+    (define all-fitted all-fits)
+    (remove-sub-areas!)
+    (set! areas (create-areas x1 (if all-fits
+                                     x2
+                                     scrollbar-x1)))
+    (set! total-area-height (apply + (map (lambda (area)
+                                              (area :get-position (lambda (x1 y1 x2 y2 width height)
+                                                                    height)))
+                                            areas)))
+    
+    (set! slider-length (if (= 0 total-area-height)
+                              1
+                              (min 1 (/ height total-area-height))))
+    
+    (set! all-fits (>= slider-length 1))
+    
+    (set! scrollbar-width (if all-fits
                               0
                               (between 1
                                        (/ width 10)
                                        (min (average (<gui> :text-width "Xx")
                                                      (<gui> :text-width "x"))
                                             (/ width 2)))))
-  
-  (define scrollbar-x1 (- x2 scrollbar-width))
+    
+    (set! scrollbar-x1 (- x2 scrollbar-width))
 
-  (define (scrollbar-callback pos1 pos2)
-    (define pos1 (scale pos1
-                        0 1
-                        0 total-area-height))
-    (position-areas! (+ y1 (- pos1))))
+    (if (or (not scrollbar)
+            (not (eq? all-fits all-fitted)))
+        (set! scrollbar (<new> :scrollbar
+                               gui
+                               scrollbar-x1 y1
+                               x2 y2
+                               scrollbar-callback
+                               :slider-pos 0
+                               :slider-length slider-length
+                               :vertical #t
+                               :background-color background-color)))
 
-  (define scrollbar (<new> :scrollbar
-                           gui
-                           scrollbar-x1 y1
-                           x2 y2
-                           scrollbar-callback
-                           :slider-pos 0
-                           :slider-length slider-length
-                           :vertical #t
-                           :background-color background-color))
-  
+  ;;(scrollbar :resize! scrollbar-width height)
+    
+    (if (>= num-tries 10)
+        (c-display "Warning: vertical-list-area::reload-areas! called recursively" num-tries "times"))
+    
+    (if (and (< num-tries 50)
+             (not (eq? all-fits all-fitted)))
+        (reload-areas! (+ num-tries 1))))
+
+
   (define-override (get-state)
-    (define areas (get-areas))
     (hash-table :areas areas
                 :y1 y1
                 :start-y1 (if (null? areas)
@@ -1341,30 +1386,40 @@
                 :slider-pos (scrollbar :get-slider-pos)))
   
   (define-override (apply-state! state)
-    (if load-areas-from-state
-        (set! areas (state :areas)))
-    
-    (when (or load-areas-from-state
-              (not all-fits))
-      (define dy (+ (state :start-y1) (- y1 (state :y1))))
-      ;;(c-display "     apply-state!. Position dy:" dy)
-      (scrollbar :set-slider-pos! (state :slider-pos) #t)))
-;;      (position-areas! dy)))
+    (when (not all-fits)
+      (if (not (state :y1))
+          (c-display "           ERROR:" state)
+          (begin
+            (define dy (+ (state :start-y1) (- y1 (state :y1))))
+            ;;(c-display "     apply-state!. Position dy:" dy)
+            (scrollbar :set-slider-pos! (state :slider-pos) #t)))))
 
+  ;;(reload-areas!)
+  
   (define (position-areas! start-y1)
-    (remove-sub-areas!)
+    (set! start-y1 (round start-y1))
+    ;;(remove-sub-areas!)
+;    (shallow-remove-sub-areas!) ;; TODO: Ensure effect monitors are removed.
+    (reload-areas!)
+    ;;(shallow-remove-sub-areas!)
     (add-sub-area-plain! scrollbar)
-    (let loop ((areas (get-areas))
+    (define i 1)
+    (let loop ((areas areas)
                (area-y1 start-y1))
       (when (not (null? areas))
         (define area (car areas))
         (define area-y2 (+ area-y1 (area :get-height)))
+        ;;(c-display "Area " i ": " area-y1 area-y2)
+        (set! i (+ i 1))
         (if expand-area-widths
             (area :set-position-and-size! x1 area-y1 (- scrollbar-x1 1) area-y2)
             (area :set-position! x1 area-y1))
-        (if (and (>= area-y2 y1)
-                 (< area-y1 y2))
-            (add-sub-area-plain! area))
+        (when (and (>= area-y2 y1)
+                   (< area-y1 y2))          
+          (add-sub-area-plain! area)
+          ;;(display "Added :")
+          ;;(area :get-position c-display)
+          )
         (loop (cdr areas)
               area-y2))))
 
@@ -1375,17 +1430,17 @@
                     (area :get-position
                           (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
                             a-height)))
-                  (get-areas))))
+                  areas)))
   
   (define (scroll-area-to-top area)
     (scrollbar :set-slider-pos!
                (scale (area :get-position
                             (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
                               a-y1))
-                      ((car (get-areas)) :get-position
+                      ((car areas) :get-position
                        (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
                          a-y1))
-                      ((last (get-areas)) :get-position
+                      ((last areas) :get-position
                        (lambda (a-x1 a-y1 a-x2 a-y2 a-width a-height)
                          a-y2))
                       ;;(get-total-areas-height)
@@ -1422,7 +1477,6 @@
                         (run-loop test-y2 #f)))))
 
   (define (scroll! is-up)
-    (define areas (get-areas))
     (define is-down (not is-up))
     (define first-y1 (and (not (null? areas))
                           ((car areas) :get-position
@@ -1470,6 +1524,228 @@
            (loop (cdr areas)
                  (1+ n)
                  ))))))
+    
+  (define-override (mouse-wheel-moved-internal! is-up x* y*)
+    (scroll! is-up)
+    (scroll! is-up)
+    (scroll! is-up)
+    #t)
+  )
+
+(def-area-subclass (<vertical-list-area2> :gui :x1 :y1 :x2 :y2
+                                          :num-sub-areas
+                                          :get-sub-area-height ;; Either a number (if all sub-areas have the same height) or a function taking (area-num x1 x2) as arguments
+                                          :create-sub-area ;; Function taking (area-num x1 x2) as arguments
+                                          :sub-areas-can-be-cached #f
+                                          :scrollbar-color "#400010"
+                                          :background-color #f
+                                          :num-areas-to-mousewheel-scroll 3
+                                          )
+
+  (if (number? get-sub-area-height)
+      (set! get-sub-area-height (round get-sub-area-height)))
+
+  (define (get-area-x2)
+    (if all-fits
+        x2
+        (- scrollbar-x1 1)))
+  
+  (define areas (make-vector num-sub-areas #f))
+  (define areas-used (make-vector num-sub-areas #f))
+
+  (define area-heights (make-vector num-sub-areas #f))
+
+  (define (get-area-height num)
+    (if (number? get-sub-area-height)
+        get-sub-area-height
+        (let ()
+          (define height (area-heights num))
+          (if height
+              height
+              (let ((height (get-sub-area-height num x1 (get-area-x2))))
+                (set! (area-heights num) height)
+                height)))))
+
+  (define area-y1s (make-vector num-sub-areas))
+  (define area-y2s (make-vector num-sub-areas))
+
+  (define (recreate-area-y12s! area-y1)
+    (let loop ((num 0)
+               (area-y1 area-y1))
+      (when (< num num-sub-areas)
+        (define height (get-area-height num))
+        (define area-y2 (+ area-y1 height))
+        (set! (area-y1s num) area-y1)
+        (set! (area-y2s num) area-y2)
+        (loop (+ 1 num)
+              area-y2))))
+                 
+  
+  (define total-area-height (let loop ((num 0)
+                                       (total 0))
+                              (if (= num num-sub-areas)
+                                  total
+                                  (loop (+ num 1)
+                                        (+ total (get-area-height num))))))
+  
+  (define slider-length (if (= 0 total-area-height)
+                            1
+                            (min 1 (/ height total-area-height))))
+  
+  (define all-fits (>= slider-length 1))
+  
+  (define scrollbar-width (if all-fits
+                              0
+                              (between 1
+                                       (/ width 10)
+                                       (min (average (<gui> :text-width "Xx")
+                                                     (<gui> :text-width "x"))
+                                            (/ width 2)))))
+  
+  (define scrollbar-x1 (- x2 scrollbar-width))
+
+  (define (scrollbar-callback pos1 pos2)
+    (define pos1 (scale pos1
+                        0 1
+                        0 total-area-height))
+    ;;(c-display "scrollbar-callback" pos1 pos2)
+    (position-areas! (+ y1 (- pos1))))
+
+  (define scrollbar (and (not all-fits)
+                         (<new> :scrollbar
+                                gui
+                                scrollbar-x1 y1
+                                x2 y2
+                                scrollbar-callback
+                                :slider-pos 0
+                                :slider-length slider-length
+                                :vertical #t
+                                :background-color background-color)))
+  
+  (if scrollbar
+      (add-sub-area-plain! scrollbar))
+
+  (define-override (get-state)
+    (hash-table :slider-pos (and scrollbar
+                                 (scrollbar :get-slider-pos))))
+  
+  (define-override (apply-state! state)
+    (when scrollbar
+      (if (or (not state)
+              (not (state :slider-pos)))
+          (c-display "           ERROR:" state)
+          (begin
+            ;;(define dy (+ (state :start-y1) (- y1 (state :y1))))
+            ;;(c-display "     apply-state!. Position dy:" dy)
+            (scrollbar :set-slider-pos! (state :slider-pos) #t)))))
+
+  (define (position-areas! start-y1)
+
+    (set! start-y1 (round start-y1))
+    
+    (recreate-area-y12s! start-y1)
+
+    (define (add! num area-y1)
+      ;;(c-display "ADDING" num area-y1 ". used:" (area-used num))
+      (define area (areas num))
+      (if area
+          (if (areas-used num)
+              (area :set-position! x1 area-y1)
+              (begin
+                (assert sub-areas-can-be-cached)
+                (set! (areas-used num) #t)
+                (add-sub-area! area x1 area-y1)))
+          (let ((area (create-sub-area num x1 (get-area-x2))))
+            (if sub-areas-can-be-cached
+                (assert (null? (area :get-sub-areas))))
+            (add-sub-area! area x1 area-y1)
+            (set! (areas num) area)
+            (set! (areas-used num) #t))))
+      
+    (define (remove! num)
+      (define area (areas num))
+      (when area
+        ;;(c-display "REMOVING" num)
+        (remove-sub-area! area)
+        (set! (areas-used num) #f)
+        (if (not sub-areas-can-be-cached)
+            (set! (areas num) #f))))
+      
+    (let loop ((num 0)
+               (area-y1 start-y1))
+      ;;(c-display "    loop. num/area-y1/y2: " num area-y1 y2)
+      (if (and (< num num-sub-areas)
+               (< area-y1 y2))
+          (begin
+            (define area-y2 (+ area-y1 (get-area-height num)))
+            (cond ((> area-y2 y1)
+                   (add! num area-y1))
+                  ((areas num)
+                   (remove! num)))
+            (loop (+ num 1)
+                  area-y2))
+          (let loop ((num num))
+            (when (< num num-sub-areas)
+              (remove! num)
+              (loop (+ 1 num)))))))
+          
+  
+  (position-areas! y1)
+
+  (define (get-largest-area-y1)
+    (- y2 total-area-height))
+    
+  (define (set-area-at-top! num)
+    ;;(c-display "       SETTING AT TOP:" num)
+    (define first-y1 (area-y1s 0))
+    (define a-y1 (area-y1s num))
+    (define dy (- a-y1 first-y1))
+    (position-areas! (max (get-largest-area-y1)
+                          (- y1 dy))))
+     
+  (define (scroll-up!)
+    (when (not all-fits)
+      (let loop ((num 0))
+        (when (< num num-sub-areas)
+          (define a-y1 (area-y1s num))
+          ;;(define a-y2 (area-y2s num))
+          ;;(c-display "a-y1 / y1:" a-y1 y1)
+          (if (>= (- a-y1 0.001) y1)
+              (begin
+                (set-area-at-top! (max 0 (- num num-areas-to-mousewheel-scroll)))
+                (scrollbar :set-slider-pos!
+                           (scale y1
+                                  (area-y1s 0)
+                                  (area-y2s (- num-sub-areas 1))
+                                  0 1)
+                           #f)
+                )
+              (loop (+ num 1)))))))
+        
+  (define (scroll-down!)
+    (when (not all-fits)
+      (let loop ((num 0))
+        (when (< num num-sub-areas)
+          (define a-y1 (area-y1s num))
+          ;;(define a-y2 (area-y2s num))
+          ;;(c-display "a-y1 / y1:" a-y1 y1)
+          (if (>= (- a-y1 0.001) y1)
+              (begin
+                (set-area-at-top! (min (- num-sub-areas 1)
+                                       (+ num num-areas-to-mousewheel-scroll)))
+                (scrollbar :set-slider-pos!
+                           (scale y1
+                                  (area-y1s 0)
+                                  (area-y2s (- num-sub-areas 1))
+                                  0 1)
+                           #f)
+                )
+              (loop (+ num 1)))))))
+
+  (define (scroll! is-up)
+    (if is-up
+        (scroll-up!)
+        (scroll-down!)))
     
   (define-override (mouse-wheel-moved-internal! is-up x* y*)
     (scroll! is-up)
@@ -1748,10 +2024,13 @@
     (define entry-background-color (if background-color
                                        background-color
                                        "color9"))
-    
+
+    ;;(set! entry-background-color (<gui> :set-alpha-for-color entry-background-color 0.05)))
+
     ;;(if is-current
     ;;    (set! entry-background-color (<gui> :mix-colors entry-background-color "green" 0.1)))
 
+    ;;(<gui> :filled-box gui (<gui> :get-background-color gui) (+ 1 x1) y1 x2 y2 4 4)
     (<gui> :filled-box gui entry-background-color (+ 1 x1) y1 x2 y2 4 4 (if background-color #t #f))
 
     ;; name
@@ -1857,7 +2136,7 @@
   (define-override (get-state)
     (store-curr-entry-state!)
     (hash-table :curr-settings-num curr-settings-num
-                 :states states))
+                :states states))
 
   (define (apply-state2! state)
     (set! path (state :path))
@@ -1991,7 +2270,7 @@
                (iota (length entries))
                ))
 
-    (set! vertical-list-area (<new> :vertical-list-area gui x1 browser-y1 x2 y2 file-browser-entries))
+    (set! vertical-list-area (<new> :vertical-list-area gui x1 browser-y1 x2 y2 (lambda (x1 x2) file-browser-entries)))
     (add-sub-area-plain! vertical-list-area)
     )
   
