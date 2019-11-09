@@ -3098,8 +3098,20 @@ const_char *createUuid(void){
 
 void msleep(int ms){
   ASSERT_NON_RT_NON_RELEASE();
+
+#if defined(FOR_LINUX)
+  
+  // Not sure, but QThread::msleep may use a lot of CPU on linux since QTimer uses a lot of CPU on linux (think buzy-waits to be more accurate even when using the default "coarse timer". (The "very coarse timer" doesn't work at all on linux.)).
+  if (ms < 1000)
+    usleep(1000*ms);
+  else
+    QThread::msleep(ms);
+  
+#else
   
   QThread::msleep(ms);
+  
+#endif
   //usleep(1000*ms); // usleep only works in the range 0->1000000
 }
 
