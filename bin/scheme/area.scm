@@ -2198,7 +2198,7 @@
     ;;(c-display "\n\n\n---------------------- num entries:" (length entries) "-----------------------\n\n\n")
     (remove-sub-areas!)
 
-    (define border 2)
+    (define border 1)
 
     (define pathline-y1 (+ y1 (get-fontheight) border))
 

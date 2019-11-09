@@ -1503,6 +1503,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
     
     /************ AUDIO METERS *******************/
+
+#if 1
+    int _max_vamps = 0;
+#endif
     
     QVector<VerticalAudioMeterPainter*> _vamps;
 
@@ -1517,6 +1521,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 #endif
 
       _vamps.push_back(vamp);
+
+#if 1
+      if (_vamps.size() > _max_vamps){
+        _max_vamps = _vamps.size();
+        printf("Note: Num_vamps: %d\n", _max_vamps);
+      }
+#endif
+      
       callVampRegularly(vamp);
       return vamp;
     }
@@ -1601,10 +1613,22 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       bool do_sequencer_clipping = widget==SEQUENCER_WIDGET_get_widget();
             
       if (do_sequencer_clipping){
+
+        double font_height = 4 + root->song->tracker_windows->systemfontheight; // if changing 4+systemfontheight, also change get-fontheight in gui.scm
+                                                                                              
         // Hack to avoid vamps to be painted on top of the "+A a" button, and the dragger.
         float y1 = SEQTIMELINE_get_y2() - SEQUENCER_get_y1();
-        float y2 = SEQNAV_get_y2() - SEQUENCER_get_y1() - 1.5*(4 + root->song->tracker_windows->systemfontheight); // If changing 1.5, also change 1.5 in "ty2" in <sequencer-left-part> in seqtrack-headers.scm. And if changing 4+systemfontheight, change get-fontheight in mixer-strips.scm and (get-fontheight) in mixer-strips.scm.
-        p.setClipRect(QRectF(0, y1, widget->width(), y2-y1));
+        float y2 = SEQNAV_get_y2() - SEQUENCER_get_y1() - 1.5 * font_height; // If changing 1.5, also change 1.5 in "ty2" in <sequencer-left-part> in seqtrack-headers.scm. And 
+
+        QRegion region(QRect(0, y1, SEQTRACKS_get_x1() - SEQUENCER_get_x1(), y2-y1));
+
+        // Hack to avoid vamps to be painted above seqtrack config buttons in "tracks".
+        float y1_b = font_height + 1; // If changing font_height + 1 here, also change (+ y1 fontheight border) in seqtracks_config.scm
+        float y2_b = widget->height();
+        float x1_b = SEQTRACKS_get_x2() - SEQUENCER_get_x1();
+        region = region.united(QRect(x1_b, y1_b, widget->width() - x1_b, y2_b-y1_b));
+        
+        p.setClipRegion(region);
         p.setClipping(true);
       }
         
@@ -7063,11 +7087,11 @@ int64_t gui_addVerticalAudioMeter(int64_t guinum, int64_t instrument_id, double 
   
   auto *vamp = gui->createVamp(patch, note_event_patch, x1, y1, x2, y2);
   gui_update(guinum, x1, y1, x2, y2);
-                       
+  
   return vamp->_id;
 }
 
-bool gui_removeVerticalAudioMeter(int64_t vap){
+bool gui_removeVerticalAudioMeter(int64_t vap, bool throw_error_if_not_found){
   for(auto *vamp : g_active_vertical_audio_meters){
     if (vamp->_id == vap){
       Gui *gui = g_guis.value(vamp->_guinum);
@@ -7080,7 +7104,9 @@ bool gui_removeVerticalAudioMeter(int64_t vap){
     }
   }
 
-  handleError("gui_removeVerticalAudioMeter: vertical audio meter %d not found", (int)vap);
+  if (throw_error_if_not_found)
+    handleError("gui_removeVerticalAudioMeter: vertical audio meter %d not found", (int)vap);
+  
   return false;
 }
                                

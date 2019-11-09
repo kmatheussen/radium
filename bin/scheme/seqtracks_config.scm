@@ -21,8 +21,18 @@
   (define instrument-id (if for-blocks
                             -1
                             (<ra> :get-seqtrack-instrument seqtracknum)))
+
+  (define fontheight (get-fontheight))
   
-  (define text-x1 (+ x1 (get-fontheight)))
+  (define meter-width (if for-audiofiles
+                          (max 4 (myfloor (/ fontheight 3)))
+                          0))
+
+  (define b (max 0.1 (myfloor (/ fontheight 10)))) ;; border between areas.
+  
+  (define x-meter-split (- x2 (+ b meter-width)))
+  
+  (define text-x1 (+ x1 fontheight))
   (define mutesolo-x1 (- x2 (get-mutesolo-width for-audiofiles)))
   
   (define enabled-button (<new> :checkbox gui x1 y1 text-x1 y2
@@ -83,16 +93,36 @@
 
   (define mutesolo-area (<new> :mute-solo-buttons gui
                                mutesolo-x1 y1
-                               x2 y2
+                               x-meter-split y2
                                instrument-id
                                :use-single-letters #t
                                :stack-horizontally #t
                                :seqtracknum seqtracknum))
-  
+
   (add-sub-area-plain! enabled-button)
   (add-sub-area-plain! name-area)
   (add-sub-area-plain! mutesolo-area)
+
+  (define vam #f)
+
+  (define-override (about-to-be-removed-callback)
+    (when vam
+      (define removed (<gui> :remove-vertical-audio-meter vam #f))
+      ;;  (c-display "   " seqtracknum ": ! Removing vam" vam ". Removed:" removed))
+      )
+    )
   
+  (define-override (has-been-moved)
+    (when vam
+      (define removed (<gui> :remove-vertical-audio-meter vam #f))
+      ;;  (c-display "   " seqtracknum ": Removing vam" vam ". Removed:" removed))
+      )
+    
+    (when for-audiofiles      
+      (set! vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) (+ b x-meter-split) y1 x2 y2))
+      ;;(c-display "   " seqtracknum ": Added vam" vam " y1/y2:" y1 y2)
+      ))
+
   ;;(c-display seqtracknum text-x1 y1 x2 y2)
   
   )
@@ -107,6 +137,8 @@
 
 (def-area-subclass (<seqtracks-config-area> :gui :x1 :y1 :x2 :y2)
 
+  (define fontheight (get-fontheight))
+  
   (define num-settings-buttons 8)
 
   (define curr-entry-num 0)
@@ -117,9 +149,9 @@
     ;;(c-display "\n\n\n---------------------- num entries:" (length entries) "-----------------------\n\n\n")
     (remove-sub-areas!)
 
-    (define border 2)
+    (define border 1) ;; If changing here, also change "font_height + 1" in api_gui.cpp.
   
-    (define scroll-y1 (+ y1 (get-fontheight) border))
+    (define scroll-y1 (+ y1 fontheight border)) ;; If changing here, also change "font_height + 1" in api_gui.cpp.
     (define radio-x1 (+ x1 (/ width (+ 1 num-settings-buttons))))
     (define radio-y2 (- scroll-y1 border))
 
@@ -150,7 +182,7 @@
     (define curr-x2 -10000000)
     (define curr-entries #f)
 
-    (define entry-height (* 1.2 (get-fontheight)))
+    (define entry-height (* 1.2 fontheight))
     
     (set! vertical-list-area (<new> :vertical-list-area2 gui x1 scroll-y1 x2 y2
                                     :num-sub-areas (<ra> :get-num-seqtracks)
@@ -191,21 +223,16 @@
   (define area (<new> :use-first-subarea-state-as-state-area gui x1 y1 x2 y2))
   (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state))
   
-  '(area :add-mouse-cycle! (lambda (button x* y*)
-                             (and (not (<ra> :shift-pressed))
-                                  (= button *right-button*)
-                                  (begin
-                                    (show-blocklist-popup-menu)
-                                    #t))))
-  
-  ;;(c-display "state:" state)
-  
   (define (update)
-    (define state (area :get-state))
-    (area :remove-sub-areas!)
-    (area :get-position
-          (lambda (x1 y1 x2 y2 width height)
-            (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state)))))
+    ;;(if (not (area :is-alive))
+    ;;    (c-display "------------Hello"))
+    (when (area :is-alive)
+      ;;(c-display "-----------------------------------UPDTAE!")
+      (define state (area :get-state))
+      (area :remove-sub-areas!)
+      (area :get-position
+            (lambda (x1 y1 x2 y2 width height)
+              (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state))))))
 
   (set! recreate-seqtracks-config-area update)
   area
