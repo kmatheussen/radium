@@ -1692,6 +1692,10 @@
 
   (<gui> :remove-all-vertical-audio-meters gui)
 
+  (if (and (defined? 'recreate-seqtracks-config-area)
+           recreate-seqtracks-config-area)
+      (recreate-seqtracks-config-area))
+  
   (if *use-testgui*
       (begin
 

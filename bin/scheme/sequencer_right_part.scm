@@ -821,8 +821,8 @@
      (*sequencer-right-part-area* :add-sub-area-plain! (create-sequencer-right-part-area gui x1 y1 x2 y2 state))
      ))
 
-  (if (and (defined? 'recreate-seqtracks-config-area)
-           recreate-seqtracks-config-area)
-      (recreate-seqtracks-config-area))
+  ;;(if (and (defined? 'recreate-seqtracks-config-area)
+  ;;         recreate-seqtracks-config-area)
+  ;;    (recreate-seqtracks-config-area))
   )
 
