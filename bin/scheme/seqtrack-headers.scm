@@ -205,9 +205,12 @@
 
 
 
-(define (get-mutesolo-width for-audiofiles)
+(delafina (get-mutesolo-width :for-audiofiles
+                              :include-rec-button #t)
   (myfloor (* 1.8 (<gui> :text-width (if for-audiofiles
-                                         "H R M S "
+                                         (if include-rec-button
+                                             "H R M S "
+                                             "H M S ")
                                          "M H ")))))
 
 ;; There's a lot of copy-paste code from mixer-strip.scm:create-mixer-strip-mutesolo here, but I hope this code will eventually replace mixer-strip.scm:create-mixer-strip-mutesolo some day
@@ -215,7 +218,8 @@
                                         :instrument-id
                                         :use-single-letters 
                                         :stack-horizontally
-                                        :seqtracknum)
+                                        :seqtracknum
+                                        :include-rec-button #t)
   
   (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
   (define for-blocks (not for-audiofiles))
@@ -272,7 +276,9 @@
   
   (layout-func x1 y1 x2 y2
                (if for-audiofiles
-                   '(record mute solo height)
+                   (if include-rec-button
+                       '(record mute solo height)
+                       '(mute solo height))
                    '(mute height))
                :spacing -1
                :callback

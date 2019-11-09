@@ -5565,6 +5565,9 @@ void SEQUENCER_update(uint32_t what){
     g_sequencer_widget->position_widgets();
     
   } else {
+
+    if (what & SEQUPDATE_REMAKE_RIGHT_PART)
+      S7CALL2(void_void, "FROM_C-reconfigure-sequencer-right-part");
     
     if (what & SEQUPDATE_HEADERS)
       g_sequencer_widget->update(0, 0,

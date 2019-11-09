@@ -33,7 +33,8 @@
   (define x-meter-split (- x2 (+ b meter-width)))
   
   (define text-x1 (+ x1 fontheight))
-  (define mutesolo-x1 (- x2 (get-mutesolo-width for-audiofiles)))
+  (define mutesolo-x1 (- x2 (get-mutesolo-width for-audiofiles
+                                                :include-rec-button (<ra> :seqtrack-is-recording seqtracknum #f))))
   
   (define enabled-button (<new> :checkbox gui x1 y1 text-x1 y2
                                 :is-selected-func (lambda ()
@@ -97,7 +98,8 @@
                                instrument-id
                                :use-single-letters #t
                                :stack-horizontally #t
-                               :seqtracknum seqtracknum))
+                               :seqtracknum seqtracknum
+                               :include-rec-button (<ra> :seqtrack-is-recording seqtracknum #f)))
 
   (add-sub-area-plain! enabled-button)
   (add-sub-area-plain! name-area)
