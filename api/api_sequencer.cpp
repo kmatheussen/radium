@@ -746,10 +746,16 @@ void setSeqtrackIsRecording(int seqtracknum, bool is_recording){
   SEQTRACK_set_recording(seqtrack, is_recording);
 }
 
-bool seqtrackIsRecording(int seqtracknum){
-  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+bool seqtrackIsRecording(int seqtracknum, bool throw_error_if_seqtrack_is_not_for_audio){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return false;
+
+  if (seqtrack->for_audiofiles==false){
+    if (throw_error_if_seqtrack_is_not_for_audio)
+      handleError("Sequencer track %d is not for audio files", seqtracknum);
+    return false;
+  }
 
   return seqtrack->is_recording;
 }

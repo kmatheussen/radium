@@ -2550,7 +2550,7 @@ void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
   
   seqtrack->is_recording = is_recording;
 
-  SEQUENCER_update(SEQUPDATE_HEADERS);
+  SEQUENCER_update(SEQUPDATE_HEADERS | SEQUPDATE_REMAKE_RIGHT_PART);
 }
 
 
