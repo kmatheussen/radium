@@ -9,6 +9,10 @@
 (my-require 'main_layout.scm)
 (my-require 'sequencer_upper_part.scm)
 
+(<declare-variable> get-mutesolo-width)
+(<declare-variable> get-seqtrack-background-color)
+(my-require 'seqtracks_config.scm)
+
 
 ;;(define *curr-seqtrack-color* "#7c3a3a")
 ;;(define *curr-seqtrack-color* "#776757")

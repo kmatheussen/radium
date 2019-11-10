@@ -1806,7 +1806,7 @@ api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.cpp
 api_sequencer.o:  $(BUILD_DEPENDENCIES)  $(API)api_sequencer.cpp $(API)api_sequencer_proc.h  audio/Envelope.hpp common/seqblock_automation_proc.h embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_sequencer.cpp $(QTOPT)
 
-api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp
+api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) -Wno-null-dereference
 

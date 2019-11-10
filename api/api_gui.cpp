@@ -81,6 +81,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_bottom_bar_widget_proc.h"
 #include "../Qt/Qt_MyQScrollBar.hpp"
 #include "../Qt/FileRequester.hpp"
+#include "../Qt/HashVector.hpp"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -402,7 +403,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
   class VerticalAudioMeterPainter;
 
-  static QVector<VerticalAudioMeterPainter*> g_active_vertical_audio_meters;
+  static radium::HashVector<int64_t, VerticalAudioMeterPainter*> g_active_vertical_audio_meters;
 
   static int64_t g_vamp_id = 0;
 
@@ -487,11 +488,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       R_ASSERT_RETURN_IF_FALSE(get_audio_meter_peaks().num_channels == _num_channels);
 
-      g_active_vertical_audio_meters.push_back(this);
+      g_active_vertical_audio_meters.put(_id, this);
     }
 
     ~VerticalAudioMeterPainter(){
-      R_ASSERT(g_active_vertical_audio_meters.removeOne(this));
+      R_ASSERT(g_active_vertical_audio_meters.remove(_id));
       
       free(_pos);
       free(_falloff_pos);
@@ -1520,7 +1521,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 #if !defined(RELEASE)
       for(const auto *vamp2 : _vamps){
         if (vamp->_rect.intersects(vamp2->_rect))
-          handleError("Error: Vertical audio meters overlaps with antoher vertical audio meter 1: (%d, %d -> %d, %d) 2: (%d, %d -> %d, %d)", vamp->_rect.x(), vamp->_rect.y(), vamp->_rect.right(), vamp->_rect.top(), vamp2->_rect.x(), vamp2->_rect.y(), vamp2->_rect.right(), vamp2->_rect.top());
+          GFX_addMessage("Error: Vertical audio meters overlaps with another vertical audio meter 1: (%d, %d -> %d, %d) 2: (%d, %d -> %d, %d)",
+                         vamp->_rect.x(), vamp->_rect.y(), vamp->_rect.x() + vamp->_rect.width(), vamp->_rect.y()+vamp->_rect.height(),
+                         vamp2->_rect.x(), vamp2->_rect.y(), vamp2->_rect.x() + vamp2->_rect.width(), vamp2->_rect.y()+vamp2->_rect.height()
+                         );
       }
 #endif
 
@@ -7071,27 +7075,30 @@ int64_t gui_addVerticalAudioMeter(int64_t guinum, int64_t instrument_id, double 
 }
 
 static VerticalAudioMeterPainter *get_vamp(int64_t vap){
-  for(auto *vamp : g_active_vertical_audio_meters)
-    if (vamp->_id == vap)
-      return vamp;
-
-  return NULL;
+  return g_active_vertical_audio_meters.get(vap, NULL);
 }
                 
 bool gui_removeVerticalAudioMeter(int64_t vap, bool throw_error_if_not_found){
   auto *vamp = get_vamp(vap);
-  if (vamp != NULL){
-    Gui *gui = g_guis.value(vamp->_guinum);
-    if(gui==NULL)
-      R_ASSERT(false);
-    else {
-      gui->deleteVamp(vamp);
-      return true;
-    }
-  }
+  //fprintf(stderr,"VAMP: %p. Contains: %d\n", vamp,g_active_vertical_audio_meters.contains(vap));
+  
+  if (vamp==NULL) {
     
-  if (throw_error_if_not_found)
-    handleError("gui_removeVerticalAudioMeter: vertical audio meter %d not found", (int)vap);
+    if (throw_error_if_not_found)
+      handleError("gui_removeVerticalAudioMeter: vertical audio meter %d not found", (int)vap);
+    
+    return false;
+  }
+
+  Gui *gui = g_guis.value(vamp->_guinum);
+  if(gui==NULL)
+    R_ASSERT(false);
+  else {
+    int s1 = g_active_vertical_audio_meters.size();
+    gui->deleteVamp(vamp);
+    R_ASSERT(g_active_vertical_audio_meters.size() == s1-1);
+    return true;
+  }
   
   return false;
 }
