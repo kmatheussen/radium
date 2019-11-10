@@ -957,6 +957,7 @@
 (def-area-subclass (<seqtrack-header> :gui :x1 :y1 :x2 :y2
                                       :use-two-rows
                                       :show-panner
+                                      :bottom-visible-y2
                                       :seqtracknum)
 
   (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
@@ -1064,8 +1065,11 @@
                                   :seqtracknum seqtracknum
                                   )))
 
-  (if for-audiofiles
-      (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) (+ b x-meter-split) y1 x2 y2))
+  (when for-audiofiles
+    (define vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) (+ b x-meter-split) y1 x2 y2))
+    (when (> y2 bottom-visible-y2)
+      (<gui> :set-vertical-audio-meter-clip-rect vam x1 y1 x2 bottom-visible-y2))
+    )
 
   ;;(define vam2 (<gui> :add-vertical-audio-meter gui instrument-id (- x2 8) y1 x2 y2))
   
@@ -1556,7 +1560,7 @@
             
             (if (or (not (<ra> :seqtrack-for-audiofiles seqtracknum))
                     (>= (<ra> :get-seqtrack-instrument seqtracknum) 0))
-                (header-area :add-sub-area-plain! (<new> :seqtrack-header gui seqtrack-x1 sy1 x2 sy2 use-two-rows show-panner seqtracknum)))
+                (header-area :add-sub-area-plain! (<new> :seqtrack-header gui seqtrack-x1 sy1 x2 sy2 use-two-rows show-panner (- ty2 1) seqtracknum)))
             
             (loop (1+ seqtracknum))))))
 

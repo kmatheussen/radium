@@ -1279,13 +1279,19 @@ namespace radium{
     const bool _was_clipping;
     const QRegion _prev_clip_region;
 
+    bool _doit;
+    
   public:
     
-    ScopedQClipRect(QPainter &p, const QRectF &rect)
+    ScopedQClipRect(QPainter &p, const QRectF &rect, bool doit=true)
       : _p(p)
       , _was_clipping(p.hasClipping())
       , _prev_clip_region(_was_clipping ? p.clipRegion() : QRegion())
+      , _doit(doit)
     {
+      if (!_doit)
+        return;
+   
       if (_was_clipping)
         p.setClipRect(rect, Qt::IntersectClip);
       else{
@@ -1299,6 +1305,9 @@ namespace radium{
     {}
     
     ~ScopedQClipRect(){
+      if (!_doit)
+        return;
+      
       if(_was_clipping)
         _p.setClipRegion(_prev_clip_region);
       else      

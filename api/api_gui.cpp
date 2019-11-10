@@ -426,6 +426,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   public:
     int64_t _guinum;
 
+    QRect _clip_rect;
+    
   private:
     
     float _x1, _y1, _x2, _y2;
@@ -750,6 +752,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return;
       }
 
+      radium::ScopedQClipRect scoped_clip_rect(p, _clip_rect, !_clip_rect.isNull());
+      
       p.setRenderHints(QPainter::Antialiasing,true);
 
       QColor qcolor1("black");
@@ -1609,29 +1613,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         R_ASSERT_NON_RELEASE(false);
         return;
       }
-
-      bool do_sequencer_clipping = widget==SEQUENCER_WIDGET_get_widget();
-            
-      if (do_sequencer_clipping){
-
-        double font_height = 4 + root->song->tracker_windows->systemfontheight; // if changing 4+systemfontheight, also change get-fontheight in gui.scm
-                                                                                              
-        // Hack to avoid vamps to be painted on top of the "+A a" button, and the dragger.
-        float y1 = SEQTIMELINE_get_y2() - SEQUENCER_get_y1();
-        float y2 = SEQNAV_get_y2() - SEQUENCER_get_y1() - 1.5 * font_height; // If changing 1.5, also change 1.5 in "ty2" in <sequencer-left-part> in seqtrack-headers.scm. And 
-
-        QRegion region(QRect(0, y1, SEQTRACKS_get_x1() - SEQUENCER_get_x1(), y2-y1));
-
-        // Hack to avoid vamps to be painted above seqtrack config buttons in "tracks".
-        float y1_b = font_height + 1; // If changing font_height + 1 here, also change (+ y1 fontheight border) in seqtracks_config.scm
-        float y2_b = widget->height();
-        float x1_b = SEQTRACKS_get_x2() - SEQUENCER_get_x1();
-        region = region.united(QRect(x1_b, y1_b, widget->width() - x1_b, y2_b-y1_b));
-        
-        p.setClipRegion(region);
-        p.setClipping(true);
-      }
-        
+      
       int i=0;        
       for(auto *vamp : _vamps){
 
@@ -1641,9 +1623,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         
         i++;
       }
-
-      if (do_sequencer_clipping)
-        p.setClipping(false);
     }
     
     /************ MOUSE *******************/
@@ -7091,25 +7070,42 @@ int64_t gui_addVerticalAudioMeter(int64_t guinum, int64_t instrument_id, double 
   return vamp->_id;
 }
 
+static VerticalAudioMeterPainter *get_vamp(int64_t vap){
+  for(auto *vamp : g_active_vertical_audio_meters)
+    if (vamp->_id == vap)
+      return vamp;
+
+  return NULL;
+}
+                
 bool gui_removeVerticalAudioMeter(int64_t vap, bool throw_error_if_not_found){
-  for(auto *vamp : g_active_vertical_audio_meters){
-    if (vamp->_id == vap){
-      Gui *gui = g_guis.value(vamp->_guinum);
-      if(gui==NULL)
-        R_ASSERT(false);
-      else {
-        gui->deleteVamp(vamp);
-        return true;
-      }
+  auto *vamp = get_vamp(vap);
+  if (vamp != NULL){
+    Gui *gui = g_guis.value(vamp->_guinum);
+    if(gui==NULL)
+      R_ASSERT(false);
+    else {
+      gui->deleteVamp(vamp);
+      return true;
     }
   }
-
+    
   if (throw_error_if_not_found)
     handleError("gui_removeVerticalAudioMeter: vertical audio meter %d not found", (int)vap);
   
   return false;
 }
                                
+void gui_setVerticalAudioMeterClipRect(int64_t vap, double x1, double y1, double x2, double y2){
+  auto *vamp = get_vamp(vap);
+  if (vamp == NULL){
+    handleError("gui_setVerticalAudioMeterClipRect: vertical audio meter %d not found", (int)vap);
+    return;
+  }
+
+  vamp->_clip_rect = QRect(x1, y1, x2-x1, y2-y1);
+}
+
 
 int gui_removeAllVerticalAudioMeters(int64_t guinum){
   Gui *gui = get_gui(guinum);

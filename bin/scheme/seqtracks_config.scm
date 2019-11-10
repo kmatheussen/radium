@@ -12,6 +12,7 @@
 !!#
 
 (def-area-subclass (<seqtrack-config-entry> :gui :x1 :y1 :x2 :y2
+                                            :top-visible-y1
                                             :seqtracknum)
   
   (define is-current (= (<ra> :get-curr-seqtrack) seqtracknum))
@@ -123,7 +124,10 @@
     (when for-audiofiles      
       (set! vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) (+ b x-meter-split) y1 x2 y2))
       ;;(c-display "   " seqtracknum ": Added vam" vam " y1/y2:" y1 y2)
-      ))
+      (when (< y1 top-visible-y1)
+        (<gui> :set-vertical-audio-meter-clip-rect vam x1 top-visible-y1 x2 y2)
+        ;;(c-display "set clip rect:" x1 top-visible-y1 x2 y2))
+        )))
 
   ;;(c-display seqtracknum text-x1 y1 x2 y2)
   
@@ -191,7 +195,7 @@
                                     :get-sub-area-height entry-height
                                     :create-sub-area
                                     (lambda (seqtracknum x1 x2)
-                                      (<new> :seqtrack-config-entry gui x1 0 x2 entry-height seqtracknum))))
+                                      (<new> :seqtrack-config-entry gui x1 0 x2 entry-height scroll-y1 seqtracknum))))
                                       
     (add-sub-area-plain! vertical-list-area)
     )
