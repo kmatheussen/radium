@@ -1497,7 +1497,7 @@
 
   (define topmost-seqtrack (<ra> :get-topmost-visible-seqtrack))
   
-  (define seqtrack0-y1 (<ra> :get-seqtrack-y1 topmost-seqtrack))
+  (define seqtrack0-y1 (<ra> :get-seqtracks-y1)) ;;(<ra> :get-seqtrack-y1 topmost-seqtrack))
   
   (define b 0)
   (define b/2 (/ b 2))
@@ -1529,7 +1529,7 @@
              (y1 (+ y1 timeline-height))
              (header-height (- seqtrack0-y1 (<ra> :get-seqtimeline-area-y2)))
              (y2 (+ y1 header-height)))
-        ;;(c-display "timeline-height:" timeline-height ". header-height:" header-height)
+        ;;(c-display "timeline-height:" timeline-height ". header-height:" header-height ". topmost seqtrack:" topmost-seqtrack". stuff: " seqtrack0-y1 (<ra> :get-seqtimeline-area-y2))
         (add-sub-area-plain! (<new> :sequencer-timeline-headers gui x1 y1 x2 y2))))
   
   (define header-area (<new> :area gui x1 topbar-y2 x2 (- ty2 1)))
@@ -1541,7 +1541,8 @@
       (define sy1 (+ ty1 (- (seqtrack-box :y1) seqtrack0-y1)))
       (define sy2 (+ ty1 (- (seqtrack-box :y2) seqtrack0-y1)))
 
-      (if (< sy2 topbar-y2)
+      (if (or (< sy2 topbar-y2)
+              (not (<ra> :get-seqtrack-visible seqtracknum)))
           (loop (1+ seqtracknum))
           (when (< sy1 ty2)
             ;;(set! sy1 (scale seqtracknum 0 num-seqtracks ty1 ty2))
