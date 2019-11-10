@@ -554,6 +554,38 @@ void setSeqtrackVisible(int seqtracknum, bool is_visible){
 
   SEQUENCER_update(SEQUPDATE_TRACKORDER);
 }
+
+void setSeqtracksVisible(dynvec_t seqtracknums, bool is_visible){
+
+  bool has_made_undo = false;
+
+  for(const dyn_t &dyn : seqtracknums){
+    if (dyn.type != INT_TYPE){
+      handleError("setSeqtracksVisible: Expected list of integers, but one element is a %s\n", DYN_type_name(dyn));
+      return;
+    }
+    
+    int seqtracknum = dyn.int_number;
+
+    struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+    if (seqtrack==NULL)
+      return;
+
+    if (seqtrack->is_visible != is_visible) {
+
+      if (has_made_undo==false){
+        ADD_UNDO(Sequencer());
+        has_made_undo = true;
+      }
+  
+      seqtrack->is_visible = is_visible;
+
+    }
+  }
+
+  if (has_made_undo)
+    SEQUENCER_update(SEQUPDATE_TRACKORDER);
+}
   
 bool getSeqtrackVisible(int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
