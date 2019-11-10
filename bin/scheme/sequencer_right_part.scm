@@ -2,7 +2,6 @@
 
 (my-require 'gui.scm)
 (my-require 'area.scm)
-(my-require 'seqtracks_config.scm)
 
 
 ;; Note: Playlist/blocklist is also here.
