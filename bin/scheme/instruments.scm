@@ -1153,7 +1153,7 @@
 
 (delafina (get-instrument-popup-entries :instrument-id
                                         :parentgui
-                                        :include-delete-and-replace #t
+                                        :include-replace #t
                                         :must-have-inputs #f :must-have-outputs #f)
 
   (list
@@ -1172,12 +1172,11 @@
                 "------------------"))))
    
    (list "Delete"
-         :enabled (and include-delete-and-replace
-                       (not (<ra> :instrument-is-permanent instrument-id)))
+         :enabled (not (<ra> :instrument-is-permanent instrument-id))
          (lambda ()
            (<ra> :delete-instrument instrument-id)))
    (list "Replace"
-         :enabled (and include-delete-and-replace
+         :enabled (and include-replace
                        (not (<ra> :instrument-is-permanent instrument-id)))
          (lambda ()           
            (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs must-have-inputs :must-have-outputs must-have-outputs :parentgui parentgui)))
@@ -1191,12 +1190,12 @@
    "-----------"
    
    (list "Load Preset (.rec)" :enabled instrument-id
-         :enabled (and include-delete-and-replace
+         :enabled (and include-replace
                        (not (<ra> :instrument-is-permanent instrument-id)))
          (lambda ()
            (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
    (list "Save Preset (.rec)" :enabled instrument-id
-         :enabled (and include-delete-and-replace
+         :enabled (and include-replace
                        (not (<ra> :instrument-is-permanent instrument-id)))
          (lambda ()
            (<ra> :save-instrument-preset (list instrument-id) parentgui)))

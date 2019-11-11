@@ -1339,13 +1339,15 @@ bool AUDIO_is_permanent_patch(struct Patch *patch){
   if(plugin==get_main_pipe())
     return true;
 
-  else if (!strcmp(plugin->type->type_name,"Bus"))
+  else if (!strcmp(plugin->type->type_name,"Bus")) {
     return true;
 
-  else if (!strcmp(plugin->type->type_name,SEQTRACKPLUGIN_NAME)){
+  /*
+  } else if (!strcmp(plugin->type->type_name,SEQTRACKPLUGIN_NAME)){
     printf("NUM samples: %d\n", SEQTRACKPLUGIN_get_num_samples(plugin));
     return false==SEQTRACKPLUGIN_can_be_deleted(plugin);
-
+  */
+  
   }else
     return false;
 }
