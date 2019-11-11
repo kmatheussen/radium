@@ -49,7 +49,29 @@
                                 :text (lambda ()
                                         (if (<ra> :get-seqtrack-visible seqtracknum)
                                             "✓"
-                                            " "))))
+                                            " "))
+                                :right-mouse-clicked-callback (lambda ()
+                                                                (popup-menu
+                                                                 "------Enable/disable"
+                                                                 (list "Enable all"
+                                                                       :shortcut "Ctrl + Click"
+                                                                       (lambda ()
+                                                                         (<ra> :set-seqtracks-visible (iota (<ra> :get-num-seqtracks)) #t)))
+                                                                 (list "Disable all"
+                                                                       :shortcut "Ctrl + Click"                                                                  
+                                                                       (lambda ()
+                                                                         (<ra> :set-seqtracks-visible (iota (<ra> :get-num-seqtracks)) #f)))
+                                                                 ;(list (<-> "--------------------\"" (<ra> :get-seqtrack-name seqtracknum) "\"")
+                                                                 ;      (get-delete-all-pauses-menu-entry seqtracknum)
+                                                                 ;      (get-seqtrack-popup-menu-entries seqtracknum)
+                                                                 ;      (and for-audiofiles
+                                                                 ;           (get-instrument-popup-entries instrument-id gui :include-replace #f))
+                                                                 ;      (get-seqtrack-config-popup-menu-entries)
+                                                                 ;      )
+                                                                 )
+                                                                )
+                                ))
+
   (define name-area (<new> :text-area gui text-x1 y1 mutesolo-x1 y2;;text-x1 y1 x2 y2
                            :text (<-> seqtracknum ". " (<ra> :get-seqtrack-name seqtracknum))
                            :background-color (lambda ()
@@ -68,6 +90,17 @@
                              (< seqtracknum (<ra> :get-topmost-visible-seqtrack)))
                          (<ra> :set-topmost-visible-seqtrack seqtracknum))
                      (<ra> :set-curr-seqtrack seqtracknum)
+
+                     (if (= button *right-button*)
+                         (popup-menu
+                          (list (<-> "--------------------\"" (<ra> :get-seqtrack-name seqtracknum) "\"")
+                                (get-delete-all-pauses-menu-entry seqtracknum)
+                                (get-seqtrack-popup-menu-entries seqtracknum)
+                                (and for-audiofiles
+                                     (get-instrument-popup-entries instrument-id gui :include-replace #f))
+                                (get-seqtrack-config-popup-menu-entries)
+                                )))
+
                      #t)
                    #f)))
 
@@ -215,6 +248,11 @@
     ;;(update-areas!)
     )
   
+  (add-delta-mouse-cycle!
+   :press-func (lambda (button x* y*)
+                 (if (= button *right-button*)
+                     (popup-menu (get-seqtrack-config-popup-menu-entries)))
+                 #f))
 
   )
 

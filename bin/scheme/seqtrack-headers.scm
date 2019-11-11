@@ -48,7 +48,7 @@
    (and effect-name
         (get-effect-popup-entries instrument-id effect-name))
    
-   (get-instrument-popup-entries instrument-id parentgui :include-delete-and-replace #f)
+   (get-instrument-popup-entries instrument-id parentgui :include-replace #f)
    
    "------------Seqtrack"
    (get-seqtrack-popup-menu-entries seqtracknum)))
@@ -1269,34 +1269,8 @@
 (def-area-subclass (<sequencer-left-part-buttons> :gui :x1 :y1 :x2 :y2)
 
   (define (callback type)
-    (c-display "\n\n\nTYPE:" type "\n\n\n")
-    (cond ((eq? type 'InsertE)
-           (<ra> :insert-seqtrack #f))
-          ((or (eq? type 'InsertA)
-               (eq? type 'InsertB))
-           (define seqtracknum (<ra> :get-curr-seqtrack))
-           (if (and (= 0 seqtracknum)
-                    (not (<ra> :seqtrack-for-audiofiles 0)))
-               (ask-user-about-first-audio-seqtrack
-                (lambda (doit)
-                  (if doit
-                      (<ra> :insert-seqtrack #t seqtracknum (eq? type 'InsertB)))))
-               (<ra> :insert-seqtrack #t seqtracknum (eq? type 'InsertB))))
-          ((eq? type '-)
-           (when (> (<ra> :get-num-seqtracks) 1)
-             (define seqtracknum (<ra> :get-curr-seqtrack))
-             (<declare-variable> *current-seqblock-info*)
-             (set! *current-seqblock-info* #f)
-             (delete-seqtrack-and-maybe-ask seqtracknum)))
-          ((eq? type 'AppendE)
-           (<ra> :append-seqtrack #f))
-          ((eq? type 'AppendA)
-           (<ra> :append-seqtrack #t))
-          ((eq? type 'AppendB)
-           (<ra> :append-seqtrack #t #t))
-          (else
-           (assert #f))))
-
+    (insert-or-append-seqtrack type))
+  
   (define-override (get-nonpress-mouse-cycle x* y*)
     (when (inside? x* y*)
       (set-mouse-pointer ra:set-normal-mouse-pointer gui))
