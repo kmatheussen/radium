@@ -1,3 +1,47 @@
+Changes 5.9.79 -> 5.9.81:
+* Sequencer/Mixer: Made default Bus color bluish
+  instead of greenish to make it easier to see mute
+  status.
+* Sequencer: Tweak borders a little bit.
+* Linux: Possible fix for unnecessary CPU usage.
+* Sequencer: Write "H0", "H1", "H2", or "H3" instead
+  of just "H" for the track height buttons.
+* Sequencer: Let mouse wheel scroll 3 entries up or
+  down. Earlier it only scrolled 1.
+* Playlist: Fix wobbly text when moving vertical
+  scrollbar.
+* Sequencer: New "Tracks" tab to quickly configure
+  visibility, mute, solo, record, and height of all
+  seqtracks.
+* Sequencer: Change the name of the "Browser" tab to
+  "Files".
+* Sequencer: Various GUI optimizations and minor
+  fixes.
+* Mixer: Various GUI optimizations and minor fixes.
+* Sequencer: Quickly change height of a track by
+  scrolling mouse wheel on top of the "H" button.
+* Sequencer: Fix current seqtrack sometimes changing
+  in non-logical ways when clicking inside the
+  right-side tabs.
+* Sequencer: Fix first letter not being readable for
+  the current editor block in the "Blocks" tab
+* Sequencer: Fix first letter not being readable for
+  the audio file in the "Sounds" tab.
+* Sequencer: Fix error messages popping up if
+  right-clicking a seqtrack number.
+* General: Fix potential memory leak in sequencer.
+* API:
+  * New: setSeqtrackVisible, getSeqtrackVisible,
+    gui_supportsCallbacks, getLowestVisibleSeqtrack,
+    resetSeqtrackConfig, setCurrSeqtrackConfigNum,
+    getCurrSeqtrackConfigNum, seqtrackConfigIsUsed,
+    setSeqtracksVisible.
+  * Add optional argument
+    "throw_error_if_seqtrack_is_not_for_audio" to
+    seqtrackIsRecording.
+
+
+
 Changes 5.9.77 -> 5.9.79:
 * Sequencer: Let all new audio seqtracks have the
   same initial color. This color is configurable.
