@@ -450,6 +450,16 @@ int getLowestVisibleSeqtrack(void){
 }
 
 int getTopmostVisibleSeqtrack(void){
+  /*
+  for(int seqtracknum=root->song->topmost_visible_seqtrack ; seqtracknum<root->song->seqtracks.num_elements ; seqtracknum++){
+    const struct SeqTrack *seqtrack = (const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
+    //printf("   Checking %d: %d\n", seqtracknum, seqtrack->is_visible);
+    if (seqtrack->is_visible)
+      return seqtracknum;
+  }
+  return root->song->seqtracks.num_elements-1;
+  */
+
   return root->song->topmost_visible_seqtrack;
 }
 
@@ -458,8 +468,24 @@ void setTopmostVisibleSeqtrack(int new_topmost){
     handleError("setTopmostVisibleSeqtrack: Illegal seqtracknum: %d", new_topmost);
     return;
   }
-        
-  if(new_topmost==getTopmostVisibleSeqtrack())
+
+  /*
+  for(int seqtracknum=new_topmost ; seqtracknum<root->song->seqtracks.num_elements ; seqtracknum++){
+    new_topmost=seqtracknum;
+    
+    const struct SeqTrack *seqtrack = (const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
+    printf("   Checking %d: %d\n", seqtracknum, seqtrack->is_visible);
+    if (seqtrack->is_visible)
+      break;
+  }
+
+  {
+    const struct SeqTrack *seqtrack = (const struct SeqTrack *)root->song->seqtracks.elements[new_topmost];
+    printf("                                     Setting topmost to %d. Lowest reasonable: %d. visible: %d\n", new_topmost, getTopmostVisibleSeqtrack(), seqtrack->is_visible);
+  }
+  */
+  
+  if(new_topmost==root->song->topmost_visible_seqtrack)
     return;
 
   new_topmost = R_MIN(SEQUENCER_get_lowest_reasonable_topmost_seqtracknum(), new_topmost);

@@ -2493,7 +2493,10 @@ public:
     double height = 0;
     
     for(int seqtracknum=num_seqtracks-1;seqtracknum>=0;seqtracknum--){
-      //const struct SeqTrack *seqtrack = (const struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];      
+      const struct SeqTrack *seqtrack = (const struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+      if (!seqtrack->is_visible)
+        continue;
+      
       height += heights[seqtracknum];
       //printf("%d: height %f. sum: %f. available_space: %f\n",seqtracknum,height,heights[seqtracknum], available_space);
       if(height > available_space)
