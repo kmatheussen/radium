@@ -2114,9 +2114,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       if(g_delayed_resized_guis.contains(this))
         return; // already scheduled.
 
-      if(g_num_running_resize_events > 1 || myprivate::g_num_visiting_event_handlers>1 || (g_radium_runs_custom_exec && g_and_its_not_safe_to_paint)){
+      // Doing stuff (calling any scheme callback) inside the resize event can always be dangerous, so we schedule no matter what.
+      if(true){ //g_num_running_resize_events > 1 || myprivate::g_num_visiting_event_handlers>1 || (g_radium_runs_custom_exec && g_and_its_not_safe_to_paint)){
 #if !defined(RELEASE)
-        printf("  Aiai: %d %d %d %d\n", g_num_running_resize_events, myprivate::g_num_visiting_event_handlers, g_radium_runs_custom_exec, g_and_its_not_safe_to_paint);
+        if(g_num_running_resize_events > 1 || myprivate::g_num_visiting_event_handlers>1 || (g_radium_runs_custom_exec && g_and_its_not_safe_to_paint))
+          printf("  Aiai: %d %d %d %d\n", g_num_running_resize_events, myprivate::g_num_visiting_event_handlers, g_radium_runs_custom_exec, g_and_its_not_safe_to_paint);
 #endif
         g_delayed_resized_guis.push_back(this);
         if (g_delayed_resizing_timer_active==false){
@@ -2126,7 +2128,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return;
       }
 
-      do_the_resize(event->size().width(), event->size().height());
+      //do_the_resize(event->size().width(), event->size().height());
     }
 
     void addResizeCallback(func_t* func){
