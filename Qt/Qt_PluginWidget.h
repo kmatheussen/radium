@@ -225,7 +225,7 @@ class ParamWidget : public QWidget {
         for(;;){
           QFontMetrics fm(the_font);
           
-          if (fm.height() <= height() && fm.width(text) < width())
+          if (fm.height() <= height() && fm.boundingRect(text).width() < width())
             break;
           
           int size = the_font.pointSize();

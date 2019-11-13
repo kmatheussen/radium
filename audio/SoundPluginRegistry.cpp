@@ -158,7 +158,7 @@ struct Favourites{
       }
     }END_VECTOR_FOR_EACH;
 
-    qSort(hepps.begin(), hepps.end(), compare_hepps);
+    std::sort(hepps.begin(), hepps.end(), compare_hepps);
   }
 
   void set_num_uses(SoundPluginType *type){

@@ -39,7 +39,7 @@ static bool can_fit(const QFont &font, const QString &text, int flags, int width
   QFontMetrics fm(font);
 
   // Not an optimization. Seems like this test sometimes returns true even if the code below returns false.
-  if (fm.width(text) < width && fm.height() < height)
+  if (fm.boundingRect(text).width() < width && fm.height() < height)
     return true;
 
   QRect rect = fm.boundingRect(0, 0, width, height, flags, text);
@@ -194,7 +194,7 @@ void setFontValues(struct Tracker_Windows *tvisual){
 
   QFontMetrics fm(font);
 
-  double width3           = R_MAX(fm.width("D#6"), R_MAX(fm.width("MUL"), fm.width("STP")));
+  double width3           = R_MAX(fm.boundingRect("D#6").width(), R_MAX(fm.boundingRect("MUL").width(), fm.boundingRect("STP").width()));
   tvisual->fontwidth      = (int)(width3/3.0) + 1;
   tvisual->org_fontheight = fm.height() - 1;
   tvisual->fontheight     = tvisual->org_fontheight;
@@ -228,7 +228,7 @@ void GFX_SetSystemFont(QFont font){
   QApplication::setFont(font);
   qApp->setFont(font);
 
-  printf("Raw font name: \"%s\". family name: %s, style: %s\n",font.rawName().toUtf8().constData(),font.family().toUtf8().constData(),font.styleName().toUtf8().constData());
+  //printf("Raw font name: \"%s\". family name: %s, style: %s\n",font.rawName().toUtf8().constData(),font.family().toUtf8().constData(),font.styleName().toUtf8().constData());
 
   {
     QFont write_font = font;
@@ -299,7 +299,7 @@ static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   release_keyboard_focus();
   //editor->setFont(editor->font);
 
-  printf("Raw font name: \"%s\"\n",editor->font.rawName().toUtf8().constData());
+  //printf("Raw font name: \"%s\"\n",editor->font.rawName().toUtf8().constData());
 
   setFontValues(tvisual);
   UpdateAllWBlockWidths(tvisual);
@@ -410,11 +410,11 @@ void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
 int GFX_get_text_width(struct Tracker_Windows *tvisual, const char *text){
   //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   const QFontMetrics fn = QFontMetrics(QApplication::font()); //editor->font);
-  return fn.width(text);
+  return fn.boundingRect(text).width();
 }
 
 static bool does_text_fit(const QFontMetrics &fn, const QString &text, int pos, int max_width){
-  return fn.width(text, pos) <= max_width;
+  return fn.boundingRect(text.right(text.size()-pos)).width() <= max_width;
 }
 
 static int average(int min, int max){

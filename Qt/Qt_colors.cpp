@@ -823,26 +823,26 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
     if(dynamic_cast<QComboBox*>(widget)!=NULL){
       c = get_qcolor(BUTTONS_COLOR_NUM);
 #if 0
-      c = mix_colors(c.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
+      c = mix_colors(c.lighter(70),QColor(98,59,33),0.55);//editor->colors[colnum].lighter(52);
       c.setAlpha(76);
 #endif
     }
 
     pal.setColor( QPalette::Active, QPalette::Background, b);
     pal.setColor( QPalette::Inactive, QPalette::Background, b);
-    pal.setColor( QPalette::Disabled, QPalette::Background, b.light(95));
+    pal.setColor( QPalette::Disabled, QPalette::Background, b.lighter(95));
 
     pal.setColor( QPalette::Active, QPalette::Button, c);
     pal.setColor( QPalette::Inactive, QPalette::Button, c);
-    pal.setColor( QPalette::Disabled, QPalette::Button, c.light(80));
+    pal.setColor( QPalette::Disabled, QPalette::Button, c.lighter(80));
 
     pal.setColor(QPalette::Active, QPalette::Base, c);
     pal.setColor(QPalette::Inactive, QPalette::Base, c);
-    pal.setColor(QPalette::Disabled, QPalette::Base, c.light(80));
+    pal.setColor(QPalette::Disabled, QPalette::Base, c.lighter(80));
 
-    pal.setBrush(QPalette::Highlight, (const QBrush&)QBrush(b.light(85)));
+    pal.setBrush(QPalette::Highlight, (const QBrush&)QBrush(b.lighter(85)));
 
-    pal.setColor(QPalette::Disabled, QPalette::Light, c.light(80));
+    pal.setColor(QPalette::Disabled, QPalette::Light, c.lighter(80));
 
     //pal.setBrush((QPalette::ColorGroup)QPalette::Button, QPalette::Highlight, (const QBrush&)QBrush(b.light(95)));
     //pal.setBrush(QPalette::Highlight, QPalette::Button, QBrush(c.light(80)));
@@ -852,13 +852,13 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
 #if 0
     pal.setColor(QPalette::Active, QPalette::Window, c);
     pal.setColor(QPalette::Inactive, QPalette::Window, c);
-    pal.setColor(QPalette::Disabled, QPalette::Window, c.light(80));
+    pal.setColor(QPalette::Disabled, QPalette::Window, c.lighter(80));
 #endif
 
 #if 0
     pal.setColor(QPalette::Active, QPalette::BrightText, c);
     pal.setColor(QPalette::Inactive, QPalette::BrightText, c);
-    pal.setColor(QPalette::Disabled, QPalette::BrightText, c.light(80));
+    pal.setColor(QPalette::Disabled, QPalette::BrightText, c.lighter(80));
 #endif
 
   }
@@ -871,32 +871,32 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
     //black.setAlpha(108);
 
     pal.setColor(QPalette::Active, QPalette::Foreground, c);
-    pal.setColor(QPalette::Inactive, QPalette::Foreground, c.light(93));
-    pal.setColor(QPalette::Disabled, QPalette::Foreground, c.light(80));
+    pal.setColor(QPalette::Inactive, QPalette::Foreground, c.lighter(93));
+    pal.setColor(QPalette::Disabled, QPalette::Foreground, c.lighter(80));
 
     pal.setColor(QPalette::Active, QPalette::Foreground, c);
-    pal.setColor(QPalette::Inactive, QPalette::Foreground, c.light(93));
-    pal.setColor(QPalette::Disabled, QPalette::Foreground, c.light(80));
+    pal.setColor(QPalette::Inactive, QPalette::Foreground, c.lighter(93));
+    pal.setColor(QPalette::Disabled, QPalette::Foreground, c.lighter(80));
 
     pal.setColor(QPalette::Active, QPalette::ButtonText, c);
-    pal.setColor(QPalette::Inactive, QPalette::ButtonText, c.light(93));
-    pal.setColor(QPalette::Disabled, QPalette::ButtonText, c.light(80));
+    pal.setColor(QPalette::Inactive, QPalette::ButtonText, c.lighter(93));
+    pal.setColor(QPalette::Disabled, QPalette::ButtonText, c.lighter(80));
 
     pal.setColor(QPalette::Active, QPalette::ButtonText, c);
-    pal.setColor(QPalette::Inactive, QPalette::ButtonText, c.light(93));
-    pal.setColor(QPalette::Disabled, QPalette::ButtonText, c.light(80));
+    pal.setColor(QPalette::Inactive, QPalette::ButtonText, c.lighter(93));
+    pal.setColor(QPalette::Disabled, QPalette::ButtonText, c.lighter(80));
 
     pal.setColor(QPalette::Active, QPalette::Text, c);
-    pal.setColor(QPalette::Inactive, QPalette::Text, c.light(90));
-    pal.setColor(QPalette::Disabled, QPalette::Text, c.light(80));
+    pal.setColor(QPalette::Inactive, QPalette::Text, c.lighter(90));
+    pal.setColor(QPalette::Disabled, QPalette::Text, c.lighter(80));
 
-    pal.setColor(QPalette::Active, QPalette::HighlightedText, c.light(100));
-    pal.setColor(QPalette::Inactive, QPalette::HighlightedText, c.light(90));
-    pal.setColor(QPalette::Disabled, QPalette::HighlightedText, c.light(80));
+    pal.setColor(QPalette::Active, QPalette::HighlightedText, c.lighter(100));
+    pal.setColor(QPalette::Inactive, QPalette::HighlightedText, c.lighter(90));
+    pal.setColor(QPalette::Disabled, QPalette::HighlightedText, c.lighter(80));
 
     pal.setColor(QPalette::Active, QPalette::Text, c);
-    pal.setColor(QPalette::Inactive, QPalette::Text, c.light(90));
-    pal.setColor(QPalette::Disabled, QPalette::Text, c.light(80));
+    pal.setColor(QPalette::Inactive, QPalette::Text, c.lighter(90));
+    pal.setColor(QPalette::Disabled, QPalette::Text, c.lighter(80));
   }
 }
 
