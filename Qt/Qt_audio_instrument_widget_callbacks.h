@@ -240,7 +240,7 @@ public:
     {
       QFontMetrics fm(QApplication::font());
       //QRect r =fm.boundingRect(SLIDERPAINTER_get_string(_painter));
-      int width = fm.width("Dry: 100% Wet: 0% Gak") + 10;
+      int width = fm.boundingRect("Dry: 100% Wet: 0% Gak").width() + 10;
       lowpass_freq_slider->setMinimumWidth(width);
       highpass_freq_slider->setMinimumWidth(width);
       drywet_slider->setMinimumWidth(width);

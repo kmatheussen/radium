@@ -454,7 +454,7 @@ struct SliderPainter{
 
           p->fillRect(f, get_qcolor(data->color));
         
-          p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(120),1));
+          p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).lighter(120),1));
           const QRectF &f2 = f; //f.adjusted(0, 0, 0, 0);        
           p->drawRect(f2);
 

@@ -203,7 +203,7 @@ static const GlyphpathAndWidth &getGlyphpathAndWidth(const QFont &font, const QC
 
   if (!glyphpathCache.contains(c)){
     const QVector<quint32> indexes = rawFont.glyphIndexesForString(c);    
-    glyphpathCache[c] = GlyphpathAndWidth(rawFont.pathForGlyph(indexes[0]), fn.width(c));
+    glyphpathCache[c] = GlyphpathAndWidth(rawFont.pathForGlyph(indexes[0]), fn.horizontalAdvance(c));
   }
   
   return glyphpathCache[c];
@@ -2976,9 +2976,9 @@ struct Timeline_widget : public LightWidget { //: public MouseTrackerQWidget {
     const QFontMetrics fn = QFontMetrics(QApplication::font());
     double min_pixels_between_text;
     if (false==_show_timeline)
-      min_pixels_between_text = fn.width("125") + 10;
+      min_pixels_between_text = fn.boundingRect("125").width() + 10;
     else
-      min_pixels_between_text = fn.width("00:00:00") + t1*2 + 10;
+      min_pixels_between_text = fn.boundingRect("00:00:00").width() + t1*2 + 10;
     
     //double  = 40; //width() / 4;
 
@@ -3079,7 +3079,7 @@ struct Timeline_widget : public LightWidget { //: public MouseTrackerQWidget {
       }
       //inc_time = 1;
 
-      double start_x = t_x1 - fn.width("00:00:00") - t1*2 - 4;
+      double start_x = t_x1 - fn.boundingRect("00:00:00").width() - t1*2 - 4;
 
       int64_t time = inc_time * int((double)start_time/(double)inc_time);
     

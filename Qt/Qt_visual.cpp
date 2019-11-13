@@ -740,7 +740,7 @@ void OS_GFX_Text(
 
       //const QFontMetrics fn = QFontMetrics(painter->font());
       const QFontMetrics fn = QFontMetrics(QApplication::font());
-      float text_width = fn.width(text);
+      float text_width = fn.boundingRect(text).width();
 
       //printf("Got TEXT_SCALE. Text: \"%s\". text_width: %f. box_width: %f\n",text, text_width, (float)width);
 

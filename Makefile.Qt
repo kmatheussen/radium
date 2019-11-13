@@ -1993,7 +1993,7 @@ Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
 
 
 FAUST_DEPENDENCIES = audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS1 = $(QTOPT) $(CPUOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations
+FAUST_OPTS1 = $(QTOPT) $(CPUOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations -Wno-deprecated-declarations
 FAUST_OPTS = $(FAUST_OPTS1) -I$(FAUSTDIR)/architecture
 # -Ibin/packages/faust2/architecture 
 

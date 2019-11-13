@@ -72,7 +72,7 @@ static SpinlockIMutex image_mutex;
 static inline void GE_add_imageholder(QFont qfont, QHash<QChar,ImageHolder> *imageholders, QString chars){
   QFontMetrics metrics(qfont);
 
-  int real_width = metrics.width("#");
+  int real_width = metrics.horizontalAdvance("#");
   int height = metrics.height();
   int width=height;
   //int width=real_width;

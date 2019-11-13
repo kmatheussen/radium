@@ -104,7 +104,7 @@ extern EditorWidget *g_editor;
 
 static int get_text_width(const QFont &font, const QString &text){
   const QFontMetrics fn = QFontMetrics(font);
-  return fn.width(text);
+  return fn.boundingRect(text).width();
 }
 
 #if 0

@@ -481,7 +481,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
 
     const QFontMetrics fn = QFontMetrics(QApplication::font()); //editor->font);
-    int width = 2.3 * fn.width("Note: Sometimes it is virtually impossible to fix the bug");
+    int width = 2.3 * fn.boundingRect("Note: Sometimes it is virtually impossible to fix the bug").width();
 
     //box.setMaximumWidth(600);
     box.adjustSize();

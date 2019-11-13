@@ -121,7 +121,7 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
     for(int i = 0 ; i < R_MAX(3, num_lines_log10) ; i++)
       test += "9";
     
-    double width = fm.width(test+" ");
+    double width = fm.boundingRect(test+" ").width();
     //printf(" width: %f %d %d\n", width, font.pixelSize(), font.pointSize());
     setMarginWidth(1, ceil(width));
   }

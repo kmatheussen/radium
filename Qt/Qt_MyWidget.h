@@ -63,11 +63,11 @@ namespace cvs{
     {}
 
     MyColor lighter(int p){
-      return MyColor(col.light(p));
+      return MyColor(col.lighter(p));
     }
 
     MyColor darker(int p){
-      return MyColor(col.dark(p));
+      return MyColor(col.darker(p));
     }
 
     void setAlpha(int a){
@@ -204,7 +204,7 @@ namespace cvs{
 
     int getTextWidth(std::string text){
       const QFontMetrics fn = QFontMetrics(QFont());
-      return fn.width(QString::fromStdString(text));
+      return fn.boundingRect(QString::fromStdString(text)).width();
     }
 
     int getTextHeight(){

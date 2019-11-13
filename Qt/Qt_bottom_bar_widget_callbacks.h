@@ -212,7 +212,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     {
       QFontMetrics fm(QApplication::font());
       //QRect r =fm.boundingRect(SLIDERPAINTER_get_string(_painter));
-      int width = fm.width("Min. Vel: 100%")+20;
+      int width = fm.boundingRect("Min. Vel: 100%").width()+20;
       min_velocity_slider->setMinimumWidth(width);
       velocity_slider->setMinimumWidth(width);
     }

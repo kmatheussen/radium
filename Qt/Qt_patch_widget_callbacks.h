@@ -243,7 +243,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     QFont font;
     widget->setFont(font);
     QFontMetrics fm(font);
-    int width = fm.width(text) + 2;
+    int width = fm.boundingRect(text).width() + 2;
     widget->setFixedWidth(width);
     widget->setMinimumWidth(width);
     widget->setMaximumWidth(width);

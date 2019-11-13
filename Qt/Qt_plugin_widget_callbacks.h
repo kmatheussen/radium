@@ -123,12 +123,12 @@ public:
 
       {
         QColor c = get_qcolor(BUTTONS_COLOR_NUM);
-        c=mix_colors(c.light(70),QColor(98,59,33),0.55);
+        c=mix_colors(c.lighter(70),QColor(98,59,33),0.55);
         c.setAlpha(76);
         QPalette pal(interpolation_type->palette());
         pal.setColor( QPalette::Active, QPalette::Button, c);
         pal.setColor( QPalette::Inactive, QPalette::Button, c);
-        pal.setColor( QPalette::Disabled, QPalette::Button, c.light(80));
+        pal.setColor( QPalette::Disabled, QPalette::Button, c.lighter(80));
         interpolation_type->setPalette(pal);
       }
     }
