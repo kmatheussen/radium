@@ -1428,7 +1428,7 @@ Qt_EventReceiver.o:  $(BUILD_DEPENDENCIES) $(P)Qt_EventReceiver.cpp $(P)EditorWi
 	$(CCC) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
 Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp common/visual_proc.h  embedded_scheme/s7extra_proc.h
-	$(CCC) $(P)Qt_colors.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -Wno-overloaded-virtual -Wno-unused-function #
+	$(CCC) $(P)Qt_colors.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -Wno-overloaded-virtual -Wno-unused-function -Wno-deprecated-declarations #
 
 $(P)mQt_colors.cpp: $(P)Qt_colors.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_colors.cpp >$(P)mQt_colors.cpp
