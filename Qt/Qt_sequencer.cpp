@@ -202,8 +202,13 @@ static const GlyphpathAndWidth &getGlyphpathAndWidth(const QFont &font, const QC
   }
 
   if (!glyphpathCache.contains(c)){
-    const QVector<quint32> indexes = rawFont.glyphIndexesForString(c);    
-    glyphpathCache[c] = GlyphpathAndWidth(rawFont.pathForGlyph(indexes[0]), fn.horizontalAdvance(c));
+    const QVector<quint32> indexes = rawFont.glyphIndexesForString(c);
+#if QT_VERSION >= 0x051100
+    int width_ = fn.horizontalAdvance(c);
+#else
+    int width_ = fn.width(c);
+#endif
+    glyphpathCache[c] = GlyphpathAndWidth(rawFont.pathForGlyph(indexes[0]), width_);
   }
   
   return glyphpathCache[c];
