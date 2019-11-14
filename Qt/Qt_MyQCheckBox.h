@@ -51,7 +51,7 @@ extern QColor *g_colors;
 
 static int get_text_width(QString text){
   const QFontMetrics fn = QFontMetrics(QFont());
-  return fn.width(text);
+  return fn.boundingRect(text).width();
 }
 
 inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height, QString text, bool _is_implicitly_on, bool is_hovered){
