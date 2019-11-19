@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>1712</width>
-    <height>27</height>
+    <height>69</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+   <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -19,7 +19,7 @@
   <property name="maximumSize">
    <size>
     <width>16777215</width>
-    <height>27</height>
+    <height>127</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -44,7 +44,7 @@
    <item>
     <widget class="QWidget" name="widget" native="true">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+      <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -52,7 +52,7 @@
      <property name="maximumSize">
       <size>
        <width>16777215</width>
-       <height>20</height>
+       <height>120</height>
       </size>
      </property>
      <property name="palette">
@@ -207,6 +207,9 @@
       <property name="spacing">
        <number>2</number>
       </property>
+      <property name="sizeConstraint">
+       <enum>QLayout::SetMinimumSize</enum>
+      </property>
       <property name="leftMargin">
        <number>0</number>
       </property>
@@ -222,7 +225,7 @@
       <item>
        <widget class="QWidget" name="widget_2" native="true">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -251,7 +254,7 @@
            <item>
             <widget class="QLabel" name="status_label">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Ignored" vsizetype="Minimum">
+              <sizepolicy hsizetype="Ignored" vsizetype="MinimumExpanding">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -272,6 +275,12 @@
            </item>
            <item>
             <widget class="Line" name="line_5">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="palette">
               <palette>
                <active>
@@ -758,7 +767,7 @@
            <item>
             <widget class="QSlider" name="system_volume_slider">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Ignored" vsizetype="Minimum">
+              <sizepolicy hsizetype="Ignored" vsizetype="MinimumExpanding">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -1406,7 +1415,7 @@
       <item>
        <widget class="QWidget" name="BPMWidget" native="true">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+         <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
