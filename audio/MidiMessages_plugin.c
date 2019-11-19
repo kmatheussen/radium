@@ -32,16 +32,6 @@ enum{
   EXPRESSION_CONTROLLER,
   EFFECT_CONTROLLER_1,
   EFFECT_CONTROLLER_2,
-  GENERAL_PURPOSE_CONTROLLER_1,
-  GENERAL_PURPOSE_CONTROLLER_2,
-  GENERAL_PURPOSE_CONTROLLER_3,
-  GENERAL_PURPOSE_CONTROLLER_4,
-
-  REVERB,
-  TREMOLO,
-  CHORUS,
-  CELESTE,
-  PHASER,
 
   // booleans:
   DAMPER_ONOFF,
@@ -51,6 +41,40 @@ enum{
   LEGATO_FOOTSWITCH,
   HOLD2_ONOFF,
 
+  SOUND_VARIATION,
+  TIMBRE,
+  RELEASE_,
+  ATTACK,
+  BRIGHTNESS,
+  DECAY,
+  VIBRATO_RATE,
+  VIBRATO_DEPTH,
+  VIBRATO_DELAY,
+
+  SOUND_CONTROLLER10,
+
+  GENERAL_PURPOSE_CONTROLLER_1,
+  GENERAL_PURPOSE_CONTROLLER_2,
+  GENERAL_PURPOSE_CONTROLLER_3,
+  GENERAL_PURPOSE_CONTROLLER_4,
+
+  PORTAMENTO,
+  REVERB,
+  TREMOLO,
+  CHORUS,
+  CELESTE,
+  PHASER,
+
+  CC3,CC6,CC9,
+  
+  CC14,CC15,CC16,CC17,CC18,CC19,CC20,CC21,CC22,CC23,CC24,CC25,CC26,CC27,CC28,CC29,CC30,CC31,CC32,CC33,CC34,CC35,CC36,CC37,CC38,CC39,CC40,CC41,CC42,CC43,CC44,CC45,CC46,CC47,CC48,CC49,CC50,CC51,CC52,CC53,CC54,CC55,CC56,CC57,CC58,CC59,CC60,CC61,CC62,CC63,
+  
+  CC85,CC86,CC87,CC88,CC89,CC90,
+  
+  CC96,CC97,CC98,CC99,CC100,CC101,CC102,CC103,CC104,CC105,CC106,CC107,CC108,CC109,CC110,CC111,CC112,CC113,CC114,CC115,CC116,CC117,CC118,CC119,
+
+  CC120,CC121,CC122,CC123,CC124,CC125,CC126,CC127,
+  
   NUM_EFFECTS
 };
 
@@ -156,8 +180,10 @@ static void send_msg(struct SoundPlugin *plugin, int64_t block_delta_time, unsig
 
   if (patch==NULL) // happens during initialization
     return;
-  
+
   byte1 |= data->values[CHANNEL];
+
+  //printf("Sending %0x %d %d\n", byte1, byte2, byte3);
 
   uint32_t msg;
 
@@ -252,21 +278,49 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time
     CASE(FOOT_CONTROLLER,4);
     CASE(PORTAMENTO_TIME,5);
     CASE(CHANNEL_VOLUME,7);
-    CASE(BALANCE,9);
+    CASE(BALANCE,8);
     CASE(PAN,0xa);
     CASE(EXPRESSION_CONTROLLER,0xb);
     CASE(EFFECT_CONTROLLER_1,0xc);
     CASE(EFFECT_CONTROLLER_2,0xd);
+
+    CASE(SOUND_VARIATION,70);
+    CASE(TIMBRE,71);
+    CASE(RELEASE_,72);
+    CASE(ATTACK,73);
+    CASE(BRIGHTNESS,74);
+    CASE(DECAY,75);
+    CASE(VIBRATO_RATE,76);
+    CASE(VIBRATO_DEPTH,77);
+    CASE(VIBRATO_DELAY,78);
+    CASE(SOUND_CONTROLLER10,79);
+
     CASE(GENERAL_PURPOSE_CONTROLLER_1,80);
     CASE(GENERAL_PURPOSE_CONTROLLER_2,81);
     CASE(GENERAL_PURPOSE_CONTROLLER_3,82);
     CASE(GENERAL_PURPOSE_CONTROLLER_4,83);
 
-    CASE(REVERB,0x5b);
-    CASE(TREMOLO,0x5c);
-    CASE(CHORUS,0x5d);
-    CASE(CELESTE,0x5e);
-    CASE(PHASER,0x5f);
+    CASE(PORTAMENTO, 84);    
+    CASE(REVERB,91);
+    CASE(TREMOLO,92);
+    CASE(CHORUS,93);
+    CASE(CELESTE,94);
+    CASE(PHASER,95);
+
+#define C(N) CASE(CC##N, N);
+    
+    C(3); C(6); C(9);
+  
+    C(14); C(15); C(16); C(17); C(18); C(19); C(20); C(21); C(22); C(23); C(24); C(25); C(26); C(27); C(28); C(29); C(30); C(31); C(32); C(33); C(34); C(35); C(36); C(37); C(38); C(39); C(40); C(41); C(42); C(43); C(44); C(45); C(46); C(47); C(48); C(49); C(50); C(51); C(52); C(53); C(54); C(55); C(56); C(57); C(58); C(59); C(60); C(61); C(62); C(63);
+    
+    C(85); C(86); C(87); C(88); C(89); C(90);
+    
+    C(96); C(97); C(98); C(99); C(100); C(101); C(102); C(103); C(104); C(105); C(106); C(107); C(108); C(109); C(110); C(111); C(112); C(113); C(114); C(115); C(116); C(117); C(118); C(119);
+    
+    C(120); C(121); C(122); C(123); C(124); C(125); C(126); C(127);
+
+#undef C
+    
 #undef CASE
 
 #define CASE(a, b)                            \
@@ -333,23 +387,133 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     c(EXPRESSION_CONTROLLER,"Expression (cc=11)");
     c(EFFECT_CONTROLLER_1,"Effect 1 (cc=12)");
     c(EFFECT_CONTROLLER_2,"Effect 2 (cc=13");
-    c(GENERAL_PURPOSE_CONTROLLER_1,"General 1 (cc=80)");
-    c(GENERAL_PURPOSE_CONTROLLER_2,"General 2 (cc=81)");
-    c(GENERAL_PURPOSE_CONTROLLER_3,"General 3 (cc=82)");
-    c(GENERAL_PURPOSE_CONTROLLER_4,"General 4 (cc=83)");
 
-    c(REVERB,"Reverb (cc=91)");
-    c(TREMOLO,"Tremolo (cc=92)");
-    c(CHORUS,"Chorus (cc=93)");
-    c(CELESTE,"Celeste (cc=94)");
-    c(PHASER,"Phaser (cc=95)");
-    
     c(DAMPER_ONOFF,"Damper (cc=64)");
     c(PORTAMENTO_ONOFF,"Portamento (cc=65)");
     c(SOSTENUTO_ONOFF,"Sostenuto (cc=66)");
     c(SOFT_PEDAL_ONOFF,"Soft Pedal (cc=67)");
     c(LEGATO_FOOTSWITCH,"Legato Footswitch (cc=68)");
     c(HOLD2_ONOFF,"Hold2 (cc=69)");
+
+    c(SOUND_VARIATION,"Sound Variation (cc=70))");    
+    c(TIMBRE,"Timbre (cc=71)");    
+    c(RELEASE_,"Release (cc=72)");    
+    c(ATTACK,"Attack (cc=73)");    
+    c(BRIGHTNESS,"Brightness (cc=74)");    
+    c(DECAY,"Decay (cc=75)");    
+    c(VIBRATO_RATE,"Vibrato Rate (cc=76)");    
+    c(VIBRATO_DEPTH,"Vibrato Depth (cc=77)");    
+    c(VIBRATO_DELAY,"Vibrato Delay (cc=78)");    
+    c(SOUND_CONTROLLER10,"Controller 10 (cc=79)");
+    
+    c(GENERAL_PURPOSE_CONTROLLER_1,"General 1 (cc=80)");
+    c(GENERAL_PURPOSE_CONTROLLER_2,"General 2 (cc=81)");
+    c(GENERAL_PURPOSE_CONTROLLER_3,"General 3 (cc=82)");
+    c(GENERAL_PURPOSE_CONTROLLER_4,"General 4 (cc=83)");
+
+    c(PORTAMENTO, "Portamento (cc=84)");
+    c(REVERB,"Reverb (cc=91)");
+    c(TREMOLO,"Tremolo (cc=92)");
+    c(CHORUS,"Chorus (cc=93)");
+    c(CELESTE,"Celeste (cc=94)");
+    c(PHASER,"Phaser (cc=95)");
+    
+    c(CC3,"cc 3");
+    c(CC6,"cc 6");
+    c(CC9,"cc 9");
+    
+    c(CC14,"cc 14");
+    c(CC15,"cc 15");
+    c(CC16,"cc 16");
+    c(CC17,"cc 17");
+    c(CC18,"cc 18");
+    c(CC19,"cc 19");
+    c(CC20,"cc 20");
+    c(CC21,"cc 21");
+    c(CC22,"cc 22");
+    c(CC23,"cc 23");
+    c(CC24,"cc 24");
+    c(CC25,"cc 25");
+    c(CC26,"cc 26");
+    c(CC27,"cc 27");
+    c(CC28,"cc 28");
+    c(CC29,"cc 29");
+    c(CC30,"cc 30");
+    c(CC31,"cc 31");
+    c(CC32,"cc 32");
+    c(CC33,"cc 33");
+    c(CC34,"cc 34");
+    c(CC35,"cc 35");
+    c(CC36,"cc 36");
+    c(CC37,"cc 37");
+    c(CC38,"cc 38");
+    c(CC39,"cc 39");
+    c(CC40,"cc 40");
+    c(CC41,"cc 41");
+    c(CC42,"cc 42");
+    c(CC43,"cc 43");
+    c(CC44,"cc 44");
+    c(CC45,"cc 45");
+    c(CC46,"cc 46");
+    c(CC47,"cc 47");
+    c(CC48,"cc 48");
+    c(CC49,"cc 49");
+    c(CC50,"cc 50");
+    c(CC51,"cc 51");
+    c(CC52,"cc 52");
+    c(CC53,"cc 53");
+    c(CC54,"cc 54");
+    c(CC55,"cc 55");
+    c(CC56,"cc 56");
+    c(CC57,"cc 57");
+    c(CC58,"cc 58");
+    c(CC59,"cc 59");
+    c(CC60,"cc 60");
+    c(CC61,"cc 61");
+    c(CC62,"cc 62");
+    c(CC63,"cc 63");
+
+    c(CC85,"cc 85");
+    c(CC86,"cc 86");
+    c(CC87,"cc 87");
+    c(CC88,"cc 88");
+    c(CC89,"cc 89");
+    c(CC90,"cc 90");
+    
+    c(CC96,"cc 96");
+    c(CC97,"cc 97");
+    c(CC98,"cc 98");
+    c(CC99,"cc 99");
+    c(CC100,"cc 100");
+    c(CC101,"cc 101");
+    c(CC102,"cc 102");
+    c(CC103,"cc 103");
+    c(CC104,"cc 104");
+    c(CC105,"cc 105");
+    c(CC106,"cc 106");
+    c(CC107,"cc 107");
+    c(CC108,"cc 108");
+    c(CC109,"cc 109");
+    c(CC110,"cc 110");
+    c(CC111,"cc 111");
+    c(CC112,"cc 112");
+    c(CC113,"cc 113");
+    c(CC114,"cc 114");
+    c(CC115,"cc 115");
+    c(CC116,"cc 116");
+    c(CC117,"cc 117");
+    c(CC118,"cc 118");
+    c(CC119,"cc 119");
+    
+    c(CC120,"cc 120");
+    c(CC121,"cc 121");
+    c(CC122,"cc 122");
+    c(CC123,"cc 123");
+    c(CC124,"cc 124");
+    c(CC125,"cc 125");
+    c(CC126,"cc 126");
+    c(CC127,"cc 127");
+    
 #undef c
 
   default:
@@ -368,7 +532,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   get_minval_and_maxval(effect_num, &minval, &maxval);
 
   if (effect_num>0 && value==minval) {
-    snprintf(buffer,buffersize-1,"Not used");
+    snprintf(buffer,buffersize-1," ");//Not used");
     return;
   }
   

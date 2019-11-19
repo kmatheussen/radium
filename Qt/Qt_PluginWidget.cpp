@@ -53,9 +53,10 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
   //PluginType *pType = m_pPlugin->type();
 
   bool is_patchbay = !strcmp("Patchbay",plugin->type->type_name);
+  bool is_midi_messages = !strcmp("MIDI Messages", plugin->type->type_name);
   
   int MaxYsPerPage     = 8;
-  int MaxXsPerPage     = 8;
+  int MaxXsPerPage     = is_midi_messages ? 6 : 8;
 
   switch(size_type){
     case SIZETYPE_NORMAL:
@@ -92,7 +93,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
   int iParams = PLUGIN_get_num_visible_effects(plugin);
 
   if (iParams > MaxParamsPerPage && !is_patchbay && size_type==SIZETYPE_NORMAL){
-    MaxYsPerPage     = 6;
+    MaxYsPerPage     = 7;
     MaxParamsPerPage = MaxYsPerPage * MaxXsPerPage;
   }
 
