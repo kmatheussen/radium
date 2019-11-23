@@ -171,6 +171,14 @@ static double get_seqtrack_y1(int seqtracknum);
 static double get_seqtrack_y2(int seqtracknum);
 static double get_seqtracks_y1(void);
 
+static int get_seqtrack_scrollbar_width(void){
+  static int ret = -1;
+  if (ret <= 0)
+    ret = GFX_get_text_width(root->song->tracker_windows, "#2");
+
+  return ret;
+}
+
 /* Custom font drawing code */
 
 namespace{
@@ -729,6 +737,32 @@ static int get_last_visible_seqtrack(void){
   return ret;
 }
  
+static int find_prev_visible_legal_topmost_seqtrack(void){
+  
+  for(int seqtracknum=root->song->topmost_visible_seqtrack-1 ; seqtracknum>=0 ; seqtracknum--){
+    const struct SeqTrack *seqtrack = (const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
+    if (seqtrack->is_visible)
+      return seqtracknum;
+  }
+
+  return root->song->topmost_visible_seqtrack;
+}
+   
+static int find_next_visible_legal_topmost_seqtrack(void){
+  const int lowest_reasonable_topmost_seqtracknum = SEQUENCER_get_lowest_reasonable_topmost_seqtracknum();
+
+  R_ASSERT_RETURN_IF_FALSE2(lowest_reasonable_topmost_seqtracknum>=0,0);
+  R_ASSERT_RETURN_IF_FALSE2(lowest_reasonable_topmost_seqtracknum<root->song->seqtracks.num_elements,0);
+  
+  for(int seqtracknum=root->song->topmost_visible_seqtrack+1;seqtracknum <= lowest_reasonable_topmost_seqtracknum;seqtracknum++){
+    const struct SeqTrack *seqtrack = (const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
+    if (seqtrack->is_visible)
+      return seqtracknum;
+  }
+
+  return root->song->topmost_visible_seqtrack;
+}
+   
 static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, double start_play_time, double end_play_time) {
 
   double pos = R_MAX(0, scale_double(e->x(), x1, x2, start_play_time, end_play_time));
@@ -818,20 +852,16 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
     int vu_width = root->song->tracker_windows->systemfontheight;
     if (VerticalModifierPressed(e->modifiers()) || mapToEditorX(widget, e->x()) < SEQTRACK_get_x1(0)-vu_width) {
 
-      int lowest_reasonable_topmost_seqtracknum = get_last_visible_seqtrack();
-      int seqtracknum = root->song->topmost_visible_seqtrack;
+      int seqtracknum;
       
       if (e->delta() > 0){
-        seqtracknum--; 
+        seqtracknum = find_prev_visible_legal_topmost_seqtrack();
       } else {
-        seqtracknum++;
-        lowest_reasonable_topmost_seqtracknum = SEQUENCER_get_lowest_reasonable_topmost_seqtracknum();
-        //printf("seqtracknum: %d. lowest: %d. num: %d. \n", seqtracknum, lowest_reasonable_topmost_seqtracknum, root->song->seqtracks.num_elements);
+        seqtracknum = find_next_visible_legal_topmost_seqtrack();
       }
-      
-      if (seqtracknum >= 0 && seqtracknum <= lowest_reasonable_topmost_seqtracknum)
-        setTopmostVisibleSeqtrack(seqtracknum);
 
+      setTopmostVisibleSeqtrack(seqtracknum);
+      
     } else {
 
       if (e->delta() > 0){
@@ -2496,16 +2526,25 @@ public:
     available_space += get_seqtrack_border_width()/2.0;
     
     double height = 0;
+
+    int maybe = -1;
     
     for(int seqtracknum=num_seqtracks-1;seqtracknum>=0;seqtracknum--){
       const struct SeqTrack *seqtrack = (const struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
       if (!seqtrack->is_visible)
         continue;
-      
+
       height += heights[seqtracknum];
       //printf("%d: height %f. sum: %f. available_space: %f\n",seqtracknum,height,heights[seqtracknum], available_space);
-      if(height > available_space)
-        return R_MIN(num_seqtracks-1, seqtracknum+1);
+      if(height > available_space) {
+        //printf("... height > available_space. seqtracknum: %d. height: %f. available_space: %f. Maybe: %d\n", seqtracknum, height, available_space, maybe);
+        if (maybe==-1){          
+          return seqtracknum; // I.e. the last visible seqtrack is bigger than the available space.
+        }else
+          return maybe;
+      }
+
+      maybe = seqtracknum;
     }
     
     return 0;
@@ -4582,7 +4621,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       const Seqblocks_widget w = get_seqblocks_widget(curr_seqtracknum, false);
 
       //QRectF rect(b/2.0, w.t_y1-b/2.0, this->width()-b, w.t_y2-w.t_y1+b);
-      QRectF rect(0, w.t_y1, w.t_x2+20, w.t_y2-w.t_y1);
+      QRectF rect(SEQUENCER_get_lowest_reasonable_topmost_seqtracknum() > 0 ? get_seqtrack_scrollbar_width() : 0, w.t_y1, w.t_x2+20, w.t_y2-w.t_y1);
 
       //printf("Seqtrack: ");
       paintCurrBorder(p, rect, get_qcolor(MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM), true);
@@ -4694,7 +4733,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       //
       if (seqtracks_are_painted || left_part_is_painted){
         
-        radium::ScopedQClipRect scoped_rect(p, 0, 0, _seqtracks_widget.t_x2, seqtracks_y_max);
+        radium::ScopedQClipRect scoped_rect(p, 0, 0, _seqtracks_widget.t_x2, SEQUENCER_get_left_part_buttons_y1() - 2);
             
         paintSeqtrackBorders(p);
 
@@ -4911,10 +4950,15 @@ float SEQTRACKS_get_y2(void){
 }
 
 float SEQUENCER_get_left_part_x1(void){
+  float ret = 0.0f;
+  
   if (root->song->seqtracks.num_elements > 1)
-    return get_seqtrack_border_width();
-  else
-    return 0;
+    ret += get_seqtrack_border_width();
+
+  if (SEQUENCER_get_lowest_reasonable_topmost_seqtracknum() > 0)
+    ret += get_seqtrack_scrollbar_width();
+
+  return ret;
 }
 
 float SEQUENCER_get_left_part_x2(void){
@@ -4927,6 +4971,10 @@ float SEQUENCER_get_left_part_y1(void){
 
 float SEQUENCER_get_left_part_y2(void){
   return g_sequencer_widget->height();
+}
+
+float SEQUENCER_get_left_part_buttons_y1(void){
+  return SEQUENCER_get_left_part_y2() - (4 + 1.5*root->song->tracker_windows->systemfontheight);
 }
 
 bool SEQUENCER_right_part_is_empty(void){
@@ -5416,6 +5464,10 @@ static double get_seqtrack_y2(int seqtracknum){
 
 float SEQTRACK_get_y2(int seqtracknum){
   return mapToEditorY(g_sequencer_widget, get_seqtrack_y2(seqtracknum));
+}
+
+double SEQTRACK_get_border_width(void){
+  return get_seqtrack_border_width();
 }
 
 int SEQUENCER_get_lowest_reasonable_topmost_seqtracknum(void){

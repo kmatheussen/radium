@@ -126,6 +126,8 @@ static const ColorConfig g_colorconfig[] = {
   {TAB_SELECTED_COLOR_NUM,  "tab_selected",   "Selected tab"},
   {TAB_UNSELECTED_COLOR_NUM,  "tab_unselected",   "Unselected tab"},
 
+  {CHECK_BOX_SELECTED_COLOR_NUM,  "check_box_selected",   "Selected check box"},
+
   {PEAKS_COLOR_NUM,             "peaks",                    "Peaks < 0dB"},
   {PEAKS_0DB_COLOR_NUM,         "peaks0db",                 "Peaks 0dB - 4dB"},
   {PEAKS_4DB_COLOR_NUM,         "peaks4db",                 "Peaks > 4dB"},
@@ -286,6 +288,8 @@ static ReplacementColor g_replacement_color[] = {
 
   {TAB_SELECTED_COLOR_NUM,  QColor("green")},
   {TAB_UNSELECTED_COLOR_NUM,  QColor("#004000")},
+
+  {CHECK_BOX_SELECTED_COLOR_NUM,  QColor("#005e50")},
 
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor(1,1,1)},
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},

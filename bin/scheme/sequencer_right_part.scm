@@ -765,8 +765,8 @@
                                       (create-seqtracks-config-area gui x1 y1 x2 y2 state))))
                              ))
 
-    (list-area :add-nonpress-mouse-cycle!
-               (lambda (x* y)
+    '(list-area :add-raw-mouse-cycle!
+               (lambda (button x* y)
                  (set-mouse-pointer ra:set-normal-mouse-pointer gui)
                  #f))
     

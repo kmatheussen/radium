@@ -110,6 +110,10 @@ float getSequencerLeftPartY2(void){
   return SEQUENCER_get_left_part_y2();
 }
 
+float getSequencerLeftPartButtonsY1(void){
+  return SEQUENCER_get_left_part_buttons_y1();
+}
+
 bool getSequencerRightPartEmpty(void){
   return SEQUENCER_right_part_is_empty();
 }
@@ -492,9 +496,21 @@ void setTopmostVisibleSeqtrack(int new_topmost){
                                                        
   if(new_topmost==getTopmostVisibleSeqtrack())
     return;
-  
+
+  {
+    const struct SeqTrack *seqtrack = (const struct SeqTrack *)root->song->seqtracks.elements[new_topmost];
+    if (!seqtrack->is_visible){
+      printf("Note: setTopmostVisibleSeqtrack: seqtrack #%d is not visible. Returning\n", new_topmost);
+      return;
+    }
+  }
+
   root->song->topmost_visible_seqtrack = new_topmost;
   SEQUENCER_update(SEQUPDATE_TRACKCOORDINATES);
+}
+
+int getLowestPossibleTopmostVisibleSeqtrack(void){
+  return SEQUENCER_get_lowest_reasonable_topmost_seqtracknum();
 }
 
 void swapSeqtracks(int seqtracknum1, int seqtracknum2){
@@ -2018,6 +2034,10 @@ float getSeqtrackY2(int seqtracknum){
   return SEQTRACK_get_y2(seqtracknum);
 }
 
+double getSeqtrackBorderWidth(void){
+  return SEQTRACK_get_border_width();
+}
+                          
 int getSeqtrackFromY(int y){
   for(int seqtracknum=0;seqtracknum<getNumSeqtracks();seqtracknum++){
     float y1 = getSeqtrackY1(seqtracknum);

@@ -4429,11 +4429,14 @@
              :seqtracknum (+ (seqblock :seqtracknum) delta-tracknum)))
 
 (define (get-seqtracknum X Y)
-  (define num-seqtracks (<ra> :get-num-seqtracks))
+  (define first-visible-seqtrack (find-first-visible-seqtrack))
+  (define last-visible-seqtrack (find-last-visible-seqtrack))
   (and (inside-box? (<ra> :get-box seqtracks) X Y)
-       (let loop ((seqtracknum 0))
-         (cond ((= seqtracknum num-seqtracks)
+       (let loop ((seqtracknum first-visible-seqtrack))
+         (cond ((> seqtracknum last-visible-seqtrack)
                 #f) ;;seqtracknum)
+               ((not (<ra> :get-seqtrack-visible seqtracknum))
+                (loop (+ seqtracknum 1)))
                ((<= Y (<ra> :get-seqtrack-y2 seqtracknum))           
                 seqtracknum)
                (else
@@ -6193,10 +6196,13 @@
                         :Move-node (lambda (seqblock-infos Value Y)
                                      (set! gakkgakk-last-value (list Value Y))
 
-                                     (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y)
-                                                                 (if (<= Y (<ra> :get-seqtrack-y1 0))
-                                                                     0
-                                                                     (<ra> :get-num-seqtracks))))
+                                     (define first-visible-seqtrack (find-first-visible-seqtrack))
+                                     
+                                     (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 first-visible-seqtrack))
+                                                                                  Y)
+                                                                 (if (<= Y (<ra> :get-seqtrack-y1 first-visible-seqtrack))
+                                                                     first-visible-seqtrack
+                                                                     (find-last-visible-seqtrack))))
                                      (define inctrack (- new-seqtracknum gakkgakk-startseqtracknum))
                                      ;;(c-display new-seqtracknum gakkgakk-startseqtracknum inctrack)
                                      (delete-all-gfx-gfx-seqblocks)
@@ -8116,13 +8122,76 @@
   (make-box2 (<ra> :get-seqnav-left-size-handle-x2) (<ra> :get-seqnav-left-size-handle-y1)
              (<ra> :get-seqnav-right-size-handle-x1) (<ra> :get-seqnav-right-size-handle-y2)))
 
+#!!
+(<ra> :get-lowest-possible-topmost-visible-seqtrack)
+(list (<ra> :get-seqtrack-y2 0)
+      (<ra> :get-seqtrack-y1 1))
+!!#
+
+(define (get-actual-total-seqtracks-height)
+  (define first-visible (find-first-visible-seqtrack))
+  (define last-visible (find-last-visible-seqtrack))
+  (define lowest-topmost-visible (<ra> :get-lowest-possible-topmost-visible-seqtrack))
+  (define seqtracks-height (- (get-sequencer-left-part-seqtracks-y2)
+                              (get-sequencer-left-part-seqtracks-y1)))
+  
+  (define bottom-empty-space (- (- seqtracks-height
+                                   (- (<ra> :get-seqtrack-y2 last-visible)
+                                      (<ra> :get-seqtrack-y1 lowest-topmost-visible)))
+                                (ra:get-seqtrack-border-width)))
+  
+  (c-display ":bottom-empty-space:" bottom-empty-space
+             ":lowest-topmost-visible:" lowest-topmost-visible
+             ":seqtracks-height:" seqtracks-height
+             ":height of last visible seqtracks:" (- (<ra> :get-seqtrack-y2 last-visible)
+                                                     (<ra> :get-seqtrack-y1 lowest-topmost-visible))
+             ". " last-visible lowest-topmost-visible
+             "first y1: " (<ra> :get-seqtrack-y1 lowest-topmost-visible)
+             "last y2:" (<ra> :get-seqtrack-y2 last-visible)
+             ":last-visible:" last-visible
+             ":...:" (get-sequencer-left-part-seqtracks-y2) (<ra> :get-seqtracks-y1))
+  
+  (+ (- (<ra> :get-seqtrack-y2 last-visible)
+        (<ra> :get-seqtrack-y1 first-visible))
+     bottom-empty-space))
+
+#!
+(<ra> :get-seqtrack-y1 10)
+(<ra> :get-seqtrack-y1 11)
+(<ra> :get-seqtrack-y1 12)
+(<ra> :get-seqtrack-y1 13)
+(<ra> :get-seqtrack-y1 14)
+
+(<ra> :get-lowest-possible-topmost-visible-seqtrack)
+
+(get-actual-total-seqtracks-height)
+(<ra> :get-seqtrack-y1 17)
+(<ra> :get-seqtrack-y2 18)
+(get-visible-seqtracks-y2)
+(list (get-visible-seqtracks-y2)
+      (<ra> :get-seqtracks-y2)
+      (<ra> :get-seqtracks-y1))
+
+(list (- (<ra> :get-seqtrack-y2 18)
+         (<ra> :get-seqtrack-y1 17))
+      (- (get-sequencer-left-part-seqtracks-y2)
+         (get-sequencer-left-part-seqtracks-y1))
+      (- (<ra> :get-seqtracks-y2)
+         (<ra> :get-seqtracks-y1))
+      )
+
+!!#
+
+  
 (define (set-topmost-seqtrack-from-navigator org-topmost dy)
   (define num-seqtracks (<ra> :get-num-seqtracks))
+  (define last-visible-topmost-seqtrack (<ra> :get-lowest-possible-topmost-visible-seqtrack))
   (define org-y (<ra> :get-seqtracks-y1))
   
   (define (get-height seqtracknum)
-    (- (<ra> :get-seqtrack-y2 seqtracknum)
-       (<ra> :get-seqtrack-y1 seqtracknum)))
+    (+ (<ra> :get-seqtrack-border-width)
+       (- (<ra> :get-seqtrack-y2 seqtracknum)
+          (<ra> :get-seqtrack-y1 seqtracknum))))
   
   (define new-topmost
     (if (> dy 0)
@@ -8132,22 +8201,29 @@
                    (minseqtracknum org-topmost)
                    (seqtracknum org-topmost))
           ;;(c-display "dy>0: " dy ". mindiff:" mindiff)
-          (if (or (< dy 0)
-                  (= seqtracknum num-seqtracks))
-              minseqtracknum
-              (let* ((seqtrack-height (get-height seqtracknum))
-                     (next-dy (- dy seqtrack-height))
-                     (maybe-mindiff (abs next-dy)))
-                (if (< maybe-mindiff
-                       mindiff)
-                    (loop next-dy
-                          maybe-mindiff
-                          seqtracknum
-                          (+ 1 seqtracknum))
-                    (loop next-dy
-                          mindiff
-                          minseqtracknum
-                          (+ 1 seqtracknum))))))
+          (if (>= seqtracknum last-visible-topmost-seqtrack)
+              last-visible-topmost-seqtrack
+              (if (or (< dy 0)
+                      (= seqtracknum num-seqtracks))
+                  minseqtracknum
+                  (if (not (<ra> :get-seqtrack-visible seqtracknum))
+                      (loop dy
+                            mindiff
+                            minseqtracknum
+                            (+ 1 seqtracknum))
+                      (let* ((seqtrack-height (get-height seqtracknum))
+                             (next-dy (- dy seqtrack-height))
+                             (maybe-mindiff (abs next-dy)))
+                        (if (< maybe-mindiff
+                               mindiff)
+                            (loop next-dy
+                                  maybe-mindiff
+                                  seqtracknum
+                                  (+ 1 seqtracknum))
+                            (loop next-dy
+                                  mindiff
+                                  minseqtracknum
+                                  (+ 1 seqtracknum))))))))
 
         (let loop ((dy dy)
                    (mindiff (abs dy))
@@ -8157,21 +8233,26 @@
           (if (or (> dy 0)
                   (= seqtracknum -1))
               minseqtracknum
-              (let* ((seqtrack-height (get-height seqtracknum))
-                     (next-dy (+ dy seqtrack-height))
-                     (maybe-mindiff (abs next-dy)))
-                (if (< maybe-mindiff
-                       mindiff)
-                    (loop next-dy
-                          maybe-mindiff
-                          seqtracknum
-                          (- seqtracknum 1))
-                    (loop next-dy
-                          mindiff
-                          minseqtracknum
-                          (- seqtracknum 1))))))))
+              (if (not (<ra> :get-seqtrack-visible seqtracknum))
+                  (loop dy
+                        mindiff
+                        minseqtracknum
+                        (- seqtracknum 1))
+                  (let* ((seqtrack-height (get-height seqtracknum))
+                         (next-dy (+ dy seqtrack-height))
+                         (maybe-mindiff (abs next-dy)))
+                    (if (< maybe-mindiff
+                           mindiff)
+                        (loop next-dy
+                              maybe-mindiff
+                              seqtracknum
+                              (- seqtracknum 1))
+                        (loop next-dy
+                              mindiff
+                              minseqtracknum
+                              (- seqtracknum 1)))))))))
 
-  ;;(c-display "org-topmost:" org-topmost "new-topmost:" new-topmost "dy:" dy)
+  (c-display "org-topmost:" org-topmost "new-topmost:" new-topmost "dy:" dy)
   (<ra> :set-topmost-visible-seqtrack new-topmost))
   
   
@@ -8204,11 +8285,14 @@
                                        (<ra> :set-sequencer-visible-start-time new-start-time2)
                                        (<ra> :set-sequencer-visible-end-time new-end-time2)
                                        )
-                                     
+
+                                     (define first-visible-seqtrack (find-first-visible-seqtrack))
+                                     (define last-visible-seqtrack (find-last-visible-seqtrack))
+
                                      (set-topmost-seqtrack-from-navigator org-topmost
                                                                           (* delta-Y
-                                                                             (/ (- (<ra> :get-seqtrack-y2 (- (<ra> :get-num-seqtracks) 1))
-                                                                                   (<ra> :get-seqtrack-y1 0))
+                                                                             (/ (- (<ra> :get-seqtrack-y2 last-visible-seqtrack)
+                                                                                   (<ra> :get-seqtrack-y1 first-visible-seqtrack))
                                                                                 (- (<ra> :get-seqnav-left-size-handle-y2)
                                                                                    (<ra> :get-seqnav-left-size-handle-y1)))))
                                                                                  

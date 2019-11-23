@@ -1749,10 +1749,13 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                       
 
 (define* (find-instrument-to-the-X-of modular-func strips-func (goal-instrument-id (ra:get-current-instrument)))
-  (if (and (<gui> :is-active-window  (<gui> :get-main-mixer-gui))
-           (<ra> :main-mixer-is-modular))
-      (modular-func goal-instrument-id)
-      (strips-func goal-instrument-id)))
+  (cond ;;((a-mixer-strip-window-is-active?)
+        ;; (strips-func goal-instrument-id))
+        ((and (<gui> :is-active-window  (<gui> :get-main-mixer-gui))
+              (<ra> :main-mixer-is-modular))
+         (modular-func goal-instrument-id))
+        (else
+         (strips-func goal-instrument-id))))
 
 (define* (find-instrument-to-the-left-of (goal-instrument-id (ra:get-current-instrument)))
   (find-instrument-to-the-X-of find-instrument-in-modular-mixer-to-the-left-of
@@ -1947,7 +1950,8 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                          :instrument-id
                          :x1 :y1 :x2 :y2
                          :is-selected 'undefined
-                         :use-single-letters 
+                         :use-single-letters
+                         :is-hovering #f
                          :background-color #f
                          :border 0
                          :implicit-border 1
@@ -2019,13 +2023,14 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                #f)))
 
   ;;(c-display "background-color:" background-color)
-  (draw-checkbox gui text is-selected x1 y1 x2 y2 color
-                 :background-color background-color                 
-                 :y-border border
-                 :x-border border
-                 :paint-implicit-border is-implicitly
-                 :implicit-border-width implicit-border
-                 :box-rounding 2)
+  (draw-button gui text is-selected x1 y1 x2 y2 color
+               :background-color background-color
+               :is-hovering is-hovering
+               :y-border border
+               :x-border border
+               :paint-implicit-border is-implicitly
+               :implicit-border-width implicit-border
+               :box-rounding 2)
   )
 
 (define (paint-horizontal-instrument-slider widget instrument-id value text is-enabled is-current get-automation-data text-x1 x1 y1 x2 y2 color)

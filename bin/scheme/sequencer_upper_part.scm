@@ -257,9 +257,9 @@
 
 
   ;; mark current entry
-  (add-nonpress-mouse-cycle!
+  (add-raw-mouse-cycle!
    :move-func
-   (lambda (x* y*)
+   (lambda (button x* y*)
      (define had-curr-entry curr-entry)
      (set! curr-entry #f)
      (set! curr-id #f)
@@ -324,8 +324,8 @@
                  "")))
      #t)
    :leave-func
-   (lambda (button-was-pressed)
-     (when (and (not button-was-pressed)
+   (lambda (button x y)
+     (when (and (= 0 button)
                 curr-entry)
        (set! curr-entry #f)
        (set! curr-id #f)
@@ -333,7 +333,7 @@
            (<ra> :set-paint-vertical-markers-in-sequencer #f))
        ;;(update-parent!)
        )
-     (when (not button-was-pressed)
+     (when (not (= 0 button))
        (<ra> :set-statusbar-text "")
        ;;(<gui> :tool-tip "")
        )))

@@ -174,6 +174,7 @@ extern LANGSPEC float SEQUENCER_get_left_part_x1(void);
 extern LANGSPEC float SEQUENCER_get_left_part_x2(void);
 extern LANGSPEC float SEQUENCER_get_left_part_y1(void);
 extern LANGSPEC float SEQUENCER_get_left_part_y2(void);
+extern LANGSPEC float SEQUENCER_get_left_part_buttons_y1(void);
 
 extern LANGSPEC bool SEQUENCER_right_part_is_empty(void);
 extern LANGSPEC void SEQUENCER_set_right_part_is_empty(bool is_empty);
@@ -225,6 +226,8 @@ extern LANGSPEC float SEQTRACK_get_x1(int seqtracknum);
 extern LANGSPEC float SEQTRACK_get_x2(int seqtracknum);
 extern LANGSPEC float SEQTRACK_get_y1(int seqtracknum);
 extern LANGSPEC float SEQTRACK_get_y2(int seqtracknum);
+
+extern LANGSPEC double SEQTRACK_get_border_width(void);
 
 extern LANGSPEC int SEQUENCER_get_lowest_reasonable_topmost_seqtracknum(void);
 extern LANGSPEC bool SEQUENCER_last_seqtrack_is_visible(void);

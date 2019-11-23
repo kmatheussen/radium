@@ -320,7 +320,8 @@
                                                (else
                                                 (assert #f))))))
                                     :paint-func
-                                    (lambda (gui x1 y1 x2 y2 is-selected)
+                                    (lambda (gui x1 y1 x2 y2 is-selected is-hovering)
+                                      ;;(c-display "is-hovering/type:" is-hovering type)
                                       ;;(c-display "DRAWING mutesolo" instrument-id type (* 1.0 x1) (* 1.0 y1) (* 1.0 x2) (* 1.0 y2))
                                       (if (eq? type 'solo)
                                           (set! last-drawn-implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id)))
@@ -330,6 +331,7 @@
                                                      x1 y1 x2 y2
                                                      is-selected
                                                      use-single-letters
+                                                     :is-hovering is-hovering
                                                      :background-color (get-seqtrack-background-color gui seqtracknum)
                                                      :border 0
                                                      :implicit-border 3
@@ -375,7 +377,7 @@
                         (box :add-statusbar-text-handler "Enable/disable Mute"))
                        (else
                         (assert #f)))
-                       
+                 
                  (add-sub-area-plain! box)))
 
   )
@@ -1104,9 +1106,10 @@
                      )
         )
 
-  (add-nonpress-mouse-cycle!
-   :enter-func (lambda (x* y)
-                 (set-mouse-pointer ra:set-normal-mouse-pointer gui)
+  (add-raw-mouse-cycle!
+   :enter-func (lambda (button x* y)
+                 (if (= 0 button)
+                     (set-mouse-pointer ra:set-normal-mouse-pointer gui))
                  #f))
 
   (define-override (get-mouse-cycle button x* y*)
@@ -1134,6 +1137,9 @@
   )
 
 
+(define *sequencer-height-dragging* #f)
+(define *sequencer-height-hovering* #f)
+  
 (def-area-subclass (<sequencer-height-dragger> :gui :x1 :y1 :x2 :y2)
   (define background-color (<gui> :get-background-color gui))
   (define border-color (get-default-button-color gui))
@@ -1143,39 +1149,51 @@
          (not *sequencer-window-gui-active*)))
   
   (define-override (paint)
-    (<gui> :filled-box gui background-color x1 y1 x2 y2)
-    (when (is-active)
-      (<gui> :draw-text gui *text-color* "=" x1 y1 x2 y2
-             #f ;; wrap-lines
-             #f ;; align top
-             #f)
-      (<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 3 3)))
+    (draw-button gui "=" *sequencer-height-dragging*
+                 x1 y1 x2 y2
+                 :is-hovering *sequencer-height-hovering*))
+
+    ;;(<gui> :filled-box gui background-color x1 y1 x2 y2)
+    ;;(when (is-active)
+    ;;  (<gui> :draw-text gui *text-color* "=" x1 y1 x2 y2
+    ;;         #f ;; wrap-lines
+   ;;          #f ;; align top
+   ;;          #f)
+   ;;   ;;(<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 3 3)
+   ;;   )
+   ;; )
 ;      (<gui> :draw-box gui border-color
 ;             (1+ x1) (1+ y1)
 ;             (1- x2) (1- y2)
 ;             1.3 0 0))) ;; align left
 
   ;; TODO: Add area::add-mouse-pointer-shape-handler
-  (add-nonpress-mouse-cycle!
-   :enter-func (lambda (x* y)
+  (add-raw-mouse-cycle!
+   :enter-func (lambda (button x* y)
                  ;;(c-display "ENTER DRAGGER" class-name)
                  (<ra> :set-statusbar-text "Change sequencer height")
                  (if (is-active)
                      (begin
                        (set-mouse-pointer ra:set-vertical-split-mouse-pointer gui)
+                       (set! *sequencer-height-hovering* #t)
+                       (update-me!)
                        #t)
                      #f))
-   :leave-func (lambda (button-was-pressed)
+   :leave-func (lambda (button x y)
                  ;;(c-display "LEAVE DRAGGER")
                  (<ra> :set-statusbar-text "")
-                 (set-mouse-pointer ra:set-normal-mouse-pointer gui)
-                 #f))
+                 (if (= 0 button)
+                     (set-mouse-pointer ra:set-normal-mouse-pointer gui))
+                 (set! *sequencer-height-hovering* #f)
+                 (update-me!)))
 
   (add-delta-mouse-cycle!
    :press-func (lambda (button x* y*)
                  (if (is-active)
                      (begin
                        (set-mouse-pointer ra:set-vertical-split-mouse-pointer gui)
+                       (set! *sequencer-height-dragging* #t)
+                       (update-me!)
                        #t)
                      #f))
    :drag-func
@@ -1198,11 +1216,15 @@
 
    :release-func
    (lambda (button x* y* dx dy)
-     (set-mouse-pointer ra:set-normal-mouse-pointer gui))
+     (set! *sequencer-height-dragging* #f)
+     (update-me!)
+     (if (= 0 button)
+         (set-mouse-pointer ra:set-normal-mouse-pointer gui))
+     )
    )
 
   ;; doesn't work. must fix nonpress-mouse-cycle in area.scm
-  '(add-statusbar-text-handler (lambda ()
+  (add-statusbar-text-handler (lambda ()
                                 (if (is-active)
                                     "Change sequencer height"
                                     "")))
@@ -1249,36 +1271,15 @@
 (<ra> :toggle-full-screen)
 !!#
 
-(define (delete-seqtrack-and-maybe-ask seqtracknum)
-  (define (deleteit)
-    (<ra> :delete-seqtrack seqtracknum)
-    (if *current-seqtrack-num*
-        (set! *current-seqtrack-num* (min (- (<ra> :get-num-seqtracks) 1)
-                                          *current-seqtrack-num*)))
-    )
-
-  (if (and (= 0 seqtracknum)
-           (not (<ra> :seqtrack-for-audiofiles 0))
-           (<ra> :seqtrack-for-audiofiles 1))
-      (ask-user-about-first-audio-seqtrack
-       (lambda (doit)
-         (if doit
-             (deleteit))))
-      (deleteit)))
-
 (def-area-subclass (<sequencer-left-part-buttons> :gui :x1 :y1 :x2 :y2)
 
   (define (callback type)
     (insert-or-append-seqtrack type))
   
-  (define-override (get-nonpress-mouse-cycle x* y*)
-    (when (inside? x* y*)
-      (set-mouse-pointer ra:set-normal-mouse-pointer gui))
-    (super:get-nonpress-mouse-cycle x* y*))
-
-  (add-nonpress-mouse-cycle!
-   :enter-func (lambda (x* y)
-                 (set-mouse-pointer ra:set-normal-mouse-pointer gui)
+  (add-raw-mouse-cycle!
+   :enter-func (lambda (button x* y)
+                 (if (= 0 button)
+                     (set-mouse-pointer ra:set-normal-mouse-pointer gui))
                  #f))
 
   (define b (max 0 (/ (get-fontheight) 6)))
@@ -1310,7 +1311,8 @@
                                                                                        (else
                                                                                         (assert #f))))
                                                            :callback-release (lambda ()
-                                                                               (callback type))))))
+                                                                               (callback type))
+                                                           :id (<_> 'sequencer-left-part-buttons type)))))
 
   ;;(define background-color (<gui> :get-background-color gui))
   ;;
@@ -1371,6 +1373,7 @@
                  (<ra> :set-sequencer-grid-enabled new-value))
                :text (lambda ()
                        (<-> "G: " (get-curr-grid)))
+               :prepend-checked-marker #t
                :right-mouse-clicked-callback
                (lambda ()
                  (define grid (get-curr-grid))
@@ -1464,13 +1467,71 @@
    )
                                  
   )
-   
+
+#!!
+(map (lambda (seqtracknum)
+       (list seqtracknum
+             (<ra> :get-seqtrack-y1 seqtracknum)
+             (<ra> :get-seqtrack-y2 seqtracknum)))
+     (iota (<ra> :get-num-seqtracks)))
+!!#
+
+(define (set-topmost-visible-seqtrack-from-percentage percentage)
+  (define first-visible-seqtrack (find-first-visible-seqtrack))
+  (define last-visible-seqtrack (find-last-visible-seqtrack))
+
+  (define total-height (get-actual-total-seqtracks-height))
+  
+  (define seqtrack0-y1 (<ra> :get-seqtrack-y1 first-visible-seqtrack))
+  (define ideal-pos (+ seqtrack0-y1 (* percentage total-height)))
+  (define lowest-seqtracknum (<ra> :get-lowest-possible-topmost-visible-seqtrack))
+  (define new-seqtracknum
+    (let loop ((seqtracknum first-visible-seqtrack)
+               (last-legal 0)
+               (prev-dist #f))
+      (cond ((= seqtracknum lowest-seqtracknum)
+             seqtracknum)
+            ((not (<ra> :get-seqtrack-visible seqtracknum))
+             (loop (+ seqtracknum 1)
+                   last-legal
+                   prev-dist))
+            (else
+             (define curr-pos (<ra> :get-seqtrack-y1 seqtracknum))
+             (define dist (abs (- curr-pos ideal-pos)))
+             (c-display "---. " seqtracknum ". Prev dist:" prev-dist ". Dist:" dist ". curr-pos:" curr-pos ". ideal pos:" ideal-pos)
+             (if (and prev-dist
+                      (> dist prev-dist))
+                 last-legal
+                 (loop (+ seqtracknum 1)
+                       seqtracknum
+                       dist))))))
+
+  (c-display "percentage:" percentage ". new:" new-seqtracknum)
+  (<ra> :set-topmost-visible-seqtrack new-seqtracknum))
+
+
+(define (get-sequencer-left-part-seqtracks-y1)
+  (define seqtrack0-y1 (<ra> :get-seqtracks-y1)) ;;(<ra> :get-seqtrack-y1 topmost-seqtrack))
+  (define ty1-height (myfloor (- seqtrack0-y1
+                                 (<ra> :get-sequencer-y1))))
+  (+ (<ra> :get-sequencer-left-part-y1)
+     ty1-height))
+
+(define (get-sequencer-left-part-seqtracks-y2)
+  (- (<ra> :get-sequencer-left-part-buttons-y1) 1))
+
+(define *scrollbar-is-moving* #f)
+
+#!!
+(<ra> :get-topmost-visible-seqtrack)
+(<ra> :get-lowest-possible-topmost-visible-seqtrack)
+!!#
 
 (def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2 :seqtrack-x1)
   (define num-seqtracks (<ra> :get-num-seqtracks))
 
   (define topmost-seqtrack (<ra> :get-topmost-visible-seqtrack))
-  
+
   (define seqtrack0-y1 (<ra> :get-seqtracks-y1)) ;;(<ra> :get-seqtrack-y1 topmost-seqtrack))
   
   (define b 0)
@@ -1481,18 +1542,15 @@
                                          0
                                          ((<ra> :get-box seqtempo-area) :height)))))
   
-  (define ty1-height (myfloor (- seqtrack0-y1
-                                 (<ra> :get-sequencer-y1))))
-;;                                 (<ra> :get-seqtimeline-area-y1))))
-  
-  (define ty1 (+ y1 ty1-height))    
-  (define ty2 (- y2 (* 1.5 (get-fontheight)))) ;; If changing this, also change the y2 value for setClipRect in paintVamps in api_gui.cpp too.
+  (define ty1 (get-sequencer-left-part-seqtracks-y1))
+  (define ty2 (get-sequencer-left-part-seqtracks-y2))
 
   ;;(c-display "       ___:" x1 y1 x2 y2 ty1 ty2 seqtrack-x1)
 
   (define topbar-y2 (+ y1 topbar-height))
-
-  (add-sub-area-plain! (<new> :sequencer-left-part-top-bar gui x1 y1 x2 topbar-y2))
+  (define seqtracks-y2 (get-sequencer-left-part-seqtracks-y2))
+  
+  (add-sub-area-plain! (<new> :sequencer-left-part-top-bar gui x1 (+ y1 2) x2 (- topbar-y2 2)))
 
   (define show-tempos (<ra> :show-tempos-sequencer-lane))
   (define show-signatures (<ra> :show-signatures-sequencer-lane))
@@ -1506,10 +1564,16 @@
         ;;(c-display "timeline-height:" timeline-height ". header-height:" header-height ". topmost seqtrack:" topmost-seqtrack". stuff: " seqtrack0-y1 (<ra> :get-seqtimeline-area-y2))
         (add-sub-area-plain! (<new> :sequencer-timeline-headers gui x1 y1 x2 y2))))
   
-  (define header-area (<new> :area gui x1 topbar-y2 x2 (- ty2 1)))
+  (define header-area (<new> :area gui seqtrack-x1 topbar-y2 x2 (- ty2 1)))
   (add-sub-area-plain! header-area)
+
+  (define lowest-seqtrack 0)
+
+  (define topmost-seqtrack-y1 0)
   
   (let loop ((seqtracknum topmost-seqtrack))
+    (set! lowest-seqtrack seqtracknum)
+      
     (when (< seqtracknum num-seqtracks)
       (define seqtrack-box (<ra> :get-box seqtrack seqtracknum))
       (define sy1 (+ ty1 (- (seqtrack-box :y1) seqtrack0-y1)))
@@ -1530,6 +1594,9 @@
                                       (if (= (1- num-seqtracks) seqtracknum)
                                           0
                                           b/2)))))
+
+            (if (= topmost-seqtrack seqtracknum)
+                (set! topmost-seqtrack-y1 sy1))
             
             (define use-two-rows (> (seqtrack-box :height)
                                     (* 2.5 (get-fontheight))))
@@ -1539,11 +1606,59 @@
             
             (if (or (not (<ra> :seqtrack-for-audiofiles seqtracknum))
                     (>= (<ra> :get-seqtrack-instrument seqtracknum) 0))
-                (header-area :add-sub-area-plain! (<new> :seqtrack-header gui seqtrack-x1 sy1 x2 sy2 use-two-rows show-panner (- ty2 1) seqtracknum)))
+                (header-area :add-sub-area-plain! (<new> :seqtrack-header gui seqtrack-x1 sy1 x2 sy2 use-two-rows show-panner seqtracks-y2 seqtracknum)))
             
             (loop (1+ seqtracknum))))))
 
+  (if (> (<ra> :get-lowest-possible-topmost-visible-seqtrack)
+         0)
+      (let ()
+        (define scrollbar-x1 x1)
+        (define scrollbar-x2 (- seqtrack-x1 (<ra> :get-seqtrack-border-width)))
+        
+        (define slider-length (/ (- seqtracks-y2 topmost-seqtrack-y1)
+                                 (get-actual-total-seqtracks-height)))
 
+        (define first-visible-seqtrack (find-first-visible-seqtrack))
+        (define last-visible-seqtrack (find-last-visible-seqtrack))
+        
+        (define org-slider-pos (scale (<ra> :get-seqtrack-y1 topmost-seqtrack)
+                                      (<ra> :get-seqtrack-y1 first-visible-seqtrack)
+                                      (+ (<ra> :get-seqtrack-y1 first-visible-seqtrack)
+                                         (get-actual-total-seqtracks-height))
+                                      0 1))
+
+        (c-display "visible height:" (- seqtracks-y2 topmost-seqtrack-y1)
+                   "y1/y2:" (<ra> :get-seqtrack-y1 first-visible-seqtrack) (<ra> :get-seqtrack-y2 last-visible-seqtrack)
+                   ". total height:" (get-actual-total-seqtracks-height) ;;(- (<ra> :get-seqtrack-y2 (- (<ra> :get-num-seqtracks) 1)) (<ra> :get-seqtrack-y1 0))
+                   ". slider-length:" slider-length
+                   ". org-slider-pos:" org-slider-pos
+                   ". topmost-seqtrack-y1:" topmost-seqtrack-y1)
+
+        (add-sub-area-plain! (<new> :scrollbar gui scrollbar-x1 topmost-seqtrack-y1 scrollbar-x2 seqtracks-y2
+                                    :callback (lambda (slider-pos slider-len)
+                                                '(c-display "callback:" slider-pos slider-len ". dist:" (- slider-len slider-pos))
+                                                '(c-display "dy:" (- slider-pos org-slider-pos)
+                                                           (scale (- slider-pos org-slider-pos)
+                                                                  0 1
+                                                                  0 (get-actual-total-seqtracks-height)))
+                                                (c-display "len/length:" slider-pos slider-len)
+                                                (set-topmost-visible-seqtrack-from-percentage slider-pos)
+                                                )
+                                    :slider-pos org-slider-pos
+                                    :slider-length slider-length
+                                    ;;:slider-length (scale (- (+ 1 lowest-seqtrack) topmost-seqtrack)
+                                    ;;                     0 (<ra> :get-num-seqtracks)
+                                    ;;                    0 1)
+                                    :vertical #t
+                                    :mouse-press-callback (lambda ()
+                                                            (set! *scrollbar-is-moving* #t))
+                                    :mouse-release-callback (lambda ()
+                                                              (set! *scrollbar-is-moving* #f))
+                                    :is-moving (lambda ()
+                                                 *scrollbar-is-moving*)
+                                    ))))
+  
   (add-sub-area-plain! (<new> :sequencer-left-part-buttons gui x1 ty2 x2 y2))
 
   (define background-color (<gui> :get-background-color gui))
