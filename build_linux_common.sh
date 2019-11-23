@@ -121,7 +121,7 @@ export OS_OPTS="-Werror=array-bounds -msse2 -fomit-frame-pointer -DFOR_LINUX `$P
 #VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Debug -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which clang++` -DCMAKE_C_COMPILER=`which clang`" make most
 #VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc`" make most
 
-if [[ -v "${INCLUDE_FAUSTDEV}" ]] ; then
+if env |grep INCLUDE_FAUSTDEV= ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
 fi
 
@@ -140,8 +140,9 @@ if [ -f $MAYBELLVM ]; then
 else
     LLVMLIBS=`llvm-config --libs`
 fi
-if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
-    if [[ -v "${INCLUDE_FAUSTDEV}" ]] ; then
+
+if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM= ; then
+    if env |grep INCLUDE_FAUSTDEV= ; then
         LLVMLIBS=
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
@@ -153,7 +154,7 @@ fi
 
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_gpl-2.10.8
 
-if [[ -v "${INCLUDE_FAUSTDEV}" ]] ; then
+if env |grep INCLUDE_FAUSTDEV= ; then
     FAUSTLDFLAGS="$QSCINTILLA_PATH/Qt4Qt5/libqscintilla2_qt5.a `pwd`/bin/packages/faust/build/lib/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
 else    
     FAUSTLDFLAGS=""
