@@ -150,7 +150,6 @@ if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
     fi
 fi
 
-exit -2
 
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_gpl-2.10.8
 
