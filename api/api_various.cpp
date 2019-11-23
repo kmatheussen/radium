@@ -2275,7 +2275,7 @@ void evalScheme(const_char *code){
     if (pos > 0){
       code2 = code2.left(pos);
       code2 = code2.trimmed();
-      printf("   CODE2: -%s-\n", code2.toUtf8().constData());
+      //printf("   CODE2: -%s-\n", code2.toUtf8().constData());
       S7CALL2(void_charpointer,"FROM-C-assert-that-function-can-be-called-from-C",code2.toUtf8().constData());
     }
   }
@@ -3090,6 +3090,10 @@ const_char *fromBase64(const char *s){
 
 const_char *appendBase64Strings(const_char* w1, const_char* w2){
   return qstring_to_w(w_to_qstring(w1) + w_to_qstring(w2));
+}
+
+int getStringLength(const_char* s){
+  return QString(s).length();
 }
 
 const_char *createUuid(void){

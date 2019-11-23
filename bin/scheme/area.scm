@@ -50,15 +50,26 @@
                          ,@body)))))
 
 
+(define-struct raw-mouse-cycle
+  :enter-func
+  :move-func
+  :leave-func  
+  :inside?
+  :id
+  :is-active #f
+  :data #f)
+
+(define *raw-mouse-cycle-counter* 0)
+
 (define *area-id-counter* 0)
 
 (c-define-expansion (*def-area-subclass* def . body)
-
+                    
   (define body-methods '())
   (let ((temp (split-list body keyword?)))
     (set! body (car temp))
     (set! body-methods (cadr temp)))
-                     
+  
   `(define-class ,def
 
      ;; To avoid overlapping paint updates, we convert all coordinates to integers.
@@ -76,7 +87,7 @@
      (define (paint?)
        #t)
 
-     (define id (inc! *area-id-counter* 1))
+     (define id_ (inc! *area-id-counter* 1))
 
      (define is-alive #t)
 
@@ -344,43 +355,64 @@
                          (return #t))))
                #f))))
      
-     ;; Mouse cycles
-     ;;;;;;;;;;;;;;;;;;;;;;;;
 
-     (define-optional-hash-table curr-nonpress-mouse-cycle)
-     (define-optional-hash-table curr-mouse-cycle)
+     ;; Raw mouse cycles (both when button is pressed, and when button is not pressed)
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-     (define mouse-cycles '())
-     (define nonpress-mouse-cycles '())
+     (define raw-mouse-cycles '())
+     
+     (delafina (add-raw-mouse-cycle! :enter-func (lambda x #t)
+                                     :move-func (lambda x #t)
+                                     :leave-func (lambda x #f) ;; Leave area, or button was pressed.
+                                     :data #f)
        
-     (delafina (add-nonpress-mouse-cycle! :enter-func (lambda x #t)
-                                          :move-func (lambda x #f)
-                                          :leave-func (lambda x #f)) ;; Leave area, or button was pressed.
-       (push-back! nonpress-mouse-cycles
-                   (make-mouse-cycle enter-func
-                                     move-func
-                                     leave-func
-                                     inside?))
+       (set! *raw-mouse-cycle-counter* (+ 1 *raw-mouse-cycle-counter*))
+       
+       (push-back! raw-mouse-cycles
+                   (make-raw-mouse-cycle enter-func
+                                         move-func
+                                         leave-func
+                                         inside?
+                                         *raw-mouse-cycle-counter*
+                                         data))
        )
 
-     (define (start-nonpress-mouse-cycle! new-cycle)
-       (assert (not curr-nonpress-mouse-cycle))
-       (set! curr-nonpress-mouse-cycle new-cycle))
+     ;; This function handles all raw mouse cycles, and it is only called from mouse-callback-internal in the gui that is placed directly on the underlying qt widget,
+     ;; or from the parent widget's handle-raw-mouse-cycles function.
+     (define (handle-raw-mouse-cycles button state x y)
+       (for-each (lambda (sub-area)
+                   (sub-area :handle-raw-mouse-cycles button state x y))
+                 sub-areas) ;; (reverse sub-areas))
+       (define is-inside (inside? x y))
+       (for-each (lambda (raw-mouse-cycle)
+                   (define was-active (raw-mouse-cycle :is-active))
+                   (define is-active was-active)
+                   (if is-active
+                       (if is-inside
+                           (set! is-active (raw-mouse-cycle :move-func button x y))
+                           (begin
+                             (raw-mouse-cycle :leave-func button x y)
+                             (set! is-active #f)))
+                       (if is-inside
+                           (set! is-active (raw-mouse-cycle :enter-func button x y))))
+                   (if (not (eq? was-active is-active))
+                       (set! (raw-mouse-cycle :is-active) is-active)))
+                 raw-mouse-cycles))
      
-     (define (end-nonpress-mouse-cycle! button-was-pressed)
-       (assert curr-nonpress-mouse-cycle)
-       (let ((nonpress-mouse-cycle curr-nonpress-mouse-cycle))
-         (set! curr-nonpress-mouse-cycle #f)
-         ;;(c-display "end-nonpress-mouse-cycle called" (nonpress-mouse-cycle :release-func))
-         ((nonpress-mouse-cycle :release-func) button-was-pressed)))
-  
+     
+     ;; Mouse cycles (only when button is pressed)
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+     (define-optional-hash-table curr-mouse-cycle)
+     (define mouse-cycles '())
+
      (delafina (add-mouse-cycle! :press-func (lambda x #t)
                                  :drag-func (lambda x #f)
                                  :release-func (lambda x #f))
        (push-back! mouse-cycles
                    (make-mouse-cycle press-func drag-func release-func))
        )
-
+     
      (delafina (add-delta-mouse-cycle! :press-func (lambda x #t)
                                        :drag-func (lambda x #f)
                                        :release-func (lambda x #f))
@@ -425,22 +457,23 @@
                                      (lambda (button x* y*)
                                        (call-delta-func drag-func button x* y* #f)
                                        (call-delta-func release-func button x* y* #t)))))
-
-     (define (get-nonpress-mouse-cycle x* y*)
+     
+     (define (get-raw-mouse-cycles x* y*)
+       (define ret '())
        (and (paint?)
             (inside? x* y*)
-	    (or (call-with-exit (lambda (return)
-                                  (for-each (lambda (sub-area)
-                                              (and-let* ((res (sub-area :get-nonpress-mouse-cycle x* y*)))
-                                                        (return res)))
-                                            (reverse sub-areas))
-                                  #f))
-		(call-with-exit (lambda (return)                                  
-                                  (for-each (lambda (mouse-cycle)
-                                              (and-let* ((res (mouse-cycle :press-func x* y*)))
-                                                        (return mouse-cycle)))
-                                            nonpress-mouse-cycles)
-                                  #f)))))
+            (call-with-exit (lambda (return)
+                              (for-each (lambda (sub-area)
+                                          (let ((maybe (sub-area :get-raw-mouse-cycle x* y*)))
+                                            (if (not (null? maybe))
+                                                (return maybe))))
+                                        (reverse sub-areas))
+                              (keep identity
+                                    (map (lambda (mouse-cycle)
+                                           (if (mouse-cycle :press-func x* y*)
+                                               mouse-cycle
+                                               #f))
+                                         raw-mouse-cycles))))))
        
      (define do-nothing-mouse-cycle (make-mouse-cycle (lambda (button x* y*)
                                                         (assert #f))
@@ -472,8 +505,6 @@
 
      (define (mouse-press-internal button x* y*)
        ;;(c-display "_____________________________________mouse-press" curr-mouse-cycle)
-       (if curr-nonpress-mouse-cycle
-           (end-nonpress-mouse-cycle! #t))
        (if (not (<ra> :release-mode))
            (assert (not curr-mouse-cycle))) ;; Unfortunately, we can't trust Qt to send release events. (fixed now)
        (set! curr-mouse-cycle (get-mouse-cycle button x* y*))
@@ -484,20 +515,9 @@
      
      (define (mouse-move-internal button x* y*)
        ;;(c-display "..mouse-move-internal for" class-name ". y:" y* ". has-curr:" (to-boolean curr-mouse-cycle)  ". has_nonpress:" (to-boolean curr-nonpress-mouse-cycle))
-       (let ((ret (cond (curr-mouse-cycle
-              (curr-mouse-cycle :drag-func button x* y*))
-             (curr-nonpress-mouse-cycle
-              ;;(c-display "inside?" class-name y1 y2 (curr-nonpress-mouse-cycle :inside? x* y*))
-              (if (curr-nonpress-mouse-cycle :inside? x* y*)
-                  (curr-nonpress-mouse-cycle :drag-func x* y*) ;; still inside
-                  (end-nonpress-mouse-cycle! #f))) ;; not inside any more
-             (else
-              ;;(c-display "hepp")
-              (start-nonpress-mouse-cycle! (get-nonpress-mouse-cycle x* y*)))))
-
-             )
-         ;;(c-display "ret:" ret)
-         ret))
+       (and curr-mouse-cycle
+            (curr-mouse-cycle :drag-func button x* y*)))
+     
      (define (mouse-release-internal button x* y*)
        ;;(if curr-mouse-cycle
        ;;    (c-display "..mouse-release-internal for" class-name ". y:" y*))
@@ -515,6 +535,8 @@
        ;;(c-display "   mouse-callback-internal" "has:" (if curr-mouse-cycle #t #f) ". button/state:" button state
        ;;           (if (= state *is-releasing*) "releasing" (if (= state *is-leaving*) "leaving" (if (= state *is-pressing*) "pressing" "unknown"))))
        
+       (handle-raw-mouse-cycles button state x y)
+       
        ;; make sure release is always called when releasing, no matter other states.
        (when (or (= state *is-releasing*)
                  (= state *is-leaving*))
@@ -525,9 +547,7 @@
        (cond (*current-mouse-cycle*
               #f) ;; i.e. mouse.scm is handling mouse now.
              ((= state *is-leaving*)
-              (if curr-nonpress-mouse-cycle
-                  (end-nonpress-mouse-cycle! #f)
-                  #f))
+              #f)
              ((= state *is-moving*)
               (mouse-move-internal button x y))
              ((not (inside? x y))
@@ -542,10 +562,16 @@
 
      (define (has-mouse)
        ;;(c-display "has-mouse:" class-name curr-mouse-cycle curr-nonpress-mouse-cycle)
-       (get-bool (or curr-mouse-cycle
-                     curr-nonpress-mouse-cycle)))
+       (or (get-bool curr-mouse-cycle)
+           #f))
+;           (any? (lambda (raw-mouse-cycle)
+;                   (raw-mouse-cycle :is-active))
+;                 raw-mouse-cycles)
+;           (any? (lambda (sub-area)
+;                   (sub-area :has-mouse))
+;                 sub-areas)))
      
-     ;; Status bar
+       ;; Status bar
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
      
      (define statusbar-text-id -1)
@@ -556,26 +582,64 @@
      (define (remove-statusbar-text)
        (<gui> :tool-tip "")
        (<ra> :remove-statusbar-text statusbar-text-id))
-     
+
+     (define (a-sub-area-contains-active-raw-mouse-handler? area data)
+       (call-with-exit
+        (lambda (return)
+          (for-each (lambda (raw-mouse-cycle)
+                      (when (raw-mouse-cycle :is-active)
+                        (define data (raw-mouse-cycle :data))
+                        (if (and (symbol? data)
+                                 (eq? data data))
+                            (return #t))))
+                    (area :get-raw-mouse-cycles))
+          (any? (lambda (sub-area)
+                  (a-sub-area-contains-active-raw-mouse-handler? sub-area data))
+                (area :get-sub-areas)))))
+       
+     (define (a-sub-area-contains-active-raw-statusbar-text-mouse-cycle-handler? area)
+       (a-sub-area-contains-active-raw-mouse-handler? area 'statusbar-text-handler))
+  
      (define (add-statusbar-text-handler string-or-func)
-       (add-nonpress-mouse-cycle!
-        :enter-func (lambda (x* y)
-                      (define string-or-pair (if (procedure? string-or-func)
-                                                 (string-or-func)
-                                                 string-or-func))
-                      (define text (if (pair? string-or-pair)
-                                       (cadr string-or-pair)
-                                       string-or-pair))
-                      (define also-show-tooltip (if (pair? string-or-pair)
-                                                    (car string-or-pair)
-                                                    #f))
-                      
-                      (if also-show-tooltip
-                          (<gui> :tool-tip text))
-                      (set-statusbar-text! text)
-                      #t)
-        :leave-func (lambda (button-was-pressed)
-                      remove-statusbar-text)))
+       (add-raw-mouse-cycle!
+        :enter-func (lambda (button x* y)
+                      (if (any? a-sub-area-contains-active-raw-statusbar-text-mouse-cycle-handler? sub-areas)
+                          #f
+                          (let ()
+                            (define string-or-pair (if (procedure? string-or-func)
+                                                       (string-or-func)
+                                                       string-or-func))
+                            (define text (if (pair? string-or-pair)
+                                             (cadr string-or-pair)
+                                             string-or-pair))
+                            (define also-show-tooltip (if (pair? string-or-pair)
+                                                          (car string-or-pair)
+                                                          #f))
+                            
+                            (if also-show-tooltip
+                                (<gui> :tool-tip text))
+                            (set-statusbar-text! text)
+                            #t)))
+        :leave-func (lambda (button x y)
+                      (remove-statusbar-text))
+        :data 'statusbar-text-handler))
+       
+     (define (a-sub-area-contains-active-raw-statusbar-text-mouse-cycle-handler? area)
+       (a-sub-area-contains-active-raw-mouse-handler? area 'mouse-pointerhandler))
+
+     (define (add-mouse-pointerhandler set-mouse-pointer-func!)
+       (add-raw-mouse-cycle!
+        :enter-func (lambda (button x* y)
+                      (if (any? a-sub-area-contains-active-raw-statusbar-text-mouse-cycle-handler? sub-areas)
+                          #f
+                          (let ()
+                            (set-mouse-pointer set-mouse-pointer-func! gui)
+                            #t)))
+        :leave-func (lambda (button x y)
+                      #t
+                      ;;(set-mouse-pointer ra:set-normal-mouse-pointer gui)                      
+                      )
+        :data 'mouse-pointerhandler))
        
      ;; Painting
      ;;;;;;;;;;;;;;;
@@ -657,8 +721,9 @@
      :mouse-wheel-moved-internal! x (apply mouse-wheel-moved-internal! x)
      :add-mouse-cycle! x (apply add-mouse-cycle! x)
      :get-mouse-cycle x (apply get-mouse-cycle x)
-     :add-nonpress-mouse-cycle! x (apply add-nonpress-mouse-cycle! x)
-     :get-nonpress-mouse-cycle x (apply get-nonpress-mouse-cycle x)
+     :add-raw-mouse-cycle! x (apply add-raw-mouse-cycle! x)
+     :get-raw-mouse-cycles x raw-mouse-cycles
+     :handle-raw-mouse-cycles x (apply handle-raw-mouse-cycles x)
      :overlaps? x (apply overlaps? x)
      ;;:paint x (apply paint x)
      :paint-internal x (apply paint-internal x)
@@ -985,32 +1050,49 @@
                                :text "" ;; Only used if paint-func is #f
                                :text-color *text-color* ;; Only used if paint-func is #f
                                :selected-color #f ;; only used if paint-func is #f. If #f, use get-default-button-color
+                               :prepend-checked-marker #t
                                :right-mouse-clicked-callback #f
                                :border-width 0.25
                                :box-rounding #f
                                )
 
   (if (not selected-color)
-      (set! selected-color (get-default-button-color gui)))
+      (set! selected-color "check_box_selected")) ;;(get-default-button-color gui)))
+
+  (define is-hovering #f)
 
   (define-override (paint)
     (if paint-func
-        (paint-func gui x1 y1 x2 y2 (is-selected-func))
+        (paint-func gui x1 y1 x2 y2 (is-selected-func) is-hovering)
         (begin
-          (<gui> :filled-box gui (<gui> :get-background-color gui) x1 y1 x2 y2 3 3)
-          (draw-checkbox gui
+          (draw-button gui
                          (if (procedure? text) (text) text)
                          (is-selected-func)
                          x1 y1 x2 y2
                          selected-color
+                         ;;:unselected-color (<gui> :get-background-color gui)
+                         :background-color "color13" ;;(<gui> :get-background-color gui)
+                         :is-hovering is-hovering
+                         :prepend-checked-marker prepend-checked-marker
                          :text-color text-color
                          :paint-implicit-border #f
                          :implicit-border-width border-width
                          :box-rounding box-rounding
                          )
-          (<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 3 3))))
+          ;;(<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 3 3)
+          )))
 
-  (add-mouse-cycle! (lambda (button x* y*)
+  (add-raw-mouse-cycle!
+   :enter-func (lambda (button x y)
+                 (set! is-hovering #t)
+                 (update-me!)
+                 #t)
+   :leave-func (lambda (button x y)
+                 (set! is-hovering #f)
+                 (update-me!)
+                 #f))
+
+(add-mouse-cycle! (lambda (button x* y*)
                       (cond ((and right-mouse-clicked-callback
                                   (= button *right-button*)
                                   ;;(not (<ra> :shift-pressed))
@@ -1076,6 +1158,9 @@
 
   )
 
+(define *button-is-pressing* (make-hash-table 10 eq?))
+(define *button-is-pressing-num-stoppers* (make-hash-table 10 =))
+
 (def-area-subclass (<button> :gui :x1 :y1 :x2 :y2
                              :paint-func #f
                              :text ""
@@ -1083,11 +1168,23 @@
                              :statusbar-text #f
                              :callback #f
                              :callback-release #f
-                             :right-mouse-clicked-callback #f)
-  
+                             :right-mouse-clicked-callback #f
+                             :id #f)
 
   (define is-pressing #f)
+  (define (is-pressing?)
+    (if id
+        (*button-is-pressing* id)
+        is-pressing))
 
+  (define (set-is-pressing! maybe)
+    (if id
+        (set! (*button-is-pressing* id) maybe)
+        (set! is-pressing maybe))
+    (update-me!))
+
+  (define is-hovering #f)
+  
   (define fontheight (get-fontheight))
   (define b (max 1 (myfloor (/ fontheight 2.5)))) ;; border
   
@@ -1096,9 +1193,34 @@
 
   (if (not background-color)
       (set! background-color (get-default-button-color gui)))
-  
+
   (define (mypaint)
-    (if (not is-pressing)
+    (draw-button gui text (is-pressing?)
+                 x1 y1 x2 y2
+                 :is-hovering is-hovering))
+
+  (define (start-show-pressed!)
+    (set-is-pressing! #t))
+
+  (define (stop-show-pressed!)
+    (if id
+        (let ((num-stoppers (or (*button-is-pressing-num-stoppers* id)
+                                0)))
+          ;;(c-display "---------Num stoppers for" id ":" num-stoppers)
+          (set! (*button-is-pressing-num-stoppers* id) (+ num-stoppers 1))))
+    (<ra> :schedule 0
+          (lambda ()
+            (if id
+                (let ((num-stoppers (or (*button-is-pressing-num-stoppers* id)
+                                        1)))
+                  (set! (*button-is-pressing-num-stoppers* id) (- num-stoppers 1))
+                  (if (= 1 num-stoppers)
+                      (set-is-pressing! #f)))
+                (set-is-pressing! #f))                
+            #f)))
+    
+  '(define (mypaint)
+    (if (not (is-pressing?))
         (<gui> :filled-box gui background-color (+ x1 0) (+ y1 0) (- x2 0) (- y2 0) r r))
     
     (if (not (string=? "" text))
@@ -1127,6 +1249,16 @@
 
   (if statusbar-text
       (add-statusbar-text-handler statusbar-text))
+
+  (add-raw-mouse-cycle!
+   :enter-func (lambda (button x y)
+                 (set! is-hovering #t)
+                 (update-me!)
+                 #t)
+   :leave-func (lambda (button x y)
+                 (set! is-hovering #f)
+                 (update-me!)
+                 #f))
   
   (add-mouse-cycle! (lambda (button x* y*)
                       (cond ((and right-mouse-clicked-callback
@@ -1136,17 +1268,20 @@
                              (right-mouse-clicked-callback)
                              'eat-mouse-cycle)
                             ((= button *left-button*)
-                             (set! is-pressing #t)
-                             (if callback
-                                 (callback))
-                             (update-me!)
+                             ;;(set! is-pressing #t)
+                             (<ra> :schedule 0
+                                   (lambda ()
+                                     (if callback
+                                         (callback))
+                                     #f))
+                             (start-show-pressed!)
                              #t)
                             (else
                              #f)))
                     (lambda (button x* y*)
                       #t)
                     (lambda (button x* y*)
-                      (set! is-pressing #f)
+                      (stop-show-pressed!)
                       (cond ((and callback-release
                                   (= button *left-button*))
                              (callback-release)))
@@ -1158,15 +1293,16 @@
                                 :slider-pos
                                 :slider-length ;; between 0 and 1. E.g. for 0.5; slider length = scrollbar length * 0.5. Can also be a function returning the slider length.
                                 :vertical
-                                :background-color #f
+                                :background-color "#224653" ;;#f
                                 :paint-border #t
                                 :border-color "black"
                                 :border-rounding 0
-                                :slider-color "#400010"
-                                :slider-pressed-color #f
+                                :slider-color "black" ;;"#701040"
+                                :slider-pressed-color "#222222" ;;#f
                                 :border-width #f
                                 :mouse-press-callback #f
                                 :mouse-release-callback #f
+                                :is-moving #f
                                 )
 
   (assert slider-length)
@@ -1195,8 +1331,15 @@
 
   (add-method! :set-slider-pos! set-legal-slider-pos!)
                  
-  (define is-moving #f)
+  (define is-moving-internal #f)
+
+  (define (is-moving?)
+    (or (and is-moving
+             (is-moving))
+        is-moving-internal))
   
+  (add-method! :is-moving is-moving)
+                            
   (define-override (paint)
     (paint-scrollbar gui
                      slider-pos
@@ -1204,7 +1347,7 @@
                      vertical
                      x1 y1 x2 y2
                      background-color
-                     (if is-moving
+                     (if (is-moving?)
                          slider-pressed-color
                          slider-color)
                      slider-color
@@ -1226,7 +1369,7 @@
             (set-mouse-pointer ra:set-closed-hand-mouse-pointer gui)
             ;;(c-display "start:" slider-pos)
             (set! start-mouse-pos slider-pos)
-            (set! is-moving #t)
+            (set! is-moving-internal #t)
             (update-me!)
             #t)))
    (lambda (button x* y* dx dy)
@@ -1240,7 +1383,7 @@
    
    (lambda (button x* y* dx dy)
      (set-mouse-pointer ra:set-open-hand-mouse-pointer gui)
-     (set! is-moving #f)
+     (set! is-moving-internal #f)
      (update-me!)
      (if mouse-release-callback
          (mouse-release-callback))
@@ -1248,15 +1391,30 @@
      #f
      ))
 
-  (add-nonpress-mouse-cycle!
-   :enter-func (lambda (x* y)
-                 ;;(c-display "ENTER DRAGGER" class-name)
+  (add-raw-mouse-cycle!
+   :enter-func (lambda (button x* y)
+                 (if (any? a-sub-area-contains-active-raw-statusbar-text-mouse-cycle-handler? sub-areas)
+                     #f
+                     (let ()
+                       (set-mouse-pointer ra:set-open-hand-mouse-pointer gui)
+                       #t)))
+   :leave-func (lambda (button x y)
+                 '(if (not (is-moving?))
+                      (set-mouse-pointer ra:set-normal-mouse-pointer gui))
+                 #t
+                 )
+   :data 'mouse-pointerhandler)
+
+;;(add-mouse-pointerhandler ra:set-open-hand-mouse-pointer)
+  
+  '(add-raw-mouse-cycle!
+   :enter-func (lambda (button x* y)
+                 (c-display "ENTER SCROLLBAR" class-name)
                  (set-mouse-pointer ra:set-open-hand-mouse-pointer gui)
                  #t)
-   :leave-func (lambda (button-was-pressed)
-                 ;;(c-display "LEAVE DRAGGER")
-                 (set-mouse-pointer ra:set-normal-mouse-pointer gui)
-                 #f))
+   :leave-func (lambda (button x y)
+                 (c-display "LEAVE SCROLLBAR")
+                 (set-mouse-pointer ra:set-normal-mouse-pointer gui)))
 
   )
 
@@ -1368,7 +1526,8 @@
                                :slider-pos 0
                                :slider-length slider-length
                                :vertical #t
-                               :background-color background-color)))
+                               ;;:background-color background-color
+                               )))
 
   ;;(scrollbar :resize! scrollbar-width height)
     
@@ -1625,7 +1784,8 @@
                                 :slider-pos 0
                                 :slider-length slider-length
                                 :vertical #t
-                                :background-color background-color)))
+                                ;;:background-color background-color
+                                )))
   
   (if scrollbar
       (add-sub-area-plain! scrollbar))
@@ -2407,6 +2567,8 @@
     (add-sub-area-plain! tab-area)
     (update-me!))
 
+  (add-mouse-pointerhandler ra:set-normal-mouse-pointer)
+  
   (add-mouse-cycle! :press-func (lambda (button x* y*)
                                   (and (= button *left-button*)
                                        (call-with-exit

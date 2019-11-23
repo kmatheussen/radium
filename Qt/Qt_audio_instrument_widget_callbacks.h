@@ -196,7 +196,7 @@ public:
     if(plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Click") || plugin->type==PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth")){
       _sample_requester_widget = new Sample_requester_widget(this, _patch_widget->name_widget, _plugin_widget->sample_name_label, _patch.data());
       effects_layout->insertWidget(3,_sample_requester_widget);
-      show_browser->setFixedWidth(browserArrow->width());
+      //show_browser->setFixedWidth(browserArrow->width());
 
       /*
       QLabel *arrow = new QLabel("=>",this);

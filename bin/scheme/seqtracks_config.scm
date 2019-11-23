@@ -15,8 +15,6 @@
                                             :top-visible-y1
                                             :seqtracknum)
   
-  (define is-current (= (<ra> :get-curr-seqtrack) seqtracknum))
-  
   (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
   (define for-blocks (not for-audiofiles))
   (define instrument-id (if for-blocks
@@ -37,7 +35,7 @@
   (define mutesolo-x1 (- x2 (get-mutesolo-width for-audiofiles
                                                 :include-rec-button (<ra> :seqtrack-is-recording seqtracknum #f))))
   
-  (define enabled-button (<new> :checkbox gui x1 y1 text-x1 y2
+  (define enabled-button (<new> :checkbox gui (+ x1 2) (+ y1 1) (- text-x1 2) (- y2 1)
                                 :is-selected-func (lambda ()
                                                     (<ra> :get-seqtrack-visible seqtracknum))
                                 :value-changed-callback (lambda (new-value)
@@ -48,8 +46,8 @@
                                                           #t)
                                 :text (lambda ()
                                         (if (<ra> :get-seqtrack-visible seqtracknum)
-                                            "✓"
-                                            " "))
+                                            "✔"
+                                            ""))
                                 :right-mouse-clicked-callback (lambda ()
                                                                 (if (<ra> :shift-pressed)
                                                                     (if (> (<ra> :get-num-seqtracks) 1)
@@ -108,6 +106,11 @@
                              'eat-mouse-cycle)
                             (else
                              #f))))))
+
+  (define-override (post-paint)
+    (when (= (<ra> :get-curr-seqtrack) seqtracknum)
+      (<gui> :draw-box gui "sequencer_currtrack_border_color" (+ 1 x1) (+ 1 y1) (- x-meter-split 0) (- y2 1) 2 3 3))
+    )
 
   '(define-override (get-mouse-cycle button x* y*)
     (define ret (super:get-mouse-cycle button x* y*))
@@ -197,11 +200,11 @@
 
     (define border 1) ;; If changing here, also change "font_height + 1" in api_gui.cpp.
   
-    (define scroll-y1 (+ y1 fontheight border)) ;; If changing here, also change "font_height + 1" in api_gui.cpp.
+    (define scroll-y1 (+ y1 fontheight border 2)) ;; If changing here, also change "font_height + 1" in api_gui.cpp.
     (define radio-x1 (+ x1 (/ width (+ 1 num-settings-buttons))))
     (define radio-y2 (- scroll-y1 border))
 
-    (define reset-button (<new> :button gui x1 y1 (- radio-x1 (/ border 2)) radio-y2
+    (define reset-button (<new> :button gui (+ x1 2) (+ y1 2) (- radio-x1 border 2) (- radio-y2 2)
                                 :text "↝"
                                 :background-color "#88228833"
                                 :statusbar-text (list #t "Reset A/B")
@@ -209,7 +212,7 @@
                                             (<ra> :reset-seqtrack-config))))
     (add-sub-area-plain! reset-button)
     
-    (add-sub-area-plain! (<new> :radiobuttons gui (+ radio-x1 (/ border 2)) y1 x2 radio-y2
+    (add-sub-area-plain! (<new> :radiobuttons gui (+ radio-x1 (/ border 2)) (+ y1 2) x2 (- radio-y2 2)
                                 num-settings-buttons
                                 (<ra> :get-curr-seqtrack-config-num)
                                 (lambda (num is-on)
@@ -228,14 +231,14 @@
     (define curr-x2 -10000000)
     (define curr-entries #f)
 
-    (define entry-height (* 1.2 fontheight))
+    (define entry-height (round (* 1.2 fontheight)))
     
     (set! vertical-list-area (<new> :vertical-list-area2 gui x1 scroll-y1 x2 y2
                                     :num-sub-areas (<ra> :get-num-seqtracks)
                                     :get-sub-area-height entry-height
                                     :create-sub-area
                                     (lambda (seqtracknum x1 x2)
-                                      (<new> :seqtrack-config-entry gui x1 0 x2 entry-height scroll-y1 seqtracknum))))
+                                      (<new> :seqtrack-config-entry gui x1 0 x2 (- entry-height 1) scroll-y1 seqtracknum))))
                                       
     (add-sub-area-plain! vertical-list-area)
     )

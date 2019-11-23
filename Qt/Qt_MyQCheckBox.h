@@ -40,6 +40,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/undo_audio_effect_proc.h"
 #include "../common/undo_patchvoice_proc.h"
+#include "../api/api_gui_proc.h"
+#include "../api/api_proc.h"
+
 #include "Qt_mix_colors.h"
 
 #ifdef COMPILING_RADIUM
@@ -82,7 +85,7 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
       else if (text=="Bypass")
         checked_col = mix_colors(col, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), 0.6);
       else
-        checked_col = col;
+        checked_col = get_qcolor(CHECK_BOX_SELECTED_COLOR_NUM);
 
       if (is_checked) {
         col = checked_col;
@@ -124,16 +127,16 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
       else
         painter->setPen(col);
 
-      painter->drawRect(1,1,width-3,height-2); // outer
+      painter->drawRoundedRect(1,1,width-3,height-2,5,5); // outer
       if(_is_implicitly_on)
         painter->setPen(col);
-      painter->drawRect(2,2,width-5,height-4); // inner
+      painter->drawRoundedRect(2,2,width-5,height-4,5,5); // inner
     }
 
 
     if(text!=""){
       painter->setPen(get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM));
-      painter->drawRect(0,0,width,height);
+      painter->drawRoundedRect(0,0,width,height,5,5);
 
       //QRect rect(5,3,width-5,height-3);
       QRect rect(1,1,width-2,height-1);//5,3,width-5,height-3);
@@ -169,8 +172,12 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   int _effect_num = 0;
   bool _is_implicitly_on = false;
 
-  MyQCheckBox_OnlyCustomPainting ( QWidget * parent = 0 ) : QCheckBox(parent) {}
-  MyQCheckBox_OnlyCustomPainting ( const QString & text, QWidget * parent = 0) : QCheckBox(text,parent) {}
+  MyQCheckBox_OnlyCustomPainting ( QWidget * parent = 0 ) : QCheckBox(parent) {
+    setMouseTracking(true);
+  }
+  MyQCheckBox_OnlyCustomPainting ( const QString & text, QWidget * parent = 0) : QCheckBox(text,parent) {
+    setMouseTracking(true);
+  }
 
   QString vertical_text;
 
@@ -180,26 +187,32 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   }
 
   bool _is_hovered = false;
+  bool _is_popup_hovered = false;
       
   bool _popup_menu_is_visible = false;
+
+  bool _show_enabled_marker = true;
   
   void enterEvent(QEvent *event) override {
     if (_patch.data() != NULL){
-      _is_hovered = true;
-      update();
+      _is_popup_hovered = true;
       if(_patch->instrument==get_audio_instrument())
         GFX_SetStatusBar(talloc_format("\"%s\" (right-click for options)", getInstrumentEffectName(_effect_num, _patch->id)));
     }
+    _is_hovered = true;
+    update();
   }
 
   void leaveEvent(QEvent *event) override {
     if (_patch.data() != NULL){
       if(_popup_menu_is_visible==false){
-        _is_hovered = false;
+        _is_popup_hovered = false;
         update();
       }
       GFX_SetStatusBar("");
     }
+    _is_hovered = false;
+    update();
   }
 
   void paintEvent ( QPaintEvent * ev ) override {
@@ -207,6 +220,8 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
     
     QPainter p(this);
 
+    p.setRenderHints(QPainter::Antialiasing,true);
+    
     if(text().startsWith("V ")){
       vertical_text = text().right(text().size()-2);
       setText("");
@@ -216,8 +231,42 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
 
     if(_patch.data()!=NULL && _patch->patchdata != NULL && _is_patchvoice_onoff_button==false)
       text2 = get_parameter_prepend_text(_patch.data(), _effect_num) + text2;
+
+#if 1
+
+    QRect rect(1,1,width()-2,height()-2);
     
+    radium::ScopedQClipRect scoped_clip_rect(p, rect);
+                                           
+    API_run_custom_gui_paint_function(this,
+                                      &p, &ev->region(),
+                                      [this,text2](){
+                                        evalScheme(talloc_format("(draw-button %d \"%s\" %s %d %d %d %d :is-hovering %s :prepend-checked-marker %s :vertical-text %s)", 
+                                                                 (int)API_get_gui_from_widget(this),
+                                                                 text2.toUtf8().constData(),
+                                                                 isChecked() ? "#t" : "#f",
+                                                                 1, 1, width()-1, height()-1,
+                                                                 _is_hovered ? "#t" : "#f",
+                                                                 _show_enabled_marker ? "#t" : "#f",
+                                                                 vertical_text.isEmpty() ? "#f" : "#t"
+                                                                 )
+                                                   );
+                                        /*
+                                        S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
+                                        S7CALL(void_int_charstring_bool_float_float_float_float,
+                                               draw_checkbox_func,
+                                               API_get_gui_from_widget(this),
+                                               text2.toUtf8().constData(), isChecked(),
+                                               0, 0, width(), height()
+                                               );
+                                        */
+                                      });
+  
+#else
+      
     CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2, _is_implicitly_on, _is_hovered);
+    
+#endif
   }
 
   
@@ -246,7 +295,7 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
     if(_popup_menu_is_visible){
       if(false==gui_isOpen(guinum)){
         _popup_menu_is_visible=false;
-        _is_hovered = false;
+        _is_popup_hovered = false;
         update();
       }else{
         IsAlive is_alive(this);

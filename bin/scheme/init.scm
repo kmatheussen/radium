@@ -226,6 +226,7 @@ FROM_C-move-current-instrument-right
 FROM_C-move-current-instrument-up
 FROM_C-move-current-instrument-down
 recreate-seqtracks-config-area
+draw-button
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

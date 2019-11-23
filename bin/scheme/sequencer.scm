@@ -19,6 +19,29 @@
 (define2 *current-seqtrack-num* (curry-or not integer?) #f)
 
 
+(define (find-first-visible-seqtrack)
+  (let loop ((seqtracknum 0))
+    (cond ((= seqtracknum (<ra> :get-num-seqtracks))
+           0)
+          ((<ra> :get-seqtrack-visible seqtracknum)
+           seqtracknum)
+          (else
+           (loop (+ 1 seqtracknum))))))
+        
+(define (find-last-visible-seqtrack)
+  (let loop ((seqtracknum (- (<ra> :get-num-seqtracks) 1)))
+    (cond ((= seqtracknum 0)
+           0)
+          ((<ra> :get-seqtrack-visible seqtracknum)
+           seqtracknum)
+          (else
+           (loop (- seqtracknum 1))))))
+
+#!!
+(find-first-visible-seqtrack)
+(find-last-visible-seqtrack)
+!!#
+
 (define (for-each-seqtracknum func)
   (let loop ((seqtracknum 0))
     (when (< seqtracknum (<ra> :get-num-seqtracks))
@@ -609,6 +632,23 @@
               (<ra> :undo-sequencer)
               (<ra> :set-using-sequencer-timing #t))
             (callback arg)))))))
+
+(define (delete-seqtrack-and-maybe-ask seqtracknum)
+  (define (deleteit)
+    (<ra> :delete-seqtrack seqtracknum)
+    (if *current-seqtrack-num*
+        (set! *current-seqtrack-num* (min (- (<ra> :get-num-seqtracks) 1)
+                                          *current-seqtrack-num*)))
+    )
+
+  (if (and (= 0 seqtracknum)
+           (not (<ra> :seqtrack-for-audiofiles 0))
+           (<ra> :seqtrack-for-audiofiles 1))
+      (ask-user-about-first-audio-seqtrack
+       (lambda (doit)
+         (if doit
+             (deleteit))))
+      (deleteit)))
 
 (define (insert-or-append-seqtrack type)
   (c-display "\n\n\nTYPE:" type "\n\n\n")
