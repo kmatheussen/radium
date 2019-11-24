@@ -14,6 +14,7 @@ typedef struct _dynvec_t dynvec_t;
 enum DynType{
   UNINITIALIZED_TYPE = 0, // Must be 0
   STRING_TYPE,
+  SYMBOL_TYPE,
   INT_TYPE,
   FLOAT_TYPE,
   HASH_TYPE,
@@ -29,6 +30,7 @@ typedef struct{
   enum DynType type;
   union{
     const wchar_t *string;
+    const char *symbol;
     int64_t int_number;
     double float_number;
     hash_t *hash;

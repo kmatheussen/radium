@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/SoundPlugin.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "Qt_MyQCheckBox.h"
 
 struct MyQButton : public QToolButton{
@@ -53,6 +55,8 @@ struct MyQButton : public QToolButton{
     update();
   }
 
+  radium::GcHolder<wchar_t> _text_to_draw;
+  
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
     //QToolButton::paintEvent(ev);
@@ -71,6 +75,29 @@ struct MyQButton : public QToolButton{
     API_run_custom_gui_paint_function(this,
                                       &p, &ev->region(),
                                       [this](){
+
+                                        static dynvec_t args = {}; // static to avoid allocating bdwgc-memory.
+
+                                        DYNVEC_light_clean(args);
+ 
+                                        if (_text_to_draw.data()==NULL || QString::fromWCharArray(_text_to_draw.data())!=text())
+                                          _text_to_draw.set(STRING_create(text()));
+                                       
+                                        DYNVEC_push_back(args, DYN_create_int(API_get_gui_from_widget(this)));
+                                        DYNVEC_push_back(args, DYN_create_string_dont_copy(_text_to_draw.data()));
+                                        DYNVEC_push_back(args, DYN_create_bool(isDown()));
+                                        DYNVEC_push_back(args, DYN_create_int(1));
+                                        DYNVEC_push_back(args, DYN_create_int(1));
+                                        DYNVEC_push_back(args, DYN_create_int(width()-1));
+                                        DYNVEC_push_back(args, DYN_create_int(height()-1));
+                                        
+                                        DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":is-hovering"));
+                                        DYNVEC_push_back(args, DYN_create_bool(_is_hovered));
+                                        
+                                        S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
+                                        s7extra_applyFunc_void(draw_checkbox_func, args);
+
+                                        /*
                                         evalScheme(talloc_format("(draw-button %d \"%s\" %s %d %d %d %d :is-hovering %s)", 
                                                                  (int)API_get_gui_from_widget(this),
                                                                  text().toUtf8().constData(), isDown() ? "#t" : "#f",
@@ -78,6 +105,8 @@ struct MyQButton : public QToolButton{
                                                                  _is_hovered ? "#t" : "#f"
                                                                  )
                                                    );
+                                        */
+                                        
                                         /*
                                           S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
                                           S7CALL(void_int_charstring_bool_float_float_float_float,

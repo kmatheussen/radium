@@ -47,6 +47,13 @@ extern LANGSPEC bool DYNVEC_equal(dynvec_t *v1, dynvec_t *v2);
 extern LANGSPEC void DYNVEC_save(disk_t *file, const dynvec_t dynvec);
 extern LANGSPEC dynvec_t DYNVEC_load(disk_t *file, bool *success);
 
+static inline dynvec_t *DYNVEC_create(int num_init){
+  dynvec_t *ret = (dynvec_t*)talloc(sizeof(dynvec_t));
+  ret->num_elements_allocated = num_init;
+  ret->elements = (dyn_t*)talloc(num_init*(int)sizeof(dyn_t));
+  return ret;
+}
+
 static inline void DYNVEC_ensure_space_for_one_more_element(dynvec_t *v){
   const int num_elements = v->num_elements;
   
@@ -82,6 +89,10 @@ static inline int DYNVEC_push_back(dynvec_t *v, const dyn_t element){
   v->num_elements = num_elements+1;
   
   return num_elements;
+}
+
+static inline void DYNVEC_light_clean(dynvec_t *v){
+  v->num_elements = 0;
 }
 
 #ifdef __cplusplus

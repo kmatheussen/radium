@@ -172,13 +172,21 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   int _effect_num = 0;
   bool _is_implicitly_on = false;
 
-  MyQCheckBox_OnlyCustomPainting ( QWidget * parent = 0 ) : QCheckBox(parent) {
-    setMouseTracking(true);
+  MyQCheckBox_OnlyCustomPainting ( QWidget * parent = 0 )
+    : QCheckBox(parent)
+  {
+    init();
   }
-  MyQCheckBox_OnlyCustomPainting ( const QString & text, QWidget * parent = 0) : QCheckBox(text,parent) {
-    setMouseTracking(true);
+  MyQCheckBox_OnlyCustomPainting ( const QString & text, QWidget * parent = 0)
+    : QCheckBox(text,parent)
+  {
+    init();
   }
 
+  void init(void){
+    setMouseTracking(true);
+  }
+  
   QString vertical_text;
 
   // Have to do this. Just overriding the paintEvent makes mouse partly stop working.
@@ -215,6 +223,8 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
     update();
   }
 
+  radium::GcHolder<wchar_t> _text_to_draw;
+  
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
     
@@ -241,6 +251,35 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
     API_run_custom_gui_paint_function(this,
                                       &p, &ev->region(),
                                       [this,text2](){
+
+                                        static dynvec_t args = {}; // static to avoid allocating bdwgc-memory.
+                                        
+                                        DYNVEC_light_clean(args);
+
+                                        if (_text_to_draw.data()==NULL || QString::fromWCharArray(_text_to_draw.data())!=text2)
+                                          _text_to_draw.set(STRING_create(text2));
+
+                                        DYNVEC_push_back(args, DYN_create_int(API_get_gui_from_widget(this)));
+                                        DYNVEC_push_back(args, DYN_create_string_dont_copy(_text_to_draw.data()));
+                                        DYNVEC_push_back(args, DYN_create_bool(isChecked()));
+                                        DYNVEC_push_back(args, DYN_create_int(1));
+                                        DYNVEC_push_back(args, DYN_create_int(1));
+                                        DYNVEC_push_back(args, DYN_create_int(width()-1));
+                                        DYNVEC_push_back(args, DYN_create_int(height()-1));
+                                        
+                                        DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":is-hovering"));
+                                        DYNVEC_push_back(args, DYN_create_bool(_is_hovered));
+                                        
+                                        DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":prepend-checked-marker"));
+                                        DYNVEC_push_back(args, DYN_create_bool(_show_enabled_marker));
+                                        
+                                        DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":vertical-text"));
+                                        DYNVEC_push_back(args, DYN_create_bool(!vertical_text.isEmpty()));
+
+                                        S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
+                                        s7extra_applyFunc_void(draw_checkbox_func, args);
+                                        
+                                        /*
                                         evalScheme(talloc_format("(draw-button %d \"%s\" %s %d %d %d %d :is-hovering %s :prepend-checked-marker %s :vertical-text %s)", 
                                                                  (int)API_get_gui_from_widget(this),
                                                                  text2.toUtf8().constData(),
@@ -251,6 +290,8 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
                                                                  vertical_text.isEmpty() ? "#f" : "#t"
                                                                  )
                                                    );
+                                        */
+                                        
                                         /*
                                         S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
                                         S7CALL(void_int_charstring_bool_float_float_float_float,
