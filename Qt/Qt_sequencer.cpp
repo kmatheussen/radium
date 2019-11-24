@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <math.h>
 
+#include <QtGlobal>
 #include <QColor>
 #include <QRawFont>
 #include <QApplication>
@@ -211,7 +212,7 @@ static const GlyphpathAndWidth &getGlyphpathAndWidth(const QFont &font, const QC
 
   if (!glyphpathCache.contains(c)){
     const QVector<quint32> indexes = rawFont.glyphIndexesForString(c);
-#if QT_VERSION >= 0x051100
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     int width_ = fn.horizontalAdvance(c);
 #else
     int width_ = fn.width(c);

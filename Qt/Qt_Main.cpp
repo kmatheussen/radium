@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define TEST_CRASHREPORTER 0
 
+#include <QtGlobal>
 #include <qapplication.h>
 #include <qsplashscreen.h>
 #include <qsplitter.h>
@@ -3389,7 +3390,7 @@ static void myMessageOutput(QtMsgType type, const char *localMsg)
     case QtDebugMsg:
       fprintf(stderr, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
       break;
-#if QT_VERSION >= 0x050500
+#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
     case QtInfoMsg:
       fprintf(stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
       break;
