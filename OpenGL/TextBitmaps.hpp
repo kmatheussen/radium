@@ -3,6 +3,7 @@
 #include <vlCore/IMutex.hpp>
 #include <vlGraphics/ImagePBO.hpp>
 
+#include <QtGlobal>
 #include <QFont>
 #include <QFontMetrics>
 #include <QHash>
@@ -72,7 +73,7 @@ static SpinlockIMutex image_mutex;
 static inline void GE_add_imageholder(QFont qfont, QHash<QChar,ImageHolder> *imageholders, QString chars){
   QFontMetrics metrics(qfont);
 
-#if QT_VERSION >= 0x051100
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   int real_width = metrics.horizontalAdvance("#");
 #else
   int real_width = metrics.width("#");
