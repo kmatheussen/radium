@@ -268,13 +268,13 @@ void insertSeqtrack(bool for_audiofiles, int pos, bool is_bus){
 
   SEQUENCER_insert_seqtrack(pos, for_audiofiles, is_bus);
 
-  setCurrSeqtrack(pos);
+  setCurrSeqtrack(pos, false);
 }
 
 void appendSeqtrack(bool for_audiofiles, bool is_bus){
   SEQUENCER_append_seqtrack(for_audiofiles, is_bus);
 
-  setCurrSeqtrack(root->song->seqtracks.num_elements - 1);
+  setCurrSeqtrack(root->song->seqtracks.num_elements - 1, false);
 }
 
 void deleteSeqtrack(int seqtracknum){
@@ -431,8 +431,97 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
 
 }
 
-void setCurrSeqtrack(int seqtracknum){
+void autoscrollSeqtracks(int seqtracknum){
+  int topmost_visible = getTopmostVisibleSeqtrack();
+  int lowest_visible = getLowestVisibleSeqtrack();
+
+  if (seqtracknum >= topmost_visible && seqtracknum <= lowest_visible)
+    return;
+
+  if (seqtracknum < topmost_visible) {
+    // Scroll up.
+    setTopmostVisibleSeqtrack(seqtracknum);
+    return;
+  }
+
+  // Scroll down.
+  
+  int lowest_possible = getLowestPossibleTopmostVisibleSeqtrack();
+
+  for(;;){
+    topmost_visible++;
+
+    setTopmostVisibleSeqtrack(topmost_visible);
+    //printf("Setting topmost to %d. Actual: %d. Seqtracknum: %d. lowestvisible: %d\n", topmost_visible, getTopmostVisibleSeqtrack(), seqtracknum, getLowestVisibleSeqtrack());
+    
+    if (topmost_visible==lowest_possible)
+      return;
+
+    if (seqtracknum <= getLowestVisibleSeqtrack())
+      return;
+  };
+}
+
+void setCurrSeqtrack(int seqtracknum, bool auto_scroll_to_make_seqtrack_visible){
+  
+  if (auto_scroll_to_make_seqtrack_visible){
+    
+    if (seqtracknum < 0)
+      seqtracknum = 0;
+    else if (seqtracknum >= getNumSeqtracks())
+      seqtracknum = getNumSeqtracks() - 1;
+    
+    struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+    if (seqtrack==NULL)
+      return;
+
+    if (seqtrack->is_visible)
+      autoscrollSeqtracks(seqtracknum);
+  }
+  
   setCurrSeqtrack2(seqtracknum, false);
+}
+
+void setCurrSeqtrackDown(int num_seqtracks, bool auto_scroll_to_make_seqtrack_visible){
+
+  if (num_seqtracks <= 0)
+    return;
+  
+  for(int seqtracknum = getCurrSeqtrack() + 1; seqtracknum < getNumSeqtracks() ; seqtracknum++){
+    struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+    if(seqtrack==NULL)
+      return; // handleError() is displayed in getSeqtrackFromNum.
+
+    if (seqtrack->is_visible){
+      num_seqtracks--;
+      if (num_seqtracks==0){
+        setCurrSeqtrack(seqtracknum, auto_scroll_to_make_seqtrack_visible);
+        return;
+      }
+    }
+  }
+  
+}
+
+void setCurrSeqtrackUp(int num_seqtracks, bool auto_scroll_to_make_seqtrack_visible){
+  
+  if (num_seqtracks <= 0)
+    return;
+  
+  for(int seqtracknum = getCurrSeqtrack() - 1; seqtracknum >= 0 ; seqtracknum--){
+    struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+    if(seqtrack==NULL)
+      return; // handleError() is displayed in getSeqtrackFromNum.
+
+    if (seqtrack->is_visible){
+      num_seqtracks--;
+      if (num_seqtracks==0){
+        setCurrSeqtrack(seqtracknum, auto_scroll_to_make_seqtrack_visible);
+        return;
+      }
+    }
+  }
+  
 }
 
 int getCurrSeqtrack(void){
