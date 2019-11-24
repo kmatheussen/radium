@@ -540,6 +540,8 @@ s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
       return s7_unspecified(radiums7_sc);
     case STRING_TYPE:
       return s7_make_string(radiums7_sc, STRING_get_chars(dyn.string));
+    case SYMBOL_TYPE:
+      return s7_make_symbol(radiums7_sc, dyn.symbol);
     case INT_TYPE:
       return s7_make_integer(radiums7_sc, dyn.int_number);
     case FLOAT_TYPE:
@@ -636,6 +638,50 @@ void s7extra_callFunc_void_void(const func_t *func){
 
 void s7extra_callFunc2_void_void(const char *funcname){
   s7extra_callFunc_void_void((const func_t*)find_scheme_value(s7, funcname));
+}
+
+void s7extra_applyFunc_void(const func_t *func, dynvec_t args){
+  ScopedEvalTracker eval_tracker;
+
+  s7_pointer list = s7_nil(s7);
+  
+  for(int i=args.num_elements-1;i>=0;i--){
+    list = s7_cons(s7,
+                   Protect(s7extra_make_dyn(s7, args.elements[i])).v,
+                   list);
+  }
+
+  list = s7_cons(s7,
+                 (s7_pointer)func,
+                 list);
+  
+  catch_call(s7, list);
+}
+
+void s7extra_applyFunc2_void(const char *funcname, dynvec_t args){
+  s7extra_applyFunc_void((const func_t*)find_scheme_value(s7, funcname), args);
+}
+
+dyn_t s7extra_applyFunc_dyn(const func_t *func, dynvec_t args){
+  ScopedEvalTracker eval_tracker;
+
+  s7_pointer list = s7_nil(s7);
+  
+  for(int i=args.num_elements-1;i>=0;i--){
+    list = s7_cons(s7,
+                   Protect(s7extra_make_dyn(s7, args.elements[i])).v,
+                   list);
+  }
+
+  list = s7_cons(s7,
+                 (s7_pointer)func,
+                 list);
+  
+  return s7extra_dyn(s7, catch_call(s7, list));
+}
+
+dyn_t s7extra_applyFunc2_dyn(const char *funcname, dynvec_t args){
+  return s7extra_applyFunc_dyn((const func_t*)find_scheme_value(s7, funcname), args);
 }
 
 double s7extra_callFunc_double_void(const func_t *func){

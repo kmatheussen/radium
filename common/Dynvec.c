@@ -55,6 +55,10 @@ void DYN_save(disk_t *file, const dyn_t dyn){
     DISK_write_wchar(file, dyn.string);
     DISK_write(file, "\n");
     break;
+  case SYMBOL_TYPE:
+    DISK_write(file, dyn.symbol);
+    DISK_write(file, "\n");
+    break;
   case INT_TYPE:
     DISK_printf(file,"%" PRId64 "\n",dyn.int_number);
     break;
@@ -140,6 +144,10 @@ dyn_t DYN_load(disk_t *file, bool *success){
   case STRING_TYPE:
     line = READ_LINE(file);
     ret = DYN_create_string_dont_copy(line);
+    break;
+  case SYMBOL_TYPE:
+    line = READ_LINE(file);
+    ret = DYN_create_symbol_dont_copy(STRING_get_chars(line));
     break;
   case INT_TYPE:
     line = READ_LINE(file);

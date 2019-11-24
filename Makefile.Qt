@@ -1617,7 +1617,7 @@ $(P)Qt_tools.h: $(BUILD_DEPENDENCIES) $(P)qt4_tools.ui $(P)Qt_tools_callbacks.h 
 	cd $(P) && $(MOC) Qt_tools_callbacks.h >mQt_tools_callbacks.h
 #	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) tools
 
-Qt_pianorollheader_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_pianorollheader_callbacks.cpp $(P)Qt_pianorollheader_callbacks.h $(P)Qt_pianorollheader.h
+Qt_pianorollheader_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_pianorollheader_callbacks.cpp $(P)Qt_pianorollheader_callbacks.h $(P)Qt_pianorollheader.h $(P)Qt_MyQButton.h 
 	$(CCC) $(P)Qt_pianorollheader_callbacks.cpp $(QTOPT)
 
 $(P)Qt_pianorollheader.h: $(BUILD_DEPENDENCIES) $(P)qt4_pianorollheader.ui $(P)Qt_pianorollheader_callbacks.h $(P)lzqlineedit.h

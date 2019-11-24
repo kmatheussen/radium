@@ -986,6 +986,8 @@ static inline const char *DYN_type_name(enum DynType type){
       return "UNINITIALIZED_TYPE";
     case STRING_TYPE:
       return "STRING_TYPE";
+    case SYMBOL_TYPE:
+      return "SYMBOL_TYPE";
     case INT_TYPE:
       return "INT_TYPE";
     case FLOAT_TYPE:
@@ -1028,7 +1030,7 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
   switch(a1.type){
     case UNINITIALIZED_TYPE:
       R_ASSERT(false);
-      return false;      
+      return false;
     case STRING_TYPE:
       if (a1.string==a2.string)
         return true;
@@ -1036,6 +1038,14 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
         return false;
       else
         return !wcscmp(a1.string, a2.string);
+    case SYMBOL_TYPE:
+      if (a1.symbol==a2.symbol)
+        return true;
+      else if (a1.symbol==NULL || a2.symbol==NULL){
+        R_ASSERT(false);
+        return false;
+      }else
+        return !strcmp(a1.symbol, a2.symbol);
     case INT_TYPE:
       return a1.int_number==a2.int_number;
     case FLOAT_TYPE:
@@ -1080,6 +1090,27 @@ static inline dyn_t DYN_create_string(QString string){
 static inline dyn_t DYN_create_string_from_chars(const char *chars){
   return DYN_create_string_dont_copy(STRING_create(chars));
 }
+
+static inline dyn_t DYN_create_symbol_dont_copy(const char *symbol){
+  dyn_t a;
+  a.type = SYMBOL_TYPE;
+  if(symbol==NULL){
+    R_ASSERT(false);
+    symbol = "";
+  }
+  a.symbol = symbol;
+  return a;
+}
+
+static inline dyn_t DYN_create_symbol(const char *symbol){
+  return DYN_create_symbol_dont_copy(talloc_strdup(symbol));
+}
+
+#if USE_QT4
+static inline dyn_t DYN_create_symbol(QString symbol){
+  return DYN_create_symbol(symbol.toUtf8().constData());
+}
+#endif
 
 static inline dyn_t DYN_create_func(func_t *func){
   dyn_t a;
