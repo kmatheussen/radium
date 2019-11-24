@@ -87,9 +87,6 @@
              (lambda (button x* y*)
                (and (inside? x* y*)
                     (begin
-                      (if (or (> seqtracknum (<ra> :get-lowest-visible-seqtrack))
-                              (< seqtracknum (<ra> :get-topmost-visible-seqtrack)))
-                          (<ra> :set-topmost-visible-seqtrack seqtracknum))
                       (<ra> :set-curr-seqtrack seqtracknum)
                       (cond ((= button *right-button*)
                              (if (<ra> :shift-pressed)
