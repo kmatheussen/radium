@@ -2289,7 +2289,7 @@ static void apply_seqtracks_config(int confignum){
   SEQUENCER_update(SEQUPDATE_TRACKORDER | SEQUPDATE_TRACKCOORDINATES | SEQUPDATE_RIGHT_PART); // Must be called before setCurrSeqtrack to ensure coordinates are updated first.
 
   if (curr_seqtracknum != -1)
-    setCurrSeqtrack(curr_seqtracknum);    
+    setCurrSeqtrack(curr_seqtracknum, false);
 }
 
 void SEQTRACKS_set_curr_config(int confignum){
@@ -3156,7 +3156,7 @@ void SEQUENCER_delete_seqtrack(int pos){
     setTopmostVisibleSeqtrack(num_seqtracks-1);    
   
   if (new_seqtracknum >= 0)
-    setCurrSeqtrack(new_seqtracknum);
+    setCurrSeqtrack(new_seqtracknum, false);
 
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
   
