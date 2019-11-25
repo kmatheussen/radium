@@ -539,16 +539,24 @@
   (if (<ra> :seqtrack-for-audiofiles -1)
       (let* ((pos (entry :start-time))
              (filename (let ((v (<ra> :get-audio-files)))
-                         (v *curr-audiofile-num*))) 
-             (duration (<ra> :get-sample-length filename)))
-        (undo-block
-         (lambda ()
-           (insert-pause-in-seqtrack! -1 pos duration)
-           (<ra> :create-sample-seqblock
-                 -1
-                 filename
-                 (entry :start-time)
-                 )))
+                         (if (not *curr-audiofile-num*)
+                             (set! *curr-audiofile-num* 0))
+                         (if (>= *curr-audiofile-num*
+                                 (length v))
+                             (set! *curr-audiofile-num* (- (length v) 1)))
+                         (and (>= *curr-audiofile-num* 0)
+                              (v *curr-audiofile-num*))))
+             (duration (and filename
+                            (<ra> :get-sample-length filename))))
+        (if filename
+            (undo-block
+             (lambda ()
+               (insert-pause-in-seqtrack! -1 pos duration)
+               (<ra> :create-sample-seqblock
+                     -1
+                     filename
+                     (entry :start-time)
+                     ))))
         )
       (<ra> :create-seqblock -1 -1 (entry :start-time)))
   (<ra> :set-curr-playlist-pos (+ pos 1) #f #t))
