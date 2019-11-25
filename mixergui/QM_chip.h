@@ -361,7 +361,7 @@ public:
     if (to==NULL)
       setVisibility(true);
     else if (!is_event_connection && SP_get_bus_num(to->_sound_producer) >= 0)
-      setVisibility(MW_get_connections_visibility() && MW_get_bus_connections_visibility());
+      setVisibility(MW_get_bus_connections_visibility());
     else
       setVisibility(MW_get_connections_visibility());
   }
