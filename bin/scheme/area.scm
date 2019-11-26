@@ -1009,7 +1009,7 @@
 (def-area-subclass (<line-input> :gui :x1 :y1 :x2 :y2
                                  :prompt ""
                                  :text ""
-                                 :background-color "color9"
+                                 :background-color "low_background"
                                  :get-wide-string #f
                                  :callback)
   (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 y2
@@ -1048,7 +1048,7 @@
                                :value-changed-callback
                                :paint-func #f
                                :text "" ;; Only used if paint-func is #f
-                               :text-color *text-color* ;; Only used if paint-func is #f
+                               :text-color "buttons_text"
                                :selected-color #f ;; only used if paint-func is #f. If #f, use get-default-button-color
                                :prepend-checked-marker #t
                                :gradient-background #t
@@ -1117,7 +1117,7 @@
                                    :layout-horizontally #t
                                    :paint-func #f
                                    :text-func (lambda (num) "") ;; Only used if paint-func is #f
-                                   :text-color *text-color* ;; Only used if paint-func is #f
+                                   :text-color "buttons_text"
                                    :selected-color #f ;; only used if paint-func is #f. If #f, use get-default-button-color
                                    :right-mouse-clicked-callback #f
                                    :border-width 0.25
@@ -2196,7 +2196,7 @@
 
     (define entry-background-color (if background-color
                                        background-color
-                                       "color9"))
+                                       "low_background"))
 
     ;;(set! entry-background-color (<gui> :set-alpha-for-color entry-background-color 0.05)))
 

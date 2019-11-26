@@ -260,7 +260,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
     
     {
-      QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
+      QColor system_color = get_qcolor(HIGH_BACKGROUND_COLOR_NUM);
       QPalette pal(palette());
       pal.setColor( QPalette::Active, QPalette::Dark, system_color);
       pal.setColor( QPalette::Active, QPalette::Light, system_color);
@@ -604,7 +604,7 @@ QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool in
     ret->remove_editor_elements();
 
   {
-    QColor system_color(SETTINGS_read_string("system_color","#d2d0d5"));
+    QColor system_color = get_qcolor(HIGH_BACKGROUND_COLOR_NUM);
     QPalette pal(ret->palette());
     pal.setColor( QPalette::Active, QPalette::Dark, system_color);
     pal.setColor( QPalette::Active, QPalette::Light, system_color);

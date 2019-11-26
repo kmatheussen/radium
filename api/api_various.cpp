@@ -2748,7 +2748,7 @@ void setUseNativeFileRequesters(bool doit){
 
 
 
-static float g_instrument_brightness = 0.5;
+static float g_instrument_brightness = 0.531000018119812;
 
 static void update_all_instrument_colors_in_editor(void){
   root->song->tracker_windows->must_redraw_editor=true;
@@ -2766,7 +2766,7 @@ float getInstrumentBrightness(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_instrument_brightness = SETTINGS_read_double("color_instrument_brightness", g_instrument_brightness);
+    g_instrument_brightness = SETTINGS_read_double("color_instrument_brightness_v2", g_instrument_brightness);
     has_inited = true;
   }
 
@@ -2777,7 +2777,7 @@ void setInstrumentBrightness(float val){
   if (val != g_instrument_brightness){
     g_instrument_brightness = val;
     update_all_instrument_colors();
-    SETTINGS_write_double("color_instrument_brightness", val);
+    SETTINGS_write_double("color_instrument_brightness_v2", val);
   }
 }
 
@@ -2788,7 +2788,7 @@ float getInstrumentBrightnessInEditor(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_instrument_brightness_in_editor = SETTINGS_read_double("color_instrument_brightness_in_editor", g_instrument_brightness_in_editor);
+    g_instrument_brightness_in_editor = SETTINGS_read_double("color_instrument_brightness_in_editor_v2", g_instrument_brightness_in_editor);
     has_inited = true;
   }
 
@@ -2799,18 +2799,18 @@ void setInstrumentBrightnessInEditor(float val){
   if (val != g_instrument_brightness_in_editor){
     g_instrument_brightness_in_editor = val;
     update_all_instrument_colors_in_editor();
-    SETTINGS_write_double("color_instrument_brightness_in_editor", val);
+    SETTINGS_write_double("color_instrument_brightness_in_editor_v2", val);
   }
 }
 
 
-static float g_instrument_saturation = 0.6669999957084656;
+static float g_instrument_saturation = 0.4339999854564667;
 
 float getInstrumentSaturation(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_instrument_saturation = SETTINGS_read_double("color_instrument_saturation", g_instrument_saturation);
+    g_instrument_saturation = SETTINGS_read_double("color_instrument_saturation_v2", g_instrument_saturation);
     has_inited = true;
   }
 
@@ -2821,18 +2821,18 @@ void setInstrumentSaturation(float val){
   if (val != g_instrument_saturation){
     g_instrument_saturation = val;
     update_all_instrument_colors();
-    SETTINGS_write_double("color_instrument_saturation", val);
+    SETTINGS_write_double("color_instrument_saturation_v2", val);
   }
 }
 
 
-static float g_instrument_saturation_in_editor = 0.5;
+static float g_instrument_saturation_in_editor = 0.363999992609024;
 
 float getInstrumentSaturationInEditor(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_instrument_saturation_in_editor = SETTINGS_read_double("color_instrument_saturation_in_editor", g_instrument_saturation_in_editor);
+    g_instrument_saturation_in_editor = SETTINGS_read_double("color_instrument_saturation_in_editor_v2", g_instrument_saturation_in_editor);
     has_inited = true;
   }
 
@@ -2843,7 +2843,7 @@ void setInstrumentSaturationInEditor(float val){
   if (val != g_instrument_saturation_in_editor){
     g_instrument_saturation_in_editor = val;
     update_all_instrument_colors_in_editor();
-    SETTINGS_write_double("color_instrument_saturation_in_editor", val);
+    SETTINGS_write_double("color_instrument_saturation_in_editor_v2", val);
   }
 }
 
@@ -2858,7 +2858,7 @@ float getBlockBrightness(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_block_brightness = SETTINGS_read_double("color_block_brightness", g_block_brightness);
+    g_block_brightness = SETTINGS_read_double("color_block_brightness_v2", g_block_brightness);
     has_inited = true;
   }
 
@@ -2869,7 +2869,7 @@ void setBlockBrightness(float val){
   if (val != g_block_brightness){
     g_block_brightness = val;
     update_all_block_colors();
-    SETTINGS_write_double("color_block_brightness", val);
+    SETTINGS_write_double("color_block_brightness_v2", val);
   }
 }
 
@@ -2880,7 +2880,7 @@ float getBlockSaturation(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_block_saturation = SETTINGS_read_double("color_block_saturation", g_block_saturation);
+    g_block_saturation = SETTINGS_read_double("color_block_saturation_v2", g_block_saturation);
     has_inited = true;
   }
 
@@ -2891,7 +2891,7 @@ void setBlockSaturation(float val){
   if (val != g_block_saturation){
     g_block_saturation = val;
     update_all_block_colors();
-    SETTINGS_write_double("color_block_saturation", val);
+    SETTINGS_write_double("color_block_saturation_v2", val);
   }
 }
 

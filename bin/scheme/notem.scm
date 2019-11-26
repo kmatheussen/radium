@@ -143,7 +143,7 @@
   (define ret (<gui> :group groupname horizontal))
                      
   (<gui> :set-layout-spacing ret 6 9 0 9 0)
-  ;;(<gui> :set-background-color ret "color9")
+  ;;(<gui> :set-background-color ret "low_background")
   
   ret)
 
@@ -780,14 +780,14 @@
 (begin
   (define group (<gui> :group "hello"))
   (define widg (<gui> :widget))
-  (<gui> :set-background-color widg "color9")
+  (<gui> :set-background-color widg "low_background")
   (<gui> :add widg (create-transpose-notem) 0 0 500 500)
   (<gui> :show widg))
 
                    
 (define transp (create-transpose-notem))
 (<gui> :show transp)
-(<gui> :set-background-color transp "color9")
+(<gui> :set-background-color transp "low_background")
 
 (add-notem-tab "Transpose" (create-transpose-notem))
 (add-notem-tab "Transpose2" (<gui> :flow-layout

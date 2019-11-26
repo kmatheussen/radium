@@ -1667,7 +1667,7 @@
   (define-override (paint)
     ;;(c-display "   Scheme: Painting left part")
     ;;(define-override (paint)
-    (<gui> :filled-box gui "color11" x1 y1 x2 y2)
+    (<gui> :filled-box gui "high_background" x1 y1 x2 y2)
 
 
     ;;(<gui> :filled-box gui background-color x1 y1 x2 y2)
