@@ -3,7 +3,7 @@ settings_version = 0.73 # dont change this one
 font = Cousine,11,-1,5,75,0,0,0,0,0
 font_style = Regular
 
-system_font = Lato,8,-1,5,87,0,0,0,0,0
+system_font = Lato,10,-1,5,87,0,0,0,0,0,Black
 system_font_style = Black
 
 bottom_slider_height = 14
