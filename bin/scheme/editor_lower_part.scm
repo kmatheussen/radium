@@ -235,7 +235,7 @@
 
   ;; Workaround. TODO: Investigate why this is necessary.
   (define-override (paint)
-    (<gui> :filled-box gui "color11" x1 y1 x2 y2 -1 -1 #f))
+    (<gui> :filled-box gui "high_background" x1 y1 x2 y2 -1 -1 #f))
   )
 
 (define *last-created-editor-lower-part-area* #f)
@@ -250,7 +250,7 @@
   (define gui (qtarea :get-gui))
 
   ;; TODO: Investigate why this doesn't work on OSX.
-  ;;(<gui> :set-background-color gui "color11")
+  ;;(<gui> :set-background-color gui "high_background")
   
   (<gui> :dont-autofill-background gui)
   gui)

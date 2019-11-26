@@ -671,7 +671,7 @@
                        :prepend-checked-marker #f
                        :prepend-space-if-prepending-checked-marker #f
                        :vertical-text #f
-                       :text-color *text-color* ;;"black"
+                       :text-color "buttons_text" ;;*text-color* ;;"black"
                        :y-border 0
                        :x-border 0
                        :gradient-background #t
@@ -783,7 +783,9 @@
         (<gui> :draw-box gui "#222222" (+ x1 b) (+ y1 b) (- x2 b) (- y2 b) 1.2 box-rounding box-rounding)))
   '(let ((b 0.5))
     (<gui> :draw-box gui "black" (+ x1 b) (+ y1 b) (- x2 b) (- y2 b) 1.2 box-rounding box-rounding))
-  
+  '(let ((b 0.5))
+    (<gui> :draw-box gui "#222222" (+ x1 b) (+ y1 b) (- x2 b) (- y2 b) 1.2 box-rounding box-rounding))
+
   )
 
 (define (ra:gui_do-font gui font func)
@@ -1186,7 +1188,7 @@
            (define tab-bar-width (<gui> :width tab-bar))
            (define tab-bar-height (<gui> :height tab-bar))
            
-           (define tabs-background-color (<gui> :mix-colors "color11" "color9" 0.8))
+           (define tabs-background-color (<gui> :mix-colors "high_background" "low_background" 0.8))
 
            ;;(<gui> :filled-box tabs tabs-background-color 0 0 width height)
            
@@ -1490,8 +1492,8 @@
     ;;(c-display "x1/y1:" checkbox-x1 checkbox-y1 (<gui> :width checkbox) before-width)
     (<gui> :add widget checkbox checkbox-x1 checkbox-y1))
     
-  (define nonhover-background-color (<gui> :mix-colors "color9" "#ffffff" 0.97))
-  (define hover-background-color "color11") ;;(<gui> :mix-colors (<gui> :get-background-color widget) "#010101" 0.5))
+  (define nonhover-background-color (<gui> :mix-colors "low_background" "#ffffff" 0.97))
+  (define hover-background-color "high_background") ;;(<gui> :mix-colors (<gui> :get-background-color widget) "#010101" 0.5))
   (define border-color (<gui> :mix-colors hover-background-color "#010101" 0.5))
   
   (<gui> :add-paint-callback widget

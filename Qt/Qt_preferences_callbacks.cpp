@@ -72,6 +72,7 @@ static radium::Vector<ColorButton*> all_buttons;
 
 static enum ColorNums g_current_colornum = LOW_EDITOR_BACKGROUND_COLOR_NUM;
 
+   
 struct MyColorDialog : public QColorDialog {
 
 public: 

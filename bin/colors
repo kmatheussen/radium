@@ -11,15 +11,8 @@ color7 = #ff0b186c
 color8 = #fffdfec8
 color9 = #ff63696a
 color10 = #fff4ff23
-color11 = #ff313c3f
 color12 = #ff96a3a7
-color13 = #ff283438
-#color13 = #bbcba9
 color14 = #ffc28963
-color15 = #ff5c6159
-
-system_color = #63696a
-button_color = #454d4f
 
 range_color = #ff3e4e47
 
@@ -74,7 +67,6 @@ mixer_audio_connection_color = #ff2e0359
 track_slider_color = #ff939393
 buttons_text_color = #ffe9e9e9
 line_slider_color = #ff000000
-check_button_enabled_color = #ff1c1a16
 slider_recording_color = #ffc50003
 mixer_autosuspension_color = #3ca6a6a6
 sequencer_currtrack_border_color = #ffc8c8c8
@@ -99,7 +91,6 @@ sequencer_block_selected_color = #5400801d
 sequencer_multiselect_block_background_color = #ffff4811
 sequencer_grid_color = #99281980
 sequencer_tempo_automation_color = #ffbaab88
-scroll_bar_color = #69b8b8b8
 mixerstrips_selected_object_color_num = #ffffffff
 sequencer_block_interface_color = #ff041ae0
 sequencer_block_audio_file_background_color = #64eeeeee

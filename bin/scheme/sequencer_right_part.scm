@@ -95,7 +95,7 @@
                                   :background-color (lambda ()
                                                       (let ((base (<gui> :set-alpha-for-color color 0.05)))
                                                         (if (is-current?)
-                                                            (<gui> :mix-colors "color11" base 0.95)
+                                                            (<gui> :mix-colors "high_background" base 0.95)
                                                             base)))
                                   :text-color (lambda ()
                                                 (if (is-current?)
@@ -204,7 +204,7 @@
                                                     (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum))
                                                     :background-color (let ((base (<gui> :set-alpha-for-color color 0.05)))
                                                                         (if is-current
-                                                                            (<gui> :mix-colors "color11" base 0.95)
+                                                                            (<gui> :mix-colors "high_background" base 0.95)
                                                                             base))
                                                     :text-color (if is-current
                                                                     *text-color*
@@ -370,11 +370,11 @@
                                           (if color
                                               (set! color (<gui> :set-alpha-for-color color 0.1)))
                                           (cond ;((eq? (entry :type) 'pause)
-                                        ; "color9");;#f) ;;"#666666")
+                                        ; "low_background");;#f) ;;"#666666")
                                            ((is-current?)
                                             (if color
-                                                (<gui> :mix-colors "color11" color 0.95)
-                                                "color11"))
+                                                (<gui> :mix-colors "high_background" color 0.95)
+                                                "high_background"))
                                            (else
                                             color)))
                       :text-color (lambda ()
@@ -519,7 +519,7 @@
     (<gui> :set-pos gui (<gui> :get-x *playlist-area-gui*) (<gui> :get-y *playlist-area-gui*))
     (<gui> :close *playlist-area-gui*))
   (set! *playlist-area-gui* (testarea :get-gui))
-  (<gui> :set-background-color *playlist-area-gui* "color9")
+  (<gui> :set-background-color *playlist-area-gui* "low_background")
   (<gui> :show *playlist-area-gui*))
 !!#
 
@@ -675,9 +675,9 @@
   (add-sub-area-plain! blocklist)
   (add-sub-area-plain! playlist)
 
-  ;;(<gui> :set-background-color gui "color9") doesn't work on osx. (really strange)
+  ;;(<gui> :set-background-color gui "low_background") doesn't work on osx. (really strange)
   (define-override (paint) ;; workaround for osx.
-    (<gui> :filled-box gui "color9" x1 y1 x2 y2 0 0 #t))
+    (<gui> :filled-box gui "low_background" x1 y1 x2 y2 0 0 #t))
 
   (define-override (get-state)
     (hash-table :blocklist-class-name (blocklist :class-name)
