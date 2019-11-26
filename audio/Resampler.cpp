@@ -217,15 +217,13 @@ struct SincResampler : public Resampler{
 
     int ret = (int)src_callback_read(_src_state, ratio, num_frames, out);
 
-    if(ret==0){
-      if(src_error(_src_state)!=0)
-        RError("libsamplerate returned an error: %d: \"%s\". ratio: %f\n",
-               src_error(_src_state),
-               src_strerror(src_error(_src_state)),
-               ratio);
-      return R_MIN(num_frames, 1); // Return 1 instead of 0 to maybe avoid crashes here and there.
-    }else
-      return ret;
+    if(ret==0 && src_error(_src_state)!=0)
+      RError("libsamplerate returned an error: %d: \"%s\". ratio: %f\n",
+             src_error(_src_state),
+             src_strerror(src_error(_src_state)),
+             ratio);
+    
+    return ret;
   }
 
   void reset() override {
