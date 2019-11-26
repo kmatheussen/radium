@@ -5,7 +5,7 @@
 #include <QFont>
 #include <QWidget>
 #include <QApplication>
-#define AUTOSUSPENDING_STRING " Auto-suspended"
+#define AUTOSUSPENDING_STRING " Auto-susp."
 
 
 struct CpuUsage{
@@ -132,6 +132,14 @@ static inline void set_cpu_usage_font_and_width(QWidget *widget, bool shows_inte
   sansFont.setPointSize(QApplication::font().pointSize()-1.0);
   
   widget->setFont(sansFont);
+
+  /*
+  QPalette pal = widget->palette();
+  pal.setColor(QPalette::Background, QColor("green"));
+  pal.setColor(QPalette::Base, QColor("green"));
+  widget->setAutoFillBackground(true);
+  widget->setPalette(pal);
+  */
   
   QFontMetrics fm(sansFont); //QApplication::font());
   //QRect r =fm.boundingRect(SLIDERPAINTER_get_string(_painter));

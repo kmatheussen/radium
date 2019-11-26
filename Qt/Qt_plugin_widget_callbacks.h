@@ -90,8 +90,6 @@ public:
     
     setupUi(this);
     
-    set_cpu_usage_font_and_width(plugin_info, true, true);
-    
     ab_reset->hide(); // The exact same button is placed only a few hundred pixels to the left anyway.
       
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -151,6 +149,7 @@ public:
       //info_button->setEnabled(false);
     }
 
+    /*
     {
       QString info;
       if(false){//!strcmp(type->type_name,"FluidSynth") || !strcmp(type->name,"Sample Player")){
@@ -161,7 +160,10 @@ public:
         plugin_info->setText(info);
       }
     }
-
+    */
+    
+    set_cpu_usage_font_and_width(plugin_info, true, true);
+    
     if(strcmp(type->type_name,"VST"))
       delete fxbp_button;
 
