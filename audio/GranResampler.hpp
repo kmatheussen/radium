@@ -225,6 +225,12 @@ public:
 
     int num_frames;
     *out_data = data->call_callback(data->_curr_ch, num_frames);
+
+    /*
+      if(num_frames==0)
+      printf("num_frames==0\n");
+      //      abort();
+    */
     
     return num_frames;
   }
