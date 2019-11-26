@@ -85,6 +85,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 #endif
 #endif
 
+    through_onoff->setFont(QApplication::font()); // why?
+    
     if (_patch->instrument==get_audio_instrument()){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 

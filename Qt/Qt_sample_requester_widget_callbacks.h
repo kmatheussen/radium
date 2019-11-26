@@ -245,7 +245,6 @@ class Sample_requester_widget : public QWidget
     file_list->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
     file_list->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
 
-
     // set _dir
     {
       bool use_saved_path = true;
@@ -298,6 +297,23 @@ class Sample_requester_widget : public QWidget
     up->setToolTip("Octave up (preview sound).");
     down->setToolTip("Octave down (preview sound).");
 
+    {
+      auto bookmarks = {bookmark1,bookmark2,bookmark3,bookmark4,bookmark5,bookmark6,bookmark7,bookmark8,bookmark9};
+      
+      int width = gui_textWidth("12", -1) * 3 / 2;
+      
+      for(auto bookmark : bookmarks){//int i=0;i<9;i++){
+        bookmark->_show_enabled_marker = false;
+        bookmark->setFont(QApplication::font()); // why?
+        bookmark->setFixedWidth(width);
+      }
+    }
+    
+    random_button->setFont(QApplication::font()); // why?
+    octave->setFont(QApplication::font()); // why?
+    down->setFont(QApplication::font()); // why?
+    up->setFont(QApplication::font()); // why?
+    
     update_file_list(false);
 
     updateWidgets();
@@ -882,7 +898,7 @@ public slots:
     write_bookmark();
   }
 
-  void on_bookmark1_toggled(bool is_on){
+  void on_bookmark1_toggled(bool is_on){    
     if (is_on)
       bookmark_selected(1);
   }
