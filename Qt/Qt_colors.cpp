@@ -112,8 +112,8 @@ static const ColorConfig g_colorconfig[] = {
   {VELOCITY_TEXT_COLOR_NUM,     "velocity_text", "Velocity text"},
    
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM,                  "high_editor", "High Editor background"},
-  {SCROLLBAR_COLOR_NUM,                  "scroll_bar", "Scroll bar color"},
-  {SCROLLBAR_BACKGROUND_COLOR_NUM,                  "scroll_bar_background", "Scroll bar background color"},
+  {SCROLLBAR_COLOR_NUM,                  "scroll_bar_v2", "Scroll bar color"},
+  {SCROLLBAR_BACKGROUND_COLOR_NUM,                  "scroll_bar_background_v2", "Scroll bar background color"},
 
   {KEYBOARD_FOCUS_BORDER_COLOR_NUM,                  "keyboard_focus_border", "Keyboard Focus Border"},
 
@@ -284,7 +284,7 @@ static ReplacementColor g_replacement_color[] = {
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM, QColor("#585d55")},
   
   {SCROLLBAR_COLOR_NUM, QColor("black")},
-  {SCROLLBAR_BACKGROUND_COLOR_NUM, QColor("#224653")},
+  {SCROLLBAR_BACKGROUND_COLOR_NUM, QColor("#69b8b8b8")},
   
   {KEYBOARD_FOCUS_BORDER_COLOR_NUM, QColor("#ff9d00")},
 

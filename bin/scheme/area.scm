@@ -1301,11 +1301,11 @@
                                 :slider-pos
                                 :slider-length ;; between 0 and 1. E.g. for 0.5; slider length = scrollbar length * 0.5. Can also be a function returning the slider length.
                                 :vertical
-                                :background-color "scroll_bar_background" ;;"#224653" ;;#f
+                                :background-color "scroll_bar_background_v2" ;;"#224653" ;;#f
                                 :paint-border #t
                                 :border-color "black"
                                 :border-rounding 0
-                                :slider-color "scroll_bar" ;;"#701040"
+                                :slider-color "scroll_bar_v2" ;;"#701040"
                                 :slider-pressed-color #f ;;"#222222" ;;#f
                                 :border-width #f
                                 :mouse-press-callback #f
