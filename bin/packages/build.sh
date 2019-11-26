@@ -127,6 +127,8 @@ rm -fr libpd-master
 tar xvzf libpd-master.tar.gz
 cd libpd-master/
 sed -i '/define CFLAGS/ s|")| -I/usr/include/tirpc ")|' make.scm
+sed -i 's/k_cext$//' make.scm
+sed -i 's/oscx //' make.scm
 make clean
 make -j`nproc`
 cd ..
