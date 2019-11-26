@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 5.9.81
+RADIUM_VERSION = 5.9.83
 
 
 #----------------USER SETTINGS-------------------------------
