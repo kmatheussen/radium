@@ -18,7 +18,7 @@
 
     Edit: errorOccured is called when radium is compiled in RELEASE mode.
 
-  * QProcess::waitForFinished returns false if the program had exited normally before calling. This is documented, and therefore
+  * QProcess::waitForFinished returns false if the program had exited normally before calling. This is documented, and perhaps even
     the intended behaviour, but it is also obviously the wrong behavior, and the reason for writing this file.
 
   * When program crashes, QProcess::waitForFinished doesn't return. Instead QProcess::waitForFinished waits until it times out.
