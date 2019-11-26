@@ -73,6 +73,8 @@ extern "C" {
   void s7extra_applyFunc_void(const func_t *func, dynvec_t args);
   void s7extra_applyFunc2_void(const char *funcname, dynvec_t args);
 
+  void s7extra_applyFunc_void_varargs(const func_t *func, ...);
+  
   double s7extra_callFunc_double_void(const func_t *func);
   double s7extra_callFunc2_double_void(const char *funcname);
 

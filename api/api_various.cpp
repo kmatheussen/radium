@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <unistd.h>
 
+#include <gc.h>
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 #include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
@@ -2928,6 +2930,10 @@ void stopAutotestingMode(void){
 
 bool isInAutotestingMode(void){
   return g_user_interaction_enabled==false;
+}
+
+int64_t getGcMemoryUsage(void){
+  return GC_get_heap_size();
 }
 
 void disableSchemeHistory(void){

@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QDialogButtonBox>
 #include <QPainter>
+#include <QLabel>
 
 #include "../common/nsmtracker.h"
 

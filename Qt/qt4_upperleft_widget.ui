@@ -426,17 +426,17 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>SignatureQLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>lzqlineedit.h</header>
+  </customwidget>
+  <customwidget>
    <class>LZQLineEdit</class>
    <extends>QLineEdit</extends>
    <header>lzqlineedit.h</header>
   </customwidget>
   <customwidget>
    <class>GridQLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>lzqlineedit.h</header>
-  </customwidget>
-  <customwidget>
-   <class>SignatureQLineEdit</class>
    <extends>QLineEdit</extends>
    <header>lzqlineedit.h</header>
   </customwidget>

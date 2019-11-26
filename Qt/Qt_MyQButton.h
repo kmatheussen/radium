@@ -19,11 +19,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QToolButton>
 
+#include "Qt_mix_colors.h"
+#include "Qt_colors_proc.h"
+
 #include "../audio/SoundPlugin.h"
+
+#include "../api/api_gui_proc.h"
+#include "../api/api_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
-#include "Qt_MyQCheckBox.h"
+//#include "Qt_MyQCheckBox.h"
+
 
 struct MyQButton : public QToolButton{
 
@@ -68,9 +75,9 @@ struct MyQButton : public QToolButton{
     
 #if 1
 
-    QRect rect(1,1,width()-2,height()-2);
+    //QRect rect(1,1,width()-2,height()-2);
     
-    radium::ScopedQClipRect scoped_clip_rect(p, rect);
+    //radium::ScopedQClipRect scoped_clip_rect(p, rect);
     
     API_run_custom_gui_paint_function(this,
                                       &p, &ev->region(),
@@ -90,9 +97,17 @@ struct MyQButton : public QToolButton{
                                         DYNVEC_push_back(args, DYN_create_int(1));
                                         DYNVEC_push_back(args, DYN_create_int(width()-1));
                                         DYNVEC_push_back(args, DYN_create_int(height()-1));
-                                        
+
+                                        if (isDown()){
+                                          DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":selected-color"));
+                                          DYNVEC_push_back(args, DYN_create_string_dont_copy(L"button_pressed_v2"));
+                                        } else {                                        
+                                          DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":background-color"));
+                                          DYNVEC_push_back(args, DYN_create_string_dont_copy(L"button_v2"));
+                                        }
+                                            
                                         DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":is-hovering"));
-                                        DYNVEC_push_back(args, DYN_create_bool(_is_hovered));
+                                        DYNVEC_push_back(args, DYN_create_bool(_is_hovered && isEnabled()));
                                         
                                         S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
                                         s7extra_applyFunc_void(draw_checkbox_func, args);

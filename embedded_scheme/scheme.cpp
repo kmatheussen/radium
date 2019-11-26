@@ -662,6 +662,39 @@ void s7extra_applyFunc2_void(const char *funcname, dynvec_t args){
   s7extra_applyFunc_void((const func_t*)find_scheme_value(s7, funcname), args);
 }
 
+void s7extra_applyFunc_void_varargs(const func_t *func, ...){
+  ScopedEvalTracker eval_tracker;
+
+  s7_pointer list = s7_nil(s7);
+
+  {
+    va_list vl;
+    va_start(vl,func);
+    
+    for(;;){
+      dyn_t arg = va_arg(vl, dyn_t);
+      
+      if (arg.type==UNINITIALIZED_TYPE)
+        break;
+      
+      list = s7_cons(s7,
+                     Protect(s7extra_make_dyn(s7, arg)).v,
+                     list);
+    }
+    
+    va_end(vl);
+  }
+  
+  
+  list = s7_reverse(s7, list);
+  
+  list = s7_cons(s7,
+                 (s7_pointer)func,
+                 list);
+  
+  catch_call(s7, list);
+}
+
 dyn_t s7extra_applyFunc_dyn(const func_t *func, dynvec_t args){
   ScopedEvalTracker eval_tracker;
 

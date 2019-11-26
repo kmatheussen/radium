@@ -79,6 +79,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/helpers.h"
 
 #include "../Qt/Qt_MyQButton.h"
+#include "../Qt/Qt_MyQCheckBox.h"
 #include "../Qt/Qt_MyQSlider.h"
 #include "../Qt/mQt_mixer_widget_callbacks.h"
 #include "../Qt/KeyboardFocusFrame.hpp"

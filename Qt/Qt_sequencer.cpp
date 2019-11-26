@@ -2984,8 +2984,9 @@ struct Timeline_widget : public LightWidget { //: public MouseTrackerQWidget {
     QColor border_color = get_qcolor(SEQUENCER_BORDER_COLOR_NUM);
     //QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
 
-    QRect rect(t_x1+1,t_y1+1,t_width-1,t_height-1);
-    myFillRect(p, rect, get_qcolor(SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM));
+    myFillRect(p, t_rect, get_qcolor(SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM));
+
+    QRectF rect = t_rect.adjusted(1,1,-1,-1);
     
     //p.setPen(text_color);
     //p.drawText(4,2,width()-6,height()-4, Qt::AlignLeft, "timeline");
@@ -4700,7 +4701,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       
       QPainter p(this);
 
-      myFillRect(p, rect(), get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM), true, 15);
+      if (seqtracks_are_painted)
+        myFillRect(p, _seqtracks_widget.t_rect.adjusted(-10, 0, 0, 10), get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM), true, 15);
+
+      if (right_part_is_painted){
+        QRectF rect(_seqtracks_widget.t_x2, 0, width() - _seqtracks_widget.t_x2, height());
+        myFillRect(p, rect, get_qcolor(HIGH_BACKGROUND_COLOR_NUM), true, 15);
+      }
+          
       /*
       for(const QRect &rect : ev->region())
         p.eraseRect(rect);

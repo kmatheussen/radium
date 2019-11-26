@@ -1027,6 +1027,8 @@ public:
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
+    checkbox->_show_enabled_marker = false;
+    
     QString c = QString("ABCDEFGH"[num]);
 
     bool is_selected=plugin->curr_ab_num==num || plugin->ab_is_valid[num];

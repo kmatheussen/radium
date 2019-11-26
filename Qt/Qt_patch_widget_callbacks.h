@@ -351,7 +351,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 
     name_widget->setText(_patch->name);
     through_onoff->setChecked(_patch->forward_events);
-
+    //through_onoff->_show_enabled_marker = false;
+    
     update_label_color(nd_label1);
     update_label_color(nd_label2);
     update_label_color(nd_label3);

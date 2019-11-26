@@ -44,10 +44,11 @@
                                                               (<ra> :set-seqtracks-visible (iota (<ra> :get-num-seqtracks)) new-value)
                                                               (<ra> :set-seqtrack-visible seqtracknum new-value))
                                                           #t)
-                                :text (lambda ()
-                                        (if (<ra> :get-seqtrack-visible seqtracknum)
-                                            "✔"
-                                            ""))
+                                ;;:text (lambda ()
+                                ;;        (if (<ra> :get-seqtrack-visible seqtracknum)
+                                ;;            "✔"
+                                ;;            ""))
+                                :gradient-background #f
                                 :right-mouse-clicked-callback (lambda ()
                                                                 (if (<ra> :shift-pressed)
                                                                     (if (> (<ra> :get-num-seqtracks) 1)
@@ -73,7 +74,7 @@
                                                                     ))
                                 ))
 
-  (define name-area (<new> :text-area gui text-x1 y1 mutesolo-x1 y2;;text-x1 y1 x2 y2
+  (define name-area (<new> :text-area gui text-x1 y1 (- mutesolo-x1 1) y2;;text-x1 y1 x2 y2
                            :text (<-> seqtracknum ". " (<ra> :get-seqtrack-name seqtracknum))
                            :background-color (lambda ()
                                                (get-seqtrack-background-color gui seqtracknum))
@@ -203,10 +204,12 @@
 
     (define reset-button (<new> :button gui (+ x1 2) (+ y1 2) (- radio-x1 border 2) (- radio-y2 2)
                                 :text "↝"
-                                :background-color "#88228833"
+                                ;;:background-color "#88228833"
                                 :statusbar-text (list #t "Reset A/B")
                                 :callback (lambda ()
-                                            (<ra> :reset-seqtrack-config))))
+                                            (<ra> :reset-seqtrack-config))
+                                :id 'reset-seqtracks-config-ab))
+
     (add-sub-area-plain! reset-button)
     
     (add-sub-area-plain! (<new> :radiobuttons gui (+ radio-x1 (/ border 2)) (+ y1 2) x2 (- radio-y2 2)
