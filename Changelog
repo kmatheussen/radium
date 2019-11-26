@@ -1,3 +1,65 @@
+Changes 5.9.81 -> 5.9.83:
+* GUI: Increase default system font height from 8
+  to 10 on Linux and Windows, and from 12 to 14
+  on macOS.
+* Preferences: Clean up color order a little bit.
+* GUI: Adjust colors.
+* Build: Remove the k_cext and oscx pd externals from
+  libpds since some linkers refuse to link object
+  files using mktemp.
+* Sampler instrument: Fix Noise and error messages
+  when playing non-looped samples using a non-cubic
+  resampler (Bug introduced in 5.9.41(!)).
+* GUI: Make scroll bar colors configurable.
+* GUI: Make colors of all buttons and checkboxes
+  configurable.
+* GUI: New appearance for buttons and checkboxes.
+* Instrument widget: Adjust some fonts and layouts.
+* Playlist: Don't show error message if pressing
+  "Insert" and there are no audio files.
+* Instrument widget: Fix being able to deselect both
+  the A and the B a/b buttons.
+* Modular mixer: Always show bus connections when
+  "C2" is enabled. Earlier they weren't shown unless
+  "C1" was also enabled.
+* Sequencer: Auto-scroll to make current seqtrack
+  visible when pressing up/down key.
+* Sequencer: Make Page up/down scroll up/down 4
+  seqtracks.
+* Instrument widget: Fix width of the "Controls
+  visible" checkbox.
+* Sequencer: Add vertical scrollbar for seqtracks.
+* Sequencer: Fix various minor issues when seqtracks
+  are hidden.
+* Sequencer GUI: Various minor tweaks and bug fixes.
+* GUI: Light up buttons and check boxes when hovered
+  by the mouse.
+* Preferences: Improve help text for the "Update
+  waveforms during playback" button.
+* Sequencer: Fix mouse pointer shape not always being
+  of the correct type.
+* GUI: Fix bottom bar widgets often not using all
+  available vertical space.
+* Midi messages instrument: Fix CC for "Balance". It
+  sent out CC 9 instead of CC 8.
+* Midi messages instrument: Order all effect sliders
+  by CC.
+* Midi messages instrument: Add missing CC effects.
+* Build: Fix building with qt 5.13.
+* API:
+  * setTopmostVisibleSeqtrack: Ignore operation if
+    seqtrack is not visible.
+  * setCurrSeqtrack: Add optional argument
+    "bool auto_scroll_to_make_seqtrack_visible",.
+  * New functions: getStringLength,
+    getSequencerLeftPartButtonsY1,
+    getLowestPossibleTopmostVisibleSeqtrack,
+    getSeqtrackBorderWidth, setCurrSeqtrackDown,
+    setCurrSeqtrackUp, autoscrollSeqtracks,
+    getGcMemoryUsage.
+
+
+
 Changes 5.9.79 -> 5.9.81:
 * Sequencer/Mixer: Made default Bus color bluish
   instead of greenish to make it easier to see mute
