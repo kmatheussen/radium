@@ -103,6 +103,8 @@ public:
     , _size_type_before_hidden(SIZETYPE_NORMAL)
   {
     radium::ScopedGeneration scoped_update(_is_updating);
+
+    _ab_checkbox_width=gui_textWidth("12", -1) * 3 / 2;
     
     setupUi(this);    
 
@@ -122,7 +124,12 @@ public:
       ab_reset_button->setMaximumWidth(_ab_checkbox_width);
     }
     */
-              
+
+    /*
+    right_part_layout->setStretch(0,2);
+    right_part_layout->setStretch(1,9);
+    */
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     _patch_widget = new Patch_widget(this,patch);
@@ -996,7 +1003,10 @@ public:
 
   void update_all_ab_buttons(void){
     radium::ScopedGeneration scoped_update(_is_updating);
-    
+
+    ab_reset_button->setMinimumWidth(_ab_checkbox_width);
+    ab_reset_button->setMaximumWidth(_ab_checkbox_width);
+
     update_ab_button(ab0, 0);
     update_ab_button(ab1, 1);
     update_ab_button(ab2, 2);
@@ -1012,7 +1022,7 @@ public:
 
   int _ab_checkbox_width = -1;
 
-  void update_ab_button(QCheckBox *checkbox, int num){
+  void update_ab_button(MyQCheckBox *checkbox, int num){
     radium::ScopedGeneration scoped_update(_is_updating);
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -1026,15 +1036,15 @@ public:
     else
       checkbox->setText(c);
 
+    /*
     if (!is_selected && _ab_checkbox_width==-1){
       checkbox->adjustSize();
       _ab_checkbox_width = checkbox->width();
     }
-
-    if (_ab_checkbox_width != -1){
-      checkbox->setMinimumWidth(_ab_checkbox_width);
-      checkbox->setMaximumWidth(_ab_checkbox_width);
-    }
+    */
+    
+    checkbox->setMinimumWidth(_ab_checkbox_width);
+    checkbox->setMaximumWidth(_ab_checkbox_width);
   }
 
   MyQCheckBox *get_ab_checkbox(int num){
