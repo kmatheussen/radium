@@ -100,16 +100,20 @@ static const ColorConfig g_colorconfig[] = {
   {TRACK_SLIDER_COLOR_NUM,     "track_slider", "Track slider (bottom of editor)"},
   {LINE_SLIDER_COLOR_NUM,     "line_slider", "Line slider (left of editor)"},
   
-  {BUTTONS_COLOR_NUM,                  "color13", "Buttons"},
-  {BUTTONS_ON_OFF_COLOR_NUM,                  "check_button_enabled", "Enabled Check Buttons"},
+  {BUTTONS_COLOR_NUM,                  "button_v2", "Buttons"},
+  {BUTTONS_PRESSED_COLOR_NUM,                  "button_pressed_v2", "Buttons pressed"}, // rename to buttons_pressed
+  {CHECK_BOX_SELECTED_COLOR_NUM,  "check_box_selected_v2",   "Selected check box"},
+  {CHECK_BOX_UNSELECTED_COLOR_NUM,  "check_box_unselected_v2",   "Unselected check box"},
+
   {BUTTONS_TEXT_COLOR_NUM,                  "buttons_text", "Button Text"},
-  
+
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text"},
   {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM,                  "portamento_end_note_text", "Portamento end note text"},
   {VELOCITY_TEXT_COLOR_NUM,     "velocity_text", "Velocity text"},
    
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM,                  "color15", "High Editor background"},
   {SCROLLBAR_COLOR_NUM,                  "scroll_bar", "Scroll bar color"},
+  {SCROLLBAR_BACKGROUND_COLOR_NUM,                  "scroll_bar_background", "Scroll bar background color"},
 
   {KEYBOARD_FOCUS_BORDER_COLOR_NUM,                  "keyboard_focus_border", "Keyboard Focus Border"},
 
@@ -125,8 +129,6 @@ static const ColorConfig g_colorconfig[] = {
 
   {TAB_SELECTED_COLOR_NUM,  "tab_selected",   "Selected tab"},
   {TAB_UNSELECTED_COLOR_NUM,  "tab_unselected",   "Unselected tab"},
-
-  {CHECK_BOX_SELECTED_COLOR_NUM,  "check_box_selected",   "Selected check box"},
 
   {PEAKS_COLOR_NUM,             "peaks",                    "Peaks < 0dB"},
   {PEAKS_0DB_COLOR_NUM,         "peaks0db",                 "Peaks 0dB - 4dB"},
@@ -276,7 +278,9 @@ static ReplacementColorNum g_replacement_color_num[] = {
 };
 
 static ReplacementColor g_replacement_color[] = {
-  {SCROLLBAR_COLOR_NUM, QColor("#69b8b8b8")},
+  {SCROLLBAR_COLOR_NUM, QColor("black")},
+  {SCROLLBAR_BACKGROUND_COLOR_NUM, QColor("#224653")},
+  
   {KEYBOARD_FOCUS_BORDER_COLOR_NUM, QColor("#ff9d00")},
 
   {CURSOR_BORDER_COLOR_NUM, QColor("#50000000")},
@@ -289,11 +293,13 @@ static ReplacementColor g_replacement_color[] = {
   {TAB_SELECTED_COLOR_NUM,  QColor("green")},
   {TAB_UNSELECTED_COLOR_NUM,  QColor("#004000")},
 
+  {BUTTONS_COLOR_NUM, QColor(40, 40, 40)},
+  {BUTTONS_PRESSED_COLOR_NUM, QColor(40, 40, 40)},
   {CHECK_BOX_SELECTED_COLOR_NUM,  QColor("#005e50")},
-
+  {CHECK_BOX_UNSELECTED_COLOR_NUM,  QColor("#ff2c543c")},
+  
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor(1,1,1)},
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
-  {BUTTONS_ON_OFF_COLOR_NUM, QColor(40, 40, 40)},
   {LINE_SLIDER_COLOR_NUM, QColor(1,1,1)},
 
   {RANGE_COLOR_NUM, QColor("#3e4e4790")},
@@ -806,8 +812,8 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
     SETTINGS_write_string("system_color",system_color->name());
   }
   if(button_color==NULL){
-    button_color=new QColor(SETTINGS_read_string("button_color","#c1f1e3"));
-    SETTINGS_write_string("button_color",button_color->name());
+    button_color=new QColor(SETTINGS_read_string("button_v2_color","#c1f1e3"));
+    SETTINGS_write_string("button_v2_color",button_color->name());
   }
 
   if(override_default_qt_colors==false){
@@ -1019,7 +1025,7 @@ void setEditorColors(EditorWidget *my_widget){
 
   my_widget->colors[10]=QColor(SETTINGS_read_string("color10","#777777"));
 
-  my_widget->colors[11]=QColor(SETTINGS_read_string("button_color","#c1f1e3"));
+  my_widget->colors[11]=QColor(SETTINGS_read_string("button_v2_color","#c1f1e3"));
 
   my_widget->colors[12]=QColor(SETTINGS_read_string("color12","black"));
   my_widget->colors[13]=QColor(SETTINGS_read_string("color13","green"));
@@ -1157,7 +1163,7 @@ void GFX_ResetColors(void){
   //setEditorColors(editorwidget); // read back from file.
 
   system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
-  button_color->setRgb(QColor(SETTINGS_read_qstring("button_color","#c1f1e3")).rgb());
+  button_color->setRgb(QColor(SETTINGS_read_qstring("button_v2_color","#c1f1e3")).rgb());
   updateAll(editorwidget);
   GFX_update_current_instrument_widget();
 
@@ -1206,7 +1212,7 @@ static void setDefaultColors(struct Tracker_Windows *tvisual, QString configfile
 
   //setEditorColors(editorwidget); // read back from file.
   system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
-  button_color->setRgb(QColor(SETTINGS_read_qstring("button_color","#c1f1e3")).rgb());
+  button_color->setRgb(QColor(SETTINGS_read_qstring("button_v2_color","#c1f1e3")).rgb());
 
   updateAll(editorwidget);
   tvisual->must_redraw = true;

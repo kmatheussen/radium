@@ -52,119 +52,6 @@ extern QColor *g_colors;
 #endif
 
 
-static int get_text_width(QString text){
-  const QFontMetrics fn = QFontMetrics(QFont());
-  return fn.boundingRect(text).width();
-}
-
-inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height, QString text, bool _is_implicitly_on, bool is_hovered){
-#ifdef COMPILING_RADIUM
-  //QColor *colors = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors;
-#else
-    QColor *colors = g_colors;
-#endif
-
-    QColor col; // on
-
-    QColor checked_col;
-    
-    if(text!=""){
-      col = get_qcolor(BUTTONS_COLOR_NUM);
-      
-      if (text=="Record")
-        col = mix_colors(col, QColor(255,0,0), 0.9);
-      else if (text=="Waiting for note...")
-        col = mix_colors(col, QColor(255,0,0), 0.6);
-      else if (text=="Recording")
-        col = mix_colors(col, QColor(255,0,0), 0.1);
-
-      if (text=="Mute")
-        checked_col = mix_colors(col, Qt::green, 0.75);
-      else if (text=="Solo")
-        checked_col = mix_colors(col, Qt::yellow, 0.75);
-      else if (text=="Bypass")
-        checked_col = mix_colors(col, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), 0.6);
-      else
-        checked_col = get_qcolor(CHECK_BOX_SELECTED_COLOR_NUM);
-
-      if (is_checked) {
-        col = checked_col;
-      }
-      
-#if 0
-      col = mix_colors(col.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
-      col.setAlpha(76);
-#endif
-    }else{
-      //col = get_qcolor(HIGH_BACKGROUND_COLOR_NUM).light(52);
-      col = get_qcolor(BUTTONS_ON_OFF_COLOR_NUM);
-      //col = get_qcolor(PEAKS_COLOR_NUM);
-   }
-
-
-    if(is_enabled==false)
-      col.setAlpha(col.alpha()/3);
-
-    //col = QColor(106, 104, 100, 255);
-    //col = QColor(0, 107, 156, 255);
-
-    if(is_checked==true){
-      if(is_hovered && is_enabled)
-        painter->fillRect(1,1,width-2,height-1,col.lighter(110));
-      else
-        painter->fillRect(1,1,width-2,height-1,col);
-      //painter->setPen(editor->colors[1]);
-      //p.drawRect(0,0,width()-1,height()-1);
-      //p.drawRect(1,1,width()-3,height()-3);
-    }else{
-      if(is_hovered && is_enabled){
-        QColor c = get_qcolor(HIGH_BACKGROUND_COLOR_NUM); //.light(52); //_qslider->palette().color(_qslider->backgroundRole());
-        myFillRect(*painter, QRectF(0,0,width,height), c.lighter(110), false);
-      }
-      
-      if(_is_implicitly_on)
-        painter->setPen(checked_col);
-      else
-        painter->setPen(col);
-
-      painter->drawRoundedRect(1,1,width-3,height-2,5,5); // outer
-      if(_is_implicitly_on)
-        painter->setPen(col);
-      painter->drawRoundedRect(2,2,width-5,height-4,5,5); // inner
-    }
-
-
-    if(text!=""){
-      painter->setPen(get_qcolor(HIGH_EDITOR_BACKGROUND_COLOR_NUM));
-      painter->drawRoundedRect(0,0,width,height,5,5);
-
-      //QRect rect(5,3,width-5,height-3);
-      QRect rect(1,1,width-2,height-1);//5,3,width-5,height-3);
-      QColor button_text_color = get_qcolor(BUTTONS_TEXT_COLOR_NUM);
-      if(is_checked==true)
-        button_text_color.setAlpha(190);
-      else
-        button_text_color.setAlpha(120);
-      painter->setPen(button_text_color);
-
-      if(text.endsWith("Loop"))
-        text = text + " " + QChar(8634);
-
-      if(height>width && text.size()>2){
-        painter->save();
-        painter->translate(0,0);
-        painter->rotate(90);
-        int text_width = get_text_width(text);
-        int pos = (height-text_width)/2;
-        painter->drawText(pos,-5, text);
-        painter->restore();
-      }else{
-        painter->drawText(rect, Qt::AlignCenter, text);
-      }
-
-    }
-}
-
 struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   radium::GcHolder<struct Patch> _patch;
   bool _is_patchvoice_onoff_button = false;
@@ -194,6 +81,8 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
     setChecked(!isChecked());    
   }
 
+  //QColor _background_color = get_qcolor(BUTTONS_COLOR_NUM);
+  
   bool _is_hovered = false;
   bool _is_popup_hovered = false;
       
@@ -223,6 +112,7 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
     update();
   }
 
+
   radium::GcHolder<wchar_t> _text_to_draw;
   
   void paintEvent ( QPaintEvent * ev ) override {
@@ -238,76 +128,46 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
     }
 
     QString text2 = vertical_text!="" ? vertical_text : text();
-
+      
     if(_patch.data()!=NULL && _patch->patchdata != NULL && _is_patchvoice_onoff_button==false)
       text2 = get_parameter_prepend_text(_patch.data(), _effect_num) + text2;
 
-#if 1
-
-    QRect rect(1,1,width()-2,height()-2);
-    
-    radium::ScopedQClipRect scoped_clip_rect(p, rect);
-                                           
     API_run_custom_gui_paint_function(this,
                                       &p, &ev->region(),
                                       [this,text2](){
 
-                                        static dynvec_t args = {}; // static to avoid allocating bdwgc-memory.
-                                        
-                                        DYNVEC_light_clean(args);
-
                                         if (_text_to_draw.data()==NULL || QString::fromWCharArray(_text_to_draw.data())!=text2)
                                           _text_to_draw.set(STRING_create(text2));
 
-                                        DYNVEC_push_back(args, DYN_create_int(API_get_gui_from_widget(this)));
-                                        DYNVEC_push_back(args, DYN_create_string_dont_copy(_text_to_draw.data()));
-                                        DYNVEC_push_back(args, DYN_create_bool(isChecked()));
-                                        DYNVEC_push_back(args, DYN_create_int(1));
-                                        DYNVEC_push_back(args, DYN_create_int(1));
-                                        DYNVEC_push_back(args, DYN_create_int(width()-1));
-                                        DYNVEC_push_back(args, DYN_create_int(height()-1));
-                                        
-                                        DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":is-hovering"));
-                                        DYNVEC_push_back(args, DYN_create_bool(_is_hovered));
-                                        
-                                        DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":prepend-checked-marker"));
-                                        DYNVEC_push_back(args, DYN_create_bool(_show_enabled_marker));
-                                        
-                                        DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":vertical-text"));
-                                        DYNVEC_push_back(args, DYN_create_bool(!vertical_text.isEmpty()));
+                                        S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
 
-                                        S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
-                                        s7extra_applyFunc_void(draw_checkbox_func, args);
-                                        
-                                        /*
-                                        evalScheme(talloc_format("(draw-button %d \"%s\" %s %d %d %d %d :is-hovering %s :prepend-checked-marker %s :vertical-text %s)", 
-                                                                 (int)API_get_gui_from_widget(this),
-                                                                 text2.toUtf8().constData(),
-                                                                 isChecked() ? "#t" : "#f",
-                                                                 1, 1, width()-1, height()-1,
-                                                                 _is_hovered ? "#t" : "#f",
-                                                                 _show_enabled_marker ? "#t" : "#f",
-                                                                 vertical_text.isEmpty() ? "#f" : "#t"
-                                                                 )
-                                                   );
-                                        */
-                                        
-                                        /*
-                                        S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
-                                        S7CALL(void_int_charstring_bool_float_float_float_float,
-                                               draw_checkbox_func,
-                                               API_get_gui_from_widget(this),
-                                               text2.toUtf8().constData(), isChecked(),
-                                               0, 0, width(), height()
-                                               );
-                                        */
+                                        s7extra_applyFunc_void_varargs(draw_checkbox_func,
+                                                                       DYN_create_int(API_get_gui_from_widget(this)),
+                                                                       DYN_create_string_dont_copy(_text_to_draw.data()),
+                                                                       DYN_create_bool(isChecked()),
+                                                                       DYN_create_int(1),
+                                                                       DYN_create_int(1),
+                                                                       DYN_create_int(width()-1),
+                                                                       DYN_create_int(height()-1),
+                                                                       
+                                                                       DYN_create_symbol_dont_copy(":background-color"),
+                                                                       DYN_create_string_dont_copy(L"check_box_unselected_v2"),
+                                                                       
+                                                                       DYN_create_symbol_dont_copy(":is-hovering"),
+                                                                       DYN_create_bool(_is_hovered && isEnabled()),
+                                                                       
+                                                                       DYN_create_symbol_dont_copy(":prepend-checked-marker"),
+                                                                       DYN_create_bool(_show_enabled_marker),
+                                                                       
+                                                                       DYN_create_symbol_dont_copy(":vertical-text"),
+                                                                       DYN_create_bool(!vertical_text.isEmpty()),
+                                                                       
+                                                                       DYN_create_symbol_dont_copy(":gradient-background"),
+                                                                       DYN_create_bool(!_is_hovered && !isChecked() && _show_enabled_marker && !text2.isEmpty()),
+                                                                       
+                                                                       g_uninitialized_dyn);
                                       });
   
-#else
-      
-    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2, _is_implicitly_on, _is_hovered);
-    
-#endif
   }
 
   

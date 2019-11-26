@@ -284,7 +284,7 @@
                        '(record mute solo height)
                        '(mute solo height))
                    '(mute height))
-               :spacing -1
+               :spacing 1
                :callback
                (lambda (type x1 y1 x2 y2)
                  (define-optional-func box (methodname . args))
@@ -1136,7 +1136,6 @@
                                           #f))))
   )
 
-
 (define *sequencer-height-dragging* #f)
 (define *sequencer-height-hovering* #f)
   
@@ -1151,6 +1150,8 @@
   (define-override (paint)
     (draw-button gui "=" *sequencer-height-dragging*
                  x1 y1 x2 y2
+                 :selected-color "button_pressed_v2"
+                 :background-color "button_v2"
                  :is-hovering *sequencer-height-hovering*))
 
     ;;(<gui> :filled-box gui background-color x1 y1 x2 y2)
@@ -1665,7 +1666,11 @@
 
   (define-override (paint)
     ;;(c-display "   Scheme: Painting left part")
-    (<gui> :filled-box gui background-color x1 y1 x2 y2)
+    ;;(define-override (paint)
+    (<gui> :filled-box gui "color11" x1 y1 x2 y2)
+
+
+    ;;(<gui> :filled-box gui background-color x1 y1 x2 y2)
     )
   
   )

@@ -237,6 +237,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     }
 
     for(int i=0;i<MW_NUM_AB;i++){
+
+      buttons[i]->_show_enabled_marker = false;
       
       buttons[i]->setMinimumWidth(_ab_checkbox_width);
       buttons[i]->setMaximumWidth(_ab_checkbox_width);

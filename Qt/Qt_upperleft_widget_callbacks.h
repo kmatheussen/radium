@@ -52,7 +52,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
       setStyle(new QCleanlooksStyle);
 #endif
 
-      swing_onoff->setText("✔");
+      swing_onoff->setText("");
                             
     // Set up custom popup menues for the time widgets
     {

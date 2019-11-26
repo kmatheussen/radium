@@ -8,7 +8,9 @@
 
 
 #include "../common/nsmtracker.h"
-#include <FocusSniffers.h>
+
+#include "EditorWidget.h"
+#include "FocusSniffers.h"
 
 #include "../common/OS_visual_input.h"
 #include "../OpenGL/Widget_proc.h"

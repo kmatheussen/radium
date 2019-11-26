@@ -618,6 +618,9 @@ public:
       _ab_checkbox_width = ab_a->width();
     }
 
+    ab_a->_show_enabled_marker = false;
+    ab_b->_show_enabled_marker = false;
+    
     ab_a->setMinimumWidth(_ab_checkbox_width);
     ab_a->setMaximumWidth(_ab_checkbox_width);
     ab_b->setMinimumWidth(_ab_checkbox_width);

@@ -1445,13 +1445,13 @@ Qt_Fonts.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Fonts.cpp
 Qt_ReqType.o:  $(BUILD_DEPENDENCIES) $(P)Qt_ReqType.cpp
 	$(CCC) $(P)Qt_ReqType.cpp $(QTOPT) -Wno-null-dereference
 
-Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cpp audio/Envelope.hpp embedded_scheme/s7extra_proc.h
+Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cpp audio/Envelope.hpp embedded_scheme/s7extra_proc.h Qt/Timer.hpp
 	$(CCC) $(P)Qt_PopupMenu.cpp $(QTOPT) -Wno-null-dereference
 
 $(P)mQt_PopupMenu.cpp: $(P)Qt_PopupMenu.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_PopupMenu.cpp -DUSE_QT_MENU >$(P)mQt_PopupMenu.cpp
 
-Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar_widget_callbacks.h $(P)mQt_upperleft_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h audio/CpuUsage.hpp Qt/EditorWidget.h  Qt/FileRequester.hpp
+Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar_widget_callbacks.h $(P)mQt_upperleft_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h audio/CpuUsage.hpp Qt/EditorWidget.h  Qt/FileRequester.hpp Qt/Qt_MyQCheckBox.h
 	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
 
 Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
@@ -1462,17 +1462,17 @@ ifeq (,$(findstring clang,$(CC)))
  QT_SEQUENCER_OPT += -Wno-duplicated-branches
 endif
 
-Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp common/seqblock_automation_proc.h Qt/KeyboardFocusFrame.hpp
+Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp common/seqblock_automation_proc.h Qt/KeyboardFocusFrame.hpp Qt/Qt_MyQCheckBox.h
 	$(CCC) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SEQUENCER_OPT)
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
 
-Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp
+Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp  Qt/Qt_MyQScrollBar.hpp
 	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT) #-fno-sanitize=undefined
 
 
-INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp common/Vector.hpp
+INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp common/Vector.hpp Qt/Qt_MyQScrollBar.hpp
 
 
 
@@ -1575,12 +1575,12 @@ $(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_wid
 
 # Look at this one for creating Qt dialogs (the other Qt dialogs are hacks since the "create_source_from_uio.sh" script is not called
 ######################################################################################################################################
-Qt_comment_dialog.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.h $(P)Qt_comment_dialog.cpp $(P)qt4_comment_dialog.ui
+Qt_comment_dialog.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.h $(P)Qt_comment_dialog.cpp $(P)qt4_comment_dialog.ui Qt/Qt_MyQCheckBox.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) comment_dialog  DONT_USE_RADIUM_CHECKBOXES
 	ln -sf mQt_comment_dialog_callbacks.h $(P)mQt_comment_dialog_callbacks.cpp
 	$(CCC) $(P)Qt_comment_dialog.cpp $(QTOPT) -o Qt_comment_dialog.o  -Wno-null-dereference
 
-Qt_song_properties.o: $(BUILD_DEPENDENCIES) $(P)Qt_song_properties_callbacks.h $(P)Qt_song_properties.cpp $(P)qt4_song_properties.ui
+Qt_song_properties.o: $(BUILD_DEPENDENCIES) $(P)Qt_song_properties_callbacks.h $(P)Qt_song_properties.cpp $(P)qt4_song_properties.ui Qt/Qt_MyQCheckBox.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) song_properties DONT_USE_RADIUM_CHECKBOXES
 	ln -sf mQt_song_properties_callbacks.h $(P)mQt_song_properties_callbacks.cpp
 	$(CCC) $(P)Qt_song_properties.cpp $(QTOPT) -o Qt_song_properties.o  -Wno-null-dereference
@@ -1609,7 +1609,7 @@ $(P)Qt_vst_paths_widget.h: $(P)qt4_vst_paths_widget.ui
 	cd $(P) && $(UIC) qt4_vst_paths_widget.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_vst_paths_widget.h
 
 
-Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h midi/midi_i_input_proc.h common/Vector.hpp Qt/ScrollArea.hpp 
+Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h midi/midi_i_input_proc.h common/Vector.hpp Qt/ScrollArea.hpp  Qt/Qt_MyQScrollBar.hpp
 	$(CCC) $(P)Qt_tools_callbacks.cpp $(QTOPT)
 
 $(P)Qt_tools.h: $(BUILD_DEPENDENCIES) $(P)qt4_tools.ui $(P)Qt_tools_callbacks.h $(P)lzqlineedit.h
@@ -1623,7 +1623,7 @@ Qt_pianorollheader_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_pianorollheader_cal
 $(P)Qt_pianorollheader.h: $(BUILD_DEPENDENCIES) $(P)qt4_pianorollheader.ui $(P)Qt_pianorollheader_callbacks.h $(P)lzqlineedit.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pianorollheader
 
-Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp
+Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQCheckBox.h
 	$(CCC) $(P)Qt_PluginWidget.cpp $(QTOPT)
 
 $(P)mQt_PluginWidget.cpp: $(P)Qt_PluginWidget.h
@@ -1806,7 +1806,7 @@ api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.cpp
 api_sequencer.o:  $(BUILD_DEPENDENCIES)  $(API)api_sequencer.cpp $(API)api_sequencer_proc.h  audio/Envelope.hpp common/seqblock_automation_proc.h embedded_scheme/s7extra_proc.h
 	$(CCC)  $(API)api_sequencer.cpp $(QTOPT)
 
-api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp
+api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) -Wno-null-dereference
 
@@ -1918,7 +1918,7 @@ $(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h $(QM)QM_MixerWidget.cpp $(P)Qt_M
 #	$(RCC) $(QM)images.qrc -name images -o $(QM)images.cpp
 #	$(CCC) $(QM)images.cpp  `$(PKG) --libs --cflags QtGui` -c
 
-QM_MixerWidget.o: $(QM)mQM_MixerWidget.cpp $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp Qt/helpers.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/KeyboardFocusFrame.hpp
+QM_MixerWidget.o: $(QM)mQM_MixerWidget.cpp $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp Qt/helpers.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/KeyboardFocusFrame.hpp Qt/Timer.hpp Qt/Qt_MyQCheckBox.h
 	$(CCC) $(QM)QM_MixerWidget.cpp $(QTOPT)
 
 QM_view.o: $(QM)QM_view.cpp $(QM)QM_view.h $(QM)QM_chip.h $(QM)mQM_view.cpp $(QM)QM_MixerWidget.h

@@ -4,7 +4,11 @@
 
 #include <QScrollBar>
 
+#include "Qt_mix_colors.h"
+
+
 #include "Qt_colors_proc.h"
+
 
 extern int g_default_slider_height;
 
@@ -127,7 +131,7 @@ struct Qt_MyQScrollBar : public QScrollBar, public radium::MouseCycleFix {
     const int min_val = minimum();
     const int max_val = maximum();
 
-    p.fillRect(0,0,width(),height(),  get_qcolor(HIGH_BACKGROUND_COLOR_NUM));
+    p.fillRect(0,0,width(),height(),  get_qcolor(SCROLLBAR_BACKGROUND_COLOR_NUM));//HIGH_BACKGROUND_COLOR_NUM));
 
     /*
     QColor background = QWidget::palette().color(QWidget::backgroundRole());
@@ -167,7 +171,7 @@ struct Qt_MyQScrollBar : public QScrollBar, public radium::MouseCycleFix {
                                    xy1, xy2);
 
     if (_is_moving)
-      foreground = foreground.darker(150);
+      foreground = mix_colors(QColor(0,0,0), foreground, 0.4);
 
     if (orientation()==Qt::Vertical) {
       

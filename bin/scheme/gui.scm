@@ -664,9 +664,9 @@
 
 (delafina (draw-button :gui :text :is-selected
                        :x1 :y1 :x2 :y2
-                       :selected-color "check_box_selected"
+                       :selected-color "check_box_selected_v2"
                        :unselected-color "#404040"
-                       :background-color "color13" ;;(<gui> :get-background-color gui) ;; if #f, background will not be painted.
+                       :background-color "button_v2" ;;(<gui> :get-background-color gui) ;; if #f, background will not be painted.
                        :is-hovering #f
                        :prepend-checked-marker #f
                        :prepend-space-if-prepending-checked-marker #f
@@ -674,6 +674,7 @@
                        :text-color *text-color* ;;"black"
                        :y-border 0
                        :x-border 0
+                       :gradient-background #t
                        :paint-implicit-border #f ;; used by the mute buttons (when implicitly muted by someone else solo-ing)
                        :implicit-border-width 2
                        :box-rounding #f) ;; if #f, rounding will be set automatically based on checkbox size.
@@ -681,8 +682,24 @@
   (if (not box-rounding)
       (set! box-rounding (if (and #f (> (string-length text) 1))
                              5
-                             5)))
+                             3)))
 
+  (when background-color
+    (if (not is-selected)
+        (cond ((string=? text "Record")
+               (set! background-color (<gui> :mix-colors background-color "red" 0.9)))
+              ((string=? text "Waiting for note...")
+               (set! background-color (<gui> :mix-colors background-color "red" 0.6)))
+              ((string=? text "Recording")
+               (set! background-color (<gui> :mix-colors background-color "red" 0.1))))
+        (cond ((string=? text "Mute")
+               (set! selected-color (<gui> :mix-colors background-color "#44ff44" 0.55)))
+              ((string=? text "Solo")
+               (set! selected-color (<gui> :mix-colors background-color "yellow" 0.75)))
+              ((string=? text "Bypass")
+               (set! selected-color (<gui> :mix-colors background-color "zoomline_text1" 0.6))))))
+  
+  
   (define (paintit)
     (if (or is-selected
             background-color)
@@ -695,45 +712,29 @@
                      (<gui> :make-color-lighter color 1.25)
                      color))
                (+ x-border x1) (+ y-border y1) (- x2 x-border) (- y2 y-border)
-               box-rounding box-rounding))
+               box-rounding box-rounding
+               gradient-background))
 
     ;;(set! text "Gakk")
 
     (define text-len (<ra> :get-string-length text))
-    
-    (if (and #f is-selected prepend-checked-marker)
-        (begin
-          
-          (<gui> :my-draw-text
-                 gui
-                 text-color ;;(if is-hovering "black" text-color)
-                 text
-                 ;;(+ x1 2) (+ y1 2) (- x2 2) (- y2 2)
-                 (+ x1 0) (+ y1 0) (- x2 0) (- y2 -1)
-                 #f
-                 #f
-                 #f
-                 0
-                 #f
-                 #t
-                 )
-          )
-        
+
+    (if (or (> text-len 0)
+            (and is-selected
+                 prepend-checked-marker))
         (<gui> :my-draw-text
                gui
-               text-color ;;(if is-hovering "black" text-color)
-               (if (= text-len 0)
-                   (if is-selected
-                       "✔"
-                       "")
-                   (if (or (not prepend-checked-marker)
-                           (< text-len 2))
-                       text
-                       (if is-selected
-                           (<-> "✔ " text)
-                           (if prepend-space-if-prepending-checked-marker
-                               (<-> "     " text)
-                               text))))
+               text-color ;;(if is-hovering "black" text-color)               
+               (cond ((= text-len 0)
+                      "✔")
+                     ((not prepend-checked-marker)
+                      text)
+                     (is-selected
+                      (<-> "✔ " text))
+                     (prepend-space-if-prepending-checked-marker
+                      (<-> "     " text))
+                     (else
+                      text))
                ;;(+ x1 2) (+ y1 2) (- x2 2) (- y2 2)
                (+ x1 0) (+ y1 0) (- x2 0) (- y2 -1)
                #f
@@ -751,25 +752,38 @@
       (paintit))
 
   
-  (define box-border (if paint-implicit-border
-                         implicit-border-width
-                         0))
-  (<gui> :draw-box
-         gui
-         (if paint-implicit-border
-             selected-color
-             unselected-color)
-         (+ x1 x-border box-border) (+ y1 y-border box-border) (- x2 (+ x-border box-border)) (- y2 (+ y-border box-border))
-         (if paint-implicit-border
-             2.0
-             1.0)
-         box-rounding box-rounding)
 
+  (when paint-implicit-border
+
+    (define box-border (if paint-implicit-border
+                           implicit-border-width
+                           0))
+    (<gui> :do-alpha gui (if paint-implicit-border
+                             1.0
+                             0.2)
+           (lambda ()
+             (<gui> :draw-box
+                    gui
+                    (if paint-implicit-border
+                        selected-color
+                        unselected-color
+                        )
+                    (+ x1 x-border box-border) (+ y1 y-border box-border) (- x2 (+ x-border box-border)) (- y2 (+ y-border box-border))
+                    (if paint-implicit-border
+                        2.0
+                        1.0)
+                    box-rounding box-rounding))))
   ;(<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 3 3)
   ;(<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 box-rounding box-rounding)
-
+  
   '(let ((b 0.5))
-    (<gui> :draw-box gui "black" (- x1 0.5) (- y1 0.5) (+ x2 0.5) (+ y2 0.5) 1.2 box-rounding box-rounding))
+     (<gui> :draw-box gui "#60000000" (+ x1 b) (+ y1 b) (- x2 b) (- y2 b) 1.2 box-rounding box-rounding))
+  '(if (not gradient-background)
+      (let ((b 0.5))
+        (<gui> :draw-box gui "#222222" (+ x1 b) (+ y1 b) (- x2 b) (- y2 b) 1.2 box-rounding box-rounding)))
+  '(let ((b 0.5))
+    (<gui> :draw-box gui "black" (+ x1 b) (+ y1 b) (- x2 b) (- y2 b) 1.2 box-rounding box-rounding))
+  
   )
 
 (define (ra:gui_do-font gui font func)

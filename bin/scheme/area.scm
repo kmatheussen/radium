@@ -1051,13 +1051,14 @@
                                :text-color *text-color* ;; Only used if paint-func is #f
                                :selected-color #f ;; only used if paint-func is #f. If #f, use get-default-button-color
                                :prepend-checked-marker #t
+                               :gradient-background #t
                                :right-mouse-clicked-callback #f
                                :border-width 0.25
                                :box-rounding #f
                                )
 
   (if (not selected-color)
-      (set! selected-color "check_box_selected")) ;;(get-default-button-color gui)))
+      (set! selected-color "check_box_selected_v2")) ;;(get-default-button-color gui)))
 
   (define is-hovering #f)
 
@@ -1065,16 +1066,18 @@
     (if paint-func
         (paint-func gui x1 y1 x2 y2 (is-selected-func) is-hovering)
         (begin
+          (define is-selected (is-selected-func))
           (draw-button gui
                          (if (procedure? text) (text) text)
-                         (is-selected-func)
+                         is-selected
                          x1 y1 x2 y2
                          selected-color
                          ;;:unselected-color (<gui> :get-background-color gui)
-                         :background-color "color13" ;;(<gui> :get-background-color gui)
+                         :background-color "check_box_unselected_v2" ;;"button_color_v2" ;;(<gui> :get-background-color gui)
                          :is-hovering is-hovering
                          :prepend-checked-marker prepend-checked-marker
                          :text-color text-color
+                         :gradient-background (or is-selected gradient-background is-hovering)
                          :paint-implicit-border #f
                          :implicit-border-width border-width
                          :box-rounding box-rounding
@@ -1150,6 +1153,8 @@
                                    "o")
                          :text-color text-color
                          :selected-color #f
+                         :prepend-checked-marker #f
+                         :gradient-background #f
                          :right-mouse-clicked-callback (and right-mouse-clicked-callback
                                                             (lambda ()
                                                               (right-mouse-clicked-callback num)))
@@ -1195,8 +1200,11 @@
       (set! background-color (get-default-button-color gui)))
 
   (define (mypaint)
+    ;;(<gui> :filled-box gui background-color x1 y1 x2 y2)
     (draw-button gui text (is-pressing?)
                  x1 y1 x2 y2
+                 :selected-color "button_pressed_v2"
+                 :background-color "button_v2"
                  :is-hovering is-hovering))
 
   (define (start-show-pressed!)
@@ -1293,12 +1301,12 @@
                                 :slider-pos
                                 :slider-length ;; between 0 and 1. E.g. for 0.5; slider length = scrollbar length * 0.5. Can also be a function returning the slider length.
                                 :vertical
-                                :background-color "#224653" ;;#f
+                                :background-color "scroll_bar_background" ;;"#224653" ;;#f
                                 :paint-border #t
                                 :border-color "black"
                                 :border-rounding 0
-                                :slider-color "black" ;;"#701040"
-                                :slider-pressed-color "#222222" ;;#f
+                                :slider-color "scroll_bar" ;;"#701040"
+                                :slider-pressed-color #f ;;"#222222" ;;#f
                                 :border-width #f
                                 :mouse-press-callback #f
                                 :mouse-release-callback #f
@@ -1308,7 +1316,7 @@
   (assert slider-length)
   
   (if (not slider-pressed-color)
-      (set! slider-pressed-color (<gui> :mix-colors "#fefefe" slider-color 0.1)))
+      (set! slider-pressed-color (<gui> :mix-colors "#000000" slider-color 0.4)))
 
   (define b (if border-width
                 border-width
