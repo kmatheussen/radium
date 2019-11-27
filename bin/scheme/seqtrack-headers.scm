@@ -1490,8 +1490,8 @@
     (let loop ((seqtracknum first-visible-seqtrack)
                (last-legal 0)
                (prev-dist #f))
-      (cond ((= seqtracknum lowest-seqtracknum)
-             seqtracknum)
+      (cond ((>= seqtracknum (+ lowest-seqtracknum 1))
+             last-legal)
             ((not (<ra> :get-seqtrack-visible seqtracknum))
              (loop (+ seqtracknum 1)
                    last-legal
@@ -1499,7 +1499,7 @@
             (else
              (define curr-pos (<ra> :get-seqtrack-y1 seqtracknum))
              (define dist (abs (- curr-pos ideal-pos)))
-             (c-display "---. " seqtracknum ". Prev dist:" prev-dist ". Dist:" dist ". curr-pos:" curr-pos ". ideal pos:" ideal-pos)
+             ;;(c-display "---. " seqtracknum ". Prev dist:" prev-dist ". Dist:" dist ". curr-pos:" curr-pos ". ideal pos:" ideal-pos)
              (if (and prev-dist
                       (> dist prev-dist))
                  last-legal
@@ -1507,7 +1507,7 @@
                        seqtracknum
                        dist))))))
 
-  (c-display "percentage:" percentage ". new:" new-seqtracknum)
+  ;;(c-display "percentage:" percentage ". new:" new-seqtracknum ". lowest:" lowest-seqtracknum)
   (<ra> :set-topmost-visible-seqtrack new-seqtracknum))
 
 
