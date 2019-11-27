@@ -1501,7 +1501,7 @@
              (define dist (abs (- curr-pos ideal-pos)))
              ;;(c-display "---. " seqtracknum ". Prev dist:" prev-dist ". Dist:" dist ". curr-pos:" curr-pos ". ideal pos:" ideal-pos)
              (if (and prev-dist
-                      (> dist prev-dist))
+                      (< prev-dist dist))
                  last-legal
                  (loop (+ seqtracknum 1)
                        seqtracknum
