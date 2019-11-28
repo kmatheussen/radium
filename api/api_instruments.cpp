@@ -2974,10 +2974,15 @@ void removeEffectMonitor(int64_t effect_monitor_id, bool throw_exception_if_not_
 
 void API_remove_effect_monitors_for_instrument(struct Patch *patch){
  again:
+  
   for(auto *monitor : g_effect_monitors){
     if (monitor->patch.data()==patch){
+      
       int num = g_effect_monitors.removeAll(monitor);
       R_ASSERT(num==1);
+      
+      delete monitor;
+      
       goto again;
     }
   }  
