@@ -241,7 +241,7 @@ private:
 
   void handle_error(double timeout, double start_time) {
     R_ASSERT_RETURN_IF_FALSE(get_qprocess() != NULL);
-    R_ASSERT(_error_occured==false);
+    R_ASSERT_NON_RELEASE(_error_occured==false);
     
     _error_occured = true;
     
