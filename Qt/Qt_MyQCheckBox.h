@@ -141,6 +141,10 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
 
                                         S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
 
+                                        bool do_gradient = false;
+                                        if(_is_hovered || isChecked() || !text2.isEmpty()) // _show_enabled_marker || 
+                                          do_gradient = true;
+
                                         s7extra_applyFunc_void_varargs(draw_checkbox_func,
                                                                        DYN_create_int(API_get_gui_from_widget(this)),
                                                                        DYN_create_string_dont_copy(_text_to_draw.data()),
@@ -163,7 +167,8 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
                                                                        DYN_create_bool(!vertical_text.isEmpty()),
                                                                        
                                                                        DYN_create_symbol_dont_copy(":gradient-background"),
-                                                                       DYN_create_bool(!_is_hovered && !isChecked() && _show_enabled_marker && !text2.isEmpty()),
+                                                                       DYN_create_bool(do_gradient),
+                                                                       //DYN_create_bool(!_is_hovered && !isChecked() && _show_enabled_marker && !text2.isEmpty()),
                                                                        
                                                                        g_uninitialized_dyn);
                                       });
