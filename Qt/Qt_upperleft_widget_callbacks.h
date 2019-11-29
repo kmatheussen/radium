@@ -53,7 +53,12 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
 #endif
 
       swing_onoff->setText("");
-                            
+      swing_onoff->y1_border=0;
+      swing_onoff->y2_border=0;
+      swing_onoff->x1_border=0;
+      swing_onoff->x2_border=0;
+      swing_onoff->_always_gradient_when_checked = true;
+                             
     // Set up custom popup menues for the time widgets
     {
       bpm->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -76,16 +81,25 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
       connect(signature, SIGNAL(customContextMenuRequested(const QPoint&)),
               this, SLOT(ShowSignaturePopup(const QPoint&)));
 
-      lineZoomWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-      connect(lineZoomWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
+      lz_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(lz_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowLZPopup(const QPoint&)));
+
+      lz->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(lz, SIGNAL(customContextMenuRequested(const QPoint&)),
               this, SLOT(ShowLZPopup(const QPoint&)));
 
       signature_label->setContextMenuPolicy(Qt::CustomContextMenu);
       connect(signature_label, SIGNAL(customContextMenuRequested(const QPoint&)),
               this, SLOT(ShowSignaturePopup(const QPoint&)));
 
-      SwingWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-      connect(SwingWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
+      
+      swing_label->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(swing_label, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowSwingPopup(const QPoint&)));
+
+      swing_onoff->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(swing_onoff, SIGNAL(customContextMenuRequested(const QPoint&)),
               this, SLOT(ShowSwingPopup(const QPoint&)));
 
       reltempomax->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -147,14 +161,22 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     //    set_editor_focus();
   }
 
-  void updateLayout(QWidget *w, int x1, int x2, int height){
-    w->move(x1, 0);
-    w->resize(x2-x1, height);
+  void updateLayout(QWidget *w1, QWidget *w2, int x1, int x2, int height){
+    QSizePolicy policy(QSizePolicy::MinimumExpanding ,QSizePolicy::Fixed);
 
-    QLayout *l = w->layout();
+    w1->setSizePolicy(policy);
+    w2->setSizePolicy(policy);
 
-    l->setSpacing(2);
-    l->setContentsMargins(0, 2, 2, 3);
+    int width = (x2-x1) - 1;
+
+    int ysplit = height/2;
+    
+    w1->move(x1, 0);
+    w2->move(x1, ysplit);
+    
+    w1->resize(width, ysplit-1);
+    w2->resize(width, height-ysplit-1);
+    
   }
   
   // called from the outside
@@ -163,26 +185,38 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     GL_lock();{
 
       // upperleft lpb/bpm/reltempo show/hide
-      if (window->show_lpb_track)
-        LPBWidget->show();
-      else
-        LPBWidget->hide();
+      if (window->show_lpb_track){
+        lpb_label->show();
+        lpb->show();
+      }else{
+        lpb_label->hide();
+        lpb->hide();
+      }
       
-      if (window->show_bpm_track)
-        BPMWidget->show();
-      else
-        BPMWidget->hide();
+      if (window->show_bpm_track){
+        bpm_label->show();
+        bpm->show();
+      }else{
+        bpm_label->hide();
+        bpm->hide();
+      }
       
-      if (window->show_swing_track)
-        SwingWidget->show();
-      else
-        SwingWidget->hide();
+      if (window->show_swing_track){
+        swing_label->show();
+        swing_onoff->show();
+      }else{
+        swing_label->hide();
+        swing_onoff->hide();
+      }
       
-      if (window->show_reltempo_track)
-        ReltempoWidget->show();
-      else
-        ReltempoWidget->hide();
-      
+      if (window->show_reltempo_track){
+        reltempomax_label->show();
+        reltempomax->show();
+      }else{
+        reltempomax_label->hide();
+        reltempomax->hide();
+      }
+        
       // bottombar signature/lpb/bpm show/hide
       for(auto *bottom_bar : g_bottom_bars){
         if (window->show_signature_track)
@@ -221,50 +255,60 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     /////////////////////
     int x1 = 0; //wblock->tempocolorarea.x;
     int x2 = wblock->tempoTypearea.x;
-    updateLayout(GridWidget, x1, x2, height);
+    updateLayout(grid_label, grid, x1, x2, height);
+    /*
     QMargins margins = GridWidget->layout()->contentsMargins();
     margins.setLeft(2);
     GridWidget->layout()->setContentsMargins(margins);
+    */
     
     // BPM
     //////////////////////////
     x1 = x2;
     x2 = wblock->lpbTypearea.x;
-    updateLayout(BPMWidget, x1, x2, height);
+    updateLayout(bpm_label, bpm, x1, x2, height);
     
     // LPB
     //////////////////////////
     x1 = x2;
     x2 = wblock->signaturearea.x;
-    updateLayout(LPBWidget, x1, x2, height);
+    updateLayout(lpb_label, lpb, x1, x2, height);
     
     // Signature
     ///////////////////////////
     x1 = x2;
     x2 = wblock->linenumarea.x;
-    updateLayout(SignatureWidget, x1, x2, height);
+    updateLayout(signature_label, signature, x1, x2, height);
     
     // LZ / linenumber(bars/beats)
     ///////////////////////////////
     x1 = x2;
     x2 = wblock->swingTypearea.x;
-    updateLayout(lineZoomWidget, x1, x2, height);
+    updateLayout(lz_label, lz, x1, x2, height);
 
     // Swing
     ///////////////////////////////
     x1 = x2;
     x2 = wblock->temponodearea.x;
-    updateLayout(SwingWidget, x1, x2, height);
-
+    updateLayout(swing_label, swing_onoff, x1, x2, height);
+    /*
+    SwingWidget->setContentsMargins(0, 0, 0, 0);
+    SwingWidget->resize(x2-x1,2+height);
+    //SwingWidget->layout()->itemAt(0)->widget()->resize(x2-x1,height/2 - 2); // qt is a nightmare. It's only useful for toy programs.
+    SwingWidget->layout()->itemAt(1)->widget()->move(0,height/2 + 2);
+    //SwingWidget->layout()->itemAt(1)->widget()->resize(x2-x1,height/2 + 2); // qt is a nightmare.
+    */
+    
     // Reltempo (temponode)
     ///////////////////////////////
     x1 = x2;
     x2 = wblock->t.x1;
-    updateLayout(ReltempoWidget, x1, x2, height);
+    updateLayout(reltempomax_label, reltempomax, x1, x2, height);
+    /*
     QMargins margins2 = ReltempoWidget->layout()->contentsMargins();
     margins2.setRight(1);
     ReltempoWidget->layout()->setContentsMargins(margins2);
-    
+    */
   }
 
 public slots:

@@ -51,8 +51,8 @@ static void DrawWTrackNames(
 
   struct Patch *patch = wtrack1->track->patch;
   
-  int x1 = wtrack1->x + 2;
-  int x2 = wtrack2->x2 - 1;
+  int x1 = wtrack1->x;
+  int x2 = wtrack2->x2 + 2;
   int y1 = wtrack1->y;
   int y2 = wtrack1->panonoff.y1 - 2;
 
@@ -331,10 +331,10 @@ void UpdateAllPianoRollHeaders(
         
         //struct Tracks *track = wtrack->track;
         
-        int x1 = wtrack->x + 2;
-        int x2 = wtrack->panonoff.x1 - 1;
-        int y1 = wtrack->panonoff.y1 + 1;
-        int y2 = wtrack->volumeonoff.y2;
+        int x1 = wtrack->x;
+        int x2 = wtrack->panonoff.x1;
+        int y1 = wtrack->panonoff.y1;
+        int y2 = wtrack->volumeonoff.y2 + 2;
         
         //if(wtrack->l.num==0)
         //  printf("Showing header\n");

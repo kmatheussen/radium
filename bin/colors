@@ -18,7 +18,7 @@ range_color = #ff3e4e47
 
 soundfont_color = #ff009000
 soundfile_color = #ff0000f0
-current_soundfile_color = #ff010101
+current_soundfile_color = #ff9a9a9a
 
 override_default_qt_colors = true
 last_color_version = 3.7.2

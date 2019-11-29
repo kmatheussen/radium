@@ -52,6 +52,11 @@ struct MyQButton : public QToolButton{
 
   bool _is_hovered = false;
 
+  int x1_border = 1;
+  int x2_border = 1;
+  int y1_border = 1;
+  int y2_border = 0;
+  
   void enterEvent(QEvent *event) override {
     _is_hovered = true;
     update();
@@ -93,10 +98,10 @@ struct MyQButton : public QToolButton{
                                         DYNVEC_push_back(args, DYN_create_int(API_get_gui_from_widget(this)));
                                         DYNVEC_push_back(args, DYN_create_string_dont_copy(_text_to_draw.data()));
                                         DYNVEC_push_back(args, DYN_create_bool(isDown()));
-                                        DYNVEC_push_back(args, DYN_create_int(1));
-                                        DYNVEC_push_back(args, DYN_create_int(1));
-                                        DYNVEC_push_back(args, DYN_create_int(width()-1));
-                                        DYNVEC_push_back(args, DYN_create_int(height()-1));
+                                        DYNVEC_push_back(args, DYN_create_int(x1_border));
+                                        DYNVEC_push_back(args, DYN_create_int(y1_border));
+                                        DYNVEC_push_back(args, DYN_create_int(width()-x2_border));
+                                        DYNVEC_push_back(args, DYN_create_int(height()-y2_border));
 
                                         if (isDown()){
                                           DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":selected-color"));

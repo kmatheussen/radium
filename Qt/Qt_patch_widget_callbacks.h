@@ -180,6 +180,11 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 
     }
 
+    for(int i=0;i<NUM_PATCH_VOICES;i++){
+      get_o(i)->x2_border=0;
+      get_o(i)->y1_border=0;
+    }
+    
     setup_popup_menus_and_stuff();
     
     updateWidgets();

@@ -291,22 +291,22 @@ static void UpdateWTrackCoordinates(
 
 //	wtrack->panonoff.x1 = wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)/2 - (window->fontwidth/2);
 //	wtrack->panonoff.x2 = wtrack->panonoff.x1+window->fontwidth;
-        wtrack->panonoff.x1 = wtrack->notearea.x  + 1;
-        wtrack->panonoff.x2 = wtrack->notearea.x2 - 1;
+        wtrack->panonoff.x1 = wtrack->notearea.x;
+        wtrack->panonoff.x2 = wtrack->notearea.x2;
         if (wtrack->swingtext_on==true){
           int swingwidth = wtrack->swingtextarea.x2 - wtrack->swingtextarea.x + 2;
           wtrack->panonoff.x1 -= swingwidth;
           wtrack->panonoff.x2 -= swingwidth;
         }
 
-	wtrack->panonoff.y1 = wtrack->pan.y1;
-	wtrack->panonoff.y2 = wtrack->pan.y2;
-
-	wtrack->pan.x1 = wtrack->panonoff.x2 + 3;
-	wtrack->pan.x2 = wtrack->x2;
+	wtrack->pan.x1 = wtrack->panonoff.x2 + 1;
+	wtrack->pan.x2 = wtrack->x2 + 2;
 	//wtrack->pan.y1 = wblock->a.y1+(window->systemfontheight) + WTRACKS_SPACE*2;
 	wtrack->pan.y1 = y1_;
-	wtrack->pan.y2 = y2_-1;
+	wtrack->pan.y2 = y2_ - 1;
+
+	wtrack->panonoff.y1 = wtrack->pan.y1;
+	wtrack->panonoff.y2 = wtrack->pan.y2;
 
 	wtrack->volume.x1 = wtrack->pan.x1;
 	wtrack->volume.x2 = wtrack->pan.x2;
