@@ -591,11 +591,11 @@
   (define insert/remove-y1 blocklist-y2)
   (define insert/remove-y2 (+ blocklist-y2 button-height))
 
-  (define playlist-y1 insert/remove-y2)
+  (define playlist-y1 (+ insert/remove-y2 1))
   (define playlist-y2 (+ playlist-y1 list-height))
 
   (define up/down-y1 playlist-y2)
-  (define up/down-y2 y2)
+  (define up/down-y2 (- y2 1))
 
   (set! *curr-block/audio-list-type* (get-curr-block/audio-list-type))
   
@@ -614,12 +614,12 @@
 
   ;;(c-display blocklist-y1 blocklist-y2 playlist-y1 playlist-y2 "button-height:" button-height ". list-height:" list-height ". y1/y2:" y1 y2)
   
-  (add-sub-area-plain! (<new> :button gui x1 insert/remove-y1 button-mid insert/remove-y2
+  (add-sub-area-plain! (<new> :button gui (+ x1 1) insert/remove-y1 (- button-mid 1) insert/remove-y2
                               :text "Insert"
                               :callback-release FROM_C-playlist-insert!))
                                                   
   
-  (add-sub-area-plain! (<new> :button gui button-mid insert/remove-y1 x2 insert/remove-y2
+  (add-sub-area-plain! (<new> :button gui button-mid insert/remove-y1 (- x2 1) insert/remove-y2
                               :text "Remove"
                               :callback-release FROM_C-playlist-remove!))
 
@@ -634,7 +634,7 @@
           (else
            (swap-seqblock-with-next! (entry1 :seqblockid)))))
 
-  (add-sub-area-plain! (<new> :button gui x1 up/down-y1 button-mid up/down-y2
+  (add-sub-area-plain! (<new> :button gui (+ x1 1) up/down-y1 (- button-mid 1) up/down-y2
                               :text "Up"
                               :callback-release (lambda ()
                                                   (define entries (get-playlist-entries -1))
@@ -654,7 +654,7 @@
                                                             (<ra> :set-curr-playlist-pos new-pos)
                                                             #f))
                                                     ))))
-  (add-sub-area-plain! (<new> :button gui button-mid up/down-y1 x2 up/down-y2
+  (add-sub-area-plain! (<new> :button gui button-mid up/down-y1 (- x2 1) up/down-y2
                               :text "Down"
                               :callback-release (lambda ()
                                                   (define entries (get-playlist-entries -1))
