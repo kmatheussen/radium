@@ -951,6 +951,7 @@
   (define couldnt-fit-all-text #f)
   
   (define (paint-slider x1-on/off width height)
+    ;;(c-display "   Paint slider")
     (define value (get-scaled-value))
     (set! couldnt-fit-all-text
           (or (not (paint-horizontal-instrument-slider widget
@@ -1006,7 +1007,8 @@
   (define (paintit width height)
     (define x1 (get-x1-on/off))
     (paint-slider x1 width height)
-    (paint-on/off x1 width height))
+    (paint-on/off x1 width height)
+    )
   
   (set! widget (<gui> :horizontal-slider "" 0 (get-scaled-value) 1.0
                       (lambda (val)
@@ -1372,9 +1374,10 @@
   (define slider #f)
 
   (define (update-slider-value new-slider-value)
-    (when (not (= new-slider-value (<gui> :get-value slider)))
+    (when (> (abs (- new-slider-value (<gui> :get-value slider)))
+             0.001)
       (set! doit #f)
-      ;;(c-display "new-slider-value: " new-slider-value ". new-db:" new-db)
+      ;;(c-display "new-slider-value: " new-slider-value ". OLD:" (<gui> :get-value slider) ". DIFF:" (abs (- new-slider-value (<gui> :get-value slider))))
       ;;(set! last-value new-slider-value)
       (<gui> :set-value slider new-slider-value)
       (<gui> :update slider)
@@ -1382,6 +1385,7 @@
 
   (define (get-scaled-value)
     (let ((scaled-value (db-to-slider (get-db-value))))
+      ;;(c-display "   scaled: " scaled-value)
       (if scaled-value
           (<ra> :schedule 0 ;; The send monitor doesn't cover changing values by undo/redo, so we do this thing. (if not slider jumps after trying to move it after undo/redo).
                 (lambda ()
