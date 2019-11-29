@@ -1116,7 +1116,7 @@
                                    :value-changed-callback
                                    :layout-horizontally #t
                                    :paint-func #f
-                                   :text-func (lambda (num) "") ;; Only used if paint-func is #f
+                                   :text-func (lambda (num) "")
                                    :text-color "buttons_text"
                                    :selected-color #f ;; only used if paint-func is #f. If #f, use get-default-button-color
                                    :right-mouse-clicked-callback #f
@@ -1128,38 +1128,47 @@
                           horizontally-layout-areas
                           vertically-layout-areas))
 
+  (define radiobuttons (make-vector num-buttons #f))
+  
+  (add-method! :get-radiobutton (lambda (num)
+                                  (radiobuttons num)))
+                                  
   (layout-func x1 y1 x2 y2
                (iota num-buttons)
                :spacing 2
                :callback
                (lambda (num x1 y1 x2 y2)
-                 (add-sub-area-plain!
-                  (<new> :checkbox gui x1 y1 x2 y2
-                         (lambda ()
-                           (= num curr-button-num))
-                         (lambda (is-on)
-                           (if is-on
-                               (set! curr-button-num num))
-                           (for-each (lambda (num)
-                                       (value-changed-callback num (= curr-button-num num)))
-                                     (iota num-buttons))
-                           (update-me!)
-                           )
-                         :paint-func (and paint-func
-                                          (lambda (gui x1 y1 x2 y2 is-on)
-                                            (paint-func gui x1 y1 x2 y2 num is-on)))
-                         :text (if text-func
-                                   (text-func num)
-                                   "o")
-                         :text-color text-color
-                         :selected-color #f
-                         :prepend-checked-marker #f
-                         :gradient-background #f
-                         :right-mouse-clicked-callback (and right-mouse-clicked-callback
-                                                            (lambda ()
-                                                              (right-mouse-clicked-callback num)))
-                         :border-width border-width
-                         :box-rounding box-rounding))))
+                 (define checkbox
+                   (<new> :checkbox gui x1 y1 x2 y2
+                          (lambda ()
+                            (= num curr-button-num))
+                          (lambda (is-on)
+                            (if is-on
+                                (set! curr-button-num num))
+                            (for-each (lambda (num)
+                                        (value-changed-callback num (= curr-button-num num)))
+                                      (iota num-buttons))
+                            (update-me!)
+                            )
+                          :paint-func (and paint-func
+                                           (lambda (gui x1 y1 x2 y2 is-on)
+                                             (paint-func gui x1 y1 x2 y2 num is-on)))
+                          :text (if text-func
+                                    (text-func num)
+                                    "o")
+                          :text-color text-color
+                          :selected-color #f
+                          :prepend-checked-marker #f
+                          :gradient-background #f
+                          :right-mouse-clicked-callback (and right-mouse-clicked-callback
+                                                             (lambda ()
+                                                               (right-mouse-clicked-callback num)))
+                          :border-width border-width
+                          :box-rounding box-rounding))
+                 
+                 (set! (radiobuttons num) checkbox)
+  
+                 (add-sub-area-plain! checkbox)))
 
   )
 
@@ -2370,24 +2379,37 @@
 
     (define pathline-y1 (+ y1 (get-fontheight) border))
 
-    (add-sub-area-plain! (<new> :radiobuttons gui x1 y1 x2 (- pathline-y1 border)
-                                num-settings-buttons
-                                curr-settings-num
-                                (lambda (num is-on)
-                                  (c-display "numison:" num is-on)
-                                  (when is-on
-                                    (store-curr-entry-state!)
-                                    (set! curr-settings-num num)
-                                    (<ra> :put-settings (<-> "filebrowser_" id-text "_curr-settings-num") (<-> num))
-                                    (let ((state (states curr-settings-num)))
-                                      (if state
-                                          (apply-state2! state)
-                                          (set-new-path! (<ra> :get-settings-w (<-> "filebrowser_" id-text "_" num) path)
-                                                         :store-setting #f))))
-                                  #t)
-                                #t
-                                :text-func (lambda (num)
-                                             (<-> num))))
+    (define (get-settings num)
+      (<ra> :get-settings-w (<-> "filebrowser_" id-text "_" num) path))
+    
+    (define radiobuttons
+      (<new> :radiobuttons gui x1 y1 x2 (- pathline-y1 border)
+             num-settings-buttons
+             curr-settings-num
+             (lambda (num is-on)
+               (c-display "numison:" num is-on)
+               (when is-on
+                 (store-curr-entry-state!)
+                 (set! curr-settings-num num)
+                 (<ra> :put-settings (<-> "filebrowser_" id-text "_curr-settings-num") (<-> num))
+                 (let ((state (states curr-settings-num)))
+                   (if state
+                       (apply-state2! state)
+                       (set-new-path! (get-settings num)
+                                      :store-setting #f))))
+               #t)
+             #t
+             :text-func (lambda (num)
+                          (<-> num))))
+    (add-sub-area-plain! radiobuttons)
+
+    (for-each (lambda (num)
+                ((radiobuttons :get-radiobutton num) :add-statusbar-text-handler
+                 (lambda ()
+                   (define path (<ra> :from-base64 (get-settings num)))
+                   (list #t
+                         (<-> num ": " path)))))
+              (iota num-settings-buttons))
     
     (define button-width (* 2 (<gui> :text-width "R")))
     (define reload-x1 (+ x1 button-width border))
