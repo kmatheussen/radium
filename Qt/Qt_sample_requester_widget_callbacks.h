@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDirIterator>
 #include <QFileInfo>
 #include <QTime>
+#include <QToolTip>
 
 #include "Qt_sample_requester_widget.h"
 
@@ -301,11 +302,38 @@ class Sample_requester_widget : public QWidget
       auto bookmarks = {bookmark1,bookmark2,bookmark3,bookmark4,bookmark5,bookmark6,bookmark7,bookmark8,bookmark9};
       
       int width = gui_textWidth("12", -1) * 3 / 2;
+
+      int num = 0;
       
-      for(auto bookmark : bookmarks){//int i=0;i<9;i++){
+      for(auto bookmark : bookmarks){
         bookmark->_show_enabled_marker = false;
         bookmark->setFont(QApplication::font()); // why?
         bookmark->setFixedWidth(width);
+
+        IsAlive is_alive(this);
+        
+        bookmark->_hovered_callback = [is_alive, this, num](bool do_enter){
+          if (is_alive){
+            if (do_enter){
+              
+              QString settings_key, default_dir;
+              QString path = get_bookmark_path(num, settings_key, default_dir);
+
+              QToolTip::showText(QCursor::pos(),path + "gakk",NULL,QRect()); // QToolTip tries to be smart, but does of course fail. Why not let the programmer decide how things should behave instead? (shold probably make a custom tooltip function to avoid alle these workarounds)
+              QToolTip::showText(QCursor::pos(),path,NULL,QRect());
+              
+              GFX_SetStatusBar(path.toUtf8().constData());
+              
+            } else {
+
+              QToolTip::hideText();
+              GFX_SetStatusBar("");
+              
+            }
+          }
+        };
+
+        num++;
       }
     }
     
@@ -320,15 +348,20 @@ class Sample_requester_widget : public QWidget
 
     is_starting_up = false;
   }
+
+  QString get_bookmark_path(int bookmarknum, QString settings_key, QString &default_dir){
+    settings_key = QString("sample_bookmarks")+QString::number(bookmarknum);
+    default_dir = SETTINGS_read_qstring(
+                                        "samples_dir", // "samples_dir" contains last used sample.
+                                        _dir.absolutePath()
+                                        );
+    
+    return SETTINGS_read_qstring(settings_key, default_dir);
+  }
   
   void read_bookmark_and_set_dir(void){
-    QString settings_key = QString("sample_bookmarks")+QString::number(_bookmark);
-    QString default_dir = SETTINGS_read_qstring(
-                                                "samples_dir", // "samples_dir" contains last used sample.
-                                                _dir.absolutePath()
-                                                );
-
-    QString path = SETTINGS_read_qstring(settings_key, default_dir);
+    QString settings_key, default_dir;
+    QString path = get_bookmark_path(_bookmark, settings_key, default_dir);
     _dir = QDir(path);
 
     if(_dir.exists()==false) {
