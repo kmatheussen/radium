@@ -47,8 +47,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MyQScrollBar.hpp"
 #include <FocusSniffers.h>
 #include "helpers.h"
+#include "Qt_sequencer_proc.h"
 
 #include "Qt_colors_proc.h"
+
 
 #include "mQt_vst_paths_widget_callbacks.h"
 
@@ -72,7 +74,38 @@ static radium::Vector<ColorButton*> all_buttons;
 
 static enum ColorNums g_current_colornum = LOW_EDITOR_BACKGROUND_COLOR_NUM;
 
-   
+struct Separator : public QWidget{
+  QString _text;
+  Separator(QString text)
+    : _text(text)
+  {
+    setMinimumHeight(root->song->tracker_windows->systemfontheight);
+    setMaximumHeight(root->song->tracker_windows->systemfontheight);
+
+    QSizePolicy policy = QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+
+    setSizePolicy(policy);
+  }
+
+  void paintEvent ( QPaintEvent * ev ) override {
+    TRACK_PAINT();
+    
+    //QToolButton::paintEvent(ev);
+    QPainter p(this);
+    p.fillRect(0,0,width(),height(),QColor("black"));
+    //p.eraseRect(rect());
+
+    QRect rect(1,1,width()-2,height()-2);
+
+    QColor text_color = get_qcolor(TEXT_COLOR_NUM); //black(0,0,0);
+    
+    p.setPen(text_color);
+
+    myDrawText(p, rect, _text, Qt::AlignHCenter | Qt::AlignVCenter, false, 0, true, false);
+  }
+  
+};
+ 
 struct MyColorDialog : public QColorDialog {
 
 public: 
@@ -159,10 +192,10 @@ public:
     p.fillRect(half_width,0,half_width,height(),col);
     */
 
-    QRect rect(split+1,1,text_width-2,height()-1);
+    QRect rect(split+10,1,text_width-2,height()-1);
 
     p.setPen(text_color);
-    p.drawText(rect, Qt::AlignCenter, text());
+    p.drawText(rect, Qt::AlignLeft | Qt::AlignVCenter, text());
 
     p.fillRect(0,0,split,height(),get_qcolor(colornum));
 
@@ -316,12 +349,24 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       contents->setLayout(layout);
       
       for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++) {
-        ColorButton *l = new ColorButton(get_color_display_name((enum ColorNums)i), (enum ColorNums)i, &_color_dialog);
-      
-        layout->addWidget(l);
-        //l->move(0, i*20);
-        safeShow(l);
-        //contents->resize(contents->width(), 200*20);
+        
+        QString name = get_color_display_name((enum ColorNums)i);
+        
+        if (is_qcolor_separator(i)){
+
+          Separator *s = new Separator(name);
+          layout->addWidget(s);
+          safeShow(s);
+    
+        } else {
+            
+          ColorButton *l = new ColorButton(name, (enum ColorNums)i, &_color_dialog);
+          
+          layout->addWidget(l);
+          //l->move(0, i*20);
+          safeShow(l);
+          //contents->resize(contents->width(), 200*20);
+        }
       }
       
       //contents->adjustSize();

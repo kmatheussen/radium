@@ -72,6 +72,7 @@ namespace{
     enum ColorNums num;
     const char *config_name;
     const char *display_name;
+    bool is_separator;
   };
   struct ReplacementColorNum{
     enum ColorNums num;
@@ -84,145 +85,159 @@ namespace{
 }
 
 static const ColorConfig g_colorconfig[] = {
-  {LOW_EDITOR_BACKGROUND_COLOR_NUM, "low_editor_background",  "Low Editor background"},
-  {TEXT_COLOR_NUM,      "color1",  "Text"},
-  {WAVEFORM_COLOR_NUM,                   "color2",  "Waveform"},
-  {AUTOMATION1_COLOR_NUM,                   "color3",  "Automation 1"},
-  {AUTOMATION2_COLOR_NUM,                   "color4",  "Automation 2"},
-  {VELOCITY1_COLOR_NUM,                   "color5",  "Note background color 1"},
-  {VELOCITY2_COLOR_NUM,                   "color6",  "Note background color 2"},
-  {CURSOR_EDIT_ON_COLOR_NUM,                   "color7",  "Cursor, edit ON"},
-  {INSTRUMENT_NAME_COLOR_NUM,                   "color8",  "Instrument name"},
-  {LOW_BACKGROUND_COLOR_NUM,                   "low_background",  "Low Background"},
-  {AUTOMATION3_COLOR_NUM,                  "color10", "Automation 3"},
-  {HIGH_BACKGROUND_COLOR_NUM,                  "high_background", "High Background"},
-  {EDITOR_SLIDERS_COLOR_NUM,                  "color12", "Editor sliders"},
-  {TRACK_SLIDER_COLOR_NUM,     "track_slider", "Track slider (bottom of editor)"},
-  {LINE_SLIDER_COLOR_NUM,     "line_slider", "Line slider (left of editor)"},
+  {BACKGROUND_SEPARATOR, "", "Background", true},
+  {BUTTONS_SEPARATOR, "", "Buttons", true},
+  {SCROLLBAR_SEPARATOR, "", "Scrollbars", true},
+  {SLIDER_SEPARATOR, "", "Sliders", true},
+  {TABS_SEPARATOR, "", "Tabs", true},
+  {AUDIO_SEPARATOR, "", "Audio", true},
+  {EDITOR_SEPARATOR, "", "Editor", true},
+  {AUTOMATION_SEPARATOR, "", "Automation", true},
+  {INSTRUMENT_SEPARATOR, "", "Instruments", true},
+  {MIXER_SEPARATOR, "", "Mixer", true},
+  {SEQUENCER_SEPARATOR, "", "Sequencer", true},
+  //{_SEPARATOR, "", "", true},
+  //{_SEPARATOR, "", "", true},
   
-  {BUTTONS_COLOR_NUM,                  "button_v2", "Buttons"},
-  {BUTTONS_PRESSED_COLOR_NUM,                  "button_pressed_v2", "Buttons pressed"}, // rename to buttons_pressed
-  {CHECK_BOX_SELECTED_COLOR_NUM,  "check_box_selected_v2",   "Selected check box"},
-  {CHECK_BOX_UNSELECTED_COLOR_NUM,  "check_box_unselected_v2",   "Unselected check box"},
+  {LOW_EDITOR_BACKGROUND_COLOR_NUM, "low_editor_background",  "Low Editor background", false},
+  {TEXT_COLOR_NUM,      "color1",  "Text", false},
+  {WAVEFORM_COLOR_NUM,                   "color2",  "Waveform", false},
+  {AUTOMATION1_COLOR_NUM,                   "color3",  "Automation 1", false},
+  {AUTOMATION2_COLOR_NUM,                   "color4",  "Automation 2", false},
+  {VELOCITY1_COLOR_NUM,                   "color5",  "Note background color 1", false},
+  {VELOCITY2_COLOR_NUM,                   "color6",  "Note background color 2", false},
+  {CURSOR_EDIT_ON_COLOR_NUM,                   "color7",  "Cursor, edit ON", false},
+  {INSTRUMENT_NAME_COLOR_NUM,                   "color8",  "Instrument name", false},
+  {LOW_BACKGROUND_COLOR_NUM,                   "low_background",  "Low Background", false},
+  {AUTOMATION3_COLOR_NUM,                  "color10", "Automation 3", false},
+  {HIGH_BACKGROUND_COLOR_NUM,                  "high_background", "High Background", false},
+  {EDITOR_SLIDERS_COLOR_NUM,                  "color12", "Editor sliders", false},
+  {TRACK_SLIDER_COLOR_NUM,     "track_slider", "Track slider (bottom of editor)", false},
+  {LINE_SLIDER_COLOR_NUM,     "line_slider", "Line slider (left of editor)", false},
+  
+  {BUTTONS_COLOR_NUM,                  "button_v2", "Buttons", false},
+  {BUTTONS_PRESSED_COLOR_NUM,                  "button_pressed_v2", "Buttons pressed", false}, // rename to buttons_pressed
+  {CHECK_BOX_SELECTED_COLOR_NUM,  "check_box_selected_v2",   "Selected check box", false},
+  {CHECK_BOX_UNSELECTED_COLOR_NUM,  "check_box_unselected_v2",   "Unselected check box", false},
 
-  {BUTTONS_TEXT_COLOR_NUM,                  "buttons_text", "Button Text"},
+  {BUTTONS_TEXT_COLOR_NUM,                  "buttons_text", "Button Text", false},
 
-  {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text"},
-  {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM,                  "portamento_end_note_text", "Portamento end note text"},
-  {VELOCITY_TEXT_COLOR_NUM,     "velocity_text", "Velocity text"},
+  {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text", false},
+  {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM,                  "portamento_end_note_text", "Portamento end note text", false},
+  {VELOCITY_TEXT_COLOR_NUM,     "velocity_text", "Velocity text", false},
    
-  {HIGH_EDITOR_BACKGROUND_COLOR_NUM,                  "high_editor", "High Editor background"},
-  {SCROLLBAR_COLOR_NUM,                  "scroll_bar_v2", "Scroll bar color"},
-  {SCROLLBAR_BACKGROUND_COLOR_NUM,                  "scroll_bar_background_v2", "Scroll bar background color"},
+  {HIGH_EDITOR_BACKGROUND_COLOR_NUM,                  "high_editor", "High Editor background", false},
+  {SCROLLBAR_COLOR_NUM,                  "scroll_bar_v2", "Scroll bar", false},
+  {SCROLLBAR_BACKGROUND_COLOR_NUM,                  "scroll_bar_background_v2", "Scroll bar background", false},
 
-  {KEYBOARD_FOCUS_BORDER_COLOR_NUM,                  "keyboard_focus_border", "Keyboard Focus Border"},
+  {KEYBOARD_FOCUS_BORDER_COLOR_NUM,                  "keyboard_focus_border", "Keyboard Focus Border", false},
 
-  {SOUNDFONT_COLOR_NUM,         "soundfont",          "Browser: Soundfont"},
-  {SOUNDFILE_COLOR_NUM,         "soundfile",          "Browser: Sound file"},
-  {CURRENT_SOUNDFILE_COLOR_NUM, "current_soundfile",  "Current sound file"},
+  {SOUNDFONT_COLOR_NUM,         "soundfont",          "Browser: Soundfont", false},
+  {SOUNDFILE_COLOR_NUM,         "soundfile",          "Browser: Sound file", false},
+  {CURRENT_SOUNDFILE_COLOR_NUM, "current_soundfile",  "Current sound file", false},
       
-  {SLIDER1_COLOR_NUM,           "slider1",            "Slider 1"},
-  {SLIDER2_COLOR_NUM,           "slider2",            "Slider 2"},
-  {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled",    "Slider disabled"},
-  {SLIDER_TEXT_COLOR_NUM,       "slider_text",        "Slider Text"},
-  {SLIDER_RECORDING_COLOR_NUM,  "slider_recording",   "Slider recording"},
+  {SLIDER1_COLOR_NUM,           "slider1",            "Slider 1", false},
+  {SLIDER2_COLOR_NUM,           "slider2",            "Slider 2", false},
+  {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled",    "Slider disabled", false},
+  {SLIDER_TEXT_COLOR_NUM,       "slider_text",        "Slider Text", false},
+  {SLIDER_RECORDING_COLOR_NUM,  "slider_recording",   "Slider recording", false},
 
-  {TAB_SELECTED_COLOR_NUM,  "tab_selected",   "Selected tab"},
-  {TAB_UNSELECTED_COLOR_NUM,  "tab_unselected",   "Unselected tab"},
+  {TAB_SELECTED_COLOR_NUM,  "tab_selected",   "Selected tab", false},
+  {TAB_UNSELECTED_COLOR_NUM,  "tab_unselected",   "Unselected tab", false},
 
-  {PEAKS_COLOR_NUM,             "peaks",                    "Peaks < 0dB"},
-  {PEAKS_0DB_COLOR_NUM,         "peaks0db",                 "Peaks 0dB - 4dB"},
-  {PEAKS_4DB_COLOR_NUM,         "peaks4db",                 "Peaks > 4dB"},
+  {PEAKS_COLOR_NUM,             "peaks",                    "Peaks < 0dB", false},
+  {PEAKS_0DB_COLOR_NUM,         "peaks0db",                 "Peaks 0dB - 4dB", false},
+  {PEAKS_4DB_COLOR_NUM,         "peaks4db",                 "Peaks > 4dB", false},
 
-  {PIANONOTE_COLOR_NUM,         "pianonote",                "Pianoroll note"},
+  {PIANONOTE_COLOR_NUM,         "pianonote",                "Pianoroll note", false},
 
-  {AUTOMATION4_COLOR_NUM,                   "automation4",  "Automation 4"},
-  {AUTOMATION5_COLOR_NUM,                   "automation5",  "Automation 5"},
-  {AUTOMATION6_COLOR_NUM,                   "automation6",  "Automation 6"},
-  {AUTOMATION7_COLOR_NUM,                   "automation7",  "Automation 7"},
-  {AUTOMATION8_COLOR_NUM,                   "automation8",  "Automation 8"},  
-  {AUTOMATION_INDICATOR_COLOR_NUM,          "automation_indicator", "Automation indicator"},
+  {AUTOMATION4_COLOR_NUM,                   "automation4",  "Automation 4", false},
+  {AUTOMATION5_COLOR_NUM,                   "automation5",  "Automation 5", false},
+  {AUTOMATION6_COLOR_NUM,                   "automation6",  "Automation 6", false},
+  {AUTOMATION7_COLOR_NUM,                   "automation7",  "Automation 7", false},
+  {AUTOMATION8_COLOR_NUM,                   "automation8",  "Automation 8", false},  
+  {AUTOMATION_INDICATOR_COLOR_NUM,          "automation_indicator", "Automation indicator", false},
 
-  {TRACK_SEPARATOR1_COLOR_NUM,              "track_separator1", "Track separator 1"},
-  {TRACK_SEPARATOR2A_COLOR_NUM,             "track_separator2_darkened", "Track separator 2 left part"},
-  {TRACK_SEPARATOR2B_COLOR_NUM,             "track_separator2",  "Track separator 2 right part"},
+  {TRACK_SEPARATOR1_COLOR_NUM,              "track_separator1", "Track separator 1", false},
+  {TRACK_SEPARATOR2A_COLOR_NUM,             "track_separator2_darkened", "Track separator 2 left part", false},
+  {TRACK_SEPARATOR2B_COLOR_NUM,             "track_separator2",  "Track separator 2 right part", false},
 
-  {BAR_TEXT_COLOR_NUM,                      "bar_text", "Bar text"},
-  {ZOOMLINE_TEXT_COLOR_NUM1, "zoomline_text1", "Zoom line 1"},
-  {ZOOMLINE_TEXT_COLOR_NUM2, "zoomline_text2", "Zoom line 2"},
-  {ZOOMLINE_TEXT_COLOR_NUM3, "zoomline_text3", "Zoom line 3"},
-  {ZOOMLINE_TEXT_COLOR_NUM4, "zoomline_text4", "Zoom line 4"},
-  {ZOOMLINE_TEXT_COLOR_NUM5, "zoomline_text5", "Zoom line 5"},
-  {ZOOMLINE_TEXT_COLOR_NUM6, "zoomline_text6", "Zoom line 6"},
-  {ZOOMLINE_TEXT_COLOR_NUM7, "zoomline_text7", "Zoom line 7"},
+  {BAR_TEXT_COLOR_NUM,                      "bar_text", "Bar text", false},
+  {ZOOMLINE_TEXT_COLOR_NUM1, "zoomline_text1", "Zoom line 1", false},
+  {ZOOMLINE_TEXT_COLOR_NUM2, "zoomline_text2", "Zoom line 2", false},
+  {ZOOMLINE_TEXT_COLOR_NUM3, "zoomline_text3", "Zoom line 3", false},
+  {ZOOMLINE_TEXT_COLOR_NUM4, "zoomline_text4", "Zoom line 4", false},
+  {ZOOMLINE_TEXT_COLOR_NUM5, "zoomline_text5", "Zoom line 5", false},
+  {ZOOMLINE_TEXT_COLOR_NUM6, "zoomline_text6", "Zoom line 6", false},
+  {ZOOMLINE_TEXT_COLOR_NUM7, "zoomline_text7", "Zoom line 7", false},
 
-  {TEMPOGRAPH_COLOR_NUM, "tempograph", "Tempo graph"},
-  {RANGE_COLOR_NUM, "range", "Range"},
-  {PITCH_LINE_COLOR_NUM, "pitchlines", "Pitch change lines"},
+  {TEMPOGRAPH_COLOR_NUM, "tempograph", "Tempo graph", false},
+  {RANGE_COLOR_NUM, "range", "Range", false},
+  {PITCH_LINE_COLOR_NUM, "pitchlines", "Pitch change lines", false},
 
-  {PIANOROLL_OCTAVE_COLOR_NUM, "pianoroll_octave", "Pianoroll octave color"},
-  {PIANOROLL_NOTE_NAME_COLOR_NUM, "pianoroll_note_name", "Pianoroll note names"},
-  {PIANOROLL_NOTE_BORDER_COLOR_NUM, "pianoroll_note_border", "Pianoroll note border"},
+  {PIANOROLL_OCTAVE_COLOR_NUM, "pianoroll_octave", "Pianoroll octave", false},
+  {PIANOROLL_NOTE_NAME_COLOR_NUM, "pianoroll_note_name", "Pianoroll note names", false},
+  {PIANOROLL_NOTE_BORDER_COLOR_NUM, "pianoroll_note_border", "Pianoroll note border", false},
   
-  {CURSOR_EDIT_OFF_COLOR_NUM,     "cursor_edit_off",  "Cursor, edit OFF"},
-  {CURSOR_BORDER_COLOR_NUM,     "cursor_border",  "Cursor border current column border"},
-  {CURSOR_CURR_COLUMN_BORDER_COLOR_NUM,     "cursor_curr_column_border",  "Cursor, current column border"},
-  {PLAY_CURSOR_COLOR_NUM,     "play_cursor_edit_off",  "Play cursor"},
+  {CURSOR_EDIT_OFF_COLOR_NUM,     "cursor_edit_off",  "Cursor, edit OFF", false},
+  {CURSOR_BORDER_COLOR_NUM,     "cursor_border",  "Cursor border current column border", false},
+  {CURSOR_CURR_COLUMN_BORDER_COLOR_NUM,     "cursor_curr_column_border",  "Cursor, current column border", false},
+  {PLAY_CURSOR_COLOR_NUM,     "play_cursor_edit_off",  "Play cursor", false},
 
-  {MIXER_TEXT_COLOR_NUM, "mixer_text_color", "Mixer text color"},
-  {MIXER_BORDER_COLOR_NUM, "mixer_border_color", "Mixer border color"},
+  {NOTE_EVENT_INDICATOR_COLOR_NUM, "note_event_indicator",  "Note event indicator", false},
+  {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, "note_event_indicator_border",  "Note event indicator border", false},
+
+  {MIXER_TEXT_COLOR_NUM, "mixer_text_color", "Modular Mixer: Object text", false},
+  {MIXER_BORDER_COLOR_NUM, "mixer_border_color", "Modular Mixer: Object border", false},
   
-  {NOTE_EVENT_INDICATOR_COLOR_NUM, "note_event_indicator",  "Note event indicator"},
-  {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, "note_event_indicator_border",  "Note event indicator border"},
-
-  {MIXER_EVENT_CONNECTION_COLOR_NUM, "mixer_event_connection_color", "Mixer: Event connection color"},
-  {MIXER_AUDIO_CONNECTION_COLOR_NUM, "mixer_audio_connection_color", "Mixer: Audio connection color"},
-  {MIXER_AUTOSUSPENSION_COLOR_NUM, "mixer_autosuspension_color", "Mixer: Auto-suspension sound object color"},
-  //{MIXER_SELECTED_OBJECT_COLOR_NUM, "mixer_selected_object_color_num", "Mixer: Selected sound object color"},
-  {MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM, "mixer_current_object_border_color_num", "Mixer: Current sound object border color"},
-  {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, "mixer_selected_object_border_color_num", "Mixer: Selected sound object border color"},
-  {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, "mixerstrips_selected_object_color_num", "Mixer strips: Current instrument border color"},
+  {MIXER_EVENT_CONNECTION_COLOR_NUM, "mixer_event_connection_color", "Modular Mixer: Event connection", false},
+  {MIXER_AUDIO_CONNECTION_COLOR_NUM, "mixer_audio_connection_color", "Modular Mixer: Audio connection", false},
+  {MIXER_AUTOSUSPENSION_COLOR_NUM, "mixer_autosuspension_color", "Modular Mixer: Auto-suspension mixer object", false},
+  //{MIXER_SELECTED_OBJECT_COLOR_NUM, "mixer_selected_object_color_num", "Mixer: Selected sound object", false},
+  {MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM, "mixer_current_object_border_color_num", "Modular Mixer: Current object border", false},
+  {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, "mixer_selected_object_border_color_num", "Modular Mixer: Selected object border", false},
+  {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, "mixerstrips_selected_object_color_num", "Mixer Strips: Current instrument border", false},
   
-  {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, "default_bus_color", "Default Bus color"},
-  {SEQTRACK_INSTRUMENT_DEFAULT_COLOR_NUM, "default_seqtrack_instrument_color", "Default Seqtrack instrument color"},
+  {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, "default_bus_color", "Default Bus", false},
+  {SEQTRACK_INSTRUMENT_DEFAULT_COLOR_NUM, "default_seqtrack_instrument_color", "Default Seqtrack instrument", false},
 
-  {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, "sequencer_currtrack_border_color", "Sequencer current track border color"},
-  {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, "sequencer_curr_seqblock_border_color", "Sequencer current seqblock border color"},
-  {SEQUENCER_LANES_BACKGROUND_COLOR_NUM, "sequencer_background_color", "Sequencer lanes background color"},
-  {SEQTRACKS_BACKGROUND_COLOR_NUM, "seqtracks_background_color", "Seqtracks background color"},
-  {SEQUENCER_BORDER_COLOR_NUM, "sequencer_border_color", "Sequencer border color"},
-  {SEQUENCER_TEXT_COLOR_NUM, "sequencer_text_color", "Sequencer text color"},
-  {SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM, "sequencer_text_current_block_color", "Sequencer text color, current block"},
-  {SEQUENCER_NOTE_COLOR_NUM, "sequencer_note_color", "Sequencer note color"},
-  {SEQUENCER_NOTE_START_COLOR_NUM, "sequencer_note_start_color", "Sequencer note start color"},
+  {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, "sequencer_currtrack_border_color", "Sequencer current track border", false},
+  {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, "sequencer_curr_seqblock_border_color", "Sequencer current seqblock border", false},
+  {SEQUENCER_LANES_BACKGROUND_COLOR_NUM, "sequencer_background_color", "Sequencer lanes background", false},
+  {SEQTRACKS_BACKGROUND_COLOR_NUM, "seqtracks_background_color", "Seqtracks background", false},
+  {SEQUENCER_BORDER_COLOR_NUM, "sequencer_border_color", "Sequencer border", false},
+  {SEQUENCER_TEXT_COLOR_NUM, "sequencer_text_color", "Sequencer text", false},
+  {SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM, "sequencer_text_current_block_color", "Sequencer text color, current block", false},
+  {SEQUENCER_NOTE_COLOR_NUM, "sequencer_note_color", "Sequencer note", false},
+  {SEQUENCER_NOTE_START_COLOR_NUM, "sequencer_note_start_color", "Sequencer note start", false},
 
-  {SEQUENCER_BLOCK_HEADER_BACKGROUND_COLOR_NUM, "sequencer_block_header_background_color", "Sequencer block header background color"},
-  {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, "sequencer_block_background_color", "Sequencer block background color"},
-  {SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, "sequencer_multiselect_block_background_color", "Sequencer block multiselected background color"},
-  {SEQUENCER_BLOCK_BORDER_COLOR_NUM, "sequencer_block_border_color", "Sequencer block border color"},
-  {SEQUENCER_BLOCK_BAR_COLOR_NUM, "sequencer_block_bar_color", "Sequencer block bar color"},
-  {SEQUENCER_BLOCK_BEAT_COLOR_NUM, "sequencer_block_beat_color", "Sequencer block beat color"},
-  {SEQUENCER_BLOCK_SELECTED_COLOR_NUM, "sequencer_block_selected_color", "Sequencer block selected color"},
-  {SEQUENCER_BLOCK_INTERFACE_COLOR_NUM, "sequencer_block_interface_color", "Sequencer block interface color"},
-  {SEQUENCER_BLOCK_AUDIO_FILE_BACKGROUND_COLOR_NUM, "sequencer_block_audio_file_background_color", "Sequencer: Audio file background color"},
-  {SEQUENCER_BLOCK_FADE_BOX_COLOR_NUM, "sequencer_block_fade_box_color", "Seqblock fade box color"},
-  {SEQUENCER_BLOCK_INTERIOR_BOX_COLOR_NUM, "sequencer_block_interior_box_color", "Seqblock interior box color"},
-  {SEQUENCER_BLOCK_SPEED_BOX_COLOR_NUM, "sequencer_block_speed_box_color", "Seqblock speed box color"},
-  {SEQUENCER_BLOCK_STRETCH_BOX_COLOR_NUM, "sequencer_block_stretch_box_color", "Seqblock stretch box color"},
-  {SEQUENCER_WAVEFORM_COLOR_NUM, "sequencer_waveform_color", "Sequencer: Waveform color"},
+  {SEQUENCER_BLOCK_HEADER_BACKGROUND_COLOR_NUM, "sequencer_block_header_background_color", "Sequencer block header background", false},
+  {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, "sequencer_block_background_color", "Sequencer block background", false},
+  {SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, "sequencer_multiselect_block_background_color", "Sequencer block multiselected background", false},
+  {SEQUENCER_BLOCK_BORDER_COLOR_NUM, "sequencer_block_border_color", "Sequencer block border", false},
+  {SEQUENCER_BLOCK_BAR_COLOR_NUM, "sequencer_block_bar_color", "Sequencer block bar", false},
+  {SEQUENCER_BLOCK_BEAT_COLOR_NUM, "sequencer_block_beat_color", "Sequencer block beat", false},
+  {SEQUENCER_BLOCK_SELECTED_COLOR_NUM, "sequencer_block_selected_color", "Sequencer block selected", false},
+  {SEQUENCER_BLOCK_INTERFACE_COLOR_NUM, "sequencer_block_interface_color", "Sequencer block interface", false},
+  {SEQUENCER_BLOCK_AUDIO_FILE_BACKGROUND_COLOR_NUM, "sequencer_block_audio_file_background_color", "Sequencer: Audio file background", false},
+  {SEQUENCER_BLOCK_FADE_BOX_COLOR_NUM, "sequencer_block_fade_box_color", "Seqblock fade box", false},
+  {SEQUENCER_BLOCK_INTERIOR_BOX_COLOR_NUM, "sequencer_block_interior_box_color", "Seqblock interior box", false},
+  {SEQUENCER_BLOCK_SPEED_BOX_COLOR_NUM, "sequencer_block_speed_box_color", "Seqblock speed box", false},
+  {SEQUENCER_BLOCK_STRETCH_BOX_COLOR_NUM, "sequencer_block_stretch_box_color", "Seqblock stretch box", false},
+  {SEQUENCER_WAVEFORM_COLOR_NUM, "sequencer_waveform_color", "Sequencer: Waveform", false},
 
-  {SEQUENCER_GRID_COLOR_NUM, "sequencer_grid_color", "Sequencer grid color"},
-  {SEQUENCER_TRACK_BORDER1_COLOR_NUM, "sequencer_track_border1_color", "Sequencer track border color (first)"},
-  {SEQUENCER_TRACK_BORDER2_COLOR_NUM, "sequencer_track_border2_color", "Sequencer track border color"},
-  {SEQUENCER_CURSOR_COLOR_NUM, "sequencer_cursor_color", "Sequencer cursor color"},
-  {SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM, "sequencer_timeline_background_color", "Sequencer timeline background color"},
-  {SEQUENCER_TIMELINE_ARROW_COLOR_NUM, "sequencer_tinmeline_arrow_color", "Sequencer timeline arrow color"},
-  {SEQUENCER_NAVIGATOR_HANDLER_COLOR_NUM, "sequencer_navigator_handler_color", "Sequencer navigator handler color"},
-  {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM, "sequencer_navigator_grayout_color", "Sequencer navigator gray out color"},
-  {SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM, "sequencer_tempo_automation_color", "Sequencer tempo automation color"},
-  {SEQUENCER_MARKER_COLOR_NUM, "sequencer_marker_color", "Sequencer marker color"},
+  {SEQUENCER_GRID_COLOR_NUM, "sequencer_grid_color", "Sequencer grid", false},
+  {SEQUENCER_TRACK_BORDER1_COLOR_NUM, "sequencer_track_border1_color", "Sequencer track border color (first)", false},
+  {SEQUENCER_TRACK_BORDER2_COLOR_NUM, "sequencer_track_border2_color", "Sequencer track border", false},
+  {SEQUENCER_CURSOR_COLOR_NUM, "sequencer_cursor_color", "Sequencer cursor", false},
+  {SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM, "sequencer_timeline_background_color", "Sequencer timeline background", false},
+  {SEQUENCER_TIMELINE_ARROW_COLOR_NUM, "sequencer_tinmeline_arrow_color", "Sequencer timeline arrow", false},
+  {SEQUENCER_NAVIGATOR_HANDLER_COLOR_NUM, "sequencer_navigator_handler_color", "Sequencer navigator handler", false},
+  {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM, "sequencer_navigator_grayout_color", "Sequencer navigator gray out", false},
+  {SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM, "sequencer_tempo_automation_color", "Sequencer tempo automation", false},
+  {SEQUENCER_MARKER_COLOR_NUM, "sequencer_marker_color", "Sequencer marker", false},
   
-  {END_CONFIG_COLOR_NUM, NULL, NULL}
+  {END_CONFIG_COLOR_NUM, NULL, NULL, false}
 };
 
 static ReplacementColorNum g_replacement_color_num[] = {
@@ -623,6 +638,29 @@ static bool is_configurable_color(enum ColorNums colornum){
 }
 */
 
+
+bool has_qcolor(int colornum){
+  int i=0;
+  while(g_colorconfig[i].num != END_CONFIG_COLOR_NUM){
+    if (g_colorconfig[i].num==colornum)
+      return g_colorconfig[i].is_separator==false;
+    i++;
+  }
+
+  return false;
+}
+
+bool is_qcolor_separator(int colornum){
+  int i=0;
+  while(g_colorconfig[i].num != END_CONFIG_COLOR_NUM){
+    if (g_colorconfig[i].num==colornum)
+      return g_colorconfig[i].is_separator==true;
+    i++;
+  }
+
+  return false;
+}
+
 static const ColorConfig get_color_config(enum ColorNums colornum){
   int i=0;
   while(g_colorconfig[i].num != END_CONFIG_COLOR_NUM){
@@ -697,7 +735,8 @@ static QColor get_config_qcolor(enum ColorNums colornum){
     has_inited = true;
 
     for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++)
-      get_config_qcolor((enum ColorNums)i);    
+      if (has_qcolor(i))
+        get_config_qcolor((enum ColorNums)i);    
   }
 
   if (g_config_colors[colornum]!=NULL)
