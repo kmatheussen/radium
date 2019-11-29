@@ -24,6 +24,8 @@ class QWidget;
 class QApplication;
 
 extern const char *get_color_display_name(enum ColorNums colornum);
+extern bool has_qcolor(int colornum);
+extern bool is_qcolor_separator(int colornum);
 extern QColor get_qcolor(enum ColorNums colornum);
 extern QColor get_custom_qcolor(int colornum);
 extern QColor get_config_qcolor(QString colorname);
