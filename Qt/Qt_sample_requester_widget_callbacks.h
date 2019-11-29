@@ -317,9 +317,9 @@ class Sample_requester_widget : public QWidget
             if (do_enter){
               
               QString settings_key, default_dir;
-              QString path = get_bookmark_path(num, settings_key, default_dir);
+              QString path = QString::number(num+1) + ": " + get_bookmark_path(num, settings_key, default_dir);
 
-              QToolTip::showText(QCursor::pos(),path + "gakk",NULL,QRect()); // QToolTip tries to be smart, but does of course fail. Why not let the programmer decide how things should behave instead? (shold probably make a custom tooltip function to avoid alle these workarounds)
+              //QToolTip::showText(QCursor::pos(),path + "gakk",NULL,QRect()); // QToolTip tries to be smart, but does of course fail. Why not let the programmer decide how things should behave instead? (shold probably make a custom tooltip function to avoid alle these workarounds)
               QToolTip::showText(QCursor::pos(),path,NULL,QRect());
               
               GFX_SetStatusBar(path.toUtf8().constData());
