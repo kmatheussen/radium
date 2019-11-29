@@ -1051,7 +1051,7 @@
                                :text-color "buttons_text"
                                :selected-color #f ;; only used if paint-func is #f. If #f, use get-default-button-color
                                :prepend-checked-marker #t
-                               :gradient-background #t
+                               :gradient-background #f
                                :right-mouse-clicked-callback #f
                                :border-width 0.25
                                :box-rounding #f
@@ -1077,7 +1077,7 @@
                          :is-hovering is-hovering
                          :prepend-checked-marker prepend-checked-marker
                          :text-color text-color
-                         :gradient-background (or is-selected gradient-background is-hovering)
+                         :gradient-background (or is-selected is-hovering gradient-background)
                          :paint-implicit-border #f
                          :implicit-border-width border-width
                          :box-rounding box-rounding

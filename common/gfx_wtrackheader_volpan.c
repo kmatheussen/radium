@@ -42,7 +42,7 @@ static void DrawOnOffBox(
   GFX_T_Box(
             window,BLACK_COLOR_NUM,
             box.x1,box.y1,
-            box.x2,box.y2,
+            box.x2,box.y2 + 1,
             PAINT_BUFFER
             );
   
@@ -51,7 +51,7 @@ static void DrawOnOffBox(
   int x2=box.x2-1;
   
   int y1=box.y1+1;
-  int y2=box.y2-1;
+  int y2=box.y2;
 
   if (onoff)
     GFX_SetMixColor(window,BLACK_COLOR_NUM,LOW_EDITOR_BACKGROUND_COLOR_NUM,200);

@@ -36,7 +36,7 @@ void DrawSlider(
 ){
 
   int y1=box->y1;
-  int y2=box->y2;
+  int y2=box->y2 + 1;
 
   int x = scale(f_val, f_min,f_max, box->x1, box->x2);
 

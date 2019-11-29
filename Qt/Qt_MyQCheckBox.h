@@ -87,6 +87,13 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
 
   std::function<void(bool)> _hovered_callback;
 
+  int x1_border = 1;
+  int x2_border = 1;
+  int y1_border = 1;
+  int y2_border = 1;
+
+  bool _always_gradient_when_checked = false;
+  
   bool _is_hovered = false;
   bool _is_popup_hovered = false;
       
@@ -150,17 +157,37 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
                                         S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
 
                                         bool do_gradient = false;
-                                        if(_is_hovered || isChecked() || !text2.isEmpty()) // _show_enabled_marker || 
+
+                                        if(_is_hovered) {
+                                          
                                           do_gradient = true;
 
+                                        } else if (_always_gradient_when_checked && isChecked()) {
+                                          
+                                          do_gradient = true;
+                                          
+                                        } else if (text2.isEmpty()){
+                                          
+                                          do_gradient = false;
+                                          
+                                        } else if (isChecked()){
+                                          
+                                          if (text2.isEmpty())
+                                            do_gradient = false;
+                                          
+                                          else if (_show_enabled_marker)
+                                            do_gradient = true;
+                                          
+                                        }
+                                        
                                         s7extra_applyFunc_void_varargs(draw_checkbox_func,
                                                                        DYN_create_int(API_get_gui_from_widget(this)),
                                                                        DYN_create_string_dont_copy(_text_to_draw.data()),
                                                                        DYN_create_bool(isChecked()),
-                                                                       DYN_create_int(1),
-                                                                       DYN_create_int(1),
-                                                                       DYN_create_int(width()-1),
-                                                                       DYN_create_int(height()-1),
+                                                                       DYN_create_int(x1_border),
+                                                                       DYN_create_int(y1_border),
+                                                                       DYN_create_int(width()-x2_border),
+                                                                       DYN_create_int(height()-y2_border),
                                                                        
                                                                        DYN_create_symbol_dont_copy(":background-color"),
                                                                        DYN_create_string_dont_copy(L"check_box_unselected_v2"),

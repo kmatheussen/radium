@@ -43,6 +43,9 @@ class Pianorollheader : public QWidget, public Ui::Pianorollheader {
 
     _initing = false;
 
+    autorange->y1_border = 0;
+    autorange->y2_border = 0;
+    
     adjustSize();
   }
 
