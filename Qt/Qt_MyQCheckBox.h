@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef QT_MYQCHECKBOX_H
 #define QT_MYQCHECKBOX_H
 
+#include <functional>
+
 #include <QCheckBox>
 #include <QMouseEvent>
 #include <QString>
@@ -82,7 +84,9 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   }
 
   //QColor _background_color = get_qcolor(BUTTONS_COLOR_NUM);
-  
+
+  std::function<void(bool)> _hovered_callback;
+
   bool _is_hovered = false;
   bool _is_popup_hovered = false;
       
@@ -91,7 +95,9 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   bool _show_enabled_marker = true;
   
   void enterEvent(QEvent *event) override {
-    if (_patch.data() != NULL){
+    if (_hovered_callback) {
+      _hovered_callback(true);
+    } else if (_patch.data() != NULL){
       _is_popup_hovered = true;
       if(_patch->instrument==get_audio_instrument())
         GFX_SetStatusBar(talloc_format("\"%s\" (right-click for options)", getInstrumentEffectName(_effect_num, _patch->id)));
@@ -101,7 +107,9 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   }
 
   void leaveEvent(QEvent *event) override {
-    if (_patch.data() != NULL){
+    if (_hovered_callback) {
+      _hovered_callback(false);
+    } else if (_patch.data() != NULL){
       if(_popup_menu_is_visible==false){
         _is_popup_hovered = false;
         update();
