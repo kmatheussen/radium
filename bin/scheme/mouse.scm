@@ -156,7 +156,7 @@
       place
       (let ((r (/ (<ra> :get-grid)
                   (<ra> :get-line-zoom-block-ratio))))
-        (* (floor (/ place r))
+        (* (round (/ place r))
            r))))
 
 (define (get-maybe-gridded-place place)
@@ -2441,18 +2441,18 @@
                         :Get-min-value (lambda (_) 1)
                         :Get-max-value (lambda (_) 127)
                         :Get-release-x (lambda (info) (/ (+ (<ra> :get-pianonote-x1 (info :pianonotenum)
-                                                                         (info :notenum)
-                                                                         (info :tracknum))
-                                                    (<ra> :get-pianonote-x2 (info :pianonotenum)
-                                                                         (info :notenum)
-                                                                         (info :tracknum)))
-                                                 2))
+                                                                  (info :notenum)
+                                                                  (info :tracknum))
+                                                            (<ra> :get-pianonote-x2 (info :pianonotenum)
+                                                                  (info :notenum)
+                                                                  (info :tracknum)))
+                                                         2))
                         :Get-release-y (lambda (info)
-                                 (+ (info :mouse-delta)
-                                    (get-pianonote-y (info :pianonotenum)
-                                                     (info :notenum)
-                                                     (info :tracknum)
-                                                     (info :move-type))))
+                                         (+ (info :mouse-delta)
+                                            (get-pianonote-y (info :pianonotenum)
+                                                             (info :notenum)
+                                                             (info :tracknum)
+                                                             (info :move-type))))
                         :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            (define raw-Value (get-pianoroll-key X))
@@ -2476,6 +2476,7 @@
                                                          Value
                                                          (<ra> :get-y-from-place Next-Place))))
                         :Move-node (lambda (pianonote-info Value Place)
+                                                                          
                                      (define pianonotenum (pianonote-info :pianonotenum))
                                      (define notenum (pianonote-info :notenum))
                                      (define tracknum (pianonote-info :tracknum))
@@ -2522,7 +2523,6 @@
                                          (set! pianonotenum 0)
                                          (set! func ra:move-pianonote)))
 
-
                                      ;; New notes can also be moved upwards.
                                      (if (and (pianonote-info :new-note)
                                               (not (symbol? Place)))
@@ -2533,10 +2533,15 @@
                                                (set! func ra:move-pianonote))))
                                          
 
-                                     ;(c-display "value:" (<ra> :control-pressed) (if (<ra> :control-pressed)
-                                     ;                                             Value
-                                     ;                                             (round Value))
-                                     ;           Value)
+                                     ;;(c-display "Place:" (and (number? Place) (* 1.0 Place)))
+
+                                     ;;(c-display "value:"
+                                     ;;           (<ra> :control-pressed)
+                                     ;;          (if (<ra> :control-pressed)
+                                     ;;               Value
+                                     ;;               (round Value))
+                                     ;;           Value)
+                                     
                                      (define new-notenum
                                        (func pianonotenum
                                              (if (<ra> :control-pressed)
@@ -3036,17 +3041,17 @@
                                              1.0
                                              (- 1.0 (info :value))))
                         :Get-release-x (lambda (editormove)
-                                 (define info (editormove :nodes (editormove :Num)))
-                                 (<ra> :get-velocity-x
-                                       (info :velocitynum)
-                                       (editormove :notenum)
-                                       (info :tracknum)))
+                                         (define info (editormove :nodes (editormove :Num)))
+                                         (<ra> :get-velocity-x
+                                               (info :velocitynum)
+                                               (editormove :notenum)
+                                               (info :tracknum)))
                         :Get-release-y (lambda (editormove)
-                                 (define info (editormove :nodes (editormove :Num)))
-                                 (<ra> :get-velocity-y
-                                       (info :velocitynum)
-                                       (editormove :notenum)
-                                       (info :tracknum)))
+                                         (define info (editormove :nodes (editormove :Num)))
+                                         (<ra> :get-velocity-y
+                                               (info :velocitynum)
+                                               (editormove :notenum)
+                                               (info :tracknum)))
                         :Make-undo (lambda (editormove)
                                      (define info (editormove :nodes (editormove :Num)))
                                      (<ra> :undo-notes (info :tracknum)))
