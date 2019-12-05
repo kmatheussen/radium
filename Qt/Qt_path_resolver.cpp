@@ -216,7 +216,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool prog
                                                   Options options = 0)
 #endif
           
-          QString filename = QFileDialog::getOpenFileName(editor, 
+          QString filename = QFileDialog::getOpenFileName(editor->editor_layout_widget, 
                                                           QString("Select file to replace ")+info.fileName(),
                                                           QString(),
                                                           QString(),

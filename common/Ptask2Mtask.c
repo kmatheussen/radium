@@ -46,7 +46,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "common_proc.h"
 #include "time_proc.h"
 #include "OS_Bs_edit_proc.h"
-#include "gfx_proc.h"
 #include "settings_proc.h"
 #include "player_proc.h"
 

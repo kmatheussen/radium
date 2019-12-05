@@ -31,6 +31,8 @@ class Pianorollheader : public QWidget, public Ui::Pianorollheader {
   bool _initing;
   int blocknum;
   int tracknum;
+
+  int64_t _vap;
   
   Pianorollheader(QWidget *parent=NULL)
     : QWidget(parent)
@@ -45,6 +47,13 @@ class Pianorollheader : public QWidget, public Ui::Pianorollheader {
 
     autorange->y1_border = 0;
     autorange->y2_border = 0;
+
+    /*
+    _vap = gui_verticalAudioMeter(0,-1);
+    gui_add(API_get_gui_from_existing_widget(g_editor),
+            _vap,
+            0,0,100,100);
+    */
     
     adjustSize();
   }

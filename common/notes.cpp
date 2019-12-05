@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "realline_calc_proc.h"
 #include "undo_notes_proc.h"
 #include "cursor_updown_proc.h"
-#include "blts_proc.h"
 #include "playerclass.h"
 #include "pitches_proc.h"
 #include "trackreallines2_proc.h"

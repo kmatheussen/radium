@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_range_proc.h"
 #include "player_proc.h"
 #include "player_pause_proc.h"
-#include "blts_proc.h"
 #include "notes_proc.h"
 
 #include "transpose_proc.h"

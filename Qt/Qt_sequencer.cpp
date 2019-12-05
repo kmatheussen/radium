@@ -515,12 +515,12 @@ static void paintCurrBorder(QPainter &p, const QRectF &rect, const QColor &color
 }
 
 static bool in_editor_window(QWidget *widget){
-  return g_editor->isVisible() && widget->window()==g_editor->QWidget::window();
+  return g_editor->editor_layout_widget->isVisible() && widget->window()==g_editor->editor_layout_widget->QWidget::window();
 }
 
 QPoint mapFromEditor(QWidget *widget, QPoint point){
   QPoint global = in_editor_window(widget)
-    ? g_editor->mapToGlobal(point)
+    ? g_editor->editor_layout_widget->mapToGlobal(point)
     : QPoint(point.x()-10000, point.y()-10000);
 
   //printf("    G: %d / %d. Mapped: %d / %d\n", global.x(), global.y(), widget->mapFromGlobal(global).x(), widget->mapFromGlobal(global).y());
@@ -533,7 +533,7 @@ QPoint mapToEditor(QWidget *widget, QPoint point){
   
   //return widget->mapTo(g_editor, point); (g_editor must be a parent, for some reason)
   QPoint global = widget->mapToGlobal(point);
-  return g_editor->mapFromGlobal(global);
+  return g_editor->editor_layout_widget->mapFromGlobal(global);
 }
 
 static double mapToEditorX(QWidget *widget, double x){

@@ -227,6 +227,8 @@ FROM_C-move-current-instrument-up
 FROM_C-move-current-instrument-down
 recreate-seqtracks-config-area
 draw-button
+FROM_C-create-editor-track-headers-gui
+FROM_C-reconfigure-editor-track-headers-gui!
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*
@@ -931,6 +933,7 @@ draw-button
   (my-require 'mouse.scm)
   (my-require 'pluginmanager.scm)
   (my-require 'editor_lower_part.scm)
+  (my-require 'editor_track_headers.scm)
 
   (assert-functions-and-symbols-called-from-C)
 

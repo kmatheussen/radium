@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "vector_proc.h"
-#include "gfx_wblocks_proc.h"
 #include "windows_proc.h"
 #include "sliders_proc.h"
 #include "visual_proc.h"
@@ -29,7 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "pixmap_proc.h"
 #include "scroll_proc.h"
 #include "scroll_play_proc.h"
-#include "blts_proc.h"
 #include "list_proc.h"
 #include "trackreallines2_proc.h"
 #include "centtext_proc.h"

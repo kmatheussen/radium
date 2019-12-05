@@ -119,7 +119,7 @@ static void SelectBottomSliderHeight(
 }
 
 
-extern int beat_opacity;
+int beat_opacity = -1;
 
 static void SetBeatOpacity(
 	struct Tracker_Windows *window,
@@ -148,7 +148,7 @@ static void SetBeatOpacity(
         SETTINGS_write_int("beat_opacity", new_opacity);
 }
 
-extern int first_beat_opacity;
+int first_beat_opacity = -1;
 
 static void SetFirstBeatOpacity(
 	struct Tracker_Windows *window,
@@ -177,7 +177,7 @@ static void SetFirstBeatOpacity(
         SETTINGS_write_int("first_beat_opacity", new_opacity);
 }
 
-extern int line_opacity;
+int line_opacity = -1;
 
 static void SetLineOpacity(
 	struct Tracker_Windows *window,

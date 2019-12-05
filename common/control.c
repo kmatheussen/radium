@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_endprogram_proc.h"
 #include "input.h"
 //#include "PEQ_clock_proc.h"
-#include "blts_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "scheduler_proc.h"

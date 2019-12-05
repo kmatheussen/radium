@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "memory_proc.h"
 #include "realline_calc_proc.h"
-#include "gfx_wblocks_proc.h"
 #include "placement_proc.h"
 #include "visual_proc.h"
 #include "time_proc.h"

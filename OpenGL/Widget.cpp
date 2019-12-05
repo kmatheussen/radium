@@ -629,6 +629,7 @@ static EditorWidget *get_editorwidget(void){
 volatile float g_scroll_pos = 0.0f;
 
 // Main thread
+/*
 static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
   const QPoint p = qmouseevent->pos();
 
@@ -640,6 +641,7 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
                      Qt::NoModifier
                      );
 }
+*/
 
 #define TEST_TIME 0
 
@@ -658,6 +660,7 @@ class MyQtThreadedWidget
   : public vlQt4::Qt4ThreadedWidget
 #endif
   , public vl::UIEventListener
+  , public radium::MouseCycleFix
 {
     
 public:
@@ -827,26 +830,22 @@ private:
 public:
 
   // Main thread
-  void mouseReleaseEvent( QMouseEvent *qmouseevent) override {
-    QMouseEvent event = translate_qmouseevent(qmouseevent);
-    get_editorwidget()->mouseReleaseEvent(&event);
-    //GL_create(get_window(), get_window()->wblock);
+  void fix_mousePressEvent( QMouseEvent *qmouseevent) override {
+    get_editorwidget()->handle_mouse_press(qmouseevent->button(), qmouseevent->x(), qmouseevent->y() + root->song->tracker_windows->wblock->t.y1);
   }
 
   // Main thread
-  void mousePressEvent( QMouseEvent *qmouseevent) override {
-    QMouseEvent event = translate_qmouseevent(qmouseevent);
-    get_editorwidget()->mousePressEvent(&event);
-    //GL_create(get_window(), get_window()->wblock);
+  void fix_mouseMoveEvent( QMouseEvent *qmouseevent) override {
+    get_editorwidget()->handle_mouse_move(qmouseevent->button(), qmouseevent->x(), qmouseevent->y() + root->song->tracker_windows->wblock->t.y1);
   }
 
   // Main thread
-  void mouseMoveEvent( QMouseEvent *qmouseevent) override {
-    QMouseEvent event = translate_qmouseevent(qmouseevent);
-    get_editorwidget()->mouseMoveEvent(&event);
-    //GL_create(get_window(), get_window()->wblock);
+  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
+    get_editorwidget()->handle_mouse_release(event.button(), event.x(), event.y() + root->song->tracker_windows->wblock->t.y1);
   }
-
+  
+  MOUSE_CYCLE_CALLBACKS_FOR_QT;
+  
   void wheelEvent(QWheelEvent *qwheelevent) override {
     //QMouseEvent event = translate_qmouseevent(qmouseevent);
     get_editorwidget()->wheelEvent(qwheelevent);

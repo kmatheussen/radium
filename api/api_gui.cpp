@@ -422,7 +422,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     bool _is_output = false;
 
     float _last_peak = -100.0f;
-    radium::ProtectedS7Extra<func_t*> _peak_callback;
+    radium::ProtectedS7Extra<func_t*> _peak_callback = radium::ProtectedS7Extra<func_t*>("peak_callback");
 
   public:
     int64_t _guinum;
@@ -489,6 +489,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       R_ASSERT_RETURN_IF_FALSE(get_audio_meter_peaks().num_channels == _num_channels);
 
       g_active_vertical_audio_meters.put(_id, this);
+
+      //printf("        VAPS: %d\n", g_active_vertical_audio_meters.size());
     }
 
     ~VerticalAudioMeterPainter(){
@@ -674,7 +676,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return;
       }
 
-      {
+      if (_note_event_patch.data() != NULL){
         int old_intencity = _note_intencity;
 
         int new_intencity = ATOMIC_GET_RELAXED(_note_event_patch->visual_note_intencity);
@@ -758,6 +760,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       p.setRenderHints(QPainter::Antialiasing,true);
 
       QColor qcolor1("black");
+
       QColor color4db = get_qcolor(PEAKS_4DB_COLOR_NUM);
       QColor color0db = get_qcolor(PEAKS_0DB_COLOR_NUM);
       QColor colorgreen  = get_qcolor(PEAKS_COLOR_NUM);
@@ -941,8 +944,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
   };
 
-
-  
+#if !defined(RELEASE)
+  static int g_num_callbacks = 0;
+#endif
   
   struct Callback : QObject {
     Q_OBJECT;
@@ -959,9 +963,19 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
     Callback(func_t *func, QWidget *widget)
       : _widget(widget)
-      , _func(func)
+      , _func(func, "api_gui_callback")
     {
+#if !defined(RELEASE)
+      g_num_callbacks++;
+      printf("---------------Num callbacks: %d\n", g_num_callbacks);
+#endif
     }
+
+#if !defined(RELEASE)
+    ~Callback(){
+      g_num_callbacks--;
+    }
+#endif
 
   public slots:
     void clicked(bool checked){
@@ -1304,9 +1318,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       , _created_from_existing_widget(created_from_existing_widget)
       , _take_keyboard_focus(created_from_existing_widget==false)
 #if defined(RELEASE)
-      , _deleted_callbacks(false)
+      , _deleted_callbacks(false, "api_gui_deleted_callback")
 #else
-      , _deleted_callbacks(true)
+      , _deleted_callbacks(true, "api_gui_deleted_callback")
 #endif
       , _class_name(widget->metaObject()->className())
     {
@@ -1486,7 +1500,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     bool _was_visible = false;
     
-    radium::ProtectedS7Extra<func_t*> _visibility_change_callback;
+    radium::ProtectedS7Extra<func_t*> _visibility_change_callback = radium::ProtectedS7Extra<func_t*>("visibility_change_callback");
 
     void visibility_changed(bool visible) {
       if (visible == _was_visible)
@@ -1631,7 +1645,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
     /************ MOUSE *******************/
     
-    radium::ProtectedS7Extra<func_t*> _mouse_callback;
+    radium::ProtectedS7Extra<func_t*> _mouse_callback = radium::ProtectedS7Extra<func_t*>("mouse_callback");
     int _currentButton = 0;
     double _mouse_event_failed = -1;
     QPoint _last_mouse_pos = QPoint(0,0);
@@ -1780,12 +1794,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       _mouse_callback.set(func);
       _widget->setMouseTracking(true);
+
+      if(func!=NULL)
+        printf(" --------------------  NUM MOUSE callbacks: %d\n", ++g_num2);
     }
 
 
     /************ MOUSE Wheel *******************/
 
-    radium::ProtectedS7Extra<func_t*> _mouse_wheel_callback;
+    radium::ProtectedS7Extra<func_t*> _mouse_wheel_callback = radium::ProtectedS7Extra<func_t*>("mouse_wheel_callback");
 
     bool is_child_of_scroll_area(QObject *object){
       if (object==NULL)
@@ -1836,13 +1853,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         handleError("Gui %d doesn't have a mouse wheel callback.", (int)_gui_num);
         return;
       }
+
+      g_num3--;
       
       _mouse_wheel_callback.set(NULL);
     }
 
     /************ KEY *******************/
 
-    radium::ProtectedS7Extra<func_t*> _key_callback;
+    radium::ProtectedS7Extra<func_t*> _key_callback = radium::ProtectedS7Extra<func_t*>("key_callback");
 
     bool keyEvent(QKeyEvent *event, int keytype){
       if(can_internal_data_be_accessed_questionmark_safer()==false)
@@ -1902,13 +1921,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return;
       }
 
+      printf("-------------------- Num Key callbacks: %d\n", ++g_num4);
+      
       _key_callback.set(func);
     }
 
     
     /************ FOCUS IN *******************/
 
-    radium::ProtectedS7Extra<func_t*> _focus_in_callback;
+    radium::ProtectedS7Extra<func_t*> _focus_in_callback = radium::ProtectedS7Extra<func_t*>("focus_in_callback");
     
     void focusInEvent(QFocusEvent *event){
       if (_focus_in_callback.v==NULL)
@@ -1925,12 +1946,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
 
       _focus_in_callback.set(func);
+
+      printf("-------------------- Num Focus callbacks: %d\n", ++g_num5);
     }
 
     
     /************ DOUBLECLICK *******************/
 
-    radium::ProtectedS7Extra<func_t*> _doubleclick_callback;
+    radium::ProtectedS7Extra<func_t*> _doubleclick_callback = radium::ProtectedS7Extra<func_t*>("doubleclick_callback");
 
     void mouseDoubleClickEvent(QMouseEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_doubleclick_callback.v!=NULL);
@@ -1969,7 +1992,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
     /************ CLOSE *******************/
 
-    radium::ProtectedS7Extra<func_t*> _close_callback;
+    radium::ProtectedS7Extra<func_t*> _close_callback = radium::ProtectedS7Extra<func_t*>("close_callback");
 
     // Some scheme code is running (which might be run from an event handler), so we let the garbage collector delete us instead to avoid memory corruption in those event handlers.
     void setDelayedDeletion(QCloseEvent *event){
@@ -2062,12 +2085,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
 
       _close_callback.set(func);
+      printf("-------------------- Num close callbacks: %d\n", ++g_num7);
     }
 
     
     /************ RESIZE *******************/
     
-    radium::ProtectedS7Extra<func_t*> _resize_callback = NULL;
+    radium::ProtectedS7Extra<func_t*> _resize_callback = radium::ProtectedS7Extra<func_t*>("resize_callback");
     double _resize_callback_failed = -1;
 
     void do_the_resize(int width, int height){
@@ -2138,12 +2162,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
 
       _resize_callback.set(func);
+      printf("-------------------- Num resize callbacks: %d\n", ++g_num8);
     }
 
 
     /************ DRAWING *******************/
 
-    radium::ProtectedS7Extra<func_t*> _paint_callback;
+    radium::ProtectedS7Extra<func_t*> _paint_callback = radium::ProtectedS7Extra<func_t*>("paint_callback");
 
     QImage *_image = NULL;
     QPainter *_image_painter = NULL;
@@ -2292,6 +2317,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
 
       _paint_callback.set(func);
+      printf("-------------------- Num paint callbacks: %d\n", ++g_num9);
     }
 
 
@@ -3335,7 +3361,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     bool _is_int;
     QString _text;
-    radium::ProtectedS7Extra<func_t*> _get_text;
+    radium::ProtectedS7Extra<func_t*> _get_text = radium::ProtectedS7Extra<func_t*>("get_text_func");
     double _min,_max;
     radium::ProtectedS7FuncVector _funcs;
     
@@ -3350,9 +3376,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       , _min(min)
       , _max(max)
 #if defined(RELEASE)
-      , _funcs(false)
+      , _funcs(false, "slider_func")
 #else
-      , _funcs(true)
+      , _funcs(true, "slider_func")
 #endif
     {
 
@@ -4612,7 +4638,7 @@ int64_t gui_getEditorGui(void){
 
   if (guinum==-100){
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-    guinum = API_get_gui_from_existing_widget(editor);
+    guinum = API_get_gui_from_existing_widget(editor->editor_layout_widget);
   }
 
   return guinum;
@@ -7044,9 +7070,7 @@ int64_t gui_verticalAudioMeter(int64_t instrument_id, int64_t note_event_instrum
     return -1;
   }
 
-  struct Patch *note_event_patch = note_event_instrument_id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
-  if(note_event_patch==NULL)
-    return -1;
+  struct Patch *note_event_patch = note_event_instrument_id==-2 ? NULL : note_event_instrument_id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
 
   return (new VerticalAudioMeter(patch, note_event_patch))->get_gui_num();
 }
@@ -7060,9 +7084,7 @@ int64_t gui_addVerticalAudioMeter(int64_t guinum, int64_t instrument_id, double 
   if(patch==NULL)
     return -1;
 
-  struct Patch *note_event_patch = note_event_instrument_id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
-  if(note_event_patch==NULL)
-    return -1;
+  struct Patch *note_event_patch = note_event_instrument_id==-2 ? NULL : note_event_instrument_id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
   
   // We get garbage graphics when the coordinates are not integers. Don't bother to investigate why.
   x1 = floor(x1);

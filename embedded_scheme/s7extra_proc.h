@@ -257,31 +257,40 @@ extern "C" {
 #define S7EXTRA_GET_FUNC(CName,SchemeName)                              \
   func_t *CName = s7extra_get_func_from_funcname(SchemeName);
 #endif
-                           
+
+
+#if defined(QGLOBAL_H)
+#include <QHash>
+
+extern QHash<const char*, int> g_num_s7_protected;
+
 namespace radium{
 
   template <typename T> struct ProtectedS7Extra{
     T v;
     int64_t _pos;
-
+    
 #if !defined(RELEASE)
     bool _do_unprotect = true;
 #endif
 
+    const char *_id;
+
     ProtectedS7Extra(const ProtectedS7Extra &another)
-      : ProtectedS7Extra(another.v)
+      : ProtectedS7Extra(another.v, another._id)
     {
     }
     
     ProtectedS7Extra& operator=(const ProtectedS7Extra&) = delete;
 
-    ProtectedS7Extra(T val)
+    ProtectedS7Extra(T val, const char *id = "")
+      : _id(id)
     {
       protect(val);
     }
     
-    ProtectedS7Extra()
-      : ProtectedS7Extra(NULL)
+    ProtectedS7Extra(const char *id = "")
+      : ProtectedS7Extra(NULL, id)
     {
     }
     
@@ -296,8 +305,15 @@ namespace radium{
       
       if (v==NULL)
         _pos = -1;
-      else
+      else {
         _pos = s7extra_protect(v);
+
+        int size = g_num_s7_protected[_id] + 1;
+        g_num_s7_protected[_id] = size;
+          
+        if (strcmp(_id, ""))
+          printf("   ----  Protecting \"%s\": %p / %p / %d. Size: %d\n", _id, this, v, (int)_pos, size);
+      }
     }
     
     void unprotect(void){
@@ -307,6 +323,12 @@ namespace radium{
         if (v != NULL){
           R_ASSERT_NON_RELEASE(_pos >= 0);
           s7extra_unprotect(v, _pos);
+
+          int size = g_num_s7_protected[_id] - 1;
+          g_num_s7_protected[_id] = size;
+          
+          if (strcmp(_id, ""))
+            printf("   ----  Unprotecting \"%s\": %p / %p / %d. Size: %d\n", _id, this, v, (int)_pos, size);
           v = NULL;
           _pos = -1;
         }else{
@@ -331,8 +353,14 @@ namespace radium{
     }
   };
 
+}
+#endif
+
+
 #if defined(QVECTOR_H) && defined(QSET_H)
 
+namespace radium{
+    
   struct ProtectedS7FuncVector{
     
   private:
@@ -340,7 +368,7 @@ namespace radium{
     
     int64_t _generation = 0;
     bool _changes_allowed = true;
-
+    
   public:
 
 #if !defined(RELEASE)
@@ -349,14 +377,19 @@ namespace radium{
 
     bool _only_unique_elements;
     
+    const char *_id;
+    
     ProtectedS7FuncVector(const ProtectedS7FuncVector&) = delete;
     ProtectedS7FuncVector& operator=(const ProtectedS7FuncVector&) = delete;
 
-    ProtectedS7FuncVector(bool only_unique_elements)
+    ProtectedS7FuncVector(bool only_unique_elements, const char *id = "")
       : _only_unique_elements(only_unique_elements)
+      , _id(id)
     {
     }
-    
+
+    ~ProtectedS7FuncVector(){
+    }
     /*
     // use safe_for_all instead.
     const func_t* begin() const {
@@ -507,7 +540,7 @@ namespace radium{
         return false;
 
       _generation++;
-      _elements.push_back(ProtectedS7Extra<func_t*>(callback));
+      _elements.push_back(ProtectedS7Extra<func_t*>(callback, _id));
       
 #if !defined(RELEASE)
       if (_do_unprotect==false)
@@ -519,9 +552,10 @@ namespace radium{
 
   };
 
+}
+
 #endif // QVECTOR_H
   
-}
 
 #endif
 

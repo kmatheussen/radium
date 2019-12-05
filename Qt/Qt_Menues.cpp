@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QStack>
 
 #include "../common/nsmtracker.h"
-#include "../common/gfx_proc.h"
 #include "../common/settings_proc.h"
 #include "EditorWidget.h"
 #include "Timer.hpp"
@@ -156,10 +155,10 @@ public slots:
       this->checkval = this->checkval==1?0:1; // switch value.
       sprintf(temp,python_command,checkval?"1":"0");
       EVENTLOG_add_event(talloc_format("menu: %s", temp));
-      DO_GFX(PyRun_SimpleString(temp));
+      PyRun_SimpleString(temp);
     }else{
       EVENTLOG_add_event(talloc_format("menu: %s", python_command));
-      DO_GFX(PyRun_SimpleString(python_command));
+      PyRun_SimpleString(python_command);
     }
     
     // closeRequester(); What?

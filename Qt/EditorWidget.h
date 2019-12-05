@@ -60,7 +60,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/windows_proc.h"
 
 #include "../common/visual_proc.h"
-#include "../common/visual_op_queue_proc.h"
 
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/GfxElements.h"
@@ -95,28 +94,12 @@ struct EditorLayoutWidget : public radium::KeyboardFocusFrame{
 };
 
 
-class EditorWidget : public QWidget, public radium::MouseCycleFix
+class EditorWidget
 {
 
 public:
   EditorWidget(QWidget *parent=0, const char *name="no name" );
   ~EditorWidget();
-
-#if USE_QT_VISUAL && USE_QT4
-  //const QPaintEngine* paintEngine();
-#endif
-
-  //QColor     colors[END_CONFIG_COLOR_NUM];				// color array
-
-#if !USE_OPENGL
-#if USE_QT_VISUAL
-    PaintBuffer *paintbuffer;
-
-    PaintBuffer *cursorbuffer;
-#endif
-#endif
-    
-    //void timerEvent(QTimerEvent *);
 
     struct Tracker_Windows *window; // Not sure if this one is used.
 
@@ -124,19 +107,11 @@ public:
 
     Upperleft_widget *upperleft_widget;
 
-#if USE_QT_VISUAL
-
-    QPainter *painter; // Set in paintEvent    
-#if !USE_OPENGL    
-    QPainter *paintbuffer_painter; // Set in paintEvent
-    QPainter *cursorbuffer_painter; // Set in paintEvent
-#endif
-    
     QFont font;
-#endif
 
     EditorLayoutWidget *editor_layout_widget = NULL; // parent widget. The one holding the vertical layout.
 
+    QWidget *header_widget = NULL;
     QWidget *bottom_widget = NULL; // rec button, reltempo slider, and track scrollbar
   
 #if USE_OPENGL
@@ -151,65 +126,28 @@ public:
 
     int get_editor_width(){
       //return this->width()-XOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)
-      return this->width();
+      if(!this->header_widget)
+        return 20;
+      return this->header_widget->width();
     }
 
     int get_editor_height(){
       //return this->height()-YOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)
-      return this->height();
+      if(!this->header_widget)
+        return 20;
+      return this->header_widget->height();
     }
-
-#if !USE_OPENGL
-    Q3PointArray qpa;
-#endif
     
-    void updateEditor();
+    void updateEditor(void) const;
 
-#if 0
-    void callCustomEvent(){
-      customEvent(NULL);
-    }
-#endif
-    
-    void wheelEvent(QWheelEvent *qwheelevent) override;
-
-protected:
-    //    bool        event(QEvent *);
-#if 1 //USE_QT_VISUAL
-    void	paintEvent( QPaintEvent * ) override;
-    //void showEvent ( QShowEvent * event ){printf("showevent\n");}
-    //void changeEvent ( QEvent * event ) { printf("changeEvent\n"); }
-
-#endif
-
-#if 0 // Using X11filter for keys
-    void        keyPressEvent(QKeyEvent *);
-    void        keyReleaseEvent(QKeyEvent *qkeyevent);
-#endif
-
-#if 0
-#ifdef FOR_WINDOWS
-    void keyPressEvent(QKeyEvent *qkeyevent){
-      qkeyevent->accept();
-    }
-    void keyReleaseEvent(QKeyEvent *qkeyevent){
-      qkeyevent->accept();
-    }
-#endif
-#endif
+    void wheelEvent(QWheelEvent *qwheelevent); // override;
 
  public:
-#if USE_QT_VISUAL
-    void	fix_mousePressEvent( QMouseEvent *) override;
-    void	fix_mouseMoveEvent( QMouseEvent *) override;
-    void	fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override;
-    MOUSE_CYCLE_CALLBACKS_FOR_QT;
-#endif
-    void        closeEvent(QCloseEvent *) override ;
-#if 0
-    void        customEvent(QEvent *);
-#endif
-  void        resizeEvent( QResizeEvent *) override ;
+
+    void handle_mouse_press(Qt::MouseButton button, float x, float y) const;
+    void handle_mouse_move(Qt::MouseButton button, float x, float y) const;
+    void handle_mouse_release(Qt::MouseButton button, float x, float y) const;
+
 };
 
 extern QWidget *g_main_window;
@@ -224,7 +162,7 @@ static inline void calculateNewWindowWidthAndHeight(struct Tracker_Windows *wind
     return;
 
   window->width = g_editor->editor_layout_widget->width();
-  window->height = g_editor->height() + g_editor->gl_widget->height() + g_editor->window->bottomslider_height; //g_editor->get_editor_height();
+  window->height = g_editor->header_widget->height() + g_editor->gl_widget->height() + g_editor->window->bottomslider_height; //g_editor->get_editor_height();
 
 
   if(g_is_starting_up==true)
@@ -237,9 +175,9 @@ static inline void calculateNewWindowWidthAndHeight(struct Tracker_Windows *wind
     
   UpdateWBlockCoordinates(window, window->wblock);
 
-  if (g_editor->height() != window->wblock->t.y1){
-    g_editor->setMinimumHeight(window->wblock->t.y1);
-    g_editor->setMaximumHeight(window->wblock->t.y1);
+  if (g_editor->header_widget->height() != window->wblock->t.y1){
+    g_editor->header_widget->setMinimumHeight(window->wblock->t.y1);
+    g_editor->header_widget->setMaximumHeight(window->wblock->t.y1);
   }
 
   /*

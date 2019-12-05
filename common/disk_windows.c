@@ -25,11 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk_slider_proc.h"
 #include "windows_proc.h"
 #include "visual_proc.h"
-#include "gfx_wblocks_proc.h"
 #include "sliders_proc.h"
 #include "reallines_proc.h"
 #include "control_proc.h"
-#include "gfx_op_queue_proc.h"
 #include "settings_proc.h"
 
 #include "../OpenGL/Widget_proc.h"
@@ -247,10 +245,6 @@ if(window==NULL) return;
 
         //window->textborder=SETTINGS_read_bool("show_text_border",false);
 	//window->minnodesize=SETTINGS_read_int("minimum_node_size",20);
-
-#ifdef USE_GFX_OP_QUEUE
-        GFX_create_op_queue(window);
-#endif
 
 	if(GFX_CreateVisual(window)!=0){
 		EndProgram();

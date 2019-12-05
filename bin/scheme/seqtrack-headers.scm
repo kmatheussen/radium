@@ -708,6 +708,9 @@
 !!#
 
 
+
+  
+  
 (def-area-subclass (<instrument-pan-slider> :gui :x1 :y1 :x2 :y2
                                             :instrument-id
                                             :get-color
@@ -733,32 +736,15 @@
     (set! last-painted-normalized-pan (scale value -90 90 0 1))
     (define is-on (pan-enabled? instrument-id))
     ;;(<gui> :filled-box gui (get-color) x1 y1 x2 y2)
-    (define background-color (get-color))
-    (define background (if is-on
-                           (<gui> :mix-colors background-color "black" 0.39)
-                           (<gui> :mix-colors background-color "white" 0.95)))
-    (<gui> :filled-box gui background x1 y1 x2 y2 5 5 #f)
-    (define col1 (<gui> :mix-colors "white" background 0.4))
-    (define col2 (<gui> :mix-colors "#010101" background 0.5))
+    ;;(define background-color (get-color))
     
-    (define inner-width/2 (scale 1 0 18 0 (get-fontheight)))
-    (define outer-width/2 (* inner-width/2 2))
-    
-    (define middle (scale value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
-    
-    (<gui> :filled-box gui col1 (+ x1 (- middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2)               (- y2 3) -1 -1 #f)
-    (<gui> :filled-box gui col2 (+ x1 (- middle inner-width/2 outer-width/2)) (+ y1 2) (+ x1 (- middle inner-width/2))           (- y2 3) -1 -1 #f)
-    (<gui> :filled-box gui col2 (+ x1 (+ middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2 outer-width/2) (- y2 3) -1 -1 #f)
-    ;;(<gui> :draw-text gui "white" (<-> value "o") 0 0 width height #t)
-    
-    (when (> automation-slider-value -100)
-      (define middle (scale automation-slider-value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
-      (<gui> :draw-line gui pan-automation-color (+ x1 middle) (+ y1 2) (+ x1 middle) (- y2 3) 2.0))
-    
-    (<gui> :draw-box gui "#404040" x1 y1 x2 y2 2)
+    (define used-background-color (paint-pan-slider gui x1 y1 x2 y2 value is-on (get-color)
+                                                    :automation-slider-value automation-slider-value
+                                                    :automation-color pan-automation-color))
+
     
     (when (<ra> :instrument-effect-has-midi-learn instrument-id "System Pan")
-      (define midi-learn-color (<gui> :mix-colors *text-color* background 0.2))
+      (define midi-learn-color (<gui> :mix-colors *text-color* used-background-color 0.2))
       (<gui> :draw-text gui midi-learn-color "[M]" (+ x1 2) (+ y1 2) (- x2 2) (- y2 2)
              #f ;; wrap text
              #f ;; align left

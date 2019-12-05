@@ -2228,12 +2228,17 @@ struct WTracks{
   
         //int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
 
+  /*
+        TBox name;
+
 	TBox pan;
 	TBox volume;
 
 	TBox panonoff;
 	TBox volumeonoff;
 
+        TBox meter;
+  */
         int noteshowtype;
 };
 #define NextWTrack(a) ((struct WTracks *)((a)->l.next))

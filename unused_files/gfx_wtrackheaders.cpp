@@ -24,16 +24,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wtrackheader_volpan_proc.h"
 #include "blts_proc.h"
 #include "wtracks_proc.h"
-#include "../audio/SoundPlugin.h"
-#include "../Qt/Qt_instruments_proc.h"
 #include "OS_visual_input.h"
 #include "instruments_proc.h"
 
+#include "../Qt/Qt_instruments_proc.h"
+
+#include "../audio/SoundPlugin.h"
+
 #include "../api/api_proc.h"
+#include "../api/api_gui_proc.h"
+
 #include "../Qt/Qt_colors_proc.h"
 
-
 #include "gfx_wtrackheaders_proc.h"
+
+
+extern EditorWidget *g_editor;
 
 
 extern char *NotesTexts3[];
@@ -51,10 +57,10 @@ static void DrawWTrackNames(
 
   struct Patch *patch = wtrack1->track->patch;
   
-  int x1 = wtrack1->x;
-  int x2 = wtrack2->x2 + 2;
-  int y1 = wtrack1->y;
-  int y2 = wtrack1->panonoff.y1 - 2;
+  int x1 = wtrack1->name.x1;
+  int x2 = wtrack2->name.x2;
+  int y1 = wtrack1->name.y1;
+  int y2 = wtrack1->name.y2;
 
   // Background
   unsigned int color = patch==NULL ? GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM) : get_displayed_instrument_color(patch).rgb();
@@ -109,7 +115,7 @@ static void DrawWTrackNames(
                window,TEXT_COLOR_NUM,temp,
                wtrack_x1,
                wtrack1->y+WTRACKS_SPACE-1,
-               wtrack1->x2-wtrack1->x-1,
+               x2-wtrack1->x-1,
                TEXT_CLIPRECT|TEXT_BOLD|TEXT_NOTEXT,
                PAINT_BUFFER
                );
@@ -127,7 +133,7 @@ static void DrawWTrackNames(
                window,INSTRUMENT_NAME_COLOR_NUM, name,
                name_x,
                wtrack1->y+WTRACKS_SPACE-1,
-               wtrack2->x2 - name_x, //(wtrack2->x2-window->fontwidth/2) - name_x,
+               x2 - name_x, //(wtrack2->x2-window->fontwidth/2) - name_x,
                TEXT_SCALE|TEXT_NOTEXT, //|TEXT_CENTER,
                PAINT_BUFFER
                );
@@ -300,15 +306,55 @@ static void *get_pianorollheader(int tracknum, bool create_new){
 
 // Call this function first to avoid having to allocate pianorollheader widgets while playing.
 void INIT_Pianoroll_headers(void){
-  get_pianorollheader(200, true);
+  //get_pianorollheader(200, true);
 }
 
+/*
+static QVector<int64_t> g_wtrack_vams;
+
+
+static void update_all_vams(struct WBlocks *wblock){
+  for(const int64_t vam : g_wtrack_vams){
+    bool ret = gui_removeVerticalAudioMeter(vam, false);
+    R_ASSERT(ret);
+  }
+
+  g_wtrack_vams.clear();
+
+  const struct WTracks *left_wtrack = get_leftmost_visible_wtrack(wblock);
+  const struct WTracks *right_wtrack = get_rightmost_visible_wtrack(wblock, left_wtrack);
+  
+  if (left_wtrack!=NULL && right_wtrack!=NULL){
+
+    const struct WTracks *wtrack=left_wtrack;
+
+    while(wtrack!=NULL){
+
+      int64_t vam = gui_addVerticalAudioMeter(API_get_gui_from_existing_widget((QWidget*)g_editor),
+                                              0,
+                                              wtrack->meter.x1, wtrack->meter.y1,
+                                              wtrack->meter.x2, wtrack->meter.y2,
+                                              -1);
+      g_wtrack_vams.push_back(vam);
+
+      if (wtrack==right_wtrack)
+        break;
+      
+      wtrack=NextWTrack(wtrack);
+    }
+  }
+  
+}
+*/
 
 void UpdateAllPianoRollHeaders(
                                struct Tracker_Windows *window,
                                struct WBlocks *wblock
                                )
 {
+  return;
+  //update_all_vams(wblock);
+  
   const struct WTracks *wtrack=wblock->wtracks;
 
   int last_tracknum = 0;
@@ -366,13 +412,38 @@ void DrawAllWTrackHeaders(
                           const struct WBlocks *wblock
                           )
 {  
-#if 1
+#if 0
 	GFX_T_FilledBox(
 		window, HIGH_BACKGROUND_COLOR_NUM,
 		wblock->t.x1, 0,
 		window->width, wblock->t.y1,
                 PAINT_BUFFER
 	);
+#else
+
+        const struct WTracks *left_wtrack = get_leftmost_visible_wtrack(wblock);
+        const struct WTracks *right_wtrack = get_rightmost_visible_wtrack(wblock, left_wtrack);
+        
+        if (left_wtrack!=NULL && right_wtrack!=NULL){
+          
+          const struct WTracks *wtrack=left_wtrack;
+          
+          while(wtrack!=NULL){
+
+            GFX_T_FilledBox(
+                            window, HIGH_BACKGROUND_COLOR_NUM,
+                            wtrack->x, 0,
+                            wtrack->meter.x1, wblock->t.y1,
+                            PAINT_BUFFER
+                            );
+            
+            if (wtrack==right_wtrack)
+              break;
+            
+            wtrack=NextWTrack(wtrack);
+          }
+        }
+
 #endif
         DrawAllWTrackNames(window,wblock);
 

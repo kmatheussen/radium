@@ -42,8 +42,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "../common/undo_patchlist_proc.h"
 #include "../common/undo_tracks_proc.h"
 #include "../common/visual_proc.h"
-#include "../common/gfx_proc.h"
-#include "../common/gfx_wtrackheaders_proc.h"
 #include "../common/settings_proc.h"
 #include "../audio/audio_instrument_proc.h"
 #include "../midi/midi_instrument.h"
@@ -1071,7 +1069,7 @@ void MIXERSTRIP_call_regularly(void){
     last_patch = NULL;
 
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-    int height = editor->height();
+    int height = editor->editor_layout_widget->height();
 
     int64_t new_guinum = gui_createSingleMixerStrip(PATCH_get_current()->id, 100, height);
     //R_ASSERT(new_guinum != -1);

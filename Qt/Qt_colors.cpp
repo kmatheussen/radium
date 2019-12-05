@@ -55,7 +55,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/settings_proc.h"
 #include "../common/windows_proc.h"
-#include "../common/gfx_proc.h"
 #include "../GTK/GTK_visual_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
@@ -419,13 +418,13 @@ static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
 
 #define NUM_NOTE_COLOR_CONF 6
 static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
-  {0,3},
-  {24,4},
-  {48,3},
-  {72,4},
-  {96,5},
-  {120,6},
-  {128,8}
+  {0,PEAKS_0DB_COLOR_NUM},
+  {24,PEAKS_4DB_COLOR_NUM},
+  {48,PEAKS_0DB_COLOR_NUM},
+  {72,PEAKS_4DB_COLOR_NUM},
+  {96,WAVEFORM_COLOR_NUM},
+  {120,TEXT_COLOR_NUM},
+  {128,INSTRUMENT_NAME_COLOR_NUM}
 };
 
 static void configure_note_colors(void){
@@ -462,7 +461,7 @@ public:
     
     MyColorDialog(QWidget *parent, func_t *callback, const char *initial_color)
       : QColorDialog(parent)
-      , _callback(callback)
+      , _callback(callback, "colordialog_callback")
       , _initial_color(initial_color)
     {
       setAttribute(Qt::WA_DeleteOnClose);

@@ -648,7 +648,8 @@
 ;; Set current track and mouse track
 (add-mouse-move-handler
  :move (lambda (Button X Y)
-         (set-current-track-num! X Y)))
+         (set-current-track-num! X Y)
+         ))
 
 (define2 *current-subtrack-num* (curry-or not integer?) #f)
 
@@ -1228,32 +1229,7 @@
          ;;(c-display "x/y/sequencer:" X Y (box-to-string (<ra> :get-box sequencer)))
 
          ;;(c-display X Y (box-to-string (get-seqnav-move-box)))
-         (cond ((and *current-track-num*
-                     (inside-box? (<ra> :get-box track-pan-slider *current-track-num*) X Y))
-                (set-mouse-pointer ra:set-horizontal-split-mouse-pointer (<gui> :get-editor-gui))
-                (show-track-pan-in-statusbar *current-track-num*))
-               
-               ((and *current-track-num*
-                     (inside-box? (<ra> :get-box track-volume-slider *current-track-num*) X Y))
-                (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer (<gui> :get-editor-gui))
-                (show-track-volume-in-statusbar *current-track-num*))
-               
-               ((and *current-track-num*
-                     (inside-box? (<ra> :get-box track-pan-on-off *current-track-num*) X Y))
-                (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
-                (set-editor-statusbar (<-> "Track panning slider " (if (<ra> :get-track-pan-on-off *current-track-num*) "on" "off"))))
-               
-               ((and *current-track-num*
-                     (inside-box? (<ra> :get-box track-volume-on-off *current-track-num*) X Y))
-                (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
-                (set-editor-statusbar (<-> "Track volume slider " (if (<ra> :get-track-volume-on-off *current-track-num*) "on" "off"))))
-
-               ((and *current-track-num*
-                     (< Y (<ra> :get-track-pan-on-off-y1)))
-                (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
-                (set-editor-statusbar (<-> "Select instrument for track " *current-track-num*)))
-
-               ((and (inside-box? (<ra> :get-box sequencer) X Y)
+         (cond ((and (inside-box? (<ra> :get-box sequencer) X Y)
                      (not *current-seqautomation/distance*))
                 (if (not *current-seqblock-info*)
                     (set-seqblock-selected-box 'non -1 -1))
@@ -1647,143 +1623,7 @@
 ||#
 
 
-;; select instrument for track
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(add-mouse-cycle (make-mouse-cycle
-                  :press-func (lambda (Button X Y)
-                                (and *current-track-num*
-                                     (>= X (<ra> :get-track-x1 0))
-                                     ;;(>= X (<ra> :get-track-notes-x1 *current-track-num*))
-                                     (< Y (<ra> :get-track-pan-on-off-y1))
-                                     (= Button *left-button*)
-                                     (select-track-instrument *current-track-num*)
-                                     #t))))
 
-
-;; track pan on/off
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(add-mouse-cycle (make-mouse-cycle
-                  :press-func (lambda (Button X Y)
-                                (cond ((and *current-track-num*
-                                            (inside-box? (<ra> :get-box track-pan-on-off *current-track-num*) X Y))
-                                       (<ra> :undo-track-pan *current-track-num*)
-                                       (<ra> :set-track-pan-on-off (not (<ra> :get-track-pan-on-off *current-track-num*))
-                                                                *current-track-num*)
-                                       #t)
-                                      (else
-                                       #f)))))
-
-
-;; track volume on/off
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(add-mouse-cycle (make-mouse-cycle
-                  :press-func (lambda (Button X Y)
-                                (cond ((and *current-track-num*
-                                            (inside-box? (<ra> :get-box track-volume-on-off *current-track-num*) X Y))
-                                       (<ra> :undo-track-volume *current-track-num*)
-                                       (<ra> :set-track-volume-on-off (not (<ra> :get-track-volume-on-off *current-track-num*))
-                                                                   *current-track-num*)
-                                       #t)
-                                      (else
-                                       #f)))))
-
-
-
-
-;; track pan sliders
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define (show-track-pan-in-statusbar Tracknum)
-  (set-editor-statusbar (<-> "Track pan " (two-decimal-string (<ra> :get-track-pan Tracknum)))))
-
-(define (get-trackpan-x Tracknum)
-  (scale (<ra> :get-track-pan Tracknum)
-         -1
-         1
-         (<ra> :get-track-pan-slider-x1 Tracknum)
-         (<ra> :get-track-pan-slider-x2 Tracknum)))
-
-;; slider
-(add-horizontal-handler :Get-handler-data (lambda (X Y)
-                                            (and *current-track-num*
-                                                 (inside-box? (<ra> :get-box track-pan-slider *current-track-num*) X Y)
-                                                 *current-track-num*))
-                        :Get-x1 ra:get-track-pan-slider-x1
-                        :Get-x2 ra:get-track-pan-slider-x2
-                        :Get-min-value (lambda (_)
-                                         -1.0)
-                        :Get-max-value (lambda (_)
-                                         1.0)
-                        :Get-release-x (lambda (Tracknum)
-                                 (get-trackpan-x Tracknum))
-                        :Get-value ra:get-track-pan
-                        :Make-undo ra:undo-track-pan
-                        :Move (lambda (Tracknum Value)
-                                ;;(c-display Tracknum Value)
-                                (<ra> :set-track-pan Value Tracknum))
-                        :Publicize (lambda (Tracknum)
-                                     (show-track-pan-in-statusbar Tracknum))
-                        )
-
-;; reset slider value
-(add-mouse-cycle (make-mouse-cycle
-                  :press-func (lambda (Button X Y)
-                                (cond ((and *current-track-num*
-                                            (inside-box? (<ra> :get-box track-pan-slider *current-track-num*) X Y))
-                                       (<ra> :undo-track-pan *current-track-num*)
-                                       (<ra> :set-track-pan 0.0 *current-track-num*)
-                                       #t)
-                                      (else
-                                       #f)))))
-
-     
-
-;; track volume sliders
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define (show-track-volume-in-statusbar Tracknum)
-  (set-editor-statusbar (<-> "Track volume " (two-decimal-string (<ra> :get-track-volume Tracknum)))))
-
-(define (get-trackvolume-x Tracknum)
-  (scale (<ra> :get-track-volume Tracknum)
-         0
-         1
-         (<ra> :get-track-volume-slider-x1 Tracknum)
-         (<ra> :get-track-volume-slider-x2 Tracknum)))
-
-;; slider
-(add-horizontal-handler :Get-handler-data (lambda (X Y)
-                                            (and *current-track-num*
-                                                 (inside-box? (<ra> :get-box track-volume-slider *current-track-num*) X Y)
-                                                 *current-track-num*))
-                        :Get-x1 ra:get-track-volume-slider-x1
-                        :Get-x2 ra:get-track-volume-slider-x2
-                        :Get-min-value (lambda (_)
-                                         0.0)
-                        :Get-max-value (lambda (_)
-                                         1.0)
-                        :Get-release-x (lambda (Tracknum)
-                                 (get-trackvolume-x Tracknum))
-                        :Get-value ra:get-track-volume
-                        :Make-undo ra:undo-track-volume
-                        :Move (lambda (Tracknum Value)
-                                ;;(c-display Tracknum Value)
-                                (<ra> :set-track-volume Value Tracknum))
-                        :Publicize (lambda (Tracknum)
-                                     (show-track-volume-in-statusbar Tracknum))
-                        )
-
-
-;; reset slider value
-(add-mouse-cycle (make-mouse-cycle
-                  :press-func (lambda (Button X Y)
-                                (cond ((and *current-track-num*
-                                            (inside-box? (<ra> :get-box track-volume-slider *current-track-num*) X Y))
-                                       (<ra> :undo-track-volume *current-track-num*)
-                                       (<ra> :set-track-volume 0.8 *current-track-num*)
-                                       #t)
-                                      (else
-                                       #f)))))
 
      
 
@@ -3262,7 +3102,7 @@
                 2))
        (<= X (+ (<ra> :get-track-x1 Tracknum)
                 (<ra> :get-half-of-node-width)))
-       (>= Y (+ 4 (<ra> :get-track-volume-on-off-y2)))))
+       (>= Y (+ 4 (<ra> :get-editor-scrollbar-y1)))))
                 
 
 (define-match get-resize-point-track

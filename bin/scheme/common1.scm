@@ -383,9 +383,9 @@
   (let loop ((before '())
              (after das-list))
     (cond ((null? after)
-           (list (reverse before) '()))
+           (list (reverse! before) '()))
           ((func (car after))
-           (list (reverse before) after))
+           (list (reverse! before) after))
           (else
            (loop (cons (car after) before)
                  (cdr after))))))
@@ -532,8 +532,8 @@
            (loop (cdr string*) (cdr startswith)))
           (else
            #f)))
-  (loop (reverse (string->list string*))
-        (reverse (string->list endswith))))
+  (loop (reverse! (string->list string*))
+        (reverse! (string->list endswith))))
 
 (***assert*** (string-ends-with? "" "") #t)
 (***assert*** (string-ends-with? "asdf" "df") #t)
@@ -607,14 +607,15 @@
 
 (define (string-strip-right string*)
   (list->string
-   (reverse
-    (remove-while (reverse (string->list string*))
+   (reverse!
+    (remove-while (reverse! (string->list string*))
                   is-whitespace?))))
 
 (***assert*** (string-strip-right "   as dfasdf \n\n ")
               "   as dfasdf")
 
 (define (string-strip-left string*)
+  ;;(assert (< (string-length string*) 1000))
   (list->string
    (remove-while (string->list string*)
                   is-whitespace?)))
@@ -702,4 +703,4 @@
                       ret))
           (begin
             (<ra> :close-file file)
-            (reverse ret))))))
+            (reverse! ret))))))

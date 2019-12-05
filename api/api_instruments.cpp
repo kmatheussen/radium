@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo.h"
 #include "../common/undo_tracks_proc.h"
 #include "../common/undo_instrument_color_proc.h"
-#include "../common/gfx_wtrackheaders_proc.h"
 #include "../common/player_pause_proc.h"
 #include "../common/sequencer_proc.h"
 #include "../common/seqtrack_automation_proc.h"
@@ -2875,7 +2874,7 @@ namespace{
     bool monitor_stored = 0;
     bool monitor_automation = 0;
     int effect_num = 0;
-    radium::ProtectedS7Extra<func_t*> func;
+    radium::ProtectedS7Extra<func_t*> func = radium::ProtectedS7Extra<func_t*>("effectmonitor");
     
     float last_stored_value = 0;
     float last_automation_value = 0;

@@ -127,7 +127,7 @@ namespace{
       : qmenu(qmenu)
       , num(num)
       , _text(text)
-      , callback(callback)
+      , callback(callback, "popupmenu_callback")
       , callback3(callback3)
       , result(result)
       , is_checkable(is_checkable)

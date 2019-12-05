@@ -66,7 +66,6 @@ static HWND gtk_hwnd = NULL;
 #  include "../GTK/GTK_visual_proc.h"
 #endif
 
-#include "../common/gfx_proc.h"
 #include "../common/cursor_updown_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../common/disk_load_proc.h"
@@ -166,9 +165,16 @@ void GFX_UpdateUpperLeft(struct Tracker_Windows *tvisual, struct WBlocks *wblock
   editor->upperleft_widget->updateWidgets(wblock);
 }
 
+void add_upper_left_widget(struct Tracker_Windows *tvisual){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  //editor->upperleft_widget = new Upperleft_widget(editor->header_widget);
+  editor->upperleft_widget->setParent(editor->header_widget);
+  editor->upperleft_widget->move(0,0);
+}
+
 EditorWidget::EditorWidget(QWidget *parent, const char *name )
   //: QFrame( parent, name, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
-  : QWidget( parent)
+//: QWidget( parent)
     //: QWidget( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
     //: EditorWidgetParent( parent, name) //, Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase )
 #if USE_QT_VISUAL && !USE_OPENGL
@@ -179,7 +185,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #endif
 
 #if USE_OPENGL
-  , gl_widget(NULL)
+  : gl_widget(NULL)
 #else    
   , qpa(256)
 #endif
@@ -188,11 +194,22 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
   this->paintbuffer=NULL;
 #endif
 
-  setAttribute(Qt::WA_StaticContents, true);
+  //setAttribute(Qt::WA_StaticContents, true);
 
-  upperleft_widget = new Upperleft_widget(this);
+  upperleft_widget = new Upperleft_widget; //(this);
+
+  /*
   upperleft_widget->move(0,0);
+  */
 
+  /*
+  header_widget = API_gui_get_widget(S7CALL2(int_void, "FROM_C-create-editor-track-headers-gui"));
+
+  editor_layout_widget->layout()->addWidget(header_widget);
+
+  add_upper_left_widget(window);
+  */
+  
 #if USE_GTK_VISUAL
   if(sizeof(int64_t) < sizeof(WId))
     abort();
@@ -270,7 +287,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
   //setEditorColors(this);
 
 #if USE_QT_VISUAL
-  this->setMouseTracking(true);
+  //this->setMouseTracking(true);
   //g_embed_container->setMouseTracking(true);
 #endif
 
@@ -300,9 +317,11 @@ void grabKeyboard(void){
   //g_editor->main_window->grabKeyboard();
   //abort(); // This function should not be used.
   // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  /*
   GL_lock();{
     g_editor->setFocus();
   }GL_unlock();
+  */
 }
 
 
@@ -539,9 +558,11 @@ void SetupMainWindow(void){
   EditorWidget *editor=new EditorWidget(main_window,"name");
 #if USE_QT_VISUAL
   // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  /*
   GL_lock();{
     editor->setFocus(); // Lots of trouble with focus with the qt_visual backend.
   }GL_unlock();
+  */
 #endif
 
 #ifdef USE_QT4
@@ -552,10 +573,12 @@ void SetupMainWindow(void){
   //editor->setAttribute(Qt::WA_PaintOnScreen);
 #endif
 
+  /*
   editor->setAcceptDrops(true);
                  
   editor->setAutoFillBackground(true);
-
+  */
+  
   //#if USE_OPENGL
     // editor->setAttribute(Qt::WA_PaintOnScreen);
   //#endif
@@ -585,7 +608,8 @@ void SetupMainWindow(void){
 #endif
 
   main_window->resize(1024,550);
-  editor->setMinimumWidth(550);
+  
+  //editor->setMinimumWidth(550);
   //editor->setMinimumHeight(100);
 
   main_window->setWindowTitle("Radium editor window");
@@ -765,7 +789,7 @@ const wchar_t *GFX_GetLoadFileName(
 
   QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
   
-  QString filename = radium::FileRequester(editor,
+  QString filename = radium::FileRequester(editor->editor_layout_widget,
                                            seltext,
                                            dir,
                                            type,
@@ -794,7 +818,7 @@ const wchar_t *GFX_GetSaveFileName(
 
   QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
   
-  QString filename = radium::FileRequester(editor,
+  QString filename = radium::FileRequester(editor->editor_layout_widget,
                                            seltext,
                                            dir,
                                            type,
