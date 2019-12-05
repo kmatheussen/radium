@@ -156,10 +156,14 @@ pre, code {
 			<div class="innertube">
 <h1>Swing</h1>
 
-The Swing tracks provide efficient ways to add swing. The global swing track
-applies swing to all tracks in a block, and the swing subtracks applies swing to
-individual tracks (overriding the global swing track). Right click a track and enable "Swing text"
-to edit swing of individual tracks.
+The Swing tracks provide efficient ways to create swing. There are two types of swing tracks:
+<OL>
+  <LI> <b>The global swing track.</b> <i>(to the right of the "LZ" track)</i><br>
+    The global swing track applies swing to all tracks in a block.
+  <LI> <b>Swing subtracks.</b> <i>(to the left of note text)</i><br>
+    Swing subtracks applies swing to normal tracks, and overrides the global swing track for that track. Right click a track and enable "Swing text"
+    to edit swing of individual tracks.
+</OL>
 
 
 
@@ -171,7 +175,7 @@ to edit swing of individual tracks.
   <blockquote>
   <pre>
     
-<b>xx</b> = swing weight. 1 = lowest value, 99 = highest value.
+<b>xx</b> = Swing weight. 1 = lowest value, 99 = highest value.
 <b>t</b>  = Whether to gradually change tempo to the next swing value. (Press 't' to switch)
   </pre>
   </blockquote>
@@ -204,7 +208,6 @@ to edit swing of individual tracks.
   <LI> To remove a swing entry, press DEL.
   <LI> To stop swing in the middle of a block, add "1" (or any number) to the first beat in a bar, and remove all other swing values from that bar.
   <LI>To disable all swing in a block (can be used to quickly compare swing vs. non-swing), unselect the check box below "Swing" in the upper left part of the editor.
-  <LI>To switch glide mode (i.e. add or remove the <b>|</b> character), press 'T'.
 </UL>
 
   
