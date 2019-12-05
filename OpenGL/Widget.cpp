@@ -1873,8 +1873,10 @@ public:
   /** Event generated when the bound OpenGLContext is resized. */
   // OpenGL thread
   void resizeEvent(int w, int h) override {
-    //printf("resisizing %d %d\n",w,h);
+    //printf("|||||||||||||||||||||||--------------------------resisizing %d %d\n",w,h);
 
+    is_patched();
+    
 #if USE_COVER
     if(0){
       radium::ScopedMutex lock(_cover_mutex);
@@ -1930,6 +1932,7 @@ public:
   
   /** Event generated when the mouse moves. */
   void mouseMoveEvent(int x, int y) override {
+    R_ASSERT_NON_RELEASE(false);
     printf("mouseMove %d %d\n",x,y);
     //_rendering->sceneManagers()->clear();
     //create_block();
@@ -1938,6 +1941,7 @@ public:
   
   /** Event generated when one of the mouse buttons is released. */
   void mouseUpEvent(vl::EMouseButton button, int x, int y) override {
+    R_ASSERT_NON_RELEASE(false);
     printf("mouseMove %d %d\n",x,y);
     //_rendering->sceneManagers()->clear();
     //create_block(_rendering->camera()->viewport()->width(), _rendering->camera()->viewport()->height());
@@ -1946,6 +1950,7 @@ public:
   
   /** Event generated when one of the mouse buttons is pressed. */
   void mouseDownEvent(vl::EMouseButton button, int x, int y) override {
+    R_ASSERT_NON_RELEASE(false);
     printf("mouseMove %d %d\n",x,y);
     //_rendering->sceneManagers()->clear();
     //create_block();
@@ -1954,6 +1959,7 @@ public:
   
   /** Event generated when the mouse wheel rotated. */
   void mouseWheelEvent(int n) override {
+    R_ASSERT_NON_RELEASE(false);
     printf("mouseWheel %d\n",n);
   }
 
