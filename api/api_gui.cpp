@@ -14,8 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
-
 #define __STDC_FORMAT_MACROS 1
 
 #include "../common/includepython.h"
@@ -1418,6 +1416,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         
         g_valid_guis.removeLast();
       }
+
     }
 
     void apply_deleted_callbacks(void){
@@ -1794,9 +1793,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       _mouse_callback.set(func);
       _widget->setMouseTracking(true);
-
-      if(func!=NULL)
-        printf(" --------------------  NUM MOUSE callbacks: %d\n", ++g_num2);
     }
 
 
@@ -1844,7 +1840,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         handleError("Gui %d already has a mouse wheel callback.", (int)_gui_num);
         return;
       }
-
+      
       _mouse_wheel_callback.set(func);
     }
 
@@ -1853,8 +1849,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         handleError("Gui %d doesn't have a mouse wheel callback.", (int)_gui_num);
         return;
       }
-
-      g_num3--;
       
       _mouse_wheel_callback.set(NULL);
     }
@@ -1921,8 +1915,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return;
       }
 
-      printf("-------------------- Num Key callbacks: %d\n", ++g_num4);
-      
       _key_callback.set(func);
     }
 
@@ -1946,8 +1938,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
 
       _focus_in_callback.set(func);
-
-      printf("-------------------- Num Focus callbacks: %d\n", ++g_num5);
     }
 
     
@@ -2085,7 +2075,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
 
       _close_callback.set(func);
-      printf("-------------------- Num close callbacks: %d\n", ++g_num7);
     }
 
     
@@ -2162,7 +2151,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
 
       _resize_callback.set(func);
-      printf("-------------------- Num resize callbacks: %d\n", ++g_num8);
     }
 
 
@@ -2317,7 +2305,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
 
       _paint_callback.set(func);
-      printf("-------------------- Num paint callbacks: %d\n", ++g_num9);
     }
 
 
