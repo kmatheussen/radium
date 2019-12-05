@@ -286,9 +286,22 @@ static void UpdateWTrackCoordinates(
 	wtrack->y2 = wblock->a.y2;
 	wtrack->x2 = wtrack->fxarea.x2;
 
+        /*
         int y1_ = (wblock->a.y1+wblock->linearea.y)/2;
         int y2_ = (y1_+wblock->linearea.y)/2;
 
+        int meter_x1 = wtrack->x2 - 10;
+        int meter_x2 = wtrack->x2 + 2;
+        
+        wtrack->name.x1 = wtrack->x;
+        wtrack->name.y1 = wtrack->y;
+        wtrack->name.x2 = meter_x1;
+        wtrack->name.y2 = y1_ - 2;
+
+        wtrack->meter.x1 = meter_x1;
+        wtrack->meter.y1 = wtrack->y;
+        wtrack->meter.x2 = meter_x2;
+        
 //	wtrack->panonoff.x1 = wtrack->notearea.x+(wtrack->notearea.x2-wtrack->notearea.x)/2 - (window->fontwidth/2);
 //	wtrack->panonoff.x2 = wtrack->panonoff.x1+window->fontwidth;
         wtrack->panonoff.x1 = wtrack->notearea.x;
@@ -300,7 +313,7 @@ static void UpdateWTrackCoordinates(
         }
 
 	wtrack->pan.x1 = wtrack->panonoff.x2 + 1;
-	wtrack->pan.x2 = wtrack->x2 + 2;
+	wtrack->pan.x2 = wtrack->name.x2;
 	//wtrack->pan.y1 = wblock->a.y1+(window->systemfontheight) + WTRACKS_SPACE*2;
 	wtrack->pan.y1 = y1_;
 	wtrack->pan.y2 = y2_ - 1;
@@ -320,6 +333,9 @@ static void UpdateWTrackCoordinates(
 	wtrack->volumeonoff.y1 = wtrack->volume.y1;
 	wtrack->volumeonoff.y2 = wtrack->volume.y2;
 
+        wtrack->meter.y2 = wtrack->volume.y2;
+        */
+        
 /*
 	if(wtrack->x >= wblock->a.x2){
 		wblock->right_track=wtrack->l.num;

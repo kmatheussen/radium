@@ -532,43 +532,6 @@ void setEditorScrollbarIsMoving(bool is_moving, int windownum){
 // track panning on/off
 ///////////////////////////////////////////////////
 
-float getTrackPanOnOffX1(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->panonoff.x1;
-}
-float getTrackPanOnOffY1(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->panonoff.y1;
-}
-float getTrackPanOnOffX2(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->panonoff.x2;
-}
-float getTrackPanOnOffY2(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->panonoff.y2;
-}
-
 bool getTrackPanOnOff(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -604,43 +567,6 @@ void setTrackPanOnOff(bool onoff, int tracknum, int blocknum, int windownum){
 
 // track volumening on/off
 ///////////////////////////////////////////////////
-
-float getTrackVolumeOnOffX1(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->volumeonoff.x1;
-}
-float getTrackVolumeOnOffY1(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->volumeonoff.y1;
-}
-float getTrackVolumeOnOffX2(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->volumeonoff.x2;
-}
-float getTrackVolumeOnOffY2(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->volumeonoff.y2;
-}
 
 bool getTrackVolumeOnOff(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
@@ -679,43 +605,6 @@ void setTrackVolumeOnOff(bool onoff, int tracknum, int blocknum, int windownum){
 // track panning slider
 ///////////////////////////////////////////////////
 
-float getTrackPanSliderX1(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->pan.x1;
-}
-float getTrackPanSliderY1(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->pan.y1;
-}
-float getTrackPanSliderX2(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->pan.x2;
-}
-float getTrackPanSliderY2(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->pan.y2;
-}
-
 float getTrackPan(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -743,43 +632,6 @@ void undoTrackPan(int tracknum, int blocknum, int windownum){
 
 // track volumening slider
 ///////////////////////////////////////////////////
-
-float getTrackVolumeSliderX1(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->volume.x1;
-}
-float getTrackVolumeSliderY1(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->volume.y1;
-}
-float getTrackVolumeSliderX2(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->volume.x2;
-}
-float getTrackVolumeSliderY2(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 0.0f;
-
-  return wtrack->volume.y2;
-}
 
 float getTrackVolume(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;

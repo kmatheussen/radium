@@ -102,7 +102,7 @@ void closeUndo(void){
   UNDO_CLOSE();
 }
 
-static radium::ProtectedS7FuncVector g_undo_callbacks(true);
+static radium::ProtectedS7FuncVector g_undo_callbacks(true,"undo_callbacks");
 
 static int64_t g_undoredo_generation = 0;
 

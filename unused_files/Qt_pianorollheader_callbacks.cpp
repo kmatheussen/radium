@@ -27,7 +27,7 @@ extern EditorWidget *g_editor;
 void *PIANOROLLHEADER_create(void){
   R_ASSERT(g_editor != NULL);
     
-  Pianorollheader *widget = new Pianorollheader(g_editor);
+  Pianorollheader *widget = new Pianorollheader(g_editor->editor_layout_widget);
   //widget->show();
   
   return widget;
@@ -50,6 +50,12 @@ void PIANOROLLHEADER_show(const struct WBlocks *wblock, void *pianorollheader, i
     widget->move(x,y);
     widget->resize(x2-x, y2-y);
 
+    /*
+    gui_setPos(widget->_vap,
+               x2-20, y);
+    gui_setSize(widget->_vap,
+                20, y2-y);
+    */
     if (x < wblock->t.x1){
       int x1 = wblock->t.x1 - x;
       int w = x2-x1;
@@ -65,6 +71,8 @@ void PIANOROLLHEADER_show(const struct WBlocks *wblock, void *pianorollheader, i
       widget->updateWidgets();
     
     widget->show();
+    //gui_show(widget->_vap);
+
     //widget->raise();
     //widget->update();
 
@@ -79,4 +87,5 @@ void PIANOROLLHEADER_hide(void *pianorollheader){
   
   Pianorollheader *widget=static_cast<Pianorollheader*>(pianorollheader);
   widget->hide();
+  //gui_hide(widget->_vap);
 }

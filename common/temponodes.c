@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "list_proc.h"
 #include "placement_proc.h"
-#include "gfx_wblocks_proc.h"
 #include "time_proc.h"
 #include "reltempo_proc.h"
 #include "undo_temponodes_proc.h"

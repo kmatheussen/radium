@@ -1206,14 +1206,14 @@
   (define r/2 2)
 
   (if (not background-color)
-      (set! background-color (get-default-button-color gui)))
+      (set! background-color "button_v2")) ;;(get-default-button-color gui)))
 
   (define (mypaint)
     ;;(<gui> :filled-box gui background-color x1 y1 x2 y2)
     (draw-button gui text (is-pressing?)
                  x1 y1 x2 y2
                  :selected-color "button_pressed_v2"
-                 :background-color "button_v2"
+                 :background-color background-color
                  :is-hovering is-hovering))
 
   (define (start-show-pressed!)
@@ -1278,6 +1278,7 @@
                  #f))
   
   (add-mouse-cycle! (lambda (button x* y*)
+                      ;;(c-display "BUTTON:" button)
                       (cond ((and right-mouse-clicked-callback
                                   (= button *right-button*)
                                   ;;(not (<ra> :shift-pressed))

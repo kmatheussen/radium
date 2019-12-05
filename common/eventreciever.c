@@ -20,13 +20,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "windows_proc.h"
 #include "wblocks_proc.h"
-#include "gfx_op_queue_proc.h"
 #include "undo.h"
 
 #include "fxlines_proc.h"
 
 #include "visual_proc.h"
-#include "../common/gfx_proc.h"
 #include "../common/player_proc.h"
 #include "../common/player_pause_proc.h"
 
@@ -267,9 +265,7 @@ bool EventReciever(struct TEvent *in_tevent, struct Tracker_Windows *window){
          R_ASSERT(g_pausing_level==0);
   
         int ret;
-        DO_GFX({
-            ret=EventTreater(in_tevent,window);
-          });
+        ret=EventTreater(in_tevent,window);
 
         if(g_pausing_level != 0){
           RError("EventReceiver: g_pausing_level: %d", g_pausing_level);

@@ -34,6 +34,8 @@ public:
   {
     setupUi(this);
 
+    forceFonts(this);
+    
     _patch_widget = new Patch_widget(this,patch);
     main_layout->insertWidget(0,_patch_widget);
 
@@ -44,7 +46,19 @@ public:
     volume_slider->_effect_num = 7;
   }
   
+  void forceFonts(QWidget *widget) const {
+    if (widget != NULL){
+      widget->setFont(QApplication::font()); // why?
+      
+      for(auto *c : widget->children()){
+        QWidget *w = dynamic_cast<QWidget*>(c);
+        if (w && w->isWindow()==false)
+          forceFonts(w);
+      }
+    }
+  }
 
+  
 public slots:
 
   // Volume

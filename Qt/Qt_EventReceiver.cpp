@@ -33,20 +33,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 
+#include "EditorWidget.h"
 #include "Qt_instruments_proc.h"
 
 #include "../common/list_proc.h"
-#include "../common/blts_proc.h"
 #include "../common/disk_load_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../common/eventreciever_proc.h"
 //#include "../common/PEQ_clock_proc.h"
-#include "../common/gfx_proc.h"
-#include "../common/gfx_wtrackheaders_proc.h"
 #include "../midi/midi_i_input_proc.h"
 
 #include "../common/player_proc.h"
-#include "../common/gfx_op_queue_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/wblocks_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
@@ -61,6 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Widget_proc.h"
 
 #include "../api/api_proc.h"
+#include "../api/api_gui_proc.h"
 
 
 #if USE_GTK_VISUAL
@@ -109,36 +107,7 @@ static void transfer_atomic_must_redraws(struct Tracker_Windows *window)
 bool g_allowed_to_grow_queue = false;
 
 #if USE_QT_VISUAL
-void EditorWidget::paintEvent( QPaintEvent *e ){
-  TRACK_PAINT();
 
-  RETURN_IF_DATA_IS_INACCESSIBLE();
-
-  if(g_is_starting_up==true)
-    return;
-  
-  //static int n=0;  printf("** Drawing up everything! %d\n",n++);
-  
-  GFX_clear_op_queue(this->window);
-
-  g_allowed_to_grow_queue = true;
-  DO_GFX(DrawUpTrackerWindow(this->window));
-  g_allowed_to_grow_queue = false;
-
-  if(GFX_get_op_queue_size(this->window) > 0){
-    QPainter paint(this);
-
-    this->painter = &paint;
-    //this->painter->setFont(this->font);
-    
-    {
-      GFX_play_op_queue(this->window);
-      //GFX_clear_op_queue(this->window);
-    }
-    
-    this->painter = NULL;
-  }
-}
 
 //void EditorWidget::showEvent ( QShowEvent * event )
 #endif
@@ -152,7 +121,7 @@ static void update_seqtracks_with_current_editor_block(void){
   SEQUENCER_update_seqblocks_holding_editor_block(root->song->tracker_windows->wblock->block);
 }
 
-void EditorWidget::updateEditor(){
+void EditorWidget::updateEditor(void) const {
   if(g_is_starting_up==true)
     return;
 
@@ -176,9 +145,6 @@ void EditorWidget::updateEditor(){
   }
 #endif
   
-  if (GFX_get_op_queue_size(this->window)>0)
-    this->window->must_redraw = true;
-    
   if (this->window->must_calculate_coordinates==true){
     this->window->must_redraw = true;
     this->window->must_calculate_coordinates=false;
@@ -197,7 +163,7 @@ void EditorWidget::updateEditor(){
 
     UpdateWBlockCoordinates(this->window, this->window->wblock);
     GFX_UpdateUpperLeft(window, window->wblock);
-    UpdateAllPianoRollHeaders(window, window->wblock);
+    //UpdateAllPianoRollHeaders(window, window->wblock);
 
     /*
     if (x2_before != getReltempoSliderX2() || skew_before != this->window->wblock->skew_x)
@@ -206,11 +172,12 @@ void EditorWidget::updateEditor(){
       bottom_widget->update();
     */
 
+    S7CALL2(void_void,"FROM_C-reconfigure-editor-track-headers-gui!");
     S7CALL2(void_void,"FROM_C-reconfigure-editor-lower-part-gui!");
     
     update_seqtracks_with_current_editor_block();
 
-    update();
+    //update();
     
     this->window->must_redraw_editor=true;
     this->window->must_redraw=false;
@@ -288,45 +255,32 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
 
     //printf("   Got wheel event %d\n",qwheelevent->delta()/120);
     
-    DO_GFX(
-           {
-             /*
-             if(qwheelevent->delta()<0)
-               ScrollEditorDown(window,num_lines * getScrollMultiplication());
-             else
-               ScrollEditorUp(window,num_lines * getScrollMultiplication());
-             */
-
-             if (qwheelevent->modifiers() & Qt::ControlModifier) {
-               if (qwheelevent->delta() > 0)
-                 zoom(1,window->l.num);
-               else
-                 zoom(-1,window->l.num);
-#if 0
-             } else if (qwheelevent->modifiers() & Qt::ShiftModifier) {
-
-               tevent.ID=TR_KEYBOARD;
-               if(qwheelevent->delta()<0)
-                 tevent.SubID=EVENT_LEFTARROW;
-               else
-                 tevent.SubID=EVENT_RIGHTARROW;
-               
-               for(int i=0;i<num_lines;i++)
-                 EventReciever(&tevent,window);
-#endif
-             } else {
-
-               tevent.ID=TR_KEYBOARD;
-               if(qwheelevent->delta()<0)
-                 tevent.SubID=EVENT_DOWNARROW;
-               else
-                 tevent.SubID=EVENT_UPARROW;
-               
-               for(int i=0;i<num_lines;i++)
-                 EventReciever(&tevent,window);
-             }
-             
-           });
+    {
+      /*
+        if(qwheelevent->delta()<0)
+        ScrollEditorDown(window,num_lines * getScrollMultiplication());
+        else
+        ScrollEditorUp(window,num_lines * getScrollMultiplication());
+      */
+      
+      if (qwheelevent->modifiers() & Qt::ControlModifier) {
+        if (qwheelevent->delta() > 0)
+          zoom(1,window->l.num);
+        else
+          zoom(-1,window->l.num);
+      } else {
+        
+        tevent.ID=TR_KEYBOARD;
+        if(qwheelevent->delta()<0)
+          tevent.SubID=EVENT_DOWNARROW;
+        else
+          tevent.SubID=EVENT_UPARROW;
+        
+        for(int i=0;i<num_lines;i++)
+          EventReciever(&tevent,window);
+      }
+      
+    }
 
 #if USE_QT_VISUAL
     updateEditor();
@@ -484,20 +438,27 @@ void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
 
 static int g_currentButton = 0;
 
-static int getMouseButtonEventID( QMouseEvent *qmouseevent){
-  if(qmouseevent->button()==Qt::LeftButton)
+static int getMouseButtonEventID(Qt::MouseButton button){
+  if(button==Qt::LeftButton)
     return TR_LEFTMOUSEDOWN;
-  else if(qmouseevent->button()==Qt::RightButton)
+  else if(button==Qt::RightButton)
     return TR_RIGHTMOUSEDOWN;
-  else if(qmouseevent->button()==Qt::MiddleButton)
+  else if(button==Qt::MiddleButton)
     return TR_MIDDLEMOUSEDOWN;
   else
     return 0;
 }
 
+/*
+static int getMouseButtonEventID( QMouseEvent *qmouseevent){
+  return getMouseButtonEventID(qmouseevent->button());
+}
+*/
+
 static bool g_is_mousing_editor = false;
 
-void EditorWidget::fix_mousePressEvent( QMouseEvent *qmouseevent) {
+#if 1
+void EditorWidget::handle_mouse_press(Qt::MouseButton button, float x, float y) const{
   g_is_mousing_editor = true;
   
   if(g_is_starting_up==true)
@@ -505,14 +466,10 @@ void EditorWidget::fix_mousePressEvent( QMouseEvent *qmouseevent) {
 
   //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, true);
   
-  tevent.ID = getMouseButtonEventID(qmouseevent);
-#if USE_QT5
-  tevent.x  = qmouseevent->localPos().x();
-  tevent.y  = qmouseevent->localPos().y();
-#else
-  tevent.x  = qmouseevent->posF().x();
-  tevent.y  = qmouseevent->posF().y();
-#endif
+  tevent.ID = getMouseButtonEventID(button);
+  tevent.x = x;
+  tevent.y = y;
+  
   g_currentButton = tevent.ID;
 
   //printf("> Got mouse press %d %d\n",tevent.x,tevent.y);
@@ -528,14 +485,15 @@ void EditorWidget::fix_mousePressEvent( QMouseEvent *qmouseevent) {
   release_keyboard_focus();
   
   // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  /*
   GL_lock();{
     setFocus();
   }GL_unlock();
-
+  */
+  
   updateEditor();
-    
-  qmouseevent->accept();
 }
+#endif
 
 #if FOR_WINDOWS
 void MouseMoveRelative(float x, float y, float dx, float dy) {
@@ -579,20 +537,10 @@ void MouseMoveRelative(float x, float y, float dx, float dy) {
 #endif
 
 
-
-void EditorWidget::fix_mouseMoveEvent( QMouseEvent *qmouseevent) {  
+//void EditorWidget::fix_mouseMoveEvent( QMouseEvent *qmouseevent) {
+void EditorWidget::handle_mouse_move(Qt::MouseButton button, float x, float y) const {
   if(g_is_starting_up==true)
     return;
-
-  float x, y;
-  
-#if USE_QT5
-  x = qmouseevent->localPos().x();
-  y = qmouseevent->localPos().y();
-#else
-  x  = qmouseevent->posF().x();
-  y  = qmouseevent->posF().y();
-#endif
 
   tevent.ID=TR_MOUSEMOVE;
   tevent.x  = x;
@@ -605,33 +553,27 @@ void EditorWidget::fix_mouseMoveEvent( QMouseEvent *qmouseevent) {
   R_ASSERT(g_pausing_level==0);
 
   updateEditor();
-  
-  qmouseevent->accept();
 }
 
 
-void EditorWidget::fix_mouseReleaseEvent(radium::MouseCycleEvent &event) {
+void EditorWidget::handle_mouse_release(Qt::MouseButton button, float x, float y) const {
   g_is_mousing_editor = false;
 
   if(g_is_starting_up==true)
     return;
 
-  if(event.button()==Qt::LeftButton){
+  if(button==Qt::LeftButton){
     tevent.ID=TR_LEFTMOUSEUP;
   }else{
-    if(event.button()==Qt::RightButton){
+    if(button==Qt::RightButton){
       tevent.ID=TR_RIGHTMOUSEUP;
     }else{
       tevent.ID=TR_MIDDLEMOUSEUP;
     }
   }
-#if USE_QT5
-  tevent.x  = event.localPos().x();
-  tevent.y  = event.localPos().y();
-#else
-  tevent.x  = event.posF().x();
-  tevent.y  = event.posF().y();
-#endif
+
+  tevent.x = x;
+  tevent.y = y;
 
   //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
   if (SCHEME_mouserelease(g_currentButton, tevent.x, tevent.y)==false)
@@ -642,8 +584,6 @@ void EditorWidget::fix_mouseReleaseEvent(radium::MouseCycleEvent &event) {
   g_currentButton = 0;
 
   updateEditor();
-
-  event.accept();
 }
 
 #endif // USE_QT_VISUAL
@@ -670,6 +610,7 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
 
 
 #if USE_QT_VISUAL
+#if 0
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){
   radium::ScopedResizeEventTracker resize_event_tracker;
   
@@ -677,11 +618,14 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){
   window->must_redraw = true;
   updateEditor();
 }
+#endif
 
 #endif // USE_QT_VISUAL
 
 
+#if 0
 void EditorWidget::closeEvent(QCloseEvent *ce){
   printf("Close event\n");
   //  ce->accept();
 }
+#endif

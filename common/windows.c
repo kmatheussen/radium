@@ -20,17 +20,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "wtracks_proc.h"
 #include "reallines_proc.h"
-#include "gfx_wblocks_proc.h"
 #include "common_proc.h"
 #include "visual_proc.h"
 #include "sliders_proc.h"
 #include "pixmap_proc.h"
-#include "blts_proc.h"
-#include "gfx_op_queue_proc.h"
 #include "settings_proc.h"
 #include "cursor_proc.h"
-#include "gfx_subtrack_proc.h"
-#include "gfx_point_proc.h"
 
 #include "windows_proc.h"
 
@@ -163,7 +158,7 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 	DrawLeftSlider(window);
 #endif
 
-	DrawWBlock(window,window->wblock);
+	//DrawWBlock(window,window->wblock);
 
 	window->wblock->isgfxdatahere=true;
 
@@ -191,10 +186,6 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 	twindow->y=y;
 	twindow->width=width;
 	twindow->height=height;
-
-#ifdef USE_GFX_OP_QUEUE
-        GFX_create_op_queue(twindow);
-#endif
 
 	if(GFX_CreateVisual(twindow)!=0)
 		return -1;

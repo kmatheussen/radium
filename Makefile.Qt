@@ -270,7 +270,7 @@ RADIUM_BFD_LDFLAGS ?=
 REQTYPE_TYPE = -DUSE_QT_REQTYPE=1 -DUSE_GTK_REQTYPE=0
 MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
-FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
+FLAGOPTS = $(DEFINES) -DGUIISQT -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
 COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference 
 #-fdelete-null-pointer-checks 
@@ -422,15 +422,15 @@ VL_LDFLAGS=$(VL_LIBS)
 
 OBJ1= windows.o window_config.o list.o vector.o hashmap.o Dynvec.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o mmd2load.o
 
-OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o gfx_wblocks.o common.o gfx_wtext.o gfx_text.o gfx_lines.o gfx_point.o gfx_op_queue.o
+OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o common.o
 
 OBJ3= eventreciever.o scancodes.o reallines.o notestext.o trackreallines2.o signaturetext.o lpbtext.o bpmtext.o swingtext.o centtext.o chancetext.o veltext.o fxtext.o data_as_text.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
 
 OBJ4 = tbox.o area.o range.o nodelines.o
 
-OBJ5= debug.o memory.o validatemem.o placement.o t_gc.o cursor.o cursor_updown.o velocities.o pixmap.o scroll.o blts.o
+OBJ5= debug.o memory.o validatemem.o placement.o t_gc.o cursor.o cursor_updown.o velocities.o pixmap.o scroll.o
 
-OBJ6= realline_calc.o gfx_subtrack.o LPB.o Signature.o Beats.o gfx_wtrackheaders.o gfx_wtrackheader_volpan.o gfx_slider.o reallines_insert.o gfx_shrink.o gfx_shrink_t.o gfx_request.o
+OBJ6= realline_calc.o gfx_subtrack.o LPB.o Signature.o Beats.o reallines_insert.o gfx_request.o
 
 OBJ7= instruments.o patch.o undo_audio_patch_addremove.o fxlines.o fxlines_legalize.o sequencer.o seqtrack_automation.o song_tempo_automation.o sequencer_timing.o seqblock_automation.o seqblock_stretchspeed.o scroll_play.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o Semaphores.o stacktoucher.o
 
@@ -450,7 +450,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_swing
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_instruments.o Qt_visual.o GTK_visual.o Qt_Main.o KeyboardFocus.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_PluginWidget.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o Qt_sequencer.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog.o Qt_song_properties.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_pianorollheader_callbacks.o Qt_Error.o Qt_progresswindow.o Qt_check_for_updates.o Rational.o Qt_AutoBackups.o flowlayout.o
+OBJ12= Qt_instruments.o Qt_visual.o GTK_visual.o Qt_Main.o KeyboardFocus.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_PluginWidget.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o Qt_sequencer.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog.o Qt_song_properties.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_Error.o Qt_progresswindow.o Qt_check_for_updates.o Rational.o Qt_AutoBackups.o flowlayout.o
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
 #Qt_Bs_edit.o 
@@ -829,32 +829,8 @@ wtracks.o:  $(BUILD_DEPENDENCIES) $(CD)wtracks.c
 sliders.o:  $(BUILD_DEPENDENCIES) $(CD)sliders.c 
 	$(CC) $(CD)sliders.c $(OPT)
 
-gfx_wblocks.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wblocks.c 
-	$(CC) $(CD)gfx_wblocks.c $(OPT)
-
 common.o:  $(BUILD_DEPENDENCIES) $(CD)common.c 
 	$(CC) $(CD)common.c $(OPT)
-
-gfx_wtext.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtext.c 
-	$(CC) $(CD)gfx_wtext.c $(OPT)
-
-gfx_text.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_text.c  $(CD)visual_op_queue_proc.h
-	$(CC) $(CD)gfx_text.c $(OPT)
-
-gfx_lines.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_lines.c $(CD)visual_op_queue_proc.h
-	$(CC) $(CD)gfx_lines.c $(OPT)
-
-gfx_point.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_point.c $(CD)visual_op_queue_proc.h
-	$(CC) $(CD)gfx_point.c $(OPT)
-
-gfx_op_queue.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_op_queue_generated.c $(CD)visual_op_queue_proc.h $(CD)gfx_op_queue.c
-	$(CC) $(CD)gfx_op_queue.c $(OPT)
-
-$(CD)gfx_op_queue_generated.c: $(CD)gfx_op_queue.scm $(CD)gfx_op_queue.c
-	cd $(CD) && ./gfx_op_queue.scm op-queue-code >gfx_op_queue_generated.c
-
-$(CD)visual_op_queue_proc.h: $(CD)gfx_op_queue.scm 
-	cd $(CD) && ./gfx_op_queue.scm protos >visual_op_queue_proc.h
 
 eventreciever.o:  $(BUILD_DEPENDENCIES) $(CD)eventreciever.c
 	$(CC) $(CD)eventreciever.c $(OPT)
@@ -942,9 +918,6 @@ Signature.o:  $(BUILD_DEPENDENCIES) $(CD)Signature.cpp
 
 Beats.o:  $(BUILD_DEPENDENCIES) $(CD)Beats.cpp
 	$(CCC) $(CD)Beats.cpp $(QTOPT)
-
-gfx_wtrackheaders.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackheaders.cpp
-	$(CCC) $(CD)gfx_wtrackheaders.cpp $(QTOPT)
 
 temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes.c
 	$(CC) $(CD)temponodes.c $(OPT)
@@ -1263,9 +1236,6 @@ track_insert.o:  $(BUILD_DEPENDENCIES) $(CD)track_insert.c
 quantitize.o:  $(BUILD_DEPENDENCIES) $(CD)quantitize.c
 	$(CC) $(CD)quantitize.c $(OPT)
 
-gfx_wtrackheader_volpan.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wtrackheader_volpan.c
-	$(CC) $(CD)gfx_wtrackheader_volpan.c $(OPT)
-
 undo_trackheader.o:  $(BUILD_DEPENDENCIES) $(CD)undo_trackheader.c
 	$(CC) $(CD)undo_trackheader.c $(OPT)
 
@@ -1325,9 +1295,6 @@ invert.o:  $(BUILD_DEPENDENCIES) $(CD)new/invert.c
 
 gfx_slider.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_slider.c
 	$(CC) $(CD)gfx_slider.c $(OPT)
-
-gfx_wblocks_reltempo.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_wblocks_reltempo.c
-	$(CC) $(CD)gfx_wblocks_reltempo.c $(OPT)
 
 undo_reltemposlider.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reltemposlider.c
 	$(CC) $(CD)undo_reltemposlider.c $(OPT)
@@ -1395,17 +1362,18 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
 
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
-Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp
+Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
+	cd Qt && $(MOC) -DFOR_LINUX Timer.hpp > mTimer.hpp
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
 
 KeyboardFocus.o:  $(BUILD_DEPENDENCIES) Qt/KeyboardFocus.cpp Qt/KeyboardFocusFrame.hpp
 	$(CCC) $(P)KeyboardFocus.cpp $(QTOPT)
 
-Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
+Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
 
-GTK_visual.o:  $(BUILD_DEPENDENCIES) GTK/GTK_visual.c  $(CD)visual_op_queue_proc.h
+GTK_visual.o:  $(BUILD_DEPENDENCIES) GTK/GTK_visual.c
 	$(CC) GTK/GTK_visual.c $(OPT) $(GTK_CFLAGS)
 
 GTK_ReqType.o:  $(BUILD_DEPENDENCIES) GTK/GTK_ReqType.c 
@@ -1617,12 +1585,6 @@ $(P)Qt_tools.h: $(BUILD_DEPENDENCIES) $(P)qt4_tools.ui $(P)Qt_tools_callbacks.h 
 	cd $(P) && $(MOC) Qt_tools_callbacks.h >mQt_tools_callbacks.h
 #	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) tools
 
-Qt_pianorollheader_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_pianorollheader_callbacks.cpp $(P)Qt_pianorollheader_callbacks.h $(P)Qt_pianorollheader.h $(P)Qt_MyQButton.h 
-	$(CCC) $(P)Qt_pianorollheader_callbacks.cpp $(QTOPT)
-
-$(P)Qt_pianorollheader.h: $(BUILD_DEPENDENCIES) $(P)qt4_pianorollheader.ui $(P)Qt_pianorollheader_callbacks.h $(P)lzqlineedit.h
-	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pianorollheader
-
 Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQCheckBox.h
 	$(CCC) $(P)Qt_PluginWidget.cpp $(QTOPT)
 
@@ -1709,9 +1671,6 @@ scroll.o:  $(BUILD_DEPENDENCIES) $(CD)scroll.c
 
 pixmap.o:  $(BUILD_DEPENDENCIES)  $(CD)pixmap.c
 	$(CC)  $(CD)pixmap.c $(OPT)
-
-blts.o:  $(BUILD_DEPENDENCIES)  $(CD)blts.c
-	$(CC)  $(CD)blts.c $(OPT)
 
 X11_memory.o:  $(BUILD_DEPENDENCIES)  $(P)X11_memory.c 
 	$(CC)  $(P)X11_memory.c $(OPT)

@@ -43,7 +43,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Bs_edit_proc.h"
 #include "list_proc.h"
 #include "clipboard_range_calc_proc.h"
-#include "gfx_wblocks_proc.h"
 #include "patch_proc.h"
 #include "cursor_updown_proc.h"
 #include "wblocks_proc.h"

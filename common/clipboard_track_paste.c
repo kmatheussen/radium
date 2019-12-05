@@ -36,7 +36,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_proc.h"
 #include "temponodes_legalize_proc.h"
 #include "tempos_proc.h"
-#include "gfx_wblocks_proc.h"
 #include "undo_tracks_proc.h"
 #include "undo_swings_proc.h"
 #include "undo_signatures_proc.h"

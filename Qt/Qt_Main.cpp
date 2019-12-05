@@ -60,6 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextCodec>
 #include <QWindow>
 #include <QScreen>
+#include <QThread>
 
 #include <QStyleFactory>
 
@@ -93,7 +94,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/scancodes_proc.h"
 #include "../common/player_proc.h"
 #include "../common/player_pause_proc.h"
-#include "../common/gfx_wtrackheaders_proc.h"
 #include "../common/data_as_text_proc.h"
 #include "../common/sequencer_proc.h"
 #include "../common/Process.hpp"
@@ -142,6 +142,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MainWindow_proc.h"
 #include "Qt_Menues_proc.h"
 #include "Qt_sequencer_proc.h"
+
 
 
 /*
@@ -1762,8 +1763,6 @@ void Ptask2Mtask(void){
 
 #include <QTimer>
 #include "../midi/midi_i_input_proc.h"
-#include "../common/gfx_proc.h"
-#include "../common/gfx_op_queue_proc.h"
 #include "../common/player_proc.h"
 #include "../common/Ptask2Mtask_proc.h"
 
@@ -2005,25 +2004,18 @@ protected:
     // Does not work.
     
     static bool has_focused = false;
-    if(has_focused==false && num_calls_at_this_point>400/interval){ // Set focus constantly between 0.4 and 1.0 seconds after startup.
+    if(has_focused==false && num_calls_at_this_point>400/_interval){ // Set focus constantly between 0.4 and 1.0 seconds after startup.
       
       // We started to lose keyboard focus at startup between 4.8.8 and 4.9.0 (but only if no message windows showed up, and only in RELEASE mode). Clicking the window did not help. I don't know wny.
       OS_WINDOWS_set_key_window((void*)g_main_window->winId());
 
-      if (num_calls_at_this_point>5000/interval){
+      if (num_calls_at_this_point>5000/_interval){
         has_focused=true;
       }
     }
 #endif
     
-    {
-      DO_GFX({
-          MIDI_HandleInputMessage();
-#if !USE_OPENGL
-          TRACKREALLINES_call_very_often(window);
-#endif
-        });
-    }
+    MIDI_HandleInputMessage();
 
     //if (qapplication->activeWindow() != NULL)
     //  printf("   active window\n");
@@ -2071,7 +2063,7 @@ protected:
 
     SampleRecorder_called_regularly();
     
-    if (is_called_every_ms(50)){ // 50ms = 3*1000ms/60 (each third frame)
+    if (is_called_every_ms(15)){ // 50ms = 3*1000ms/60 (each third frame)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function      
     }
     
@@ -2315,8 +2307,6 @@ void RT_request_to_stop_playing(void){
 #endif
 
 
-int GFX_ResizeWindow(struct Tracker_Windows *tvisual,int x,int y){return 0;}
-
 bool ControlPressed(void){
 #if 0 //FOR_MACOSX
   return QApplication::keyboardModifiers() & Qt::MetaModifier;
@@ -2429,10 +2419,10 @@ void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
   
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPoint pos;
-  if (!g_editor->isVisible())
+  if (!g_editor->editor_layout_widget->isVisible())
     pos = QPoint(x - 10000, y - 10000);
   else
-    pos = editor->mapToGlobal(QPoint(x,y));
+    pos = editor->editor_layout_widget->mapToGlobal(QPoint(x,y));
 
 #if FOR_MACOSX
   OS_OSX_set_cursorpos(pos.x(), pos.y()); // https://bugreports.qt.io/browse/QTBUG-33959
@@ -2450,7 +2440,7 @@ void MoveAbsPointer(struct Tracker_Windows *tvisual, float x, float y){
   if (tvisual==NULL)
     QCursor::setPos(x,y);
   else {
-    QWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+    QWidget *editor=((EditorWidget *)tvisual->os_visual.widget)->editor_layout_widget;
     QScreen *screen = editor->window()->windowHandle()->screen();
     QCursor::setPos(screen, x, y);
   }
@@ -2489,11 +2479,11 @@ WPoint GetPointerPos(struct Tracker_Windows *tvisual){
     pos = QCursor::pos();
   else{
     EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-    if (!g_editor->isVisible()){
+    if (!g_editor->editor_layout_widget->isVisible()){
       pos = QPoint(QCursor::pos().x() + 10000, QCursor::pos().y() + 10000);
       //R_ASSERT_NON_RELEASE(false);
     }else
-      pos = editor->mapFromGlobal(QCursor::pos());
+      pos = editor->editor_layout_widget->mapFromGlobal(QCursor::pos());
   }
   ret.x = pos.x();
   ret.y = pos.y();
@@ -2507,7 +2497,7 @@ WPoint GetAbsPointerPos(struct Tracker_Windows *tvisual){
   if (tvisual==NULL)
     pos = QCursor::pos();
   else{
-    QWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+    QWidget *editor=((EditorWidget *)tvisual->os_visual.widget)->editor_layout_widget;
     QScreen *screen = editor->window()->windowHandle()->screen();
     pos = QCursor::pos(screen);
   }
@@ -2525,7 +2515,7 @@ Area GetScreenSize(struct Tracker_Windows *tvisual){
   if (tvisual==NULL)
     screen = QApplication::screens()[0];
   else{
-    QWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+    QWidget *editor=((EditorWidget *)tvisual->os_visual.widget)->editor_layout_widget;
     screen = editor->window()->windowHandle()->screen();
   }
   
@@ -2933,6 +2923,10 @@ int radium_main(const char *arg){
         xsplitter->add_mixer_strip();
 
       editor->editor_layout_widget = new EditorLayoutWidget();
+      editor->editor_layout_widget->setMinimumWidth(550);
+      editor->editor_layout_widget->setMinimumHeight(100);
+
+
       xsplitter->addWidget(editor->editor_layout_widget);
 
       xsplitter->addWidget(block_selector);
@@ -3035,15 +3029,23 @@ int radium_main(const char *arg){
 
 #if USE_OPENGL
 
-  GFX_ShowProgressMessage("Creating editor window", true);
+
+  editor->header_widget = API_gui_get_widget(S7CALL2(int_void, "FROM_C-create-editor-track-headers-gui"));
+
+  editor->editor_layout_widget->layout()->addWidget(editor->header_widget);
+
+  add_upper_left_widget(window);
+
   
-  editor->gl_widget = GL_create_widget(editor);
+  GFX_ShowProgressMessage("Creating editor window", true);
+
+  editor->gl_widget = GL_create_widget(editor->editor_layout_widget);
   if(editor->gl_widget==NULL)
     return -100;
 
-  editor->editor_layout_widget->layout()->addWidget(editor);
+  //editor->editor_layout_widget->layout()->addWidget(editor);
   editor->editor_layout_widget->layout()->addWidget(editor->gl_widget);
-
+  
   editor->bottom_widget = API_gui_get_widget(S7CALL2(int_void, "FROM_C-create-editor-lower-part-gui"));
   GFX_set_bottom_widget_height(window->bottomslider_height);
   editor->editor_layout_widget->layout()->addWidget(editor->bottom_widget);
@@ -3083,14 +3085,12 @@ int radium_main(const char *arg){
   }
 
 
-  INIT_Pianoroll_headers();
-
   ATOMIC_SET(is_starting_up, false);
   g_is_starting_up = false;
 
   window->must_redraw = true;
-  editor->update();
-  editor->resize(editor->width(),editor->height());
+  //editor->update();
+  //editor->resize(editor->width(),editor->height());
   main_window->updateGeometry();
   
 #if USE_OPENGL

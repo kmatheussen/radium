@@ -1278,7 +1278,10 @@ void setTrackVolume(float volume,int tracknum,int blocknum,int windownum){
   else
     wtrack->track->volume = (int)(volume * (float)MAXTRACKVOL);
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
+
+  EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+  editor->header_widget->update(wtrack->x, 0, wtrack->x2 - wtrack->x + 2, editor->header_widget->height());
 }
 
 void setTrackPan(float pan,int tracknum,int blocknum,int windownum){
@@ -1303,7 +1306,10 @@ void setTrackPan(float pan,int tracknum,int blocknum,int windownum){
   else
     wtrack->track->pan = (int)(pan * (float)MAXTRACKPAN);
 
-  window->must_redraw = true;
+  window->must_redraw_editor = true;
+
+  EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+  editor->header_widget->update(wtrack->x, 0, wtrack->x2 - wtrack->x + 2, editor->header_widget->height());
 }
 
 void switchTrackNoteShowType(int tracknum,int blocknum,int windownum){
@@ -2494,7 +2500,7 @@ static const_char* getKeyName(int keynum){
 }
 
 
-static radium::ProtectedS7Extra<func_t*> g_grab_callback;
+static radium::ProtectedS7Extra<func_t*> g_grab_callback = radium::ProtectedS7Extra<func_t*>("grab_callback");
 
 void API_has_grabbed_keybinding(int key, int *qualifiers, int len_qualifiers){
   R_ASSERT_RETURN_IF_FALSE(g_grab_callback.v != NULL);
@@ -3186,7 +3192,7 @@ namespace{
     ScheduledEvent *next = NULL;
 
     double priority = 0.0;
-    radium::ProtectedS7Extra<func_t*> _callback;
+    radium::ProtectedS7Extra<func_t*> _callback = radium::ProtectedS7Extra<func_t*>("ra:schedule");
 #if STDFUNC
     std::function<void(void)> _callback3;
 #endif
