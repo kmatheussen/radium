@@ -166,6 +166,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
   void updateLayout(QLabel *w1, QWidget *w2, int x1, int x2, int height){
     
     w1->setFont(_label_font);
+    //w2->setFont(_label_font);
     
     QSizePolicy policy(QSizePolicy::MinimumExpanding ,QSizePolicy::Fixed);
 
