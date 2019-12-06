@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Faust_plugins_proc.h"
 #include "../midi/midi_i_input_proc.h"
 
+#include "Qt_MyQLabel.h"
 #include "Qt_MyQCheckBox.h"
 
 

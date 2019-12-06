@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 //namespace{
+#include "Qt_MyQLabel.h"
 #include "Qt_MyQCheckBox.h"
 //}
 

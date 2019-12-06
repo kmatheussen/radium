@@ -161,7 +161,12 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     //    set_editor_focus();
   }
 
-  void updateLayout(QWidget *w1, QWidget *w2, int x1, int x2, int height){
+  QFont _label_font;
+  
+  void updateLayout(QLabel *w1, QWidget *w2, int x1, int x2, int height){
+    
+    w1->setFont(_label_font);
+    
     QSizePolicy policy(QSizePolicy::MinimumExpanding ,QSizePolicy::Fixed);
 
     w1->setSizePolicy(policy);
@@ -244,6 +249,8 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     int height = wblock->t.y1;
     
     //printf("Upper left: resizing to %d - %d - %d - %d\n",x(),y(),width,height);
+
+    _label_font = GFX_getFittingFont(swing_label->text(), Qt::AlignVCenter, swing_label->width(), swing_label->height());
 
     /*
     move(0,0); // Necessary on windows. I have no idea why.

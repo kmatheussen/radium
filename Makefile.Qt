@@ -1419,7 +1419,7 @@ Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cp
 $(P)mQt_PopupMenu.cpp: $(P)Qt_PopupMenu.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_PopupMenu.cpp -DUSE_QT_MENU >$(P)mQt_PopupMenu.cpp
 
-Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar_widget_callbacks.h $(P)mQt_upperleft_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h audio/CpuUsage.hpp Qt/EditorWidget.h  Qt/FileRequester.hpp Qt/Qt_MyQCheckBox.h
+Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar_widget_callbacks.h $(P)mQt_upperleft_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h audio/CpuUsage.hpp Qt/EditorWidget.h  Qt/FileRequester.hpp Qt/Qt_MyQCheckBox.h Qt/Qt_MyQLabel.h
 	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
 
 Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
@@ -1440,7 +1440,7 @@ Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp  Qt/Qt_MyQScrollBar.hpp
 	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT) #-fno-sanitize=undefined
 
 
-INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp common/Vector.hpp Qt/Qt_MyQScrollBar.hpp
+INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQLabel.h
 
 
 
@@ -1543,7 +1543,7 @@ $(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_wid
 
 # Look at this one for creating Qt dialogs (the other Qt dialogs are hacks since the "create_source_from_uio.sh" script is not called
 ######################################################################################################################################
-Qt_comment_dialog.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.h $(P)Qt_comment_dialog.cpp $(P)qt4_comment_dialog.ui Qt/Qt_MyQCheckBox.h
+Qt_comment_dialog.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.h $(P)Qt_comment_dialog.cpp $(P)qt4_comment_dialog.ui Qt/Qt_MyQCheckBox.h Qt/Qt_MyQLabel.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) comment_dialog  DONT_USE_RADIUM_CHECKBOXES
 	ln -sf mQt_comment_dialog_callbacks.h $(P)mQt_comment_dialog_callbacks.cpp
 	$(CCC) $(P)Qt_comment_dialog.cpp $(QTOPT) -o Qt_comment_dialog.o  -Wno-null-dereference
