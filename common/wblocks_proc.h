@@ -23,7 +23,7 @@ static inline float get_scrollbar_x1(const struct Tracker_Windows *window){
 
 // Returns y coordinate for the opengl widget, not the editor widget.
 static inline float get_scrollbar_y1(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  return 1.0;
+  return 2.0;
 }
 
 static inline float get_scrollbar_x2(const struct Tracker_Windows *window){
@@ -40,12 +40,12 @@ static inline float get_scrollbar_y2(const struct Tracker_Windows *window, const
 static inline float get_scrollbar_scroller_y1(float realline, float num_reallines, float scrollbar_height, float scrollbar_scroller_height){
   return scale(realline,
                0, num_reallines,
-               2, (scrollbar_height - scrollbar_scroller_height - 1)
+               2.5, (scrollbar_height - scrollbar_scroller_height)
                );
 }
 
 static inline float get_scrollbar_scroller_height(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  return  (float)(wblock->t.y2 - wblock->t.y1 - 4)
+  return  (float)(wblock->t.y2 - wblock->t.y1 - 6)
     * (float)wblock->num_visiblelines
     / (float)(wblock->num_reallines + wblock->num_visiblelines - 2);
 }
