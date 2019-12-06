@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_colors_proc.h"
 
 #include "Qt_MyQSlider.h"
+#include "Qt_MyQLabel.h"
 #include "Qt_MyQCheckBox.h"
 #include "Qt_MyQButton.h"
 #include "Qt_MyQSpinBox.h"

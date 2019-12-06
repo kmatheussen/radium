@@ -86,6 +86,7 @@ static HWND gtk_hwnd = NULL;
 #include "../audio/SoundPluginRegistry_proc.h"
 #include "../audio/Sampler_plugin_proc.h"
 
+#include "Qt_MyQLabel.h"
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
 
@@ -590,9 +591,6 @@ void SetupMainWindow(void){
   // We might experience less or more flicker though.
   //
 
-  set_widget_takes_care_of_painting_everything(editor);
-
-  
 #if !defined(FOR_MACOSX) // Yes, we definitely experienced more flicker. Turn ON unless running OSX.
   //editor->setAttribute(Qt::WA_OpaquePaintEvent);
   //  editor->setAttribute(Qt::WA_NoSystemBackground); // This one doesn't seem to make a difference though.
