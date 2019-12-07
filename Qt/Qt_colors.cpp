@@ -1200,6 +1200,9 @@ void GFX_SaveColors(const wchar_t *filename){
   }
   
   for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++) {
+    if (is_qcolor_separator(i))
+      continue;
+    
     const char *colorname = get_color_config((enum ColorNums)i).config_name;
     
     if (!QString(colorname).contains("color"))
