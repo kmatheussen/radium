@@ -60,7 +60,9 @@
         ;;(c-display "HEPP:" (<ra> :from-base64 audiofile) i *curr-audiofile-num*)
         (area :update-me!)
         (cond ((= button *right-button*)
-               (show-audiolist-popup-menu audiofile)
+               (if draggable
+                   (show-audiolist-popup-menu audiofile)
+                   (FROM_C-show-blocklist-popup-menu))
                #t)
               ((and (= button *left-button*)
                     (<gui> :is-double-clicking gui))
@@ -130,7 +132,9 @@
                               (area :update-me!))
                             (and (= button *right-button*)
                                  (begin
-                                   (show-audiolist-popup-menu #f) ;;curr-audiofile)
+                                   (if draggable
+                                       (show-audiolist-popup-menu #f) ;;curr-audiofile)
+                                       (FROM_C-show-blocklist-popup-menu))
                                    #t))))
 
 
@@ -227,7 +231,9 @@
                             (and (not (<ra> :shift-pressed))
                                  (= button *right-button*)
                                  (begin
-                                   (show-blocklist-popup-menu)
+                                   (if draggable
+                                       (show-blocklist-popup-menu)
+                                       (FROM_C-show-blocklist-popup-menu))
                                    #t))))
   
   ;;(c-display "state:" state)
