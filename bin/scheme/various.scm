@@ -904,7 +904,15 @@
 (define (FROM_C-show-playlist-popup-menu)
   (define seqtracknum (<ra> :get-curr-seqtrack))
   (popup-menu
-   (get-delete-all-pauses-menu-entry seqtracknum)))
+   (get-delete-all-pauses-menu-entry seqtracknum)
+
+   "---------------"
+
+   (list "Hide"
+         (lambda ()
+           (<ra> :show-hide-playlist -1)
+           ))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Load song, "are you sure?" requester 
