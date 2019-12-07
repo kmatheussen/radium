@@ -194,6 +194,7 @@ public:
 
     void hideEvent(QHideEvent *event_) override {
       remember_geometry.hideEvent_override(this);
+      FOCUSFRAMES_set_focus_best_guess();
     }
 
   /*
@@ -2047,8 +2048,10 @@ void GFX_showHideMixerWidget(void){
     if(g_mixer_widget->isHidden()){
       setMixerKeyboardFocus(true);
       g_mixer_widget->show();
-    }else
+    }else {
       g_mixer_widget->hide();
+      FOCUSFRAMES_set_focus_best_guess();
+    }
   }GL_unlock();
   set_editor_focus();
 }

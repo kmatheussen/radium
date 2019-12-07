@@ -7752,6 +7752,7 @@ void API_showSequencerGui(void){
 
 void API_hideSequencerGui(void){
   S7CALL2(void_void, "FROM-C-hide-sequencer-gui");
+  FOCUSFRAMES_set_focus_best_guess();
 }
 
 bool GFX_SequencerIsVisible(void){

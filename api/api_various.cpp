@@ -300,6 +300,12 @@ void setSequencerKeyboardFocus(bool setit){
   FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, setit);
 }
 
+void setBestGuessKeyboardFocus(void){
+  FOCUSFRAMES_set_focus_best_guess();
+}
+
+
+
 void showSequencer(void){
   GFX_ShowSequencer();
 }
