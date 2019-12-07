@@ -8,8 +8,6 @@
 ;; When adding a new mixer strip, we could slice the various mixer strips windows.
 
 
-
-
 (define-constant *arrow-text* "↳")
 (define-constant *arrow-text2* "→")
 
@@ -66,20 +64,26 @@
         ;;        (pan-enable! instrument-id onoff)))
         
         (list "Wide"
-              :check (and wide-mode-instrument-id
-                          (<ra> :has-wide-instrument-strip wide-mode-instrument-id))
+              :check (if is-standalone
+                         *current-mixer-strip-is-wide*
+                         (and wide-mode-instrument-id
+                              (<ra> :has-wide-instrument-strip wide-mode-instrument-id)))
               :enabled wide-mode-instrument-id
               (lambda (enabled)
-                (<ra> :set-wide-instrument-strip wide-mode-instrument-id enabled)
+                (if is-standalone
+                    (set! *current-mixer-strip-is-wide* enabled)
+                    (<ra> :set-wide-instrument-strip wide-mode-instrument-id enabled))
                 (remake-mixer-strips instrument-id)))
         
         (list "Visible" :enabled (or instrument-id
                                      (not strips-config))
               :check #t
-              (lambda (hideit)
-                (if (not strips-config)
+              (lambda (enabled)
+                (c-display "STRIPS_CONFIG:" strips-config)
+                (if (or is-standalone
+                        (not strips-config))
                     (<ra> :show-hide-mixer-strip)
-                    (set! (strips-config :is-enabled instrument-id) #f)))))
+                    (set! (strips-config :is-enabled instrument-id) enabled)))))
        '())
 
    (and (not is-standalone)
