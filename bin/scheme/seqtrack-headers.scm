@@ -1638,6 +1638,9 @@
                                           0
                                           b/2)))))
 
+            (if (= 1 num-seqtracks)
+                (set! sy2 (max sy2 seqtracks-y2)))
+            
             (if (= topmost-seqtrack seqtracknum)
                 (set! topmost-seqtrack-y1 sy1))
             
