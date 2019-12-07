@@ -149,6 +149,9 @@ extern LANGSPEC void MW_set_connections_visibility(bool show);
 extern LANGSPEC bool MW_get_bus_connections_visibility(void);
 extern LANGSPEC void MW_set_bus_connections_visibility(bool show);
 
+extern LANGSPEC void MW_zoom(int inc);
+extern void MW_reset_zoom(void);
+
 extern LANGSPEC void MW_connect_plugin_to_main_pipe(SoundPlugin *plugin);
 
 #ifdef __cplusplus

@@ -83,6 +83,10 @@ public:
     setMatrix(matrix);
   }
 
+  void reset_zoom(void){
+    set_zoom_value(250);
+  }
+
   void set_rotate(qreal rotate){
     _rotate = rotate;
 
@@ -112,6 +116,10 @@ public:
   void keyPressEvent ( QKeyEvent * event ) override {
     event->ignore();
   }
+
+  void zoom(int inc){
+    set_zoom_value(_zoom_value + inc);
+  }
   
   void wheelEvent(QWheelEvent *e) override
   {
@@ -120,9 +128,9 @@ public:
       // Zooming in / out
       
       if (e->delta() > 0)
-        set_zoom_value(_zoom_value + 6);
+        zoom(6);
       else
-        set_zoom_value(_zoom_value - 6);
+        zoom(-6);
       
     } else if (HorizontalModifierPressed(e->modifiers())) {
       
@@ -794,7 +802,7 @@ public slots:
     view->set_zoom_value(view->_zoom_value - 6);
   }
   void on_zoomreset_button_clicked(){
-    view->set_zoom_value(250);
+    view->reset_zoom();
   }
 
   void on_help_button_clicked(){

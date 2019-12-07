@@ -1731,8 +1731,8 @@ api_timing.o:  $(BUILD_DEPENDENCIES)  $(API)api_timing.c
 api_trackonoff.o:  $(BUILD_DEPENDENCIES)  $(API)api_trackonoff.c 
 	$(CC)  $(API)api_trackonoff.c $(OPT)
 
-api_zoom.o:  $(BUILD_DEPENDENCIES)  $(API)api_zoom.c 
-	$(CC)  $(API)api_zoom.c $(OPT)
+api_zoom.o:  $(BUILD_DEPENDENCIES)  $(API)api_zoom.cpp
+	$(CCC)  $(API)api_zoom.cpp $(QTOPT)
 
 api_notemanipulate.o:  $(BUILD_DEPENDENCIES)  $(API)api_notemanipulate.c 
 	$(CC)  $(API)api_notemanipulate.c $(OPT)

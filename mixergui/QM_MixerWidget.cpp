@@ -1206,6 +1206,14 @@ void MW_set_bus_connections_visibility(bool show){
   update_connections_visibility();
 }
 
+void MW_zoom(int inc){
+  g_mixer_widget->view->zoom(inc);
+}
+
+void MW_reset_zoom(void){
+  g_mixer_widget->view->reset_zoom();
+}
+
 static const char *get_displayable_keybinding(const char *prefix, const char *racommand, const dynvec_t &args){
   const char *result = S7CALL2(charpointer_charpointer_dyn, "FROM_C-get-displayable-keybinding", racommand, DYN_create_array(args));
 

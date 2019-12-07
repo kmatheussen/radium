@@ -25,6 +25,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/expand_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/visual_proc.h"
+#include "../common/sequencer_proc.h"
+
+#include "../Qt/KeyboardFocusFrame.hpp"
+#include "../Qt/Qt_sequencer_proc.h"
+
+#include "../mixergui/QM_MixerWidget.h"
 
 #include "api_common_proc.h"
 
@@ -132,14 +138,24 @@ void zoom(int incfontsize,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
-  IncFontSize_CurrPos(window,incfontsize);
+  if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::MIXER))
+    MW_zoom(incfontsize*6);
+  else if(FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::SEQUENCER))
+    SEQUENCER_zoom_or_move_leftright(true, incfontsize, 0.5);
+  else
+    IncFontSize_CurrPos(window,incfontsize);
 }
 
 void unzoom(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
-  SetFontSizeNormal_CurrPos(window);
+  if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::MIXER))
+    MW_reset_zoom();
+  else if(FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::SEQUENCER))
+    SEQUENCER_set_visible_start_and_end_time(0, (SONG_get_length()+SEQUENCER_EXTRA_SONG_LENGTH) * pc->pfreq);
+  else
+    SetFontSizeNormal_CurrPos(window);
 }
 
 

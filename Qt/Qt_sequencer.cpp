@@ -763,91 +763,22 @@ static int find_next_visible_legal_topmost_seqtrack(void){
 
   return root->song->topmost_visible_seqtrack;
 }
-   
+
+ 
 static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, double start_play_time, double end_play_time) {
 
   double pos = R_MAX(0, scale_double(e->x(), x1, x2, start_play_time, end_play_time));
   //printf("pos: %f, _start/end: %f / %f. x: %d\n", (double)pos/48000.0, (double)start_play_time / 48000.0, (double)end_play_time / 48000.0, e->x());
 
 
-  if (  (e->modifiers() & Qt::ControlModifier) || (HorizontalModifierPressed(e->modifiers()))) {
+  if (  (e->modifiers() & Qt::ControlModifier)) {
 
-    double nav_start_time = SEQUENCER_get_visible_start_time();
-    double nav_end_time = SEQUENCER_get_visible_end_time();
-    double visible_song_length = get_visible_song_length() * MIXER_get_sample_rate();
-    double new_start,new_end;
+    SEQUENCER_zoom_or_move_leftright(true, (e->delta() > 0) ? 1 : -1, scale_double(e->x(), x1, x2, 0, 1));
     
-    double range = nav_end_time - nav_start_time;
-    double middle = nav_start_time + range/2.0;
-    double how_much = range / 10.0;
-     
-    if (e->modifiers() & Qt::ControlModifier) {
+  } else if (HorizontalModifierPressed(e->modifiers())) {
 
-      // CTRL. Zoom in / out
-      
-      if (e->delta() > 0) {
-
-        // Zoom in
-        
-        new_start = nav_start_time + how_much;
-        new_end = nav_end_time - how_much;
-        
-      } else {
-
-        // Zoom out
-        
-        new_start = nav_start_time - how_much;
-        new_end = nav_end_time + how_much;
-        
-      }
-
-      if (fabs(new_end-new_start) < 400 || new_end<=new_start) {
-        
-        // Zooming in too much.
-        
-        new_start = middle - 200;
-        new_end = middle + 200;
-      }
-      
-      {
-        // Make sure time under mouse pointer is still the same.
-        double new_pos = scale_double(e->x(), x1, x2, new_start, new_end);
-        double delta = new_pos - pos;
-        new_start -= delta;
-        new_end -= delta;
-      }
-      
-    } else {
-
-      // Scroll horizontally (meta/osx:alt). Scroll left /right
-      
-      if (e->delta() > 0) {
-        
-        new_start = nav_start_time + how_much;
-        new_end = nav_end_time + how_much;
-        
-      } else {
-        
-        new_start = nav_start_time - how_much;
-        new_end = nav_end_time - how_much;
-        
-      }
-      
-    }
-
-    if (new_start < 0){
-      new_end -= new_start;
-      new_start = 0;
-    }
+    SEQUENCER_zoom_or_move_leftright(false, (e->delta() > 0) ? 1 : -1);;
     
-    if (new_end > visible_song_length){
-      double over = new_end - visible_song_length;
-      new_end = visible_song_length;
-      new_start -= over;
-    }
-      
-    SEQUENCER_set_visible_start_and_end_time(new_start, new_end);
-
   } else {
 
     int vu_width = root->song->tracker_windows->systemfontheight;
@@ -5091,6 +5022,63 @@ void SEQUENCER_set_visible_end_time(int64_t val){
     
   SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE|SEQUPDATE_NAVIGATOR|SEQUPDATE_TIMING);
   //g_sequencer_widget->my_update_all();
+}
+
+void SEQUENCER_zoom_or_move_leftright(bool do_zoom, int inc, double middle_pos){
+  const double nav_start_time = SEQUENCER_get_visible_start_time();
+  const double nav_end_time = SEQUENCER_get_visible_end_time();
+  const double visible_song_length = get_visible_song_length() * MIXER_get_sample_rate();
+  double new_start,new_end;
+  
+  double range = nav_end_time - nav_start_time;
+  double middle = nav_start_time + range/2.0;
+  double how_much = inc * (range / 10.0);
+     
+  if (do_zoom) {
+    
+    // CTRL. Zoom in / out
+    
+    new_start = nav_start_time + how_much;
+    new_end = nav_end_time - how_much;
+    
+    if (fabs(new_end-new_start) < 400 || new_end<=new_start) {
+      
+      // Zooming in too much.
+      
+      new_start = middle - 200;
+      new_end = middle + 200;
+    }
+    
+    {
+      // Make sure time under mouse pointer is still the same.
+      double pos = R_MAX(0, scale_double(middle_pos, 0, 1, nav_start_time, nav_end_time));
+      double new_pos = scale(middle_pos, 0, 1, new_start, new_end);
+      double delta = new_pos - pos;
+      new_start -= delta;
+      new_end -= delta;
+    }
+    
+  } else {
+    
+    // Scroll horizontally (meta/osx:alt). Scroll left /right
+          
+    new_start = nav_start_time + how_much;
+    new_end = nav_end_time + how_much;
+
+  }
+  
+  if (new_start < 0){
+    new_end -= new_start;
+    new_start = 0;
+  }
+  
+  if (new_end > visible_song_length){
+    double over = new_end - visible_song_length;
+    new_end = visible_song_length;
+    new_start -= over;
+  }
+  
+  SEQUENCER_set_visible_start_and_end_time(new_start, new_end);
 }
 
 void SEQUENCER_set_grid_type(enum GridType grid_type){
