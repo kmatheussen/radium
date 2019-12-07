@@ -1514,6 +1514,62 @@
 (<ra> :get-lowest-possible-topmost-visible-seqtrack)
 !!#
 
+(define (get-actual-total-seqtracks-height)
+  (define first-visible (find-first-visible-seqtrack))
+  (define last-visible (find-last-visible-seqtrack))
+  (define lowest-topmost-visible (<ra> :get-lowest-possible-topmost-visible-seqtrack))
+  (define seqtracks-height (- (get-sequencer-left-part-seqtracks-y2)
+                              (get-sequencer-left-part-seqtracks-y1)))
+  
+  (define bottom-empty-space (- (- seqtracks-height
+                                   (- (<ra> :get-seqtrack-y2 last-visible)
+                                      (<ra> :get-seqtrack-y1 lowest-topmost-visible)))
+                                (ra:get-seqtrack-border-width)))
+  
+  (c-display ":bottom-empty-space:" bottom-empty-space
+             ":lowest-topmost-visible:" lowest-topmost-visible
+             ":seqtracks-height:" seqtracks-height
+             ":height of last visible seqtracks:" (- (<ra> :get-seqtrack-y2 last-visible)
+                                                     (<ra> :get-seqtrack-y1 lowest-topmost-visible))
+             ". " last-visible lowest-topmost-visible
+             "first y1: " (<ra> :get-seqtrack-y1 lowest-topmost-visible)
+             "last y2:" (<ra> :get-seqtrack-y2 last-visible)
+             ":last-visible:" last-visible
+             ":...:" (get-sequencer-left-part-seqtracks-y2) (<ra> :get-seqtracks-y1))
+  
+  (+ (- (<ra> :get-seqtrack-y2 last-visible)
+        (<ra> :get-seqtrack-y1 first-visible))
+     bottom-empty-space))
+
+#!
+(<ra> :get-seqtrack-y1 10)
+(<ra> :get-seqtrack-y1 11)
+(<ra> :get-seqtrack-y1 12)
+(<ra> :get-seqtrack-y1 13)
+(<ra> :get-seqtrack-y1 14)
+
+(<ra> :get-lowest-possible-topmost-visible-seqtrack)
+
+(get-actual-total-seqtracks-height)
+(<ra> :get-seqtrack-y1 17)
+(<ra> :get-seqtrack-y2 18)
+(get-visible-seqtracks-y2)
+(list (get-visible-seqtracks-y2)
+      (<ra> :get-seqtracks-y2)
+      (<ra> :get-seqtracks-y1))
+
+(list (- (<ra> :get-seqtrack-y2 18)
+         (<ra> :get-seqtrack-y1 17))
+      (- (get-sequencer-left-part-seqtracks-y2)
+         (get-sequencer-left-part-seqtracks-y1))
+      (- (<ra> :get-seqtracks-y2)
+         (<ra> :get-seqtracks-y1))
+      )
+
+!!#
+
+  
+
 (def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2 :seqtrack-x1)
   (define num-seqtracks (<ra> :get-num-seqtracks))
 
@@ -1787,6 +1843,8 @@
 
   (<gui> :remove-all-vertical-audio-meters gui)
 
+  (<declare-variable> recreate-seqtracks-config-area)
+  
   (if (and (defined? 'recreate-seqtracks-config-area)
            recreate-seqtracks-config-area)
       (recreate-seqtracks-config-area))

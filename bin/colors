@@ -97,3 +97,12 @@ sequencer_block_audio_file_background_color = #64eeeeee
 sequencer_waveform_color = #c8000000
 sequencer_marker_color = #ff0a0632
 
+
+# These three colores are not used, but they are needed by older versions of Radium. (This file is copied to the users home area)
+color11 = #ff22282a
+color13 = #ff2c543c
+color15 = #ff585d55
+
+
+
+# edited colors:
