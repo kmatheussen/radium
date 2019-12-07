@@ -636,9 +636,14 @@ static struct Patch *create_audio_patch(const char *type_name, const char *plugi
     return NULL;
 
   printf("       PATCH create audio\n");
-  remakeMixerStrips(patch->id);
 
-  S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
+  if(!g_is_loading) {
+
+    remakeMixerStrips(patch->id);
+
+    S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
+
+  }
   
   return patch;
 }

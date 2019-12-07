@@ -2836,6 +2836,10 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   
   autoposition_missing_bus_chips(bus_chips_state);
 
+  remakeMixerStrips(-1);
+
+  S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
+
   if (HASH_has_key(state, "mixer_strips_configuration"))
     MW_apply_mixer_strips_state(HASH_get_dyn(state, "mixer_strips_configuration"));
   else

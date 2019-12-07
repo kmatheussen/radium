@@ -2359,6 +2359,7 @@ void SP_RT_clean_output(SoundProducer *producer, int num_frames){
 
 
 struct SoundPlugin *SP_get_plugin(const SoundProducer *producer){
+  R_ASSERT_RETURN_IF_FALSE2(producer!=NULL, NULL);
   return producer->_plugin;
 }
 

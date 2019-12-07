@@ -2648,9 +2648,15 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
     
     plugin->bus_on_off[0] = HASH_get_float(effects, "System Reverb On/Off") >= 0.5;
     plugin->bus_on_off[1] = HASH_get_float(effects, "System Chorus On/Off") >= 0.5;
-    plugin->bus_on_off[2] = HASH_get_float(effects, "System Aux 1 On/Off") >= 0.5;
-    plugin->bus_on_off[3] = HASH_get_float(effects, "System Aux 2 On/Off") >= 0.5;
-    plugin->bus_on_off[4] = HASH_get_float(effects, "System Aux 3 On/Off") >= 0.5;
+
+    if(HASH_has_key(effects, "System Aux 1 On/Off"))
+      plugin->bus_on_off[2] = HASH_get_float(effects, "System Aux 1 On/Off") >= 0.5;
+
+    if(HASH_has_key(effects, "System Aux 2 On/Off"))
+      plugin->bus_on_off[3] = HASH_get_float(effects, "System Aux 2 On/Off") >= 0.5;
+
+    if(HASH_has_key(effects, "System Aux 3 On/Off"))
+      plugin->bus_on_off[4] = HASH_get_float(effects, "System Aux 3 On/Off") >= 0.5;
     
   }
 
