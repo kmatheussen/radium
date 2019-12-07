@@ -2,6 +2,8 @@
 #ifndef _RADIUM_EMBEDDED_SCHEME_S7EXTRA_PROC_H
 #define _RADIUM_EMBEDDED_SCHEME_S7EXTRA_PROC_H
 
+#define DEBUG_GC_PROTECT 0
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -262,7 +264,9 @@ extern "C" {
 #if defined(QGLOBAL_H)
 #include <QHash>
 
+#if DEBUG_GC_PROTECT
 extern QHash<const char*, int> g_num_s7_protected;
+#endif
 
 namespace radium{
 
@@ -308,11 +312,13 @@ namespace radium{
       else {
         _pos = s7extra_protect(v);
 
+#if DEBUG_GC_PROTECT
         int size = g_num_s7_protected[_id] + 1;
         g_num_s7_protected[_id] = size;
           
         if (strcmp(_id, ""))
           printf("   ----  Protecting \"%s\": %p / %p / %d. Size: %d\n", _id, this, v, (int)_pos, size);
+#endif
       }
     }
     
@@ -324,11 +330,14 @@ namespace radium{
           R_ASSERT_NON_RELEASE(_pos >= 0);
           s7extra_unprotect(v, _pos);
 
+#if DEBUG_GC_PROTECT
           int size = g_num_s7_protected[_id] - 1;
           g_num_s7_protected[_id] = size;
           
           if (strcmp(_id, ""))
             printf("   ----  Unprotecting \"%s\": %p / %p / %d. Size: %d\n", _id, this, v, (int)_pos, size);
+#endif
+          
           v = NULL;
           _pos = -1;
         }else{

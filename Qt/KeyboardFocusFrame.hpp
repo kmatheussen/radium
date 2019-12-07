@@ -25,6 +25,8 @@ struct KeyboardFocusFrame;
 
 }
 
+extern radium::KeyboardFocusFrameType g_curr_focus_type;
+extern radium::KeyboardFocusFrameType g_prev_focus_type;
 extern radium::KeyboardFocusFrame* g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::NUM_TYPES];
 
 
@@ -74,12 +76,20 @@ struct KeyboardFocusFrame : public QFrame{
   */
   
   void set_focus(bool has_focus){
+    
     if (has_focus != _has_focus){
+      
       _has_focus = has_focus;
+      
+      if (has_focus)
+        g_curr_focus_type = _type;
+      
       update();
+      
       for(auto *focus : g_keyboard_focus_frames)
         if(focus != this && focus != NULL){
           if (focus->_has_focus){
+            g_prev_focus_type = focus->_type;
             focus->_has_focus = false;
             focus->update();
             if(focus->_type==KeyboardFocusFrameType::EDITOR)
@@ -137,6 +147,7 @@ struct KeyboardFocusFrame : public QFrame{
 
 void FOCUSFRAMES_init(void);
 void FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType type, bool has_focus);
+void FOCUSFRAMES_set_focus_best_guess(void);
 bool FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType type);
 
 #endif

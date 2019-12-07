@@ -58,6 +58,10 @@ void FOCUSFRAMES_init(void){
     qApp->installEventFilter(&g_obj);
   }
 }
+
+
+radium::KeyboardFocusFrameType g_curr_focus_type = radium::KeyboardFocusFrameType::EDITOR;
+radium::KeyboardFocusFrameType g_prev_focus_type = radium::KeyboardFocusFrameType::SEQUENCER;
   
 void FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType type, bool has_focus){
   R_ASSERT_RETURN_IF_FALSE(g_keyboard_focus_frames[(int)type] != NULL);
@@ -65,6 +69,28 @@ void FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType type, bool has_focus){
   g_keyboard_focus_frames[(int)type]->set_focus(has_focus);
 }
 
+static bool set_if_visible(radium::KeyboardFocusFrameType type){
+  if (g_keyboard_focus_frames[(int)type]->isVisible()){
+    FOCUSFRAMES_set_focus(type, true);
+    return true;
+  }
+
+  return false;
+}
+
+void FOCUSFRAMES_set_focus_best_guess(void){
+  if (set_if_visible(g_curr_focus_type))
+    return;
+
+  if (set_if_visible(g_curr_focus_type))
+    return;
+  
+  for(auto *focus : g_keyboard_focus_frames){
+    if (set_if_visible(focus->_type))
+      return;
+  }
+}
+  
 bool FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType type){
   if (g_keyboard_focus_frames[(int)type]==NULL)
     return false;

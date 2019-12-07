@@ -371,8 +371,8 @@ void GFX_ShowEditor(void){
 
 void GFX_HideEditor(void){
   g_editor->editor_layout_widget->hide();
-
   set_editor_focus();
+  FOCUSFRAMES_set_focus_best_guess();
 }
 
 void GFX_showHideEditor(void){
@@ -380,8 +380,10 @@ void GFX_showHideEditor(void){
     if(g_editor->editor_layout_widget->isHidden()){
       setEditorKeyboardFocus(true);
       g_editor->editor_layout_widget->show();
-    }else
+    }else{
       g_editor->editor_layout_widget->hide();
+      FOCUSFRAMES_set_focus_best_guess();
+    }
   }GL_unlock();
   
   set_editor_focus();

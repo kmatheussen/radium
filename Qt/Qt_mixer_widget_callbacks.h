@@ -641,6 +641,8 @@ public slots:
 
       w->adjustSize();
 
+      FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true); // Give back focus. FOCUSFRAMES_set_focus_best_guess() was (probably) called in MixerWidget::hideEvent.
+      
       //w->show();
     } else {
       EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
