@@ -139,7 +139,7 @@ struct ModulatorTarget{
         
     } else {
 
-      // Note: We are only here when loading older songs.
+      // Note: We are only here when loading older songs or MIDI. (effect-num is CC for MIDI effects)
       
       effect_num = HASH_get_int32(state, ":effect-num");
 
@@ -172,7 +172,8 @@ struct ModulatorTarget{
     hash_t *state = HASH_create(2);
     HASH_put_int(state, ":instrument-id", patch->id);
     HASH_put_int(state, ":effect-num", effect_num);
-    HASH_put_chars(state, ":effect-name", patch->instrument->getFxName(patch, effect_num));
+    if (patch->instrument==get_audio_instrument())
+      HASH_put_chars(state, ":effect-name", patch->instrument->getFxName(patch, effect_num));
     HASH_put_bool(state, ":enabled", enabled);
 
     return DYN_create_hash(state);
