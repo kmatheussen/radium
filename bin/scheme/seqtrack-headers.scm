@@ -11,7 +11,7 @@
 
 (<declare-variable> get-mutesolo-width)
 (<declare-variable> get-seqtrack-background-color)
-(my-require 'seqtracks_config.scm)
+
 
 
 ;;(define *curr-seqtrack-color* "#7c3a3a")

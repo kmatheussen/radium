@@ -1717,6 +1717,11 @@ void CHIP_delete(Patch *patch){
 
 static bool is_bus_provider(Chip *chip, const QVector<SoundProducer*> &buses){
   for(SoundProducer *bus : buses){
+    if(bus==NULL){
+      if (!g_is_loading) // Happens when loading older songs that doesn't have all buses.
+        R_ASSERT(false);
+      continue;
+    }
     Chip *bus_chip = CHIP_get(get_scene(g_mixer_widget), const_cast<struct Patch*>(SP_get_plugin(bus)->patch));
     if (CONNECTION_are_connected_somehow(bus_chip, chip))
       return false;
