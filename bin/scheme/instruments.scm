@@ -1009,12 +1009,12 @@
                                 :must-have-inputs #f
                                 :must-have-outputs #f
                                 :parentgui -2)
-          (<ra> :create-new-instrument-conf
-                x y
-                connect-to-main-pipe
-                do-autoconnect include-load-preset must-have-inputs must-have-outputs
-                (<ra> :gui_get-parent-window parentgui) ;; Improves plugin menu caching performance.
-                ))
+  (<ra> :create-new-instrument-conf
+        x y
+        (to-boolean connect-to-main-pipe)
+        (to-boolean do-autoconnect) (to-boolean include-load-preset) (to-boolean must-have-inputs) (to-boolean must-have-outputs)
+        (<ra> :gui_get-parent-window parentgui) ;; Improves plugin menu caching performance.
+        ))
 
 
 (define (same-instrconf-with-regards-to-filtering? instrconf1 instrconf2)
