@@ -16,19 +16,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-#ifndef TRACKER_INCLUDE
-
-extern void IncFontSize_CurrPos(
+extern LANGSPEC void IncFontSize_CurrPos(
 	struct Tracker_Windows *window,
 	int incnum
 );
 
-extern void SetFontSizeNormal_CurrPos(
+extern LANGSPEC void SetFontSizeNormal_CurrPos(
 	struct Tracker_Windows *window
 );
-
-
-#endif
-
 
