@@ -124,10 +124,14 @@ struct ModulatorTarget{
     if (HASH_has_key(state, ":effect-name")){
 
       const char *effect_name = HASH_get_chars(state, ":effect-name");
-      
-      if (AUDIO_maybe_warn_about_automating_bus_onoff(patch, effect_name, "modulation", talloc_format(" by \"%s\"", modulator_patch->name))){
-        patch = NULL;
-        return;
+
+      if (patch->instrument==get_audio_instrument()){
+        
+        if (AUDIO_maybe_warn_about_automating_bus_onoff(patch, effect_name, "modulation", talloc_format(" by \"%s\"", modulator_patch->name))){
+          patch = NULL;
+          return;
+        }
+
       }
       
       char *error_message = NULL;
@@ -172,8 +176,7 @@ struct ModulatorTarget{
     hash_t *state = HASH_create(2);
     HASH_put_int(state, ":instrument-id", patch->id);
     HASH_put_int(state, ":effect-num", effect_num);
-    if (patch->instrument==get_audio_instrument())
-      HASH_put_chars(state, ":effect-name", patch->instrument->getFxName(patch, effect_num));
+    HASH_put_chars(state, ":effect-name", (patch->instrument==get_audio_instrument()) ? patch->instrument->getFxName(patch, effect_num) : talloc_format("%d", effect_num));
     HASH_put_bool(state, ":enabled", enabled);
 
     return DYN_create_hash(state);
