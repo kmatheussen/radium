@@ -1,3 +1,95 @@
+Changes 5.9.83 -> 5.9.85:
+* Mixer strips: Fix the replace plugin entry in the
+  popup menu.
+* Scripting: Update S7 scheme interpreter.
+* Keyboard: Change keyboard focus to a visible widget
+  when the widget currently having keyboard focus is
+  hidden.
+* Menus: Move the Zoom entries from "Editor View" to
+  "Windows".
+* Keybindings: Let keypad +, -, * and Ctrl +, -
+  zoom in/out/reset in the mixer and sequencer as
+  well, not just the editor.
+* Sequencer: Fix seqtrack header height when there is
+  only one seqtrack.
+* Playlist: Put back the "Hide" entry to the popup
+  menu (disappeared when playlist was rewritten).
+* Mixer strips: Fix the "Wide" and "Enabled"
+  checkboxes in the popup menu of the current
+  instrument mixer strip.
+* MIDI: Fix modulator gui for MIDI CC targets
+* MIDI: Fix saving/loading/undo/redo CC slider
+  modulation.
+* Editor: Tweak vertical scroll bar position.
+* Editor: Middle-align text of labels and input
+  widgets in the upper left.
+* Editor: Automatically scale font size of the upper
+  left labels to make sure "Swing" is always
+  completely visible.
+* Help: Some minor updates.
+* Editor: Fix error message popping up if changing
+  track width of track while playing song and current
+  block is changed.
+* Editor: Fix editor sometimes not responding after
+  pressing the "F" button in the sequencer twice, and
+  possibly other situations.
+* Editor: Clearer and better looking interface for
+  the track headers.
+* Editor: Show audio meters in the track headers.
+* Instrument widget: Fix font type in the MIDI
+  instrument widget.
+* Editor: Fix pianoroll notes snapping to the next
+  grid line instead of the current 50% of the time.
+  Was usually not noticable except when trying to
+  move the end position to the end of the block,
+  which wasn't possible without pressing Ctrl.
+* GUI: Various gfx tweaks.
+* Preferences: Put the colors into sub sections and
+  adjust order.
+* Instrument widget: Show full path in tooltip and
+  status bar when mouse cursor is positioned above a
+  settings button in the sample browser.
+* Sequencer: Show path in tooltip and status bar when
+  mouse cursor is positioned above a settings button
+  in the file browser.
+* Playlist: Tweak button positions.
+* GUI: Fix gradient behavior when painting
+  checkboxes.
+* Mixer: Fix high CPU usage when mixer strips are
+  visible.
+* Instruments: Fix memory leak.
+* Fix unnecessary assertion sometimes popping up when
+  checking OpenGL on Windows.
+* Sequencer: Fix seqtrack slider not working in some
+  semi-rare situations.
+* Menus: Remove duplicate "Silence!" entries.
+* API:
+  * setPianorollLowKey: Set default value of
+    'blocknum' to -1.
+  * setPianorollHighKey: Set default value of
+    'blocknum' to -1.
+  * gui_verticalAudioMeter: Ignore note event
+    painting if "note_event_instrument_id" is set
+    to -2.
+  * gui_addVerticalAudioMeter: Ignore note event
+    painting if "note_event_instrument_id" is set
+    to -2.
+  * Better error messages for various instrument
+    functions.
+  * Change "zoom" and "unzoom" to zoom / reset zoom
+    the part (editor/mixer/sequencer) that has
+    keyboard focus, not just the editor.
+  * Removed: getTrackPanOnOffX1, getTrackPanOnOffY1,
+    getTrackPanOnOffX2, getTrackPanOnOffY2,
+    getTrackVolumeOnOffX1, getTrackVolumeOnOffY1,
+    getTrackVolumeOnOffX2, getTrackVolumeOnOffY2,
+    getTrackPanSliderX1, getTrackPanSliderY1,
+    getTrackPanSliderX2, getTrackPanSliderY2,
+    getTrackVolumeSliderX1, getTrackVolumeSliderY1,
+    getTrackVolumeSliderX2, getTrackVolumeSliderY2.
+  * New: setBestGuessKeyboardFocus
+ 
+
 Changes 5.9.81 -> 5.9.83:
 * GUI: Increase default system font height from 8
   to 10 on Linux and Windows, and from 12 to 14
