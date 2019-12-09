@@ -86,7 +86,7 @@ void FOCUSFRAMES_set_focus_best_guess(void){
     return;
   
   for(auto *focus : g_keyboard_focus_frames){
-    if (set_if_visible(focus->_type))
+    if (focus!=NULL && set_if_visible(focus->_type))
       return;
   }
 }
