@@ -70,7 +70,11 @@ void FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType type, bool has_focus){
 }
 
 static bool set_if_visible(radium::KeyboardFocusFrameType type){
-  if (g_keyboard_focus_frames[(int)type]->isVisible()){
+  auto *frame = g_keyboard_focus_frames[(int)type];
+  if (frame==NULL)
+    return false;
+  
+  if (frame->isVisible()){
     FOCUSFRAMES_set_focus(type, true);
     return true;
   }
@@ -84,17 +88,18 @@ void FOCUSFRAMES_set_focus_best_guess(void){
 
   if (set_if_visible(g_curr_focus_type))
     return;
-  
-  for(auto *focus : g_keyboard_focus_frames){
-    if (focus!=NULL && set_if_visible(focus->_type))
+
+  for(int type = 0 ; type < (int)radium::KeyboardFocusFrameType::NUM_TYPES ; type++){
+    if (set_if_visible((radium::KeyboardFocusFrameType)type))
       return;
   }
 }
   
 bool FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType type){
-  if (g_keyboard_focus_frames[(int)type]==NULL)
+  auto *frame = g_keyboard_focus_frames[(int)type];
+  if (frame==NULL)
     return false;
   
-  return g_keyboard_focus_frames[(int)type]->has_focus();
+  return frame->has_focus();
 }
 
