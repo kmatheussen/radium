@@ -3815,15 +3815,15 @@ int main(int argc, char **argv){
 
 
 #if defined(FOR_MACOSX)
-  if (QSysInfo::productVersion()=="10.14"){
+  if (QSysInfo::productVersion()=="10.15"){
     GFX_Message(NULL,
                 "Radium has not been tested on this very much on this version of macOS. Please report problems you have with it.\n"
                 "\n"
                 "If Radium crashes right after startup, it's probably the OpenGL library that crashes. "
                 "Fortunately, the bug is usually only hit during startup, and not every time."
                 );
-  } else if (QSysInfo::productVersion()=="10.15" || QSysInfo::productVersion()=="10.16" || QSysInfo::productVersion()=="10.17"){
-    GFX_Message(NULL, "Radium has not been tested on this version of macOS. Latest supported version of macOS is 10.14. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.");
+  } else if (QSysInfo::productVersion()=="10.16" || QSysInfo::productVersion()=="10.17" || QSysInfo::productVersion()=="10.18"){
+    GFX_Message(NULL, "Radium has not been tested on this version of macOS. Latest supported version of macOS is 10.15. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.");
   }
 #endif
 
