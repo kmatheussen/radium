@@ -2531,11 +2531,20 @@ void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
 #else
   QWidget *main_window = (QWidget *)tvisual->os_visual.main_window;
 
+  bool main_layout_visible = g_editor->editor_layout_widget->isVisible();
+
+  if (main_layout_visible)
+    g_editor->editor_layout_widget->hide(); // prevents crash in apple opengl library.
+
   if(main_window->isFullScreen()){
     main_window->showNormal();
   }else{
     main_window->showFullScreen();
   }
+
+  if (main_layout_visible)
+    g_editor->editor_layout_widget->show();
+
 #if defined(FOR_WINDOWS)
   OS_WINDOWS_set_key_window((void*)g_main_window->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
 #endif
@@ -2581,6 +2590,10 @@ void GFX_toggleCurrWindowFullScreen(void){
 
         fprintf(stderr, "\n\n     TOGGLE main window\n\n\n");
 
+        bool main_layout_visible = g_editor->editor_layout_widget->isVisible();
+
+        if (main_layout_visible)
+          g_editor->editor_layout_widget->hide(); // prevents crash in apple opengl library.
         
         if(toplevel->isFullScreen()){
           printf("Trying to set normal\n");
@@ -2596,6 +2609,9 @@ void GFX_toggleCurrWindowFullScreen(void){
           toplevel->showFullScreen();
         }
 
+        if (main_layout_visible)
+          g_editor->editor_layout_widget->show();
+        
 #if defined(FOR_WINDOWS)
         OS_WINDOWS_set_key_window((void*)toplevel->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
 #endif

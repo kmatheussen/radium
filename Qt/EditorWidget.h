@@ -115,6 +115,7 @@ public:
     QWidget *bottom_widget = NULL; // rec button, reltempo slider, and track scrollbar
   
 #if USE_OPENGL
+    QWidget *gl_cover = NULL;
     QWidget *gl_widget = NULL; // Note: might be NULL
 #endif
 

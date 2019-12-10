@@ -35,6 +35,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   Performance is also significantly worse, but it can probably be handy for debugging.
 */
 
+static double g_last_resize_time = -1;
+
+#if defined(FOR_MACOSX)
+#define USE_LAYOUT_COVER 1
+#else
+#define USE_LAYOUT_COVER 0
+#endif
 
 #if USE_QT5
 #  if THREADED_OPENGL
@@ -647,6 +654,126 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
 
 #if defined(RELEASE) && TEST_TIME==1
 #error "oops"
+#endif
+
+#if USE_LAYOUT_COVER // this mad stuff seems to prevent the apple opengl library from crashing when resizing.
+
+namespace{
+  class MyCoverWidget : public QWidget {
+    void resizeEvent(QResizeEvent *qresizeevent) override {
+      g_last_resize_time = TIME_get_ms();
+      radium::ScopedResizeEventTracker resize_event_tracker;
+      QSize size = qresizeevent->size();
+      THREADING_run_on_main_thread_async([size]{
+          g_editor->gl_widget->resize(size);
+        });
+    }
+     
+    void paintEvent( QPaintEvent *e ){
+      TRACK_PAINT();
+      QPainter p(this);
+
+      p.fillRect(rect(), get_qcolor(LOW_EDITOR_BACKGROUND_COLOR_NUM));
+      
+      if (true){ //if ((TIME_get_ms() - _start_time) > 50){
+        
+        QRect cover_rect = rect().adjusted(rect().width()/4, rect().height()/4, -rect().width()/4, -rect().height()/4);
+        
+        p.fillRect(cover_rect.adjusted(-20,-20,20,20), mix_colors(get_qcolor(LOW_EDITOR_BACKGROUND_COLOR_NUM), Qt::black, 0.5));
+        
+        QRect text_rect(0, 0, width(), cover_rect.y()-20);
+        p.drawText(text_rect, Qt::AlignCenter, "Resizing OpenGL");
+
+        /*
+        if(!_cover->_image.isNull()){
+          p.drawImage(cover_rect, _cover->_image);
+        }
+        */
+      }
+    }
+  };
+}
+
+static bool g_cover_is_visible = false;
+
+static void show_layout_cover(void){
+  if (g_cover_is_visible)
+    return;
+  g_cover_is_visible = true;
+  
+  printf("               SHOW_COVER\n");
+  if (g_editor->gl_cover==NULL){
+    g_editor->gl_cover = new MyCoverWidget;
+    static_cast<QBoxLayout*>(g_editor->editor_layout_widget->layout())->insertWidget(1,g_editor->gl_cover);    
+  }
+
+  g_editor->editor_layout_widget->setUpdatesEnabled(false);
+  
+  //g_editor->editor_layout_widget->layout()->replaceWidget(g_editor->gl_widget, g_editor->gl_cover, Qt::FindDirectChildrenOnly);
+  
+  g_editor->gl_widget->hide();
+  g_editor->gl_cover->show();
+
+  /*
+  g_editor->gl_cover->adjustSize();
+  g_editor->gl_cover->updateGeometry();
+  */
+
+  QTimer::singleShot(100, []{
+      g_editor->editor_layout_widget->setUpdatesEnabled(true);
+    });
+}
+
+static void hide_layout_cover(void){
+  if (!g_cover_is_visible)
+    return;
+  g_cover_is_visible = false;
+  
+  printf("           HIDE_COVER\n");
+  g_editor->editor_layout_widget->setUpdatesEnabled(false);
+
+  //g_editor->editor_layout_widget->layout()->replaceWidget(g_editor->gl_cover, g_editor->gl_widget, Qt::FindDirectChildrenOnly);
+  
+  g_editor->gl_cover->hide();
+  g_editor->gl_widget->show();
+
+  /*
+  g_editor->gl_widget->adjustSize();
+  g_editor->gl_widget->updateGeometry();
+  */
+
+  QTimer::singleShot(100, []{
+      g_editor->editor_layout_widget->setUpdatesEnabled(true);
+    });
+
+  //g_editor->editor_layout_widget->setUpdatesEnabled(true);
+}
+
+static void schedule_hide_layout_cover(void){
+  //if (g_editor->gl_widget->isVisible())
+  //  return;
+  
+  if ( (TIME_get_ms() - g_last_resize_time) > 100){
+    
+    hide_layout_cover();
+    
+    /*
+      g_editor->gl_widget->show();
+      
+      {
+      radium::ScopedMutex lock(_cover_mutex);
+      delete _cover;
+      _cover = NULL;
+      }
+    */
+    
+  } else {
+    
+    QTimer::singleShot(1000, schedule_hide_layout_cover);
+    
+  }
+}
+
 #endif
 
 class MyQtThreadedWidget
@@ -1302,8 +1429,17 @@ private:
     if(_dont_swap_right_now_downcount > 0){
       msleep(17);
       _dont_swap_right_now_downcount--;
-      if(_dont_swap_right_now_downcount==0)
+      if(_dont_swap_right_now_downcount==0){
+#if !USE_LAYOUT_COVER
         hide_cover();
+#else
+        THREADING_run_on_main_thread_async([this]{
+            g_last_resize_time = TIME_get_ms();
+            schedule_hide_layout_cover();
+          });
+#endif
+      }
+      
       /*
       double time = TIME_get_ms();
       if ((time - _dont_swap_right_now_last_time) > 15){
@@ -1499,6 +1635,7 @@ private:
           _widget = new CoverWidget(parent, this);
           _widget->resize(size);
           _widget->move(0,0);
+
           _widget->show();
         },
         true);
@@ -1576,9 +1713,9 @@ private:
   radium::Mutex _cover_mutex;
   Cover *_cover = NULL;
 #endif
+
   
   void hide_cover(void){
-      //return;
     
 #if USE_COVER
     IsAlive is_alive(this);
@@ -1626,16 +1763,18 @@ private:
             }
           });
       });
+#else
+    
 #endif
   }
 
   void show_cover(void){
-    //return;
     
 #if USE_COVER
     radium::ScopedMutex lock(_cover_mutex);
 
     if (_cover == NULL){
+
       _cover = new Cover(this, size());
 
 #if 0
@@ -1846,12 +1985,18 @@ public:
   }
 
   void resizeEvent(QResizeEvent *qresizeevent) override {
+    g_last_resize_time = TIME_get_ms();
+      
     radium::ScopedResizeEventTracker resize_event_tracker;
 
-    
     show_cover();
-
+    
     ATOMIC_SET(_dont_swap_right_now, true);
+
+#if USE_LAYOUT_COVER
+    show_layout_cover();
+#endif    
+
 
     if (g_editor->window != NULL)
       calculateNewWindowWidthAndHeight(g_editor->window);
@@ -1902,15 +2047,17 @@ public:
     // Doesn't seem necessary on other platforms to avoid crashes, but it seems to lower flickering when resizing.
     //
     // For each time this variable is decremented, we also wait 15ms, so spent_time(10) is effectively between 15ms*10 and 30ms*10 = 150-300ms. (on OSX the value is much much closer to 150ms than 300ms)
+
 #if FOR_MACOSX
     _dont_swap_right_now_downcount = 10;
 #else
     _dont_swap_right_now_downcount = 10;
 #endif
-    
-    ATOMIC_SET(_dont_swap_right_now, false);
 
-    GFX_ScheduleEditorRedraw();
+      ATOMIC_SET(_dont_swap_right_now, false);
+
+      GFX_ScheduleEditorRedraw();
+
   }
   
   // The rest of the methods in this class are virtual methods required by the vl::UIEventListener class. Not used.
