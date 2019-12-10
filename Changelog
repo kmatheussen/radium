@@ -1,3 +1,24 @@
+Changes 5.9.85 -> 5.9.86:
+* macOS: Don't display startup warning window anymore
+  if running 10.14.
+* macOS: Officially support 10.15, but display a
+  warning during startup that it hasn't been much
+  tested yet.
+* macOS: Include a QJackCtl app in the binaries since
+  neither the "Jack Pilot" nor QjackCtl binaries
+  included with jack works very well in 10.15.
+* macOS: New workarounds to prevent Apple's OpenGL
+  library from crashing when resizing (especially in
+  10.14 and 10.15). Unfortunately, this causes a
+  little bit of flickering when resizing, plus longer
+  time to resize, but it's better than crashing.
+* GUI: Fix crash when ensuring that a visible widget
+  always has keyboard focus. The crash could for
+  instance be triggered by pressing the tab key 4
+  times in a row. Bug was introduced in 5.9.85.
+
+
+
 Changes 5.9.83 -> 5.9.85:
 * Mixer strips: Fix the replace plugin entry in the
   popup menu.
