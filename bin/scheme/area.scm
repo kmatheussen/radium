@@ -406,6 +406,13 @@
      (define-optional-hash-table curr-mouse-cycle)
      (define mouse-cycles '())
 
+     (delafina (add-mouse-cycle-prepend! :press-func (lambda x #t)
+                                         :drag-func (lambda x #f)
+                                         :release-func (lambda x #f))
+       (push! mouse-cycles
+              (make-mouse-cycle press-func drag-func release-func))
+       )
+     
      (delafina (add-mouse-cycle! :press-func (lambda x #t)
                                  :drag-func (lambda x #f)
                                  :release-func (lambda x #f))
@@ -689,6 +696,7 @@
 
      :get-width () width
      :get-height () height
+     :get-gui () gui
      :get-position x (apply get-position x)
      :get-i-position x (apply get-i-position x)
      :inside? x (apply inside? x)
@@ -719,6 +727,7 @@
      :key-pressed-internal! x (apply key-pressed-internal x)
      :key-released-internal! x (apply key-released-internal x)
      :mouse-wheel-moved-internal! x (apply mouse-wheel-moved-internal! x)
+     :add-mouse-cycle-prepend! x (apply add-mouse-cycle-prepend! x)
      :add-mouse-cycle! x (apply add-mouse-cycle! x)
      :get-mouse-cycle x (apply get-mouse-cycle x)
      :add-raw-mouse-cycle! x (apply add-raw-mouse-cycle! x)
@@ -822,9 +831,6 @@
   
   (define area (<new> :qtarea))
   
-  (area :add-method! :get-gui (lambda ()
-                                gui))
-
   area)
 
 
@@ -1095,7 +1101,7 @@
                  (update-me!)
                  #f))
 
-(add-mouse-cycle! (lambda (button x* y*)
+  (add-mouse-cycle! (lambda (button x* y*)
                       (cond ((and right-mouse-clicked-callback
                                   (= button *right-button*)
                                   ;;(not (<ra> :shift-pressed))

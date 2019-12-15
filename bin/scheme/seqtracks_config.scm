@@ -211,22 +211,37 @@
                                 :id 'reset-seqtracks-config-ab))
 
     (add-sub-area-plain! reset-button)
-    
-    (add-sub-area-plain! (<new> :radiobuttons gui (+ radio-x1 (/ border 2)) (+ y1 2) x2 (- radio-y2 2)
-                                num-settings-buttons
-                                (<ra> :get-curr-seqtrack-config-num)
-                                (lambda (num is-on)
-                                  ;;(c-display "radio:" num is-on)
-                                  (when is-on
-                                    (apply-state! (get-state))
-                                    (<ra> :set-curr-seqtrack-config-num num))
-                                  #t)
-                                :layout-horizontally #t
-                                :text-func (lambda (num)
-                                             (if (<ra> :seqtrack-config-is-used num)
-                                                 (vector-ref (vector "A*" "B*" "C*" "D*" "E*" "F*" "G*" "H*") num)
-                                                 (vector-ref (vector "A" "B" "C" "D" "E" "F" "G" "H") num)))))
 
+    (define settings-buttons (<new> :radiobuttons gui (+ radio-x1 (/ border 2)) (+ y1 2) x2 (- radio-y2 2)
+                                    num-settings-buttons
+                                    (<ra> :get-curr-seqtrack-config-num)
+                                    (lambda (num is-on)
+                                      ;;(c-display "radio:" num is-on)
+                                      (when is-on
+                                        (apply-state! (get-state))
+                                        (<ra> :set-curr-seqtrack-config-num num))
+                                      #t)
+                                    :layout-horizontally #t
+                                    :text-func (lambda (num)
+                                                 (if (<ra> :seqtrack-config-is-used num)
+                                                     (vector-ref (vector "A*" "B*" "C*" "D*" "E*" "F*" "G*" "H*") num)
+                                                     (vector-ref (vector "A" "B" "C" "D" "E" "F" "G" "H") num)))))
+    (add-sub-area-plain! settings-buttons)
+    
+    (for-each (lambda (num)
+                (define settings-button (settings-buttons :get-radiobutton num))
+                (settings-button :add-statusbar-text-handler (lambda ()
+                                                               (list #f
+                                                                     (let ((keybinding (get-displayable-keybinding "ra:set-curr-seqtrack-config-num"
+                                                                                                                   (list num))))
+                                                                       (if (string=? keybinding "")
+                                                                           "Right-click to edit keybinding"
+                                                                           (<-> "Keybinding: \"" keybinding "\". Right-click to edit"))))))
+                (add-keybinding-configuration-to-gui settings-button
+                                                     "ra:set-curr-seqtrack-config-num"
+                                                     (list num)))
+              (iota num-settings-buttons))
+    
     (define curr-x1 -10000000)
     (define curr-x2 -10000000)
     (define curr-entries #f)

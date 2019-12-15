@@ -412,9 +412,59 @@ Examples:
                                  string<?))
                  " ")))
 
-(delafina (add-keybinding-configuration-to-gui :gui
+(define (get-keyboard-focus-from-gui gui)
+  (define parent-window (<gui> :get-parent-window gui))
+  (let loop ((gui gui))
+    (cond ((< gui 0)
+           "")
+          ((= gui (<gui> :get-editor-gui))
+           "FOCUS_EDITOR")
+          ((= gui (FROM-C-get-edit-gui))
+           "FOCUS_EDITOR")          
+          ((= gui (<gui> :get-sequencer-gui))
+           "FOCUS_SEQUENCER")
+          ((= gui (<gui> :get-main-mixer-gui))
+           "FOCUS_MIXER")
+          ((= gui (<gui> :get-main-mixer-strips-gui))
+           "FOCUS_MIXER")
+          ((= gui parent-window)
+           "")
+          (else
+           (let ((parent (<gui> :get-parent-gui gui)))
+             (if (= parent gui)
+                 ""
+                 (loop parent)))))))
+         
+#!!
+(get-keyboard-focus-from-gui 327)
+(<gui> :get-main-mixer-strips-gui)
+!!#
+
+(define (get-mouse-keybinding-from-focus-keybinding focus-keybinding)
+  (string-join (map (lambda (keybinding)
+                      (cond ((string=? keybinding "FOCUS_EDITOR")
+                             "MOUSE_EDITOR")
+                            ((string=? keybinding "FOCUS_MIXER")
+                             "MOUSE_MIXER")
+                            ((string=? keybinding "FOCUS_SEQUENCER")
+                             "MOUSE_SEQUENCER")
+                            (else
+                             keybinding)))
+                    (string-split focus-keybinding #\space))
+               " "))
+
+#!!
+(get-mouse-keybinding-from-focus-keybinding "")
+(get-mouse-keybinding-from-focus-keybinding "a b c")
+(string-join (list "a" "b" "c") " ")
+(string-join (list) " ")
+!!#
+
+(delafina (add-keybinding-configuration-to-gui :gui-or-area
                                                :ra-funcname
-                                               :args '())
+                                               :args '()
+                                               :focus-keybinding ;; Can be either FOCUS_EDITOR, FOCUS_MIXER, FOCUS_SEQUENCER, a combination of those (separate them with space), or an empty string (all). If not set, it will be set automatically from where gui-or-area is placed. It will be set automatically when the user right-clicks so you don't have to set parent gui before calling this function.
+                                               )
 
   (define (get-arg-string arg)
     (let ((arg2 (to-displayable-string arg)))
@@ -450,13 +500,14 @@ Examples:
     (<gui> :set-modal grab-gui #t)
 
     (<ra> :grab-keybinding
-          (lambda (keybinding) 
+          (lambda (keybinding)
+            (c-display "KEYBINDING1:" keybinding)
             (set! keybinding (remove-mouse-from-keybinding keybinding))
             (<gui> :close grab-gui)
             (define (setit!)
               (<ra> :add-keybinding-to-conf-file keybinding (get-python-ra-funcname ra-funcname) (map get-arg-string args)))
-            (define existing-command (<ra> :get-keybinding-from-keys (add-qualifier-to-keybinding keybinding "MOUSE_EDITOR")))
-            (c-display "KEYBINDING:" keybinding ". EXISTING:" existing-command)
+            (define existing-command (<ra> :get-keybinding-from-keys (add-qualifier-to-keybinding keybinding (get-mouse-keybinding-from-focus-keybinding focus-keybinding))))
+            (c-display "KEYBINDING2:" keybinding ". Existing:" existing-command)
             (if (string=? "" existing-command)
                 (setit!)
                 (show-async-message :text (<-> "Keybinding \"" (get-displayable-keybinding-from-keybinding keybinding) "\" already bound to \"" existing-command "\". Override?")
@@ -465,9 +516,16 @@ Examples:
                                                 (if (string=? "Yes" answer)
                                                     (setit!)))))
                                                     
-            (c-display "hello1"))))
+            (c-display "hello1................. GUI:" (if (integer? gui-or-area)
+                                                          gui-or-area
+                                                          (gui-or-area :get-gui))))))
     
   (define (keybinding-mouse-handler button state x y)
+    (if (not focus-keybinding)
+        (set! focus-keybinding (let ((gui (if (integer? gui-or-area)
+                                              gui-or-area
+                                              (gui-or-area :get-gui))))
+                                 (get-keyboard-focus-from-gui gui))))
     (define keybinding (get-displayable-keybinding ra-funcname args))
     (define has-keybinding (not (string=? keybinding "")))
     
@@ -484,7 +542,7 @@ Examples:
                            (define python-ra-funcname (get-python-ra-funcname ra-funcname))
                            (<ra> :remove-keybinding-from-conf-file
                                  (let ((keybinding (last (get-keybindings-from-command-without-focus-and-mouse (get-keybindings-command python-ra-funcname args)))))
-                                   (define ret (add-qualifier-to-keybinding keybinding "FOCUS_EDITOR"))
+                                   (define ret (add-qualifier-to-keybinding keybinding focus-keybinding))
                                    (c-display "RET:" ret)
                                    ret)
                                  python-ra-funcname
@@ -493,9 +551,28 @@ Examples:
                         '())))
     #f)
 
-  (<gui> :add-mouse-callback gui keybinding-mouse-handler))
+  (if (integer? gui-or-area)
+      (<gui> :add-mouse-callback gui-or-area keybinding-mouse-handler)
+      (gui-or-area :add-mouse-cycle-prepend!
+                   (lambda (button x* y*)
+                     (c-display "HEPP")
+                     (if (= button *right-button*)
+                         (begin
+                           (keybinding-mouse-handler button *is-pressing* x* y*)
+                           'eat-mouse-cycle)
+                         #f))))
+  )
 
-    
+#!!
+(for-each c-display (<ra> :get-keybindings-from-keys))
+
+(get-keybindings-from-command-without-focus-and-mouse
+ (get-keybindings-command (get-python-ra-funcname "ra:eval-scheme")
+                          (list (<-> "(c-display " 0 ")"))))
+(<ra> :get-keybindings-from-command
+ (get-keybindings-command (get-python-ra-funcname "ra:eval-scheme")
+                          (list (<-> "(c-display " 0 ")"))))
+!!#
   
 (delafina (create-keybinding-button :name
                                     :ra-funcname

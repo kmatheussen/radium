@@ -54,6 +54,21 @@
 
 #!!
 (get-menu-lines (<ra> :to-base64 "/home/kjetil/radium/bin/menues.conf"))
+(get-all-lines-in-file (<ra> :to-base64 "/home/kjetil/radium/bin/menues.conf"))
+
+(define wfilename (<ra> :to-base64 "/home/kjetil/radium/bin/menues.conf"))
+
+(map create-menu-line-from-line
+     (remove (lambda (line)
+               (string=? "" (string-strip line))) ;; remove empty lines
+             (map (lambda (line)
+                    (if (or (string=? "" line)
+                            (string-starts-with? line "#"))
+                        ""
+                        ((string-split line #\#) 0))) ;; remove comments
+                  (get-all-lines-in-file wfilename))))
+
+
 !!#
 
 (define (generate-menu-item-text text keybinding)
