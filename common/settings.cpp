@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "settings_proc.h"
 
+
 static QString custom_configuration_filename;
 
 static QString not_found("___________NOT-FOUND");
