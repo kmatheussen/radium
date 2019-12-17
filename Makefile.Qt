@@ -1519,7 +1519,7 @@ $(P)mQt_upperleft_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_upperleft_wi
 
 
 
-$(P)Qt_mixer_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_widget.ui $(P)create_source_from_ui.sh $(P)Qt_mixer_widget_callbacks.h $(P)Qt_mixer_direction_menu.h Qt/helpers.h
+$(P)Qt_mixer_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_widget.ui $(P)create_source_from_ui.sh $(P)Qt_mixer_widget_callbacks.h $(P)Qt_mixer_direction_menu.h Qt/helpers.h Qt/Timer.hpp
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) mixer_widget
 
 $(P)Qt_mixer_direction_menu.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_direction_menu.ui $(P)create_source_from_ui.sh  $(P)Qt_mixer_direction_menu_callbacks.h
@@ -2388,7 +2388,7 @@ T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.h
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h
 	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)
 
-Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp
+Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp
 	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) #-Wno-error=unused-variable
 
 CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp

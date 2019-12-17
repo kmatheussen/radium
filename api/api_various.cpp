@@ -2534,6 +2534,11 @@ void grabKeybinding(func_t *callback){
   g_grab_next_eventreceiver_key = true;
 }
 
+void cancelGrabKeybinding(void){
+  g_grab_next_eventreceiver_key = false;
+  g_grab_callback.set(NULL);
+}
+
 const_char* getQualifierName(const_char *qualifier){
 #if FOR_LINUX
   const char *g_left_meta = "Left Meta";
