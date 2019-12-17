@@ -125,6 +125,7 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #include <limits.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <math.h>
 
 #ifdef __cplusplus
 #include <limits>
@@ -1063,6 +1064,32 @@ static inline enum DynType DYN_get_type_from_name(const char* type_name){
   return INT_TYPE;
 }
 
+// code copied from s7.c
+static inline bool doubles_are_equal(double x, double y){
+
+  if (x == y)
+    return(true);
+
+  const double equivalent_float_epsilon = 1.0e-15; // Almost std::numeric_limits<double>::epsilon();
+  
+  const double eps = equivalent_float_epsilon;
+  const double diff = fabs(x - y);
+
+  if (diff <= eps)
+    return(true);
+
+  if ((isnan(x)) || (isnan(y)))
+    return((isnan(x)) && (isnan(y)));
+
+  // I don't understand what's happening below here, but I trust Bill.
+  
+  if (x < 0.0)
+    x = -x;
+  
+  return((x > 1.0) &&
+	 (diff < (x * eps)));
+}
+
 
 static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
   if (a1.type!=a2.type)
@@ -1090,7 +1117,7 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
     case INT_TYPE:
       return a1.int_number==a2.int_number;
     case FLOAT_TYPE:
-      return a1.float_number==a2.float_number;
+      return doubles_are_equal(a1.float_number, a2.float_number);
     case HASH_TYPE:
       return HASH_equal(a1.hash, a2.hash);
     case ARRAY_TYPE:
