@@ -438,10 +438,76 @@ class Parser:
             return True
         else:
             return False;
+
+    def getFocusQualifiers(self):
+        ret = []
         
+        if self.focusEditorKey in self.qualifiers:
+            ret += [self.focusEditorKey]
+        if self.focusMixerKey in self.qualifiers:
+            ret += [self.focusMixerKey]
+        if self.focusMixerStripsKey in self.qualifiers:
+            ret += [self.focusMixerStripsKey]
+        if self.focusSequencerKey in self.qualifiers:
+            ret += [self.focusSequencerKey]
+            
+        if not ret:
+            ret += [self.focusEditorKey]
+            ret += [self.focusMixerKey]
+            ret += [self.focusMixerStripsKey]
+            ret += [self.focusSequencerKey]
+            
+        return ret
+    
+    def getMouseQualifiers(self):
+        ret = []
+        
+        if self.mouseEditorKey in self.qualifiers:
+            ret += [self.mouseEditorKey]
+        if self.mouseMixerKey in self.qualifiers:
+            ret += [self.mouseMixerKey]
+        if self.mouseMixerStripsKey in self.qualifiers:
+            ret += [self.mouseMixerStripsKey]
+        if self.mouseSequencerKey in self.qualifiers:
+            ret += [self.mouseSequencerKey]
+            
+        if not ret:
+            ret += [self.mouseEditorKey]
+            ret += [self.mouseMixerKey]
+            ret += [self.mouseMixerStripsKey]
+            ret += [self.mouseSequencerKey]
+            
+        return ret
+    
     def getQualifiers(self):
         #print "qualifiers:", self.qualifiers
         return self.qualifiers[:]
+
+    def getQualifiersWithoutFocusAndMouse(self):
+        #print "qualifiers:", self.qualifiers
+        ret = []
+        for qualifier in self.qualifiers:
+            if qualifier == self.focusEditorKey:
+                continue
+            if qualifier == self.focusMixerKey:
+                continue
+            if qualifier == self.focusMixerStripsKey:
+                continue
+            if qualifier == self.focusSequencerKey:
+                continue
+
+            if qualifier == self.mouseEditorKey:
+                continue
+            if qualifier == self.mouseMixerKey:
+                continue
+            if qualifier == self.mouseMixerStripsKey:
+                continue
+            if qualifier == self.mouseSequencerKey:
+                continue
+
+            ret += [qualifier]
+            
+        return ret
 
     def getCommands(self):
         return self.command
@@ -451,7 +517,7 @@ class Parser:
         
 
 def putCode(keyhandles,parser,commands,added_qualifiers):
-    keys=parser.getKeys()+parser.getQualifiers()+added_qualifiers
+    keys=parser.getKeys()+parser.getQualifiersWithoutFocusAndMouse()+added_qualifiers
     firstkey=keys.pop(0)
 
     command = " ".join(commands)
@@ -496,23 +562,13 @@ def printsak(file,keyhandles,parser,codestring):
 
 
 def addIt2(keyhandles, parser, commands, extra):
-    if not parser.focusInQualifiers():
-        putCode(keyhandles, parser, commands, extra + [parser.focusEditorKey])
-        putCode(keyhandles, parser, commands, extra + [parser.focusMixerKey])
-        putCode(keyhandles, parser, commands, extra + [parser.focusMixerStripsKey])
-        putCode(keyhandles, parser, commands, extra + [parser.focusSequencerKey])
-    else:
-        putCode(keyhandles, parser, commands, extra)
+    for focusQualifier in parser.getFocusQualifiers():
+        putCode(keyhandles, parser, commands, extra + [focusQualifier])
     
     
 def addIt(keyhandles, parser, commands):
-    if not parser.mouseInQualifiers():
-        addIt2(keyhandles, parser, commands, [parser.mouseEditorKey])
-        addIt2(keyhandles, parser, commands, [parser.mouseMixerKey])
-        addIt2(keyhandles, parser, commands, [parser.mouseMixerStripsKey])
-        addIt2(keyhandles, parser, commands, [parser.mouseSequencerKey])
-    else:
-        addIt2(keyhandles, parser, commands, [])
+    for mouseQualifier in parser.getMouseQualifiers():
+        addIt2(keyhandles, parser, commands, [mouseQualifier])
 
 
 
