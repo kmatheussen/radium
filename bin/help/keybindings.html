@@ -68,9 +68,11 @@ F12          : ra.showMixerHelpWindow
       Qualifiers are AND-ed together and not OR-ed. For instance, "A CTRL_L SHIFT_L" means that you have to press all the keys "a", "left ctrl", and "left shift" at the same time.
   <p>
     <UL>
-      <LI><b>FOCUS_EDITOR</b> is true if the editor has keyboard focus, marked by a thin orange frame. (Same for <b>FOCUS_MIXER</b>, <b>FOCUS_SEQUENCER</b>, and <b>FOCUS_MIXERSTRIPS</b>.)
+      <LI><b>FOCUS_EDITOR</b> is true if the editor has keyboard focus, marked by a thin orange frame. (Same for <b>FOCUS_MIXER</b>, <b>FOCUS_SEQUENCER</b>, and <b>FOCUS_MIXERSTRIPS</b>.)<br>
+        Note that the FOCUS_* qualifiers are OR-ed, not AND-ed.
       <p>
-      <LI><b>MOUSE_EDITOR</b> is true if the mouse pointer is placed inside the editor. (Same for <b>MOUSE_MIXER</b>, <b>MOUSE_SEQUENCER</b>, and <b>MOUSE_MIXERSTRIPS</b>.)
+        <LI><b>MOUSE_EDITOR</b> is true if the mouse pointer is placed inside the editor. (Same for <b>MOUSE_MIXER</b>, <b>MOUSE_SEQUENCER</b>, and <b>MOUSE_MIXERSTRIPS</b>.)<br>
+          Note that the MOUSE_* qualifiers are OR-ed, not AND-ed.
       <p>
       <LI><b>UP</b> is true when releasing the key instead of pressing it.
       <p>
