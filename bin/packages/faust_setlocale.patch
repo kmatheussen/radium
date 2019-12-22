@@ -1,0 +1,55 @@
+--- ./compiler/generator/llvm/llvm_dynamic_dsp_aux.cpp~	2019-12-11 11:32:13.000000000 +0100
++++ ./compiler/generator/llvm/llvm_dynamic_dsp_aux.cpp	2019-12-22 18:06:21.511580353 +0100
+@@ -593,7 +593,11 @@
+         return sfactory;
+     } else {
+         char* tmp_local = setlocale(LC_ALL, NULL);
++        if (tmp_local != NULL) {
++          tmp_local = strdup(tmp_local);
++        }
+         setlocale(LC_ALL, "C");
++        
+         LLVMContext* context = new LLVMContext();
+         SMDiagnostic err;
+         // parseIR takes ownership of the given buffer, so don't delete it
+@@ -603,7 +607,11 @@
+             return nullptr;
+         }
+ 
+-        setlocale(LC_ALL, tmp_local);
++        if (tmp_local != NULL) {
++          setlocale(LC_ALL, tmp_local);
++          free(tmp_local);
++        }
++        
+         string error_msg;
+ 
+         llvm_dynamic_dsp_factory_aux* factory_aux =
+--- ./architecture/faust/gui/JSONUIDecoder.h~	2019-12-11 11:32:13.000000000 +0100
++++ ./architecture/faust/gui/JSONUIDecoder.h	2019-12-22 18:02:20.760150094 +0100
+@@ -324,7 +324,10 @@
+     void buildUserInterface(UI* ui_interface, char* memory_block)
+     {
+         // MANDATORY: to be sure floats or double are correctly parsed
+-        char* tmp_local = setlocale(LC_ALL, nullptr);
++        char *tmp_local = setlocale(LC_ALL, nullptr);
++        if (tmp_local != NULL) {
++          tmp_local = strdup(tmp_local);
++        }
+         setlocale(LC_ALL, "C");
+         
+         for (auto& it : fUiItems) {
+@@ -381,8 +384,11 @@
+                 REAL_UI(ui_interface)->closeBox();
+             }
+         }
+-        
+-        setlocale(LC_ALL, tmp_local);
++
++        if (tmp_local != NULL) {
++          setlocale(LC_ALL, tmp_local);
++          free(tmp_local);
++        }
+     }
+     
+     void buildUserInterface(UIGlue* ui_interface, char* memory_block)
