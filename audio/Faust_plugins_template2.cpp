@@ -679,7 +679,7 @@ static void convert_effect_data_to_instrument_data(Data *data, dsp *initialized_
 }
 
 // May be called from any thread
-static Data *create_instrument_plugin_data2(float samplerate, dsp *initialized_dsps[MAX_POLYPHONY]){
+static Data *create_instrument_plugin_data2(float samplerate, dsp *initialized_dsps[MAX_POLYPHONY]){ // [NO_STATIC_ARRAY_WARNING]
   Data *data = new Data;
   data->samplerate = samplerate;
 
