@@ -229,7 +229,11 @@ namespace{
     
       void* allocate(size_t size) override
       {
+#if defined(RELEASE)
         void* res = V_calloc(1, size);
+#else
+        void* res = V_malloc(size); // makes it possible (probably) for asan to check reading unassigned memory.
+#endif
         return res;
       }
       
@@ -354,7 +358,7 @@ namespace{
             dsps[i] = reply.factory->createDSPInstance(); //reply.factory);
         }
         
-        for(int i=1;i<MAX_POLYPHONY;i++)
+        for(int i=1;i<MAX_POLYPHONY;i++)          
           dsps[i]->instanceInit(MIXER_get_sample_rate());
         
         convert_effect_data_to_instrument_data(reply.data, dsps);
@@ -400,6 +404,10 @@ namespace{
       return false;
       */
       if (opts.use_interpreter) {
+        /*
+        for(int i=0;i<args.get_argc();i++)
+          printf("%d: \"%s\"\n",i, args.get_argv()[i]);
+        */
         reply.interpreter_factory =
           createInterpreterDSPFactoryFromString(
                                                 "FaustDev",
@@ -415,6 +423,11 @@ namespace{
         R_ASSERT(false);
         return "Compilation error";
 #else
+        /*
+        for(int i=0;i<args.get_argc();i++)
+          printf("%d: %s\n",i, args.get_argv()[i]);
+        */
+        
         reply.llvm_factory =
           createDSPFactoryFromString(
                                      "FaustDev",

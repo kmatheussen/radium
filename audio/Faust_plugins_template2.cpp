@@ -174,7 +174,7 @@ private:
       controller->name = name;
     }
 
-    //printf("  addEffect. Controller name: \"%s\". Value: %f\n",controller->name.c_str(), *control_port);
+    //printf("  %p: addEffect. Controller name: \"%s\". Value: %f\n", this, controller->name.c_str(), *control_port);
 
     controller->type = type;
     controller->min_value = min_value;
@@ -186,34 +186,46 @@ private:
       next_peak = NULL;
     }
 
-    if(!strcmp(name,"gate"))
+    if(!strcmp(name,"gate")){
+      //R_ASSERT(_gate_control==NULL || _gate_control==control_port);
       _gate_control = control_port;
-
-    if(!strcmp(name,"freq"))
+    }
+    
+    if(!strcmp(name,"freq")){
+      //R_ASSERT(_freq_control==NULL || _freq_control==control_port);
       _freq_control = control_port;
-
-    if(!strcmp(name,"gain"))
+    }
+    
+    if(!strcmp(name,"gain")){
+      //R_ASSERT(_gain_control==NULL || _gain_control==control_port);
       _gain_control = control_port;
+    }
   }
 
 protected:
 
   void addButton(const char* label, float* zone) override {
+    //printf("Add button %s - %p\n", label, zone);
     addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
   }
   void addToggleButton(const char* label, float* zone) {
+    //printf("Add toggle button %s - %p\n", label, zone);
     addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
   }
   void addCheckButton(const char* label, float* zone) override {
+    //printf("Add check button %s - %p\n", label, zone);
     addEffect(label, zone, EFFECT_FORMAT_BOOL, 0, 0, 1);
   }
   void addVerticalSlider(const char* label, float* zone, float init, float min, float max, float step) override {
+    //printf("Add vertical slider %s - %p. %f %f %f %f\n", label, zone, init, min, max, step);
     addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
   }
   void addHorizontalSlider(const char* label, float* zone, float init, float min, float max, float step) override {
+    //printf("Add horizontal slider %s - %p. %f %f %f %f\n", label, zone, init, min, max, step);
     addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
   }
   void addNumEntry(const char* label, float* zone, float init, float min, float max, float step) override {
+    //printf("Add num entry %s - %p. %f %f %f %f\n", label, zone, init, min, max, step);
     addEffect(label, zone, step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max); // The INT effect format might not work. Need to go through the code first.
   }
   
@@ -471,6 +483,8 @@ static void play_note2(Data *data, int time, note_t note){
   *(voice->myUI._freq_control) = midi_to_hz(note.pitch);
   *(voice->myUI._gain_control) = velocity2gain(note.velocity);
 
+  //printf("        Setting freq to %f. gate: %f. gain: %f\n", *(voice->myUI._freq_control), *(voice->myUI._gate_control), *(voice->myUI._gain_control));
+
   voice->note_num = note.pitch;
   voice->note_id = note.id;
   voice->seqblock = note.seqblock;
@@ -517,8 +531,10 @@ static void set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
 static void stop_note2(Data *data, int time, note_t note){
   Voice *voice = data->voices_playing;
   while(voice!=NULL){
-    if(is_note(note, voice->note_id, voice->seqblock))
+    if(is_note(note, voice->note_id, voice->seqblock)){
       voice->delta_pos_at_end = time;
+      //printf("        STOP! freq to %f. gate: %f. gain: %f\n", *(voice->myUI._freq_control), *(voice->myUI._gate_control), *(voice->myUI._gain_control));
+    }
     voice=voice->next;
   }
 }
