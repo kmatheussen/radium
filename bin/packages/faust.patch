@@ -1,22 +1,5 @@
-diff --git a/build/CMakeLists.txt b/build/CMakeLists.txt
-index ece37cb0b..ff2b549e0 100644
---- a/build/CMakeLists.txt
-+++ b/build/CMakeLists.txt
-@@ -84,8 +84,8 @@ if (INCLUDE_LLVM )
- 	# the declarations below are redundant but necessary to cope with different cmake behaviors on different platforms
- 	set (TMP ${SRCDIR}/generator/llvm)
- if (NOT MSVC)
--	set_property(SOURCE ${TMP}/llvm_dsp_aux.cpp ${TMP}/llvm_dynamic_dsp_aux.cpp APPEND_STRING PROPERTY COMPILE_FLAGS "-fno-rtti ${LLVM_DEFINITIONS}")
--	set_property(SOURCE ${TMP}/llvm_dsp_aux.cpp ${TMP}/llvm_dynamic_dsp_aux.cpp APPEND_STRING PROPERTY CMAKE_CXX_FLAGS "-fno-rtti ${LLVM_DEFINITIONS}")
-+	set_property(SOURCE ${TMP}/llvm_dsp_aux.cpp ${TMP}/llvm_dynamic_dsp_aux.cpp APPEND_STRING PROPERTY COMPILE_FLAGS "${LLVM_DEFINITIONS}")
-+	set_property(SOURCE ${TMP}/llvm_dsp_aux.cpp ${TMP}/llvm_dynamic_dsp_aux.cpp APPEND_STRING PROPERTY CMAKE_CXX_FLAGS "${LLVM_DEFINITIONS}")
- endif()
- 	set (FAUST_LIBS ${FAUST_LIBS} ${LLVM_LD_FLAGS} ${LLVM_LIBS})
- 	
-diff --git a/build/backends/most.cmake b/build/backends/most.cmake
-index c6333e550..0589c5d41 100644
---- a/build/backends/most.cmake
-+++ b/build/backends/most.cmake
+--- build/backends/most.cmake	2019-12-21 23:15:59.431032512 +0100
++++ build/backends/most.cmake	2019-12-21 23:17:08.018789839 +0100
 @@ -8,14 +8,14 @@
  #    WASM      embed the backend in the faust wasm library
  #    SOUL      embed the backend in the faust wasm library
@@ -31,13 +14,14 @@ index c6333e550..0589c5d41 100644
 -set ( RUST_BACKEND   COMPILER STATIC DYNAMIC        CACHE STRING  "Include RUST backend"      FORCE )
 -set ( SOUL_BACKEND   COMPILER STATIC DYNAMIC        CACHE STRING  "Include SOUL backend"      FORCE )
 -set ( WASM_BACKEND   COMPILER STATIC DYNAMIC WASM   CACHE STRING  "Include WASM backend"      FORCE )
-+set ( C_BACKEND      OFF   CACHE STRING  "Include C backend"         FORCE )
-+set ( CPP_BACKEND    STATIC COMPILER   CACHE STRING  "Include CPP backend"       FORCE )
-+set ( FIR_BACKEND    OFF       CACHE STRING  "Include FIR backend"       FORCE )
-+set ( INTERP_BACKEND STATIC                           CACHE STRING  "Include INTERPRETER backend" FORCE )
++set ( C_BACKEND      OFF        CACHE STRING  "Include C backend"         FORCE )
++set ( CPP_BACKEND    COMPILER STATIC         CACHE STRING  "Include CPP backend"       FORCE )
++set ( FIR_BACKEND    OFF        CACHE STRING  "Include FIR backend"       FORCE )
++set ( INTERP_BACKEND STATIC                            CACHE STRING  "Include INTERPRETER backend" FORCE )
 +set ( JAVA_BACKEND   OFF        CACHE STRING  "Include JAVA backend"      FORCE )
 +set ( LLVM_BACKEND   STATIC        CACHE STRING  "Include LLVM backend"      FORCE )
-+set ( OLDCPP_BACKEND OFF         CACHE STRING  "Include old CPP backend"   FORCE )
-+set ( RUST_BACKEND   OFF       CACHE STRING  "Include RUST backend"      FORCE )
-+set ( SOUL_BACKEND   OFF         CACHE STRING  "Include SOUL backend"      FORCE )
-+set ( WASM_BACKEND   OFF  WASM   CACHE STRING  "Include WASM backend"      FORCE )
++set ( OLDCPP_BACKEND OFF        CACHE STRING  "Include old CPP backend"   FORCE )
++set ( RUST_BACKEND   OFF        CACHE STRING  "Include RUST backend"      FORCE )
++set ( SOUL_BACKEND   OFF        CACHE STRING  "Include SOUL backend"      FORCE )
++set ( WASM_BACKEND   OFF WASM   CACHE STRING  "Include WASM backend"      FORCE )
+ 
