@@ -1952,11 +1952,11 @@ Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
 
 
 FAUST_DEPENDENCIES = audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS1 = $(QTOPT) $(CPUOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations -Wno-deprecated-declarations
+FAUST_OPTS1 = $(QTOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations -Wno-deprecated-declarations -fno-sanitize=vptr $(CPUOPT) 
 FAUST_OPTS = $(FAUST_OPTS1) -I$(FAUSTDIR)/architecture
 # -Ibin/packages/faust2/architecture 
 
-Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
+Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
 	$(CCC) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(NOSHORTEN64TO32FLAG) # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
 
