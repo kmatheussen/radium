@@ -37,6 +37,7 @@ fi
 #fi
 
 export INCLUDE_FAUSTDEV="jadda"
+#export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
 
 # Always compile pddev. Most of it is placed in a dynamic library, so it doesn't contribute to higher link time or startup time.
 export INCLUDE_PDDEV="jadda"
@@ -222,7 +223,8 @@ if [[ $1 == "test" ]] ; then
 else
     make radium $@ --stop
 fi
-   
+
+
 #make pluginhost/Builds/Linux/build/libMyPluginHost.a
 
 cp -f bin/run_radium_linux.sh bin/radium
@@ -230,3 +232,14 @@ cp -f bin/run_radium_linux.sh bin/radium
 #cp -p *.o linux_objs/ 2>/dev/null | true
 
 
+if grep ^static\  audio/*.cpp | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v "\[NO_STATIC_ARRAY_WARNING\]" ; then
+    echo "ERROR. Global arrays of static data decreases GC performance";
+    exit -1
+fi
+
+echo
+if grep ^static\  */*.cpp | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v "\[NO_STATIC_ARRAY_WARNING\]" ; then
+    echo
+    echo "   Warning for the files listed above. Global arrays of static data decreases GC performance";
+    echo
+fi

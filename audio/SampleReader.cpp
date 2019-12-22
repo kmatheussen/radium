@@ -267,7 +267,7 @@ struct SliceBuffer{
   float samples[SLICE_SIZE];
 };
 
-static float g_empty_slicebuffer_buffer[SLICE_SIZE] = {};
+static float *g_empty_slicebuffer_buffer; __attribute__((constructor)) static void initialize_g_empty_slicebuffer_buffer() { g_empty_slicebuffer_buffer = (float*)calloc(sizeof(float), SLICE_SIZE);};
  
 static SliceBuffer *g_slicebuffers = NULL;
 

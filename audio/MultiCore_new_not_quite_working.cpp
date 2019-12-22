@@ -307,7 +307,7 @@ struct Owner{
 
 };
   
-static Owner g_owners2[MAX_OWNERS];
+static Owner g_owners2[MAX_OWNERS];  // [NO_STATIC_ARRAY_WARNING]
 
 
 #if 0

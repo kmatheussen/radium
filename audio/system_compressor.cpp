@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------
 name: "system_compressor"
-Code generated with Faust 2.17.6 (https://faust.grame.fr)
+Code generated with Faust 2.20.2 (https://faust.grame.fr)
 Compilation options: -lang cpp -vec -lv 0 -vs 32 -ftz 0 -mcd 16
 ------------------------------------------------------------ */
 
@@ -21,6 +21,7 @@ Compilation options: -lang cpp -vec -lv 0 -vs 32 -ftz 0 -mcd 16
 #ifndef FAUSTCLASS 
 #define FAUSTCLASS Faust_system_compressor
 #endif
+
 #ifdef __APPLE__ 
 #define exp10f __exp10f
 #define exp10 __exp10
@@ -60,7 +61,7 @@ class Faust_system_compressor : public dsp {
 		m->declare("effect.lib/license", "STK-4.3");
 		m->declare("effect.lib/name", "Faust Audio Effect Library");
 		m->declare("effect.lib/version", "1.33");
-		m->declare("filename", "system_compressor");
+		m->declare("filename", "system_compressor.dsp");
 		m->declare("filter.lib/author", "Julius O. Smith (jos at ccrma.stanford.edu)");
 		m->declare("filter.lib/copyright", "Julius O. Smith III");
 		m->declare("filter.lib/deprecated", "This library is deprecated and is not maintained anymore. It will be removed in August 2017.");
@@ -85,15 +86,13 @@ class Faust_system_compressor : public dsp {
 
 	virtual int getNumInputs() {
 		return 2;
-		
 	}
 	virtual int getNumOutputs() {
 		return 2;
-		
 	}
 	virtual int getInputRate(int channel) {
 		int rate;
-		switch (channel) {
+		switch ((channel)) {
 			case 0: {
 				rate = 0;
 				break;
@@ -106,14 +105,12 @@ class Faust_system_compressor : public dsp {
 				rate = -1;
 				break;
 			}
-			
 		}
 		return rate;
-		
 	}
 	virtual int getOutputRate(int channel) {
 		int rate;
-		switch (channel) {
+		switch ((channel)) {
 			case 0: {
 				rate = 1;
 				break;
@@ -126,14 +123,11 @@ class Faust_system_compressor : public dsp {
 				rate = -1;
 				break;
 			}
-			
 		}
 		return rate;
-		
 	}
 	
 	static void classInit(int sample_rate) {
-		
 	}
 	
 	virtual void instanceConstants(int sample_rate) {
@@ -141,7 +135,6 @@ class Faust_system_compressor : public dsp {
 		fConst0 = std::min<float>(192000.0f, std::max<float>(1.0f, float(fSampleRate)));
 		fConst1 = (1.0f / fConst0);
 		fConst2 = (2.0f / fConst0);
-		
 	}
 	
 	virtual void instanceResetUserInterface() {
@@ -150,27 +143,21 @@ class Faust_system_compressor : public dsp {
 		fHslider2 = FAUSTFLOAT(50.148000000000003f);
 		fHslider3 = FAUSTFLOAT(2.0f);
 		fHslider4 = FAUSTFLOAT(-20.0f);
-		
 	}
 	
 	virtual void instanceClear() {
 		for (int l0 = 0; (l0 < 4); l0 = (l0 + 1)) {
 			fRec0_perm[l0] = 0.0f;
-			
 		}
 		for (int l1 = 0; (l1 < 4); l1 = (l1 + 1)) {
 			fRec3_perm[l1] = 0.0f;
-			
 		}
 		for (int l2 = 0; (l2 < 4); l2 = (l2 + 1)) {
 			fRec2_perm[l2] = 0.0f;
-			
 		}
 		for (int l3 = 0; (l3 < 4); l3 = (l3 + 1)) {
 			fRec1_perm[l3] = 0.0f;
-			
 		}
-		
 	}
 	
 	virtual void init(int sample_rate) {
@@ -189,7 +176,6 @@ class Faust_system_compressor : public dsp {
 	
 	virtual int getSampleRate() {
 		return fSampleRate;
-		
 	}
 	
 	virtual void buildUserInterface(UI* ui_interface) {
@@ -224,7 +210,6 @@ class Faust_system_compressor : public dsp {
 		ui_interface->declare(&fHbargraph1, "7", "");
 		ui_interface->addHorizontalBargraph("Gakk", &fHbargraph1, -50.0f, 10.0f);
 		ui_interface->closeBox();
-		
 	}
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
@@ -266,106 +251,87 @@ class Faust_system_compressor : public dsp {
 			/* Vectorizable loop 0 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
-				fZec0[i] = std::fabs((std::fabs(float(input0[i])) + std::fabs(float(input1[i]))));
-				
+				fZec0[i] = std::fabs((std::fabs(float(input1[i])) + std::fabs(float(input0[i]))));
 			}
 			/* Recursive loop 1 */
 			/* Pre code */
 			for (int j2 = 0; (j2 < 4); j2 = (j2 + 1)) {
 				fRec3_tmp[j2] = fRec3_perm[j2];
-				
 			}
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fRec3[i] = std::max<float>(fZec0[i], ((fRec3[(i - 1)] * fSlow2) + (fZec0[i] * fSlow3)));
-				
 			}
 			/* Post code */
 			for (int j3 = 0; (j3 < 4); j3 = (j3 + 1)) {
 				fRec3_perm[j3] = fRec3_tmp[(vsize + j3)];
-				
 			}
 			/* Recursive loop 2 */
 			/* Pre code */
 			for (int j4 = 0; (j4 < 4); j4 = (j4 + 1)) {
 				fRec2_tmp[j4] = fRec2_perm[j4];
-				
 			}
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fRec2[i] = ((fRec2[(i - 1)] * fSlow5) + (fRec3[i] * fSlow6));
-				
 			}
 			/* Post code */
 			for (int j5 = 0; (j5 < 4); j5 = (j5 + 1)) {
 				fRec2_perm[j5] = fRec2_tmp[(vsize + j5)];
-				
 			}
 			/* Vectorizable loop 3 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fZec1[i] = (8.68588924f * ((8.26295832e-08f * float(int(pun_float_to_int(float(fRec2[i]))))) + -87.9899673f));
-				
 			}
 			/* Vectorizable loop 4 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fHbargraph0 = FAUSTFLOAT(fZec1[i]);
 				fZec2[i] = (fSlow8 * std::max<float>((fZec1[i] - fSlow9), 0.0f));
-				
 			}
 			/* Recursive loop 5 */
 			/* Pre code */
 			for (int j6 = 0; (j6 < 4); j6 = (j6 + 1)) {
 				fRec1_tmp[j6] = fRec1_perm[j6];
-				
 			}
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fHbargraph1 = FAUSTFLOAT(fZec2[i]);
 				fRec1[i] = ((fRec1[(i - 1)] * fSlow7) + (fZec2[i] * fSlow10));
-				
 			}
 			/* Post code */
 			for (int j7 = 0; (j7 < 4); j7 = (j7 + 1)) {
 				fRec1_perm[j7] = fRec1_tmp[(vsize + j7)];
-				
 			}
 			/* Recursive loop 6 */
 			/* Pre code */
 			for (int j0 = 0; (j0 < 4); j0 = (j0 + 1)) {
 				fRec0_tmp[j0] = fRec0_perm[j0];
-				
 			}
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fRec0[i] = (fSlow0 + (0.999000013f * fRec0[(i - 1)]));
-				
 			}
 			/* Post code */
 			for (int j1 = 0; (j1 < 4); j1 = (j1 + 1)) {
 				fRec0_perm[j1] = fRec0_tmp[(vsize + j1)];
-				
 			}
 			/* Vectorizable loop 7 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fZec3[i] = float(pun_int_to_float(int((8388608.0f * (std::max<float>(-126.0f, (0.166096404f * fRec1[i])) + 126.942696f)))));
-				
 			}
 			/* Vectorizable loop 8 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				output0[i] = FAUSTFLOAT(((float(input0[i]) * fRec0[i]) * fZec3[i]));
-				
 			}
 			/* Vectorizable loop 9 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				output1[i] = FAUSTFLOAT(((float(input1[i]) * fRec0[i]) * fZec3[i]));
-				
 			}
-			
 		}
 		/* Remaining frames */
 		if (vindex < count) {
@@ -377,108 +343,88 @@ class Faust_system_compressor : public dsp {
 			/* Vectorizable loop 0 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
-				fZec0[i] = std::fabs((std::fabs(float(input0[i])) + std::fabs(float(input1[i]))));
-				
+				fZec0[i] = std::fabs((std::fabs(float(input1[i])) + std::fabs(float(input0[i]))));
 			}
 			/* Recursive loop 1 */
 			/* Pre code */
 			for (int j2 = 0; (j2 < 4); j2 = (j2 + 1)) {
 				fRec3_tmp[j2] = fRec3_perm[j2];
-				
 			}
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fRec3[i] = std::max<float>(fZec0[i], ((fRec3[(i - 1)] * fSlow2) + (fZec0[i] * fSlow3)));
-				
 			}
 			/* Post code */
 			for (int j3 = 0; (j3 < 4); j3 = (j3 + 1)) {
 				fRec3_perm[j3] = fRec3_tmp[(vsize + j3)];
-				
 			}
 			/* Recursive loop 2 */
 			/* Pre code */
 			for (int j4 = 0; (j4 < 4); j4 = (j4 + 1)) {
 				fRec2_tmp[j4] = fRec2_perm[j4];
-				
 			}
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fRec2[i] = ((fRec2[(i - 1)] * fSlow5) + (fRec3[i] * fSlow6));
-				
 			}
 			/* Post code */
 			for (int j5 = 0; (j5 < 4); j5 = (j5 + 1)) {
 				fRec2_perm[j5] = fRec2_tmp[(vsize + j5)];
-				
 			}
 			/* Vectorizable loop 3 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fZec1[i] = (8.68588924f * ((8.26295832e-08f * float(int(pun_float_to_int(float(fRec2[i]))))) + -87.9899673f));
-				
 			}
 			/* Vectorizable loop 4 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fHbargraph0 = FAUSTFLOAT(fZec1[i]);
 				fZec2[i] = (fSlow8 * std::max<float>((fZec1[i] - fSlow9), 0.0f));
-				
 			}
 			/* Recursive loop 5 */
 			/* Pre code */
 			for (int j6 = 0; (j6 < 4); j6 = (j6 + 1)) {
 				fRec1_tmp[j6] = fRec1_perm[j6];
-				
 			}
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fHbargraph1 = FAUSTFLOAT(fZec2[i]);
 				fRec1[i] = ((fRec1[(i - 1)] * fSlow7) + (fZec2[i] * fSlow10));
-				
 			}
 			/* Post code */
 			for (int j7 = 0; (j7 < 4); j7 = (j7 + 1)) {
 				fRec1_perm[j7] = fRec1_tmp[(vsize + j7)];
-				
 			}
 			/* Recursive loop 6 */
 			/* Pre code */
 			for (int j0 = 0; (j0 < 4); j0 = (j0 + 1)) {
 				fRec0_tmp[j0] = fRec0_perm[j0];
-				
 			}
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fRec0[i] = (fSlow0 + (0.999000013f * fRec0[(i - 1)]));
-				
 			}
 			/* Post code */
 			for (int j1 = 0; (j1 < 4); j1 = (j1 + 1)) {
 				fRec0_perm[j1] = fRec0_tmp[(vsize + j1)];
-				
 			}
 			/* Vectorizable loop 7 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				fZec3[i] = float(pun_int_to_float(int((8388608.0f * (std::max<float>(-126.0f, (0.166096404f * fRec1[i])) + 126.942696f)))));
-				
 			}
 			/* Vectorizable loop 8 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				output0[i] = FAUSTFLOAT(((float(input0[i]) * fRec0[i]) * fZec3[i]));
-				
 			}
 			/* Vectorizable loop 9 */
 			/* Compute code */
 			for (int i = 0; (i < vsize); i = (i + 1)) {
 				output1[i] = FAUSTFLOAT(((float(input1[i]) * fRec0[i]) * fZec3[i]));
-				
 			}
-			
 		}
-		
 	}
 
 };
