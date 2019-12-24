@@ -2533,8 +2533,14 @@ void midi_setInputPort(void){
 
 #define NUM_IDS 2048
 static int playnote_ids_pos = 0;
-static int64_t playnote_ids[NUM_IDS] = {};
-static float initial_pitches[NUM_IDS] = {};
+static int64_t *playnote_ids;
+static float *initial_pitches;
+
+__attribute__((constructor)) static void initialize_playnote_ids_and_initial_pitches() {
+  playnote_ids = (int64_t*)calloc(sizeof(int64_t), NUM_IDS);
+  initial_pitches = (float*)calloc(sizeof(float), NUM_IDS);
+};
+
 
 int playNote(float pitch, float velocity, float pan, int midi_channel, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);

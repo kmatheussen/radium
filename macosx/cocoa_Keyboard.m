@@ -53,7 +53,11 @@ extern struct TEvent tevent;
 extern struct Root *root;
 
 
-static bool g_modifiers[64] = {false}; // These are used to keep track of whether it's a key up or key down event when pressing a modifier key. Unfortunately we get NSFlagsChanged events for modifier keys.
+static bool *g_modifiers; // These are used to keep track of whether it's a key up or key down event when pressing a modifier key. Unfortunately we get NSFlagsChanged events for modifier keys.
+
+__attribute__((constructor)) static void initialize_g_modifiers(void) {
+  g_modifiers = (bool*)calloc(sizeof(bool), 64);
+};
 
 static void clear_modifiers(void){
   int i;
@@ -183,12 +187,27 @@ int OS_SYSTEM_get_modifier(void *void_event){
 }
 
 
-static int keymap[0x100] = {EVENT_NO};
-static int keymap_qwerty[0x100] = {EVENT_NO};
+static int *keymap;
+static int *keymap_qwerty;
 
 // This only works for qwerty-keyboards (i.e. what scancode is used for in windows and linux). To get EVENT_A (for instance): http://stackoverflow.com/questions/8263618/convert-virtual-key-code-to-unicode-string
 // Mac vk overview: http://stackoverflow.com/questions/3202629/where-can-i-find-a-list-of-mac-virtual-key-codes
 static void init_keymaps(void){
+
+  if (keymap==NULL){
+    
+    keymap = (int*)calloc(sizeof(int), 0x100);
+    keymap_qwerty = (int*)calloc(sizeof(int), 0x100);
+    
+    for(int i=0;i<0x100;i++){
+      keymap[i] = EVENT_NO;
+      keymap_qwerty[i] = EVENT_NO;
+    }
+    
+  } else {
+    R_ASSERT_NON_RELEASE(false);
+  }
+
   // alpha
   keymap_qwerty[kVK_ANSI_A] = EVENT_QWERTY_A;
   keymap_qwerty[kVK_ANSI_B] = EVENT_QWERTY_B;

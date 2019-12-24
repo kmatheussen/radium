@@ -93,10 +93,10 @@ SaveWindow(NextWindow(window));
 
 
 struct Tracker_Windows *LoadWindow(void){
-	static const char *objs[1]={
+	const char *objs[1]={
 		"WBLOCK"
 	};
-	static const char *vars[22]={
+	const char *vars[22]={
 		"x",
 		"y",
 		"width",

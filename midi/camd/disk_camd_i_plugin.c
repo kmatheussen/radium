@@ -24,8 +24,8 @@ DC_end();
 }
 
 void *LoadPatchData(void){
-	static char **objs=NULL;
-	static char *vars[5]={
+	char **objs=NULL;
+	char *vars[5]={
 		"clustername",
 		"channel",
 		"preset",

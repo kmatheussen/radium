@@ -37,14 +37,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 const char *OS_get_directory_separator(void){
-  static char ret[2] = {0};
-  static bool is_inited = false;
+  static const char *ret = NULL;
 
-  if(is_inited==false){
-    ret[0] = QString(QDir::separator()).toLocal8Bit()[0];
-    is_inited=true;
-  }
-
+  if (ret == NULL)
+    ret = talloc_strdup(QString(QDir::separator()).toLocal8Bit().constData());
+    
   return ret;
 }
 

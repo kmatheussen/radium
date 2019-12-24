@@ -62,7 +62,7 @@ if (save_all)
 
 struct WTracks *LoadWTrack(void){
 	static const char **objs=NULL;
-	static const char *vars[13]={
+	const char *vars[13]={
 		"notesonoff",
 		"notelength",
 		"fxwidth",

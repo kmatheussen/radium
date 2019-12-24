@@ -387,11 +387,16 @@ static QApplication *application;
 //static QColor *button_color=NULL;
 static bool override_default_qt_colors=true;
 
-static QColor g_note_colors[128];
+static QColor *g_note_colors;
+
+__attribute__((constructor)) static void initialize_g_note_colors(void) {
+  g_note_colors = new QColor[128];
+}
+
 
 #if 0
 #define NUM_NOTE_COLOR_CONF 4
-static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
+static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = { // [NO_STATIC_ARRAY_WARNING]
   {128*0,                     1},
   {128*1/NUM_NOTE_COLOR_CONF, 5},
   {128*2/NUM_NOTE_COLOR_CONF, 6},
@@ -402,7 +407,7 @@ static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
 
 #if 0
 #define NUM_NOTE_COLOR_CONF 9
-static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
+static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = { // [NO_STATIC_ARRAY_WARNING]
   {128*0,1},
   {128*1/NUM_NOTE_COLOR_CONF,2},
   {128*2/NUM_NOTE_COLOR_CONF,3},
@@ -417,7 +422,7 @@ static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
 #endif
 
 #define NUM_NOTE_COLOR_CONF 6
-static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = {
+static const int note_color_conf[NUM_NOTE_COLOR_CONF+1][2] = { // [NO_STATIC_ARRAY_WARNING]
   {0,PEAKS_0DB_COLOR_NUM},
   {24,PEAKS_4DB_COLOR_NUM},
   {48,PEAKS_0DB_COLOR_NUM},
@@ -714,8 +719,12 @@ static QColor get_replacement_color(enum ColorNums colornum){
   return ret;
 }
 
-static QColor *g_config_colors[END_CONFIG_COLOR_NUM] = {0};
+static QColor **g_config_colors;
 
+__attribute__((constructor)) static void initialize_g_config_colors(void) {
+  g_config_colors = (QColor**)calloc(sizeof(QColor*), END_CONFIG_COLOR_NUM);
+}
+  
 
 static void clear_config_color(enum ColorNums num){
   delete g_config_colors[num];

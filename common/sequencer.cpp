@@ -2210,7 +2210,7 @@ void SEQTRACK_delete_gfx_gfx_seqblock(struct SeqTrack *seqtrack, const struct Se
 /* Seqtracks config (a/b/c/d/e/f/g/h) */
 /*************************************/
 
-static hash_t *g_seqtracks_configs[NUM_SEQTRACKS_CONFIGS] = {0};
+static hash_t *g_seqtracks_configs[NUM_SEQTRACKS_CONFIGS] = {0}; // [NO_STATIC_ARRAY_WARNING]
 
 static hash_t *get_seqtrack_config(const struct SeqTrack *seqtrack){
   hash_t *config = HASH_create(10);

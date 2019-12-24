@@ -330,7 +330,7 @@ SWIG_addvarlink(PyObject *p, char *name,
 /* Pack binary data into a string */
 SWIGRUNTIME(char *)
 SWIG_PackData(char *c, void *ptr, int sz) {
-  static char hex[17] = "0123456789abcdef";
+  char *hex = "0123456789abcdef";
   int i;
   unsigned char *u = (unsigned char *) ptr;
   register unsigned char uu;
@@ -559,7 +559,7 @@ SWIG_InstallConstants(PyObject *d, swig_const_info constants[]) {
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
-static swig_type_info *swig_types[1];
+static swig_type_info *swig_types[1]; // [NO_STATIC_ARRAY_WARNING]
 
 /* -------- TYPES TABLE (END) -------- */
 

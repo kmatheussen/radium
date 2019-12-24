@@ -70,9 +70,16 @@ static int get_ms(void) {
 
 
 static bool crash_already_reported(void){
-  static pthread_t reported_threads[100];
+  static pthread_t *reported_threads = NULL;
   static int num_threads=0;
 
+  if (num_threads > 98)
+    return true;
+  
+  if (reported_threads == NULL){
+    reported_threads = calloc(sizeof(pthread_t), 100);
+  }  
+  
   pthread_t this_thread = pthread_self();
 
   int i;

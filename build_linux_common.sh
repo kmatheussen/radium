@@ -231,15 +231,10 @@ cp -f bin/run_radium_linux.sh bin/radium
 
 #cp -p *.o linux_objs/ 2>/dev/null | true
 
-
-if grep ^static\  audio/*.cpp | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v "\[NO_STATIC_ARRAY_WARNING\]" ; then
-    echo "ERROR. Global arrays of static data decreases GC performance";
-    exit -1
-fi
-
 echo
-if grep ^static\  */*.cpp | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v "\[NO_STATIC_ARRAY_WARNING\]" ; then
+if grep static\  */*.c */*.cpp */*.m */*/*.c */*/*.cpp | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples |grep -v "\[NO_STATIC_ARRAY_WARNING\]" ; then
     echo
-    echo "   Warning for the files listed above. Global arrays of static data decreases GC performance";
+    echo "ERROR in line(s) above. Static arrays may decrease GC performance notably.";
     echo
+    exit -1
 fi

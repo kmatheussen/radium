@@ -43,8 +43,8 @@ DC_end();
 
 
 void *MIDILoadFX(struct FX *fx,const struct Tracks *track){
-	static const char **objs=NULL;
-	static const char *vars[1]={"cc"};
+	const char **objs=NULL;
+	const char *vars[1]={"cc"};
 
 	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
 	struct UsedTrackMidiCCs *usmf;

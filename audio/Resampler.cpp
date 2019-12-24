@@ -271,7 +271,7 @@ void RESAMPLER_reset(struct radium::Resampler *resampler){
 #include <stdio.h>
 
 static long src_callback(void *cb_data, float **out_data){
-  static float data[1420];
+  static float data[1420]; // [NO_STATIC_ARRAY_WARNING]
   *out_data = data;
   return 1420;
 }

@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_fx_proc.h"
 
 
-static struct MIDI_FX MIDI_fxs[MIDI_NUM_FX]={
+static struct MIDI_FX MIDI_fxs[MIDI_NUM_FX]={ // [NO_STATIC_ARRAY_WARNING]
         {"Program Change",0,127,PROGRAMCHANGE_CC},
 
 	{"-----------------------",0,0,-1},
@@ -82,7 +82,7 @@ static struct MIDI_FX MIDI_fxs[MIDI_NUM_FX]={
 	{"Other CC",0,0,OTHER_CC}
 };
 
-static const char *midi_fxs_fullnames[MIDI_NUM_FX]={
+static const char *midi_fxs_fullnames[MIDI_NUM_FX]={ // [NO_STATIC_ARRAY_WARNING]
 	"Program Change",
 
 	"-----------------------",

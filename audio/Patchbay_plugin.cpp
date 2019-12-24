@@ -98,11 +98,18 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 }
 
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+  static char **names = NULL;
+
+  if (names==NULL)
+    names = (char**)calloc(sizeof(char*), MAX_NUM_CHANNELS*MAX_NUM_CHANNELS);
+  
   SoundPluginType *type = plugin->type;
-  static char names[MAX_NUM_CHANNELS*MAX_NUM_CHANNELS][64];
   int from = effect_num / type->num_inputs; // not sure if it's num_inputs or num_outputs here
   int to = effect_num % type->num_inputs; // same here
-  sprintf(names[effect_num], "%d->%d",from,to);
+  
+  if (names[effect_num]==NULL)
+    names[effect_num] = strdup(talloc_format("%d->%d",from,to));
+  
   return names[effect_num];
 }
 

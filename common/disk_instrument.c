@@ -22,11 +22,11 @@ DC_end();
 }
 
 struct Instruments *LoadInstrument(void){
-	static const char *objs[2]={
+	const char *objs[2]={
                 "PATCH",
                 "PATCH_V2"
 	};
-	static const char *vars[1]={
+	const char *vars[1]={
 		"instrumentname"
 	};
         char *instrument_name = NULL;

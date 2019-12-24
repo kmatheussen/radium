@@ -231,10 +231,23 @@ static uint32_t get_keyswitch(void){
   return keyswitch;
 }
 
-static int keymap[0x100] = {EVENT_NO};
+
+static int *keymap = NULL;
+
 
 // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%28v=vs.85%29.aspx
 static void init_keymap(void){
+  if (keymap==NULL){
+    
+    keymap = (int*)calloc(sizeof(int), 0x100);
+    
+    for(int i=0;i<0x100;i++)
+      keymap[i] = EVENT_NO;
+    
+  } else {
+    R_ASSERT_NON_RELEASE(false);
+  }
+  
   // alpha
   keymap[0x41] = EVENT_A;
   keymap[0x42] = EVENT_B;

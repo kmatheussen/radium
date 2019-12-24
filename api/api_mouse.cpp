@@ -2749,7 +2749,8 @@ int64_t getFxInstrument(int fxnum, int tracknum, int blocknum, int windownum){
   
   return fxs->fx->patch->id;
 }
-  
+
+
 const_char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){   
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -2772,7 +2773,10 @@ const_char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, in
 
   // instead we just do this:
   struct FX *fx = fxs->fx;
-  static char ret[512];
+  static char *ret = NULL;
+
+  if (ret==NULL)
+    ret = (char*)calloc(sizeof(char), 512);
 
   if (wtrack->track->patch->instrument==get_MIDI_instrument())
     snprintf(ret, 511, "%s: %d", fx->name, (int)val);
