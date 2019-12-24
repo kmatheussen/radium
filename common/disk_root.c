@@ -60,10 +60,10 @@ DC_end();
 
 struct Root *LoadRoot(void){
           
-	static const char *objs[1]={
+	const char *objs[1]={
 		"SONG"
 	};
-	static const char *vars[14]={
+	const char *vars[14]={
 		"def_instrument",
 		"curr_block",
 		"tempo",

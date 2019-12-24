@@ -44,7 +44,7 @@ extern struct Root *root;
 
 #define MAX_SCROLLPLAYTRACKS 128
 
-static vector_t scrollplaying_notes[MAX_SCROLLPLAYTRACKS] = {{0}};
+static vector_t scrollplaying_notes[MAX_SCROLLPLAYTRACKS] = {{0}}; // [NO_STATIC_ARRAY_WARNING]
 
 
 

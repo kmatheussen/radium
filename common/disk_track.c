@@ -77,13 +77,13 @@ if (save_all)
 extern struct Root *root;
 
 struct Tracks *LoadTrack(void){
-        static const char *objs[4]={
+        const char *objs[4]={
           "NOTE",
           "STOPS",
           "FXS",
           "SWING"
         };
-	static const char *vars[10]={
+	const char *vars[10]={
 		"onoff",
 		"trackname",
 		"patchnum",

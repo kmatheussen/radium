@@ -95,7 +95,7 @@ DC_end();
 }
 
 struct Song *LoadSong(void){
-	static const char *objs[7]={
+	const char *objs[7]={
 		"TRACKER_WINDOW",
 		"BLOCK",
 		"PLAYLIST",
@@ -104,7 +104,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	static const char *vars[11]={
+	const char *vars[11]={
 		"num_blocks",
 		"length",
 		"songname",

@@ -10,7 +10,14 @@ scancode table: https://msdn.microsoft.com/en-us/library/Aa299374%28v=VS.60%29.a
 http://www.quadibloc.com/comp/scan.htm
 ordinary scan codes: http://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
 */
-static int scancode[0x100] = {EVENT_NO};
+static int *scancode;
+
+__attribute__((constructor)) static void initialize_scancode(void) {
+  scancode = calloc(sizeof(int), 0x100);
+  for(int i=0;i<0x100;i++)
+    scancode[i] = EVENT_NO;
+}
+
 static void init_scancodes(void){
 #define s(a,b) scancode[0x##a] = EVENT_##b
   

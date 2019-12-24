@@ -245,8 +245,13 @@ bool g_qtgui_has_stopped = false;
 bool g_program_has_ended = false;
 
 #define RTWIDGET_SIZE 50
-static QPointer<QWidget> g_rtwidgets[RTWIDGET_SIZE];
-static bool g_widgets_needing_update[RTWIDGET_SIZE] = {};
+static QPointer<QWidget> *g_rtwidgets;
+static bool *g_widgets_needing_update;
+
+__attribute__((constructor)) static void initialize_g_widgets(void) {
+  g_rtwidgets = new QPointer<QWidget>[RTWIDGET_SIZE];
+  g_widgets_needing_update = (bool*)calloc(sizeof(bool), RTWIDGET_SIZE);
+}
 
 void RT_RTWIDGET_mark_needing_update(int pos){
   if(pos==-1)
@@ -384,7 +389,11 @@ void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_event
 extern struct TEvent tevent;
 bool tevent_autorepeat = false;
 
-static bool g_up_downs[EVENT_DASMAX];
+static bool *g_up_downs;
+
+__attribute__((constructor)) static void initialize_g_up_downs(void) {
+  g_up_downs = (bool*)calloc(sizeof(bool), EVENT_DASMAX);
+}
 
 static bool maybe_got_key_window(QWindow *window);
   
@@ -1784,7 +1793,12 @@ enum RT_MESSAGE_STATUS {
 
 static DEFINE_ATOMIC(int, rt_message_status) = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;
-static char rt_message[rt_message_length];
+static char *rt_message;
+
+__attribute__((constructor)) static void initialize_rt_message(void) {
+  rt_message = (char*)calloc(sizeof(char), rt_message_length);
+}
+
 
 static DEFINE_ATOMIC(int64_t, g_request_from_jack_transport_to_start_playing) = -1;
 static DEFINE_ATOMIC(bool, g_request_to_start_playing) = false;

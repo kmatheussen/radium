@@ -2602,17 +2602,17 @@ bool isFullVersion(void){
 }
 
 int radiumMajorVersion(void){
-  static int val = QString(RADIUM_VERSION).split(".")[0].toInt();
+  static int val = QString(RADIUM_VERSION).split(".")[0].toInt(); // [NO_STATIC_ARRAY_WARNING]
   return val;
 }
 
 int radiumMinorVersion(void){
-  static int val = QString(RADIUM_VERSION).split(".")[1].toInt();
+  static int val = QString(RADIUM_VERSION).split(".")[1].toInt(); // [NO_STATIC_ARRAY_WARNING]
   return val;
 }
 
 int radiumRevisionVersion(void){
-  static int val = QString(RADIUM_VERSION).split(".")[2].toInt();
+  static int val = QString(RADIUM_VERSION).split(".")[2].toInt(); // [NO_STATIC_ARRAY_WARNING]
   return val;
 }
 

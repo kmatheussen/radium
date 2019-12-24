@@ -956,8 +956,8 @@ static void AUDIO_save_FX(struct FX *fx,const struct Tracks *track){
 }
 
 static void *AUDIO_LoadFX(struct FX *fx,const struct Tracks *track){
-  static const char **objs=NULL;
-  static const char *vars[2]={"num","name"};
+  const char **objs=NULL;
+  const char *vars[2]={"num","name"};
 
   init_fx(fx,0,"Effect name was not set in file (\?\?\?)",NULL);
 

@@ -46,7 +46,7 @@ typedef struct _event_t{
 
 static event_t *g_free_events = NULL;
 
-static event_t g_all_events[QUEUE_SIZE] = {{0}}; // stored as a global variable so the gc can reach the data.
+static event_t g_all_events[QUEUE_SIZE] = {{0}}; // stored as a global variable so the gc can reach the data. [NO_STATIC_ARRAY_WARNING]
 
 static event_t g_event0 = {0};
 

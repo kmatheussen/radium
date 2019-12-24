@@ -71,8 +71,8 @@ static void SavePatchVoice(struct PatchVoice *voice, int voicenum){
 #endif
 
 static void LoadPatchVoice(struct PatchVoice *voice){
-  static const char *objs[0] = {};
-  static const char *vars[11] = {"is_on","transpose","volume","start","length","pan","time_format","chance", "only_set_new_transpose_when_note_on", "only_set_new_volume_when_note_on", "only_set_new_pan_when_note_on"};
+  const char *objs[0] = {};
+  const char *vars[11] = {"is_on","transpose","volume","start","length","pan","time_format","chance", "only_set_new_transpose_when_note_on", "only_set_new_volume_when_note_on", "only_set_new_pan_when_note_on"};
 
   voice->chance = 256; // For older songs
   
@@ -153,8 +153,8 @@ static void SavePatchVoices(struct Patch *patch){
 #endif
 
 static void LoadPatchVoices(struct Patch *patch){
-  static const char *objs[1] = {"VOICE"};
-  static const char *vars[1] = {"max_voices"};
+  const char *objs[1] = {"VOICE"};
+  const char *vars[1] = {"max_voices"};
 
   int voicenum;
 
@@ -267,11 +267,11 @@ struct Patch *LoadPatchV2(void){
 struct Patch *LoadPatchV1(void){
         bool is_MIDI_instrument = false;
 
-	static const char *objs[2]={
+	const char *objs[2]={
           "PATCHDATA",
           "VOICES"
 	};
-	static const char *vars[10]={
+	const char *vars[10]={
 		"name",
 		"minvel",
 		"maxvel",

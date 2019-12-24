@@ -122,10 +122,11 @@ static Faust_Plugin_widget *AUDIOWIDGET_get_faust_plugin_widget(Audio_instrument
 #endif
 
 const char **get_ccnames(void){
-  static bool is_inited = false;
-  static const char *ccnames[128];
+  static const char **ccnames = NULL;
 
-  if (is_inited == false) {
+  if (ccnames == NULL) {
+    ccnames = (const char**)calloc(sizeof(char*), 128);
+    
     for(int i=0;i<128;i++)
       ccnames[i] = "";
 
@@ -155,10 +156,9 @@ const char **get_ccnames(void){
       ccnames[127] = "Poly Mode";
     }
 
-    is_inited = true;
   }
 
-    return ccnames;
+  return ccnames;
 }
 
 //#define protected public

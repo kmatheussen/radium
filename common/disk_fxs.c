@@ -51,7 +51,7 @@ void SaveFXs(vector_t *fxss,struct Tracks *track){
 }
 
 struct FXs *LoadFXs(struct Tracks *track){
-	static const char *objs[2]={
+	const char *objs[2]={
 		"FX",
 		"FXNODELINES"
 	};

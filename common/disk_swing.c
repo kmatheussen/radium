@@ -49,10 +49,10 @@ SaveSwings(NextSwing(swing));
 
 
 struct Swing *LoadSwing(void){
-        static const char *objs[1]={
+        const char *objs[1]={
           "PLACE"
         };
-	static const char *vars[2]={
+	const char *vars[2]={
 		"weight",
 		"logtype"
 	};

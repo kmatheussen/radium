@@ -134,14 +134,24 @@ static void clear_file(QString filename){
 
 #define NUM_EVENTS 100
 
-static const char *g_event_log[NUM_EVENTS] = {""};
-static double g_time_log[NUM_EVENTS] = {0.0};
+static const char **g_event_log;
+static double *g_time_log;
 static DEFINE_ATOMIC(int, g_event_pos) = 0;
 
+static void init_log(void){
+  if (g_event_log==NULL){
+    g_event_log = (const char**)calloc(sizeof(const char*), NUM_EVENTS);
+    g_time_log = (double*)calloc(sizeof(double), NUM_EVENTS);
+    for(int i=0;i<NUM_EVENTS;i++)
+      g_event_log[i] = "";
+  }  
+}
 
 void EVENTLOG_add_event(const char *log_entry){
  R_ASSERT(THREADING_is_main_thread());
 
+ init_log();
+ 
  int pos = ATOMIC_ADD_RETURN_OLD(g_event_pos, 1) % NUM_EVENTS;
  
  g_event_log[pos] = log_entry;
@@ -149,11 +159,15 @@ void EVENTLOG_add_event(const char *log_entry){
 }
 
 static QString get_event_string(int pos, double time_now){
+  init_log();
+  
   return QString(QString::number((time_now - g_time_log[pos])/1000.0, 'f', 6) + ": " + g_event_log[pos]) + "\n";
 }
 
 static QString get_event_log(int event_pos, double time_now){
   QString ret;
+
+  init_log();
   
   for(int i=event_pos-1; i>=0 ; i--)
     ret += get_event_string(i, time_now);
@@ -634,8 +648,17 @@ static DEFINE_ATOMIC(int, g_plugin_name_pos) = 0;
 
 double g_last_midi_receive_time = 0;
 
-static DEFINE_ATOMIC(const char *, g_plugin_names)[MAX_NUM_PLUGIN_NAMES]={g_no_plugin_name};
+static DEFINE_ATOMIC(const char **, g_plugin_names);
 //static QString g_plugin_name=g_no_plugin_name;
+
+__attribute__((constructor)) static void initialize_g_plugin_names() {
+  ATOMIC_NAME(g_plugin_names) = (const char**)calloc(sizeof(const char*), MAX_NUM_PLUGIN_NAMES);
+  
+  for(int i=0;i<MAX_NUM_PLUGIN_NAMES;i++){
+    ATOMIC_SET_ARRAY(g_plugin_names, i, g_no_plugin_name);
+  }
+}
+
 
 int CRASHREPORTER_set_plugin_name(const char *plugin_name){
   //fprintf(stderr,"plugin_name: -%s-\n",plugin_name);
@@ -1122,6 +1145,8 @@ void CRASHREPORTER_close(void){
 
 
 void CRASHREPORTER_init(void){
+
+  init_log();
   
 #if defined(FOR_WINDOWS)
   CRASHREPORTER_windows_init();

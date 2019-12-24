@@ -59,17 +59,21 @@ bool Quit(struct Tracker_Windows *window){
 
 extern PyObject *gotkeyFunc;
 
-static PyObject *Integers_py[EVENT_DASMAX];
-static PyObject *Lists_py[12];
+static PyObject **Integers_py;
+static PyObject **Lists_py;
 
 static void init_pyobjects(void){
 	int lokke;
 
+        Integers_py = calloc(sizeof(PyObject*), EVENT_DASMAX);
+        
 	for(lokke=0;lokke<EVENT_DASMAX;lokke++){
 		Integers_py[lokke]=PyInt_FromLong((long)lokke);
 		Py_INCREF(Integers_py[lokke]);
 		Py_INCREF(Integers_py[lokke]);
 	}
+
+        Lists_py = calloc(sizeof(PyObject*), 12);
 
 	for(lokke=0;lokke<12;lokke++){
 		Lists_py[lokke]=PyList_New(lokke);

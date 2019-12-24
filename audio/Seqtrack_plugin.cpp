@@ -2526,7 +2526,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   bool enable_piping = false;
   
   Data *data = new Data(sample_rate, enable_piping);
-  printf("####################################################### Setting sine volume to 0.5f (create_plugin_data)\n");
+  //printf("####################################################### Setting sine volume to 0.5f (create_plugin_data)\n");
 
   //add_sample(L"/home/kjetil/radium/bin/sounds/bbs2.wav");
   
@@ -2535,7 +2535,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
-  printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
+  //printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
   delete data;
 }
 

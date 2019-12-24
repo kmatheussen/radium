@@ -2474,8 +2474,12 @@ static void get_patches_min_x_y(const vector_t *patches, float &min_x, float &mi
 }
 
 static char *get_patch_key(struct Patch *patch){
-  static char temp[128];
-  sprintf(temp, "%" PRId64, patch->id);
+  static char *temp = NULL;
+  if(temp==NULL)
+    temp = (char*)malloc(sizeof(temp) * 128);
+  
+  snprintf(temp, 110, "%" PRId64, patch->id);
+  
   return temp;
 }
 
@@ -2875,9 +2879,10 @@ void MW_create_plain(void){
 
 // A/B
 
-static hash_t *g_ab_states[MW_NUM_AB] = {};
-static bool g_ab_is_valid[MW_NUM_AB] = {};
+static hash_t *g_ab_states[MW_NUM_AB] = {}; // [NO_STATIC_ARRAY_WARNING]
+static bool g_ab_is_valid[MW_NUM_AB] = {}; // [NO_STATIC_ARRAY_WARNING]
 static int g_curr_ab = 0;
+
 
 int MW_get_curr_ab(void){
   return g_curr_ab;
