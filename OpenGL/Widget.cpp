@@ -2183,10 +2183,29 @@ return SETTINGS_read_double("vblank", -1.0) > 0.0;
 }
 #endif
 
+
+static bool g_has_started_t2_thread = false;
+
+static bool maybe_start_t2_thread(void){
+  if (g_has_started_t2_thread)
+    return true;
+  
+  QWindow *qwindow = widget->windowHandle();
+  if (qwindow!=NULL){
+    QScreen *qscreen = qwindow->screen();
+    if (qscreen!=NULL) {
+      radium::ScopedMutex lock(make_current_mutex);
+      T1_start_t2_thread(widget->context()->contextHandle());
+      g_has_started_t2_thread = true;
+      return true;
+    }
+  }
+
+  return false;
+}
+
 static double get_refresh_rate(void){
-
-  static bool has_started_t2_thread = false;
-
+  
   QWindow *qwindow = widget->windowHandle();
   if (qwindow!=NULL){
 
@@ -2212,21 +2231,13 @@ static double get_refresh_rate(void){
       }
       
     }
-
+    
     QScreen *qscreen = qwindow->screen();
     if (qscreen!=NULL) {
 
-      if (has_started_t2_thread==false){
-        
-        radium::ScopedMutex lock(make_current_mutex);
-
-        T1_start_t2_thread(widget->context()->contextHandle());
-        has_started_t2_thread = true;
-        
-      }
+      maybe_start_t2_thread();
 
       return qscreen->refreshRate();
-
     }
 
   }
@@ -2451,6 +2462,23 @@ static void setup_widget(QWidget *parent){
 #if THREADED_OPENGL
   widget->setAutomaticDelete(false);  // dont want auto-desctruction at program exit.
 #endif
+
+  // This code-block seems to prevent garbled font drawing sometimes happening on windows.
+  {
+    int countdown = 5000 / 20;
+    bool gotit=false;
+    while(gotit==false){
+
+      countdown--;
+      if (countdown <= 0) // security to prevent lockup.
+        break;
+      
+      msleep(20);
+      
+      if (maybe_start_t2_thread()==true)
+        break;
+    }
+  }
 }
 
 static bool g_compatibility_ok = false;

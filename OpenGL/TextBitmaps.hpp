@@ -77,7 +77,7 @@ static inline void GE_add_imageholder(QFont qfont, QHash<QChar,ImageHolder> *ima
   int real_width = metrics.horizontalAdvance("#");
 #else
   int real_width = metrics.width("#");
-#endif  
+#endif
   int height = metrics.height();
   int width=height;
   //int width=real_width;
