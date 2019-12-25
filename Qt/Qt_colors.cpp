@@ -305,6 +305,9 @@ static ReplacementColor g_replacement_color[] = {
   {CURSOR_BORDER_COLOR_NUM, QColor("#50000000")},
   {CURSOR_CURR_COLUMN_BORDER_COLOR_NUM, QColor("#d0ff0000")},
 
+  {VELOCITY1_COLOR_NUM, QColor("#ff1e211e")},
+  {VELOCITY2_COLOR_NUM, QColor("#ffab8d5c")},
+  
   {SLIDER1_COLOR_NUM, QColor(108,65,36)},
   {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},
   {SLIDER_RECORDING_COLOR_NUM, QColor(197,0,3)},
@@ -713,6 +716,15 @@ static QColor get_replacement_color(enum ColorNums colornum){
     i++;
   }
 
+  if(g_is_starting_up) {
+    static bool has_shown_startup_error = false;
+    if (has_shown_startup_error == false){
+      GFX_Message(NULL, "Could not find color \"%s\". Your color configuration is not valid. Try deleting the file .radium/color in your home directory and start Radium again.", get_color_config(colornum).config_name);
+      has_shown_startup_error = true;
+    }
+    return QColor(generateNewColor(1.0));
+  }
+
   RWarning("Unable to find color %s in config file", get_color_config(colornum).config_name);
 
   QColor ret;  
@@ -797,7 +809,7 @@ static QColor get_qcolor_really(enum ColorNums colornum){
 
   if (colornum==RED_COLOR_NUM)
     return red;
-
+  
   RError("Unknown color. Very strange %d", (int)colornum);
   return white;
 }

@@ -355,8 +355,18 @@ static QColor getQColor(const_char* colorname){
 #if !defined(RELEASE)
     abort();
 #endif
-    handleError("Color \"%s\" is not valid", colorname);
-    color = Qt::blue;
+
+    
+    if(g_is_starting_up) {
+      static bool has_shown_startup_error = false;
+      if (has_shown_startup_error == false){
+        GFX_Message(NULL, "Could not find color \"%s\". Your color configuration is not valid. Try deleting the file .radium/color in your home directory and start Radium again.", colorname);
+        has_shown_startup_error = true;
+      }
+    }else
+      handleError("Color \"%s\" is not valid", colorname);
+
+    color = QColor(generateNewColor(1.0));
   }
   
   return color;
