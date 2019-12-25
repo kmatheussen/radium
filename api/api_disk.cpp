@@ -418,8 +418,8 @@ int writeToFile(int64_t disknum, const_char* string){
 
   int bytes_written = DISK_write(disk, string);
   int string_len = (int)strlen(string);
-  if (bytes_written != string_len){
-    handleError("writeToFile: Unable to write all bytes to file. (%d / %d)", bytes_written, string_len);
+  if (bytes_written < string_len){
+    handleError("writeToFile: Unable to write all bytes to file. Written: %d. Expected: %d)", bytes_written, string_len);
   }
 
   return bytes_written;
