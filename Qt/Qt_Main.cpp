@@ -111,6 +111,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_AutoBackups_proc.h"
 #include "Qt_Bs_edit_proc.h"
 
+#include "Timer.hpp"
+#include "mTimer.hpp"
+
 #include "../common/eventreciever_proc.h"
 #include "../common/control_proc.h"
 #include "../common/settings_proc.h"
@@ -1428,7 +1431,6 @@ public slots:
 
 };
 
-#include "mQt_Main.cpp"
 
 MyApplication::MyApplication(int &argc,char **argv)
   : QApplication(argc,argv)
@@ -1825,26 +1827,26 @@ namespace{
   };
 }
 
-namespace{
-class CalledPeriodically : public QTimer {
-
+namespace {
+class CalledPeriodically : radium::Timer {
+  
   QPointer<NoKeyboardEventsQMessageBox> rt_msgBox;
   QAbstractButton *rt_msgBox_ok;
   QAbstractButton *rt_msgBox_stop_playing;
   QAbstractButton *rt_msgBox_dontshowagain;
   QSet<QString> dontshow;
 
-  const int interval;
-  
 public:
   CalledPeriodically()
-    : interval(MAIN_TIMER_INTERVAL) // is set to either 1, 2, 5, 10, 25, or 50.
+    : radium::Timer(MAIN_TIMER_INTERVAL) // is set to either 1, 2, 5, 10, 25, or 50.
   {
     //R_ASSERT( (50 % interval) == 0);
-    
+    /*    
     setInterval(interval);
     start();
+    */
   }
+
 protected:
 
   void createRtMsgBox(void){
@@ -1859,8 +1861,9 @@ protected:
     rt_msgBox->open();
     rt_msgBox->hide();
   }
-  
-  void 	timerEvent ( QTimerEvent * e ) override {
+
+  void calledFromTimer(void) override {
+      
 #ifdef TEST_GC
     printf("triggering full collect\n");
     GC_gcollect();
@@ -1962,11 +1965,11 @@ protected:
     struct Tracker_Windows *window=root->song->tracker_windows;
 
     // No, we still need to do this. At least in qt 5.5.1. Seems like it's not necessary in 5.7 or 5.8 though, but that could be coincidental.
-    if(num_calls_at_this_point<150/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
+    if(num_calls_at_this_point<150/_interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
       updateWidgetRecursively(g_main_window);
     }
 
-    if(num_calls_at_this_point==160/interval){
+    if(num_calls_at_this_point==160/_interval){
       show_nag_window("");
     }
 
@@ -1975,14 +1978,14 @@ protected:
     {
       static QPointer<MyQMessageBox> gakkbox = NULL; // gakkbox could, perhaps, be deleted by itself if radium finds a strange parent. (got a crash once where gakkbox was deleted before explicitly calling delete below.)
 
-      if(num_calls_at_this_point==50/interval){
+      if(num_calls_at_this_point==50/_interval){
         gakkbox = MyQMessageBox::create(false, NULL);
         gakkbox->setText("Forcing focus");
         safeShow(gakkbox);
         if (gakkbox != NULL)
           gakkbox->lower(); // doesn't work, at least on linux. Normally I struggle to keep window on top, now it's the opposite. Should probably change Radium to use QMdiArea. It should solve all of the window manager problems.
       }
-      if(num_calls_at_this_point==60/interval){
+      if(num_calls_at_this_point==60/_interval){
         if (gakkbox != NULL){
           gakkbox->hide();
           g_main_window->raise();
@@ -1990,7 +1993,7 @@ protected:
         }
       }
 
-      if(num_calls_at_this_point==70/interval){
+      if(num_calls_at_this_point==70/_interval){
         delete gakkbox;
         GFX_SetMenuFontsAgain();
         GFX_CloseProgress();
@@ -2002,7 +2005,7 @@ protected:
     // Does not work.
     {
       static bool has_raised = false;
-      if (has_raised==false && gnum_calls_at_this_point > 300/interval){
+      if (has_raised==false && gnum_calls_at_this_point > 300/_interval){
         g_main_window->raise();
         g_main_window->activateWindow();
         //BringWindowToTop((HWND)g_main_window->winId());
@@ -2094,7 +2097,7 @@ protected:
 
     if (window->message_duration_left > 0){
       //printf("message dur: %d\n",window->message_duration_left);
-      window->message_duration_left -= interval;
+      window->message_duration_left -= _interval;
       if (window->message_duration_left <= 0){
         window->message_duration_left = 0;
         window->message = NULL;
@@ -2143,7 +2146,7 @@ protected:
     }
 
     {
-      int gl_status = GL_maybe_notify_that_main_window_is_exposed(interval);
+      int gl_status = GL_maybe_notify_that_main_window_is_exposed(_interval);
       if (gl_status>=1)
         GL_maybe_estimate_vblank(static_cast<EditorWidget*>(window->os_visual.widget)->gl_widget);
     }
@@ -4111,3 +4114,7 @@ int main(int argc, char **argv){
   return 0;
 }
 
+//namespace radium_internal{
+#include "mQt_Main.cpp"
+//#include "mTimer.hpp"
+//}
