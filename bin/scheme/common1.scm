@@ -407,7 +407,39 @@
         (else
          das-list)))
 
+;; '(5 5 2 3 9) -> '((5 5) (2) (3) (9))
+(define (group-list das-list two-elements-mergable?)
+  (let loop ((das-list das-list)
+             (ret '()))
+    (if (null? das-list)
+        ret
+        (let ((el (car das-list)))
+          (loop (cdr das-list)
+                (let loop ((ret ret))
+                  ;;(c-display "ret:" ret)
+                  (cond ((null? ret)
+                         (list (list el)))
+                        ((two-elements-mergable? el (caar ret))
+                         (cons (append (car ret) (list el))
+                               (cdr ret)))
+                        (else
+                         (cons (car ret)
+                               (loop (cdr ret)))))))))))
 
+(***assert*** (group-list '(5 5 2 3 9 5) =)
+              '((5 5 5) (2) (3) (9)))
+
+(***assert*** (group-list '((5 a) (5 b) (2 c) (3 d) (2 de) (9 e) (5 f))
+                          (lambda (a b)
+                            (= (car a) (car b))))
+              '(((5 a) (5 b) (5 f))
+                ((2 c) (2 de))
+                ((3 d))
+                ((9 e))))
+#!!
+(merge-list '(5 5 2 3 9 5) =)
+!!#
+         
 ;; a 50 b 90 c 100 -> '((a 50)(b 90)(c 100))
 (define (make-assoc-from-flat-list rest)  
   (if (null? rest)
