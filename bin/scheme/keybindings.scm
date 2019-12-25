@@ -1,5 +1,8 @@
 (provide 'keybindings.scm)
 
+(<declare-variable> FROM-C-get-edit-gui) ;; in main_layout.scm
+
+
 (define (maybe-merge-two-keybindings-2 keybinding1 keybinding2 left right qualifier)
   (define (removeleftright keybinding)
     (delete-maybe right
@@ -172,6 +175,22 @@
 
 
 
+(define (get-keybindings-from-command-without-focus-and-mouse command)
+  (remove-duplicates-in-sorted-list equal?
+                                    (map (lambda (keybindings)
+                                           (remove (lambda (keybinding)
+                                                     (or (string-starts-with? keybinding "FOCUS_")
+                                                         (string-starts-with? keybinding "MOUSE_")))
+                                                   (string-split keybindings #\space)))
+                                         (to-list (<ra> :get-keybindings-from-command command)))))
+
+#!!
+(get-keybindings-from-command-without-focus-and-mouse "ra.pasteSeqblocks")
+(<ra> :get-keybindings-from-command "ra.pasteSeqblocks")
+(get-menu-keybindings "ra.pasteSeqblocks")
+(<ra> :get-qualifier-name "CTRL")
+!!#
+
 
 (define (get-displayable-keybindings1 command)
   (define keybindings (get-keybindings-from-command-without-focus-and-mouse command))
@@ -237,33 +256,62 @@
   (or (*key-display* key)      
       key))
 
-(define (get-displayable-keybinding2 keybinding)
-  (let loop ((qualifiers (cdr keybinding))
-             (is-first #t))
-    (<-> (if is-first "" " + ")
-         (if (null? qualifiers)
-             (get-key-name (car keybinding))
-             (<-> (<ra> :get-qualifier-name (car qualifiers))
-                  (loop (cdr qualifiers)
-                        #f))))))
+(define (remove-focus-and-mouse-from-keys keys)
+  (remove (lambda (key)
+            (or (string-starts-with? key "FOCUS_")
+                (string-starts-with? key "MOUSE_")))
+          keys))
+  
+(define (get-displayable-keybinding2 keys)
+  ;;(c-display "get-displayable-keybinding2. keys:" keys)
+  (define (getit pre)
+    (keep identity
+          (map (lambda (key)
+                 (cond ((string=? (<-> pre "EDITOR") key)
+                        "Editor")
+                       ((string=? (<-> pre "MIXER") key)
+                        "Mixer")
+                       ((string=? (<-> pre "SEQUENCER") key)
+                        "Sequencer")
+                       (else
+                        #f)))
+               keys)))
+                                 
+  (define focus-keys (getit "FOCUS_"))
+  (define mouse-keys (getit "MOUSE_"))
 
-(define (get-displayable-keybindings command)
-  (map get-displayable-keybinding2
-       (get-displayable-keybindings1 command)))
+  (string-join (append (if (null? focus-keys)
+                           '()
+                           (list (<-> (string-join focus-keys " or ")
+                                      " has keyboard focus")))
+                       (if (null? mouse-keys)
+                           '()
+                           (list (<-> "Mouse pointer inside the "
+                                      (string-join mouse-keys " or the "))))
+                       (map ra:get-qualifier-name (remove-focus-and-mouse-from-keys (cdr keys)))
+                       (list (car keys)))
+               " + "))
 
-(define (remove-focus-and-mouse-from-keybinding keybinding)
+#!!
+(get-displayable-keybinding2 (list "F2" "CTRL_L" "FOCUS_EDITOR" "FOCUS_MIXER"))
+(get-displayable-keybinding2 (list "F2" "MOUSE_EDITOR" "MOUSE_MIXER"))
+(get-displayable-keybinding2 (list "F2" "MOUSE_EDITOR" "MOUSE_MIXER" "FOCUS_EDITOR" "FOCUS_MIXER"))
+(get-displayable-keybinding2 (list "F2" "CTRL_L" "CTRL_R" "MOUSE_EDITOR" "FOCUS_EDITOR"))
+!!#
+
+(define (remove-focus-and-mouse-from-keybinding-list keybinding)
   (let* ((keys (if (list? keybinding)
                    keybinding
                    (string-split keybinding #\space)))
          (key (car keys))
          (qualifiers (cdr keys)))
-
     (cons key
-          (remove (lambda (keybinding)
-                    (or (string-starts-with? keybinding "FOCUS_")
-                        (string-starts-with? keybinding "MOUSE_")))
-                  qualifiers))))
+          (remove-focus-and-mouse-from-keys qualifiers))))
      
+(define (get-displayable-keybindings command)
+  (map get-displayable-keybinding2
+       (get-displayable-keybindings1 command)))
+
 (define (get-displayable-keybinding-from-keybinding keybinding)
   (get-displayable-keybinding2 (remove-focus-and-mouse-from-keybinding keybinding)))
 
@@ -277,22 +325,6 @@
 (<ra> :get-keybindings-from-command "ra.undo")
 !!#
 
-
-(define (get-keybindings-from-command-without-focus-and-mouse command)
-  (remove-duplicates-in-sorted-list equal?
-                                    (map (lambda (keybindings)
-                                           (remove (lambda (keybinding)
-                                                     (or (string-starts-with? keybinding "FOCUS_")
-                                                         (string-starts-with? keybinding "MOUSE_")))
-                                                   (string-split keybindings #\space)))
-                                         (to-list (<ra> :get-keybindings-from-command command)))))
-
-#!!
-(get-keybindings-from-command-without-focus-and-mouse "ra.pasteSeqblocks")
-(<ra> :get-keybindings-from-command "ra.pasteSeqblocks")
-(get-menu-keybindings "ra.pasteSeqblocks")
-(<ra> :get-qualifier-name "CTRL")
-!!#
 
 (define *reload-keybindings-callbacks* '())
 
@@ -407,6 +439,11 @@ Examples:
                             (string-split keybinding #\ ))
                     " ")))
 
+(define (remove-focus-and-mouse-from-keybinding keybinding)
+  (remove-mouse-from-keybinding
+   (remove-focus-from-keybinding
+    keybinding)))
+
 (define (add-qualifier-to-keybinding keybinding qualifier)
   (let* ((keys (if (list? keybinding)
                    keybinding
@@ -498,6 +535,270 @@ Examples:
 (string-contains? "FOCUS_SEQUENCER FOCUS_EDITOR" "FOCUS_EDITOR")
 !!#
 
+
+(define (group-keybindings-by-command keybindings)
+  (map (lambda (group)
+         (define first (car group))
+         (define command (cdr first))
+         (hash-table :command command
+                     :keybindings (map car group)))
+       (group-list keybindings
+                   (lambda (keybinding1 keybinding2)
+                     (equal? (cdr keybinding1)
+                             (cdr keybinding2))))))
+
+#!!
+(group-keybindings-by-command (get-existing-keybindings-from-keys "2"))
+(for-each pretty-print (group-keybindings-by-command (get-existing-keybindings-from-keys "2")))
+(length (group-keybindings-by-command (get-existing-keybindings-from-keys "2")))
+!!#
+
+(define (merge-keybindings-by-mouse-and-focus command-keybindings)
+  (define (remove-if-all pre keys)
+    (if (and (member (<-> pre "_SEQUENCER") keys)
+             (member (<-> pre "_MIXER") keys)
+             (member (<-> pre "_EDITOR") keys))
+        (delete (<-> pre "_SEQUENCER")
+                (delete (<-> pre "_MIXER")
+                        (delete (<-> pre "_EDITOR")
+                                keys
+                                string=?)
+                        string=?)
+                string=?)
+        keys))
+  (copy-hash command-keybindings
+             :keybindings
+             (map (lambda (grouped)
+                    (string-join (remove-if-all "MOUSE"
+                                                (remove-if-all "FOCUS"
+                                                               (remove-duplicates string<? string=?
+                                                                                  (apply append (map (lambda (s)
+                                                                                                       (string-split s #\space))
+                                                                                                     grouped)))))
+                                 " "))
+                  (group-list (command-keybindings :keybindings)
+                              (lambda (keybinding1 keybinding2)    
+                                (string=? (remove-focus-and-mouse-from-keybinding keybinding1)
+                                          (remove-focus-and-mouse-from-keybinding keybinding2)))))))
+
+#!!
+(for-each (lambda (a)
+            (pretty-print a)(newline))
+          (map merge-keybindings-by-mouse-and-focus
+               (group-keybindings-by-command
+                (get-existing-keybindings-from-keys "2 FOCUS_SEQUENCER FOCUS_EDITOR"))))
+
+
+(delete 5 (list 2 3 4 5) =)
+(map group-keybindings-by-non-mouse-and-non-focus-keys
+     (group-keybindings-by-command (get-existing-keybindings-from-keys "2")))
+
+(car (map group-keybindings-by-non-mouse-and-non-focus-keys
+          (group-keybindings-by-command (get-existing-keybindings-from-keys "2"))))
+
+(group-keybindings-by-command (get-existing-keybindings-from-keys "2"))
+
+(((("2 FOCUS_SEQUENCER MOUSE_SEQUENCER" . "ra.setCurrSeqtrackConfigNum 1")
+   ("2 FOCUS_SEQUENCER MOUSE_EDITOR" . "ra.setCurrSeqtrackConfigNum 1")
+   ("2 FOCUS_SEQUENCER MOUSE_MIXER" . "ra.setCurrSeqtrackConfigNum 1")))
+ ((("2 FOCUS_EDITOR MOUSE_SEQUENCER" . "ra.evalScheme \"(c-display 50)\"")
+   ("2 FOCUS_EDITOR MOUSE_EDITOR" . "ra.evalScheme \"(c-display 50)\"")
+   ("2 FOCUS_EDITOR MOUSE_MIXER" . "ra.evalScheme \"(c-display 50)\"")
+   ("2 FOCUS_MIXER MOUSE_SEQUENCER" . "ra.evalScheme \"(c-display 50)\"")
+   ("2 FOCUS_MIXER MOUSE_EDITOR" . "ra.evalScheme \"(c-display 50)\"")
+   ("2 FOCUS_MIXER MOUSE_MIXER" . "ra.evalScheme \"(c-display 50)\""))))
+
+(for-each pretty-print (group-keybindings-by-command (get-existing-keybindings-from-keys "2")))
+(length (group-keybindings-by-command (get-existing-keybindings-from-keys "2")))
+!!#
+
+(define (get-existing-keybindings-from-keys keybinding)
+  (define keys (string-split keybinding #\space))
+  
+  (define focus-keys (let ((ret (keep (lambda (key) (string-starts-with? key "FOCUS_")) keys)))
+                       (if (null? ret)
+                           (list "FOCUS_SEQUENCER" "FOCUS_EDITOR" "FOCUS_MIXER")
+                           ret)))
+  
+  (define mouse-keys (let ((ret (keep (lambda (key) (string-starts-with? key "MOUSE_")) keys)))
+                       (if (null? ret)
+                           (list "MOUSE_SEQUENCER" "MOUSE_EDITOR" "MOUSE_MIXER")
+                           ret)))
+                       
+  (define other-keys (remove (lambda (key)
+                               (or (member? key focus-keys)
+                                   (member? key mouse-keys)))
+                             keys))
+
+  (define ret '())
+  
+  (let loop1 ((focus-keys focus-keys))
+    (when (not (null? focus-keys))
+      (let loop2 ((mouse-keys mouse-keys))
+        (if (null? mouse-keys)
+            (loop1 (cdr focus-keys))
+            (let ((keybinding (string-join (sort (cons (car focus-keys)
+                                                       (cons (car mouse-keys)
+                                                             other-keys))
+                                                 string<=?)
+                                           " ")))
+              (define command (<ra> :get-keybinding-from-keys keybinding))
+              (if (not (string=? "" command))
+                  (push-back! ret (cons keybinding command)))
+              (loop2 (cdr mouse-keys)))))))
+
+  ret
+  )
+#!!
+(for-each c-display (get-existing-keybindings-from-keys "2 FOCUS_EDITOR FOCUS_SEQUENCER"))
+(member? "a" (list "b" "a"))
+(delete "a" (list "a" "b") string=?)
+(string-join (list) " ")
+(<ra> :get-keybinding-from-keys " ")
+!!#
+
+(define (get-prepared-existing-keybindings-from-keys keys) ;; keys is a string separated by spaces
+  (map merge-keybindings-by-mouse-and-focus
+       (group-keybindings-by-command
+        (get-existing-keybindings-from-keys keys))))
+
+#!!
+(for-each (lambda (c)
+            (pretty-print c)(newline))
+          (get-prepared-existing-keybindings-from-keys "2"))
+!!#
+
+(define (get-html-from-prepared-existing-keybindings keybindings)
+  (<-> "<table bgcolor=\"black\"> <tr>  <font color=\"white\">  <th><u>Keys</u></th>    <th><u>Function</u></th>    <th><u>Argument</u></th> </font> </tr>\n"
+       ;;"<tr><td><hr></td><td><hr></td><td><hr></td></tr>\n"
+       
+       (apply <-> (map (lambda (prepared)
+                         ;;(c-display "KEYBINDINGS:" (prepared :keybindings))
+                         (apply <-> (map (lambda (keybinding)
+                                           (define splitted (string-split (prepared :command) #\space))
+                                           (<-> "<tr>\n"
+                                                "  <td> <font color=\"green\"> " keybinding " </font> </td>\n"
+                                                "  <td> <font color=\"green\">" (car splitted) "</font> </td>\n"
+                                                (if (= (length splitted) 1)
+                                                    "  <td></td>\n"
+                                                    (<-> "  <td> <font color=\"green\">" (string-join (cdr splitted) " ") " </font> </td>\n"))                                                
+                                                "</tr>"))
+                                         (prepared :keybindings))))
+                       keybindings))
+       
+       "</table>\n"))
+
+#!!
+(get-html-from-prepared-existing-keybindings (get-prepared-existing-keybindings-from-keys "2"))
+(get-prepared-existing-keybindings-from-keys "2")
+(map c-display "asdf")
+!!#
+
+(define (FROM_C-request-grab-keybinding ra-funcname args focus-editor focus-mixer focus-sequencer)
+  (define (get-arg-string arg)
+    (let ((arg2 (to-displayable-string arg)))
+      (if (string? arg)
+          (<-> "\"" arg2 "\"")
+          arg2)))
+  
+  (define command (<-> (get-python-ra-funcname ra-funcname)
+                       (apply <-> (map (lambda (arg)
+                                         (<-> " " (get-arg-string arg)))
+                                       args))))
+
+  (define (get-a-mouse-key)
+    (cond (focus-editor
+           "MOUSE_EDITOR")
+          (focus-mixer
+           "MOUSE_MIXER")
+          (focus-sequencer
+           "MOUSE_SEQUENCER")
+          (else
+           "MOUSE_EDITOR")))
+           
+  (define grab-gui (<gui> :vertical-layout))
+  
+  (define wait-text (mid-horizontal-layout (<gui> :text "Waiting for key....")))
+  (<gui> :add grab-gui wait-text)
+  
+  (define focus-layout (<gui> :horizontal-layout))
+  (<gui> :add focus-layout (<gui> :checkbox "Focus Editor" focus-editor (lambda (x) (set! focus-editor x))))
+  (<gui> :add focus-layout (<gui> :checkbox "Focus Mixer" focus-mixer (lambda (x) (set! focus-mixer x))))
+  (<gui> :add focus-layout (<gui> :checkbox "Focus Sequencer" focus-sequencer (lambda (x) (set! focus-sequencer x))))
+  (<gui> :add grab-gui focus-layout)
+  
+  (<gui> :add-deleted-callback grab-gui (lambda _
+                                          (<ra> :cancel-grab-keybinding)))
+  
+  (<gui> :add grab-gui (<gui> :button "Cancel" (lambda ()
+                                                 (<gui> :close grab-gui))))
+  
+  (<gui> :set-parent grab-gui -1)
+  (<gui> :show grab-gui)
+  (<gui> :set-modal grab-gui #t)
+
+  (define (grabbed keybinding)
+    (c-display "KEYBINDING1:" keybinding)
+    
+    (set! keybinding (remove-focus-and-mouse-from-keybinding keybinding))
+    
+    (define selected-focus-keybinding (string-join (append (if focus-editor (list "FOCUS_EDITOR") '())
+                                                           (if focus-mixer (list "FOCUS_MIXER") '())
+                                                           (if focus-sequencer (list "FOCUS_SEQUENCER") '()))
+                                                   " "))
+    
+    (if (not (string=? "" selected-focus-keybinding))
+        (set! keybinding (<-> keybinding " " selected-focus-keybinding)))
+    
+    (<gui> :close grab-gui) ;; This causes ra:cancel-grab-keybinding to be called, but that doesn't matter now.
+
+    (define existing-commands (get-prepared-existing-keybindings-from-keys keybinding))
+    ;;(define existing-command (<ra> :get-keybinding-from-keys (add-qualifier-to-keybinding keybinding (get-a-mouse-key))))
+    
+    (c-display "KEYBINDING2:" keybinding ". Existing:" existing-commands ". mouse:" (get-a-mouse-key))
+    
+    (define (setit!)
+      (<ra> :add-keybinding-to-conf-file keybinding (get-python-ra-funcname ra-funcname) (map get-arg-string args)))
+
+    (if (null? existing-commands)
+        (setit!)
+        (show-async-message :text (<-> "<style>table, th, td {  border: 2px solid white;  border-collapse: collapse;}th, td {  padding: 5px;  text-align: left;    }</style>"
+                                       ;;"Keybinding \""
+                                       "<center>Keybinding already bound.</center>\n"
+                                       "<p>\n"
+                                       "\"" (get-displayable-keybinding2 (string-split keybinding #\space)) "\" is currently bound to:<br>"
+                                       (get-html-from-prepared-existing-keybindings existing-commands)
+                                       "<br>\n"
+                                       "<p>Override?</p>")
+                            :buttons '("Yes" "No")
+                            :callback (lambda (answer)
+                                        (if (string=? "Yes" answer)
+                                            (setit!)))))
+    )
+  
+  (<ra> :grab-keybinding grabbed))
+
+
+#!!
+(<ra> :schedule 100
+      (lambda ()
+        (FROM_C-request-grab-keybinding "ra.evalScheme" (list "(c-display 50)") #t #t #f)
+        #f))
+
+(<ra> :get-keybinding-from-keys "R FOCUS_EDITOR FOCUS_MIXER")
+(<ra> :get-keybinding-from-keys "Q MOUSE_EDITOR UP")
+(<ra> :get-keybinding-from-keys "2 FOCUS_EDITOR MOUSE_EDITOR")
+(<ra> :get-keybinding-from-keys "LEFTARROW CTRL_L FOCUS_EDITOR MOUSE_MIXER")
+(for-each (lambda (something)
+            (define keystring (<-> (car something)))
+            (if (string-starts-with? keystring "2 ")
+                (c-display something)))
+          (<ra> :get-keybindings-from-keys))
+
+
+
+!!#
+
 (delafina (add-keybinding-configuration-to-gui :gui-or-area
                                                :ra-funcname
                                                :args '()
@@ -514,76 +815,7 @@ Examples:
                        (apply <-> (map (lambda (arg)
                                          (<-> " " (get-arg-string arg)))
                                        args))))
-  
-  (define (changeit)
-    (define grab-gui (<gui> :vertical-layout))
 
-    #||
-    (define all (<gui> :radiobutton "All" #t))
-    (define mixerstrips (<gui> :radiobutton "Mixer strips" #f))
-    (define sequencer (<gui> :radiobutton "Mixer strips" #f))
-    (define mixer (<gui> :radiobutton "Mixer" #f))
-    (define editor (<gui> :radiobutton "Editor" #f))
-    
-    (define buttons (<gui> :horizontal-layout all mixerstrips sequencer mixer editor))
-    (<gui> :add grab-gui buttons)
-    ||#
-    
-    (define wait-text (mid-horizontal-layout (<gui> :text "Waiting for key....")))
-    (<gui> :add grab-gui wait-text)
-
-    (define focus-editor (string-contains? focus-keybinding "FOCUS_EDITOR"))
-    (define focus-mixer (string-contains? focus-keybinding "FOCUS_MIXER"))
-    (define focus-sequencer (string-contains? focus-keybinding "FOCUS_SEQUENCER"))
-      
-    (define focus-layout (<gui> :horizontal-layout))
-    (<gui> :add focus-layout (<gui> :checkbox "Focus Editor" focus-editor (lambda (x) (set! focus-editor x))))
-    (<gui> :add focus-layout (<gui> :checkbox "Focus Mixer" focus-mixer (lambda (x) (set! focus-mixer x))))
-    (<gui> :add focus-layout (<gui> :checkbox "Focus Sequencer" focus-sequencer (lambda (x) (set! focus-sequencer x))))
-    (<gui> :add grab-gui focus-layout)
-
-    (<gui> :add-deleted-callback grab-gui (lambda _
-                                            (<ra> :cancel-grab-keybinding)))
-    
-    (<gui> :add grab-gui (<gui> :button "Cancel" (lambda ()
-                                                   (<gui> :close grab-gui))))
-
-    (<gui> :set-parent grab-gui -1)
-    (<gui> :show grab-gui)
-    (<gui> :set-modal grab-gui #t)
-
-    (<ra> :grab-keybinding
-          (lambda (keybinding)
-            (define selected-focus-keybinding (string-join (append (if focus-editor (list "FOCUS_EDITOR") '())
-                                                                   (if focus-mixer (list "FOCUS_MIXER") '())
-                                                                   (if focus-sequencer (list "FOCUS_SEQUENCER") '()))
-                                                           " "))
-            
-            (c-display "KEYBINDING1:" keybinding)
-            
-            (set! keybinding (remove-mouse-from-keybinding keybinding))
-            (set! keybinding (remove-focus-from-keybinding keybinding))
-            
-            (if (not (string=? "" selected-focus-keybinding))
-                (set! keybinding (<-> keybinding " " selected-focus-keybinding)))
-            
-            (<gui> :close grab-gui)
-            (define (setit!)
-              (<ra> :add-keybinding-to-conf-file keybinding (get-python-ra-funcname ra-funcname) (map get-arg-string args)))
-            (define existing-command (<ra> :get-keybinding-from-keys (add-qualifier-to-keybinding keybinding (get-mouse-binding-from-first-focus-binding focus-keybinding))))
-            (c-display "KEYBINDING2:" keybinding ". Existing:" existing-command ". focus-keybinding:" focus-keybinding ". mouse:" (get-mouse-keybinding-from-focus-keybinding focus-keybinding))
-            (if (string=? "" existing-command)
-                (setit!)
-                (show-async-message :text (<-> "Keybinding \"" (get-displayable-keybinding-from-keybinding keybinding) "\" already bound to \"" existing-command "\". Override?")
-                                    :buttons '("Yes" "No")
-                                    :callback (lambda (answer)
-                                                (if (string=? "Yes" answer)
-                                                    (setit!)))))
-                                                    
-            (c-display "hello1................. GUI:" (if (integer? gui-or-area)
-                                                          gui-or-area
-                                                          (gui-or-area :get-gui))))))
-    
   (define (keybinding-mouse-handler button state x y)
     (if (not focus-keybinding)
         (set! focus-keybinding (let ((gui (if (integer? gui-or-area)
@@ -596,9 +828,13 @@ Examples:
     (if (and (= button *right-button*)
              (= state *is-pressing*))
         (popup-menu (list (if has-keybinding
-                              (<-> "Change keybinding for \"" command "\"")
+                              (<-> "Change keybinding for \"" command "\". (Now: " keybinding ")")
                               (<-> "Add keybinding for \"" command "\""))
-                          changeit)
+                          (lambda ()
+                            (define focus-editor (string-contains? focus-keybinding "FOCUS_EDITOR"))
+                            (define focus-mixer (string-contains? focus-keybinding "FOCUS_MIXER"))
+                            (define focus-sequencer (string-contains? focus-keybinding "FOCUS_SEQUENCER"))
+                            (FROM_C-request-grab-keybinding ra-funcname args focus-editor focus-mixer focus-sequencer)))
                     (if has-keybinding
                         (list 
                          "Remove the keybinding"
@@ -619,7 +855,6 @@ Examples:
       (<gui> :add-mouse-callback gui-or-area keybinding-mouse-handler)
       (gui-or-area :add-mouse-cycle-prepend!
                    (lambda (button x* y*)
-                     (c-display "HEPP")
                      (if (= button *right-button*)
                          (begin
                            (keybinding-mouse-handler button *is-pressing* x* y*)
@@ -634,8 +869,8 @@ Examples:
  (get-keybindings-command (get-python-ra-funcname "ra:eval-scheme")
                           (list (<-> "(c-display " 0 ")"))))
 (<ra> :get-keybindings-from-command
- (get-keybindings-command (get-python-ra-funcname "ra:eval-scheme")
-                          (list (<-> "(c-display " 0 ")"))))
+      (get-keybindings-command (get-python-ra-funcname "ra:eval-scheme")
+                               (list (<-> "(c-display " 0 ")"))))
 !!#
   
 (delafina (create-keybinding-button :name

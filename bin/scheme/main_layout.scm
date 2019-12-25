@@ -222,8 +222,9 @@
 
       (<gui> :add-close-callback window
              (lambda (radium-runs-custom-exec)
-               ;;(move-sequencer-to-main-tabs)
+               ;;(move-sequencer-to-main-tabs)               
                (<gui> :hide window)
+               (<ra> :set-best-guess-keyboard-focus)
                #f))
       
       (set! *sequencer-window-gui* window))
