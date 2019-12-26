@@ -1,3 +1,41 @@
+Changes 5.9.86 -> 5.9.88:
+* Startup: Make sure a proper error message is shown
+  if the custom color configuration file is not
+  valid.
+* Windows: Fix editor text sometimes being garbled
+  after startup. Bug has probably always been there,
+  but hasn't been notable until very recently.
+* Windows: Fix writing keybinding configuration to
+  disk after grabbing keybinding.
+* Internal: Use radium::Timer instead of QTimer for
+  the main timer. Might lower idle CPU usage on Linux
+  a little bit.
+* Internal: Improve GC performance.
+* Faust: Update faust to master-dev-2019-12-22
+  (between V2.21.0 and 2.21.1). This update fixes
+  interpreter backend not working properly for
+  instruments using prerendered tables and other
+  things ("os.osc" is the most prominent example not
+  working before when used in an instrument).
+* Keybindings: Make MOUSE_* and FOCUS_* qualifers
+  OR-ed, and not AND-ed. AND-ing for these makes no
+  sense since you can never have more than one widget
+  focused, or the mouse to be directly above more
+  than one widget at the same time.
+* Keybindings: Add close button  to the keybinding
+  grab gui.
+* Keybindings: Add checkboxes for selecting focus for
+  editor, mixer, and sequencer to the keybinding grab
+  gui.
+* Keybindings: Display more detailed information
+  about current keybinding(s) in the "override?"
+  window.
+* Sequencer: Right-click the seqtrack settings
+  radio-buttons to edit keybinding.
+* API: cancelGrabKeybinding
+ 
+
+
 Changes 5.9.85 -> 5.9.86:
 * macOS: Don't display startup warning window anymore
   if running 10.14.
