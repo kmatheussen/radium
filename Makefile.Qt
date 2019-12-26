@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 5.9.86
+RADIUM_VERSION = 5.9.88
 
 
 #----------------USER SETTINGS-------------------------------
@@ -2414,7 +2414,7 @@ S7AlignmentSanitize=
 endif
 
 ifeq ($(BUILDTYPE), DEBUG)
-	S7OPTS += -DS7_DEBUGGING=1 -DWITH_PROFILE=1 -DWITH_MULTITHREAD_CHECKS=1 -DS7_ALIGNED #-DWITH_GMP
+	S7OPTS += -DS7_DEBUGGING=1 -DWITH_MULTITHREAD_CHECKS=1 -DS7_ALIGNED #-DWITH_GMP -DWITH_PROFILE=1 
 	ifneq (,$(findstring clang,$(CC)))
 		S7OPTS +=  -fno-sanitize=integer
 	endif
