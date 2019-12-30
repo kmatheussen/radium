@@ -2504,7 +2504,7 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
   HASH_put_bool(state, "enable_sample_seek", ATOMIC_GET(plugin->enable_sample_seek));
 
   HASH_put_bool(state, "is_dpi_aware", plugin->is_dpi_aware);
-  
+
   HASH_put_int(state, "___radium_plugin_state_v3", 1);
       
   return state;

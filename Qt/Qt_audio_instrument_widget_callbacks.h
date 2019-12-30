@@ -99,8 +99,8 @@ public:
     , _plugin_widget(NULL)
     , _sample_requester_widget(NULL)
       //, _is_large(false)
-    , _size_type(SIZETYPE_NORMAL)
-    , _size_type_before_hidden(SIZETYPE_NORMAL)
+    , _size_type(SIZETYPE_NORMAL) //patch->widget_height_type)
+    , _size_type_before_hidden(patch->widget_height_type)
   {
     radium::ScopedGeneration scoped_update(_is_updating);
 
@@ -908,7 +908,7 @@ private:
     if (instrumentWidgetIsInMixer())
       MW_instrument_widget_set_size(this, _size_type, SIZETYPE_NORMAL);
     
-    _size_type=SIZETYPE_NORMAL;
+    _size_type = SIZETYPE_NORMAL;
     
     setMinimumHeight(10);
     setMaximumHeight(16777214);
@@ -960,6 +960,9 @@ public:
     if (new_size_type==_size_type)
       return;
 
+    if(isVisible())
+      _patch->widget_height_type = new_size_type;
+    
     if (new_size_type==SIZETYPE_FULL)
       hide_non_instrument_widgets();    
     else if (_size_type == SIZETYPE_FULL)
@@ -976,13 +979,22 @@ public:
       show_small();
     else
       show_large(new_size_type);
+    
+#ifdef WITH_FAUST_DEV
+    if (_plugin_widget->_faust_plugin_widget != NULL)
+      _plugin_widget->_faust_plugin_widget->change_height(new_size_type);
+#endif
+
+    if (new_size_type==SIZETYPE_NORMAL)
+      S7CALL2(void_void,"minimize-lowertab");
   }
 
   void hideEvent(QHideEvent * event) override {
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin != NULL)
       ATOMIC_SET(plugin->is_visible, false);
-    
+
+    _patch->widget_height_type = _size_type;
     _size_type_before_hidden = _size_type;
     
     if(_size_type != SIZETYPE_NORMAL)
@@ -997,6 +1009,9 @@ public:
     
     if (_size_type_before_hidden != SIZETYPE_NORMAL)
       change_height(_size_type_before_hidden);
+    else
+      S7CALL2(void_void,"minimize-lowertab");
+
     //      show_large();
   }
 

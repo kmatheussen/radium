@@ -48,7 +48,6 @@ class ParamWidget : public QWidget {
   MyQCheckBox *_check_button;
   bool _can_update_effect_value;
   QString _name;
-  SizeType _size_type;
   int _tab_page_num;
   
   ParamWidget(QWidget *parent, struct Patch *patch, int effect_num, int tab_page_num)
@@ -58,7 +57,6 @@ class ParamWidget : public QWidget {
     , _slider(NULL)
     , _check_button(NULL)
     , _can_update_effect_value(false)
-    , _size_type(SIZETYPE_NORMAL)
     , _tab_page_num(tab_page_num)
   {
       
@@ -208,7 +206,7 @@ class ParamWidget : public QWidget {
       
       if (w != NULL){
 
-        if (_size_type==SIZETYPE_NORMAL){
+        if (_patch->widget_height_type==SIZETYPE_NORMAL){
           w->setFont(font());
           return;
         }
@@ -248,7 +246,7 @@ class ParamWidget : public QWidget {
     }
   }
 
-  void resizeEvent(QResizeEvent * event) override{
+  void resizeEvent(QResizeEvent * event) override {
     radium::ScopedResizeEventTracker resize_event_tracker;
     RETURN_IF_DATA_IS_INACCESSIBLE();
     adjustFontSize();

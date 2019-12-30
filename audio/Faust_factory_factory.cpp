@@ -613,7 +613,7 @@ namespace{
       R_ASSERT(plugin!=NULL);
 
 #if COMPILE_SVG_IN_PARALLEL
-      run_svg_job(patch_id, opts, is_initializing);
+      run_svg_job(plugin->patch->id, opts, is_initializing);
 #endif
 
       printf("         start_new_job_now. is_init: %d\n", is_initializing);

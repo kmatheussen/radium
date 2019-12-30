@@ -1675,6 +1675,13 @@ typedef struct _linked_note_t{
 } linked_note_t;
 
 
+enum PatchWidgetSizeType{
+  SIZETYPE_NORMAL = 0, // Don't change. Saved to disk
+  SIZETYPE_HALF = 1, // Don't change. Saved to disk
+  SIZETYPE_FULL = 2 // Don't change. Saved to disk
+};
+
+
 // #define CAST_API_PATCH_ID(a) ((int)a) // When API is converted to 64 bit, this definition should be changed to just 'a'.
 
 // Note that Patch objects are stored directly in undo/redo (not copied), so it must not be freed, reused for other purposes, or othervice manipulated when not available.
@@ -1725,6 +1732,8 @@ struct Patch{
 
   bool last_chance_decision_value; // Used when chance==0. Only accessed by the main player thread.
 
+  enum PatchWidgetSizeType widget_height_type;
+  
   //DEFINE_ATOMIC(int, visual_note_pitch);
   DEFINE_ATOMIC(int, visual_note_intencity); // Used by the mixer to keep track of how bright the note indicator should light up.
 
