@@ -61,7 +61,6 @@ public:
 
   PluginWidget *_plugin_widget;
 
-  SizeType _size_type;
   //int _last_height;
 
   Auto_Suspend_Menu _auto_suspend_menu;
@@ -80,7 +79,6 @@ public:
 #endif
     , _ignore_checkbox_stateChanged(false)
     , _plugin_widget(NULL)
-    , _size_type(SIZETYPE_NORMAL)
       //, _last_height(10)
     , _auto_suspend_menu(this, patch)
   {
@@ -102,6 +100,9 @@ public:
 #else
     solo_checkbox->hide();
 #endif
+
+    half_checkbox->setChecked(_patch->widget_height_type==SIZETYPE_HALF);
+    max_checkbox->setChecked(_patch->widget_height_type==SIZETYPE_FULL);
     
     bool will_always_autosuspend = type->will_always_autosuspend;
 
@@ -575,34 +576,17 @@ private:
   }
 
   void change_height(SizeType type){
-    if (_size_type==type)
-      return;
-
-    if (_plugin_widget != NULL){
-      for(ParamWidget *paramWidget : _plugin_widget->_param_widgets)
-        paramWidget->_size_type = type;
-    }
-
-    _size_type=type;
     
     AUDIOWIDGET_change_height(_patch.data(), type);
 
-#ifdef WITH_FAUST_DEV
-    if (_faust_plugin_widget != NULL)
-      _faust_plugin_widget->change_height(type);
-#endif
-    //    else
-      //#endif
 #if 0
-    // ?? This code was enabled before.
+    // ?? This code was enabled earlier.
       {
         delete _plugin_widget;
         _plugin_widget=PluginWidget_create(this, _patch.data(), type);
         vertical_layout->insertWidget(1,_plugin_widget);
       }
 #endif
-    if (type==SIZETYPE_NORMAL)
-      S7CALL2(void_void,"minimize-lowertab");
   }
 
   int _ab_checkbox_width = -1;

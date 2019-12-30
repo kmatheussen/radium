@@ -17,11 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef QT_INSTRUMENTS_PROC_H
 #define QT_INSTRUMENTS_PROC_H
 
-enum SizeType{
-  SIZETYPE_NORMAL,
-  SIZETYPE_HALF,
-  SIZETYPE_FULL
-};
+typedef enum PatchWidgetSizeType SizeType;
 
 extern LANGSPEC const char **get_ccnames(void);
   
@@ -57,7 +53,7 @@ extern void SAMPLEREQUESTER_set_path(Sample_requester_widget *w, QString new_pat
 extern QString SAMPLEREQUESTER_get_path(Sample_requester_widget *w);
 #endif
 
-extern LANGSPEC void AUDIOWIDGET_change_height(struct Patch *patch, enum SizeType type);
+extern LANGSPEC void AUDIOWIDGET_change_height(struct Patch *patch, SizeType type);
 extern LANGSPEC void AUDIOWIDGET_set_ab(struct Patch *patch, int ab_num);
 extern LANGSPEC void AUDIOWIDGET_redraw_ab(struct Patch *patch);
 #if 0

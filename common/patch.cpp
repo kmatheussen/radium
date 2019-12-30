@@ -517,7 +517,9 @@ hash_t *PATCH_get_state(const struct Patch *patch){
   HASH_put_chars(state, "instrument", patch->instrument==get_audio_instrument() ? "audio" : "MIDI");
 
   HASH_put_bool(state, "always_receive_MIDI_input", ATOMIC_GET(patch->always_receive_midi_input));
-  
+
+  HASH_put_int(state, "widget_height_type", (int)patch->widget_height_type);
+
   return state;
 }
 
@@ -576,6 +578,9 @@ struct Patch *PATCH_create_from_state(hash_t *state){
   if (HASH_has_key(state, "always_receive_MIDI_input"))
     ATOMIC_SET(patch->always_receive_midi_input, HASH_get_bool(state, "always_receive_MIDI_input"));
 
+  if (HASH_has_key(state, "widget_height_type"))
+    patch->widget_height_type = (PatchWidgetSizeType)HASH_get_int(state, "widget_height_type");
+    
   if (STRING_equals(HASH_get_string(state, "instrument"), "audio")){
     
     AUDIO_set_patch_attributes(patch, NULL);
