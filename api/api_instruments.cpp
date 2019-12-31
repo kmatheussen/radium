@@ -2130,6 +2130,22 @@ void setAudioConnectionType(int64_t source_id, int64_t dest_id, int audio_connec
   remakeMixerStrips(-1);
 }
 
+void setCurrMixerConfigNum(int num){
+  if (num < 0 || num >= 8) {
+    handleError("setCurrMixerConfigNum: Wrong number: %d", num);
+    return;
+  }
+
+  MW_change_ab(num, true);
+}
+
+void resetMixerConfigNum(int num){
+  if (num < -1 || num >= 8) {
+    handleError("setCurrMixerConfigNum: Wrong number: %d", num);
+    return;
+  }
+  MW_reset_ab(num);
+}
 
 // modulators
 

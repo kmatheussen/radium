@@ -923,6 +923,28 @@
   
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Mixer
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (FROM_C-show-mixer-config-popup-menu num)
+  (popup-menu
+   "reset" (lambda ()
+             (<ra> :reset-mixer-config-num num))
+   "-------------"
+   (get-keybinding-configuration-popup-menu-entries "ra:set-curr-mixer-config-num"
+                                                    (list num)
+                                                    "FOCUS_MIXER")))
+                                                    
+(define (FROM_C-show-mixer-config-reset-popup-menu num)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:reset-mixer-config-num"
+                                                    (list num)
+                                                    "FOCUS_MIXER")))
+                                                    
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Various
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
