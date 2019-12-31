@@ -67,6 +67,16 @@ struct MyQButton : public QToolButton{
     update();
   }
 
+  std::function<void(void)> _show_popup_menu;
+  
+  void contextMenuEvent(QContextMenuEvent *event) override {
+    if (_show_popup_menu) {
+      _show_popup_menu();
+    } else
+      QToolButton::contextMenuEvent(event);
+  }
+
+
   radium::GcHolder<wchar_t> _text_to_draw;
   
   void paintEvent ( QPaintEvent * ev ) override {

@@ -2429,7 +2429,7 @@ void MW_cleanup(bool is_loading){
     
     while(delete_a_chip(is_loading)); // remove all chips. All connections are removed as well when removing all chips.
     
-    MW_update_mixer_widget();
+    MW_update_mixer_widget(true);
     
   }Undo_stop_ignoring_undo_operations();
 }
@@ -2847,7 +2847,7 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   AUDIO_update_all_permanent_ids();
   
   GFX_update_all_instrument_widgets();
-  MW_update_mixer_widget();
+  MW_update_mixer_widget(true);
   
   autoposition_missing_bus_chips(bus_chips_state);
 
@@ -3096,7 +3096,7 @@ static void apply_ab_state(hash_t *state, hash_t *curr_state){
     MW_apply_mixer_strips_state(HASH_get_dyn(state, "mixer_strips_configuration"));
 }
 
-void MW_change_ab(int ab_num){
+void MW_change_ab(int ab_num, bool update_current_button){
   int old_ab_num = g_curr_ab;
   int new_ab_num = ab_num;
 
@@ -3118,6 +3118,8 @@ void MW_change_ab(int ab_num){
 
   g_curr_ab = new_ab_num;
   printf("Curr ab: %d\n", new_ab_num);
+
+  MW_update_mixer_widget(update_current_button);
 }
 
 void MW_reset_ab(int num){
@@ -3127,6 +3129,8 @@ void MW_reset_ab(int num){
     g_curr_ab = 0;
   } else
     g_ab_is_valid[num]=false;
+
+  MW_update_mixer_widget(true);
 }
 
 hash_t *MW_get_ab_state(void){

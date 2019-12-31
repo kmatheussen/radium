@@ -799,12 +799,14 @@ Examples:
 
 !!#
 
-(delafina (add-keybinding-configuration-to-gui :gui-or-area
-                                               :ra-funcname
-                                               :args '()
-                                               :focus-keybinding ;; Can be either FOCUS_EDITOR, FOCUS_MIXER, FOCUS_SEQUENCER, a combination of those (separate them with space), or an empty string (all). If not set, it will be set automatically from where gui-or-area is placed. It will be set automatically when the user right-clicks so you don't have to set parent gui before calling this function.
-                                               )
+(delafina (get-keybinding-configuration-popup-menu-entries :ra-funcname
+                                                           :args '()
+                                                           :focus-keybinding ;; Can be either FOCUS_EDITOR, FOCUS_MIXER, FOCUS_SEQUENCER, a combination of those (separate them with space), or an empty string (all). If not set, it will be set automatically from where gui-or-area is placed. It will be set automatically when the user right-clicks so you don't have to set parent gui before calling this function.
+                                                           :gui-or-area ;; if this one is set, and focus-keybinding is #f, focus-keybinding will be set automatically from gui-or-area.
+                                                           )
 
+  (assert (or focus-keybinding gui-or-area))
+  
   (define (get-arg-string arg)
     (let ((arg2 (to-displayable-string arg)))
       (if (string? arg)
@@ -816,39 +818,50 @@ Examples:
                                          (<-> " " (get-arg-string arg)))
                                        args))))
 
-  (define (keybinding-mouse-handler button state x y)
-    (if (not focus-keybinding)
-        (set! focus-keybinding (let ((gui (if (integer? gui-or-area)
-                                              gui-or-area
-                                              (gui-or-area :get-gui))))
-                                 (get-keyboard-focus-from-gui gui))))
-    (define keybinding (get-displayable-keybinding ra-funcname args))
-    (define has-keybinding (not (string=? keybinding "")))
+  (if (not focus-keybinding)
+      (set! focus-keybinding (let ((gui (if (integer? gui-or-area)
+                                            gui-or-area
+                                            (gui-or-area :get-gui))))
+                               (get-keyboard-focus-from-gui gui))))
+  (define keybinding (get-displayable-keybinding ra-funcname args))
+  (define has-keybinding (not (string=? keybinding "")))
     
+  (list (if has-keybinding
+            (<-> "Change keybinding for \"" command "\". (Now: " keybinding ")")
+            (<-> "Add keybinding for \"" command "\""))
+        (lambda ()
+          (define focus-editor (string-contains? focus-keybinding "FOCUS_EDITOR"))
+          (define focus-mixer (string-contains? focus-keybinding "FOCUS_MIXER"))
+          (define focus-sequencer (string-contains? focus-keybinding "FOCUS_SEQUENCER"))
+          (FROM_C-request-grab-keybinding ra-funcname args focus-editor focus-mixer focus-sequencer))
+        (if has-keybinding
+            (list 
+             "Remove the keybinding"
+             (lambda ()
+               (define python-ra-funcname (get-python-ra-funcname ra-funcname))
+               (<ra> :remove-keybinding-from-conf-file
+                     (let ((keybinding (last (get-keybindings-from-command-without-focus-and-mouse (get-keybindings-command python-ra-funcname args)))))
+                       (define ret (add-qualifier-to-keybinding keybinding focus-keybinding))
+                       (c-display "RET:" ret)
+                       ret)
+                     python-ra-funcname
+                     (map get-arg-string args))
+               (c-display "removing")))
+            '())))
+
+(delafina (add-keybinding-configuration-to-gui :gui-or-area
+                                               :ra-funcname
+                                               :args '()
+                                               :focus-keybinding ;; Can be either FOCUS_EDITOR, FOCUS_MIXER, FOCUS_SEQUENCER, a combination of those (separate them with space), or an empty string (all). If not set, it will be set automatically from where gui-or-area is placed. It will be set automatically when the user right-clicks so you don't have to set parent gui before calling this function.
+                                               )
+
+  (define (keybinding-mouse-handler button state x y)
     (if (and (= button *right-button*)
              (= state *is-pressing*))
-        (popup-menu (list (if has-keybinding
-                              (<-> "Change keybinding for \"" command "\". (Now: " keybinding ")")
-                              (<-> "Add keybinding for \"" command "\""))
-                          (lambda ()
-                            (define focus-editor (string-contains? focus-keybinding "FOCUS_EDITOR"))
-                            (define focus-mixer (string-contains? focus-keybinding "FOCUS_MIXER"))
-                            (define focus-sequencer (string-contains? focus-keybinding "FOCUS_SEQUENCER"))
-                            (FROM_C-request-grab-keybinding ra-funcname args focus-editor focus-mixer focus-sequencer)))
-                    (if has-keybinding
-                        (list 
-                         "Remove the keybinding"
-                         (lambda ()
-                           (define python-ra-funcname (get-python-ra-funcname ra-funcname))
-                           (<ra> :remove-keybinding-from-conf-file
-                                 (let ((keybinding (last (get-keybindings-from-command-without-focus-and-mouse (get-keybindings-command python-ra-funcname args)))))
-                                   (define ret (add-qualifier-to-keybinding keybinding focus-keybinding))
-                                   (c-display "RET:" ret)
-                                   ret)
-                                 python-ra-funcname
-                                 (map get-arg-string args))
-                           (c-display "removing")))
-                        '())))
+        (popup-menu (get-keybinding-configuration-popup-menu-entries :ra-funcname ra-funcname
+                                                                     :args args
+                                                                     :focus-keybinding focus-keybinding
+                                                                     :gui-or-area gui-or-area)))
     #f)
 
   (if (integer? gui-or-area)

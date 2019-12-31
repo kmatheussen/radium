@@ -112,7 +112,7 @@ void MW_set_selected_chip(Chip *chip);
 extern LANGSPEC DEFINE_ATOMIC(bool, g_show_cpu_usage_in_mixer);
 
 extern LANGSPEC void MW_set_rotate(float rotate);
-extern LANGSPEC void MW_update_mixer_widget(void);
+extern LANGSPEC void MW_update_mixer_widget(bool update_current_button);
 extern LANGSPEC void MW_disable_include_instrument_checkbox(void);
 extern LANGSPEC void MW_enable_include_instrument_checkbox(void);
 #if USE_QT4
@@ -188,7 +188,7 @@ extern LANGSPEC void MW_create_plain(void);
 
 extern LANGSPEC int MW_get_curr_ab(void);
 extern LANGSPEC bool MW_is_ab_valid(int ab_num);
-extern LANGSPEC void MW_change_ab(int ab_num);
+extern LANGSPEC void MW_change_ab(int ab_num, bool update_current_button);
 extern LANGSPEC void MW_reset_ab(int ab_num); // -1 resets all
 extern LANGSPEC hash_t *MW_get_ab_state(void);
 extern LANGSPEC void MW_recreate_ab_from_state(hash_t *ab_state);

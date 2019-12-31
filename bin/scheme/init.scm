@@ -229,6 +229,8 @@ recreate-seqtracks-config-area
 draw-button
 FROM_C-create-editor-track-headers-gui
 FROM_C-reconfigure-editor-track-headers-gui!
+FROM_C-show-mixer-config-popup-menu
+FROM_C-show-mixer-config-reset-popup-menu
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*
