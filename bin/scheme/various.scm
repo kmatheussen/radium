@@ -952,7 +952,7 @@
  
 (define (FROM_C-show-modular-popup-menu) 
   (popup-menu
-   (get-keybinding-configuration-popup-menu-entries "ra:switch-mixer-is-in-window"
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-main-mixer-is-modular"
                                                     '()
                                                     "FOCUS_MIXER")))
  
