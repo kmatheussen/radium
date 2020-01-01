@@ -216,6 +216,14 @@ bool instrumentWidgetIsInMixer(void){
 void setInstrumentWidgetInMixer(bool val){
   g_instrumentWidgetIsInMixer = val;
   SETTINGS_write_bool("position_instrument_widget_in_mixer", val);
+
+  MW_set_instrument_in_mixer(val);
+}
+
+bool switchInstrumentWidgetInMixer(void){
+  bool ret = !instrumentWidgetIsInMixer();
+  setInstrumentWidgetInMixer(ret);
+  return ret;
 }
 
 

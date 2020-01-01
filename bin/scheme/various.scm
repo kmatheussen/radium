@@ -956,6 +956,12 @@
                                                     '()
                                                     "FOCUS_MIXER")))
  
+(define (FROM_C-show-instrument-in-mixer-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-instrument-widget-in-mixer"
+                                                    '()
+                                                    "FOCUS_MIXER")))
+ 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Various
