@@ -129,6 +129,20 @@ void switchMainMixerIsModular(void){
   setMainMixerIsModular(!mainMixerIsModular());
 }
 
+void setMainMixerInWindow(bool show_window){
+  MW_set_window_mode(show_window);
+}
+  
+bool mainMixerIsInWindow(void){
+  return MW_is_in_window_mode();
+}
+  
+bool switchMixerIsInWindow(void){
+  bool ret = !MW_is_in_window_mode();
+  setMainMixerInWindow(ret);
+  return ret;
+}
+  
 static bool g_showInstrumentWidgetWhenDoubleClickingSoundObject = false;
 
 bool showInstrumentWidgetWhenDoubleClickingSoundObject(void){

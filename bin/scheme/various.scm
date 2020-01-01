@@ -944,6 +944,18 @@
                                                     "FOCUS_MIXER")))
                                                     
 
+(define (FROM_C-window-mode-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-mixer-is-in-window"
+                                                    '()
+                                                    "FOCUS_MIXER")))
+ 
+(define (FROM_C-show-modular-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-mixer-is-in-window"
+                                                    '()
+                                                    "FOCUS_MIXER")))
+ 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Various
