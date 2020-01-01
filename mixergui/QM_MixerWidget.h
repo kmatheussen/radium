@@ -132,6 +132,8 @@ extern LANGSPEC void MW_set_modular_mixer_type(bool show_modular);
 extern LANGSPEC void MW_set_window_mode(bool show_window);
 extern LANGSPEC bool MW_is_in_window_mode(void);
 
+extern LANGSPEC void MW_set_instrument_in_mixer(bool include_instrument_widget);
+  
 extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
 extern LANGSPEC const char *MW_popup_plugin_selector2(bool must_have_inputs, bool must_have_outputs);
 extern LANGSPEC SoundPluginType *MW_popup_plugin_type_selector(bool must_have_inputs, bool must_have_outputs);

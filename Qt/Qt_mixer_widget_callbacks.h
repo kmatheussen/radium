@@ -391,6 +391,27 @@ public:
       GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }
 
+  void set_include_instrument_widget(bool include_instrument_widget){
+    if(include_instrument_widget){
+      API_setLowertabIncludesInstrument(false);
+      verticalLayout->insertWidget(verticalLayout->count()-1, getInstrumentsWidget(), 0);
+    }
+      
+    GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
+    
+    if (include_instrument_widget && getInstrumentsWidget()->isVisible()==false)
+      GFX_InstrumentWindowToFront();
+
+    if (!include_instrument_widget)
+      API_setLowertabIncludesInstrument(true);
+
+    if (this->include_instrument_widget->isChecked() != include_instrument_widget){
+      radium::ScopedIniting initing(_initing);
+      this->include_instrument_widget->setChecked(include_instrument_widget);
+    }
+
+  }
+    
   void change_num_mixerstrips_rows(int num_rows){
     if(_initing.can_access() && _mixer_strips_gui!=-1 && num_rows!=_num_rows){
       gui_setNumRowsInMixerStrips(_mixer_strips_gui, num_rows);
@@ -715,23 +736,16 @@ public slots:
   void on_include_instrument_widget_toggled(bool include_instrument_widget){
     if (!_initing.can_access())
       return;
-    
-    if(include_instrument_widget){
-      API_setLowertabIncludesInstrument(false);
-      verticalLayout->insertWidget(verticalLayout->count()-1, getInstrumentsWidget(), 0);
-    }
 
     setInstrumentWidgetInMixer(include_instrument_widget);
-      
-    GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
-    
-    if (include_instrument_widget && getInstrumentsWidget()->isVisible()==false)
-      GFX_InstrumentWindowToFront();
-
-    if (!include_instrument_widget)
-      API_setLowertabIncludesInstrument(true);
   }
 
+  void on_include_instrument_widget_clicked(){
+    if (include_instrument_widget->_last_pressed_button==Qt::RightButton){
+      S7CALL2(void_void,"FROM_C-show-instrument-in-mixer-popup-menu");
+    }
+  }
+  
   void on_rows1_toggled(bool val){
     if(val)
       change_num_mixerstrips_rows(1);
@@ -926,6 +940,10 @@ void MW_set_window_mode(bool show_window){
 
 bool MW_is_in_window_mode(void){
   return g_mixer_widget2->_is_showing_window;
+}
+
+void MW_set_instrument_in_mixer(bool include_instrument_widget){
+  g_mixer_widget2->set_include_instrument_widget(include_instrument_widget);
 }
 
 #if 0
