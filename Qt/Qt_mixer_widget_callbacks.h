@@ -553,6 +553,74 @@ public:
     }
   }
 
+  bool _is_showing_window = false;
+  
+  void set_window_mode(bool show_window){
+
+    if (show_window==_is_showing_window)
+      return;
+    
+    _is_showing_window = show_window;
+    
+    QWidget *w = get_qwidget(g_mixer_widget);
+
+    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+    QSplitter *xsplitter = editor->xsplitter;
+          
+    //static QWidget *xsplitter = NULL;
+    if(show_window){
+      //if(xsplitter!=NULL)
+      //  xsplitter = (QWidget*)g_mixer_widget->parent();
+      pauseUpdates(w, 15); // Prevent some flickering.
+      pauseUpdates(g_main_window, 15); // Prevent some flickering.
+            
+      w->hide();
+      _bottom_bar->show();
+      convert_widget_to_window(w, mixerWindowIsChildOfMainWindow() ? g_main_window : NULL, radium::NOT_MODAL);
+
+      w->adjustSize();
+
+      //w->show();
+    } else {
+      EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+      QSplitter *splitter = editor->xsplitter;
+
+      int pos = splitter->count();
+
+      if (pos>0 && g_mixerstripparent == splitter->widget(pos-1))
+        pos--;
+
+      /*
+      if (xsplitter->count() > 0){
+        
+        int64_t curr_mixerstrip_guinum = MIXERSTRIP_get_curr_mixerstrip_guinum();
+        
+        if (curr_mixerstrip_guinum >= 0 && gui_isOpen(curr_mixerstrip_guinum)) {
+
+          QWidget *mixerstrip_widget = API_gui_get_widget(curr_mixerstrip_guinum);
+
+          printf("pos: %d, count: %d. strip: %p, w-2: %p, w-1: %p.\n", pos, xsplitter->count(), mixerstrip_widget, xsplitter->widget(pos-2), xsplitter->widget(pos-1));
+        }
+      }
+      */
+      
+      xsplitter->insertWidget(pos, w);
+
+      _bottom_bar->hide();
+
+      //printf("  NUM: %d / %d. MIN: %d %d %d %d %d %d\n", pos, xsplitter->count(), g_editor->minimumHeight(), w->minimumHeight(), xsplitter->minimumHeight(), g_main_window->minimumHeight(), API_get_main_ysplitter()->minimumHeight(), this->minimumHeight());
+      
+#if defined(FOR_WINDOWS)
+      OS_WINDOWS_set_key_window((void*)g_main_window->winId()); // Don't know why.
+#endif
+    }
+    
+    if(include_instrument_widget->isChecked())
+      GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
+
+    FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
+  }
+
 public slots:
 
   void on_ab_reset_clicked(){
@@ -618,69 +686,25 @@ public slots:
     }
   }
   
+  void on_window_mode_clicked(){
+    if (window_mode->_last_pressed_button==Qt::RightButton){
+      S7CALL2(void_void,"FROM_C-window-mode-popup-menu");
+    }
+  }
+  
   void on_window_mode_toggled(bool show_window){
     if(!_initing.can_access())
       return;
 
-    QWidget *w = get_qwidget(g_mixer_widget);
-
-    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-    QSplitter *xsplitter = editor->xsplitter;
-          
-    //static QWidget *xsplitter = NULL;
-    if(show_window){
-      //if(xsplitter!=NULL)
-      //  xsplitter = (QWidget*)g_mixer_widget->parent();
-      pauseUpdates(w, 15); // Prevent some flickering.
-      pauseUpdates(g_main_window, 15); // Prevent some flickering.
-            
-      w->hide();
-      _bottom_bar->show();
-      convert_widget_to_window(w, mixerWindowIsChildOfMainWindow() ? g_main_window : NULL, radium::NOT_MODAL);
-
-      w->adjustSize();
-
-      FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true); // Give back focus. FOCUSFRAMES_set_focus_best_guess() was (probably) called in MixerWidget::hideEvent.
-      
-      //w->show();
-    } else {
-      EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-      QSplitter *splitter = editor->xsplitter;
-
-      int pos = splitter->count();
-
-      if (pos>0 && g_mixerstripparent == splitter->widget(pos-1))
-        pos--;
-
-      /*
-      if (xsplitter->count() > 0){
-        
-        int64_t curr_mixerstrip_guinum = MIXERSTRIP_get_curr_mixerstrip_guinum();
-        
-        if (curr_mixerstrip_guinum >= 0 && gui_isOpen(curr_mixerstrip_guinum)) {
-
-          QWidget *mixerstrip_widget = API_gui_get_widget(curr_mixerstrip_guinum);
-
-          printf("pos: %d, count: %d. strip: %p, w-2: %p, w-1: %p.\n", pos, xsplitter->count(), mixerstrip_widget, xsplitter->widget(pos-2), xsplitter->widget(pos-1));
-        }
-      }
-      */
-      
-      xsplitter->insertWidget(pos, w);
-
-      _bottom_bar->hide();
-
-      //printf("  NUM: %d / %d. MIN: %d %d %d %d %d %d\n", pos, xsplitter->count(), g_editor->minimumHeight(), w->minimumHeight(), xsplitter->minimumHeight(), g_main_window->minimumHeight(), API_get_main_ysplitter()->minimumHeight(), this->minimumHeight());
-      
-#if defined(FOR_WINDOWS)
-      OS_WINDOWS_set_key_window((void*)g_main_window->winId()); // Don't know why.
-#endif
-    }
-    
-    if(include_instrument_widget->isChecked())
-      GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
+    set_window_mode(show_window);
   }
 
+  void on_show_modular_clicked(){
+    if (show_modular->_last_pressed_button==Qt::RightButton){
+      S7CALL2(void_void,"FROM_C-show-modular-popup-menu");
+    }
+  }
+  
   void on_show_modular_toggled(bool show_modular){
     if (!_initing.can_access())
       return;
@@ -894,6 +918,14 @@ bool MW_modular_mixer_is_visible(void){
 
 void MW_set_modular_mixer_type(bool show_modular){
   return g_mixer_widget2->set_modular_mixer_type(show_modular);
+}
+
+void MW_set_window_mode(bool show_window){
+  g_mixer_widget2->set_window_mode(show_window);
+}
+
+bool MW_is_in_window_mode(void){
+  return g_mixer_widget2->_is_showing_window;
 }
 
 #if 0
