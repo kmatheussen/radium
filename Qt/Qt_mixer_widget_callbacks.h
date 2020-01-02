@@ -781,9 +781,14 @@ public slots:
       change_mixerstrips_vert_ratio(make_ratio(3,1));
   }
   
+  void on_show_cpu_usage_clicked(){
+    if (show_cpu_usage->_last_pressed_button==Qt::RightButton){
+      S7CALL2(void_void,"FROM_C-show-cpu-usage-in-mixer-popup-menu");
+    }
+  }
+  
   void on_show_cpu_usage_toggled(bool val){
-    ATOMIC_SET(g_show_cpu_usage_in_mixer, val);
-    MW_update_all_chips();
+    setShowCpuUsageInMixer(val);
   }
 
   void on_connections_visibility_toggled(bool val){
@@ -944,6 +949,11 @@ bool MW_is_in_window_mode(void){
 
 void MW_set_instrument_in_mixer(bool include_instrument_widget){
   g_mixer_widget2->set_include_instrument_widget(include_instrument_widget);
+}
+
+void MW_update_show_cpu_usage_checkbox(void){
+  radium::ScopedIniting initing(g_mixer_widget2->_initing);
+  g_mixer_widget2->show_cpu_usage->setChecked(getShowCpuUsageInMixer());
 }
 
 #if 0
