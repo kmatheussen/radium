@@ -142,7 +142,25 @@ bool switchMixerIsInWindow(void){
   setMainMixerInWindow(ret);
   return ret;
 }
-  
+
+void setShowCpuUsageInMixer(bool showit){
+  if (showit != getShowCpuUsageInMixer()){
+    ATOMIC_SET(g_show_cpu_usage_in_mixer, showit);
+    MW_update_all_chips();
+    MW_update_show_cpu_usage_checkbox();
+  }
+}
+
+bool getShowCpuUsageInMixer(void){
+  return ATOMIC_GET(g_show_cpu_usage_in_mixer);
+}
+
+bool switchShowCpuUsageInMixer(void){
+  bool ret = !getShowCpuUsageInMixer();
+  setShowCpuUsageInMixer(ret);
+  return ret;
+}
+
 static bool g_showInstrumentWidgetWhenDoubleClickingSoundObject = false;
 
 bool showInstrumentWidgetWhenDoubleClickingSoundObject(void){
