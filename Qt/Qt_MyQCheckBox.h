@@ -213,7 +213,7 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   
 };
 
-struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
+struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting, public radium::MouseCycleFix {
   bool _has_mouse = false;
   bool _add_undo_when_clicked = true;
   bool _is_a_pd_slider = false;
@@ -247,10 +247,11 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
       }
     }
   }
-  
-  void mousePressEvent ( QMouseEvent * event ) override
-  {
 
+  void fix_mousePressEvent( QMouseEvent *event) override {
+
+    _is_hovered = true;
+    
     _last_pressed_button = event->button();
 
     if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
@@ -316,7 +317,24 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
     }
   }
 
+  void fix_mouseMoveEvent( QMouseEvent *qmouseevent) override {
+    MyQCheckBox_OnlyCustomPainting::mouseMoveEvent(qmouseevent);
+  }
 
+  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
+    _is_hovered = false;
+    
+    auto *qevent = event.get_qtevent();
+    
+    if (qevent != NULL)
+      MyQCheckBox_OnlyCustomPainting::mouseReleaseEvent(qevent);
+
+    update();
+  }
+  
+  MOUSE_CYCLE_CALLBACKS_FOR_QT;
+
+  
 #if 0  //unable to make this work. Using the "clicked" signal instead.
  signals:
   

@@ -232,6 +232,10 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     zoomreset_button->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-show-mixer-zoom-reset-popup-menu");
     };
+
+    mixer_direction_menu_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-mixer-zoom-reset-popup-menu");
+    };
   }
 
   void enterEvent(QEvent *event) override {
