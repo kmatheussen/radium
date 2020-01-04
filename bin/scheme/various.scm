@@ -1014,31 +1014,31 @@
 
 (define (FROM_C-show-mixer-zoom-reset-popup-menu)
   (popup-menu
-   "--------Keybinding to reset zoom"
+   "--------Reset zoom"
    (get-keybinding-configuration-popup-menu-entries "ra:unzoom"
                                                     '()
                                                     "")
-   "--------Keybinding for zooming in"
+   "--------Zoom in"
    (get-keybinding-configuration-popup-menu-entries "ra:zoom"
                                                     '(1)
                                                     "")
-   "--------Keybinding for zooming out"
+   "--------Zoom out"
    (get-keybinding-configuration-popup-menu-entries "ra:zoom"
                                                     '(-1)
                                                     "")
-   "--------Keybinding for zooming in more"
+   "--------Zoom in more"
    (get-keybinding-configuration-popup-menu-entries "ra:zoom"
                                                     '(4)
                                                     "")
-   "--------Keybinding for zooming out more"
+   "--------Zoom out more"
    (get-keybinding-configuration-popup-menu-entries "ra:zoom"
                                                     '(-4)
                                                     "")
-   "--------Keybinding for zooming in even more"
+   "--------Zoom in even more"
    (get-keybinding-configuration-popup-menu-entries "ra:zoom"
                                                     '(8)
                                                     "")
-   "--------Keybinding for zooming out even more"
+   "--------Zoom out even more"
    (get-keybinding-configuration-popup-menu-entries "ra:zoom"
                                                     '(-8)
                                                     "")
