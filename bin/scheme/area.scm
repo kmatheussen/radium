@@ -180,7 +180,12 @@
        (<gui> :update gui x1 y1 x2 y2)
        ;;#f
        )
-      
+
+     (define (update-me-and-all-parents-and-siblings!)
+       (if parent-area
+           (parent-area :update-me-and-all-parents-and-siblings!)
+           (update-me!)))
+     
      (define (set-position! x* y*)
        (let ((dx (- x* x1))
 	     (dy (- y* y1)))
@@ -458,12 +463,14 @@
 
        (push-back! mouse-cycles
                    (make-mouse-cycle (lambda (button x* y*)
+                                       ;;(c-display "delta press")
                                        (set! prev-x x*)
                                        (set! prev-y y*)
                                        (set! inc-x 0)
                                        (set! inc-y 0)
                                        (press-func button x* y*))
                                      (lambda (button x* y*)
+                                       ;;(c-display "delta press move: " curr-mouse-cycle)
                                        (call-delta-func drag-func button x* y* #f))
                                      (lambda (button x* y*)
                                        (call-delta-func drag-func button x* y* #f)
@@ -494,6 +501,7 @@
                                                         #f)))
 
      (define (get-mouse-cycle button x* y*)
+       ;;(c-display "GET MOUSE CYCLE")
        (and (paint?)
             (inside? x* y*)
 	    (or (call-with-exit (lambda (return)
@@ -573,14 +581,12 @@
 
      (define (has-mouse)
        ;;(c-display "has-mouse:" class-name curr-mouse-cycle curr-nonpress-mouse-cycle)
-       (or (get-bool curr-mouse-cycle)
-           #f))
+       (if parent-area
+           (parent-area :has-mouse)
+           (get-bool curr-mouse-cycle)))
 ;           (any? (lambda (raw-mouse-cycle)
 ;                   (raw-mouse-cycle :is-active))
 ;                 raw-mouse-cycles)
-;           (any? (lambda (sub-area)
-;                   (sub-area :has-mouse))
-;                 sub-areas)))
      
        ;; Status bar
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -705,6 +711,7 @@
      :get-i-position x (apply get-i-position x)
      :inside? x (apply inside? x)
      :update-me! x (apply update-me! x)
+     :update-me-and-all-parents-and-siblings! () (update-me-and-all-parents-and-siblings!)
      :set-font! dasfont (set! font dasfont)
      :set-position! x (apply set-position! x)
      :set-position-and-size! x (apply set-position-and-size! x)
