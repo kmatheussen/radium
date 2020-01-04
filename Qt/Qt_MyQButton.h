@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "Qt_MyQCheckBox.h"
 
 
-struct MyQButton : public QToolButton{
+struct MyQButton : public QToolButton, public radium::MouseCycleFix {
 
   MyQButton ( QWidget * parent = 0 ) : QToolButton(parent) {}
   MyQButton ( const QString & text, QWidget * parent = 0)
@@ -56,6 +56,29 @@ struct MyQButton : public QToolButton{
   int x2_border = 1;
   int y1_border = 1;
   int y2_border = 0;
+  
+  void fix_mousePressEvent( QMouseEvent *qmouseevent) override {
+    _is_hovered = true;
+    QToolButton::mousePressEvent(qmouseevent);
+    update();
+  }
+
+  void fix_mouseMoveEvent( QMouseEvent *qmouseevent) override {
+    QToolButton::mouseMoveEvent(qmouseevent);
+  }
+
+  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
+    _is_hovered = false;
+    
+    auto *qevent = event.get_qtevent();
+    
+    if (qevent != NULL)
+      QToolButton::mouseReleaseEvent(qevent);
+
+    update();
+  }
+  
+  MOUSE_CYCLE_CALLBACKS_FOR_QT;
   
   void enterEvent(QEvent *event) override {
     _is_hovered = true;
