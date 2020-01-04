@@ -928,59 +928,123 @@
 ;;; Mixer
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define (show-keybinding-help-window)
+  (FROM-C-show-help-window "help/keybindings_framed.html"))
+
 (define (FROM_C-show-mixer-config-popup-menu num)
   (popup-menu
-   "reset" (lambda ()
-             (<ra> :reset-mixer-config-num num))
+   (list
+    (<-> "Reset A/B button #" (+ num 1))
+    :enabled (or (= -1 num)
+                 (<ra> :mixer-config-num-is-used num))
+    (lambda ()
+      (<ra> :reset-mixer-config-num num)))
    "-------------"
    (get-keybinding-configuration-popup-menu-entries "ra:set-curr-mixer-config-num"
                                                     (list num)
-                                                    "FOCUS_MIXER")))
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
                                                     
 (define (FROM_C-show-mixer-config-reset-popup-menu num)
   (popup-menu
    (get-keybinding-configuration-popup-menu-entries "ra:reset-mixer-config-num"
                                                     (list num)
-                                                    "FOCUS_MIXER")))
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
                                                     
 
 (define (FROM_C-window-mode-popup-menu) 
   (popup-menu
    (get-keybinding-configuration-popup-menu-entries "ra:switch-mixer-is-in-window"
                                                     '()
-                                                    "FOCUS_MIXER")))
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
  
 (define (FROM_C-show-modular-popup-menu) 
   (popup-menu
    (get-keybinding-configuration-popup-menu-entries "ra:switch-main-mixer-is-modular"
                                                     '()
-                                                    "FOCUS_MIXER")))
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
  
 (define (FROM_C-show-instrument-in-mixer-popup-menu) 
   (popup-menu
    (get-keybinding-configuration-popup-menu-entries "ra:switch-instrument-widget-in-mixer"
                                                     '()
-                                                    "FOCUS_MIXER")))
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
  
 (define (FROM_C-show-cpu-usage-in-mixer-popup-menu) 
   (popup-menu
    (get-keybinding-configuration-popup-menu-entries "ra:switch-show-cpu-usage-in-mixer"
                                                     '()
-                                                    "FOCUS_MIXER")))
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
 
 (define (FROM_C-show-mixer-connections-popup-menu) 
   (popup-menu
    (get-keybinding-configuration-popup-menu-entries "ra:switch-visible-mixer-connections"
                                                     '()
-                                                    "FOCUS_MIXER")))
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
 
 (define (FROM_C-show-mixer-bus-connections-popup-menu) 
   (popup-menu
    (get-keybinding-configuration-popup-menu-entries "ra:switch-visible-mixer-bus-connections"
                                                     '()
-                                                    "FOCUS_MIXER")))
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
 
-
+(define (FROM_C-show-mixer-zoom-reset-popup-menu)
+  (popup-menu
+   "--------Keybinding to reset zoom"
+   (get-keybinding-configuration-popup-menu-entries "ra:unzoom"
+                                                    '()
+                                                    "")
+   "--------Keybinding for zooming in"
+   (get-keybinding-configuration-popup-menu-entries "ra:zoom"
+                                                    '(1)
+                                                    "")
+   "--------Keybinding for zooming out"
+   (get-keybinding-configuration-popup-menu-entries "ra:zoom"
+                                                    '(-1)
+                                                    "")
+   "--------Keybinding for zooming in more"
+   (get-keybinding-configuration-popup-menu-entries "ra:zoom"
+                                                    '(4)
+                                                    "")
+   "--------Keybinding for zooming out more"
+   (get-keybinding-configuration-popup-menu-entries "ra:zoom"
+                                                    '(-4)
+                                                    "")
+   "--------Keybinding for zooming in even more"
+   (get-keybinding-configuration-popup-menu-entries "ra:zoom"
+                                                    '(8)
+                                                    "")
+   "--------Keybinding for zooming out even more"
+   (get-keybinding-configuration-popup-menu-entries "ra:zoom"
+                                                    '(-8)
+                                                    "")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Various

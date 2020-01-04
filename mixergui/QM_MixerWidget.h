@@ -196,6 +196,7 @@ extern LANGSPEC int MW_get_curr_ab(void);
 extern LANGSPEC bool MW_is_ab_valid(int ab_num);
 extern LANGSPEC void MW_change_ab(int ab_num, bool update_current_button);
 extern LANGSPEC void MW_reset_ab(int ab_num); // -1 resets all
+extern LANGSPEC bool MW_ab_is_used(int num);
 extern LANGSPEC hash_t *MW_get_ab_state(void);
 extern LANGSPEC void MW_recreate_ab_from_state(hash_t *ab_state);
 
