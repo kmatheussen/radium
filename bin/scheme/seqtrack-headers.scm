@@ -846,12 +846,29 @@
                                 
   )
 
+(define *hovering-seqtrack-number* -1)
+
 (def-area-subclass (<seqtrack-number> :gui :x1 :y1 :x2 :y2
                                       :seqtracknum
                                       :get-color)
+
+  (add-raw-mouse-cycle!
+   :enter-func (lambda (button x y)
+                 (set! *hovering-seqtrack-number* seqtracknum)
+                 (update-me!)
+                 #t)
+   :leave-func (lambda (button x y)
+                 (if (not (has-mouse))
+                     (set! *hovering-seqtrack-number* -1))
+                 (update-me!)
+                 #f))
+
   (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 y2
                               (<-> seqtracknum)
-                              :background-color get-color
+                              :background-color (lambda ()
+                                                  (if (= seqtracknum *hovering-seqtrack-number*)
+                                                      (<gui> :make-color-lighter (get-color) 1.7)
+                                                      (get-color)))
                               :text-color "black"
                               :border-rounding 108 ;0 ;;(if use-two-rows 1 8)
                               ))
@@ -901,34 +918,35 @@
 
   (define was-using-sequencer-timing #f)
   (define first-seqtrack-was-audio #f)
-  
+
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
      (set-statusbar-text! (get-statusbar-text))
-     ;;(c-display "press" x* y*)
      (set! has-made-undo #f)
      (set! first-seqtrack-was-audio (<ra> :seqtrack-for-audiofiles 0))
      (set! was-using-sequencer-timing (<ra> :is-using-sequencer-timing))
      (if (= button *left-button*)
          (begin
+           (set! *hovering-seqtrack-number* seqtracknum)
            #t)
          (begin
           #f)))
    (lambda (button x* y* dx dy)
-     ;;(c-display "move" x* y*)
-     (maybe-make-undo)
      (define new-seqtracknum (get-new-seqtracknum y*))
      ;;(c-display "new-seqtracknum:" new-seqtracknum ". now:" seqtracknum)
      (cond ((< new-seqtracknum seqtracknum)
             (let loop ((seqtracknum2 seqtracknum))
               (when (> seqtracknum2 new-seqtracknum)
+                (maybe-make-undo)
                 (<ra> :swap-seqtracks (- seqtracknum2 1) seqtracknum2)
                 (loop (- seqtracknum2 1)))))
            ((> new-seqtracknum seqtracknum)
             (let loop ((seqtracknum2 seqtracknum))
               (when (< seqtracknum2 new-seqtracknum)
+                (maybe-make-undo)
                 (<ra> :swap-seqtracks seqtracknum2 (+ seqtracknum2 1))
                 (loop (+ seqtracknum2 1))))))
+     (set! *hovering-seqtrack-number* new-seqtracknum)
      (set! seqtracknum new-seqtracknum)
      (<ra> :set-curr-seqtrack seqtracknum)
      )
@@ -936,6 +954,8 @@
      ;;(c-display (not was-using-sequencer-timing)
      ;;           (not first-seqtrack-was-audio)
      ;;           (<ra> :seqtrack-for-audiofiles 0))
+     (set! *hovering-seqtrack-number* -1)
+     (update-me-and-all-parents-and-siblings!) ;; Update hovered background color of all numbers. (this area might not correspond to the area of the actual current seqtrack anymore)
      (when (and (not was-using-sequencer-timing)
                 (not first-seqtrack-was-audio)
                 (<ra> :seqtrack-for-audiofiles 0))
