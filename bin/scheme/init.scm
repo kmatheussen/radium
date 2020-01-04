@@ -237,6 +237,7 @@ FROM_C-show-instrument-in-mixer-popup-menu
 FROM_C-show-cpu-usage-in-mixer-popup-menu
 FROM_C-show-mixer-connections-popup-menu
 FROM_C-show-mixer-bus-connections-popup-menu
+FROM_C-show-mixer-zoom-reset-popup-menu
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

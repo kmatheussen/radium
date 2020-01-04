@@ -861,7 +861,10 @@ Examples:
         (popup-menu (get-keybinding-configuration-popup-menu-entries :ra-funcname ra-funcname
                                                                      :args args
                                                                      :focus-keybinding focus-keybinding
-                                                                     :gui-or-area gui-or-area)))
+                                                                     :gui-or-area gui-or-area)
+                    "-------------"
+                    "Help keybindings" show-keybinding-help-window
+                    ))
     #f)
 
   (if (integer? gui-or-area)

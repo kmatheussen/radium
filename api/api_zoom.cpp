@@ -146,16 +146,27 @@ void zoom(int incfontsize,int windownum){
     IncFontSize_CurrPos(window,incfontsize);
 }
 
-void unzoom(int windownum){
+void resetEditorZoom(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
+  
+  SetFontSizeNormal_CurrPos(window);
+}
+void resetMixerZoom(void){
+  MW_reset_zoom();
+}
 
+void resetSequencerZoom(void){
+  SEQUENCER_set_visible_start_and_end_time(0, (SONG_get_length()+SEQUENCER_EXTRA_SONG_LENGTH) * pc->pfreq);
+}
+
+void unzoom(int windownum){
   if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::MIXER))
-    MW_reset_zoom();
+    resetMixerZoom();
   else if(FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::SEQUENCER))
-    SEQUENCER_set_visible_start_and_end_time(0, (SONG_get_length()+SEQUENCER_EXTRA_SONG_LENGTH) * pc->pfreq);
+    resetSequencerZoom();
   else
-    SetFontSizeNormal_CurrPos(window);
+    resetEditorZoom(windownum);
 }
 
 

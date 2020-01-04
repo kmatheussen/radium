@@ -2131,7 +2131,7 @@ void setAudioConnectionType(int64_t source_id, int64_t dest_id, int audio_connec
 }
 
 void setCurrMixerConfigNum(int num){
-  if (num < 0 || num >= 8) {
+  if (num < 0 || num >= MW_NUM_AB) {
     handleError("setCurrMixerConfigNum: Wrong number: %d", num);
     return;
   }
@@ -2140,11 +2140,19 @@ void setCurrMixerConfigNum(int num){
 }
 
 void resetMixerConfigNum(int num){
-  if (num < -1 || num >= 8) {
+  if (num < -1 || num >= MW_NUM_AB) {
     handleError("setCurrMixerConfigNum: Wrong number: %d", num);
     return;
   }
   MW_reset_ab(num);
+}
+
+bool mixerConfigNumIsUsed(int num){
+  if (num < 0 || num >= MW_NUM_AB) {
+    handleError("mixerConfigNumIsUsed. Wrong number: %d", num);
+    return false;
+  }
+  return MW_ab_is_used(num);
 }
 
 // modulators

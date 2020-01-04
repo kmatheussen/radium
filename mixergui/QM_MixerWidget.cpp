@@ -3097,6 +3097,8 @@ static void apply_ab_state(hash_t *state, hash_t *curr_state){
 }
 
 void MW_change_ab(int ab_num, bool update_current_button){
+  R_ASSERT_RETURN_IF_FALSE(ab_num>=0 && ab_num < MW_NUM_AB);
+  
   int old_ab_num = g_curr_ab;
   int new_ab_num = ab_num;
 
@@ -3123,6 +3125,8 @@ void MW_change_ab(int ab_num, bool update_current_button){
 }
 
 void MW_reset_ab(int num){
+  R_ASSERT_RETURN_IF_FALSE(num>=-1 && num < MW_NUM_AB);
+  
   if (num==-1) {
     for(int i=0;i<MW_NUM_AB;i++)
       g_ab_is_valid[i]=false;
@@ -3131,6 +3135,11 @@ void MW_reset_ab(int num){
     g_ab_is_valid[num]=false;
 
   MW_update_mixer_widget(true);
+}
+
+bool MW_ab_is_used(int num){
+  R_ASSERT_RETURN_IF_FALSE2(num>=0 && num < MW_NUM_AB, false);
+  return g_ab_is_valid[num];
 }
 
 hash_t *MW_get_ab_state(void){
