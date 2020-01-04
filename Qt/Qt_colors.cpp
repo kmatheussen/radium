@@ -115,9 +115,11 @@ static const ColorConfig g_colorconfig[] = {
   {LINE_SLIDER_COLOR_NUM,     "line_slider", "Line slider (left of editor)", false},
   
   {BUTTONS_COLOR_NUM,                  "button_v2", "Buttons", false},
-  {BUTTONS_PRESSED_COLOR_NUM,                  "button_pressed_v2", "Buttons pressed", false}, // rename to buttons_pressed
+  {BUTTONS_PRESSED_COLOR_NUM,                  "button_pressed_v2", "Buttons pressed", false},
+  //{BUTTONS_NOT_ENABLED_COLOR_NUM,                  "button_not_enabled", "Buttons not enabled", false},
   {CHECK_BOX_SELECTED_COLOR_NUM,  "check_box_selected_v2",   "Selected check box", false},
   {CHECK_BOX_UNSELECTED_COLOR_NUM,  "check_box_unselected_v2",   "Unselected check box", false},
+  //{CHECK_BOX_NOT_ENABLED_COLOR_NUM,  "check_box_not_enabled",   "Check box not enabled", false},
 
   {BUTTONS_TEXT_COLOR_NUM,                  "buttons_text", "Button Text", false},
 
@@ -240,6 +242,10 @@ static const ColorConfig g_colorconfig[] = {
 };
 
 static ReplacementColorNum g_replacement_color_num[] = {
+
+  //{BUTTONS_NOT_ENABLED_COLOR_NUM, BUTTONS_COLOR_NUM},
+  //{CHECK_BOX_NOT_ENABLED_COLOR_NUM, CHECK_BOX_SELECTED_COLOR_NUM},
+  
   {SOUNDFONT_COLOR_NUM, BUTTONS_COLOR_NUM}, // 13=green  
   {SOUNDFILE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM}, // 7=bluish
   {CURRENT_SOUNDFILE_COLOR_NUM, VELOCITY2_COLOR_NUM},

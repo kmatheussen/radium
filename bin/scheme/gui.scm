@@ -706,6 +706,7 @@
                        :unselected-color "#404040"
                        :background-color "button_v2" ;;(<gui> :get-background-color gui) ;; if #f, background will not be painted.
                        :is-hovering #f
+                       :is-enabled #t
                        :prepend-checked-marker #f
                        :prepend-space-if-prepending-checked-marker #f
                        :vertical-text #f
@@ -762,7 +763,9 @@
                  prepend-checked-marker))
         (<gui> :my-draw-text
                gui
-               text-color ;;(if is-hovering "black" text-color)               
+               (if is-enabled
+                   text-color ;;(if is-hovering "black" text-color)
+                   (<gui> :set-alpha-for-color text-color 0.35))
                (cond ((= text-len 0)
                       "✔")
                      ((not prepend-checked-marker)

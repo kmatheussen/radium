@@ -191,9 +191,12 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
                                                                        
                                                                        DYN_create_symbol_dont_copy(":background-color"),
                                                                        DYN_create_string_dont_copy(L"check_box_unselected_v2"),
-                                                                       
+                                                                           
                                                                        DYN_create_symbol_dont_copy(":is-hovering"),
                                                                        DYN_create_bool(_is_hovered && isEnabled()),
+                                                                       
+                                                                       DYN_create_symbol_dont_copy(":is-enabled"),
+                                                                       DYN_create_bool(isEnabled()),
                                                                        
                                                                        DYN_create_symbol_dont_copy(":prepend-checked-marker"),
                                                                        DYN_create_bool(_show_enabled_marker),
