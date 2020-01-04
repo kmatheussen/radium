@@ -3742,7 +3742,12 @@
   (c-display "global swing track popup menu")
   (popup-menu "Hide swing track" ra:show-hide-swing-track
               (list "Swing help" (lambda ()
-                                   (<ra> :show-swing-help-window)))))
+                                   (<ra> :show-swing-help-window)))
+              "-----------"
+              (get-keybinding-configuration-popup-menu-entries "ra:switch-swing-enabled"
+                                                               '()
+                                                               "FOCUS_EDITOR")))
+
 
 (define (show-bars-and-beats-or-line-numbers-popup-menu)
   (define gui (<gui> :popup))

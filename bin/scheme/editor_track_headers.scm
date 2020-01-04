@@ -255,16 +255,16 @@
   )
 
 
-(define (set-pianoroll-autorange tracknum)
-  (define minkey (floor (<ra> :get-lowest-key tracknum)))
-  (define maxkey (+ 1 (floor (<ra> :get-highest-key tracknum))))
+(define (FROM_C-set-pianoroll-autorange tracknum blocknum)
+  (define minkey (floor (<ra> :get-lowest-key tracknum blocknum)))
+  (define maxkey (+ 1 (floor (<ra> :get-highest-key tracknum blocknum))))
   (if (>= minkey 0)
       (let loop ((minkey minkey)
                  (maxkey maxkey))
         (if (>= (- maxkey minkey) 5)
             (begin
-              (<ra> :set-pianoroll-low-key minkey tracknum)
-              (<ra> :set-pianoroll-high-key maxkey tracknum))
+              (<ra> :set-pianoroll-low-key minkey tracknum blocknum)
+              (<ra> :set-pianoroll-high-key maxkey tracknum blocknum))
             (loop (if (> minkey 0)
                       (- minkey 1)
                       minkey)
@@ -311,12 +311,17 @@
                                                                     keynum))))
                             ))
   (add-sub-area-plain! low-button)
+
+  (define auto-button (<new> :button gui x-split1 y1 x-split2 y2
+                             :text "A"
+                             :callback-release (lambda ()
+                                                 (<ra> :set-pianoroll-auto-range tracknum))
+                             ))
+  (add-sub-area-plain! auto-button)
+  (add-keybinding-configuration-to-gui auto-button
+                                       "ra:set-pianoroll-auto-range"
+                                       (list -1))
   
-  (add-sub-area-plain! (<new> :button gui x-split1 y1 x-split2 y2
-                              :text "A"
-                              :callback-release (lambda ()
-                                                  (set-pianoroll-autorange tracknum))       
-                              ))
   (define high-button (<new> :line-input gui x-split2 (- y1 1) (+ x2 1) y2
                             :text (<ra> :get-note-name3 (<ra> :get-pianoroll-high-key tracknum))
                             :background-color minmax-color
