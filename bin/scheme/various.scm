@@ -1046,6 +1046,28 @@
    "Help keybindings" show-keybinding-help-window
    ))
         
+(define (FROM_C-show-mixer-rotate-popup-menu)
+  (popup-menu
+   "--------Direction left"
+   (get-keybinding-configuration-popup-menu-entries "ra:set-mixer-rotate"
+                                                    '(0)
+                                                    "FOCUS_MIXER")
+   "--------Direction right"
+   (get-keybinding-configuration-popup-menu-entries "ra:set-mixer-rotate"
+                                                    '(180)
+                                                    "FOCUS_MIXER")
+   "--------Direction up"
+   (get-keybinding-configuration-popup-menu-entries "ra:set-mixer-rotate"
+                                                    '(270)
+                                                    "FOCUS_MIXER")
+   "--------Direction down"
+   (get-keybinding-configuration-popup-menu-entries "ra:set-mixer-rotate"
+                                                    '(90)
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+        
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Various
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
