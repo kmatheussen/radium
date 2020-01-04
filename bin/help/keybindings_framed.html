@@ -154,15 +154,16 @@ pre, code {
 				
 		<main>
 			<div class="innertube">
-<h1>Custom keybindings</h1>
+<h1>Editing keybindings</h1>
 
-There are two ways to add custom keybindings:
+There are two ways to edit keybindings:
 
 <OL>
-  <LI> In the "Edit" tab in the main window lower tabs, you can right-click a button and select "Add keybinding". The program will then ask you to press a key combination.
+  <LI> You can right-click a button or checkbox and select "Add keybinding", "Change keybinding", or "Remove keybinding".
+    If you select "Add keybinding" or "Change keybinding", the program will then ask you to press a key combination.
     <p>
       
-  <LI> Not all functions are included in the "Edit" tab though. Another way to add custom keybindings is to edit a text file.
+  <LI> Not all functions are available through buttons and checkboxes though. Another way to add custom keybindings is to edit a text file.
     
     <p>
       <UL>
@@ -179,7 +180,7 @@ There are two ways to add custom keybindings:
 <p>
 
 
-<h3>Examples (this is all you need to know to get started)</h3>
+<h3>Custom keybinding file examples (this is all you need to know to get started)</h3>
 
 <OL>
 
@@ -192,11 +193,11 @@ Z CTRL_L : ra.openAboutWindow
 
 <p>
 
-  A key binding normally starts with the name of a <b>key</b> (e.g. "Z"), followed by 0 or more <b>qualifiers</b> (e.g. "CTRL_L").<br>
+  A keybinding normally starts with the name of a <b>key</b> (e.g. "Z"), followed by 0 or more <b>qualifiers</b> (e.g. "CTRL_L").<br>
 
 <LI>
 <p>
-  If a key binding lacks a <b>key</b>, it will use the key from the last defined keybinding that had a key. Example:
+  If a keybinding lacks a <b>key</b>, it will use the key from the last defined keybinding that had a key. Example:
 <blockquote>
 <pre>
 F12          : ra.showMixerHelpWindow
@@ -217,15 +218,18 @@ F12          : ra.showMixerHelpWindow
   <h3>Qualifier names</h3>
   
   <UL>
-    The qualifiers are <b>CTRL_L</b>, <b>CTRL_R</b>, <b>SHIFT_L</b>, <b>SHIFT_R</b>, <b>EXTRA_L</b>, <b>ALT_L</b>, <b>ALT_R</b>, <b>FOCUS_EDITOR</b>, <b>FOCUS_MIXER</b>, <b>FOCUS_SEQUENCER</b>, <b>FOCUS_MIXERSTRIPS</b>, <b>MOUSE_EDITOR</b>, <b>MOUSE_MIXER</b>, <b>MOUSE_SEQUENCER</b>, <b>MOUSE_MIXERSTRIPS</b>, and <b>UP</b>.
+    The qualifiers are <b>CTRL_L</b>, <b>CTRL_R</b>, <b>SHIFT_L</b>, <b>SHIFT_R</b>, <b>EXTRA_L</b>, <b>ALT_L</b>, <b>ALT_R</b>, <b>FOCUS_EDITOR</b>, <b>FOCUS_MIXER</b>, <b>FOCUS_SEQUENCER</b>, <b>MOUSE_EDITOR</b>, <b>MOUSE_MIXER</b>, <b>MOUSE_SEQUENCER</b>, and <b>UP</b>.
+    <!-- <b>FOCUS_MIXERSTRIPS</b>, <b>MOUSE_MIXERSTRIPS</b>,  -->
     <p>
       Qualifiers are AND-ed together and not OR-ed. For instance, "A CTRL_L SHIFT_L" means that you have to press all the keys "a", "left ctrl", and "left shift" at the same time.
   <p>
     <UL>
-      <LI><b>FOCUS_EDITOR</b> is true if the editor has keyboard focus, marked by a thin orange frame. (Same for <b>FOCUS_MIXER</b>, <b>FOCUS_SEQUENCER</b>, and <b>FOCUS_MIXERSTRIPS</b>.)<br>
+      <LI><b>FOCUS_EDITOR</b> is true if the editor has keyboard focus, marked by a thin orange frame. (Same for <b>FOCUS_MIXER</b>, and <b>FOCUS_SEQUENCER</b></b>.)<br>
+<!-- , and <b>FOCUS_MIXERSTRIPS -->
         Note that the FOCUS_* qualifiers are OR-ed, not AND-ed.
       <p>
-        <LI><b>MOUSE_EDITOR</b> is true if the mouse pointer is placed inside the editor. (Same for <b>MOUSE_MIXER</b>, <b>MOUSE_SEQUENCER</b>, and <b>MOUSE_MIXERSTRIPS</b>.)<br>
+        <LI><b>MOUSE_EDITOR</b> is true if the mouse pointer is placed inside the editor. (Same for <b>MOUSE_MIXER</b>, and <b>MOUSE_SEQUENCER</b>.)<br>
+          <!-- , and <b>MOUSE_MIXERSTRIPS</b> -->
           Note that the MOUSE_* qualifiers are OR-ed, not AND-ed.
       <p>
       <LI><b>UP</b> is true when releasing the key instead of pressing it.
@@ -245,7 +249,7 @@ F12          : ra.showMixerHelpWindow
   
     <LI> Alphanumeric keys: <b>0</b>, ..., <b>9</b>, and <b>A</b>, ..., <b>Z</b>.
     <p> 
-    <LI> Locale-independent alphanumeric keys (<A onclick="showHide('qwerty3')" href="#!">QWERTY</A>): <b>QWERTY_0</b>, ...<b>QWERTY_0</b>, and <b>QWERTY_A</b>, ..., <b>QWERTY_Z</b>.
+    <LI> Locale-independent alphanumeric keys (<A onclick="showHide('qwerty3')" href="#!">QWERTY</A>): <b>QWERTY_1</b>, ...<b>QWERTY_0</b>, and <b>QWERTY_A</b>, ..., <b>QWERTY_Z</b>.
       <div id="qwerty3" style="display: none">
         <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
       </div>
