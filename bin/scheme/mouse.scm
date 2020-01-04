@@ -3746,7 +3746,10 @@
               "-----------"
               (get-keybinding-configuration-popup-menu-entries "ra:switch-swing-enabled"
                                                                '()
-                                                               "FOCUS_EDITOR")))
+                                                               "FOCUS_EDITOR")
+              "-------------"
+              "Help keybindings" show-keybinding-help-window))
+
 
 
 (define (show-bars-and-beats-or-line-numbers-popup-menu)
