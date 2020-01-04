@@ -147,6 +147,9 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
                                         DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":is-hovering"));
                                         DYNVEC_push_back(args, DYN_create_bool(_is_hovered && isEnabled()));
                                         
+                                        DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":is-enabled"));
+                                        DYNVEC_push_back(args, DYN_create_bool(isEnabled()));
+                                                                       
                                         S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
                                         s7extra_applyFunc_void(draw_checkbox_func, args);
 
