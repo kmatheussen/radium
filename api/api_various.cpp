@@ -1570,6 +1570,40 @@ void showHideSwingtextInBlock(int blocknum,int windownum){
   window->must_redraw = true;
 }
 
+void setSwingEnabled(bool val, int blocknum, int windownum){
+  const struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if(wblock==NULL) return;
+
+  wblock->block->swing_enabled = val;
+  TIME_block_swings_have_changed(wblock->block);
+}
+
+  
+bool getSwingEnabled(int blocknum, int windownum){
+  const struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if(wblock==NULL) return false;
+
+  return wblock->block->swing_enabled;
+}
+
+bool switchSwingEnabled(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  const struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL) return false;
+
+  bool ret = !wblock->block->swing_enabled;
+  
+  wblock->block->swing_enabled = ret;
+
+  TIME_block_swings_have_changed(wblock->block);
+
+  window->must_redraw = true;
+  
+  return ret;
+}
+
+  
+
 // centtext
 
 bool centtextCanBeTurnedOff(int tracknum, int blocknum, int windownum){

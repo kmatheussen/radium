@@ -366,11 +366,8 @@ public slots:
   void on_swing_onoff_toggled(bool val){
     if (_is_initing==true)
       return;
-    
-    struct Tracker_Windows *window = root->song->tracker_windows;
-    struct WBlocks *wblock = window->wblock;
-    wblock->block->swing_enabled = val;
-    TIME_block_swings_have_changed(wblock->block);
+
+    setSwingEnabled(val, -1, -1);
   }
     
   void on_lz_editingFinished(){

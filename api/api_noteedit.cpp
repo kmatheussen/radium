@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_notes_proc.h"
 #include "../common/visual_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "api_common_proc.h"
 #include "api_support_proc.h"
 #include "radium_proc.h"
@@ -113,6 +115,16 @@ void setPianorollHighKey(int key, int tracknum, int blocknum, int windownum){
 
   UpdateWBlockCoordinates(window,wblock);
   window->must_redraw=true;
+}
+
+void setPianorollAutoRange(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+
+  S7CALL2(void_int_int,"FROM_C-set-pianoroll-autorange", wtrack->l.num, wblock->l.num);
 }
 
 float getLowestKey(int tracknum, int blocknum, int windownum){
