@@ -147,7 +147,7 @@ void setShowCpuUsageInMixer(bool showit){
   if (showit != getShowCpuUsageInMixer()){
     ATOMIC_SET(g_show_cpu_usage_in_mixer, showit);
     MW_update_all_chips();
-    MW_update_show_cpu_usage_checkbox();
+    MW_update_checkboxes();
   }
 }
 
@@ -158,6 +158,36 @@ bool getShowCpuUsageInMixer(void){
 bool switchShowCpuUsageInMixer(void){
   bool ret = !getShowCpuUsageInMixer();
   setShowCpuUsageInMixer(ret);
+  return ret;
+}
+
+void setVisibleMixerConnections(bool val){
+  MW_set_connections_visibility(val);
+  MW_update_checkboxes();
+}
+
+bool getVisibleMixerConnections(void){
+  return MW_get_connections_visibility();
+}
+
+bool switchVisibleMixerConnections(void){
+  bool ret = !getVisibleMixerConnections();
+  setVisibleMixerConnections(ret);
+  return ret;
+}
+
+void setVisibleMixerBusConnections(bool val){
+  MW_set_bus_connections_visibility(val);
+  MW_update_checkboxes();
+}
+
+bool getVisibleMixerBusConnections(void){
+  return MW_get_bus_connections_visibility();
+}
+
+bool switchVisibleMixerBusConnections(void){
+  bool ret = !getVisibleMixerBusConnections();
+  setVisibleMixerBusConnections(ret);
   return ret;
 }
 

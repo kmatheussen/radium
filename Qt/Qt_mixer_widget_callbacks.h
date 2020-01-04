@@ -791,11 +791,23 @@ public slots:
     setShowCpuUsageInMixer(val);
   }
 
+  void on_connections_visibility_clicked(){
+    if (connections_visibility->_last_pressed_button==Qt::RightButton){
+      S7CALL2(void_void,"FROM_C-show-mixer-connections-popup-menu");
+    }
+  }
+  
   void on_connections_visibility_toggled(bool val){
     if (_initing.can_access())
       MW_set_connections_visibility(val);
   }
 
+  void on_bus_connections_visibility_clicked(){
+    if (bus_connections_visibility->_last_pressed_button==Qt::RightButton){
+      S7CALL2(void_void,"FROM_C-show-mixer-bus-connections-popup-menu");
+    }
+  }
+  
   void on_bus_connections_visibility_toggled(bool val){
     if (_initing.can_access())
       MW_set_bus_connections_visibility(val);
@@ -951,9 +963,11 @@ void MW_set_instrument_in_mixer(bool include_instrument_widget){
   g_mixer_widget2->set_include_instrument_widget(include_instrument_widget);
 }
 
-void MW_update_show_cpu_usage_checkbox(void){
+void MW_update_checkboxes(void){
   radium::ScopedIniting initing(g_mixer_widget2->_initing);
   g_mixer_widget2->show_cpu_usage->setChecked(getShowCpuUsageInMixer());
+  g_mixer_widget2->connections_visibility->setChecked(getVisibleMixerConnections());
+  g_mixer_widget2->bus_connections_visibility->setChecked(getVisibleMixerBusConnections());
 }
 
 #if 0

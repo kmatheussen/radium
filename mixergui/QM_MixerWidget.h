@@ -131,7 +131,7 @@ extern LANGSPEC void MW_set_modular_mixer_type(bool show_modular);
 
 extern LANGSPEC void MW_set_window_mode(bool show_window);
 extern LANGSPEC bool MW_is_in_window_mode(void);
-extern LANGSPEC void MW_update_show_cpu_usage_checkbox(void);
+extern LANGSPEC void MW_update_checkboxes(void);
 
 extern LANGSPEC void MW_set_instrument_in_mixer(bool include_instrument_widget);
   

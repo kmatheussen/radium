@@ -967,7 +967,19 @@
    (get-keybinding-configuration-popup-menu-entries "ra:switch-show-cpu-usage-in-mixer"
                                                     '()
                                                     "FOCUS_MIXER")))
- 
+
+(define (FROM_C-show-mixer-connections-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-visible-mixer-connections"
+                                                    '()
+                                                    "FOCUS_MIXER")))
+
+(define (FROM_C-show-mixer-bus-connections-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-visible-mixer-bus-connections"
+                                                    '()
+                                                    "FOCUS_MIXER")))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

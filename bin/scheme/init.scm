@@ -235,6 +235,8 @@ FROM_C-window-mode-popup-menu
 FROM_C-show-modular-popup-menu
 FROM_C-show-instrument-in-mixer-popup-menu
 FROM_C-show-cpu-usage-in-mixer-popup-menu
+FROM_C-show-mixer-connections-popup-menu
+FROM_C-show-mixer-bus-connections-popup-menu
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*
