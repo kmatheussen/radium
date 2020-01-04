@@ -383,14 +383,18 @@
        (for-each (lambda (sub-area)
                    (sub-area :handle-raw-mouse-cycles button state x y))
                  sub-areas) ;; (reverse sub-areas))
-       (define is-inside (inside? x y))
+       (define is-inside (and (not (eq? state *is-leaving*))
+                              (inside? x y)))
        (for-each (lambda (raw-mouse-cycle)
                    (define was-active (raw-mouse-cycle :is-active))
                    (define is-active was-active)
+                   ;;(if (or is-inside was-active is-active)
+                   ;;    (c-display "inside?:" is-inside ". is-active:" is-active ". was-active: " was-active ". class-name:" class-name ". state:" state))
                    (if is-active
                        (if is-inside
                            (set! is-active (raw-mouse-cycle :move-func button x y))
                            (begin
+                             ;;(c-display "     RAW Leave func for called for" class-name ".")
                              (raw-mouse-cycle :leave-func button x y)
                              (set! is-active #f)))
                        (if is-inside
@@ -548,7 +552,7 @@
        (when (or (= state *is-releasing*)
                  (= state *is-leaving*))
          ;;(if curr-mouse-cycle
-         ;;    (c-display "     MOUSE-CALLBACK-INTERNAL called for" class-name ". y:" y ". type:" (if (= state *is-releasing*) "RELEASE" "LEAVE")))
+         ;;(c-display "     MOUSE-CALLBACK-INTERNAL called for" class-name ". y:" y ". type:" (if (= state *is-releasing*) "RELEASE" "LEAVE"))
          (mouse-release-internal button x y))
        
        (cond (*current-mouse-cycle*
