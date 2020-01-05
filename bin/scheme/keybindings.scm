@@ -186,6 +186,7 @@
 
 #!!
 (get-keybindings-from-command-without-focus-and-mouse "ra.pasteSeqblocks")
+(get-keybindings-from-command-without-focus-and-mouse "keybinding.space_play_keyboard_handler")
 (<ra> :get-keybindings-from-command "ra.pasteSeqblocks")
 (get-menu-keybindings "ra.pasteSeqblocks")
 (<ra> :get-qualifier-name "CTRL")
@@ -450,9 +451,10 @@ Examples:
                    (string-split keybinding #\space)))
          (key (car keys))
          (qualifiers (cdr keys)))    
-    (string-join (cons key (sort (cons qualifier
-                                       qualifiers)
-                                 string<?))
+    (string-join (cons key
+                       (sort (cons qualifier
+                                   qualifiers)
+                             string<?))
                  " ")))
 
 (define (get-keyboard-focus-from-gui gui)
@@ -624,11 +626,13 @@ Examples:
                        (if (null? ret)
                            (list "MOUSE_SEQUENCER" "MOUSE_EDITOR" "MOUSE_MIXER")
                            ret)))
-                       
-  (define other-keys (remove (lambda (key)
+
+  (define key (car keys))
+
+  (define qualifiers (remove (lambda (key)
                                (or (member? key focus-keys)
                                    (member? key mouse-keys)))
-                             keys))
+                             (cdr keys)))
 
   (define ret '())
   
@@ -637,12 +641,14 @@ Examples:
       (let loop2 ((mouse-keys mouse-keys))
         (if (null? mouse-keys)
             (loop1 (cdr focus-keys))
-            (let ((keybinding (string-join (sort (cons (car focus-keys)
-                                                       (cons (car mouse-keys)
-                                                             other-keys))
-                                                 string<=?)
+            (let ((keybinding (string-join (cons key
+                                                 (sort (cons (car focus-keys)
+                                                             (cons (car mouse-keys)
+                                                                   qualifiers))
+                                                       string<=?))
                                            " ")))
               (define command (<ra> :get-keybinding-from-keys keybinding))
+              ;;(c-display "command:" command ". keybinding: " keybinding)
               (if (not (string=? "" command))
                   (push-back! ret (cons keybinding command)))
               (loop2 (cdr mouse-keys)))))))
@@ -651,6 +657,14 @@ Examples:
   )
 #!!
 (for-each c-display (get-existing-keybindings-from-keys "2 FOCUS_EDITOR FOCUS_SEQUENCER"))
+(for-each c-display (get-existing-keybindings-from-keys "SPACE FOCUS_EDITOR"))
+(get-existing-keybindings-from-keys "SPACE FOCUS_EDITOR")
+(<ra> :get-keybinding-from-keys "SPACE FOCUS_EDITOR MOUSE_EDITOR")
+(for-each c-display ((<ra> :get-keybindings-from-commands) 'keybinding.space_play_keyboard_handler))
+(for-each c-display ((<ra> :get-keybindings-from-commands) 'ra.resetMixerZoom))
+(for-each c-display ((<ra> :get-keybindings-from-commands) 'keybinding.switch_metronome))
+(<ra> :get-keybinding-from-keys "FOCUS_EDITOR MOUSE_EDITOR SPACE")
+
 (member? "a" (list "b" "a"))
 (delete "a" (list "a" "b") string=?)
 (string-join (list) " ")
