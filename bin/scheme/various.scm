@@ -1067,7 +1067,17 @@
    "-------------"
    "Help keybindings" show-keybinding-help-window
    ))
-        
+
+(define (FROM_C-show-mixer-help-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:show-mixer-help-window"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Various
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
