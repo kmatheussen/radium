@@ -2172,6 +2172,11 @@ void setRecordAccuratelyFromMidi(bool accurately){
   MIDI_set_record_accurately(accurately);
 }
 
+bool switchRecordAccuratelyFromMidi(void){
+  bool ret = !recordAccuratelyFromMidi();
+  setRecordAccuratelyFromMidi(ret);
+  return ret;
+}
 
 
 // Disk

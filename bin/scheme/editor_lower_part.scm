@@ -206,6 +206,9 @@
                       :selected-color "red"
                       ))
   (area :add-statusbar-text-handler "Enable polyphonic and time-accurate recording from MIDI")
+  (add-keybinding-configuration-to-gui area
+                                       "ra:switch-record-accurately-from-midi"
+                                       '())
   area)
 
 
