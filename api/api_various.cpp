@@ -1571,11 +1571,14 @@ void showHideSwingtextInBlock(int blocknum,int windownum){
 }
 
 void setSwingEnabled(bool val, int blocknum, int windownum){
-  const struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  struct Tracker_Windows *window;
+  const struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if(wblock==NULL) return;
 
   wblock->block->swing_enabled = val;
   TIME_block_swings_have_changed(wblock->block);
+
+  window->must_redraw = true;
 }
 
   
@@ -1587,6 +1590,7 @@ bool getSwingEnabled(int blocknum, int windownum){
 }
 
 bool switchSwingEnabled(int blocknum, int windownum){
+
   struct Tracker_Windows *window;
   const struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if(wblock==NULL) return false;
