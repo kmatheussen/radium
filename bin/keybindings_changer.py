@@ -77,7 +77,31 @@ def write_lines(lines):
 
     ra.closeFile(disk)
 
+def keybindings_equal(keybinding1, keybinding2):
+    return " ".join(sorted(keybinding1.split(" "))) == " ".join(sorted(keybinding2.split(" ")))
+    
+    
+def remove_focus_and_mouse_from_keybinding(keybinding):
+    keys = keybinding.split(" ")
+    ret = []
+    for key in keys:
+        if key.startswith("MOUSE_"):
+            continue
+        if key.startswith("FOCUS_"):
+            continue
+        ret += [key]
 
+    return " ".join(ret)
+        
+    
+def lines_without_focus_and_mouse_are_equal(line1, line2):
+    keybinding1, command1 = get_keybinding_and_command(line1)
+    keybinding2, command2 = get_keybinding_and_command(line2)
+    if not command1==command2:
+        return False
+    return keybindings_equal(remove_focus_and_mouse_from_keybinding(keybinding1), remove_focus_and_mouse_from_keybinding(keybinding2))
+
+    
 def has_line(line, lines):
     for aline in lines:
         print "comparing start->",aline,"-",line,"<-end"
@@ -110,7 +134,7 @@ def has_keybinding(keybinding, lines):
     ret = False
 
     for line in lines:
-        if get_keybinding_from_line(line)==keybinding:
+        if keybindings_equal(get_keybinding_from_line(line), keybinding):
             ret = line
 
     return ret
@@ -151,7 +175,7 @@ def ensure_has_line(new_line):
     new_lines = []
     
     for line in lines:
-        if get_keybinding_from_line(line) != keybinding and get_command_from_line(line) != command:
+        if not keybindings_equal(get_keybinding_from_line(line), keybinding) and get_command_from_line(line) != command:
             new_lines += [line]
         else:
             num_removed += 1
@@ -204,21 +228,28 @@ def remove_keybinding_from_conf_file(keybinding, command):
     
     lines = get_lines()
     print "lines:",lines
-    if has_line(line_to_remove, lines)==False:
+    
+    #if has_line(line_to_remove, lines)==False:
+    #    message2 = "Could not remove keybinding \"%s\".<br>It might be a default keybinding, and those can't be removed. They can be overridden to be used for something else though." % line_to_remove
+    #    print message2
+    #    ra.addMessage(message2)
+    #    return
+
+    num_removed = 0
+    new_lines = []
+    
+    for line in lines:
+        if lines_without_focus_and_mouse_are_equal(line, line_to_remove):
+            num_removed += 1
+        else:
+            new_lines += [line]
+
+    if num_removed==0:
         message2 = "Could not remove keybinding \"%s\".<br>It might be a default keybinding, and those can't be removed. They can be overridden to be used for something else though." % line_to_remove
         print message2
         ra.addMessage(message2)
-        return
-
-    def keepit(line):
-        if line != line_to_remove:
-            return True
-        else:
-            return False
-
-    new_lines = filter(keepit, lines)
-
-    write_lines(new_lines)
+    else:
+        write_lines(new_lines)
 
 def FROM_C_remove_keybinding_from_conf_file(keybinding, command):
     old_stdout = sys.stdout
@@ -247,5 +278,12 @@ def FROM_C_remove_keybinding_from_conf_file(keybinding, command):
 
 if __name__ == "__main__":
     #update_conf_file("#gakkgakk")
-    insert_new_line_into_conf_file("a b : 90")
-
+    #insert_new_line_into_conf_file("a b : 90")
+    print "A:",remove_focus_and_mouse_from_keybinding("A")
+    print "B:",remove_focus_and_mouse_from_keybinding("FOCUS_MIXER B")
+    print "False:",lines_without_focus_and_mouse_are_equal("MOUSE_MIXER A : doit", "FOCUS_MIXER B : doit")
+    print "True:",lines_without_focus_and_mouse_are_equal("MOUSE_MIXER A : doit", "FOCUS_MIXER A : doit")
+    print "False:",lines_without_focus_and_mouse_are_equal("MOUSE_MIXER A : doit1", "FOCUS_MIXER A : doit2")
+    print "True:",keybindings_equal("A B", "A B")
+    print "False:",keybindings_equal("A B", "A")
+    print "True:",keybindings_equal("A B", "B A")
