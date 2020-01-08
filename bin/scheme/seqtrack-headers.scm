@@ -1409,6 +1409,7 @@
                            when ison
                            (<ra> :set-sequencer-grid-type "bar")
                            (update-me!)))
+                   "--------------"
                    (list "Keybindings"
                          (list
                           "-----------------On/Off keybinding"
