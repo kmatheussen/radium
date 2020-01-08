@@ -789,7 +789,7 @@ Examples:
                                         (if (string=? "Yes" answer)
                                             (setit!)))))
     )
-  
+
   (<ra> :grab-keybinding grabbed))
 
 
