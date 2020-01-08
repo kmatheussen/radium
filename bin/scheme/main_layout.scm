@@ -259,7 +259,19 @@
 (define (recall-lower-tabs-height)
   ;;(c-display "|||||||||||||| ========recall lower tabs height:" *lower-tabs-height-before-full-or-active*)
   (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) *lower-tabs-height-before-full-or-active*))
-  
+
+(define (FROM_C-show-sequencer-in-full-mode! doit)
+  (when (not (eq? doit (<ra> :sequencer-in-full-mode)))
+    (if doit
+        (begin
+          ;; show sequencer full
+          (remember-lower-tabs-height)
+          (<ra> :hide-upper-part-of-main-window))
+        (begin
+          ;; don't show sequencer full
+          (recall-lower-tabs-height)
+          (<ra> :show-upper-part-of-main-window)))))
+
 (define (FROM-C-sequencer-set-gui-in-window! doit)
   (when (not (eq? doit (FROM-C-sequencer-gui-in-window)))
     (if doit
