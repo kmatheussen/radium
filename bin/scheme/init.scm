@@ -241,6 +241,8 @@ FROM_C-show-mixer-zoom-reset-popup-menu
 FROM_C-show-mixer-rotate-popup-menu
 FROM_C-set-pianoroll-autorange
 FROM_C-show-mixer-help-popup-menu
+FROM_C-playlist-up!
+FROM_C-playlist-down!
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

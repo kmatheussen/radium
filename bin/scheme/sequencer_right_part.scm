@@ -579,7 +579,53 @@
        (delete-pause-in-seqtrack -1 (entry :start-time) (entry :duration)))))
   (c-display "Remove"))
 
+(define (playlist-swap-entries entry1 entry2)
+  (cond ((eq? (entry1 :type) 'pause)
+         (move-seqblock! (entry2 :seqblockid) (entry1 :start-time)))
+        ((eq? (entry2 :type) 'pause)
+         (move-seqblock! (entry1 :seqblockid) (- (+ (entry1 :start-time)
+                                                    (entry1 :duration)
+                                                    (entry2 :duration))
+                                                 (entry1 :duration))))
+        (else
+         (swap-seqblock-with-next! (entry1 :seqblockid)))))
 
+(define (FROM_C-playlist-up!)
+
+  (define entries (get-playlist-entries -1))
+  (define curr-playlist-pos (get-legal-playlist-pos entries))
+  (c-display "OLD POS:" (<ra> :get-curr-playlist-pos) curr-playlist-pos)
+  (when (and (> curr-playlist-pos 0)
+             (< curr-playlist-pos (- (length entries) 1)))
+    (define entry1 (entries (- curr-playlist-pos 1)))
+    (define entry2 (entries curr-playlist-pos))
+    (define new-pos (- curr-playlist-pos 1))
+    (playlist-swap-entries entry1 entry2)
+    
+    (c-display "NEW POS:" new-pos ", old:" curr-playlist-pos)
+    ( ;;<ra> :schedule 0
+     (lambda ()
+       (FROM_C-recreate-playlist-area)
+       (<ra> :set-curr-playlist-pos new-pos)
+       #f))
+    ))
+
+(define (FROM_C-playlist-down!)
+  (define entries (get-playlist-entries -1))
+  (define curr-playlist-pos (get-legal-playlist-pos entries))
+  (when (and (>= curr-playlist-pos 0)
+             (< curr-playlist-pos (- (length entries) 2)))
+    (define entry1 (entries curr-playlist-pos))
+    (define entry2 (entries (+ 1 curr-playlist-pos)))
+    (define new-pos (+ curr-playlist-pos 1))
+    (playlist-swap-entries entry1 entry2)
+    ( ;;<ra> :schedule 0
+     (lambda ()
+       (FROM_C-recreate-playlist-area)
+       (<ra> :set-curr-playlist-pos new-pos)
+       #f))))
+
+  
 (def-area-subclass (<block-and-playlist-area> :gui :x1 :y1 :x2 :y2 :state)
 
   (define button-height (round (min (/ height 4)
@@ -626,7 +672,8 @@
   
   (add-keybinding-configuration-to-gui insert-button
                                        "ra:playlist-insert"
-                                       '())
+                                       '()
+                                       "FOCUS_EDITOR FOCUS_SEQUENCER")
   
   (add-sub-area-plain! insert-button)
                                                   
@@ -637,57 +684,29 @@
   
   (add-keybinding-configuration-to-gui remove-button
                                        "ra:playlist-remove"
-                                       '())
+                                       '()
+                                       "FOCUS_EDITOR FOCUS_SEQUENCER")
   (add-sub-area-plain! remove-button)
+
+  (define up-button (<new> :button gui (+ x1 1) up/down-y1 (- button-mid 1) up/down-y2
+                           :text "Up"
+                           :callback-release FROM_C-playlist-up!))
+
+  (add-keybinding-configuration-to-gui up-button
+                                       "ra:playlist-up"
+                                       '()
+                                       "FOCUS_EDITOR FOCUS_SEQUENCER")
+  (add-sub-area-plain! up-button)
+
+  (define down-button (<new> :button gui button-mid up/down-y1 (- x2 1) up/down-y2
+                             :text "Down"
+                             :callback-release FROM_C-playlist-down!))
   
-
-  (define (swap-entries entry1 entry2)
-    (cond ((eq? (entry1 :type) 'pause)
-           (move-seqblock! (entry2 :seqblockid) (entry1 :start-time)))
-          ((eq? (entry2 :type) 'pause)
-           (move-seqblock! (entry1 :seqblockid) (- (+ (entry1 :start-time)
-                                                     (entry1 :duration)
-                                                     (entry2 :duration))
-                                                  (entry1 :duration))))
-          (else
-           (swap-seqblock-with-next! (entry1 :seqblockid)))))
-
-  (add-sub-area-plain! (<new> :button gui (+ x1 1) up/down-y1 (- button-mid 1) up/down-y2
-                              :text "Up"
-                              :callback-release (lambda ()
-                                                  (define entries (get-playlist-entries -1))
-                                                  (define curr-playlist-pos (get-legal-playlist-pos entries))
-                                                  (c-display "OLD POS:" (<ra> :get-curr-playlist-pos) curr-playlist-pos)
-                                                  (when (and (> curr-playlist-pos 0)
-                                                             (< curr-playlist-pos (- (length entries) 1)))
-                                                    (define entry1 (entries (- curr-playlist-pos 1)))
-                                                    (define entry2 (entries curr-playlist-pos))
-                                                    (define new-pos (- curr-playlist-pos 1))
-                                                    (swap-entries entry1 entry2)
-                                                    
-                                                    (c-display "NEW POS:" new-pos ", old:" curr-playlist-pos)
-                                                    ( ;;<ra> :schedule 0
-                                                          (lambda ()
-                                                            (FROM_C-recreate-playlist-area)
-                                                            (<ra> :set-curr-playlist-pos new-pos)
-                                                            #f))
-                                                    ))))
-  (add-sub-area-plain! (<new> :button gui button-mid up/down-y1 (- x2 1) up/down-y2
-                              :text "Down"
-                              :callback-release (lambda ()
-                                                  (define entries (get-playlist-entries -1))
-                                                  (define curr-playlist-pos (get-legal-playlist-pos entries))
-                                                  (when (and (>= curr-playlist-pos 0)
-                                                             (< curr-playlist-pos (- (length entries) 2)))
-                                                    (define entry1 (entries curr-playlist-pos))
-                                                    (define entry2 (entries (+ 1 curr-playlist-pos)))
-                                                    (define new-pos (+ curr-playlist-pos 1))
-                                                    (swap-entries entry1 entry2)
-                                                    ( ;;<ra> :schedule 0
-                                                     (lambda ()
-                                                       (FROM_C-recreate-playlist-area)
-                                                       (<ra> :set-curr-playlist-pos new-pos)
-                                                       #f))))))
+  (add-keybinding-configuration-to-gui down-button
+                                       "ra:playlist-down"
+                                       '()
+                                       "FOCUS_EDITOR FOCUS_SEQUENCER")
+  (add-sub-area-plain! down-button)
 
   
   (add-sub-area-plain! blocklist)
