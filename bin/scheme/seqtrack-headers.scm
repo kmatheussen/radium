@@ -1450,15 +1450,7 @@
                 (cond ((eq? type 'window)
                        (<ra> :set-sequencer-in-window new-value))
                       ((eq? type 'full)
-                       (if new-value
-                           (begin
-                             ;; show sequencer full
-                             (remember-lower-tabs-height)
-                             (<ra> :hide-upper-part-of-main-window))
-                           (begin
-                             ;; don't show sequencer full
-                             (recall-lower-tabs-height)
-                             (<ra> :show-upper-part-of-main-window))))
+                       (<ra> :set-sequencer-in-full-mode new-value))
                       (else
                        (assert #f)))
                 (<gui> :update gui)) ;; Necessary if the dragger is at topmost position. Then the dragger gfx won't be updated.
@@ -1470,15 +1462,18 @@
                            (assert #f)))
               :right-mouse-clicked-callback
               (lambda ()
-                (if (eq? type 'window)
-                    (popup-menu
+                (popup-menu
+                 (if (eq? type 'window)
                      (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-sequencer-in-window"
                                                                       :args '()
                                                                       :focus-keybinding "FOCUS_SEQUENCER")
-                     "-------------"
-                     "Help keybindings" show-keybinding-help-window)))))
-
-                 
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-sequencer-in-full-mode"
+                                                                      :args '()
+                                                                      :focus-keybinding "FOCUS_SEQUENCER"))
+                 "-------------"
+                 "Help keybindings" show-keybinding-help-window))))
+     
+     
      (checkbox :add-statusbar-text-handler
                (cond ((eq? type 'window)
                       "Window mode")

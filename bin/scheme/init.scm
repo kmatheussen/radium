@@ -243,6 +243,7 @@ FROM_C-set-pianoroll-autorange
 FROM_C-show-mixer-help-popup-menu
 FROM_C-playlist-up!
 FROM_C-playlist-down!
+FROM_C-show-sequencer-in-full-mode!
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

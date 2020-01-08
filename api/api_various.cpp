@@ -407,6 +407,21 @@ void showHideSequencerInWindow(void){
   setSequencerInWindow(!sequencerInWindow());    
 }
 
+void setSequencerInFullMode(bool doit){
+  S7CALL2(void_bool, "FROM_C-show-sequencer-in-full-mode!", doit);
+}
+
+bool sequencerInFullMode(void){
+  return !upperPartOfMainWindowIsVisible();
+}
+
+bool switchSequencerInFullMode(void){
+  bool ret = !sequencerInFullMode();
+  setSequencerInFullMode(ret);
+
+  return ret;
+}
+
 void switchSequencerPlaylistConfiguration(void){
   bool seq  = GFX_SequencerIsVisible();
   bool play = GFX_PlaylistWindowIsVisible();
