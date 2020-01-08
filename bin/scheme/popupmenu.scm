@@ -220,7 +220,11 @@
         
 ;; Async only. Use ra:simple-popup-menu for sync.
 (define (popup-menu . args)
-  (popup-menu-from-args (get-popup-menu-args args)))
+  (<ra> :schedule 0
+        (lambda ()
+          (popup-menu-from-args (get-popup-menu-args args))
+          #f)))
+                                
 
 
 #!!
