@@ -2625,6 +2625,14 @@ void playlistRemove(void){
   S7CALL2(void_void, "FROM_C-playlist-remove!");
 }
 
+void playlistUp(void){
+  S7CALL2(void_void, "FROM_C-playlist-up!");
+}
+
+void playlistDown(void){
+  S7CALL2(void_void, "FROM_C-playlist-down!");
+}
+
 static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
                                                const struct SeqBlock *seqblock,
                                                const struct Blocks *block,
