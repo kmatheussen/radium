@@ -1389,6 +1389,7 @@
                    :radio-buttons
                    (list "Line grid"
                          :check (string=? grid "Line")
+                         :shortcut (list ra:set-sequencer-grid-type "line")
                          (lambda (ison)
                            (when ison
                              (c-display "setting ot line")
@@ -1396,12 +1397,14 @@
                              (update-me!))))
                    (list "Beat grid"
                          :check (string=? grid "Beat")
+                         :shortcut (list ra:set-sequencer-grid-type "beat")
                          (lambda (ison)
                            (when ison
                              (<ra> :set-sequencer-grid-type "beat")
                              (update-me!))))
                    (list "Bar grid"
                          :check (string=? grid "Bar")
+                         :shortcut (list ra:set-sequencer-grid-type "bar")
                          (lambda (ison)
                            when ison
                            (<ra> :set-sequencer-grid-type "bar")
