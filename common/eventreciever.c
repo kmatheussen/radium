@@ -196,7 +196,7 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
 			//	len++;
 			//}
 
-                        if (g_grab_next_eventreceiver_key){
+                        if (g_grab_next_eventreceiver_key && in_tevent->ID==TR_KEYBOARD){ // don't want to grab keyboardup.
                           
                           API_has_grabbed_keybinding(in_tevent->SubID, places, len);
                           g_grab_next_eventreceiver_key = false;

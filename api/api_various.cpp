@@ -2641,7 +2641,7 @@ void grabKeybinding(func_t *callback){
     return;
   }
 
-  R_ASSERT(g_grab_callback.v == NULL);
+  R_ASSERT_RETURN_IF_FALSE(g_grab_callback.v == NULL);
 
   g_grab_callback.set(callback);
   g_grab_next_eventreceiver_key = true;
