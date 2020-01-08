@@ -2618,7 +2618,7 @@ int64_t getPlaylistPosTime(int daspos){
 }
 
 void playlistInsert(void){
-  S7CALL2(void_void, "FROM_C-update-playlist-area");
+  S7CALL2(void_void, "FROM_C-playlist-insert!");
 }
 
 void playlistRemove(void){
