@@ -2334,6 +2334,7 @@ void setSequencerGridType(const_char *grid_type){
   }
   
   SEQUENCER_set_grid_type(what);
+  SEQUENCER_update(SEQUPDATE_HEADERS);
 }
 
 const_char *getSequencerGridType(void){
@@ -2366,6 +2367,12 @@ bool sequencerGridEnabled(void){
 void setSequencerGridEnabled(bool val){
   g_sequencer_grid_enabled = val;
   SEQUENCER_update(SEQUPDATE_HEADERS);
+}
+
+bool switchSequencerGridEnabled(void){
+  bool ret = !sequencerGridEnabled();
+  setSequencerGridEnabled(ret);
+  return ret;
 }
 
 void setPaintSequencerGrid(bool doit){
