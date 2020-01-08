@@ -32,6 +32,7 @@
               (let ((instrument-id (<ra> :get-instrument-for-track tracknum)))
                 (list "Rename instrument"
                       :enabled (>= instrument-id 0)
+                      :shortcut (list ra:eval-scheme "(request-rename-instrument)")
                       (lambda ()
                         (request-rename-instrument instrument-id))))
                             
@@ -53,9 +54,17 @@
                      (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-pan-on-off"
                                                                       :args '()
                                                                       :focus-keybinding "FOCUS_EDITOR")
+                     (<-> "---------------Pan slider on/off for track #" tracknum)
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-pan-on-off"
+                                                                      :args (list tracknum)
+                                                                      :focus-keybinding "FOCUS_EDITOR")
                      "---------------Volume slider on/off"
                      (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-volume-on-off"
                                                                       :args '()
+                                                                      :focus-keybinding "FOCUS_EDITOR")
+                     (<-> "---------------Volume slider on/off for track #" tracknum)
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-volume-on-off"
+                                                                      :args (list tracknum)
                                                                       :focus-keybinding "FOCUS_EDITOR")
                      "---------------Rename instrument"
                      (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:eval-scheme"
@@ -65,7 +74,7 @@
                      (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-on"
                                                                       :args '()
                                                                       :focus-keybinding "FOCUS_EDITOR")
-                     (<-> "---------------Enabled/Muted track #" tracknum)
+                     (<-> "---------------Enabled/Muted for track #" tracknum)
                      (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-on"
                                                                       :args (list tracknum)
                                                                       :focus-keybinding "FOCUS_EDITOR")
