@@ -542,16 +542,6 @@ bool getTrackPanOnOff(int tracknum, int blocknum, int windownum){
   return wtrack->track->panonoff;
 }
 
-void undoTrackPanOnOff(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return;
-
-  ADD_UNDO(TrackHeader(wblock->l.num, wtrack->l.num));
-}
-
 void setTrackPanOnOff(bool onoff, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -559,11 +549,23 @@ void setTrackPanOnOff(bool onoff, int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
+  if (wtrack->track->panonoff == onoff)
+    return;
+  
+  ADD_UNDO(TrackHeader(wblock->l.num, wtrack->l.num));
+  
   wtrack->track->panonoff = onoff;
         
   window->must_redraw = true;
 }
 
+bool switchTrackPanOnOff(int tracknum, int blocknum, int windownum){
+  bool ret = !getTrackPanOnOff(tracknum, blocknum, windownum);
+
+  setTrackPanOnOff(ret, tracknum, blocknum, windownum);
+
+  return ret;
+}
 
 // track volumening on/off
 ///////////////////////////////////////////////////
@@ -578,16 +580,6 @@ bool getTrackVolumeOnOff(int tracknum, int blocknum, int windownum){
   return wtrack->track->volumeonoff;
 }
 
-void undoTrackVolumeOnOff(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return;
-
-  ADD_UNDO(TrackHeader(wblock->l.num, wtrack->l.num));
-}
-
 void setTrackVolumeOnOff(bool onoff, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -600,6 +592,13 @@ void setTrackVolumeOnOff(bool onoff, int tracknum, int blocknum, int windownum){
   window->must_redraw = true;
 }
 
+bool switchTrackVolumeOnOff(int tracknum, int blocknum, int windownum){
+  bool ret = !getTrackVolumeOnOff(tracknum, blocknum, windownum);
+
+  setTrackVolumeOnOff(ret, tracknum, blocknum, windownum);
+
+  return ret;
+}
 
 
 // track panning slider

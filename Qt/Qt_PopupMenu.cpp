@@ -1246,7 +1246,7 @@ int64_t GFX_Menu2(
     R_ASSERT_RETURN_IF_FALSE2(callback!=NULL, -1);
     R_ASSERT_RETURN_IF_FALSE2(program_state_is_valid, 1);
   }
-  
+
   if(reqtype==NULL || v.num_elements>20 || is_async || callback!=NULL){
     std::function<void(int,bool)> empty_callback3;
     return GFX_QtMenu(v, callback, empty_callback3, is_async, program_state_is_valid);
