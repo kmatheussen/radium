@@ -250,14 +250,32 @@
 (<ra> :hide-upper-part-of-main-window)
 !!#
 
+(define *lower-tabs-height-before-full-or-active* 10)
 
+(define (remember-lower-tabs-height)
+  ;;(c-display "|||||||||||||| ========REMEMBER lower tabs height:" (<gui> :height *lowertab-gui*))
+  (set! *lower-tabs-height-before-full-or-active* (<gui> :height *lowertab-gui*)))
+
+(define (recall-lower-tabs-height)
+  ;;(c-display "|||||||||||||| ========recall lower tabs height:" *lower-tabs-height-before-full-or-active*)
+  (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) *lower-tabs-height-before-full-or-active*))
+  
 (define (FROM-C-sequencer-set-gui-in-window! doit)
-  (cond ((and doit
-              (not *sequencer-window-gui-active*))
-         (move-sequencer-to-window))
-        ((and (not doit)
-              *sequencer-window-gui-active*)
-         (move-sequencer-to-main-tabs))))
+  (when (not (eq? doit (FROM-C-sequencer-gui-in-window)))
+    (if doit
+        (if (not (<ra> :upper-part-of-main-window-is-visible))
+            (<ra> :show-upper-part-of-main-window)
+            (remember-lower-tabs-height)))
+    
+    (cond ((and doit
+                (not *sequencer-window-gui-active*))
+           (move-sequencer-to-window))
+          ((and (not doit)
+                *sequencer-window-gui-active*)
+           (move-sequencer-to-main-tabs)))
+    
+    (if (not doit)
+        (recall-lower-tabs-height))))
       
 (define (FROM-C-sequencer-gui-in-window)
   *sequencer-window-gui-active*)
