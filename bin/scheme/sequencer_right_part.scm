@@ -619,15 +619,27 @@
   (set! *playlist-area* playlist)
 
   ;;(c-display blocklist-y1 blocklist-y2 playlist-y1 playlist-y2 "button-height:" button-height ". list-height:" list-height ". y1/y2:" y1 y2)
+
+  (define insert-button (<new> :button gui (+ x1 1) insert/remove-y1 (- button-mid 1) insert/remove-y2
+                               :text "Insert"
+                               :callback-release ra:playlist-insert))
   
-  (add-sub-area-plain! (<new> :button gui (+ x1 1) insert/remove-y1 (- button-mid 1) insert/remove-y2
-                              :text "Insert"
-                              :callback-release FROM_C-playlist-insert!))
+  (add-keybinding-configuration-to-gui insert-button
+                                       "ra:playlist-insert"
+                                       '())
+  
+  (add-sub-area-plain! insert-button)
                                                   
+
+  (define remove-button (<new> :button gui button-mid insert/remove-y1 (- x2 1) insert/remove-y2
+                               :text "Remove"
+                               :callback-release ra:playlist-remove))
   
-  (add-sub-area-plain! (<new> :button gui button-mid insert/remove-y1 (- x2 1) insert/remove-y2
-                              :text "Remove"
-                              :callback-release FROM_C-playlist-remove!))
+  (add-keybinding-configuration-to-gui remove-button
+                                       "ra:playlist-remove"
+                                       '())
+  (add-sub-area-plain! remove-button)
+  
 
   (define (swap-entries entry1 entry2)
     (cond ((eq? (entry1 :type) 'pause)
