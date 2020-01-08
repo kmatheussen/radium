@@ -5,17 +5,27 @@
 
 (define *editor-track-background-color* "high_editor")
 
+(delafina (request-rename-instrument :instrument-id (<ra> :get-current-instrument))
+  (when (>= instrument-id 0)
+    (define old-name (<ra> :get-instrument-name instrument-id))
+    (define new-name (<ra> :request-string "" #t old-name))
+    (if (and (not (string=? new-name ""))
+             (not (string=? old-name new-name)))
+        (<ra> :set-instrument-name new-name instrument-id))))
+
+  
+         
 (define (show-editor-track-popup-menu tracknum)
   (popup-menu (<-> "---------Track " tracknum ":")
-              (list "Panning"
+              (list "Pan slider"
                     :check (<ra> :get-track-pan-on-off tracknum)
+                    :shortcut ra:switch-track-pan-on-off
                     (lambda (onoff)
-                      (<ra> :undo-track-pan tracknum)
                       (<ra> :set-track-pan-on-off onoff tracknum)))
-              (list "Volume"
+              (list "Volume slider"
                     :check (<ra> :get-track-volume-on-off tracknum)
+                    :shortcut ra:switch-track-volume-on-off
                     (lambda (onoff)
-                      (<ra> :undo-track-volume tracknum)
                       (<ra> :set-track-volume-on-off onoff tracknum))
                     )
               "-----------"
@@ -23,14 +33,10 @@
                 (list "Rename instrument"
                       :enabled (>= instrument-id 0)
                       (lambda ()
-                        (define old-name (<ra> :get-instrument-name instrument-id))
-                        (define new-name (<ra> :request-string "" #t old-name))
-                        (if (and (not (string=? new-name ""))
-                                 (not (string=? old-name new-name)))
-                            (<ra> :set-instrument-name new-name instrument-id)))))
+                        (request-rename-instrument instrument-id))))
                             
               "-----------"
-              (list "Enabled"
+              (list "Enabled/Muted"
                     :check (<ra> :track-on tracknum)
                     :shortcut ra:switch-track-on
                     (lambda (onoff)
@@ -41,7 +47,40 @@
                     :shortcut ra:show-hide-pianoroll
                     (lambda (onoff)
                       (<ra> :show-pianoroll onoff tracknum)))
-              ))
+              (list "Keybindings"
+                    (list
+                     "---------------Pan slider on/off"
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-pan-on-off"
+                                                                      :args '()
+                                                                      :focus-keybinding "FOCUS_EDITOR")
+                     "---------------Volume slider on/off"
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-volume-on-off"
+                                                                      :args '()
+                                                                      :focus-keybinding "FOCUS_EDITOR")
+                     "---------------Rename instrument"
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:eval-scheme"
+                                                                      :args (list "(request-rename-instrument)")
+                                                                      :focus-keybinding "FOCUS_EDITOR")
+                     "---------------Enabled/Muted"
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-on"
+                                                                      :args '()
+                                                                      :focus-keybinding "FOCUS_EDITOR")
+                     (<-> "---------------Enabled/Muted track #" tracknum)
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-on"
+                                                                      :args (list tracknum)
+                                                                      :focus-keybinding "FOCUS_EDITOR")
+                     "---------------Pianoroll on/off"
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-pianoroll"
+                                                                      :args ()
+                                                                      :focus-keybinding "FOCUS_EDITOR")
+                     (<-> "---------------Pianoroll on/off for track #" tracknum)
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-pianoroll"
+                                                                      :args (list tracknum)
+                                                                      :focus-keybinding "FOCUS_EDITOR")
+                     "-------------"
+                     "Help keybindings" show-keybinding-help-window)))
+  )
+
                       
 (def-area-subclass (<track-volume-slider> :gui :x1 :y1 :x2 :y2
                                           :tracknum
