@@ -64,18 +64,6 @@
               (popup-menu (get-sequencer-header-popup-menu-entries seqtracknum instrument-id effect-name parentgui))
               #f))))
 
-(define *lower-tabs-height-before-full-or-active* 10)
-
-(define (remember-lower-tabs-height)
-  ;;(c-display "|||||||||||||| ========REMEMBER lower tabs height:" (<gui> :height *lowertab-gui*))
-  (set! *lower-tabs-height-before-full-or-active* (<gui> :height *lowertab-gui*)))
-
-(define (recall-lower-tabs-height)
-  ;;(c-display "|||||||||||||| ========recall lower tabs height:" *lower-tabs-height-before-full-or-active*)
-  (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) *lower-tabs-height-before-full-or-active*))
-  
-
-
 
 (define (get-num-recording-channels seqtracknum)
   (define ret 0)
@@ -1460,17 +1448,7 @@
               (lambda (new-value)
                 ;;(c-display type "new-value:" new-value)
                 (cond ((eq? type 'window)
-                       (if new-value
-                           (begin                                               
-                             ;; show sequencer in new window
-                             (if (not (<ra> :upper-part-of-main-window-is-visible))
-                                 (<ra> :show-upper-part-of-main-window)
-                                 (remember-lower-tabs-height))
-                             (FROM-C-sequencer-set-gui-in-window! #t))
-                           (begin
-                             ;; put back sequencer into main tabs
-                             (FROM-C-sequencer-set-gui-in-window! #f)
-                             (recall-lower-tabs-height))))
+                       (<ra> :set-sequencer-in-window new-value))
                       ((eq? type 'full)
                        (if new-value
                            (begin
@@ -1489,7 +1467,18 @@
                           ((eq? type 'full)
                            "F")
                           (else
-                           (assert #f)))))
+                           (assert #f)))
+              :right-mouse-clicked-callback
+              (lambda ()
+                (if (eq? type 'window)
+                    (popup-menu
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-sequencer-in-window"
+                                                                      :args '()
+                                                                      :focus-keybinding "FOCUS_SEQUENCER")
+                     "-------------"
+                     "Help keybindings" show-keybinding-help-window)))))
+
+                 
      (checkbox :add-statusbar-text-handler
                (cond ((eq? type 'window)
                       "Window mode")
