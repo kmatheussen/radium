@@ -1400,7 +1400,7 @@
                    "--------------"
                    (list "Keybindings"
                          (list
-                          "-----------------On/Off keybinding"
+                          "-----------------Grid on/off keybinding"
                           (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-sequencer-grid-enabled"
                                                                            :args '()
                                                                            :focus-keybinding "FOCUS_SEQUENCER"

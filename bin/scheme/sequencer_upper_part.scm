@@ -643,6 +643,19 @@
 
   area)
 
+(define (get-markers-jump-popup-menu-entries)
+  (list
+   (list "Jump prev marker"
+         ra:jump-prev-sequencer-mark)
+   (list "Jump next marker"
+         ra:jump-next-sequencer-mark)
+   (list "Jump to marker #"
+         (map (lambda (marker-num)
+                (list (<-> marker-num)
+                      :shortcut (list ra:jump-to-sequencer-mark marker-num)
+                      (lambda ()
+                        (<ra> :jump-to-sequencer-mark marker-num))))
+              (iota 11)))))
 
 (define (create-sequencer-marker-area gui x1 y1 x2 y2)
   (define-optional-func area (key . rest))
@@ -717,17 +730,7 @@
                                              (lambda (marker)
                                                (area :replace-curr-entry! marker)))))
                   "-------------------"
-                  (list "Jump prev marker"
-                        ra:jump-prev-sequencer-mark)
-                  (list "Jump next marker"
-                        ra:jump-next-sequencer-mark)
-                  (list "Jump to marker #"
-                        (map (lambda (marker-num)
-                               (list (<-> marker-num)
-                                     :shortcut (list ra:jump-to-sequencer-mark marker-num)
-                                     (lambda ()
-                                       (<ra> :jump-to-sequencer-mark marker-num))))
-                             (iota 11)))
+                  (get-markers-jump-popup-menu-entries)
                   (get-sequencer-timing-popup-menu-entries)
                   ))
                :get-entry-info-string get-entry-info-string
@@ -908,6 +911,16 @@
                                   :align-right #t
                                   :paint-border #f
                                   )))
+  
+  (add-mouse-cycle!
+   (lambda (button x* y*)
+     (if (= button *right-button*)
+         (begin
+           (popup-menu
+            (get-sequencer-conf-menues))
+           'eat-mouse-cycle)
+         #f)))
+  
   )
 
 (def-area-subclass (<sequencer-timeline-area> :gui :x1 :y1 :x2 :y2)
