@@ -736,7 +736,7 @@
 
 (define (get-sequencer-conf-menues)
   (list 
-        "-------- Sequencer timeline"
+        "--------Sequencer timeline"
         (list
          :radio-buttons
          (list "Free"
@@ -754,7 +754,7 @@
                  (<ra> :set-seqpunching val)
                  (c-display "new punch in/out:" val))))
         ;;"------- Sequencer configuration" ;;Various"
-        "------- Sequencer lanes"
+        "-------Sequencer lanes"
         (list "Song tempo automation"
               :check (<ra> :seqtempo-visible)
               (lambda (doit)
