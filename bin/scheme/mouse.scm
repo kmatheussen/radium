@@ -7419,7 +7419,6 @@
                               
                               (paint-grid! #t)
                               
-                              (define guinum
                               (popup-menu (list
                                            "--------------------Seqtrack"
                                            
@@ -7860,17 +7859,8 @@
                                           ;;"Append sequencer track" (lambda ()
                                           ;;                           (<ra> :append-seqtrack))
                                           (get-sequencer-conf-menues)
-                                          ))
+                                          )
 
-                              ;; Popup is an existing widget, so we can't use add-deleted-callback
-                              (<ra> :schedule 100
-                                    (lambda ()
-                                      (if (<gui> :is-open guinum)
-                                          100
-                                          (begin
-                                            (paint-grid! #f)
-                                            #f))))
-                              
                               )))))))
 
 ;; right size handle in navigator

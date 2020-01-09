@@ -718,6 +718,8 @@ namespace{
         release_keyboard_focus_counting();
         _has_keyboard_focus = false;
       }
+      
+      setPaintSequencerGrid(false);
     }
   
     void mousePressEvent(QMouseEvent *event) override{
