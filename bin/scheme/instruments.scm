@@ -1471,6 +1471,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                             )
                   )
       )
+  #f
   )
 
 ;;  Sjekk ut hva dette var godt for. Kanskje det har noe med at feil verdi blir lagra i undo om ikke denne blir kalt først.
