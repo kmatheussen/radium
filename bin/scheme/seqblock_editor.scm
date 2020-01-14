@@ -192,11 +192,11 @@
                                                               (<ra> :set-seqblock-track-enabled enabled tracknum seqblocknum seqtracknum))
                                                             :text
                                                             (<-> tracknum ": " 
-                                                                 (if (< instrument-id 0)
+                                                                 (if (not (<ra> :is-legal-instrument instrument-id))
                                                                      ""
                                                                      (<ra> :get-instrument-name instrument-id)))
                                                             :selected-color
-                                                            (and (>= instrument-id 0)
+                                                            (and (<ra> :is-legal-instrument instrument-id)
                                                                  (<ra> :get-instrument-color instrument-id))
                                                             :border-width 1
                                                             :box-rounding 2.5

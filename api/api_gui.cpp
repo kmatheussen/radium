@@ -7054,7 +7054,7 @@ const_char *getHtmlFromText(const_char* text){
 // audio meter
 ////////////////
 
-int64_t gui_verticalAudioMeter(int64_t instrument_id, int64_t note_event_instrument_id){
+int64_t gui_verticalAudioMeter(instrument_t instrument_id, dyn_t note_event_instrument_id2){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
@@ -7067,12 +7067,26 @@ int64_t gui_verticalAudioMeter(int64_t instrument_id, int64_t note_event_instrum
     return -1;
   }
 
+  int64_t note_event_instrument_id = -3;
+  if (note_event_instrument_id2.type==INT_TYPE){
+    note_event_instrument_id = note_event_instrument_id2.int_number;
+    if (note_event_instrument_id < -2 || note_event_instrument_id >= 0){
+      handleError("gui_verticalAudioMeter: Argument note_event_instrument_id must either be a valid instrument, -1, or -2.");
+      return -1;
+    }
+  }else if (note_event_instrument_id2.type==INSTRUMENT_TYPE)
+    note_event_instrument_id = note_event_instrument_id2.instrument;
+  else {
+    handleError("gui_verticalAudioMeter: Argument note_event_instrument_id must either be a valid instrument, -1, or -2.");
+    return -1;
+  }
+  
   struct Patch *note_event_patch = note_event_instrument_id==-2 ? NULL : note_event_instrument_id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
 
   return (new VerticalAudioMeter(patch, note_event_patch))->get_gui_num();
 }
 
-int64_t gui_addVerticalAudioMeter(int64_t guinum, int64_t instrument_id, double x1, double y1, double x2, double y2, int64_t note_event_instrument_id){
+int64_t gui_addVerticalAudioMeter(int64_t guinum, instrument_t instrument_id, double x1, double y1, double x2, double y2, dyn_t note_event_instrument_id2){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return -1;
@@ -7080,6 +7094,20 @@ int64_t gui_addVerticalAudioMeter(int64_t guinum, int64_t instrument_id, double 
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
+
+  int64_t note_event_instrument_id = -3;
+  if (note_event_instrument_id2.type==INT_TYPE){
+    note_event_instrument_id = note_event_instrument_id2.int_number;
+    if (note_event_instrument_id < -2 || note_event_instrument_id >= 0){
+      handleError("gui_addVerticalAudioMeter: Argument note_event_instrument_id must either be a valid instrument, -1, or -2.");
+      return -1;
+    }
+  }else if (note_event_instrument_id2.type==INSTRUMENT_TYPE)
+    note_event_instrument_id = note_event_instrument_id2.instrument;
+  else {
+    handleError("gui_addVerticalAudioMeter: Argument note_event_instrument_id must either be a valid instrument, -1, or -2.");
+    return -1;
+  }
 
   struct Patch *note_event_patch = note_event_instrument_id==-2 ? NULL : note_event_instrument_id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
   
@@ -7188,11 +7216,11 @@ int64_t gui_createMixerStrips(int num_rows, dyn_t vert_ratio, dyn_t instrument_i
   if (vert_ratio.type==UNINITIALIZED_TYPE)
     vert_ratio = DYN_create_ratio(make_ratio(1,1));
   
-  return S7CALL2(int_int_dyn_dyn, "create-mixer-strips-gui", num_rows, vert_ratio, instrument_ids);
+  return S7CALL2(int_int_dyn_dyn, "FROM_C-create-mixer-strips-gui", num_rows, vert_ratio, instrument_ids);
 }
 
 int gui_getNumRowsInMixerStrips(int64_t guinum){
-  return (int)S7CALL2(int_int, "mixer-strips-get-num-rows", guinum);
+  return (int)S7CALL2(int_int, "FROM_C-mixer-strips-get-num-rows", guinum);
 }
 
 void gui_setNumRowsInMixerStrips(int64_t guinum, int num_rows){
@@ -7200,7 +7228,7 @@ void gui_setNumRowsInMixerStrips(int64_t guinum, int num_rows){
     handleError("gui_setNumRowsInMixerStrips: num_rows < 1: %d < 1", num_rows);
     return;
   }
-  S7CALL2(void_int_int, "mixer-strips-change-num-rows", guinum, num_rows);
+  S7CALL2(void_int_int, "FROM_C-mixer-strips-change-num-rows", guinum, num_rows);
 }
 
 dyn_t gui_getVertRatioInMixerStrips(int64_t guinum){
@@ -7775,12 +7803,12 @@ bool GFX_SequencerIsVisible(void){
 
 
 // Returns a single mixer strip. (Currently, this function is only used in MIXERSTRIP_call_regularly() in Qt_instruments.cpp)
-int64_t gui_createSingleMixerStrip(int64_t instrument_id, int width, int height){
+int64_t gui_createSingleMixerStrip(instrument_t instrument_id, int width, int height){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
 
-  return S7CALL2(int_int_int_int,"create-standalone-mixer-strip", instrument_id, width, height);
+  return S7CALL2(int_instrument_int_int,"FROM_C-create-standalone-mixer-strip", instrument_id, width, height);
 }
 
 

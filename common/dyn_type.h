@@ -4,6 +4,7 @@
 #include <wchar.h>
 
 #include "ratio_type.h"
+#include "../api/s7_types.h"
 
 struct _hash_t;
 typedef struct _hash_t hash_t;
@@ -21,6 +22,7 @@ enum DynType{
   ARRAY_TYPE,
   RATIO_TYPE,
   FUNC_TYPE,
+  INSTRUMENT_TYPE,
   BOOL_TYPE // must be placed last (see below)
 };
 
@@ -32,6 +34,7 @@ typedef struct{
     const wchar_t *string;
     const char *symbol;
     int64_t int_number;
+    instrument_t instrument;
     double float_number;
     hash_t *hash;
     dynvec_t *array;

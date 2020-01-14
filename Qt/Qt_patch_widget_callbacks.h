@@ -198,7 +198,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void show_popup(const char *name, int voicenum){
-    S7CALL2(dyn_int_charpointer,"FROM_C-show-effect-popup-menu", _patch->id, get_effect_name(name, voicenum));
+    S7CALL2(dyn_dyn_charpointer,"FROM_C-show-effect-popup-menu", DYN_create_instrument(_patch->id), get_effect_name(name, voicenum));
   }
 
   template <class SpinBox> void set_popup_and_stuff(SpinBox *spinbox, const char *name, int voicenum){

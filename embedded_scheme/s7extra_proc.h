@@ -4,6 +4,10 @@
 
 #define DEBUG_GC_PROTECT 0
 
+#define RADIUM_S7_INSTRUMENT_KEY "___RADIUM_INTERNAL___is_s7_instrument"
+
+#include "../api/s7_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,6 +15,8 @@ extern "C" {
 
   #ifdef S7_VERSION
   void init_radium_s7(s7_scheme *s7);
+
+  s7_pointer s7extra_make_instrument(s7_scheme *s7, instrument_t val);
   
   bool s7extra_is_place(s7_pointer place);
   Place s7extra_place(s7_scheme *s7, s7_pointer place);
@@ -35,6 +41,8 @@ extern "C" {
   func_t *s7extra_get_func(s7_scheme *s7, s7_pointer func, const char **error);
   dynvec_t s7extra_get_dynvec(s7_scheme *s7, s7_pointer vec, const char **error);
   dyn_t s7extra_get_dyn(s7_scheme *s7, s7_pointer s, const char **error);
+
+  int64_t s7extra_get_instrument(s7_scheme *s7, s7_pointer s, const char **error);
 
   #endif
 
@@ -110,11 +118,20 @@ extern "C" {
   dyn_t s7extra_callFunc_dyn_int_charpointer(const func_t *func, int64_t arg1, const char *arg2);
   dyn_t s7extra_callFunc2_dyn_int_charpointer(const char *funcname, int64_t arg1, const char *arg2);
 
+  dyn_t s7extra_callFunc_dyn_dyn_charpointer(const func_t *func, dyn_t arg1, const char *arg2);
+  dyn_t s7extra_callFunc2_dyn_dyn_charpointer(const char *funcname, dyn_t arg1, const char *arg2);
+
   void s7extra_callFunc_void_int_charpointer_dyn(const func_t *func, int64_t arg1, const char* arg2, const dyn_t arg3);
   void s7extra_callFunc2_void_int_charpointer_dyn(const char *funcname, int64_t arg1, const char* arg2, const dyn_t arg3);
 
+  void s7extra_callFunc_void_instrument_charpointer_dyn(const func_t *func, instrument_t arg1, const char* arg2, const dyn_t arg3);
+  void s7extra_callFunc2_void_instrument_charpointer_dyn(const char *funcname, instrument_t arg1, const char* arg2, const dyn_t arg3);
+
   void s7extra_callFunc_void_int_charpointer_int(const func_t *func, int64_t arg1, const char* arg2, int64_t arg3);
   void s7extra_callFunc2_void_int_charpointer_int(const char *funcname, int64_t arg1, const char* arg2, int64_t arg3);
+
+  void s7extra_callFunc_void_instrument_charpointer_int(const func_t *func, instrument_t arg1, const char* arg2, int64_t arg3);
+  void s7extra_callFunc2_void_instrument_charpointer_int(const char *funcname, instrument_t arg1, const char* arg2, int64_t arg3);
 
   void s7extra_callFunc_void_int_bool(const func_t *func, int64_t arg1, bool arg2);
   void s7extra_callFunc2_void_int_bool(const char *funcname, int64_t arg1, bool arg2);
@@ -206,8 +223,17 @@ extern "C" {
   int64_t s7extra_callFunc_int_int(const func_t *func, int64_t arg1);
   int64_t s7extra_callFunc2_int_int(const char *funcname, int64_t arg1);
 
+  int64_t s7extra_callFunc_int_instrument(const func_t *func, instrument_t arg1);
+  int64_t s7extra_callFunc2_int_instrument(const char *funcname, instrument_t arg1);
+
   int64_t s7extra_callFunc_int_int_int_int(const func_t *func, int64_t arg1, int64_t arg2, int64_t arg3);
   int64_t s7extra_callFunc2_int_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3);
+
+  int64_t s7extra_callFunc_int_dyn_int_int(const func_t *func, dyn_t arg1, int64_t arg2, int64_t arg3);
+  int64_t s7extra_callFunc2_int_dyn_int_int(const char *funcname, dyn_t arg1, int64_t arg2, int64_t arg3);
+
+  int64_t s7extra_callFunc_int_instrument_int_int(const func_t *func, instrument_t arg1, int64_t arg2, int64_t arg3);
+  int64_t s7extra_callFunc2_int_instrument_int_int(const char *funcname, instrument_t arg1, int64_t arg2, int64_t arg3);
 
   int64_t s7extra_callFunc_int_int_int_int_bool(const func_t *func, int64_t arg1, int64_t arg2, int64_t arg3, bool arg4);
   int64_t s7extra_callFunc2_int_int_int_int_bool(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3, bool arg4);

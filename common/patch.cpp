@@ -503,7 +503,7 @@ hash_t *PATCH_get_state(const struct Patch *patch){
   }
 
   // We add some more info, for future compatibility. We're not currently using any of these, but perhaps it is used later.
-  HASH_put_int(state, "id", patch->id);
+  HASH_put_instrument(state, "id", patch->id);
   
   HASH_put_int(state, "name_is_edited", patch->name_is_edited ? 1 : 0);
   HASH_put_chars(state, "name", patch->name);
@@ -568,7 +568,7 @@ struct Patch *PATCH_create_from_state(hash_t *state){
   
   apply_patch_state(patch, state);
 
-  patch->id = HASH_get_int(state, "id");
+  patch->id = HASH_get_instrument(state, "id");
   patch->name_is_edited = HASH_get_int(state, "name_is_edited")==1 ? true : false;
   patch->uuid = HASH_get_chars(state, "uuid");
 

@@ -606,7 +606,7 @@
       (<gui> :filled-box widget color2 (1+ x1) (1+ y1) (1- x2) (1- y2) rounding rounding #f))
   (<gui> :filled-box widget color x1 y1 pos y2 rounding rounding #f)
   
-  ;;(if (= (<ra> :get-current-instrument) instrument-id)
+  ;;(if (equal? (<ra> :get-current-instrument) instrument-id)
   ;;    (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
   
   (define w 1.2)

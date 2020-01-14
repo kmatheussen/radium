@@ -1,7 +1,5 @@
 (provide 'popupmenu.scm)
 
-(my-require 'keybindings.scm)
-
 
 ;;;;;;;;;; popup menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;

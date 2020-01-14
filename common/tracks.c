@@ -363,7 +363,7 @@ hash_t *TRACKS_get_patch_state(bool create_undo){
     while (track != NULL) {
       
       int patch_id = track->patch==NULL ? -1 : track->patch->id;
-      HASH_put_int_at(block_state, "track_patch_id", track->l.num, patch_id);
+      HASH_put_instrument_at(block_state, "track_patch_id", track->l.num, patch_id);
       
       track = NextTrack(track);
     }
@@ -383,7 +383,7 @@ void TRACKS_set_patch_state(hash_t *state){
     struct Tracks *track = block->tracks;
     while (track != NULL) {
       
-      int patch_id = HASH_get_int_at(block_state, "track_patch_id", track->l.num);
+      int patch_id = HASH_get_instrument_at(block_state, "track_patch_id", track->l.num);
 
       struct Patches *patch = PATCH_get_from_id(patch_id);
       if (patch != track->patch) {

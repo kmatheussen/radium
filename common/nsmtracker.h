@@ -1042,6 +1042,8 @@ static inline const char *DYN_type_name(enum DynType type){
       return "RATIO_TYPE";
     case FUNC_TYPE:
       return "FUNC_TYPE";
+    case INSTRUMENT_TYPE:
+      return "INSTRUMENT_TYPE";
     case BOOL_TYPE:
       return "BOOL_TYPE";
   }
@@ -1126,6 +1128,8 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
       return RATIO_equal(*a1.ratio, *a2.ratio);
     case FUNC_TYPE:
       return a1.func==a2.func;
+    case INSTRUMENT_TYPE:
+      return a1.instrument==a2.instrument;
     case BOOL_TYPE:
       return a1.bool_number==a2.bool_number;
   }
@@ -1210,6 +1214,13 @@ static inline dyn_t DYN_create_int(int64_t int_number){
   dyn_t a;
   a.type = INT_TYPE;
   a.int_number = int_number;
+  return a;
+}
+
+static inline dyn_t DYN_create_instrument(instrument_t instrument){
+  dyn_t a;
+  a.type = INSTRUMENT_TYPE;
+  a.instrument = instrument;
   return a;
 }
 

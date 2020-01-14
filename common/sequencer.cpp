@@ -1750,7 +1750,7 @@ static hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_
   HASH_put_hash(state, "automation", SEQTRACK_AUTOMATION_get_state(seqtrack->seqtrackautomation));
 
   if (seqtrack->patch != NULL)
-    HASH_put_int(state, "patch_id", seqtrack->patch->id);
+    HASH_put_instrument(state, "patch_id", seqtrack->patch->id);
 
   if (seqtrack->name != NULL)
     HASH_put_chars(state, "name", seqtrack->name);
@@ -2000,7 +2000,7 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
   struct Patch *patch = NULL;
   
   if (HASH_has_key(state, "patch_id")){
-    int64_t patch_id = HASH_get_int(state, "patch_id");
+    int64_t patch_id = HASH_get_instrument(state, "patch_id");
     if (patch_id >= 0){
       patch = PATCH_get_from_id(patch_id);
       R_ASSERT(patch!=NULL);

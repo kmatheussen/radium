@@ -1,6 +1,9 @@
 (provide 'keybindings.scm)
 
+
 (<declare-variable> FROM-C-get-edit-gui) ;; in main_layout.scm
+(<declare-variable> show-keybinding-help-window) ;; in various.scm
+
 
 
 (define (maybe-merge-two-keybindings-2 keybinding1 keybinding2 left right qualifier)

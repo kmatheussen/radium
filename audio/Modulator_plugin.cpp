@@ -118,7 +118,7 @@ struct ModulatorTarget{
 
     const hash_t *state = dynstate.hash;
     
-    int64_t patch_id = HASH_get_int(state, ":instrument-id");
+    int64_t patch_id = HASH_get_instrument(state, ":instrument-id");
     patch = PATCH_get_from_id(patch_id);
 
     if (HASH_has_key(state, ":effect-name")){
@@ -174,7 +174,7 @@ struct ModulatorTarget{
   // Note: Used directly in the API (i.e don't change the key names)
   dyn_t get_state(void) const {
     hash_t *state = HASH_create(2);
-    HASH_put_int(state, ":instrument-id", patch->id);
+    HASH_put_instrument(state, ":instrument-id", patch->id);
     HASH_put_int(state, ":effect-num", effect_num);
     HASH_put_chars(state, ":effect-name", (patch->instrument==get_audio_instrument()) ? patch->instrument->getFxName(patch, effect_num) : talloc_format("%d", effect_num));
     HASH_put_bool(state, ":enabled", enabled);
@@ -572,7 +572,7 @@ public:
     {
       const volatile struct Patch *modulator_patch = _plugin->patch;
       R_ASSERT_RETURN_IF_FALSE2(modulator_patch != NULL, state);
-      HASH_put_int(state, "modulator_patch_id", modulator_patch->id);
+      HASH_put_instrument(state, "modulator_patch_id", modulator_patch->id);
     }
 
     dynvec_t targets = {};
@@ -590,7 +590,7 @@ public:
     const struct Patch *modulator_patch = const_cast<const struct Patch*>(_plugin->patch);
     R_ASSERT_RETURN_IF_FALSE(modulator_patch != NULL);
     
-    int64_t patch_id = HASH_get_int(state, "modulator_patch_id");
+    int64_t patch_id = HASH_get_instrument(state, "modulator_patch_id");
     R_ASSERT_RETURN_IF_FALSE(patch_id==modulator_patch->id);
 
     radium::Vector<ModulatorTarget*> *new_targets = new radium::Vector<ModulatorTarget*>;
@@ -1026,7 +1026,7 @@ void MODULATORS_apply_connections_state(const dyn_t dynstate){
   for(const dyn_t modulator_state : dynstate.array){
     R_ASSERT_RETURN_IF_FALSE(modulator_state.type==HASH_TYPE);
 
-    int64_t patch_id = HASH_get_int(modulator_state.hash, "modulator_patch_id");
+    int64_t patch_id = HASH_get_instrument(modulator_state.hash, "modulator_patch_id");
     Modulator *modulator = get_modulator_from_patch_id(patch_id);
     R_ASSERT_RETURN_IF_FALSE(modulator!=NULL);
 
@@ -1460,7 +1460,7 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
     return true;
   }
   
-  modulator->gui = S7CALL2(int_int, "FROM_C-create-modulator-gui", modulator_patch->id);
+  modulator->gui = S7CALL2(int_instrument, "FROM_C-create-modulator-gui", modulator_patch->id);
 
   if (modulator->gui>=0){
 

@@ -240,6 +240,11 @@ static radium::Granulator *RT_obtain_granulator(radium::AudioPickuper *sample_up
 
 
 static void init_granulator_pool(void){
+  static bool has_inited=false;
+
+  R_ASSERT(has_inited==false);
+  has_inited = true;
+  
   int pool_size = 128;
 
   double max_frames_between_grains = R_MIN(pc->pfreq*2, ms_to_frames(MAX_length / MIN_overlap)); // Don"t need more than 1 second between each grain. Just fail if trying to add more (possibly audible failure, not error message). Probably bad for CPU cache to allocate more than 1 second. Without the R_MIN, we would have allocated 10 seconds.
@@ -3377,7 +3382,7 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
                                      
     struct Patch *patch = (struct Patch*)plugin->patch;
     
-    int64_t guinum = S7CALL2(int_int, "FROM_C-create-granular-vizualization-gui-for-sample-player", patch->id);
+    int64_t guinum = S7CALL2(int_instrument, "FROM_C-create-granular-vizualization-gui-for-sample-player", patch->id);
 
     data->gui = API_gui_get_widget(guinum);
 

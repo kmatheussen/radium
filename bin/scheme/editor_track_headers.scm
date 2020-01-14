@@ -5,15 +5,6 @@
 
 (define *editor-track-background-color* "high_editor")
 
-(delafina (request-rename-instrument :instrument-id (<ra> :get-current-instrument))
-  (when (>= instrument-id 0)
-    (define old-name (<ra> :get-instrument-name instrument-id))
-    (define new-name (<ra> :request-string "" #t old-name))
-    (if (and (not (string=? new-name ""))
-             (not (string=? old-name new-name)))
-        (<ra> :set-instrument-name new-name instrument-id))))
-
-  
          
 (define (show-editor-track-popup-menu tracknum)
   (popup-menu (<-> "---------Track " tracknum ":")
@@ -31,10 +22,10 @@
               "-----------"
               (let ((instrument-id (<ra> :get-instrument-for-track tracknum)))
                 (list "Rename instrument"
-                      :enabled (>= instrument-id 0)
-                      :shortcut (list ra:eval-scheme "(request-rename-instrument)")
+                      :enabled (<ra> :is-legal-instrument instrument-id)
+                      :shortcut (list ra:eval-scheme "(FROM_C-request-rename-instrument)")
                       (lambda ()
-                        (request-rename-instrument instrument-id))))
+                        (FROM_C-request-rename-instrument instrument-id))))
                             
               "-----------"
               (list "Enabled/Muted"
@@ -271,6 +262,8 @@
                        x1))
   
   (define vam #f)
+
+  ;;(c-display "INSTRUMENT-id:" instrument-id)
   
   (if show-vam
       (set! vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) x1 y1 (+ b meter-x2) y2 -2)));; instrument-id)))
@@ -413,10 +406,10 @@
 
   (define instrument-id (<ra> :get-instrument-for-track start-tracknum))
 
-  (define is-audio-instrument (and (>= instrument-id 0)
+  (define is-audio-instrument (and (<ra> :is-legal-instrument instrument-id)
                                    (<ra> :instrument-is-audio instrument-id)))
 
-  (define instrument-color (and (>= instrument-id 0)
+  (define instrument-color (and (<ra> :is-legal-instrument instrument-id)
                                 (get-instrument-background-color gui instrument-id)))
   ;;(define meter-x2 x1)
 
@@ -431,7 +424,7 @@
                                        start-tracknum
                                        (<-> start-tracknum "->" end-tracknum))
                            ": "
-                           (if (>= instrument-id 0)
+                           (if (<ra> :is-legal-instrument instrument-id)
                                (<ra> :get-instrument-name instrument-id)
                                "(click me)"))
                       :background-color (or instrument-color
@@ -454,9 +447,14 @@
                               ((= button *left-button*)
                                (<ra> :select-instrument-for-track tracknum))))
                       #f))
-        
-  (if is-audio-instrument
-      (set! vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) x1 0 (+ b meter-x2) y2 -2))) ;;instrument-id)))
+
+  
+  (when is-audio-instrument
+    ;;(c-display "INSTRUMENT-id 2:" instrument-id is-audio-instrument (<ra> :get-instrument-name instrument-id))
+    ;;(c-display "   HEPP: " instrument-id (find-meter-instrument-id instrument-id))
+    (set! vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) x1 0 (+ b meter-x2) y2 -2))) ;;instrument-id)))
+
+  ;;(c-display "    INSTRUMENT-id 3")
   
   (define-override (about-to-be-removed-callback)
     (if vam
@@ -537,11 +535,11 @@
     
 
     (if (or (= tracknum num-tracks)
-            (= -2 (<ra> :get-instrument-for-track tracknum)))
+            (not (<ra> :has-instrument-for-track tracknum)))
         (create!)
         (let ((start-instrument (<ra> :get-instrument-for-track start-tracknum))
               (end-instrument (<ra> :get-instrument-for-track tracknum)))
-          (if (not (= start-instrument end-instrument))
+          (if (not (equal? start-instrument end-instrument))
               (create!)
               (loop start-tracknum
                     (+ tracknum 1)))))))
