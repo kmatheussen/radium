@@ -18,9 +18,9 @@
   (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
   (define for-blocks (not for-audiofiles))
   (define instrument-id (if for-blocks
-                            -1
+                            (<ra> :create-illegal-instrument)
                             (<ra> :get-seqtrack-instrument seqtracknum)))
-
+  
   (define fontheight (get-fontheight))
   
   (define meter-width (if for-audiofiles
