@@ -14,7 +14,6 @@
 #include <QDir>
 
 #include "../common/nsmtracker.h"
-#include "../common/spinlock.h"
 #include "../common/Mutex.hpp"
 #include "../common/OS_error_proc.h"
 
@@ -29,20 +28,19 @@
 
 namespace{
 
-struct SpinlockIMutex : public vl::IMutex{
-  radium::Spinlock spinlock;
-  //radium::Mutex spinlock;
+struct MyIMutex : public vl::IMutex{
+  radium::Mutex _lock;
 
   bool is_obtained = false;
 
-  void 	lock () override {
-    spinlock.lock();
+  void lock () override {
+    _lock.lock();
     is_obtained = true;
   }
   
   void 	unlock () override {
     is_obtained = false;
-    spinlock.unlock();
+    _lock.unlock();
   }
   
   int isLocked () const override {
@@ -68,7 +66,7 @@ static QHash<QString, QHash<QChar,ImageHolder>* > g_imageholderss;
 static QSet<QString> g_imageholder_fonts;
    
 
-static SpinlockIMutex image_mutex;
+static MyIMutex image_mutex;
 
 static inline void GE_add_imageholder(QFont qfont, QHash<QChar,ImageHolder> *imageholders, QString chars){
   QFontMetrics metrics(qfont);
