@@ -43,7 +43,6 @@ static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_da
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/Mutex.hpp"
-#include "../common/spinlock.h"
 #include "../common/QueueStack.hpp"
 
 #include "../Qt/Qt_colors_proc.h"
@@ -182,7 +181,7 @@ struct GradientTriangles : public vl::Effect {
   vl::Uniform *uniform_x;
   vl::Uniform *uniform_width;
 
-  SpinlockIMutex ref_mutex;
+  MyIMutex ref_mutex;
   
   GradientTriangles(GradientType::Type type)
     : type(type)
@@ -269,6 +268,7 @@ public:
   }
 };
 
+#if DEBUG_PRINT
 static int gradlist_length(GradientTriangles *gradients){
   int ret = 0;
   while(gradients!=NULL){
@@ -277,6 +277,7 @@ static int gradlist_length(GradientTriangles *gradients){
   }
   return ret;
 }
+#endif
 
 static void TS_push_free_gradient_triangle(GradientType::Type type, GradientTriangles* gradient);
 
@@ -453,7 +454,7 @@ struct GradientTrianglesCollection {
 
   GradientType::Type type;
 
-  radium::Spinlock lock;
+  radium::Mutex lock;
   
   // These two are only accessed by the main thread
   GradientTriangles *used_gradient_triangles; // Only used by T3.
@@ -466,13 +467,15 @@ struct GradientTrianglesCollection {
     , free_gradient_triangles(NULL)
   {}
 
+#if DEBUG_PRINT
   int freesize(void){
-    radium::ScopedSpinlock daslock(lock);
+    radium::ScopedMutex daslock(lock);
     return gradlist_length(free_gradient_triangles);
   }
+#endif
   
   GradientTriangles *TS_get_free_gradient_triangle(void){
-    radium::ScopedSpinlock daslock(lock);
+    radium::ScopedMutex daslock(lock);
 
     GradientTriangles *gradient = free_gradient_triangles;
 
@@ -489,7 +492,7 @@ struct GradientTrianglesCollection {
   }
   
   void TS_push_free_gradient_triangle(GradientTriangles *gradient){
-    radium::ScopedSpinlock daslock(lock);
+    radium::ScopedMutex daslock(lock);
 
     R_ASSERT_NON_RELEASE(gradient->next==NULL);
     
@@ -503,7 +506,7 @@ struct GradientTrianglesCollection {
       R_ASSERT(last_element==NULL);
 
     } else {      
-      radium::ScopedSpinlock daslock(lock);
+      radium::ScopedMutex daslock(lock);
       
       last_element->next = free_gradient_triangles;
       free_gradient_triangles = gradients;
