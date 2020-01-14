@@ -853,7 +853,7 @@ static void delete_instrument(struct Patch *patch){
     radium::ScopedUndo undo;
     if (parent != NULL){
       ADD_UNDO(MixerConnections_CurrPos());
-      S7CALL2(void_int_int, "FROM_C-remove-instrument-from-connection-path", parent->id, patch->id);
+      S7CALL2(void_dyn_dyn, "FROM_C-remove-instrument-from-connection-path", DYN_create_instrument(parent->id), DYN_create_instrument(patch->id));
     }
     
     deleteInstrument(patch->id);
@@ -1534,7 +1534,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       } else if (sel==rename) {
 
         R_ASSERT_RETURN_IF_FALSE(patch_ids.size() == 1);
-        S7CALL2(void_int, "FROM_C-request-rename-instrument", patch_ids.at(0));
+        S7CALL2(void_dyn, "FROM_C-request-rename-instrument", DYN_create_instrument(patch_ids.at(0)));
         
       } else if (sel==load) {
 
@@ -1551,7 +1551,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
         dynvec_t instruments = {};
         
         VECTOR_FOR_EACH(struct Patch *,patch,&patches){
-          DYNVEC_push_back(&instruments, DYN_create_int(patch->id));
+          DYNVEC_push_back(&instruments, DYN_create_instrument(patch->id));
         }END_VECTOR_FOR_EACH;
         
         showMixerStrips2(num_rows, DYN_create_array(instruments));
@@ -1576,7 +1576,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
         
       } else if (sel==instrument_info) {
         
-        showInstrumentInfo(DYN_create_int(CHIP_get_patch(chip_under)->id), parentguinum);
+        showInstrumentInfo(DYN_create_instrument(CHIP_get_patch(chip_under)->id), parentguinum);
         
       } else if (sel==show_gui) {
         
@@ -2642,7 +2642,7 @@ static void MW_create_chips_from_full_state(hash_t *chips, Buses buses, bool is_
   for(int i=0;i<num_chips;i++) {
     hash_t *state = HASH_get_hash_at(chips, "", i);
 
-    struct Patch *patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
+    struct Patch *patch = PATCH_get_from_id(HASH_get_instrument(state, "patch"));
     if(patch==NULL){
       R_ASSERT(false);
       continue;
@@ -2736,7 +2736,7 @@ static hash_t *get_chips_and_bus_chips(const hash_t *state){
     const char *type_name = HASH_get_chars(plugin, "type_name");
     
     if (!strcmp(type_name,"Bus")) {
-      fprintf(stderr, "\n   Bus %d/%d. Id: %d\n", num_buses, i, HASH_get_int32(chip, "patch"));
+      fprintf(stderr, "\n   Bus %d/%d. Id: %d\n", num_buses, i, (int)HASH_get_instrument(chip, "patch"));
       HASH_put_hash_at(buses, "", num_buses++, chip);
     } else
       HASH_put_hash_at(new_chips, "", num_chips++, chip);
@@ -2915,12 +2915,12 @@ static hash_t *apply_ab_patch_state(hash_t *patches_state, hash_t *chips, hash_t
   
   for(int i = 0 ; i < num_presets ; i++) {
     hash_t *new_patch_state = HASH_get_hash_at(patches_state, "patch", i);
-    const char *key = talloc_format("%" PRId64, HASH_get_int(new_patch_state, "id"));
+    const char *key = talloc_format("%" PRId64, HASH_get_instrument(new_patch_state, "id"));
     
     if (!HASH_has_key(curr_patches, key)) {
       
       struct Patch *patch = PATCH_create_audio(NULL, NULL, NULL, new_patch_state, 0, 0);
-      HASH_put_int(patch_id_map, key, patch->id);
+      HASH_put_instrument(patch_id_map, key, patch->id);
       
       hasht *chip_state = HASH_get_hash(chips, key);
       CHIP_set_pos(patch, HASH_get_float(chip_state, "x"), HASH_get_float(chip_state, "y"));
@@ -3017,8 +3017,8 @@ static void apply_ab_connections_state(hash_t *connections){
   for(int i=0;i<HASH_get_int(connections, "num_connections");i++) {
     hash_t *connection_state = HASH_get_hash_at(connections, "", i);
     
-    int64_t id_from = HASH_get_int(connection_state, "from_patch");
-    int64_t id_to = HASH_get_int(connection_state, "to_patch");
+    int64_t id_from = HASH_get_instrument(connection_state, "from_patch");
+    int64_t id_to = HASH_get_instrument(connection_state, "to_patch");
     bool is_event_connection = HASH_get_bool(connection_state, "is_event_connection");
 
     if (in_patches(&patches, id_from) && in_patches(&patches, id_to)) {
@@ -3068,8 +3068,8 @@ static void apply_ab_connections_state(hash_t *connections){
   }
 
   VECTOR_FOR_EACH(hash_t *, connection_state, &connections_to_create){
-    int64_t id_from = HASH_get_int(connection_state, "from_patch");
-    int64_t id_to = HASH_get_int(connection_state, "to_patch");
+    int64_t id_from = HASH_get_instrument(connection_state, "from_patch");
+    int64_t id_to = HASH_get_instrument(connection_state, "to_patch");
     bool is_event_connection = HASH_get_bool(connection_state, "is_event_connection");
     CONNECTION_create_from_state(&g_mixer_widget->scene,
                                  connection_state,

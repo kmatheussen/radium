@@ -589,8 +589,8 @@
          (define track-instrument-id (<ra> :get-instrument-for-track tracknum))
          (define fxname (<_> (<ra> :get-fx-name fxnum tracknum blocknum)))
          (define fxinstrument (let ((fx-instrument-id (<ra> :get-fx-instrument fxnum tracknum blocknum)))
-                                (if (= fx-instrument-id track-instrument-id)
-                                    -1 ;; We want to copy effect from other instruments with the same type without modifying the other instrument. (maybe not though)
+                                (if (equal? fx-instrument-id track-instrument-id)
+                                    (<ra> :create-illegal-instrument) ;; We want to copy effect from other instruments with the same type without modifying the other instrument. (maybe not though)
                                     fx-instrument-id)))
          (define num-fxnodes (<ra> :get-num-fxnodes fxnum tracknum blocknum))
          (define fxnodes (map (lambda (fxnodenum)
@@ -873,8 +873,8 @@
         
         (for-each (lambda (fx)
                     (define name (fx :name))
-                    (define is-legal-effect (or (not (= (fx :instrument)
-                                                        instrument))
+                    (define is-legal-effect (or (not (equal? (fx :instrument)
+                                                             instrument))
                                                 (memq name effect-names)))
                     (define fx-nodes (fx :nodes))
                     (c-display "got" name "? "

@@ -189,7 +189,7 @@ void selectInstrumentForTrack(int tracknum){
   S7CALL2(void_int,"select-track-instrument", tracknum);
 }
 
-void requestReplaceInstrument(int64_t instrument_id, const_char* instrument_description, int64_t parentgui){
+void requestReplaceInstrument(instrument_t instrument_id, const_char* instrument_description, int64_t parentgui){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -201,11 +201,11 @@ void requestReplaceInstrument(int64_t instrument_id, const_char* instrument_desc
                                             parentgui
                                             );
 
-  S7CALL2(void_int_charpointer_dyn,"async-replace-instrument", instrument_id, instrument_description, instrconf);
+  S7CALL2(void_instrument_charpointer_dyn,"async-replace-instrument", instrument_id, instrument_description, instrconf);
 }
 
-void requestLoadInstrumentPreset(int64_t instrument_id, const_char* instrument_description, int64_t parentgui){
-  S7CALL2(void_int_charpointer_int,"async-load-instrument-preset", instrument_id, instrument_description, parentgui);
+void requestLoadInstrumentPreset(instrument_t instrument_id, const_char* instrument_description, int64_t parentgui){
+  S7CALL2(void_instrument_charpointer_int,"async-load-instrument-preset", instrument_id, instrument_description, parentgui);
 }
 
 void saveInstrumentPreset(dynvec_t instrument_ids, int64_t parentgui){
@@ -219,12 +219,12 @@ void saveInstrumentPreset(dynvec_t instrument_ids, int64_t parentgui){
 
   for(int i=0;i<instrument_ids.num_elements;i++){
     
-    if (instrument_ids.elements[i].type != INT_TYPE){
+    if (instrument_ids.elements[i].type != INSTRUMENT_TYPE){
       handleError("saveInstrumentPreset: Element #%d is not an instrument id. Found: %s", i, DYN_type_name(instrument_ids.elements[i].type));
       return;
     }
     
-    struct Patch *patch = getPatchFromNum(instrument_ids.elements[i].int_number);
+    struct Patch *patch = getPatchFromNum(instrument_ids.elements[i].instrument);
     if(patch==NULL)
       return;
     
@@ -257,7 +257,38 @@ int64_t getInstrumentForTrack(int tracknum, int blocknum, int windownum){
   return patch->id;
 }
 
-void setInstrumentForTrack(int64_t instrument_id, int tracknum, int blocknum, int windownum){
+bool hasInstrumentForTrack(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window=NULL;
+  struct WTracks *wtrack;
+  struct WBlocks *wblock;
+
+  wtrack=getWTrackFromNumA(
+	windownum,
+	&window,
+	blocknum,
+	&wblock,
+	tracknum
+	);
+
+  if(wtrack==NULL) return false;
+
+  struct Patch *patch = wtrack->track->patch;
+
+  if (patch==NULL)
+    return false;
+
+  return true;
+}
+
+bool isLegalInstrument(instrument_t instrument_id){
+  return instrument_id >= 0;
+}
+  
+instrument_t createIllegalInstrument(void){
+  return -1;
+}
+  
+void setInstrumentForTrack(instrument_t instrument_id, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
   struct WBlocks *wblock;
@@ -388,7 +419,7 @@ int64_t createMIDIInstrument(const_char *name) {
 }
 
 // There was a good reason for the 'name' parameter. Think it had something to do with replace instrument, and whether to use old name or autogenerate new one.
-int64_t createAudioInstrument(const_char *type_name, const_char *plugin_name, const_char *name, float x, float y, bool set_as_current) {
+instrument_t createAudioInstrument(const_char *type_name, const_char *plugin_name, const_char *name, float x, float y, bool set_as_current) {
   printf("createAudioInstrument called\n");
   
   if (name!=NULL && strlen(name)==0)
@@ -488,7 +519,7 @@ int64_t createAudioInstrumentFromDescription(const char *instrument_description,
   }
 }
 
-int64_t cloneAudioInstrument(int64_t instrument_id, float x, float y, bool set_as_current){
+int64_t cloneAudioInstrument(instrument_t instrument_id, float x, float y, bool set_as_current){
   struct Patch *old_patch = getAudioPatchFromNum(instrument_id);
   if(old_patch==NULL)
     return -1;
@@ -562,7 +593,7 @@ bool instrumentPresetInClipboard(void){
   return PRESET_has_copy();
 }
 
-int getNumInstrumentEffects(int64_t instrument_id){
+int getNumInstrumentEffects(instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -570,7 +601,7 @@ int getNumInstrumentEffects(int64_t instrument_id){
   return patch->instrument->getNumFxs(patch);
 }
 
-const_char* getInstrumentEffectName(int effect_num, int64_t instrument_id){
+const_char* getInstrumentEffectName(int effect_num, instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -584,7 +615,7 @@ const_char* getInstrumentEffectName(int effect_num, int64_t instrument_id){
   return patch->instrument->getFxName(patch, effect_num);
 }
 
-bool instrumentHasBeenUsed(int64_t instrument_id){
+bool instrumentHasBeenUsed(instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -600,7 +631,7 @@ bool hasPureData(void){
 #endif
 }
 
-void setInstrumentSample(int64_t instrument_id, const_char *filename){
+void setInstrumentSample(instrument_t instrument_id, const_char *filename){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -621,7 +652,7 @@ void setInstrumentSample(int64_t instrument_id, const_char *filename){
   SAMPLER_set_new_sample(plugin, STRING_create(filename), -1);
 }
 
-void setRandomInstrumentSample(int64_t instrument_id, const_char *path){
+void setRandomInstrumentSample(instrument_t instrument_id, const_char *path){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -649,7 +680,7 @@ void setRandomSampleForAllSelectedInstruments(void){
   S7CALL2(void_void, "set-random-sample-for-all-selected-sampler-instruments");
 }
   
-void setInstrumentLoopData(int64_t instrument_id, int64_t start, int64_t length){
+void setInstrumentLoopData(instrument_t instrument_id, int64_t start, int64_t length){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -669,7 +700,7 @@ void setInstrumentLoopData(int64_t instrument_id, int64_t start, int64_t length)
   SAMPLER_set_loop_data(plugin, start, length);
 }
 
-const_char *getInstrumentName(int64_t instrument_id) {
+const_char *getInstrumentName(instrument_t instrument_id) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -677,7 +708,7 @@ const_char *getInstrumentName(int64_t instrument_id) {
   return patch->name;
 }
 
-void setInstrumentName(const_char *name, int64_t instrument_id) {
+void setInstrumentName(const_char *name, instrument_t instrument_id) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -693,7 +724,7 @@ void setInstrumentName(const_char *name, int64_t instrument_id) {
   }
 }
 
-const_char* getInstrumentComment(int64_t instrument_id) {
+const_char* getInstrumentComment(instrument_t instrument_id) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -704,7 +735,7 @@ const_char* getInstrumentComment(int64_t instrument_id) {
   return patch->comment;
 }
 
-void setInstrumentComment(const_char* comment, int64_t instrument_id){
+void setInstrumentComment(const_char* comment, instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -712,7 +743,7 @@ void setInstrumentComment(const_char* comment, int64_t instrument_id){
   patch->comment = talloc_strdup(comment);
 }
 
-bool instrumentNameWasAutogenerated(int64_t instrument_id){
+bool instrumentNameWasAutogenerated(instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -720,7 +751,7 @@ bool instrumentNameWasAutogenerated(int64_t instrument_id){
   return !patch->name_is_edited;
 }
 
-void API_setInstrumentColor(const_char *colorname, int64_t instrument_id, bool create_undo){
+void API_setInstrumentColor(const_char *colorname, instrument_t instrument_id, bool create_undo){
 
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -750,11 +781,11 @@ void API_setInstrumentColor(const_char *colorname, int64_t instrument_id, bool c
   root->song->tracker_windows->must_redraw=true;
 }
 
-void setInstrumentColor(const_char *colorname, int64_t instrument_id){
+void setInstrumentColor(const_char *colorname, instrument_t instrument_id){
   API_setInstrumentColor(colorname, instrument_id, true);
 }
 
-void generateNewInstrumentColor(int64_t instrument_id, float mix_background){
+void generateNewInstrumentColor(instrument_t instrument_id, float mix_background){
   const char *new_color = generateNewColor(mix_background);
   setInstrumentColor(new_color, instrument_id);
 }
@@ -763,7 +794,7 @@ void generateNewColorForAllSelectedInstruments(float mix_background){
   S7CALL2(void_float,"FROM-C-generate-new-color-for-all-selected-instruments", mix_background);
 }
   
-const char *getInstrumentColor(int64_t instrument_id, bool get_displayed_color){
+const char *getInstrumentColor(instrument_t instrument_id, bool get_displayed_color){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -773,7 +804,7 @@ const char *getInstrumentColor(int64_t instrument_id, bool get_displayed_color){
   return talloc_strdup(color.name(QColor::HexArgb).toUtf8());
 }
 
-bool instrumentIsImplicitlyMuted(int64_t instrument_id){
+bool instrumentIsImplicitlyMuted(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -787,7 +818,7 @@ bool instrumentIsImplicitlyMuted(int64_t instrument_id){
   return plugin->is_implicitly_muted;
 }
 
-void setInstrumentIsImplicitlyMuted(bool doit, int64_t instrument_id){
+void setInstrumentIsImplicitlyMuted(bool doit, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -806,7 +837,7 @@ void setInstrumentIsImplicitlyMuted(bool doit, int64_t instrument_id){
   SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_RIGHT_PART);
 }
 
-bool instrumentIsImplicitlySoloed(int64_t instrument_id){
+bool instrumentIsImplicitlySoloed(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -820,7 +851,7 @@ bool instrumentIsImplicitlySoloed(int64_t instrument_id){
   return plugin->is_implicitly_soloed;
 }
 
-void setInstrumentIsImplicitlySoloed(bool doit, int64_t instrument_id){
+void setInstrumentIsImplicitlySoloed(bool doit, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -841,7 +872,7 @@ void setInstrumentIsImplicitlySoloed(bool doit, int64_t instrument_id){
 }
 
 
-float getInstrumentEffect(int64_t instrument_id, const_char* effect_name){
+float getInstrumentEffect(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -855,7 +886,7 @@ float getInstrumentEffect(int64_t instrument_id, const_char* effect_name){
   return PLUGIN_get_effect_from_name(plugin, effect_name, VALUE_FROM_PLUGIN, EFFECT_FORMAT_SCALED);
 }
 
-float getNativeInstrumentEffect(int64_t instrument_id, const_char* effect_name){
+float getNativeInstrumentEffect(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -869,7 +900,7 @@ float getNativeInstrumentEffect(int64_t instrument_id, const_char* effect_name){
   return PLUGIN_get_effect_from_name(plugin, effect_name, VALUE_FROM_PLUGIN, EFFECT_FORMAT_NATIVE);
 }
 
-float getStoredInstrumentEffect(int64_t instrument_id, const_char* effect_name){
+float getStoredInstrumentEffect(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -891,7 +922,7 @@ static int get_effect_num(const struct Patch *patch, const_char* effect_name){
   return effect_num;
 }
 
-float getDefaultInstrumentEffect(int64_t instrument_id, const_char* effect_name){
+float getDefaultInstrumentEffect(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -921,7 +952,7 @@ static void post_set_effect(struct Patch *patch, struct SoundPlugin *plugin, con
   GFX_update_instrument_widget(patch);
 }
                        
-void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float value){
+void setInstrumentEffect(instrument_t instrument_id, const char *effect_name, float value){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -949,7 +980,7 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
   post_set_effect(patch, plugin, effect_name);
 }
 
-void resetInstrumentEffect(int64_t instrument_id, const char *effect_name){
+void resetInstrumentEffect(instrument_t instrument_id, const char *effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -969,7 +1000,7 @@ void resetInstrumentEffect(int64_t instrument_id, const char *effect_name){
   post_set_effect(patch, plugin, effect_name);
 }
 
-void deletePdController(int64_t instrument_id, const char *effect_name){
+void deletePdController(instrument_t instrument_id, const char *effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -992,7 +1023,7 @@ void deletePdController(int64_t instrument_id, const char *effect_name){
   PD_delete_controller(plugin, effect_num);
 }
 
-const_char* getInstrumentEffectColor(int64_t instrument_id, const_char* effect_name){
+const_char* getInstrumentEffectColor(instrument_t instrument_id, const_char* effect_name){
   const struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -1010,7 +1041,7 @@ const_char* getInstrumentEffectColor(int64_t instrument_id, const_char* effect_n
   return GFX_get_colorname_from_color(GFX_get_color(get_effect_color(plugin, effect_num)));
 }
 
-bool instrumentAlwaysReceiveMidiInput(int64_t instrument_id){
+bool instrumentAlwaysReceiveMidiInput(instrument_t instrument_id){
   const struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1018,7 +1049,7 @@ bool instrumentAlwaysReceiveMidiInput(int64_t instrument_id){
   return ATOMIC_GET(patch->always_receive_midi_input);
 }
 
-void setInstrumentAlwaysReceiveMidiInput(int64_t instrument_id, bool always_receive_midi_input){
+void setInstrumentAlwaysReceiveMidiInput(instrument_t instrument_id, bool always_receive_midi_input){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1026,7 +1057,7 @@ void setInstrumentAlwaysReceiveMidiInput(int64_t instrument_id, bool always_rece
   ATOMIC_SET(patch->always_receive_midi_input, always_receive_midi_input);
 }
 
-bool getNoteDuplicatorSetNewValueImmediately(int64_t instrument_id, const_char* effect_name){
+bool getNoteDuplicatorSetNewValueImmediately(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1059,7 +1090,7 @@ bool getNoteDuplicatorSetNewValueImmediately(int64_t instrument_id, const_char* 
 #undef C
 }
 
-void setNoteDuplicatorSetNewValueImmediately(int64_t instrument_id, const_char* effect_name, bool set_immediately){
+void setNoteDuplicatorSetNewValueImmediately(instrument_t instrument_id, const_char* effect_name, bool set_immediately){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1098,7 +1129,7 @@ void setNoteDuplicatorSetNewValueImmediately(int64_t instrument_id, const_char* 
 // midi learn
 ///////////////
 
-bool instrumentEffectHasMidiLearn(int64_t instrument_id, const_char* effect_name){
+bool instrumentEffectHasMidiLearn(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1116,7 +1147,7 @@ bool instrumentEffectHasMidiLearn(int64_t instrument_id, const_char* effect_name
   return PLUGIN_has_midi_learn(plugin, effect_num);
 }
 
-void addInstrumentEffectMidiLearn(int64_t instrument_id, const_char* effect_name){
+void addInstrumentEffectMidiLearn(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1139,7 +1170,7 @@ void addInstrumentEffectMidiLearn(int64_t instrument_id, const_char* effect_name
   PLUGIN_add_midi_learn(plugin, effect_num);  
 }
 
-void removeInstrumentEffectMidiLearn(int64_t instrument_id, const_char* effect_name){
+void removeInstrumentEffectMidiLearn(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1164,7 +1195,7 @@ void removeInstrumentEffectMidiLearn(int64_t instrument_id, const_char* effect_n
 
 
 
-bool addAutomationToCurrentEditorTrack(int64_t instrument_id, const_char* effect_name){
+bool addAutomationToCurrentEditorTrack(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1220,7 +1251,7 @@ bool addAutomationToCurrentEditorTrack(int64_t instrument_id, const_char* effect
   return true;
 }
 
-bool addAutomationToCurrentSequencerTrack(int64_t instrument_id, const_char* effect_name){
+bool addAutomationToCurrentSequencerTrack(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1254,7 +1285,7 @@ bool addAutomationToCurrentSequencerTrack(int64_t instrument_id, const_char* eff
   return true;
 }
   
-void setInstrumentEffectChangesValueWhenPressingRandom(int64_t instrument_id, const_char* effect_name, bool doit){
+void setInstrumentEffectChangesValueWhenPressingRandom(instrument_t instrument_id, const_char* effect_name, bool doit){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1274,7 +1305,7 @@ void setInstrumentEffectChangesValueWhenPressingRandom(int64_t instrument_id, co
   (*patch->instrument->PP_Update)(patch->instrument,patch,false);
 }
 
-bool getInstrumentEffectChangesValueWhenPressingRandom(int64_t instrument_id, const_char* effect_name){
+bool getInstrumentEffectChangesValueWhenPressingRandom(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1292,7 +1323,7 @@ bool getInstrumentEffectChangesValueWhenPressingRandom(int64_t instrument_id, co
   return PLUGIN_get_random_behavior(plugin, effect_num);
 }
 
-void startRecordingInstrumentAutomationInEditor(int64_t instrument_id, const_char* effect_name, bool do_start_recording_not_stop_recording){
+void startRecordingInstrumentAutomationInEditor(instrument_t instrument_id, const_char* effect_name, bool do_start_recording_not_stop_recording){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1310,7 +1341,7 @@ void startRecordingInstrumentAutomationInEditor(int64_t instrument_id, const_cha
   PLUGIN_set_recording_automation(plugin, effect_num, do_start_recording_not_stop_recording);
 }
 
-bool getInstrumentSolo(int64_t instrument_id){
+bool getInstrumentSolo(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1324,7 +1355,7 @@ bool getInstrumentSolo(int64_t instrument_id){
   return PLUGIN_get_soloed(plugin);
 }
 
-void setInstrumentSolo(bool do_solo, int64_t instrument_id){
+void setInstrumentSolo(bool do_solo, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1345,13 +1376,13 @@ void setInstrumentSolo(bool do_solo, int64_t instrument_id){
   PLUGIN_set_soloed(plugin, do_solo);
 }
 
-bool switchInstrumentSolo(int64_t instrument_id){
+bool switchInstrumentSolo(instrument_t instrument_id){
   bool set_to = !getInstrumentSolo(instrument_id);
   setInstrumentSolo(set_to, instrument_id);
   return set_to;
 }
   
-bool getInstrumentMute(int64_t instrument_id){
+bool getInstrumentMute(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1365,7 +1396,7 @@ bool getInstrumentMute(int64_t instrument_id){
   return PLUGIN_get_muted(plugin);
 }
 
-void setInstrumentMute(bool do_mute, int64_t instrument_id){
+void setInstrumentMute(bool do_mute, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1378,13 +1409,13 @@ void setInstrumentMute(bool do_mute, int64_t instrument_id){
   PLUGIN_set_muted(plugin, do_mute);
 }
 
-bool switchInstrumentMute(int64_t instrument_id){
+bool switchInstrumentMute(instrument_t instrument_id){
   bool set_to = !getInstrumentMute(instrument_id);
   setInstrumentMute(set_to, instrument_id);
   return set_to;
 }
   
-bool getInstrumentBypass(int64_t instrument_id){
+bool getInstrumentBypass(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1398,7 +1429,7 @@ bool getInstrumentBypass(int64_t instrument_id){
   return PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_PLUGIN) < 0.5;
 }
 
-void setInstrumentBypass(bool do_bypass, int64_t instrument_id){
+void setInstrumentBypass(bool do_bypass, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1420,7 +1451,7 @@ void setInstrumentBypass(bool do_bypass, int64_t instrument_id){
   PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 }
 
-bool switchInstrumentBypass(int64_t instrument_id){
+bool switchInstrumentBypass(instrument_t instrument_id){
   bool set_to = !getInstrumentBypass(instrument_id);
   setInstrumentBypass(set_to, instrument_id);
   return set_to;
@@ -1460,7 +1491,7 @@ bool atLeastOneInstrumentHasSolo(void){
   return false;
 }
 
-void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
+void undoInstrumentEffect(instrument_t instrument_id, const char *effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1479,7 +1510,7 @@ void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
 }
 
 #if 0
-void setInstrumentVolume(int64_t instrument_id, float volume) {
+void setInstrumentVolume(instrument_t instrument_id, float volume) {
   struct Instruments *instrument = getInstrumentFromNum(instrument_id);
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL) return NULL;
@@ -1487,7 +1518,7 @@ void setInstrumentVolume(int64_t instrument_id, float volume) {
   (*patch->instrument->PP_Update)(instrument,patch,false);
 }
 
-float getInstrumentVolume(int64_t instrument_id) {
+float getInstrumentVolume(instrument_t instrument_id) {
   return 0.0f;
 }
 #endif
@@ -1508,7 +1539,7 @@ float gainToDb(float gain){
   return gain2db(gain);
 }
 
-void setInstrumentData(int64_t instrument_id, const_char *key, const_char *value) {
+void setInstrumentData(instrument_t instrument_id, const_char *key, const_char *value) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1518,7 +1549,7 @@ void setInstrumentData(int64_t instrument_id, const_char *key, const_char *value
   (*patch->instrument->PP_Update)(patch->instrument,patch,false);
 }
 
-const_char *getInstrumentData(int64_t instrument_id, const_char *key) {
+const_char *getInstrumentData(instrument_t instrument_id, const_char *key) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -1553,6 +1584,16 @@ int64_t getAudioInstrumentId(int instrument_num){
   return patch->id;
 }
 
+int getAudioInstrumentNum(instrument_t instrument_id){
+  VECTOR_FOR_EACH(struct Patch *, patch, &get_audio_instrument()->patches){
+    if (patch->id==instrument_id)
+      return iterator666;
+  }END_VECTOR_FOR_EACH;
+
+  handleError("No instrument %d", (int)instrument_id);
+  return -1;
+}
+
 int64_t getAudioBusId(int bus_num){
   if (bus_num < 0 || bus_num>=5){
     handleError("There is no bus %d", bus_num);
@@ -1566,7 +1607,7 @@ int64_t getAudioBusId(int bus_num){
   return patch->id;
 }
 
-bool instrumentIsSeqtrackBus(int64_t instrument_id){
+bool instrumentIsSeqtrackBus(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1588,7 +1629,7 @@ bool instrumentIsSeqtrackBus(int64_t instrument_id){
   return false;
 }
 
-bool instrumentIsPermanent(int64_t instrument_id){  
+bool instrumentIsPermanent(instrument_t instrument_id){  
   if (g_is_replacing_main_pipe==true) // hack
     return false;
 
@@ -1602,7 +1643,7 @@ bool instrumentIsPermanent(int64_t instrument_id){
     return true; // Can not delete midi instruments.
 }
 
-bool instrumentIsAudio(int64_t instrument_id){
+bool instrumentIsAudio(instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1611,7 +1652,7 @@ bool instrumentIsAudio(int64_t instrument_id){
 }
 
 // Mixer GUI
-float getInstrumentX(int64_t instrument_id){
+float getInstrumentX(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0.0;
@@ -1619,7 +1660,7 @@ float getInstrumentX(int64_t instrument_id){
   return CHIP_get_pos_x(patch);
 }
 
-float getInstrumentY(int64_t instrument_id){
+float getInstrumentY(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0.0;
@@ -1643,7 +1684,7 @@ float getMixerSlottedY(float from_y){
 }
 */
 
-void setInstrumentPosition(float x, float y, int64_t instrument_id, bool auto_slot){
+void setInstrumentPosition(float x, float y, instrument_t instrument_id, bool auto_slot){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1659,7 +1700,7 @@ void setInstrumentPosition(float x, float y, int64_t instrument_id, bool auto_sl
 #endif
 }
 
-void autopositionInstrument(int64_t instrument_id){
+void autopositionInstrument(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1668,7 +1709,7 @@ void autopositionInstrument(int64_t instrument_id){
   CHIP_autopos(patch);
 }
 
-const_char* getInstrumentTypeName(int64_t instrument_id){
+const_char* getInstrumentTypeName(instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -1680,7 +1721,7 @@ const_char* getInstrumentTypeName(int64_t instrument_id){
   return plugin->type->type_name;
 }
 
-const_char* getInstrumentPluginName(int64_t instrument_id){
+const_char* getInstrumentPluginName(instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -1692,7 +1733,7 @@ const_char* getInstrumentPluginName(int64_t instrument_id){
   return plugin->type->name;
 }
 
-const_char* getInstrumentInfo(int64_t instrument_id){
+const_char* getInstrumentInfo(instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -1712,7 +1753,7 @@ dynvec_t getSelectedInstruments(void){
   vector_t patches = MW_get_selected_patches();
 
   VECTOR_FOR_EACH(struct Patch *, patch,&patches){
-    DYNVEC_push_back(&ret, DYN_create_int(patch->id));
+    DYNVEC_push_back(&ret, DYN_create_instrument(patch->id));
   }END_VECTOR_FOR_EACH;
 
   return ret;
@@ -1725,7 +1766,7 @@ dynvec_t getExtendedSelectedInstruments(void){
 
     int64_t curr = getCurrentInstrument();
     if (curr >= 0)
-      DYNVEC_push_back(&ret, DYN_create_int(curr));
+      DYNVEC_push_back(&ret, DYN_create_instrument(curr));
 
   }
   
@@ -1745,7 +1786,7 @@ int numSelectedInstruments(void){
   return ret;
 }
 
-bool instrumentIsSelected(int64_t instrument_id){
+bool instrumentIsSelected(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1763,7 +1804,7 @@ bool instrumentIsSelected(int64_t instrument_id){
 
 // connections
 
-void connectAudioInstrumentToMainPipe(int64_t instrument_id){
+void connectAudioInstrumentToMainPipe(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1778,7 +1819,7 @@ void connectAudioInstrumentToMainPipe(int64_t instrument_id){
   MW_connect_plugin_to_main_pipe(plugin);
 }
 
-bool autoconnectInstrument(int64_t instrument_id, float x, float y){
+bool autoconnectInstrument(instrument_t instrument_id, float x, float y){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1793,7 +1834,7 @@ bool autoconnectInstrument(int64_t instrument_id, float x, float y){
   return MW_autoconnect(patch, x, y);
 }
 
-int getNumInAudioConnections(int64_t instrument_id){
+int getNumInAudioConnections(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -1801,7 +1842,7 @@ int getNumInAudioConnections(int64_t instrument_id){
   return CHIP_get_num_in_connections(patch);
 }
 
-int getNumInEventConnections(int64_t instrument_id){
+int getNumInEventConnections(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -1809,7 +1850,7 @@ int getNumInEventConnections(int64_t instrument_id){
   return CHIP_get_num_in_econnections(patch);
 }
 
-int getNumOutAudioConnections(int64_t instrument_id){
+int getNumOutAudioConnections(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -1817,7 +1858,7 @@ int getNumOutAudioConnections(int64_t instrument_id){
   return CHIP_get_num_out_connections(patch);
 }
 
-int getNumOutEventConnections(int64_t instrument_id){
+int getNumOutEventConnections(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -1825,7 +1866,7 @@ int getNumOutEventConnections(int64_t instrument_id){
   return CHIP_get_num_out_econnections(patch);
 }
 
-int64_t getAudioConnectionSourceInstrument(int connectionnum, int64_t instrument_id){
+int64_t getAudioConnectionSourceInstrument(int connectionnum, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -1837,7 +1878,7 @@ int64_t getAudioConnectionSourceInstrument(int connectionnum, int64_t instrument
   return source->id;
 }
 
-int64_t getEventConnectionSourceInstrument(int connectionnum, int64_t instrument_id){
+instrument_t getEventConnectionSourceInstrument(int connectionnum, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -1849,7 +1890,7 @@ int64_t getEventConnectionSourceInstrument(int connectionnum, int64_t instrument
   return source->id;
 }
 
-int64_t getAudioConnectionDestInstrument(int connectionnum, int64_t instrument_id){
+instrument_t getAudioConnectionDestInstrument(int connectionnum, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -1861,7 +1902,7 @@ int64_t getAudioConnectionDestInstrument(int connectionnum, int64_t instrument_i
   return dest->id;
 }
 
-int64_t getEventConnectionDestInstrument(int connectionnum, int64_t instrument_id){
+int64_t getEventConnectionDestInstrument(int connectionnum, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -2160,7 +2201,7 @@ bool mixerConfigNumIsUsed(int num){
 int64_t createModulator(void){
   //struct Patch *curr_patch = PATCH_get_current();
   
-  int64_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0, false);
+  instrument_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0, false);
   if (instrument_id==-1){
     printf("\n\n NOT FOUND\n\n");
     getchar();
@@ -2179,7 +2220,7 @@ int64_t createModulator(void){
 }
 
 
-bool hasModulator(int64_t instrument_id, const char *effect_name){
+bool hasModulator(instrument_t instrument_id, const char *effect_name){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -2191,7 +2232,7 @@ bool hasModulator(int64_t instrument_id, const char *effect_name){
   return MODULATOR_has_modulator(patch, effect_num);
 }
 
-static void addModulator2(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id, bool supposed_to_already_have_modulator){
+static void addModulator2(instrument_t instrument_id, const char *effect_name, instrument_t modulator_instrument_id, bool supposed_to_already_have_modulator){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -2235,15 +2276,15 @@ static void addModulator2(int64_t instrument_id, const char *effect_name, int64_
   }
 }
 
-void addModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+void addModulator(instrument_t instrument_id, const char *effect_name, instrument_t modulator_instrument_id){
   addModulator2(instrument_id, effect_name, modulator_instrument_id, false);
 }
 
-void replaceModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+void replaceModulator(instrument_t instrument_id, const char *effect_name, instrument_t modulator_instrument_id){
   addModulator2(instrument_id, effect_name, modulator_instrument_id, true);
 }
 
-void removeModulator(int64_t instrument_id, const char *effect_name){
+void removeModulator(instrument_t instrument_id, const char *effect_name){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -2284,7 +2325,7 @@ const char *getModulatorDescription3(int64_t modulator_instrument_id){
   return get_modulator_patch_description(patch);
 }
 
-const char *getModulatorDescription2(int64_t instrument_id, int effect_num){
+const char *getModulatorDescription2(instrument_t instrument_id, int effect_num){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -2301,7 +2342,7 @@ const char *getModulatorDescription2(int64_t instrument_id, int effect_num){
   return get_modulator_patch_description(modulation_patch);
 }
 
-const char *getModulatorDescription(int64_t instrument_id, const char *effect_name){
+const char *getModulatorDescription(instrument_t instrument_id, const char *effect_name){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -2323,9 +2364,9 @@ dynvec_t getModulatorInstruments(void){
     dyn_t dynstate = vec->elements[i];
     
     hash_t *modulator_state = dynstate.hash;
-    int64_t patch_id = HASH_get_int(modulator_state, "modulator_patch_id");
+    int64_t patch_id = HASH_get_instrument(modulator_state, "modulator_patch_id");
 
-    DYNVEC_push_back(&dynvec, DYN_create_int(patch_id));
+    DYNVEC_push_back(&dynvec, DYN_create_instrument(patch_id));
   }
 
   return dynvec;
@@ -2348,7 +2389,7 @@ dynvec_t getModulatorTargets(int64_t modulator_instrument_id){
   return MODULATOR_get_modulator_targets(modulator_instrument_id);
 }
 
-void setModulatorEnabled(int64_t instrument_id, const char *effect_name, bool enabled){
+void setModulatorEnabled(instrument_t instrument_id, const char *effect_name, bool enabled){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -2367,7 +2408,7 @@ void setModulatorEnabled(int64_t instrument_id, const char *effect_name, bool en
   MODULATOR_set_target_enabled(modulator_id, patch, effect_num, enabled);
 }
 
-bool getModulatorEnabled(int64_t instrument_id, const char *effect_name){
+bool getModulatorEnabled(instrument_t instrument_id, const char *effect_name){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -2388,7 +2429,7 @@ bool getModulatorEnabled(int64_t instrument_id, const char *effect_name){
 
                                
 /*
-void addModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+void addModulator(instrument_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -2399,13 +2440,13 @@ void addModulator(int64_t instrument_id, const char *effect_name, int64_t modula
   }
 }
 
-void removeModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+void removeModulator(instrument_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
 }
 
-void replaceModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+void replaceModulator(instrument_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
 }
 
-int64_t getModulator(int64_t instrument_id, const char *effect_name){
+int64_t getModulator(instrument_t instrument_id, const char *effect_name){
 }
 
 dyn_t get_modulators_instruments(void){
@@ -2415,7 +2456,7 @@ const_char *getModulatorDescription(int64_t modulator_instrument_id){
 }
 */
 
-int getNumInputChannels(int64_t instrument_id){
+int getNumInputChannels(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -2429,7 +2470,7 @@ int getNumInputChannels(int64_t instrument_id){
   return plugin->type->num_inputs;
 }
 
-int getNumOutputChannels(int64_t instrument_id){
+int getNumOutputChannels(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return 0;
@@ -2443,7 +2484,7 @@ int getNumOutputChannels(int64_t instrument_id){
   return plugin->type->num_outputs;
 }
 
-void deleteInstrument(int64_t instrument_id){
+void deleteInstrument(instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -2502,7 +2543,11 @@ void internalReplaceMainPipe(int64_t new_main_pipe_id){
   g_is_replacing_main_pipe = false;
 }
 
-bool instrumentIsOpenAndAudio(int64_t instrument_id){
+instrument_t getMainPipeInstrument(void){
+  return 0;
+}
+
+bool instrumentIsOpenAndAudio(instrument_t instrument_id){
   const struct Patch *patch = instrument_id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id);
   if (patch==NULL)
     return false;
@@ -2510,7 +2555,7 @@ bool instrumentIsOpenAndAudio(int64_t instrument_id){
   return patch->instrument == get_audio_instrument();
 }
 
-bool instrumentIsOpen(int64_t instrument_id){
+bool instrumentIsOpen(instrument_t instrument_id){
   return (instrument_id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id)) != NULL;
 }
 
@@ -2566,7 +2611,7 @@ __attribute__((constructor)) static void initialize_playnote_ids_and_initial_pit
 };
 
 
-int playNote(float pitch, float velocity, float pan, int midi_channel, int64_t instrument_id){
+int playNote(float pitch, float velocity, float pan, int midi_channel, instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
@@ -2598,7 +2643,7 @@ int playNote(float pitch, float velocity, float pan, int midi_channel, int64_t i
   return ret;
 }
 
-void changeNotePitch(float pitch, int playnote_id, int midi_channel, int64_t instrument_id){
+void changeNotePitch(float pitch, int playnote_id, int midi_channel, instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -2630,7 +2675,7 @@ void changeNotePitch(float pitch, int playnote_id, int midi_channel, int64_t ins
                                           ));
 }
 
-void stopNote(int playnote_id, int midi_channel, int64_t instrument_id){
+void stopNote(int playnote_id, int midi_channel, instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -2657,7 +2702,7 @@ void stopNote(int playnote_id, int midi_channel, int64_t instrument_id){
                                        ));
 }
 
-bool hasNativeInstrumentGui(int64_t instrument_id){
+bool hasNativeInstrumentGui(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -2673,7 +2718,7 @@ bool hasNativeInstrumentGui(int64_t instrument_id){
   return false;
 }
 
-bool showInstrumentGui(int64_t instrument_id, int64_t parentgui, bool show_instrument_window_if_not_visible){
+bool showInstrumentGui(instrument_t instrument_id, int64_t parentgui, bool show_instrument_window_if_not_visible){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -2719,7 +2764,7 @@ bool showInstrumentGui(int64_t instrument_id, int64_t parentgui, bool show_instr
   return false;
 }
 
-bool hideInstrumentGui(int64_t instrument_id){
+bool hideInstrumentGui(instrument_t instrument_id){
 
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -2742,7 +2787,7 @@ bool hideInstrumentGui(int64_t instrument_id){
   return false;
 }
 
-bool instrumentGuiIsVisible(int64_t instrument_id, int64_t parentgui){
+bool instrumentGuiIsVisible(instrument_t instrument_id, int64_t parentgui){
 
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -2761,7 +2806,7 @@ bool instrumentGuiIsVisible(int64_t instrument_id, int64_t parentgui){
     return false;
 }
 
-void internal_instrumentGuiHasBeenHidden(int64_t instrument_id){
+void internal_instrumentGuiHasBeenHidden(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -2778,7 +2823,7 @@ int64_t getCurrentInstrument(void){
   return PATCH_get_current()->id;
 }
 
-void setCurrentInstrument(int64_t instrument_id, bool show_instrument_window_if_not_visible){
+void setCurrentInstrument(instrument_t instrument_id, bool show_instrument_window_if_not_visible){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -2828,9 +2873,9 @@ void setCurrentInstrumentDown(void){
 }
 
 void showInstrumentInfo(dyn_t instrument_id_or_description, int64_t parentgui){
-  if (instrument_id_or_description.type==INT_TYPE){
+  if (instrument_id_or_description.type==INSTRUMENT_TYPE){
     
-    int64_t instrument_id = instrument_id_or_description.int_number;
+    instrument_t instrument_id = instrument_id_or_description.instrument;
     struct Patch *patch = getAudioPatchFromNum(instrument_id);
     if(patch==NULL)
       return;
@@ -2863,7 +2908,7 @@ void showInstrumentInfo(dyn_t instrument_id_or_description, int64_t parentgui){
 
   } else {
     
-    handleError("Illegal first argument for showInstrumentInfo. Expected INT_TYPE or STRING_TYPE, found %s", DYN_type_name(instrument_id_or_description.type));
+    handleError("Illegal first argument for showInstrumentInfo. Expected INSTRUMENT_TYPE or STRING_TYPE, found %s", DYN_type_name(instrument_id_or_description.type));
       
   }
 }
@@ -2900,7 +2945,7 @@ namespace{
     
     radium::GcHolder<struct Patch> patch;
     
-    int64_t instrument_id = 0;
+    instrument_t instrument_id = 0;
     bool monitor_stored = 0;
     bool monitor_automation = 0;
     int effect_num = 0;
@@ -2924,7 +2969,7 @@ static struct EffectMonitor *find_effect_monitor_from_id(int64_t id){
 }
 
 /*
-static struct EffectMonitor *find_effect_monitor(int effect_num, int64_t instrument_id){
+static struct EffectMonitor *find_effect_monitor(int effect_num, instrument_t instrument_id){
   VECTOR_FOR_EACH(struct EffectMonitor *effect_monitor, &g_effect_monitors){
     if (effect_monitor->effect_num==effect_num && effect_monitor->instrument_id==instrument_id)
       return effect_monitor;
@@ -2934,7 +2979,7 @@ static struct EffectMonitor *find_effect_monitor(int effect_num, int64_t instrum
 }
 */
 
-int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, bool monitor_stored, bool monitor_automation, func_t *func){
+int64_t addEffectMonitor(const char *effect_name, instrument_t instrument_id, bool monitor_stored, bool monitor_automation, func_t *func){
   if (!monitor_automation && !monitor_stored){
     handleError("addEfectMonitor: at least one of monitor_stored and monitor_automation must be true");
     return -1;
@@ -3097,7 +3142,7 @@ void remakeMixerStrips(int64_t id){
   RT_schedule_mixer_strips_remake(id); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
 }
 
-bool hasWideInstrumentStrip(int64_t instrument_id){
+bool hasWideInstrumentStrip(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id); // calling getAudioPatchFromNum instead of getPatchFromNum works as an assertion
   if(patch==NULL)
     return true;
@@ -3105,7 +3150,7 @@ bool hasWideInstrumentStrip(int64_t instrument_id){
   return patch->wide_mixer_strip;
 }
 
-void setWideInstrumentStrip(int64_t instrument_id, bool is_wide){
+void setWideInstrumentStrip(instrument_t instrument_id, bool is_wide){
   struct Patch *patch = getAudioPatchFromNum(instrument_id); // calling getAudioPatchFromNum instead of getPatchFromNum works as an assertion
   if(patch==NULL)
     return;

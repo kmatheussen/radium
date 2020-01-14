@@ -346,7 +346,7 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 
           _popup_menu_is_visible = true;
 
-          dyn_t ret = S7CALL2(dyn_int_charpointer,"FROM_C-show-effect-popup-menu", _patch->id, PLUGIN_get_effect_name(plugin, _effect_num));
+          dyn_t ret = S7CALL2(dyn_dyn_charpointer,"FROM_C-show-effect-popup-menu", DYN_create_instrument(_patch->id), PLUGIN_get_effect_name(plugin, _effect_num));
           if (ret.type==INT_TYPE){
             set_unhovered_when_popupmenu_is_closed(ret.int_number);
           }

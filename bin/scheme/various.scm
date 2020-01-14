@@ -1,6 +1,7 @@
 (provide 'various.scm)
 
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Editor: Zoom exponentially
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -479,7 +480,7 @@
                                                                         (when doit
                                                                           ;;(c-display "ROW_CONTENT:" row-content row-num)
                                                                           (define instrument-id (to-integer (string->number (first row-content))))
-                                                                          (when (not (= instrument-id (<ra> :get-current-instrument)))
+                                                                          (when (not (equal? instrument-id (<ra> :get-current-instrument)))
                                                                             (<ra> :set-current-instrument instrument-id)
                                                                             (update-rows!)
                                                                             ;;(c-display (integer? instrumentnum) instrumentnum "row num" row-num "selected. Content:" row-content)
@@ -578,7 +579,7 @@
     (<gui> :add-table-gui-cell table delete 8 rownum)
     (define time7 (time))
 
-    (if (= instrument-id curr-instrument-id)
+    (if (equal? instrument-id curr-instrument-id)
         (<gui> :set-value table rownum))
 
     (define time8 (time))

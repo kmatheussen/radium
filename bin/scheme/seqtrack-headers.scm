@@ -30,7 +30,7 @@
   (if (not (<ra> :seqtrack-for-audiofiles seqtracknum))
       (if (and #f (= seqtracknum (<ra> :get-curr-seqtrack)))
           *curr-seqtrack-color*
-          (get-instrument-background-color gui -1))
+          (get-instrument-background-color gui (<ra> :create-illegal-instrument)))
       (begin
         (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
         (let ((background-color (get-instrument-background-color gui instrument-id)))
@@ -230,7 +230,7 @@
   
   (define (turn-off-all-mute except)
     (for-each (lambda (instrument-id)
-                (when (and (not (= instrument-id except))
+                (when (and (not (equal? instrument-id except))
                            (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
                   (<ra> :undo-instrument-effect instrument-id volume-on-off-name)
                   (<ra> :set-instrument-effect instrument-id volume-on-off-name 1)
@@ -239,7 +239,7 @@
   
   (define (turn-off-all-solo except)
     (for-each (lambda (instrument-id)
-                (if (not (= instrument-id except))
+                (if (not (equal? instrument-id except))
                     (<ra> :set-instrument-solo #f instrument-id)))
               (get-all-audio-instruments)))
   
@@ -392,7 +392,7 @@
                                               (<ra> :set-seqtrack-name new-name seqtracknum)
                                               new-name)))))
 
-  (if (>= instrument-id 0)
+  (if (<ra> :is-legal-instrument instrument-id)
       (<ra> :schedule (random 1000)
             (lambda ()
               (and (line-input :is-alive)
@@ -429,7 +429,7 @@
     (<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 5 5)
     )
 
-  (if (>= instrument-id 0)
+  (if (<ra> :is-legal-instrument instrument-id)
       (<ra> :schedule (random 1000)
             (lambda ()
               (and is-alive (<gui> :is-open gui) (<ra> :instrument-is-open-and-audio instrument-id)
@@ -963,7 +963,7 @@
   (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
   (define for-blocks (not for-audiofiles))
   (define instrument-id (if for-blocks
-                            -1
+                            (<ra> :create-illegal-instrument)
                             (<ra> :get-seqtrack-instrument seqtracknum)))
 
   (if for-blocks
@@ -1017,7 +1017,7 @@
                               x1 (+ y1 0)
                               (- x1-split 1) y-split
                               seqtracknum
-                              (lambda () (<gui> :mix-colors "white" (get-background-color #t) 0.02))))
+                              (lambda () (<gui> :mix-colors "white" (get-background-color (<ra> :create-illegal-instrument)) 0.02))))
   
   (define panner-x2 (if use-two-rows x-meter-split x2-split))
   (define panner-y1 (if use-two-rows
@@ -1684,7 +1684,7 @@
                                    (* 4.0 (get-fontheight))))
             
             (if (or (not (<ra> :seqtrack-for-audiofiles seqtracknum))
-                    (>= (<ra> :get-seqtrack-instrument seqtracknum) 0))
+                    (<ra> :is-legal-instrument (<ra> :get-seqtrack-instrument seqtracknum)))
                 (header-area :add-sub-area-plain! (<new> :seqtrack-header gui seqtrack-x1 sy1 x2 sy2 use-two-rows show-panner seqtracks-y2 seqtracknum)))
             
             (loop (1+ seqtracknum))))))

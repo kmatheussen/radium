@@ -48,7 +48,7 @@
   (display (and strips-config (strips-config :parent-gui)))
   (newline)
   (define is-standalone (or (not strips-config) (strips-config :is-standalone)))
-  (c-display "num-instruments:" is-standalone strips-config)
+  ;;(c-display "num-instruments:" is-standalone strips-config)
   
   (list
    (and effect-name
@@ -79,7 +79,7 @@
                                      (not strips-config))
               :check #t
               (lambda (enabled)
-                (c-display "STRIPS_CONFIG:" strips-config)
+                ;;(c-display "STRIPS_CONFIG:" strips-config)
                 (if (or is-standalone
                         (not strips-config))
                     (<ra> :show-hide-mixer-strip)
@@ -406,7 +406,7 @@
     :is-unique)
 
   (define first-time #t)
-  (define confs (make-hash-table 100 =))
+  (define confs (make-hash-table 100 equal?))
 
   (define (scan-instruments!)
 
@@ -421,12 +421,12 @@
                                                      (confs id :is-enabled))
                                                     (initial-instruments
                                                      (and first-time
-                                                          (memv id initial-instruments)))
+                                                          (member id initial-instruments)))
                                                     (else
                                                      is-strip))))
                         (is-unique (or (cat-instruments :has-no-inputs-or-outputs? id)
                                        is-strip)))
-                   ;;(c-display "=======================" (<ra> :get-instrument-name id) ". is-instrument:" is-instrument ". is-enabled:" is-enabled ". is-strip:" is-strip)
+                   ;;(c-display "=======================" (<ra> :get-instrument-name id) ". is-instrument:" is-instrument ". is-enabled:" is-enabled ". is-strip:" is-strip ". initial:" initial-instruments ". cat:" cat-instruments)
                    (set! (confs id) (make-conf :instrument-id id
                                                :is-bus is-bus
                                                :row-num 0
@@ -443,7 +443,7 @@
 
   (define (reset!)
     (set! first-time #t)
-    (set! confs (make-hash-table 100 =))
+    (set! confs (make-hash-table 100 equal?))
     (set! initial-instruments #f)
     (scan-instruments!))
   
@@ -507,12 +507,17 @@
   
   (define this
     (dilambda (lambda (keyword . rest)
-                ;;(c-display "THIS called. keyword:" keyword)
+                ;;(c-display "THIS called. keyword:" keyword ". rest:" rest)
                 (case keyword
                   ((:parent-gui) parentgui)
                   ((:row-num) (confs (car rest) :row-num))
-                  ((:is-enabled) (confs (car rest) :is-enabled))
-                  ((:is-unique) (confs (car rest) :is-unique))
+                  ((:is-enabled) (begin
+                                   ;;(c-display "   (car rest):" (car rest) ". conf:" (confs (car rest)))                                   
+                                   (confs (car rest) :is-enabled)))
+                  ((:is-unique) (begin
+                                  ;;(c-display "CONFS:" confs)
+                                  ;;(c-display "REST:" rest)
+                                  (confs (car rest) :is-unique)))
                   ((:scan-instruments!) (scan-instruments!))
                   ((:is-standalone) is-standalone)
                   ((:reset!) (begin
@@ -659,7 +664,7 @@
                                                (cond (is-current-mixer-strip
                                                       (set! *current-mixer-strip-is-wide* is-minimized)
                                                       (remake-mixer-strips instrument-id))
-                                                     ((= instrument-id (<ra> :get-current-instrument))
+                                                     ((equal? instrument-id (<ra> :get-current-instrument))
                                                       (<ra> :set-wide-instrument-strip instrument-id is-minimized)
                                                       (remake-mixer-strips instrument-id))
                                                      (else
@@ -747,7 +752,7 @@
   ;;(c-display (<-> "Effect name: -" effect-name "-"))
   ;;(c-display "ins:" instrument-id)
 
-  (define is-top-instrument (= instrument-id first-instrument-id))
+  (define is-top-instrument (equal? instrument-id first-instrument-id))
   
   (define curr-plugin-instrument (if is-send?
                                      parent-instrument-id
@@ -963,7 +968,7 @@
                                                        value
                                                        (get-slider-text value)
                                                        (is-enabled?)
-                                                       (= (<ra> :get-current-instrument) instrument-id)
+                                                       (equal? (<ra> :get-current-instrument) instrument-id)
                                                        get-automation-data
                                                        x1-on/off
                                                        0 0 width height
@@ -1492,8 +1497,8 @@
     (define send-callback
       (lambda (maybe-gui maybe-source-id maybe-target-id db)
         (if (and (not (= gui maybe-gui))
-                 (= maybe-source-id source-id)
-                 (= maybe-target-id target-id)
+                 (equal? maybe-source-id source-id)
+                 (equal? maybe-target-id target-id)
                  (<ra> :instrument-is-open-and-audio source-id)
                  (<ra> :instrument-is-open-and-audio target-id)
                  (<ra> :has-audio-connection source-id target-id))
@@ -1557,13 +1562,6 @@
   send-gui)
 
 
-;; Returns the last plugin.
-(define (find-meter-instrument-id instrument-id)
-  (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
-  (if next-plugin-instrument
-      (find-meter-instrument-id next-plugin-instrument)
-      instrument-id))
-
 (define (get-mixer-strip-path-instruments instrument-id kont)
   (define out-instruments (sort-instruments-by-mixer-position
                            (get-instruments-connecting-from-instrument instrument-id)))
@@ -1571,7 +1569,7 @@
 
   (define instrument-sends (keep (lambda (out-instrument)
                                    (or (not next-plugin-instrument)
-                                       (not (= next-plugin-instrument out-instrument))))
+                                       (not (equal? next-plugin-instrument out-instrument))))
                                  out-instruments))
   
   (kont instrument-sends
@@ -1790,7 +1788,7 @@
            
   (define (turn-off-all-mute except)
     (for-each (lambda (instrument-id)
-                (when (and (not (= instrument-id except))
+                (when (and (not (equal? instrument-id except))
                            (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
                   (<ra> :undo-instrument-effect instrument-id volume-on-off-name)
                   (<ra> :set-instrument-effect instrument-id volume-on-off-name 1)
@@ -1799,7 +1797,7 @@
   
   (define (turn-off-all-solo except)
     (for-each (lambda (instrument-id)
-                (if (not (= instrument-id except))
+                (if (not (equal? instrument-id except))
                     (<ra> :set-instrument-solo #f instrument-id)))
               (get-all-audio-instruments)))
 
@@ -2279,7 +2277,7 @@
 
 (define (create-current-instrument-border gui instrument-id)
   (define rubberband-resize (gui-rubberband gui 5 "#bb111144" (lambda ()
-                                                                (= (<ra> :get-current-instrument) instrument-id))))
+                                                                (equal? (<ra> :get-current-instrument) instrument-id))))
   (add-safe-resize-callback gui (lambda (width height)
                                   (rubberband-resize 0 0 width height))))
 
@@ -2511,7 +2509,7 @@
   (cadr stored-mixer-strip))
 
 (define (get-stored-mixer-strip stored-mixer-strips instrument-id)
-  (assv instrument-id stored-mixer-strips))
+  (assoc instrument-id stored-mixer-strips))
 
 (define (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
   (cond ((not stored-mixer-strip)
@@ -2522,18 +2520,20 @@
          #f)
         (else
          (let ((instrument-id (get-instrument-id-from-stored-mixer-strip stored-mixer-strip)))
-           (not (or (memv instrument-id list-of-modified-instrument-ids)
+           (not (or (member? instrument-id list-of-modified-instrument-ids)
                     (any? (lambda (instrument-id)
-                            (memv instrument-id list-of-modified-instrument-ids))
+                            (member instrument-id list-of-modified-instrument-ids))
                           (get-all-instruments-used-in-mixer-strip instrument-id))))))))
 
 
 (define *standalone-mixer-strip-ratio* 1)
 
-(define (create-standalone-mixer-strip instrument-id width height)
+(define (FROM_C-create-standalone-mixer-strip instrument-id width height)
   ;;(define parent (<gui> :horizontal-layout))
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
+  ;;(c-display "INSTRUMENT-ID:" instrument-id)
+  
   (set-minimum-mixer-strip-widths!)
   
   (define parent (<gui> :widget width height)) ;; Lots of trouble using a widget as parent instead of a layout. However, it's an easy way to avoid flickering when changing current instrument.
@@ -2691,6 +2691,7 @@
   (define num-strips-per-row (ceiling (/ num-visible-strips num-rows)))
   
   (define (add-strips id-instruments)
+    ;;(c-display "              ADD-strips:" id-instruments)
     (map (lambda (instrument-id)
            (set! (strips-config :row-num instrument-id) row-num)
            ;;(c-display "adding strips for" instrument-id)
@@ -2764,10 +2765,10 @@
                                    :instrument-ids #f
                                    :is-full-screen #f
                                    :pos #f)
-  
+
   (set! instrument-ids (to-list instrument-ids))
   
-  (c-display "   IDS:" instrument-ids num-rows)
+  ;;(c-display "   IDS:" instrument-ids num-rows)
   ;;(set! instrument-ids #f)
   
   ;;(define gui (<gui> :horizontal-layout))
@@ -2822,8 +2823,11 @@
                  (else
                   (assert (list? undone-remakes))
                   (assert (list? list-of-modified-instrument-ids))
-                  (set! undone-remakes (remove-duplicates < = (append list-of-modified-instrument-ids
-                                                                      undone-remakes))))))
+                  (define (less? a b)
+                    (< (<ra> :get-audio-instrument-num a)
+                       (<ra> :get-audio-instrument-num b)))                       
+                  (set! undone-remakes (remove-duplicates less? equal? (append list-of-modified-instrument-ids
+                                                                               undone-remakes))))))
           (else
            (define start-time (time))
            (set! g-total-time 0)
@@ -2863,6 +2867,7 @@
            )))
 
 
+  
   (define strips-config (create-strips-config instrument-ids num-rows vert-ratio remake gui))
 
   (add-safe-mouse-callback gui
@@ -2917,13 +2922,22 @@
                    ;;(c-display "CLOSING" das-mixer-strips-gui)
                    (<gui> :close das-mixer-strips-gui)
                    (set! das-mixer-strips-gui #f))))))
-  
+
   ;;mixer-strips-object
 
   (<gui> :set-takes-keyboard-focus gui #f)
 
   gui
   )
+
+
+(define (FROM_C-create-mixer-strips-gui num-rows
+                                        vert-ratio
+                                        instrument-ids)
+  (create-mixer-strips-gui :num-rows num-rows
+                           :vert-ratio vert-ratio
+                           :instrument-ids instrument-ids))
+
 
 #!!
 (define gui (create-mixer-strips-gui 2
@@ -2932,7 +2946,8 @@
 (<gui> :show gui)
 (every? (lambda (b)
        #t)
-     (list 1 2 3))
+        (list 1 2 3))
+(<ra> :get-instrument-solo)
 !!#
 
 (<declare-variable> FROM_C-reconfigure-sequencer-left-part)
@@ -2947,12 +2962,12 @@
                                                           :has-all? list-of-modified-instrument-ids)))
                                                 :non-are-valid)
                                                ((true-for-all? (lambda (id)
-                                                                 (= id -2))
+                                                                 (not (<ra> :is-legal-instrument id)))
                                                                list-of-modified-instrument-ids)
                                                 :all-are-valid)
                                                (else
                                                 (remove (lambda (id)
-                                                          (= id -2))
+                                                          (not (<ra> :is-legal-instrument id)))
                                                         list-of-modified-instrument-ids)))))
     (run-instrument-data-memoized
      (lambda()
@@ -2983,19 +2998,19 @@
            (loop (cdr objects))))))
                    
 
-(define (mixer-strips-get-num-rows mixer-strips-gui)
+(define (FROM_C-mixer-strips-get-num-rows mixer-strips-gui)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
     (if object
         (object :strips-config :num-rows)
         #f)))
 
-(define (mixer-strips-change-num-rows mixer-strips-gui num-rows)
+(define (FROM_C-mixer-strips-change-num-rows mixer-strips-gui num-rows)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
     (if object
         (set! (object :strips-config :num-rows) num-rows))))
 
 #!!
-(mixer-strips-change-num-rows ((car *mixer-strips-objects*) :gui) 6)
+(FROM_C-mixer-strips-change-num-rows ((car *mixer-strips-objects*) :gui) 6)
 !!#
 
 
@@ -3013,7 +3028,7 @@
         (set! (object :strips-config :vert-ratio) vert-ratio))))
 
 #!!
-(mixer-strips-change-num-rows ((car *mixer-strips-objects*) :gui) 6)
+(FROM_C-mixer-strips-change-num-rows ((car *mixer-strips-objects*) :gui) 6)
 !!#
 
 

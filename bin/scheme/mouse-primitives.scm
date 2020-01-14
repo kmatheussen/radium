@@ -1,6 +1,5 @@
 (provide 'mouse-primitives.scm)
 
-
 (define-constant *left-button* 1) ;; TR_LEFTMOUSE
 (define-constant *middle-button* 3) ;; TR_MIDDLEMOUSE
 (define-constant *right-button* 5) ;; TR_RIGHTMOUSE

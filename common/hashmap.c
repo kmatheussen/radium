@@ -547,7 +547,7 @@ hash_t *HASH_create(int approx_size){
 
   hash->elements_size = elements_size;
 
-  hash->version = 3;
+  hash->version = 4;
 
   return hash;
 }
@@ -739,6 +739,10 @@ static void put_int(hash_t *hash, const char *key, int i, int64_t val){
   put_dyn(hash, key, i, DYN_create_int(val));
 }
 
+static void put_instrument(hash_t *hash, const char *key, int i, instrument_t val){
+  put_dyn(hash, key, i, DYN_create_instrument(val));
+}
+
 static void put_bool(hash_t *hash, const char *key, int i, bool val){
   put_dyn(hash, key, i, DYN_create_bool(val));
 }
@@ -778,6 +782,10 @@ void HASH_put_chars(hash_t *hash, const char *key, const char *val){
 
 void HASH_put_int(hash_t *hash, const char *key, int64_t val){
   put_int(hash, key, 0, val);
+}
+
+void HASH_put_instrument(hash_t *hash, const char *key, instrument_t val){
+  put_instrument(hash, key, 0, val);
 }
 
 void HASH_put_bool(hash_t *hash, const char *key, bool val){
@@ -823,6 +831,13 @@ void HASH_put_chars_at(hash_t *hash, const char *key, int i, const char *val){
 
 void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val){
   put_int(hash, key, i, val);
+  int new_size = i+1;
+  if(new_size>hash->num_array_elements)
+    hash->num_array_elements = new_size;
+}
+
+void HASH_put_instrument_at(hash_t *hash, const char *key, int i, instrument_t val){
+  put_instrument(hash, key, i, val);
   int new_size = i+1;
   if(new_size>hash->num_array_elements)
     hash->num_array_elements = new_size;
@@ -950,6 +965,17 @@ static int64_t get_int(const hash_t *hash, const char *key, int i){
   return element->a.int_number;
 }
 
+static instrument_t get_instrument(const hash_t *hash, const char *key, int i){
+  if(hash->version < 4)
+    return get_int(hash, key, i);
+  
+  hash_element_t *element = HASH_get(hash,key,i,INSTRUMENT_TYPE);
+  if(element==NULL)
+    return 0;
+
+  return element->a.instrument;
+}
+
 static double get_number(const hash_t *hash, const char *key, int i){
   hash_element_t *element=HASH_get_no_complaining(hash, key, i);
 
@@ -1046,6 +1072,10 @@ int64_t HASH_get_int(const hash_t *hash, const char *key){
   return get_int(hash, key, 0);
 }
 
+instrument_t HASH_get_instrument(const hash_t *hash, const char *key){
+  return get_instrument(hash, key, 0);
+}
+
 bool HASH_get_bool(const hash_t *hash, const char *key){
   return get_bool(hash, key, 0);
 }
@@ -1080,6 +1110,10 @@ const char *HASH_get_chars_at(const hash_t *hash, const char *key, int i){
 
 int64_t HASH_get_int_at(const hash_t *hash, const char *key, int i){
   return get_int(hash, key, i);
+}
+
+instrument_t HASH_get_instrument_at(const hash_t *hash, const char *key, int i){
+  return get_instrument(hash, key, i);
 }
 
 bool HASH_get_bool_at(const hash_t *hash, const char *key, int i){
@@ -1144,7 +1178,7 @@ wchar_t *HASH_to_string(const hash_t *hash){
 #endif
 
 void HASH_save(const hash_t *hash, disk_t *file){
-  DISK_write(file, ">> HASH MAP V3 BEGIN\n");
+  DISK_write(file, ">> HASH MAP V4 BEGIN\n");
 
   R_ASSERT(hash != NULL);
   
@@ -1163,7 +1197,7 @@ void HASH_save(const hash_t *hash, disk_t *file){
     }
   }
   
-  DISK_write(file,"<< HASH MAP V3 END\n");
+  DISK_write(file,"<< HASH MAP V4 END\n");
 }
 
 static wchar_t *read_line(disk_t *file){
@@ -1195,6 +1229,8 @@ hash_t *HASH_load(disk_t *file){
     version = 2;
   } else if (STRING_equals(line,">> HASH MAP V3 BEGIN")){
     version = 3;
+  } else if (STRING_equals(line,">> HASH MAP V4 BEGIN")){
+    version = 4;
   } else  if (STRING_starts_with(line, ">> HASH MAP V")){
     version = 3;
     vector_t v = {0};
@@ -1221,37 +1257,45 @@ hash_t *HASH_load(disk_t *file){
 
   line = READ_LINE(file);
   
-  while(!STRING_equals(line,"<< HASH MAP END") && !STRING_equals(line,"<< HASH MAP V2 END") && !STRING_equals(line,"<< HASH MAP V3 END")){
-    const char *key = STRING_get_chars(line);
-    int i = 0;
-
-    if(version > 1){
-
-      line = READ_LINE(file);
+  while(!STRING_equals(line,"<< HASH MAP END")
+        && !STRING_equals(line,"<< HASH MAP V2 END")
+        && !STRING_equals(line,"<< HASH MAP V3 END")
+        && !STRING_equals(line,"<< HASH MAP V4 END")
+        )
+    {
+      const char *key = STRING_get_chars(line);
+      int i = 0;
       
-      i = STRING_get_int(line);
-      int new_size = i+1;
-      if(new_size > hash->num_array_elements)
-        hash->num_array_elements = new_size;
+      if(version > 1){
+        
+        line = READ_LINE(file);
+        
+        i = STRING_get_int(line);
+        int new_size = i+1;
+        if(new_size > hash->num_array_elements)
+          hash->num_array_elements = new_size;
+        
+      } else if(!strncmp(key,"<int hash>",strlen("<int hash>"))) {
+        
+        sscanf(key, "<int hash> %d", &i);
+        key = "";
+        hash->num_array_elements++;
+        
+      }
+      
+      bool success;
+      dyn_t dyn = DYN_load(file, &success);
+      if (!success)
+        return NULL;
 
-    } else if(!strncmp(key,"<int hash>",strlen("<int hash>"))) {
-
-      sscanf(key, "<int hash> %d", &i);
-      key = "";
-      hash->num_array_elements++;
-
+      if (hash->version < 4 && !strcmp(key, ":instrument-id") && dyn.type==INT_TYPE)
+        dyn = DYN_create_instrument(dyn.int_number);
+      
+      put_dyn(hash, key, i, dyn);
+      
+      line = READ_LINE(file);
     }
-
-    bool success;
-    dyn_t dyn = DYN_load(file, &success);
-    if (!success)
-      return NULL;
-
-    put_dyn(hash, key, i, dyn);
-            
-    line = READ_LINE(file);
-  }
-
+  
   return hash;  
 }
 

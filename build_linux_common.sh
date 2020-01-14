@@ -213,6 +213,7 @@ if ! file $RADIUM_BIN |grep Linux ; then
     rm -f bin/radium_error_message
 fi
 
+api/s7_types_generator.scm types
 make buildtype.opt --stop
 make flagopts.opt --stop
 make api/radium_proc.h --stop

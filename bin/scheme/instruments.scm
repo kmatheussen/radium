@@ -146,8 +146,8 @@
                                           :gain #f)
   (assert (or (string=? type "connect")
               (string=? type "disconnect")))
-  (assert (integer? source))
-  (assert (integer? target))
+  (assert (instrument? source))
+  (assert (instrument? target))
   (if (string=? type "disconnect")
       (assert (not gain))
       (assert (or (not gain)
@@ -169,8 +169,8 @@
 (delafina (create-audio-connection-implicitly-enabled-change :source
                                                              :target
                                                              :implicitly-enabled)
-  (assert (integer? source))
-  (assert (integer? target))
+  (assert (instrument? source))
+  (assert (instrument? target))
   (hash-table :type "connect" :source source :target target :implicitly-enabled (if implicitly-enabled 1 0)))
 
 (c-define-macro (*push-audio-connection-implicitly-enabled-change!* changes rest)
@@ -244,14 +244,14 @@
   (define start (time))
   (define ret
     (begin
-      (define visited (make-hash-table 16 =))        
+      (define visited (make-hash-table 16 equal?))        
       (let loop ((i1 i1))
         (if (visited i1)
             #f
             (begin
               (hash-table-set! visited i1 #t)
               (any? (lambda (to)
-                      (if (= to i2)
+                      (if (equal? to i2)
                           #t
                           (loop to)))
                     (get-instruments-connecting-from-instrument i1)))))))
@@ -264,7 +264,7 @@
   (define start (time))
   
   (define container (<new> :container instruments))
-  (define done (make-hash-table (i-max 1 (container :length)) =))
+  (define done (make-hash-table (i-max 1 (container :length)) equal?))
   
   ;; topological sort, plus keep as much as possible of the order
   ;; from 'sort-instruments-by-mixer-position'.
@@ -312,7 +312,7 @@
              (bus-effect-names *bus-effect-names*))
     (if (null? bus-effect-names)
         #f
-        (if (= target-id (<ra> :get-audio-bus-id bus-num))
+        (if (equal? target-id (<ra> :get-audio-bus-id bus-num))
             (car bus-effect-names)
             (loop (+ 1 bus-num)
                   (cdr bus-effect-names))))))
@@ -349,14 +349,14 @@
 (define-instrument-memoized (get-all-instruments-with-no-input-connections)
   (define buses (get-buses))
   (keep (lambda (id-instrument)
-          (and (not (memv id-instrument buses))
+          (and (not (member id-instrument buses))
                (= 0 (<ra> :get-num-in-audio-connections id-instrument))))
         (get-all-audio-instruments)))
 
 (define-instrument-memoized (get-all-instruments-with-at-least-two-input-connections)
   (define buses (get-buses))
   (keep (lambda (id-instrument)
-          (and (not (memv id-instrument buses))
+          (and (not (member id-instrument buses))
                (>= (<ra> :get-num-in-audio-connections id-instrument)
                    2)))
         (get-all-audio-instruments)))
@@ -364,22 +364,22 @@
 
 (define-instrument-memoized (would-this-create-a-recursive-connection? goal-id id)
   (or (begin
-        (define visited (make-hash-table 16 =))
+        (define visited (make-hash-table 16 equal?))
         (let loop ((id id))
           (cond ((visited id)
                  #f)
-                ((= goal-id id)
+                ((equal? goal-id id)
                  #t)
                 (else
                  (hash-table-set! visited id #t)
                  (any? loop
                        (get-instruments-connecting-from-instrument id))))))
       (begin
-        (define visited (make-hash-table 16 =))
+        (define visited (make-hash-table 16 equal?))
         (let loop ((id id))
           (cond ((visited id)
                  #f)
-                ((= goal-id id)
+                ((equal? goal-id id)
                  #t)
                 (else
                  (hash-table-set! visited id #t)
@@ -446,6 +446,16 @@
                   (loop (cdr out-instruments))))))))
 
                                               
+;; Returns the last plugin.
+(define (find-meter-instrument-id instrument-id)
+  ;;(c-display "FINDMETER1" instrument-id)
+  (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
+  ;;(c-display "FINDMETER2" instrument-id next-plugin-instrument (and next-plugin-instrument (<ra> :get-instrument-name next-plugin-instrument)))
+  (if next-plugin-instrument
+      (find-meter-instrument-id next-plugin-instrument)
+      instrument-id))
+
+
 (define-instrument-memoized (find-all-plugins-used-in-mixer-strip instrument-id)
   (define next (find-next-plugin-instrument-in-path instrument-id))
   (if next
@@ -456,7 +466,7 @@
 (define-instrument-memoized (find-all-nonbus-plugins-used-in-mixer-strip instrument-id)
   (define next (find-next-plugin-instrument-in-path instrument-id))
   (if (and next
-           (not (memv next (get-buses))))
+           (not (member next (get-buses))))
       (cons next
             (find-all-plugins-used-in-mixer-strip next))
       '()))
@@ -474,7 +484,7 @@
                       (if (= 1 (<ra> :get-num-in-audio-connections out-instrument))
                           (if (not next-plugin-instrument)
                               #t
-                              (if (= next-plugin-instrument out-instrument)
+                              (if (equal? next-plugin-instrument out-instrument)
                                   #f
                                   #t))
                           #f))
@@ -519,7 +529,7 @@
                            (append instrument-plugin-buses ;; Not sure if there could be duplicates here.
                                    buses
                                    buses-plugin-buses)
-                           =))
+                           equal?))
 
   (define instrument-plugins (keep (lambda (id)
                                      (> (<ra> :get-num-in-audio-connections id) 0))
@@ -534,8 +544,8 @@
   (define all-bus-instruments (append (all-buses :list)
                                       buses-plugins))
   
-  (set! instruments (<new> :container instruments =))
-  (set! no-inputs-or-outputs (<new> :container no-inputs-or-outputs =))
+  (set! instruments (<new> :container instruments equal?))
+  (set! no-inputs-or-outputs (<new> :container no-inputs-or-outputs equal?))
   
   :no-input-or-outputs ()
   (no-inputs-or-outputs :list)
@@ -614,18 +624,18 @@
 (define (replace-instrument-in-all-tracks! id-old-instrument id-new-instrument)
   (for-all-tracks
    (lambda (blocknum tracknum)
-     (if (= id-old-instrument (<ra> :get-instrument-for-track tracknum blocknum))
+     (if (equal? id-old-instrument (<ra> :get-instrument-for-track tracknum blocknum))
          (<ra> :set-instrument-for-track id-new-instrument tracknum blocknum)))))
 ||#
 
 (define (replace-instrument-in-mixer id-old-instrument id-new-instrument)
   (define x (+ 0 (<ra> :get-instrument-x id-old-instrument)))
   (define y (+ 0 (<ra> :get-instrument-y id-old-instrument)))
-  (if (= 0 id-old-instrument)
+  (if (equal? (<ra> :get-main-pipe-instrument) id-old-instrument)
       (begin
         (<ra> :internal-replace-main-pipe id-new-instrument)
-        (set! id-new-instrument 0))
-      (<ra> :delete-instrument id-old-instrument))      
+        (set! id-new-instrument (<ra> :get-main-pipe-instrument)))
+      (<ra> :delete-instrument id-old-instrument))
   (<ra> :set-instrument-position x y id-new-instrument)
   )
 
@@ -633,6 +643,8 @@
 ;; Async. Returns immediately.
 (define (async-replace-instrument id-old-instrument description instrconf)
 
+  (assert (instrument? id-old-instrument))
+  
   (define (replace description)
     (if (not (string=? "" description))
         (undo-block
@@ -641,7 +653,7 @@
                                   ""
                                   (<ra> :get-instrument-name id-old-instrument)))
            (define id-new-instrument (<ra> :create-audio-instrument-from-description description patch-name))
-           (when (not (= -1 id-new-instrument))
+           (when (<ra> :is-legal-instrument id-new-instrument)
              (<ra> :set-instrument-effect
                    id-new-instrument "System Dry/Wet"
                    (<ra> :get-stored-instrument-effect id-old-instrument "System Dry/Wet"))
@@ -653,7 +665,7 @@
              (replace-instrument-in-mixer id-old-instrument id-new-instrument)
              )))))
 
-  (cond ((= 0 id-old-instrument)
+  (cond ((equal? (<ra> :get-main-pipe-instrument) id-old-instrument)
          (<ra> :schedule 0 ;; We do this since the function is specified to return immediately. I.e. the caller expects the instrument configuration to be the same when we return.
                (lambda ()
                  (ignore-undo-block
@@ -791,7 +803,7 @@
        (undo-block
         (lambda ()
           (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y))
-          (if (not (= -1 new-instrument))
+          (if (<ra> :is-legal-instrument new-instrument)
               (begin
                 (define num-inputs (<ra> :get-num-input-channels new-instrument))
                 (define num-outputs (<ra> :get-num-output-channels new-instrument))
@@ -1142,14 +1154,15 @@
 (<ra> :get-sound-plugin-registry #t)
 ||#
 
-(define (FROM_C-request-rename-instrument instrument-id)
-  (define old-name (<ra> :get-instrument-name instrument-id))
-  (define new-name (<ra> :request-string "New name:" #t old-name))
-  (c-display "NEWNAME" (<-> "-" new-name "-"))
-  (if (and (not (string=? new-name ""))
-           (not (string=? new-name old-name)))
-      (<ra> :set-instrument-name new-name instrument-id)))
+(delafina (FROM_C-request-rename-instrument :instrument-id (<ra> :get-current-instrument))
+  (when (<ra> :is-legal-instrument instrument-id)
+    (define old-name (<ra> :get-instrument-name instrument-id))
+    (define new-name (<ra> :request-string "" #t old-name))
+    (if (and (not (string=? new-name ""))
+             (not (string=? old-name new-name)))
+        (<ra> :set-instrument-name new-name instrument-id))))
 
+  
 
 (delafina (get-instrument-popup-entries :instrument-id
                                         :parentgui
@@ -1161,8 +1174,8 @@
    ;;"-----------Instrument"
    
    (and #f ;; Seems like instrument-id is always current instrument.
-        (let ((is-current (= (<ra> :get-current-instrument)
-                             instrument-id)))
+        (let ((is-current (equal? (<ra> :get-current-instrument)
+                                  instrument-id)))
           (and (not is-current)
                (list
                 (list "Set as current instrument"
@@ -1277,8 +1290,7 @@
   (undo-block
    (lambda ()
      (let ((instrument-id (<ra> :create-audio-instrument-from-description description "" (instrconf :x) (instrconf :y))))
-       (when (and (integer? instrument-id)
-                  (not (= -1 instrument-id)))  
+       (when (<ra> :is-legal-instrument instrument-id)
          ;;(c-display (pp instrconf))
          (if (and (instrconf :connect-to-main-pipe)
                   (> (<ra> :get-num-output-channels instrument-id) 0))
@@ -1485,7 +1497,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
 
 (define (delete-all-unused-MIDI-instruments)
-  (define used-instruments (<new> :container '() =))
+  (define used-instruments (<new> :container '() equal?))
   (define unused-MIDI-instruments '())
   
   (for-each (lambda (blocknum)
@@ -1576,8 +1588,8 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                 (cond ((not data)
                        (and best-data
                             (best-data :instrument-id)))
-                      ((and (not (= (data :instrument-id)
-                                    goal-instrument-id))
+                      ((and (not (equal? (data :instrument-id)
+                                         goal-instrument-id))
                             (better? goal-box
                                      best-data
                                      data))
@@ -1817,8 +1829,8 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
   (define instruments-before (get-all-audio-instruments))
   
   (define (is-new-instrument? id-instrument)
-    (and (not (memv id-instrument instruments-before))
-         (memv id-instrument (get-all-audio-instruments))))
+    (and (not (member id-instrument instruments-before))
+         (member id-instrument (get-all-audio-instruments))))
   
   (define (num-new-instruments)
     (- (length (get-all-audio-instruments))
@@ -1828,7 +1840,8 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
     `(undo-block
       (lambda ()
         (define id-instrument (begin ,@code))
-        (when (and (integer? id-instrument) (not (= -1 id-instrument)))
+        (when (and (instrument? id-instrument)
+                   (<ra> :is-legal-instrument id-instrument))
           (<ra> :set-instrument-for-track id-instrument tracknum)
           (when (and (is-new-instrument? id-instrument)
                      (= 1 (num-new-instruments)))
@@ -1903,7 +1916,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 (define (show/hide-instrument-gui)
   (define parentgui -2) ;; current window
   (let ((id (ra:get-current-instrument)))
-    (when (not (= -1 id))
+    (when (<ra> :is-legal-instrument id)
       (if (ra:has-native-instrument-gui id)
           (if (ra:instrument-gui-is-visible id parentgui)
               (ra:hide-instrument-gui id)
@@ -1921,7 +1934,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
 
 (define (get-instrument-background-color gui instrument-id)
-  (if (>= instrument-id 0)
+  (if (<ra> :is-legal-instrument instrument-id)
       (<gui> :mix-colors
              (<ra> :get-instrument-color instrument-id)
              (<gui> :get-background-color gui)
@@ -1930,7 +1943,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
 (define (get-instrument-border-color instrument-id)
   (define color #f)
-  (if (= (<ra> :get-current-instrument) instrument-id)
+  (if (equal? (<ra> :get-current-instrument) instrument-id)
       (set! color *current-mixer-strip-border-color*))
   (if (<ra> :instrument-is-selected instrument-id)
       ;;(let ((selcolor "#8888ee"))
@@ -2014,11 +2027,11 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
   (define is-implicitly (cond ((and (eq? type 'mute)
                                     instrument-id
-                                    (>= instrument-id 0))
+                                    (<ra> :is-legal-instrument instrument-id))
                                (<ra> :instrument-is-implicitly-muted instrument-id))
                               ((and (eq? type 'solo)
                                     instrument-id
-                                    (>= instrument-id 0))
+                                    (<ra> :is-legal-instrument instrument-id))
                                (<ra> :instrument-is-implicitly-soloed instrument-id))
                               (else
                                #f)))

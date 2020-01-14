@@ -1951,6 +1951,10 @@
   (vector-set! v 0 5)
   v)
 
+(mylint-file "/home/kjetil/radium/bin/scheme/mixer-strips.scm")
+(mylint-file "/home/kjetil/radium/bin/scheme/editor_track_headers.scm")
+(mylint-file "/home/kjetil/radium/bin/scheme/instruments.scm")
+
 (begin
   (mylint-file "/home/kjetil/radium/bin/scheme/mylint.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/mixer-strips.scm")
@@ -1965,6 +1969,8 @@
   (mylint-file "/home/kjetil/radium/bin/scheme/notem.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/sequencer_upper_part.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/notes.scm")
+  (define stuff.scm #f)
+  (define write.scm #f)
   (mylint-file "/home/kjetil/radium/bin/scheme/init.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/various.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/seqblock_audio.scm")
@@ -1979,11 +1985,18 @@
   (mylint-file "/home/kjetil/radium/bin/scheme/seqblock_editor.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/solo.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/editor_lower_part.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/editor_track_headers.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/quantitize.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/main_menus.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/seqblock-paint.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/semi-primitives.scm")
   (mylint-file "/home/kjetil/radium/bin/scheme/nodes.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/mouse-primitives.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/seqtracks_config.scm")
+  (mylint-file "/home/kjetil/radium/bin/scheme/sequencer_right_part.scm")
+  )
+
+(begin
   (mylint-file "/home/kjetil/radium/bin/scheme/mouse-primitives.scm")
   )
 

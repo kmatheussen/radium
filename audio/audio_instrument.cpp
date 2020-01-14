@@ -1289,7 +1289,7 @@ hash_t *AUDIO_get_audio_patch_state(struct Patch *patch){
     abort();
 #endif
   
-  HASH_put_int(state, "patch", patch->id);
+  HASH_put_instrument(state, "patch", patch->id);
   HASH_put_float(state, "x", CHIP_get_pos_x(patch));
   HASH_put_float(state, "y", CHIP_get_pos_y(patch));
 

@@ -177,7 +177,7 @@
    (<ra> :get-native-instrument-effect instrument-id "Gran. Jitter")
    (<ra> :get-native-instrument-effect instrument-id "Grain Ramp")
    (<ra> :get-native-instrument-effect instrument-id "Gran. Stretch")
-   instrument-id))
+   (<ra> :get-audio-instrument-num instrument-id)))
 
 (define (create-granular-vizualization-gui height paint-granulation)
   (define gui (<gui> :widget height height))

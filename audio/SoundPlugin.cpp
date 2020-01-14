@@ -2273,7 +2273,7 @@ hash_t *PLUGIN_get_modulation_state(SoundPlugin *plugin){
     if (modulator_patch != NULL){
       if (modulation==NULL)
         modulation=HASH_create(3);
-      HASH_put_int_at(modulation, "patch", i, modulator_patch->id);
+      HASH_put_instrument_at(modulation, "patch", i, modulator_patch->id);
     }
   }
 
@@ -2292,7 +2292,7 @@ void PLUGIN_apply_modulation_state(SoundPlugin *plugin, hash_t *modulation){
   for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
     if (HASH_has_key_at(modulation, "patch", i)){
 
-      int64_t modulator_patch_id = HASH_get_int_at(modulation, "patch", i);
+      int64_t modulator_patch_id = HASH_get_instrument_at(modulation, "patch", i);
       R_ASSERT_RETURN_IF_FALSE(modulator_patch_id >= 0);
 
       struct Patch *modulator_patch;

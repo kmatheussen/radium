@@ -1482,7 +1482,7 @@
   ;;(c-display "TRACK " *current-track-num*)
   (define tracknum *current-track-num*)
   (define instrument-id (<ra> :get-instrument-for-track tracknum))
-  (define has-instrument (>= instrument-id 0))
+  (define has-instrument (<ra> :is-legal-instrument instrument-id))
   ;;(c-display "tracknunm/instrument-id/has:" tracknum instrument-id has-instrument)
   (popup-menu 
               "---------FX"
@@ -1494,8 +1494,8 @@
               (map (lambda (fxnum)
                      (define fx-instrument-id (<ra> :get-fx-instrument fxnum tracknum))
                      (define fxname (<ra> :get-fx-name fxnum tracknum))
-                     (list (if (= fx-instrument-id
-                                  instrument-id)
+                     (list (if (equal? fx-instrument-id
+                                       instrument-id)
                                fxname
                                (<-> (<ra> :get-instrument-name fx-instrument-id)
                                     ": "
@@ -1577,17 +1577,17 @@
                     (lambda ()
                       (select-track-instrument tracknum)))
               (list "Configure instrument color"
-                    :enabled (>= instrument-id 0)
+                    :enabled (<ra> :is-legal-instrument instrument-id)
                     (lambda ()
                       (show-instrument-color-dialog -1 instrument-id)))
               (list "Generate new instrument color"
-                    :enabled (>= instrument-id 0)
+                    :enabled (<ra> :is-legal-instrument instrument-id)
                     (lambda ()
                       (<ra> :set-instrument-color (<ra> :generate-new-color 0.9) instrument-id)))
 
               "-------MIDI"
               (let* ((curr-midi-channel (<ra> :get-track-midi-channel tracknum))
-                     (is-midi-instrument (and (>= instrument-id 0)
+                     (is-midi-instrument (and (<ra> :is-legal-instrument instrument-id)
                                               (string=? (<ra> :get-instrument-type-name instrument-id)
                                                         "MIDI"))))
                 (list (<-> "Set MIDI channel" (if is-midi-instrument "" (<-> " (now: " (1+ curr-midi-channel) ")")))
@@ -2244,7 +2244,7 @@
 
 (define (create-play-pianonote note-id pianonote-id)
   (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
-    (if (< instrument-id 0)
+    (if (not (<ra> :is-legal-instrument instrument-id))
         -1
         (<ra> :play-note
               (<ra> :get-pianonote-value pianonote-id note-id *current-track-num*)
@@ -2394,7 +2394,7 @@
                                      (if (not (and (number? (pianonote-info :note-id))
                                                    (= -1 (pianonote-info :note-id))))
                                          (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
-                                           (if (>= instrument-id 0)
+                                           (if (<ra> :is-legal-instrument instrument-id)
                                                (<ra> :change-note-pitch
                                                      (<ra> :get-pianonote-value (pianonote-info :pianonotenum) new-notenum *current-track-num*)
                                                      (pianonote-info :note-id)
@@ -2409,7 +2409,7 @@
                                         (if (not (and (number? (pianonote-info :note-id))
                                                       (= -1 (pianonote-info :note-id))))
                                             (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
-                                              (if (>= instrument-id 0)
+                                              (if (<ra> :is-legal-instrument instrument-id)
                                                   (<ra> :stop-note (pianonote-info :note-id)
                                                                    (<ra> :get-track-midi-channel *current-track-num*)
                                                                    instrument-id)))))
@@ -3566,7 +3566,7 @@
   (define fxname (<ra> :get-fx-name fxnum tracknum))
   (define trackinstrument_id (<ra> :get-instrument-for-track tracknum))
   (define fxinstrument_id (<ra> :get-fx-instrument fxnum tracknum))
-  (if (= trackinstrument_id fxinstrument_id)
+  (if (equal? trackinstrument_id fxinstrument_id)
       fxname
       (<-> fxname " (" (<ra> :get-instrument-name fxinstrument_id) ")")))
 
@@ -3658,7 +3658,7 @@
                         ((and (<ra> :fxtext-visible *current-track-num*)
                               (inside-box? (<ra> :get-box fxtext *current-track-num*) X Y))
                          (define instrument-id (<ra> :get-instrument-for-track  *current-track-num*))
-                         (when (>= instrument-id 0)
+                         (when (<ra> :is-legal-instrument instrument-id)
                            (define fxnum (<ra> :get-fxtext-fxnum-from-x X *current-track-num*))
                            (when (>= fxnum 0)
                              (define effect-name (get-full-fx-name fxnum *current-track-num*))
@@ -7191,7 +7191,7 @@
 
   (popup-menu
    (if (and seqtrack-instrument-id
-            (>= seqtrack-instrument-id 0))
+            (<ra> :is-legal-instrument seqtrack-instrument-id))
        (list (<ra> :get-instrument-name seqtrack-instrument-id)
              (lambda ()
                (instrument-popup-menu seqtrack-instrument-id))

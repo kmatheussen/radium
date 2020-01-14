@@ -87,6 +87,9 @@ void DYN_save(disk_t *file, const dyn_t dyn){
   case BOOL_TYPE:
     DISK_printf(file,"%d\n",dyn.bool_number ? 1 : 0);
     break;
+  case INSTRUMENT_TYPE:
+    DISK_printf(file,"%" PRId64 "\n",dyn.instrument);
+    break;
   default:
     RError("Unknown type %d", dyn.type);
     return;
@@ -183,6 +186,10 @@ dyn_t DYN_load(disk_t *file, bool *success){
       int64_t denominator = STRING_get_int64(line);
       ret = DYN_create_ratio(make_ratio(numerator, denominator));
     }
+    break;
+  case INSTRUMENT_TYPE:
+    line = READ_LINE(file);
+    ret = DYN_create_instrument(STRING_get_int64(line));
     break;
   case BOOL_TYPE:
     line = READ_LINE(file);

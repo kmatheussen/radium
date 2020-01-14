@@ -8,28 +8,28 @@
   :target-id)
 
 (define (audio-connection<? a b)
-  (cond ((< (a :source-id)
-            (b :source-id))
+  (cond ((< (<ra> :get-audio-instrument-num (a :source-id))
+            (<ra> :get-audio-instrument-num (b :source-id)))
          #t)                             
-        ((> (a :source-id)
-            (b :source-id))
+        ((> (<ra> :get-audio-instrument-num (a :source-id))
+            (<ra> :get-audio-instrument-num (b :source-id)))
          #f)
         (else
-         (< (a :target-id)
-            (b :target-id)))))
+         (< (<ra> :get-audio-instrument-num (a :target-id))
+            (<ra> :get-audio-instrument-num (b :target-id))))))
 
 (define (audio-connection=? a b)
-  (and (= (a :source-id)
-          (b :source-id))
-       (= (a :target-id)
-          (b :target-id))))
+  (and (equal? (a :source-id)
+               (b :source-id))
+       (equal? (a :target-id)
+               (b :target-id))))
 
 (define (make-audio-connection-hash-table instruments)
   (define len (max 1 (length instruments)))
   (make-hash-table len
                    (cons audio-connection=? (lambda (x)
-                                              (modulo (+ (* len (x :source-id))
-                                                         (x :target-id))
+                                              (modulo (+ (* len (<ra> :get-audio-instrument-num (x :source-id)))
+                                                         (<ra> :get-audio-instrument-num (x :target-id)))
                                                       len)))))
 
 (define (pp-audio-connections audio-connections)
@@ -160,7 +160,7 @@
 (define (update-implicite-instrument-solo/mutes! all-instruments all-explicit-solo-instruments)
   (define len (length all-instruments))
 
-  (define all-solo-instruments (make-hash-table (i-max 1 len) =))
+  (define all-solo-instruments (make-hash-table (i-max 1 len) equal?))
   
   ;;(for-each (lambda (instrument-id)
   ;;            (hash-table-set! all-solo-instruments instrument-id #t))

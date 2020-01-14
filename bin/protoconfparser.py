@@ -77,6 +77,8 @@ class Argument:
             return "s_integer"
         elif self.type_string=="int64_t":
             return "s_integer"
+        elif self.type_string=="instrument_t":
+            return "s_instrument"
         elif self.type_string=="float":
             return "s_real"
         elif self.type_string=="double":
@@ -110,6 +112,8 @@ class Argument:
             return "s7_make_integer"
         elif self.type_string=="int64_t":
             return "s7_make_integer"
+        elif self.type_string=="instrument_t":
+            return "s7extra_make_instrument"
         elif self.type_string=="float":
             return "s7_make_real"
         elif self.type_string=="double":
@@ -135,6 +139,8 @@ class Argument:
             return "(int)s7_integer("
         elif self.type_string=="int64_t":
             return "s7_integer("
+        elif self.type_string=="instrument_t":
+            return "make_instrument("
         elif self.type_string=="float":
             return "s7_number_to_real(radiums7_sc, "
         elif self.type_string=="double":
@@ -160,6 +166,8 @@ class Argument:
             return "(int)s7extra_get_integer"
         elif self.type_string=="int64_t":
             return "s7extra_get_integer"
+        elif self.type_string=="instrument_t":
+            return "s7extra_get_instrument"
         elif self.type_string=="float":
             return "s7extra_get_float"
         elif self.type_string=="double":
@@ -185,6 +193,8 @@ class Argument:
             return "s7_is_integer"
         elif self.type_string=="int64_t":
             return "s7_is_integer"
+        elif self.type_string=="instrument_t":
+            return "is_instrument"
         elif self.type_string=="float":
             return "s7_is_number"
         elif self.type_string=="double":
@@ -391,6 +401,8 @@ class Proto:
                 t="i"
             elif qualifier=="int64_t":
                 t="L"
+            elif qualifier=="instrument_t":
+                t="L"
             elif qualifier=="float":
                 t="f"
             elif qualifier=="double":
@@ -445,6 +457,8 @@ class Proto:
                 if return_type=="int":
                     t="PyInt_FromLong((long)"
                 elif return_type=="int64_t":
+                    t="PyInt_FromLong((long)" # doesn't seem to be a PyInt_FromLongLong function.
+                elif return_type=="instrument_t":
                     t="PyInt_FromLong((long)" # doesn't seem to be a PyInt_FromLongLong function.
                 elif return_type=="float":
                     t="PyFloat_FromDouble("
@@ -808,6 +822,7 @@ class Protos:
             proto.write_s7_func(oh)
     def write_s7_defines(self,oh):
         oh.write('  s7_pointer s_integer = s7_make_symbol(s7, "integer?");\n')
+        oh.write('  s7_pointer s_instrument = s7_make_symbol(s7, "instrument?");\n')
         oh.write('  s7_pointer s_real = s7_make_symbol(s7, "real?");\n')
         oh.write('  s7_pointer s_string = s7_make_symbol(s7, "string?");\n')
         oh.write('  s7_pointer s_boolean = s7_make_symbol(s7, "boolean?");\n')
@@ -913,6 +928,7 @@ class Read:
         oh.write("#define const_char const char\n")
         oh.write("#include \"../common/placement_type.h\"\n")
         oh.write("#include \"../common/dyn_type.h\"\n")
+        oh.write("typedef int64_t instrument_t;\n")
         self.hs.write(oh)
         self.protos.writeH(oh)
         oh.close()
@@ -938,14 +954,17 @@ class Read:
         oh=sys.stdout
         oh.write("#include \"Python.h\"\n\n")
         oh.write("#include \"s7.h\"\n\n")
+        oh.write("#include \"s7_types.h\"\n")
         oh.write("#include \"../common/placement_type.h\"\n\n")
         oh.write("#include \"../common/dyn_type.h\"\n\n")
         oh.write("#include \"../embedded_scheme/s7extra_proc.h\"\n")
         oh.write("#include \"radium_proc.h\"\n\n")
         oh.write("#include \"../crashreporter/crashreporter_proc.h\"\n\n")
         oh.write("#include \"api_common_proc.h\"\n\n")
+        oh.write("#include \"s7_types_code.c\"\n\n");
         self.protos.write_s7_funcs(oh)
         oh.write("void init_radium_s7(s7_scheme *s7){\n")
+        oh.write("#include \"s7_types_code_init.c\"\n\n");
         self.protos.write_s7_defines(oh)
         oh.write("}\n")
 

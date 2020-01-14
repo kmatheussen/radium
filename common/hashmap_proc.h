@@ -56,6 +56,7 @@ extern LANGSPEC void HASH_put_dyn(hash_t *hash, const char *key, const dyn_t val
 extern LANGSPEC void HASH_put_string(hash_t *hash, const char *key, const wchar_t *val);
 extern LANGSPEC void HASH_put_chars(hash_t *hash, const char *key, const char *val);
 extern LANGSPEC void HASH_put_int(hash_t *hash, const char *key, int64_t val);
+extern LANGSPEC void HASH_put_instrument(hash_t *hash, const char *key, instrument_t val);
 extern LANGSPEC void HASH_put_bool(hash_t *hash, const char *key, bool val);
 extern LANGSPEC void HASH_put_float(hash_t *hash, const char *key, double val);
 extern LANGSPEC void HASH_put_ratio(hash_t *hash, const char *key, const Ratio val);
@@ -75,6 +76,7 @@ extern LANGSPEC dyn_t HASH_get_dyn(const hash_t *hash, const char *key);
 extern LANGSPEC const wchar_t *HASH_get_string(const hash_t *hash, const char *key);
 extern LANGSPEC const char *HASH_get_chars(const hash_t *hash, const char *key);
 extern LANGSPEC int64_t HASH_get_int(const hash_t *hash, const char *key);
+extern LANGSPEC instrument_t HASH_get_instrument(const hash_t *hash, const char *key);
 extern LANGSPEC bool HASH_get_bool(const hash_t *hash, const char *key);
 extern LANGSPEC double HASH_get_float(const hash_t *hash, const char *key);
 extern LANGSPEC hash_t *HASH_get_hash(const hash_t *hash, const char *key);
@@ -104,6 +106,7 @@ extern LANGSPEC void HASH_put_dyn_at(hash_t *hash, const char *key, int i, const
 extern LANGSPEC void HASH_put_string_at(hash_t *hash, const char *key, int i, const wchar_t *val);
 extern LANGSPEC void HASH_put_chars_at(hash_t *hash, const char *key, int i, const char *val);
 extern LANGSPEC void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val);
+extern LANGSPEC void HASH_put_instrument_at(hash_t *hash, const char *key, int i, instrument_t val);
 extern LANGSPEC void HASH_put_bool_at(hash_t *hash, const char *key, int i, bool val);
 extern LANGSPEC void HASH_put_float_at(hash_t *hash, const char *key, int i, double val);
 extern LANGSPEC void HASH_put_ratio_at(hash_t *hash, const char *key, int i, const Ratio val);
@@ -114,6 +117,7 @@ extern LANGSPEC dyn_t HASH_get_dyn_at(const hash_t *hash, const char *key, int i
 extern LANGSPEC const wchar_t *HASH_get_string_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC const char *HASH_get_chars_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC int64_t HASH_get_int_at(const hash_t *hash, const char *key, int i);
+extern LANGSPEC instrument_t HASH_get_instrument_at(const hash_t *hash, const char *key, int i);
 static inline int HASH_get_int32_at(const hash_t *hash, const char *key, int i){
   return (int)HASH_get_int_at(hash, key, i);
 }

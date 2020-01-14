@@ -138,9 +138,9 @@ FROM_C-reconfigure-sequencer-left-part
 FROM_C-reconfigure-sequencer-right-part
 FROM_C-reconfigure-sequencer-timing-part
 mid-horizontal-layout
-create-mixer-strips-gui
-mixer-strips-get-num-rows
-mixer-strips-change-num-rows
+FROM_C-create-mixer-strips-gui
+FROM_C-mixer-strips-get-num-rows
+FROM_C-mixer-strips-change-num-rows
 mixer-strips-get-vert-ratio
 mixer-strips-change-vert-ratio
 mixer-strips-reset-configuration!
@@ -163,7 +163,7 @@ FROM-C-show-edit/various-tab
 FROM-C-show-sequencer-gui
 FROM-C-hide-sequencer-gui
 FROM-C-sequencer-gui-is-visible
-create-standalone-mixer-strip
+FROM_C-create-standalone-mixer-strip
 select-track-instrument
 async-replace-instrument
 async-load-instrument-preset
@@ -734,7 +734,6 @@ FROM_C-show-sequencer-in-full-mode!
               (if (and #f do-rethrow)
                   (error 'loading-failed)
                   ret))))))
-
 
 
 (require stuff.scm)

@@ -1035,14 +1035,14 @@ bool CONNECTIONS_apply_changes(const dynvec_t dynchanges){
     if (!HASH_check_type(element.hash, ":type", STRING_TYPE, errorstring))
       return false;
 
-    if (!HASH_check_type(element.hash, ":source", INT_TYPE, errorstring))
+    if (!HASH_check_type(element.hash, ":source", INSTRUMENT_TYPE, errorstring))
       return false;
     
-    if (!HASH_check_type(element.hash, ":target", INT_TYPE, errorstring))
+    if (!HASH_check_type(element.hash, ":target", INSTRUMENT_TYPE, errorstring))
       return false;
 
-    int64_t source_id = HASH_get_int(element.hash, ":source");
-    int64_t target_id = HASH_get_int(element.hash, ":target");
+    int64_t source_id = HASH_get_instrument(element.hash, ":source");
+    int64_t target_id = HASH_get_instrument(element.hash, ":target");
 
     Chip *source = get_chip_from_patch_id(scene, source_id);
     Chip *target = get_chip_from_patch_id(scene, target_id);
@@ -2157,15 +2157,15 @@ static bool in_slider(const QPointF &pos){
 static int64_t g_statusbar_id = -1;
 
 static void set_solo_statusbar(const Chip *chip){
-  g_statusbar_id = S7CALL2(int_int, "FROM_C-display-solo-status-in-statusbar", CHIP_get_patch(chip)->id);
+  g_statusbar_id = S7CALL2(int_instrument, "FROM_C-display-solo-status-in-statusbar", CHIP_get_patch(chip)->id);
 }
 
 static void set_mute_statusbar(const Chip *chip){
-  g_statusbar_id = S7CALL2(int_int, "FROM_C-display-mute-status-in-statusbar", CHIP_get_patch(chip)->id);
+  g_statusbar_id = S7CALL2(int_instrument, "FROM_C-display-mute-status-in-statusbar", CHIP_get_patch(chip)->id);
 }
 
 static void set_bypass_statusbar(const Chip *chip){
-  g_statusbar_id = S7CALL2(int_int, "FROM_C-display-bypass-status-in-statusbar", CHIP_get_patch(chip)->id);
+  g_statusbar_id = S7CALL2(int_instrument, "FROM_C-display-bypass-status-in-statusbar", CHIP_get_patch(chip)->id);
 }
 
 static void set_slider_statusbar(const Chip *chip){
@@ -2620,8 +2620,8 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
   struct Patch *from = CHIP_get_patch(connection->from);
   struct Patch *to = CHIP_get_patch(connection->to);
   
-  HASH_put_int(state, "from_patch", get_saving_patch_id(from, patches));
-  HASH_put_int(state, "to_patch",   get_saving_patch_id(to,   patches));
+  HASH_put_instrument(state, "from_patch", get_saving_patch_id(from, patches));
+  HASH_put_instrument(state, "to_patch",   get_saving_patch_id(to,   patches));
   HASH_put_bool(state, "is_event_connection", connection->is_event_connection);
   if (!connection->is_event_connection){
     HASH_put_float(state, "gain", getAudioConnectionGain(from->id, to->id, true));
@@ -2645,8 +2645,8 @@ static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioG
                                           bool all_patches_are_always_supposed_to_be_here
                                           )
 {
-  int64_t id_from = HASH_get_int(state, "from_patch");
-  int64_t id_to = HASH_get_int(state, "to_patch");
+  int64_t id_from = HASH_get_instrument(state, "from_patch");
+  int64_t id_to = HASH_get_instrument(state, "to_patch");
 
   if (id_from==patch_id_old)
     id_from = patch_id_new;
@@ -2667,7 +2667,7 @@ static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioG
 
     // (get_chip_from_patch_id shows error.)
     //if (all_patches_are_always_supposed_to_be_here)
-    //  RError("Could not find chip from patch id. %d: 0x%p, %d: 0x%p",HASH_get_int(state, "from_patch"),from_chip,HASH_get_int(state, "to_patch"),to_chip);
+    //  RError("Could not find chip from patch id. %d: 0x%p, %d: 0x%p",HASH_get_instrument(state, "from_patch"),from_chip,HASH_get_instrument(state, "to_patch"),to_chip);
     
     return;
   }
@@ -2763,8 +2763,8 @@ void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *
   for(int i=0;i<HASH_get_int(connections, "num_connections");i++) {
     hash_t *connection_state = HASH_get_hash_at(connections, "", i);
       
-    int64_t index_from = HASH_get_int(connection_state, "from_patch");
-    int64_t index_to = HASH_get_int(connection_state, "to_patch");
+    int64_t index_from = HASH_get_instrument(connection_state, "from_patch");
+    int64_t index_to = HASH_get_instrument(connection_state, "to_patch");
 
     R_ASSERT_RETURN_IF_FALSE(index_from < patches->num_elements);
     R_ASSERT_RETURN_IF_FALSE(index_to < patches->num_elements);
