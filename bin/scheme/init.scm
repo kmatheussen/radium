@@ -249,6 +249,10 @@ FROM_C-show-bottom-bar-octave-up-popup-menu
 FROM_C-show-bottom-bar-undo-popup-menu
 FROM_C-show-bottom-bar-redo-popup-menu
 FROM_C-show-bottom-bar-switch-drunk_velocity-popup-menu
+FROM_C-show-bottom-bar-switch-edit-popup-menu
+FROM_C-show-bottom-bar-switch-click-popup-menu
+FROM_C-show-bottom-bar-switch-play-cursor-popup-menu
+FROM_C-show-bottom-bar-switch-editor-follows-play-cursor-popup-menu
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

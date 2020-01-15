@@ -291,6 +291,22 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     drunk_velocity_onoff->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-show-bottom-bar-switch-drunk_velocity-popup-menu");
     };
+    
+    edit_onoff->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-bottom-bar-switch-edit-popup-menu");
+    };
+    
+    click_onoff->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-bottom-bar-switch-click-popup-menu");
+    };
+    
+    play_cursor_onoff->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-bottom-bar-switch-play-cursor-popup-menu");
+    };
+
+    editor_follows_play_cursor_onoff->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-bottom-bar-switch-editor-follows-play-cursor-popup-menu");
+    };
   }
 
   ~Bottom_bar_widget(){
