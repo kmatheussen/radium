@@ -253,6 +253,9 @@ FROM_C-show-bottom-bar-switch-edit-popup-menu
 FROM_C-show-bottom-bar-switch-click-popup-menu
 FROM_C-show-bottom-bar-switch-play-cursor-popup-menu
 FROM_C-show-bottom-bar-switch-editor-follows-play-cursor-popup-menu
+FROM_C-show-mixer-ratio13-popup-menu
+FROM_C-show-mixer-ratio11-popup-menu
+FROM_C-show-mixer-ratio31-popup-menu
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*
