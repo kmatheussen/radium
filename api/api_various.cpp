@@ -630,11 +630,21 @@ void switchPlayCursorOnOff(void){
   return enablePlayCursor(!playCursorEnabled());
 }
 
+bool editorFollowsPlayCursor(void){
+  return ATOMIC_GET(root->editor_follows_play_cursor_onoff);
+}
+
 void enableEditorFollowsPlayCursor(bool onoff){
   ATOMIC_SET(root->editor_follows_play_cursor_onoff, onoff);
   
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   window->must_redraw = true;
+}
+
+bool switchEditorFollowsPlayCursor(void){
+  bool ret = !editorFollowsPlayCursor();
+  enableEditorFollowsPlayCursor(ret);
+  return ret;
 }
 
 void insertReallines(int toinsert,int windownum){

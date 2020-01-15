@@ -1125,6 +1125,43 @@
    "Help keybindings" show-keybinding-help-window
    ))
 
+(define (FROM_C-show-bottom-bar-switch-edit-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-edit-on-off"
+                                                    '()
+                                                    "FOCUS_EDITOR")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-show-bottom-bar-switch-click-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-metronome"
+                                                    '()
+                                                    "")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-show-bottom-bar-switch-play-cursor-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-play-cursor-on-off"
+                                                    '()
+                                                    "FOCUS_EDITOR")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-show-bottom-bar-switch-editor-follows-play-cursor-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-editor-follows-play-cursor"
+                                                    '()
+                                                    "FOCUS_EDITOR")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Various
