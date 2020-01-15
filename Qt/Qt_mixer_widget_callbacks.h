@@ -436,7 +436,7 @@ public:
     
   void change_num_mixerstrips_rows(int num_rows){
     if(_initing.can_access() && _mixer_strips_gui!=-1 && num_rows!=_num_rows){
-      gui_setNumRowsInMixerStrips(_mixer_strips_gui, num_rows);
+      gui_setNumRowsInMixerStrips(num_rows, _mixer_strips_gui);
       /*
       int64_t old_gui = _mixer_strips_gui;
       int64_t guinum, int num_rows){

@@ -2999,12 +2999,16 @@
                    
 
 (define (FROM_C-mixer-strips-get-num-rows mixer-strips-gui)
+  (if (= -1 mixer-strips-gui)
+      (set! mixer-strips-gui (<gui> :get-main-mixer-strips-gui)))
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
     (if object
         (object :strips-config :num-rows)
         #f)))
 
 (define (FROM_C-mixer-strips-change-num-rows mixer-strips-gui num-rows)
+  (if (= -1 mixer-strips-gui)
+      (set! mixer-strips-gui (<gui> :get-main-mixer-strips-gui)))
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
     (if object
         (set! (object :strips-config :num-rows) num-rows))))
