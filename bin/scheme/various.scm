@@ -1079,6 +1079,53 @@
    ))
 
 
+(define (FROM_C-show-bottom-bar-octave-down-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:dec-key-add"
+                                                    '(12)
+                                                    "FOCUS_EDITOR")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+
+(define (FROM_C-show-bottom-bar-octave-up-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:inc-key-add"
+                                                    '(12)
+                                                    "FOCUS_EDITOR")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-show-bottom-bar-undo-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:inc-key-add"
+                                                    '(12)
+                                                    "FOCUS_EDITOR")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-show-bottom-bar-redo-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:inc-key-add"
+                                                    '(12)
+                                                    "FOCUS_EDITOR")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-show-bottom-bar-switch-drunk_velocity-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-drunk-velocity-on-off"
+                                                    '()
+                                                    "FOCUS_EDITOR")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Various
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/notes_proc.h"
 #include "../common/visual_proc.h"
 
+#include "../Qt/Qt_bottom_bar_widget_proc.h"
+
 #include "api_common_proc.h"
 
 
@@ -113,6 +115,10 @@ void incKeyAdd(int incaddnum){
 
 void decKeyAdd(int decaddnum){
 	incKeyAdd(-decaddnum);
+}
+
+bool switchDrunkVelocityOnOff(void){
+  return EDITOR_switch_drunk_velocity();
 }
 
 void switchEditOnOff(void){
