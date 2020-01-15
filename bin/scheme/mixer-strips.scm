@@ -3015,6 +3015,8 @@
 
 
 (define (mixer-strips-get-vert-ratio mixer-strips-gui)
+  (if (= -1 mixer-strips-gui)
+      (set! mixer-strips-gui (<gui> :get-main-mixer-strips-gui)))
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
     ;;(if object
     ;;    (c-display "obj:" (object :strips-config :vert-ratio)))
@@ -3023,6 +3025,8 @@
         #f)))
 
 (define (mixer-strips-change-vert-ratio mixer-strips-gui vert-ratio)
+  (if (= -1 mixer-strips-gui)
+      (set! mixer-strips-gui (<gui> :get-main-mixer-strips-gui)))
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
     (if object
         (set! (object :strips-config :vert-ratio) vert-ratio))))
