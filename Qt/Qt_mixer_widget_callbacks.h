@@ -445,7 +445,7 @@ public:
   void change_mixerstrips_vert_ratio(const Ratio &vert_ratio){
     if(_initing.can_access() && _mixer_strips_gui!=-1 && RATIO_get_intratio(_vert_ratio) != RATIO_get_intratio(vert_ratio)){
       _vert_ratio = vert_ratio;
-      gui_setVertRatioInMixerStrips(_mixer_strips_gui, DYN_create_ratio(vert_ratio));
+      gui_setVertRatioInMixerStrips(DYN_create_ratio(vert_ratio), _mixer_strips_gui);
     }
   }
     

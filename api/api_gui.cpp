@@ -7235,7 +7235,7 @@ dyn_t gui_getVertRatioInMixerStrips(int64_t guinum){
   return S7CALL2(dyn_int, "mixer-strips-get-vert-ratio", guinum);
 }
 
-void gui_setVertRatioInMixerStrips(int64_t guinum, dyn_t vert_ratio){
+void gui_setVertRatioInMixerStrips(dyn_t vert_ratio, int64_t guinum){
   S7CALL2(void_int_dyn, "mixer-strips-change-vert-ratio", guinum, vert_ratio);
 }
 
