@@ -1105,6 +1105,42 @@
    "Help keybindings" show-keybinding-help-window
    ))
   
+(define (FROM_C-show-mixer-R1-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:eval-scheme"
+                                                    '("(ra:gui_set-num-rows-in-mixer-strips 1)")
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+  
+(define (FROM_C-show-mixer-R2-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:eval-scheme"
+                                                    '("(ra:gui_set-num-rows-in-mixer-strips 2)")
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+  
+(define (FROM_C-show-mixer-R3-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:eval-scheme"
+                                                    '("(ra:gui_set-num-rows-in-mixer-strips 3)")
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+  
+(define (FROM_C-show-mixer-R4-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:eval-scheme"
+                                                    '("(ra:gui_set-num-rows-in-mixer-strips 4)")
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+  
 
 
 (define (FROM_C-show-bottom-bar-octave-down-popup-menu)

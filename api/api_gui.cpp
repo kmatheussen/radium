@@ -7229,6 +7229,8 @@ void gui_setNumRowsInMixerStrips(int num_rows, int64_t guinum){
     return;
   }
   S7CALL2(void_int_int, "FROM_C-mixer-strips-change-num-rows", guinum, num_rows);
+
+  MW_update_checkboxes();
 }
 
 dyn_t gui_getVertRatioInMixerStrips(int64_t guinum){
@@ -7237,6 +7239,8 @@ dyn_t gui_getVertRatioInMixerStrips(int64_t guinum){
 
 void gui_setVertRatioInMixerStrips(dyn_t vert_ratio, int64_t guinum){
   S7CALL2(void_int_dyn, "mixer-strips-change-vert-ratio", guinum, vert_ratio);
+
+  MW_update_checkboxes();
 }
 
 // Called after loading.
