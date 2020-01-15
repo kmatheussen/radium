@@ -7223,7 +7223,7 @@ int gui_getNumRowsInMixerStrips(int64_t guinum){
   return (int)S7CALL2(int_int, "FROM_C-mixer-strips-get-num-rows", guinum);
 }
 
-void gui_setNumRowsInMixerStrips(int64_t guinum, int num_rows){
+void gui_setNumRowsInMixerStrips(int num_rows, int64_t guinum){
   if (num_rows < 1){
     handleError("gui_setNumRowsInMixerStrips: num_rows < 1: %d < 1", num_rows);
     return;
