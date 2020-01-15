@@ -244,6 +244,11 @@ FROM_C-show-mixer-help-popup-menu
 FROM_C-playlist-up!
 FROM_C-playlist-down!
 FROM_C-show-sequencer-in-full-mode!
+FROM_C-show-bottom-bar-octave-down-popup-menu
+FROM_C-show-bottom-bar-octave-up-popup-menu
+FROM_C-show-bottom-bar-undo-popup-menu
+FROM_C-show-bottom-bar-redo-popup-menu
+FROM_C-show-bottom-bar-switch-drunk_velocity-popup-menu
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

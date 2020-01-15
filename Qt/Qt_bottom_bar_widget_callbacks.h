@@ -271,6 +271,26 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       setPalette(pal);
     }
 
+    
+    octave_down_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-bottom-bar-octave-down-popup-menu");
+    };
+
+    octave_up_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-bottom-bar-octave-up-popup-menu");
+    };
+
+    undo_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-bottom-bar-undo-popup-menu");
+    };
+    
+    redo_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-bottom-bar-redo-popup-menu");
+    };
+    
+    drunk_velocity_onoff->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-bottom-bar-switch-drunk_velocity-popup-menu");
+    };
   }
 
   ~Bottom_bar_widget(){
@@ -310,7 +330,6 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     el_line->hide();
     sps_line->hide();
     tempo_line->hide();
-
   }
 
   /*
@@ -458,6 +477,9 @@ public slots:
   }
 
   void on_drunk_velocity_onoff_toggled(bool val){
+    if(_initing==true)
+      return;
+    
     drunk_velocity = val;
     update_velocity_sliders();
     velocity_slider->update();
@@ -598,6 +620,20 @@ struct Patch *GFX_OS_get_system_out(void){
   return g_system_out_patch;
 }
 
+bool EDITOR_switch_drunk_velocity(void){
+  drunk_velocity = !drunk_velocity;
+  
+  for(auto *bottom_bar_widget : g_bottom_bars){
+    bottom_bar_widget->_initing = true;
+    bottom_bar_widget->update_velocity_sliders();
+    bottom_bar_widget->velocity_slider->update();
+    bottom_bar_widget->drunk_velocity_onoff->setChecked(drunk_velocity);
+    bottom_bar_widget->_initing = false;
+  }
+  
+  return drunk_velocity;
+}
+  
 QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool include_navigator){
   auto *ret = new Bottom_bar_widget(parent, include_navigator);
   if(!include_editor_elements)

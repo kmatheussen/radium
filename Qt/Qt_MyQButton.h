@@ -59,6 +59,7 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
   
   void fix_mousePressEvent( QMouseEvent *qmouseevent) override {
     _is_hovered = true;
+
     QToolButton::mousePressEvent(qmouseevent);
     update();
   }
@@ -79,7 +80,7 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
   }
   
   MOUSE_CYCLE_CALLBACKS_FOR_QT;
-  
+
   void enterEvent(QEvent *event) override {
     _is_hovered = true;
     update();
@@ -91,14 +92,31 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
   }
 
   std::function<void(void)> _show_popup_menu;
-  
+
+  // Override event instead of contextMenuEvent since contextMenuEvent is not called when widget is disabled.
+  bool event(QEvent *event) override {
+    
+    if (event->type() == QEvent::MouseButtonPress){
+      QMouseEvent *mouseEvent = dynamic_cast<QMouseEvent*>(event);
+      if (mouseEvent==NULL){
+        R_ASSERT(false);
+      } else {
+        if (mouseEvent->button()==Qt::RightButton && _show_popup_menu)
+          _show_popup_menu();
+      }
+    }
+
+    return QToolButton::event(event);
+  }
+    
+  /*
   void contextMenuEvent(QContextMenuEvent *event) override {
     if (_show_popup_menu) {
       _show_popup_menu();
     } else
       QToolButton::contextMenuEvent(event);
   }
-
+  */
 
   radium::GcHolder<wchar_t> _text_to_draw;
   
