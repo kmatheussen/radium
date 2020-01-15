@@ -250,6 +250,18 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     ratio31->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-show-mixer-ratio31-popup-menu");
     };
+    rows1->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-mixer-R1-popup-menu");
+    };
+    rows2->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-mixer-R2-popup-menu");
+    };
+    rows3->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-mixer-R3-popup-menu");
+    };
+    rows4->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-mixer-R4-popup-menu");
+    };
   }
 
   void enterEvent(QEvent *event) override {
@@ -531,9 +543,7 @@ public:
   }
   */
 
-  void calledFromTimer(void) override {
-    //printf("m: %d\n",(int)_mixer_strips_gui);
-    
+  void updateWidgets(void){
     if (_mixer_strips_gui >= 0){
 
       int new_num_rows = gui_getNumRowsInMixerStrips(_mixer_strips_gui);
@@ -594,6 +604,12 @@ public:
         }
       }
     }
+  }
+  
+  void calledFromTimer(void) override {
+    //printf("m: %d\n",(int)_mixer_strips_gui);
+
+    updateWidgets();
   }
 
   bool _is_showing_window = false;
@@ -986,10 +1002,15 @@ void MW_set_instrument_in_mixer(bool include_instrument_widget){
 }
 
 void MW_update_checkboxes(void){
-  radium::ScopedIniting initing(g_mixer_widget2->_initing);
-  g_mixer_widget2->show_cpu_usage->setChecked(getShowCpuUsageInMixer());
-  g_mixer_widget2->connections_visibility->setChecked(getVisibleMixerConnections());
-  g_mixer_widget2->bus_connections_visibility->setChecked(getVisibleMixerBusConnections());
+  {
+    radium::ScopedIniting initing(g_mixer_widget2->_initing);
+    g_mixer_widget2->show_cpu_usage->setChecked(getShowCpuUsageInMixer());
+    g_mixer_widget2->connections_visibility->setChecked(getVisibleMixerConnections());
+    g_mixer_widget2->bus_connections_visibility->setChecked(getVisibleMixerBusConnections());
+    g_mixer_widget2->bus_connections_visibility->setChecked(getVisibleMixerBusConnections());
+  }
+
+  g_mixer_widget2->updateWidgets();
 }
 
 #if 0
