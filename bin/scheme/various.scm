@@ -1078,6 +1078,34 @@
    "Help keybindings" show-keybinding-help-window
    ))
 
+(define (FROM_C-show-mixer-ratio13-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:eval-scheme"
+                                                    '("(ra:gui_set-vert-ratio-in-mixer-strips 1/3)")
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+  
+(define (FROM_C-show-mixer-ratio11-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:eval-scheme"
+                                                    '("(ra:gui_set-vert-ratio-in-mixer-strips 1)")
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+  
+(define (FROM_C-show-mixer-ratio31-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:eval-scheme"
+                                                    '("(ra:gui_set-vert-ratio-in-mixer-strips 3)")
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+  
+
 
 (define (FROM_C-show-bottom-bar-octave-down-popup-menu)
   (popup-menu

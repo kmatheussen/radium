@@ -240,6 +240,16 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     help_button->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-show-mixer-help-popup-menu");
     };
+
+    ratio13->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-mixer-ratio13-popup-menu");
+    };
+    ratio1->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-mixer-ratio11-popup-menu");
+    };
+    ratio31->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-mixer-ratio31-popup-menu");
+    };
   }
 
   void enterEvent(QEvent *event) override {
