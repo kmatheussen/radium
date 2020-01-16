@@ -713,10 +713,15 @@ Examples:
 
 (define (FROM_C-request-grab-keybinding ra-funcname args focus-editor focus-mixer focus-sequencer)
   (define (get-arg-string arg)
-    (let ((arg2 (to-displayable-string arg)))
-      (if (string? arg)
-          (<-> "\"" arg2 "\"")
-          arg2)))
+    (cond ((eq? #f arg)
+           "False")
+          ((eq? #t arg)
+           "True")
+          (else
+           (let ((arg2 (to-displayable-string arg)))
+             (if (string? arg)
+                 (<-> "\"" arg2 "\"")
+                 arg2)))))
   
   (define command (<-> (get-python-ra-funcname ra-funcname)
                        (apply <-> (map (lambda (arg)

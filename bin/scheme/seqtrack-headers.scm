@@ -1322,6 +1322,35 @@
                                                                                         (assert #f))))
                                                            :callback-release (lambda ()
                                                                                (callback type))
+                                                           :right-mouse-clicked-callback
+                                                           (lambda ()
+                                                             (define func-and-args
+                                                               (cond ((eq? type 'InsertE)
+                                                                      (list "ra:insert-editor-seqtrack"))
+                                                                     ((eq? type 'InsertA)
+                                                                      (list "ra:insert-audio-seqtrack"))
+                                                                     ((eq? type 'InsertB)
+                                                                      (list "ra:insert-bus-seqtrack"))
+                                                                     ((eq? type '-)
+                                                                      (list "ra:delete-seqtrack"))
+                                                                     ((eq? type 'AppendE)
+                                                                      (list "ra:append-editor-seqtrack"))
+                                                                     ((eq? type 'AppendA)
+                                                                      (list "ra:append-audio-seqtrack"))
+                                                                     ((eq? type 'AppendB)
+                                                                      (list "ra:append-bus-seqtrack"))
+                                                                     (else
+                                                                      (assert #f))))
+                                                             (popup-menu
+                                                              (get-keybinding-configuration-popup-menu-entries
+                                                               :ra-funcname (car func-and-args)
+                                                               :args (cdr func-and-args)
+                                                               :focus-keybinding "FOCUS_SEQUENCER")
+                                                              "-------------"
+                                                              "Help keybindings" show-keybinding-help-window
+                                                              )
+                                                             )
+
                                                            :id (<_> 'sequencer-left-part-buttons type)))))
 
   ;;(define background-color (<gui> :get-background-color gui))
