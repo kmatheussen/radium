@@ -849,7 +849,7 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
     PATCH_set_current(patch);
     redrawMixerStrips(false);
 
-    if(patch->widget_height_type==SIZETYPE_NORMAL)
+    if(patch->widget_height_type==SIZETYPE_NORMAL && GFX_InstrumentWindowIsVisible() && !instrumentWidgetIsInMixer())
       S7CALL2(void_void,"minimize-lowertab");
   }
   //exit:

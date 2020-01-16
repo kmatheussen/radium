@@ -51,11 +51,12 @@
 (define2 *curr-lowertab-is-sequencer* boolean? #t)
 
 (define (minimize-lowertab)
-  ;;(c-display "minimizing")
-  (<gui> :minimize-as-much-as-possible (<gui> :get-instrument-gui))
-  (<gui> :minimize-as-much-as-possible *notem-gui*)
-  ;;(<gui> :set-size (<gui> :get-instrument-gui) 50 10)
-  (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) 10))
+  (when (not *curr-lowertab-is-sequencer*)
+    ;;(c-display "minimizing")
+    (<gui> :minimize-as-much-as-possible (<gui> :get-instrument-gui))
+    (<gui> :minimize-as-much-as-possible *notem-gui*)
+    ;;(<gui> :set-size (<gui> :get-instrument-gui) 50 10)
+    (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) 10)))
   
 (define (lowertab-index-callback index)
   ;;(c-display "\n\n\n                ****lowertab changed to index" index *sequencer-gui-height* "\n\n\n")
@@ -314,6 +315,7 @@
 #!!
 (FROM-C-show-instrument-gui)
 (FROM-C-hide-instrument-gui)
+(FROM-C-show-sequencer-gui)
 (begin *sequencer-window-gui-active*)
 (<ra> :sequencer-is-visible)
 (<ra> :hide-sequencer)
