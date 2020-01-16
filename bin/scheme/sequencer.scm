@@ -666,35 +666,23 @@
 (define (get-seqtrack-config-popup-menu-entries)
   (list
    "----Insert seqtrack"
-   (list "E+ Insert editor seqtrack"         
-         :shortcut (list ra:insert-seqtrack #f)
-         (lambda ()
-           (<ra> :insert-seqtrack #f)))
-   (list "A+ Insert audio seqtrack"         
-         :shortcut (list ra:insert-seqtrack #t)
-         (lambda ()
-           (<ra> :insert-seqtrack #t)))
+   (list "E+ Insert editor seqtrack"
+         ra:insert-editor-seqtrack)
+   (list "A+ Insert audio seqtrack"
+         ra:insert-audio-seqtrack)
    (list "A+ Insert audio bus"         
-         :shortcut (list ra:insert-seqtrack #t -1 #t)
-         (lambda ()
-           (<ra> :insert-seqtrack #t -1 #t)))
+         ra:insert-bus-seqtrack)
    "----Delete seqtrack"
    (list (<-> "Delete \"" (<ra> :get-seqtrack-name (<ra> :get-curr-seqtrack)) "\"")
          :enabled (> (<ra> :get-num-seqtracks) 1)
          ra:delete-seqtrack)
    "----Append seqtrack"
-   (list "+A Append editor seqtrack"         
-         :shortcut (list ra:append-seqtrack #f)
-         (lambda ()
-           (<ra> :append-seqtrack #f)))
-   (list "+A Append audio seqtrack"         
-         :shortcut (list ra:append-seqtrack #t)
-         (lambda ()
-           (<ra> :append-seqtrack #t)))
-   (list "+A Append audio bus"         
-         :shortcut (list ra:append-seqtrack #t -1 #t)
-         (lambda ()
-           (<ra> :append-seqtrack #t -1 #t)))
+   (list "+A Append editor seqtrack"
+         ra:append-editor-seqtrack)
+   (list "+A Append audio seqtrack"
+         ra:append-audio-seqtrack)
+   (list "+A Append audio bus"
+         ra:append-bus-seqtrack)
    ))
 
    
