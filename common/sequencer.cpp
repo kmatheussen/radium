@@ -3103,6 +3103,8 @@ static void call_me_after_seqtrack_has_been_removed(struct SeqTrack *seqtrack){
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     API_seqblock_has_been_deleted(seqblock->id);
   }END_VECTOR_FOR_EACH;
+
+  S7CALL2(void_void, "FROM_C-call-me-after-seqtrack-has-been-deleted");
 }
 
 void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos){

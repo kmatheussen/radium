@@ -633,43 +633,47 @@
               (<ra> :set-using-sequencer-timing #t))
             (callback arg)))))))
 
-(define (delete-seqtrack-and-maybe-ask seqtracknum)
-  (define (deleteit)
-    (<ra> :delete-seqtrack seqtracknum)
-    (if *current-seqtrack-num*
-        (set! *current-seqtrack-num* (min (- (<ra> :get-num-seqtracks) 1)
-                                          *current-seqtrack-num*)))
-    )
+(define (FROM_C-call-me-after-seqtrack-has-been-deleted)
+  (<declare-variable> *current-seqblock-info*)
+  (set! *current-seqblock-info* #f)
+  (if *current-seqtrack-num*
+      (set! *current-seqtrack-num* (min (- (<ra> :get-num-seqtracks) 1)
+                                        *current-seqtrack-num*)))
+  #t)
 
+(define (FROM_C-delete-seqtrack seqtracknum)
   (if (and (= 0 seqtracknum)
            (not (<ra> :seqtrack-for-audiofiles 0))
            (<ra> :seqtrack-for-audiofiles 1))
       (ask-user-about-first-audio-seqtrack
        (lambda (doit)
          (if doit
-             (deleteit))))
-      (deleteit)))
+             (<ra> :delete-seqtrack seqtracknum #t))))
+      (<ra> :delete-seqtrack seqtracknum #t)))
 
+(define (FROM_C-insert-seqtrack for-audiofiles seqtracknum is-bus)
+  (if (= -1 seqtracknum)
+      (set! seqtracknum (<ra> :get-curr-seqtrack)))
+  (if (and (= 0 seqtracknum)
+           for-audiofiles
+           (not (<ra> :seqtrack-for-audiofiles 0)))
+      (ask-user-about-first-audio-seqtrack
+       (lambda (doit)
+         (if doit
+             (<ra> :insert-seqtrack #t seqtracknum is-bus #t))))
+      (<ra> :insert-seqtrack for-audiofiles seqtracknum is-bus #t)))
+
+  
 (define (insert-or-append-seqtrack type)
   (c-display "\n\n\nTYPE:" type "\n\n\n")
   (cond ((eq? type 'InsertE)
          (<ra> :insert-seqtrack #f))
         ((or (eq? type 'InsertA)
              (eq? type 'InsertB))
-         (define seqtracknum (<ra> :get-curr-seqtrack))
-         (if (and (= 0 seqtracknum)
-                  (not (<ra> :seqtrack-for-audiofiles 0)))
-             (ask-user-about-first-audio-seqtrack
-              (lambda (doit)
-                (if doit
-                    (<ra> :insert-seqtrack #t seqtracknum (eq? type 'InsertB)))))
-             (<ra> :insert-seqtrack #t seqtracknum (eq? type 'InsertB))))
+         (<ra> :insert-seqtrack #t -1 (eq? type 'InsertB)))
         ((eq? type '-)
          (when (> (<ra> :get-num-seqtracks) 1)
-           (define seqtracknum (<ra> :get-curr-seqtrack))
-           (<declare-variable> *current-seqblock-info*)
-           (set! *current-seqblock-info* #f)
-           (delete-seqtrack-and-maybe-ask seqtracknum)))
+           (<ra> :delete-seqtrack)))
         ((eq? type 'AppendE)
          (<ra> :append-seqtrack #f))
         ((eq? type 'AppendA)
