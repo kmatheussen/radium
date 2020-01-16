@@ -283,10 +283,36 @@ void insertSeqtrack(bool for_audiofiles, int pos, bool is_bus, bool force_insert
   }
 }
 
+void insertEditorSeqtrack(int pos, bool force_insert){
+  insertSeqtrack(false, pos, false, force_insert);
+}
+
+void insertAudioSeqtrack(int pos, bool force_insert){
+  insertSeqtrack(true, pos, false, force_insert);
+}
+
+void insertBusSeqtrack(int pos, bool force_insert){
+  insertSeqtrack(true, pos, true, force_insert);
+}
+
 void appendSeqtrack(bool for_audiofiles, bool is_bus){
+  R_ASSERT_NON_RELEASE(for_audiofiles || !is_bus);
+  
   SEQUENCER_append_seqtrack(for_audiofiles, is_bus);
 
   setCurrSeqtrack(root->song->seqtracks.num_elements - 1, false);
+}
+
+void appendEditorSeqtrack(void){
+  appendSeqtrack(false, false);
+}
+
+void appendAudioSeqtrack(void){
+  appendSeqtrack(true, false);
+}
+
+void appendBusSeqtrack(void){
+  appendSeqtrack(true, true);
 }
 
 void deleteSeqtrack(int seqtracknum, bool force_delete){
