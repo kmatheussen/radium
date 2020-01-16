@@ -504,7 +504,7 @@
   (define-override (post-paint)
     ;;(c-display "POASTPAINT")
     (let loop ((tracknum 0))
-      (when (< tracknum num-tracks)
+      (when (< tracknum (<ra> :get-num-tracks))
         (define track-x1 (- (<ra> :get-track-x1 tracknum) 1))
         (define track-x2 (+ 4 (<ra> :get-track-x2 tracknum)))
         (when (and (< track-x1 x2)
