@@ -985,7 +985,7 @@ public:
       _plugin_widget->_faust_plugin_widget->change_height(new_size_type);
 #endif
 
-    if (new_size_type==SIZETYPE_NORMAL)
+    if (new_size_type==SIZETYPE_NORMAL && !instrumentWidgetIsInMixer())
       S7CALL2(void_void,"minimize-lowertab");
   }
 
@@ -1009,7 +1009,7 @@ public:
     
     if (_size_type_before_hidden != SIZETYPE_NORMAL)
       change_height(_size_type_before_hidden);
-    else
+    else if (!instrumentWidgetIsInMixer())
       S7CALL2(void_void,"minimize-lowertab");
 
     //      show_large();
