@@ -52,7 +52,7 @@
                                 :right-mouse-clicked-callback (lambda ()
                                                                 (if (<ra> :shift-pressed)
                                                                     (if (> (<ra> :get-num-seqtracks) 1)
-                                                                        (delete-seqtrack-and-maybe-ask seqtracknum))
+                                                                        (<ra> :delete-seqtrack))
                                                                     (popup-menu
                                                                      "------Enable/disable"
                                                                      (list "Enable all"
@@ -92,7 +92,7 @@
                       (cond ((= button *right-button*)
                              (if (<ra> :shift-pressed)
                                  (if (> (<ra> :get-num-seqtracks) 1)
-                                     (delete-seqtrack-and-maybe-ask seqtracknum))
+                                     (<ra> :delete-seqtrack))
                                  (popup-menu
                                   (list (<-> "--------------------\"" (<ra> :get-seqtrack-name seqtracknum) "\"")
                                         (get-delete-all-pauses-menu-entry seqtracknum)

@@ -1117,7 +1117,7 @@
                                            (<ra> :shift-pressed)
                                            (> (<ra> :get-num-seqtracks) 1))
                                       (begin
-                                        (delete-seqtrack-and-maybe-ask seqtracknum)
+                                        (<ra> :delete-seqtrack)
                                         #t)
                                       #f)))
   (if for-audiofiles
@@ -1269,7 +1269,22 @@
 (def-area-subclass (<sequencer-left-part-buttons> :gui :x1 :y1 :x2 :y2)
 
   (define (callback type)
-    (insert-or-append-seqtrack type))
+    (cond ((eq? type 'InsertE)
+           (<ra> :insert-seqtrack #f))
+          ((or (eq? type 'InsertA)
+               (eq? type 'InsertB))
+           (<ra> :insert-seqtrack #t -1 (eq? type 'InsertB)))
+          ((eq? type '-)
+           (if (> (<ra> :get-num-seqtracks) 1)
+               (<ra> :delete-seqtrack)))
+          ((eq? type 'AppendE)
+           (<ra> :append-seqtrack #f))
+          ((eq? type 'AppendA)
+           (<ra> :append-seqtrack #t))
+          ((eq? type 'AppendB)
+           (<ra> :append-seqtrack #t #t))
+          (else
+           (assert #f))))
   
   (add-raw-mouse-cycle!
    :enter-func (lambda (button x* y)
