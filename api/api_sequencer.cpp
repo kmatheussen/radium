@@ -257,7 +257,7 @@ float getSeqnavRightSizeHandleY2(void){
   return getSeqnavY2();
 }
 
-void insertSeqtrack(bool for_audiofiles, int pos, bool is_bus){
+void insertSeqtrack(bool for_audiofiles, int pos, bool is_bus, bool force_insert){
   if (pos==-1)
     pos = ATOMIC_GET(root->song->curr_seqtracknum);
   
@@ -266,9 +266,21 @@ void insertSeqtrack(bool for_audiofiles, int pos, bool is_bus){
     return;
   }
 
-  SEQUENCER_insert_seqtrack(pos, for_audiofiles, is_bus);
+  if (force_insert){
+    
+    SEQUENCER_insert_seqtrack(pos, for_audiofiles, is_bus);
+    setCurrSeqtrack(pos, false);
+    
+  } else {
 
-  setCurrSeqtrack(pos, false);
+    S7EXTRA_GET_FUNC(insert_seqtrack_func, "FROM_C-insert-seqtrack");
+    
+    s7extra_applyFunc_void_varargs(insert_seqtrack_func,
+                                   DYN_create_bool(for_audiofiles),
+                                   DYN_create_int(pos),
+                                   DYN_create_bool(is_bus),
+                                   g_uninitialized_dyn);
+  }
 }
 
 void appendSeqtrack(bool for_audiofiles, bool is_bus){
@@ -277,7 +289,7 @@ void appendSeqtrack(bool for_audiofiles, bool is_bus){
   setCurrSeqtrack(root->song->seqtracks.num_elements - 1, false);
 }
 
-void deleteSeqtrack(int seqtracknum){
+void deleteSeqtrack(int seqtracknum, bool force_delete){
   if (seqtracknum==-1)
     seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
   
@@ -291,10 +303,21 @@ void deleteSeqtrack(int seqtracknum){
     return;
   }    
 
-  UNDO_OPEN_REC();{ // SEQUENCER_delete_seqtrack might delete a seqtrack plugin as well.
-    ADD_UNDO(Sequencer());
-    SEQUENCER_delete_seqtrack(seqtracknum);
-  }UNDO_CLOSE();
+  if (force_delete){
+
+    UNDO_OPEN_REC();{ // SEQUENCER_delete_seqtrack might delete a seqtrack plugin as well.
+      ADD_UNDO(Sequencer());
+      SEQUENCER_delete_seqtrack(seqtracknum);
+    }UNDO_CLOSE();
+
+  } else {
+
+    S7EXTRA_GET_FUNC(delete_seqtrack_func, "FROM_C-delete-seqtrack");
+
+    S7CALL(void_int, delete_seqtrack_func, seqtracknum);
+    
+  }
+  
 }
 
 void API_curr_seqtrack_has_changed(void){
