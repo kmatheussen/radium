@@ -436,7 +436,6 @@ FROM_C-call-me-after-seqtrack-has-been-deleted
 	       (format p "~%<br>~{~A~| ~}~%<br>" e))
 	   (set! elist (cons e elist))))))))
 
-
 ;; Note! This function is called from the error handler.
 (define (history-ow!)
   (define history (copy (s7:get-history)))

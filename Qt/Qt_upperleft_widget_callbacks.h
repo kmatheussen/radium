@@ -184,6 +184,10 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     w2->resize(width, height-ysplit-1);
     
   }
+
+  QFont get_fitting_font(const QLabel *label, int width) const {
+    return GFX_getFittingFont(label->text(), Qt::AlignVCenter, width, label->height());
+  }
   
   // called from the outside
   void position(struct Tracker_Windows *window, struct WBlocks *wblock){
@@ -222,6 +226,14 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
         reltempomax_label->hide();
         reltempomax->hide();
       }
+
+      if (window->show_signature_track){
+        signature_label->show();
+        signature->show();
+      } else {
+        signature_label->hide();
+        signature->hide();
+      }
         
       // bottombar signature/lpb/bpm show/hide
       for(auto *bottom_bar : g_bottom_bars){
@@ -251,7 +263,12 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     
     //printf("Upper left: resizing to %d - %d - %d - %d\n",x(),y(),width,height);
 
-    _label_font = GFX_getFittingFont(swing_label->text(), Qt::AlignVCenter, swing_label->width(), swing_label->height());
+    if (swing_label->isVisible())
+      _label_font = get_fitting_font(swing_label, wblock->temponodearea.x - wblock->swingTypearea.x);
+    else if (signature_label->isVisible())
+      _label_font = get_fitting_font(signature_label, wblock->linenumarea.x - wblock->signaturearea.x);
+    else
+      _label_font = get_fitting_font(grid_label, wblock->tempoTypearea.x);
 
     /*
     move(0,0); // Necessary on windows. I have no idea why.
