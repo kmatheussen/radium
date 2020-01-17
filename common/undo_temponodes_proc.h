@@ -15,24 +15,18 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#pragma once
 
+extern LANGSPEC void ADD_UNDO_FUNC(TempoNodes(
+                                              struct Tracker_Windows *window,
+                                              struct Blocks *block,
+                                              NInt tracknum,
+                                              int realline
+                                              ));
 
-
-
-#ifndef TRACKER_INCLUDE
-
-extern void ADD_UNDO_FUNC(TempoNodes(
-	struct Tracker_Windows *window,
-	struct Blocks *block,
-	NInt tracknum,
-	int realline
-                                     ));
-
-extern void ADD_UNDO_FUNC(TempoNodes_CurrPos(
-	struct Tracker_Windows *window
-                                             ));
-
-#endif
+extern LANGSPEC void ADD_UNDO_FUNC(TempoNodes_CurrPos(
+                                                      struct Tracker_Windows *window
+                                                      ));
 
 
 

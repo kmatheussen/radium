@@ -1725,8 +1725,8 @@ api_velocities.o:  $(BUILD_DEPENDENCIES)  $(API)api_velocities.c
 api_pitches.o:  $(BUILD_DEPENDENCIES)  $(API)api_pitches.c 
 	$(CC)  $(API)api_pitches.c $(OPT)
 
-api_timing.o:  $(BUILD_DEPENDENCIES)  $(API)api_timing.c 
-	$(CC)  $(API)api_timing.c $(OPT)
+api_timing.o:  $(BUILD_DEPENDENCIES)  $(API)api_timing.cpp
+	$(CCC)  $(API)api_timing.cpp $(QTOPT)
 
 api_trackonoff.o:  $(BUILD_DEPENDENCIES)  $(API)api_trackonoff.c 
 	$(CC)  $(API)api_trackonoff.c $(OPT)

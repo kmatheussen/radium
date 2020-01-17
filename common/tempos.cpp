@@ -108,6 +108,14 @@ struct Tempos *SetTempo(
 }
 
 
+void SetTempos(
+               struct Blocks *block,
+               struct Tempos *tempos
+               )
+{
+  block->tempos = tempos;
+  TIME_block_tempos_have_changed(block);
+}
 
 void SetTempoCurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;

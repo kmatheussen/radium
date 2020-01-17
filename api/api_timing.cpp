@@ -115,7 +115,7 @@ int addSignature3(int numerator, int denominator,
                   int line,int counter,int dividor,
                   int blocknum)
 {
-  Place place = {line, counter, dividor};
+  Place place = {line, (uint32_t)counter, (uint32_t)dividor};
   return addSignature(numerator, denominator, place, blocknum);
 }
 
@@ -198,7 +198,7 @@ int addLPB3(int lpb,
             int blocknum
             )
 {
-  Place place = {line, counter, dividor};
+  Place place = {line, (uint32_t)counter, (uint32_t)dividor};
 
   return addLPB(lpb, place, blocknum);
 }
@@ -212,7 +212,7 @@ int getLPB(int num, int blocknum, int windownum){
 }
 
 dyn_t API_getAllLPB(const struct Blocks *block){
-  dynvec_t ret = {0};
+  dynvec_t ret = {};
   struct LPBs *lpb = block->lpbs;
 
   while(lpb != NULL){
@@ -276,6 +276,85 @@ int numBPMs(int blocknum, int windownum){
   return ListFindNumElements3((struct ListHeader3*)wblock->block->tempos);
 }
 
+void setBPMs(dynvec_t bpms, int blocknum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock=getWBlockFromNumA(-1,&window,blocknum);
+  if(wblock==NULL)
+    return;
+
+  Tempos *tempos = NULL;
+
+  for(dyn_t dynhash : bpms){
+    
+    if (dynhash.type != HASH_TYPE){
+      handleError("setBPMs: An element is not a hash table. Found %s instead", DYN_type_name(dynhash.type));
+      return;
+    }
+    
+    hash_t *hash = dynhash.hash;
+    
+    if (!HASH_has_key(hash, ":place")){
+      handleError("setBPMs: An element does not contain :place");
+      return;
+    }
+
+    dyn_t dynplace = HASH_get_dyn(hash, ":place");
+
+    if (!DYN_is_ratio(dynplace)){
+      handleError("setBPMs: :place must either be INT_TYPE or RATIO_TYPE, found %s", DYN_type_name(dynplace.type));
+      return;
+    }
+    
+    if (!HASH_has_key(hash, ":bpm")){
+      handleError("setBPMs: An element does not contain :bpm");
+      return;
+    }
+
+    dyn_t dynbpm = HASH_get_dyn(hash, ":bpm");
+
+    if (dynbpm.type != INT_TYPE){
+      handleError("setBPMs: :bpm must be INT_TYPE, found %s", DYN_type_name(dynbpm.type));
+      return;
+    }
+    
+    int logtype = LOGTYPE_HOLD;
+    
+    if (HASH_has_key(hash, ":logtype")){
+      
+      dyn_t dynlogtype = HASH_get_dyn(hash, ":logtype");
+      
+      if (dynlogtype.type != INT_TYPE){
+        handleError("setBPMs: :logtype must be INT_TYPE, found %s", DYN_type_name(dynbpm.type));
+        return;
+      }
+
+      logtype = dynlogtype.int_number;
+    }
+
+    struct Tempos *tempo=(struct Tempos*)talloc(sizeof(struct Tempos));
+    tempo->l.p = DYN_get_place(dynplace);
+    tempo->tempo = (int)dynbpm.int_number;
+    tempo->logtype = logtype;
+
+    if (!PlaceLegal(wblock->block, &tempo->l.p)) {
+      handleError("setBPMs: Place %s is not legal", PlaceToString(&tempo->l.p));
+      return;
+    }
+
+    if (tempo->tempo < 1){
+      handleError("setBPMs: BPM must be 1 or higher, found %d", tempo->tempo);
+      return;
+    }
+    
+    ListAddElement3(&tempos,&tempo->l);
+  }
+  
+  ADD_UNDO(Tempos_CurrPos(window));
+
+  SetTempos(wblock->block, tempos);
+
+  window->must_redraw=true;
+}
 
 int addBPM(int bpm,
            Place place,
@@ -310,7 +389,7 @@ int addBPM3(int bpm,
             int blocknum
             )
 {
-  Place place = {line, counter, dividor};
+  Place place = {line, (uint32_t)counter, (uint32_t)dividor};
 
   return addBPM(bpm, place, blocknum);
 }
@@ -332,7 +411,7 @@ Place getBPMPlace(int num, int blocknum, int windownum){
 }
 
 dyn_t API_getAllBPM(const struct Blocks *block){
-  dynvec_t ret = {0};
+  dynvec_t ret = {};
   struct Tempos *tempo = block->tempos;
 
   while(tempo != NULL){
@@ -372,7 +451,7 @@ Place getTemponodePlace(int num, int blocknum, int windownum){
     return p_Create(0,0,1);
 
   struct Blocks *block = wblock->block;
-  struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
+  struct TempoNodes *temponode = (struct TempoNodes *)ListFindElement3_num(&block->temponodes->l, num);
   if (temponode==NULL) {
     handleError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return p_Create(0,0,1);
@@ -391,7 +470,7 @@ float getTemponodeValue(int num, int blocknum, int windownum){
     return 0.0;
 
   struct Blocks *block = wblock->block;
-  struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
+  struct TempoNodes *temponode = (struct TempoNodes *)ListFindElement3_num(&block->temponodes->l, num);
   if (temponode==NULL) {
     handleError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return 0.0;
@@ -429,14 +508,14 @@ void setTemponode(int num, double value, Place place, int blocknum, int windownu
     temponode = block->temponodes; // don't want to set placement for the first node. It's always at top.
   
   else if (num==tempo_nodes->num_elements-1)
-    temponode = ListLast3(&block->temponodes->l); // don't want to set placement for the last node. It's always at bottom.
+    temponode = (struct TempoNodes *)ListLast3(&block->temponodes->l); // don't want to set placement for the last node. It's always at bottom.
 
   else if (num < 0 || num>=tempo_nodes->num_elements) {
     handleError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return;
     
   } else if (p_is_same_place(place)) {    
-    temponode = ListFindElement3_num(&block->temponodes->l, num);
+    temponode = (struct TempoNodes *)ListFindElement3_num(&block->temponodes->l, num);
 
   } else {
     if(place.line < 0){handleError("Negative place");}
@@ -484,7 +563,7 @@ void deleteTemponode(int num, int blocknum){
   if (num==0){
     wblock->block->temponodes->reltempo = 0.0f;
   } else if (num==tempo_nodes->num_elements-1) {
-    struct TempoNodes *last = ListLast3(&wblock->block->temponodes->l);
+    struct TempoNodes *last = (struct TempoNodes *)ListLast3(&wblock->block->temponodes->l);
     last->reltempo = 0.0f;
   } else {
     ListRemoveElement3_fromNum(&wblock->block->temponodes,num);
@@ -532,7 +611,7 @@ int addTemponode(float value, Place place, int blocknum, int windownum){
 }
 
 dyn_t API_getAllTemponodes(const struct Blocks *block){
-  dynvec_t ret = {0};
+  dynvec_t ret = {};
   struct TempoNodes *temponode = block->temponodes;
 
   while(temponode != NULL){
@@ -567,7 +646,7 @@ dyn_t getAllTemponodes(int blocknum, int windownum){
 /************* Beats ************************/
 
 dyn_t API_getAllBeats(const struct Beats *beats){
-  dynvec_t ret = {0};
+  dynvec_t ret = {};
   const struct Beats *beat = beats;
 
   while(beat != NULL){
@@ -601,7 +680,7 @@ dyn_t getAllBeats(int blocknum, int windownum){
 /************* Swing ************************/
 
 static dyn_t create_swing(const Place place, int weight, int logtype){
-  dynvec_t swing = {0};
+  dynvec_t swing = {};
   DYNVEC_push_back(&swing, DYN_create_place(place));
   DYNVEC_push_back(&swing, DYN_create_int(weight));
   DYNVEC_push_back(&swing, DYN_create_int(logtype));
@@ -609,7 +688,7 @@ static dyn_t create_swing(const Place place, int weight, int logtype){
 }
 
 dyn_t API_getAllBlockSwings(const struct Blocks *block){
-  dynvec_t ret = {0};
+  dynvec_t ret = {};
 
   struct Swing *swing = block->swings;
 
@@ -631,7 +710,7 @@ dyn_t getAllBlockSwings(int blocknum, int windownum){
 }
 
 dyn_t API_getAllTrackSwings(const struct Tracks *track){
-  dynvec_t ret = {0};
+  dynvec_t ret = {};
 
   struct Swing *swing = track->swings;
 
@@ -678,7 +757,7 @@ dyn_t testsomething(dyn_t arg){
 
   HASH_put_hash(hash, ":c", hash2);
 
-  dynvec_t dynvec = {0};
+  dynvec_t dynvec = {};
   DYNVEC_push_back(&dynvec, DYN_create_int(8));
   DYNVEC_push_back(&dynvec, DYN_create_int(9));
 
