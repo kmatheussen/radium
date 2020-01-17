@@ -244,6 +244,14 @@ class Argument:
             return "ra:num-lpbs"
         if self.varname=="numBPMs":
             return "ra:num-bpms"
+        if self.varname=="addBPM3":
+            return "ra:add-bpm3"
+        if self.varname=="addBPM3":
+            return "ra:add-bpm3"
+        if self.varname=="addLPB3":
+            return "ra:add-lpb3"
+        if self.varname=="setBPMs":
+            return "ra:set-bpms"
         
         result = ""
         for element in loop(string.capitalize(self.varname[0]),self.varname[1:]+" ", True):

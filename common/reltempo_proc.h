@@ -14,16 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
-#ifndef TRACKER_INCLUDE
-
-
-extern double RelTempo2RealRelTempo(double reltempo);
-extern double RealRelTempo2RelTempo(double realreltempo);
-extern double FindAverageRealRelTempo(double r1,double r2);
-extern double Gfx2RelTempo(struct WBlocks *wblock,int dx);
+#pragma once
 
 
-#endif
-
+extern LANGSPEC double RelTempo2RealRelTempo(double reltempo);
+extern LANGSPEC double RealRelTempo2RelTempo(double realreltempo);
+extern LANGSPEC double FindAverageRealRelTempo(double r1,double r2);
+extern LANGSPEC double Gfx2RelTempo(struct WBlocks *wblock,int dx);
 

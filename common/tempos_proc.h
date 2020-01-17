@@ -35,6 +35,11 @@ extern LANGSPEC struct Tempos *SetTempo(
         int logtype
 );
 
+extern LANGSPEC void SetTempos(
+                               struct Blocks *block,
+                               struct Tempos *tempos
+                               );
+
 extern LANGSPEC void SetTempoCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC void RemoveTempo(struct Blocks *block,const struct Tempos *tempo);
