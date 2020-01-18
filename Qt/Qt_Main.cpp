@@ -260,12 +260,14 @@ void RT_RTWIDGET_mark_needing_update(int pos){
   if(pos==-1)
     return;
 
-  R_ASSERT_NON_RELEASE(pos>=0 && pos<RTWIDGET_SIZE);
+  R_ASSERT_RETURN_IF_FALSE(pos>=0 && pos<RTWIDGET_SIZE);
   
   safe_bool_write(&g_widgets_needing_update[pos], true);
 }
 
 void RTWIDGET_release_slot(int pos){
+  R_ASSERT_RETURN_IF_FALSE(pos>=0 && pos<RTWIDGET_SIZE);
+  
   R_ASSERT_NON_RELEASE(g_rtwidgets[pos].data() != NULL);
   g_rtwidgets[pos] = NULL;
 }

@@ -3398,8 +3398,10 @@ static void hide_gui(struct SoundPlugin *plugin){
   Data *data=(Data*)plugin->data;
   
   if(data->gui.data() != NULL){
-    RTWIDGET_release_slot(ATOMIC_GET_RELAXED(data->rtwidget_pos));
-    ATOMIC_SET_RELAXED(data->rtwidget_pos, -1);
+    if (ATOMIC_GET_RELAXED(data->rtwidget_pos) != -1){
+      RTWIDGET_release_slot(ATOMIC_GET_RELAXED(data->rtwidget_pos));
+      ATOMIC_SET_RELAXED(data->rtwidget_pos, -1);
+    }
     data->gui->hide();
   }
 }
