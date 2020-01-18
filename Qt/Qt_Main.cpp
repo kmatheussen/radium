@@ -257,6 +257,8 @@ __attribute__((constructor)) static void initialize_g_widgets(void) {
 }
 
 void RT_RTWIDGET_mark_needing_update(int pos){
+  //printf("marking update %d\n", pos);
+  
   if(pos==-1)
     return;
 
