@@ -3386,8 +3386,10 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 
     data->gui = API_gui_get_widget(guinum);
 
-    ATOMIC_SET_RELAXED(data->rtwidget_pos, RTWIDGET_allocate_slot(data->gui.data()));
   }
+
+  if (ATOMIC_GET_RELAXED(data->rtwidget_pos) == -1)
+    ATOMIC_SET_RELAXED(data->rtwidget_pos, RTWIDGET_allocate_slot(data->gui.data()));
 
   data->gui->show();
 
