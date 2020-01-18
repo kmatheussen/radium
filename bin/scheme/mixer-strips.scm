@@ -2760,6 +2760,24 @@
 
 (define *mixer-strip-gui-num* 1)
 
+;; Returns #f is main window or the main mixer window is active instead.
+#||
+(define (a-mixer-strip-window-is-active?)
+  (define (in-main-or-mixer-window? gui)
+    (or (= (<gui> :get-window gui)
+           (<gui> :get-main-x-splitter))
+        (= (<gui> :get-window gui)
+           (<gui> :get-main-mixer-gui))))           
+  (let loop ((objects *mixer-strips-objects*))
+    (if (null? objects)
+        #f
+        (let ((object (car objects)))
+          (if (and (<gui> :is-active-window  (object :gui))
+                   (in-main-or-mixer-window? (object :gui)))
+              (loop (cdr objects))
+              #t)))))
+||#
+
 (delafina (create-mixer-strips-gui :num-rows 1
                                    :vert-ratio 1
                                    :instrument-ids #f

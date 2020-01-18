@@ -703,12 +703,17 @@
               "b999 2b")
 
 (define (get-python-ra-funcname funcname)
-  (let ((parts (string-split (string-drop funcname 3) #\-)))
-    (<-> "ra."
-         (car parts)
-         (apply <->
-                (map capitalize-first-char-in-string
-                     (cdr parts))))))
+  (cond ((string=? funcname "ra:show-hide-bpm-track")
+         "ra.showHideBPMTrack")
+        ((string=? funcname "ra:show-hide-lpb-track")
+         "ra.showHideLPBTrack")
+        (else
+         (let ((parts (string-split (string-drop funcname 3) #\-)))
+           (<-> "ra."
+                (car parts)
+                (apply <->
+                       (map capitalize-first-char-in-string
+                            (cdr parts))))))))
 
 #!!
 (get-python-ra-funcname "ra:w")

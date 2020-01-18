@@ -2061,10 +2061,13 @@ void showHideNoteTracksInBlock(int blocknum,int windownum){
   window->must_redraw = true;
 }
 
-void showHideSignatureTrack(int windownum){
+void setSignatureTrackVisible(bool showit, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
-  window->show_signature_track = !window->show_signature_track;
+  if (window->show_signature_track == showit)
+    return;
+  
+  window->show_signature_track = showit;
 
   if (!window->show_signature_track && window->curr_track==SIGNATURETRACK)
     ATOMIC_WRITE(window->curr_track, 0);
@@ -2073,23 +2076,38 @@ void showHideSignatureTrack(int windownum){
   window->must_redraw = true;
 }
 
+void showHideSignatureTrack(int windownum){
+  setSignatureTrackVisible(!signatureTrackVisible(windownum), windownum);
+}
+
 // swingtext (global)
-void showHideSwingTrack(int windownum){
+void setSwingTrackVisible(bool setit, int windownum){
+  
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
-
-  window->show_swing_track = !window->show_swing_track;
-
+  
+  if (window->show_swing_track == setit)
+    return;
+  
+  window->show_swing_track = setit;
+  
   if (!window->show_swing_track && window->curr_track==SWINGTRACK)
     ATOMIC_WRITE(window->curr_track, 0);
-
+  
   UpdateAllWBlockCoordinates(window);
   window->must_redraw = true;
 }
 
-void showHideLPBTrack(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+void showHideSwingTrack(int windownum){
+  setSwingTrackVisible(!swingTrackVisible(windownum), windownum);
+}
 
-  window->show_lpb_track = !window->show_lpb_track;
+void setLpbTrackVisible(bool showit, int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  
+  if(showit==window->show_lpb_track)
+    return;
+  
+  window->show_lpb_track = showit;
 
   if (!window->show_lpb_track && window->curr_track==LPBTRACK)
     ATOMIC_WRITE(window->curr_track, 0);
@@ -2098,10 +2116,22 @@ void showHideLPBTrack(int windownum){
   window->must_redraw = true;
 }
 
-void showHideBPMTrack(int windownum){
+void showHideLPBTrack(int windownum){
+  setLpbTrackVisible(!lpbTrackVisible(windownum), windownum);
+}
+
+bool bpmTrackVisible(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  return window->show_bpm_track;
+}
+
+void setBpmTrackVisible(bool setit, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
-  window->show_bpm_track = !window->show_bpm_track;
+  if (setit==window->show_bpm_track)
+    return;
+  
+  window->show_bpm_track = setit;
 
   if (!window->show_bpm_track && window->curr_track==TEMPOTRACK)
     ATOMIC_WRITE(window->curr_track, 0);
@@ -2110,10 +2140,22 @@ void showHideBPMTrack(int windownum){
   window->must_redraw = true;
 }
 
-void showHideReltempoTrack(int windownum){
+void showHideBPMTrack(int windownum){
+  setBpmTrackVisible(!bpmTrackVisible(windownum), windownum);
+}
+
+bool reltempoTrackVisible(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  return window->show_reltempo_track;
+}
+
+void setReltempoTrackVisible(bool setit, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
-  window->show_reltempo_track = !window->show_reltempo_track;
+  if (setit==window->show_reltempo_track)
+    return;
+  
+  window->show_reltempo_track = setit;
 
   if (!window->show_reltempo_track && window->curr_track==TEMPONODETRACK)
     ATOMIC_WRITE(window->curr_track, 0);
@@ -2122,29 +2164,23 @@ void showHideReltempoTrack(int windownum){
   window->must_redraw = true;
 }
 
+void showHideReltempoTrack(int windownum){
+  setReltempoTrackVisible(!reltempoTrackVisible(windownum), windownum);
+}
+
 bool swingTrackVisible(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return false;
   return window->show_swing_track;
 }
 
 bool signatureTrackVisible(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return false;
   return window->show_signature_track;
 }
 
 bool lpbTrackVisible(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
   return window->show_lpb_track;
-}
-
-bool bpmTrackVisible(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
-  return window->show_bpm_track;
-}
-
-bool reltempoTrackVisible(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return false;
-  return window->show_reltempo_track;
 }
 
 
@@ -2167,6 +2203,9 @@ void setLinenumbersVisible(bool doit){
   root->song->tracker_windows->must_redraw = true;
 }
 
+void showHideLinenumbers(void){
+  setLinenumbersVisible(!linenumbersVisible());
+}
 
 // Various
 
