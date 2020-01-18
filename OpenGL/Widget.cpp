@@ -1433,7 +1433,7 @@ private:
 #if !USE_LAYOUT_COVER
         hide_cover();
 #else
-        THREADING_run_on_main_thread_async([this]{
+        THREADING_run_on_main_thread_async([]{
             g_last_resize_time = TIME_get_ms();
             schedule_hide_layout_cover();
           });

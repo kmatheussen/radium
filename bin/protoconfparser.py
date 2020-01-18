@@ -936,7 +936,7 @@ class Read:
         oh.write("#define const_char const char\n")
         oh.write("#include \"../common/placement_type.h\"\n")
         oh.write("#include \"../common/dyn_type.h\"\n")
-        oh.write("typedef int64_t instrument_t;\n")
+        #oh.write("typedef int64_t instrument_t;\n")
         self.hs.write(oh)
         self.protos.writeH(oh)
         oh.close()
