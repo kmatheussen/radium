@@ -654,6 +654,11 @@ bool HASH_remove(hash_t *hash, const char *raw_key){
 }
 
 static void put2(hash_t *hash, const char *key, int i, const dyn_t dyn){
+  /*
+  if (hash->version < 4 && dyn.type==INSTRUMENT_TYPE)
+    abort();
+  */
+  
 #if !defined(RELEASE)
   if (strcmp(NOTUSED_EFFECT_NAME, key)) // <- The pd and faust instruments create effect names called "NOTUSED" for unused effects.
     R_ASSERT(!HASH_has_key_at(hash, key, i)); // NOTE. Hitting this one is not necessarily a bug. But since it's so seldom that we overwrite hash table elements, it seems like a good idea to have this line here.
@@ -740,6 +745,10 @@ static void put_int(hash_t *hash, const char *key, int i, int64_t val){
 }
 
 static void put_instrument(hash_t *hash, const char *key, int i, instrument_t val){
+#if !defined(RELEASE)
+  if(hash->version < 4)
+    abort();
+#endif
   put_dyn(hash, key, i, DYN_create_instrument(val));
 }
 
@@ -906,13 +915,22 @@ bool HASH_has_key(const hash_t *hash, const char *key){
   return HASH_has_key_at(hash, key, 0);
 }
 
-static hash_element_t *HASH_get(const hash_t *hash, const char *key, int i, enum DynType type){
+static hash_element_t *HASH_get_any_type(const hash_t *hash, const char *key, int i){
   hash_element_t *element=HASH_get_no_complaining(hash, key, i);
 
   if(element==NULL){
     RWarning("HASH_get. Element not found. key: \"%s\"/%d. hash: %p",key,i,hash);
     return NULL;
   }
+  
+  return element;
+}
+
+static hash_element_t *HASH_get(const hash_t *hash, const char *key, int i, enum DynType type){
+  hash_element_t *element=HASH_get_any_type(hash, key, i);
+
+  if(element==NULL)
+    return NULL;
   
   if(element->a.type!=type){
     RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested %s, found %s.",key,i,DYN_type_name(type),DYN_type_name(element->a.type));
@@ -966,14 +984,31 @@ static int64_t get_int(const hash_t *hash, const char *key, int i){
 }
 
 static instrument_t get_instrument(const hash_t *hash, const char *key, int i){
-  if(hash->version < 4)
-    return get_int(hash, key, i);
-  
-  hash_element_t *element = HASH_get(hash,key,i,INSTRUMENT_TYPE);
-  if(element==NULL)
-    return 0;
+  if(hash->version < 4){
 
-  return element->a.instrument;
+    // Need to check both INT_TYPE and INSTRUMENT_TYPE. Reason is that :instrument-id is stored as instrument type in HASH_load (even when version==3) to fix mixer strips.
+    
+    hash_element_t *element=HASH_get_any_type(hash, key, i);
+    if (element==NULL)
+      return 0;
+
+    if (element->a.type==INT_TYPE)
+      return element->a.int_number;
+    else if (element->a.type==INSTRUMENT_TYPE)
+      return element->a.instrument;
+
+    RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Expected INT_TYPE or INSTRUMENT_TYPE, found %s",key,i,DYN_type_name(element->a.type));
+    
+    return 0;
+    
+  } else {
+  
+    hash_element_t *element = HASH_get(hash,key,i,INSTRUMENT_TYPE);
+    if(element==NULL)
+      return 0;
+
+    return element->a.instrument;
+  }
 }
 
 static double get_number(const hash_t *hash, const char *key, int i){
