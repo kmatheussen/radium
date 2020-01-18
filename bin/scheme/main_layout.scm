@@ -50,7 +50,7 @@
 
 (define2 *curr-lowertab-is-sequencer* boolean? #t)
 
-(define (minimize-lowertab)
+(define (FROM_C-minimize-lowertab)
   (when (not *curr-lowertab-is-sequencer*)
     ;;(c-display "minimizing")
     (<gui> :minimize-as-much-as-possible (<gui> :get-instrument-gui))
@@ -77,7 +77,7 @@
         
         (<gui> :set-enabled handle #f)
 
-        (minimize-lowertab))))
+        (FROM_C-minimize-lowertab))))
 
 
 (define (init-lowertab-gui)

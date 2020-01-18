@@ -795,6 +795,8 @@ static bool patch_used_in_current_editor_block(struct Patch *patch){
 
 void GFX_PP_Update(struct Patch *patch, bool is_loading){
   printf("GFX_PP_Update %s\n", patch==NULL?"(null)":patch->name);
+
+  struct Patch *old_current = PATCH_get_current();
   
   called_from_pp_update = true;{
     //if(PATCH_get_current()==patch)
@@ -849,8 +851,8 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
     PATCH_set_current(patch);
     redrawMixerStrips(false);
 
-    if(patch->widget_height_type==SIZETYPE_NORMAL && GFX_InstrumentWindowIsVisible() && !instrumentWidgetIsInMixer())
-      S7CALL2(void_void,"minimize-lowertab");
+    if(old_current!=patch && patch->widget_height_type==SIZETYPE_NORMAL && GFX_InstrumentWindowIsVisible() && !instrumentWidgetIsInMixer())
+      S7CALL2(void_void,"FROM_C-minimize-lowertab");
   }
   //exit:
   called_from_pp_update = false;

@@ -2231,7 +2231,6 @@ void Chip::hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ){
 void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
-
   //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
   
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
