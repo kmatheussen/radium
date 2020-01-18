@@ -99,7 +99,7 @@ rm -fr libraries
 mv faustlibraries-master libraries
 patch -p0 <../faust.patch
 patch -p1 <../faust_setlocale.patch
-patch -p1 <../faust_svgfix.patch
+patch -p0 <../faust_svgfix.patch
 if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
     patch -p0 <../faust_nollvm.patch
 fi
