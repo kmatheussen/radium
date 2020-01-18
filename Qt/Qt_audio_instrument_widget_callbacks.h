@@ -986,7 +986,7 @@ public:
 #endif
 
     if (new_size_type==SIZETYPE_NORMAL && !instrumentWidgetIsInMixer())
-      S7CALL2(void_void,"minimize-lowertab");
+      S7CALL2(void_void,"FROM_C-minimize-lowertab");
   }
 
   void hideEvent(QHideEvent * event) override {
@@ -1010,7 +1010,7 @@ public:
     if (_size_type_before_hidden != SIZETYPE_NORMAL)
       change_height(_size_type_before_hidden);
     else if (!instrumentWidgetIsInMixer())
-      S7CALL2(void_void,"minimize-lowertab");
+      S7CALL2(void_void,"FROM_C-minimize-lowertab");
 
     //      show_large();
   }

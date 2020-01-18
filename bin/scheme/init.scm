@@ -20,7 +20,7 @@
 
 (define-constant *functions-and-symbols-used-by-C*
   '(show-global-swing-track-popup-menu
-    minimize-lowertab
+    FROM_C-minimize-lowertab
     remake-mixer-strips
     FROM_C-redraw-mixer-strips
     toggle-current-mixer-strips-fullscreen
@@ -206,7 +206,7 @@ FROM_C-display-bypass-status-in-statusbar
 FROM_C-set-current-seqblock!
 FROM_C-show-blocklist-popup-menu
 FROM_C-show-playlist-popup-menu
-minimize-lowertab
+FROM_C-minimize-lowertab
 remake-mixer-strips
 toggle-current-mixer-strips-fullscreen
 generate-main-menus
