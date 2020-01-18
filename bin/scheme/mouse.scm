@@ -1484,8 +1484,7 @@
   (define instrument-id (<ra> :get-instrument-for-track tracknum))
   (define has-instrument (<ra> :is-legal-instrument instrument-id))
   ;;(c-display "tracknunm/instrument-id/has:" tracknum instrument-id has-instrument)
-  (popup-menu 
-              "---------FX"
+  (popup-menu (<-> "---------FX (track #" tracknum ")")
               (list "New FX"
                     :enabled has-instrument
                     :shortcut ra:request-fx
@@ -1505,7 +1504,7 @@
                              (<ra> :undo-fxs tracknum)
                              (<ra> :set-fx-enabled onoff fxnum tracknum))))
                    (iota (<ra> :get-num-fxs tracknum)))
-              "---------Subtracks"
+              (<-> "---------Subtracks (track #" tracknum ")")
               (car (swingtext-popup-elements))
               (list "Pianoroll"
                     :check (<ra> :pianoroll-visible tracknum)
@@ -1522,7 +1521,7 @@
               (car (velocitytext-popup-elements))
               (car (fxtext-popup-elements))
 
-              "-------Clipboard"
+              (<-> "---------Clipboard (track #" tracknum ")")
               "Copy Track" :shortcut ra:copy-track (lambda ()
                                                      (<ra> :copy-track tracknum))
               "Cut Track" :shortcut ra:cut-track (lambda ()
@@ -1543,7 +1542,7 @@
                                                              (<ra> :load-track "" tracknum))
               "Save Track" :shortcut ra:save-track (lambda ()
                                                      (<ra> :save-track "" tracknum))
-              "----------Misc"
+              (<-> "---------Misc (track #" tracknum ")")
               (list "Wide note name"
                     :check (<ra> :track-note-area-width-is-wide tracknum)
                     :shortcut ra:change-track-note-area-width
@@ -1569,7 +1568,8 @@
                     (lambda (doit)
                       (<ra> :switch-solo-track tracknum)))
               "Minimize track" ra:minimize-track
-              "-------Instrument"
+              
+              (<-> "---------Instrument (track #" tracknum ")")
               (list (if has-instrument
                         "Change instrument"
                         "Set instrument")
@@ -1585,7 +1585,7 @@
                     (lambda ()
                       (<ra> :set-instrument-color (<ra> :generate-new-color 0.9) instrument-id)))
 
-              "-------MIDI"
+              (<-> "-------MIDI (track #" tracknum ")")
               (let* ((curr-midi-channel (<ra> :get-track-midi-channel tracknum))
                      (is-midi-instrument (and (<ra> :is-legal-instrument instrument-id)
                                               (string=? (<ra> :get-instrument-type-name instrument-id)
@@ -3737,7 +3737,6 @@
                  (<ra> :select-track *current-track-num*)
                  #t))))
 
-
 (define (show-global-swing-track-popup-menu)
   (c-display "global swing track popup menu")
   (popup-menu "Hide swing track" ra:show-hide-swing-track
@@ -3774,6 +3773,75 @@
 
 ;; show/hide time tracks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (get-time-tracks-popup-menu-entries)
+  (list
+   "---------Timing tracks"
+   (list "BPM"
+         :check (<ra> :bpm-track-visible)
+         :shortcut ra:show-hide-bpm-track
+         ra:set-bpm-track-visible)
+   (list "LPB"
+         :check (<ra> :lpb-track-visible)
+         :shortcut ra:show-hide-lpb-track
+         ra:set-lpb-track-visible)
+   (list "Signature"
+         :check (<ra> :signature-track-visible)
+         :shortcut ra:show-hide-signature-track
+         ra:set-signature-track-visible)
+   "---------"
+   (list
+    :radio-buttons
+    (list "Show bars and beats"
+          :check (not (<ra> :linenumbers-visible))
+          :shortcut ra:show-hide-linenumbers
+          (lambda (setit)
+            (<ra> :set-linenumbers-visible #f)))
+    (list "Show line numbers"
+          :check (<ra> :linenumbers-visible)
+          :shortcut ra:show-hide-linenumbers
+          (lambda (setit)
+            (<ra> :set-linenumbers-visible #t))))
+   "---------"
+   (list "Swing"
+         :check (<ra> :swing-track-visible)
+         :shortcut ra:show-hide-swing-track
+         ra:set-swing-track-visible)
+   (list "Tempo automation"
+         :check (<ra> :reltempo-track-visible)
+         :shortcut ra:show-hide-reltempo-track
+         ra:set-reltempo-track-visible)
+   "--------------"
+   (list "Keybindings"
+         (list
+          "-------------BPM visibility keybinding"
+          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-bpm-track"
+                                                           :args '()
+                                                           :focus-keybinding "FOCUS_EDITOR")
+          "-------------LPB visibility keybinding"
+          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-lpb-track"
+                                                           :args '()
+                                                           :focus-keybinding "FOCUS_EDITOR")
+          "-------------Signature visibility keybinding"
+          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-signature-track"
+                                                           :args '()
+                                                           :focus-keybinding "FOCUS_EDITOR")
+          "-------------Switch bars and beats / line numbers keybinding"
+          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-linenumbers"
+                                                           :args '()
+                                                           :focus-keybinding "FOCUS_EDITOR")
+          "-------------Swing visibility keybinding"
+          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-swing-track"
+                                                           :args '()
+                                                           :focus-keybinding "FOCUS_EDITOR")
+          "-------------Tempo automation visibility keybinding"
+          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-reltempo-track"
+                                                           :args '()
+                                                           :focus-keybinding "FOCUS_EDITOR")
+          "-------------"
+          "Help keybindings" show-keybinding-help-window))
+   ))
+
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
@@ -3781,24 +3849,28 @@
                      *current-track-num-all-tracks*
                      (>= Y (<ra> :get-block-header-y2))
                      (< Y (<ra> :get-reltempo-slider-y1))
-                     (cond ((= *current-track-num-all-tracks* (<ra> :get-rel-tempo-track-num))
-                            (c-display "reltempo")
-                            (popup-menu "hide tempo multiplier track" ra:show-hide-reltempo-track))
-                           ((= *current-track-num-all-tracks* (<ra> :get-tempo-track-num))
-                            (c-display "tempo")
-                            (popup-menu "hide BPM track" ra:show-hide-bpm-track))
-                           ((= *current-track-num-all-tracks* (<ra> :get-lpb-track-num))
-                            (c-display "lpb")
-                            (popup-menu "hide LPB track" ra:show-hide-lpb-track))
-                           ((= *current-track-num-all-tracks* (<ra> :get-signature-track-num))
-                            (c-display "signature")
-                            (popup-menu "hide time signature track" ra:show-hide-signature-track))
-                           ((= *current-track-num-all-tracks* (<ra> :get-swing-track-num))
-                            (show-global-swing-track-popup-menu))
-                           ((= *current-track-num-all-tracks* (<ra> :get-linenum-track-num))
-                            (show-bars-and-beats-or-line-numbers-popup-menu))
-                           (else
-                            (c-display "nothing")))
+                     (popup-menu
+                      (get-time-tracks-popup-menu-entries)
+                      #||
+                      "------------"
+                      (cond ((= *current-track-num-all-tracks* (<ra> :get-rel-tempo-track-num))
+                             (list "hide tempo multiplier track" ra:show-hide-reltempo-track))
+                            ((= *current-track-num-all-tracks* (<ra> :get-tempo-track-num))
+                             (list "hide BPM track" ra:show-hide-bpm-track))
+                            ((= *current-track-num-all-tracks* (<ra> :get-lpb-track-num))
+                             (list "hide LPB track" ra:show-hide-lpb-track))
+                            ((= *current-track-num-all-tracks* (<ra> :get-signature-track-num))
+                             (list "hide time signature track" ra:show-hide-signature-track))
+                            ((= *current-track-num-all-tracks* (<ra> :get-swing-track-num))
+                             (list "Hide swing track" ra:show-hide-swing-track))
+                            ((= *current-track-num-all-tracks* (<ra> :get-linenum-track-num))
+                             (list "todo" (lambda () #t)))
+                            ;;(show-bars-and-beats-or-line-numbers-popup-menu))
+                            (else
+                             (list)))
+                      "--------------"
+                      ||#
+                      )
                      #t))))
 
 
