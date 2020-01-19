@@ -15,6 +15,7 @@
 #include <QPainter>
 #include <QDateTime>
 #include <QToolButton>
+#include <QScreen>
 
 
 static const QString message_hide = "_MESSAGE_HIDE";
@@ -444,6 +445,34 @@ private:
 
 }
 
+static QRect get_startup_rect(void){
+  int fontsize = QApplication::font().pointSize();
+  
+  int height = fontsize*300/8;
+  int width = height * 1.779291553133515;
+  
+  QPoint point;
+  
+  QScreen *screen = QApplication::screens().first();
+
+  if (screen==NULL) {
+    
+    point = QPoint(400,400);
+    
+  } else {
+    
+    QRect parentRect = screen->availableGeometry();
+    
+    int x = parentRect.x() + (parentRect.width() - width)/2;
+    int y = parentRect.y() + (parentRect.height() - height)/2;
+
+    point = QPoint(std::max(20, x), std::max(20, y));
+
+  }
+  
+  return QRect(point.x(), point.y(), width, height);
+}
+
 
 #include "getqapplicationconstructorargs.hpp"
 
@@ -456,18 +485,35 @@ int main(int argc, char **argv){
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
 
-  int fontsize = atoi(argv[1]);
+  bool is_startup_message = false;
+  
+  if (!strcmp(argv[1], "--startup"))
+    is_startup_message = true;
 
-  QRect rect(atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
-    
   QFont font = QApplication::font();
-  font.setPointSize(fontsize);
-  QApplication::setFont(font);
 
+  QRect rect;
+  QString header;
+  
+  if (is_startup_message) {
+
+    rect = get_startup_rect();
+
+    header = "Please wait for the operating system to start Radium";
+    
+  } else {
+    int fontsize = atoi(argv[1]);
+
+    rect = QRect(atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
+    
+    font.setPointSize(fontsize);
+    QApplication::setFont(font);
+
+    header = QByteArray::fromBase64(argv[6]).constData();
+  }
+  
   MyTimer mytimer;
   mytimer.start();
-
-  QString header = QByteArray::fromBase64(argv[6]).constData();
 
   process_OpenProgress(header, rect);
 
