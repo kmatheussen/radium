@@ -1,3 +1,140 @@
+Changes 5.9.88 -> 5.9.90:
+* Windows: Show progress window much earlier when
+  starting the program.
+* Sampler instrument: Fix GUI graphics not updating
+  immediately when dragging sliders if GUI was opened
+  by the second time or later.
+* Sampler instrument: Fix memory corruption when
+  opening a sampler instrument GUI for the second
+  time. In Radium 5.9.88 this memory corruption
+  started to crash the program.
+* Editor: Popup menus for timing tracks.
+* Import MOD: Decrease time it takes to import MOD
+  file with lots of tempo changes. 
+* Scripting: Update S7 to latest version.
+* Editor: Fix very small font for the labels in the
+  upper right when the swing track is not visible.
+* Editor: Fix error message "getTrackX2: No track X"
+  sometimes popping up, especially after importing
+  MOD file.
+* Sequencer: Fix some shortcuts in the seqtracks
+  config popup menu.
+* Internal/GUI: Fix a bug in the raw mouse cycle
+  handling in the internal widget system.
+* FaustDev: Fix block diagrams not being drawn when
+  using the LLVM backend. Bug introduced in 5.9.88.
+* Editor/OpenGL: Replace use of spinlock with mutex.
+  This might fix some freezing in the editor when
+  it's redrawn.
+* Sequencer: Add popup menu to the timing lane
+  headers area.
+* Keybindings: Fix grabbing keybinding when
+  navigating popup menus with the keyboard.
+* Editor: Add support for grabbing keybinding to the
+  entries in the track header popup menu.
+* GUI: Fix entries in sub menues not always being
+  highligthed.
+* Sequencer: Add support for grabbing keybinding for
+  the various grid functions in the grid button popup
+  menu.
+* Keybindings: Fix "Remove keybinding" when a
+  previous keybinding has been added with other
+  focus qualifiers than the default ones.
+* Keybindings: Fix sometimes not detecting when
+  overriding a keybinding.
+* Mixer: Add support for grabbing keybindings for
+  rotating the mixer to the popup menu of the mixer
+  direction button.
+* GUI: Add alpha to text color of disabled buttons
+  and check boxes.
+* GUI: Fix various buttons and checkboxes still being
+  highlighted after releasing mouse button.
+* Keybindings: Remove "EDIT SHIFT_L F5" keybinding to
+  unzoom.
+* Mixer: Options in the popup menu to edit various
+  zoom keybindings.
+* Keybindings: Add "Help keybindings" option to the
+  bottom of all popup menus to grab keybindings.
+* Help: Variuos fixes for the keybindings help page.
+* Sequencer: Light up background color of the
+  seqtrack numbers when hovered or moved.
+* GUI: Fix buttons and checkboxes not always stops
+  being highlighted after mouse pointer has been
+  moved somewhere else.
+* Mixer: Fix keyboard focus when un-windowing mixer.
+* GUI: Add support for grabbing keybinding to
+  the popup menu of all buttons and check boxes in
+  the mixer, editor, sequencer, and playlist.
+* Instrument widget: Save half/full status to disk.
+* Instrument widget: Fix font size for effect sliders
+  not always being correct when widget is half or
+  full size.
+* Instrument widget: Various clean-ups for the
+  half/full size buttons.
+* API:
+  * New: setCurrMixerConfigNum, resetMixerConfigNum,
+    setMainMixerInWindow, mainMixerIsInWindow,
+    switchMixerIsInWindow,
+    switchInstrumentWidgetInMixer,
+    setShowCpuUsageInMixer, getShowCpuUsageInMixer,
+    switchShowCpuUsageInMixer,
+    setVisibleMixerConnections,
+    getVisibleMixerConnections,
+    switchVisibleMixerConnections,
+    setVisibleMixerBusConnections,
+    getVisibleMixerBusConnections,
+    switchVisibleMixerBusConnections,
+    mixerConfigNumIsUsed, resetEditorZoom,
+    resetMixerZoom, resetSequencerZoom,
+    setSwingEnabled, getSwingEnabled,
+    switchSwingEnabled, setPianorollAutoRange,
+    switchRecordAccuratelyFromMidi, playlistUp,
+    playlistDown, switchSequencerGridEnabled,
+    switchTrackPanOnOff, switchTrackVolumeOnOff,
+    setSequencerInFullMode, sequencerInFullMode,
+    switchSequencerInFullMode, hasInstrumentForTrack,
+    isLegalInstrument, createIllegalInstrument,
+    getAudioInstrumentNum, getMainPipeInstrument,
+    switchDrunkVelocityOnOff,
+    editorFollowsPlayCursor,
+    switchEditorFollowsPlayCursor,
+    insertEditorSeqtrack, insertAudioSeqtrack,
+    insertBusSeqtrack, appendEditorSeqtrack,
+    appendAudioSeqtrack, appendBusSeqtrack, setBPMs,
+    setSwingTrackVisible, setSignatureTrackVisible,
+    setLpbTrackVisible, setBpmTrackVisible,
+    setReltempoTrackVisible, showHideLinenumbers.
+  * Removed: undoTrackPanOnOff, undoTrackVolumeOnOff.
+  * Update documentation for zoom and unzoom.
+  * Fix playlistInsert.
+  * Use a custom "instrument" type instead of int64_t
+    to store instrument id.
+  * Change order of arguments for
+    gui_setVertRatioInMixerStrips.
+  * Let the default guinum argument for
+    gui_getVertRatioInMixerStrips and
+    gui_setVertRatioInMixerStrips be -1 (main mixer
+    strips gui).
+  * Change order of arguments for
+    gui_setNumRowsInMixerStrips.
+  * Let the default guinum argument for
+    gui_getNumRowsInMixerStrips and
+    gui_setNumRowsInMixerStrips be -1 (main mixer
+    strips gui).
+  * Fix state of current seqblock and seqtrack if
+    calling deleteSeqtrack directly instead of
+    pressing the "-" button in the sequencer.
+  * Add optional argument
+    "bool force_insert/force_delete" to
+    insertSeqtrack and deleteSeqtrack. The argument
+    is false by default. If false, program will ask
+    user "are you sure?" if calling the function
+    causes song to switch from editor timing mode to
+    sequencer timing mode.
+  * Fix function names for addBPM3 and addLPB3.
+
+
+
 Changes 5.9.86 -> 5.9.88:
 * Startup: Make sure a proper error message is shown
   if the custom color configuration file is not
