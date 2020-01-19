@@ -1164,18 +1164,18 @@
 
 (define (FROM_C-show-bottom-bar-undo-popup-menu)
   (popup-menu
-   (get-keybinding-configuration-popup-menu-entries "ra:inc-key-add"
-                                                    '(12)
-                                                    "FOCUS_EDITOR")
+   (get-keybinding-configuration-popup-menu-entries "ra:undo"
+                                                    '()
+                                                    "")
    "-------------"
    "Help keybindings" show-keybinding-help-window
    ))
 
 (define (FROM_C-show-bottom-bar-redo-popup-menu)
   (popup-menu
-   (get-keybinding-configuration-popup-menu-entries "ra:inc-key-add"
-                                                    '(12)
-                                                    "FOCUS_EDITOR")
+   (get-keybinding-configuration-popup-menu-entries "ra:redo"
+                                                    '()
+                                                    "")
    "-------------"
    "Help keybindings" show-keybinding-help-window
    ))
