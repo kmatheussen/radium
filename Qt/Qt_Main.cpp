@@ -3703,6 +3703,7 @@ int main(int argc, char **argv){
 #endif
   
 #if defined(FOR_WINDOWS)
+  DWORD progress_pid = atoi(argv[2]);
   GC_set_no_dls(1);
 #endif
 
@@ -3848,13 +3849,19 @@ int main(int argc, char **argv){
   }
 #endif
 
-
-
   //GC_disable();
   //QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
   //QPixmap pixmap(QPixmap(OS_get_full_program_file_path("/home/kjetil/radium/pictures/logo_big.png")).scaled(QSize(256,256), Qt::KeepAspectRatioByExpanding));
   GFX_OpenProgress("Please wait, starting program");
   
+#if defined(FOR_WINDOWS)
+  {
+    auto handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, progress_pid);
+    if (handle != NULL)
+      TerminateProcess(handle, 0);
+  }
+#endif
+
   SCHEME_init1();
 
   GFX_ShowProgressMessage("Starting OpenGL", true);
@@ -3891,13 +3898,15 @@ int main(int argc, char **argv){
   }
 #endif
 
+#if !defined(FOR_WINDOWS)
   if(argc>1){
     if (!strcmp(argv[1],"--dont-load-new-song"))
       g_load_new_song=false;
     else
       g_songfile_from_commandline = strdup(argv[1]);
   }
-
+#endif
+  
 #if defined(IS_LINUX_BINARY)
 #if 0  
   setenv("PYTHONHOME","temp/dist",1);
