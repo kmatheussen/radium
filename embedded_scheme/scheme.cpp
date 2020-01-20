@@ -336,6 +336,10 @@ static bool is_instrument(s7_pointer s){
   return s7_is_c_object(s) && (s7_c_object_type(s) == g_instrument_type_tag);
 }
 
+static bool is_file(s7_pointer s){
+  return s7_is_c_object(s) && (s7_c_object_type(s) == g_file_type_tag);
+}
+
 static instrument_t get_instrument(s7_pointer s){
   R_ASSERT_NON_RELEASE(is_instrument(s));
                                         
@@ -345,6 +349,17 @@ static instrument_t get_instrument(s7_pointer s){
   int64_t *i = (int64_t*)s7_c_object_value(s);
 
   return make_instrument(*i);
+}
+
+static file_t get_file(s7_pointer s){
+  R_ASSERT_NON_RELEASE(is_file(s));
+                                        
+  if (sizeof(file_t) <= sizeof(void*))
+    return make_file((int64_t)s7_c_object_value(s));
+      
+  int64_t *i = (int64_t*)s7_c_object_value(s);
+
+  return make_file(*i);
 }
 
 static dyn_t create_dyn_from_s7(s7_scheme *s7, s7_pointer s, bool undefinedIsError){
@@ -523,6 +538,16 @@ instrument_t s7extra_get_instrument(s7_scheme *s7, s7_pointer s, const char **er
   }
 
   return get_instrument(s);
+}
+
+file_t s7extra_get_file(s7_scheme *s7, s7_pointer s, const char **error){
+  
+  if (!is_file(s)){
+    *error = "file";
+    return createIllegalFile();
+  }
+
+  return get_file(s);
 }
 
 

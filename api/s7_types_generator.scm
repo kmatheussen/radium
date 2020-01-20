@@ -7,7 +7,8 @@ exec guile -e main -s $0 $*
 
 
 (define *radium-s7-types*
-  '((instrument int64_t)))
+  '((instrument int64_t)
+    (file int64_t)))
 
 
 
