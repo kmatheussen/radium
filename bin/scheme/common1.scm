@@ -741,3 +741,8 @@
           (begin
             (<ra> :close-file file)
             (reverse! ret))))))
+
+
+#!!
+(for-each c-display (get-all-lines-in-file (<ra> :to-base64 "/tmp/test.mrec")))
+!!#

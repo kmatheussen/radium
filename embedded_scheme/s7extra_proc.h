@@ -17,6 +17,7 @@ extern "C" {
   void init_radium_s7(s7_scheme *s7);
 
   s7_pointer s7extra_make_instrument(s7_scheme *s7, instrument_t val);
+  s7_pointer s7extra_make_file(s7_scheme *s7, file_t val);
   
   bool s7extra_is_place(s7_pointer place);
   Place s7extra_place(s7_scheme *s7, s7_pointer place);
@@ -43,7 +44,8 @@ extern "C" {
   dyn_t s7extra_get_dyn(s7_scheme *s7, s7_pointer s, const char **error);
 
   instrument_t s7extra_get_instrument(s7_scheme *s7, s7_pointer s, const char **error);
-
+  file_t s7extra_get_file(s7_scheme *s7, s7_pointer s, const char **error);
+  
   #endif
 
   extern int g_scheme_nested_level; // If this number > 0, then some scheme code is currently running. (i.e. we are inside s7_eval)

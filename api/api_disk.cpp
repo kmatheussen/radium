@@ -58,7 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static int64_t g_curr_disknum = 0;
 
-static QHash<int64_t,disk_t*> g_disks;
+static QHash<file_t,disk_t*> g_disks;
 
 
 const_char* getPath(const_char *path_string){
@@ -373,34 +373,43 @@ bool iterateDirectory(const_char* w_path, bool async, func_t* callback){
   return true;
 }
 
-int64_t openFileForReading(const_char* w_path){
+file_t createIllegalFile(void){
+  return make_file(-1);
+}
+
+bool isIllegalFile(file_t file){
+  return file.id==-1;
+}
+
+
+file_t openFileForReading(const_char* w_path){
   disk_t *disk = DISK_open_for_reading(w_to_qstring(w_path));
   if (disk==NULL){
     handleError("Unable to open file %s for reading\n", w_to_qstring(w_path).toUtf8().constData());
-    return -1;
+    return createIllegalFile();
   }
 
-  int64_t disknum = ++g_curr_disknum;
+  file_t disknum = make_file(++g_curr_disknum);
   g_disks[disknum] = disk;
   return disknum;
 }
 
-int64_t openFileForWriting(const_char* w_path){
+file_t openFileForWriting(const_char* w_path){
   disk_t *disk = DISK_open_for_writing(w_to_qstring(w_path));
   if (disk==NULL){
     handleError("Unable to open file for writing (couldn't create temporary file, check your file system)");
-    return -1;
+    return createIllegalFile();
   }
 
-  int64_t disknum = ++g_curr_disknum;
+  file_t disknum = make_file(++g_curr_disknum);
   g_disks[disknum] = disk;
   return disknum;
 }
 
-bool closeFile(int64_t disknum){
+bool closeFile(file_t disknum){
   disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
-    handleError("closeFile: No file #%d", (int)disknum);
+    handleError("closeFile: No file #%d", (int)disknum.id);
     return false;
   }
 
@@ -409,10 +418,10 @@ bool closeFile(int64_t disknum){
   return DISK_close_and_delete(disk);
 }
 
-int writeToFile(int64_t disknum, const_char* string){
+int writeToFile(file_t disknum, const_char* string){
   disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
-    handleError("writeToFile: No file #%d", (int)disknum);
+    handleError("writeToFile: No file #%d", (int)disknum.id);
     return -1;
   }
 
@@ -425,20 +434,20 @@ int writeToFile(int64_t disknum, const_char* string){
   return bytes_written;
 }
 
-bool fileAtEnd(int64_t disknum){
+bool fileAtEnd(file_t disknum){
   disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
-    handleError("writeToFile: No file #%d", (int)disknum);
+    handleError("writeToFile: No file #%d", (int)disknum.id);
     return false;
   }
 
   return DISK_at_end(disk);
 }
 
-const_char* readLineFromFile(int64_t disknum){
+const_char* readLineFromFile(file_t disknum){
   disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
-    handleError("writeToFile: No file #%d", (int)disknum);
+    handleError("writeToFile: No file #%d", (int)disknum.id);
     return "";
   }
 
@@ -457,30 +466,30 @@ const_char* readLineFromFile(int64_t disknum){
 #include "../common/read_binary.h"
 
 
-int64_t openFileForBinaryReading(const_char* w_path){
+file_t openFileForBinaryReading(const_char* w_path){
   disk_t *disk = DISK_open_binary_for_reading(STRING_create(w_to_qstring(w_path)));
   if (disk==NULL){
     handleError("Unable to open file %s for reading\n", w_to_qstring(w_path).toUtf8().constData());
-    return -1;
+    return createIllegalFile();
   }
 
   R_ASSERT(DISK_is_binary(disk));
 
-  int64_t disknum = ++g_curr_disknum;
+  file_t disknum = make_file(++g_curr_disknum);
   g_disks[disknum] = disk;
   return disknum;
 }
 
 
-static bool read_binary(const_char* funcname, int64_t disknum, unsigned char dest[], int64_t num_bytes){
+static bool read_binary(const_char* funcname, file_t disknum, unsigned char dest[], int64_t num_bytes){
   disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
-    handleError("%s: No file #%d", funcname, (int)disknum);
+    handleError("%s: No file #%d", funcname, (int)disknum.id);
     return false;
   }
 
   if (DISK_is_binary(disk)==false){
-    handleError("%s: File #%d is not opened in binary mode", funcname, (int)disknum);
+    handleError("%s: File #%d is not opened in binary mode", funcname, (int)disknum.id);
     return false;
   }
 
@@ -496,7 +505,7 @@ static bool read_binary(const_char* funcname, int64_t disknum, unsigned char des
 
 // 32 bit
 
-int readLe32FromFile(int64_t disknum){
+int readLe32FromFile(file_t disknum){
   unsigned char chars[4];
   if(read_binary("readLe32FromFile", disknum, chars, 4)==false)
     return 0;
@@ -504,7 +513,7 @@ int readLe32FromFile(int64_t disknum){
   return get_le_32(chars);
 }
 
-int64_t readLeU32FromFile(int64_t disknum){
+int64_t readLeU32FromFile(file_t disknum){
   unsigned char chars[4];
   if(read_binary("readLeU32FromFile", disknum, chars, 4)==false)
     return 0;
@@ -514,7 +523,7 @@ int64_t readLeU32FromFile(int64_t disknum){
 
 /*
 // there is no get_be_32 function
-int readBe32FromFile(int64_t disknum){
+int readBe32FromFile(file_t disknum){
   unsigned char chars[4];
   if(read_binary("readLe32FromFile", disknum, chars, 4)==false)
     return 0;
@@ -523,7 +532,7 @@ int readBe32FromFile(int64_t disknum){
 }
 */
 
-int64_t readBeU32FromFile(int64_t disknum){
+int64_t readBeU32FromFile(file_t disknum){
   unsigned char chars[4];
   if(read_binary("readLeU32FromFile", disknum, chars, 4)==false)
     return 0;
@@ -533,7 +542,7 @@ int64_t readBeU32FromFile(int64_t disknum){
 
 // 16 bit
 
-int readLe16FromFile(int64_t disknum){
+int readLe16FromFile(file_t disknum){
   unsigned char chars[2];
   if(read_binary("readLe16FromFile", disknum, chars, 2)==false)
     return 0;
@@ -543,7 +552,7 @@ int readLe16FromFile(int64_t disknum){
 
 /*
 // there is no get_le_u16 function
-int readLeU16FromFile(int64_t disknum){
+int readLeU16FromFile(file_t disknum){
   unsigned char chars[2];
   if(read_binary("readLeU16FromFile", disknum, chars, 2)==false)
     return 0;
@@ -554,7 +563,7 @@ int readLeU16FromFile(int64_t disknum){
 
 /*
 // there is no get_be_16 function
-int readBe16FromFile(int64_t disknum){
+int readBe16FromFile(file_t disknum){
   unsigned char chars[2];
   if(read_binary("readBe16FromFile", disknum, chars, 2)==false)
     return 0;
@@ -563,7 +572,7 @@ int readBe16FromFile(int64_t disknum){
 }
 */
 
-int readBeU16FromFile(int64_t disknum){
+int readBeU16FromFile(file_t disknum){
   unsigned char chars[2];
   if(read_binary("readBeU16FromFile", disknum, chars, 2)==false)
     return 0;
@@ -573,28 +582,28 @@ int readBeU16FromFile(int64_t disknum){
 
 // 8 bit
 
-int read8FromFile(int64_t disknum){
+int read8FromFile(file_t disknum){
   disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
-    handleError("readU8FromFile: No file #%d", (int)disknum);
+    handleError("readU8FromFile: No file #%d", (int)disknum.id);
     return 0;
   }
   
   if (DISK_is_binary(disk)==false){
-    handleError("read8FromFile: File #%d is not opened in binary mode", (int)disknum);
+    handleError("read8FromFile: File #%d is not opened in binary mode", (int)disknum.id);
     return 0;
   }
 
   int8_t size_chars[1] = {};
   if(DISK_read_binary(disk, size_chars, 1) !=1 ){
-    handleError("read8FromFile: unable to read from file #%d",(int)disknum);
+    handleError("read8FromFile: unable to read from file #%d",(int)disknum.id);
     return 0;
   }
 
   return size_chars[0];
 }
 
-int readU8FromFile(int64_t disknum){
+int readU8FromFile(file_t disknum){
   unsigned char chars[1];
   if(read_binary("read8FromFile", disknum, chars, 1)==false)
     return 0;
