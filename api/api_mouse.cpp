@@ -2473,7 +2473,7 @@ static int get_effect_num(struct Patch *patch, const char *fx_name){
   return -1;
 }
 
-int getFx(const char* fx_name, int tracknum, int64_t instrument_id, int blocknum, int windownum){
+int getFx(const char* fx_name, int tracknum, instrument_t instrument_id, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -2489,7 +2489,7 @@ int getFx(const char* fx_name, int tracknum, int64_t instrument_id, int blocknum
     return -1;
   }
 
-  if (instrument_id >= 0){
+  if (isLegalInstrument(instrument_id)){
     if (track->patch->instrument != get_audio_instrument()){
       RError("track->patch->instrument != get_audio_instrument()");
     } else {
@@ -2517,7 +2517,7 @@ int getFx(const char* fx_name, int tracknum, int64_t instrument_id, int blocknum
   return -2;
 }
 
-int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t instrument_id, int blocknum, int windownum){
+int addFx(float value, Place place, const char* fx_name, int tracknum, instrument_t instrument_id, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -2541,7 +2541,7 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
     return -1;
   }
 
-  if (instrument_id >= 0){
+  if (isLegalInstrument(instrument_id)){
     if (track->patch->instrument != get_audio_instrument()){
       handleError("An audio instrument is not assigned to track %d", track->l.num);
       return -1;
@@ -2600,7 +2600,7 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
   }
 }
 
-int addFxF(float value, float floatplace, const char* fx_name, int tracknum, int64_t instrument_id, int blocknum, int windownum){
+int addFxF(float value, float floatplace, const char* fx_name, int tracknum, instrument_t instrument_id, int blocknum, int windownum){
   if (floatplace < 0){
     handleError("Place can not be negative: %f", floatplace);
     return -1;
@@ -2730,21 +2730,21 @@ const char* getFxName(int fxnum, int tracknum, int blocknum, int windownum){
   return fxs->fx->name;
 }
   
-int64_t getFxInstrument(int fxnum, int tracknum, int blocknum, int windownum){
+instrument_t getFxInstrument(int fxnum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
   if (fxs==NULL)
-    return -1;
+    return createIllegalInstrument();
 
   if (wtrack->track->patch==NULL){
     R_ASSERT("wtrack->track->patch==NULL");
-    return -1;
+    return createIllegalInstrument();
   }
 
   //if (wtrack->track->patch == fxs->fx->patch)
-  //  return -1;
+  //  return createIllegalInstrument();
   
   return fxs->fx->patch->id;
 }

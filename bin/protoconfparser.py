@@ -476,8 +476,13 @@ class Proto:
                     t="PyString_FromString("
                 elif return_type=="bool":
                     t="PyBool_FromLong((long)"
-                oh.write(t+"result);\n")
-
+                    
+                if return_type=="instrument_t":
+                    oh.write(t+"result.id);\n")
+                else:
+                    oh.write(t+"result);\n")
+                
+                    
         oh.write("return resultobj;\n")
         oh.write("}\n\n")
             

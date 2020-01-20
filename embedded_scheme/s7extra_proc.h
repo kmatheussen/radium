@@ -42,7 +42,7 @@ extern "C" {
   dynvec_t s7extra_get_dynvec(s7_scheme *s7, s7_pointer vec, const char **error);
   dyn_t s7extra_get_dyn(s7_scheme *s7, s7_pointer s, const char **error);
 
-  int64_t s7extra_get_instrument(s7_scheme *s7, s7_pointer s, const char **error);
+  instrument_t s7extra_get_instrument(s7_scheme *s7, s7_pointer s, const char **error);
 
   #endif
 

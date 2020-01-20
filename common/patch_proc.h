@@ -21,8 +21,8 @@ extern LANGSPEC void PATCH_clean_unused_patches(void);
 
 extern LANGSPEC void PATCH_remove_from_instrument(struct Patch *patch);
 extern LANGSPEC void PATCH_add_to_instrument(struct Patch *patch);
-extern LANGSPEC struct Patch *PATCH_get_from_id(int64_t id);
-extern LANGSPEC int64_t PATCH_get_new_id(void);
+extern LANGSPEC struct Patch *PATCH_get_from_id(instrument_t id);
+extern LANGSPEC instrument_t PATCH_get_new_id(void);
 
 extern LANGSPEC int PATCH_get_effect_num(const struct Patch *patch, const char *effect_name, char **error_message);
 

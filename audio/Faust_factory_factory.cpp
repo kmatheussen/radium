@@ -55,12 +55,12 @@ namespace{
   };
 
   struct Request{
-    int64_t patch_id;
+    instrument_t patch_id;
     CompileOptions opts;
 
     bool please_stop;
     
-    Request(int64_t patch_id, const CompileOptions &opts)
+    Request(instrument_t patch_id, const CompileOptions &opts)
       : patch_id(patch_id)
       , opts(opts)
       , please_stop(false)
@@ -476,7 +476,7 @@ namespace{
   public:
 
 #if COMPILE_SVG_IN_PARALLEL
-    void run_svg_job(int64_t patch_id, const CompileOptions &opts, bool is_initializing) const {
+    void run_svg_job(instrument_t patch_id, const CompileOptions &opts, bool is_initializing) const {
       QString error_message;
       MyQTemporaryDir *svg_dir = create_svg(opts, error_message);
       //printf("    SVG error: -%s-\n", error_message.toUtf8().constData());
@@ -497,7 +497,7 @@ namespace{
     }
 #endif
 
-    void run_create_factory_job(struct SoundPlugin *maybe_plugin, int64_t patch_id, const CompileOptions &opts, bool is_initializing) const {
+    void run_create_factory_job(struct SoundPlugin *maybe_plugin, instrument_t patch_id, const CompileOptions &opts, bool is_initializing) const {
       FFF_Reply reply;
 
       MyQTemporaryDir *svg_dir = NULL; // only used if !COMPILE_SVG_IN_PARALLEL
@@ -594,7 +594,7 @@ namespace{
 
     }
 
-    void start_new_job(int64_t patch_id, const CompileOptions &opts) const {
+    void start_new_job(instrument_t patch_id, const CompileOptions &opts) const {
 
       //printf("           start_new_job. is_init: %d\n", false);
 
@@ -618,7 +618,7 @@ namespace{
 
       printf("         start_new_job_now. is_init: %d\n", is_initializing);
 
-      run_create_factory_job(plugin, -1, opts, is_initializing);
+      run_create_factory_job(plugin, make_instrument(-1), opts, is_initializing);
     }
 
 
@@ -661,7 +661,7 @@ namespace{
 
       while(true){
 
-        QMap<int64_t, Request*> code_requests;
+        QMap<instrument_t, Request*> code_requests;
 
         // 1. First collect compilation requests. Here we only keep the newest compilation requests for each plugin, i.e. ensure that we only compile latest version.
         do{
@@ -679,7 +679,7 @@ namespace{
         
         // 2. Then do the compilation
         
-        QMapIterator<int64_t, Request*> iterator(code_requests);
+        QMapIterator<instrument_t, Request*> iterator(code_requests);
 
         {
 #if U_MUTEX
@@ -722,7 +722,7 @@ static void init_fff(void){
 void FFF_shut_down(void){
   if (g_fff_thread.isRunning()){
     
-    Request *request = new Request(-1, CompileOptions("", "", 0, false));
+    Request *request = new Request(make_instrument(-1), CompileOptions("", "", 0, false));
     request->please_stop = true;
     
     g_queue.put(request);
@@ -748,7 +748,7 @@ llvm_dsp *FFF_get_dsp(const FFF_Reply &reply){
 }
 */
 
-static void FFF_request_reply(int64_t patch_id, const CompileOptions &opts){
+static void FFF_request_reply(instrument_t patch_id, const CompileOptions &opts){
   init_fff();
   
   Request *request = new Request(patch_id, opts);

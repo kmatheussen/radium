@@ -285,10 +285,10 @@ struct Patch *LoadPatchV1(void){
 	};
 
 	struct Patch *patch=PATCH_alloc();
-	patch->id=DC_LoadN();
+	patch->id=make_instrument(DC_LoadL());
         
-        if (disk_load_version < 0.67 && patch->id==0) // These songs only contained MIDI instruments, and the ID started at 0. id=0 is the main patch.
-          patch->id = 500;
+        if (disk_load_version < 0.67 && patch->id.id==0) // These songs only contained MIDI instruments, and the ID started at 0. id=0 is the main patch.
+          patch->id = make_instrument(500);
         
         patch->is_usable = true;
         patch->forward_events = true; // default value

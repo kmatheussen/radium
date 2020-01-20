@@ -1129,7 +1129,7 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
     case FUNC_TYPE:
       return a1.func==a2.func;
     case INSTRUMENT_TYPE:
-      return a1.instrument==a2.instrument;
+      return a1.instrument.id==a2.instrument.id;
     case BOOL_TYPE:
       return a1.bool_number==a2.bool_number;
   }
@@ -1697,7 +1697,7 @@ enum PatchWidgetSizeType{
 
 // Note that Patch objects are stored directly in undo/redo (not copied), so it must not be freed, reused for other purposes, or othervice manipulated when not available.
 struct Patch{
-  int64_t id;
+  instrument_t id;
   const char *uuid; // Not currently used for anything.
   
   bool is_usable; // If pasting a track with this patch, this flag tells whether the patch can be used on the new track.

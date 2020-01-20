@@ -340,11 +340,11 @@ static instrument_t get_instrument(s7_pointer s){
   R_ASSERT_NON_RELEASE(is_instrument(s));
                                         
   if (sizeof(instrument_t) <= sizeof(void*))
-    return (instrument_t)s7_c_object_value(s);
+    return make_instrument((int64_t)s7_c_object_value(s));
       
-  instrument_t *i = (instrument_t*)s7_c_object_value(s);
+  int64_t *i = (int64_t*)s7_c_object_value(s);
 
-  return *i;
+  return make_instrument(*i);
 }
 
 static dyn_t create_dyn_from_s7(s7_scheme *s7, s7_pointer s, bool undefinedIsError){
@@ -519,7 +519,7 @@ instrument_t s7extra_get_instrument(s7_scheme *s7, s7_pointer s, const char **er
   
   if (!is_instrument(s)){
     *error = "instrument";
-    return -1;
+    return make_instrument(-1);
   }
 
   return get_instrument(s);

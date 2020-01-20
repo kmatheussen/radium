@@ -118,7 +118,7 @@ struct ModulatorTarget{
 
     const hash_t *state = dynstate.hash;
     
-    int64_t patch_id = HASH_get_instrument(state, ":instrument-id");
+    instrument_t patch_id = HASH_get_instrument(state, ":instrument-id");
     patch = PATCH_get_from_id(patch_id);
 
     if (HASH_has_key(state, ":effect-name")){
@@ -570,7 +570,7 @@ public:
     hash_t *state = HASH_create(2);
 
     {
-      const volatile struct Patch *modulator_patch = _plugin->patch;
+      const struct Patch *modulator_patch = _plugin->patch;
       R_ASSERT_RETURN_IF_FALSE2(modulator_patch != NULL, state);
       HASH_put_instrument(state, "modulator_patch_id", modulator_patch->id);
     }
@@ -590,7 +590,7 @@ public:
     const struct Patch *modulator_patch = const_cast<const struct Patch*>(_plugin->patch);
     R_ASSERT_RETURN_IF_FALSE(modulator_patch != NULL);
     
-    int64_t patch_id = HASH_get_instrument(state, "modulator_patch_id");
+    instrument_t patch_id = HASH_get_instrument(state, "modulator_patch_id");
     R_ASSERT_RETURN_IF_FALSE(patch_id==modulator_patch->id);
 
     radium::Vector<ModulatorTarget*> *new_targets = new radium::Vector<ModulatorTarget*>;
@@ -784,9 +784,9 @@ void RT_MODULATOR_process(void){
     modulator->RT_block_process();
 }
 
-static Modulator *get_modulator(int64_t modulator_patch_id){
+static Modulator *get_modulator(instrument_t modulator_patch_id){
   for(auto *modulator : g_modulators2){
-    const volatile struct Patch *modulator_patch = modulator->_plugin->patch;
+    const struct Patch *modulator_patch = modulator->_plugin->patch;
     R_ASSERT(modulator_patch != NULL);
     if (modulator_patch_id == modulator_patch->id)
       return modulator;
@@ -813,7 +813,7 @@ bool MODULATOR_has_modulator(const struct Patch *patch, int effect_num){
 int64_t MODULATOR_get_id_from_modulator_patch(const struct Patch *patch){
   for(int64_t id : g_modulators.keys()){
     auto *modulator = g_modulators[id];
-    const volatile struct Patch *modulator_patch = modulator->_plugin->patch;
+    const struct Patch *modulator_patch = modulator->_plugin->patch;
     R_ASSERT(modulator_patch != NULL);
     if (modulator_patch == patch)
       return modulator->_id;
@@ -828,7 +828,7 @@ struct Patch *MODULATOR_get_modulator_patch(const struct Patch *patch, int effec
       printf("       FOUND target? %s. Found it: %d\n", patch->name, modulator->has_target(patch, effect_num));
     }
     if(modulator->has_target(patch, effect_num)){      
-      volatile struct Patch *modulator_patch = modulator->_plugin->patch;
+      struct Patch *modulator_patch = modulator->_plugin->patch;
       R_ASSERT(modulator_patch != NULL);
       return (struct Patch*)modulator_patch;
     }
@@ -871,7 +871,7 @@ void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect
   std::sort(modulators.begin(), modulators.end(), sort_modulators_by_creation_time);
 
   for(auto *modulator : modulators){
-    volatile struct Patch *patch = modulator->_plugin->patch;
+    struct Patch *patch = modulator->_plugin->patch;
     R_ASSERT(patch!=NULL);
     VECTOR_push_back(&v, talloc_format("%s: %s", patch==NULL ? "" : patch->name, MODULATOR_get_description(modulator->_id)));
   }
@@ -893,8 +893,8 @@ void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect
 
                 //struct Patch *curr_patch = PATCH_get_current();
 
-                int64_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0, false);
-                if (instrument_id==-1)
+                instrument_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0, false);
+                if (instrument_id.id==-1)
                   return;
 
                 //if (curr_patch != NULL)
@@ -981,12 +981,12 @@ const char *MODULATOR_get_description(int64_t modulator_id){
   return modulator->_generator->_name;
 }
 
-bool MODULATOR_is_modulator(int64_t modulator_patch_id){
+bool MODULATOR_is_modulator(instrument_t modulator_patch_id){
   return get_modulator(modulator_patch_id) != NULL;
 }
 
 // Note: The result is sent directly to the API
-dynvec_t MODULATOR_get_modulator_targets(int64_t modulator_patch_id){
+dynvec_t MODULATOR_get_modulator_targets(instrument_t modulator_patch_id){
   Modulator *modulator = get_modulator(modulator_patch_id);
   if (modulator==NULL)
     return *g_empty_dynvec.array;
@@ -1007,9 +1007,9 @@ dyn_t MODULATORS_get_connections_state(void){
   return DYN_create_array(vec);
 }
 
-static Modulator *get_modulator_from_patch_id(int64_t patch_id){
+static Modulator *get_modulator_from_patch_id(instrument_t patch_id){
   for(auto *modulator : g_modulators2){
-    const volatile struct Patch *modulator_patch = modulator->_plugin->patch;
+    const struct Patch *modulator_patch = modulator->_plugin->patch;
     if (modulator_patch==NULL)
       R_ASSERT(false);
     else if (modulator_patch->id==patch_id)
@@ -1026,11 +1026,11 @@ void MODULATORS_apply_connections_state(const dyn_t dynstate){
   for(const dyn_t modulator_state : dynstate.array){
     R_ASSERT_RETURN_IF_FALSE(modulator_state.type==HASH_TYPE);
 
-    int64_t patch_id = HASH_get_instrument(modulator_state.hash, "modulator_patch_id");
+    instrument_t patch_id = HASH_get_instrument(modulator_state.hash, "modulator_patch_id");
     Modulator *modulator = get_modulator_from_patch_id(patch_id);
     R_ASSERT_RETURN_IF_FALSE(modulator!=NULL);
 
-    printf("  patch_id: %d\n", (int)patch_id);
+    printf("  patch_id: %d\n", (int)patch_id.id);
     
     modulator->apply_state(modulator_state.hash);
   }
@@ -1432,7 +1432,7 @@ static int RT_get_audio_tail_length(const struct SoundPlugin *plugin){
 }
 
 static bool gui_is_visible(struct SoundPlugin *plugin){
-  const volatile struct Patch *modulator_patch = plugin->patch;
+  const struct Patch *modulator_patch = plugin->patch;
   if(modulator_patch==NULL){
     R_ASSERT_NON_RELEASE(false);
     return false;
@@ -1447,7 +1447,7 @@ static bool gui_is_visible(struct SoundPlugin *plugin){
 }
 
 static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
-  const volatile struct Patch *modulator_patch = plugin->patch;
+  const struct Patch *modulator_patch = plugin->patch;
   if(modulator_patch==NULL){
     R_ASSERT_NON_RELEASE(false);
     return false;

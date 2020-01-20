@@ -75,7 +75,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 // A Major cleanup is needed for the patch/instrument system.
 // (introduction of id numbers helped though)
 
-static QHash<int64_t, struct Patch*> g_patchhash;
+static QHash<instrument_t, struct Patch*> g_patchhash;
 
 static struct Patch *g_main_pipe_patch = NULL;
 static struct Patch *g_curr_patch = NULL;
@@ -183,7 +183,7 @@ static vector_t *get_all_patches(void){
   return v;
 }
 
-int64_t PATCH_get_new_id(void){
+instrument_t PATCH_get_new_id(void){
   static int64_t id = 1; // Start at 1. id=0 is the main pipe, and we don't use PATCH_get_new_id() when creating the main pipe.
   id++;
   
@@ -192,14 +192,14 @@ int64_t PATCH_get_new_id(void){
   int i;
   for(i=0;i<v->num_elements;i++){
     struct Patch *patch=(struct Patch*)v->elements[i];
-    if(patch->id>=id)
-      id=patch->id+1;
+    if(patch->id.id >= id)
+      id = patch->id.id + 1;
   }
 
-  return id;
+  return make_instrument(id);
 }
 
-struct Patch *PATCH_get_from_id(int64_t id){
+struct Patch *PATCH_get_from_id(instrument_t id){
   //static int num_calls = 0;printf("        num_calls: %d\n",num_calls++);
 
 #if 1
@@ -210,7 +210,7 @@ struct Patch *PATCH_get_from_id(int64_t id){
   int i;
   for(i=0;i<v->num_elements;i++){
     struct Patch *patch=(struct Patch*)v->elements[i];
-    if(patch->id==id){
+    if(patch->id.id==id.id){
       g_patchhash[id] = patch;
       return patch;
     }
@@ -303,7 +303,7 @@ struct Patch *PATCH_get_current(void){
 
 int PATCH_get_effect_num(const struct Patch *patch, const char *effect_name, char **error_message){
   if (patch->patchdata==NULL){
-    char *message = talloc_format("Instrument #%d (%s) has been closed", (int)patch->id, patch->name);
+    char *message = talloc_format("Instrument #%d (%s) has been closed", (int)patch->id.id, patch->name);
     if (error_message != NULL)
       *error_message = message;
     else
@@ -327,7 +327,7 @@ int PATCH_get_effect_num(const struct Patch *patch, const char *effect_name, cha
 
 
   if (ret==-1 && error_message!=NULL && (*error_message)==NULL){
-    *error_message = talloc_format("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)patch->id, patch->name);
+    *error_message = talloc_format("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)patch->id.id, patch->name);
   }
 
   return ret;
@@ -418,12 +418,12 @@ void PATCH_set_name(struct Patch *patch, const char *name){
     set_symbol_name(patch->midi_learn_port_name, new_name);
 
   printf("       PATCH set name\n");
-  remakeMixerStrips(-1);
+  remakeMixerStrips(make_instrument(-1));
 }
 
 static struct Patch *create_new_patch(const char *name, bool is_main_pipe){
   struct Patch *patch = PATCH_alloc();
-  patch->id = is_main_pipe ? 0 : PATCH_get_new_id();
+  patch->id = is_main_pipe ? make_instrument(0) : PATCH_get_new_id();
   patch->forward_events = true;
 
   PATCH_set_name(patch, name);
@@ -534,7 +534,7 @@ hash_t *PATCHES_get_state(const vector_t *patches, bool put_in_array){
     if (put_in_array)
       HASH_put_hash_at(patches_state, "patch", i, patch_state);
     else
-      HASH_put_hash(patches_state, talloc_format("%" PRId64, patch->id), patch_state);
+      HASH_put_hash(patches_state, talloc_format("%" PRId64, patch->id.id), patch_state);
   }
 
   if (!put_in_array)
@@ -873,10 +873,10 @@ void PATCH_force_make_inactive(struct Patch *patch){
 }
   
 void PATCH_replace_main_pipe(struct Patch *new_main_pipe){
-  PATCH_force_make_inactive(getPatchFromNum(0));
+  PATCH_force_make_inactive(get_main_pipe_patch());
 
   PATCH_remove_from_instrument(new_main_pipe);
-  new_main_pipe->id = 0;
+  new_main_pipe->id = make_instrument(0);
   PATCH_add_to_instrument(new_main_pipe);
 }
 
@@ -2159,7 +2159,7 @@ void PATCH_stop_all_notes(struct Patch *patch){
   
 
   if (PLAYER_current_thread_has_lock())
-    PLAYER_maybe_pause_lock_a_little_bit((int)patch->id);
+    PLAYER_maybe_pause_lock_a_little_bit((int)patch->id.id);
   else
     printf("STOP ALL NOTES on \"%s\".\n", patch->name);
   

@@ -61,7 +61,7 @@ static void save_track_patches(const struct Tracks *track){
 
 static void remove_all_patches_and_fxs_from_track(struct Tracks *track){
   if (track->patch != NULL)
-    track->patch->id = -1;
+    track->patch->id = make_instrument(-1);
   
   vector_t fxs = {0};
   track->fxs = fxs;

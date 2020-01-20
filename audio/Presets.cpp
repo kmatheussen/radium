@@ -199,7 +199,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
   return state;
 }
 
-static int64_t PRESET_load_multipreset(hash_t *state, const char *name, bool inc_usage_number, bool set_as_current, float x, float y){
+static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, bool inc_usage_number, bool set_as_current, float x, float y){
 
   struct Patch *first_patch = NULL;
   vector_t patches = {};
@@ -233,15 +233,15 @@ static int64_t PRESET_load_multipreset(hash_t *state, const char *name, bool inc
   R_ASSERT(first_patch != NULL);
   
   if (first_patch==NULL)
-    return -1;
+    return createIllegalInstrument();
   else
     return first_patch->id;
 }
 
-static int64_t PRESET_load_singlepreset(hash_t *state, const_char *name, bool inc_usage_number, bool set_as_current, float x, float y){
+static instrument_t PRESET_load_singlepreset(hash_t *state, const_char *name, bool inc_usage_number, bool set_as_current, float x, float y){
   struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state, set_as_current, x, y);
   if (patch==NULL)
-    return -1;
+    return createIllegalInstrument();
 
   if (inc_usage_number){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
@@ -251,7 +251,7 @@ static int64_t PRESET_load_singlepreset(hash_t *state, const_char *name, bool in
   return patch->id;
 }
 
-static int64_t insert_preset_into_program(hash_t *state, const_char *name, bool inc_usage_number, bool set_as_current, float x, float y){
+static instrument_t insert_preset_into_program(hash_t *state, const_char *name, bool inc_usage_number, bool set_as_current, float x, float y){
   bool is_multipreset = HASH_has_key(state, "multipreset_presets") && HASH_get_bool(state, "multipreset_presets");
   
   if (is_multipreset)
@@ -264,7 +264,7 @@ static int64_t insert_preset_into_program(hash_t *state, const_char *name, bool 
 //
 // A less confusing name could perhaps be PRESET_add_instrument
 //
-int64_t PRESET_load(const wchar_t *wfilename, const_char *patchname, bool inc_usage_number, bool set_as_current, float x, float y) {
+instrument_t PRESET_load(const wchar_t *wfilename, const_char *patchname, bool inc_usage_number, bool set_as_current, float x, float y) {
   if (patchname!=NULL && strlen(patchname)==0)
     patchname = NULL;
 
@@ -276,18 +276,18 @@ int64_t PRESET_load(const wchar_t *wfilename, const_char *patchname, bool inc_us
   
   hash_t *state = get_preset_state_from_filename(filename);
   if (state==NULL)
-    return -1;
+    return createIllegalInstrument();
   
   PRESET_set_last_used_filename(filename);
 
   return insert_preset_into_program(state, patchname, inc_usage_number, set_as_current, x, y);
 }
 
-int64_t PRESET_paste(float x, float y){
+instrument_t PRESET_paste(float x, float y){
   if (g_preset_clipboard != NULL)
     return insert_preset_into_program(g_preset_clipboard, NULL, true, true, x, y);
   else
-    return -1;
+    return make_instrument(-1);
 }
 
 bool PRESET_has_copy(void){

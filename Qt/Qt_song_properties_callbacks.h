@@ -94,7 +94,7 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
       return;
 
     struct SoundPlugin *plugin = get_main_pipe();
-    auto *patch = plugin->patch;
+    struct Patch *patch = plugin->patch;
 
     const_char *description = getAudioInstrumentDescription(toBase64(""), toBase64("Pipe"), toBase64(num_channels==2 ? "Pipe" : "Pipe8"));
 

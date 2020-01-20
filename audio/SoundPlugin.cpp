@@ -122,10 +122,10 @@ struct SoundPluginEffectMidiLearn final : MidiLearn {
     effect_num = HASH_get_int32(state, "SoundPluginEffectMidiLearn::effect_num");
   }
 
-  int64_t RT_get_instrument_id(void) override {
-    volatile struct Patch *patch = plugin->patch;
+  instrument_t RT_get_instrument_id(void) override {
+    struct Patch *patch = plugin->patch;
     if (patch==NULL)
-      return -2;
+      return make_instrument(-2);
     else
       return patch->id;
   }
@@ -1238,7 +1238,7 @@ static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFor
     float old_value = safe_float_read(&plugin->bus_volume[busnum]);       \
     if(old_value != store_value_native){                                \
       safe_float_write(&plugin->bus_volume[busnum], store_value_native); \
-      volatile struct Patch *patch = plugin->patch;                     \
+      struct Patch *patch = plugin->patch;                     \
       update_instrument_gui(const_cast<struct Patch*>(patch));          \
     }                                                                   \
   }                                                                     \
@@ -1326,7 +1326,7 @@ void PLUGIN_call_me_before_starting_to_play_song_START(SoundPlugin *plugin){
 
 namespace{
   struct EffectUndoData{
-    int64_t patch_id;
+    instrument_t patch_id;
     //int undo_generation; // Used for corner cases. Probably not important. We have patch_id, which we use to determine if the plugin still exists, and that's most important.
     int effect_num;
     float effect_value;
@@ -1335,7 +1335,7 @@ namespace{
 
 static boost::lockfree::queue<EffectUndoData, boost::lockfree::capacity<8000> > g_effect_undo_data_buffer;
 
-static void add_eud_undo(QVector<EffectUndoData> &s_euds, QHash<int64_t, QSet<int>> &s_stored_effect_nums, double curr_time, double &s_last_time, int &s_last_undo_num){
+static void add_eud_undo(QVector<EffectUndoData> &s_euds, QHash<instrument_t, QSet<int>> &s_stored_effect_nums, double curr_time, double &s_last_time, int &s_last_undo_num){
   {
     radium::ScopedUndo scoped_undo;
     
@@ -1371,7 +1371,7 @@ void PLUGIN_call_me_very_often_from_main_thread(void){
   static int s_last_undo_num = -1;
   
   static QVector<EffectUndoData> s_euds;
-  static QHash<int64_t, QSet<int>> s_stored_effect_nums;
+  static QHash<instrument_t, QSet<int>> s_stored_effect_nums;
 
   double curr_time = TIME_get_ms();
   //printf("curr_time: %f\n", curr_time/1000.0);
@@ -1447,7 +1447,7 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
     if (make_undo) {
       float old_native_value = safe_float_read(&plugin->stored_effect_values_native[effect_num]);
       if (old_native_value != native_value) {
-        volatile struct Patch *patch = plugin->patch;
+        struct Patch *patch = plugin->patch;
         if (patch != NULL){
           EffectUndoData eud;
           eud.patch_id = patch->id;
@@ -1486,7 +1486,7 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
   if (update_instrument_widget){
     ATOMIC_SET(plugin->effect_num_to_show_because_it_was_used_externally, effect_num); // Used by the plugin widget to know current tab num.
 
-    volatile struct Patch *patch = plugin->patch;
+    struct Patch *patch = plugin->patch;
     if (patch != NULL)
       ATOMIC_SET(patch->widget_needs_to_be_updated, true);
   }
@@ -2939,7 +2939,7 @@ void radium::SoundPluginEffectMidiLearn::RT_callback(float val) {
   } else
     PLUGIN_set_effect_value2(plugin, -1, effect_num, val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED, true);
   
-  volatile struct Patch *patch = plugin->patch;
+  struct Patch *patch = plugin->patch;
   if (patch != NULL)
     ATOMIC_SET(patch->widget_needs_to_be_updated, true);
 }
@@ -3148,7 +3148,7 @@ bool PLUGIN_can_autobypass(SoundPlugin *plugin){
 void PLUGIN_reset(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;
 
-  volatile struct Patch *patch = plugin->patch;
+  struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
   
   if (type->num_effects==0)
@@ -3184,7 +3184,7 @@ void PLUGIN_reset(SoundPlugin *plugin){
 }
 
 void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
-  volatile struct Patch *patch = plugin->patch;
+  struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
   int system_effect = effect_num - plugin->type->num_effects;
@@ -3218,7 +3218,7 @@ void PLUGIN_random(SoundPlugin *plugin){
   const SoundPluginType *type = plugin->type;
   int i;
 
-  volatile struct Patch *patch = plugin->patch;
+  struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
   //if (type->num_effects==0)

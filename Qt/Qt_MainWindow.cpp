@@ -408,7 +408,7 @@ void handleDropEvent(QString filename, float x){
   RETURN_IF_DATA_IS_INACCESSIBLE();
 
   int tracknum = get_track_from_x(x);
-  int64_t instrument_id = -1;
+  instrument_t instrument_id = make_instrument(-1);
 
   UNDO_OPEN();{
     
@@ -433,7 +433,7 @@ void handleDropEvent(QString filename, float x){
         SAMPLEREQUESTER_set_path(w, QFileInfo(filename).absoluteDir().absolutePath());
     }
     
-    if (instrument_id != -1) {
+    if (instrument_id.id != -1) {
       autopositionInstrument(instrument_id);
       connectAudioInstrumentToMainPipe(instrument_id);
       

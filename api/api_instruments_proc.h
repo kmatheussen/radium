@@ -1,4 +1,4 @@
-extern LANGSPEC void API_setInstrumentColor(const char *colorname, int64_t instrument_id, bool create_undo); // same as setInstrumentColor(colorname, instrument_id, true)
+extern LANGSPEC void API_setInstrumentColor(const char *colorname, instrument_t instrument_id, bool create_undo); // same as setInstrumentColor(colorname, instrument_id, true)
   
 extern LANGSPEC void API_instruments_call_regularly(void);
 

@@ -444,7 +444,7 @@ void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch, bool s
     
     // Schedule this happen a little bit later since GFX_PP_Update might do all sorts of things, which might not work very well before the instrument is finished initializing.
     
-    int64_t patch_id = patch->id;
+    instrument_t patch_id = patch->id;
     QTimer::singleShot(g_set_current_delay + 3,[patch_id]{
         struct Patch *patch = PATCH_get_from_id(patch_id);
         if(patch != NULL)
