@@ -1285,7 +1285,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
     RememberGeometry remember_geometry;
 
-    QSet<int64_t> _child_plugin_gui_patch_ids; // Plugins that have been opened with this GUI as parent. We identify the plugin by using Patch::id since Patch::id requires less bookkeeping (no need to do anything when patch or plugin is deleted).
+    QSet<instrument_t> _child_plugin_gui_patch_ids; // Plugins that have been opened with this GUI as parent. We identify the plugin by using Patch::id since Patch::id requires less bookkeeping (no need to do anything when patch or plugin is deleted).
     
     bool is_full_screen(void) const {
       //return _is_full_screen;
@@ -1378,9 +1378,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       // Close plugin GUI children
       {
-        QList<int64_t> patch_ids = _child_plugin_gui_patch_ids.toList(); // Work on a copy since elements are removed while iterating.
+        QList<instrument_t> patch_ids = _child_plugin_gui_patch_ids.toList(); // Work on a copy since elements are removed while iterating.
         
-        for(int64_t patch_id : patch_ids){
+        for(instrument_t patch_id : patch_ids){
         
           struct Patch *patch = PATCH_get_from_id(patch_id);
           if (patch->instrument==get_audio_instrument()){
@@ -7067,10 +7067,10 @@ int64_t gui_verticalAudioMeter(instrument_t instrument_id, dyn_t note_event_inst
     return -1;
   }
 
-  int64_t note_event_instrument_id = -3;
+  instrument_t note_event_instrument_id = make_instrument(-3);
   if (note_event_instrument_id2.type==INT_TYPE){
-    note_event_instrument_id = note_event_instrument_id2.int_number;
-    if (note_event_instrument_id < -2 || note_event_instrument_id >= 0){
+    note_event_instrument_id = make_instrument(note_event_instrument_id2.int_number);
+    if (note_event_instrument_id.id < -2 || note_event_instrument_id.id >= 0){
       handleError("gui_verticalAudioMeter: Argument note_event_instrument_id must either be a valid instrument, -1, or -2.");
       return -1;
     }
@@ -7081,7 +7081,7 @@ int64_t gui_verticalAudioMeter(instrument_t instrument_id, dyn_t note_event_inst
     return -1;
   }
   
-  struct Patch *note_event_patch = note_event_instrument_id==-2 ? NULL : note_event_instrument_id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
+  struct Patch *note_event_patch = note_event_instrument_id.id==-2 ? NULL : note_event_instrument_id.id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
 
   return (new VerticalAudioMeter(patch, note_event_patch))->get_gui_num();
 }
@@ -7095,10 +7095,10 @@ int64_t gui_addVerticalAudioMeter(int64_t guinum, instrument_t instrument_id, do
   if(patch==NULL)
     return -1;
 
-  int64_t note_event_instrument_id = -3;
+  instrument_t note_event_instrument_id = make_instrument(-3);
   if (note_event_instrument_id2.type==INT_TYPE){
-    note_event_instrument_id = note_event_instrument_id2.int_number;
-    if (note_event_instrument_id < -2 || note_event_instrument_id >= 0){
+    note_event_instrument_id = make_instrument(note_event_instrument_id2.int_number);
+    if (note_event_instrument_id.id < -2 || note_event_instrument_id.id >= 0){
       handleError("gui_addVerticalAudioMeter: Argument note_event_instrument_id must either be a valid instrument, -1, or -2.");
       return -1;
     }
@@ -7109,7 +7109,7 @@ int64_t gui_addVerticalAudioMeter(int64_t guinum, instrument_t instrument_id, do
     return -1;
   }
 
-  struct Patch *note_event_patch = note_event_instrument_id==-2 ? NULL : note_event_instrument_id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
+  struct Patch *note_event_patch = note_event_instrument_id.id==-2 ? NULL : note_event_instrument_id.id==-1 ? patch : getAudioPatchFromNum(note_event_instrument_id);
   
   // We get garbage graphics when the coordinates are not integers. Don't bother to investigate why.
   x1 = floor(x1);

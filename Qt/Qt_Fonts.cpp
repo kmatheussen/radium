@@ -252,7 +252,7 @@ void GFX_SetSystemFont(QFont font){
     //widget->update();
   }
 
-  remakeMixerStrips(-1);
+  remakeMixerStrips(make_instrument(-1));
 
   S7CALL2(void_void,"FROM_C-minimize-lowertab");
 }

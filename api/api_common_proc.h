@@ -137,8 +137,8 @@ extern struct BPMs *getBPMFromNum(int windownum,int blocknum,int bpmnum);
 extern struct FXs *getFXsFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int fxnum);
 extern struct FXs *getFXsFromNum(int windownum,int blocknum,int tracknum,int fxnum);
 
-extern struct Patch *getPatchFromNum(int64_t instrument_id);
-extern struct Patch *getAudioPatchFromNum(int64_t instrument_id);
+extern struct Patch *getPatchFromNum(instrument_t instrument_id);
+extern struct Patch *getAudioPatchFromNum(instrument_t instrument_id);
 
 extern struct SeqTrack *getSeqtrackFromNum_R0(int seqtracknum);
 extern struct SeqTrack *getSeqtrackFromNum(int seqtracknum);

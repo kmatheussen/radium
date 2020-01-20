@@ -26,21 +26,27 @@ exec guile -e main -s $0 $*
       (error (<-> "unknown type " c-type))))
 
 (define (get-s7-types-code type c-type)
-  (<-> "#pragma once\n"
-       "extern int g_" type "_type_tag;\n"
-       "typedef " c-type " " type "_t;\n"))
+  (<-> "extern int g_" type "_type_tag;\n"
+       "typedef struct { " c-type " id; } " type "_t;\n"
+       "static inline " type "_t make_" type "(" c-type " id){" type "_t ret = {.id=id}; return ret;}\n"
+       "#ifdef __cplusplus\n"
+       "static inline bool operator==(const " type "_t &a, const " type "_t &b){ return a.id==b.id; }\n"
+       "static inline unsigned int qHash(" type "_t a){ return a.id; }\n"
+       "static inline bool operator<(const " type "_t &e1, const " type "_t &e2){ return e1.id < e2.id; }\n"
+       "#endif\n"
+       ))
           
 (define (get-s7-type-c-functions-code type c-type)
   (<->
    "int g_" type "_type_tag;\n"
    "\n"
-   "s7_pointer s7extra_make_" type "(s7_scheme *s7, " c-type " val){\n"
+   "s7_pointer s7extra_make_" type "(s7_scheme *s7, " type "_t val){\n"
    "\n"
    "  if (sizeof(" c-type ") <= sizeof(void*))\n"
-   "    return s7_make_c_object(s7, g_" type "_type_tag, (void*)val);\n"
+   "    return s7_make_c_object(s7, g_" type "_type_tag, (void*)(val.id));\n"
    "\n"
    "  " c-type " *o = (" c-type "*)malloc(sizeof(" c-type "));\n"
-   "  *o = val;\n"
+   "  *o = val.id;\n"
    "\n"
    "  return(s7_make_c_object(s7, g_" type "_type_tag, (void *)o));\n"
    "}\n"
@@ -94,6 +100,7 @@ exec guile -e main -s $0 $*
 
 (define (gen-s7_types)
   (let ((port (open-output-file "api/s7_types.h")))
+    (display "#pragma once\n" port)       
     (for-each (lambda (gakk)
                 (display (apply get-s7-types-code gakk) port))
               *radium-s7-types*)

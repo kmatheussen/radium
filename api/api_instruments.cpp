@@ -234,7 +234,7 @@ void saveInstrumentPreset(dynvec_t instrument_ids, int64_t parentgui){
   PRESET_save(&patches, false, parentgui);
 }
 
-int64_t getInstrumentForTrack(int tracknum, int blocknum, int windownum){
+instrument_t getInstrumentForTrack(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
   struct WBlocks *wblock;
@@ -247,12 +247,12 @@ int64_t getInstrumentForTrack(int tracknum, int blocknum, int windownum){
 	tracknum
 	);
 
-  if(wtrack==NULL) return -1;
+  if(wtrack==NULL) return createIllegalInstrument();
 
   struct Patch *patch = wtrack->track->patch;
 
   if (patch==NULL)
-    return -2;
+    return make_instrument(-2);
 
   return patch->id;
 }
@@ -281,11 +281,11 @@ bool hasInstrumentForTrack(int tracknum, int blocknum, int windownum){
 }
 
 bool isLegalInstrument(instrument_t instrument_id){
-  return instrument_id >= 0;
+  return instrument_id.id >= 0;
 }
   
 instrument_t createIllegalInstrument(void){
-  return -1;
+  return make_instrument(-1);
 }
   
 void setInstrumentForTrack(instrument_t instrument_id, int tracknum, int blocknum, int windownum){
@@ -337,12 +337,12 @@ void setInstrumentForTrack(instrument_t instrument_id, int tracknum, int blocknu
   (*new_patch->instrument->PP_Update)(new_patch->instrument,new_patch,false);
 }
 
-void replaceUseOfInstrument(int64_t old_instrument_id, int64_t new_instrument_id){
+void replaceUseOfInstrument(instrument_t old_instrument_id, instrument_t new_instrument_id){
   struct Patch *old_patch = getPatchFromNum(old_instrument_id);
   if (old_patch==NULL)
     return;
   
-  struct Patch *new_patch = new_instrument_id==-1 ? NULL : getPatchFromNum(new_instrument_id);
+  struct Patch *new_patch = new_instrument_id.id==-1 ? NULL : getPatchFromNum(new_instrument_id);
   if (new_patch==old_patch)
     return;
 
@@ -412,7 +412,7 @@ void setSendMidiInputToCurrentInstrument(bool doit){
 }
 
 
-int64_t createMIDIInstrument(const_char *name) {
+instrument_t createMIDIInstrument(const_char *name) {
   struct Patch *patch = PATCH_create_midi(name);
   GFX_PP_Update(patch,false);
   return patch->id;
@@ -427,7 +427,7 @@ instrument_t createAudioInstrument(const_char *type_name, const_char *plugin_nam
 
   struct Patch *patch = PATCH_create_audio(type_name, plugin_name, name, NULL, set_as_current, x, y);
   if (patch==NULL)
-    return -1;
+    return createIllegalInstrument();
 
   //MW_move_chip_to_slot(patch, x, y); // Ensure it is placed in a slot. (x and y comes from mouse positions, which are not necessarily slotted). <--- Changed. x and y must be slotted before calling this function.
   
@@ -439,7 +439,7 @@ instrument_t createAudioInstrument(const_char *type_name, const_char *plugin_nam
   return patch->id;
 }
 
-int64_t createAudioInstrumentFromPreset(const char *filename, const_char *name, float x, float y, bool set_as_current) {
+instrument_t createAudioInstrumentFromPreset(const char *filename, const_char *name, float x, float y, bool set_as_current) {
   return PRESET_load(STRING_create(filename), name, false, set_as_current, x, y);
 }
 
@@ -458,7 +458,7 @@ static bool get_type_name_from_description(const char *instrument_description, c
       char c = descr[sep_pos];
       if(c==0){
         handleError("Illegal instrument_description: %s (missing colon separator)",instrument_description);
-        return -1;
+        return false;
       }
       if (c==':'){
         sep_poss[sep_n] = sep_pos;
@@ -480,9 +480,9 @@ static bool get_type_name_from_description(const char *instrument_description, c
   return false;
 }
   
-int64_t createAudioInstrumentFromDescription(const char *instrument_description, const_char *name, float x, float y, bool set_as_current){
+instrument_t createAudioInstrumentFromDescription(const char *instrument_description, const_char *name, float x, float y, bool set_as_current){
   if (strlen(instrument_description)==0)
-    return -1;
+    return createIllegalInstrument();
 
   if (name!=NULL && strlen(name)==0)
     name = NULL;
@@ -514,21 +514,21 @@ int64_t createAudioInstrumentFromDescription(const char *instrument_description,
   } else {
 
     handleError("Illegal instrument_description: %s (string doesn't start with '1', '2' or '3')",instrument_description);
-    return -1;
+    return createIllegalInstrument();
 
   }
 }
 
-int64_t cloneAudioInstrument(instrument_t instrument_id, float x, float y, bool set_as_current){
+instrument_t cloneAudioInstrument(instrument_t instrument_id, float x, float y, bool set_as_current){
   struct Patch *old_patch = getAudioPatchFromNum(instrument_id);
   if(old_patch==NULL)
-    return -1;
+    return createIllegalInstrument();
   
   hash_t *state = PATCH_get_state(old_patch);
 
   struct Patch *new_patch = PATCH_create_audio(NULL, NULL, talloc_format("Clone of %s",old_patch->name), state, set_as_current, x, y);
   if (new_patch==NULL)
-    return -1;
+    return createIllegalInstrument();
 
   return new_patch->id;
 }
@@ -638,12 +638,12 @@ void setInstrumentSample(instrument_t instrument_id, const_char *filename){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("setInstrumentSample: Instrument #%d has been closed", (int)instrument_id);
+    handleError("setInstrumentSample: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
   if (strcmp(plugin->type->type_name, "Sample Player")) {
-    handleError("setInstrumentSample: instrument %d is not a Sample Player", (int)instrument_id);
+    handleError("setInstrumentSample: instrument %d is not a Sample Player", (int)instrument_id.id);
     return;
   }
 
@@ -659,12 +659,12 @@ void setRandomInstrumentSample(instrument_t instrument_id, const_char *path){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("setRandomInstrumentSample: Instrument #%d has been closed", (int)instrument_id);
+    handleError("setRandomInstrumentSample: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
   if (strcmp(plugin->type->type_name, "Sample Player")) {
-    handleError("setRandomInstrumentSample: instrument %d is not a Sample Player", (int)instrument_id);
+    handleError("setRandomInstrumentSample: instrument %d is not a Sample Player", (int)instrument_id.id);
     return;
   }
 
@@ -687,12 +687,12 @@ void setInstrumentLoopData(instrument_t instrument_id, int64_t start, int64_t le
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("setInstrumentLoopData: Instrument #%d has been closed", (int)instrument_id);
+    handleError("setInstrumentLoopData: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
   if (strcmp(plugin->type->type_name, "Sample Player")) {
-    handleError("setInstrumentLoopData: instrument %d is not a Sample Player", (int)instrument_id);
+    handleError("setInstrumentLoopData: instrument %d is not a Sample Player", (int)instrument_id.id);
     return;
   }
 
@@ -766,7 +766,7 @@ void API_setInstrumentColor(const_char *colorname, instrument_t instrument_id, b
   if (patch->instrument==get_audio_instrument()){
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     if (plugin==NULL){
-      handleError("setInstrumentColor: Instrument #%d has been closed", (int)instrument_id);
+      handleError("setInstrumentColor: Instrument #%d has been closed", (int)instrument_id.id);
       return;
     }
     CHIP_update(plugin);
@@ -811,7 +811,7 @@ bool instrumentIsImplicitlyMuted(instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("instrumentIsImplicitlyMuted: Instrument #%d has been closed", (int)instrument_id);
+    handleError("instrumentIsImplicitlyMuted: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
 
@@ -825,7 +825,7 @@ void setInstrumentIsImplicitlyMuted(bool doit, instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("setInstrumentIsImplicitlyMuted: Instrument #%d has been closed", (int)instrument_id);
+    handleError("setInstrumentIsImplicitlyMuted: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
@@ -844,7 +844,7 @@ bool instrumentIsImplicitlySoloed(instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("instrumentIsImplicitlySoloed: Instrument #%d has been closed", (int)instrument_id);
+    handleError("instrumentIsImplicitlySoloed: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
 
@@ -858,7 +858,7 @@ void setInstrumentIsImplicitlySoloed(bool doit, instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("setInstrumentIsImplicitlySoloed: Instrument #%d has been closed", (int)instrument_id);
+    handleError("setInstrumentIsImplicitlySoloed: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
@@ -879,7 +879,7 @@ float getInstrumentEffect(instrument_t instrument_id, const_char* effect_name){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("getInstrumentEffect: Instrument #%d has been closed", (int)instrument_id);
+    handleError("getInstrumentEffect: Instrument #%d has been closed", (int)instrument_id.id);
     return 0.0;
   }
 
@@ -893,7 +893,7 @@ float getNativeInstrumentEffect(instrument_t instrument_id, const_char* effect_n
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("getNativeInstrumentEffect: Instrument #%d has been closed", (int)instrument_id);
+    handleError("getNativeInstrumentEffect: Instrument #%d has been closed", (int)instrument_id.id);
     return 0.0;
   }
 
@@ -907,7 +907,7 @@ float getStoredInstrumentEffect(instrument_t instrument_id, const_char* effect_n
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("getStoredInstrumentEffect: Instrument #%d has been closed", (int)instrument_id);
+    handleError("getStoredInstrumentEffect: Instrument #%d has been closed", (int)instrument_id.id);
     return 0.0;
   }
 
@@ -929,7 +929,7 @@ float getDefaultInstrumentEffect(instrument_t instrument_id, const_char* effect_
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("getDefaultInstrumentEffect: Instrument #%d has been closed", (int)instrument_id);
+    handleError("getDefaultInstrumentEffect: Instrument #%d has been closed", (int)instrument_id.id);
     return 0.0;
   }
 
@@ -959,13 +959,13 @@ void setInstrumentEffect(instrument_t instrument_id, const char *effect_name, fl
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("setInstrumentEffect: Instrument #%d has been closed", (int)instrument_id);
+    handleError("setInstrumentEffect: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
   /*
   if (strcmp(plugin->type->type_name, "Sample Player")) {
-    handleError("instrument %d is not a Sample Player plugin", (int)instrument_id);
+    handleError("instrument %d is not a Sample Player plugin", (int)instrument_id.id);
     return;
   }
   */
@@ -987,7 +987,7 @@ void resetInstrumentEffect(instrument_t instrument_id, const char *effect_name){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("resetInstrumentEffect: Instrument #%d has been closed", (int)instrument_id);
+    handleError("resetInstrumentEffect: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
@@ -1007,12 +1007,12 @@ void deletePdController(instrument_t instrument_id, const char *effect_name){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("deletePdController: Instrument #%d has been closed", (int)instrument_id);
+    handleError("deletePdController: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
   if (strcmp(plugin->type->type_name, "Pd")){
-    handleError("deletePdController: Instrument #%d is not a Pd instrument: \"%s\"", (int)instrument_id, plugin->type->type_name);
+    handleError("deletePdController: Instrument #%d is not a Pd instrument: \"%s\"", (int)instrument_id.id, plugin->type->type_name);
     return;
   }
   
@@ -1030,7 +1030,7 @@ const_char* getInstrumentEffectColor(instrument_t instrument_id, const_char* eff
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("getInstrumentEffectColor: Instrument #%d has been closed", (int)instrument_id);
+    handleError("getInstrumentEffectColor: Instrument #%d has been closed", (int)instrument_id.id);
     return "";
   }
 
@@ -1136,7 +1136,7 @@ bool instrumentEffectHasMidiLearn(instrument_t instrument_id, const_char* effect
   
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("instrumentEffectHasMidiLearn: Instrument #%d has been closed", (int)instrument_id);
+    handleError("instrumentEffectHasMidiLearn: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
 
@@ -1154,7 +1154,7 @@ void addInstrumentEffectMidiLearn(instrument_t instrument_id, const_char* effect
   
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("addInstrumentEffectMidiLearn: Instrument #%d has been closed", (int)instrument_id);
+    handleError("addInstrumentEffectMidiLearn: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
@@ -1177,7 +1177,7 @@ void removeInstrumentEffectMidiLearn(instrument_t instrument_id, const_char* eff
   
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("removeInstrumentEffectMidiLearn: Instrument #%d has been closed", (int)instrument_id);
+    handleError("removeInstrumentEffectMidiLearn: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
@@ -1202,7 +1202,7 @@ bool addAutomationToCurrentEditorTrack(instrument_t instrument_id, const_char* e
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("addAutomationToCurrentEditorTrack: Instrument #%d has been closed", (int)instrument_id);
+    handleError("addAutomationToCurrentEditorTrack: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
 
@@ -1212,9 +1212,9 @@ bool addAutomationToCurrentEditorTrack(instrument_t instrument_id, const_char* e
 
   int blocknum = currentBlock(-1);
   int tracknum = R_MAX(0, currentTrack(blocknum, -1));
-  int64_t track_instrument_id = getInstrumentForTrack(tracknum, blocknum, -1);
+  instrument_t track_instrument_id = getInstrumentForTrack(tracknum, blocknum, -1);
   
-  if (track_instrument_id < 0) {
+  if (!isLegalInstrument(track_instrument_id)) {
     
     track_instrument_id = instrument_id;
     setInstrumentForTrack(instrument_id, tracknum, blocknum, -1);
@@ -1258,7 +1258,7 @@ bool addAutomationToCurrentSequencerTrack(instrument_t instrument_id, const_char
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("addAutomationToCurrentSequencerTrack: Instrument #%d has been closed", (int)instrument_id);
+    handleError("addAutomationToCurrentSequencerTrack: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
 
@@ -1292,7 +1292,7 @@ void setInstrumentEffectChangesValueWhenPressingRandom(instrument_t instrument_i
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("setInstrumentEffectChangesValueWhenPressingRandom: Instrument #%d has been closed", (int)instrument_id);
+    handleError("setInstrumentEffectChangesValueWhenPressingRandom: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
@@ -1312,7 +1312,7 @@ bool getInstrumentEffectChangesValueWhenPressingRandom(instrument_t instrument_i
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("getInstrumentEffectChangesValueWhenPressingRandom: Instrument #%d has been closed", (int)instrument_id);
+    handleError("getInstrumentEffectChangesValueWhenPressingRandom: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
 
@@ -1330,7 +1330,7 @@ void startRecordingInstrumentAutomationInEditor(instrument_t instrument_id, cons
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("startRecordingInstrumentAutomationInEditor: Instrument #%d has been closed", (int)instrument_id);
+    handleError("startRecordingInstrumentAutomationInEditor: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
@@ -1348,7 +1348,7 @@ bool getInstrumentSolo(instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("getInstrumentSolo: Instrument #%d has been closed", (int)instrument_id);
+    handleError("getInstrumentSolo: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
   
@@ -1362,7 +1362,7 @@ void setInstrumentSolo(bool do_solo, instrument_t instrument_id){
 
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("setInstrumentSolo: Instrument #%d has been closed", (int)instrument_id);
+    handleError("setInstrumentSolo: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
@@ -1389,7 +1389,7 @@ bool getInstrumentMute(instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("getInstrumentMute: Instrument #%d has been closed", (int)instrument_id);
+    handleError("getInstrumentMute: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
   
@@ -1422,7 +1422,7 @@ bool getInstrumentBypass(instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("getInstrumentBypass: Instrument #%d has been closed", (int)instrument_id);
+    handleError("getInstrumentBypass: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
 
@@ -1498,7 +1498,7 @@ void undoInstrumentEffect(instrument_t instrument_id, const char *effect_name){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("undoInstrumentEffect: Instrument #%d (\"%s\") has been closed", (int)instrument_id, patch->name);
+    handleError("undoInstrumentEffect: Instrument #%d (\"%s\") has been closed", (int)instrument_id.id, patch->name);
     return;
   }
 
@@ -1562,10 +1562,10 @@ int getNumMIDIInstruments(void){
   return get_MIDI_instrument()->patches.num_elements;
 }
 
-int64_t getMIDIInstrumentId(int instrument_num){
+instrument_t getMIDIInstrumentId(int instrument_num){
   if (instrument_num>=getNumMIDIInstruments()){
     handleError("No instrument #%d", (int)instrument_num);
-    return -1;
+    return createIllegalInstrument();
   }
   struct Patch *patch = (struct Patch*)get_MIDI_instrument()->patches.elements[instrument_num];
   return patch->id;
@@ -1575,10 +1575,10 @@ int getNumAudioInstruments(void){
   return get_audio_instrument()->patches.num_elements;
 }
 
-int64_t getAudioInstrumentId(int instrument_num){
+instrument_t getAudioInstrumentId(int instrument_num){
   if (instrument_num>=getNumAudioInstruments()){
     handleError("No instrument #%d", (int)instrument_num);
-    return -1;
+    return createIllegalInstrument();
   }
   struct Patch *patch = (struct Patch*)get_audio_instrument()->patches.elements[instrument_num];
   return patch->id;
@@ -1590,19 +1590,19 @@ int getAudioInstrumentNum(instrument_t instrument_id){
       return iterator666;
   }END_VECTOR_FOR_EACH;
 
-  handleError("No instrument %d", (int)instrument_id);
+  handleError("No instrument %d", (int)instrument_id.id);
   return -1;
 }
 
-int64_t getAudioBusId(int bus_num){
+instrument_t getAudioBusId(int bus_num){
   if (bus_num < 0 || bus_num>=5){
     handleError("There is no bus %d", bus_num);
-    return -1;
+    return createIllegalInstrument();
   }
 
   struct Patch *patch = MIXER_get_bus(bus_num);
   if (patch==NULL)
-    return -1; // never happens
+    return createIllegalInstrument(); // never happens
   
   return patch->id;
 }
@@ -1614,7 +1614,7 @@ bool instrumentIsSeqtrackBus(instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("instrumentIsSeqtrackBus: Instrument #%d has been closed", (int)instrument_id);
+    handleError("instrumentIsSeqtrackBus: Instrument #%d has been closed", (int)instrument_id.id);
     return true;
   }
 
@@ -1764,8 +1764,8 @@ dynvec_t getExtendedSelectedInstruments(void){
 
   if (ret.num_elements==0){
 
-    int64_t curr = getCurrentInstrument();
-    if (curr >= 0)
+    instrument_t curr = getCurrentInstrument();
+    if (isLegalInstrument(curr))
       DYNVEC_push_back(&ret, DYN_create_instrument(curr));
 
   }
@@ -1793,7 +1793,7 @@ bool instrumentIsSelected(instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("instrumentIsSelected: Instrument #%d has been closed", (int)instrument_id);
+    handleError("instrumentIsSelected: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }  
 
@@ -1811,7 +1811,7 @@ void connectAudioInstrumentToMainPipe(instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("connectAudioInstrumentToMainPipe: Instrument #%d has been closed", (int)instrument_id);
+    handleError("connectAudioInstrumentToMainPipe: Instrument #%d has been closed", (int)instrument_id.id);
     return;
   }
 
@@ -1826,7 +1826,7 @@ bool autoconnectInstrument(instrument_t instrument_id, float x, float y){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("autoconnectInstrument: Instrument #%d has been closed", (int)instrument_id);
+    handleError("autoconnectInstrument: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
 
@@ -1866,14 +1866,14 @@ int getNumOutEventConnections(instrument_t instrument_id){
   return CHIP_get_num_out_econnections(patch);
 }
 
-int64_t getAudioConnectionSourceInstrument(int connectionnum, instrument_t instrument_id){
+instrument_t getAudioConnectionSourceInstrument(int connectionnum, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
-    return 0;
+    return createIllegalInstrument();
 
   struct Patch *source = CHIP_get_source(patch, connectionnum);
   if (source == NULL)
-    return 0;
+    return createIllegalInstrument();
     
   return source->id;
 }
@@ -1881,11 +1881,11 @@ int64_t getAudioConnectionSourceInstrument(int connectionnum, instrument_t instr
 instrument_t getEventConnectionSourceInstrument(int connectionnum, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
-    return 0;
+    return createIllegalInstrument();
 
   struct Patch *source = CHIP_get_esource(patch, connectionnum);
   if (source == NULL)
-    return 0;
+    return createIllegalInstrument();
     
   return source->id;
 }
@@ -1893,23 +1893,23 @@ instrument_t getEventConnectionSourceInstrument(int connectionnum, instrument_t 
 instrument_t getAudioConnectionDestInstrument(int connectionnum, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
-    return 0;
+    return createIllegalInstrument();
 
   struct Patch *dest = CHIP_get_dest(patch, connectionnum);
   if (dest == NULL)
-    return 0;
+    return createIllegalInstrument();
   
   return dest->id;
 }
 
-int64_t getEventConnectionDestInstrument(int connectionnum, instrument_t instrument_id){
+instrument_t getEventConnectionDestInstrument(int connectionnum, instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
-    return 0;
+    return createIllegalInstrument();
 
   struct Patch *dest = CHIP_get_edest(patch, connectionnum);
   if (dest == NULL)
-    return 0;
+    return createIllegalInstrument();
   
   return dest->id;
 }
@@ -1919,7 +1919,7 @@ void undoMixerConnections(void){
 }
 
 // TODO: Note: Currently never used. changeAudioConnections is used instead. TODO: If used, MW_connect should have a gain argument so that the volume is set immediately. May be used by 3rd parties though, so should probably fix this as soon as possible.
-void createAudioConnection(int64_t source_id, int64_t dest_id, float gain, int connection_type){
+void createAudioConnection(instrument_t source_id, instrument_t dest_id, float gain, int connection_type){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -1934,7 +1934,7 @@ void createAudioConnection(int64_t source_id, int64_t dest_id, float gain, int c
     setAudioConnectionGain(source_id, dest_id, gain, true);
 }
 
-void deleteAudioConnection(int64_t source_id, int64_t dest_id){
+void deleteAudioConnection(instrument_t source_id, instrument_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -1951,7 +1951,7 @@ bool changeAudioConnections(dynvec_t changes){
   return CONNECTIONS_apply_changes(changes);
 }
 
-bool hasAudioConnection(int64_t source_id, int64_t dest_id){
+bool hasAudioConnection(instrument_t source_id, instrument_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return false;
@@ -1963,7 +1963,7 @@ bool hasAudioConnection(int64_t source_id, int64_t dest_id){
   return MW_are_connected(source, dest);
 }
 
-void createEventConnection(int64_t source_id, int64_t dest_id){
+void createEventConnection(instrument_t source_id, instrument_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -1975,7 +1975,7 @@ void createEventConnection(int64_t source_id, int64_t dest_id){
   MW_econnect(source, dest); 
 }
                            
-void deleteEventConnection(int64_t source_id, int64_t dest_id){
+void deleteEventConnection(instrument_t source_id, instrument_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -1988,7 +1988,7 @@ void deleteEventConnection(int64_t source_id, int64_t dest_id){
     handleError("deleteEventConnection: Could not find event connection between \"%s\" and \"%s\"", source->name, dest->name);
 }
 
-bool canAudioConnect(int64_t source_id, int64_t dest_id){
+bool canAudioConnect(instrument_t source_id, instrument_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return false;
@@ -2000,7 +2000,7 @@ bool canAudioConnect(int64_t source_id, int64_t dest_id){
   return CONNECTION_can_connect(source, dest);
 }
 
-bool hasEventConnection(int64_t source_id, int64_t dest_id){
+bool hasEventConnection(instrument_t source_id, instrument_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return false;
@@ -2012,7 +2012,7 @@ bool hasEventConnection(int64_t source_id, int64_t dest_id){
   return MW_are_econnected(source, dest);
 }
 
-static bool get_connection_gain_enabled(const char *funcname, int64_t source_id, int64_t dest_id, float *gain, bool *is_enabled, bool show_error_if_not_connected){
+static bool get_connection_gain_enabled(const char *funcname, instrument_t source_id, instrument_t dest_id, float *gain, bool *is_enabled, bool show_error_if_not_connected){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return false;
@@ -2043,14 +2043,14 @@ static bool get_connection_gain_enabled(const char *funcname, int64_t source_id,
   
   if (error!=NULL){
     if (show_error_if_not_connected)
-      handleError("%s: Could not find audio connection between instrument %d (%s) and instrument %d (%s): %s", funcname, (int)source_id, source->name, (int)dest_id, dest->name, error);
+      handleError("%s: Could not find audio connection between instrument %d (%s) and instrument %d (%s): %s", funcname, (int)source_id.id, source->name, (int)dest_id.id, dest->name, error);
     return false;
   }
 
   return true;
 }
 
-float getAudioConnectionGain(int64_t source_id, int64_t dest_id, bool show_error_if_not_connected){
+float getAudioConnectionGain(instrument_t source_id, instrument_t dest_id, bool show_error_if_not_connected){
   float ret;
   if (get_connection_gain_enabled("getAudioConnectionGain", source_id, dest_id, &ret, NULL, show_error_if_not_connected))
     return ret;
@@ -2058,7 +2058,7 @@ float getAudioConnectionGain(int64_t source_id, int64_t dest_id, bool show_error
     return 0.0;
 }
 
-bool getConnectionEnabled(int64_t source_id, int64_t dest_id, bool show_error_if_not_connected){
+bool getConnectionEnabled(instrument_t source_id, instrument_t dest_id, bool show_error_if_not_connected){
   bool ret;
   if (get_connection_gain_enabled("getConnectioEnabled", source_id, dest_id, NULL, &ret, show_error_if_not_connected))
     return ret;
@@ -2066,7 +2066,7 @@ bool getConnectionEnabled(int64_t source_id, int64_t dest_id, bool show_error_if
     return false;
 }
 
-static void set_connection_gain_enabled(const char *funcname, int64_t source_id, int64_t dest_id, const float *gain, const bool *is_enabled, bool redraw_mixer_strips){
+static void set_connection_gain_enabled(const char *funcname, instrument_t source_id, instrument_t dest_id, const float *gain, const bool *is_enabled, bool redraw_mixer_strips){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -2100,18 +2100,18 @@ static void set_connection_gain_enabled(const char *funcname, int64_t source_id,
   }
     
   if (error!=NULL)
-    handleError("%s: Could not find audio connection between instrument %d (%s) and instrument %d (%s): %s", funcname, (int)source_id, source->name, (int)dest_id, dest->name, error);
+    handleError("%s: Could not find audio connection between instrument %d (%s) and instrument %d (%s): %s", funcname, (int)source_id.id, source->name, (int)dest_id.id, dest->name, error);
 }
 
-void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool redraw_mixer_strips){
+void setAudioConnectionGain(instrument_t source_id, instrument_t dest_id, float gain, bool redraw_mixer_strips){
   set_connection_gain_enabled("setAudioConnectionGain", source_id, dest_id, &gain, NULL, redraw_mixer_strips);
 }
 
-void setConnectionEnabled(int64_t source_id, int64_t dest_id, bool is_enabled, bool redraw_mixer_strips){
+void setConnectionEnabled(instrument_t source_id, instrument_t dest_id, bool is_enabled, bool redraw_mixer_strips){
   set_connection_gain_enabled("setConnectionEnabled", source_id, dest_id, NULL, &is_enabled, redraw_mixer_strips);
 }
 
-void undoConnectionEnabled(int64_t source_id, int64_t dest_id){
+void undoConnectionEnabled(instrument_t source_id, instrument_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -2124,7 +2124,7 @@ void undoConnectionEnabled(int64_t source_id, int64_t dest_id){
 }
 
 
-void undoAudioConnectionGain(int64_t source_id, int64_t dest_id){
+void undoAudioConnectionGain(instrument_t source_id, instrument_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -2136,7 +2136,7 @@ void undoAudioConnectionGain(int64_t source_id, int64_t dest_id){
   ADD_UNDO(AudioConnectionGain_CurrPos(source, dest));
 }
 
-int getAudioConnectionType(int64_t source_id, int64_t dest_id){
+int getAudioConnectionType(instrument_t source_id, instrument_t dest_id){
 
   const struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
@@ -2154,7 +2154,7 @@ int getAudioConnectionType(int64_t source_id, int64_t dest_id){
 }
 
   
-void setAudioConnectionType(int64_t source_id, int64_t dest_id, int audio_connection_type){
+void setAudioConnectionType(instrument_t source_id, instrument_t dest_id, int audio_connection_type){
   const struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -2168,7 +2168,7 @@ void setAudioConnectionType(int64_t source_id, int64_t dest_id, int audio_connec
     return;
 
   connection->set_connection_type(audio_connection_type);
-  remakeMixerStrips(-1);
+  remakeMixerStrips(make_instrument(-1));
 }
 
 void setCurrMixerConfigNum(int num){
@@ -2198,14 +2198,15 @@ bool mixerConfigNumIsUsed(int num){
 
 // modulators
 
-int64_t createModulator(void){
+instrument_t createModulator(void){
   //struct Patch *curr_patch = PATCH_get_current();
   
   instrument_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0, false);
-  if (instrument_id==-1){
-    printf("\n\n NOT FOUND\n\n");
-    getchar();
-    return -1;
+  if (!isLegalInstrument(instrument_id)){
+    //printf("\n\n NOT FOUND\n\n");
+    //getchar();
+    R_ASSERT(false);
+    return createIllegalInstrument();
   }
   
   //if (curr_patch != NULL)
@@ -2241,7 +2242,7 @@ static void addModulator2(instrument_t instrument_id, const char *effect_name, i
   if (effect_num==-1)
     return;
 
-  if (modulator_instrument_id != -1){
+  if (modulator_instrument_id.id != -1){
     
     struct Patch *modulator_patch = getPatchFromNum(modulator_instrument_id);
     if (modulator_patch==NULL)
@@ -2317,7 +2318,7 @@ static const char *get_modulator_patch_description(const struct Patch *modulator
   return talloc_format("%s: %s", modulator_patch->name, MODULATOR_get_description(modulator_id));
 }
 
-const char *getModulatorDescription3(int64_t modulator_instrument_id){
+const char *getModulatorDescription3(instrument_t modulator_instrument_id){
   const struct Patch *patch = getPatchFromNum(modulator_instrument_id);
   if(patch==NULL)
     return "";
@@ -2364,7 +2365,7 @@ dynvec_t getModulatorInstruments(void){
     dyn_t dynstate = vec->elements[i];
     
     hash_t *modulator_state = dynstate.hash;
-    int64_t patch_id = HASH_get_instrument(modulator_state, "modulator_patch_id");
+    instrument_t patch_id = HASH_get_instrument(modulator_state, "modulator_patch_id");
 
     DYNVEC_push_back(&dynvec, DYN_create_instrument(patch_id));
   }
@@ -2373,7 +2374,7 @@ dynvec_t getModulatorInstruments(void){
 }
 
 // Note, called quite often.
-dynvec_t getModulatorTargets(int64_t modulator_instrument_id){
+dynvec_t getModulatorTargets(instrument_t modulator_instrument_id){
 
   dynvec_t empty_ret = {};
   
@@ -2382,7 +2383,7 @@ dynvec_t getModulatorTargets(int64_t modulator_instrument_id){
     return empty_ret;
 
   if (!MODULATOR_is_modulator(modulator_instrument_id)){
-    handleError("getModulatorTargets: Instrument #%d is not a modulator", (int)modulator_instrument_id);
+    handleError("getModulatorTargets: Instrument #%d is not a modulator", (int)modulator_instrument_id.id);
     return empty_ret;
   }
 
@@ -2429,7 +2430,7 @@ bool getModulatorEnabled(instrument_t instrument_id, const char *effect_name){
 
                                
 /*
-void addModulator(instrument_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+void addModulator(instrument_t instrument_id, const char *effect_name, instrument_t modulator_instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -2440,10 +2441,10 @@ void addModulator(instrument_t instrument_id, const char *effect_name, int64_t m
   }
 }
 
-void removeModulator(instrument_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+void removeModulator(instrument_t instrument_id, const char *effect_name, instrument_t modulator_instrument_id){
 }
 
-void replaceModulator(instrument_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+void replaceModulator(instrument_t instrument_id, const char *effect_name, instrument_t modulator_instrument_id){
 }
 
 int64_t getModulator(instrument_t instrument_id, const char *effect_name){
@@ -2463,7 +2464,7 @@ int getNumInputChannels(instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("getNumInputChannels: Instrument #%d has been closed", (int)instrument_id);
+    handleError("getNumInputChannels: Instrument #%d has been closed", (int)instrument_id.id);
     return 0;
   }
 
@@ -2477,7 +2478,7 @@ int getNumOutputChannels(instrument_t instrument_id){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("getNumOutputChannels: Instrument #%d has been closed", (int)instrument_id);
+    handleError("getNumOutputChannels: Instrument #%d has been closed", (int)instrument_id.id);
     return 0;
   }
 
@@ -2528,7 +2529,7 @@ void deleteInstrument(instrument_t instrument_id){
 
 }
 
-void internalReplaceMainPipe(int64_t new_main_pipe_id){
+void internalReplaceMainPipe(instrument_t new_main_pipe_id){
   if (g_is_replacing_main_pipe==false){
     handleError("Can not call this function like this");
     return;
@@ -2544,11 +2545,11 @@ void internalReplaceMainPipe(int64_t new_main_pipe_id){
 }
 
 instrument_t getMainPipeInstrument(void){
-  return 0;
+  return get_main_pipe_patch_id();
 }
 
 bool instrumentIsOpenAndAudio(instrument_t instrument_id){
-  const struct Patch *patch = instrument_id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id);
+  const struct Patch *patch = instrument_id.id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id);
   if (patch==NULL)
     return false;
 
@@ -2556,7 +2557,7 @@ bool instrumentIsOpenAndAudio(instrument_t instrument_id){
 }
 
 bool instrumentIsOpen(instrument_t instrument_id){
-  return (instrument_id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id)) != NULL;
+  return (instrument_id.id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id)) != NULL;
 }
 
 const_char* getSampleBookmarks(int num){
@@ -2819,7 +2820,7 @@ void internal_instrumentGuiHasBeenHidden(instrument_t instrument_id){
   }
 }
 
-int64_t getCurrentInstrument(void){
+instrument_t getCurrentInstrument(void){
   return PATCH_get_current()->id;
 }
 
@@ -2945,7 +2946,7 @@ namespace{
     
     radium::GcHolder<struct Patch> patch;
     
-    instrument_t instrument_id = 0;
+    instrument_t instrument_id = make_instrument(0);
     bool monitor_stored = 0;
     bool monitor_automation = 0;
     int effect_num = 0;
@@ -2991,7 +2992,7 @@ int64_t addEffectMonitor(const char *effect_name, instrument_t instrument_id, bo
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("addEffectMonitor: Instrument #%d has been closed", (int)instrument_id);
+    handleError("addEffectMonitor: Instrument #%d has been closed", (int)instrument_id.id);
     return -1;
   }
 
@@ -3138,7 +3139,7 @@ void redrawMixerStrips(bool immediately){
     RT_schedule_mixer_strips_redraw(); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
 }
 
-void remakeMixerStrips(int64_t id){
+void remakeMixerStrips(instrument_t id){
   RT_schedule_mixer_strips_remake(id); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
 }
 
@@ -3161,7 +3162,7 @@ void setWideInstrumentStrip(instrument_t instrument_id, bool is_wide){
 void setMixerStripCommentsVisible(bool val){
   if(root->song->mixer_comments_visible != val){
     root->song->mixer_comments_visible = val;
-    remakeMixerStrips(-1);
+    remakeMixerStrips(make_instrument(-1));
   }
 }
   

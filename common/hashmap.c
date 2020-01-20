@@ -990,22 +990,22 @@ static instrument_t get_instrument(const hash_t *hash, const char *key, int i){
     
     hash_element_t *element=HASH_get_any_type(hash, key, i);
     if (element==NULL)
-      return 0;
+      return make_instrument(0);
 
     if (element->a.type==INT_TYPE)
-      return element->a.int_number;
+      return make_instrument(element->a.int_number);
     else if (element->a.type==INSTRUMENT_TYPE)
       return element->a.instrument;
 
     RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Expected INT_TYPE or INSTRUMENT_TYPE, found %s",key,i,DYN_type_name(element->a.type));
     
-    return 0;
+    return make_instrument(0);
     
   } else {
   
     hash_element_t *element = HASH_get(hash,key,i,INSTRUMENT_TYPE);
     if(element==NULL)
-      return 0;
+      return make_instrument(0);
 
     return element->a.instrument;
   }
@@ -1324,7 +1324,7 @@ hash_t *HASH_load(disk_t *file){
         return NULL;
 
       if (hash->version < 4 && !strcmp(key, ":instrument-id") && dyn.type==INT_TYPE)
-        dyn = DYN_create_instrument(dyn.int_number);
+        dyn = DYN_create_instrument(make_instrument(dyn.int_number));
       
       put_dyn(hash, key, i, dyn);
       

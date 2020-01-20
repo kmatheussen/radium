@@ -335,8 +335,8 @@ void cutSelectedMixerObjects(void){
   MW_cut();
 }
 
-int64_t pasteMixerObjects(float x, float y){
-  int64_t ret;
+instrument_t pasteMixerObjects(float x, float y){
+  instrument_t ret;
 
   //printf("   X: %f,    Y: %f\n", x,  y);
   UNDO_OPEN();{

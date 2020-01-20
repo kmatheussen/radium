@@ -38,7 +38,7 @@ DC_start("FX");
 	DC_SSI("max",fx->max);
         DC_SSB("is_enabled",fx->is_enabled);
 	DC_SSI("effect_num",fx->effect_num);
-        DC_SSN("patchnum",fx->patch->id);
+        DC_SSL("patchnum",fx->patch->id.id);
 
 	(*fx->SaveFX)(fx,track);
 
@@ -66,7 +66,7 @@ struct FX *LoadFX(struct Tracks *track){
 
         fx->is_enabled = true;
         fx->patch = PATCH_alloc(); // temporary object used during loading.
-        fx->patch->id = -1; // for loading older songs.
+        fx->patch->id = make_instrument(-1); // for loading older songs.
                 
 	GENERAL_LOAD(0,7)
 
@@ -99,7 +99,7 @@ var5:
 	goto start;
 
 var6:
-        fx->patch->id = DC_LoadN();
+        fx->patch->id = make_instrument(DC_LoadL());
         goto start;
         
 obj0:
@@ -138,11 +138,11 @@ end:
 
 
 void DLoadFX(const struct Root *newroot,struct Tracks *track, struct FXs *fxs, struct FX *fx){
-  int64_t id = fx->patch->id;
+  instrument_t id = fx->patch->id;
   
-  if (id==-1)
+  if (id.id==-1)
     fx->patch = track->patch;
   else
-    fx->patch = PATCH_get_from_id(fx->patch->id);
+    fx->patch = PATCH_get_from_id(id);
 }
 

@@ -89,7 +89,7 @@
     if
     ra:set-instrument-color
     load
-    show-instrument-color-dialog
+    FROM_C-show-instrument-color-dialog
     generate-main-menus
     ra:set-curr-seqtrack
     
@@ -893,7 +893,7 @@ FROM_C-call-me-after-seqtrack-has-been-deleted
 (<declare-variable> popup-menu)
 (<declare-variable> get-popup-menu-args)
 (<declare-variable> popup-menu-from-args)
-(<declare-variable> show-instrument-color-dialog)
+(<declare-variable> FROM_C-show-instrument-color-dialog)
 (<declare-variable> pmg-start)
 (<declare-variable> FROM-C-show-help-window)
 

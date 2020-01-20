@@ -793,7 +793,7 @@ void FAUST_start_compilation(struct SoundPlugin *plugin){
   Devdata *devdata = (Devdata*)plugin->data;
 
   const auto *patch = plugin->patch;
-  int64_t patch_id = -1;
+  instrument_t patch_id = make_instrument(-1);
 
   if(patch==NULL)
     R_ASSERT_NON_RELEASE(false);

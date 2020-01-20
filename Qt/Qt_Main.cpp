@@ -302,8 +302,8 @@ static void RTWIDGET_call_often(void){
 static boost::lockfree::queue<int64_t, boost::lockfree::capacity<64> > g_mixer_strips_needing_remake;
 
 DEFINE_ATOMIC(bool, g_all_mixer_strips_needs_remake) = false;
-void RT_schedule_mixer_strips_remake(int64_t id){
-  if (id==-1 || g_mixer_strips_needing_remake.bounded_push(id)==false)
+void RT_schedule_mixer_strips_remake(instrument_t id){
+  if (id.id==-1 || g_mixer_strips_needing_remake.bounded_push(id.id)==false)
     ATOMIC_SET(g_all_mixer_strips_needs_remake, true);
 }
 

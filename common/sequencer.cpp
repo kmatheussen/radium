@@ -261,8 +261,8 @@ static struct Patch *create_seqtrack_patch(bool is_bus, int seqtracknum){
     //int seqtracknum = get_seqtracknum(seqtrack);
     name = talloc_format("Seqtrack %d", seqtracknum);
   }
-  int64_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, name, 0, 0, true);
-  R_ASSERT_RETURN_IF_FALSE2(patch_id >= 0, NULL);
+  instrument_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, name, 0, 0, true);
+  R_ASSERT_RETURN_IF_FALSE2(patch_id.id >= 0, NULL);
   
   struct Patch *patch = PATCH_get_from_id(patch_id);
   R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, NULL);
@@ -2000,8 +2000,8 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
   struct Patch *patch = NULL;
   
   if (HASH_has_key(state, "patch_id")){
-    int64_t patch_id = HASH_get_instrument(state, "patch_id");
-    if (patch_id >= 0){
+    instrument_t patch_id = HASH_get_instrument(state, "patch_id");
+    if (patch_id.id >= 0){
       patch = PATCH_get_from_id(patch_id);
       R_ASSERT(patch!=NULL);
     } else {

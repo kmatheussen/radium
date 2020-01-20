@@ -654,7 +654,7 @@ namespace{
           
           plugin->is_dpi_aware = new_state;
 
-          int64_t instrument_id = plugin->patch->id;
+          instrument_t instrument_id = plugin->patch->id;
           int64_t parentgui2 = parentgui;
           
           delete this;

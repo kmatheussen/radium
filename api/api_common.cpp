@@ -533,23 +533,23 @@ struct FXs *getFXsFromNum(int windownum,int blocknum,int tracknum,int fxnum){
   return getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
 }
 
-struct Patch *getPatchFromNum(int64_t instrument_id){
-  struct Patch *patch = instrument_id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id);
+struct Patch *getPatchFromNum(instrument_t instrument_id){
+  struct Patch *patch = instrument_id==make_instrument(-1) ? PATCH_get_current() : PATCH_get_from_id(instrument_id);
   if(patch==NULL)
-    handleError("instrument %d not found", (int)instrument_id);
+    handleError("instrument %d not found", (int)instrument_id.id);
   
   return patch;
 }
 
-struct Patch *getAudioPatchFromNum(int64_t instrument_id){ // TODO: Rename to getAudioPatchFromId
-  struct Patch *patch = instrument_id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id);
+struct Patch *getAudioPatchFromNum(instrument_t instrument_id){ // TODO: Rename to getAudioPatchFromId
+  struct Patch *patch = instrument_id==make_instrument(-1) ? PATCH_get_current() : PATCH_get_from_id(instrument_id);
   if(patch==NULL) {
-    handleError("instrument %d not found", (int)instrument_id);
+    handleError("instrument %d not found", (int)instrument_id.id);
     return NULL;
   }
   
   if (patch->instrument != get_audio_instrument()) {
-    handleError("instrument %d is not an audio instrument", (int)instrument_id);
+    handleError("instrument %d is not an audio instrument", (int)instrument_id.id);
     return NULL;
   }
 

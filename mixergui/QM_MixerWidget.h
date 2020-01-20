@@ -145,7 +145,7 @@ extern LANGSPEC vector_t MW_get_selected_patches(void);
 extern LANGSPEC void MW_copy(void);
 extern LANGSPEC void MW_delete(void);
 extern LANGSPEC void MW_cut(void);
-extern LANGSPEC int64_t MW_paste(float x, float y);
+extern LANGSPEC instrument_t MW_paste(float x, float y);
 
 extern LANGSPEC bool MW_has_mouse_pointer(void);
 
@@ -205,7 +205,7 @@ extern LANGSPEC float MW_get_chip_x(const struct Patch *patch);
 extern LANGSPEC float MW_get_chip_y(struct Patch *patch);
 
 extern LANGSPEC struct Patch *get_main_pipe_patch(void);
-extern LANGSPEC int64_t get_main_pipe_patch_id(void);
+extern LANGSPEC instrument_t get_main_pipe_patch_id(void);
 extern LANGSPEC SoundPlugin *get_main_pipe(void);
 
 #endif // QM_MIXERWIDGET_H

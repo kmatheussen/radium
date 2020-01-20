@@ -1391,7 +1391,7 @@
                         )                        
 
 
-(define (show-instrument-color-dialog parentgui . instrument-ids)
+(define (FROM_C-show-instrument-color-dialog parentgui . instrument-ids)
   (<ra> :color-dialog (<ra> :get-instrument-color (car instrument-ids) #f) parentgui
         (lambda (color)
           (for-each (lambda (instrument-id)
@@ -1579,7 +1579,7 @@
               (list "Configure instrument color"
                     :enabled (<ra> :is-legal-instrument instrument-id)
                     (lambda ()
-                      (show-instrument-color-dialog -1 instrument-id)))
+                      (FROM_C-show-instrument-color-dialog -1 instrument-id)))
               (list "Generate new instrument color"
                     :enabled (<ra> :is-legal-instrument instrument-id)
                     (lambda ()

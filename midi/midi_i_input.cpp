@@ -846,15 +846,15 @@ typedef struct {
 
 static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > g_play_buffer;
 
-void radium::MidiLearn::RT_maybe_use_forall(int64_t instrument_id, const symbol_t *port_name, uint32_t msg){
+void radium::MidiLearn::RT_maybe_use_forall(instrument_t instrument_id, const symbol_t *port_name, uint32_t msg){
   for (auto midi_learn : g_midi_learns) {
     bool may_use = false;
 
-    if (instrument_id == -1)
+    if (instrument_id == make_instrument(-1))
       may_use = true;
     else {
-      int64_t id2 = midi_learn->RT_get_instrument_id();
-      if (id2==-1 || id2==instrument_id)
+      instrument_t id2 = midi_learn->RT_get_instrument_id();
+      if (id2==make_instrument(-1) || id2==instrument_id)
         may_use = true;
     }
 
@@ -891,7 +891,7 @@ void RT_MIDI_handle_play_buffer(void){
 
     uint32_t msg = event.msg;
 
-    radium::MidiLearn::RT_maybe_use_forall(-1, event.port_name, msg);
+    radium::MidiLearn::RT_maybe_use_forall(make_instrument(-1), event.port_name, msg);
 
     if (has_inited == false){
       

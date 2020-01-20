@@ -583,7 +583,7 @@ static bool move_chip_to_slot(Chip *chip, float from_x, float from_y){
   chip->setPos(x,y);
 
   printf("       Remake: move_chip_to_slot\n");
-  remakeMixerStrips(-2);
+  remakeMixerStrips(make_instrument(-2));
   
   return chip->_moving_start_pos!=chip->pos();
 }
@@ -845,7 +845,7 @@ static void delete_instrument(struct Patch *patch){
   struct Patch *parent = NULL;
   
   if (getNumInAudioConnections(patch->id)==1){
-    int64_t parent_id = getAudioConnectionSourceInstrument(0, patch->id);
+    instrument_t parent_id = getAudioConnectionSourceInstrument(0, patch->id);
     parent = getAudioPatchFromNum(parent_id);
   }
   
@@ -1145,9 +1145,9 @@ void MW_cut(void){
   MW_cut2(0,0,false);
 }
 
-int64_t MW_paste(float x, float y){
+instrument_t MW_paste(float x, float y){
   if (PRESET_has_copy()==false)
-    return -1;
+    return make_instrument(-1);
 
   if (x <= -10000 || y <= -10000){
     QPoint viewPoint = g_mixer_widget->view->mapFromGlobal(QCursor::pos());
@@ -1426,7 +1426,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   IsAlive is_alive(chip_under);
 
   // Not safe to store gc objects in a c++ closure. (At least I think so.)
-  QVector<int64_t> patch_ids;
+  QVector<instrument_t> patch_ids;
   VECTOR_FOR_EACH(struct Patch *,patch,&patches){
     patch_ids.push_back(patch->id);
   }END_VECTOR_FOR_EACH;
@@ -1442,7 +1442,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
       vector_t patches = {};
       
-      for(int64_t patch_id : patch_ids){
+      for(instrument_t patch_id : patch_ids){
         struct Patch *patch = PATCH_get_from_id(patch_id);
         
         if(patch==NULL || patch->patchdata==NULL){
@@ -1558,18 +1558,21 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
         
       } else if (sel==config_color) {
         
-        QString command = QString("(show-instrument-color-dialog ") + QString::number(parentguinum) + " " + QString::number(CHIP_get_patch(chip_under)->id);
+        S7EXTRA_GET_FUNC(scheme_func, "FROM_C-show-instrument-color-dialog");
+
+        dynvec_t args = {};
+
+        DYNVEC_push_back(args, DYN_create_int(parentguinum));
+
+        DYNVEC_push_back(args, DYN_create_instrument(CHIP_get_patch(chip_under)->id));
         
         VECTOR_FOR_EACH(struct Patch *,patch,&patches){
           if (patch!=CHIP_get_patch(chip_under))
-            command += " " + QString::number(patch->id);
+            DYNVEC_push_back(args, DYN_create_instrument(patch->id));
         }END_VECTOR_FOR_EACH;
-        
-        command += ")";
-        //}UNDO_CLOSE();
-        
-        evalScheme(talloc_strdup(command.toUtf8().constData()));
-        
+
+        s7extra_applyFunc_void(scheme_func, args);
+                                       
       } else if (sel==generate_new_color) {
 
         generateNewColorForAllSelectedInstruments(0.9);
@@ -1826,7 +1829,7 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   if(_moving_chips.size()>0 && stop_moving_chips(this, pos)) {
 
     printf("       Remake: mousereleaseevent\n");
-    remakeMixerStrips(-2);
+    remakeMixerStrips(make_instrument(-2));
     
     must_accept = true;
   }
@@ -2056,13 +2059,13 @@ void GFX_showHideMixerWidget(void){
   set_editor_focus();
 }
 
-static const int g_main_pipe_patch_id = 0;
+static const instrument_t g_main_pipe_patch_id = make_instrument(0);
 
 struct Patch *get_main_pipe_patch(void){
   return PATCH_get_from_id(g_main_pipe_patch_id);
 }
   
-int64_t get_main_pipe_patch_id(void){
+instrument_t get_main_pipe_patch_id(void){
   return g_main_pipe_patch_id;
 }
   
@@ -2478,7 +2481,7 @@ static char *get_patch_key(struct Patch *patch){
   if(temp==NULL)
     temp = (char*)malloc(sizeof(temp) * 128);
   
-  snprintf(temp, 110, "%" PRId64, patch->id);
+  snprintf(temp, 110, "%" PRId64, patch->id.id);
   
   return temp;
 }
@@ -2736,7 +2739,7 @@ static hash_t *get_chips_and_bus_chips(const hash_t *state){
     const char *type_name = HASH_get_chars(plugin, "type_name");
     
     if (!strcmp(type_name,"Bus")) {
-      fprintf(stderr, "\n   Bus %d/%d. Id: %d\n", num_buses, i, (int)HASH_get_instrument(chip, "patch"));
+      fprintf(stderr, "\n   Bus %d/%d. Id: %d\n", num_buses, i, (int)HASH_get_instrument(chip, "patch").id);
       HASH_put_hash_at(buses, "", num_buses++, chip);
     } else
       HASH_put_hash_at(new_chips, "", num_chips++, chip);
@@ -2837,7 +2840,9 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   if (is_loading)
     GFX_ShowProgressMessage("Creating connections between sound objects", true);
 
-  CONNECTIONS_create_from_state(&g_mixer_widget->scene, HASH_get_hash(state, "connections"), -1, -1, -1, -1);
+  CONNECTIONS_create_from_state(&g_mixer_widget->scene, HASH_get_hash(state, "connections"),
+                                make_instrument(-1), make_instrument(-1), make_instrument(-1), make_instrument(-1)
+                                );
 
   MW_create_bus_connections_for_all_chips(new_buses); // compatibility with old songs
 
@@ -2851,7 +2856,7 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   
   autoposition_missing_bus_chips(bus_chips_state);
 
-  remakeMixerStrips(-1);
+  remakeMixerStrips(make_instrument(-1));
 
   S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
 

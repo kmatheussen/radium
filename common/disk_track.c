@@ -55,9 +55,9 @@ DC_start("TRACK");
         DC_SSI("midi_channel", ATOMIC_GET(track->midi_channel));
         
 	if(track->patch!=NULL){
-		DC_SSN("patchnum",track->patch->id);
+		DC_SSL("patchnum",track->patch->id.id);
 	}else{
-		DC_SSN("patchnum",-1);
+		DC_SSL("patchnum",-1);
 	}
 
         DC_SSI("instrument_type",get_type_from_instrument(track->patch==NULL ? NULL : track->patch->instrument));
@@ -112,9 +112,9 @@ var2:
           track->patch=PATCH_alloc(); // temporary object used during loading.
           track->patch->instrument = get_instrument_from_type(MIDI_INSTRUMENT_TYPE); // To support songs without instrument_type. (old songs)
         }
-	track->patch->id=DC_LoadN();
-        if (disk_load_version < 0.67 && track->patch->id==0) // These songs only contained MIDI instruments, and the ID started at 0. id=0 is the main patch.
-          track->patch->id = 500;
+	track->patch->id=make_instrument(DC_LoadL());
+        if (disk_load_version < 0.67 && track->patch->id.id==0) // These songs only contained MIDI instruments, and the ID started at 0. id=0 is the main patch.
+          track->patch->id = make_instrument(500);
 	goto start;
 var3:
 	track->volume=DC_LoadI();
@@ -184,7 +184,7 @@ extern void DLoadInstrumentData(struct Root *newroot,struct Tracks *track);
 void DLoadTracks(const struct Root *newroot,struct Tracks *track, bool dload_all){
 if(track==NULL) return;
 
-         if(track->patch->id==-1){
+         if(track->patch->id.id==-1){
            track->patch=NULL;
          }else{
            track->patch=PATCH_get_from_id(track->patch->id);

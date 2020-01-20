@@ -88,7 +88,7 @@ void DYN_save(disk_t *file, const dyn_t dyn){
     DISK_printf(file,"%d\n",dyn.bool_number ? 1 : 0);
     break;
   case INSTRUMENT_TYPE:
-    DISK_printf(file,"%" PRId64 "\n",dyn.instrument);
+    DISK_printf(file,"%" PRId64 "\n",dyn.instrument.id);
     break;
   default:
     RError("Unknown type %d", dyn.type);
@@ -189,7 +189,7 @@ dyn_t DYN_load(disk_t *file, bool *success){
     break;
   case INSTRUMENT_TYPE:
     line = READ_LINE(file);
-    ret = DYN_create_instrument(STRING_get_int64(line));
+    ret = DYN_create_instrument(make_instrument(STRING_get_int64(line)));
     break;
   case BOOL_TYPE:
     line = READ_LINE(file);

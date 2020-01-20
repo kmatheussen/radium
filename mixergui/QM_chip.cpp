@@ -488,7 +488,7 @@ float CHIP_get_pos_y(const struct Patch *patch){
 static void CHIP_set_pos(Chip *chip, float x, float y){
   chip->setPos(x,y);
   printf("       Remake: CHIP_set_pos\n");
-  remakeMixerStrips(-2);
+  remakeMixerStrips(make_instrument(-2));
 }
 
 void CHIP_set_pos(const struct Patch *patch,float x,float y){
@@ -538,7 +538,7 @@ void CHIP_kick_left(Chip *chip){
   }
 
   printf("       Remake: CHIP_kick_left\n");
-  remakeMixerStrips(-2);
+  remakeMixerStrips(make_instrument(-2));
 }
 
 static void CHIP_kick_right_rec(Chip *chip, std::set<Chip*> &kicks){
@@ -583,21 +583,21 @@ void CHIP_kick_right(Chip *chip){
   }
 
   printf("       Remake: CHIP_kick_right\n");
-  remakeMixerStrips(-2);
+  remakeMixerStrips(make_instrument(-2));
 }
 
-static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id, bool patch_is_always_supposed_to_be_here = true){
-  struct Patch *patch = patch_id==-1 ? PATCH_get_current() : PATCH_get_from_id(patch_id);
+static Chip *get_chip_from_patch_id(QGraphicsScene *scene, instrument_t patch_id, bool patch_is_always_supposed_to_be_here = true){
+  struct Patch *patch = patch_id.id==-1 ? PATCH_get_current() : PATCH_get_from_id(patch_id);
 
   if (patch==NULL){
     if (patch_is_always_supposed_to_be_here)
-      RError("Could not find patch from id #%d", (int)patch_id);
+      RError("Could not find patch from id #%d", (int)patch_id.id);
     
     return NULL;
   }
 
   if (patch->instrument != get_audio_instrument()){
-    RError("Found patch from id #%d, but it is a MIDI instrument", (int)patch_id);    
+    RError("Found patch from id #%d, but it is a MIDI instrument", (int)patch_id.id);    
     return NULL;
   }
   
@@ -1041,19 +1041,19 @@ bool CONNECTIONS_apply_changes(const dynvec_t dynchanges){
     if (!HASH_check_type(element.hash, ":target", INSTRUMENT_TYPE, errorstring))
       return false;
 
-    int64_t source_id = HASH_get_instrument(element.hash, ":source");
-    int64_t target_id = HASH_get_instrument(element.hash, ":target");
+    instrument_t source_id = HASH_get_instrument(element.hash, ":source");
+    instrument_t target_id = HASH_get_instrument(element.hash, ":target");
 
     Chip *source = get_chip_from_patch_id(scene, source_id);
     Chip *target = get_chip_from_patch_id(scene, target_id);
 
     if (source==NULL){
-      handleError("Source instrument #%d not found", (int)source_id);
+      handleError("Source instrument #%d not found", (int)source_id.id);
       return false;
     }
 
     if (target==NULL){
-      handleError("Target instrument #%d not found", (int)target_id);
+      handleError("Target instrument #%d not found", (int)target_id.id);
       return false;
     }
 
@@ -2600,17 +2600,17 @@ AudioConnection *CONNECTION_find_audio_connection(const struct Patch *from, cons
   return CONNECTION_find_audio_connection(from_chip, to_chip);
 }
 
-static int64_t get_saving_patch_id(struct Patch *patch, const vector_t *patches){
+static instrument_t get_saving_patch_id_or_index(struct Patch *patch, const vector_t *patches){
   if (patches==NULL)
     return patch->id;
 
   for(int pos=0;pos<patches->num_elements;pos++)
     if(patches->elements[pos]==patch)
-      return pos;
+      return make_instrument(pos); // chaotic code...
 
-  RError("get_saving_patch_id: patch \"%s\" not found. patches length: %d",patch->name, patches->num_elements);
+  RError("get_saving_patch_index: patch \"%s\" not found. patches length: %d",patch->name, patches->num_elements);
   
-  return -1;
+  return make_instrument(-1);
 }
 
 hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *patches){
@@ -2619,8 +2619,8 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
   struct Patch *from = CHIP_get_patch(connection->from);
   struct Patch *to = CHIP_get_patch(connection->to);
   
-  HASH_put_instrument(state, "from_patch", get_saving_patch_id(from, patches));
-  HASH_put_instrument(state, "to_patch",   get_saving_patch_id(to,   patches));
+  HASH_put_instrument(state, "from_patch", get_saving_patch_id_or_index(from, patches));
+  HASH_put_instrument(state, "to_patch",   get_saving_patch_id_or_index(to,   patches));
   HASH_put_bool(state, "is_event_connection", connection->is_event_connection);
   if (!connection->is_event_connection){
     HASH_put_float(state, "gain", getAudioConnectionGain(from->id, to->id, true));
@@ -2639,13 +2639,13 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
 
 
 static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioGraph &changes, const hash_t *state,
-                                          int64_t patch_id_old, int64_t patch_id_new,
-                                          int64_t patch_id_old2, int64_t patch_id_new2,
+                                          instrument_t patch_id_old, instrument_t patch_id_new,
+                                          instrument_t patch_id_old2, instrument_t patch_id_new2,
                                           bool all_patches_are_always_supposed_to_be_here
                                           )
 {
-  int64_t id_from = HASH_get_instrument(state, "from_patch");
-  int64_t id_to = HASH_get_instrument(state, "to_patch");
+  instrument_t id_from = HASH_get_instrument(state, "from_patch");
+  instrument_t id_to = HASH_get_instrument(state, "to_patch");
 
   if (id_from==patch_id_old)
     id_from = patch_id_new;
@@ -2700,22 +2700,25 @@ static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioG
 }
   
 static void CONNECTIONS_create_from_state2(QGraphicsScene *scene, changes::AudioGraph &changes, const hash_t *connections,
-                                           int patch_id_old, int patch_id_new,
-                                           int64_t patch_id_old2, int64_t patch_id_new2,
+                                           instrument_t patch_id_old, instrument_t patch_id_new,
+                                           instrument_t patch_id_old2, instrument_t patch_id_new2,
                                            bool all_patches_are_always_supposed_to_be_here
                                            )
 {
   int num_connections = HASH_get_int32(connections, "num_connections");
   for(int i=0;i<num_connections;i++){
     const hash_t *state = HASH_get_hash_at(connections, "", i);
-    CONNECTION_create_from_state2(scene, changes, state, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2, all_patches_are_always_supposed_to_be_here);
+    CONNECTION_create_from_state2(scene, changes, state,
+                                  patch_id_old, patch_id_new,
+                                  patch_id_old2, patch_id_new2,
+                                  all_patches_are_always_supposed_to_be_here);
   }
 }
 
 // Only used when loading song.
 void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connections,
-                                   int patch_id_old, int patch_id_new,
-                                   int64_t patch_id_old2, int64_t patch_id_new2
+                                   instrument_t patch_id_old, instrument_t patch_id_new,
+                                   instrument_t patch_id_old2, instrument_t patch_id_new2
                                    )
 {
   changes::AudioGraph changes;
@@ -2727,7 +2730,7 @@ void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connecti
 }
 
 /*
-static void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new){
+static void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, instrument_t patch_id_old, instrument_t patch_id_new){
   changes::AudioGraph changes;
 
   CONNECTION_create_from_state2(scene, changes, state, patch_id_old, patch_id_new, -1, -1, true);
@@ -2741,7 +2744,9 @@ void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *con
 
   CONNECTIONS_remove_all2(scene, changes);
   
-  CONNECTIONS_create_from_state2(scene, changes, connections, -1, -1, -1, -1, all_patches_are_always_supposed_to_be_here);
+  CONNECTIONS_create_from_state2(scene, changes, connections,
+                                 make_instrument(-1), make_instrument(-1), make_instrument(-1), make_instrument(-1),
+                                 all_patches_are_always_supposed_to_be_here);
   
   CONNECTIONS_apply_changes(scene, changes);
 
@@ -2762,23 +2767,28 @@ void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *
   for(int i=0;i<HASH_get_int(connections, "num_connections");i++) {
     hash_t *connection_state = HASH_get_hash_at(connections, "", i);
       
-    int64_t index_from = HASH_get_instrument(connection_state, "from_patch");
-    int64_t index_to = HASH_get_instrument(connection_state, "to_patch");
+    int index_from = HASH_get_instrument(connection_state, "from_patch").id; // sigh
+    int index_to = HASH_get_instrument(connection_state, "to_patch").id; // sigh
 
     R_ASSERT_RETURN_IF_FALSE(index_from < patches->num_elements);
     R_ASSERT_RETURN_IF_FALSE(index_to < patches->num_elements);
 
-    if (patches->elements[index_from]!=NULL && patches->elements[index_to]!=NULL) {
-      int64_t id_from = ((struct Patch*)patches->elements[index_from])->id;
-      int64_t id_to = ((struct Patch*)patches->elements[index_to])->id;
-      
-      CONNECTION_create_from_state2(scene,
-                                    changes,
-                                    connection_state,
-                                    index_from, id_from,
-                                    index_to, id_to,
-                                    true
-                                    );
+    if (index_from < 0 || index_to < 0){
+      R_ASSERT(index_from >= 0);
+      R_ASSERT(index_to >= 0);
+    } else {
+      if (patches->elements[index_from]!=NULL && patches->elements[index_to]!=NULL) {
+        instrument_t id_from = ((struct Patch*)patches->elements[index_from])->id;
+        instrument_t id_to = ((struct Patch*)patches->elements[index_to])->id;
+        
+        CONNECTION_create_from_state2(scene,
+                                      changes,
+                                      connection_state,
+                                      make_instrument(index_from), id_from,
+                                      make_instrument(index_to), id_to,
+                                      true
+                                      );
+      }
     }
   }
 

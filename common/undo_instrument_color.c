@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 
 struct Undo_InstrumentColor{
-  int64_t instrument_id;
+  instrument_t instrument_id;
 
   const char *color;
 };
@@ -46,7 +46,7 @@ static void *Undo_Do_InstrumentColor(
 static void Undo_InstrumentColor(
                                  struct Tracker_Windows *window,
                                  struct WBlocks *wblock,
-                                 int64_t instrument_id
+                                 instrument_t instrument_id
                                  )
 {
   struct Undo_InstrumentColor *undo_ae=talloc(sizeof(struct Undo_InstrumentColor));
@@ -65,12 +65,12 @@ static void Undo_InstrumentColor(
                              wblock->curr_realline,
                              undo_ae,
                              Undo_Do_InstrumentColor,
-                             talloc_format("Undo instrument color %d -> %s",(int)instrument_id, undo_ae->color)
+                             talloc_format("Undo instrument color %d -> %s",(int)instrument_id.id, undo_ae->color)
                              );
 
 }
 
-void ADD_UNDO_FUNC(InstrumentColor(int64_t instrument_id)){
+void ADD_UNDO_FUNC(InstrumentColor(instrument_t instrument_id)){
   struct Tracker_Windows *window = root->song->tracker_windows;
   //printf("Undo_InstrumentColor_CurrPos\n");
   Undo_InstrumentColor(window,window->wblock, instrument_id);

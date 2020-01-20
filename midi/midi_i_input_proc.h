@@ -116,8 +116,8 @@ public:
   }
 
   // may be overridden. Returns -2 if no instrument should match, or -1 if all instruments should match.
-  virtual int64_t RT_get_instrument_id(void){
-    return -1;
+  virtual instrument_t RT_get_instrument_id(void){
+    return make_instrument(-1);
   }
   
   virtual QString get_dest_info(void){
@@ -132,7 +132,7 @@ public:
     printf("MidiLearn::callback got %f. Error: This method is supposed to be overridden.\n", val);
   }
 
-  static void RT_maybe_use_forall(int64_t instrument_id, const symbol_t *port_name, uint32_t msg);
+  static void RT_maybe_use_forall(instrument_t instrument_id, const symbol_t *port_name, uint32_t msg);
 };
 }
 

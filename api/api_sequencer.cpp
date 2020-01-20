@@ -675,17 +675,17 @@ void swapSeqtracks(int seqtracknum1, int seqtracknum2){
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
-int64_t getSeqtrackInstrument(int seqtracknum){
+instrument_t getSeqtrackInstrument(int seqtracknum){
   struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
-    return -1;
+    return createIllegalInstrument();
 
   if (seqtrack->patch==NULL)
-    return -1;
+    return createIllegalInstrument();
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
   if (plugin==NULL)
-    return -1;
+    return createIllegalInstrument();
 
   return seqtrack->patch->id;
 }
@@ -1092,7 +1092,7 @@ void resetSeqtrackRecordingOptions(int seqtracknum){
 // Sequencer track automation
 //////////////////////////////////////////
 
-static int add_seq_automation(int64_t time1, float value1, int64_t time2, float value2, int effect_num, int64_t instrument_id, int seqtracknum, int *nodenum1, int *nodenum2){
+static int add_seq_automation(int64_t time1, float value1, int64_t time2, float value2, int effect_num, instrument_t instrument_id, int seqtracknum, int *nodenum1, int *nodenum2){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
@@ -1124,11 +1124,11 @@ static int add_seq_automation(int64_t time1, float value1, int64_t time2, float 
   return SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, time1, value1, LOGTYPE_LINEAR, time2, value2, nodenum1, nodenum2);
 }
 
-int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, int effect_num, int64_t instrument_id, int seqtracknum){
+int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, int effect_num, instrument_t instrument_id, int seqtracknum){
   return add_seq_automation(time1, value1, time2, value2, effect_num, instrument_id, seqtracknum, NULL, NULL);
 }
   
-dyn_t addSeqAutomation2(int64_t time1, float value1, int64_t time2, float value2, int effect_num, int64_t instrument_id, int seqtracknum){
+dyn_t addSeqAutomation2(int64_t time1, float value1, int64_t time2, float value2, int effect_num, instrument_t instrument_id, int seqtracknum){
   int nodenum1=-1, nodenum2=-1;
   int automationnum = add_seq_automation(time1, value1, time2, value2, effect_num, instrument_id, seqtracknum, &nodenum1, &nodenum2);
   
@@ -1140,7 +1140,7 @@ dyn_t addSeqAutomation2(int64_t time1, float value1, int64_t time2, float value2
   return DYN_create_hash(hash);
 }
 
-void replaceAllSeqAutomation(int64_t old_instrument, int64_t new_instrument){
+void replaceAllSeqAutomation(instrument_t old_instrument, instrument_t new_instrument){
   struct Patch *old_patch = getAudioPatchFromNum(old_instrument);
   if(old_patch==NULL)
     return;
@@ -1209,16 +1209,16 @@ void setSeqAutomationEnabled(int automationnum, int seqtracknum, bool is_enabled
   SEQTRACK_AUTOMATION_set_enabled(seqtrack->seqtrackautomation, automationnum, is_enabled);
 }
 
-int64_t getSeqAutomationInstrumentId(int automationnum, int seqtracknum){
+instrument_t getSeqAutomationInstrumentId(int automationnum, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
-    return -1;
+    return createIllegalInstrument();
 
-  VALIDATE_AUTOMATIONNUM(-1);
+  VALIDATE_AUTOMATIONNUM(createIllegalInstrument());
 
   struct Patch *patch = SEQTRACK_AUTOMATION_get_patch(seqtrack->seqtrackautomation, automationnum);
   if (patch==NULL)
-    return 0;
+    return createIllegalInstrument();
 
   return patch->id;
 }
