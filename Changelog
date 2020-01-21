@@ -1,3 +1,18 @@
+Changes 5.9.90 -> 5.9.91:
+* Menus: Remove lots of entries from "Editor View"
+  that are also available in relevant popup menus.
+* Build: Remove some -Werror flags from non-debug
+  build.
+* API/internal: Change type from int64_t to file_t
+  for files.
+* Internal: Let "instrument_t" be a struct to avoid
+  accidentally mixing types.
+* Mixer: Fix the "Configure color" option in the
+  popup menu.
+* API: createIllegalFile, isIllegalFile
+
+
+
 Changes 5.9.88 -> 5.9.90:
 * Windows: Show progress window much earlier when
   starting the program.
