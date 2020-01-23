@@ -1,3 +1,8 @@
+Changes 5.9.91 -> 5.9.92:
+* Windows: Fix Jack if running in a directory with
+  non-ascii characters.
+
+
 Changes 5.9.90 -> 5.9.91:
 * Menus: Remove lots of entries from "Editor View"
   that are also available in relevant popup menus.
