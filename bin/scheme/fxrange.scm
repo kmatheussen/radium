@@ -18,7 +18,7 @@
 
 (define-struct fx
   :name
-  :instrument
+  :instrument-id
   :nodes)
 
 
@@ -854,11 +854,11 @@
        (iota (<ra> :get-num-instrument-effects instrument))))
   
 (define (paste-track-fxs! blocknum tracknum fxs)
-  (define instrument (<ra> :get-instrument-for-track tracknum blocknum))
+  (define instrument-id (<ra> :get-instrument-for-track tracknum blocknum))
   ;;(c-display "blocknum/tracknum/fxs/instrument" blocknum tracknum fxs instrument)
-  (if (< instrument 0)
+  (if (not (<ra> :is-legal-instrument instrument-id))
       #t
-      (let ((effect-names  (get-fxnames instrument)))
+      (let ((effect-names  (get-fxnames instrument-id)))
         (ignore-undo-block
          (lambda ()
            (<ra> :clear-track-fx tracknum blocknum)))
@@ -873,8 +873,8 @@
         
         (for-each (lambda (fx)
                     (define name (fx :name))
-                    (define is-legal-effect (or (not (equal? (fx :instrument)
-                                                             instrument))
+                    (define is-legal-effect (or (not (equal? (fx :instrument-id)
+                                                             instrument-id))
                                                 (memq name effect-names)))
                     (define fx-nodes (fx :nodes))
                     (c-display "got" name "? "
@@ -888,7 +888,7 @@
                                               (legal-place (fx-node :place))
                                               (<-> name)
                                               tracknum
-                                              (fx :instrument)
+                                              (fx :instrument-id)
                                               blocknum))
                           ;;(c-display "fxnum" fxnum (fx-node :place))
                           (when (>= fxnum 0)
