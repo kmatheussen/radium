@@ -136,6 +136,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static int g_num_visible_plugin_windows = 0;
 static bool g_vst_grab_keyboard = true;
+static int g_num_data = 0;
 
 static int RT_get_latency(const struct SoundPlugin *plugin);
 
@@ -496,10 +497,15 @@ namespace{
       , num_input_channels(num_input_channels)
       , num_output_channels(num_output_channels)
     {
+      g_num_data++;
       audio_instance->addListener(&listener);
       midi_buffer.ensureSize(1024*16);
     }
 
+    ~Data(){
+      g_num_data--;
+    }
+    
     void plugin_will_be_deleted(void){
       audio_instance->removeListener(&listener);
       playHead.plugin_will_be_deleted();
@@ -2069,6 +2075,8 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 }
 
 
+static bool g_waiting_to_shut_down = false;
+
 namespace{
   // Some plugins require that it takes some time between deleting the window and deleting the instance. If we don't do this, some plugins will crash. Only seen it on OSX though, but it doesn't hurt to do it on all platforms.
   struct DelayDeleteData : public juce::Timer {
@@ -2083,7 +2091,7 @@ namespace{
     }
 
     void timerCallback() override {
-      if (downcount > 0) {
+      if (downcount > 7 || (g_waiting_to_shut_down==false && downcount > 0)) {
         
         fprintf(stderr, "    DelayDeleteData: Downcounting %d\n", downcount);
         downcount--;
@@ -2123,7 +2131,12 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 #endif
       
       // Then schedule deletion in 5 seconds.
+#if 0
+      delete data->audio_instance;
+      delete data;
+#else
       new DelayDeleteData(data);
+#endif
     });
 }
 
@@ -2947,6 +2960,14 @@ void PLUGINHOST_init(void){
 void PLUGINHOST_shut_down(void){
   printf(" PLUGINHOST_shut_down: about to...\n");
 
+  run_on_message_thread([](){
+      g_waiting_to_shut_down = true;
+      int downcount = g_num_data + 100;
+      while(g_num_data > 0 && (downcount--) > 0){
+        juce::MessageManager::getInstance()->runDispatchLoopUntil(100);
+      }
+    });
+  
   if (g_use_custom_mm_thread){
     run_on_message_thread([&](){
         juce::MessageManager::getInstance()->stopDispatchLoop();
