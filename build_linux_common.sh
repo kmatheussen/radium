@@ -22,7 +22,7 @@ if ! env |grep RADIUM_QT_VERSION ; then
 fi
 
 if ! env |grep BUILDTYPE ; then
-    echo "Must define BUILDTYPE to DEBUG or RELEASE. For instance: \"BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j7\""
+    echo "Must define BUILDTYPE to DEBUG, DEBUG_FAST, or RELEASE. For instance: \"BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j7\""
     exit -1
 fi
 
