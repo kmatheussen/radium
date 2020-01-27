@@ -301,7 +301,9 @@ extern PlayerClass *pc;
 
 #define NUM_NOTE_IDS (8192*4)
 
-typedef struct _Data{
+namespace {
+  
+struct Data{
   pd_t *pd;
 
   Pd_Controller controllers[NUM_PD_CONTROLLERS];
@@ -311,12 +313,14 @@ typedef struct _Data{
 
   DEFINE_ATOMIC(void *, qtgui);
 
-  struct _Data *next;
+  struct Data *next;
 
   int largest_used_ids_pos;
   int ids_pos;
   int64_t note_ids[NUM_NOTE_IDS]; 
-} Data;
+};
+
+}
 
 
 static Data *g_instances = NULL; // protected by the player lock

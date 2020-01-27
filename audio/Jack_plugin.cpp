@@ -27,12 +27,16 @@
   Note that plugin_type->num_input corresponds to jack_client->num_outputs, and vica versa.
 */
 
-typedef struct{
+namespace{
+  
+struct Data {
   jack_client_t *client;
   jack_port_t **input_ports;
   jack_port_t **output_ports;
-} Data;
+};
 
+}
+ 
 static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *client, int num_inputs, int num_outputs, const char **input_portnames, const char **output_portnames){
   Data *data = (Data*)V_calloc(1,sizeof(Data));
   data->client = client;

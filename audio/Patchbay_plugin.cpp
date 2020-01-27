@@ -28,9 +28,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define MAX_NUM_CHANNELS 32
 
-typedef struct{
+namespace{
+  
+struct Data {
   int routes[MAX_NUM_CHANNELS*MAX_NUM_CHANNELS];
-} Data;
+};
+
+}
 
 
 

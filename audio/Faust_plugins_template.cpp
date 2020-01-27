@@ -8,10 +8,13 @@
 
 #include <math.h>
 
+/*
 struct Meta
 {
     void declare (const char* key, const char* value) { }
 };
+*/
+#include "faust/gui/meta.h"
 
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic push
