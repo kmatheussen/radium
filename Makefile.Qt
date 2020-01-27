@@ -36,10 +36,6 @@ PYTHONEXE ?= `which python2`
 
 
 
-# 6. Opimization options. Only enabled in RELEASE build
-OPTIMIZE ?= -O2 -flto
-
-
 #----------------END USER SETTINGS---------------------------
 
 
@@ -226,8 +222,23 @@ MEMORY_SANITIZE_OPTS=
 OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS)
 DEBUG_BUILD_OPTS = -Werror -Wall -ggdb3 -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 
-WERROR=
+BUILD_DEBUG=NO
+BUILD_OPTIMIZED=YES
+OPTIMIZE ?= -O2 -flto
+
 ifeq ($(BUILDTYPE), DEBUG)
+	BUILD_DEBUG=YES
+	BUILD_OPTIMIZED=NO
+        OPTIMIZE=
+endif
+ifeq ($(BUILDTYPE), DEBUG_FAST)
+	BUILD_DEBUG=YES
+endif
+
+
+
+WERROR=
+ifeq ($(BUILD_DEBUG), YES)
 	WERROR = -Werror
 endif
 
@@ -256,7 +267,7 @@ ifneq (,$(findstring FOR_LINUX,$(OS_OPTS)))
 #	DEBUG_BUILD_OPTS += -ftree-vrp -Warray-bounds=2
 endif
 
-RELEASE_BUILD_OPTS_WITHOUT_NDEBUG = -DRELEASE -Wall -g $(OPTIMIZE)
+RELEASE_BUILD_OPTS_WITHOUT_NDEBUG = -DRELEASE -Wall -g
 
 RELEASE_BUILD_OPTS = $(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG) -DNDEBUG
 
@@ -312,11 +323,11 @@ endif
 CPUOPT ?=
 
 
-ifeq ($(BUILDTYPE), RELEASE)
+ifeq ($(BUILD_OPTIMIZED), YES)
 	CPUOPT += -O3
 endif
 
-ifeq ($(BUILDTYPE), RELEASE)
+ifeq ($(BUILD_OPTIMIZED), RELEASE)
 	OPTIMIZE_O3=-O3 # SmoothDelay.hpp / Fade.hpp / Granulator.hpp runs faster with -O3.
 else
 	OPTIMIZE_O3=
@@ -1847,9 +1858,11 @@ midi_menues.o:  $(BUILD_DEPENDENCIES)  midi/midi_menues.c
 buildtype.opt: #Makefile
 	echo $(TARGET_OS)
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		echo "$(DEBUG_BUILD_OPTS)" >buildtype.opt ; \
+		echo "$(DEBUG_BUILD_OPTS) $(OPTIMIZE)" >buildtype.opt ; \
+	elif [ $(BUILDTYPE) = DEBUG_FAST ] ; then \
+		echo "$(DEBUG_BUILD_OPTS) $(OPTIMIZE)" >buildtype.opt ; \
 	else \
-		echo "$(RELEASE_BUILD_OPTS)" >buildtype.opt ; \
+		echo "$(RELEASE_BUILD_OPTS) $(OPTIMIZE)" >buildtype.opt ; \
 	fi
 
 #	elif [ $(TARGET_OS) = mingw32 ] ; then \
