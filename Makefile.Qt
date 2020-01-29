@@ -1872,6 +1872,8 @@ buildtype.opt: #Makefile
 flagopts.opt: #Makefile
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
 		echo "$(FLAGOPTS)" >flagopts.opt ; \
+	elif [ $(BUILDTYPE) = DEBUG_FAST ] ; then \
+		echo "$(FLAGOPTS)" >flagopts.opt ; \
 	else \
 		echo "$(FLAGOPTS) -DRELEASE" >flagopts.opt ; \
 	fi
@@ -1957,7 +1959,7 @@ Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/Gra
 	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) $(OPTIMIZE_O3) # $(CPUOPT) 
 
 FluidSynth_plugin.o: audio/FluidSynth_plugin.cpp
-	$(CCC) $(CPPOPT) $(CPUOPT) audio/FluidSynth_plugin.cpp -Wno-gnu-designator
+	$(CCC) $(CPPOPT) $(CPUOPT) audio/FluidSynth_plugin.cpp #-Wno-gnu-designator
 #-Wno-missing-field-initializers
 #`$(PKG) --cflags fluidsynth`
 
