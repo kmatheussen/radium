@@ -59,7 +59,7 @@
                                                                       :focus-keybinding "FOCUS_EDITOR")
                      "---------------Rename instrument"
                      (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:eval-scheme"
-                                                                      :args (list "(request-rename-instrument)")
+                                                                      :args (list "(FROM_C-request-rename-instrument)")
                                                                       :focus-keybinding "FOCUS_EDITOR")
                      "---------------Enabled/Muted"
                      (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-on"
