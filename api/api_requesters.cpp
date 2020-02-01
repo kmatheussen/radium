@@ -140,33 +140,20 @@ bool vstConfigOpen(void){
   return OS_VST_config_visible();
 }
 
-const char *getLoadFilename(const_char *text, const_char *filetypes, const_char *dir, const_char *type){
-  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
+filepath_t getLoadFilename(const_char *text, const_char *filetypes, filepath_t dir, const_char *type){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return make_filepath(L"");
   if (!strcmp(type,""))
     type = NULL;
 
-  const wchar_t *ret;
-  
-  ret = GFX_GetLoadFileName(window, NULL, text, STRING_create(dir), filetypes, type, true);
-  
-  if(ret==NULL)
-    return "";
-  else
-    return STRING_get_chars(ret);
+  return GFX_GetLoadFileName(window, NULL, text, dir, filetypes, type, true);
 }
 
-const char *getSaveFilename(const_char *text, const_char *filetypes, const_char *dir, const_char *type){
-  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
+filepath_t getSaveFilename(const_char *text, const_char *filetypes, filepath_t dir, const_char *type){
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return make_filepath(L"");
   if (!strcmp(type,""))
     type = NULL;
-  const wchar_t *ret;
 
-  ret = GFX_GetSaveFileName(window, NULL, text, STRING_create(dir), filetypes, type, true);
-    
-  if(ret==NULL)
-    return "";
-  else
-    return STRING_get_chars(ret);
+  return GFX_GetSaveFileName(window, NULL, text, dir, filetypes, type, true);
 }
 
 static int g_req_counter = 0;       // these two variables shouldn't be necessary, but it's to avoid crash

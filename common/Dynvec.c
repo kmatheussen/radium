@@ -90,6 +90,10 @@ void DYN_save(disk_t *file, const dyn_t dyn){
   case INSTRUMENT_TYPE:
     DISK_printf(file,"%" PRId64 "\n",dyn.instrument.id);
     break;
+  case FILEPATH_TYPE:
+    DISK_write_wchar(file, dyn.filepath.id);
+    DISK_write(file, "\n");
+    break;
   default:
     RError("Unknown type %d", dyn.type);
     return;
@@ -190,6 +194,10 @@ dyn_t DYN_load(disk_t *file, bool *success){
   case INSTRUMENT_TYPE:
     line = READ_LINE(file);
     ret = DYN_create_instrument(make_instrument(STRING_get_int64(line)));
+    break;
+  case FILEPATH_TYPE:
+    line = READ_LINE(file);
+    ret = DYN_create_filepath(make_filepath(line));
     break;
   case BOOL_TYPE:
     line = READ_LINE(file);

@@ -105,10 +105,10 @@ static inline bool ignore(void){
 }
 
 static const wchar_t *get_filename(void){
-  if(dc.filename==NULL)
+  if(isIllegalFilepath(dc.filename))
     return STRING_create("Radium - New song.");
   else
-    return dc.filename;
+    return dc.filename.id;
 }
 
 static void show_star(void){
@@ -335,7 +335,7 @@ bool Undo_are_you_sure_questionmark(void){
     }
       
     VECTOR_FOR_EACH(const wchar_t *filename, &deletable_audiofiles){      
-      SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(filename, wtt);
+      SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(make_filepath(filename), wtt);
     }END_VECTOR_FOR_EACH;
     
   }

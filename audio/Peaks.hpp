@@ -323,8 +323,8 @@ public:
 #include "../common/QueueStack.hpp"
 #include "../common/Mutex.hpp"
 
-static inline wchar_t *get_peak_filename(const wchar_t *soundfilename){
-  return STRING_append(soundfilename, ".radium_peaks");
+static inline filepath_t get_peak_filename(filepath_t soundfilename){
+  return make_filepath(STRING_append(soundfilename.id, ".radium_peaks"));
 }
 
 namespace radium{
@@ -336,7 +336,7 @@ extern radium::Queue<DiskPeaks*, 1024> g_disk_peaks_queue;
   
 class DiskPeaks {
 
-  const wchar_t *_peak_filename;
+  radium::FilePath _peak_filename;
 
   DEFINE_ATOMIC(bool, _is_valid) = false;
   DEFINE_ATOMIC(int64_t, _percentage_read) = 0;
@@ -347,16 +347,16 @@ public:
   int _num_ch = -1;
   Peaks **_peaks = NULL;
 
-  const wchar_t *_filename;
+  radium::FilePath _filename;
   DEFINE_ATOMIC(int, num_visitors) = 0;
 
   // Use DISKPEAKS_get instead.
-  DiskPeaks(const wchar_t *filename)
-    : _peak_filename(wcsdup(get_peak_filename(filename)))
-    , _filename(wcsdup(filename))
+  DiskPeaks(filepath_t filename)
+    : _peak_filename(get_peak_filename(filename))
+    , _filename(filename)
   {
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
-    SNDFILE *sndfile = radium_sf_open(_filename,SFM_READ,&sf_info);
+    SNDFILE *sndfile = radium_sf_open(_filename.get(),SFM_READ,&sf_info);
     if (sndfile==NULL)
       return;
 
@@ -386,14 +386,11 @@ public:
   ~DiskPeaks(){
     R_ASSERT(ATOMIC_GET(num_visitors)==0);
 
-    printf("Deleting DISKPeaks %s\n", STRING_get_qstring(_peak_filename).toUtf8().constData());
+    printf("Deleting DISKPeaks %S\n", _peak_filename.getString());
     for(int ch=0;ch<_num_ch;ch++)
       delete _peaks[ch];
 
     free(_peaks);
-
-    free((void*)_peak_filename);
-    free((void*)_filename);
   }
 
   bool is_valid(void){
@@ -405,11 +402,11 @@ public:
   }
 
   bool has_valid_peaks_on_disk(void) const {
-    if (DISK_file_exists(_peak_filename)==false)
+    if (DISK_file_exists(_peak_filename.get())==false)
       return false;
     
-    int64_t peaks_creation_time = DISK_get_creation_time(_peak_filename);
-    int64_t sample_creation_time = DISK_get_creation_time(_filename);
+    int64_t peaks_creation_time = DISK_get_creation_time(_peak_filename.get());
+    int64_t sample_creation_time = DISK_get_creation_time(_filename.get());
 
     return peaks_creation_time > sample_creation_time;
   }
@@ -419,7 +416,7 @@ public:
     
     R_ASSERT(THREADING_is_main_thread()==false);
     
-    printf("   Reading peaks from file %s\n", STRING_get_qstring(_peak_filename).toUtf8().constData());
+    printf("   Reading peaks from file %S\n", _peak_filename.getString());
 
     if (has_valid_peaks_on_disk())
       read_peaks_from_disk();
@@ -435,9 +432,9 @@ private:
   void read_peaks_from_disk(void){
     bool success = false;
 
-    disk_t *disk = DISK_open_binary_for_reading(_peak_filename);
+    disk_t *disk = DISK_open_binary_for_reading(_peak_filename.get());
     if (disk==NULL){
-      GFX_Message(NULL, "Unable to open peak file %s for reading", STRING_get_qstring(_peak_filename).toUtf8().constData());
+      GFX_Message(NULL, "Unable to open peak file %S for reading", _peak_filename.getString());
       goto exit;
     }
 
@@ -450,7 +447,7 @@ private:
         goto exit; // old format
 
       if(strncmp(source, "RADIUM1", 8)){
-        GFX_Message(NULL, "Unable to read peak file %s. Expected \"RADIUM0\" or \"RADIUM1\", found something else.", STRING_get_qstring(_peak_filename).toUtf8().constData());
+        GFX_Message(NULL, "Unable to read peak file %S. Expected \"RADIUM0\" or \"RADIUM1\", found something else.", _peak_filename.getString());
         goto exit;
       }
     }
@@ -461,7 +458,7 @@ private:
         goto exit;
       int num_ch = get_le_32(source);
       if (num_ch != _num_ch){
-        GFX_Message(NULL, "Peak file %s is not correct. It contains peaks for %d channels, but soundfile contains %d channels.", STRING_get_qstring(_peak_filename).toUtf8().constData(), num_ch, _num_ch);
+        GFX_Message(NULL, "Peak file %S is not correct. It contains peaks for %d channels, but soundfile contains %d channels.", _peak_filename.getString(), num_ch, _num_ch);
         goto exit;
       }
     }
@@ -473,7 +470,7 @@ private:
           goto exit;
         int samples_per_peak = get_le_32(source);
         if (samples_per_peak != SAMPLES_PER_PEAK){
-          GFX_Message(NULL, "Something is wrong with peak file %s (1)", STRING_get_qstring(_peak_filename).toUtf8().constData());
+          GFX_Message(NULL, "Something is wrong with peak file %S (1)", _peak_filename.getString());
           goto exit;
         }
       }
@@ -486,7 +483,7 @@ private:
           goto exit;
         num_peaks = get_le_32(source);        
         if (num_peaks <= 0){
-          GFX_Message(NULL, "Something is wrong with peak file %s (2)", STRING_get_qstring(_peak_filename).toUtf8().constData());
+          GFX_Message(NULL, "Something is wrong with peak file %S (2)", _peak_filename.getString());
           goto exit;
         }
       }
@@ -497,7 +494,7 @@ private:
           goto exit;
         int64_t total_frames = get_le_64(source);
         if (total_frames != _total_frames){
-          GFX_Message(NULL, "Something is wrong with peak file %s. Expected %" PRId64 " frames, found %" PRId64 "", STRING_get_qstring(_peak_filename).toUtf8().constData(), _total_frames, total_frames);
+          GFX_Message(NULL, "Something is wrong with peak file %S. Expected %" PRId64 " frames, found %" PRId64 "", _peak_filename.getString(), _total_frames, total_frames);
           goto exit;          
         }
       }
@@ -508,12 +505,12 @@ private:
       // TODO: Optimize. Read more than one float at the time.
       qfloat16 *data = new qfloat16[num_peaks*2]; // Allocate on heap instead of the stack since it could be very big (even likely to be very big)
       if (data==NULL){
-        GFX_Message(NULL, "Unable to allocate enough temporary memory when reading Peak file %s. Size: %d.", STRING_get_qstring(_peak_filename).toUtf8().constData(), (int)(num_peaks*2*sizeof(qfloat16)));
+        GFX_Message(NULL, "Unable to allocate enough temporary memory when reading Peak file %S. Size: %d.", _peak_filename.getString(), (int)(num_peaks*2*sizeof(qfloat16)));
         goto exit;
       }
       
       if (DISK_read_binary(disk, data, sizeof(qfloat16)*2*num_peaks)==-1){
-        GFX_Message(NULL, "Unable to read data from peak file %s.", STRING_get_qstring(_peak_filename).toUtf8().constData());
+        GFX_Message(NULL, "Unable to read data from peak file %S.", _peak_filename.getString());
         goto exit;
       }
 #endif
@@ -576,9 +573,9 @@ private:
   void store_peaks_to_disk(void){
     printf("   DiskPeaks: storing peaks to disk\n");
 
-    disk_t *disk = DISK_open_binary_for_writing(_peak_filename);
+    disk_t *disk = DISK_open_binary_for_writing(_peak_filename.get());
     if (disk==NULL){
-      printf("   DiskPeaks: Failed opening \"%s\"\n", STRING_get_qstring(_peak_filename).toUtf8().constData());
+      printf("   DiskPeaks: Failed opening \"%S\"\n", _peak_filename.getString());
       return;
     }
 
@@ -619,15 +616,15 @@ private:
     }
 
     DISK_close_and_delete(disk);
-    printf("   DiskPeaks: Finished writing peak file \"%s\"\n", STRING_get_qstring(_peak_filename).toUtf8().constData());
+    printf("   DiskPeaks: Finished writing peak file \"%S\"\n", _peak_filename.getString());
   }
 
   void read_peaks_from_sample_file(void){
 
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
-    SNDFILE *sndfile = radium_sf_open(_filename,SFM_READ,&sf_info);
+    SNDFILE *sndfile = radium_sf_open(_filename.get(),SFM_READ,&sf_info);
     if (sndfile==NULL){
-      printf("   DiskPeaks: Failed opening %s\n", STRING_get_qstring(_filename).toUtf8().constData());
+      printf("   DiskPeaks: Failed opening %S\n", _filename.getString());
       ATOMIC_SET(_is_valid, false);
       return;
     }
@@ -646,8 +643,7 @@ private:
       int num_read = (int)sf_readf_float(sndfile, interleaved_samples, SAMPLES_PER_PEAK);
       
       if (num_read==0) {
-        QString s = STRING_get_qstring(_filename); 
-        GFX_Message(NULL, "Unable to read from pos %" PRId64 " in file %s", i, s.toLocal8Bit().constData());
+        GFX_Message(NULL, "Unable to read from pos %" PRId64 " in file %S", i, _filename.getString());
         ATOMIC_SET(_is_valid, false);
         break;
       }
@@ -697,9 +693,9 @@ private:
 }
 
 void DISKPEAKS_stop(void);
-radium::DiskPeaks *DISKPEAKS_get(const wchar_t *wfilename);
+radium::DiskPeaks *DISKPEAKS_get(filepath_t wfilename);
 void DISKPEAKS_remove(radium::DiskPeaks *diskpeaks);
-void DISKPEAKS_delete_file(const wchar_t *wfilename);
+void DISKPEAKS_delete_file(filepath_t wfilename);
 void DISKPEAKS_call_very_often(void);
 
 #endif

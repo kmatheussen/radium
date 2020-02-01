@@ -803,7 +803,7 @@ namespace{
   static bool g_check_backtrace_process_finished = false;
   
   static void start_check_backtrace_process(void){
-    g_check_backtrace_process.start(OS_get_full_program_file_path("radium_plugin_scanner") + " test_backtrace");
+    g_check_backtrace_process.start(STRING_get_qstring(OS_get_full_program_file_path("radium_plugin_scanner").id) + " test_backtrace");
   }
   
   static void checkup_on_check_backtrace_process(void){
@@ -3049,7 +3049,7 @@ int radium_main(const char *arg){
       if (!info.isAbsolute())
         filename = g_startup_path + OS_get_directory_separator() + filename;
       
-      if (LoadSong_CurrPos(window, STRING_create(filename))==false)
+      if (LoadSong_CurrPos(window, make_filepath(filename))==false)
         NewSong_CurrPos(window);
       
     }else
@@ -3912,7 +3912,7 @@ int main(int argc, char **argv){
   setenv("PYTHONHOME","temp/dist",1);
   setenv("PYTHONPATH","temp/dist",1);
 #else
-  QString pythonlibpath = OS_get_full_program_file_path(QString("python2.7/lib"));
+  QString pythonlibpath = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7/lib")).id);
   setenv("PYTHONHOME",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
   setenv("PYTHONPATH",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
 
@@ -3920,7 +3920,7 @@ int main(int argc, char **argv){
 #endif
 
 #if defined(FOR_MACOSX)
-  QString pythonlibpath = OS_get_full_program_file_path(QString("python2.7/lib"));
+  QString pythonlibpath = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7/lib")).id);
   setenv("PYTHONHOME",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
   setenv("PYTHONPATH",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
 #endif
@@ -3987,7 +3987,7 @@ int main(int argc, char **argv){
     sprintf(temp,"sys.g_program_path = \"\"");
 #else
     // This doesn't work on mingw. Could be a wine problem only.
-    sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%S\"))", OS_get_full_program_file_path(L"start.py"));
+    sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%S\"))", OS_get_full_program_file_path(L"start.py").id);
 #endif
     PyRun_SimpleString(temp);
 
@@ -4004,9 +4004,9 @@ int main(int argc, char **argv){
 #if defined(FOR_WINDOWS)
             "keybindings.conf",
 #else
-            OS_get_keybindings_conf_filename().replace("\\","\\\\").toLocal8Bit().constData(),
+            STRING_get_qstring(OS_get_keybindings_conf_filename().id).replace("\\","\\\\").toLocal8Bit().constData(),
 #endif
-            OS_get_custom_keybindings_conf_filename().replace("\\","\\\\").toLocal8Bit().constData()
+            STRING_get_qstring(OS_get_custom_keybindings_conf_filename().id).replace("\\","\\\\").toLocal8Bit().constData()
             );
     PyRun_SimpleString(temp);
     
@@ -4016,12 +4016,12 @@ int main(int argc, char **argv){
     //exit(0);
   }
 
-  qapplication->setWindowIcon(QIcon(OS_get_full_program_file_path("radium_256x256x32.png")));
+  qapplication->setWindowIcon(QIcon(STRING_get_qstring(OS_get_full_program_file_path("radium_256x256x32.png").id)));
 
   {
     // Add fonts in the "fonts" directory
     {
-      QDir dir(OS_get_full_program_file_path("fonts"));
+      QDir dir(STRING_get_qstring(OS_get_full_program_file_path("fonts").id));
       QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
       for (int i=0;i<list.count();i++){
         QFileInfo file_info = list[i];

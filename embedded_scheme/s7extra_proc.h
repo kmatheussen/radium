@@ -18,6 +18,7 @@ extern "C" {
 
   s7_pointer s7extra_make_instrument(s7_scheme *s7, instrument_t val);
   s7_pointer s7extra_make_file(s7_scheme *s7, file_t val);
+  s7_pointer s7extra_make_filepath(s7_scheme *s7, filepath_t val);
   
   bool s7extra_is_place(s7_pointer place);
   Place s7extra_place(s7_scheme *s7, s7_pointer place);
@@ -45,6 +46,7 @@ extern "C" {
 
   instrument_t s7extra_get_instrument(s7_scheme *s7, s7_pointer s, const char **error);
   file_t s7extra_get_file(s7_scheme *s7, s7_pointer s, const char **error);
+  filepath_t s7extra_get_filepath(s7_scheme *s7, s7_pointer s, const char **error);
   
   #endif
 

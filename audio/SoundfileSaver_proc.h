@@ -25,7 +25,7 @@ extern LANGSPEC void SOUNDFILESAVER_writer_has_been_stopped(void);
 extern LANGSPEC bool SOUNDFILESAVER_write(float **outputs, int num_ch, int num_frames);
 extern LANGSPEC void SOUNDFILESAVER_request_stop(void);
 extern LANGSPEC void SOUNDFILESAVER_start(void);
-extern LANGSPEC bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, int num_ch, float post_recording_length, enum ResamplerType min_resampler_type, const char **error_string);
+extern LANGSPEC bool SOUNDFILESAVER_save(filepath_t filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, int num_ch, float post_recording_length, enum ResamplerType min_resampler_type, const char **error_string);
 
 extern LANGSPEC void SOUNDFILESAVERGUI_open(void);
 extern LANGSPEC void SOUNDFILESAVERGUI_stop(const char *message);

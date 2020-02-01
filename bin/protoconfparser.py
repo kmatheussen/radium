@@ -81,6 +81,8 @@ class Argument:
             return "s_instrument"
         elif self.type_string=="file_t":
             return "s_file"
+        elif self.type_string=="filepath_t":
+            return "s_filepath"
         elif self.type_string=="float":
             return "s_real"
         elif self.type_string=="double":
@@ -118,6 +120,8 @@ class Argument:
             return "s7extra_make_instrument"
         elif self.type_string=="file_t":
             return "s7extra_make_file"
+        elif self.type_string=="filepath_t":
+            return "s7extra_make_filepath"
         elif self.type_string=="float":
             return "s7_make_real"
         elif self.type_string=="double":
@@ -147,6 +151,8 @@ class Argument:
             return "make_instrument("
         elif self.type_string=="file_t":
             return "make_file("
+        elif self.type_string=="filepath_t":
+            return "make_filepath("
         elif self.type_string=="float":
             return "s7_number_to_real(radiums7_sc, "
         elif self.type_string=="double":
@@ -176,6 +182,8 @@ class Argument:
             return "s7extra_get_instrument"
         elif self.type_string=="file_t":
             return "s7extra_get_file"
+        elif self.type_string=="filepath_t":
+            return "s7extra_get_filepath"
         elif self.type_string=="float":
             return "s7extra_get_float"
         elif self.type_string=="double":
@@ -205,6 +213,8 @@ class Argument:
             return "is_instrument"
         elif self.type_string=="file_t":
             return "is_file"
+        elif self.type_string=="filepath_t":
+            return "is_filepath"
         elif self.type_string=="float":
             return "s7_is_number"
         elif self.type_string=="double":
@@ -423,6 +433,8 @@ class Proto:
                 t="L"
             elif qualifier=="file_t":
                 t="L"
+            elif qualifier=="filepath_t":
+                t="u"
             elif qualifier=="float":
                 t="f"
             elif qualifier=="double":
@@ -482,6 +494,8 @@ class Proto:
                     t="PyInt_FromLong((long)" # doesn't seem to be a PyInt_FromLongLong function.
                 elif return_type=="file_t":
                     t="PyInt_FromLong((long)" # doesn't seem to be a PyInt_FromLongLong function.
+                elif return_type=="filepath_t":
+                    t="PyUnicode_FromWideChar("
                 elif return_type=="float":
                     t="PyFloat_FromDouble("
                 elif return_type=="double":
@@ -493,6 +507,8 @@ class Proto:
                     
                 if return_type=="instrument_t" or return_type=="file_t":
                     oh.write(t+"result.id);\n")
+                elif return_type=="filepath_t":
+                    oh.write(t+"result.id, wcslen(result.id));\n")
                 else:
                     oh.write(t+"result);\n")
                 
@@ -851,6 +867,7 @@ class Protos:
         oh.write('  s7_pointer s_integer = s7_make_symbol(s7, "integer?");\n')
         oh.write('  s7_pointer s_instrument = s7_make_symbol(s7, "instrument?");\n')
         oh.write('  s7_pointer s_file = s7_make_symbol(s7, "file?");\n')
+        oh.write('  s7_pointer s_filepath = s7_make_symbol(s7, "filepath?");\n')
         oh.write('  s7_pointer s_real = s7_make_symbol(s7, "real?");\n')
         oh.write('  s7_pointer s_string = s7_make_symbol(s7, "string?");\n')
         oh.write('  s7_pointer s_boolean = s7_make_symbol(s7, "boolean?");\n')

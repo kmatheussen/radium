@@ -929,7 +929,7 @@ static void get_dir_uris (QStringList &lrdf_uris, const QString &dirname){
 static void get_path_uris (QStringList &lrdf_uris){
   QStringList lrdf_paths;
 
-  lrdf_paths << OS_get_full_program_file_path("rdf"); // place this one first so that the user doesn't override the rdfs in bin/rdf/
+  lrdf_paths << STRING_get_qstring(OS_get_full_program_file_path("rdf").id); // place this one first so that the user doesn't override the rdfs in bin/rdf/
 
 #if __linux__
 
@@ -1123,7 +1123,7 @@ void create_ladspa_plugins(void){
 #endif
 
     if(OS_has_full_program_file_path("ladspa"))
-      ladspa_path << OS_get_full_program_file_path("ladspa");
+      ladspa_path << STRING_get_qstring(OS_get_full_program_file_path("ladspa").id);
     
     ladspa_path << home_ladspa_path;
     ladspa_path << "/usr/lib64/ladspa";
@@ -1136,7 +1136,7 @@ void create_ladspa_plugins(void){
 
 #else
   
-  ladspa_path << OS_get_full_program_file_path("ladspa");
+  ladspa_path << STRING_get_qstring(OS_get_full_program_file_path("ladspa").id);
   
 #endif
 

@@ -71,9 +71,9 @@ bool OS_has_full_program_file_path(QString filename){
   return true;
 }
 
-QString OS_get_full_program_file_path(QString filename){
+filepath_t OS_get_full_program_file_path(filepath_t filename){
   QDir dir(QCoreApplication::applicationDirPath());
-  QFileInfo info(dir, filename);
+  QFileInfo info(dir, STRING_get_qstring(filename.id));
 
   if (!info.exists()){
     ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
@@ -89,12 +89,7 @@ QString OS_get_full_program_file_path(QString filename){
   printf("BEF: -%s-. ret: -%s-\n", info.absoluteFilePath().toUtf8().constData(), ret.toUtf8().constData());
   */
   
-  return info.absoluteFilePath();
-}
-
-wchar_t *OS_get_full_program_file_path(const wchar_t *filename){
-  QString ret = OS_get_full_program_file_path(STRING_get_qstring(filename));
-  return STRING_create(ret);
+  return make_filepath(info.absoluteFilePath());
 }
 
 // TODO: Remove.
@@ -122,13 +117,17 @@ wchar_t *STRING_create(const QString s, bool use_gc_alloc){
   return array;
 }
 
+wchar_t *STRING_create2(const QString s){
+  return STRING_create(s);
+}
+
 wchar_t *STRING_create(const char *s){
   QString string = QString::fromUtf8(s);
   return STRING_create(string);
 }
 
 /*
-wchar_t *STRING_copy(const wchar_t *string){
+wchar_t *STRING_copy(filepath_t string){
   return STRING_create(STRING_get_qstring(string));
 }
 */
@@ -229,7 +228,7 @@ wchar_t *STRING_trim(const wchar_t *string){
 }
 
 // TODO: Rename to OS_get_program_path
-const wchar_t *OS_get_program_path2(void){
+filepath_t OS_get_program_path2(void){
   static wchar_t *array=NULL;
   if (array==NULL){
     QString s = QDir::toNativeSeparators(QCoreApplication::applicationDirPath());
@@ -237,7 +236,7 @@ const wchar_t *OS_get_program_path2(void){
     s.toWCharArray(array);
   }
 
-  return array;
+  return make_filepath(array);
 }
 
 bool OS_config_key_is_color(const char *key){
@@ -351,6 +350,10 @@ bool OS_has_conf_filename(QString filename){
   return true;
 }
 
+bool OS_has_conf_filename(filepath_t filename){
+  return OS_has_conf_filename(STRING_get_qstring(filename.id));
+}
+
 /*
 static QString get_custom_conf_filename(QString filename){
   int error;
@@ -367,74 +370,80 @@ static QString get_custom_conf_filename(QString filename){
 }
 */
 
-QString OS_get_conf_filename(QString filename){
+filepath_t OS_get_conf_filename(filepath_t filename){
   QString path;
 
   int error;
   QDir dir = get_dot_radium_dir(&error);
-  if(error!=0)
-    return "";
+  if(error!=0 || isIllegalFilepath(filename))
+    return make_filepath(L"");
 
-  QFileInfo info(dir, filename);
+  QFileInfo info(dir, STRING_get_qstring(filename.id));
 
   if(info.exists()==false)
-    info = QFileInfo(OS_get_full_program_file_path(filename));
+    info = QFileInfo(STRING_get_qstring(OS_get_full_program_file_path(filename).id));
   
   printf("************* conf filename: -%s\n",info.absoluteFilePath().toLocal8Bit().constData());
-  return info.absoluteFilePath();
+  return make_filepath(info.absoluteFilePath());
 }
 
-char *OS_get_conf_filename2(const char *filename){
-  return talloc_strdup(OS_get_conf_filename(filename).toLocal8Bit().constData());
+filepath_t OS_get_conf_filename2(const char *filename){
+  return OS_get_conf_filename(make_filepath(STRING_create(filename)));
 }
 
 bool OS_has_conf_filename2(const char *filename){
   return OS_has_conf_filename(filename);
 }
 
-QString OS_get_keybindings_conf_filename(void){
-  return OS_get_full_program_file_path("keybindings.conf");
+filepath_t OS_get_keybindings_conf_filename(void){
+  return OS_get_full_program_file_path(make_filepath(L"keybindings.conf"));
   //return OS_get_conf_filename("keybindings.conf");
 }
 
+/*
 char *OS_get_keybindings_conf_filename2(void){
   return talloc_strdup(OS_get_keybindings_conf_filename().toLocal8Bit().constData());
 }
+*/
 
-QString OS_get_custom_keybindings_conf_filename(void){
+filepath_t OS_get_custom_keybindings_conf_filename(void){
   int error;
   QDir dir = get_dot_radium_dir(&error);
   if(error!=0)
-    return NULL;
+    return createIllegalFilepath();
 
   QFileInfo config_info(dir, "keybindings.conf");
 
-  return config_info.absoluteFilePath();
+  return make_filepath(config_info.absoluteFilePath());
 }
 
+/*
 char *OS_get_custom_keybindings_conf_filename2(void){
   return talloc_strdup(OS_get_custom_keybindings_conf_filename().toLocal8Bit().constData());
 }
+*/
 
-QString OS_get_menues_conf_filename(void){
+filepath_t OS_get_menues_conf_filename(void){
 #if defined(FOR_WINDOWS)
-  return "menues.conf";
+  return make_filepath(L"menues.conf");
 #else
-  return OS_get_conf_filename("menues.conf");
+  return OS_get_conf_filename2("menues.conf");
 #endif
 }
 
+/*
 char *OS_get_menues_conf_filename2(void){
   return talloc_strdup(OS_get_menues_conf_filename().toLocal8Bit().constData());
 }
+*/
 
-QString OS_get_config_filename(const char *key){
+filepath_t OS_get_config_filename(const char *key){
   bool is_color_config = OS_config_key_is_color(key);
 
   int error;
   QDir dir = get_dot_radium_dir(&error);
   if(error!=0)
-    return NULL;
+    return createIllegalFilepath();
 
   QFileInfo config_info(dir, is_color_config ? "colors" : "config");
 
@@ -445,7 +454,7 @@ QString OS_get_config_filename(const char *key){
     abort();
 #endif
 
-  return config_info.absoluteFilePath();
+  return make_filepath(config_info.absoluteFilePath());
 }
 
 double OS_get_double_from_string(const char *s){
@@ -464,11 +473,11 @@ QString OS_get_qstring_from_double(double d){
 }
 
 
-SNDFILE *radium_sf_open(const wchar_t *filename, int mode, SF_INFO *sfinfo){
+SNDFILE *radium_sf_open(filepath_t filename, int mode, SF_INFO *sfinfo){
 #if defined(FOR_WINDOWS)
-  return sf_wchar_open(filename,mode,sfinfo);
+  return sf_wchar_open(filename.id,mode,sfinfo);
 #else
-  return radium_sf_open(STRING_get_qstring(filename), mode, sfinfo);
+  return radium_sf_open(STRING_get_qstring(filename.id), mode, sfinfo);
 #endif
 }
 

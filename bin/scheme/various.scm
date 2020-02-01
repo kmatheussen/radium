@@ -49,7 +49,7 @@
   
 (define (FROM_C-create-modulator-gui instrument-id)
 
-  (define gui (<gui> :ui "modulatorgui.ui"))
+  (define gui (<gui> :ui (<ra> :get-path "modulatorgui.ui")))
   (<gui> :set-window-title gui (<-> "GUI for " (<ra> :get-instrument-name instrument-id)))
 
   (let ((width (floor (* 3 (<gui> :text-width "Instrument name, and an effect name, Enabled, Delete")))))
@@ -187,7 +187,7 @@
 
 (define (create-blocks-table-gui)
 
-  (define gui (<gui> :ui "blocks.ui"))
+  (define gui (<gui> :ui (<ra> :get-path "blocks.ui")))
   (<gui> :set-window-title gui "Blocks")
 
   (define doit #f)
@@ -443,7 +443,7 @@
 
 (define (create-instruments-table-gui)
 
-  (define gui (<gui> :ui "blocks.ui"))
+  (define gui (<gui> :ui (<ra> :get-path "blocks.ui")))
   (<gui> :set-window-title gui "Instruments")
 
   (define doit #f)
@@ -768,7 +768,7 @@
   (list
    "Add new audio file"
    (lambda ()
-     (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
+     (create-file-requester "Choose audio file" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
                             (lambda (filename)
                               (<ra> :add-audiofile filename))))
                                                  

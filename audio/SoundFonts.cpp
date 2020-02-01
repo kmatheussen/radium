@@ -360,12 +360,12 @@ static hash_t *get_menu(hash_t *info){
 //
 // regions are stored within both instruments and presets. They are stored as an array within each of those.
 //
-hash_t *SF2_get_info(const wchar_t *filename){
+hash_t *SF2_get_info(filepath_t filename){
   try {
 
-    const char *osfilename = talloc_strdup(QFile::encodeName(STRING_get_qstring(filename)).constData());
+    const char *osfilename = talloc_strdup(QFile::encodeName(STRING_get_qstring(filename.id)).constData());
 #if defined(FOR_WINDOWS)
-    RIFF::File riff(filename, std::string(osfilename));
+    RIFF::File riff(filename.id, std::string(osfilename));
 #else
     RIFF::File riff(osfilename);
 #endif
@@ -383,7 +383,7 @@ hash_t *SF2_get_info(const wchar_t *filename){
     fprintf(stderr, "SoundFonts.cpp: Caught RIFF::Exception exception:\n");
     e.PrintMessage();
   }catch (...) {
-    GFX_Message(NULL,"Unknown exception while trying to parse file: %S", filename);
+    GFX_Message(NULL,"Unknown exception while trying to parse file: %S", filename.id);
   }
 
   return NULL;
@@ -409,10 +409,10 @@ hash_t *SF2_get_displayable_preset_names(hash_t *info){
 #endif
 
 
-float *SF2_load_sample(const wchar_t *filename, int sample_num){
-  const char *osfilename = talloc_strdup(QFile::encodeName(STRING_get_qstring(filename)).constData());
+float *SF2_load_sample(filepath_t filename, int sample_num){
+  const char *osfilename = talloc_strdup(QFile::encodeName(STRING_get_qstring(filename.id)).constData());
 #if defined(FOR_WINDOWS)
-  RIFF::File riff(filename, std::string(osfilename));
+  RIFF::File riff(filename.id, std::string(osfilename));
 #else
   RIFF::File riff(osfilename);
 #endif

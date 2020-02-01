@@ -517,7 +517,7 @@ static void MMD_LoadPlayList(struct Tracker_Windows *window,disk_t *file,ULONG m
 
 
 
-bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename){
+bool LoadMMP2(struct Tracker_Windows *window, filepath_t filename){
 	disk_t *file;
 	NInt lokke;
 	int lokke2;
@@ -544,8 +544,8 @@ bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename){
 	file=DISK_open_binary_for_reading(filename);
 
 	if(file==NULL){
-          perror(STRING_get_chars(filename));
-          GFX_Message(NULL, "Could not open file \"%S\"\n", filename);
+          perror(STRING_get_chars(filename.id));
+          GFX_Message(NULL, "Could not open file \"%S\"\n", filename.id);
           return false;
 	}
 

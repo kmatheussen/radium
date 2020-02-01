@@ -947,9 +947,9 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   // start process
   {
 #ifdef FOR_WINDOWS
-    QString program = OS_get_full_program_file_path("radium_crashreporter.exe");
+    QString program = STRING_get_qstring(OS_get_full_program_file_path("radium_crashreporter.exe").id);
 #else
-    QString program = OS_get_full_program_file_path("radium_crashreporter");
+    QString program = STRING_get_qstring(OS_get_full_program_file_path("radium_crashreporter").id);
 #endif
 
 #if defined(FOR_WINDOWS)
@@ -1036,7 +1036,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
                 );
 
     if (dosave)
-      Save_Clean(STRING_create(emergency_save_file.fileName()),root,false);
+      Save_Clean(make_filepath(emergency_save_file.fileName()),root,false);
   }
 
 }

@@ -76,7 +76,7 @@ namespace radium{
 #endif
     }
     
-    QString get_filename(bool program_state_is_valid){
+    filepath_t get_filename(bool program_state_is_valid){
       QString ret;
       connect(this, &QFileDialog::fileSelected, this, [&ret](const QString &filename)
               {
@@ -84,7 +84,7 @@ namespace radium{
               }
               );
       safeExec(this, program_state_is_valid);
-      return ret;
+      return make_filepath(ret);
     }
 
   };

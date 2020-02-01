@@ -61,34 +61,59 @@ static int64_t g_curr_disknum = 0;
 static QHash<file_t,disk_t*> g_disks;
 
 
-const_char* getPath(const_char *path_string){
-  return toBase64(path_string);
+filepath_t getPath(const_char *path_string){
+  return make_filepath(STRING_create(path_string));
 }
 
-const_char* getHomePath(void){
-  return qstring_to_w(OS_get_home_path());
+filepath_t getHomePath(void){
+  return make_filepath(OS_get_home_path());
 }
 
-const_char* getProgramPath(void){
-  return qstring_to_w(QCoreApplication::applicationDirPath());
+filepath_t getProgramPath(void){
+  return make_filepath(QCoreApplication::applicationDirPath());
 }
 
-const_char* getPathString(const_char* w_path){
-  return fromBase64(w_path);
+const_char* getPathString(filepath_t filepath){
+  if (isIllegalFilepath(filepath)){
+    handleError("Illegal filepath argument 1");
+    return "";
+  }
+  
+  return STRING_get_chars(filepath.id);
 }
 
-const_char* appendFilePaths(const_char* w_path1, const_char* w_path2){
-  return qstring_to_w(w_to_qstring(w_path1) + QDir::separator() + w_to_qstring(w_path2));
+filepath_t appendFilePaths(filepath_t path1, filepath_t path2){
+  if (isIllegalFilepath(path1)){
+    handleError("Illegal filepath argument 1");
+    return path1;
+  }
+  
+  if (isIllegalFilepath(path2)){
+    handleError("Illegal filepath argument 2");
+    return path2;
+  }
+  
+  return make_filepath(STRING_get_qstring(path1.id) + QDir::separator() + STRING_get_qstring(path2.id));
 }
 
-const_char* getParentPath(const_char* w_path){
-  QDir dir(w_to_qstring(w_path));
+filepath_t getParentPath(filepath_t path){
+  if (isIllegalFilepath(path)){
+    handleError("Illegal filepath argument 1");
+    return path;
+  }
+  
+  QDir dir(STRING_get_qstring(path.id));
   dir.cdUp();  
-  return qstring_to_w(dir.absolutePath());
+  return make_filepath(dir.absolutePath());
 }
 
-bool fileExists(const_char* w_path){
-  QString filename = w_to_qstring(w_path);
+bool fileExists(filepath_t path){
+  if (isIllegalFilepath(path)){
+    handleError("Illegal filepath argument 1");
+    return false;
+  }
+  
+  QString filename = STRING_get_qstring(path.id);
   return QFileInfo::exists(filename);
 }
 
@@ -99,8 +124,13 @@ extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
 #endif
 
 
-dyn_t getFileInfo(const_char* w_path){
-  QString path = w_to_qstring(w_path);
+dyn_t getFileInfo(filepath_t w_path){
+  if (isIllegalFilepath(w_path)){
+    handleError("getFileInfo: illegal path for argument 1");
+    return g_uninitialized_dyn;
+  }
+  
+  QString path = STRING_get_qstring(w_path.id);
 
   QFileInfo info(path);
 
@@ -145,8 +175,9 @@ dyn_t getFileInfo(const_char* w_path){
     }
   }
 
-  HASH_put_chars(ret, ":path", qstring_to_w(path));
-  HASH_put_string(ret, ":filename", qstring_to_w(info.fileName())); //STRING_create(info.fileName()));
+  HASH_put_filepath(ret, ":path", make_filepath(path));
+  HASH_put_filepath(ret, ":filename", make_filepath(info.fileName())); //STRING_create(info.fileName()));
+  
   HASH_put_bool(ret, ":is-dir", info.isDir());
   HASH_put_bool(ret, ":is-sym-link", info.isSymLink());
   HASH_put_bool(ret, ":exists", info.exists());
@@ -212,18 +243,18 @@ dyn_t getFileInfo(const_char* w_path){
   return DYN_create_hash(ret);
 }
 
-static bool call_callback(func_t* callback, bool in_main_thread, bool is_finished, const_char* path){
+static bool call_callback(func_t* callback, bool in_main_thread, bool is_finished, const wchar_t *path){
   int64_t num_calls = g_num_calls_to_handleError;
 
   //printf("  Call callback -%S-\n", STRING_create(w_to_qstring(path)));
 
-  if(!strcmp(path,""))
+  if(path==NULL || !wcscmp(path,L""))
     R_ASSERT(is_finished);
   
   bool ret = S7CALL(bool_bool_dyn,
                     callback,
                     is_finished,                
-                    !strcmp(path,"") ? g_uninitialized_dyn : getFileInfo(path)
+                    (path==NULL || !wcscmp(path,L"")) ? g_uninitialized_dyn : getFileInfo(make_filepath(path))
                     );
 
   if (num_calls != g_num_calls_to_handleError) // Return false if the callback generated any errors.
@@ -261,7 +292,7 @@ static void traverse(QString path, func_t* callback, bool in_main_thread){
       if (!call_callback(callback,
                          true, 
                          false,
-                         qstring_to_w(path)
+                         STRING_create(path)
                          ))
         ATOMIC_SET(callback_has_returned_false, true);
 
@@ -274,7 +305,7 @@ static void traverse(QString path, func_t* callback, bool in_main_thread){
           if(!call_callback(callback,
                             true, 
                             false,
-                            qstring_to_w(path)
+                            STRING_create(path)
                             ))
             ATOMIC_SET(callback_has_returned_false, true);
         });
@@ -285,7 +316,7 @@ static void traverse(QString path, func_t* callback, bool in_main_thread){
   if (in_main_thread){
 
     if (ATOMIC_GET(callback_has_returned_false)==false)
-      call_callback(callback, true, true, "");
+      call_callback(callback, true, true, L"");
 
   } else {
 
@@ -296,7 +327,7 @@ static void traverse(QString path, func_t* callback, bool in_main_thread){
 
       THREADING_run_on_main_thread_and_wait([callback](){
 
-          call_callback(callback, false, true, "");
+          call_callback(callback, false, true, L"");
 
       });
 
@@ -305,14 +336,19 @@ static void traverse(QString path, func_t* callback, bool in_main_thread){
   }
 }
 
-bool iterateDirectory(const_char* w_path, bool async, func_t* callback){  
-  QString path = w_to_qstring(w_path);
+bool iterateDirectory(filepath_t daspath, bool async, func_t* callback){  
+  if (isIllegalFilepath(daspath)){
+    handleError("Illegal filepath argument 1");
+    return false;
+  }
+  
+  QString path = STRING_get_qstring(daspath.id);
 
   QFileInfo info(path);
 
   if (!info.exists()){
     showAsyncMessage(talloc_format("Directory \"%S\" does not exist.", STRING_create(path)));
-    call_callback(callback, true, true, "");
+    call_callback(callback, true, true, L"");
     return false;
   }
 
@@ -332,7 +368,7 @@ bool iterateDirectory(const_char* w_path, bool async, func_t* callback){
 
   if (!is_readable){
     showAsyncMessage(talloc_format("Directory \"%S\" is not readable", STRING_create(path)));
-    call_callback(callback, true, true, "");
+    call_callback(callback, true, true, L"");
     return false;
   }
  
@@ -373,6 +409,51 @@ bool iterateDirectory(const_char* w_path, bool async, func_t* callback){
   return true;
 }
 
+const wchar_t *g_illegal_filepath_string = L"_______________RADIUM. illegal file path________________";
+
+filepath_t g_illegal_filepath = {.id = g_illegal_filepath_string};
+
+filepath_t createIllegalFilepath(void){
+  return g_illegal_filepath;
+}
+
+bool isLegalFilepath(filepath_t file){
+  if (file.id==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+  
+  if (file.id==g_illegal_filepath_string)
+    return false;
+  
+  return wcscmp(file.id, g_illegal_filepath_string);
+}
+
+bool isIllegalFilepath(filepath_t file){
+  if (file.id==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return true;
+  }
+
+  if (file.id==g_illegal_filepath_string)
+    return true;
+  
+  return !wcscmp(file.id, g_illegal_filepath_string);
+}
+
+const_char* getBase64FromFilepath(filepath_t filepath){
+  if (isIllegalFilepath(filepath)){
+    handleError("getBase64FromFilepath: illegal filepath argument 1");
+    return "";
+  }
+
+  return STRING_get_chars(STRING_toBase64(filepath.id));
+}
+
+filepath_t getFilepathFromBase64(const_char* base64text){
+  return make_filepath(w_path_to_path(base64text));
+}
+
 file_t createIllegalFile(void){
   return make_file(-1);
 }
@@ -382,10 +463,15 @@ bool isIllegalFile(file_t file){
 }
 
 
-file_t openFileForReading(const_char* w_path){
-  disk_t *disk = DISK_open_for_reading(w_to_qstring(w_path));
+file_t openFileForReading(filepath_t w_path){
+  if (isIllegalFilepath(w_path)){
+    handleError("openFileForReading: illegal filepath argument 1");
+    return createIllegalFile();
+  }
+
+  disk_t *disk = DISK_open_for_reading(w_path);
   if (disk==NULL){
-    handleError("Unable to open file %s for reading\n", w_to_qstring(w_path).toUtf8().constData());
+    handleError("Unable to open file %S for reading\n", w_path.id);
     return createIllegalFile();
   }
 
@@ -394,8 +480,13 @@ file_t openFileForReading(const_char* w_path){
   return disknum;
 }
 
-file_t openFileForWriting(const_char* w_path){
-  disk_t *disk = DISK_open_for_writing(w_to_qstring(w_path));
+file_t openFileForWriting(filepath_t w_path){
+  if (isIllegalFilepath(w_path)){
+    handleError("Illegal filepath argument 1");
+    return createIllegalFile();
+  }
+  
+  disk_t *disk = DISK_open_for_writing(w_path);
   if (disk==NULL){
     handleError("Unable to open file for writing (couldn't create temporary file, check your file system)");
     return createIllegalFile();
@@ -466,10 +557,15 @@ const_char* readLineFromFile(file_t disknum){
 #include "../common/read_binary.h"
 
 
-file_t openFileForBinaryReading(const_char* w_path){
-  disk_t *disk = DISK_open_binary_for_reading(STRING_create(w_to_qstring(w_path)));
+file_t openFileForBinaryReading(filepath_t w_path){
+  if (isIllegalFilepath(w_path)){
+    handleError("Illegal filepath argument 1");
+    return createIllegalFile();
+  }
+  
+  disk_t *disk = DISK_open_binary_for_reading(w_path);
   if (disk==NULL){
-    handleError("Unable to open file %s for reading\n", w_to_qstring(w_path).toUtf8().constData());
+    handleError("Unable to open file %S for reading\n", w_path.id);
     return createIllegalFile();
   }
 
@@ -617,9 +713,29 @@ void putSettings(const_char* key, const_char* value){
 void putSettingsW(const_char* key, const_char* w_value){
   SETTINGS_write_string(key, w_to_qstring(w_value));
 }
+
+void putSettingsF(const_char* key, filepath_t w_value){
+  if (isIllegalFilepath(w_value)){
+    handleError("Illegal filepath argument 2");
+    return;
+  }
+
+  SETTINGS_write_string(key, STRING_get_qstring(w_value.id));
+}
+
 const_char* getSettings(const_char* key, const_char* default_value){
   return SETTINGS_read_string(key, default_value);
 }
+
 const_char* getSettingsW(const_char* key, const_char* default_w_value){
   return qstring_to_w(SETTINGS_read_qstring(key, w_to_qstring(default_w_value)));
+}
+
+filepath_t getSettingsF(const_char* key, filepath_t default_w_value){
+  if (isIllegalFilepath(default_w_value)){
+    handleError("Illegal filepath argument 2");
+    return default_w_value;
+  }
+  
+  return make_filepath(SETTINGS_read_qstring(key, STRING_get_qstring(default_w_value.id)));
 }

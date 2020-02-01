@@ -96,7 +96,7 @@ static QVector<QString> get_lines(const char* key){
   QVector<QString> ret;
 
   //const char *filename = custom_configuration_filename==NULL ? OS_get_config_filename(key) : custom_configuration_filename;
-  QString filename = custom_configuration_filename=="" ? OS_get_config_filename(key) : custom_configuration_filename;
+  QString filename = custom_configuration_filename=="" ? STRING_get_qstring(OS_get_config_filename(key).id) : custom_configuration_filename;
   //printf("Filename: -%s-. custom: -%s-\n", filename.toUtf8().constData(), custom_configuration_filename.toUtf8().constData());
   
   QFile file(filename);
@@ -110,7 +110,7 @@ static QVector<QString> get_lines(const char* key){
     sprintf(filename,"%s%s%s",curr_dir,separator,basefilename);
     file = fopen(filename,"r");
 #endif
-    QString bin_filename = OS_get_full_program_file_path(is_color_config ? "colors" : "config");
+    QString bin_filename = STRING_get_qstring(OS_get_full_program_file_path(is_color_config ? "colors" : "config").id);
     
     file.setFileName(bin_filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)==false){
@@ -191,7 +191,7 @@ static void transfer_temporary_file_to_file(QString from, QString to){
 static void write_lines(const char* key, QVector<QString> lines){
   R_ASSERT(THREADING_is_main_thread());
   
-  QString filename = OS_get_config_filename(key);
+  QString filename = STRING_get_qstring(OS_get_config_filename(key).id);
 
   printf("config filename: -%s-\n",filename.toUtf8().constData());
 
@@ -302,8 +302,8 @@ bool SETTINGS_has_key(const char *key){
   return SETTINGS_get_chars(key) != NULL;
 }
 
-void SETTINGS_set_custom_configfile(QString filename){
-  custom_configuration_filename=filename;
+void SETTINGS_set_custom_configfile(filepath_t filename){
+  custom_configuration_filename=STRING_get_qstring(filename.id);
 }
 
 void SETTINGS_unset_custom_configfile(void){

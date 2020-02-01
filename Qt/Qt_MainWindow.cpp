@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <inttypes.h>
 
-#include "../api/api_proc.h"
+#include <QString>
 
 #include <unistd.h> // Must be placed after includepyton/api_proc to avoid compilation error.
 
@@ -58,6 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static HWND gtk_hwnd = NULL;
 #endif
 
+#include <QString>
 
 #include "EditorWidget.h"
 #include "../common/threading.h"
@@ -97,6 +98,10 @@ static QVector<Bottom_bar_widget*> g_bottom_bars; // need to be defined here sin
 #include "mQt_bottom_bar_widget_callbacks.h"
 #include "mQt_upperleft_widget_callbacks.h"
 #include "../OpenGL/Widget_proc.h"
+
+#include "../api/api_proc.h"
+
+
 
 #include "Qt_MainWindow_proc.h"
 
@@ -413,19 +418,19 @@ void handleDropEvent(QString filename, float x){
   UNDO_OPEN();{
     
     if (filename.endsWith(".rad"))
-      LoadSong_CurrPos(window, STRING_create(filename));
+      LoadSong_CurrPos(window, make_filepath(filename));
     
     else if (filename.endsWith(".rec"))
-      instrument_id = createAudioInstrumentFromPreset(filename.toUtf8().constData(), NULL, 0, 0, true);
+      instrument_id = createAudioInstrumentFromPreset(make_filepath(filename), NULL, 0, 0, true);
     
     else if (filename.endsWith(".mrec"))
-      instrument_id = createAudioInstrumentFromPreset(filename.toUtf8().constData(), NULL, 0, 0, true);
+      instrument_id = createAudioInstrumentFromPreset(make_filepath(filename), NULL, 0, 0, true);
     
     else if (file_could_be_a_sample(filename) || filename.endsWith(".sf2")){
       struct Patch *patch = PATCH_create_audio("Sample Player", "Sample Player", NULL, NULL, true, 0, 0);
       instrument_id = patch->id;
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-      SAMPLER_set_new_sample(plugin, STRING_create(filename), 0);
+      SAMPLER_set_new_sample(plugin, make_filepath(filename), 0);
       Sample_requester_widget *w = AUDIOWIDGET_get_sample_requester_widget(patch);
       if (w==NULL)
         R_ASSERT(false);
@@ -671,7 +676,7 @@ void SetupMainWindow(void){
 
     const char *fontstring = SETTINGS_read_string("font",NULL);
     if(fontstring==NULL) {
-      SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
+      SETTINGS_set_custom_configfile(OS_get_full_program_file_path(L"config"));
       fontstring = SETTINGS_read_string("font",NULL);
       R_ASSERT(fontstring != NULL);
       custom_config_set = true;
@@ -774,61 +779,62 @@ void GFX_EnablePainting(void){
 
 
 
-const wchar_t *GFX_GetLoadFileName(
-                                   struct Tracker_Windows *tvisual,
-                                   ReqType reqtype,
-                                   const char *seltext,
-                                   const wchar_t *wdir,
-                                   const char *postfixes,
-                                   const char *type,
-                                   bool program_state_is_valid
+filepath_t GFX_GetLoadFileName(
+                                     struct Tracker_Windows *tvisual,
+                                     ReqType reqtype,
+                                     const char *seltext,
+                                     const filepath_t wdir,
+                                     const char *postfixes,
+                                     const char *type,
+                                     bool program_state_is_valid
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
-  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, createIllegalFilepath());
 
-  QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
+  QString dir = isIllegalFilepath(wdir) ? "" : QString::fromWCharArray(wdir.id);
   
-  QString filename = radium::FileRequester(editor->editor_layout_widget,
-                                           seltext,
-                                           dir,
-                                           type,
-                                           postfixes,
-                                           true
-                                           ).get_filename(program_state_is_valid);
+  filepath_t filename = radium::FileRequester(editor->editor_layout_widget,
+                                              seltext,
+                                              dir,
+                                              type,
+                                              postfixes,
+                                              true
+                                              ).get_filename(program_state_is_valid);
   
-  if(filename == "")
-    return NULL;
-  else
-    return STRING_create(filename);  
+  if(isIllegalFilepath(filename) || STRING_equals(filename.id, ""))
+    return createIllegalFilepath();
+
+  return filename;
 }
 
-const wchar_t *GFX_GetSaveFileName(
-                                   struct Tracker_Windows *tvisual,
-                                   ReqType reqtype,
-                                   const char *seltext,
-                                   const wchar_t *wdir,
-                                   const char *postfixes,
-                                   const char *type,
-                                   bool program_state_is_valid
-                                   ){
+filepath_t GFX_GetSaveFileName(
+                                     struct Tracker_Windows *tvisual,
+                                     ReqType reqtype,
+                                     const char *seltext,
+                                     const filepath_t wdir,
+                                     const char *postfixes,
+                                     const char *type,
+                                     bool program_state_is_valid
+                                     ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
-  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, createIllegalFilepath());
 
-  QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
+  QString dir = isIllegalFilepath(wdir) ? "" : QString::fromWCharArray(wdir.id);
   
-  QString filename = radium::FileRequester(editor->editor_layout_widget,
-                                           seltext,
-                                           dir,
-                                           type,
-                                           postfixes,
-                                           false
-                                           ).get_filename(program_state_is_valid);
-  if (filename == "")
-    return NULL;
-  else
-    return STRING_create(filename);
+  filepath_t filename = radium::FileRequester(editor->editor_layout_widget,
+                                              seltext,
+                                              dir,
+                                              type,
+                                              postfixes,
+                                              false
+                                              ).get_filename(program_state_is_valid);
+
+  if(isIllegalFilepath(filename) || STRING_equals(filename.id, ""))
+    return createIllegalFilepath();
+
+  return filename;
 }
 
 static QVector<QPointer<QWidget>> g_modal_widgets;

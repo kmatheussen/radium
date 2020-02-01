@@ -43,8 +43,9 @@ static void PRESET_set_last_used_filename(QString filename){
   g_last_filename = QFileInfo(filename).baseName();
 }
 
-void PRESET_set_last_used_filename(const wchar_t *wfilename){
-  QString filename = STRING_get_qstring(wfilename);
+void PRESET_set_last_used_filename(filepath_t wfilename){
+  R_ASSERT_RETURN_IF_FALSE(isLegalFilepath(wfilename));
+  QString filename = STRING_get_qstring(wfilename.id);
   PRESET_set_last_used_filename(filename);
 }
 
@@ -54,13 +55,13 @@ void PRESET_set_last_used_filename(const wchar_t *wfilename){
 /************** LOAD ********************/
 /****************************************/
 
-static vector_t get_all_files_in_path(const wchar_t *wpath, QString ends_with){
-  vector_t ret = {};
+static dynvec_t get_all_files_in_path(filepath_t wpath, QString ends_with){
+  dynvec_t ret = {};
 
   if (g_last_preset_path=="")
     g_last_preset_path = QCoreApplication::applicationDirPath();
 
-  QString path = wpath==NULL ? g_last_preset_path : STRING_get_qstring(wpath);
+  QString path = isIllegalFilepath(wpath) ? g_last_preset_path : STRING_get_qstring(wpath.id);
   
   QDir dir(path);
   dir.setSorting(QDir::Name);
@@ -69,18 +70,18 @@ static vector_t get_all_files_in_path(const wchar_t *wpath, QString ends_with){
     QFileInfo file_info = list.at(i);
     QString filename = file_info.fileName();
     if (filename.endsWith(ends_with))
-      VECTOR_push_back(&ret, STRING_create(filename));
+      DYNVEC_push_back(&ret, DYN_create_filepath(make_filepath(filename)));
   }
 
   return ret;
 }
 
-vector_t PRESET_get_all_rec_files_in_path(const wchar_t *wpath){
+dynvec_t PRESET_get_all_rec_files_in_path(filepath_t wpath){
   return get_all_files_in_path(wpath, ".rec");
 }
 
 
-vector_t PRESET_get_all_mrec_files_in_path(const wchar_t *wpath){
+dynvec_t PRESET_get_all_mrec_files_in_path(filepath_t wpath){
   return get_all_files_in_path(wpath, ".mrec");
 }
 
@@ -264,11 +265,11 @@ static instrument_t insert_preset_into_program(hash_t *state, const_char *name, 
 //
 // A less confusing name could perhaps be PRESET_add_instrument
 //
-instrument_t PRESET_load(const wchar_t *wfilename, const_char *patchname, bool inc_usage_number, bool set_as_current, float x, float y) {
+instrument_t PRESET_load(filepath_t wfilename, const_char *patchname, bool inc_usage_number, bool set_as_current, float x, float y) {
   if (patchname!=NULL && strlen(patchname)==0)
     patchname = NULL;
 
-  QString filename = STRING_get_qstring(wfilename);
+  QString filename = STRING_get_qstring(wfilename.id);
   QFileInfo info(filename);
 
   if (info.isAbsolute()==false && g_last_preset_path!="")

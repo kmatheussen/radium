@@ -2908,12 +2908,12 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
         const SeqBlock *curr_sample_seqblock = RT_get_curr_sample_seqblock2(curr_seqtrack);
 
         if (curr_sample_seqblock != NULL){
-          const wchar_t *filename = get_seqblock_sample_name(curr_seqtrack, curr_sample_seqblock, false);
-          if (filename==NULL){
+          filepath_t filename = get_seqblock_sample_name(curr_seqtrack, curr_sample_seqblock, false);
+          if (isIllegalFilepath(filename)){
             R_ASSERT(false);
             new_message = "error";
           }else{
-            create_message(window, QString("Playing ") + STRING_get_qstring(filename));
+            create_message(window, QString("Playing ") + STRING_get_qstring(filename.id));
             goto gotit;
           }
         }else

@@ -330,14 +330,16 @@ static dynvec_t s7extra_array(s7_scheme *s7, s7_pointer vector){
 }
 
 
-extern int g_instrument_type_tag;
-
 static bool is_instrument(s7_pointer s){
   return s7_is_c_object(s) && (s7_c_object_type(s) == g_instrument_type_tag);
 }
 
 static bool is_file(s7_pointer s){
   return s7_is_c_object(s) && (s7_c_object_type(s) == g_file_type_tag);
+}
+
+static bool is_filepath(s7_pointer s){
+  return s7_is_c_object(s) && (s7_c_object_type(s) == g_filepath_type_tag);
 }
 
 static instrument_t get_instrument(s7_pointer s){
@@ -360,6 +362,15 @@ static file_t get_file(s7_pointer s){
   int64_t *i = (int64_t*)s7_c_object_value(s);
 
   return make_file(*i);
+}
+
+static filepath_t get_filepath(s7_pointer s){
+  R_ASSERT_NON_RELEASE(is_filepath(s));
+
+  const wchar_t *w = (const wchar_t*)s7_c_object_value(s);
+  const wchar_t *i = talloc_wcsdup(w); // Probably not necessary to make a copy, but we never know.
+
+  return make_filepath(i);
 }
 
 static dyn_t create_dyn_from_s7(s7_scheme *s7, s7_pointer s, bool undefinedIsError){
@@ -395,6 +406,9 @@ static dyn_t create_dyn_from_s7(s7_scheme *s7, s7_pointer s, bool undefinedIsErr
 
   if (is_instrument(s))
     return DYN_create_instrument(get_instrument(s));
+      
+  if (is_filepath(s))
+    return DYN_create_filepath(get_filepath(s));
       
   if(undefinedIsError){
     //if (g_user_interaction_enabled==false)
@@ -550,6 +564,16 @@ file_t s7extra_get_file(s7_scheme *s7, s7_pointer s, const char **error){
   return get_file(s);
 }
 
+filepath_t s7extra_get_filepath(s7_scheme *s7, s7_pointer s, const char **error){
+  
+  if (!is_filepath(s)){
+    *error = "filepath";
+    return createIllegalFilepath();
+  }
+
+  return get_filepath(s);
+}
+
 
 
 /**
@@ -613,6 +637,8 @@ s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
       return (s7_pointer)dyn.func;
     case INSTRUMENT_TYPE:
       return s7extra_make_instrument(s7, dyn.instrument);
+    case FILEPATH_TYPE:
+      return s7extra_make_filepath(s7, dyn.filepath);
     case BOOL_TYPE:
       return s7_make_boolean(radiums7_sc, dyn.bool_number);
   }

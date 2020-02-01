@@ -372,7 +372,7 @@ void pasteGeneral(void){
 }
 
 
-void saveBlock(const char *filename, int blocknum, int windownum){
+void saveBlock(filepath_t filename, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
 
@@ -389,12 +389,12 @@ void saveBlock(const char *filename, int blocknum, int windownum){
 }
 
 
-void loadBlock(const char *filename_c){
-  LoadBlockFromDisk(filename_c);
+void loadBlock(filepath_t filename){
+  LoadBlockFromDisk(filename);
 }
 
 
-void saveTrack(const char *filename, int tracknum, int blocknum, int windownum){  
+void saveTrack(filepath_t filename, int tracknum, int blocknum, int windownum){  
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   
   if (window->curr_track < 0){
@@ -411,7 +411,7 @@ void saveTrack(const char *filename, int tracknum, int blocknum, int windownum){
 }
 
 
-void loadTrack(const char *filename_c, int tracknum, int blocknum, int windownum){
+void loadTrack(filepath_t filename, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   
   if (window->curr_track < 0){
@@ -433,7 +433,7 @@ void loadTrack(const char *filename_c, int tracknum, int blocknum, int windownum
   if(wtrack==NULL)
     return;
 
-  LoadTrackFromDisk(filename_c, window, wblock, wtrack);
+  LoadTrackFromDisk(filename, window, wblock, wtrack);
 }
 
 

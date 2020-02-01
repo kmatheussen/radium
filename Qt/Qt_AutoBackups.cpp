@@ -29,8 +29,8 @@ extern struct Root *root;
 
 static int64_t g_undo_generation_for_last_backup = -1;
 
-static wchar_t *get_backup_filename(void){
-  return STRING_append(dc.filename, STRING_create("_automatic_backup.rad"));
+static filepath_t get_backup_filename(void){
+  return make_filepath(STRING_append(dc.filename.id, L"_automatic_backup.rad"));
 }
 
 static int64_t get_backup_interval_ms(void){
@@ -44,7 +44,7 @@ static void make_backup(void){
   if (Undo_num_undos() == 0)
     return;
 
-  if (dc.filename==NULL)
+  if (isIllegalFilepath(dc.filename))
     return;
 
   if (g_undo_generation_for_last_backup == g_curr_undo_generation)
@@ -56,7 +56,7 @@ static void make_backup(void){
   root->song->tracker_windows->message = "Please wait. Saving backup";
   GL_create(root->song->tracker_windows);
 
-  wchar_t *backup_filename = get_backup_filename();
+  filepath_t backup_filename = get_backup_filename();
   Save_Backup(backup_filename, root);
 
   root->song->tracker_windows->message = NULL;

@@ -552,7 +552,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     }
 
     {
-      embedded_audio_files->setText(getEmbeddedAudioFilesPath());
+      embedded_audio_files->setText(STRING_get_qstring(getEmbeddedAudioFilesPath().id));
       embedded_audio_group->hide(); // not used yet.
     }
 
@@ -944,7 +944,7 @@ public slots:
   
   // embedded audio file paths
   void on_embedded_audio_files_editingFinished(){
-    setEmbeddedAudioFilesPath(embedded_audio_files->text().toUtf8().constData());
+    setEmbeddedAudioFilesPath(make_filepath(embedded_audio_files->text()));
     set_editor_focus();
     
     GL_lock();{
@@ -1135,19 +1135,19 @@ public slots:
   }
 
   void on_color_save_button_clicked(){
-    GFX_SaveColors(NULL);
+    GFX_SaveColors(createIllegalFilepath());
   }
 
 
   void on_save_color_file_clicked(){
-    const wchar_t *filename = GFX_GetSaveFileName(root->song->tracker_windows,
-                                                  NULL,
-                                                  "Select file",
-                                                  NULL,
-                                                  NULL,
-                                                  NULL,
-                                                  true);
-    if (filename != NULL)
+    filepath_t filename = GFX_GetSaveFileName(root->song->tracker_windows,
+                                              NULL,
+                                              "Select file",
+                                              createIllegalFilepath(),
+                                              NULL,
+                                              NULL,
+                                              true);
+    if (isLegalFilepath(filename))
       GFX_SaveColors(filename);
   }
 

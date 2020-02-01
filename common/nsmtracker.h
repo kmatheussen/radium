@@ -554,27 +554,6 @@ static inline bool is_called_every_ms(int ms){
 
 
 /*********************************************************************
-	sndfile.h
-*********************************************************************/
-
-#if defined(INCLUDE_SNDFILE_OPEN_FUNCTIONS)
-
-#if defined(FOR_WINDOWS)
-#include <windows.h>
-#define ENABLE_SNDFILE_WINDOWS_PROTOTYPES 1
-#endif
-
-#include <sndfile.h>
-
-extern LANGSPEC SNDFILE *radium_sf_open(const wchar_t *filename, int mode, SF_INFO *sfinfo);
-#if USE_QT4
-extern SNDFILE *radium_sf_open(QString filename, int mode, SF_INFO *sfinfo);
-#endif
-
-#endif
-
-
-/*********************************************************************
 	colors.h
 *********************************************************************/
 
@@ -1006,6 +985,57 @@ typedef struct _radium_os_disk disk_t;
 
 #include "dyn_type.h"
 
+extern filepath_t g_illegal_filepath;
+
+#ifdef __cplusplus
+namespace radium{
+  class FilePath{
+
+    filepath_t _filepath;
+
+  public:
+    FilePath(const wchar_t *string)
+      : _filepath(make_filepath(string==NULL ? g_illegal_filepath.id : wcsdup(string)))
+    {
+      R_ASSERT(string!=NULL);
+    }
+    FilePath(filepath_t filepath)
+      : FilePath(filepath.id)
+    {}
+    FilePath()
+      : FilePath(g_illegal_filepath)
+    {}
+    ~FilePath(){
+      free((void*)_filepath.id);
+    }
+
+    FilePath(const FilePath &filepath)
+      : FilePath(filepath.get())
+    {}
+    
+    FilePath& operator=(const FilePath &filepath)
+    {
+      free((void*)_filepath.id);
+      _filepath.id = wcsdup(filepath.getString());
+      return *this;
+    }
+
+    const wchar_t *getString(void) const {
+      return _filepath.id;
+    }
+    filepath_t get(void) const {
+      return _filepath;
+    }
+    bool isLegal(void) const {
+      return wcscmp(_filepath.id, g_illegal_filepath.id);
+    }
+    bool isEmpty(void) const {
+      return !isLegal() || wcslen(getString())==0;
+    }
+  };
+}
+#endif
+
 
 /*********************************************************************
 	hashmap.h
@@ -1044,6 +1074,8 @@ static inline const char *DYN_type_name(enum DynType type){
       return "FUNC_TYPE";
     case INSTRUMENT_TYPE:
       return "INSTRUMENT_TYPE";
+    case FILEPATH_TYPE:
+      return "FILEPATH_TYPE";
     case BOOL_TYPE:
       return "BOOL_TYPE";
   }
@@ -1130,6 +1162,14 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
       return a1.func==a2.func;
     case INSTRUMENT_TYPE:
       return a1.instrument.id==a2.instrument.id;
+    case FILEPATH_TYPE:
+      if (a1.filepath.id==a2.filepath.id)
+        return true;
+      else if (a1.filepath.id==NULL || a2.filepath.id==NULL){
+        R_ASSERT_NON_RELEASE(false);
+        return false;
+      }else
+        return !wcscmp(a1.filepath.id, a2.filepath.id);
     case BOOL_TYPE:
       return a1.bool_number==a2.bool_number;
   }
@@ -1221,6 +1261,13 @@ static inline dyn_t DYN_create_instrument(instrument_t instrument){
   dyn_t a;
   a.type = INSTRUMENT_TYPE;
   a.instrument = instrument;
+  return a;
+}
+
+static inline dyn_t DYN_create_filepath(filepath_t filepath){
+  dyn_t a;
+  a.type = FILEPATH_TYPE;
+  a.filepath = filepath;
   return a;
 }
 
@@ -1375,6 +1422,27 @@ static inline dyn_t DYN_copy(const dyn_t a){
     return a;
 }
 
+
+
+/*********************************************************************
+	sndfile.h
+*********************************************************************/
+
+#if defined(INCLUDE_SNDFILE_OPEN_FUNCTIONS)
+
+#if defined(FOR_WINDOWS)
+#include <windows.h>
+#define ENABLE_SNDFILE_WINDOWS_PROTOTYPES 1
+#endif
+
+#include <sndfile.h>
+
+extern LANGSPEC SNDFILE *radium_sf_open(filepath_t filename, int mode, SF_INFO *sfinfo);
+#if USE_QT4
+extern SNDFILE *radium_sf_open(QString filename, int mode, SF_INFO *sfinfo);
+#endif
+
+#endif
 
 
 /*********************************************************************
@@ -3086,8 +3154,8 @@ struct SeqBlock{
   struct Blocks *block; // If NULL, then the seqblock holds a sample.
 
   int64_t sample_id; // Has valid value if block==NULL.
-  const wchar_t *sample_filename;
-  const wchar_t *sample_filename_without_path;
+  filepath_t sample_filename;
+  filepath_t sample_filename_without_path;
   const wchar_t *name; // Only used when block==NULL. If null, sample_filename is displayed.
   
   bool *track_is_disabled; // Is NULL in the seqblock used when playing block.

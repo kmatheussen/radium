@@ -273,15 +273,16 @@ struct Sample{
   radium::Peaks *peaks = new radium::Peaks();
 
 #if !defined(RELEASE)
-  const wchar_t *filename = NULL;
+  radium::FilePath filename;
 #endif
 
   double frequency_table[128] = {};
 
   Data *data = NULL;
 
-  Sample(){
-  }
+  Sample()
+    : filename(L"")
+  {}
 
   ~Sample(){
     delete peaks;
@@ -451,7 +452,7 @@ struct Data{
 
   enum ResamplerType org_resampler_type = RESAMPLER_NON; // Used to remember the original resampler type when rendering soundfile.
   enum ResamplerType resampler_type = RESAMPLER_NON;
-  const wchar_t *filename = NULL;
+  radium::FilePath filename;
   int instrument_number = 0;
   bool using_default_sound = false;
   
@@ -502,7 +503,9 @@ struct Data{
   Data(const Data&) = delete;
   Data& operator=(const Data&) = delete;
  
-  Data(){
+  Data(filepath_t filename)
+    : filename(filename)
+  {
     R_ASSERT(voices_playing==NULL);
     R_ASSERT(voices_not_playing==NULL);
     R_ASSERT(p.crossfade_length==0);
@@ -524,13 +527,13 @@ struct MySampleRecorderInstance : radium::SampleRecorderInstance{
 
   struct Patch *_patch;
 
-  MySampleRecorderInstance(struct Patch *patch, wchar_t *recording_path, int num_ch)
+  MySampleRecorderInstance(struct Patch *patch, filepath_t recording_path, int num_ch)
     : SampleRecorderInstance(recording_path, num_ch, 48)
     , _patch(patch)
   {
   }
   
-  void is_finished(bool success, wchar_t *filename) override {
+  void is_finished(bool success, filepath_t filename) override {
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     
     if (plugin != NULL){
@@ -2520,7 +2523,7 @@ static void set_legal_loop_points(Sample &sample, int64_t start, int64_t end, bo
 #include "Sampler_plugin_xi_load.c"
 #include "Sampler_plugin_sf2_load.c"
 
-static float *load_interleaved_samples(const wchar_t *filename, SF_INFO *sf_info){
+static float *load_interleaved_samples(filepath_t filename, SF_INFO *sf_info){
   SNDFILE *sndfile = radium_sf_open(filename,SFM_READ,sf_info);
   
   if(sndfile==NULL)
@@ -2566,8 +2569,8 @@ static float *load_interleaved_samples(const wchar_t *filename, SF_INFO *sf_info
   return ret;
 }
 
-static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, bool set_loop_on_off){
-  EVENTLOG_add_event(talloc_format("load_sample_with_libsndfile -%S-", filename));
+static bool load_sample_with_libsndfile(Data *data, filepath_t filename, bool set_loop_on_off){
+  EVENTLOG_add_event(talloc_format("load_sample_with_libsndfile -%S-", filename.id));
     
   SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
 
@@ -2576,7 +2579,7 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, boo
   float *samples = load_interleaved_samples(filename, &sf_info);
 
   if(samples==NULL){
-    fprintf(stderr,"  Libsndfile could not open file \"%S\"\n", filename);
+    fprintf(stderr,"  Libsndfile could not open file \"%S\"\n", filename.id);
     return false;
   }
 
@@ -2774,11 +2777,11 @@ static void release_voice(Voice &voice){
 }
 
 
-static bool load_sample(Data *data, const wchar_t *filename, int instrument_number, bool set_loop_on_off){
+static bool load_sample(Data *data, filepath_t filename, int instrument_number, bool set_loop_on_off){
   if(load_xi_instrument(data,filename, set_loop_on_off)==false){
     if(load_sample_with_libsndfile(data,filename, set_loop_on_off)==false){
       if(load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false){        
-        GFX_Message(NULL,"Unable to load %S as soundfile.", filename);
+        GFX_Message(NULL,"Unable to load %S as soundfile.", filename.id);
         return false;
       }
     }
@@ -2809,8 +2812,8 @@ static void free_tremolo(SoundPlugin *tremolo){
   V_free(tremolo);
 }
 
-static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, enum ResamplerType resampler_type, bool use_sample_file_middle_note, bool is_loading){
-  Data *data = new Data;
+static Data *create_data(float samplerate, Data *old_data, filepath_t filename, int instrument_number, enum ResamplerType resampler_type, bool use_sample_file_middle_note, bool is_loading){
+  Data *data = new Data(filename);
   
   data->signal_from_RT = RSEMAPHORE_create(0);
 
@@ -2847,7 +2850,6 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
 
   data->samplerate = samplerate;
   data->resampler_type = resampler_type;
-  data->filename = wcsdup(filename);
   data->instrument_number = instrument_number;
 
   int i;
@@ -2873,14 +2875,12 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   //const char *filename="/home/kjetil/brenn/downloaded/temp/CATEGORY/BELL/CHURCH/CHRBEL01.XI";
   //const char *filename="/gammelhd/gammelhd/gammel_lyd/2_channel_short.wav";
   //const char *filename="/gammelhd/gammelhd/gammelhd/gammel_lyd/d_lydfiler/instrument/keyboard/mellotron.sf2";
-  wchar_t *default_sound_filename = STRING_append(OS_get_program_path2(),
-                                    STRING_append(STRING_create(OS_get_directory_separator()),
-                                    STRING_append(STRING_create("sounds"),
-                                    STRING_append(STRING_create(OS_get_directory_separator()),
-                                                  !strcmp(plugin_type->name, g_click_name)
-                                                  ? STRING_create("243749__unfa__metronome-1khz-weak-pulse.flac")
-                                                  : STRING_create("016.WAV")))));
-    
+  filepath_t default_sound_filename = appendFilePaths(OS_get_program_path2(),
+                                                      appendFilePaths(make_filepath(L"sounds"),
+                                                                      !strcmp(plugin_type->name, g_click_name)
+                                                                      ? make_filepath(L"243749__unfa__metronome-1khz-weak-pulse.flac")
+                                                                      : make_filepath(L"016.WAV")));
+  
   Data *data = create_data(samplerate,NULL,default_sound_filename,0,RESAMPLER_CUBIC, true, is_loading); // cubic is the default
 
   // Add a little bit release to click instrument to avoid noise when unpressing the "Click" button in the bottom bar.
@@ -2931,8 +2931,6 @@ static void delete_data(Data *data){
 
   EVENTLOG_add_event("sampler_plugin: delete_data 3");
   
-  free((char*)data->filename);
-
   RSEMAPHORE_delete(data->signal_from_RT);
 
   free_tremolo(data->tremolo);
@@ -2998,7 +2996,7 @@ void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int64_t start, int64_t le
 }
 
 static bool set_new_sample(struct SoundPlugin *plugin,
-                           const wchar_t *filename,
+                           filepath_t filename,
                            int instrument_number,
                            enum ResamplerType resampler_type,
                            int64_t loop_start,
@@ -3012,7 +3010,7 @@ static bool set_new_sample(struct SoundPlugin *plugin,
   Data *old_data = (Data*)plugin->data;
 
   filename = OS_loading_get_resolved_file_path(filename, false); // set program_state_is_valid=false. Might not be necessary, but I'm not sure.
-  if (filename==NULL)
+  if (isIllegalFilepath(filename))
     goto exit;
 
   data = create_data(old_data->samplerate, old_data, filename, instrument_number, resampler_type, use_sample_file_middle_note, is_loading);
@@ -3070,7 +3068,7 @@ static bool set_new_sample(struct SoundPlugin *plugin,
 }
 
 
-bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename, int instrument_number){
+bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, filepath_t filename, int instrument_number){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), false);
   
   Data *data=(Data*)plugin->data;
@@ -3078,24 +3076,24 @@ bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, const wchar_t *filename,
 }
 
 
-bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, const wchar_t *path){
+bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, filepath_t path){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), false);
     
   bool is_default_sound;
 
   QDir dir;
   
-  if (path==NULL){
+  if (isIllegalFilepath(path)){
     
-    const wchar_t *filename = SAMPLER_get_filename(plugin, &is_default_sound);
+    filepath_t filename = SAMPLER_get_filename(plugin, &is_default_sound);
     
-    QFileInfo info(STRING_get_qstring(filename));
+    QFileInfo info(STRING_get_qstring(filename.id));
   
     dir = info.absoluteDir();
     
   } else {
     
-    dir = QDir(STRING_get_qstring(path));
+    dir = QDir(STRING_get_qstring(path.id));
     
   }
   
@@ -3117,7 +3115,7 @@ bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, const wchar_t *path){
 
   printf("*********** filename: -%s-\n", new_filename.toUtf8().constData());
   
-  if (SAMPLER_set_new_sample(plugin, STRING_create(new_filename), 0)==false){
+  if (SAMPLER_set_new_sample(plugin, make_filepath(new_filename), 0)==false){
     //GFX_Message(NULL, "Unable to set sample %s", new_filename.toUtf8().constData()); // SAMPLER_set_new_sample has already given a message.
     return false;
   }
@@ -3130,7 +3128,7 @@ bool SAMPLER_set_temp_resampler_type(struct SoundPlugin *plugin, enum ResamplerT
   Data *data=(Data*)plugin->data;
   data->org_resampler_type = resampler_type;
   if (resampler_type != data->resampler_type)
-    return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
+    return set_new_sample(plugin,data->filename.get(),data->instrument_number,resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
   else
     return true;
 }
@@ -3138,7 +3136,7 @@ bool SAMPLER_set_temp_resampler_type(struct SoundPlugin *plugin, enum ResamplerT
 void SAMPLER_set_org_resampler_type(struct SoundPlugin *plugin){
   Data *data=(Data*)plugin->data;
   if (data->org_resampler_type != data->resampler_type)
-    set_new_sample(plugin,data->filename,data->instrument_number,data->org_resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
+    set_new_sample(plugin,data->filename.get(),data->instrument_number,data->org_resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
 }
 
 bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, enum ResamplerType resampler_type){
@@ -3146,7 +3144,7 @@ bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, enum ResamplerType r
   
   Data *data=(Data*)plugin->data;
   if (resampler_type != data->resampler_type)
-    return set_new_sample(plugin,data->filename,data->instrument_number,resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
+    return set_new_sample(plugin,data->filename.get(),data->instrument_number,resampler_type,data->loop_start,data->loop_length, data->use_sample_file_middle_note, false);
   else
     return true;
 }
@@ -3159,7 +3157,7 @@ enum ResamplerType SAMPLER_get_resampler_type(struct SoundPlugin *plugin){
 }
 
 // Has been used for debugging. Not sure if I planned to use it for anything else.
-void SAMPLER_save_sample(struct SoundPlugin *plugin, const wchar_t *filename, int sample_number){
+void SAMPLER_save_sample(struct SoundPlugin *plugin, filepath_t filename, int sample_number){
   R_ASSERT_RETURN_IF_FALSE(!strcmp("Sample Player", plugin->type->type_name));
   
   Data *data = (Data*)plugin->data;
@@ -3188,7 +3186,7 @@ void SAMPLER_save_sample(struct SoundPlugin *plugin, const wchar_t *filename, in
   sf_close(sndfile);
 }
 
-void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir, int num_channels, bool recording_from_main_input){
+void SAMPLER_start_recording(struct SoundPlugin *plugin, filepath_t pathdir, int num_channels, bool recording_from_main_input){
 #if !defined(RELEASE)
   R_ASSERT_RETURN_IF_FALSE(!strcmp("Sample Player", plugin->type->type_name));
 #endif
@@ -3200,14 +3198,14 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir,
   if (ATOMIC_GET(data->recording_status) != NOT_RECORDING)
     return;
 
-  wchar_t *recording_path = STRING_append(pathdir,
-                                          STRING_append(STRING_create(OS_get_directory_separator()),
-                                                        STRING_replace(STRING_replace(STRING_create(plugin->patch->name),
-                                                                                      "/",
-                                                                                      "_slash_"),
-                                                                       "\\",
-                                                                       "_backslash_")));
-  QDir dir = QFileInfo(STRING_get_qstring(recording_path)).dir();
+  filepath_t recording_path = appendFilePaths(pathdir,
+                                              make_filepath(STRING_replace(STRING_replace(STRING_create(plugin->patch->name),
+                                                                                          "/",
+                                                                                          "_slash_"),
+                                                                           "\\",
+                                                                           "_backslash_")));
+  
+  QDir dir = QFileInfo(STRING_get_qstring(recording_path.id)).dir();
   if (dir.exists()==false){
     GFX_Message2(NULL, true, "Error. Could not find the directory \"%s\".\n", dir.absolutePath().toUtf8().constData());
     return;
@@ -3429,13 +3427,13 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   int64_t        loop_start        = 0; if (HASH_has_key(state, "loop_start"))  loop_start  = HASH_get_int(state, "loop_start");
   int64_t        loop_length       = 0; if (HASH_has_key(state, "loop_length")) loop_length = HASH_get_int(state, "loop_length");
 
-  const wchar_t *filename = PLUGIN_DISK_get_audio_filename(state);
+  filepath_t filename = PLUGIN_DISK_get_audio_filename(state);
 
-  if(filename==NULL) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
+  if(isIllegalFilepath(filename)) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
     return;
 
   if(set_new_sample(plugin,filename,instrument_number,resampler_type,loop_start,loop_length, use_sample_file_middle_note, is_loading)==false)
-    GFX_Message(NULL, "Could not load soundfile \"%S\". (instrument number: %d)\n", filename,instrument_number);
+    GFX_Message(NULL, "Could not load soundfile \"%S\". (instrument number: %d)\n", filename.id,instrument_number);
 
   Data *data=(Data*)plugin->data;
 
@@ -3460,10 +3458,10 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   
   Data *data=(Data*)plugin->data;
 
-  const wchar_t *maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename);
+  filepath_t maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename.get());
   
   //printf("maybe: -%s- -%s-\n", data->filename, maybe_relative_filename);
-  HASH_put_string(state, "filename", maybe_relative_filename);
+  HASH_put_filepath(state, "filename", maybe_relative_filename);
 
   HASH_put_bool(state, "use_sample_file_middle_note", data->use_sample_file_middle_note);
 
@@ -3474,27 +3472,27 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   HASH_put_int(state, "loop_length",data->loop_length);
 
   if (g_embed_samples){
-    const char *audiofile = DISK_file_to_base64(data->filename);
+    const char *audiofile = DISK_file_to_base64(data->filename.get());
     if (audiofile != NULL)
       HASH_put_chars(state, "audiofile", audiofile);
     else
-      GFX_addMessage("Unable to embed sample \"%S\". Could not read file.", maybe_relative_filename);
+      GFX_addMessage("Unable to embed sample \"%S\". Could not read file.", maybe_relative_filename.id);
   }
 }
 
-const wchar_t *SAMPLER_get_filename(struct SoundPlugin *plugin, bool *is_default_sound){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), NULL);  
+filepath_t SAMPLER_get_filename(struct SoundPlugin *plugin, bool *is_default_sound){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), createIllegalFilepath());
 
   Data *data=(Data*)plugin->data;
   *is_default_sound = data->using_default_sound;
-  return data->filename;
+  return data->filename.get();
 }
 
-const wchar_t *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), NULL);
+const wchar_t* SAMPLER_get_filename_display(struct SoundPlugin *plugin){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), L"");
 
   Data *data=(Data*)plugin->data;
-  return data->filename;
+  return data->filename.getString();
 }
 
 static SoundPluginType plugin_type = {};

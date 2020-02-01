@@ -38,12 +38,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../config/config.h"
 
 
-bool Save_Initialize(const wchar_t *filename, const char *type){
+bool Save_Initialize(const filepath_t filename, const char *type){
   	dc.success=true;
 
         dc.file=DISK_open_for_writing(filename);
 	if(dc.file==NULL){
-          GFX_Message2(NULL, true, "Could not save song file \"%S\".\n\nMessage from the system: \"%s\".", filename, DISK_get_error(NULL));
+          GFX_Message2(NULL, true, "Could not save song file \"%S\".\n\nMessage from the system: \"%s\".", filename.id, DISK_get_error(NULL));
           return false;
 	}
 
@@ -55,7 +55,7 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
         
 	if(length1<0 || length2<0 || length3<0){
           const char *error = DISK_get_error(dc.file);
-          GFX_Message2(NULL, true, "Unable to write to file \"%S\".\n\nMessage from the system: \"%s\".", filename, error!=NULL ? error : "(no info)");
+          GFX_Message2(NULL, true, "Unable to write to file \"%S\".\n\nMessage from the system: \"%s\".", filename.id, error!=NULL ? error : "(no info)");
           DISK_close_and_delete(dc.file);
           return false;
 	}
@@ -68,7 +68,7 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
         
         const char *error = DISK_get_error(dc.file);
         if (error != NULL){
-          GFX_Message2(NULL, true, "Unable to write to file \"%S\".\n\nMessage from the system: \"%s\"", filename, error);
+          GFX_Message2(NULL, true, "Unable to write to file \"%S\".\n\nMessage from the system: \"%s\"", filename.id, error);
           DISK_close_and_delete(dc.file);
           return false;
         }
@@ -78,7 +78,7 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
 
 bool g_is_saving = false;
 
-void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
+void Save_Clean(const filepath_t filename,struct Root *theroot, bool is_backup){
 
         if (g_user_interaction_enabled==false)
           return;
@@ -95,7 +95,7 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
 	SaveRoot(theroot);
 
 	if( ! dc.success){
-          GFX_Message2(NULL, true,"Problems writing to file \"%S\".\n", filename);
+          GFX_Message2(NULL, true,"Problems writing to file \"%S\".\n", filename.id);
 	}
 
         bool success=DISK_close_and_delete(dc.file);
@@ -120,12 +120,13 @@ void SaveAs(struct Root *theroot){
         if (g_user_interaction_enabled==false)
           return;
 
-        const wchar_t *wdir = SETTINGS_read_wchars("filerequester_song_path", NULL);
-        const wchar_t *filename=GFX_GetSaveFileName(theroot->song->tracker_windows, NULL," Select file to save", wdir, "*.rad", NULL, true);
+        filepath_t wdir = make_filepath(SETTINGS_read_wchars("filerequester_song_path", NULL));
+        const filepath_t filename = GFX_GetSaveFileName(theroot->song->tracker_windows, NULL, " Select file to save", wdir, "*.rad", NULL, true);
 
-	if(filename==NULL) return;
+	if(isIllegalFilepath(filename))
+          return;
 
-        SETTINGS_write_wchars("filerequester_song_path", DISK_get_absolute_dir_path(filename));
+        SETTINGS_write_wchars("filerequester_song_path", DISK_get_absolute_dir_path(filename).id);
 
 #ifndef GUIISQT // Qt asks this question for us.
 	char *ret=NULL;
@@ -150,7 +151,7 @@ void SaveAs(struct Root *theroot){
 	Save_Clean(filename,theroot,false);
 
         if (dc.success)
-          GFX_SetWindowTitle(theroot->song->tracker_windows,filename);
+          GFX_SetWindowTitle(theroot->song->tracker_windows,filename.id);
 }
 
 bool g_embed_samples = false;
@@ -175,7 +176,7 @@ void Save(struct Root *theroot){
   if (doStopPlayingWhenSavingSong())
     PlayStop();
   
-  if(dc.filename==NULL){
+  if(isIllegalFilepath(dc.filename)){
     
     g_embed_samples = g_curr_song_contains_embedded_samples;
 
@@ -197,10 +198,10 @@ void Save(struct Root *theroot){
   }
 }
 
-void Save_Backup(wchar_t *filename, struct Root *theroot){
-  printf("not saving backup to %S\n", filename);
+void Save_Backup(const filepath_t filename, struct Root *theroot){
+  printf("not saving backup to %S\n", filename.id);
 
-  const wchar_t *filename_org = dc.filename;
+  const filepath_t filename_org = dc.filename;
 
   Save_Clean(filename, theroot, true);
 

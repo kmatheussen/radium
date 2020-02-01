@@ -263,6 +263,8 @@ FROM_C-show-mixer-R4-popup-menu
 FROM_C-insert-seqtrack
 FROM_C-delete-seqtrack
 FROM_C-call-me-after-seqtrack-has-been-deleted
+undo-block
+FROM_C-create-quantitize-gui
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

@@ -77,7 +77,7 @@ int g_disk_load_radium_version_revision = -1;
 bool g_is_loading = false;
 
 
-bool Load_Initialize(const wchar_t *filename, const char *type){
+bool Load_Initialize(const filepath_t filename, const char *type){
   
         dc.success=true;
         
@@ -88,7 +88,7 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
 
 	dc.file=DISK_open_for_reading(filename);
 	if(dc.file==NULL){
-          GFX_Message2(NULL,true,"Could not open \"%S\".\n\nMessage from the system: \"%s\".\n",filename, DISK_get_error(dc.file));
+          GFX_Message2(NULL,true,"Could not open \"%S\".\n\nMessage from the system: \"%s\".\n",filename.id, DISK_get_error(dc.file));
           goto failed;
 	}
 
@@ -169,7 +169,7 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
           
           const char *error = DISK_get_error(dc.file);
           if (error != NULL){
-            GFX_Message2(NULL, true, "Unable to read from file \"%S\".\n\nMessage from the system: \"%s\"", filename, error);
+            GFX_Message2(NULL, true, "Unable to read from file \"%S\".\n\nMessage from the system: \"%s\"", filename.id, error);
             goto failed;
           }
 
@@ -182,8 +182,7 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
         
 	dc.filename=filename;
 
-        dc.embedded_files_dirname = DISK_get_absolute_file_path(STRING_append(filename,
-                                                                              STRING_create("_embedded_samples")));
+        dc.embedded_files_dirname = DISK_get_absolute_file_path(make_filepath(STRING_append(filename.id, L"_embedded_samples")));
         dc.has_shown_embedded_files_dirname_warning = false;
         dc.has_deleted_files_in_embedded_dir = false;
         
@@ -207,14 +206,14 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
         return false;
 }
   
-static bool Load(const wchar_t *filename){
+static bool Load(filepath_t filename){
 	struct Root *newroot;
         
         if (Load_Initialize(filename, "RADIUM SONG")==false)
           return false;
         
 	if(strcmp(dc.ls,"OSSTUFF")){
-          GFX_Message2(NULL, true,"OSSTUFF not found, but: '%s'. File: '%S'\n",dc.ls,filename);
+          GFX_Message2(NULL, true,"OSSTUFF not found, but: '%s'. File: '%S'\n",dc.ls,filename.id);
           DISK_close_and_delete(dc.file);
           //EndProgram();
           //exit(4);
@@ -304,11 +303,14 @@ static bool Load(const wchar_t *filename){
 
 
 //#ifdef _AMIGA
-static const wchar_t *mmp2filename;
+static filepath_t mmp2filename;
+__attribute__((constructor)) static void initialize_mmp2filename(void) {
+  mmp2filename.id=g_illegal_filepath_string;
+}
 //#endif
 
 
-static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *filename){
+static bool Load_CurrPos_org(struct Tracker_Windows *window, filepath_t filename){
 	bool ret = false;
 
         // So many things happen here, that we should turn off garbage collection while loading.
@@ -327,30 +329,29 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
         if(Undo_are_you_sure_questionmark()==false)
           goto exit;
 
-        if(filename==NULL){
-          const wchar_t *wdir = SETTINGS_read_wchars("filerequester_song_path", NULL);
-          filename=GFX_GetLoadFileName(window,NULL,"Select file to load", wdir, NULL, NULL, true);
-          if (filename!=NULL)
-            SETTINGS_write_wchars("filerequester_song_path", DISK_get_absolute_dir_path(filename));
+        if(isIllegalFilepath(filename)){
+          const filepath_t wdir = make_filepath(SETTINGS_read_wchars("filerequester_song_path", NULL));
+          filename = GFX_GetLoadFileName(window,NULL,"Select file to load", wdir, NULL, NULL, true);
+          if (!isIllegalFilepath(filename))
+            SETTINGS_write_wchars("filerequester_song_path", DISK_get_absolute_dir_path(filename).id);
         }
 
-	if(filename==NULL)
+	if(isIllegalFilepath(filename))
           goto exit;
 
         g_is_loading = true;
 
         
-        if (STRING_ends_with(filename,".MMD2") ||
-            STRING_ends_with(filename,".MMD3") ||
-            STRING_ends_with(filename,".MMD") ||
-            STRING_ends_with(filename,".mmd2") ||
-            STRING_ends_with(filename,".mmd3") ||
-            STRING_ends_with(filename,".mmd")
+        if (STRING_ends_with(filename.id,".MMD2") ||
+            STRING_ends_with(filename.id,".MMD3") ||
+            STRING_ends_with(filename.id,".MMD") ||
+            STRING_ends_with(filename.id,".mmd2") ||
+            STRING_ends_with(filename.id,".mmd3") ||
+            STRING_ends_with(filename.id,".mmd")
             )
           {
-
             mmp2filename=filename;
-            ret = Load(STRING_create("sounds/new_song.rad"));
+            ret = Load(make_filepath(L"sounds/new_song.rad"));
 
           } else {
 
@@ -360,7 +361,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
             }
             OS_unset_loading_path();
             
-            GFX_SetWindowTitle(root->song->tracker_windows, filename);
+            GFX_SetWindowTitle(root->song->tracker_windows, filename.id);
             
             GFX_EditorWindowToFront(root->song->tracker_windows);
             
@@ -380,9 +381,9 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
           Threadsafe_GC_enable();
         }
 
-	if(mmp2filename!=NULL) {
+	if(isLegalFilepath(mmp2filename)){
           LoadMMP2(root->song->tracker_windows, mmp2filename);
-          mmp2filename=NULL;
+          mmp2filename = createIllegalFilepath();
         }
 
         //fprintf(stderr,"Got here3 (loading finished)\n");
@@ -399,7 +400,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
           const vector_t deletable_audiofiles = SAMPLEREADER_get_all_deletable_filenames();
           
           VECTOR_FOR_EACH(const wchar_t *filename, &deletable_audiofiles){      
-            SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(filename, WTT_DONT_KNOW);
+            SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(make_filepath(filename), WTT_DONT_KNOW);
           }END_VECTOR_FOR_EACH;
         }
         
@@ -409,10 +410,10 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
 }
 
 bool Load_CurrPos(struct Tracker_Windows *window){
-  return Load_CurrPos_org(window,NULL);
+  return Load_CurrPos_org(window,createIllegalFilepath());
 }
 
-bool LoadSong_CurrPos(struct Tracker_Windows *window, const wchar_t *filename){
+bool LoadSong_CurrPos(struct Tracker_Windows *window, const filepath_t filename){
   return Load_CurrPos_org(window,filename);
 }
 
@@ -421,11 +422,13 @@ void NewSong_CurrPos(struct Tracker_Windows *window){
   //sprintf(temp,"%s%s%s",OS_get_program_path(), OS_get_directory_separator(), "new_song.rad");
   //Load_CurrPos_org(window,talloc_strdup(temp));
 
-  Load_CurrPos_org(window, OS_get_full_program_file_path(STRING_create("sounds/new_song.rad")));
+  R_ASSERT_NON_RELEASE(mmp2filename.id!=NULL);
+  
+  Load_CurrPos_org(window, OS_get_full_program_file_path(make_filepath(L"sounds/new_song.rad")));
 
   GFX_SetWindowTitle(root->song->tracker_windows, STRING_create("Radium - New song."));
   
-  dc.filename=NULL;
+  dc.filename = createIllegalFilepath();
 
   // set bus colors
   {

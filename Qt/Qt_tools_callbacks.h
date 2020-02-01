@@ -185,7 +185,7 @@ class Tools : public RememberGeometryQDialog, public Ui::Tools {
 
     setupUi(this);
 
-    dyn_t quant_gui_dyn = s7extra_callFunc2_dyn_void("create-quantitize-gui");
+    dyn_t quant_gui_dyn = s7extra_callFunc2_dyn_void("FROM_C-create-quantitize-gui");
     if (quant_gui_dyn.type==INT_TYPE){
       
       int64_t quant_gui_num = quant_gui_dyn.int_number;

@@ -614,9 +614,9 @@ void GFX_OpenProgress(const char *message){
   g_process = new QProcess;
 
 #if FOR_WINDOWS
-  QString program = OS_get_full_program_file_path("radium_progress_window.exe");
+  QString program = STRING_get_qstring(OS_get_full_program_file_path("radium_progress_window.exe").id);
 #else
-  QString program = OS_get_full_program_file_path("radium_progress_window");
+  QString program = STRING_get_qstring(OS_get_full_program_file_path("radium_progress_window").id);
 #endif
 
 #if defined(FOR_WINDOWS)

@@ -696,10 +696,10 @@
                         use-file-requester)
                   "------------"
                   (let* ((create-entries (lambda (presets)
-                                           (map (lambda (base64-name)
-                                                  (list (<ra> :from-base64 base64-name)
+                                           (map (lambda (filename)
+                                                  (list (<ra> :get-path-string filename)
                                                         (lambda ()
-                                                          (callback (<-> "2" base64-name)))))
+                                                          (callback (<-> "2" (<ra> :get-base64-from-filepath filename))))))
                                                 presets)))
                          (single-entries (create-entries single-presets))
                          (multi-entries (create-entries multi-presets)))

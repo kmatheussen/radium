@@ -181,7 +181,7 @@ bool SOUNDFILESAVER_write(float **outputs, int num_ch, int num_frames){
   return ret;
 }
 
-bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, int num_ch, float post_recording_length, enum ResamplerType min_resampler_type, const char **error_string){
+bool SOUNDFILESAVER_save(filepath_t filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, int num_ch, float post_recording_length, enum ResamplerType min_resampler_type, const char **error_string){
 
   PlayStop();
 
@@ -208,7 +208,7 @@ bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_
   }
 
   g_saving_was_successful = true;
-  g_filename = talloc_wcsdup(filename);
+  g_filename = talloc_wcsdup(filename.id);
   g_post_writing_left = post_recording_length;
 
   

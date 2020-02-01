@@ -42,7 +42,7 @@ extern LANGSPEC void SETTINGS_init(void);
 
 #ifdef USE_QT4
 #include <QString>
-extern void SETTINGS_set_custom_configfile(QString filename);
+extern void SETTINGS_set_custom_configfile(filepath_t filename);
 extern void SETTINGS_unset_custom_configfile(void);
 extern void SETTINGS_write_string(const char *key, QString val);
 extern void SETTINGS_write_string(QString key, const char *val);

@@ -128,9 +128,9 @@ QDialog *FAUST_create_qdialog(SoundPlugin *plugin){
 
 void FAUST_change_qtguistyle(const char *style_name){
 
-  QString filename = "packages/faust/architecture/faust/gui/Styles/" + QString(getFaustGuiStyle()) + ".qss";
-  if (!OS_has_full_program_file_path(filename)){
-    GFX_Message2(NULL, true, "File not found (%s)", filename.toUtf8().constData());
+  filepath_t filename = make_filepath(QString("packages/faust/architecture/faust/gui/Styles/") + QString(getFaustGuiStyle()) + ".qss");
+  if (!OS_has_full_program_file_path(STRING_get_qstring(filename.id))){
+    GFX_Message2(NULL, true, "File not found (%S)", filename.id);
     return;
   }
                                 
@@ -138,13 +138,13 @@ void FAUST_change_qtguistyle(const char *style_name){
   disk_t *disk = DISK_open_for_reading(filename);
   if (disk==NULL){
       
-    GFX_Message2(NULL, true, "File not found (%s)", filename.toUtf8().constData());
+    GFX_Message2(NULL, true, "File not found (%S)", filename.id);
     
   } else {
     
     QString stylesheet = DISK_read_qstring_file(disk);
     if (DISK_close_and_delete(disk)==false) {
-      GFX_Message2(NULL, true, "Unable to read from %s", filename.toUtf8().constData());
+      GFX_Message2(NULL, true, "Unable to read from %S", filename.id);
       stylesheet = "";
     }
 
@@ -581,10 +581,10 @@ void FAUST_generate_cpp_code(const struct SoundPlugin *plugin, int generation, s
   // CPU usage should not clubber up here, at least not too much, since FAUST_generate_cpp_code is only called after the llvm/interpreter code has been created.
 
   // Must do this in main thread since DISK_create_non_existant_filename allocates gc-memory.
-  QString template_ = STRING_get_qstring(DISK_get_temp_dir()) + QDir::separator() + "radium_faust_cppsource.cpp";
-  const wchar_t *temp_file = DISK_create_non_existant_filename(STRING_create(template_));
+  filepath_t template_ = appendFilePaths(DISK_get_temp_dir(), make_filepath(L"radium_faust_cppsource.cpp"));
+  filepath_t temp_file = DISK_create_non_existant_filename(template_);
   
-  QString filename = STRING_get_qstring(temp_file);
+  QString filename = STRING_get_qstring(temp_file.id);
       
   QtConcurrent::run([code, options, generation, filename, callback]{
 
