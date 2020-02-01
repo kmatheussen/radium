@@ -962,7 +962,7 @@ static void put_pdfile_into_state(SoundPlugin *plugin, QFile *file, hash_t *stat
 }
 
 static QString get_search_path() {
-  return OS_get_full_program_file_path("pd");
+  return STRING_get_qstring(OS_get_full_program_file_path("pd").id);
 }
 
 static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size){

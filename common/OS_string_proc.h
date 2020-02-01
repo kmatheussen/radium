@@ -58,7 +58,10 @@ wchar_t *STRING_append(const wchar_t *s1, const char *w2);
 wchar_t *STRING_create(const QString s, bool use_gc_alloc = true);
 
 static inline QString STRING_get_qstring(const wchar_t *string){ // TODO: Rename to STRING_create_qstring.
-  return QString::fromWCharArray(string);
+  if (string==NULL)
+    return QString("");
+  else
+    return QString::fromWCharArray(string);
 }
 
 bool STRING_is_local8Bit_compatible(QString s);

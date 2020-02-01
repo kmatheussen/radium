@@ -414,7 +414,7 @@ typedef struct SoundPluginTypeContainer{
   bool is_populated;
   enum PopulateContainerResult (*populate)(struct SoundPluginTypeContainer *container);
 
-  wchar_t *filename; // full path to plugin file.
+  filepath_t filename; // full path to plugin file.
   bool has_saved_disk_entry;
   
   int num_uses; // Filled in when asking for soundpluginregistry entries

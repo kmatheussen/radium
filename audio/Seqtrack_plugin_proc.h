@@ -45,10 +45,10 @@ extern LANGSPEC vector_t SEQTRACKPLUGIN_get_all_used_audio_filenames(struct Soun
   
 extern LANGSPEC void SEQTRACKPLUGIN_clear_resampler_warning_hashmap(void);
 #if __cplusplus
-extern int64_t SEQTRACKPLUGIN_add_sample(const struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type);
+extern int64_t SEQTRACKPLUGIN_add_sample(const struct SeqTrack *seqtrack, struct SoundPlugin *plugin, filepath_t filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type);
 #endif
 
-extern LANGSPEC void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *path); // Called when user enables the "R" checkbox.
+extern LANGSPEC void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, filepath_t path); // Called when user enables the "R" checkbox.
 extern LANGSPEC bool SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin); // Called when user disables the "R" checkbox.
 
 extern LANGSPEC void SEQTRACKPLUGIN_apply_gfx_samples(struct SoundPlugin *plugin);
@@ -63,7 +63,7 @@ extern LANGSPEC int SEQTRACKPLUGIN_get_num_samples(const struct SoundPlugin *plu
 extern LANGSPEC int SEQTRACKPLUGIN_get_num_channels(const struct SoundPlugin *plugin, int64_t id);
 extern LANGSPEC int64_t SEQTRACKPLUGIN_get_total_num_frames_in_sample(const struct SoundPlugin *plugin, int64_t id); // Directly in sample
 extern LANGSPEC int64_t SEQTRACKPLUGIN_get_total_num_frames_for_sample(const struct SoundPlugin *plugin, int64_t id); // When resampled.
-extern LANGSPEC const wchar_t *SEQTRACKPLUGIN_get_sample_name(const struct SoundPlugin *plugin, int64_t id, bool full_path);
+extern LANGSPEC filepath_t SEQTRACKPLUGIN_get_sample_name(const struct SoundPlugin *plugin, int64_t id, bool full_path);
 extern LANGSPEC unsigned int SEQTRACKPLUGIN_get_sample_color(const struct SoundPlugin *plugin, int64_t id);
 //extern LANGSPEC unsigned int SEQTRACKPLUGIN_get_sample_color(const struct SoundPlugin *plugin, int64_t id);
 //extern LANGSPEC void SEQTRACKPLUGIN_set_sample_color(const SoundPlugin *plugin, int64_t id, unsigned int new_color);

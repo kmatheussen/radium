@@ -183,7 +183,7 @@ int addVelocityDontDisplayErrors(float value, Place place, dyn_t dynnote, int tr
   return addVelocity2(value, place, dynnote, tracknum, blocknum, windownum, false);
 }
   
-int addVelocityF(float value, float floatplace, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+int addVelocityF(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
   if (floatplace < 0){
     handleError("Place can not be negative: %f", floatplace);
     return -1;
@@ -191,7 +191,7 @@ int addVelocityF(float value, float floatplace, dyn_t dynnote, int tracknum, int
 
   Place place;
   Float2Placement(floatplace, &place);
-  return addVelocity(value, place, dynnote, tracknum, blocknum, windownum);
+  return addVelocity(value, place, DYN_create_int(notenum), tracknum, blocknum, windownum);
 }
 
 dyn_t setVelocity(float value, Place place, int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){

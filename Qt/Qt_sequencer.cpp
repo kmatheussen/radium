@@ -3991,10 +3991,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
           
           printf("File: -%s-. Y: %f\n", url.toLocalFile().toUtf8().constData(), y);
           
-          const char *w_filename = STRING_get_chars(STRING_toBase64(STRING_create(url.toLocalFile())));
           if (seqtrackForAudiofiles(seqtracknum)) {
             createSampleSeqblock(seqtracknum,
-                                 w_filename,
+                                 make_filepath(url.toLocalFile()),
                                  pos,
                                  -1
                                  );

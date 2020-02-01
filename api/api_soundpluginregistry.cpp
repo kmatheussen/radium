@@ -17,6 +17,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+// Note: We store filepaths as strings in the hash tables here since it was done so before the creation of filepath_t. Changing the disk format now might create unforseen problems.
+// Also note: "path" in here is not a disk path. It's usually something like this: "VST / Presswerk / Presswerk.64 / Presswerk.64", so this would have still be stored as string anyway.
+ 
 
 
 
@@ -85,7 +88,7 @@ static hash_t *get_entry_from_type(const SoundPluginType *type, const QString pa
 
 static hash_t *get_container_entry(const SoundPluginTypeContainer *container, const QString path, bool is_blacklisted){
   hash_t *hash = HASH_create(10);
-  HASH_put_string(hash, ":filename", container->filename);
+  HASH_put_string(hash, ":filename", container->filename.id);
   HASH_put_string(hash, ":type-name", container->type_name);
   HASH_put_string(hash, ":name", container->name);
   HASH_put_string(hash, ":path",  path);
@@ -115,11 +118,11 @@ enum BlacklistCached{
 static QHash<QString, enum BlacklistCached> g_blacklisted_cache;
 
 static void update_blacklist_cache(const SoundPluginTypeContainer *container, bool is_blacklisted){
-  g_blacklisted_cache[STRING_get_qstring(container->filename)] = is_blacklisted ? BLACKLISTED : NOT_BLACKLISTED;
+  g_blacklisted_cache[STRING_get_qstring(container->filename.id)] = is_blacklisted ? BLACKLISTED : NOT_BLACKLISTED;
 }
   
 static QString get_blacklist_filename(const SoundPluginTypeContainer *plugin_type_container){
-  QString encoded = STRING_get_qstring(STRING_get_sha1(plugin_type_container->filename));
+  QString encoded = STRING_get_qstring(STRING_get_sha1(plugin_type_container->filename.id));
 
   return OS_get_dot_radium_path() + QDir::separator() + SCANNED_PLUGINS_DIRNAME + QDir::separator() + "blacklisted_" + encoded;
 }
@@ -131,7 +134,7 @@ void API_blacklist_container(const SoundPluginTypeContainer *container){
   disk_t *file = DISK_open_for_writing(disk_blacklist_filename);
   hash_t *hash = HASH_create(1);
 
-  HASH_put_string(hash, "filename", container->filename);
+  HASH_put_string(hash, "filename", container->filename.id);
   
   HASH_save(hash, file);
   
@@ -148,7 +151,7 @@ void API_unblacklist_container(const SoundPluginTypeContainer *container){
 }
 
 bool API_container_is_blacklisted(const SoundPluginTypeContainer *container){
-  const enum BlacklistCached cached = g_blacklisted_cache.value(STRING_get_qstring(container->filename), NOT_IN_CACHE);
+  const enum BlacklistCached cached = g_blacklisted_cache.value(STRING_get_qstring(container->filename.id), NOT_IN_CACHE);
 
 #define Vars()                                                          \
   QString disk_blacklist_filename = get_blacklist_filename(container);  \
@@ -196,7 +199,7 @@ static QSet<QString> g_known_noncached_entries;
 
 
 static QString get_disk_entries_filename(const SoundPluginTypeContainer *plugin_type_container){
-  QString encoded = STRING_get_qstring(STRING_get_sha1(plugin_type_container->filename));
+  QString encoded = STRING_get_qstring(STRING_get_sha1(plugin_type_container->filename.id));
   return get_disk_entries_dir() + "v2_" + encoded;
 }
 
@@ -234,26 +237,26 @@ static hash_t *get_container_disk_hash(const SoundPluginTypeContainer *container
   HASH_put_int(hash, "version", 1);
 
   {
-    QFileInfo info(STRING_get_qstring(container->filename));
+    QFileInfo info(STRING_get_qstring(container->filename.id));
     if (info.exists()==false){
-      GFX_Message(NULL, "Error: Plugin file %S does not seem to exist anymore.", container->filename);
+      GFX_Message(NULL, "Error: Plugin file %S does not seem to exist anymore.", container->filename.id);
       return NULL;
     }
 
     int64_t filesize = info.size();
     if (filesize==0){
       //GFX_addMessage("Error: Plugin file %s seems to have size 0.", STRING_get_chars(container->filename));
-      printf("Error: Plugin file %S seems to have size 0.", container->filename);
+      printf("Error: Plugin file %S seems to have size 0.", container->filename.id);
       //return NULL;  // No need to fail.
     }
     
     QDateTime datetime = info.lastModified();
     if (datetime.isValid()==false)
-      printf("Warning: plugin %S does not have a valid write time", container->filename); // Could perhaps happen on some filesystems.
+      printf("Warning: plugin %S does not have a valid write time", container->filename.id); // Could perhaps happen on some filesystems.
     
     int64_t writetime = datetime.isValid() ? datetime.toUTC().toMSecsSinceEpoch() : 0;
     
-    HASH_put_string(hash, "filename", container->filename);
+    HASH_put_string(hash, "filename", container->filename.id);
     HASH_put_int(hash, "filesize", filesize);
     HASH_put_int(hash, "writetime", writetime);
   }
@@ -331,10 +334,10 @@ static bool load_entries_from_diskcache(dynvec_t &ret, const SoundPluginTypeCont
     hash = HASH_get_hash(g_disk_entries_cache, key);
 
     QString loaded_filename = HASH_get_qstring(hash, "filename");
-    if (loaded_filename != STRING_get_qstring(container->filename)){
+    if (loaded_filename != STRING_get_qstring(container->filename.id)){
       // Oops. sha1 crash. How likely is that?
       printf("             NOT SAME FILENAME: -%s-",loaded_filename.toUtf8().constData());
-      printf("                                -%S-",container->filename);
+      printf("                                -%S-",container->filename.id);
       return false;
     }
 

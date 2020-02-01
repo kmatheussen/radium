@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <inttypes.h>
 
 
-#include "../api/api_proc.h"
 
 
 #include <qspinbox.h>
@@ -29,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qevent.h>
 #include <qtreeview.h>
 #include <qlistwidget.h>
+#include <QString>
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
@@ -49,7 +49,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_i_input_proc.h"
 #include "../midi/OS_midigfx_proc.h"
 #include "../midi/OS_midi_proc.h"
-#include "Qt_colors_proc.h"
 
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQLabel.h"
@@ -62,6 +61,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 
 #include "../api/api_gui_proc.h"
+#include "../api/api_proc.h"
+
+#include "Qt_colors_proc.h"
+
+
 #include "Qt_instruments_proc.h"
 
 

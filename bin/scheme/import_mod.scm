@@ -4442,7 +4442,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 (define (instrument-sample-name instr)
   (<ra> :from-base64 (instr 0)))
 (define (instrument-sample-filename instr)
-  (<ra> :from-base64 (instr 1)))
+  (<ra> :get-filepath-from-base64 (instr 1)))
 (define (instrument-num-samples instr)
   (instr 2))
 (define (instrument-finetune instr)
@@ -5781,15 +5781,14 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 ||#
 
 (define (load-protracker-module filename)
-  (if (string=? filename "")
-      (assert #f))
+  (assert (<ra> :is-legal-filepath filename))
 
-  (<ra> :open-progress-window (<-> "Please wait, loading " (<ra> :from-base64 filename)))
+  (<ra> :open-progress-window (<-> "Please wait, loading " (<ra> :get-path-string filename)))
     
   (try-finally
    :try (lambda ()
           (<ra> :reset-undo)
-          (<ra> :load-song "sounds/mod_song_template.rad")
+          (<ra> :load-song (<ra> :get-path "sounds/mod_song_template.rad"))
           (try-finally :try (lambda ()
                               (<ra> :start-ignoring-undo)
                               
@@ -5798,7 +5797,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                               
                               (set! *playlist* #f)
                               
-                              (<ra> :eval-python (<-> "import_mod2.import_mod(\"" filename "\")"))
+                              (<ra> :eval-python (<-> "import_mod2.import_mod(\"" (<ra> :get-base64-from-filepath filename) "\")"))
                               
                               (let* ((stuff (process-events *playlist*
                                                             *instrumentlist*
@@ -5826,12 +5825,12 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   )
   
   
-(delafina (async-load-protracker-module :filename "")
+(delafina (async-load-protracker-module :filename (<ra> :create-illegal-filepath))
   (<ra> :schedule 1
         (lambda ()
           (when (<ra> :ask-are-you-sure-song-has-changed)
-            (if (string=? "" filename)
-                (create-file-requester "Choose MOD file" "" "Mod files" "*.mod *.MOD mod.* MOD.*" #t #t -1 load-protracker-module)
+            (if (<ra> :is-illegal-filepath filename)
+                (create-file-requester "Choose MOD file" (<ra> :create-illegal-filepath) "Mod files" "*.mod *.MOD mod.* MOD.*" #t #t -1 load-protracker-module)
                 (load-protracker-module filename)))
           #f)))
 

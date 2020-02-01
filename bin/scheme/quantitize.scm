@@ -141,8 +141,8 @@
 
          
 
-(define (create-quantitize-gui)
-  (define quant-gui (<gui> :ui "quantization.ui"))
+(define (FROM_C-create-quantitize-gui)
+  (define quant-gui (<gui> :ui (<ra> :get-path "quantization.ui")))
 
   (define (set-me-as-current!)
     (set! *curr-quantitize-gui* quant-gui))
@@ -232,19 +232,19 @@
   (if #t
       (let ((hor (<gui> :horizontal-layout)))
         (<gui> :add-layout-space hor 10 10 #t #f)
-        (<gui> :add hor (create-quantitize-gui))
+        (<gui> :add hor (FROM_C-create-quantitize-gui))
         (<gui> :add-layout-space hor 10 10 #t #f)
         (<gui> :set-layout-spacing hor 0 0 0 0 0)
         hor)
-      (create-quantitize-gui)))
+      (FROM_C-create-quantitize-gui)))
 
 #!!
-(let ((gui (create-quantitize-gui)))
+(let ((gui (FROM_C-create-quantitize-gui)))
   (<gui> :show gui))
 
 (load "notem.scm")
 (add-notem-tab "Quantization" (let ((hor (<gui> :horizontal-layout)))
-                                (<gui> :add hor (create-quantitize-gui))
+                                (<gui> :add hor (FROM_C-create-quantitize-gui))
                                 (<gui> :add-layout-space hor 10 10 #t #f)
                                 hor))
 !!#

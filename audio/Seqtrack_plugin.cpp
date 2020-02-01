@@ -177,12 +177,12 @@ public:
 
     if (fabs(samplerate-pc->pfreq) > 1){
 
-      const wchar_t *filename = SAMPLEREADER_get_filename(reader);
-      QString qfilename = STRING_get_qstring(filename);
+      filepath_t filename = SAMPLEREADER_get_filename(reader);
+      QString qfilename = STRING_get_qstring(filename.id);
 
       if (g_resampler_warnings.contains(qfilename)==false){
         GFX_addMessage("Warning: \"%S\" has a samplerate of %d, while radium runs at %d\n. To compensate the difference, Radium will perform high quality samplerate conversion during runtime, which will use a bit CPU.",
-                       SAMPLEREADER_get_sample_name(reader),
+                       SAMPLEREADER_get_sample_name(reader).id,
                        (int)samplerate,
                        (int)pc->pfreq);                     
         g_resampler_warnings.insert(qfilename);
@@ -535,7 +535,7 @@ public:
 
 struct Sample{
   int64_t _id = g_id++;
-  const wchar_t *_filename;
+  radium::FilePath _filename;
 
   enum State{ // clang doesn't allow enum class here.
     RUNNING,
@@ -578,7 +578,7 @@ struct Sample{
   double _resampler_ratio;
 
   const unsigned int _color;
-  const wchar_t *_filename_without_path;
+  radium::FilePath _filename_without_path;
   
   bool _is_playing = false; // If false, we are not playing current. But fade-outs can play even if _is_playing==false.
   int _click_avoidance_fade_in = 0; // frames left while fading in.
@@ -589,8 +589,8 @@ struct Sample{
   radium::LockAsserter lockAsserter;
 #endif
   
-  Sample(const wchar_t *filename, radium::SampleReader *reader1, radium::SampleReader *reader2, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, const struct SeqTrack *seqtrack, Seqblock_Type type)
-    : _filename(wcsdup(filename))
+  Sample(filepath_t filename, radium::SampleReader *reader1, radium::SampleReader *reader2, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, const struct SeqTrack *seqtrack, Seqblock_Type type)
+    : _filename(filename)
       //, _reader(NULL) //new MyReader(reader))
       //, _fade_out_reader(new MyReader(fade_out_reader))
     , _reader_holding_permanent_samples(SAMPLEREADER_create(filename))
@@ -602,7 +602,7 @@ struct Sample{
     , _num_ch(SAMPLEREADER_get_num_channels(reader1))
     , _total_num_frames_in_sample(SAMPLEREADER_get_total_num_frames_in_sample(reader1))
     , _color(SAMPLEREADER_get_sample_color(filename))
-    , _filename_without_path(wcsdup(SAMPLEREADER_get_sample_name(reader1)))
+    , _filename_without_path(SAMPLEREADER_get_sample_name(reader1))
   {
     //printf("     =========SAMPLE c/d: Alloced 1: %p\n", _reader_holding_permanent_samples);
     
@@ -611,7 +611,7 @@ struct Sample{
 #if !defined(RELEASE)
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     
-    QFileInfo info(STRING_get_qstring(_filename));
+    QFileInfo info(STRING_get_qstring(_filename.getString()));
     if (!info.isAbsolute())
       abort();
 #endif
@@ -671,9 +671,6 @@ struct Sample{
     _reader_holding_permanent_samples = NULL;
     
     DISKPEAKS_remove(_peaks);
-    
-    free((void*)_filename);
-    free((void*)_filename_without_path);
   }
 
   void interior_start_may_have_changed(void){
@@ -819,7 +816,7 @@ struct Sample{
     MyReader *allocated_reader;
 
     {
-      radium::SampleReader *samplereader = SAMPLEREADER_create(_filename); // light operation
+      radium::SampleReader *samplereader = SAMPLEREADER_create(_filename.get()); // light operation
       if (samplereader==NULL)
         return;
       //printf("     =========SAMPLE c/d: Alloced 2: %p\n", samplereader);
@@ -1225,11 +1222,11 @@ struct Recorder : public radium::SampleRecorderInstance{
 
   const SeqtrackRecordingConfig _config;
   
-  radium::String _filename;
+  radium::FilePath _filename;
   
   int _seqtrack_recording_generation;
   
-  Recorder(struct SeqTrack *seqtrack, const wchar_t *recording_path, const SeqtrackRecordingConfig *config)
+  Recorder(struct SeqTrack *seqtrack, filepath_t recording_path, const SeqtrackRecordingConfig *config)
     : SampleRecorderInstance(recording_path, get_num_recording_soundfile_channels(config), 48) // 60 is standard value, I think, but the sample recorder adds 12 to the middle note, for some reason.
     , _peaks(num_ch)
       //, _data(data)
@@ -1287,7 +1284,7 @@ struct Recorder : public radium::SampleRecorderInstance{
     }
   }
  
-  void is_finished(bool success, wchar_t *filename) override {
+  void is_finished(bool success, filepath_t filename) override {
     struct SeqTrack *seqtrack = _seqtrack.data();
     
     printf("-------------------------        recorder IS_FINISHED start %d / %d  (%p)\n", (int)seqtrack->recording_generation, (int)_seqtrack_recording_generation, this);
@@ -1308,14 +1305,14 @@ struct Recorder : public radium::SampleRecorderInstance{
     if (_has_started==false)
       R_ASSERT(_seqblock.data()==NULL);
     
-    printf("-------------------------        recorder IS_FINISHED end   %d / %d  (%p). Success: %d. Filename: %S\n", (int)seqtrack->recording_generation, (int)_seqtrack_recording_generation, this, success, filename);
+    printf("-------------------------        recorder IS_FINISHED end   %d / %d  (%p). Success: %d. Filename: %S\n", (int)seqtrack->recording_generation, (int)_seqtrack_recording_generation, this, success, filename.id);
 
     if (success) {
 
-      QFileInfo info(STRING_get_qstring(filename));
-      _seqblock->sample_filename_without_path = talloc_wcsdup(STRING_create(info.fileName()));
+      QFileInfo info(STRING_get_qstring(filename.id));
+      _seqblock->sample_filename_without_path = make_filepath(info.fileName());
       
-      _filename = filename;
+      _filename = radium::FilePath(filename);
       g_successfully_finished_recorders.push_back(this);
       
     } else {
@@ -1346,7 +1343,7 @@ private:
     
     if (_seqblock.data() != NULL){ // Not supposed to be NULL, but we should have already gotten an assertion report if it has happened. This check is only to avoid crash.
       _seqblock->sample_id = _id;
-      _seqblock->sample_filename_without_path = L"Recording...";
+      _seqblock->sample_filename_without_path = make_filepath(L"Recording...");
       SEQTRACK_update(_seqtrack.data());
     }
   }
@@ -1598,7 +1595,7 @@ public:
         }PLAYER_unlock();
         assert_samples();
 #if !defined(RELEASE)
-        printf("    REMOVING Sample \"%S\". Reader: %p\n", sample->_filename_without_path, sample->_reader_holding_permanent_samples);
+        printf("    REMOVING Sample \"%S\". Reader: %p\n", sample->_filename_without_path.getString(), sample->_reader_holding_permanent_samples);
 #endif
         delete sample;
         set_num_visible_outputs(plugin);
@@ -1655,7 +1652,7 @@ static void set_num_visible_outputs(SoundPlugin *plugin){
   plugin->num_visible_outputs = new_visible_channels;
 }
 
-static int64_t add_sample(Data *data, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, const struct SeqTrack *seqtrack, enum Seqblock_Type type){
+static int64_t add_sample(Data *data, filepath_t filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, const struct SeqTrack *seqtrack, enum Seqblock_Type type){
   R_ASSERT(THREADING_is_main_thread());
   
   radium::SampleReader *reader1 = SAMPLEREADER_create(filename);
@@ -1699,7 +1696,7 @@ static int64_t add_sample(Data *data, const wchar_t *filename, enum ResamplerTyp
   return sample->_id;
 }
 
-int64_t SEQTRACKPLUGIN_add_sample(const struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type){
+int64_t SEQTRACKPLUGIN_add_sample(const struct SeqTrack *seqtrack, SoundPlugin *plugin, filepath_t filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type){
   R_ASSERT(THREADING_is_main_thread());
   
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
@@ -1720,7 +1717,7 @@ int64_t SEQTRACKPLUGIN_add_sample(const struct SeqTrack *seqtrack, SoundPlugin *
 }
 
 // Called when user enables the "R" checkbox.
-void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *path){
+void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin, filepath_t path){
   R_ASSERT(THREADING_is_main_thread());
 
   Data *data = (Data*)plugin->data;
@@ -1919,7 +1916,7 @@ void SEQTRACKPLUGIN_request_remove_sample(SoundPlugin *plugin, int64_t id, enum 
     return;
 
   if (ATOMIC_GET(sample->_state) != Sample::State::RUNNING){
-    RError("Sample \"%S\" has already been requested removed from sequencer track. type: %d", sample->_filename, (int)type);
+    RError("Sample \"%S\" has already been requested removed from sequencer track. type: %d", sample->_filename.getString(), (int)type);
     return;
   }
     
@@ -2008,42 +2005,42 @@ int64_t SEQTRACKPLUGIN_get_total_num_frames_in_sample(const SoundPlugin *plugin,
 }
 */
 
-const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t id, bool full_path){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), L"");
+filepath_t SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t id, bool full_path){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), make_filepath(L""));
 
   if (id == INITIAL_RECORDER_ID)
-    return L"";
+    return make_filepath(L"");
 
   if (id <= HIGHEST_RECORDER_ID){
     Recorder *recorder = g_recorders.value(id);
     
     if (recorder==NULL){
       R_ASSERT_NON_RELEASE(false);
-      return L"";
+      return make_filepath(L"");
     }
 
-    if (recorder->_filename.is_empty()==false)
+    if (recorder->_filename.isEmpty()==false)
       return recorder->_filename.get();
     else
-      return recorder->recording_path.get();    
+      return make_filepath(recorder->recording_path.get());
   }
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
-    return L"";
+    return make_filepath(L"");
 
 #if !defined(RELEASE)
   if (full_path){
-    QFileInfo info(STRING_get_qstring(sample->_filename));
+    QFileInfo info(STRING_get_qstring(sample->_filename.getString()));
     if (!info.isAbsolute())
       abort();
   }
 #endif
 
   if (full_path)
-    return sample->_filename;
+    return sample->_filename.get();
   else
-    return sample->_filename_without_path;
+    return sample->_filename_without_path.get();
 }
 
 unsigned int SEQTRACKPLUGIN_get_sample_color(const SoundPlugin *plugin, int64_t id){
@@ -2294,7 +2291,7 @@ vector_t SEQTRACKPLUGIN_get_all_used_audio_filenames(struct SoundPlugin *plugin)
   vector_t ret = {};
   
   for(Sample *sample : data->_samples)
-    VECTOR_push_back(&ret, talloc_wcsdup(sample->_filename));
+    VECTOR_push_back(&ret, talloc_wcsdup(sample->_filename.getString()));
 
   return ret;
 }

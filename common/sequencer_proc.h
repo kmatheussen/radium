@@ -10,6 +10,8 @@
 
 #include "../audio/Seqtrack_plugin_proc.h"
 
+#include "../api/api_proc.h"
+
 
 
 #define SEQNAV_SIZE_HANDLE_WIDTH 50
@@ -391,10 +393,10 @@ extern LANGSPEC void SEQUENCER_timing_has_changed(radium::PlayerLockOnlyIfNeeded
 extern LANGSPEC void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t length);
 extern LANGSPEC int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime, int64_t end_seqtime);
 extern LANGSPEC int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type);
-extern LANGSPEC int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime);
+extern LANGSPEC int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, filepath_t filename, int64_t seqtime, int64_t end_seqtime);
 extern LANGSPEC struct SeqBlock *SEQTRACK_add_recording_seqblock(struct SeqTrack *seqtrack, int64_t seqtime, int64_t end_seqtime);
 extern LANGSPEC void SEQTRACK_remove_recording_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock);
-extern LANGSPEC void SEQUENCER_remove_sample_from_song(const wchar_t *filename);
+extern LANGSPEC void SEQUENCER_remove_sample_from_song(filepath_t filename);
 extern LANGSPEC double SEQTRACK_get_length(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQTRACK_init(struct SeqTrack *seqtrack, const hash_t *automation_state);
 
@@ -551,9 +553,9 @@ static inline const vector_t *gfx_seqblocks2(const struct SeqTrack *seqtrack, bo
     return &seqtrack->seqblocks;
 }
   
-static inline const wchar_t *get_seqblock_sample_name(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool full_path){
-  R_ASSERT_RETURN_IF_FALSE2(seqblock->block==NULL, L"");
-  R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, L"");
+static inline filepath_t get_seqblock_sample_name(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool full_path){
+  R_ASSERT_RETURN_IF_FALSE2(seqblock->block==NULL, make_filepath(L""));
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, make_filepath(L""));
 
   /*
   const struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;
@@ -608,7 +610,7 @@ static inline QString get_seqblock_name(const struct SeqTrack *seqtrack, const s
   
   if (seqblock->block==NULL) {
 
-    return STRING_get_qstring(get_seqblock_sample_name(seqtrack, seqblock, false));
+    return STRING_get_qstring(get_seqblock_sample_name(seqtrack, seqblock, false).id);
     
   } else {
 

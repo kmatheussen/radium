@@ -93,7 +93,7 @@
           (let ((text-area (<new> :text-area gui x1 0 x2 entry-height
                                   (<ra> :append-base64-strings
                                         (<ra> :to-base64 (<-> (if (< i 10) " " "") i ": "))
-                                        (file-info :filename))
+                                        (<ra> :get-base64-from-filepath (file-info :filename)))
                                   :background-color (lambda ()
                                                       (let ((base (<gui> :set-alpha-for-color color 0.05)))
                                                         (if (is-current?)
@@ -313,7 +313,7 @@
                                                   :seqblock-name (<ra> :get-seqblock-name (seqblock :id))
                                                   :num num
                                                   :seqblockid (seqblock :id)
-                                                  :audiofile (seqblock :sample-base64))
+                                                  :audiofile (seqblock :sample))
                              (loop (seqblock :end-time)
                                    (cdr seqblocks)
                                    (+ num 1))))

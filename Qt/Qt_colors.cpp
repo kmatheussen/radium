@@ -60,6 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../embedded_scheme/s7extra_proc.h"
 
 #include "../api/api_gui_proc.h"
+#include "../api/api_proc.h"
 
 
 #include "Qt_colors_proc.h"
@@ -1221,9 +1222,9 @@ void GFX_ResetColor(enum ColorNums colornum){
   window->must_redraw = true;
 }
 
-void GFX_SaveColors(const wchar_t *filename){
-  if (filename != NULL){
-    SETTINGS_set_custom_configfile(STRING_get_qstring(filename));
+void GFX_SaveColors(filepath_t filename){
+  if (isLegalFilepath(filename)){
+    SETTINGS_set_custom_configfile(filename);
   }
   
   for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++) {
@@ -1238,7 +1239,7 @@ void GFX_SaveColors(const wchar_t *filename){
     SETTINGS_write_string(colorname, get_qcolor((enum ColorNums)i).name(QColor::HexArgb));
   }
 
-  if (filename != NULL)
+  if (isLegalFilepath(filename))
     SETTINGS_unset_custom_configfile();
 }
   
@@ -1248,9 +1249,9 @@ static void setDefaultColors(struct Tracker_Windows *tvisual, QString configfile
 
   clear_config_colors();
    
-  QFile::remove(QString(OS_get_config_filename("color0")) + "_old");
-  QFile::rename(OS_get_config_filename("color0"), QString(OS_get_config_filename("color0")) + "_old");
-  QFile::copy(OS_get_full_program_file_path(configfilename), OS_get_config_filename("color0"));
+  QFile::remove(STRING_get_qstring(OS_get_config_filename("color0").id) + "_old");
+  QFile::rename(STRING_get_qstring(OS_get_config_filename("color0").id), STRING_get_qstring(OS_get_config_filename("color0").id) + "_old");
+  QFile::copy(STRING_get_qstring(OS_get_full_program_file_path(configfilename).id), STRING_get_qstring(OS_get_config_filename("color0").id));
 
   //setEditorColors(editorwidget); // read back from file.
   //system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());

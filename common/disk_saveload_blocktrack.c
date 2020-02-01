@@ -23,6 +23,8 @@
 
 #include "../OpenGL/Widget_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "disk_saveload_blocktrack_proc.h"
 
 
@@ -70,19 +72,15 @@ static void remove_all_patches_and_fxs_from_track(struct Tracks *track){
 
 /******** Block **********************/
 
-void SaveBlockToDisk(const char *filename_c, const struct WBlocks *wblock){
+void SaveBlockToDisk(filepath_t filename, const struct WBlocks *wblock){
   struct Tracker_Windows *window=root->song->tracker_windows;
   
   R_ASSERT_RETURN_IF_FALSE(wblock!=NULL);
 
-  const wchar_t *filename;
+  if (isIllegalFilepath(filename))
+    filename = GFX_GetSaveFileName(window,NULL,"Select filename for block to save", createIllegalFilepath(), "*.rad_block", "Block files", true);
 
-  if (filename_c==NULL || !strcmp(filename_c, ""))
-    filename=GFX_GetSaveFileName(window,NULL,"Select filename for block to save", NULL, "*.rad_block", "Block files", true);
-  else
-    filename = STRING_create(filename_c);
-
-  if (filename==NULL)
+  if (isIllegalFilepath(filename))
     return;
 
   if (Save_Initialize(filename, "RADIUM BLOCK")==false)
@@ -111,20 +109,16 @@ static void remove_all_patches_and_fxs_from_loaded_block(struct Blocks *block){
   }
 }
 
-void LoadBlockFromDisk(const char *filename_c){
+void LoadBlockFromDisk(filepath_t filename){
   struct Tracker_Windows *window=root->song->tracker_windows;
     
   bool success = false;
   bool have_made_undo = false;
 
-  const wchar_t *filename;
+  if (isIllegalFilepath(filename) || !wcscmp(filename.id, L""))
+    filename = GFX_GetLoadFileName(window,NULL,"Select block to load", createIllegalFilepath(), "*.rad_block", "Block files", true);
 
-  if (filename_c==NULL || !strcmp(filename_c, ""))
-    filename=GFX_GetLoadFileName(window,NULL,"Select block to load", NULL, "*.rad_block", "Block files", true);
-  else
-    filename = STRING_create(filename_c);
-
-  if (filename==NULL){
+  if (isIllegalFilepath(filename)){
     goto exit;
     return;
   }
@@ -160,7 +154,7 @@ void LoadBlockFromDisk(const char *filename_c){
   }
 
   if(strcmp(dc.ls,"WBLOCK")){
-    GFX_Message(NULL, "Loading failed.\nExpected \"WBLOCK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename);
+    GFX_Message(NULL, "Loading failed.\nExpected \"WBLOCK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename.id);
     DISK_close_and_delete(dc.file);
     goto exit;
     return;
@@ -171,7 +165,7 @@ void LoadBlockFromDisk(const char *filename_c){
 
   DC_Next();
   if(strcmp(dc.ls,"BLOCK")){
-    GFX_Message(NULL, "Loading failed.\nExpected \"BLOCK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename);
+    GFX_Message(NULL, "Loading failed.\nExpected \"BLOCK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename.id);
     DISK_close_and_delete(dc.file);
     goto exit;
   }
@@ -234,19 +228,15 @@ void LoadBlockFromDisk(const char *filename_c){
 /******** Track **********************/
 
 
-void SaveTrackToDisk(const char *filename_c, const struct WTracks *wtrack){
+void SaveTrackToDisk(filepath_t filename, const struct WTracks *wtrack){
   struct Tracker_Windows *window=root->song->tracker_windows;
   
   R_ASSERT_RETURN_IF_FALSE(wtrack!=NULL);
 
-  const wchar_t *filename = NULL;
+  if (isIllegalFilepath(filename) || !wcscmp(filename.id, L""))
+    filename=GFX_GetSaveFileName(window,NULL,"Select filename for track to save", createIllegalFilepath(), "*.rad_track", "Track files", true);
   
-  if (filename_c==NULL || !strcmp(filename_c, ""))
-    filename=GFX_GetSaveFileName(window,NULL,"Select filename for track to save", NULL, "*.rad_track", "Track files", true);
-  else
-    filename = STRING_create(filename_c);
-  
-  if (filename==NULL)
+  if (isIllegalFilepath(filename))
     return;
 
   if (Save_Initialize(filename, "RADIUM TRACK")==false)
@@ -265,19 +255,15 @@ void SaveTrackToDisk(const char *filename_c, const struct WTracks *wtrack){
   DISK_close_and_delete(dc.file);
 }
 
-void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *old_wtrack){
+void LoadTrackFromDisk(filepath_t filename, struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *old_wtrack){
   
   bool success = false;
   bool have_made_undo = false;
 
-  const wchar_t *filename = NULL;
+  if (isIllegalFilepath(filename) || !wcscmp(filename.id, L""))
+    filename=GFX_GetLoadFileName(window,NULL,"Select track to load", createIllegalFilepath(), "*.rad_track", "Track files", true);
   
-  if (filename_c==NULL || !strcmp(filename_c, ""))
-    filename=GFX_GetLoadFileName(window,NULL,"Select track to load", NULL, "*.rad_track", "Track files", true);
-  else
-    filename = STRING_create(filename_c);
-  
-  if (filename==NULL){
+  if (isIllegalFilepath(filename)){
     goto exit;
     return;
   }
@@ -311,7 +297,7 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
   }
 
   if(strcmp(dc.ls,"WTRACK")){
-    GFX_Message2(NULL, true,"Loading failed.\nExpected \"WTRACK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename);
+    GFX_Message2(NULL, true,"Loading failed.\nExpected \"WTRACK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename.id);
     DISK_close_and_delete(dc.file);
     goto exit;
     return;
@@ -322,7 +308,7 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
 
   DC_Next();
   if(strcmp(dc.ls,"TRACK")){
-    GFX_Message(NULL, "Loading failed.\nExpected \"TRACK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename);
+    GFX_Message(NULL, "Loading failed.\nExpected \"TRACK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename.id);
     DISK_close_and_delete(dc.file);
     goto exit;
   }

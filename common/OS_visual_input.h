@@ -158,25 +158,25 @@ extern LANGSPEC int GFX_Menu(
 
 extern LANGSPEC vector_t GFX_MenuParser(const char *texts, const char *separator);
 
-extern LANGSPEC const wchar_t *GFX_GetLoadFileName(
-                                                   struct Tracker_Windows *tvisual,
-                                                   ReqType reqtype,
-                                                   const char *seltext,
-                                                   const wchar_t *dir,
-                                                   const char *postfixes,
-                                                   const char *type,
-                                                   bool program_state_is_valid
-                                                   );
+extern LANGSPEC filepath_t GFX_GetLoadFileName(
+                                               struct Tracker_Windows *tvisual,
+                                               ReqType reqtype,
+                                               const char *seltext,
+                                               const filepath_t dir,
+                                               const char *postfixes,
+                                               const char *type,
+                                               bool program_state_is_valid
+                                               );
 
-extern LANGSPEC const wchar_t *GFX_GetSaveFileName(
-                                                   struct Tracker_Windows *tvisual,
-                                                   ReqType reqtype,
-                                                   const char *seltext,
-                                                   const wchar_t *dir,
-                                                   const char *postfixes,
-                                                   const char *type,
-                                                   bool program_state_is_valid
-                                                   );
+extern LANGSPEC filepath_t GFX_GetSaveFileName(
+                                               struct Tracker_Windows *tvisual,
+                                               ReqType reqtype,
+                                               const char *seltext,
+                                               const filepath_t dir,
+                                               const char *postfixes,
+                                               const char *type,
+                                               bool program_state_is_valid
+                                               );
 
 extern LANGSPEC void GFX_OS_update_bottombar(void);
 extern LANGSPEC void GFX_OS_UpdateKeyOctave(void);

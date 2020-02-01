@@ -42,6 +42,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../Qt/Qt_instruments_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "FluidSynth_plugin_proc.h"
 
 
@@ -61,36 +63,40 @@ enum{
   };
 
 
-typedef struct _Data{
-  fluid_settings_t* settings;
-  fluid_synth_t* synth;
+namespace{
+  
+struct Data{
+  fluid_settings_t* settings = NULL;
+  fluid_synth_t* synth = NULL;
   //fluid_audio_driver_t* driver; Hopefully there's nothing wrong using fluidsynth without creating a driver.
-  fluid_sequencer_t* sequencer;
-  short synth_seq_ID;
-  fluid_event_t *event;
+  fluid_sequencer_t* sequencer = NULL;
+  short synth_seq_ID = 0;
+  fluid_event_t *event = NULL;
     
-  int soundfont_id;
+  int soundfont_id = 0;
 
-  int64_t time;
+  int64_t time = 0;
 
-  double samplerate;
-  double time_scale;
+  double samplerate = 0;
+  double time_scale = 0;
 
-  const wchar_t *filename;
-  int bank_num;
-  int preset_num;
-  bool using_default_sound;
+  radium::FilePath filename;
+  int bank_num = 0;
+  int preset_num = 0;
+  bool using_default_sound = false;
   
   // These two are used when switching sound in realtime
-  DEFINE_ATOMIC(struct _Data *, new_data);
-  RSemaphore *signal_from_RT;
+  DEFINE_ATOMIC(Data *, new_data) = NULL;
+  RSemaphore *signal_from_RT = NULL;
 
-  float pitch;
-  float pitch_range;
-  float modulation;
-  float sustain_on;
+  float pitch = 0;
+  float pitch_range = 0;
+  float modulation = 0;
+  float sustain_on = 0;
 
-} Data;
+};
+
+}
 
 
 
@@ -362,17 +368,14 @@ static void delete_data(Data *data){
   if(data->settings!=NULL)
     delete_fluid_settings(data->settings);
 
-  if(data->filename!=NULL)
-    free((wchar_t*)data->filename);
-
   if(data->signal_from_RT!=NULL)
     RSEMAPHORE_delete(data->signal_from_RT);
 
-  V_free(data);
+  delete data;
 }
 
-static Data *create_data(const wchar_t *filename, float samplerate){
-  Data *data = (Data*)V_calloc(1,sizeof(Data));
+static Data *create_data(filepath_t filename, float samplerate){
+  Data *data = new Data;
   //CRASHREPORTER_send_assert_message("AIAI2!");
   //data = NULL;
   
@@ -446,18 +449,18 @@ static Data *create_data(const wchar_t *filename, float samplerate){
     return NULL;
   }
 
-  const wchar_t *something = OS_loading_get_resolved_file_path(filename, false); // program_state_is_valid=false, might probably be.
-  if (something==NULL){
+  filepath_t something = OS_loading_get_resolved_file_path(filename, false); // program_state_is_valid=false, might probably be.
+  if (isIllegalFilepath(something)){
     delete_data(data);
     return NULL;
   }
   
-  data->filename = wcsdup(something);
+  data->filename = radium::FilePath(something);
 
-  data->soundfont_id = fluid_synth_sfload(data->synth,STRING_get_chars(data->filename),true);
+  data->soundfont_id = fluid_synth_sfload(data->synth,STRING_get_chars(data->filename.getString()),true);
 
   if(data->soundfont_id==FLUID_FAILED){
-    printf("Soundfont loading failed for \"%S\"\n",data->filename);
+    printf("Soundfont loading failed for \"%S\"\n",data->filename.getString());
 
     delete_data(data);
 
@@ -470,7 +473,7 @@ static Data *create_data(const wchar_t *filename, float samplerate){
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size, bool is_loading){
   //Data *data = create_data("/home/kjetil/SGM-V2.01.sf2",samplerate);
-  wchar_t *default_sound_filename = OS_get_full_program_file_path(STRING_create("sounds/Orgue.sf2"));
+  filepath_t default_sound_filename = OS_get_full_program_file_path(STRING_create("sounds/Orgue.sf2"));
   
   Data *data = create_data(default_sound_filename, samplerate);
   
@@ -489,10 +492,10 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   delete_data(data);
 }
 
-bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int bank_num, int preset_num){
+bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, filepath_t sf2_file, int bank_num, int preset_num){
   Data *data = (Data*)plugin->data;
 
-  if(!STRING_equals2(sf2_file, data->filename)){
+  if(!STRING_equals2(sf2_file.id, data->filename.getString())){
 
     Data *new_data = create_data(sf2_file, data->samplerate);
     if(new_data==NULL)
@@ -541,13 +544,13 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   int         bank_num    = HASH_get_int32(state, "bank_num");
   int         preset_num  = HASH_get_int32(state, "preset_num");
 
-  const wchar_t *filename = PLUGIN_DISK_get_audio_filename(state);
+  filepath_t filename = PLUGIN_DISK_get_audio_filename(state);
 
-  if(filename==NULL) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
+  if(isIllegalFilepath(filename)) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
     return;
 
   if(FLUIDSYNTH_set_new_preset(plugin, filename, bank_num, preset_num)==false)
-    GFX_Message(NULL, "Could not load soundfont \"%S\", bank %d, preset %d",filename,bank_num,preset_num);
+    GFX_Message(NULL, "Could not load soundfont \"%S\", bank %d, preset %d",filename.id,bank_num,preset_num);
 
   // Can not delete now. file is still used when creating/recreating states. Deleting at program end.
   //if (audiodata_is_included)
@@ -557,34 +560,34 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
-  const wchar_t *maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename);
+  filepath_t maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename.get());
     
-  HASH_put_string(state, "filename", maybe_relative_filename);
+  HASH_put_filepath(state, "filename", maybe_relative_filename);
   HASH_put_int(state, "bank_num", data->bank_num);
   HASH_put_int(state, "preset_num", data->preset_num);
 
   if (g_embed_samples){
-    const char *audiofile = DISK_file_to_base64(data->filename);
+    const char *audiofile = DISK_file_to_base64(data->filename.get());
     if (audiofile != NULL)
       HASH_put_chars(state, "audiofile", audiofile);
     else
-      GFX_addMessage("Unable to embed sample \"%S\". Could not read file.", maybe_relative_filename);
+      GFX_addMessage("Unable to embed sample \"%S\". Could not read file.", maybe_relative_filename.id);
   }
 }
 
-const wchar_t *FLUIDSYNTH_get_filename(struct SoundPlugin *plugin, bool *is_default_sound){
+filepath_t FLUIDSYNTH_get_filename(struct SoundPlugin *plugin, bool *is_default_sound){
   Data *data=(Data*)plugin->data;
   
   *is_default_sound = data->using_default_sound;
-  return data->filename;
+  return data->filename.get();
 }
 
 const wchar_t *FLUIDSYNTH_get_filename_display(struct SoundPlugin *plugin){
   Data *data=(Data*)plugin->data;
-
+  
   char *s2 = talloc_format(", b: %d, p: %d", data->bank_num, data->preset_num);
-
-  return STRING_append(data->filename,
+  
+  return STRING_append(data->filename.getString(),
                        STRING_create(s2));
 }
 
@@ -648,3 +651,4 @@ void create_fluidsynth_plugin(void){
   
   PR_add_plugin_type(&plugin_type);
 }
+

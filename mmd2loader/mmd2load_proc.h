@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TRACKER_INCLUDE
 
-extern bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename);
+extern bool LoadMMP2(struct Tracker_Windows *window,const filepath_t filename);
 
 #endif
 

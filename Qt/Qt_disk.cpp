@@ -36,73 +36,73 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define SUPPORT_TEMP_WRITING_FUNCTIONS 0
 
-const wchar_t *DISK_get_absolute_dir_path(const wchar_t *wfilename){
+filepath_t DISK_get_absolute_dir_path(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QFileInfo info(STRING_get_qstring(wfilename));
-  return STRING_create(QDir::toNativeSeparators(info.absoluteDir().absolutePath()));
+  QFileInfo info(STRING_get_qstring(wfilename.id));
+  return make_filepath(QDir::toNativeSeparators(info.absoluteDir().absolutePath()));
 }
 
-const wchar_t *DISK_get_absolute_file_path(const wchar_t *wfilename){
+filepath_t DISK_get_absolute_file_path(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QFileInfo info(STRING_get_qstring(wfilename));
-  return STRING_create(QDir::toNativeSeparators(info.absoluteFilePath()));
+  QFileInfo info(STRING_get_qstring(wfilename.id));
+  return make_filepath(QDir::toNativeSeparators(info.absoluteFilePath()));
 }
 
-const wchar_t *DISK_get_pathless_file_path(const wchar_t *wfilename){
+filepath_t DISK_get_pathless_file_path(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QFileInfo info(STRING_get_qstring(wfilename));
-  return STRING_create(QDir::toNativeSeparators(info.fileName()));
+  QFileInfo info(STRING_get_qstring(wfilename.id));
+  return make_filepath(QDir::toNativeSeparators(info.fileName()));
 }
 
-int64_t DISK_get_creation_time(const wchar_t *wfilename){
+int64_t DISK_get_creation_time(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QFileInfo info(STRING_get_qstring(wfilename));
+  QFileInfo info(STRING_get_qstring(wfilename.id));
   info.setCaching(false);
   return info.lastModified().toMSecsSinceEpoch();
 }
 
-bool DISK_file_exists(const wchar_t *wfilename){
+bool DISK_file_exists(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QString filename = STRING_get_qstring(wfilename);
+  QString filename = STRING_get_qstring(wfilename.id);
   return QFile::exists(filename);
 }
 
-bool DISK_dir_exists(const wchar_t *wdirname){
+bool DISK_dir_exists(filepath_t wdirname){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QString filename = STRING_get_qstring(wdirname);
+  QString filename = STRING_get_qstring(wdirname.id);
   return QDir(filename).exists();
 }
 
-bool DISK_create_dir(const wchar_t *wdirname){
+bool DISK_create_dir(filepath_t wdirname){
   ASSERT_NON_RT_NON_RELEASE();
   
   if(DISK_dir_exists(wdirname))
     return true;
-  QDir::root().mkpath(STRING_get_qstring(wdirname));
+  QDir::root().mkpath(STRING_get_qstring(wdirname.id));
   return DISK_dir_exists(wdirname);
 }
 
-bool DISK_delete_file(const wchar_t *wfilename){
+bool DISK_delete_file(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
   if(!DISK_file_exists(wfilename))
     return false;
   
-  QFile::remove(STRING_get_qstring(wfilename));
+  QFile::remove(STRING_get_qstring(wfilename.id));
 
   return !DISK_file_exists(wfilename);
 }
 
-void DISK_delete_all_files_in_dir(const wchar_t *wdirname){
+void DISK_delete_all_files_in_dir(filepath_t wdirname){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QDir dir(STRING_get_qstring(wdirname));
+  QDir dir(STRING_get_qstring(wdirname.id));
   R_ASSERT_RETURN_IF_FALSE(dir.absolutePath() != QDir::root().absolutePath());
   
   QFileInfoList files = dir.entryInfoList(QDir::Files|QDir::NoDotAndDotDot);
@@ -117,13 +117,13 @@ const wchar_t *DISK_get_dir_separator(void){
   return STRING_create(QDir::separator());
 }
 
-const wchar_t *DISK_create_non_existant_filename(const wchar_t *filename){
+filepath_t DISK_create_non_existant_filename(filepath_t filename){
   ASSERT_NON_RT_NON_RELEASE();
   
   if (DISK_file_exists(filename)==false)
     return filename;
 
-  QFileInfo info(STRING_get_qstring(filename));
+  QFileInfo info(STRING_get_qstring(filename.id));
   
   QString dirname = info.absoluteDir().absolutePath();
   QString basename = info.baseName();
@@ -132,30 +132,30 @@ const wchar_t *DISK_create_non_existant_filename(const wchar_t *filename){
     suffix = "." + suffix;
 
   for(int i=2;i<10000;i++){
-    QString maybe = dirname + QDir::separator() + basename + "_" + QString::number(i) + suffix;
-    if (DISK_file_exists(STRING_create(maybe))==false)
-      return STRING_create(maybe);
+    filepath_t maybe = make_filepath(dirname + QDir::separator() + basename + "_" + QString::number(i) + suffix);
+    if (DISK_file_exists(maybe)==false)
+      return maybe;
   }
 
   return filename;
 }
 
-bool DISK_copy(const wchar_t *old_file, const wchar_t *new_file){
+bool DISK_copy(filepath_t old_file, filepath_t new_file){
   ASSERT_NON_RT_NON_RELEASE();
   
-  return QFile::copy(STRING_get_qstring(old_file), STRING_get_qstring(new_file));
+  return QFile::copy(STRING_get_qstring(old_file.id), STRING_get_qstring(new_file.id));
 }
 
-const wchar_t *DISK_get_temp_dir(void){
+filepath_t DISK_get_temp_dir(void){
   ASSERT_NON_RT_NON_RELEASE();
   
-  return STRING_create(QDir::tempPath());
+  return make_filepath(QDir::tempPath());
 }
 
-const wchar_t *DISK_copy_to_temp_file(const wchar_t *old_file){
+filepath_t DISK_copy_to_temp_file(filepath_t old_file){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QFileInfo info(STRING_get_qstring(old_file));
+  QFileInfo info(STRING_get_qstring(old_file.id));
 
   QString dirname = info.absoluteDir().absolutePath();
   QString basename = info.baseName();
@@ -163,17 +163,17 @@ const wchar_t *DISK_copy_to_temp_file(const wchar_t *old_file){
   if (suffix != "")
     suffix = "." + suffix;
 
-  QString template_ = STRING_get_qstring(DISK_get_temp_dir()) + QDir::separator() + "radium_copied" + suffix;
-  const wchar_t *temp_file = DISK_create_non_existant_filename(STRING_create(template_));
+  QString template_ = STRING_get_qstring(DISK_get_temp_dir().id) + QDir::separator() + "radium_copied" + suffix;
+  filepath_t temp_file = DISK_create_non_existant_filename(make_filepath(template_));
 
-  if (temp_file==NULL)
-    return NULL;
+  if (isIllegalFilepath(temp_file))
+    return temp_file;
 
-  printf("  TEMP_FILE: -%S-\n", temp_file);
+  printf("  TEMP_FILE: -%S-\n", temp_file.id);
 
   if (DISK_copy(old_file, temp_file)==false){
     DISK_delete_file(temp_file);
-    return NULL;
+    return createIllegalFilepath();
   }
 
   return temp_file;
@@ -424,17 +424,17 @@ disk_t *DISK_open_binary_for_writing(QString filename){
   return open_for_writing(filename, true);
 }
 
-disk_t *DISK_open_for_writing(const wchar_t *wfilename){
+disk_t *DISK_open_for_writing(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QString filename = STRING_get_qstring(wfilename);
+  QString filename = STRING_get_qstring(wfilename.id);
   return DISK_open_for_writing(filename);
 }
 
-disk_t *DISK_open_binary_for_writing(const wchar_t *wfilename){
+disk_t *DISK_open_binary_for_writing(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QString filename = STRING_get_qstring(wfilename);
+  QString filename = STRING_get_qstring(wfilename.id);
   return DISK_open_binary_for_writing(filename);
 }
 
@@ -484,17 +484,17 @@ disk_t *DISK_open_for_reading(QString filename){
   return disk;
 }
 
-disk_t *DISK_open_for_reading(const wchar_t *wfilename){
+disk_t *DISK_open_for_reading(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QString filename = STRING_get_qstring(wfilename);
+  QString filename = STRING_get_qstring(wfilename.id);
   return DISK_open_for_reading(filename);
 }
 
-disk_t *DISK_open_binary_for_reading(const wchar_t *wfilename){
+disk_t *DISK_open_binary_for_reading(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QString filename = STRING_get_qstring(wfilename);
+  QString filename = STRING_get_qstring(wfilename.id);
   
   disk_t *disk = new disk_t(filename, disk_t::READ, true);
 
@@ -515,10 +515,10 @@ const char* DISK_get_error(disk_t *disk){
     return disk->get_error();
 }
 
-wchar_t *DISK_get_filename(disk_t *disk){
+filepath_t DISK_get_filename(disk_t *disk){
   ASSERT_NON_RT_NON_RELEASE();
   
-  return STRING_create(disk->filename);
+  return make_filepath(disk->filename);
 }
 
 int DISK_write_qstring(disk_t *disk, QString s){
@@ -694,7 +694,7 @@ bool DISK_close_and_delete(disk_t *disk){
 }
 
 // Only used for audio files, so we don't bother with compression.
-const char *DISK_file_to_base64(const wchar_t *wfilename){
+const char *DISK_file_to_base64(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
   disk_t *disk = DISK_open_binary_for_reading(wfilename);
@@ -713,7 +713,7 @@ static QMap<QString, QTemporaryFile*> g_temporary_files;
 static radium::Mutex g_mutex;
 
 // Only used for audio files, so we don't bother with decompression.
-const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars){
+filepath_t DISK_base64_to_file(filepath_t wfilename, const char *chars){
   ASSERT_NON_RT_NON_RELEASE();
   
   QFile *file;
@@ -724,7 +724,7 @@ const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars){
 
   QByteArray data = QByteArray::fromBase64(chars);
   
-  if (wfilename==NULL) {
+  if (isIllegalFilepath(wfilename)){
 
     temporary_write_file = new QTemporaryFile;
     
@@ -732,39 +732,39 @@ const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars){
     
   } else {
     
-    outfile.setFileName(STRING_get_qstring(wfilename));
+    outfile.setFileName(STRING_get_qstring(wfilename.id));
   
     file = &outfile;
   }
 
   if (file->open(QIODevice::WriteOnly)==false){
     GFX_Message(NULL, "Unable to open file \"%s\" (%s)", file->fileName().toUtf8().constData(), file->errorString().toUtf8().constData());
-    return NULL;
+    return createIllegalFilepath();
   }
 
   if (file->write(data) != data.size()){
     GFX_Message(NULL, "Unable to write to file \"%s\" (%s)", file->fileName().toUtf8().constData(), file->errorString().toUtf8().constData());
     file->close();
-    return NULL;
+    return createIllegalFilepath();
   }
 
   file->close();
 
-  if (wfilename==NULL){
+  if (isIllegalFilepath(wfilename)){
     radium::ScopedMutex lock(g_mutex);
     g_temporary_files[temporary_write_file->fileName()] = temporary_write_file;
   }else
     R_ASSERT(temporary_write_file==NULL);
   
-  return STRING_create(file->fileName());
+  return make_filepath(file->fileName());
 }
 
-void DISK_delete_base64_file(const wchar_t *wfilename){
+void DISK_delete_base64_file(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   
   radium::ScopedMutex lock(g_mutex);
   
-  QString key = STRING_get_qstring(wfilename);
+  QString key = STRING_get_qstring(wfilename.id);
   QTemporaryFile *file = g_temporary_files[key];
 
   R_ASSERT_RETURN_IF_FALSE(file!=NULL);

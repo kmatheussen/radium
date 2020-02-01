@@ -164,7 +164,7 @@ static void DC_fgetsNoMatterWhat(void){
 
 	if(ret==NULL){
           GFX_Message(NULL, "Unable to read string from file \"%S\". Line: %d.",
-                      DISK_get_filename(dc.file),
+                      DISK_get_filename(dc.file).id,
                       g_curr_disk_line
                       );
           dc.success=false;

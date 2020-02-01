@@ -1107,7 +1107,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     void fileSelected(const QString &file){
       ScopedEventHandlerTracker event_handler_tracker;
-      S7CALL(void_charpointer,_func.v, path_to_w_path(STRING_create(file)));
+      S7CALL(void_dyn,_func.v, DYN_create_filepath(make_filepath(file)));
     }
 
     void currentChanged(int index){
@@ -3743,7 +3743,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     else if (QFileInfo(stringurl).isAbsolute())
       return QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
     else if (OS_has_full_program_file_path(stringurl))
-      return QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path(stringurl)));
+      return QUrl::fromLocalFile(QDir::fromNativeSeparators(STRING_get_qstring(OS_get_full_program_file_path(stringurl).id)));
     else
       return QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
   }
@@ -4294,11 +4294,15 @@ float gui_textWidth(const_char* text, int64_t guinum){
   return fn.boundingRect(text).width();
 }
 
-int64_t gui_ui(const_char *filename){
-  
-  QFile file(filename);
+int64_t gui_ui(filepath_t filename){
+  if (isIllegalFilepath(filename)){
+    handleError("gui_ui: illegal filename for argument 1");
+    return -1;
+  }
+
+  QFile file(STRING_get_qstring(filename.id));
   if (file.open(QFile::ReadOnly)==false){
-    handleError("Unable to open \"%s\": %s", filename, file.errorString().toUtf8().constData());
+    handleError("Unable to open \"%S\": %s", filename.id, file.errorString().toUtf8().constData());
     return -1;
   }
   
@@ -4306,7 +4310,7 @@ int64_t gui_ui(const_char *filename){
   file.close();
 
   if (widget==NULL){
-    handleError("Unable to open \"%s\": %s", filename, get_uiloader()->errorString().toUtf8().constData());
+    handleError("Unable to open \"%S\": %s", filename.id, get_uiloader()->errorString().toUtf8().constData());
     return -1;
   }
   
@@ -5091,8 +5095,9 @@ void openExternalWebBrowser(const_char *stringurl){
   QDesktopServices::openUrl(getUrl(stringurl));
 }
 
-int64_t gui_fileRequester(const_char* header_text, const_char* dir, const_char* filetypename, const_char* postfixes, bool for_loading){
-  return (new FileRequester(header_text, dir, filetypename, postfixes, for_loading))->get_gui_num();
+int64_t gui_fileRequester(const_char* header_text, filepath_t dir, const_char* filetypename, const_char* postfixes, bool for_loading){
+  QString dasdir = isLegalFilepath(dir) ? STRING_get_qstring(dir.id) : "";
+  return (new FileRequester(header_text, dasdir, filetypename, postfixes, for_loading))->get_gui_num();
 }
 
 int64_t gui_fontRequester(const_char* fontdescr){
@@ -7543,7 +7548,7 @@ namespace{
 }
 
 
-static void create_drag_icon(int64_t parent, int width, int height, float hotspot_x, float hotspot_y, const_char* w_path, int blocknum, func_t *paint_icon_callback){
+static void create_drag_icon(int64_t parent, int width, int height, float hotspot_x, float hotspot_y, filepath_t w_path, int blocknum, func_t *paint_icon_callback){
 
   Gui *gui = get_gui(parent);
   
@@ -7552,10 +7557,10 @@ static void create_drag_icon(int64_t parent, int width, int height, float hotspo
 
   QMimeData *mimeData = new QMimeData;
 
-  if (w_path != NULL){
+  if (isLegalFilepath(w_path)){
     R_ASSERT(blocknum==-1);
-    printf("   w_path: -%s-.   path: -%s-\n", w_path, w_to_qstring(w_path).toUtf8().constData());
-    QUrl url = QUrl::fromLocalFile(w_to_qstring(w_path));
+    printf("   w_path: -%S-\n", w_path.id);
+    QUrl url = QUrl::fromLocalFile(STRING_get_qstring(w_path.id));
     QList<QUrl> urls;
     urls << url;
     mimeData->setUrls(urls);
@@ -7604,10 +7609,15 @@ static void create_drag_icon(int64_t parent, int width, int height, float hotspo
 }
 
 void gui_createBlockDragIcon(int64_t parent, int width, int height, float hotspot_x, float hotspot_y, int blocknum, func_t *paint_icon_callback){
-  create_drag_icon(parent, width, height, hotspot_x, hotspot_y, NULL, blocknum, paint_icon_callback);
+  create_drag_icon(parent, width, height, hotspot_x, hotspot_y, createIllegalFilepath(), blocknum, paint_icon_callback);
 }
 
-void gui_createFileDragIcon(int64_t parent, int width, int height, float hotspot_x, float hotspot_y, const_char* w_path, func_t *paint_icon_callback){
+void gui_createFileDragIcon(int64_t parent, int width, int height, float hotspot_x, float hotspot_y, filepath_t w_path, func_t *paint_icon_callback){
+  if (isIllegalFilepath(w_path)){
+    handleError("gui_createFileDragIcon: illegal filepath");
+    return;
+  }
+
   create_drag_icon(parent, width, height, hotspot_x, hotspot_y, w_path, -1, paint_icon_callback);
 }
 

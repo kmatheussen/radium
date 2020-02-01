@@ -250,12 +250,12 @@ static bool set_wav_loop_points_using_smpl_chunk(Sample &sample, disk_t *file, b
   return true;
 }
 
-static void set_wav_loop_points(Sample &sample, const wchar_t *filename, bool set_loop_on_off){
+static void set_wav_loop_points(Sample &sample, filepath_t filename, bool set_loop_on_off){
   
   disk_t *file = DISK_open_binary_for_reading(filename);
   
   if(file==NULL){
-    GFX_Message(NULL, "Could not open file \"%S\". libsndfile could open the file though. Something might be wrong with your disk.", filename);
+    GFX_Message(NULL, "Could not open file \"%S\". libsndfile could open the file though. Something might be wrong with your disk.", filename.id);
     return;
   }
 
@@ -314,11 +314,11 @@ static double get_wav_middle_note_from_instr_chunk(disk_t *file){
   return middle_note;
 }
 
-static double get_wav_middle_note(const wchar_t *filename, double default_middle_note){
+static double get_wav_middle_note(filepath_t filename, double default_middle_note){
   disk_t *file = DISK_open_binary_for_reading(filename);
   
   if(file==NULL){
-    GFX_Message(NULL, "Could not open file \"%S\". libsndfile could open the file though, which is very strange.", filename);
+    GFX_Message(NULL, "Could not open file \"%S\". libsndfile could open the file though, which is very strange.", filename.id);
     return default_middle_note;
   }
 

@@ -3296,11 +3296,11 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
 
 bool g_curr_song_contains_embedded_samples = false;
 
-const wchar_t *PLUGIN_DISK_get_audio_filename(hash_t *state){
+filepath_t PLUGIN_DISK_get_audio_filename(hash_t *state){
   bool audiodata_is_included = HASH_has_key(state, "audiofile");
 
-  const wchar_t *filename = NULL;
-  const wchar_t *org_filename = HASH_get_string(state, "filename");
+  filepath_t filename = createIllegalFilepath();
+  filepath_t org_filename = HASH_get_filepath(state, "filename");
 
   if (audiodata_is_included){
 
@@ -3313,17 +3313,19 @@ const wchar_t *PLUGIN_DISK_get_audio_filename(hash_t *state){
     
     if (DISK_create_dir(dc.embedded_files_dirname)==false){
       if (dc.has_shown_embedded_files_dirname_warning==false){
-        GFX_Message(NULL, "Unable to create directory \"%S\"", dc.embedded_files_dirname);
+        GFX_Message(NULL, "Unable to create directory \"%S\"", dc.embedded_files_dirname.id);
         dc.has_shown_embedded_files_dirname_warning = true;
       }
     }else{      
-      filename = STRING_create(STRING_get_qstring(dc.embedded_files_dirname) + QDir::separator() + QFileInfo(STRING_get_qstring(org_filename)).fileName());
+      filename = appendFilePaths(dc.embedded_files_dirname,
+                                 make_filepath(QFileInfo(STRING_get_qstring(org_filename.id)).fileName())
+                                 );
       filename = DISK_create_non_existant_filename(filename);
     }
 
     filename = DISK_base64_to_file(filename, HASH_get_chars(state, "audiofile"));
-    if (filename==NULL)
-      filename = DISK_base64_to_file(NULL, HASH_get_chars(state, "audiofile"));
+    if (isIllegalFilepath(filename))
+      filename = DISK_base64_to_file(filename, HASH_get_chars(state, "audiofile"));
 
   } else {
 
@@ -3331,7 +3333,7 @@ const wchar_t *PLUGIN_DISK_get_audio_filename(hash_t *state){
 
   }
   
-  R_ASSERT(filename!=NULL);
+  R_ASSERT(isLegalFilepath(filename));
   
   return filename;
 }

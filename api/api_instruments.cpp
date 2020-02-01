@@ -15,6 +15,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Python.h"
+
+#include <QString>
+
 #include "radium_proc.h"
 
 #include <string.h>
@@ -439,8 +442,8 @@ instrument_t createAudioInstrument(const_char *type_name, const_char *plugin_nam
   return patch->id;
 }
 
-instrument_t createAudioInstrumentFromPreset(const char *filename, const_char *name, float x, float y, bool set_as_current) {
-  return PRESET_load(STRING_create(filename), name, false, set_as_current, x, y);
+instrument_t createAudioInstrumentFromPreset(filepath_t filename, const_char *name, float x, float y, bool set_as_current) {
+  return PRESET_load(filename, name, false, set_as_current, x, y);
 }
 
 const char *getAudioInstrumentDescription(const_char* container_name, const_char* type_name, const_char* plugin_name){
@@ -505,7 +508,7 @@ instrument_t createAudioInstrumentFromDescription(const char *instrument_descrip
     wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
     //printf("filename: %s\n",filename);
 
-    return PRESET_load(filename, name, true, set_as_current, x, y);
+    return PRESET_load(make_filepath(filename), name, true, set_as_current, x, y);
     
   } else if (instrument_description[0]=='3'){
 
@@ -557,32 +560,12 @@ void createInstrumentDescriptionPopupMenu(dyn_t instrconf){
   S7CALL2(void_dyn,"create-instrument-popup-menu", instrconf);
 }
 
-dynvec_t getAllSinglePresetsInPath(const_char* path){
-  wchar_t *wpath = (path==NULL || strlen(path)==0) ? NULL : STRING_fromBase64(STRING_create(path));
-    
-  vector_t rec_presets = PRESET_get_all_rec_files_in_path(wpath);
-  
-  dynvec_t ret = {};
-
-  VECTOR_FOR_EACH(const wchar_t *, path, &rec_presets){
-    DYNVEC_push_back(&ret, DYN_create_string(STRING_toBase64(path)));
-  }END_VECTOR_FOR_EACH;
-  
-  return ret;
+dynvec_t getAllSinglePresetsInPath(filepath_t path){
+  return PRESET_get_all_rec_files_in_path(path);
 }
 
-dynvec_t getAllMultiPresetsInPath(const_char* path){
-  wchar_t *wpath = (path==NULL || strlen(path)==0) ? NULL : STRING_fromBase64(STRING_create(path));
-    
-  vector_t rec_presets = PRESET_get_all_mrec_files_in_path(wpath);
-
-  dynvec_t ret = {};
-
-  VECTOR_FOR_EACH(const wchar_t *, path, &rec_presets){
-    DYNVEC_push_back(&ret, DYN_create_string(STRING_toBase64(path)));
-  }END_VECTOR_FOR_EACH;
-  
-  return ret;
+dynvec_t getAllMultiPresetsInPath(filepath_t path){
+  return PRESET_get_all_mrec_files_in_path(path);
 }
 
 void requestLoadPresetInstrumentDescription(int64_t parentgui, func_t* callback){
@@ -631,7 +614,12 @@ bool hasPureData(void){
 #endif
 }
 
-void setInstrumentSample(instrument_t instrument_id, const_char *filename){
+void setInstrumentSample(instrument_t instrument_id, filepath_t filename){
+  if (isIllegalFilepath(filename)){
+    handleError("setInstrumentSample: illegal filename for argument 2");
+    return;
+  }
+
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -649,10 +637,10 @@ void setInstrumentSample(instrument_t instrument_id, const_char *filename){
 
   ADD_UNDO(PluginState(patch, NULL));
   
-  SAMPLER_set_new_sample(plugin, STRING_create(filename), -1);
+  SAMPLER_set_new_sample(plugin, filename, -1);
 }
 
-void setRandomInstrumentSample(instrument_t instrument_id, const_char *path){
+void setRandomInstrumentSample(instrument_t instrument_id, filepath_t path){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -668,12 +656,9 @@ void setRandomInstrumentSample(instrument_t instrument_id, const_char *path){
     return;
   }
 
-  if (path==NULL || path[0]==0)
-    path = NULL;
-
   ADD_UNDO(PluginState(patch, NULL));
   
-  SAMPLER_set_random_sample(plugin, path==NULL ? NULL : STRING_create(path));
+  SAMPLER_set_random_sample(plugin, path);
 }
 
 void setRandomSampleForAllSelectedInstruments(void){
@@ -2560,12 +2545,15 @@ bool instrumentIsOpen(instrument_t instrument_id){
   return (instrument_id.id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id)) != NULL;
 }
 
-const_char* getSampleBookmarks(int num){
-  return SETTINGS_read_string(talloc_format("sample_bookmarks%d",num), "/");
+filepath_t getSampleBookmarks(int num, filepath_t default_path){
+  filepath_t default_ = isLegalFilepath(default_path) ? default_path : getHomePath();
+  QString ret = SETTINGS_read_qstring(talloc_format("sample_bookmarks%d",num), STRING_get_qstring(default_.id));
+  return make_filepath(STRING_create(ret));
 }
 
-void setSampleBookmarks(int num, const_char* path){
-  SETTINGS_write_string(talloc_format("sample_bookmarks%d",num), path);
+void setSampleBookmarks(int num, filepath_t default_path){
+  filepath_t default_ = isLegalFilepath(default_path) ? default_path : getHomePath();
+  SETTINGS_write_string(talloc_format("sample_bookmarks%d",num), STRING_get_qstring(default_.id));
 }
 
 void midi_resetAllControllers(void){

@@ -2770,7 +2770,7 @@ int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
   return SEQTRACK_insert_block(seqtrack, block, start_seqtime, end_seqtime);
 }
 
-int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, int64_t endpos){
+int createSampleSeqblock(int seqtracknum, filepath_t w_filename, int64_t pos, int64_t endpos){
   if (pos==-1)
     pos = getSongPos();
   
@@ -2784,7 +2784,7 @@ int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, i
 
   {
     radium::ScopedIgnoreUndo ignore_undo;
-    return SEQTRACK_insert_sample(seqtrack, seqtracknum, w_path_to_path(w_filename), pos, endpos);
+    return SEQTRACK_insert_sample(seqtrack, seqtracknum, w_filename, pos, endpos);
   }
 }
 
@@ -2793,8 +2793,13 @@ const_char* getAudiofilePostfixes(void){
   return talloc_strdup(get_sample_name_filters().join(" ").toUtf8().constData());
 }  
 
-bool addAudiofile(const_char* w_filename){
-  bool ret = SAMPLEREADER_add_audiofile(w_path_to_path(w_filename));
+bool addAudiofile(filepath_t w_filename){
+  if (isIllegalFilepath(w_filename)){
+    handleError("setAudiofile: illegal sample name for argument 1");
+    return 0;
+  }
+  
+  bool ret = SAMPLEREADER_add_audiofile(w_filename);
   BS_UpdateBlockList();
   return ret;
 }
@@ -2808,7 +2813,7 @@ dynvec_t getAudioFiles(void){
   vector_t filenames = SAMPLEREADER_get_all_filenames();
 
   VECTOR_FOR_EACH(wchar_t *, filename, &filenames){
-    DYNVEC_push_back(ret, DYN_create_string(path_to_w_path(filename)));
+    DYNVEC_push_back(ret, DYN_create_filepath(make_filepath(filename)));
   }END_VECTOR_FOR_EACH;
 
   return ret;
@@ -3296,7 +3301,7 @@ const_char* getSeqblockName(int64_t seqblockid){
     return path_to_w_path(seqblock->name);
   
   else if (seqblock->block==NULL)
-    return path_to_w_path(get_seqblock_sample_name(seqtrack, seqblock, false));
+    return path_to_w_path(get_seqblock_sample_name(seqtrack, seqblock, false).id);
   
   else
     return toBase64(seqblock->block->name);
@@ -3728,7 +3733,7 @@ dynvec_t getFadeShapes(void){
   return dynvec;
 }
 
-const_char* getFadeShapeIconFilename(const_char* shape, bool is_fadein){
+const char *getFadeShapeIconFilename(const_char* shape, bool is_fadein){
   enum FadeShape fade_shape;
 
   if (string_to_fade_shape2(shape, &fade_shape)==false){
@@ -3737,7 +3742,7 @@ const_char* getFadeShapeIconFilename(const_char* shape, bool is_fadein){
   }
   
   radium::Envelope env(fade_shape, 1.0, is_fadein);
-  return talloc_strdup(env.get_icon_filename().toUtf8().toBase64().constData());
+  return talloc_strdup(env.get_icon_filename().toUtf8().toBase64().constData()); // Won't return filepath_t since iconfilename is used by popupMenu, which takes a string. And, the function name is misleading, we don't really return a file name so widechar is not necessary.
 }
 
 const_char *getSeqblockFadeShape(bool is_fadein, int seqblocknum, int seqtracknum){
@@ -4119,25 +4124,29 @@ int getSeqblockBlocknum(int seqblocknum, int seqtracknum){
   return seqblock->block->l.num;
 }
 
-const_char* getSeqblockSample(int seqblocknum, int seqtracknum){
+filepath_t getSeqblockSample(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, false);
   if (seqblock==NULL)
-    return "";
+    return createIllegalFilepath();
+  
   if (seqblock->block!=NULL){
     handleError("getSeqblockSampleId: Seqblock %d in seqtrack %d holds a block and not a sample", seqblocknum, seqtracknum);
-    return "";
+    return createIllegalFilepath();
   }
 
-  const wchar_t *samplename = get_seqblock_sample_name(seqtrack, seqblock, true);
-  return path_to_w_path(samplename); // <- to base64 (s7 doesn't support wide char).
+  return get_seqblock_sample_name(seqtrack, seqblock, true);
 }
 
-int64_t getSampleLength(const_char* w_filename){
-  const wchar_t *path = w_path_to_path(w_filename);
-  int64_t length = SAMPLEREADER_get_sample_duration(path);
+int64_t getSampleLength(filepath_t w_filename){
+  if (isIllegalFilepath(w_filename)){
+    handleError("getSampleLength: illegal sample name for argument");
+    return 0;
+  }
+  
+  int64_t length = SAMPLEREADER_get_sample_duration(w_filename);
   if (length < 0)
-    handleError("Sample \"%S\" not found", path);
+    handleError("Sample \"%S\" not found", w_filename.id);
 
   return length;
 }

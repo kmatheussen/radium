@@ -15,9 +15,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-extern LANGSPEC hash_t *SF2_get_info(const wchar_t *filename);
+extern LANGSPEC hash_t *SF2_get_info(filepath_t filename);
 extern LANGSPEC hash_t *SF2_get_displayable_preset_names(hash_t *info);
-extern LANGSPEC float *SF2_load_sample(const wchar_t *filename, int sample_num);
+extern LANGSPEC float *SF2_load_sample(filepath_t filename, int sample_num);
 
 
 

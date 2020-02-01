@@ -2333,26 +2333,26 @@ static SoundPluginType *create_plugin_type(const juce::PluginDescription &descri
 
 
 
-static juce::String get_container_descriptions_filename(const wchar_t *container_filename){
-  juce::String encoded(STRING_get_sha1(container_filename));
+static juce::String get_container_descriptions_filename(filepath_t container_filename){
+  juce::String encoded(STRING_get_sha1(container_filename.id));
   return juce::String(OS_get_dot_radium_path(true)) + OS_get_directory_separator() + SCANNED_PLUGINS_DIRNAME + OS_get_directory_separator() + "v2_PluginDescription_" + encoded;
 }
 
 static juce::String get_plugin_scanner_executable_filename(void){
 #if FOR_WINDOWS
-  juce::String executable = juce::String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner.exe"))); // Don't need to surround string with " and " with juce. You need to do that in Qt.
+  juce::String executable = juce::String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner.exe")).id); // Don't need to surround string with " and " with juce. You need to do that in Qt.
 #else
-  juce::String executable = juce::String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner")));
+  juce::String executable = juce::String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner")).id);
 #endif
   return executable;
 }
 
-static enum PopulateContainerResult launch_program_calling_write_container_descriptions_to_cache_on_disk(const wchar_t *container_filename){
+static enum PopulateContainerResult launch_program_calling_write_container_descriptions_to_cache_on_disk(filepath_t container_filename){
   juce::String executable = get_plugin_scanner_executable_filename();
     
   juce::StringArray args;
   args.add(executable);
-  args.add(juce::Base64::toBase64(juce::String(container_filename)));
+  args.add(juce::Base64::toBase64(juce::String(container_filename.id)));
   args.add(juce::Base64::toBase64(get_container_descriptions_filename(container_filename)));
 
   juce::ChildProcess process;
@@ -2374,7 +2374,7 @@ static enum PopulateContainerResult launch_program_calling_write_container_descr
     int blacklist = VECTOR_push_back(&v, "Cancel, and add to blacklist");
     fprintf(stderr, "Openinig requester\n");
 
-    int ret = GFX_Message2(&v, true, "Waited more than %d seconds for \"%S\" to load\n", s, container_filename);
+    int ret = GFX_Message2(&v, true, "Waited more than %d seconds for \"%S\" to load\n", s, container_filename.id);
     fprintf(stderr, "Got answer from requester\n");
 
     if (ret==w3)
@@ -2398,7 +2398,7 @@ static enum PopulateContainerResult launch_program_calling_write_container_descr
 static enum PopulateContainerResult get_container_descriptions_from_disk(const SoundPluginTypeContainer *container, juce::OwnedArray<juce::PluginDescription> &descriptions){
   juce::String filename = get_container_descriptions_filename(container->filename);
   
-  fprintf(stderr, "   READING.  %s: Reading from description file \"%s\".\n", juce::String(container->filename).toRawUTF8(), filename.toRawUTF8());
+  fprintf(stderr, "   READING.  %s: Reading from description file \"%s\".\n", juce::String(container->filename.id).toRawUTF8(), filename.toRawUTF8());
     
   juce::File file(filename);
   if (file.existsAsFile()==false){
@@ -2508,7 +2508,7 @@ static enum PopulateContainerResult populate(SoundPluginTypeContainer *container
   }
 
   if (size==0)
-    GFX_addMessage("No valid plugins found in %S", container->filename);
+    GFX_addMessage("No valid plugins found in %S", container->filename.id);
 
   return POPULATE_RESULT_IS_OKAY;
 }
@@ -2551,7 +2551,7 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, c
   container->type_name = V_strdup(container_type_name);
   container->name = V_strdup(name);
   container->populate = populate;
-  container->filename = V_wcsdup(library_file_full_path);
+  container->filename = make_filepath(V_wcsdup(library_file_full_path));
   
   ContainerData *data = (ContainerData*)V_calloc(1, sizeof(ContainerData));
   data->file_or_identifier = wcsdup(file_or_identifier);

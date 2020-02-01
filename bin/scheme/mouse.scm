@@ -1539,9 +1539,9 @@
                                                        (<ra> :clear-track tracknum))
               "----------"
               "Load Track (BETA!)" :shortcut ra:load-track (lambda ()
-                                                             (<ra> :load-track "" tracknum))
+                                                             (<ra> :load-track (<ra> :create-illegal-filepath) tracknum))
               "Save Track" :shortcut ra:save-track (lambda ()
-                                                     (<ra> :save-track "" tracknum))
+                                                     (<ra> :save-track (<ra> :create-illegal-filepath) tracknum))
               (<-> "---------Misc (track #" tracknum ")")
               (list "Wide note name"
                     :check (<ra> :track-note-area-width-is-wide tracknum)
@@ -7562,7 +7562,7 @@
                                                 (lambda ()
                                                   (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X))))
                                                          (num-blocks (<ra> :get-num-blocks)))
-                                                    (<ra> :load-block "")
+                                                    (<ra> :load-block)
                                                     (if (not (= num-blocks (<ra> :get-num-blocks)))
                                                         (<ra> :create-seqblock seqtracknum num-blocks pos)))))))
                                           (if (not for-audiofiles)
@@ -7578,7 +7578,7 @@
                                                         ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong_24000.wav") pos))))
                                                         ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
                                                         ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
-                                                        (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/390514__tylean__counting-1-to-10.wav") pos))))
+                                                        (<ra> :create-sample-seqblock seqtracknum (<ra> :get-path "/home/kjetil/390514__tylean__counting-1-to-10.wav") pos))))
                                                    ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
                                                    )
                                                ;;
@@ -7586,7 +7586,7 @@
                                                 "Insert new audio file"
                                                 (lambda ()
                                                   (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
-                                                    (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
+                                                    (create-file-requester "Choose audio file" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
                                                                            (lambda (filename)
                                                                              (<ra> :create-sample-seqblock seqtracknum filename pos))))))
 
@@ -7906,7 +7906,7 @@
                                                     (list "Copy filename to system clipboard"
                                                           :enabled (and seqblocknum (not blocknum))
                                                           (lambda ()
-                                                            (<ra> :copy-wtext-to-clipboard (<ra> :get-seqblock-sample seqblocknum seqtracknum))
+                                                            (<ra> :copy-filepath-to-clipboard (<ra> :get-seqblock-sample seqblocknum seqtracknum))
                                                             #t))
                                                     
                                                     (list "Settings (double click)"

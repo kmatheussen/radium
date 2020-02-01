@@ -12,6 +12,15 @@
 
 #include "helpers.h"
 
+#ifdef TEST_MAIN
+static inline QString STRING_get_qstring(const wchar_t *string){ // TODO: Rename to STRING_create_qstring.
+  if (string==NULL)
+    return QString("");
+  else
+    return QString::fromWCharArray(string);
+}
+#endif
+
 #ifndef TEST_MAIN
 
 #define LANGSPEC "C"  // LANGSPEC doesn't work in OS_error_proc.h, so can't include nsmtracker.h. Haven't found out why this happens.
@@ -22,11 +31,13 @@
 
 
 /*
-  g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DCOMPILE_EXECUTABLE -o ../bin/radium_error_message `cat ../buildtype.opt` `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11 && ../bin/radium_error_message gakkgakk1
-  g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DTEST_MAIN -o test_radium_error_message `cat ../buildtype.opt` `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11 &&  ./test_radium_error_message gakkgakk2
+  g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DCOMPILE_EXECUTABLE -o ../bin/radium_error_message `cat ../buildtype.opt` `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11  -Wno-class-memaccess && ../bin/radium_error_message gakkgakk1
+  g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DTEST_MAIN -o test_radium_error_message `cat ../buildtype.opt` `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11  -Wno-class-memaccess &&  ./test_radium_error_message gakkgakk2
+
+`cat ../buildtype.opt` 
 
 both:
-  g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DCOMPILE_EXECUTABLE -o ../bin/radium_error_message `cat ../buildtype.opt` `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11 && g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DTEST_MAIN -o test_radium_error_message `cat ../buildtype.opt` `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11 &&  ./test_radium_error_message gakkgakk2
+  g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DCOMPILE_EXECUTABLE -o ../bin/radium_error_message `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11  -Wno-class-memaccess && g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DTEST_MAIN -o test_radium_error_message `cat ../buildtype.opt` `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11  -Wno-class-memaccess &&  ./test_radium_error_message gakkgakk2
 
  */
 
@@ -52,20 +63,41 @@ static int show_message(QString message, const QVector<QString> &menu_strings){
   msgBox->raise();
   msgBox->activateWindow();
   
-  printf("hepp: %d\n",msgBox->exec()); // safeExec(&msgBox)); <-- We are not inside the radium executable here.
+  printf("hepp: %d. msgBox: %p\n",msgBox->exec(), msgBox.data()); // safeExec(&msgBox)); <-- We are not inside the radium executable here.
 
-  if (msgBox==NULL)
+  if (msgBox.data()==NULL){
     return -1;
-      
+  }
+
   QAbstractButton *clicked_button = msgBox->clickedButton();
 
   int i = 0;
   for(QString menu_string : menu_strings){
-    if(clicked_button->text()==menu_string)
+    if(clicked_button->text()==menu_string){
+      /*
+      {
+        QMessageBox msgBox;
+        msgBox.setIcon(QMessageBox::Critical);
+        msgBox.setText("AI: " + QString::number(i));
+        msgBox.setStandardButtons(QMessageBox::Ok);
+        msgBox.exec();
+      }
+      */
       return i;
+    }
     i++;
   }
 
+  /*
+  {
+    QMessageBox msgBox;
+    msgBox.setIcon(QMessageBox::Critical);
+    msgBox.setText("AI2: " + QString::number(0));
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.exec();
+  }
+  */
+  
   fprintf(stderr,"what?\n");
   return -1;
 }
@@ -88,6 +120,14 @@ void register_modal_qwidget(QWidget *widget){
 }
 
 int main(int argc, char **argv){
+  /*
+  {
+    char command[1000];
+    snprintf(command,998,"echo %d >/tmp/res.txt", 2);
+    system(command);
+  }
+  */
+  
 #if FOR_LINUX
   bool faulty_installation = false;
   if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")==NULL){
@@ -131,7 +171,15 @@ int main(int argc, char **argv){
 #endif
 
   int ret = show_message(message, menu_strings);
-  printf("ret: %d\n",ret);
+  printf("retgakk: %d\n",ret);
+  /*
+  {
+    char command[1000];
+    snprintf(command,998,"echo %d >/tmp/res.txt", ret);
+    system(command);
+  }
+  */
+  
   return ret;
 }
 
@@ -157,9 +205,9 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
     
 
 #if FOR_WINDOWS
-  QString program = OS_get_full_program_file_path(QString("radium_error_message.exe"));
+  QString program = STRING_get_qstring(OS_get_full_program_file_path(L"radium_error_message.exe").id);
 #else
-  QString program = OS_get_full_program_file_path(QString("radium_error_message"));
+  QString program = STRING_get_qstring(OS_get_full_program_file_path(L"radium_error_message").id);
 #endif
 
 #if defined(FOR_WINDOWS)
@@ -221,7 +269,7 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
   
   R_ASSERT_RETURN_IF_FALSE2(myProcess->exitStatus()==QProcess::NormalExit, -1);
   
-      
+  printf("  Exit code: %d\n", myProcess->exitCode());
   return myProcess->exitCode();
 }
 
@@ -278,13 +326,27 @@ double TIME_get_ms(void){
 
 bool g_qt_is_running = true;
 extern "C"{
-wchar_t *OS_get_full_program_file_path(const wchar_t *w){
-  QString ret = QString("../bin/") + QString::fromWCharArray(w);
+filepath_t OS_get_full_program_file_path(filepath_t filename){
+  QString ret = QString("../bin/") + QString::fromWCharArray(filename.id);
   wchar_t * ch = (wchar_t*)calloc(sizeof(wchar_t), ret.size()+1);
   ret.toWCharArray(ch);
-  return ch;
+  return make_filepath(ch);
 }
+  bool THREADING_is_player_or_runner_thread(void){
+    return false;
+  }
+  bool PLAYER_current_thread_has_lock(void){
+    return false;
+  }
+  bool THREADING_is_main_thread(void){
+    return true;
+  }
 }
+
+void MOUSE_CYCLE_schedule_unregister_all(void){
+}
+
+QPointer<QMenu> g_curr_popup_qmenu;
 
 void GL_lock(void){
 }
@@ -312,15 +374,15 @@ extern "C"{
 
 int main(int argc, char **argv){
   QApplication app(argc,argv);
-  int ret = SYSTEM_show_error_message(argv[1]);
-  printf("ret: %d\n",ret);
+  int ret = 2;//SYSTEM_show_error_message(argv[1]);
+  printf("ret1: %d\n",ret);
 
   vector_t menu = {};
   VECTOR_push_back(&menu, "Option 1/3 øæå ååå");
   VECTOR_push_back(&menu, "Option 2/3 øæå ååå");
   VECTOR_push_back(&menu, "Option 3/3 øæå ååå");
   ret = SYSTEM_show_message_menu(&menu, "HELLO!");
-  printf("ret: %d\n",ret);
+  printf("ret2: %d\n",ret);
   return 0;
 }
 #endif // TEST_MAIN

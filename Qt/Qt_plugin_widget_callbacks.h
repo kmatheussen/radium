@@ -971,7 +971,7 @@ public slots:
 
     QString pathdir;
 
-    if (saveRecordedAudioFilesInBrowserPath() || dc.filename == NULL){
+    if (saveRecordedAudioFilesInBrowserPath() || isIllegalFilepath(dc.filename)){
 
       auto *sample_requester_widget = AUDIOWIDGET_get_sample_requester_widget(_patch.data());
       //printf("dir: %p\n", sample_requester_widget->_dir);
@@ -979,7 +979,7 @@ public slots:
 
     } else {
 
-      QString filename = STRING_get_qstring(dc.filename).replace(QRegExp(".rad$"), "_rad");      
+      QString filename = STRING_get_qstring(dc.filename.id).replace(QRegExp(".rad$"), "_rad");      
 
       QDir dir(QFileInfo(filename).absoluteFilePath() + "_audio");
 
@@ -1006,13 +1006,13 @@ public slots:
           return;
 
         if (sel==mono_main)
-          SAMPLER_start_recording(plugin, STRING_create(pathdir), 1, true);
+          SAMPLER_start_recording(plugin, make_filepath(pathdir), 1, true);
         else if (sel==stereo_main)
-          SAMPLER_start_recording(plugin, STRING_create(pathdir), 2, true);
+          SAMPLER_start_recording(plugin, make_filepath(pathdir), 2, true);
         else if (sel==mono)
-          SAMPLER_start_recording(plugin, STRING_create(pathdir), 1, false);
+          SAMPLER_start_recording(plugin, make_filepath(pathdir), 1, false);
         else if (sel==stereo)
-          SAMPLER_start_recording(plugin, STRING_create(pathdir), 2, false);
+          SAMPLER_start_recording(plugin, make_filepath(pathdir), 2, false);
       });
     
   }

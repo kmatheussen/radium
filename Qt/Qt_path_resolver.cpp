@@ -30,6 +30,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../common/OS_disk_proc.h"
 
+#include "../api/api_proc.h"
+
+
 #ifndef TEST_PATH_RESOLVER
 
 #include "EditorWidget.h"
@@ -59,8 +62,8 @@ static void ask_to_add_resolved_path(QDir key, QDir value, bool program_state_is
 
 static const wchar_t *_loading_path  = NULL;
 
-void OS_set_loading_path(const wchar_t *filename){  
-  QFileInfo info(STRING_get_qstring(filename));
+void OS_set_loading_path(filepath_t filename){  
+  QFileInfo info(STRING_get_qstring(filename.id));
   _loading_path = STRING_create(info.absoluteFilePath());
 }
 
@@ -70,8 +73,8 @@ void OS_unset_loading_path(void){
 
 static QString saving_path;
 
-void OS_set_saving_path(const wchar_t *filename){
-  QFileInfo info(STRING_get_qstring(filename));
+void OS_set_saving_path(filepath_t filename){
+  QFileInfo info(STRING_get_qstring(filename.id));
   saving_path = info.absolutePath();
   printf("saving_path: -%s-\n",saving_path.toUtf8().constData());
 }
@@ -90,13 +93,13 @@ void OS_set_saving_path(const wchar_t *filename){
   /a/b/c.wav    /a            b/c.wav        (returns a relative path)
 
 */
-const wchar_t *OS_saving_get_relative_path_if_possible(const wchar_t *wfilepath){
+filepath_t OS_saving_get_relative_path_if_possible(filepath_t wfilepath){
   //R_ASSERT_NON_RELEASE(g_is_saving); //Commented out sinc eit happens in Sampler_plugin.c and FluidSynth.c when comparing states.
   
   if (saving_path.isEmpty())
     return wfilepath;
 
-  QString filepath = STRING_get_qstring(wfilepath);
+  QString filepath = STRING_get_qstring(wfilepath.id);
   
   QFileInfo info(filepath);
 
@@ -110,7 +113,7 @@ const wchar_t *OS_saving_get_relative_path_if_possible(const wchar_t *wfilepath)
   //printf("filepath2: -%s-, savepath2: -%s-\n",filepath2.toUtf8().constData(),savepath2.toUtf8().constData());
 
   if (filepath2.startsWith(savepath2))
-    return STRING_create(filepath.remove(0, savepath2.length()));
+    return make_filepath(filepath.remove(0, savepath2.length()));
   else
     return wfilepath;
 }
@@ -132,10 +135,10 @@ static bool safe_exists(const QFileInfo &info){
     return true;
 }
 
-const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool program_state_is_valid){
+filepath_t OS_loading_get_resolved_file_path(filepath_t wpath, bool program_state_is_valid){
   //R_ASSERT_NON_RELEASE(g_is_loading); //Commented out sinc eit happens in Sampler_plugin.c and FluidSynth.c when comparing states.
   
-  QString path = QString::fromWCharArray(wpath);
+  QString path = STRING_get_qstring(wpath.id);
   QFileInfo info(path);
   
   //printf("path: -%s-, loading-path: -%S-\n",path.toUtf8().constData(),_loading_path);
@@ -157,12 +160,12 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool prog
     //gets(temp);
 
     if(safe_exists(info2)){
-      return STRING_create(info2.filePath());
+      return make_filepath(info2.filePath());
     }
   }
 
   if (g_is_loading==false && g_is_saving==false)
-    return NULL;
+    return createIllegalFilepath();
   
   // Try resolved paths
   if(resolved_paths.contains(dir.path())){
@@ -170,7 +173,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool prog
 
     if(safe_exists(info2)) {
 
-      return STRING_create(info2.filePath());
+      return make_filepath(info2.filePath());
     }
   }
 
@@ -179,7 +182,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool prog
   {
     QString in_sounds = QString("sounds") + QDir::separator() + info.fileName();
     if (OS_has_full_program_file_path(in_sounds))
-      return STRING_create(OS_get_full_program_file_path(in_sounds));
+      return OS_get_full_program_file_path(in_sounds);
   }
   
   
@@ -225,7 +228,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool prog
                                                           );
 
         if(filename == "")
-          return NULL;
+          return createIllegalFilepath();
         
         info3 = QFileInfo(filename);
       }
@@ -234,7 +237,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool prog
     if(info3.fileName() == info.fileName())
       ask_to_add_resolved_path(dir, info3.dir(), program_state_is_valid);
     
-    return STRING_create(info3.filePath());
+    return make_filepath(info3.filePath());
   }
 }
 

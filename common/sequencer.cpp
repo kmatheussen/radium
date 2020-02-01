@@ -549,7 +549,7 @@ static struct SeqBlock *SEQBLOCK_create_block(const struct SeqTrack *seqtrack, s
   return seqblock;
 }
 
-static struct SeqBlock *SEQBLOCK_create_sample(const struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, enum ResamplerType resampler_type, const hash_t *state, double state_samplerate, int64_t seqtime, Seqblock_Type type){
+static struct SeqBlock *SEQBLOCK_create_sample(const struct SeqTrack *seqtrack, int seqtracknum, filepath_t filename, enum ResamplerType resampler_type, const hash_t *state, double state_samplerate, int64_t seqtime, Seqblock_Type type){
  
   if (seqtrack->for_audiofiles==false)
     return NULL;
@@ -570,7 +570,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(const struct SeqTrack *seqtrack, 
                 seqtime 
                 );
 
-  seqblock->sample_filename = STRING_copy(filename);
+  seqblock->sample_filename = make_filepath(STRING_copy(filename.id));
   
   SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
   
@@ -580,7 +580,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(const struct SeqTrack *seqtrack, 
   if (seqblock->sample_id==-1)
     return NULL;
 
-  seqblock->sample_filename_without_path = STRING_copy(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, false));
+  seqblock->sample_filename_without_path = make_filepath(STRING_copy(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, false).id));
 
   if (type != Seqblock_Type::RECORDING) {
 
@@ -993,25 +993,25 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
   } else {
     
     SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-    const wchar_t *filename = L"";
+    filepath_t filename = make_filepath(L"");
     if (plugin != NULL)
       filename = SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, true);
     else
       R_ASSERT(false);
 
     if(g_is_saving || g_is_loading)
-      HASH_put_string(state, ":sample", OS_saving_get_relative_path_if_possible(filename));
+      HASH_put_filepath(state, ":sample", OS_saving_get_relative_path_if_possible(filename));
     else {
-      HASH_put_string(state, ":sample", filename);
+      HASH_put_filepath(state, ":sample", filename);
       //#if defined(FOR_WINDOWS)
       //HASH_put_string(state, ":sample-base64", STRING_toBase64(filename)); // char* can"t be used for filenames in windows
       //#endif
     }
 
-    HASH_put_string(state, ":sample-base64", STRING_toBase64(filename)); // For displaying soundfile name in the sequencer and playlist. Using base64 since char* can"t be used for filenames in windows
+    HASH_put_string(state, ":sample-base64", STRING_toBase64(filename.id)); // For displaying soundfile name in the sequencer and playlist. Using base64 since char* can"t be used for filenames in windows
 
 #if !defined(RELEASE)
-    QFileInfo info(STRING_get_qstring(filename));
+    QFileInfo info(STRING_get_qstring(filename.id));
     if (!info.isAbsolute())
       abort();
 #endif
@@ -1104,11 +1104,11 @@ static hash_t *get_new_seqblock_state_from_old(const hash_t *old, const struct S
     HASH_put_int(new_state, ":blocknum", blocknum);
   }
 
-  const wchar_t *sample = NULL;
+  filepath_t sample = createIllegalFilepath();
   
   if (HASH_has_key(old, ":sample")){
-    sample = HASH_get_string(old, ":sample");
-    HASH_put_string(new_state, ":sample", sample);
+    sample = HASH_get_filepath(old, ":sample");
+    HASH_put_filepath(new_state, ":sample", sample);
   }
 
   
@@ -1363,26 +1363,27 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
 
   } else {
     
-    const wchar_t *filename = L"";
-#if defined(FOR_WINDOWS)    
-    if (get_value(state, ":sample-base64", STRING_TYPE, HASH_get_string, error_type, filename, false)){
-      filename = STRING_fromBase64(filename);
+    filepath_t filename = make_filepath(L"");
+#if defined(FOR_WINDOWS)
+    const wchar_t *filename2 = L"";
+    if (get_value(state, ":sample-base64", STRING_TYPE, HASH_get_string, error_type, filename2, false)){
+      filename = make_filepath(STRING_fromBase64(filename2));
     } else
 #endif
     {
-      if (get_value(state, ":sample", STRING_TYPE, HASH_get_string, error_type, filename)==false)
+      if (get_value(state, ":sample", FILEPATH_TYPE, HASH_get_filepath, error_type, filename)==false)
         return NULL;
     }
     
     if (g_is_loading || g_is_saving){
-      const wchar_t *resolved_filename = OS_loading_get_resolved_file_path(filename, false);
-      if (resolved_filename==NULL)
+      filepath_t resolved_filename = OS_loading_get_resolved_file_path(filename, false);
+      if (isIllegalFilepath(resolved_filename))
         return NULL;
       
-      if (filename != resolved_filename){
+      if (filename.id != resolved_filename.id){
         
-        if (!STRING_equals2(DISK_get_pathless_file_path(filename), DISK_get_pathless_file_path(resolved_filename))){
-          GFX_addMessage("Warning: Could not replace \"%S\" with \"%S\" since their name differ.\n", filename, resolved_filename);
+        if (!STRING_equals2(DISK_get_pathless_file_path(filename).id, DISK_get_pathless_file_path(resolved_filename).id)){
+          GFX_addMessage("Warning: Could not replace \"%S\" with \"%S\" since their name differ.\n", filename.id, resolved_filename.id);
           return NULL;
         }
         
@@ -1391,7 +1392,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
       }
     }
     
-    if (filename==NULL)
+    if (isIllegalFilepath(filename))
       return NULL;
     
     enum ResamplerType resampler_type = RESAMPLER_SINC1;
@@ -2477,14 +2478,14 @@ static struct SeqtrackRecordingConfig get_recording_config_from_state(const hash
 }
 
 
-static wchar_t *get_recording_path(const struct SoundPlugin *plugin){
-  QString filename = STRING_get_qstring(dc.filename).replace(QRegExp(".rad$"), "_rad");      
+static filepath_t get_recording_path(const struct SoundPlugin *plugin){
+  QString filename = STRING_get_qstring(dc.filename.id).replace(QRegExp(".rad$"), "_rad");      
 
-  const wchar_t *pathdir = STRING_create(QFileInfo(filename).absoluteFilePath() + "_audio");
+  filepath_t pathdir = make_filepath(QFileInfo(filename).absoluteFilePath() + "_audio");
 
   if (DISK_create_dir(pathdir)==false){
-    GFX_addMessage("Unable to create directory %S.", pathdir);
-    return NULL;
+    GFX_addMessage("Unable to create directory %S.", pathdir.id);
+    return createIllegalFilepath();
   }
 
   wchar_t *last_dir = STRING_replace(STRING_replace(STRING_create(plugin->patch->name),
@@ -2500,13 +2501,12 @@ static wchar_t *get_recording_path(const struct SoundPlugin *plugin){
   if (s=="")
     s = "noname";
 
-  wchar_t *recording_path = STRING_append(pathdir,
-                                          STRING_append(STRING_create(OS_get_directory_separator()),
-                                                        STRING_create(s)));
-
+  filepath_t recording_path = appendFilePaths(pathdir,
+                                              make_filepath(s));
+  
   if (DISK_create_dir(recording_path)==false){
-    GFX_addMessage("Unable to create directory \"%S\".\n", recording_path);
-    return NULL;
+    GFX_addMessage("Unable to create directory \"%S\".\n", recording_path.id);
+    return createIllegalFilepath();
   }
 
   return recording_path;
@@ -2532,8 +2532,8 @@ void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
     
   } else {
 
-    wchar_t *recording_path = get_recording_path(plugin);
-    if (recording_path==NULL)
+    filepath_t recording_path = get_recording_path(plugin);
+    if (isIllegalFilepath(recording_path))
       return;
 
     if (get_num_recording_soundfile_channels(get_seqtrack_recording_config(seqtrack))==0){
@@ -2543,8 +2543,8 @@ void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
       
     SEQTRACKPLUGIN_enable_recording(seqtrack,
                                     plugin,
-                                    STRING_append(recording_path,
-                                                  STRING_create(OS_get_directory_separator()))
+                                    make_filepath(STRING_append(recording_path.id,
+                                                                STRING_create(OS_get_directory_separator())))
                                     );
   }
   
@@ -2834,7 +2834,7 @@ int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int seqtracknum, co
 }
 
 
-static struct SeqBlock *create_sample_seqblock(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime, Seqblock_Type type){
+static struct SeqBlock *create_sample_seqblock(struct SeqTrack *seqtrack, int seqtracknum, filepath_t filename, int64_t seqtime, int64_t end_seqtime, Seqblock_Type type){
   if (end_seqtime != -1)
     R_ASSERT_RETURN_IF_FALSE2(end_seqtime > seqtime, NULL);
 
@@ -2863,7 +2863,7 @@ static struct SeqBlock *create_sample_seqblock(struct SeqTrack *seqtrack, int se
   return seqblock;
 }
 
-int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime){
+int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, filepath_t filename, int64_t seqtime, int64_t end_seqtime){
   struct SeqBlock *seqblock = create_sample_seqblock(seqtrack, seqtracknum, filename, seqtime, end_seqtime, Seqblock_Type::REGULAR);
   if (seqblock==NULL)
     return -1;
@@ -2874,7 +2874,7 @@ int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wch
     
     SAMPLEREADER_inc_users(filename);
     UNDO_add_callback_when_curr_entry_becomes_unavailable(SAMPLEREADER_dec_users_undo_callback,
-                                                          talloc_wcsdup(filename),
+                                                          talloc_wcsdup(filename.id),
                                                           0
                                                           );
   }
@@ -2886,7 +2886,7 @@ struct SeqBlock *SEQTRACK_add_recording_seqblock(struct SeqTrack *seqtrack, int6
   int seqtracknum = get_seqtracknum(seqtrack);
   R_ASSERT_RETURN_IF_FALSE2(seqtracknum >= 0, NULL);
   
-  struct SeqBlock *seqblock = create_sample_seqblock(seqtrack, seqtracknum, L"", seqtime, end_seqtime, Seqblock_Type::RECORDING);
+  struct SeqBlock *seqblock = create_sample_seqblock(seqtrack, seqtracknum, make_filepath(L""), seqtime, end_seqtime, Seqblock_Type::RECORDING);
   if (seqblock==NULL)
     return NULL;
 
@@ -2903,7 +2903,7 @@ void SEQTRACK_remove_recording_seqblock(struct SeqTrack *seqtrack, struct SeqBlo
   VECTOR_remove(&seqtrack->recording_seqblocks, seqblock);
 }
 
-void SEQUENCER_remove_sample_from_song(const wchar_t *filename){
+void SEQUENCER_remove_sample_from_song(filepath_t filename){
   struct ToRemove{
     struct SeqTrack *seqtrack;
     int seqblockpos;
@@ -2919,7 +2919,7 @@ void SEQUENCER_remove_sample_from_song(const wchar_t *filename){
       
       VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
         
-        if (STRING_equals2(filename, SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, true))) {
+        if (STRING_equals2(filename.id, SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, true).id)) {
           prepare_remove_sample_from_seqblock(seqtrack, seqblock, Seqblock_Type::REGULAR);
 
           ToRemove to_remove = {seqtrack, iterator666};
@@ -3306,7 +3306,7 @@ void SEQUENCER_make_all_used_audio_files_undeletable(void){
   
   VECTOR_FOR_EACH(const wchar_t *, filename, &audiofile_names){
     
-    SAMPLEREADER_maybe_make_audio_file_undeletable(filename);
+    SAMPLEREADER_maybe_make_audio_file_undeletable(make_filepath(filename));
     
   }END_VECTOR_FOR_EACH;
 }

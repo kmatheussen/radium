@@ -986,7 +986,7 @@
                  (not only-show-left-part-if-text-dont-fit))
         (when (> text-width (- x2 x1))
           (set! x1 (+ x1 (- (- x2 x1) text-width)))))
-      
+
       (<gui> :draw-text gui (maybe-thunk-value text-color) text
              x1
              y1
@@ -1028,7 +1028,7 @@
                                  :get-wide-string #f
                                  :callback)
   (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 y2
-                              :text (lambda () 
+                              :text (lambda ()
                                       (if get-wide-string
                                           (<ra> :from-base64 text)
                                           text))
@@ -2122,7 +2122,7 @@
 
   (define name-text (if blocknum
                         (<ra> :to-base64 (get-block-table-entry-text blocknum))
-                        (let ((filename (file-info :filename)))
+                        (let ((filename (<ra> :get-base64-from-filepath (file-info :filename))))
                           (if (and is-dir
                                    ;;(not (string=? "." filename))
                                    ;;(not (string=? ".." filename))
@@ -2311,7 +2311,7 @@
   (define curr-settings-num (string->number (<ra> :get-settings (<-> "filebrowser_" id-text "_curr-settings-num") "0")))
   (define curr-entry-num 0)
 
-  (set! path (<ra> :get-settings-w (<-> "filebrowser_" id-text "_" curr-settings-num) path))
+  (set! path (<ra> :get-settings-f (<-> "filebrowser_" id-text "_" curr-settings-num) path))
   
   (define entries '())
   (define file-browser-entries '())
@@ -2371,7 +2371,7 @@
               (if (= n 0)
                   (loop old-path 1)
                   (loop (<ra> :get-home-path) 1)))
-          (<ra> :put-settings-w (<-> "filebrowser_" id-text "_" curr-settings-num) path))))
+          (<ra> :put-settings-f (<-> "filebrowser_" id-text "_" curr-settings-num) path))))
     
   (define (set-new-curr-entry! new-curr-entry-num)
     (when (not (null? entries))
@@ -2396,7 +2396,7 @@
     (define pathline-y1 (+ y1 (get-fontheight) border))
 
     (define (get-settings num)
-      (<ra> :get-settings-w (<-> "filebrowser_" id-text "_" num) path))
+      (<ra> :get-settings-f (<-> "filebrowser_" id-text "_" num) path))
     
     (define radiobuttons
       (<new> :radiobuttons gui x1 y1 x2 (- pathline-y1 border)
@@ -2422,9 +2422,9 @@
     (for-each (lambda (num)
                 ((radiobuttons :get-radiobutton num) :add-statusbar-text-handler
                  (lambda ()
-                   (define path (<ra> :from-base64 (get-settings num)))
+                   (define path (get-settings num))
                    (list #t
-                         (<-> num ": " path)))))
+                         (<-> num ": " (<ra> :get-path-string path))))))
               (iota num-settings-buttons))
     
     (define button-width (* 2 (<gui> :text-width "R")))
@@ -2447,16 +2447,16 @@
 
     (define line-input (<new> :line-input gui line-input-x1 pathline-y1 x2 (- browser-y1 border)
                               :prompt ""
-                              :text path
+                              :text (<ra> :get-base64-from-filepath path)
                               :get-wide-string #t
                               :callback
                               (lambda (new-name)
-                                (if (not (string=? new-name ""))
+                                (if (string=? new-name "")
+                                    path
                                     (begin
                                       (c-display "new-name: -" new-name "-" (<ra> :from-base64 new-name) "-")
-                                      (set-new-path! new-name)
-                                      new-name)
-                                    path))))
+                                      (set-new-path! (<ra> :get-filepath-from-base64 new-name))
+                                      new-name)))))
                                 
     (add-sub-area-plain! line-input)
 
@@ -2521,8 +2521,8 @@
                                              (define is-dir-a (a :is-dir))
                                              (define is-dir-b (b :is-dir))
                                              (if (eq? is-dir-a is-dir-b)
-                                                 (string<? (<ra> :from-base64 (a :filename))
-                                                           (<ra> :from-base64 (b :filename)))
+                                                 (string<? (<ra> :get-path-string (a :filename))
+                                                           (<ra> :get-path-string (b :filename)))
                                                  is-dir-a))))
                        (if is-finished
                            (set! entries-is-complete #t))

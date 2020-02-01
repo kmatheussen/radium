@@ -53,10 +53,10 @@
                     (get-all-lines-in-file wfilename)))))
 
 #!!
-(get-menu-lines (<ra> :to-base64 "/home/kjetil/radium/bin/menues.conf"))
-(get-all-lines-in-file (<ra> :to-base64 "/home/kjetil/radium/bin/menues.conf"))
+(get-menu-lines (<ra> :get-path "/home/kjetil/radium/bin/menues.conf"))
+(get-all-lines-in-file (<ra> :get-path "/home/kjetil/radium/bin/menues.conf"))
 
-(define wfilename (<ra> :to-base64 "/home/kjetil/radium/bin/menues.conf"))
+(define wfilename (<ra> :get-path "/home/kjetil/radium/bin/menues.conf"))
 
 (map create-menu-line-from-line
      (remove (lambda (line)
@@ -117,7 +117,7 @@
 (define (generate-main-menus)
   (let loop ((menu-lines (get-menu-lines (<ra> :append-file-paths
                                                (<ra> :get-program-path)
-                                               (<ra> :to-base64 "menues.conf"))))
+                                               (<ra> :get-path "menues.conf"))))
              (last-indentation -1))
     (if (null? menu-lines)
         #t

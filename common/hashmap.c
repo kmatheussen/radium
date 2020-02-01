@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_settings_proc.h"
 #include "OS_disk_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "hashmap_proc.h"
 
 
@@ -547,7 +549,7 @@ hash_t *HASH_create(int approx_size){
 
   hash->elements_size = elements_size;
 
-  hash->version = 4;
+  hash->version = 5;
 
   return hash;
 }
@@ -752,6 +754,13 @@ static void put_instrument(hash_t *hash, const char *key, int i, instrument_t va
   put_dyn(hash, key, i, DYN_create_instrument(val));
 }
 
+static void put_filepath(hash_t *hash, const char *key, int i, filepath_t val){
+  if(hash->version < 5)
+    put_dyn(hash, key, i, DYN_create_string(val.id));
+  else
+    put_dyn(hash, key, i, DYN_create_filepath(val));
+}
+
 static void put_bool(hash_t *hash, const char *key, int i, bool val){
   put_dyn(hash, key, i, DYN_create_bool(val));
 }
@@ -795,6 +804,10 @@ void HASH_put_int(hash_t *hash, const char *key, int64_t val){
 
 void HASH_put_instrument(hash_t *hash, const char *key, instrument_t val){
   put_instrument(hash, key, 0, val);
+}
+
+void HASH_put_filepath(hash_t *hash, const char *key, filepath_t val){
+  put_filepath(hash, key, 0, val);
 }
 
 void HASH_put_bool(hash_t *hash, const char *key, bool val){
@@ -847,6 +860,13 @@ void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val){
 
 void HASH_put_instrument_at(hash_t *hash, const char *key, int i, instrument_t val){
   put_instrument(hash, key, i, val);
+  int new_size = i+1;
+  if(new_size>hash->num_array_elements)
+    hash->num_array_elements = new_size;
+}
+
+void HASH_put_filepath_at(hash_t *hash, const char *key, int i, filepath_t val){
+  put_filepath(hash, key, i, val);
   int new_size = i+1;
   if(new_size>hash->num_array_elements)
     hash->num_array_elements = new_size;
@@ -1011,6 +1031,34 @@ static instrument_t get_instrument(const hash_t *hash, const char *key, int i){
   }
 }
 
+static filepath_t get_filepath(const hash_t *hash, const char *key, int i){
+  if(hash->version < 5){
+
+    // Need to check both INT_TYPE and FILEPATH_TYPE. Reason is that :filepath-id is stored as filepath type in HASH_load (even when version==3) to fix mixer strips.
+    
+    hash_element_t *element=HASH_get_any_type(hash, key, i);
+    if (element==NULL)
+      return createIllegalFilepath();
+
+    if (element->a.type==STRING_TYPE)
+      return make_filepath(element->a.string);
+    else if (element->a.type==FILEPATH_TYPE)
+      return element->a.filepath;
+
+    RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Expected STRING_TYPE or FILEPATH_TYPE, found %s",key,i,DYN_type_name(element->a.type));
+    
+    return createIllegalFilepath();
+    
+  } else {
+  
+    hash_element_t *element = HASH_get(hash,key,i,FILEPATH_TYPE);
+    if(element==NULL)
+      return createIllegalFilepath();
+
+    return element->a.filepath;
+  }
+}
+
 static double get_number(const hash_t *hash, const char *key, int i){
   hash_element_t *element=HASH_get_no_complaining(hash, key, i);
 
@@ -1111,6 +1159,10 @@ instrument_t HASH_get_instrument(const hash_t *hash, const char *key){
   return get_instrument(hash, key, 0);
 }
 
+filepath_t HASH_get_filepath(const hash_t *hash, const char *key){
+  return get_filepath(hash, key, 0);
+}
+
 bool HASH_get_bool(const hash_t *hash, const char *key){
   return get_bool(hash, key, 0);
 }
@@ -1149,6 +1201,10 @@ int64_t HASH_get_int_at(const hash_t *hash, const char *key, int i){
 
 instrument_t HASH_get_instrument_at(const hash_t *hash, const char *key, int i){
   return get_instrument(hash, key, i);
+}
+
+filepath_t HASH_get_filepath_at(const hash_t *hash, const char *key, int i){
+  return get_filepath(hash, key, i);
 }
 
 bool HASH_get_bool_at(const hash_t *hash, const char *key, int i){
@@ -1212,8 +1268,8 @@ wchar_t *HASH_to_string(const hash_t *hash){
 }
 #endif
 
-void HASH_save(const hash_t *hash, disk_t *file){
-  DISK_write(file, ">> HASH MAP V4 BEGIN\n");
+void HASH_save(const hash_t *hash, disk_t *file){  
+  DISK_write(file, talloc_format(">> HASH MAP V%d BEGIN\n", hash->version));
 
   R_ASSERT(hash != NULL);
   
@@ -1232,7 +1288,7 @@ void HASH_save(const hash_t *hash, disk_t *file){
     }
   }
   
-  DISK_write(file,"<< HASH MAP V4 END\n");
+  DISK_write(file,talloc_format("<< HASH MAP V%d END\n", hash->version));
 }
 
 static wchar_t *read_line(disk_t *file){
@@ -1266,6 +1322,8 @@ hash_t *HASH_load(disk_t *file){
     version = 3;
   } else if (STRING_equals(line,">> HASH MAP V4 BEGIN")){
     version = 4;
+  } else if (STRING_equals(line,">> HASH MAP V5 BEGIN")){
+    version = 5;
   } else  if (STRING_starts_with(line, ">> HASH MAP V")){
     version = 3;
     vector_t v = {0};
@@ -1296,6 +1354,7 @@ hash_t *HASH_load(disk_t *file){
         && !STRING_equals(line,"<< HASH MAP V2 END")
         && !STRING_equals(line,"<< HASH MAP V3 END")
         && !STRING_equals(line,"<< HASH MAP V4 END")
+        && !STRING_equals(line,"<< HASH MAP V5 END")
         )
     {
       const char *key = STRING_get_chars(line);

@@ -352,11 +352,11 @@ private:
 
 public:
 
-  const wchar_t *_filename;
-  const wchar_t *_filename_without_path;
+  radium::FilePath _filename;
+  radium::FilePath _filename_without_path;
 
   SNDFILE *create_sndfile2(SF_INFO *sf_info){
-    return radium_sf_open(_filename,SFM_READ,sf_info);
+    return radium_sf_open(_filename.get(),SFM_READ,sf_info);
   }
 
   SNDFILE *create_sndfile(void){
@@ -366,13 +366,10 @@ public:
 
   // Note: Probably no need to optimize this constructor (by lazily allocating what we need).
   // (This is the Provider (shared between readers), not the Reader.)
-  SampleProvider(const wchar_t *filename)
-    : _filename(wcsdup(filename))
+  SampleProvider(filepath_t filename)
+    : _filename(filename)
+    , _filename_without_path(make_filepath(QFileInfo(STRING_get_qstring(filename.id)).fileName()))
   {
-    {
-      QFileInfo info(STRING_get_qstring(filename));
-      _filename_without_path = wcsdup(STRING_create(info.fileName()));
-    }
     
     {
       /*
@@ -387,7 +384,7 @@ public:
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
     SNDFILE *sndfile = create_sndfile2(&sf_info);
     if (sndfile==NULL){
-      GFX_addMessage("Could not open file \"%S\"", filename);
+      GFX_addMessage("Could not open file \"%S\"", filename.id);
       return;
     }
 
@@ -403,7 +400,7 @@ public:
     _is_valid = true;
     {
       radium::ScopedMutex lock(g_sample_providers_mutex);
-      g_sample_providers[STRING_get_qstring(filename)] = this;
+      g_sample_providers[STRING_get_qstring(filename.id)] = this;
       g_sample_reader_filenames_generation++;
     }
   }
@@ -429,7 +426,7 @@ public:
 
     {
       radium::ScopedMutex lock(g_sample_providers_mutex);
-      g_sample_providers.remove(STRING_get_qstring(_filename));
+      g_sample_providers.remove(STRING_get_qstring(_filename.getString()));
       g_sample_reader_filenames_generation++;
     }
 
@@ -438,9 +435,6 @@ public:
     if (_file_can_be_deleted)
       force_file_deletion();
     
-    free((void*)_filename);
-    free((void*)_filename_without_path);
-
   }
 
   void force_file_deletion(void){
@@ -462,8 +456,8 @@ public:
     //printf("\n\n\n====================== Maybe deleting \"%S\". Going to? (i.e. allowed by user?): %d. ===================\n\n\n", _filename, do_delete);
 
     if (do_delete){
-      DISK_delete_file(_filename);
-      DISKPEAKS_delete_file(_filename);
+      DISK_delete_file(_filename.get());
+      DISKPEAKS_delete_file(_filename.get());
     }
   }
 
@@ -533,7 +527,7 @@ public:
       
       if (sf_seek(sndfile, pos, SEEK_SET) != pos){
 
-        RT_message("Unable to seek to pos %" PRId64 " in file %S. Max pos: %" PRId64 ". (%s)" , pos, _filename, _num_frames, sf_strerror(sndfile));
+        RT_message("Unable to seek to pos %" PRId64 " in file %S. Max pos: %" PRId64 ". (%s)" , pos, _filename.getString(), _num_frames, sf_strerror(sndfile));
         
       } else {
         
@@ -543,7 +537,7 @@ public:
         
         if (num_frames_read <= 0){
           
-          RT_message("Unable to read from pos %" PRId64 " in file %S. Max pos: %" PRId64 ". (%s)", pos, _filename, _num_frames, sf_strerror(sndfile));
+          RT_message("Unable to read from pos %" PRId64 " in file %S. Max pos: %" PRId64 ". (%s)", pos, _filename.getString(), _num_frames, sf_strerror(sndfile));
 
         } else {
 
@@ -551,7 +545,7 @@ public:
 
             if (slice_num != _num_slices-1)            
               RT_message("Unable to read full slice from pos %" PRId64 " in file %S. Slice %d / %d. Number of frames read: %d. Max pos: %" PRId64 ". (%s)",
-                         pos, _filename,
+                         pos, _filename.getString(),
                          (int)num_frames_read, (int)slice_num, (int)_num_slices,
                          _num_frames, sf_strerror(sndfile));
               
@@ -642,7 +636,7 @@ public:
         if (client->_sndfile==NULL){
           client->_sndfile = client->_provider->create_sndfile();
           if (client->_sndfile==NULL)
-            RT_message("Could not open file \"%S\"", client->_provider->_filename);
+            RT_message("Could not open file \"%S\"", client->_provider->_filename.getString());
         }
 
         SPT_fill_slice(client->_sndfile, slice, slice_num);          
@@ -651,7 +645,7 @@ public:
 
 #if DO_DEBUG_PRINTING
     if (read_slice_start != -1)
-      printf("     >>>> %S: Obtain audio data from %f to %f (slice %d -> %d (%d -> %d))\n", client->_provider->_filename_without_path, double(read_slice_start*SLICE_SIZE)/pc->pfreq, double((1+read_slice_end)*SLICE_SIZE)/pc->pfreq, (int)read_slice_start, (int)read_slice_end, (int)slice_start, (int)slice_end);
+      printf("     >>>> %S: Obtain audio data from %f to %f (slice %d -> %d (%d -> %d))\n", client->_provider->_filename_without_path.getString(), double(read_slice_start*SLICE_SIZE)/pc->pfreq, double((1+read_slice_end)*SLICE_SIZE)/pc->pfreq, (int)read_slice_start, (int)read_slice_end, (int)slice_start, (int)slice_end);
 #endif
     
     if (gotit!=NULL){
@@ -666,7 +660,7 @@ public:
     R_ASSERT_RETURN_IF_FALSE(slice_end > slice_start);
 
 #if DO_DEBUG_PRINTING
-    printf("      <<<< %S: Release audio data from %f to %f (slice %d -> %d)\n",  client->_provider->_filename_without_path, double(slice_start*SLICE_SIZE)/pc->pfreq, double((1+slice_end)*SLICE_SIZE)/pc->pfreq, (int)slice_start, (int)slice_end);
+    printf("      <<<< %S: Release audio data from %f to %f (slice %d -> %d)\n",  client->_provider->_filename_without_path.getString(), double(slice_start*SLICE_SIZE)/pc->pfreq, double((1+slice_end)*SLICE_SIZE)/pc->pfreq, (int)slice_start, (int)slice_end);
 #endif
 
     for(int64_t slice_num = slice_start ; slice_num < slice_end ; slice_num++){
@@ -698,10 +692,11 @@ public:
   }
 };
 
-static SampleProvider *get_sample_provider(const wchar_t *filename){
+static SampleProvider *get_sample_provider(filepath_t filename){
   R_ASSERT(THREADING_is_main_thread());
-
-  QString key = STRING_get_qstring(filename);
+  R_ASSERT_RETURN_IF_FALSE2(isLegalFilepath(filename), NULL);
+  
+  QString key = STRING_get_qstring(filename.id);
   auto *maybe = g_sample_providers.value(key);
   if (maybe!=NULL)
     return maybe;
@@ -1342,13 +1337,13 @@ void SAMPLEREADER_set_permanent_samples(SampleReader *reader, int64_t first_samp
   reader->set_and_obtain_first_slice(first_slice, first_slice2);
 }
 
-SampleReader *SAMPLEREADER_create(const wchar_t *filename){
+SampleReader *SAMPLEREADER_create(filepath_t filename){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)
     return NULL;
 
   if (provider->_num_frames==0){
-    GFX_Message(NULL, "Audio file \"%S\" contains no samples", filename);
+    GFX_Message(NULL, "Audio file \"%S\" contains no samples", filename.id);
     delete provider;
     return NULL;
   }
@@ -1366,8 +1361,8 @@ vector_t SAMPLEREADER_get_all_filenames(void){
   return ret;
 }
 
-bool SAMPLEREADER_remove_filename_from_filenames(const wchar_t *filename){
-  SampleProvider *provider = g_sample_providers.value(STRING_get_qstring(filename));
+bool SAMPLEREADER_remove_filename_from_filenames(filepath_t filename){
+  SampleProvider *provider = g_sample_providers.value(STRING_get_qstring(filename.id));
   //R_ASSERT_RETURN_IF_FALSE(provider!=NULL); Commented out since we might have asked to remove a deletable filename, which could have been deleted in between gathering the filename and calling this function.  
   if(provider==NULL)
     return true;
@@ -1383,14 +1378,14 @@ vector_t SAMPLEREADER_get_all_deletable_filenames(void){
   for(const auto *provider : g_sample_providers.values()){
     R_ASSERT(provider!=NULL);
     if (provider!=NULL && provider->_file_can_be_deleted)
-      VECTOR_push_back(&ret, talloc_wcsdup(provider->_filename));
+      VECTOR_push_back(&ret, talloc_wcsdup(provider->_filename.getString()));
   }
   
   return ret;
 }
 
 // Called right after recording file
-bool SAMPLEREADER_register_deletable_audio_file(const wchar_t *filename){
+bool SAMPLEREADER_register_deletable_audio_file(filepath_t filename){
   R_ASSERT_RETURN_IF_FALSE2(SAMPLEREADER_has_file(filename)==false, false);
 
   SampleProvider *provider = get_sample_provider(filename);
@@ -1405,7 +1400,7 @@ bool SAMPLEREADER_register_deletable_audio_file(const wchar_t *filename){
   return true;
 }
 
-bool SAMPLEREADER_is_deletable_audio_file(const wchar_t *filename){
+bool SAMPLEREADER_is_deletable_audio_file(filepath_t filename){
   R_ASSERT_RETURN_IF_FALSE2(SAMPLEREADER_has_file(filename)==true, false);
 
   SampleProvider *provider = get_sample_provider(filename);
@@ -1415,7 +1410,7 @@ bool SAMPLEREADER_is_deletable_audio_file(const wchar_t *filename){
   return provider->_file_can_be_deleted;
 }
   
-void SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(const wchar_t *filename, enum WhatToDoWithDeletableFileWhenLoadingOrQuitting wtt){
+void SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(filepath_t filename, enum WhatToDoWithDeletableFileWhenLoadingOrQuitting wtt){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)
     return;
@@ -1427,7 +1422,7 @@ void SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(c
 }
   
 // Called for all used sound files when saving (but not for audio files which are only available through undo/redo).
-void SAMPLEREADER_maybe_make_audio_file_undeletable(const wchar_t *filename){
+void SAMPLEREADER_maybe_make_audio_file_undeletable(filepath_t filename){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)
     return;
@@ -1450,7 +1445,7 @@ void SAMPLEREADER_delete_all_deletable_audio_files(void){
 }
 
 
-void SAMPLEREADER_inc_users(const wchar_t *filename){
+void SAMPLEREADER_inc_users(filepath_t filename){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)
     return;
@@ -1458,7 +1453,7 @@ void SAMPLEREADER_inc_users(const wchar_t *filename){
   provider->inc_users();
 }
   
-void SAMPLEREADER_dec_users(const wchar_t *filename){
+void SAMPLEREADER_dec_users(filepath_t filename){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)
     return;
@@ -1468,15 +1463,15 @@ void SAMPLEREADER_dec_users(const wchar_t *filename){
 
 void SAMPLEREADER_dec_users_undo_callback(void *data){
   R_ASSERT(THREADING_is_main_thread());
-  SAMPLEREADER_dec_users((const wchar_t*)data);
+  SAMPLEREADER_dec_users(make_filepath((const wchar_t*)data));
 }
   
 
 // can be called from any thread, but not while holding player lock.
-bool SAMPLEREADER_has_file(const wchar_t *filename){
+bool SAMPLEREADER_has_file(filepath_t filename){
   ASSERT_NON_RT_NON_RELEASE();
   
-  QString key = STRING_get_qstring(filename);
+  QString key = STRING_get_qstring(filename.id);
 
   {
     radium::ScopedMutex lock(g_sample_providers_mutex);
@@ -1492,11 +1487,11 @@ bool SAMPLEREADER_has_file(const wchar_t *filename){
 }
    
  
-bool SAMPLEREADER_add_audiofile(const wchar_t *filename){
+bool SAMPLEREADER_add_audiofile(filepath_t filename){
   return get_sample_provider(filename) != NULL;
 }
 
-int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename){  
+int64_t SAMPLEREADER_get_sample_duration(filepath_t filename){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)
     return -1;
@@ -1504,7 +1499,7 @@ int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename){
   return provider->_num_frames;
 }
 
-double SAMPLEREADER_get_samplerate(const wchar_t *filename){
+double SAMPLEREADER_get_samplerate(filepath_t filename){
   R_ASSERT(THREADING_is_main_thread());
   
   SampleProvider *provider = get_sample_provider(filename);
@@ -1561,28 +1556,28 @@ int64_t SAMPLEREADER_get_total_num_frames_in_sample(SampleReader *reader){
   return reader->_provider->_num_frames;
 }
 
-const wchar_t *SAMPLEREADER_get_sample_name(SampleReader *reader){
-  return reader->_provider->_filename_without_path;
+filepath_t SAMPLEREADER_get_sample_name(SampleReader *reader){
+  return reader->_provider->_filename_without_path.get();
 }
 
-const wchar_t *SAMPLEREADER_get_filename(SampleReader *reader){
-  return reader->_provider->_filename;
+filepath_t SAMPLEREADER_get_filename(SampleReader *reader){
+  return reader->_provider->_filename.get();
 }
 
-unsigned int SAMPLEREADER_get_sample_color(const wchar_t *filename){
+unsigned int SAMPLEREADER_get_sample_color(filepath_t filename){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL){
-    GFX_addMessage("Error: No audio file \"%S\" in the system.\n", filename);
+    GFX_addMessage("Error: No audio file \"%S\" in the system.\n", filename.id);
     return 0;
   }
 
   return provider->_color;
 }
 
-void SAMPLEREADER_set_sample_color(const wchar_t *filename, unsigned int color){
+void SAMPLEREADER_set_sample_color(filepath_t filename, unsigned int color){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL){
-    GFX_addMessage("Error: No audio file \"%S\" in the system.\n", filename);
+    GFX_addMessage("Error: No audio file \"%S\" in the system.\n", filename.id);
     return;
   }
 

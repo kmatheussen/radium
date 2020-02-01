@@ -655,8 +655,8 @@ namespace{
           
         _kill_file_name = get_kill_temp_filename();
         
-        system(talloc_format("\"%s\" %s %d %d &",
-                             OS_get_full_program_file_path("radium_linux_popup_killscript.sh").toUtf8().constData(),
+        system(talloc_format("\"%S\" %s %d %d &",
+                             OS_get_full_program_file_path("radium_linux_popup_killscript.sh").id,
                              _kill_file_name.toUtf8().constData(),
                              KILL_TIME,
                              getpid()

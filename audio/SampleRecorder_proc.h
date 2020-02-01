@@ -22,8 +22,8 @@ struct SampleRecorderInstance {
 
   int64_t start, end; // Can be accessed from another thread after is_finished has been called. Can also be accessed if holding the player lock.
 
-  SampleRecorderInstance(const wchar_t *recording_path, int num_ch, float middle_note)  // Note that the sample recorder adds 12 to the middle note.
-    : recording_path(recording_path)
+  SampleRecorderInstance(filepath_t recording_path, int num_ch, float middle_note)  // Note that the sample recorder adds 12 to the middle note.
+    : recording_path(recording_path.id)
     , num_ch(num_ch)
     , middle_note(middle_note)
   {
@@ -37,7 +37,7 @@ struct SampleRecorderInstance {
 
   // Called when recording is finished.
   // Called by the main thread.
-  virtual void is_finished(bool success, wchar_t *filename) = 0;
+  virtual void is_finished(bool success, filepath_t filename) = 0;
 
   // Called when peaks have been generated for the samples provided by RT_SampleRecorder_add_audio.
   // Note that this function is not always called if the internal queue is full. Therefore,

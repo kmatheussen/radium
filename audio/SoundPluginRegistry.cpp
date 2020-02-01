@@ -225,7 +225,7 @@ static enum PopulateResult populate(SoundPluginTypeContainer* container){
     int cancel = VECTOR_push_back(&v, "Cancel");
     (void)cancel;
 
-    int hmm=GFX_Message(&v, "Warning: The plugin file \"%S\" crashed last time we tried to open it.", container->filename);
+    int hmm=GFX_Message(&v, "Warning: The plugin file \"%S\" crashed last time we tried to open it.", container->filename.id);
     
     if (hmm != load_it)
       return PR_POPULATE_CANCELLED;
@@ -340,11 +340,11 @@ SoundPluginTypeContainer *PR_get_populated_container(const char *container_name,
     QString x = QString("Warning: ") + QString::number(usable_containers.size()) + " different usable plugin files for " + container_name + " was loaded.<br><br>";
     
     x += QString("If there are overlaps in the plugins that these files provide,<br>") +
-      "plugins from \"" + STRING_get_qstring(usable_containers[0]->filename) + "\" will be used.<br>";
+      "plugins from \"" + STRING_get_qstring(usable_containers[0]->filename.id) + "\" will be used.<br>";
 
     x += "<UL>Files:";
     for(auto *container : containers)
-      x += "<LI>" + STRING_get_qstring(container->filename);
+      x += "<LI>" + STRING_get_qstring(container->filename.id);
 
     x += "</UL>";
 

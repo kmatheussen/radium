@@ -115,7 +115,7 @@ static vl::GLSLFragmentShader *get_gradient_fragment_shader(GradientType::Type t
 
   if(gradient_velocity_shader.get()==NULL) {
     vl::String path1 =
-      vl::String(OS_get_program_path2())
+      vl::String(OS_get_program_path2().id)
       .append(vl::String(OS_get_directory_separator()))
       .append(vl::String("glsl"))
       .append(vl::String(OS_get_directory_separator()))

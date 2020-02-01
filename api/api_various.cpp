@@ -1053,33 +1053,33 @@ const_char *appendPaths(const_char* path1, const_char* path2){
 }
 */
 
-const_char *getConfPath(const char *filename){
-  return OS_get_conf_filename2(filename);
+filepath_t getConfPath(filepath_t filename){
+  return OS_get_conf_filename(filename);
 }
 
-bool hasConfPath(const char *filename){
-  return OS_has_conf_filename2(filename);
+bool hasConfPath(filepath_t filename){
+  return OS_has_conf_filename(filename);
 }
 
-const_char *getKeybindingsConfPath(void){
-  return OS_get_keybindings_conf_filename2();
+filepath_t getKeybindingsConfPath(void){
+  return OS_get_keybindings_conf_filename();
 }
 
-const_char *getMenuesConfPath(void){
-  return OS_get_menues_conf_filename2();
+filepath_t getMenuesConfPath(void){
+  return OS_get_menues_conf_filename();
 }
 
 static const char *g_embedded_audio_files_path = NULL;
-const char *getEmbeddedAudioFilesPath(void){
+filepath_t getEmbeddedAudioFilesPath(void){
   if (g_embedded_audio_files_path==NULL)
     g_embedded_audio_files_path = SETTINGS_read_string("embedded_audio_files_path", "%home%/.radium/embedded_audio_files");
   
-  return g_embedded_audio_files_path;
+  return make_filepath(g_embedded_audio_files_path);
 }
 
-void setEmbeddedAudioFilesPath(const char *new_path){
-  g_embedded_audio_files_path = talloc_strdup(new_path);
-  SETTINGS_write_string("embedded_audio_files_path", new_path);
+void setEmbeddedAudioFilesPath(filepath_t new_path){
+  g_embedded_audio_files_path = STRING_get_chars(new_path.id);
+  SETTINGS_write_string("embedded_audio_files_path", g_embedded_audio_files_path);
 }
 
 void save(void){
@@ -1107,14 +1107,14 @@ void load(void){
   }
 }
 
-void loadSong(const_char *filename){
-  if( LoadSong_CurrPos(getWindowFromNum(-1),STRING_create(filename))){
+void loadSong(filepath_t filename){
+  if( LoadSong_CurrPos(getWindowFromNum(-1),filename)){
     isloaded=true;
   }
 }
 
 bool hasSession(void){
-  return dc.filename != NULL; 
+  return isLegalFilepath(dc.filename);
 }
 
 void newSong(void){
@@ -1306,19 +1306,27 @@ const char *getBlockColor(int blocknum, int windownum, bool displayed_color){
     return GFX_get_colorname_from_color(wblock->block->color);
 }
 
-const_char* getAudiofileColor(const_char* w_audiofilename, bool displayed_color){
-  const wchar_t *filename = w_path_to_path(w_audiofilename);
-  
+const_char* getAudiofileColor(filepath_t w_audiofilename, bool displayed_color){
+  if (isIllegalFilepath(w_audiofilename)){
+    handleError("getAudiofileColor: illegal sample name for argument");
+    return "";
+  }
+
   if(displayed_color)
-    return talloc_strdup(get_displayed_audiofile_color(filename).name(QColor::HexArgb).toUtf8());
+    return talloc_strdup(get_displayed_audiofile_color(w_audiofilename).name(QColor::HexArgb).toUtf8());
   else
-    return GFX_get_colorname_from_color(SAMPLEREADER_get_sample_color(filename));
+    return GFX_get_colorname_from_color(SAMPLEREADER_get_sample_color(w_audiofilename));
 }
 
-void setAudiofileColor(const_char* colorname, const_char* w_audiofilename){
+void setAudiofileColor(const_char* colorname, filepath_t w_audiofilename){
+  if (isIllegalFilepath(w_audiofilename)){
+    handleError("setAudiofileColor: illegal sample name for argument 2");
+    return;
+  }
+
   unsigned int color = GFX_get_color_from_colorname(colorname);
 
-  SAMPLEREADER_set_sample_color(w_path_to_path(w_audiofilename), color);
+  SAMPLEREADER_set_sample_color(w_audiofilename, color);
 
   g_sample_reader_filenames_generation++; // update audio file browser in the right part of sequencer.
   SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_PLAYLIST|SEQUPDATE_BLOCKLIST);
@@ -3361,6 +3369,19 @@ void copyTextToClipboard(const_char* text){
 }
 const_char* getClipboardText(void){
   return talloc_strdup(QGuiApplication::clipboard()->text().toUtf8().constData());
+}
+
+void copyFilepathToClipboard(filepath_t filepath){
+  if (isIllegalFilepath(filepath)){
+    handleError("copyFilePathToClipboard: illegal filepath");
+    return;
+  }
+
+  QGuiApplication::clipboard()->setText(STRING_get_qstring(filepath.id));
+}
+
+filepath_t getClipboardFilepath(void){
+  return make_filepath(QGuiApplication::clipboard()->text());
 }
 
 // Scheduler

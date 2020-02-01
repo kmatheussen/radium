@@ -118,8 +118,8 @@ struct RecordingFile{
 
 private:
 
-  QString get_take_number_filename(const wchar_t *path){
-    QString base = STRING_get_qstring(path);
+  QString get_take_number_filename(filepath_t path){
+    QString base = STRING_get_qstring(path.id);
 
     QString take;
     
@@ -131,7 +131,7 @@ private:
     return base + take;
   }
   
-  int read_old_take_number_from_disk(const wchar_t *path){
+  int read_old_take_number_from_disk(filepath_t path){
     QString filename = get_take_number_filename(path);
 
     int takenum = 0;
@@ -149,7 +149,7 @@ private:
     return takenum;
   }
   
-  bool write_new_take_number_to_disk(const wchar_t *path, int take_number){
+  bool write_new_take_number_to_disk(filepath_t path, int take_number){
     QString filename = get_take_number_filename(path);
 
     auto *file = DISK_open_for_writing(filename);
@@ -164,10 +164,10 @@ private:
   }
   
   bool is_valid_new_soundfile_name(QString filename){
-    wchar_t *wfilename = STRING_create(filename, false);
+    wchar_t *wfilename = STRING_create(filename, false); // fix: comment why it's done like this.
     
-    bool has_file = SAMPLEREADER_has_file(wfilename);
-    bool file_exists = DISK_file_exists(wfilename);
+    bool has_file = SAMPLEREADER_has_file(make_filepath(wfilename));
+    bool file_exists = DISK_file_exists(make_filepath(wfilename));
     
     free(wfilename);
     
@@ -177,8 +177,8 @@ private:
       return false;
   }
   
-  QString get_unique_filename(const wchar_t *path, bool &unique_success){
-    QString base = STRING_get_qstring(path);
+  QString get_unique_filename(filepath_t path, bool &unique_success){
+    QString base = STRING_get_qstring(path.id);
 
     unique_success=true;
 
@@ -230,7 +230,7 @@ public:
     sf_info.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
     bool unique_success;
-    filename = get_unique_filename(instance->recording_path.get_from_another_thread(), unique_success);
+    filename = get_unique_filename(make_filepath(instance->recording_path.get_from_another_thread()), unique_success);
     
     if (unique_success==false){
       RT_message("Unable to create new file in \"%s\".\nPerhaps you have more than 1000 takes there?",STRING_get_qstring(instance->recording_path.get_from_another_thread()).toUtf8().constData());
@@ -537,7 +537,7 @@ void SampleRecorder_called_regularly(void){
     if(!gotit)
       break;
 
-    recorded_file->instance->is_finished(recorded_file->success, STRING_create(recorded_file->filename));
+    recorded_file->instance->is_finished(recorded_file->success, make_filepath(recorded_file->filename));
 
     delete recorded_file;
   }
