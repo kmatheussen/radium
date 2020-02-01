@@ -281,7 +281,9 @@ struct Sample{
   Data *data = NULL;
 
   Sample()
+#if !defined(RELEASE)
     : filename(L"")
+#endif
   {}
 
   ~Sample(){
