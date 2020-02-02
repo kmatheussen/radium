@@ -3460,10 +3460,11 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   
   Data *data=(Data*)plugin->data;
 
-  filepath_t maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename.get());
+  filepath_t maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename.getGC());
   
-  //printf("maybe: -%s- -%s-\n", data->filename, maybe_relative_filename);
+  //printf("maybe: -%S- -%S-\n", data->filename.getString(), maybe_relative_filename.id);
   HASH_put_filepath(state, "filename", maybe_relative_filename);
+  //HASH_put_filepath(state, "filename2", maybe_relative_filename);
 
   HASH_put_bool(state, "use_sample_file_middle_note", data->use_sample_file_middle_note);
 
