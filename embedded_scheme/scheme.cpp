@@ -364,11 +364,11 @@ static file_t get_file(s7_pointer s){
   return make_file(*i);
 }
 
-static filepath_t get_filepath(s7_pointer s){
+static filepath_t get_filepath(s7_pointer s, bool make_copy){
   R_ASSERT_NON_RELEASE(is_filepath(s));
 
   const wchar_t *w = (const wchar_t*)s7_c_object_value(s);
-  const wchar_t *i = talloc_wcsdup(w); // Probably not necessary to make a copy, but we never know.
+  const wchar_t *i = make_copy ? talloc_wcsdup(w) : w;
 
   return make_filepath(i);
 }
@@ -408,7 +408,7 @@ static dyn_t create_dyn_from_s7(s7_scheme *s7, s7_pointer s, bool undefinedIsErr
     return DYN_create_instrument(get_instrument(s));
       
   if (is_filepath(s))
-    return DYN_create_filepath(get_filepath(s));
+    return DYN_create_filepath(get_filepath(s, false));
       
   if(undefinedIsError){
     //if (g_user_interaction_enabled==false)
@@ -571,7 +571,7 @@ filepath_t s7extra_get_filepath(s7_scheme *s7, s7_pointer s, const char **error)
     return createIllegalFilepath();
   }
 
-  return get_filepath(s);
+  return get_filepath(s, true); // Probably not necessary to make a copy, but we never know.
 }
 
 
