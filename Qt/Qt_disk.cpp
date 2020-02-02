@@ -821,7 +821,7 @@ const wchar_t *DISK_run_program_that_writes_to_temp_file(const wchar_t *program,
   
 #if defined(FOR_WINDOWS)
 
-  QString full_path_program = OS_get_full_program_file_path(QString::fromWCharArray(program));
+  QString full_path_program = STRING_get_qstring(OS_get_full_program_file_path(make_filepath(QString::fromWCharArray(program))).id);
   
   wchar_t *p = STRING_create(full_path_program, false);
   wchar_t *p1 = STRING_create(QString("\"") + full_path_program + "\"", false);
