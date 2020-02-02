@@ -1270,7 +1270,7 @@ static inline dyn_t DYN_create_instrument(instrument_t instrument){
 static inline dyn_t DYN_create_filepath(filepath_t filepath){
   dyn_t a;
   a.type = FILEPATH_TYPE;
-  a.filepath = filepath;
+  a.filepath = make_filepath(STRING_copy(filepath.id));
   return a;
 }
 
