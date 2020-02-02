@@ -457,7 +457,13 @@ class Proto:
             oh.write(",kwlist")
 
         for lokke in range(self.arglen):
-            oh.write(",&arg%d" % lokke)
+            arg=self.args[lokke]
+            qualifier=arg.qualifiers[len(arg.qualifiers)-1]
+            if qualifier=="instrument_t" or qualifier=="file_t" or qualifier=="filepath_t":
+                oh.write(",&arg%d.id" % lokke)
+            else:
+                oh.write(",&arg%d" % lokke)
+                
         oh.write(")) return NULL;\n")
 
         if ("menu" not in self.proc.varname) and ("Menu" not in self.proc.varname):
@@ -468,7 +474,12 @@ class Proto:
         oh.write(self.proc.varname+"(")
 
         for lokke in range(self.arglen):
-            oh.write("arg%d" % lokke)
+            arg=self.args[lokke]
+            qualifier=arg.qualifiers[len(arg.qualifiers)-1]
+            if qualifier=="filepath_t":
+                oh.write("make_filepath(talloc_wcsdup(arg%d.id))" % lokke)
+            else:
+                oh.write("arg%d" % lokke)
             if lokke<self.arglen-1:
                 oh.write(",")
         oh.write(");\n")

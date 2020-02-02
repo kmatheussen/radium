@@ -146,7 +146,7 @@ void SaveAs(struct Root *theroot){
 		if(!strcmp("no",ret)) return;
 	}
 #endif
-	dc.filename=filename;
+	dc.filename = copy_filepath(filename);
 
 	Save_Clean(filename,theroot,false);
 
@@ -205,5 +205,5 @@ void Save_Backup(const filepath_t filename, struct Root *theroot){
 
   Save_Clean(filename, theroot, true);
 
-  dc.filename=filename_org;
+  dc.filename = filename_org;
 }

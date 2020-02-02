@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include <wchar.h>
 
+#include "memory_talloc_wcsdup_proc.h"
 
 extern LANGSPEC void Threadsafe_GC_disable(void);
 extern LANGSPEC void Threadsafe_GC_enable(void);
@@ -50,8 +51,6 @@ extern LANGSPEC void *talloc_atomic_clean__(int size, const char *filename, int 
 
 extern LANGSPEC char *talloc_strdup__(const char *input, const char *filename, int linenumber) __attribute__((malloc)); // __attribute__((returns_nonnull));
 
-extern LANGSPEC wchar_t *talloc_wcsdup__(const wchar_t *input, const char *filename, int linenumber) __attribute__((malloc)); // __attribute__((returns_nonnull));
-
 extern LANGSPEC char *talloc_numberstring__(int number, const char *filename, int linenumber) __attribute__((malloc)) __attribute__((returns_nonnull));
 
 extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, int linenumber) __attribute__((malloc)) __attribute__((returns_nonnull));
@@ -75,8 +74,6 @@ extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, i
 #define talloc_atomic_clean(a) talloc_atomic_clean__(a,__FILE__,__LINE__)
 
 #define talloc_strdup(a) talloc_strdup__(a,__FILE__,__LINE__)
-
-#define talloc_wcsdup(a) talloc_wcsdup__(a,__FILE__,__LINE__)
 
 #define talloc_numberstring(a) talloc_numberstring__(a,__FILE__,__LINE__)
 

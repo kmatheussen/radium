@@ -92,7 +92,7 @@ bool Load_Initialize(const filepath_t filename, const char *type){
           goto failed;
 	}
 
-        dc.filename_with_full_path = DISK_get_absolute_file_path(filename);
+        dc.filename_with_full_path = copy_filepath(DISK_get_absolute_file_path(filename));
         
 	DC_fgets();
         if (dc.success==false) {
@@ -180,9 +180,9 @@ bool Load_Initialize(const filepath_t filename, const char *type){
           printf("Song radium version: %d.%d.%d\n", g_disk_load_radium_version_major, g_disk_load_radium_version_minor, g_disk_load_radium_version_revision);
         }
         
-	dc.filename=filename;
+	dc.filename = copy_filepath(filename);
 
-        dc.embedded_files_dirname = DISK_get_absolute_file_path(make_filepath(STRING_append(filename.id, L"_embedded_samples")));
+        dc.embedded_files_dirname = copy_filepath(DISK_get_absolute_file_path(make_filepath(STRING_append(filename.id, L"_embedded_samples"))));
         dc.has_shown_embedded_files_dirname_warning = false;
         dc.has_deleted_files_in_embedded_dir = false;
         
