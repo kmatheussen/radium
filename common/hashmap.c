@@ -542,16 +542,22 @@ bool HASH_equal(const hash_t *h1, const hash_t *h2){
   return true;
 }
 
-hash_t *HASH_create(int approx_size){
+hash_t *HASH_create2(int approx_size, int version){
   int elements_size = find_next_prime_number(approx_size*3/2);
 
   hash_t *hash=talloc(sizeof(hash_t) + sizeof(hash_vector_t)*elements_size);
 
   hash->elements_size = elements_size;
 
-  hash->version = 5;
+  R_ASSERT(version>=3);
+  
+  hash->version = version;
 
   return hash;
+}
+
+hash_t *HASH_create(int approx_size){
+  return HASH_create2(approx_size, 5);
 }
 
 static void put2(hash_t *hash, const char *key, int i, const dyn_t dyn);
@@ -747,11 +753,10 @@ static void put_int(hash_t *hash, const char *key, int i, int64_t val){
 }
 
 static void put_instrument(hash_t *hash, const char *key, int i, instrument_t val){
-#if !defined(RELEASE)
   if(hash->version < 4)
-    abort();
-#endif
-  put_dyn(hash, key, i, DYN_create_instrument(val));
+    put_dyn(hash, key, i, DYN_create_int(val.id));
+  else
+    put_dyn(hash, key, i, DYN_create_instrument(val));
 }
 
 static void put_filepath(hash_t *hash, const char *key, int i, filepath_t val){
