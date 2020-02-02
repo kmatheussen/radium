@@ -1478,6 +1478,16 @@
 !!#
 ;;(<ra> :request-integer "MIDI channel (1-16):" 1 16))
 
+(define (get-editor-editor-menu-entries)
+  (list
+   (list "Visible"
+         :check (<ra> :editor-is-visible)
+         :shortcut ra:show-hide-editor
+         (lambda (doit)
+           (if doit
+               (<ra> :show-editor)
+               (<ra> :hide-editor))))))
+
 (define (track-configuration-popup-async X Y)
   ;;(c-display "TRACK " *current-track-num*)
   (define tracknum *current-track-num*)
@@ -1603,6 +1613,8 @@
               (list "Transpose" ra:show-edit-transpose-tab)
               (list "Randomize/Skew/Shuffle" ra:show-edit-randomize-tab)
               (list "Various" ra:show-edit-various-tab)
+              "-------Editor"
+              (get-editor-editor-menu-entries)
               "-------Help"
               (cadr (swingtext-popup-elements))
               (cadr (centtext-popup-elements))
@@ -3863,6 +3875,8 @@
                                                            :focus-keybinding "FOCUS_EDITOR")
           "-------------"
           "Help keybindings" show-keybinding-help-window))
+   "---------Editor"
+   (get-editor-editor-menu-entries)
    ))
 
 (add-mouse-cycle

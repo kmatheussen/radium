@@ -1269,6 +1269,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int unmute_all = -1;
   int show_gui = -1;
   int receive_external_midi = -1;
+  int showhide_mixer = -1;
   
   int64_t parentguinum = API_get_gui_from_existing_widget(g_mixer_widget->window());
   
@@ -1321,6 +1322,8 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     mute_all = VECTOR_push_back(&v, "Mute all");
     unmute_all = VECTOR_push_back(&v, "Un-mute all");
 
+    showhide_mixer = create_menu_entry(&v, "[check on]Visible", "ra:show-hide-mixer-widget");
+    
   } else { // i.e. if (patches.num_elements == 1){
 
     struct Patch *patch = CHIP_get_patch(chip_under);
@@ -1419,7 +1422,8 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     unsolo_all = VECTOR_push_back(&v, "Un-solo all");
     mute_all = VECTOR_push_back(&v, "Mute all");
     unmute_all = VECTOR_push_back(&v, "Un-mute all");
-    
+
+    showhide_mixer = create_menu_entry(&v, "[check on]Visible", "ra:show-hide-mixer-widget");
   }
 
   
@@ -1431,7 +1435,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     patch_ids.push_back(patch->id);
   }END_VECTOR_FOR_EACH;
 
-#define sels connect_to_main_pipe,insert,replace,solo,solo_several,unsolo_several,mute,mute_several,unmute_several,unsolo_all,mute_all,unmute_all,bypass,bypass_several,unbypass_several,copy,cut,delete_,load,save,rename,show_mixer_strips,config_color,generate_new_color,show_gui,receive_external_midi,random,instrument_info
+#define sels connect_to_main_pipe,insert,replace,solo,solo_several,unsolo_several,mute,mute_several,unmute_several,unsolo_all,mute_all,unmute_all,showhide_mixer,bypass,bypass_several,unbypass_several,copy,cut,delete_,load,save,rename,show_mixer_strips,config_color,generate_new_color,show_gui,receive_external_midi,random,instrument_info
   
   GFX_Menu3(v,[is_alive, chip_under, scene, patch_ids, sels, mouse_x, mouse_y, parentguinum](int sel, bool onoff){
       
@@ -1518,6 +1522,10 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       } else if (sel==unmute_all) {
 
         setMuteForInstruments(getSelectedInstruments(), false);
+
+      } else if (sel==showhide_mixer) {
+
+        showHideMixerWidget();
         
       } else if (sel==copy) {
         

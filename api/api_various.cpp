@@ -358,6 +358,18 @@ void showHideEditor(int windownum){
   GFX_showHideEditor();
 }
 
+bool editorIsVisible(int windownum){
+  return GFX_EditorIsVisible();
+}
+
+void showEditor(void){
+  GFX_ShowEditor();
+}
+  
+void hideEditor(void){
+  GFX_HideEditor();
+}
+  
 void setEditorKeyboardFocus(bool setit){
   FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, setit);
 }

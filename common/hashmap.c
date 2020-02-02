@@ -737,6 +737,11 @@ static void put_string(hash_t *hash, const char *key, int i, const wchar_t *val)
     R_ASSERT(false);
     val = L"";
   }
+#if 0
+  static int64_t size=0,num=0;
+  printf("    %d: %f\n", (int)(++num), (double)wcslen(val) / (1024.0*1024.0));
+  size += wcslen(val);
+#endif
   put_dyn(hash, key, i, DYN_create_string(val));
 }
 
