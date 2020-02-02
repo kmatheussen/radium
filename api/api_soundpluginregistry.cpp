@@ -55,7 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_instruments_proc.h"
 
 
-
+#define HASH_VERSION 3 // since we are saving to disk, we must be compatible with earlier versions of radium. If not, users can't use older versions of radium without deleting the scanned_plugins directory first.
 
 static QString extend_path(const QString a, const QString b){
   if (a=="")
@@ -72,7 +72,7 @@ static QString get_path(const QStack<QString> &dir){
 }
 
 static hash_t *get_entry_from_type(const SoundPluginType *type, const QString path){
-  hash_t *hash = HASH_create(5);
+  hash_t *hash = HASH_create2(5, HASH_VERSION);
   HASH_put_string(hash, ":type", PluginMenuEntry::type_to_string(PluginMenuEntry::IS_NORMAL));
   HASH_put_string(hash, ":path", path);
   HASH_put_string(hash, ":container-name", type->container==NULL ? "" : type->container->name);
@@ -87,7 +87,7 @@ static hash_t *get_entry_from_type(const SoundPluginType *type, const QString pa
 }
 
 static hash_t *get_container_entry(const SoundPluginTypeContainer *container, const QString path, bool is_blacklisted){
-  hash_t *hash = HASH_create(10);
+  hash_t *hash = HASH_create2(10, HASH_VERSION);
   HASH_put_string(hash, ":filename", container->filename.id);
   HASH_put_string(hash, ":type-name", container->type_name);
   HASH_put_string(hash, ":name", container->name);
@@ -132,7 +132,7 @@ void API_blacklist_container(const SoundPluginTypeContainer *container){
   
   QString disk_blacklist_filename = get_blacklist_filename(container);
   disk_t *file = DISK_open_for_writing(disk_blacklist_filename);
-  hash_t *hash = HASH_create(1);
+  hash_t *hash = HASH_create2(1, HASH_VERSION);
 
   HASH_put_string(hash, "filename", container->filename.id);
   
@@ -232,7 +232,7 @@ static void cleanup_old_disk_files(void){
 
 
 static hash_t *get_container_disk_hash(const SoundPluginTypeContainer *container, const QString path){
-  hash_t *hash = HASH_create(container->num_types + 10);
+  hash_t *hash = HASH_create2(container->num_types + 10, HASH_VERSION);
 
   HASH_put_int(hash, "version", 1);
 
@@ -446,12 +446,12 @@ static void get_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString
     
   } else if (entry.type==PluginMenuEntry::IS_LEVEL_UP){
     
-    hash = HASH_create(2);
+    hash = HASH_create2(2, HASH_VERSION);
     HASH_put_string(hash, ":name", entry.level_up_name);
   
   } else if (entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
     
-    hash = HASH_create(5);
+    hash = HASH_create2(5, HASH_VERSION);
     HASH_put_string(hash, ":container-name", entry.hepp.container_name);
     HASH_put_string(hash, ":type-name", entry.hepp.type_name);
     HASH_put_string(hash, ":name", entry.hepp.name);
@@ -465,7 +465,7 @@ static void get_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString
       R_ASSERT(false);
         
   } else {
-    hash = HASH_create(1);
+    hash = HASH_create2(1, HASH_VERSION);
   }
 
   if (hash!=NULL){
@@ -486,7 +486,7 @@ int getSoundPluginRegistryGeneration(void){
 
 // Note, NOT the same as clearSoundPluginRegistry.
 void API_clearSoundPluginRegistryCache(void){
-  g_disk_entries_cache=HASH_create(1000);
+  g_disk_entries_cache=HASH_create2(1000, HASH_VERSION);
   g_known_noncached_entries.clear();
 }
 
