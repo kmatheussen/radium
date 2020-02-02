@@ -546,7 +546,7 @@
     (define type (cadddr instrumentinfo))
     
     (define time1 (time))
-    (<gui> :add-table-int-cell table instrument-id 0 rownum)
+    (<gui> :add-table-int-cell table (<ra> :get-audio-instrument-num instrument-id) 0 rownum)
     (define time2 (time))
 
     (<gui> :add-table-int-cell table usage 1 rownum)
