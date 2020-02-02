@@ -355,8 +355,8 @@ static bool load_entries_from_diskcache(dynvec_t &ret, const SoundPluginTypeCont
       return false;
     }
     
-    hash = HASH_load(file); // HASH_load shows error message
-
+    hash = HASH_load2(file, true); // HASH_load shows error message
+    
     DISK_close_and_delete(file); // Shows error message if something goes wrong.
   
     if (hash == NULL) {
