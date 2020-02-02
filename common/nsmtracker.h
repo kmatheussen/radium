@@ -1026,6 +1026,9 @@ namespace radium{
     filepath_t get(void) const {
       return _filepath;
     }
+    filepath_t getGC(void) const {
+      return make_filepath(talloc_wcsdup(_filepath.id));
+    }
     bool isLegal(void) const {
       return wcscmp(_filepath.id, g_illegal_filepath.id);
     }

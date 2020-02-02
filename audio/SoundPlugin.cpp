@@ -3297,6 +3297,13 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
 bool g_curr_song_contains_embedded_samples = false;
 
 filepath_t PLUGIN_DISK_get_audio_filename(hash_t *state){
+  /*
+  if (HASH_has_key(state, "filename2")){
+    const wchar_t *ret = HASH_get_filepath(state, "filename2").id;
+    printf("\n\n\n.................... RET: -%S- -%S-\n\n\n", ret, HASH_get_filepath(state, "filename2").id);
+    return make_filepath(ret);
+  }
+  */
   bool audiodata_is_included = HASH_has_key(state, "audiofile");
 
   filepath_t filename = createIllegalFilepath();
