@@ -1312,7 +1312,7 @@ static wchar_t *read_line(disk_t *file){
 
 #define READ_LINE(file) read_line(file); if (line==NULL) return NULL;
 
-hash_t *HASH_load(disk_t *file){
+hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_versions){
 
   wchar_t *line = L"";
   while(STRING_starts_with(line, "#") || STRING_equals2(STRING_trim(line), L""))
@@ -1330,6 +1330,10 @@ hash_t *HASH_load(disk_t *file){
   } else if (STRING_equals(line,">> HASH MAP V5 BEGIN")){
     version = 5;
   } else  if (STRING_starts_with(line, ">> HASH MAP V")){
+
+    if (return_null_for_unsupported_hasmap_versions)
+      return NULL;
+
     version = 3;
     vector_t v = {0};
     int try_anyway = VECTOR_push_back(&v, "Try anyway (program might crash and/or behave unstable)");
@@ -1398,3 +1402,7 @@ hash_t *HASH_load(disk_t *file){
   return hash;  
 }
 
+hash_t *HASH_load(disk_t *file){
+  return HASH_load2(file, false);
+}
+ 
