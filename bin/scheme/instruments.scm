@@ -1042,6 +1042,7 @@
 
 ;; The callback takes an instrument description as argument
 (define (spr-entry->instrument-description entry instrconf callback)
+  ;;(c-display "INSTRCONF:" instrconf)
   (define type (entry :type))
   (cond ((or (string=? type "NORMAL")
              (string=? type "NUM_USED_PLUGIN"))
@@ -1092,12 +1093,19 @@
                              mcallback)
                        (loop (cdr entries))))
                 ((string=? type "CONTAINER")
-                 (let ((in-container (loop (cdr entries))))
-                   (if (null? in-container)
-                       '()
-                       (cons (list (entry :name)
-                                   mcallback)
-                             in-container))))
+                 (cons (list (entry :name)
+                             mcallback)
+                       (loop (cdr entries))))
+;                 (let ((in-container (loop (cdr entries)))) ;; ??
+;                   (if (and #f (null? in-container))
+;                       (list (entry :name)
+;                             mcallback)
+;                       (append (list "------------aaaa")
+;                               (list (list (entry :name)
+;                                           mcallback))
+;                               (list "------------bbbb")
+;                               in-container
+;                               (list "------------cccc")))))
                 ((string=? type "SEPARATOR")
                  (cons "----------------"
                        (loop (cdr entries))))
@@ -1149,8 +1157,17 @@
 
 
 #||
+(let ((my-callback (lambda x
+                     (c-display "CALLBACK:" x)))
+      (instrconf ""))
+  (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
+                             instrconf
+                             (lambda (entry)
+                               (spr-entry->instrument-description entry instrconf my-callback))
+                             #t))
+
 (pp (length (<ra> :get-sound-plugin-registry #t)))
-(pp (<ra> :get-sound-plugin-registry #t))
+(for-each (lambda (x) (display x)(newline)) (<ra> :get-sound-plugin-registry))
 (<ra> :get-sound-plugin-registry #t)
 ||#
 
@@ -1252,7 +1269,8 @@
   (set! *popup-menu-curr-callback* callback) ;; Since there should never be more than one popup open at the same time, this should work, hopefully.
   
   (let ((curr-generation (<ra> :get-sound-plugin-registry-generation)))
-    (when (or (not (eq? *popup-menu-args-cache-preset-in-clipboard* (<ra> :instrument-preset-in-clipboard)))
+    (when (or ;;#t
+              (not (eq? *popup-menu-args-cache-preset-in-clipboard* (<ra> :instrument-preset-in-clipboard)))
               (not (= curr-generation *popup-menu-args-cache-generation*))
               (not (same-instrconf-with-regards-to-filtering? *popup-menu-args-cache-instrconf*
                                                               instrconf))
@@ -1276,6 +1294,8 @@
     *popup-menu-args-cache-args*))
 
 #!!
+(pretty-print (ra:get-sound-plugin-registry))
+
 (ra:show-message (number->string (length (ra:get-sound-plugin-registry))))
 (for-each (lambda (i)
             (<ra> :add-message (pp ((<ra> :get-sound-plugin-registry) i))))
