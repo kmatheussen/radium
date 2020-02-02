@@ -781,7 +781,14 @@
                     (lambda (doit)
                       (when doit
                         (<ra> :set-using-sequencer-timing #f)))))
-        "-------"
+        "-------Sequencer"
+        (list "Visible"
+              :check (<ra> :sequencer-is-visible)
+              :shortcut ra:show-hide-sequencer
+              (lambda (doit)
+                (if doit
+                    (<ra> :show-sequencer)
+                    (<ra> :hide-sequencer))))
         (list "Preferences"
               (lambda ()
                 (<ra> :open-sequencer-preferences-dialog)))))
