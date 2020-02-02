@@ -2691,6 +2691,68 @@ void stopNote(int playnote_id, int midi_channel, instrument_t instrument_id){
                                        ));
 }
 
+bool instrumentSupportsChangingPitchOfPlayingNote(instrument_t instrument_id, bool include_event_connected_instruments){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  if (patch->instrument==get_MIDI_instrument())
+    return false;
+  
+  struct SoundPlugin *plugin = (struct SoundPlugin *)patch->patchdata;
+  if (plugin == NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+  
+  if (plugin->type->set_note_pitch != NULL)
+    return true;
+
+  if (!include_event_connected_instruments)
+    return false;
+
+  int num_out_connections = getNumOutEventConnections(instrument_id);
+  
+  for(int i=0;i<num_out_connections;i++){
+    instrument_t dest = getEventConnectionDestInstrument(i, instrument_id);
+    if (instrumentSupportsChangingPitchOfPlayingNote(dest, true))
+      return true;
+  }
+
+  return false;
+}
+
+bool instrumentDoesNotSupportChangingPitchOfPlayingNote(instrument_t instrument_id, bool include_event_connected_instruments){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  if (patch->instrument==get_MIDI_instrument())
+    return true;
+  
+  struct SoundPlugin *plugin = (struct SoundPlugin *)patch->patchdata;
+  if (plugin == NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+  
+  if (plugin->type->set_note_pitch == NULL)
+    return true;
+
+  if (!include_event_connected_instruments)
+    return false;
+
+  int num_out_connections = getNumOutEventConnections(instrument_id);
+  
+  for(int i=0;i<num_out_connections;i++){
+    instrument_t dest = getEventConnectionDestInstrument(i, instrument_id);
+    if (instrumentDoesNotSupportChangingPitchOfPlayingNote(dest, true))
+      return true;
+  }
+
+  return false;
+}
+
 bool hasNativeInstrumentGui(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
