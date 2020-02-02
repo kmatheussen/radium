@@ -1,3 +1,58 @@
+Changes 5.9.93 -> 5.9.95:
+* Editor: Make sure the pianoroll of the first track
+  is always visible after pressing Shift + left and
+  the cursor ends up in one of the timing tracks.
+* GUI: Add a "Visible" checkbox to the popup menus of
+  the editor, the mixer, and the sequencer.
+* Export soundfile: Make it impossible trying to
+  create a FLAC file with 32 bits or float format
+  since those are not supported by FLAC.
+* Plugins: Just ignore loading plugin cache from disk
+  if hash version on file is newer than is currently
+  supported in the program.
+* Plugins: Save plugin cache in hashmap V3 format so
+  that older versions of Radium can still be used
+  after scanning new plugins. (All versions of Radium
+  between 5.9.90 and 5.9.93 will probably be marked
+  unstable soon because of this.)
+* Instruments: Fix undoing delete instrument. This
+  operation was not always able to load the old
+  audiofile for the sampler and fluidsynth instrument.
+* Instruments: Fix instrument-list windows. Broken in
+  5.9.90.
+* Instruments: Fix VST plugins not always showing up
+  in the popup menus before they are scanned.
+* Editor: When moving notes in the piano roll, play
+  new note if pitch is changed for an instruments
+  that doesn't support changing the pitch of an
+  already playing note.
+* Windows: Fixed various problems if using non-ascii
+  filenames and dirnames.
+* Editor: Fix popup menu option for grabbing
+  keybinding for "Rename instrument".
+* Build: Add new build-type DEBUG_FAST, which is
+  the same as DEBUG + O2/O3.
+* VST/AU: Fix plugins not deleted properly when
+  exiting.
+* API:
+  * New: editorIsVisible, showEditor, hideEditor,
+    copyFilepathToClipboard, getClipboardFilepath,
+    createIllegalFilepath, isIllegalFilepath,
+    isLegalFilepath, getBase64FromFilepath,
+    getFilepathFromBase64, putSettingsF,
+    getSettingsF.
+  * Use a custom "filepath" type to store filenames
+    and dirnames.
+  * Fix loadSong and saveAs sometimes causing
+    autobackups and saving not working. Was only a
+    problem when calling these functions from Python.
+    
+
+
+Changes 5.9.92 -> 5.9.93:
+* Editor: Fix cut and paste range.
+
+
 Changes 5.9.91 -> 5.9.92:
 * Windows: Fix Jack if running in a directory with
   non-ascii characters.
