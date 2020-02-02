@@ -987,6 +987,10 @@ typedef struct _radium_os_disk disk_t;
 
 extern filepath_t g_illegal_filepath;
 
+static inline filepath_t copy_filepath(filepath_t filepath){
+  return make_filepath(talloc_wcsdup(filepath.id));
+}
+
 #ifdef __cplusplus
 namespace radium{
   class FilePath{

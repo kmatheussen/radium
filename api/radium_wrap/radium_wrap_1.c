@@ -15,6 +15,8 @@
 #include "Python.h"
 
 #include "api_common_proc.h"
+#define LANGSPEC
+#include "../common/memory_talloc_wcsdup_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 
 
