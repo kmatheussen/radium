@@ -1233,13 +1233,20 @@ static bool get_value(const hash_t *state,
     else
       return false;
   }
-  
-  if (HASH_get_type(state, key) != expected_type)
-    return SHOW_ERROR(false, "Wrong type in hash table for key \"%s\" when loading sequencer block. Expected %s, found %s",
-                      key,
-                      DYN_type_name(expected_type),
-                      DYN_type_name(HASH_get_type(state, key)));
 
+  auto type = HASH_get_type(state, key);
+  
+  if (type != expected_type){
+    if (HASH_get_version(state)<5 && expected_type==FILEPATH_TYPE && type==STRING_TYPE){
+    } else if (HASH_get_version(state)<4 && expected_type==INSTRUMENT_TYPE && type==INT_TYPE){
+    } else {
+      return SHOW_ERROR(false, "Wrong type in hash table for key \"%s\" when loading sequencer block. Expected %s, found %s",
+                        key,
+                        DYN_type_name(expected_type),
+                        DYN_type_name(type));
+    }
+  }
+  
   ret = get_value_func(state, key);
   return true;
 }
