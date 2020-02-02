@@ -241,6 +241,16 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
 
 
 public slots:
+
+  void on_format_flac_toggled(bool is_on){
+    if (is_on){
+      if (format_32->isChecked() || format_float->isChecked())
+        format_24->setChecked(true);            
+    }
+
+    format_32->setEnabled(!is_on);
+    format_float->setEnabled(!is_on);
+  }
   
   void on_buttonBox_clicked(QAbstractButton * button){
     
