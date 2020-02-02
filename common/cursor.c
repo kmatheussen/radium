@@ -688,6 +688,9 @@ void CursorPrevTrack_CurrPos(struct Tracker_Windows *window){
           return;
         
         SetCursorPosConcrete(window,wblock,new_track,-1);
+
+        if (new_track < 0)
+          wblock->skew_x = 0;
         
         int prevcursorpos = window->curr_track;
 	TrackSelectUpdate(window,wblock,0,prevcursorpos);
