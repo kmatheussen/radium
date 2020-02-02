@@ -517,7 +517,11 @@ void HASH_clear(hash_t *hash){
   hash->num_array_elements=0;
   memset(hash->elements, 0, hash->elements_size*sizeof(hash_vector_t)); //hash_element_t*));
 }
-  
+
+int HASH_get_version(const hash_t *hash){
+  return hash->version;
+}
+
 static hash_element_t *HASH_get_no_complaining(const hash_t *hash, const char *raw_key, int i);
 
 bool HASH_equal(const hash_t *h1, const hash_t *h2){
