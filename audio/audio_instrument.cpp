@@ -177,8 +177,10 @@ static int64_t RT_scheduled_send_note_pitch_to_plugin(struct SeqTrack *seqtrack,
 
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
-  if(plugin==NULL || plugin->type->set_note_volume == NULL)
+  if(plugin==NULL || plugin->type->set_note_pitch == NULL){
+    R_ASSERT_NON_RELEASE(plugin==NULL); // we should have already checked plugin->type->set_note_pitch == NULL before calling this function.
     return DONT_RESCHEDULE;
+  }
 
   const note_t note = create_note_from_args(&args[1]);
 

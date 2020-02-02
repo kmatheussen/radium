@@ -2116,7 +2116,8 @@
   :pianonotenum
   :move-type     ;; A "*pianonote-move-<...>*" value
   :mouse-delta
-  :note-id
+  :playing-note-id
+  :playing-note-pitch #f
   :new-note #f
   )
 
@@ -2169,7 +2170,7 @@
                               :pianonotenum $pianonotenum
                               :move-type move-type
                               :mouse-delta (- $y (get-pianonote-y $pianonotenum $notenum $tracknum move-type))
-                              :note-id -1
+                              :playing-note-id -1
                               ))))
   
 (define-match get-pianonote-info3
@@ -2242,12 +2243,12 @@
                                      (info :tracknum)))))
   
 
-(define (create-play-pianonote note-id pianonote-id)
+(define (create-play-pianonote playing-note-pitch)
   (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
     (if (not (<ra> :is-legal-instrument instrument-id))
         -1
         (<ra> :play-note
-              (<ra> :get-pianonote-value pianonote-id note-id *current-track-num*)
+              playing-note-pitch
               (if (<ra> :get-track-volume-on-off *current-track-num*)
                   (<ra> :get-track-volume *current-track-num*)
                   1.0)
@@ -2274,9 +2275,10 @@
                                                          ;;(and info
                                                          ;;     (c-display "        NUM " (info :pianonotenum) " type: " (info :move-type)))
                                                          (and info
-                                                              (let ((info (<copy-pianonote-info> info
-                                                                                                 :note-id (create-play-pianonote (info :notenum)
-                                                                                                                                 (info :pianonotenum)))))
+                                                              (let* ((pitch (<ra> :get-pianonote-value (info :pianonotenum) (info :notenum) *current-track-num*))
+                                                                     (info (<copy-pianonote-info> info
+                                                                                                  :playing-note-id (create-play-pianonote pitch)
+                                                                                                  :playing-note-pitch pitch)))
                                                                 (call-get-existing-node-info-callbacks callback info))))))
                         :Get-min-value (lambda (_) 1)
                         :Get-max-value (lambda (_) 127)
@@ -2305,16 +2307,18 @@
                                                                 Place Next-Place *current-track-num*))
                                            (if (and (number? noteid) (= -1 noteid))
                                                #f
-                                               (callback (make-pianonote-info :tracknum *current-track-num*
-                                                                              :notenum noteid
-                                                                              :pianonotenum 0
-                                                                              :move-type *pianonote-move-end*
-                                                                              :mouse-delta 0
-                                                                              :note-id (create-play-pianonote noteid 0)
-                                                                              :new-note #t
-                                                                              )
-                                                         Value
-                                                         (<ra> :get-y-from-place Next-Place))))
+                                               (let ((pitch (<ra> :get-pianonote-value 0 noteid *current-track-num*)))
+                                                 (callback (make-pianonote-info :tracknum *current-track-num*
+                                                                                :notenum noteid
+                                                                                :pianonotenum 0
+                                                                                :move-type *pianonote-move-end*
+                                                                                :mouse-delta 0
+                                                                                :playing-note-id (create-play-pianonote pitch)
+                                                                                :playing-note-pitch pitch
+                                                                                :new-note #t
+                                                                                )
+                                                           Value
+                                                           (<ra> :get-y-from-place Next-Place)))))
                         :Move-node (lambda (pianonote-info Value Place)
                                                                           
                                      (define pianonotenum (pianonote-info :pianonotenum))
@@ -2391,26 +2395,45 @@
                                              (pianonote-info :notenum)
                                              (pianonote-info :tracknum)))
 
-                                     (if (not (and (number? (pianonote-info :note-id))
-                                                   (= -1 (pianonote-info :note-id))))
+                                     (define playing-note-id (pianonote-info :playing-note-id))
+                                     (define playing-note-pitch (pianonote-info :playing-note-pitch))
+                                     
+                                     (if (not (and (number? playing-note-id)
+                                                   (= -1 playing-note-id)))
                                          (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
                                            (if (<ra> :is-legal-instrument instrument-id)
-                                               (<ra> :change-note-pitch
-                                                     (<ra> :get-pianonote-value (pianonote-info :pianonotenum) new-notenum *current-track-num*)
-                                                     (pianonote-info :note-id)
-                                                     (<ra> :get-track-midi-channel *current-track-num*)
-                                                     instrument-id))))
+                                               (let ((midi-channel (<ra> :get-track-midi-channel *current-track-num*))
+                                                     (new-playing-note-pitch (<ra> :get-pianonote-value (pianonote-info :pianonotenum) new-notenum *current-track-num*))
+                                                     )
+                                                 (if (<ra> :instrument-does-not-support-changing-pitch-of-playing-note instrument-id #t)
+                                                     (when (not (= (floor playing-note-pitch)
+                                                                   (floor new-playing-note-pitch)))
+                                                       ;;(c-display "value:" new-playing-note-pitch ". notenum:" new-notenum ". :pianonotenum:" (pianonote-info :pianonotenum)
+                                                       ;;           "A/B:" (floor playing-note-pitch) (floor new-playing-note-pitch))
+                                                       (set! playing-note-pitch new-playing-note-pitch)
+                                                       (<ra> :stop-note playing-note-id
+                                                             midi-channel
+                                                             instrument-id)
+                                                       (set! playing-note-id (create-play-pianonote new-playing-note-pitch))))
+                                                 (if (<ra> :instrument-supports-changing-pitch-of-playing-note instrument-id #t)
+                                                     (<ra> :change-note-pitch
+                                                           new-playing-note-pitch
+                                                           playing-note-id
+                                                           midi-channel
+                                                           instrument-id))))))
                                            
                                      (<copy-pianonote-info> pianonote-info
-                                                            :notenum new-notenum)
+                                                            :notenum new-notenum
+                                                            :playing-note-id playing-note-id
+                                                            :playing-note-pitch playing-note-pitch)
                                      )
 
                         :Release-node (lambda (pianonote-info)
-                                        (if (not (and (number? (pianonote-info :note-id))
-                                                      (= -1 (pianonote-info :note-id))))
+                                        (if (not (and (number? (pianonote-info :playing-note-id))
+                                                      (= -1 (pianonote-info :playing-note-id))))
                                             (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
                                               (if (<ra> :is-legal-instrument instrument-id)
-                                                  (<ra> :stop-note (pianonote-info :note-id)
+                                                  (<ra> :stop-note (pianonote-info :playing-note-id)
                                                                    (<ra> :get-track-midi-channel *current-track-num*)
                                                                    instrument-id)))))
 
@@ -2440,7 +2463,7 @@
                 '(c-display $x $y pianonote-info
                             (box-to-string (get-pianonote-box 0 1 0)))
                 (if (and pianonote-info
-                         (let ((pianonote-info pianonote-info)) ;;;(copy-pianonote-info :note-id (create-play-pianonote (pianonote-info :notenum)
+                         (let ((pianonote-info pianonote-info)) ;;;(copy-pianonote-info :playing-note-id (create-play-pianonote (pianonote-info :notenum)
                                                                 ;;;                                    (pianonote-info :pianonotenum)))))
                            ;;(c-display "type: " (pianonote-info :move-type))
                            (set-current-pianonote (pianonote-info :pianonotenum)
