@@ -3460,7 +3460,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   
   Data *data=(Data*)plugin->data;
 
-  filepath_t maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename.getGC());
+  filepath_t maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename.get());
   
   //printf("maybe: -%S- -%S-\n", data->filename.getString(), maybe_relative_filename.id);
   HASH_put_filepath(state, "filename", maybe_relative_filename);
@@ -3479,7 +3479,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
     if (audiofile != NULL)
       HASH_put_chars(state, "audiofile", audiofile);
     else
-      GFX_addMessage("Unable to embed sample \"%S\". Could not read file.", maybe_relative_filename.id);
+      GFX_addMessage("Unable to embed sample \"%S\". Could not read file.", data->filename.getString());
   }
 }
 
