@@ -2288,7 +2288,7 @@
       ;; Why was this line here?
       ;;(<gui> :set-clip-rect gui (+ x1 1) y1 x2 y2)
       
-      (<gui> :draw-box gui (<gui> :mix-colors "#010101" "sequencer_curr_entry_border_color" 0.5) (+ 1 x1) (+ y1 0) (- x2 0) (- y2 0) (/ (get-fontheight) 2.5) 4 4)
+      (<gui> :draw-box gui "sequencer_curr_entry_border_color" (+ 1 x1) (+ y1 0) (- x2 0) (- y2 0) (/ (get-fontheight) 2.5) 4 4)
       ;;(<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
       )
 
