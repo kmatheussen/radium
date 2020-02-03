@@ -4556,7 +4556,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       QRectF rect(SEQUENCER_get_lowest_reasonable_topmost_seqtracknum() > 0 ? get_seqtrack_scrollbar_width() : 0, w.t_y1, w.t_x2+20, w.t_y2-w.t_y1);
 
       //printf("Seqtrack: ");
-      paintCurrBorder(p, rect, get_qcolor(MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM), true);
+      paintCurrBorder(p, rect, get_qcolor(SEQUENCER_CURRTRACK_BORDER_COLOR_NUM), true);
     }
   }
 
