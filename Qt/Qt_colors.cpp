@@ -213,6 +213,8 @@ static const ColorConfig g_colorconfig[] = {
   {SEQUENCER_NOTE_COLOR_NUM, "sequencer_note_color", "Sequencer note", false},
   {SEQUENCER_NOTE_START_COLOR_NUM, "sequencer_note_start_color", "Sequencer note start", false},
 
+  {SEQUENCER_CURR_ENTRY_BORDER_COLOR_NUM, "sequencer_curr_entry_border_color", "Sequencer current list entry border", false},
+
   {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, "sequencer_block_background_color", "Sequencer block background", false},
   {SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, "sequencer_multiselect_block_background_color", "Sequencer block multiselected background", false},
   {SEQUENCER_BLOCK_BORDER_COLOR_NUM, "sequencer_block_border_color", "Sequencer block border", false},
@@ -357,6 +359,8 @@ static ReplacementColor g_replacement_color[] = {
   {SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM, QColor("#d4d4d4")},
   {SEQUENCER_NOTE_COLOR_NUM, QColor("#960101c8")},
   {SEQUENCER_NOTE_START_COLOR_NUM, QColor("#ff000000")},
+
+  {SEQUENCER_CURR_ENTRY_BORDER_COLOR_NUM, QColor("green")},
   
   {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, QColor("#ff8c8c8c")},
   {SEQUENCER_BLOCK_BORDER_COLOR_NUM, QColor("#ff321423")},
