@@ -328,7 +328,7 @@ static ReplacementColor g_replacement_color[] = {
   {CHECK_BOX_UNSELECTED_COLOR_NUM,  QColor("#ff34413c")},
   {BUTTONS_TEXT_COLOR_NUM, QColor("#cccccc")},
     
-  {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor(1,1,1)},
+  {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor("#aa000001")},
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
   {LINE_SLIDER_COLOR_NUM, QColor(1,1,1)},
 
