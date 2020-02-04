@@ -5469,6 +5469,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                       (<ra> :set-track-pan (get-pan-value (first-instrument-event :channel)) tracknum)
                       (<ra> :set-track-pan-on-off #t tracknum)
                                                      
+                      (<ra> :set-track-volume-on-off #f tracknum)
+                                                     
                       (let loop ((events channel))
                         (if (not (null? events))
                             (let ((event (car events)))
