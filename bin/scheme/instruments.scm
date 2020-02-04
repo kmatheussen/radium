@@ -802,7 +802,7 @@
      (define result
        (undo-block
         (lambda ()
-          (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y))
+          (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y #f))
           (if (<ra> :is-legal-instrument new-instrument)
               (begin
                 (define num-inputs (<ra> :get-num-input-channels new-instrument))
@@ -856,7 +856,8 @@
      (if do-undo
          (<ra> :undo))
 
-     (if result
+     (if (and result
+              callback)
          (callback result)))))
 
 (define (FROM_C-remove-instrument-from-connection-path parent-instrument-id instrument-id)

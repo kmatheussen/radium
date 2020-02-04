@@ -764,15 +764,11 @@
                         (<-> "Insert Plugin after " (<ra> :get-instrument-name curr-plugin-instrument)))
                     :enabled (> (<ra> :get-num-output-channels first-instrument-id) 0)
                     (lambda ()
-                      (define (finished new-instrument)
-                        ;;(c-display "             first: " (<ra> :get-instrument-name first-instrument-id) ", new:" (and new-instrument (<ra> :get-instrument-name new-instrument)))
-                        (if (and strips-config (not (strips-config :is-standalone)))
-                            (<ra> :set-current-instrument first-instrument-id)))
                       (insert-new-instrument-between curr-plugin-instrument
                                                      (get-instruments-connecting-from-instrument curr-plugin-instrument)
                                                      #t
                                                      parentgui
-                                                     finished)))
+                                                     #f)))
               
               (list (<-> "Insert Send for " (if is-send?
                                                 (<ra> :get-instrument-name parent-instrument-id)
@@ -785,9 +781,7 @@
                                                   instrument-id))))
                         (request-send-instrument instrument-id
                                                  (lambda (create-send-func)
-                                                   (create-send-func 0 '())
-                                                   (if (and strips-config (not (strips-config :is-standalone)))
-                                                       (<ra> :set-current-instrument first-instrument-id)))))))
+                                                   (create-send-func 0 '()))))))
 
               ;;(and (not is-send?)
               ;;     (list
