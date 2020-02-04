@@ -632,14 +632,29 @@ FROM_C-create-quantitize-gui
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(define (assert something)
-  (when (not something)
+(define (handle-assertion something throwit)
+  (display "assert-non-release: ASSERTION ERROR for \"")(display something) (display "\"")(newline)
+  (when throwit
     (handle-assertion-failure-during-startup 'assert-failed) ;; we have a better call to handle-assertion-failure in ***assert***
-    (error 'assert-failed)))
+    (eval `(error ',(list 'assert-failed ": " something)))))
+  
+(define-expansion (assert something)
+  `(if (not ,something)
+       (handle-assertion ',something #t)))
 
 ;; It is assumed various places that eqv? can be used to compare functions.
 (assert (eqv? assert ((lambda () assert))))
 
+(define-expansion (assert-non-release something)
+  `(if (not ,something)
+       (handle-assertion ',something (not (<ra> :release-mode)))))
+
+
+#!!
+(let ((hepp #f))
+  (assert-non-release (and hepp))
+  (assert-non-release hepp))
+!!#
 
 (define (***assert-custom-comp*** comp? a b)
   (define (test -__Arg1 -__Arg2)
