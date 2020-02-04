@@ -146,6 +146,10 @@ pre, code {
   border: 1px solid green ;
 }
 
+blockquote {
+  display: inline-block;
+}
+
 </style>
 		
 </head>
@@ -154,15 +158,27 @@ pre, code {
 				
 		<main>
 			<div class="innertube">
-<h1>Swing</h1>
 
-The Swing tracks provide efficient ways to create swing. There are two types of swing tracks:
+  <IMG SRC="globalswing.png" ALT="Global swing" style="border:10px solid transparent" align="right">
+
+  <h1>Swing</h1>
+
+  The Swing tracks provide efficient ways to create swing.
+<p>
+    
+  There are two types of swing tracks in the editor:
 <OL>
-  <LI> <b>The global swing track.</b> <i>(to the right of the "LZ" track)</i><br>
-    The global swing track applies swing to all tracks in a block.
-  <LI> <b>Swing subtracks.</b> <i>(to the left of note text)</i><br>
-    Swing subtracks applies swing to normal tracks, and overrides the global swing track for that track. Right click a track and enable "Swing text"
-    to edit swing of individual tracks.
+  <LI> <b>The global swing track.</b><br>
+    <UL>
+      <LI><b>Position:</b> To the right of the "LZ" track. (See first picture.)<br>
+      <LI><b>Task:</b> Apply swing to all tracks in a block.<br>
+    </UL>
+  <LI> <b>Swing subtracks.</b>
+    <UL>
+      <LI><b>Position:</b> To the left of note text. (See second picture.)(,br>
+      <LI><b>Task:</b> Apply swing to individual tracks, overriding the global swing track for that track.
+      <LI><b>How:</b> Right click inside a track and enable "Swing text".
+    </UL>
 </OL>
 
 
@@ -177,30 +193,36 @@ The Swing tracks provide efficient ways to create swing. There are two types of 
     
 <b>xx</b> = Swing weight. 1 = lowest value, 99 = highest value.
 <b>t</b>  = Whether to gradually change tempo to the next swing value. (Press 't' to switch)
-  </pre>
-  </blockquote>
-<p>
+  </pre>  
 
-  Example of a shuffle swing:
-<pre>
- 3
+  </blockquote>
+
+<p>
+  <br>
+
+  <IMG SRC="trackswing.png" ALT="Track swing" style="border:10px solid transparent" align="right">
+  
+  Example of a shuffle swing:<br>
+  <blockquote>
+    <pre>
+ 3|
 ---
- 2
+ 2|
 ---
- 3
+ 3|
 ---
- 2
+ 2|
 ---
- 3
+ 3|
 ---
- 2
+ 2|
 ---
- 3
+ 3|
 ---
- 2
+ 2|
 ---
 </pre>
-
+</blockquote>
 
 <p>
   
