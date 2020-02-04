@@ -23,18 +23,18 @@
     </UL>
 </OL>
 
-
-
-<p>
-
-  Swing text format: <b>xxt</b>, where
-  
 <p>
   <blockquote>
   <pre>
+Swing text entry format: <b>xxt</b>, where
     
-<b>xx</b> = Swing weight. 1 = lowest value, 99 = highest value.
-<b>t</b>  = Whether to gradually change tempo to the next swing value. (Press 't' to switch)
+<b>xx</b>  = Swing weight. <b>1</b> = lowest weight, <b>99</b> = highest weight.
+<b>  t</b> = Whether to gradually change tempo between the current and the next swing weight.
+
+If <b>t</b> is "<b> </b>" (empty), the change happens gradually.
+If <b>t</b> is "<b>|</b>", the change happens immediately.
+
+Press the 't' key to switch between the two modes.
   </pre>  
 
   </blockquote>
@@ -67,7 +67,8 @@
 </blockquote>
 
 <p>
-  
+
+  Tips:
 <UL>
   <LI> To remove a swing entry, press DEL.
   <LI> To stop swing in the middle of a block, add "1" (or any number) to the first beat in a bar, and remove all other swing values from that bar.
