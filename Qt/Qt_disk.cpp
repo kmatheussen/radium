@@ -57,6 +57,27 @@ filepath_t DISK_get_pathless_file_path(filepath_t wfilename){
   return make_filepath(QDir::toNativeSeparators(info.fileName()));
 }
 
+filepath_t DISK_get_filename_without_path_and_suffix(filepath_t wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
+  QFileInfo info(STRING_get_qstring(wfilename.id));
+  return make_filepath(info.baseName());
+}
+
+filepath_t DISK_create_legal_filename(filepath_t filename){
+  QString s = STRING_get_qstring(filename.id);
+  QString ret;
+  for(const QChar c : s){
+    if(c.isLetterOrNumber() || c==QChar('_') || c==QChar('-') || c==QChar(' '))
+      ret = ret + c;
+    else
+      ret = ret + "_u" + QString::number(c.unicode()) + "_";
+  }
+
+  return make_filepath(STRING_create(ret));
+}
+
+
 int64_t DISK_get_creation_time(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   

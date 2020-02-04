@@ -41,6 +41,7 @@ struct NumUsedPluginEntry{
 struct PluginMenuEntry{
   SoundPluginType *plugin_type = NULL;
   SoundPluginTypeContainer *plugin_type_container = NULL;
+  radium::FilePath preset_filename;
   QString level_up_name;
   
   NumUsedPluginEntry hepp;
@@ -79,22 +80,28 @@ struct PluginMenuEntry{
       return "UNKNOWN_TYPE";
     }
   }
-  
+
   static const QString type_to_string(const PluginMenuEntry &entry){
     return type_to_string(entry.type);
   }
     
-  static PluginMenuEntry separator(){
+  static PluginMenuEntry separator(void){
     PluginMenuEntry entry;
     entry.type=IS_SEPARATOR;
     return entry;
   }
-  static PluginMenuEntry load_preset(){
+  static PluginMenuEntry load_preset(void){
     PluginMenuEntry entry;
     entry.type=IS_LOAD_PRESET;
     return entry;
   }
-  static PluginMenuEntry paste_preset(){
+  static PluginMenuEntry load_preset(filepath_t filename){
+    PluginMenuEntry entry;
+    entry.type=IS_LOAD_PRESET;
+    entry.preset_filename = radium::FilePath(filename);
+    return entry;
+  }
+  static PluginMenuEntry paste_preset(void){
     PluginMenuEntry entry;
     entry.type=IS_PASTE_PRESET;
     return entry;
@@ -111,7 +118,7 @@ struct PluginMenuEntry{
     entry.level_up_name=name;
     return entry;
   }
-  static PluginMenuEntry level_down(){
+  static PluginMenuEntry level_down(void){
     PluginMenuEntry entry;
     entry.type=IS_LEVEL_DOWN;
     return entry;
@@ -141,6 +148,8 @@ void PR_add_menu_entry(PluginMenuEntry entry);
 extern LANGSPEC void PR_set_init_vst_first(void);
 extern LANGSPEC void PR_set_init_ladspa_first(void);
 extern LANGSPEC bool PR_is_initing_vst_first(void);
+
+extern LANGSPEC void PR_add_load_preset_menu_entries_in_directory(filepath_t dirname);
 
 extern LANGSPEC void PR_add_plugin_type_no_menu(SoundPluginType *plugin_type);
 extern LANGSPEC void PR_add_plugin_type(SoundPluginType *plugin_type);

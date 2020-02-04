@@ -3200,12 +3200,7 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, filepath_t pathdir, int
   if (ATOMIC_GET(data->recording_status) != NOT_RECORDING)
     return;
 
-  filepath_t recording_path = appendFilePaths(pathdir,
-                                              make_filepath(STRING_replace(STRING_replace(STRING_create(plugin->patch->name),
-                                                                                          "/",
-                                                                                          "_slash_"),
-                                                                           "\\",
-                                                                           "_backslash_")));
+  filepath_t recording_path = appendFilePaths(pathdir,DISK_create_legal_filename(make_filepath(STRING_create(plugin->patch->name))));
   
   QDir dir = QFileInfo(STRING_get_qstring(recording_path.id)).dir();
   if (dir.exists()==false){
