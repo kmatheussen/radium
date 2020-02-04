@@ -535,6 +535,12 @@ void create_faust_plugin(void){
     ;
 
   PR_add_plugin_type(plugin_type);
+
+  PR_add_menu_entry(PluginMenuEntry::level_up("FaustDev examples"));
+  {
+    PR_add_load_preset_menu_entries_in_directory(OS_get_full_program_file_path("faustdev_examples"));
+  }
+  PR_add_menu_entry(PluginMenuEntry::level_down());
 }
 
 /*
