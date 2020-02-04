@@ -446,16 +446,22 @@ static void get_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString
     
   } else if (entry.type==PluginMenuEntry::IS_LEVEL_UP){
     
-    hash = HASH_create2(2, HASH_VERSION);
+    hash = HASH_create(2);
     HASH_put_string(hash, ":name", entry.level_up_name);
   
   } else if (entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
     
-    hash = HASH_create2(5, HASH_VERSION);
+    hash = HASH_create(5);
     HASH_put_string(hash, ":container-name", entry.hepp.container_name);
     HASH_put_string(hash, ":type-name", entry.hepp.type_name);
     HASH_put_string(hash, ":name", entry.hepp.name);
     HASH_put_int(hash, ":num-uses", entry.hepp.num_uses);
+    
+  } else if (entry.type==PluginMenuEntry::IS_LOAD_PRESET){
+
+    hash = HASH_create(3);
+    HASH_put_filepath(hash, ":preset-filename", entry.preset_filename.get());
+    HASH_put_string(hash, ":name", STRING_replace(DISK_get_filename_without_path_and_suffix(entry.preset_filename.get()).id, "_", " "));
     
   } else if (entry.type==PluginMenuEntry::IS_NORMAL){
         
@@ -465,7 +471,7 @@ static void get_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString
       R_ASSERT(false);
         
   } else {
-    hash = HASH_create2(1, HASH_VERSION);
+    hash = HASH_create(1);
   }
 
   if (hash!=NULL){

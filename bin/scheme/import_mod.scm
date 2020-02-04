@@ -4804,35 +4804,36 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
           (print-events events))
 
     
-    (when (or (not (validate-gliding2 pitches))
-              (not (validate-gliding2 velocities)))
-      (c-display "FAILED:"
-                 (validate-gliding2 pitches)
-                 (validate-gliding2 velocities))
-      (c-display "pitches: " pitches)
-      (c-display "velocities: " velocities)
-      (c-display note)
-      (print-events events)
-      (assert #f))      
-
-    (let ((radium-notenum (<ra> :add-note (+ *pitch-transpose* first-pitch-value)
+    (if (or (not (validate-gliding2 pitches))
+            (not (validate-gliding2 velocities)))
+        (begin
+          (c-display "FAILED:"
+                     (validate-gliding2 pitches)
+                     (validate-gliding2 velocities))
+          (c-display "pitches: " pitches)
+          (c-display "velocities: " velocities)
+          (c-display note)
+          (print-events events)
+          (assert-non-release #f)
+          )
+        (let ((radium-notenum (<ra> :add-note (+ *pitch-transpose* first-pitch-value)
                                           (/ first-velocity-value 64)
                                           start-place
                                           stop-place
                                           channelnum -1 -1)))
-      (when (not (= -1 radium-notenum))
-
-        ;; set end velocity value
-        (<ra> :set-velocity (/ last-velocity-value 64)
-                            'same-place
-                            1
-                            radium-notenum
-                            channelnum)
-        
-        ;; add velocity nodes
-        (for-each (lambda (velocity)
-                    ;;(c-display velocities)
-                    (when (>= (car velocity) last-velocity-pos)
+          (when (not (= -1 radium-notenum))
+            
+            ;; set end velocity value
+            (<ra> :set-velocity (/ last-velocity-value 64)
+                  'same-place
+                  1
+                  radium-notenum
+                  channelnum)
+            
+            ;; add velocity nodes
+            (for-each (lambda (velocity)
+                        ;;(c-display velocities)
+                        (when (>= (car velocity) last-velocity-pos)
                           (c-display "note" (event-to-string note))
                           (c-display "channelnum" channelnum)
                           (c-display "instrument" instrument)
@@ -4841,44 +4842,44 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                           (c-display "num-lines" num-lines)
                           (print-events events)
                           (assert #f))
-                    (<ra> :add-velocity
-                          (/ (cadr velocity) 64) ;; value
-                          (car velocity) ;; place
-                          radium-notenum
-                          channelnum))
-                  (butlast (cdr velocities)))
-
-        ;; set velocity logtypes
-        (for-each (lambda (velocity velocitynum)
-                    (<ra> :set-velocity-logtype (if (caddr velocity) *logtype-linear* *logtype-hold*) velocitynum  radium-notenum channelnum))
-                  (butlast velocities)
-                  (iota (1- (length velocities))))
-
-        ;; whether to add pitches or not
-        (when (or (not (= first-pitch-value last-pitch-value))
-                  (> (length pitches) 2))
-          
-          (<ra> :set-note-end-pitch
-                (+ *pitch-transpose* last-pitch-value)
-                radium-notenum
-                channelnum)
-           
-          (for-each (lambda (pitch)  ;; TODO: Fix.
-                      (assert (< (car pitch) last-pitch-pos))
-                      (<ra> :add-pitchnum
-                            (+ *pitch-transpose* (cadr pitch))  ;; value
-                            (car pitch) ;; place
-                            ;; ra:add-pitchnum doesn't need a 'radium-notenum' argument. It finds note automatically, which works fine as long as the track is monophonic.
-                            channelnum))
-                    (butlast (cdr pitches)))
-
-          ;; set pitch logtypes
-          (for-each (lambda (pitch pianonotenum)
-                      (<ra> :set-pianonote-logtype (if (caddr pitch) *logtype-linear* *logtype-hold*) pianonotenum  radium-notenum channelnum))
-                    (butlast pitches)
-                    (iota (1- (length pitches))))
-          
-          )))))
+                        (<ra> :add-velocity
+                              (/ (cadr velocity) 64) ;; value
+                              (car velocity) ;; place
+                              radium-notenum
+                              channelnum))
+                      (butlast (cdr velocities)))
+            
+            ;; set velocity logtypes
+            (for-each (lambda (velocity velocitynum)
+                        (<ra> :set-velocity-logtype (if (caddr velocity) *logtype-linear* *logtype-hold*) velocitynum  radium-notenum channelnum))
+                      (butlast velocities)
+                      (iota (1- (length velocities))))
+            
+            ;; whether to add pitches or not
+            (when (or (not (= first-pitch-value last-pitch-value))
+                      (> (length pitches) 2))
+              
+              (<ra> :set-note-end-pitch
+                    (+ *pitch-transpose* last-pitch-value)
+                    radium-notenum
+                    channelnum)
+              
+              (for-each (lambda (pitch)  ;; TODO: Fix.
+                          (assert (< (car pitch) last-pitch-pos))
+                          (<ra> :add-pitchnum
+                                (+ *pitch-transpose* (cadr pitch))  ;; value
+                                (car pitch) ;; place
+                                ;; ra:add-pitchnum doesn't need a 'radium-notenum' argument. It finds note automatically, which works fine as long as the track is monophonic.
+                                channelnum))
+                        (butlast (cdr pitches)))
+              
+              ;; set pitch logtypes
+              (for-each (lambda (pitch pianonotenum)
+                          (<ra> :set-pianonote-logtype (if (caddr pitch) *logtype-linear* *logtype-hold*) pianonotenum  radium-notenum channelnum))
+                        (butlast pitches)
+                        (iota (1- (length pitches))))
+              
+              ))))))
       
 
 
@@ -5469,6 +5470,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                       (<ra> :set-track-pan (get-pan-value (first-instrument-event :channel)) tracknum)
                       (<ra> :set-track-pan-on-off #t tracknum)
                                                      
+                      (<ra> :set-track-volume-on-off #f tracknum)
+                                                     
                       (let loop ((events channel))
                         (if (not (null? events))
                             (let ((event (car events)))
@@ -5574,7 +5577,9 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   
   (define (add-instruments-and-events! message new-instruments-and-events)    
     (define cloned-instruments (map (lambda (cloned-instrument)
-                                      (let ((instrument (instruments (1- (cloned-instrument :old-instrumentnum)))))
+                                      (define new-instrument-num (1- (cloned-instrument :old-instrumentnum)))
+                                      (assert-non-release (>= new-instrument-num 0))
+                                      (let ((instrument (instruments (max 0 new-instrument-num))))
                                         (vector-copy instrument)))
                                     (car new-instruments-and-events)))
     (c-display "   cloned-instruments:" cloned-instruments)

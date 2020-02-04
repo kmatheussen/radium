@@ -531,6 +531,57 @@ void PR_add_menu_entry(PluginMenuEntry entry){
   g_plugin_menu_entries.push_back(entry);
 }
 
+static void add_from_dir(QDir dir, bool add_level_up_entries){
+
+  if (add_level_up_entries)
+    PR_add_menu_entry(PluginMenuEntry::level_up(dir.dirName().toUtf8().constData()));
+
+  PR_add_menu_entry(PluginMenuEntry::separator());
+  
+  dir.setSorting(QDir::Name);
+
+  // browse dirs first.
+  dir.setFilter(QDir::Dirs |  QDir::NoDotAndDotDot);
+
+  {
+    QFileInfoList list = dir.entryInfoList();
+    
+    for (int i = 0; i < list.size(); ++i) {
+      QFileInfo fileInfo = list.at(i);
+      //if(fileInfo.absoluteFilePath() != dir.absoluteFilePath())
+      add_from_dir(QDir(fileInfo.absoluteFilePath()), true);
+    }
+  }
+
+    // Then the files
+  dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+  {
+    QFileInfoList list = dir.entryInfoList();
+    
+    for (int i = 0; i < list.size(); ++i) {
+      
+      QFileInfo fileInfo = list.at(i);
+      printf("   file: -%s-. Suffix: -%S-\n",fileInfo.absoluteFilePath().toUtf8().constData(), STRING_create(fileInfo.suffix()));
+      
+      if(fileInfo.suffix()=="rec" || fileInfo.suffix()=="rec") {
+
+        auto entry = PluginMenuEntry::load_preset(make_filepath(fileInfo.absoluteFilePath()));
+
+        PR_add_menu_entry(entry);
+      }
+    }
+  }
+
+  if (add_level_up_entries)
+    PR_add_menu_entry(PluginMenuEntry::level_down());
+}
+
+void PR_add_load_preset_menu_entries_in_directory(filepath_t dirname){
+  printf("DIRNAME: -%S-\n",dirname.id);
+  add_from_dir(QDir(STRING_get_qstring(dirname.id)), false);
+  //abort();
+}
+
 void PR_add_plugin_type_no_menu(SoundPluginType *type){
   if(type->name==NULL || type->type_name==NULL)
     RError("Can not be null. type_name: %s, name: %s\n",type->type_name,type->name);

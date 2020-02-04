@@ -683,6 +683,9 @@
                  (replace description)
                  #f)))))
 
+(define (create-load-instrument-preset-description filename)
+  (<-> "2" (<ra> :get-base64-from-filepath filename)))
+
 (define (request-select-instrument-preset parentgui callback)
   (define (use-file-requester)
     (<ra> :request-load-preset-instrument-description parentgui callback))
@@ -699,7 +702,7 @@
                                            (map (lambda (filename)
                                                   (list (<ra> :get-path-string filename)
                                                         (lambda ()
-                                                          (callback (<-> "2" (<ra> :get-base64-from-filepath filename))))))
+                                                          (callback (create-load-instrument-preset-description filename)))))
                                                 presets)))
                          (single-entries (create-entries single-presets))
                          (multi-entries (create-entries multi-presets)))
@@ -802,7 +805,7 @@
      (define result
        (undo-block
         (lambda ()
-          (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y))
+          (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y #f))
           (if (<ra> :is-legal-instrument new-instrument)
               (begin
                 (define num-inputs (<ra> :get-num-input-channels new-instrument))
@@ -856,7 +859,8 @@
      (if do-undo
          (<ra> :undo))
 
-     (if result
+     (if (and result
+              callback)
          (callback result)))))
 
 (define (FROM_C-remove-instrument-from-connection-path parent-instrument-id instrument-id)
@@ -1060,8 +1064,11 @@
             ;;;(else
             ;;; (<ra> :show-message (<-> "The \"" (entry :name) "\" plugin container didn't contain any plugins"))))) ;; The populate function shows error message for this.
         ((string=? type "LOAD_PRESET")
-         (request-select-instrument-preset (instrconf :parentgui) callback))
-        ((string=? type "PASTE_PRESET")         
+         (let ((filename (entry :preset-filename)))
+           (if (<ra> :is-illegal-filepath filename)
+               (request-select-instrument-preset (instrconf :parentgui) callback)
+               (callback (create-load-instrument-preset-description filename)))))
+        ((string=? type "PASTE_PRESET")
          (callback "3"))
         (else
          ;;(c-display "entry:" entry)
@@ -1125,9 +1132,12 @@
                  (level-down-func (cdr entries))
                  '())
                 ((string=? type "LOAD_PRESET")
-                 (cons (list "Load Preset(s)"
-                             :enabled (instrconf :include-load-preset)
-                             mcallback)
+                 (cons (if (<ra> :is-illegal-filepath (entry :preset-filename))
+                           (list "Load Preset(s)"
+                                 :enabled (instrconf :include-load-preset)
+                                 mcallback)
+                           (list (entry :name)
+                                 mcallback))
                        (loop (cdr entries))))
                 ((string=? type "PASTE_PRESET")
                  (cons (list "Paste" ;; sound objects(s)"

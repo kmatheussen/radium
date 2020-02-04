@@ -1,0 +1,1263 @@
+>> HASH MAP V5 BEGIN
+20
+___radium_patch_state_v3
+0
+INT_TYPE
+1
+always_receive_MIDI_input
+0
+BOOL_TYPE
+0
+audio
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+11
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+ab
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+9
+curr_ab_num
+0
+INT_TYPE
+0
+is_valid
+0
+BOOL_TYPE
+0
+is_valid
+1
+BOOL_TYPE
+0
+is_valid
+2
+BOOL_TYPE
+0
+is_valid
+3
+BOOL_TYPE
+0
+is_valid
+4
+BOOL_TYPE
+0
+is_valid
+5
+BOOL_TYPE
+0
+is_valid
+6
+BOOL_TYPE
+0
+is_valid
+7
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+auto_suspend_behavior
+0
+INT_TYPE
+0
+effects
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+94
+FaustDev: bend
+0
+FLOAT_TYPE
+1
+System Aux 1
+0
+FLOAT_TYPE
+0
+System Aux 2
+0
+FLOAT_TYPE
+0
+System Aux 3
+0
+FLOAT_TYPE
+0
+System Chance Voice 1
+0
+FLOAT_TYPE
+256
+System Chance Voice 2
+0
+FLOAT_TYPE
+256
+System Chance Voice 3
+0
+FLOAT_TYPE
+256
+System Chance Voice 4
+0
+FLOAT_TYPE
+256
+System Chance Voice 5
+0
+FLOAT_TYPE
+256
+System Chance Voice 6
+0
+FLOAT_TYPE
+256
+System Chance Voice 7
+0
+FLOAT_TYPE
+256
+System Chorus
+0
+FLOAT_TYPE
+0
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+400
+System Eq1 L.
+0
+FLOAT_TYPE
+0.5
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1000
+System Eq2 L.
+0
+FLOAT_TYPE
+0.5
+System Eq2 On/Off
+0
+FLOAT_TYPE
+0
+System Highpass On/Off
+0
+FLOAT_TYPE
+0
+System Hp F.
+0
+FLOAT_TYPE
+200
+System Hs F.
+0
+FLOAT_TYPE
+1500
+System Hs L.
+0
+FLOAT_TYPE
+0
+System Hs On/Off
+0
+FLOAT_TYPE
+0
+System In
+0
+FLOAT_TYPE
+1
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Length Voice 1
+0
+FLOAT_TYPE
+0
+System Length Voice 2
+0
+FLOAT_TYPE
+0
+System Length Voice 3
+0
+FLOAT_TYPE
+0
+System Length Voice 4
+0
+FLOAT_TYPE
+0
+System Length Voice 5
+0
+FLOAT_TYPE
+0
+System Length Voice 6
+0
+FLOAT_TYPE
+0
+System Length Voice 7
+0
+FLOAT_TYPE
+0
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+5000
+System Ls F.
+0
+FLOAT_TYPE
+400
+System Ls L.
+0
+FLOAT_TYPE
+0
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System On/Off Voice 1
+0
+FLOAT_TYPE
+1
+System On/Off Voice 2
+0
+FLOAT_TYPE
+0
+System On/Off Voice 3
+0
+FLOAT_TYPE
+0
+System On/Off Voice 4
+0
+FLOAT_TYPE
+0
+System On/Off Voice 5
+0
+FLOAT_TYPE
+0
+System On/Off Voice 6
+0
+FLOAT_TYPE
+0
+System On/Off Voice 7
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+1
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.5
+System Pan On/Off
+0
+FLOAT_TYPE
+0
+System Pan Voice 1
+0
+FLOAT_TYPE
+0
+System Pan Voice 2
+0
+FLOAT_TYPE
+0
+System Pan Voice 3
+0
+FLOAT_TYPE
+0
+System Pan Voice 4
+0
+FLOAT_TYPE
+0
+System Pan Voice 5
+0
+FLOAT_TYPE
+0
+System Pan Voice 6
+0
+FLOAT_TYPE
+0
+System Pan Voice 7
+0
+FLOAT_TYPE
+0
+System Reverb
+0
+FLOAT_TYPE
+0
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Solo On/Off
+0
+FLOAT_TYPE
+0
+System Start Voice 1
+0
+FLOAT_TYPE
+0
+System Start Voice 2
+0
+FLOAT_TYPE
+0
+System Start Voice 3
+0
+FLOAT_TYPE
+0
+System Start Voice 4
+0
+FLOAT_TYPE
+0
+System Start Voice 5
+0
+FLOAT_TYPE
+0
+System Start Voice 6
+0
+FLOAT_TYPE
+0
+System Start Voice 7
+0
+FLOAT_TYPE
+0
+System Transpose Voice 1
+0
+FLOAT_TYPE
+0
+System Transpose Voice 2
+0
+FLOAT_TYPE
+12
+System Transpose Voice 3
+0
+FLOAT_TYPE
+19
+System Transpose Voice 4
+0
+FLOAT_TYPE
+24
+System Transpose Voice 5
+0
+FLOAT_TYPE
+-12
+System Transpose Voice 6
+0
+FLOAT_TYPE
+-24
+System Transpose Voice 7
+0
+FLOAT_TYPE
+0.25
+System Volume
+0
+FLOAT_TYPE
+1
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Volume Voice 1
+0
+FLOAT_TYPE
+0
+System Volume Voice 2
+0
+FLOAT_TYPE
+0
+System Volume Voice 3
+0
+FLOAT_TYPE
+0
+System Volume Voice 4
+0
+FLOAT_TYPE
+0
+System Volume Voice 5
+0
+FLOAT_TYPE
+0
+System Volume Voice 6
+0
+FLOAT_TYPE
+0
+System Volume Voice 7
+0
+FLOAT_TYPE
+0
+System Width
+0
+FLOAT_TYPE
+0
+System Width On/Off
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+enable_sample_seek
+0
+BOOL_TYPE
+0
+is_dpi_aware
+0
+BOOL_TYPE
+1
+name
+0
+STRING_TYPE
+Faust Dev
+plugin_state
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+3
+code
+0
+STRING_TYPE
+aW1wb3J0KCJzdGRmYXVzdC5saWIiKTsKIAogCmZyZXEgPSBuZW50cnkoImZyZXEiLDIwMCw0MCwyMDAwLDAuMDEpOwpiZW5kID0gbmVudHJ5KCJiZW5kIiwxLDAsMTAsMC4wMSk7CmdhaW4gPSBuZW50cnkoImdhaW4iLDEsMCwxLDAuMDEpOwpnYXRlID0gYnV0dG9uKCJnYXRlIik7CgplbnZlbG9wZSA9IGdhaW4gKiBlbi5hZHNyKDAuMDIsMC40LDAuNSwwLjQsZ2F0ZSk7Cgpwcm9jZXNzID0gb3Muc2F3dG9vdGgoZnJlcSpiZW5kKSAqIGVudmVsb3BlIDw6IF8sXzsKCg==
+options
+0
+STRING_TYPE
+LUkKJXJhZGl1bV9wYXRoJS9wYWNrYWdlcy9mYXVzdC9saWJyYXJpZXM=
+use_interpreter_backend
+0
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+plugin_type_version
+0
+INT_TYPE
+0
+random_change
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+95
+FaustDev: bend
+0
+BOOL_TYPE
+1
+NOTUSED
+0
+BOOL_TYPE
+1
+System Aux 1
+0
+BOOL_TYPE
+0
+System Aux 2
+0
+BOOL_TYPE
+0
+System Aux 3
+0
+BOOL_TYPE
+0
+System Chance Voice 1
+0
+BOOL_TYPE
+0
+System Chance Voice 2
+0
+BOOL_TYPE
+0
+System Chance Voice 3
+0
+BOOL_TYPE
+0
+System Chance Voice 4
+0
+BOOL_TYPE
+0
+System Chance Voice 5
+0
+BOOL_TYPE
+0
+System Chance Voice 6
+0
+BOOL_TYPE
+0
+System Chance Voice 7
+0
+BOOL_TYPE
+0
+System Chorus
+0
+BOOL_TYPE
+0
+System Compression Attack
+0
+BOOL_TYPE
+0
+System Compression Makeup Gain
+0
+BOOL_TYPE
+0
+System Compression On/Off
+0
+BOOL_TYPE
+0
+System Compression Ratio
+0
+BOOL_TYPE
+0
+System Compression Release
+0
+BOOL_TYPE
+0
+System Compression Threshold
+0
+BOOL_TYPE
+0
+System Controls On/Off
+0
+BOOL_TYPE
+0
+System Dry/Wet
+0
+BOOL_TYPE
+0
+System Effects On/Off
+0
+BOOL_TYPE
+0
+System Eq1 F.
+0
+BOOL_TYPE
+0
+System Eq1 L.
+0
+BOOL_TYPE
+0
+System Eq1 On/Off
+0
+BOOL_TYPE
+0
+System Eq2 F.
+0
+BOOL_TYPE
+0
+System Eq2 L.
+0
+BOOL_TYPE
+0
+System Eq2 On/Off
+0
+BOOL_TYPE
+0
+System Highpass On/Off
+0
+BOOL_TYPE
+0
+System Hp F.
+0
+BOOL_TYPE
+0
+System Hs F.
+0
+BOOL_TYPE
+0
+System Hs L.
+0
+BOOL_TYPE
+0
+System Hs On/Off
+0
+BOOL_TYPE
+0
+System In
+0
+BOOL_TYPE
+0
+System In On/Off
+0
+BOOL_TYPE
+0
+System Length Voice 1
+0
+BOOL_TYPE
+0
+System Length Voice 2
+0
+BOOL_TYPE
+0
+System Length Voice 3
+0
+BOOL_TYPE
+0
+System Length Voice 4
+0
+BOOL_TYPE
+0
+System Length Voice 5
+0
+BOOL_TYPE
+0
+System Length Voice 6
+0
+BOOL_TYPE
+0
+System Length Voice 7
+0
+BOOL_TYPE
+0
+System Lowpass On/Off
+0
+BOOL_TYPE
+0
+System Lp F.
+0
+BOOL_TYPE
+0
+System Ls F.
+0
+BOOL_TYPE
+0
+System Ls L.
+0
+BOOL_TYPE
+0
+System Ls On/Off
+0
+BOOL_TYPE
+0
+System On/Off Voice 1
+0
+BOOL_TYPE
+0
+System On/Off Voice 2
+0
+BOOL_TYPE
+0
+System On/Off Voice 3
+0
+BOOL_TYPE
+0
+System On/Off Voice 4
+0
+BOOL_TYPE
+0
+System On/Off Voice 5
+0
+BOOL_TYPE
+0
+System On/Off Voice 6
+0
+BOOL_TYPE
+0
+System On/Off Voice 7
+0
+BOOL_TYPE
+0
+System Out
+0
+BOOL_TYPE
+0
+System Out On/Off
+0
+BOOL_TYPE
+0
+System Pan
+0
+BOOL_TYPE
+0
+System Pan On/Off
+0
+BOOL_TYPE
+0
+System Pan Voice 1
+0
+BOOL_TYPE
+0
+System Pan Voice 2
+0
+BOOL_TYPE
+0
+System Pan Voice 3
+0
+BOOL_TYPE
+0
+System Pan Voice 4
+0
+BOOL_TYPE
+0
+System Pan Voice 5
+0
+BOOL_TYPE
+0
+System Pan Voice 6
+0
+BOOL_TYPE
+0
+System Pan Voice 7
+0
+BOOL_TYPE
+0
+System Reverb
+0
+BOOL_TYPE
+0
+System Sample Browser On/Off
+0
+BOOL_TYPE
+0
+System Show Compressor GUI
+0
+BOOL_TYPE
+0
+System Show Equalizer GUI
+0
+BOOL_TYPE
+0
+System Solo On/Off
+0
+BOOL_TYPE
+0
+System Start Voice 1
+0
+BOOL_TYPE
+0
+System Start Voice 2
+0
+BOOL_TYPE
+0
+System Start Voice 3
+0
+BOOL_TYPE
+0
+System Start Voice 4
+0
+BOOL_TYPE
+0
+System Start Voice 5
+0
+BOOL_TYPE
+0
+System Start Voice 6
+0
+BOOL_TYPE
+0
+System Start Voice 7
+0
+BOOL_TYPE
+0
+System Transpose Voice 1
+0
+BOOL_TYPE
+0
+System Transpose Voice 2
+0
+BOOL_TYPE
+0
+System Transpose Voice 3
+0
+BOOL_TYPE
+0
+System Transpose Voice 4
+0
+BOOL_TYPE
+0
+System Transpose Voice 5
+0
+BOOL_TYPE
+0
+System Transpose Voice 6
+0
+BOOL_TYPE
+0
+System Transpose Voice 7
+0
+BOOL_TYPE
+0
+System Volume
+0
+BOOL_TYPE
+0
+System Volume On/Off
+0
+BOOL_TYPE
+0
+System Volume Voice 1
+0
+BOOL_TYPE
+0
+System Volume Voice 2
+0
+BOOL_TYPE
+0
+System Volume Voice 3
+0
+BOOL_TYPE
+0
+System Volume Voice 4
+0
+BOOL_TYPE
+0
+System Volume Voice 5
+0
+BOOL_TYPE
+0
+System Volume Voice 6
+0
+BOOL_TYPE
+0
+System Volume Voice 7
+0
+BOOL_TYPE
+0
+System Width
+0
+BOOL_TYPE
+0
+System Width On/Off
+0
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+type_name
+0
+STRING_TYPE
+Faust Dev
+<< HASH MAP V5 END
+color
+0
+STRING_TYPE
+#ff49583b
+comment
+0
+STRING_TYPE
+Comment
+forward_events
+0
+INT_TYPE
+1
+id
+0
+INSTRUMENT_TYPE
+29
+instrument
+0
+STRING_TYPE
+audio
+name
+0
+STRING_TYPE
+FaustDev Sawtooth Instrument
+name_is_edited
+0
+INT_TYPE
+1
+patchvoice
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+11
+chance
+0
+INT_TYPE
+256
+is_on
+0
+INT_TYPE
+1
+length
+0
+FLOAT_TYPE
+0
+only_set_new_pan_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_transpose_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_volume_when_note_on
+0
+BOOL_TYPE
+0
+pan
+0
+FLOAT_TYPE
+0
+start
+0
+FLOAT_TYPE
+0
+time_format
+0
+INT_TYPE
+1
+transpose
+0
+FLOAT_TYPE
+0
+volume
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+patchvoice
+1
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+11
+chance
+0
+INT_TYPE
+256
+is_on
+0
+INT_TYPE
+0
+length
+0
+FLOAT_TYPE
+0
+only_set_new_pan_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_transpose_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_volume_when_note_on
+0
+BOOL_TYPE
+0
+pan
+0
+FLOAT_TYPE
+0
+start
+0
+FLOAT_TYPE
+0
+time_format
+0
+INT_TYPE
+1
+transpose
+0
+FLOAT_TYPE
+12
+volume
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+patchvoice
+2
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+11
+chance
+0
+INT_TYPE
+256
+is_on
+0
+INT_TYPE
+0
+length
+0
+FLOAT_TYPE
+0
+only_set_new_pan_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_transpose_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_volume_when_note_on
+0
+BOOL_TYPE
+0
+pan
+0
+FLOAT_TYPE
+0
+start
+0
+FLOAT_TYPE
+0
+time_format
+0
+INT_TYPE
+1
+transpose
+0
+FLOAT_TYPE
+19
+volume
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+patchvoice
+3
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+11
+chance
+0
+INT_TYPE
+256
+is_on
+0
+INT_TYPE
+0
+length
+0
+FLOAT_TYPE
+0
+only_set_new_pan_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_transpose_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_volume_when_note_on
+0
+BOOL_TYPE
+0
+pan
+0
+FLOAT_TYPE
+0
+start
+0
+FLOAT_TYPE
+0
+time_format
+0
+INT_TYPE
+1
+transpose
+0
+FLOAT_TYPE
+24
+volume
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+patchvoice
+4
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+11
+chance
+0
+INT_TYPE
+256
+is_on
+0
+INT_TYPE
+0
+length
+0
+FLOAT_TYPE
+0
+only_set_new_pan_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_transpose_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_volume_when_note_on
+0
+BOOL_TYPE
+0
+pan
+0
+FLOAT_TYPE
+0
+start
+0
+FLOAT_TYPE
+0
+time_format
+0
+INT_TYPE
+1
+transpose
+0
+FLOAT_TYPE
+-12
+volume
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+patchvoice
+5
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+11
+chance
+0
+INT_TYPE
+256
+is_on
+0
+INT_TYPE
+0
+length
+0
+FLOAT_TYPE
+0
+only_set_new_pan_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_transpose_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_volume_when_note_on
+0
+BOOL_TYPE
+0
+pan
+0
+FLOAT_TYPE
+0
+start
+0
+FLOAT_TYPE
+0
+time_format
+0
+INT_TYPE
+1
+transpose
+0
+FLOAT_TYPE
+-24
+volume
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+patchvoice
+6
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+11
+chance
+0
+INT_TYPE
+256
+is_on
+0
+INT_TYPE
+0
+length
+0
+FLOAT_TYPE
+0
+only_set_new_pan_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_transpose_when_note_on
+0
+BOOL_TYPE
+0
+only_set_new_volume_when_note_on
+0
+BOOL_TYPE
+0
+pan
+0
+FLOAT_TYPE
+0
+start
+0
+FLOAT_TYPE
+0
+time_format
+0
+INT_TYPE
+1
+transpose
+0
+FLOAT_TYPE
+0.25
+volume
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+uuid
+0
+STRING_TYPE
+{509d7dbc-8279-4bc4-9159-41bb340b0bf3}
+wide_mixer_strip
+0
+BOOL_TYPE
+1
+widget_height_type
+0
+INT_TYPE
+0
+<< HASH MAP V5 END
