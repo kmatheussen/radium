@@ -15,6 +15,17 @@ a {
     float:left;
 }
 
+    .img-with-text {
+        text-align: justify;
+        width: [width of img];
+    }
+     
+    .img-with-text img {
+        display: block;
+        margin: 0 auto;
+    }
+
+
 #content {
     position: relative;
 }
@@ -25,3 +36,4 @@ a {
     width: 100%;
     height: 100%;
 }
+
