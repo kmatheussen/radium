@@ -1,3 +1,36 @@
+Changes 5.9.95 -> 5.9.96:
+* Sequencer/Editor: When moving the sequencer cursor,
+  only scroll the current editor block up or down if
+  the sequencer cursor in the current seqtrack is
+  above the current editor block.
+* Manual: Update Swing page a little bit.
+* Instruments: Add four FaustDev example instruments
+  to the instrument menu. (Saw, Square, Sine, and
+  Triangle.)
+* Mixer strips: Fix new plugin automatically being
+  set as the new current instrument after selecting
+  "Insert plugin". That was not supposed to happen.
+* Sampler instrument: Fix recording sample to disk
+  when instrument name contains very special
+  characters.
+* Menus: Remove "Import XM" from the File menu. It is
+  not working well enough to be put there.
+* Import MOD: Ignore a couple of errors in order to
+  load more MOD files.
+* Import MOD: Hide the volume sliders from the track
+  headers in the editor to makes the pan values more
+  visible.
+* Sequencer: Made it possible to configure the color
+  of the current list entry border.
+* Preferences: Remove a couple of unused colors.
+* Sequencer: Fix color for current seqtrack border.
+  (It used color for current mixer strip border
+  instead.)
+* Editor: Don't hardcode alpha value of the border of
+  pianoroll note colors.
+
+
+
 Changes 5.9.93 -> 5.9.95:
 * Editor: Make sure the pianoroll of the first track
   is always visible after pressing Shift + left and
@@ -53,9 +86,11 @@ Changes 5.9.92 -> 5.9.93:
 * Editor: Fix cut and paste range.
 
 
+
 Changes 5.9.91 -> 5.9.92:
 * Windows: Fix Jack if running in a directory with
   non-ascii characters.
+
 
 
 Changes 5.9.90 -> 5.9.91:
