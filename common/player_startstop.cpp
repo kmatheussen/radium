@@ -184,7 +184,7 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
     struct WBlocks *wblock = window->wblock;
     
     printf("  Setting realline to %d\n", wblock->curr_realline);
-    ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
+    ScrollEditorToRealLine(window,/*wblock,*/wblock->curr_realline);
     
     R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
     
@@ -489,7 +489,7 @@ static void EditorFollowsPlayCursorLoop(void){
     if (goal >= wblock->num_reallines)
       goal = wblock->num_reallines-1;
     //printf("SCROLLING. now: %d. Goal: %d\n", wblock->curr_realline, goal);
-    ScrollEditorToRealLine(window,wblock,goal);
+    ScrollEditorToRealLine(window,/*wblock,*/goal);
   }
 
 }
@@ -753,13 +753,17 @@ void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool called_from_jack_
               R_ASSERT(false);
               
             } else {
-              
-              const int64_t blocktime = seqtime_to_blocktime(seqblock, pos - seqblock->t.time);
-              const Place place = STime2Place(block, blocktime);
-              const int realline = FindRealLineFor(wblock, 0, &place);
-              
-              //SelectWBlock(window, wblock);
-              ScrollEditorToRealLine(window, wblock, realline);
+
+              if (wblock==window->wblock) {
+                
+                const int64_t blocktime = seqtime_to_blocktime(seqblock, pos - seqblock->t.time);
+                const Place place = STime2Place(block, blocktime);
+                const int realline = FindRealLineFor(wblock, 0, &place);
+                
+                //SelectWBlock(window, wblock);
+                ScrollEditorToRealLine(window, /*wblock,*/ realline);
+                
+              }
             }
             
           }

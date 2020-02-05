@@ -229,7 +229,10 @@ void setCurrRealline(int realline, int blocknum, int windownum){
   if(wblock==NULL)
     return;
 
-  ScrollEditorToRealLine(window, wblock, realline);
+  if (blocknum != window->wblock->l.num)
+    return;
+  
+  ScrollEditorToRealLine(window, /* wblock, */ realline);
 }
 
 void cursorUserInputLine(void){
@@ -241,7 +244,7 @@ void cursorUserInputLine(void){
   if (line==-1)
     return;
 
-  ScrollEditorToRealLine(window, wblock, get_realline_from_line(wblock, line));
+  ScrollEditorToRealLine(window, /* wblock, */ get_realline_from_line(wblock, line));
 }
 
 static int get_realline_from_beat(struct WBlocks *wblock, int barnum, int beatnum){
@@ -319,7 +322,7 @@ void requestCursorMove(void){
       if(len>1){
         int linenum = atoi(&line[1]);
         if (linenum >= 0)
-          ScrollEditorToRealLine(window, wblock, get_realline_from_line(wblock, linenum));
+          ScrollEditorToRealLine(window, /* wblock, */ get_realline_from_line(wblock, linenum));
       }
       
     } else {
@@ -332,7 +335,7 @@ void requestCursorMove(void){
       if (realline==-1)
         goto exit;
       
-      ScrollEditorToRealLine(window, wblock, realline);
+      ScrollEditorToRealLine(window, /* wblock, */ realline);
     }
   }
   
@@ -441,5 +444,5 @@ void setCurrentLine(int linenum, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
-  ScrollEditorToRealLine(window, window->wblock, linenum);
+  ScrollEditorToRealLine(window, /* window->wblock, */ linenum);
 }
