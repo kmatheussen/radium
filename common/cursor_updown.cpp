@@ -377,9 +377,11 @@ void ScrollEditorPrevSomething(struct Tracker_Windows *window, struct WBlocks *w
 
 void ScrollEditorToRealLine(
 	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
+	//struct WBlocks *wblock,
 	int till_curr_realline
 ){
+        struct WBlocks *wblock = window->wblock;
+  
 	int curr_realline=wblock->curr_realline;
 
         //printf("Going to scroll to line %d. Now: %d \n",till_curr_realline,curr_realline);
@@ -414,7 +416,7 @@ void ScrollEditorToRealLine_CurrPos(
 	struct Tracker_Windows *window,
 	int till_curr_realline
 ){
-	ScrollEditorToRealLine(window,window->wblock,till_curr_realline);
+  ScrollEditorToRealLine(window,/*window->wblock,*/till_curr_realline);
 }
 
 /*
@@ -436,7 +438,7 @@ void ScrollEditorToLine_CurrPos(
 	struct WBlocks *wblock=window->wblock;
 
         int realline = FindRealLineFor(wblock, 0, PlaceCreate2(line));
-	ScrollEditorToRealLine(window,wblock,realline);
+	ScrollEditorToRealLine(window,/*wblock,*/realline);
 }
 
 void ScrollEditorToPercentLine_CurrPos(

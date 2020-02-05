@@ -292,7 +292,7 @@ void P2MUpdateSongPosCallBack(void){
 			//fprintf(stderr,"tilline: %d\n",till_curr_realline);
 #if 0
                         if(wblock->curr_realline != till_curr_realline)
-                          ScrollEditorToRealLine(window,wblock,till_curr_realline);
+                          ScrollEditorToRealLine(window,/*wblock,*/till_curr_realline);
 #else
                         {
                           bool do_scrolling = false;
@@ -319,7 +319,7 @@ void P2MUpdateSongPosCallBack(void){
                           }
 
                           if(do_scrolling==true) {
-                            ScrollEditorToRealLine(window,wblock,till_curr_realline);
+                            ScrollEditorToRealLine(window,/*wblock,*/till_curr_realline);
                             last_time = ATOMIC_GET(pc->therealtime);
                             last_wblock = wblock;
                           }

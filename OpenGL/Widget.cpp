@@ -614,7 +614,7 @@ static void UpdateReallineByLines(struct Tracker_Windows *window, struct WBlocks
   }
   
   if(do_scrolling==true) {
-    ScrollEditorToRealLine(window,wblock,till_curr_realline);
+    ScrollEditorToRealLine(window,till_curr_realline);
     last_time = pc->therealtime;
     last_wblock = wblock;
   }

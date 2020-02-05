@@ -36,7 +36,7 @@ extern LANGSPEC void ScrollEditorPrevSomething(struct Tracker_Windows *window, s
   
 extern LANGSPEC void ScrollEditorToRealLine(
 	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
+	//struct WBlocks *wblock,
 	int till_curr_realline
 );
 
