@@ -30,7 +30,7 @@ There are two ways to edit keybindings:
 
 <OL>
 
-  <LI> Change "Left Ctrl + z" to open the "about window":
+  <LI> Change "Left Ctrl + z" to open the "about window":<br>
 <blockquote>
 <pre>
 Z CTRL_L : ra.openAboutWindow
@@ -198,7 +198,7 @@ F12          : ra.showMixerHelpWindow
 <p>
   <h3>Bind Scheme code or Python code</h3>
   <UL>
-  If you want to run <A href="https://ccrma.stanford.edu/software/snd/snd/s7.html">S7 Scheme</A> code, or <A href="http://www.python.org">Python</A> code, use the functions ra.evalScheme or ra.evalPython:
+  If you want to run <A href="https://ccrma.stanford.edu/software/snd/snd/s7.html">S7 Scheme</A> code, or <A href="http://www.python.org">Python</A> code, use the functions ra.evalScheme or ra.evalPython:<br>
   
 
 <blockquote>
@@ -209,7 +209,7 @@ C CTRL_L : ra.evalScheme "(ra:open-about-window)"
 </blockquote>
 
 <p>
-  Note that any code between the asterisks are executed as Python code when Radium starts up. This makes it posssible to add custom functions and classes in a convenient way:
+  Note that any code between the asterisks are executed as Python code when Radium starts up. This makes it posssible to add custom functions and classes in a convenient way:<br>
 
   <blockquote>
     <pre>
@@ -221,18 +221,19 @@ def hello(what):
 ESC: keybinding.hello "world"
     </pre>
   </blockquote>
-
-  "*" can also be used to bind Python code directly to a key:
+  <br>
+  
+  "*" can also be used to bind Python code directly to a key:<br>
   <blockquote>
     <pre>
 ESC: *
 &nbsp;&nbsp;print "hello world"
 *
     </pre>
-  </blockquote>
+  </blockquote><br>
   
   
-To load custom Scheme code during startup, you can call <i>ra.evalScheme</i> inside the asterisks:
+To load custom Scheme code during startup, you can call <i>ra.evalScheme</i> inside the asterisks:<br>
   <blockquote>
     <pre>
 *

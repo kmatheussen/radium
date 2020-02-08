@@ -1,16 +1,18 @@
 <html>
-<body bgcolor="#ffffff">
+  <body bgcolor="#ffffff">
+
+    <IMG SRC="chancetext.png" ALT="Chance text" style="border:10px solid transparent" align="right">
+    
 <h1>Chance text</h1>
 
 Chance text lets you set the probability for this note or pitch to play.
-
 <p>
+To enable Chance text, right-click inside a track and enable "Chance text".
 
-  Chance text format: <b>xx</b>, where
-  
 <p>
   <blockquote>
     <pre>
+Chance text format: <b>xx</b>, where 
 
  <b>0</b> = Only play if the previous note played. For instance if you want to play a chord with same chance.
  <b>1</b> = 0.004% chance.
@@ -27,16 +29,14 @@ Chance text lets you set the probability for this note or pitch to play.
   </blockquote>
 <p>
 
-
-  To remove a chance text (to make sure the note is always played), press DEL.
-<p>
-  
-  To control the chance of individual voices in the note duplicator,
-  you can automate the <b>System Chance 1</b>, <b>System Chance 2</b>, etc. effects instead.
-  (Note that the value <b>ff</b> is interpreted as 256 when automating the chance
-  of individual voices in the note duplicator so you don't have to worry about
-  the voices not always playing.)
-                                 
+  <UL>
+    <LI>To remove a chance text (to make sure the note is always played), press <b>DEL</b>.
+    <LI>To control the chance of individual voices in the note duplicator,
+      you can automate the instrument effects <b>System Chance 1</b>, <b>System Chance 2</b>, and so forth, instead.
+      (Note that the value <b>ff</b> is interpreted as 256 when automating the chance
+      of individual voices in the note duplicator so you don't have to worry about
+      the voices not always playing.)
+  </UL>
 
 </body>
 </html>
