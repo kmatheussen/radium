@@ -264,11 +264,20 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
       */
       
       if (qwheelevent->modifiers() & Qt::ControlModifier) {
+        
         if (qwheelevent->delta() > 0)
           zoom(1,window->l.num);
         else
           zoom(-1,window->l.num);
+        
       } else {
+
+        tevent.keyswitch &= ~EVENT_MOUSE_SEQUENCER2;
+        tevent.keyswitch &= ~EVENT_MOUSE_MIXER2;
+        tevent.keyswitch &= ~EVENT_FOCUS_SEQUENCER2;
+        tevent.keyswitch &= ~EVENT_FOCUS_MIXER2;
+        
+        tevent.keyswitch |= EVENT_MOUSE_EDITOR2 | EVENT_FOCUS_EDITOR2;        
         
         tevent.ID=TR_KEYBOARD;
         if(qwheelevent->delta()<0)
@@ -278,6 +287,7 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
         
         for(int i=0;i<num_lines;i++)
           EventReciever(&tevent,window);
+        
       }
       
     }
