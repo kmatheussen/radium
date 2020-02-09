@@ -274,8 +274,10 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
 
         tevent.keyswitch &= ~EVENT_MOUSE_SEQUENCER2;
         tevent.keyswitch &= ~EVENT_MOUSE_MIXER2;
+        tevent.keyswitch &= ~EVENT_MOUSE_MIXERSTRIPS2;
         tevent.keyswitch &= ~EVENT_FOCUS_SEQUENCER2;
         tevent.keyswitch &= ~EVENT_FOCUS_MIXER2;
+        tevent.keyswitch &= ~EVENT_FOCUS_MIXERSTRIPS2;
         
         tevent.keyswitch |= EVENT_MOUSE_EDITOR2 | EVENT_FOCUS_EDITOR2;        
         
