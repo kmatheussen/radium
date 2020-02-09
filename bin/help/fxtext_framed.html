@@ -162,41 +162,45 @@ blockquote {
 
 FX text is an alternative way to edit instrument automation in the editor.
 Editing text is often quicker than editing effects graphically.
-<p>
-You enable FX text by right clicking a track and select "FX text".
-
 
 <p>
 
-  FX text format: <b>xxt</b>, where
+To enable FX text, right-click inside a track and enable "FX text".
   
 <p>
   <blockquote>
     <pre>
+FX text format: <b>xxt</b>, where
       
-<b>xx</b> = effect value. 0 = lowest value, ff = highest value. (hex format)
- <b>t</b> = Whether to glide to the next effect or not (denoted by '|').
+<b>xx</b>  = effect value. <b>0</b> = lowest value, <b>ff</b> = highest value. (hex format)
+  <b>t</b> = Whether to glide to the next effect or not (denoted by '<b>|</b>').
     </pre>
-  </blockquote>
-<p>
-  
-  A special situation:
-  <blockquote>
-  Let's say you have an fx with two nodes.
-  The first node has the value '<b>6e|</b>', and the second node has the value '<b>28 </b>'.<br>
-  Q: Will the value 28 be sent to the instrument?<br>
-  A: Yes.
   </blockquote>
 
 <p>
 
   Tips:
   <UL>
-    <LI>Left Alt + C/X/V Copies/Cuts/Pastes the current fx track.
-    <LI>To quickly add an <b>ff</b> node, press 'G'.
-    <LI>To switch glide mode (i.e. add or remove the <b>|</b> character), press 'T'.
+    <LI>Press 'G' to quickly add an <b>ff</b> node.
+    <LI>Press 'T' to switch glide mode (i.e. add or remove the <b>|</b> character).
+    <LI>Press 'Left Alt + X' to cut current fx track.
+    <LI>Press 'Left Alt + C' to copy current fx track.
+    <LI>Press 'Left Alt + V' to paste into current fx track.
   </UL>
 
+<p>
+  
+  <blockquote>
+    <pre>
+<u>A special situation</u>
+
+Let's say you have an fx with two nodes. The first node has the value '<b>6e|</b>',
+and the second node has the value '<b>28 </b>'.
+
+<b>Q</b>: Will the value 28 be sent to the instrument?
+<b>A</b>: Yes.
+</bre>
+</blockquote>
   
   
 
@@ -216,6 +220,7 @@ You enable FX text by right clicking a track and select "FX text".
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
                             <ul>
 			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
+			      <li><a class="maybeactive" href="centtext_framed.html">Cent text</a></li>
 			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
 			      <li><a class="maybeactive" href="velocitytext_framed.html">Velocity text</a></li>
 			      <li><a class="active" href="fxtext_framed.html">FX text</a></li>

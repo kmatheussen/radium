@@ -160,87 +160,28 @@ blockquote {
 			<div class="innertube">
   <body bgcolor="#ffffff">
 
-    <p>
+    <IMG SRC="centtext.png" ALT="Cent text" style="border:10px solid transparent" align="right">
+    
+<h1>Cent text</h1>
+
+Cent text lets you set the cent value of a semitone.
+<p>
+To enable Cent text, right-click inside a track and enable "Cent text".
+
+<p>
+  <blockquote>
+    <pre>
       
-<a href="#modularmixer">Modular Mixer</a><br>
-<a href="#mixerstrips">Mixer Strips</a><br>
-
-<p>
-<br>
-<br>
-<br>
-<br>
-  
-<a name="modularmixer"></a><h1>Modular Mixer</h1>
-
-    <IMG SRC="modular_mixer.png" ALT="Modular mixer" style="border:10px solid transparent" align="right">
-
-
-<h3>General</h3>
-<UL>
-<LI>Move objects with right mouse button.
-  <LI>Double-click the name of an object to open GUI.
-  <LI>Delete objects or connections by pressing SHIFT and click left (or right).
-  <LI>Select more than one object by holding CTRL when clicking. (Use Cmd key instead of CTRL if using Mac)
-  <LI>Move and connect object in one operation: Place one object on 
-    top of another object.
-  <LI>Zoom in and out by pressing CTRL and using the scroll wheel.    
-</UL>
-
-<h3>Mixer objects</h3>
-<UL>
-  <LI> "M": Mute
-  <LI> "S": Solo
-  <LI> "B": Bypass
-</UL>
-
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-
-<a name="mixerstrips"></a><h1>Mixer Strips</h1>
-
-<IMG SRC="mixer.png" ALT="Mixer" style="border:10px solid transparent" align="right">
-
-<h3>Order</h3>
-The order of the strips is not random or chronological. The sorting logic has four stages:
-<OL>
-  <LI> Sort by whether the strip is a bus or not. Non-buses are displayed first.
-  <LI> Sort by vertical position in the modular mixer (top -> bottom).
-  <LI> Sort by horizontal position in the modular mixer (left -> right).
-  <LI> Slightly rearrange the strips order so that the audio flow always goes from left to right.
-</OL>  
-
+Cent text format: <b>xx</b>, where xx goes between 1 and 99.
+    </pre>
+  </blockquote>
 <p>
 
-<h3>How to...</h3>
-Q: Set accurate volum by writing a number?<br>
-A: Click the number box right above the volume slider
-<p>
-Q: Reset highest peak value in the box above the audio meter?<br>
-A: Just click the box.
-<p>
-Q: Create a new instrument?<br>
-A: You can't do that directly in a mixer strips window. You either have to create a new instrument in the modular mixer, add a new instrument to a track in the editor, or add a new audio seqtrack.
-<p>
-Q: Delete a plugin or send?<br>
-A: Shift+right-click.
+  <UL>
+    <LI>To remove a cent text (same as setting cent to 0), press <b>DEL</b>.
+    <LI>Cents are not supported by VST instruments, the FluidSynth instrument, or the MIDI instrument.
+  </UL>
 
-
-
-<p>
-Q: Delete a mixer strip?<br>
-A: Right-click a mixer strip, and select "Delete". Or shift+right click the name.
-
-  
   
 
 				
@@ -259,13 +200,13 @@ A: Right-click a mixer strip, and select "Delete". Or shift+right click the name
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
                             <ul>
 			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
-			      <li><a class="maybeactive" href="centtext_framed.html">Cent text</a></li>
+			      <li><a class="active" href="centtext_framed.html">Cent text</a></li>
 			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
 			      <li><a class="maybeactive" href="velocitytext_framed.html">Velocity text</a></li>
 			      <li><a class="maybeactive" href="fxtext_framed.html">FX text</a></li>
                             </ul>
                           </li>
-			  <li><a class="active" href="mixer_framed.html">Mixer</a></li>
+			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
 			  <li><a class="maybeactive" href="sequencer_framed.html">Sequencer</a></li>
                           <li><a class="maybeactive" href="instrument_framed.html">Instrument</a>
                             <ul>

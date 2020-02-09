@@ -158,36 +158,36 @@ blockquote {
 				
 		<main>
 			<div class="innertube">
+  <body bgcolor="#ffffff">
+
+    <IMG SRC="velocitytext.png" ALT="Velocity text" style="border:10px solid transparent" align="right">
+
 <h1>Velocity text</h1>
 
 Velocity text is an alternative way to edit the velocities of a note.
 Editing text is often quicker than editing velocities graphically.
 
 <p>
-  Key bindings:
-  <UL>
-    <LI>Left Alt  + Y: Turn on/off velocity text for track
-    <LI>Left Ctrl + Y: Turn on/off velocity text for all tracks in block
-  </UL>
-
-<p>
-
-  Velocity text format: <b>xxt</b>, where
   
+To enable Velocity text, right-click inside a track and enable "Velocity text".
+
 <p>
   <blockquote>
     <pre>
+Velocity text format: <b>xxt</b>, where
       
-<b>xx</b> = Velocity value. 0 = lowest velocity, ff = highest velocity. (hex format)
- <b>t</b> = Whether to glide to the next velocity or not (denoted by '|').
+<b>xx</b>  = Velocity value. <b>0</b> = lowest velocity, <b>ff</b> = highest velocity. (hex format)
+  <b>t</b> = Whether to glide to the next velocity or not (denoted by '<b>|</b>').
     </pre>
   </blockquote>
 <p>
   
   Tips:
   <UL>
-    <LI>To quickly add an <b>ff</b> node, press 'G'.
-    <LI>To switch glide mode (i.e. add or remove the <b>|</b> character), press 'T'.
+    <LI>Press 'G' to quickly add an <b>ff</b> node.
+    <LI>Press 'T' to switch glide mode (i.e. add or remove the <b>|</b> character).
+    <LI>Press 'Left Alt + Y' to turn on/off velocity text for the current track.
+    <LI>Press 'Left Ctrl + Y' to turn on/off velocity text for all tracks in block.
   </UL>
 
   
@@ -209,6 +209,7 @@ Editing text is often quicker than editing velocities graphically.
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
                             <ul>
 			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
+			      <li><a class="maybeactive" href="centtext_framed.html">Cent text</a></li>
 			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
 			      <li><a class="active" href="velocitytext_framed.html">Velocity text</a></li>
 			      <li><a class="maybeactive" href="fxtext_framed.html">FX text</a></li>
