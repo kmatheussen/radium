@@ -229,7 +229,7 @@ void setCurrRealline(int realline, int blocknum, int windownum){
   if(wblock==NULL)
     return;
 
-  if (blocknum != window->wblock->l.num)
+  if (blocknum!=-1 && blocknum != window->wblock->l.num)
     return;
   
   ScrollEditorToRealLine(window, /* wblock, */ realline);
