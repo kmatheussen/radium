@@ -119,7 +119,7 @@ static void SelectBottomSliderHeight(
 }
 
 
-int beat_opacity = -1;
+int g_beat_opacity = -1;
 
 static void SetBeatOpacity(
 	struct Tracker_Windows *window,
@@ -128,7 +128,7 @@ static void SetBeatOpacity(
 	char temp[1000];
 	int new_opacity;
 
-	sprintf(temp,"New Beat Opacity (0-1000) (now %d) >",beat_opacity);
+	sprintf(temp,"New Beat Opacity (0-1000) (now %d) >",g_beat_opacity);
 
         new_opacity = GFX_GetInteger(
 		window,
@@ -141,14 +141,14 @@ static void SetBeatOpacity(
 	if(new_opacity<0 || new_opacity>1000)
           return;
 
-        beat_opacity = new_opacity;
+        g_beat_opacity = new_opacity;
 
         window->wblock->block->is_dirty = true;
 
         SETTINGS_write_int("beat_opacity", new_opacity);
 }
 
-int first_beat_opacity = -1;
+int g_bar_opacity = -1;
 
 static void SetFirstBeatOpacity(
 	struct Tracker_Windows *window,
@@ -157,7 +157,7 @@ static void SetFirstBeatOpacity(
 	char temp[1000];
 	int new_opacity;
 
-	sprintf(temp,"New First Beat Opacity (0-1000) (now %d) >",first_beat_opacity);
+	sprintf(temp,"New First Beat Opacity (0-1000) (now %d) >",g_bar_opacity);
 
         new_opacity = GFX_GetInteger(
 		window,
@@ -170,14 +170,14 @@ static void SetFirstBeatOpacity(
 	if(new_opacity<0 || new_opacity>1000)
           return;
 
-        first_beat_opacity = new_opacity;
+        g_bar_opacity = new_opacity;
 
         window->wblock->block->is_dirty = true;
 
         SETTINGS_write_int("first_beat_opacity", new_opacity);
 }
 
-int line_opacity = -1;
+int g_line_opacity = -1;
 
 static void SetLineOpacity(
 	struct Tracker_Windows *window,
@@ -186,7 +186,7 @@ static void SetLineOpacity(
 	char temp[1000];
 	int new_opacity;
 
-	sprintf(temp,"New Line Opacity (0-1000) (now %d) >",line_opacity);
+	sprintf(temp,"New Line Opacity (0-1000) (now %d) >",g_line_opacity);
 
         new_opacity = GFX_GetInteger(
 		window,
@@ -199,7 +199,7 @@ static void SetLineOpacity(
 	if(new_opacity<0 || new_opacity>1000)
           return;
 
-        line_opacity = new_opacity;
+        g_line_opacity = new_opacity;
         SETTINGS_write_int("line_opacity", new_opacity);
 
         window->must_redraw = true;
