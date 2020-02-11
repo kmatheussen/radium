@@ -731,7 +731,7 @@ static int64_t g_status_bar_id=0;
 
 static void set_status_bar_text(const char *title){
   static int s_len_last_title = 10;
-  static char *s_last_title=(char*)calloc(1, s_len_last_title);
+  static char *s_last_title=(char*)calloc(1, s_len_last_title + 2);
 
   if (strcmp(s_last_title, title)){
     
