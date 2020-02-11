@@ -459,8 +459,11 @@ static void create_background_realline(const struct Tracker_Windows *window, con
 
   const enum ColorNums c15 = HIGH_EDITOR_BACKGROUND_COLOR_NUM;
   
+  if(line_opacity == -1)
+    line_opacity = SETTINGS_read_int32("line_opacity", 950);
+  
   if(beat_opacity == -1)
-    beat_opacity = SETTINGS_read_int32("beat_opacity", 950);
+    beat_opacity = SETTINGS_read_int32("beat_opacity", 900);
   
   if(first_beat_opacity == -1)
     first_beat_opacity = SETTINGS_read_int32("first_beat_opacity", 870);
@@ -542,7 +545,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
   if(1){
     //if(line_opacity == -1)
     //  line_opacity = SETTINGS_read_int("line_opacity", R_MAX(50, beat_opacity-500));
-    line_opacity = 900;
+    //line_opacity = 900;
     
     if(line_opacity != 1000) {
       GE_Context *c;
