@@ -460,13 +460,13 @@ static void create_background_realline(const struct Tracker_Windows *window, con
   const enum ColorNums c15 = HIGH_EDITOR_BACKGROUND_COLOR_NUM;
   
   if(line_opacity == -1)
-    line_opacity = SETTINGS_read_int32("line_opacity", 950);
+    line_opacity = SETTINGS_read_int32("line_opacity", 800);
   
   if(beat_opacity == -1)
-    beat_opacity = SETTINGS_read_int32("beat_opacity", 900);
+    beat_opacity = SETTINGS_read_int32("beat_opacity", 650);
   
   if(first_beat_opacity == -1)
-    first_beat_opacity = SETTINGS_read_int32("first_beat_opacity", 870);
+    first_beat_opacity = SETTINGS_read_int32("first_beat_opacity", 400);
   
 
   // background
@@ -547,17 +547,19 @@ static void create_background_realline(const struct Tracker_Windows *window, con
     //  line_opacity = SETTINGS_read_int("line_opacity", R_MAX(50, beat_opacity-500));
     //line_opacity = 900;
     
-    if(line_opacity != 1000) {
-      GE_Context *c;
+    int opacity;
+    if (WSIGNATURE_is_first_beat(wsignature))
+      opacity = first_beat_opacity;    
+    else if (wsignature.beat_num>0)
+      opacity = beat_opacity;
+    else
+      opacity = line_opacity;
+
+    if(opacity < 1000){
 
       const GE_Conf conf(Z_ABOVE(Z_BACKGROUND) | Z_STATIC_X, y1, NO_SCISSORS);
 
-      if (WSIGNATURE_is_first_beat(wsignature))
-        c = GE_mix_color_z(GE_get_rgb(c15), Black_rgb(), first_beat_opacity-250, conf);
-      else if (wsignature.beat_num>0)
-        c = GE_mix_color_z(GE_get_rgb(c15), Black_rgb(), beat_opacity-250, conf);
-      else
-        c = GE_mix_color_z(GE_get_rgb(c15), Black_rgb(), line_opacity, conf);
+      GE_Context *c = GE_mix_color_z(GE_get_rgb(c15), Black_rgb(), R_MAX(0, opacity), conf);
 
       if (true) {
         GE_line(c,x1,y1,x2,y1,line_width);
