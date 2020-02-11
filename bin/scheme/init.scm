@@ -265,6 +265,7 @@ FROM_C-delete-seqtrack
 FROM_C-call-me-after-seqtrack-has-been-deleted
 undo-block
 FROM_C-create-quantitize-gui
+ra:load-song
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

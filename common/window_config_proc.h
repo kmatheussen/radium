@@ -23,3 +23,6 @@ extern LANGSPEC void Window_config(
 );
 
 
+extern int g_line_opacity;
+extern int g_beat_opacity;
+extern int g_bar_opacity;

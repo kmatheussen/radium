@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_string_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/settings_proc.h"
+#include "../common/window_config_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
 #include "../audio/MultiCore_proc.h"
@@ -582,6 +583,10 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
       update_waveforms_during_playback->setChecked(SETTINGS_read_bool("enable_editor_rerendering_during_playback",true));
 
+      line_opacity->setValue(g_line_opacity);
+      beat_opacity->setValue(g_beat_opacity);
+      bar_opacity->setValue(g_bar_opacity);
+      
       scrollplay_onoff->setChecked(doScrollPlay());
 
       multiplyscrollbutton->setChecked(doScrollEditLines());
@@ -788,7 +793,52 @@ public slots:
       g_rt_do_rerendering = val;
     }
   }
-  
+
+  void on_line_opacity_valueChanged(int val){
+    if (_initing==false){
+      g_line_opacity = val;
+      root->song->tracker_windows->must_redraw_editor = true;
+      SETTINGS_write_int("line_opacity", val);
+    }
+  }
+  void on_line_opacity_editingFinished(){
+    set_editor_focus();
+
+    GL_lock();{
+      line_opacity->clearFocus();
+    }GL_unlock();
+  }
+
+  void on_beat_opacity_valueChanged(int val){
+    if (_initing==false){
+      g_beat_opacity = val;
+      root->song->tracker_windows->must_redraw_editor = true;
+      SETTINGS_write_int("beat_opacity", val);
+    }
+  }
+  void on_beat_opacity_editingFinished(){
+    set_editor_focus();
+
+    GL_lock();{
+      beat_opacity->clearFocus();
+    }GL_unlock();
+  }
+
+  void on_bar_opacity_valueChanged(int val){
+    if (_initing==false){
+      g_bar_opacity = val;
+      root->song->tracker_windows->must_redraw_editor = true;
+      SETTINGS_write_int("first_beat_opacity", val);
+    }
+  }
+  void on_bar_opacity_editingFinished(){
+    set_editor_focus();
+
+    GL_lock();{
+      bar_opacity->clearFocus();
+    }GL_unlock();
+  }
+
   void on_show_playlist_during_startup_toggled(bool val){
     if (_initing==false)
       setShowPlaylistDuringStartup(val);
