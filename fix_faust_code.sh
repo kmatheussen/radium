@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 sed -i s/^float\ faustpower/static\ float\ faustpower/ $2
 
