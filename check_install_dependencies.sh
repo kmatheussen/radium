@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 PYTHONEXE=$1
 MOC=$2
