@@ -2445,10 +2445,16 @@ void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
   else
     pos = editor->editor_layout_widget->mapToGlobal(QPoint(x,y));
 
+  QPoint minpos = g_main_window->mapToGlobal(QPoint(0,0));
+  QPoint maxpos = g_main_window->mapToGlobal(QPoint(g_main_window->width(),g_main_window->height()));
+
+  int i_x = R_BOUNDARIES(minpos.x(), pos.x(), maxpos.x());
+  int i_y = R_BOUNDARIES(minpos.y(), pos.y(), maxpos.y());
+              
 #if FOR_MACOSX
-  OS_OSX_set_cursorpos(pos.x(), pos.y()); // https://bugreports.qt.io/browse/QTBUG-33959
+  OS_OSX_set_cursorpos(i_x, i_y); // https://bugreports.qt.io/browse/QTBUG-33959
 #else
-  QCursor::setPos(pos);
+  QCursor::setPos(QPoint(i_x, i_y));
 #endif
 }
 
@@ -3690,9 +3696,11 @@ bar()
 }
 #endif
 
-int main(int argc, char **argv){  
-  //  testme();
+int main(int argc, char **argv){
 
+
+     
+  //  testme();
 #if TEST_CRASHREPORTER
   QApplication dasqapp(argc,argv);
   CRASHREPORTER_init();
