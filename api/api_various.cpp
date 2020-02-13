@@ -387,7 +387,6 @@ void setBestGuessKeyboardFocus(void){
 }
 
 
-
 void showSequencer(void){
   GFX_ShowSequencer();
 }
@@ -2793,7 +2792,59 @@ const_char* getQualifierName(const_char *qualifier){
     
     return "";
 }
+
+static int getKeynumFromKeyname(QString key){
+  for(int i=0;i<EVENT_DASMAX;i++){
+    if (key == QString(g_key_event_names[i]))
+      return i;
+  }
+
+  return -1;
+}
+
+extern struct TEvent tevent;
+void sendKeyEvent(const_char *c_keybinding){
+
+  QStringList keybinding = QString(c_keybinding).split(" ");
+
+  if (keybinding.length()==0){
+    handleError("sendKeyEvent: keybinding \"%s\" is not valid", c_keybinding);
+    return;
+  }
   
+  int key = getKeynumFromKeyname(keybinding.at(0));
+  if (key<0){
+    handleError("sendKeyEvent: Unknown key \"%s\"", keybinding.at(0).toUtf8().constData());
+    return;
+  }
+
+  QStringList qualifiers(keybinding);
+  qualifiers.removeFirst();
+  qualifiers.sort();
+  
+  if (qualifiers.contains("UP"))
+    tevent.ID=TR_KEYBOARDUP;
+  else
+    tevent.ID=TR_KEYBOARD;
+
+  uint32_t keyswitch = 0;
+  
+  for(QString qualifier : qualifiers){
+    int num = getKeynumFromKeyname(qualifier);
+    if (num < 0){
+      handleError("sendKeyEvent: Unknown qualifier \"%s\"", qualifier.toUtf8().constData());
+      return;
+    }
+    keyswitch |= (1 << num);
+  }
+
+  tevent.keyswitch=keyswitch;
+  tevent.SubID=key;
+
+  EventReciever(&tevent,root->song->tracker_windows);
+}
+
+
 bool isFullVersion(void){
   return FULL_VERSION==1;
 }
@@ -3346,6 +3397,14 @@ double getMs(void){
 
 bool releaseMode(void){
 #if defined(RELEASE)
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool optimizedBuild(void){
+#ifdef __OPTIMIZE__
   return true;
 #else
   return false;
