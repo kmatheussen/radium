@@ -4324,6 +4324,17 @@ int gui_numOpenGuis(void){
   return g_valid_guis.size();
 }
 
+void gui_postKeyEvent(int64_t guinum, int qtkeynum, int64_t qtmodifiers, bool is_pressing){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  QKeyEvent *eve1 = new QKeyEvent(is_pressing ? QEvent::KeyPress : QEvent::KeyRelease, qtkeynum, (Qt::KeyboardModifier)qtmodifiers);
+  //printf("Posting. widget: %p. main gui: %p\n", gui->_widget, g_main_window);
+  qApp->postEvent(gui->_widget,eve1);
+}
+
 int64_t gui_random(void){
   return g_valid_guis[qrand() % g_valid_guis.size()]->get_gui_num();
 }
