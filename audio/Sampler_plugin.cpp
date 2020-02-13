@@ -3362,10 +3362,12 @@ static bool gui_is_visible(struct SoundPlugin *plugin){
 
   //printf("  Is visible called\n");
 
-  if (data->gui.data()==NULL)
+  auto *gui = data->gui.data();
+  
+  if (gui==NULL)
     return false;
 
-  return data->gui->isVisible();
+  return gui->isVisible();
 }
 
 static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){

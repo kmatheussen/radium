@@ -483,10 +483,11 @@ static void dev_hide_gui(struct SoundPlugin *plugin){
 
 static bool dev_gui_is_visible(struct SoundPlugin *plugin){
   Devdata *devdata = (Devdata*)plugin->data;
-  if (devdata->qtgui_parent.data()==NULL)
+  auto *parent = devdata->qtgui_parent.data();
+  if (parent==NULL)
     return false;
   else
-    return devdata->qtgui_parent->isVisible();
+    return parent->isVisible();
 }
 
 void create_faust_plugin(void){

@@ -962,13 +962,13 @@ sequencer.o:  $(BUILD_DEPENDENCIES) $(CD)sequencer.cpp audio/Envelope.hpp
 	$(CCC) $(CD)sequencer.cpp $(QTOPT)
 
 seqtrack_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h common/Vector.hpp
-	$(CCC) $(CD)seqtrack_automation.cpp $(QTOPT)
+	$(CCC) $(CD)seqtrack_automation.cpp $(QTOPT) -Wno-null-dereference
 
 song_tempo_automation.o:  $(BUILD_DEPENDENCIES) $(CD)song_tempo_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h
-	$(CCC) $(CD)song_tempo_automation.cpp $(QTOPT) -Wno-unknown-pragmas
+	$(CCC) $(CD)song_tempo_automation.cpp $(QTOPT) -Wno-unknown-pragmas -Wno-null-dereference
 
 sequencer_timing.o:  $(BUILD_DEPENDENCIES) $(CD)sequencer_timing.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h
-	$(CCC) $(CD)sequencer_timing.cpp $(QTOPT) # -Wno-unknown-pragmas
+	$(CCC) $(CD)sequencer_timing.cpp $(QTOPT) -Wno-null-dereference # -Wno-unknown-pragmas
 
 seqblock_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h audio/Envelope.hpp common/Vector.hpp
 	$(CCC) $(CD)seqblock_automation.cpp $(QTOPT) -Wno-unknown-pragmas
@@ -1316,7 +1316,7 @@ undo_reltemposlider.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reltemposlider.c
 	$(CC) $(CD)undo_reltemposlider.c $(OPT)
 
 error.o:  $(BUILD_DEPENDENCIES) $(CD)error.c
-	$(CC) $(CD)error.c $(OPT)
+	$(CC) $(CD)error.c $(OPT) -Wno-null-dereference
 
 threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp
 	$(CCC)  $(CD)threading.cpp $(JACKOPT) $(QTOPT)
@@ -1453,7 +1453,7 @@ Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/E
 QD = $(P)
 
 Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp  Qt/Qt_MyQScrollBar.hpp
-	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT) #-fno-sanitize=undefined
+	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT) -Wno-null-dereference #-fno-sanitize=undefined
 
 
 INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQLabel.h
