@@ -2838,10 +2838,14 @@ void sendKeyEvent(const_char *c_keybinding){
     keyswitch |= (1 << num);
   }
 
+  uint32_t keyswitch_before = tevent.keyswitch;
+  
   tevent.keyswitch=keyswitch;
   tevent.SubID=key;
 
   EventReciever(&tevent,root->song->tracker_windows);
+
+  tevent.keyswitch = keyswitch_before;
 }
 
 
