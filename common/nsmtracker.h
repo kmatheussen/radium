@@ -1340,7 +1340,7 @@ static inline int64_t DYN_get_int64_from_number(const dyn_t a){
 static inline dyn_t DYN_create_ratio(const Ratio ratio){
   dyn_t a;
   a.type = RATIO_TYPE;
-  a.ratio = (Ratio*)tcopy(&ratio, sizeof(Ratio));
+  a.ratio = (Ratio*)tcopy(&ratio);
   return a;
 }
 
@@ -1414,7 +1414,7 @@ static inline dyn_t DYN_create_hash(hash_t *hash){
 static inline dyn_t DYN_create_array(const dynvec_t dynvec){
   dyn_t a;
   a.type = ARRAY_TYPE;
-  a.array = (dynvec_t*)tcopy(&dynvec, sizeof(dynvec_t));
+  a.array = (dynvec_t*)tcopy(&dynvec);
   return a;
 }
 
@@ -3023,7 +3023,6 @@ struct SeqBlockTimings{
   int64_t num_samples; // Only used if seqblock->block==NULL.
   
   Place start_place; // usually {0,0,1} (not used yet). Only used if block!=NULL
-
   Place end_place;   // usually {num_lines,0,1} (not used yet)
 
   bool is_looping;

@@ -40,7 +40,7 @@ static inline Place p_Create(int line, int counter, int dividor) {
 }
 
 
-extern Place g_same_place;
+extern const Place g_same_place;
 
 static inline bool p_is_same_place(Place place){
   return
@@ -393,7 +393,7 @@ static inline void TrustedPlaceSub(const Place *p1,  const Place *p2, Place *res
 
 
 #ifndef RADIUM_PLACEMENTISCALLINGNOW
-extern Place PlaceFirstPos;
+extern const Place PlaceFirstPos;
 #endif
 
 #define PlaceGetFirstPos() &PlaceFirstPos

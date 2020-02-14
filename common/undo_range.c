@@ -64,7 +64,7 @@ void Undo_Range(
 	NInt endtrack,
 	int realline
 ){
-	Place *p1=PlaceGetFirstPos();
+	const Place *p1=PlaceGetFirstPos();
 	Place p2;
 	struct Range *undo_range;
 	NInt num_tracks;

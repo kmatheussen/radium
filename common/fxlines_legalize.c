@@ -48,7 +48,7 @@ void LegalizeFXlines(struct Blocks *block, struct Tracks *track){
  again:
         VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
                 struct FXNodeLines *fxnodeline=fxs->fxnodelines;
-		Place *p1=PlaceGetFirstPos();
+		const Place *p1=PlaceGetFirstPos();
 
  		while(fxnodeline!=NULL){
 			Place *p=&fxnodeline->l.p;

@@ -91,7 +91,7 @@ static void Undo_AudioEffect(
   int num_effects = plugin->type->num_effects+NUM_SYSTEM_EFFECTS;
     
   if (effect_num==-1)
-    undo_ae->values = tcopy_atomic(plugin->stored_effect_values_native, sizeof(float)*num_effects);
+    undo_ae->values = tcopy2_atomic(plugin->stored_effect_values_native, sizeof(float)*num_effects);
   else
     undo_ae->value = has_value ? value : plugin->stored_effect_values_native[effect_num];
 
@@ -164,7 +164,7 @@ static void *Undo_Do_AudioEffect(
 
     R_ASSERT_RETURN_IF_FALSE2(undo_ae->effect_num==-1, undo_ae);
 
-    float *new_values = tcopy_atomic(plugin->stored_effect_values_native, sizeof(float)*num_effects);
+    float *new_values = tcopy2_atomic(plugin->stored_effect_values_native, sizeof(float)*num_effects);
     //float old_value = new_values[0];
     //float new_value = undo_ae->values[0];
     

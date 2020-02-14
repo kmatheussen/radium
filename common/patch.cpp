@@ -100,7 +100,7 @@ void PATCH_clean_unused_patches(void){
   // No, we can not do this. patches are supposed to live forever.
   //VECTOR_clean(&g_unused_patches);
 
-  vector_t *delayed_released_patches = (vector_t*)tcopy(&g_unused_patches, sizeof(vector_t));
+  vector_t *delayed_released_patches = (vector_t*)tcopy(&g_unused_patches);
   add_gc_root(delayed_released_patches);
   VECTOR_clean(&g_unused_patches);
 

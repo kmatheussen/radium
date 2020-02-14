@@ -463,7 +463,7 @@ void SEQBLOCK_init(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, s
     
     seqblock->t.start_place = p_Create(0,0,1);
     
-    seqblock->t.end_place = p_Create(block->num_lines,0,1);
+    seqblock->t.end_place = p_Absolute_Last_Pos(block);
   }else{
     default_duration_changed(seqblock, 48000, 48000);
   }

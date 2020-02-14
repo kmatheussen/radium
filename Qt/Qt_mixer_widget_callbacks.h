@@ -972,7 +972,7 @@ void MW_apply_mixer_strips_state(dyn_t state){
 
   } else {
 
-    g_mixer_widget2->_mixer_strip_configuration.set((dyn_t*)tcopy(&state, sizeof(dyn_t)));
+    g_mixer_widget2->_mixer_strip_configuration.set((dyn_t*)tcopy(&state));
     
   }
 }

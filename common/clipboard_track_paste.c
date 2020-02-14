@@ -144,7 +144,6 @@ static bool co_CB_PasteTrackFX(
 ){
 	struct Tracks *totrack;
 	struct Tracks *track;
-	Place *p1,p2;
 
         R_ASSERT_RETURN_IF_FALSE2(towtrack!=NULL, false);
 
@@ -162,7 +161,8 @@ static bool co_CB_PasteTrackFX(
 
 	VECTOR_clean(&totrack->fxs);
 
-	p1=PlaceGetFirstPos();
+	const Place *p1=PlaceGetFirstPos();
+        Place p2;
 	PlaceSetLastPos(wblock->block,&p2);
 
 	CopyRange_fxs(&totrack->fxs,&track->fxs,p1,&p2);
@@ -180,7 +180,7 @@ static bool paste_track(
 {
         struct Tracks *totrack = towtrack->track;
         struct Tracks *track = wtrack->track;
-        Place *p1,p2;
+        Place p2;
 
         {
           const char *src_start = (const char*)wtrack;
@@ -223,7 +223,7 @@ static bool paste_track(
         totrack->swings=NULL;
 	VECTOR_clean(&totrack->fxs);
 
-	p1=PlaceGetFirstPos();
+	const Place *p1=PlaceGetFirstPos();
 	PlaceSetLastPos(wblock->block,&p2);
 
 	CopyRange_notes(&totrack->notes,track->notes,p1,&p2);

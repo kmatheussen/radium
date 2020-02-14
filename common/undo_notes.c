@@ -53,7 +53,7 @@ void ADD_UNDO_FUNC(
                          )
                    )
 {
-	Place *p1=PlaceGetFirstPos();
+        const Place *p1=PlaceGetFirstPos();
 	Place p2;
 	struct Undo_Notes *undo_notes=talloc(sizeof(struct Undo_Notes));
 
@@ -89,6 +89,7 @@ static void *Undo_Do_Notes(
 	int realline,
 	void *pointer
 ){
+
 	struct Undo_Notes *undo_notes=(struct Undo_Notes *)pointer;
 
 	struct Tracks *track=wtrack->track;

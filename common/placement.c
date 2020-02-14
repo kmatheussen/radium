@@ -312,9 +312,9 @@ void PlaceSetFirstPos(Place *p){
     set to first position, instead.
 **********************************************************/
 #ifdef SYSBASEDEBUG
-Place PlaceFirstPos={0,0,0,1};
+const Place PlaceFirstPos={0,0,0,1};
 #else
-Place PlaceFirstPos={0,0,1};
+const Place PlaceFirstPos={0,0,1};
 #endif
 /*
 Place *PlaceGetFirstPos(void){
@@ -322,7 +322,7 @@ Place *PlaceGetFirstPos(void){
 }
 */
 
-Place g_same_place = {-999999,999999,999999};
+const Place g_same_place = {-999999,999999,999999};
 
 /**********************************************************
   FUNCTION
