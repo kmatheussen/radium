@@ -63,8 +63,6 @@ struct WTracks *internal_copy_track(
   if (!always_copy_all_fxs)
     R_ASSERT(only_one_fxs_was_copied!=NULL);
   
-	Place *p1,p2;
-
 	struct WTracks *towtrack;
 	struct Tracks *totrack;
 	struct Tracks *track=wtrack->track;
@@ -72,7 +70,7 @@ struct WTracks *internal_copy_track(
 	towtrack=WTRACK_new();
 	memcpy(towtrack,wtrack,sizeof(struct WTracks));
 
-	towtrack->track = totrack = tcopy(track, sizeof(struct Tracks));
+	towtrack->track = totrack = tcopy(track);
 
         // Null out some data we don't need so it can be GC-ed.
 #if !USE_OPENGL
@@ -82,7 +80,8 @@ struct WTracks *internal_copy_track(
 
         towtrack->track->trackname=talloc_strdup(wtrack->track->trackname);
 
-	p1=PlaceGetFirstPos();
+	const Place *p1=PlaceGetFirstPos();
+        Place p2;
 	PlaceSetLastPos(wblock->block,&p2);
 
 	totrack->notes=NULL;

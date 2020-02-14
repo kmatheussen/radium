@@ -1659,7 +1659,7 @@ Place STime2Place(
                   )
 {
   Place place;
-  Place *firstplace = PlaceGetFirstPos();
+  const Place *firstplace = PlaceGetFirstPos();
   Place lastplace;
   PlaceSetLastPos(block, &lastplace);
 

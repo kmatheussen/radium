@@ -52,7 +52,7 @@ static void PasteRange_velocities(
 
         Place lastplace = p_Last_Pos(block);
                 
-        struct Velocities *velocity = tcopy(fromvelocity, sizeof(struct Velocities));
+        struct Velocities *velocity = tcopy(fromvelocity);
         PlaceAdd(&velocity->l.p,place);
 
         if(PlaceGreaterThan(&velocity->l.p,&lastplace))
@@ -102,7 +102,7 @@ static void PasteRange_pitches(
 
         Place lastplace = p_Last_Pos(block);
 
-	struct Pitches *pitch=tcopy(frompitch, sizeof(struct Pitches));
+	struct Pitches *pitch=tcopy(frompitch);
 	PlaceAdd(&pitch->l.p,place);
 
 	if(PlaceGreaterThan(&pitch->l.p,&lastplace))
@@ -157,7 +157,7 @@ static void PasteRange_stops(
 
         Place lastplace = p_Last_Pos(block);
 
-	struct Stops *stop=tcopy(fromstop, sizeof(struct Stops));
+	struct Stops *stop=tcopy(fromstop);
 	PlaceAdd(&stop->l.p,place);
 
 	if(PlaceGreaterThan(&stop->l.p,&lastplace))

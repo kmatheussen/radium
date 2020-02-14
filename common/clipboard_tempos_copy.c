@@ -43,7 +43,7 @@ struct Swing *CB_CopySwings(
 	while(swing!=NULL){
           if(cut!=NULL && PlaceGreaterOrEqual(&swing->l.p, cut))
             return to;
-          struct Swing *new=tcopy(swing, sizeof(struct Swing));
+          struct Swing *new=tcopy(swing);
           ListAddElement3_a(&to,&new->l);
           swing=NextSwing(swing);
 	}
@@ -55,15 +55,13 @@ struct Signatures *CB_CopySignatures(
                                      const struct Signatures *signature
 ){
 	struct Signatures *to=NULL;
-	struct Signatures *new;
 
 	while(signature!=NULL){
-		new=talloc(sizeof(struct Signatures));
-		PlaceCopy(&new->l.p,&signature->l.p);
-		new->signature=signature->signature;
+                struct Signatures *new=tcopy(signature);
 		ListAddElement3_a(&to,&new->l);
 		signature=NextSignature(signature);
 	}
+        
 	return to;
 }
 
@@ -72,12 +70,9 @@ struct LPBs *CB_CopyLPBs(
                          const struct LPBs *lpb
 ){
 	struct LPBs *to=NULL;
-	struct LPBs *new;
 
 	while(lpb!=NULL){
-		new=talloc(sizeof(struct LPBs));
-		PlaceCopy(&new->l.p,&lpb->l.p);
-		new->lpb=lpb->lpb;
+                struct LPBs *new=tcopy(lpb);
 		ListAddElement3_a(&to,&new->l);
 		lpb=NextLPB(lpb);
 	}
@@ -89,15 +84,13 @@ struct Tempos *CB_CopyTempos(
                              )
 {
 	struct Tempos *to=NULL;
-	struct Tempos *new;
 
 	while(tempo!=NULL){
-		new=talloc(sizeof(struct Tempos));
-		PlaceCopy(&new->l.p,&tempo->l.p);
-		new->tempo=tempo->tempo;
-		ListAddElement3_a(&to,&new->l);
-		tempo=NextTempo(tempo);
+          struct Tempos *new=tcopy(tempo);
+          ListAddElement3_a(&to,&new->l);
+          tempo=NextTempo(tempo);
 	}
+        
 	return to;
 }
 
@@ -106,12 +99,9 @@ struct TempoNodes *CB_CopyTempoNodes(
                                      const struct TempoNodes *temponode
 ){
 	struct TempoNodes *to=NULL;
-	struct TempoNodes *new;
 
 	while(temponode!=NULL){
-		new=talloc(sizeof(struct TempoNodes));
-		PlaceCopy(&new->l.p,&temponode->l.p);
-		new->reltempo=temponode->reltempo;
+                struct TempoNodes *new=tcopy(temponode);
 		ListAddElement3_a(&to,&new->l);
 		temponode=NextTempoNode(temponode);
 	}

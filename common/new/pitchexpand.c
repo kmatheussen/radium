@@ -143,11 +143,11 @@ static void PExpandBlock(
 ){
 	struct Tracks *track;
 	bool firsttime=true;
-	Place *p1,p2;
+	Place p2;
 	//float midnote;
 	
 	//printf("Scale %f\n",scalefactor);
-	p1=PlaceGetFirstPos();
+	const Place *p1=PlaceGetFirstPos();
 	PlaceSetLastPos(block,&p2);
 
 	track=block->tracks;

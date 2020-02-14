@@ -55,7 +55,7 @@ static void ADD_UNDO_FUNC(
                                )
                    )
 {
-	Place *p1=PlaceGetFirstPos();
+	const Place *p1=PlaceGetFirstPos();
 	Place p2;
 	struct Undo_NotesAndFXs *undo_notesandfxs=talloc(sizeof(struct Undo_NotesAndFXs));
 

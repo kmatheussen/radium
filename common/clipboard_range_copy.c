@@ -46,7 +46,7 @@ static void CopyRange_velocities(
 
 	if(PlaceGreaterOrEqual(&fromvelocity->l.p,p2)) return;
 
-	velocity=tcopy(fromvelocity, sizeof(struct Velocities));
+	velocity=tcopy(fromvelocity);
 
 	PlaceSub(&velocity->l.p,p1);
 
@@ -68,7 +68,7 @@ static void CopyRange_pitches(
 
 	if(PlaceGreaterOrEqual(&frompitch->l.p,p2)) return;
 
-	pitch=tcopy(frompitch, sizeof(struct Pitches));
+	pitch=tcopy(frompitch);
 
 	PlaceSub(&pitch->l.p,p1);
 
@@ -134,7 +134,7 @@ void CopyRange_stops(
 
 	if(PlaceGreaterOrEqual(&fromstop->l.p,p2)) return;
 
-	struct Stops *stop=tcopy(fromstop, sizeof(struct Stops));
+	struct Stops *stop=tcopy(fromstop);
 	PlaceSub(&stop->l.p,p1);
 
 	ListAddElement3_a(tostop,&stop->l);
@@ -148,7 +148,7 @@ static void add_fxnodeline(
                            const struct FXNodeLines *fromfxnodeline,
                            Place subtract
 ){               
-  struct FXNodeLines *fxnodeline=tcopy(fromfxnodeline, sizeof(struct FXNodeLines));
+  struct FXNodeLines *fxnodeline=tcopy(fromfxnodeline);
   
   fxnodeline->l.p = p_Sub(fxnodeline->l.p, subtract);
   
@@ -236,7 +236,7 @@ void CopyRange_fxs(
         
 	struct FXs *fxs=talloc(sizeof(struct FXs));
 
-	fxs->fx=tcopy(fromfxs->fx, sizeof(struct FX)); // Why not just reference the existing fx? (because fx is modified)
+	fxs->fx=tcopy(fromfxs->fx);
 
 	VECTOR_push_back(tofxs,fxs);
 

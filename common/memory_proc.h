@@ -79,8 +79,11 @@ extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, i
 
 #define talloc_floatstring(a) talloc_floatstring__(a,__FILE__,__LINE__)
 
-#define tcopy(mem, size) memcpy(talloc(size), (void*)mem, size)
-#define tcopy_atomic(mem, size) memcpy(talloc_atomic(size), (void*)mem, size)
+#define tcopy2(mem, size) memcpy(talloc(size), (void*)mem, size)
+#define tcopy2_atomic(mem, size) memcpy(talloc_atomic(size), (void*)mem, size)
+
+#define tcopy(mem) ({ typeof(mem) memTempo = (mem) ; tcopy2(memTempo, sizeof(typeof(*(memTempo)))); })
+#define tcopy_atomic(mem) ({ typeof(mem) memTempo = (mem) ; tcopy2_atomic(memTempo, sizeof(typeof(*(memTempo)))); })
 
 extern LANGSPEC char *talloc_format_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2) __attribute__((malloc)) __attribute__((returns_nonnull));
 
