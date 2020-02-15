@@ -456,9 +456,10 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
       if(wblock==NULL) return;
 
       R_ASSERT_RETURN_IF_FALSE(window!=NULL);
-      
-      if (window->wblock==wblock && window->curr_block==wblock->l.num)
-        return;
+
+      if (EDITOR_is_legal_track(window, window->curr_track))
+        if (window->wblock==wblock && window->curr_block==wblock->l.num)
+          return;
 
 
       EVENTLOG_add_event("SelectWBlock 1");
