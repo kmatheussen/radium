@@ -278,6 +278,31 @@ static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *windo
   }
 }
 
+bool EDITOR_is_legal_track(const struct Tracker_Windows *window, int tracknum){
+  if (tracknum==TEMPONODETRACK && window->show_reltempo_track==false)
+    return false;
+  
+  if (tracknum==SWINGTRACK && window->show_swing_track==false)
+    return false;
+  
+  if (tracknum==LINENUMBTRACK)
+    return false;
+  
+  if (tracknum==SIGNATURETRACK && window->show_signature_track==false)
+    return false;
+  
+  if (tracknum==LPBTRACK && window->show_lpb_track==false)
+    return false;
+  
+  if (tracknum==TEMPOTRACK && window->show_bpm_track==false)
+    return false;
+
+  if (tracknum < TEMPOTRACK)
+    return false;
+  
+  return true;
+}
+
 
 int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
   struct WTracks *wtrack = wblock->wtrack;
@@ -364,44 +389,31 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
           window->curr_othertrack_sub--;
           return 1;
           
-          //  Om LPB-track er synlig, og BPM-track er usynlig, så: venstre venstre venstre venstre
-          
 	}else{
 
-               if (window->curr_track==get_leftmost_legal_track(window))
-                  return 0;
-
-		ATOMIC_INC(window->curr_track, -1);
-
-                if (window->curr_track==TEMPONODETRACK && window->show_reltempo_track==false)
-                  ATOMIC_INC(window->curr_track, -1);
-
-                if (window->curr_track==SWINGTRACK && window->show_swing_track==false)
-                  ATOMIC_INC(window->curr_track, -1);
-                
-                if (window->curr_track==LINENUMBTRACK)
-                  ATOMIC_INC(window->curr_track, -1);
-
-                if (window->curr_track==SIGNATURETRACK && window->show_signature_track==false)
-                  ATOMIC_INC(window->curr_track, -1);
-                
-                if (window->curr_track==LPBTRACK && window->show_lpb_track==false)
-                  ATOMIC_INC(window->curr_track, -1);
-                
-                if (window->curr_track==TEMPOTRACK && window->show_bpm_track==false)
-                  set_curr_track_to_leftmost_legal_track(window);
-
-                if (window->curr_track==SWINGTRACK)
-                  window->curr_othertrack_sub = 2;
-
-                if (window->curr_track==LPBTRACK)
-                  window->curr_othertrack_sub = 1;
-
-                if (window->curr_track==TEMPOTRACK)
-                  window->curr_othertrack_sub = 3;
-                
-		return 1;
-	}
+          if (window->curr_track==get_leftmost_legal_track(window))
+            return 0;
+          
+          ATOMIC_INC(window->curr_track, -1);
+          
+          if (!EDITOR_is_legal_track(window, window->curr_track)){
+            if (window->curr_track==TEMPOTRACK && window->show_bpm_track==false)
+              set_curr_track_to_leftmost_legal_track(window);
+            else
+              ATOMIC_INC(window->curr_track, -1);
+          }
+              
+          if (window->curr_track==SWINGTRACK)
+            window->curr_othertrack_sub = 2;
+          
+          if (window->curr_track==LPBTRACK)
+            window->curr_othertrack_sub = 1;
+          
+          if (window->curr_track==TEMPOTRACK)
+            window->curr_othertrack_sub = 3;
+          
+          return 1;
+        }
 }
 
 static void show_curr_track_in_statusbar(struct Tracker_Windows *window,struct WBlocks *wblock){

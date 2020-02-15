@@ -79,6 +79,10 @@ struct Undo{
   NInt blocknum;
   NInt tracknum;
   int realline;
+
+  int curr_track;
+  int curr_track_sub;
+  int curr_othertrack_sub;
 };
 
 
@@ -398,6 +402,9 @@ void Das_Undo_Open_rec(void){
     curr_open_undo->blocknum   = wblock->l.num;
     curr_open_undo->tracknum   = wtrack->l.num;
     curr_open_undo->realline   = realline;
+    curr_open_undo->curr_track = window->curr_track;
+    curr_open_undo->curr_track_sub = window->curr_track_sub;
+    curr_open_undo->curr_othertrack_sub = window->curr_othertrack_sub;
     
 #if 0 // Disabled. Code doesn't look right.
     if(num_undos!=0 && num_undos>max_num_undos){
@@ -748,7 +755,10 @@ currently_undoing = true;
          
          wblock->curr_realline = R_BOUNDARIES(0, undo->realline, wblock->num_reallines-1);         
          ATOMIC_WRITE(window->curr_track, undo->tracknum);
-
+         ATOMIC_WRITE(window->curr_track, undo->curr_track);
+         window->curr_track_sub = undo->curr_track_sub;
+         window->curr_othertrack_sub = undo->curr_othertrack_sub;
+         
          SelectWBlock(
                       window,
                       wblock
