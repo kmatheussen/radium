@@ -158,29 +158,56 @@ blockquote {
 				
 		<main>
 			<div class="innertube">
-  <body bgcolor="#ffffff">
 
-    <IMG SRC="centtext.png" ALT="Cent text" style="border:10px solid transparent" align="right">
-    
-<h1>Cent text</h1>
+  <h1>LPB</h1>
 
-Cent text lets you set the cent value of a semitone.
+
+  LPB stands for <b>L</b>ines <b>P</b>er <b>B</b>eat, and is used to specify how many tracker lines to play in one beat.
 <p>
-To enable Cent text, right-click inside a track and enable "Cent text".
+  In trackers, this value is often important since it sets the edit resolution. But in Radium, it's usually more convenient to change the LZ value when needed to set edit resolution. In Radium, LPB should in most situations be set to 4 and not be changed afterwards.
+  
 
+  <h1>Default LPB</h1>
+
+  The LPB text entry lets you set the default LPB. The LPB text entry is either placed in the upper left corner of the editor, or in the bottom bar:<br>
+
+  <IMG SRC="globallpb.png" ALT="Global LPB in the editor" style="border:10px solid transparent">
+  <IMG SRC="globallpb2.png" ALT="Global LPB in the bottom bar" style="border:10px solid transparent">
+
+
+  <p>
+  <p>
+
+  <IMG SRC="lpbtext.png" ALT="LPB text" style="border:10px solid transparent" align="right">
+
+    <h1>LPB track</h1>
+    
+  The LPB track lets you override the default LPB for a block.
+  
+  <p>
+    
+    To enable the LPB track, right-click somewhere in the timing area of the editor (to the left of the note tracks), and enable "LPB".
+    
 <p>
   <blockquote>
     <pre>
       
-Cent text format: <b>xx</b>, where xx goes between 1 and 99.
-    </pre>
+ LPB format: <b>xx</b>, where xx goes between 1 and 99.
+      
+ Notes:
+  * If <b>xx</b> has an 'm' prefix, it means that the line contains more than one LPB entry. The last LPB is displayed.
+  * If <b>xx</b> has a 'd' prefix, it means that the LPB entry starts below the start of the line.
+      
+  </pre>  
+
   </blockquote>
+
 <p>
 
-  <UL>
-    <LI>To remove a cent text (same as setting cent to 0), press <b>DEL</b>.
-    <LI>Cents are not supported by VST instruments, the FluidSynth instrument, and the MIDI instrument.
-  </UL>
+  Tips:
+<UL>
+  <LI> To remove an LPB entry, press DEL.
+</UL>
 
   
 
@@ -200,12 +227,12 @@ Cent text format: <b>xx</b>, where xx goes between 1 and 99.
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
                             <ul>
 			      <li><a class="maybeactive" href="bpmtext_framed.html">BPM</a></li>
-			      <li><a class="maybeactive" href="lpbtext_framed.html">LPB</a></li>
+			      <li><a class="active" href="lpbtext_framed.html">LPB</a></li>
 			      <li><a class="maybeactive" href="signaturetext_framed.html">Signatures</a></li>
 			      <li><a class="maybeactive" href="lztrack_framed.html">LZ</a></li>
 			      <li><a class="maybeactive" href="tempoautomationtrack_framed.html">Tempo automation</a></li>
 			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
-			      <li><a class="active" href="centtext_framed.html">Cent text</a></li>
+			      <li><a class="maybeactive" href="centtext_framed.html">Cent text</a></li>
 			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
 			      <li><a class="maybeactive" href="velocitytext_framed.html">Velocity text</a></li>
 			      <li><a class="maybeactive" href="fxtext_framed.html">FX text</a></li>

@@ -158,29 +158,55 @@ blockquote {
 				
 		<main>
 			<div class="innertube">
-  <body bgcolor="#ffffff">
 
-    <IMG SRC="centtext.png" ALT="Cent text" style="border:10px solid transparent" align="right">
+
+  <h1>Default BPM</h1>
+
+  The BPM text entry in the upper left corner of the editor, or in the bottom bar, lets you set the default tempo.<br>
+
+  <IMG SRC="globalbpm.png" ALT="Global BPM in the editor" style="border:10px solid transparent">
+  <IMG SRC="globalbpm2.png" ALT="Global BPM in the bottom bar" style="border:10px solid transparent">
+
+
+  <p>
+
+  <IMG SRC="bpmtext.png" ALT="BPM text" style="border:10px solid transparent" align="right">
+
+    <h1>BPM track</h1>
     
-<h1>Cent text</h1>
-
-Cent text lets you set the cent value of a semitone.
-<p>
-To enable Cent text, right-click inside a track and enable "Cent text".
-
+  The BPM track lets you override the default tempo for a block.
+  
+  <p>
+    
+    To enable the BPM track, right-click somewhere in the timing area of the editor (to the left of the note tracks), and enable "BPM".
+    
 <p>
   <blockquote>
-    <pre>
+  <pre>
+ BPM format: <b>xxxt</b>, where
+    
+ <b>xxx</b>  = BPM. <b>1</b> = lowest BPM, <b>999</b> = highest BPM.
+    <b>t</b> = Whether to gradually change tempo between the current BPM and the next (denoted by '<b>|</b>').
+
+ If <b>t</b> is '<b> </b>' (empty), the tempo will accelerate / deaccelerate to the next BPM.
+ If <b>t</b> is '<b>|</b>', there is no accelerando / deaccelerando.
+
+ Press <b>T</b> to switch between the two modes.
       
-Cent text format: <b>xx</b>, where xx goes between 1 and 99.
-    </pre>
+ Notes:
+  * If <b>xxxt</b> has an 'm' prefix, it means that the line contains more than one BPM entry. The last BPM is displayed.
+  * If <b>xxxt</b> has a 'd' prefix, it means that the BPM entry starts below the start of the line.
+  </pre>  
+
   </blockquote>
+
 <p>
 
-  <UL>
-    <LI>To remove a cent text (same as setting cent to 0), press <b>DEL</b>.
-    <LI>Cents are not supported by VST instruments, the FluidSynth instrument, and the MIDI instrument.
-  </UL>
+  Tips:
+<UL>
+  <LI> To remove a BPM entry, press DEL.
+  <LI> To adjust accelerando and deaccelerando behavior (relevant when <b>t</b> is empty), go to File -> Song properties.
+</UL>
 
   
 
@@ -199,13 +225,13 @@ Cent text format: <b>xx</b>, where xx goes between 1 and 99.
                           </li>
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
                             <ul>
-			      <li><a class="maybeactive" href="bpmtext_framed.html">BPM</a></li>
+			      <li><a class="active" href="bpmtext_framed.html">BPM</a></li>
 			      <li><a class="maybeactive" href="lpbtext_framed.html">LPB</a></li>
 			      <li><a class="maybeactive" href="signaturetext_framed.html">Signatures</a></li>
 			      <li><a class="maybeactive" href="lztrack_framed.html">LZ</a></li>
 			      <li><a class="maybeactive" href="tempoautomationtrack_framed.html">Tempo automation</a></li>
 			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
-			      <li><a class="active" href="centtext_framed.html">Cent text</a></li>
+			      <li><a class="maybeactive" href="centtext_framed.html">Cent text</a></li>
 			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
 			      <li><a class="maybeactive" href="velocitytext_framed.html">Velocity text</a></li>
 			      <li><a class="maybeactive" href="fxtext_framed.html">FX text</a></li>
