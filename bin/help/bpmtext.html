@@ -1,0 +1,54 @@
+<html>
+<body bgcolor="#ffffff">
+
+
+  <h1>Default BPM</h1>
+
+  The BPM text entry in the upper left corner of the editor, or in the bottom bar, lets you set the default tempo.<br>
+
+  <IMG SRC="globalbpm.png" ALT="Global BPM in the editor" style="border:10px solid transparent">
+  <IMG SRC="globalbpm2.png" ALT="Global BPM in the bottom bar" style="border:10px solid transparent">
+
+
+  <p>
+
+  <IMG SRC="bpmtext.png" ALT="BPM text" style="border:10px solid transparent" align="right">
+
+    <h1>BPM track</h1>
+    
+  The BPM track lets you override the default tempo for a block.
+  
+  <p>
+    
+    To enable the BPM track, right-click somewhere in the timing area of the editor (to the left of the note tracks), and enable "BPM".
+    
+<p>
+  <blockquote>
+  <pre>
+ BPM format: <b>xxxt</b>, where
+    
+ <b>xxx</b>  = BPM. <b>1</b> = lowest BPM, <b>999</b> = highest BPM.
+    <b>t</b> = Whether to gradually change tempo between the current BPM and the next (denoted by '<b>|</b>').
+
+ If <b>t</b> is '<b> </b>' (empty), the tempo will accelerate / deaccelerate to the next BPM.
+ If <b>t</b> is '<b>|</b>', there is no accelerando / deaccelerando.
+
+ Press <b>T</b> to switch between the two modes.
+      
+ Notes:
+  * If <b>xxxt</b> has an 'm' prefix, it means that the line contains more than one BPM entry. The last BPM is displayed.
+  * If <b>xxxt</b> has a 'd' prefix, it means that the BPM entry starts below the start of the line.
+  </pre>  
+
+  </blockquote>
+
+<p>
+
+  Tips:
+<UL>
+  <LI> To remove a BPM entry, press DEL.
+  <LI> To adjust accelerando and deaccelerando behavior (relevant when <b>t</b> is empty), go to File -> Song properties.
+</UL>
+
+</body>
+</html>
