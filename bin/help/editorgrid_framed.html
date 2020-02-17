@@ -159,137 +159,17 @@ blockquote {
 		<main>
 			<div class="innertube">
 
+  <h1>Grid</h1>
 
-<h1>Instrument effect popup menu</h1>
-
-<img src="instrument_effect_menu.png" style="border:10px" align="right">
-
-<hr>
-<a href="#reset">Reset</a><br>
-<hr>
-<a href="#midilearn">MIDI Learn</a><br>
-<hr>
-<a href="#assignmodulator">Assign Modulator</a><br>
-<hr>
-<a href="#record">Start recording automation in editor</a><br>
-<a href="#addautomationtocurrenteditortrack">Add automation to current editor track</a><br>
-<a href="#addautomationtocurrentsequencertrack">Add automation to current sequencer track</a><br>
-<hr>
-<a href="#changevaluewhenpressingrandom">Change value when pressing "Random"</a><br>
-
-<p>
-<p>
-<p>
-<p>
+  Sets mouse grid.<br>
   
+  <IMG SRC="editorgrid.png" ALT="Editor grid" style="border:10px solid transparent">
 
-<a name="reset"></a><h2>Reset</h2>
-
-Sets value back to the initial value provided by the instrument.
-
-
-<p>
-
-<a name="midilearn"></a><h2>MIDI Learn</h2>
-
-After selecting this option, immediately turn a knob on your MIDI device. The knob should now control this effect.
-
-<p>
+  <UL>
+    <LI> Press CTRL to circumvent mouse grid.
+    <LI> Use mouse wheel to quicly change value.
+  </UL>
   
-  To remove the MIDI controller, right-click again, and select "Remove MIDI learn" from the popup menu.
-  To assign a different MIDI controller, right-click again, and select "MIDI relearn".
-
-<p>
-
-  Visit "MIDI" -> "MIDI Learn Configuration" in the main menus to configure all "MIDI Learn"-ed controllers:<br>
-<p>
-  <img src="midilearnconf.png">
-
-<p>
-  
-If it didn't work to assign a MIDI controller to this effect, make sure your MIDI device is added
-under "Input ports" in the "MIDI" tab in the preferences window:<br>
-<p>
-  <img src="midiprefs.png" width=50%>
-
-
-
-<a name="assignmodulator"></a><h2>Assign Modulator</h2>
-
-A modulator constantly changes the value of the effect, usually in a cyclic manner (<A href="https://en.wikipedia.org/wiki/Low-frequency_oscillation">LFO</A>). You change shape and frequency in the instrument widget of the modulator:
-<p>
-  
-<img src="modulator_instrument.png" width=70%>
-
-<p>
-  Modulators are often used to create vibrato, tremolo, and so forth.
-<p>
-  
-
-<a name="record"></a><h2>Start recording automation in editor</h2>
-
-Lets you record automation:
-<OL>
-  <LI> Move the editor cursor to the track you want the automation
-  <LI> Select "Start recording automation in editor"
-  <LI> Play block (Press right shift)
-  <LI> While playing, move the slider, or a MIDI controller that has <a href="#midilearn">learned</a> to control this slider.
-  <LI> Stop playing.
-  <LI> The recorded automation should now be placed in the current track.    
-</OL>
-
-<p>
-
-  After recording, a lot of automation nodes have often been created. Editing all these values can be inconvenient, so you might also want to quantitize the values afterwards:
-  <OL>
-    <LI> Enable "FX Text" in the editor track popup menu.
-    <LI> Move cursor to the FX text subtrack.
-    <LI> Adjust LZ to the resolution you want.
-    <LI> Press Left Alt + Q to quantitize.
-  </OL>
-
-  To delete the automation, press Left Alt + X while the cursor is positioned in the FX text subtrack. (Or use undo.)
-
-<p>
-
-  
-
-<a name="addautomationtocurrenteditortrack"></a><h2>Add automation to current editor track</h2>
-
-Convenient function to create a minimal automation for this effect at the current line in the current track in the editor.
-<p>
-  Selecting this option is much faster than manually creating the automation in the editor.
-
-<p>
-
-
-  
-<a name="addautomationtocurrentsequencertrack"></A><h2>Add automation to current sequencer track</h2>
-
-Convenient function to create a minimal automation for this effect at the current position in the current seqtrack in the sequencer.
-
-<p>
-
-  Selecting this option is much faster than manually creating the automation in the sequencer.
-
-<p>
-
-
-<a name="changevaluewhenpressingrandom"></A><h2>Change value when pressing "Random"</h2>
-
-In the Instrument widget, there is a "Random" button in the upper right part:
-
-<p>
-
-<img src="random_button.png">
-
-<p>
-
-  Pressing this button will cause random values to be assigned to all effects that have been set to change value when pressing "Random".
-  
-
-
-
 
   
 
@@ -308,7 +188,7 @@ In the Instrument widget, there is a "Random" button in the upper right part:
                           </li>
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
                             <ul>
-			      <li><a class="maybeactive" href="editorgrid_framed.html">Grid</a></li>
+			      <li><a class="active" href="editorgrid_framed.html">Grid</a></li>
 			      <li><a class="maybeactive" href="bpmtext_framed.html">BPM</a></li>
 			      <li><a class="maybeactive" href="lpbtext_framed.html">LPB</a></li>
 			      <li><a class="maybeactive" href="signaturetext_framed.html">Signatures</a></li>
@@ -328,7 +208,7 @@ In the Instrument widget, there is a "Random" button in the upper right part:
 			      <li><a class="maybeactive" href="faustdev_framed.html">FaustDev</a></li>
 			      <li><a class="maybeactive" href="puredata_framed.html">Pure Data</a></li>
 			      <li><a class="maybeactive" href="sampler_framed.html">Sample player</a></li>
-			      <li><a class="active" href="instrument_effect_popup_menu_framed.html">Instrument effect popup menu</a></li>
+			      <li><a class="maybeactive" href="instrument_effect_popup_menu_framed.html">Instrument effect popup menu</a></li>
                             </ul>
                           </li>
 			  <li><a class="maybeactive" href="timing_framed.html">Timing</a></li>
