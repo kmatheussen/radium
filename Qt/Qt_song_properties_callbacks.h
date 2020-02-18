@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../common/OS_Player_proc.h"
+#include "../common/sequencer_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -66,6 +67,8 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     
     set_linear_accelerando_and_ritardando(song->linear_accelerando, song->linear_ritardando);
     send_swing_to_plugins->setChecked(song->plugins_should_receive_swing_tempo);
+    use_swinging_beats_in_sequencer->setChecked(song->use_swinging_beats_in_sequencer);
+    display_swinging_beats_in_seqblocks_in_sequencer->setChecked(song->display_swinging_beats_in_seqblocks_in_sequencer);
     mute_automation->setChecked(song->mute_editor_automation_when_track_is_muted);
     swing_along->setChecked(song->editor_should_swing_along);
 
@@ -172,6 +175,22 @@ public slots:
     
     root->song->plugins_should_receive_swing_tempo = val;
     TIME_global_tempos_have_changed();
+  }
+
+  void on_use_swinging_beats_in_sequencer_toggled(bool val){
+    if (_initing==true)
+      return;
+    
+    root->song->use_swinging_beats_in_sequencer = val;
+    SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
+  }
+
+  void on_display_swinging_beats_in_seqblocks_in_sequencer_toggled(bool val){
+    if (_initing==true)
+      return;
+    
+    root->song->display_swinging_beats_in_seqblocks_in_sequencer = val;
+    SEQUENCER_update(SEQUPDATE_TIME);
   }
 
   void on_swing_along_toggled(bool val){

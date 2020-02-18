@@ -1078,8 +1078,8 @@ public:
         if(next_pitch==NULL)
           next_pitch = &last_pitch;
         
-        int64_t start = Place2STime(block, &pitch->l.p);
-        int64_t end = Place2STime(block, &next_pitch->l.p);
+        int64_t start = Place2TrackSwingingSTime(block, track, &pitch->l.p);
+        int64_t end = Place2TrackSwingingSTime(block, track, &next_pitch->l.p);
         
         double n_x1 = scale_double(start, 0, blocklen, x1, x2);
         double n_x2 = scale_double(end, 0, blocklen, x1, x2);
@@ -1400,6 +1400,50 @@ public:
     }
   }
 
+  bool has_unique_swinging_tracks(const struct Blocks *block) const {
+    const struct Tracks *track = block->tracks;
+    while(track != NULL){
+      if (track->swings != NULL && track->swings != block->swings)
+        return true;
+      
+      track = NextTrack(track);
+    }
+
+    return false;
+  }
+  
+  void paintBarsAndBeats(QPainter &p, double x1, double y1, double x2, double y2, const struct SeqBlock *seqblock, const struct STimes *times, Seqblock_Type type, int64_t blocklen) const {
+    const struct Blocks *block = seqblock->block;
+    const struct Beats *beat = block->beats;
+    QColor bar_color = get_block_qcolor(SEQUENCER_BLOCK_BAR_COLOR_NUM, type);
+    QColor beat_color = get_block_qcolor(SEQUENCER_BLOCK_BEAT_COLOR_NUM, type);
+    QPen bar_pen(bar_color);
+    QPen beat_pen(beat_color);
+    
+    bar_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 11.54);
+    beat_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 11.54);
+    
+    if (beat!=NULL)
+      beat = NextBeat(beat);
+    
+    while(beat != NULL){
+      
+      double pos = Place2STime_from_times(block->num_time_lines, times, &beat->l.p);
+      
+      double b_x = scale_double(pos, 0, blocklen, x1, x2);
+      
+      if (beat->beat_num==1)
+        p.setPen(bar_pen);
+      else
+        p.setPen(beat_pen);
+      
+      QLineF line(b_x, y1, b_x, y2);
+      p.drawLine(line);
+      
+      beat = NextBeat(beat);
+    }
+  }
+  
   void paintBlockGraphics(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, Seqblock_Type type) const {
     R_ASSERT(seqblock->block != NULL);
     
@@ -1418,6 +1462,8 @@ public:
 
     int64_t blocklen = getBlockSTimeLength(block);
 
+    bool paint_individual_beats = root->song->display_swinging_beats_in_seqblocks_in_sequencer && has_unique_swinging_tracks(block);
+    
     // Tracks
     {
       int num_tracks = block->num_tracks;
@@ -1436,44 +1482,21 @@ public:
         
         // Draw track
         paintEditorTrack(p, x1, t_y1, x2, t_y2, seqblock, block, track, blocklen, type==Seqblock_Type::GFX_GFX);
-        
+
+        // Draw beats
+        if (paint_individual_beats)
+          paintBarsAndBeats(p, x1, t_y1, x2, t_y2, seqblock, track->times, type, blocklen);
+              
         track = NextTrack(track);
       }
     }
 
-    // Bar and beats
-    if(1){
-      const struct Beats *beat = block->beats;
-      QColor bar_color = get_block_qcolor(SEQUENCER_BLOCK_BAR_COLOR_NUM, type);
-      QColor beat_color = get_block_qcolor(SEQUENCER_BLOCK_BEAT_COLOR_NUM, type);
-      QPen bar_pen(bar_color);
-      QPen beat_pen(beat_color);
+    if (!paint_individual_beats){
+      double b_y1 = y1+header_height;
+      double b_y2 = y2;
 
-      bar_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 11.54);
-      beat_pen.setWidthF((double)root->song->tracker_windows->systemfontheight / 11.54);
-
-      if (beat!=NULL)
-        beat = NextBeat(beat);
-      
-      while(beat != NULL){
-        
-        double b_y1 = y1+header_height;
-        double b_y2 = y2;
-
-        double pos = Place2STime(block, &beat->l.p);
-        
-        double b_x = scale_double(pos, 0, blocklen, x1, x2);
-
-        if (beat->beat_num==1)
-          p.setPen(bar_pen);
-        else
-          p.setPen(beat_pen);
-
-        QLineF line(b_x, b_y1, b_x, b_y2);
-        p.drawLine(line);
-        
-        beat = NextBeat(beat);
-      }
+      const struct STimes *times = root->song->display_swinging_beats_in_seqblocks_in_sequencer ? block->times_with_global_swings : block->times_without_global_swings;
+      paintBarsAndBeats(p, x1, b_y1, x2, b_y2, seqblock, times, type, blocklen);
     }
   }
 
@@ -2757,6 +2780,8 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
     (start_seqtime,end_seqtime,false,
      [&](const struct SeqTrack *seqtrack,const struct SeqBlock *seqblock, const struct Blocks *block, const struct SeqBlock *next_seqblock){
 
+    const struct STimes *times = root->song->use_swinging_beats_in_sequencer ? block->times_with_global_swings : block->times_without_global_swings;
+
     int64_t start_blockseqtime = seqblock->t.time;
     int64_t end_blockseqtime = seqblock->t.time2;
 
@@ -2775,7 +2800,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
       while(beat!=NULL){
         last_signature = &beat->valid_signature;
 
-        int64_t blocktime = Place2STime(block, &beat->l.p);
+        int64_t blocktime = Place2STime_from_times(block->num_time_lines, times, &beat->l.p);
         R_ASSERT_NON_RELEASE(blocktime>=0);
         
         int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, blocktime);
@@ -2821,7 +2846,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
 
       while(line < block->num_lines){
         Place place = {line,0,1};
-        seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime(block, &place));
+        seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime_from_times(block->num_time_lines, times, &place));
         if (callback(seqtime, -1, -1, line)==false)
           return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
         line++;

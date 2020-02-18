@@ -56,6 +56,28 @@ static inline STime Place2STime(
   return Place2STime_from_times(block->num_time_lines, block->times, p);
 }
 
+static inline STime Place2SwingingSTime(
+	const struct Blocks *block,
+	const Place *p
+){
+  return Place2STime_from_times(block->num_time_lines, block->times_with_global_swings, p);
+}
+
+static inline STime Place2TrackSwingingSTime(
+                                             const struct Blocks *block,
+                                             const struct Tracks *track,
+                                             const Place *p
+){
+  return Place2STime_from_times(block->num_time_lines, track->times, p);
+}
+
+static inline STime Place2NonSwingingSTime(
+	const struct Blocks *block,
+	const Place *p
+){
+  return Place2STime_from_times(block->num_time_lines, block->times_without_global_swings, p);
+}
+
 extern LANGSPEC double STime2Place_f(
                                     const struct Blocks *block,
                                     double time
