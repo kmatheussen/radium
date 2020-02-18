@@ -567,7 +567,7 @@ hash_t *HASH_create(int approx_size){
 static void put2(hash_t *hash, const char *key, int i, const dyn_t dyn);
 
 hash_t *HASH_shallow_copy(const hash_t *hash){
-  hash_t *copy = tcopy(hash, sizeof(hash_t) + (hash->elements_size*sizeof(hash_vector_t)));
+  hash_t *copy = tcopy2(hash, sizeof(hash_t) + (hash->elements_size*sizeof(hash_vector_t)));
   return copy;
 }
   
