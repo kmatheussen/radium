@@ -3407,6 +3407,8 @@ struct Song{
         bool linear_accelerando; // player must be stopped when writing to, or hold the player lock.
         bool linear_ritardando; // player must be stopped when writing to, or hold the player lock.
         bool plugins_should_receive_swing_tempo;
+        bool use_swinging_beats_in_sequencer;
+        bool display_swinging_beats_in_seqblocks_in_sequencer;
         bool editor_should_swing_along;
 
         bool mixer_comments_visible;

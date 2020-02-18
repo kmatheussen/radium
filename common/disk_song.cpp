@@ -62,6 +62,8 @@ DC_start("SONG");
         DC_SSB("linear_ritardando", song->linear_ritardando);
         
         DC_SSB("plugins_should_receive_swing_tempo", song->plugins_should_receive_swing_tempo);
+        DC_SSB("use_swinging_beats_in_sequencer", song->use_swinging_beats_in_sequencer);
+        DC_SSB("display_swinging_beats_in_seqblocks_in_sequencer", song->display_swinging_beats_in_seqblocks_in_sequencer);
         DC_SSB("editor_should_swing_along", song->editor_should_swing_along);
 
         DC_SSB("mixer_comments_visible", song->mixer_comments_visible);
@@ -104,7 +106,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	const char *vars[11]={
+	const char *vars[13]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -112,6 +114,8 @@ struct Song *LoadSong(void){
                 "linear_accelerando",
                 "linear_ritardando",
                 "plugins_should_receive_swing_tempo",
+                "use_swinging_beats_in_sequencer",
+                "display_swinging_beats_in_seqblocks_in_sequencer",
                 "editor_should_swing_along",
                 "mixer_comments_visible",
                 "mute_editor_automation_when_track_is_muted",
@@ -122,7 +126,9 @@ struct Song *LoadSong(void){
 
         song->mute_editor_automation_when_track_is_muted = false; // Compatibility with older songs.
         song->include_pan_and_dry_in_wet_signal = false; // Compatibility with older songs.
-
+        song->use_swinging_beats_in_sequencer = true;
+        song->display_swinging_beats_in_seqblocks_in_sequencer = true;
+        
         MIDI_SetThroughPatch(NULL);
           
         MW_cleanup(true);
@@ -146,7 +152,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
 
-        GENERAL_LOAD(7,11)
+        GENERAL_LOAD(7,13)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -211,23 +217,29 @@ var6:
         goto start;
         
 var7:
-        song->editor_should_swing_along = DC_LoadB();
+        song->use_swinging_beats_in_sequencer = DC_LoadB();
         goto start;
-
+        
 var8:
-        song->mixer_comments_visible = DC_LoadB();
+        song->display_swinging_beats_in_seqblocks_in_sequencer = DC_LoadB();
         goto start;
         
 var9:
-        song->mute_editor_automation_when_track_is_muted = DC_LoadB();
+        song->editor_should_swing_along = DC_LoadB();
         goto start;
 
 var10:
+        song->mixer_comments_visible = DC_LoadB();
+        goto start;
+        
+var11:
+        song->mute_editor_automation_when_track_is_muted = DC_LoadB();
+        goto start;
+
+var12:
         song->include_pan_and_dry_in_wet_signal = DC_LoadB();
         goto start;
 
-var11:
-var12:
 var13:
 var14:
 var15:

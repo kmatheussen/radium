@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>718</width>
-    <height>384</height>
+    <width>751</width>
+    <height>436</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -80,10 +80,24 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="3" column="0">
        <widget class="QCheckBox" name="swing_along">
         <property name="text">
          <string>Let the editor swing along when playing</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="display_swinging_beats_in_seqblocks_in_sequencer">
+        <property name="text">
+         <string>Display swinging beats for editor seqblocks in the sequencer</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="use_swinging_beats_in_sequencer">
+        <property name="text">
+         <string>Use swinging beats in the sequencer for timeline and grid</string>
         </property>
        </widget>
       </item>
