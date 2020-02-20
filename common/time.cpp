@@ -190,6 +190,7 @@ STime Place2STime(
 	const struct Blocks *block,
 	const Place *p
 ){
+  #error "what?"
   return Place2STime_from_times(block->times, p);
 }
 
@@ -768,15 +769,15 @@ void UpdateAllSTimes(void){
   ;; integrate 1/(t1*((t2/t1)^(x/b))), x from 0 to c
   ;; https://www.wolframalpha.com/input/?i=integrate+1%2F(t1*((t2%2Ft1)%5E(x%2Fb))),+x+from+0+to+c
 */
-static double get_stime_from_stimechange_equal_ratio_accelerando(const struct STimeChange *tc, double y){
-  double t1 = tc->x1;
-  double t2 = tc->x2;
-  double b = tc->y2 - tc->y1;
-  double c = y - tc->y1;
+static double get_stime_from_stimechange_equal_ratio_accelerando(const struct STimeChange &tc, double y){
+  double t1 = tc.x1;
+  double t2 = tc.x2;
+  double b = tc.y2 - tc.y1;
+  double c = y - tc.y1;
 
   //(b - b (t2/t1)^(-c/b))/(t1 log(t2/t1))
   double numerator = b - b * pow(t2/t1,-c/b);
-  double denominator = t1 * tc->logt2t1;
+  double denominator = t1 * tc.logt2t1;
 
   return pc->pfreq * 60 * numerator/denominator;
 }
@@ -788,11 +789,11 @@ static double get_stime_from_stimechange_equal_ratio_accelerando(const struct ST
   integrate 1/(t1 + (t2 - (t1 * (t2/t1)^((b-x)/b)))), t1>0, t2>0, x from 0 to c
   (-b Log[t1]+c Log[t2/t1]+b Log[t1+t2-t2 ((t2/t1))^(-c/b)])/((t1+t2) Log[t2/t1])
 */
-static double get_stime_from_stimechange_equal_ratio_deaccelerando(const struct STimeChange *tc, double y){
-  double t1 = tc->x1;
-  double t2 = tc->x2;
-  double b = tc->y2 -tc->y1;
-  double c = y - tc->y1;
+static double get_stime_from_stimechange_equal_ratio_deaccelerando(const struct STimeChange &tc, double y){
+  double t1 = tc.x1;
+  double t2 = tc.x2;
+  double b = tc.y2 -tc.y1;
+  double c = y - tc.y1;
 
   /*
       (/ (+ (- (* b (log t1)))
@@ -802,53 +803,53 @@ static double get_stime_from_stimechange_equal_ratio_deaccelerando(const struct 
             (log (/ t2 t1))))))
   */
 
-  double n1 = -b * tc->logt1;
-  double n2 = c * tc->logt2t1;
+  double n1 = -b * tc.logt1;
+  double n2 = c * tc.logt2t1;
   double n3 = b * log(t1 + t2 - t2 * pow(t2/t1, -c/b));
   double numerator   = n1+n2+n3;
 
-  double denominator = (t1+t2) * tc->logt2t1;
+  double denominator = (t1+t2) * tc.logt2t1;
 
   return (double)pc->pfreq * 60.0 * numerator/denominator;
 }
 
 
-static double get_stime_from_stimechange_linear(const struct STimeChange *c, double y){
-  const double k = (c->x2-c->x1) / (c->y2-c->y1);
-  const double Tbp = scale_double(y, c->y1, c->y2, c->x1, c->x2);
+static double get_stime_from_stimechange_linear(const struct STimeChange &c, double y){
+  const double k = (c.x2-c.x1) / (c.y2-c.y1);
+  const double Tbp = scale_double(y, c.y1, c.y2, c.x1, c.x2);
 
-  return (double)pc->pfreq * 60.0 * (1.0/k) * log(Tbp/c->x1);
+  return (double)pc->pfreq * 60.0 * (1.0/k) * log(Tbp/c.x1);
 }
 
-static inline bool tchange_has_gliding_tempo(const struct STimeChange *c){
-  return !has_same_tempo(c->x1, c->x2); // approx.
+static inline bool tchange_has_gliding_tempo(const struct STimeChange &c){
+  return !has_same_tempo(c.x1, c.x2); // approx.
 }
 
-static double get_stime_from_stimechange(const struct STimeChange *c, double y, const bool has_t){
-  //printf("  Diff: %f\n", fabs(c->x2-c->x1));
+static double get_stime_from_stimechange(const struct STimeChange &c, double y, const bool has_t){
+  //printf("  Diff: %f\n", fabs(c.x2-c.x1));
 
   double stime;
   
   if (!tchange_has_gliding_tempo(c)){
 
-    // no tempo change (almost no tempo change)
-    ///////////////////////////////////////////
+    // no tempo change (or almost no tempo change)
+    //////////////////////////////////////////////
     
-    //    if (has_t)
-    //   return scale_double(y, c->y1, c->y2, c->t1, c->t2) - c->t1;
+    if (has_t)
+      return scale_double(y, c.y1, c.y2, c.t1, c.t2) - c.t1;  // Not doing this because it's faster, but because t1/t2 have scaled values if there were rounding errors.
 
     /*
       speed = distance / time
       distance = time*speed
       time = distance/speed
     */
-
-    double distance = y - c->y1; 
-    double speed = (c->x1 + c->x2) / 2.0;
+    double distance = y - c.y1; 
+    double speed = (c.x1 + c.x2) / 2.0;
     stime = (double)pc->pfreq * 60.0 * distance / speed;
 
-  } else if (c->x2 > c->x1) {
-
+    //printf("                  Dist: %f. Speed: %f. ret: %f. Y: %f. Tempo1: %f. Tempo2: %f\n", distance, speed, stime, y, c.x1, c.x2);
+    
+  } else if (c.x2 > c.x1) {
     // accelerando
     //////////////
 
@@ -858,7 +859,6 @@ static double get_stime_from_stimechange(const struct STimeChange *c, double y, 
       stime = get_stime_from_stimechange_equal_ratio_accelerando(c, y);
     
   } else {
-
     // ritardando
     /////////////
 
@@ -869,10 +869,10 @@ static double get_stime_from_stimechange(const struct STimeChange *c, double y, 
     
   }
 
-  if (c->glidingswing_scale_value != 0)
-    return stime * c->glidingswing_scale_value;
-  else
+  if (equal_doubles(c.glidingswing_scale_value, 0.0))
     return stime;
+  else
+    return stime * c.glidingswing_scale_value;
 }
 
 static const struct STimeChange *get_stimechange(const struct STimes *stimes, double y){
@@ -900,14 +900,17 @@ double Place2STime_from_times2(
   // Find the right time_change to use.
   const struct STimeChange *time_change=get_stimechange(stimes, place_as_float);
 
-  //printf("  %f: Found %f -> %f. (%f -> %f)", place_as_float, time_change->y1, time_change->y2, time_change->t1/pc->pfreq, time_change->t2/pc->pfreq);
-  double ret = time_change->t1 + get_stime_from_stimechange(time_change, place_as_float, true);
+  double ret = time_change->t1 + get_stime_from_stimechange(*time_change, place_as_float, true);
+  
+  //fprintf(stderr, "  Ret: %f. Place-as-float: %f. Found %f -> %f. (%f -> %f). t1: %f. t2: %f\n", ret, place_as_float, time_change->y1, time_change->y2, time_change->t1/pc->pfreq, time_change->t2/pc->pfreq, time_change->t1, time_change->t2);
 
-  R_ASSERT_NON_RELEASE(ret < time_change->t2 + 300);
+  //R_ASSERT_NON_RELEASE(ret < time_change->t2 + 300);
 
-  if (ret > time_change->t2)
-    return time_change->t2; // Could happen due to rounding errors.
-  else
+  if (ret > time_change->t2){
+    fprintf(stderr, "  Ret: %f. Place-as-float: %f. Found %f -> %f. (%f -> %f). t1: %f. t2: %f\n", ret, place_as_float, time_change->y1, time_change->y2, time_change->t1/pc->pfreq, time_change->t2/pc->pfreq, time_change->t1, time_change->t2);
+    R_ASSERT_NON_RELEASE(ret+0.001 > time_change->t2);
+    return time_change->t2; // Could happen due to rounding errors. (not anymore)
+  }else
     return ret;
 }
 
@@ -969,25 +972,25 @@ static struct STimes *create_stimes_from_tchanges(int num_lines, const struct ST
     }
 #endif
     
-    const struct STimeChange *tchange = &time_changes[i];
+    const struct STimeChange &tchange = time_changes[i];
 
     // more work to avoid slightly wrong values due to rounding errors.
-    if (line==tchange->y1)
-      stimes[line].time = tchange->t1;
-    else if (line==tchange->y2)
-      stimes[line].time = tchange->t2;
+    if (equal_doubles(line, tchange.y1))
+      stimes[line].time = tchange.t1;
+    else if (equal_doubles(line, tchange.y2))
+      stimes[line].time = tchange.t2;
     else {    
       double dur = get_stime_from_stimechange(tchange, line, true);
-      stimes[line].time = tchange->t1 + dur;
+      stimes[line].time = tchange.t1 + dur;
     }
     
-    stimes[line].tchanges = tchange;
+    stimes[line].tchanges = &tchange;
     
     D(printf("   STIME %d: %d. t1: %d, t2: %d. Dur: %f\n",
              line,
              (int)stimes[line].time,// / pc->pfreq,
-             (int)tchange->t1,
-             (int)tchange->t2,
+             (int)tchange.t1,
+             (int)tchange.t2,
              -1.0
              //dur/pc->pfreq);
              ));
@@ -1139,9 +1142,9 @@ static void postprocess_swing_changes(const struct Beats *beats, struct STimeCha
       
       // Find swing duration and the range of swing_changes that belongs to this bar.
       do{
-        struct STimeChange *swing_change = &swing_changes[changepos2];
-        if (swing_change->y1+0.00001 >= float_p2){
-          R_ASSERT_NON_RELEASE(swing_change->y1 == float_p2); // I guess this assertion could fail in some situations without anything being wrong. (probably not in debug mode on an intel cpu though) Note: did get an assertion once with these numbers: y1=35.626262626262623, float_p2=35.62626262626263.
+        struct STimeChange &swing_change = swing_changes[changepos2];
+        if (swing_change.y1+0.00001 >= float_p2){
+          R_ASSERT_NON_RELEASE(equal_doubles(swing_change.y1, float_p2)); // I guess this assertion could fail in some situations without anything being wrong. (probably not in debug mode on an intel cpu though) Note: did get an assertion once with these numbers: y1=35.626262626262623, float_p2=35.62626262626263.
           break;
         }
         
@@ -1160,7 +1163,7 @@ static void postprocess_swing_changes(const struct Beats *beats, struct STimeCha
 
         // find bar-duration of the swings.
         for(int pos = changepos1 ; pos < changepos2 ; pos++)
-          swing_dur += get_stime_from_stimechange(&swing_changes[pos], swing_changes[pos].y2, false);
+          swing_dur += get_stime_from_stimechange(swing_changes[pos], swing_changes[pos].y2, false);
         
         // fill in glidingswing_scale_value for the changes belonging to this bar. (Workaround. The scheme code doesn't calculate correct tempo values for gliding swings.)
         if (fabs(nonswing_dur-swing_dur) > 0.001){
@@ -1185,27 +1188,90 @@ static void postprocess_swing_changes(const struct Beats *beats, struct STimeCha
   
 }
 
+static void printtimechanges(const char *what, const struct STimeChange *time_changes, int num_time_changes){
+  printf("-----------%s:\n", what);
+  for(int i=0;i<num_time_changes;i++){
+    const struct STimeChange &time_change = time_changes[i];
+    printf("%d: %f -> %f.  (line: %f -> %f). swing_scale: %f\n", i, time_change.t1, time_change.t2, time_change.y1, time_change.y2, time_change.glidingswing_scale_value);
+  }
+  printf("------------------------\n");
+}
 
 static void set_t_values_in_time_changes(struct STimeChange *time_changes, int num_time_changes){
   double t1 = 0;
+
+  double bulk_t1 = 0;
+  int bulk_start = 0;
+  
+  D(printtimechanges("Before", time_changes,num_time_changes));
   
   for(int i=0;i<num_time_changes;i++){
-    struct STimeChange *time_change = &time_changes[i];
+    D(printf("--------- %d:\n", i));
+    struct STimeChange &time_change = time_changes[i];
+    
+    time_change.t1 = t1; // this must always be true.
 
-    if (time_changes->t1 == 0)
-      time_change->t1 = t1;
+    double new_t2 = t1 + get_stime_from_stimechange(time_change, time_change.y2, false);
 
-    if (time_change->t2 == 0)
-      time_change->t2 = time_change->t1 + get_stime_from_stimechange(time_change, time_change->y2, false);
+    if (!equal_doubles(time_change.t2, 0)) {
+      
+      double org_t2 = time_change.t2;
+      
+      if (fabs(new_t2-org_t2) > 1) {
 
-    if (time_change->t2 < time_change->t1){
-      R_ASSERT(false);
-      time_change->t2 = time_change->t1;
+        // Workaround. We had an error in the computation, so we'll just scale the values to fit. Seems to only happen with extreme values. Probably only caused by rounding errors, i.e. that we have exceeded double float accuracy.
+
+        double ideal_bulk_duration = time_change.t2 - bulk_t1;
+        double actual_bulk_duration = new_t2 - bulk_t1;
+        
+        double scale_value = ideal_bulk_duration / actual_bulk_duration;
+        double last_t2 = -1;
+
+        time_change.t2 = new_t2;
+        
+        D(printf("%d -> %d. Ideal dur: %f. Actual dur: %f. Scale: %f. bulk_t1: %f.\n", bulk_start, i, ideal_bulk_duration, actual_bulk_duration, scale_value, bulk_t1));
+        
+        D(printtimechanges("Before scale fix", time_changes,num_time_changes));
+        
+        for(int i2=bulk_start ; i2 <= i ; i2++){
+          struct STimeChange &time_change = time_changes[i2];
+          double duration = time_change.t2 - time_change.t1;
+
+          if(last_t2 >= 0)
+            time_change.t1 = last_t2;
+          
+          time_change.t2 = time_change.t1 + (duration * scale_value);
+          
+          last_t2 = time_change.t2;
+        }
+        
+        D(printtimechanges("After scale fix", time_changes,num_time_changes));
+        D(getchar());
+      }
+
+      bulk_t1 = time_change.t2;
+      bulk_start = i + 1;
+
+      time_change.t2 = org_t2; // this must always be true.
+      
+    } else {
+
+      time_change.t2 = new_t2;
+      
+    }
+
+    if (time_change.t2 < time_change.t1){
+      R_ASSERT_NON_RELEASE(false);
+      printtimechanges("Error", time_changes,num_time_changes);
+      printf("           %d: Error: t1: %f. t2: %f\n", i, time_change.t1, time_change.t2);
+      //getchar();
+      time_change.t2 = time_change.t1;
     }
   
-    t1 = time_change->t2;
+    t1 = time_change.t2;
   }
 
+  D(printtimechanges("After", time_changes,num_time_changes));
 }
   
 
@@ -1217,6 +1283,9 @@ static const struct STimeChange *create_tchanges(const dynvec_t *timings, const 
   if (nonswing_stimes != NULL)
     postprocess_swing_changes(beats, time_changes, num_time_changes, nonswing_stimes, num_lines);
 
+  D(if (nonswing_stimes != NULL)
+      printtimechanges("Non-swing", nonswing_stimes->tchanges, num_lines););
+  
   set_t_values_in_time_changes(time_changes, num_time_changes);
 
   return time_changes;
@@ -1268,7 +1337,7 @@ static dyn_t create_filledout_swings(const dyn_t global_swings, const dyn_t trac
 
 
 static void update_stuff2(struct Blocks *blocks[], int num_blocks,
-                          int default_bpm, int default_lpb, StaticRatio default_signature, bool plugins_should_receive_swing_tempo,
+                          int default_bpm, int default_lpb, StaticRatio default_signature,
                           bool only_signature_has_changed, bool update_beats, bool update_swings)
 {
   struct STimes *stimes_without_global_swings[num_blocks];
@@ -1361,6 +1430,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
         else{
           D(printf("  Calling create_stimes for %d\n", i));
           stimes_with_global_swings[i] = create_stimes(blocks[i], dynbeats[i], beats[i], filledout_swingss[i], stimes_without_global_swings[i], default_bpm, default_lpb);
+          //printf("i: %d. s: %d. blocklen: %d\n", i, (int)stimes_with_global_swings[i][num_lines].time, (int)blocklen);
           R_ASSERT(stimes_with_global_swings[i][num_lines].time == blocklen);
         }
         
@@ -1415,13 +1485,15 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
           else{
             R_ASSERT_NON_RELEASE(false);
           }
-          
+
+          /*
           if (plugins_should_receive_swing_tempo)
             block->times = block->times_with_global_swings;
           else
             block->times = block->times_without_global_swings;
-
-          block->length = block->times[block->num_time_lines].time;
+          */
+          
+          block->length = block->times_without_global_swings[block->num_time_lines].time;
 
           if (update_swings){
             struct Tracks *track = block->tracks;
@@ -1476,7 +1548,7 @@ void das_printit(struct Blocks *block){
 #endif
 
 static void update_all(struct Song *song,
-                       int default_bpm, int default_lpb, StaticRatio default_signature, bool plugins_should_receive_swing_tempo,
+                       int default_bpm, int default_lpb, StaticRatio default_signature,
                        bool only_signature_has_changed, bool update_beats, bool update_swings)
 {
   int num_blocks = ListFindNumElements1(&song->blocks->l);
@@ -1494,49 +1566,49 @@ static void update_all(struct Song *song,
   }
 
   update_stuff2(blocks, num_blocks,
-                default_bpm, default_lpb, default_signature, plugins_should_receive_swing_tempo,
+                default_bpm, default_lpb, default_signature,
                 only_signature_has_changed, update_beats, update_swings);
 }
 
 static void update_block(struct Blocks *block,
-                         int default_bpm, int default_lpb, StaticRatio default_signature, bool plugins_should_receive_swing_tempo,
+                         int default_bpm, int default_lpb, StaticRatio default_signature,
                          bool only_signature_has_changed, bool update_beats, bool update_swings)
 {
   struct Blocks *blocks[1] = {block};
 
   update_stuff2(blocks, 1,
-                default_bpm, default_lpb, default_signature, plugins_should_receive_swing_tempo,
+                default_bpm, default_lpb, default_signature,
                 only_signature_has_changed, update_beats, update_swings);
 }
 
 
 
 void TIME_block_tempos_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, true);
+  update_block(block, root->tempo, root->lpb, root->signature, false, false, true);
 }
 
 void TIME_block_LPBs_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, true, true);
+  update_block(block, root->tempo, root->lpb, root->signature, false, true, true);
 }
 
 void TIME_block_signatures_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, true, true, true);
+  update_block(block, root->tempo, root->lpb, root->signature, true, true, true);
 }
 
 void TIME_block_num_lines_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, true, true);
+  update_block(block, root->tempo, root->lpb, root->signature, false, true, true);
 }
 
 void TIME_block_num_tracks_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, true);
+  update_block(block, root->tempo, root->lpb, root->signature, false, false, true);
 }
 
 void TIME_block_swings_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, true);
+  update_block(block, root->tempo, root->lpb, root->signature, false, false, true);
 }
 
 void TIME_everything_in_block_has_changed2(struct Blocks *block, const struct Root *root, const struct Song *song){
-  update_block(block, root->tempo, root->lpb, root->signature, song->plugins_should_receive_swing_tempo, false, true, true);
+  update_block(block, root->tempo, root->lpb, root->signature, false, true, true);
 }
 
 void TIME_everything_in_block_has_changed(struct Blocks *block){
@@ -1544,21 +1616,21 @@ void TIME_everything_in_block_has_changed(struct Blocks *block){
 }
 
 void TIME_global_tempos_have_changed(void){
-  update_all(root->song, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, true);
+  update_all(root->song, root->tempo, root->lpb, root->signature, false, false, true);
   SEQUENCER_TIMING_set_default_values(root->tempo, root->signature);
 }
 
 void TIME_global_LPB_has_changed(void){
-  update_all(root->song, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, true, true);
+  update_all(root->song, root->tempo, root->lpb, root->signature, false, true, true);
 }
 
 void TIME_global_signature_has_changed(void){
-  update_all(root->song, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, true, true, true);
+  update_all(root->song, root->tempo, root->lpb, root->signature, true, true, true);
   SEQUENCER_TIMING_set_default_values(root->tempo, root->signature);
 }
 
 void TIME_everything_has_changed2(const struct Root *root, struct Song *song){
-  update_all(song, root->tempo, root->lpb, root->signature, song->plugins_should_receive_swing_tempo, false, true, true);
+  update_all(song, root->tempo, root->lpb, root->signature, false, true, true);
   SEQUENCER_TIMING_set_default_values(root->tempo, root->signature);
 }
 
@@ -1592,7 +1664,7 @@ static double gakk_STime2Place_internal(
 {
   double maybe_result;
 
-  if (low_time==high_time)  // Happens at extreme high tempo.
+  if (equal_doubles(low_time, high_time))  // Happens at extreme high tempo.
     return low_time;
 
   if (num_tries_left==NUM_STIME2PLACE2_TRIES)
