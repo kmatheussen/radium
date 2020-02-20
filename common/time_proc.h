@@ -27,6 +27,87 @@ static inline bool has_same_tempo(double tempo1, double tempo2){
 }
 
 
+enum SwingingMode{
+  NON_SWINGING_MODE,               // Only makes sense calling from the main thread.
+  EDITOR_BLOCK_SWINGING_MODE,      // Only makes sense calling from the main thread. Returns non-swinging values if editor is not set to swing along.
+  EDITOR_CURR_TRACK_SWINGING_MODE, // Uses current_track->times if current_track is not a timing track. If not, use block->times_with_global_swing instead. Returns non-swinging values if editor is not set to swing along. Can only be used by the main thread.
+  PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE,
+  SEQUENCER_TIMELINE_SWINGING_MODE,        // Only makes sense calling from the main thread.
+  SEQUENCER_EDITOR_SEQBLOCK_SWINGING_MODE, // Only makes sense calling from the main thread.
+};
+
+static inline const struct STimes *get_stimes_from_swinging_mode(const struct Blocks *block,
+                                                                 enum SwingingMode swinging_mode)
+{
+  
+  switch(swinging_mode){
+
+    
+    case NON_SWINGING_MODE:
+      
+      R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+      
+      return block->times_without_global_swings;
+      
+
+    case EDITOR_BLOCK_SWINGING_MODE:
+      
+      R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+            
+      if (root->song->editor_should_swing_along==false)
+        return block->times_without_global_swings;
+      else
+        return block->times_with_global_swings;
+      
+
+    case EDITOR_CURR_TRACK_SWINGING_MODE:
+      
+      R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+      
+      if (root->song->editor_should_swing_along==false)
+        return block->times_without_global_swings;
+      else {
+        if (root->song->tracker_windows->curr_track < 0)
+          return block->times_with_global_swings;
+        else
+          return root->song->tracker_windows->wblock->wtrack->track->times;
+      }
+      
+
+    case PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE:
+      if (root->song->plugins_should_receive_swing_tempo)
+        return block->times_with_global_swings;
+      else
+        return block->times_without_global_swings;
+      
+
+    case SEQUENCER_TIMELINE_SWINGING_MODE:
+      
+      R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+      
+      if (root->song->use_swinging_beats_in_sequencer)
+        return block->times_with_global_swings;
+      else
+        return block->times_without_global_swings;
+      
+
+    case SEQUENCER_EDITOR_SEQBLOCK_SWINGING_MODE:
+      
+      R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+      
+      if (root->song->display_swinging_beats_in_seqblocks_in_sequencer)
+        return block->times_with_global_swings;
+      else
+        return block->times_without_global_swings;
+      
+
+    default:
+      R_ASSERT(false);
+      return block->times_with_global_swings;
+  }
+}
+
+
 // Can be called from any thread.
 extern LANGSPEC double Place2STime_from_times2(
                                                const struct STimes *stimes,
@@ -34,28 +115,23 @@ extern LANGSPEC double Place2STime_from_times2(
                                                );
 
 // Can be called from any thread.
-static inline STime Place2STime_from_times(int num_lines, const struct STimes *times, const Place *p){
-  
-  if(0==p->counter)
-    return times[p->line].time;
-
-  if (p->line >= num_lines){
-    R_ASSERT_NON_RELEASE(false);
-    return times[num_lines].time;
-  }
-
-  double y = GetDoubleFromPlace(p);
-  return Place2STime_from_times2(times, y);
-}
+extern LANGSPEC STime Place2STime_from_times(int num_lines, const struct STimes *times, const Place *p);
 
 // Can be called from any thread.
-static inline STime Place2STime(
-	const struct Blocks *block,
-	const Place *p
-){
-  return Place2STime_from_times(block->num_time_lines, block->times, p);
-}
+extern LANGSPEC STime Place2STime(
+                                  const struct Blocks *block,
+                                  const Place *p,
+                                  enum SwingingMode swinging_mode
+                                  );
 
+// Can be called from any thread.
+extern LANGSPEC STime Place2STime2(
+                                   const struct Blocks *block,
+                                   const Place *p,
+                                   const struct Tracks *track
+                                   );
+
+/*
 static inline STime Place2SwingingSTime(
 	const struct Blocks *block,
 	const Place *p
@@ -77,15 +153,30 @@ static inline STime Place2NonSwingingSTime(
 ){
   return Place2STime_from_times(block->num_time_lines, block->times_without_global_swings, p);
 }
+*/
 
 extern LANGSPEC double STime2Place_f(
                                     const struct Blocks *block,
-                                    double time
+                                    double time,
+                                    enum SwingingMode swinging_mode
                                     );
 
 extern LANGSPEC Place STime2Place(
                                   const struct Blocks *block,
-                                  STime time
+                                  STime time,
+                                  enum SwingingMode swinging_mode
+                                  );
+
+extern LANGSPEC double STime2Place2_f(
+                                    const struct Blocks *block,
+                                    double time,
+                                    const struct Tracks *track
+                                    );
+
+extern LANGSPEC Place STime2Place2(
+                                  const struct Blocks *block,
+                                  STime time,
+                                  const struct Tracks *track
                                   );
 
 // Can be called from any thread.
@@ -103,7 +194,8 @@ static inline STime getBlockSTimeLength(const struct Blocks *block){
     if (block->num_lines != block->num_time_lines) // 'num_time_lines' is the actual allocated number of lines.
       RWarning("block->num_lines != block->num_time_lines: %d != %d",block->num_lines, block->num_time_lines);
 
-    R_ASSERT(block->times[block->num_time_lines].time == block->length);
+    R_ASSERT(block->times_with_global_swings[block->num_time_lines].time == block->length);
+    R_ASSERT(block->times_without_global_swings[block->num_time_lines].time == block->length);
   }
 #endif
   

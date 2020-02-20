@@ -1078,8 +1078,8 @@ public:
         if(next_pitch==NULL)
           next_pitch = &last_pitch;
         
-        int64_t start = Place2TrackSwingingSTime(block, track, &pitch->l.p);
-        int64_t end = Place2TrackSwingingSTime(block, track, &next_pitch->l.p);
+        int64_t start = Place2STime2(block, &pitch->l.p, track);
+        int64_t end = Place2STime2(block, &next_pitch->l.p, track);
         
         double n_x1 = scale_double(start, 0, blocklen, x1, x2);
         double n_x2 = scale_double(end, 0, blocklen, x1, x2);
@@ -2780,8 +2780,6 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
     (start_seqtime,end_seqtime,false,
      [&](const struct SeqTrack *seqtrack,const struct SeqBlock *seqblock, const struct Blocks *block, const struct SeqBlock *next_seqblock){
 
-    const struct STimes *times = root->song->use_swinging_beats_in_sequencer ? block->times_with_global_swings : block->times_without_global_swings;
-
     int64_t start_blockseqtime = seqblock->t.time;
     int64_t end_blockseqtime = seqblock->t.time2;
 
@@ -2800,7 +2798,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
       while(beat!=NULL){
         last_signature = &beat->valid_signature;
 
-        int64_t blocktime = Place2STime_from_times(block->num_time_lines, times, &beat->l.p);
+        int64_t blocktime = Place2STime(block, &beat->l.p, SEQUENCER_TIMELINE_SWINGING_MODE);
         R_ASSERT_NON_RELEASE(blocktime>=0);
         
         int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, blocktime);
@@ -2846,7 +2844,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
 
       while(line < block->num_lines){
         Place place = {line,0,1};
-        seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime_from_times(block->num_time_lines, times, &place));
+        seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime(block, &place, SEQUENCER_TIMELINE_SWINGING_MODE));
         if (callback(seqtime, -1, -1, line)==false)
           return radium::IterateSeqblocksCallbackReturn::ISCR_BREAK;
         line++;

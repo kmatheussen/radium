@@ -305,7 +305,7 @@ void P2MUpdateSongPosCallBack(void){
                           
                           else if(till_curr_realline < wblock->curr_realline)
                             do_scrolling = true;
-                          
+
                           else if(till_curr_realline > wblock->curr_realline){
                             STime from_time = (STime) ((double)Place2STime(wblock->block, &wblock->reallines[wblock->curr_realline]->l.p) / wblock->block->reltempo);
                             STime to_time   = (STime) ((double)Place2STime(wblock->block, &wblock->reallines[till_curr_realline]->l.p) / wblock->block->reltempo);

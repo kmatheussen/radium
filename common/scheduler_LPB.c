@@ -46,7 +46,7 @@ static double get_num_beats(const struct SeqTrack *seqtrack, const struct SeqBlo
   
   return
     iterator->num_beats_played_so_far +
-    scale_double(STime2Place_f(block,block_time),
+    scale_double(STime2Place_f(block, block_time, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE),
                  iterator->place1_f, iterator->place2_f,
                  0.0, iterator->num_beats_between_place1_and_place2
                  );
@@ -220,7 +220,7 @@ static void schedule_next_LPB(struct SeqTrack *seqtrack, const struct SeqBlock *
     
   iterator->next_lpb = next_lpb;
 
-  int64_t time = get_seqblock_place_time(seqblock, next_lpb->l.p);
+  int64_t time = get_seqblock_place_time(seqblock, next_lpb->l.p, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
   
   SCHEDULER_add_event(seqtrack, time, RT_scheduled_LPB, &args[0], num_args, SCHEDULER_LPB_PRIORITY);
 }

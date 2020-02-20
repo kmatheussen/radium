@@ -389,7 +389,7 @@ static midi_event_t *find_midievent_end_note(std::vector<midi_event_t> &midi_eve
 // Happens if note was started in block a, and stopped in block b.
 static void add_recorded_stp(struct Blocks *block, struct Tracks *track, const STime time){
         
-  Place place = STime2Place(block,time);
+  Place place = STime2Place2(block,time,track);
         
   struct Stops *stop=(struct Stops*)talloc(sizeof(struct Stops));
   PlaceCopy(&stop->l.p,&place);
@@ -400,7 +400,7 @@ static void add_recorded_stp(struct Blocks *block, struct Tracks *track, const S
 
 static void add_recorded_note(std::vector<midi_event_t> &midi_events, struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int recorded_midi_events_pos, const STime time, const uint32_t msg, bool is_gfx){
         
-  Place place = STime2Place(block,time);
+  Place place = STime2Place2(block,time,wtrack->track);
   int notenum = MIDI_msg_byte2(msg);
   int volume  = MIDI_msg_byte3(msg);
         
@@ -409,7 +409,7 @@ static void add_recorded_note(std::vector<midi_event_t> &midi_events, struct WBl
           
   midi_event_t *midi_event_endnote = find_midievent_end_note(midi_events, block->l.num, recorded_midi_events_pos+1, notenum, time);
   if (midi_event_endnote != NULL) {
-    endplace = STime2Place(block,midi_event_endnote->timepos.blocktime);
+    endplace = STime2Place2(block,midi_event_endnote->timepos.blocktime,wtrack->track);
     endplace_p = &endplace;
     if(!is_gfx)
       midi_event_endnote->msg = 0; // don't use this event again later.
@@ -460,7 +460,7 @@ static void add_recorded_fx(std::vector<midi_event_t> &midi_events, struct Track
   if (track_patch->instrument != get_audio_instrument())
     return;
 
-  Place place = STime2Place(block,first_event.timepos.blocktime);
+  Place place = STime2Place2(block,first_event.timepos.blocktime,track);
   float value = get_msg_fx_value(first_event.msg);
   const char *effect_name = PLUGIN_get_effect_name(plugin, effect_num);
 
@@ -502,7 +502,7 @@ static void add_recorded_fx(std::vector<midi_event_t> &midi_events, struct Track
     if (midi_event.effect_num != effect_num)
       continue;
 
-    Place place = STime2Place(block,midi_event.timepos.blocktime);
+    Place place = STime2Place2(block,midi_event.timepos.blocktime,track);
     float value = get_msg_fx_value(midi_event.msg);
 
     int nodenum;

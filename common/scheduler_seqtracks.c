@@ -50,7 +50,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
   } else {
 
     if (place_pointer==NULL)
-      place = STime2Place(block, seqtime_to_blocktime(seqblock, seqtime - seqblock->t.time));
+      place = STime2Place(block, seqtime_to_blocktime(seqblock, seqtime - seqblock->t.time), PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE); // not sure if place would ever be something other than 0,0,1 here.
     else
       place = *place_pointer;
   }
@@ -228,7 +228,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
     } else {
       R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
       R_ASSERT_RETURN_IF_FALSE(block!=NULL);
-      STime block_stime = Place2STime(block, &startdata->place);
+      STime block_stime = Place2STime(block, &startdata->place, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
       seq_start_time = seqblock->t.time + blocktime_to_seqtime(seqblock, block_stime);
     }
   }
@@ -317,7 +317,7 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
     
   ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Stop gfx rendering since we are soon going to change the values of seqtrack->end_time and friends.
 
-  int64_t seq_start_time = Place2STime(block, &place); // When playing block, seqtime==blocktime.
+  int64_t seq_start_time = Place2STime(block, &place, EDITOR_CURR_TRACK_SWINGING_MODE); // When playing block, seqtime==blocktime.
 
   SEQBLOCK_init(NULL, &g_block_seqtrack_seqblock, block, NULL, -1, NULL, 0);
                 

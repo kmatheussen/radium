@@ -1841,8 +1841,8 @@ void FX_call_me_before_starting_to_play_song(struct SeqTrack *seqtrack, const st
       struct FXNodeLines *fxnodeline1 = fxs->fxnodelines;
       struct FXNodeLines *fxnodeline2 = NextFXNodeLine(fxnodeline1);
 
-      int64_t time1 = Place2STime(block, &fxnodeline1->l.p);
-      int64_t time2 = Place2STime(block, &fxnodeline2->l.p);
+      int64_t time1 = Place2STime2(block, &fxnodeline1->l.p, track);
+      int64_t time2 = Place2STime2(block, &fxnodeline2->l.p, track);
 
       if (time1 > start_time)
         continue;
@@ -1879,7 +1879,7 @@ void FX_call_me_before_starting_to_play_song(struct SeqTrack *seqtrack, const st
         fxnodeline1 = fxnodeline2;
         fxnodeline2 = next_fxnodeline;
         time1 = time2;
-        time2 = Place2STime(block, &fxnodeline2->l.p);
+        time2 = Place2STime2(block, &fxnodeline2->l.p, track);
       }
 
       R_ASSERT_RETURN_IF_FALSE(value != fx->min-1);

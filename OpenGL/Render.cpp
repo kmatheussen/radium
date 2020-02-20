@@ -2034,7 +2034,7 @@ static float subtrack_x1, subtrack_x2;
 
 static void create_track_peaks(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const struct NodeLine *nodelines){
   struct Patch *patch = wtrack->track->patch;
-  STime note_time = Place2STime(wblock->block, &note->l.p);
+  STime note_time = Place2STime2(wblock->block, &note->l.p, wtrack->track);
 
   float track_volume =  wtrack->track->volumeonoff ? (float)wtrack->track->volume / MAXTRACKVOL : 1.0f;
   //float velocity = scale(n,0,num_peaks, velocity1->velocity, velocity2->velocity);
@@ -2073,8 +2073,8 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
       
       c = c!=NULL ? GE_y(c, y1) : GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM), GE_get_rgb(WAVEFORM_COLOR_NUM), 100, GE_Conf(Z_ABOVE(Z_ZERO), y1));
 
-      const STime time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
-      const STime time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
+      const STime time1 = Place2STime2(wblock->block, &ns->element1->p, wtrack->track) - note_time;
+      const STime time2 = Place2STime2(wblock->block, &ns->element2->p, wtrack->track) - note_time;
 
       R_ASSERT_NON_RELEASE(time2 >= time1);
       

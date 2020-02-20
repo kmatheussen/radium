@@ -912,6 +912,44 @@ double Place2STime_from_times2(
 }
 
 
+// Can be called from any thread.
+STime Place2STime_from_times(int num_lines, const struct STimes *times, const Place *p){
+  
+  if(0==p->counter)
+    return times[p->line].time;
+
+  if (p->line >= num_lines){
+    R_ASSERT_NON_RELEASE(false);
+    return times[num_lines].time;
+  }
+
+  double y = GetDoubleFromPlace(p);
+  return Place2STime_from_times2(times, y);
+}
+
+// Can be called from any thread. Note: Returns swinging time if "send swing to plugins and jack transport" is true, non-swinging if that variable is false.
+STime Place2STime(
+                  const struct Blocks *block,
+                  const Place *p,
+                  enum SwingingMode swinging_mode
+                  )
+{
+  return Place2STime_from_times(block->num_time_lines,
+                                get_stimes_from_swinging_mode(block, swinging_mode),
+                                p);
+}
+
+
+STime Place2STime2(
+                   const struct Blocks *block,
+                   const Place *p,
+                   const struct Tracks *track
+                   )
+{
+  return Place2STime_from_times(block->num_time_lines,
+                                track->times,
+                                p);
+}
 
 // Precalculate timing for all line starts. (optimization)
 static struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChange *time_changes, int num_elements){//const struct STimeChange **tchanges){
@@ -1540,7 +1578,7 @@ void TIME_everything_has_changed(void){
 
 #define NUM_STIME2PLACE2_TRIES 40
 
-static double STime2Place2(
+static double gakk_STime2Place_internal(
                           const struct STimes *times,
                           double correct_time,
                           int num_tries_left,
@@ -1584,35 +1622,36 @@ static double STime2Place2(
     return maybe_result;
 
   else if (maybe_time > correct_time)
-    return STime2Place2(times,
-                        correct_time,
-                        num_tries_left-1,
-                        
-                        low_result,
-                        maybe_result,
-                        
-                        low_time,
-                        maybe_time
-                        );
-
+    return gakk_STime2Place_internal(times,
+                                      correct_time,
+                                      num_tries_left-1,
+                                      
+                                      low_result,
+                                      maybe_result,
+                                      
+                                      low_time,
+                                      maybe_time
+                                      );
+  
   else
-    return STime2Place2(times,
-                        correct_time,
-                        num_tries_left-1,
-                        
-                        maybe_result,
-                        high_result,
-                        
-                        maybe_time,
-                        high_time
-                        );
+    return gakk_STime2Place_internal(times,
+                                      correct_time,
+                                      num_tries_left-1,
+                                      
+                                      maybe_result,
+                                      high_result,
+                                      
+                                      maybe_time,
+                                      high_time
+                                      );
 }
 
 
-double STime2Place_f(
-                  const struct Blocks *block,
-                  double time
-                  )
+static double gakk_STime2Place_f(
+                                 const struct Blocks *block,
+                                 double time,
+                                 const struct STimes *times
+                                 )
 {
 
   if (time < 0)
@@ -1621,7 +1660,6 @@ double STime2Place_f(
   if (time >= getBlockSTimeLength(block))
     return block->num_lines;
 
-  
 #if 0
   int line1=0;
   int line2=1;
@@ -1635,7 +1673,7 @@ double STime2Place_f(
 #else
   int line1,line2;
   int line=1;
-  while(block->times[line].time < time) // could be optimized by binary search, but binary search is a horror to get right, and it's not that important here.
+  while(times[line].time < time) // could be optimized by binary search, but binary search is a horror to get right, and it's not that important here.
     line++;
 
   line2 = line;
@@ -1643,20 +1681,21 @@ double STime2Place_f(
 #endif
 
   
-  return STime2Place2(block->times,
-                      time,
-                      NUM_STIME2PLACE2_TRIES,
-                      line1,
-                      line2,
-                      block->times[line1].time,
-                      block->times[line2].time
-                      );
+  return gakk_STime2Place_internal(times,
+                                   time,
+                                   NUM_STIME2PLACE2_TRIES,
+                                   line1,
+                                   line2,
+                                   times[line1].time,
+                                   times[line2].time
+                                   );
 }
 
-Place STime2Place(
-                  const struct Blocks *block,
-                  STime time
-                  )
+static Place gakk_STime2Place(
+                              const struct Blocks *block,
+                              STime time,
+                              const struct STimes *times
+                              )
 {
   Place place;
   const Place *firstplace = PlaceGetFirstPos();
@@ -1672,7 +1711,7 @@ Place STime2Place(
     return place;
   }
 
-  double place_f = STime2Place_f(block,time);
+  double place_f = gakk_STime2Place_f(block,time,times);
 
   Double2Placement(place_f, &place);
     
@@ -1688,4 +1727,42 @@ Place STime2Place(
   return place;
 }
 
+
+double STime2Place_f(
+                     const struct Blocks *block,
+                     double time,
+                     enum SwingingMode swinging_mode
+                     )
+{
+  const struct STimes *times = get_stimes_from_swinging_mode(block, swinging_mode);
+  return gakk_STime2Place_f(block, time, times);
+}
+
+Place STime2Place(
+                  const struct Blocks *block,
+                  STime time,
+                  enum SwingingMode swinging_mode
+                  )
+{
+  const struct STimes *times = get_stimes_from_swinging_mode(block, swinging_mode);
+  return gakk_STime2Place(block, time, times);
+}
+
+double STime2Place2_f(
+                      const struct Blocks *block,
+                      double time,
+                      const struct Tracks *track
+                      )
+{
+  return gakk_STime2Place_f(block, time, track->times);
+}
+
+Place STime2Place2(
+                   const struct Blocks *block,
+                   STime time,
+                   const struct Tracks *track
+                   )
+{
+  return gakk_STime2Place(block, time, track->times);
+}
 

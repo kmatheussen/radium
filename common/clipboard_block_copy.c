@@ -64,8 +64,6 @@ struct WBlocks *CB_CopyBlock(
 
 	toblock->name=block->name;
 
-	toblock->times=NULL;
-
         // wtracks / tracks
         
 	towblock->wtracks=NULL;
