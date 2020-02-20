@@ -192,7 +192,7 @@ void RT_schedule_beats_between_seqblocks(struct SeqTrack *seqtrack,
   const struct Beats *last_beat = static_cast<const struct Beats*>(ListLast3(const_cast<ListHeader3*>(&block->beats->l)));
   R_ASSERT_RETURN_IF_FALSE(last_beat!=NULL);
 
-  int64_t last_beatseqtime = get_seqblock_place_time(seqblock1, last_beat->l.p);
+  int64_t last_beatseqtime = get_seqblock_place_time(seqblock1, last_beat->l.p, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
 
   int64_t beat_seqlength = time - last_beatseqtime;
   
@@ -288,7 +288,7 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
 
     // Schedule next beat
     if (iterator->next_beat != NULL)
-      return get_seqblock_place_time(seqblock, iterator->next_beat->l.p);
+      return get_seqblock_place_time(seqblock, iterator->next_beat->l.p, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
     
 #if 0
     (void)next_seqblock;
@@ -347,7 +347,7 @@ void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
     args[0].const_pointer = seqblock;
     args[1].const_pointer = next_seqblock;
     
-    int64_t time = get_seqblock_place_time(seqblock, next_beat->l.p);
+    int64_t time = get_seqblock_place_time(seqblock, next_beat->l.p, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
 
     R_ASSERT(iterator->is_active==false);
     iterator->is_active = true;

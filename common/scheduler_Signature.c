@@ -54,7 +54,7 @@ static int64_t RT_scheduled_Signature(struct SeqTrack *seqtrack, int64_t time, u
   
   // Schedule next signature
   if (iterator->next_signature != NULL)
-    return get_seqblock_place_time(seqblock, iterator->next_signature->l.p);
+    return get_seqblock_place_time(seqblock, iterator->next_signature->l.p, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
   else
     return DONT_RESCHEDULE;
 }
@@ -97,7 +97,7 @@ void RT_schedule_Signature_newblock(struct SeqTrack *seqtrack,
     union SuperType args[num_args];
     args[0].const_pointer = seqblock;
     
-    int64_t time = get_seqblock_place_time(seqblock, next_signature->l.p);
+    int64_t time = get_seqblock_place_time(seqblock, next_signature->l.p, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
     
     SCHEDULER_add_event(seqtrack, time, RT_scheduled_Signature, &args[0], num_args, SCHEDULER_SIGNATURE_PRIORITY);
   }

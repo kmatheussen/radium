@@ -4530,7 +4530,7 @@ static dynvec_t get_editor_signatures(int64_t start_seqtime, int64_t end_seqtime
       const struct Signatures *signature = block->signatures;
       while(signature != NULL){
 
-        int64_t blocktime = Place2STime(block, &signature->l.p);
+        int64_t blocktime = Place2STime(block, &signature->l.p, NON_SWINGING_MODE);
         int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, blocktime);
 
         if (has_created_first==false){

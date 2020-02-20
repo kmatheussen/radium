@@ -171,8 +171,8 @@ double lineDuration(int line, int tracknum, int blocknum, int windownum){
   Place p1 = {line, 0, 1};
   Place p2 = {line+1, 0, 1};
 
-  STime s1 = Place2NonSwingingSTime(block, &p1);
-  STime s2 = Place2NonSwingingSTime(block, &p2);
+  STime s1 = Place2STime2(block, &p1, wtrack->track);
+  STime s2 = Place2STime2(block, &p2, wtrack->track);
 
   return (double)(s2-s1) / (double)MIXER_get_sample_rate();
 }

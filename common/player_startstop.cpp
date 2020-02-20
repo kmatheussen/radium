@@ -404,7 +404,7 @@ static void PlayRange(struct Tracker_Windows *window, const Place *place){
   
   //Place *place_start = GetRangeStartPlace(wblock);
   const Place *place_end   = &wblock->rangey2;
-  pc->range_duration = Place2STime(wblock->block, place_end) - Place2STime(wblock->block, place);
+  pc->range_duration = Place2STime(wblock->block, place_end, EDITOR_BLOCK_SWINGING_MODE) - Place2STime(wblock->block, place, EDITOR_BLOCK_SWINGING_MODE);
   
   pc->is_playing_range = true;
   PlayBlock(wblock->block,place,true);
@@ -643,6 +643,7 @@ void PlaySongCurrPos(void){
   }
   
   struct WBlocks *wblock=root->song->tracker_windows->wblock;
+  struct WTracks *wtrack = wblock->wtrack;
   
   int playlistpos = getCurrPlaylistPos(); //BS_GetCurrPlaylistPos();
 
@@ -666,7 +667,7 @@ void PlaySongCurrPos(void){
       place=&wblock->reallines[wblock->curr_realline]->l.p;
     }
     
-    int64_t stime = Place2STime(seqblock->block, place);
+    int64_t stime = Place2STime2(seqblock->block, place, wtrack->track);
     int64_t seqtime = seqblock->t.time + blocktime_to_seqtime(seqblock, stime);
   
     PlaySong(seqtime);
@@ -757,7 +758,7 @@ void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool called_from_jack_
               if (wblock==window->wblock) {
                 
                 const int64_t blocktime = seqtime_to_blocktime(seqblock, pos - seqblock->t.time);
-                const Place place = STime2Place(block, blocktime);
+                const Place place = STime2Place(block, blocktime, EDITOR_CURR_TRACK_SWINGING_MODE);
                 const int realline = FindRealLineFor(wblock, 0, &place);
                 
                 //SelectWBlock(window, wblock);
