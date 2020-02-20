@@ -17,6 +17,7 @@ extern LANGSPEC char* STRING_get_utf8_chars(const char* s);
 
 extern LANGSPEC bool STRING_starts_with(const wchar_t *string, const char *startswith);
 extern LANGSPEC bool STRING_starts_with2(const wchar_t *string, const wchar_t *startswith);
+extern LANGSPEC wchar_t *STRING_remove_starts_with(const wchar_t *string, const char *startswith);
 extern LANGSPEC bool STRING_ends_with(const wchar_t *string, const char *endswiths);
 extern LANGSPEC bool STRING_equals(const wchar_t *string, const char *s2);
 extern LANGSPEC bool STRING_equals2(const wchar_t *string, const wchar_t *s2);
@@ -26,6 +27,8 @@ extern LANGSPEC wchar_t *STRING_append(const wchar_t *s1, const wchar_t *w2);
 
 extern LANGSPEC wchar_t *STRING_to_upper(const wchar_t *string);
 extern LANGSPEC wchar_t *STRING_to_lower(const wchar_t *string);
+
+extern LANGSPEC int STRING_find_pos(const wchar_t *string, int start_pos, const char *what_to_find); // returns -1 if not found.
 
 
 extern LANGSPEC wchar_t *STRING_toBase64(const wchar_t *s);
