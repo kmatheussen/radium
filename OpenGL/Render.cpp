@@ -754,12 +754,6 @@ static const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *w
   STime last_time = -1;
   int pos=0;
 
-  const struct STimes *stimes;
-  if (window->curr_track >= 0)
-    stimes = wblock->wtrack->track->times;
-  else
-    stimes = wblock->block->times_with_global_swings;
-  
   for(int realline = 0 ; realline < wblock->num_reallines ; realline++){
     float fp1=GetfloatFromPlace(&wblock->reallines[realline]->l.p);
     float fp2;
@@ -772,7 +766,7 @@ static const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *w
     for(int n = 0 ; n<TEMPOGRAPH_POINTS_PER_REALLINE ; n++){
       Place p;
       Float2Placement(scale(n,0,TEMPOGRAPH_POINTS_PER_REALLINE,fp1,fp2), &p);
-      STime time = Place2STime_from_times(wblock->block->num_lines, stimes, &p);
+      STime time = Place2STime(wblock->block, &p, EDITOR_CURR_TRACK_SWINGING_MODE);
 
       // This version might be unnoticable faster (although it could also be unnoticable slower), but in the above version we see if the stimes[linenum].time values are wrong.
       //float floatplace = scale(n,0,TEMPOGRAPH_POINTS_PER_REALLINE,fp1,fp2);
