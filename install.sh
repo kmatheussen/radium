@@ -62,6 +62,8 @@ for a in * ; do
     fi
 done
 
+cp -f /tmp/radium_linux.bin "$TARGET/"
+
 mkdir -p "$TARGET/packages"
 
 # s7

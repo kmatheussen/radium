@@ -4,7 +4,11 @@ set -e
 
 export PYTHONEXE=`./find_python_path.sh`
 
-export RADIUM_BIN="bin/radium_linux.bin"
+export RADIUM_BIN="/tmp/radium_bin/radium_linux.bin"
+
+mkdir -p /tmp/radium_bin
+mkdir -p /tmp/radium_objects
+
 
 # find_moc_and_uic_path.sh has been tested on fedora 11, fedora 17, ubuntu 12, and mint 13.
 #export MOC="`./find_moc_and_uic_paths.sh moc`"
@@ -230,7 +234,9 @@ fi
 
 cp -f bin/run_radium_linux.sh bin/radium
 
-#cp -p *.o linux_objs/ 2>/dev/null | true
+ln -sf $RADIUM_BIN bin/
+
+ln -sf `pwd`/bin/* /tmp/radium_bin/ || true
 
 echo
 if grep static\  */*.c */*.cpp */*.m */*/*.c */*/*.cpp | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup ; then
