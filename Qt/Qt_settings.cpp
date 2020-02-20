@@ -159,6 +159,14 @@ bool STRING_starts_with(const wchar_t *string, const char *endswith){
   return s.startsWith(endswith);
 }
 
+wchar_t *STRING_remove_starts_with(const wchar_t *string, const char *startswith){
+  QString s1 = STRING_get_qstring(string);
+  QString s2 = startswith;
+  R_ASSERT_NON_RELEASE(s1.startsWith(s2));
+  
+  return STRING_create(s1.remove(0, s2.length()));
+}
+
 bool STRING_ends_with(const wchar_t *string, const char *endswith){
   QString s = STRING_get_qstring(string);
   return s.endsWith(endswith);
@@ -191,6 +199,10 @@ wchar_t *STRING_to_upper(const wchar_t *string){
 }
 wchar_t *STRING_to_lower(const wchar_t *string){
   return STRING_create(STRING_get_qstring(string).toLower());
+}
+
+int STRING_find_pos(const wchar_t *string, int start_pos, const char *what_to_find){
+  return STRING_get_qstring(string).indexOf(what_to_find, 0);
 }
 
 wchar_t *STRING_toBase64(const wchar_t *s){

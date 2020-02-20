@@ -7,6 +7,7 @@
 
 #include "Dynvec_proc.h"
 
+#define STRING_IS_BASE64 "________STRING_IS_BASE64__"
 
 static const dynvec_t g_empty_dynvec_dynvec = {0};
 const dyn_t g_empty_dynvec = {
@@ -52,10 +53,16 @@ void DYN_save(disk_t *file, const dyn_t dyn){
     RError("Uninitialized type not supported when saving hash to disk");
     break;
   case STRING_TYPE:
-    DISK_write_wchar(file, dyn.string);
+    if (STRING_find_pos(dyn.string, 0, "\n") >= 0){
+      DISK_write(file, STRING_IS_BASE64);
+      DISK_write_wchar(file, STRING_toBase64(dyn.string));
+    } else {
+      DISK_write_wchar(file, dyn.string);
+    }
     DISK_write(file, "\n");
     break;
   case SYMBOL_TYPE:
+    R_ASSERT_NON_RELEASE(STRING_find_pos(STRING_create(dyn.symbol), 0, "\n")==-1);
     DISK_write(file, dyn.symbol);
     DISK_write(file, "\n");
     break;
@@ -150,7 +157,11 @@ dyn_t DYN_load(disk_t *file, bool *success){
     break;
   case STRING_TYPE:
     line = READ_LINE(file);
-    ret = DYN_create_string_dont_copy(line);
+    if (STRING_starts_with(line, STRING_IS_BASE64)){
+      ret = DYN_create_string_dont_copy(STRING_fromBase64(STRING_remove_starts_with(line, STRING_IS_BASE64)));
+    } else {
+      ret = DYN_create_string_dont_copy(line);
+    }
     break;
   case SYMBOL_TYPE:
     line = READ_LINE(file);
