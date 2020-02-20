@@ -62,6 +62,7 @@ MAKEFILE=Makefile.Qt
 MAX_NUM_UNDOS=800
 
 CD=common/
+T=/tmp/radium_objects/
 
 PKG ?= pkg-config
 PKGqt ?= $(PKG)
@@ -72,6 +73,12 @@ CC_STATIC ?= $(CC)
 GCC ?= $(CC)
 GPLUSPLUS ?= $(CCC)
 LINKER ?= g++
+
+CC2=./compile_to_tmp.sh $(CC)
+CCC2=./compile_to_tmp.sh $(CCC)
+GCC2=./compile_to_tmp.sh $(GCC)
+CC_STATIC2=./compile_to_tmp.sh $(CC_STATIC)
+
 
 TARGET_OS ?= any
 
@@ -288,7 +295,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference 
+COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference 
 #-fdelete-null-pointer-checks 
 # -Werror
 
@@ -436,81 +443,81 @@ VL_LDFLAGS=$(VL_LIBS)
 
 #-------------------OBJECT DEFINITIONS-------------------------------
 
-OBJ1= windows.o window_config.o list.o vector.o hashmap.o Dynvec.o song.o blocks.o block_insert.o block_split.o block_delete.o block_properties.o tracks.o localzooms.o control.o lines.o font.o track_insert.o track_onoff.o settings.o mmd2load.o
+OBJ1= $(T)windows.o $(T)window_config.o $(T)list.o $(T)vector.o $(T)hashmap.o $(T)Dynvec.o $(T)song.o $(T)blocks.o $(T)block_insert.o $(T)block_split.o $(T)block_delete.o $(T)block_properties.o $(T)tracks.o $(T)localzooms.o $(T)control.o $(T)lines.o $(T)font.o $(T)track_insert.o $(T)track_onoff.o $(T)settings.o $(T)mmd2load.o
 
-OBJ2= notes.o notes_legalize.o pitches.o wblocks.o wtracks.o sliders.o common.o
+OBJ2= $(T)notes.o $(T)notes_legalize.o $(T)pitches.o $(T)wblocks.o $(T)wtracks.o $(T)sliders.o $(T)common.o
 
-OBJ3= eventreciever.o scancodes.o reallines.o notestext.o trackreallines2.o signaturetext.o lpbtext.o bpmtext.o swingtext.o centtext.o chancetext.o veltext.o fxtext.o data_as_text.o clipboard_range.o clipboard_range_calc.o clipboard_range_copy.o clipboard_range_paste.o clipboard_range_cut.o transpose.o backwards.o invert.o glissando.o pitchexpand.o expand.o clipboard_track_copy.o clipboard_track_paste.o clipboard_track_cut.o clipboard_tempos_copy.o clipboard_localzooms.o clipboard_block_copy.o clipboard_block_paste.o quantitize.o
+OBJ3= $(T)eventreciever.o $(T)scancodes.o $(T)reallines.o $(T)notestext.o $(T)trackreallines2.o $(T)signaturetext.o $(T)lpbtext.o $(T)bpmtext.o $(T)swingtext.o $(T)centtext.o $(T)chancetext.o $(T)veltext.o $(T)fxtext.o $(T)data_as_text.o $(T)clipboard_range.o $(T)clipboard_range_calc.o $(T)clipboard_range_copy.o $(T)clipboard_range_paste.o $(T)clipboard_range_cut.o $(T)transpose.o $(T)backwards.o $(T)invert.o $(T)glissando.o $(T)pitchexpand.o $(T)expand.o $(T)clipboard_track_copy.o $(T)clipboard_track_paste.o $(T)clipboard_track_cut.o $(T)clipboard_tempos_copy.o $(T)clipboard_localzooms.o $(T)clipboard_block_copy.o $(T)clipboard_block_paste.o $(T)quantitize.o
 
-OBJ4 = tbox.o area.o range.o nodelines.o
+OBJ4 = $(T)tbox.o $(T)area.o $(T)range.o $(T)nodelines.o
 
-OBJ5= debug.o memory.o validatemem.o placement.o t_gc.o cursor.o cursor_updown.o velocities.o pixmap.o scroll.o
+OBJ5= $(T)debug.o $(T)memory.o $(T)validatemem.o $(T)placement.o $(T)t_gc.o $(T)cursor.o $(T)cursor_updown.o $(T)velocities.o $(T)pixmap.o $(T)scroll.o
 
-OBJ6= realline_calc.o gfx_subtrack.o LPB.o Signature.o Beats.o reallines_insert.o gfx_request.o
+OBJ6= $(T)realline_calc.o $(T)gfx_subtrack.o $(T)LPB.o $(T)Signature.o $(T)Beats.o $(T)reallines_insert.o $(T)gfx_request.o
 
-OBJ7= instruments.o patch.o undo_audio_patch_addremove.o fxlines.o fxlines_legalize.o sequencer.o seqtrack_automation.o song_tempo_automation.o sequencer_timing.o seqblock_automation.o seqblock_stretchspeed.o scroll_play.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o Semaphores.o stacktoucher.o
+OBJ7= $(T)instruments.o $(T)patch.o $(T)undo_audio_patch_addremove.o $(T)fxlines.o $(T)fxlines_legalize.o $(T)sequencer.o $(T)seqtrack_automation.o $(T)song_tempo_automation.o $(T)sequencer_timing.o $(T)seqblock_automation.o $(T)seqblock_stretchspeed.o $(T)scroll_play.o $(T)crashreporter.o $(T)crashreporter_posix.o $(T)crashreporter_windows.o $(T)error.o $(T)threading.o $(T)Semaphores.o $(T)stacktoucher.o
 
 #Tempos and time
-OBJ8= reltempo.o temponodes.o tempos.o time.o temponodes_legalize.o swing.o
+OBJ8= $(T)reltempo.o $(T)temponodes.o $(T)tempos.o $(T)time.o $(T)temponodes_legalize.o $(T)swing.o
 
 #Playing
-OBJ9= Ptask2Mtask.o player.o scheduler.o scheduler_seqtracks.o scheduler_notes.o scheduler_pitches.o scheduler_velocities.o scheduler_fxs.o scheduler_reallines.o scheduler_LPB.o scheduler_Beats.o scheduler_Signature.o playerclass.o player_startstop.o player_pause.o 
+OBJ9= $(T)Ptask2Mtask.o $(T)player.o $(T)scheduler.o $(T)scheduler_seqtracks.o $(T)scheduler_notes.o $(T)scheduler_pitches.o $(T)scheduler_velocities.o $(T)scheduler_fxs.o $(T)scheduler_reallines.o $(T)scheduler_LPB.o $(T)scheduler_Beats.o $(T)scheduler_Signature.o $(T)playerclass.o $(T)player_startstop.o $(T)player_pause.o
 
 #Disk
-OBJ10= disk.o disk_fxs.o disk_wblock.o disk_localzooms.o disk_track.o disk_fx.o disk_fxnodelines.o disk_wtrack.o disk_temponodes.o disk_tempos.o disk_song.o disk_velocities.o disk_block.o disk_placement.o disk_stops.o disk_playlist.o disk_root.o disk_notes.o disk_lpbs.o disk_signatures.o disk_swing.o disk_windows.o disk_warea.o disk_save.o disk_load.o disk_saveload_blocktrack.o disk_instrument.o disk_patches.o disk_slider.o
+OBJ10= $(T)disk.o $(T)disk_fxs.o $(T)disk_wblock.o $(T)disk_localzooms.o $(T)disk_track.o $(T)disk_fx.o $(T)disk_fxnodelines.o $(T)disk_wtrack.o $(T)disk_temponodes.o $(T)disk_tempos.o $(T)disk_song.o $(T)disk_velocities.o $(T)disk_block.o $(T)disk_placement.o $(T)disk_stops.o $(T)disk_playlist.o $(T)disk_root.o $(T)disk_notes.o $(T)disk_lpbs.o $(T)disk_signatures.o $(T)disk_swing.o $(T)disk_windows.o $(T)disk_warea.o $(T)disk_save.o $(T)disk_load.o $(T)disk_saveload_blocktrack.o $(T)disk_instrument.o $(T)disk_patches.o $(T)disk_slider.o
 
 #Undo
-OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_swings.o undo_lpbs.o undo_signatures.o undo_notesandfxs.o undo_reallines.o undo_tracks.o undo_range.o undo_blocks.o undo_trackheader.o undo_reltempomax.o undo_maintempos.o undo_block_insertdelete.o undo_block_mergesplit.o undo_reltemposlider.o undo_sequencer.o undo_song_tempo_automation.o undo_patchvoice.o undo_patchname.o undo_instrument_color.o undo_chip_position.o 
+OBJ11= $(T)undo.o $(T)undo_notes.o $(T)undo_fxs.o $(T)undo_temponodes.o $(T)undo_tempos.o $(T)undo_swings.o $(T)undo_lpbs.o $(T)undo_signatures.o $(T)undo_notesandfxs.o $(T)undo_reallines.o $(T)undo_tracks.o $(T)undo_range.o $(T)undo_blocks.o $(T)undo_trackheader.o $(T)undo_reltempomax.o $(T)undo_maintempos.o $(T)undo_block_insertdelete.o $(T)undo_block_mergesplit.o $(T)undo_reltemposlider.o $(T)undo_sequencer.o $(T)undo_song_tempo_automation.o $(T)undo_patchvoice.o $(T)undo_patchname.o $(T)undo_instrument_color.o $(T)undo_chip_position.o
 
 #X11 Spesific
-#OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
+#OBJ12= $(T)X11_visual.o $(T)X11_error.o $(T)X11_Ptask2Mtask.o $(T)X11_Bs_edit.o $(T)X11_Main.o $(T)X11_endprogram.o $(T)X11_disk.o $(T)X11_Player.o $(T)X11_memory.o $(T)X11_ReqType.o $(T)X11_keyboard.o $(T)X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_instruments.o Qt_visual.o GTK_visual.o Qt_Main.o KeyboardFocus.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_PluginWidget.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o Qt_sequencer.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog.o Qt_song_properties.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_Error.o Qt_progresswindow.o Qt_check_for_updates.o Rational.o Qt_AutoBackups.o flowlayout.o
+OBJ12= $(T)Qt_instruments.o $(T)Qt_visual.o $(T)GTK_visual.o $(T)Qt_Main.o $(T)KeyboardFocus.o $(T)Qt_endprogram.o $(T)Qt_EventReceiver.o $(T)Qt_colors.o $(T)Qt_Menues.o $(T)Qt_Fonts.o $(T)Qt_ReqType.o $(T)Qt_PopupMenu.o $(T)Qt_Bs_edit.o $(T)Qt_PluginWidget.o $(T)Qt_SliderPainter.o $(T)Qt_memory.o $(T)Qt_path_resolver.o $(T)Qt_settings.o $(T)Qt_disk.o $(T)Qt_MainWindow.o $(T)Qt_Time.o $(T)Qt_sequencer.o $(T)GTK_ReqType.o $(T)GTK_PopupMenu.o $(T)Qt_soundfilesaver_widget_callbacks.o $(T)Qt_comment_dialog.o $(T)Qt_song_properties.o $(T)Qt_preferences_callbacks.o $(T)Qt_tools_callbacks.o $(T)Qt_Error.o $(T)Qt_progresswindow.o $(T)Qt_check_for_updates.o $(T)Rational.o $(T)Qt_AutoBackups.o $(T)flowlayout.o
 
-#X11_MidiProperties.o  X11_ClientMessages.o 
-#Qt_Bs_edit.o 
+#X11_MidiProperties.o $(T)X11_ClientMessages.o $(T)
+#Qt_Bs_edit.o $(T)
 
 #Posix (used by linux/win/mac)
-OBJ_POSIX=posix_settings.o posix_Player.o 
+OBJ_POSIX=$(T)posix_settings.o $(T)posix_Player.o
 
 # Two of the following three must be set empty by the build script.
-OBJ_X11 ?= X11_keyboard.o X11_disk.o
-OBJ_WIN ?= X11_disk.o W_Keyboard.o
-OBJ_MACOSX ?= X11_disk.o cocoa_Keyboard.o do.o
+OBJ_X11 ?= $(T)X11_keyboard.o $(T)X11_disk.o
+OBJ_WIN ?= $(T)X11_disk.o $(T)W_Keyboard.o
+OBJ_MACOSX ?= $(T)X11_disk.o $(T)cocoa_Keyboard.o do.o
 
 #Python
-OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_disk.o api_noteedit.o api_velocities.o api_pitches.o api_timing.o api_support.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_soundpluginregistry.o api_requesters.o api_mouse.o api_sequencer.o api_gui.o
+OBJ13=$(T)radium_wrap.o $(T)api_common.o $(T)api_keyplay.o $(T)api_keyplayedit.o $(T)api_navigate.o $(T)api_disk.o $(T)api_noteedit.o $(T)api_velocities.o $(T)api_pitches.o $(T)api_timing.o $(T)api_support.o $(T)wrapfunclist.o $(T)api_trackonoff.o $(T)api_zoom.o $(T)api_notemanipulate.o $(T)api_play.o $(T)api_clipboard.o $(T)api_undo.o $(T)api_various.o $(T)api_instruments.o $(T)api_soundpluginregistry.o $(T)api_requesters.o $(T)api_mouse.o $(T)api_sequencer.o $(T)api_gui.o
 
 #Midi
-OBJ14=disk_midi_fx.o disk_midi_instrument.o midi_fx.o midi_instrument.o midi_playfromstart.o midi_i_input.o midi_menues.o
+OBJ14=$(T)disk_midi_fx.o $(T)disk_midi_instrument.o $(T)midi_fx.o $(T)midi_instrument.o $(T)midi_playfromstart.o $(T)midi_i_input.o $(T)midi_menues.o
 # alsaseq_midi.o
 
 #Faust plugins
-OBJ_FAUST=zita_rev.o stk_flute.o stk_bowed.o stk_blow_bottle.o stk_bass.o stk_blow_hole.o stk_brass.o stk_clarinet.o stk_flute_stk.o stk_glass_harmonica.o stk_harpsi.o stk_modal_bar.o stk_NLF_eks.o stk_NLF_fm.o stk_piano.o stk_saxophony.o stk_sitar.o stk_tibetan_bowl.o stk_tuned_bar.o stk_uni_bar.o stk_voice_form.o faust_tapiir.o faust_system_eq.o faust_system_tremolo.o faust_system_lowpass.o faust_system_highpass.o faust_system_lowshelf.o faust_system_highshelf.o faust_multibandcomp.o
+OBJ_FAUST=$(T)zita_rev.o $(T)stk_flute.o $(T)stk_bowed.o $(T)stk_blow_bottle.o $(T)stk_bass.o $(T)stk_blow_hole.o $(T)stk_brass.o $(T)stk_clarinet.o $(T)stk_flute_stk.o $(T)stk_glass_harmonica.o $(T)stk_harpsi.o $(T)stk_modal_bar.o $(T)stk_NLF_eks.o $(T)stk_NLF_fm.o $(T)stk_piano.o $(T)stk_saxophony.o $(T)stk_sitar.o $(T)stk_tibetan_bowl.o $(T)stk_tuned_bar.o $(T)stk_uni_bar.o $(T)stk_voice_form.o $(T)faust_tapiir.o $(T)faust_system_eq.o $(T)faust_system_tremolo.o $(T)faust_system_lowpass.o $(T)faust_system_highpass.o $(T)faust_system_lowshelf.o $(T)faust_system_highshelf.o $(T)faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=audio_instrument.o SoundProducer.o AudioBuffer.o Jack_plugin.o find_jack_library.o Faust_plugins.o Bus_plugins.o Timeskew_plugin.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o SampleRecorder.o SampleReader.o Seqtrack_plugin.o FluidSynth_plugin.o Pd_plugin.o Modulator_plugin.o SoundPluginRegistry.o SoundPlugin.o AudioMeterPeaks.o Peaks.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Presets.o undo_audio_effect.o undo_connection_enabled.o undo_audio_connection_gain.o undo_pd_controllers.o undo_plugin_state.o SoundfileSaver.o system_compressor_wrapper.o KillJackd.o 
+OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o
  
-#MultiCore.o Smooth.o 
+#MultiCore.o $(T)Smooth.o
 
 #Mixer
 QM=mixergui/
-OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connections.o
+OBJ_MIXER=$(T)QM_view.o $(T)QM_chip.o $(T)QM_MixerWidget.o $(T)undo_mixer.o $(T)undo_mixer_connections.o
 #undo_chip_addremove.o
 
 #OpenGL
-OBJ_VL=GfxElements.o T2.o Render.o Widget.o CheckOpenGL.o
-# Qt${RADIUM_QT_VERSION}Widget.o moc_Qt${RADIUM_QT_VERSION}Widget.o
+OBJ_VL=$(T)GfxElements.o $(T)T2.o $(T)Render.o $(T)Widget.o $(T)CheckOpenGL.o
+# Qt${RADIUM_QT_VERSION}Widget.o $(T)moc_Qt${RADIUM_QT_VERSION}Widget.o
 
 # Not using sndlib anymore, but will perhaps in the future.
 #
-#SNDLIBFILES=sndlib_objectfiles/headers.o sndlib_objectfiles/audio.o sndlib_objectfiles/io.o sndlib_objectfiles/sound.o sndlib_objectfiles/xen.o sndlib_objectfiles/vct.o sndlib_objectfiles/clm.o sndlib_objectfiles/sndlib2xen.o sndlib_objectfiles/clm2xen.o
+#SNDLIBFILES=sndlib_objectfiles/headers.o $(T)sndlib_objectfiles/audio.o $(T)sndlib_objectfiles/io.o $(T)sndlib_objectfiles/sound.o $(T)sndlib_objectfiles/xen.o $(T)sndlib_objectfiles/vct.o $(T)sndlib_objectfiles/clm.o $(T)sndlib_objectfiles/sndlib2xen.o $(T)sndlib_objectfiles/clm2xen.o
 #
 SNDLIBFILES=
 
 #Embedded scheme
-OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o $(SNDLIBFILES) s7webserver.o radium_s7_wrap.o qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o http_parser.o
+OBJ_ES=$(T)scheme.o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o $(SNDLIBFILES) $(T)s7webserver.o $(T)radium_s7_wrap.o $(T)qhttpconnection.o $(T)moc_qhttpconnection.o $(T)qhttprequest.o $(T)moc_qhttprequest.o $(T)qhttpresponse.o $(T)moc_qhttpresponse.o $(T)qhttpserver.o $(T)moc_qhttpserver.o $(T)http_parser.o
 
 OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER) $(OBJ_VL)
 
@@ -543,7 +550,7 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean: clean_pluginhost
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h api/s7_types_code.c api/s7_types_code_init.c api/s7_types.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt* $(P)Qt_preferences.h $(P)Qt_vst_paths_widget.h $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h $(CD)visual_op_queue_proc.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe bin/radium_check_opengl bin/radium_check_opengl.exe bin/radium_plugin_scanner bin/radium_plugin_scanner.exe bin/radium_addr2line bin/radium_addr2line.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp sndlib_built sndlib_objectfiles/* bin/packages/sndlib/*.o
+	rm -f $(T)*.o /tmp/radium_bin /tmp/radium_objects *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h api/s7_types_code.c api/s7_types_code_init.c api/s7_types.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt* $(P)Qt_preferences.h $(P)Qt_vst_paths_widget.h $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h $(CD)visual_op_queue_proc.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe bin/radium_check_opengl bin/radium_check_opengl.exe bin/radium_plugin_scanner bin/radium_plugin_scanner.exe bin/radium_addr2line bin/radium_addr2line.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp sndlib_built sndlib_objectfiles/* bin/packages/sndlib/*.o
 	rm -f audio/zita_rev.cpp audio/stk_flute.cpp audio/stk_bowed.cpp audio/stk_blow_bottle.cpp audio/stk_bass.cpp audio/stk_blow_hole.cpp audio/stk_brass.cpp audio/stk_clarinet.cpp audio/stk_flute_stk.cpp audio/stk_glass_harmonica.cpp audio/stk_harpsi.cpp audio/stk_modal_bar.cpp audio/stk_NLF_eks.cpp audio/stk_NLF_fm.cpp audio/stk_piano.cpp audio/stk_saxophony.cpp audio/stk_sitar.cpp audio/stk_tibetan_bowl.cpp audio/stk_tuned_bar.cpp audio/stk_uni_bar.cpp audio/stk_voice_form.cpp audio/faust_tapiir.cpp audio/faust_multibandcomp.cpp audio/faust_system_eq.cpp audio/faust_system_tremolo.cpp audio/faust_system_lowpass.cpp audio/faust_system_highpass.cpp audio/faust_system_lowshelf.cpp audio/faust_system_highshelf.cpp audio/system_compressor.cpp 
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
 	cd bin/packages/sndlib && $(MAKE) clean && rm -f sndlib.a sndlib.so
@@ -751,8 +758,6 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 bin/radium_plugin_scanner: $(PLUGINHOSTSCANNERLIB)
 	$(LINKER) $(PLUGINHOSTSCANNERLIB) -o bin/radium_plugin_scanner $(OS_JUCE_LDFLAGS) $(RADIUM_BFD_LDFLAGS) `$(PKG) --libs freetype2`
 
-
-
 # Adding "TARGET_ARCH=-g" to prevent juce from compiling with -march=native
 PLUGINHOSTOPTS = CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing"
 
@@ -803,657 +808,657 @@ bin/protos.conf: $(API)protos.conf
 
 #-----------------COMPILING-----------------------------
 
-windows.o:  $(BUILD_DEPENDENCIES) $(CD)windows.c 
-	$(CC) $(CD)windows.c $(OPT)
+$(T)windows.o: $(BUILD_DEPENDENCIES) $(CD)windows.c 
+	$(CC2) $(CD)windows.c $(OPT)
 
-list.o:  $(BUILD_DEPENDENCIES) $(CD)list.c 
-	$(CC) $(CD)list.c $(OPT)
+$(T)list.o:  $(BUILD_DEPENDENCIES) $(CD)list.c 
+	$(CC2) $(CD)list.c $(OPT)
 
-vector.o:  $(BUILD_DEPENDENCIES) $(CD)vector.c 
-	$(CC) $(CD)vector.c $(OPT)
+$(T)vector.o:  $(BUILD_DEPENDENCIES) $(CD)vector.c 
+	$(CC2) $(CD)vector.c $(OPT)
 
-hashmap.o:  $(BUILD_DEPENDENCIES) $(CD)hashmap.c 
-	$(CC) $(CD)hashmap.c $(OPT) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) #-fno-sanitize=undefined
+$(T)hashmap.o:  $(BUILD_DEPENDENCIES) $(CD)hashmap.c 
+	$(CC2) $(CD)hashmap.c $(OPT) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) #-fno-sanitize=undefined
 
-Dynvec.o:  $(BUILD_DEPENDENCIES) $(CD)Dynvec.c $(CD)dyn_type.h $(CD)nsmtracker.h
-	$(CC) $(CD)Dynvec.c $(OPT)
+$(T)Dynvec.o:  $(BUILD_DEPENDENCIES) $(CD)Dynvec.c $(CD)dyn_type.h $(CD)nsmtracker.h
+	$(CC2) $(CD)Dynvec.c $(OPT)
 
-song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c 
-	$(CC) $(CD)song.c $(OPT)
+$(T)song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c 
+	$(CC2) $(CD)song.c $(OPT)
 
-blocks.o:  $(BUILD_DEPENDENCIES) $(CD)blocks.cpp
-	$(CCC) $(CD)blocks.cpp $(QTOPT)
+$(T)blocks.o:  $(BUILD_DEPENDENCIES) $(CD)blocks.cpp
+	$(CCC2) $(CD)blocks.cpp $(QTOPT)
 
-tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.c 
-	$(CC) $(CD)tracks.c $(OPT)
+$(T)tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.c 
+	$(CC2) $(CD)tracks.c $(OPT)
 
-localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)localzooms.c 
-	$(CC) $(CD)localzooms.c $(OPT)
+$(T)localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)localzooms.c 
+	$(CC2) $(CD)localzooms.c $(OPT)
 
-notes.o:  $(BUILD_DEPENDENCIES) $(CD)notes.cpp common/nsmtracker.h
-	$(CCC) $(CD)notes.cpp $(QTOPT)
+$(T)notes.o:  $(BUILD_DEPENDENCIES) $(CD)notes.cpp common/nsmtracker.h
+	$(CCC2) $(CD)notes.cpp $(QTOPT)
 
-pitches.o:  $(BUILD_DEPENDENCIES) $(CD)pitches.c 
-	$(CC) $(CD)pitches.c $(OPT)
+$(T)pitches.o:  $(BUILD_DEPENDENCIES) $(CD)pitches.c 
+	$(CC2) $(CD)pitches.c $(OPT)
 
-wblocks.o:  $(BUILD_DEPENDENCIES) $(CD)wblocks.c 
-	$(CC) $(CD)wblocks.c $(OPT)
+$(T)wblocks.o:  $(BUILD_DEPENDENCIES) $(CD)wblocks.c 
+	$(CC2) $(CD)wblocks.c $(OPT)
 
-wtracks.o:  $(BUILD_DEPENDENCIES) $(CD)wtracks.c 
-	$(CC) $(CD)wtracks.c $(OPT)
+$(T)wtracks.o:  $(BUILD_DEPENDENCIES) $(CD)wtracks.c 
+	$(CC2) $(CD)wtracks.c $(OPT)
 
-sliders.o:  $(BUILD_DEPENDENCIES) $(CD)sliders.c 
-	$(CC) $(CD)sliders.c $(OPT)
+$(T)sliders.o:  $(BUILD_DEPENDENCIES) $(CD)sliders.c 
+	$(CC2) $(CD)sliders.c $(OPT)
 
-common.o:  $(BUILD_DEPENDENCIES) $(CD)common.c 
-	$(CC) $(CD)common.c $(OPT)
+$(T)common.o:  $(BUILD_DEPENDENCIES) $(CD)common.c 
+	$(CC2) $(CD)common.c $(OPT)
 
-eventreciever.o:  $(BUILD_DEPENDENCIES) $(CD)eventreciever.c
-	$(CC) $(CD)eventreciever.c $(OPT)
+$(T)eventreciever.o:  $(BUILD_DEPENDENCIES) $(CD)eventreciever.c
+	$(CC2) $(CD)eventreciever.c $(OPT)
 
-scancodes.o:  $(BUILD_DEPENDENCIES) $(CD)scancodes.c
-	$(CC) $(CD)scancodes.c $(OPT)
+$(T)scancodes.o:  $(BUILD_DEPENDENCIES) $(CD)scancodes.c
+	$(CC2) $(CD)scancodes.c $(OPT)
 
-reallines.o:  $(BUILD_DEPENDENCIES) $(CD)reallines.c
-	$(CC) $(CD)reallines.c $(OPT)
+$(T)reallines.o:  $(BUILD_DEPENDENCIES) $(CD)reallines.c
+	$(CC2) $(CD)reallines.c $(OPT)
 
-notestext.o:  $(BUILD_DEPENDENCIES) $(CD)notestext.c
-	$(CC) $(CD)notestext.c $(OPT)
+$(T)notestext.o:  $(BUILD_DEPENDENCIES) $(CD)notestext.c
+	$(CC2) $(CD)notestext.c $(OPT)
 
-trackreallines2.o:  $(BUILD_DEPENDENCIES) $(CD)trackreallines2.cpp
-	$(CCC) $(CD)trackreallines2.cpp  $(QTOPT) #$(OPT)
+$(T)trackreallines2.o:  $(BUILD_DEPENDENCIES) $(CD)trackreallines2.cpp
+	$(CCC2) $(CD)trackreallines2.cpp  $(QTOPT) #$(OPT)
 
-signaturetext.o:  $(BUILD_DEPENDENCIES) $(CD)signaturetext.cpp
-	$(CCC) $(CD)signaturetext.cpp $(QTOPT)
+$(T)signaturetext.o:  $(BUILD_DEPENDENCIES) $(CD)signaturetext.cpp
+	$(CCC2) $(CD)signaturetext.cpp $(QTOPT)
 
-lpbtext.o:  $(BUILD_DEPENDENCIES) $(CD)lpbtext.cpp
-	$(CCC) $(CD)lpbtext.cpp $(QTOPT)
+$(T)lpbtext.o:  $(BUILD_DEPENDENCIES) $(CD)lpbtext.cpp
+	$(CCC2) $(CD)lpbtext.cpp $(QTOPT)
 
-bpmtext.o:  $(BUILD_DEPENDENCIES) $(CD)bpmtext.cpp
-	$(CCC) $(CD)bpmtext.cpp $(QTOPT)
+$(T)bpmtext.o:  $(BUILD_DEPENDENCIES) $(CD)bpmtext.cpp
+	$(CCC2) $(CD)bpmtext.cpp $(QTOPT)
 
-swingtext.o:  $(BUILD_DEPENDENCIES) $(CD)swingtext.cpp
-	$(CCC) $(CD)swingtext.cpp $(QTOPT)
+$(T)swingtext.o:  $(BUILD_DEPENDENCIES) $(CD)swingtext.cpp
+	$(CCC2) $(CD)swingtext.cpp $(QTOPT)
 
-centtext.o:  $(BUILD_DEPENDENCIES) $(CD)centtext.cpp
-	$(CCC) $(CD)centtext.cpp $(QTOPT)
+$(T)centtext.o:  $(BUILD_DEPENDENCIES) $(CD)centtext.cpp
+	$(CCC2) $(CD)centtext.cpp $(QTOPT)
 
-chancetext.o:  $(BUILD_DEPENDENCIES) $(CD)chancetext.cpp
-	$(CCC) $(CD)chancetext.cpp $(QTOPT)
+$(T)chancetext.o:  $(BUILD_DEPENDENCIES) $(CD)chancetext.cpp
+	$(CCC2) $(CD)chancetext.cpp $(QTOPT)
 
-veltext.o:  $(BUILD_DEPENDENCIES) $(CD)veltext.cpp
-	$(CCC) $(CD)veltext.cpp $(QTOPT)
+$(T)veltext.o:  $(BUILD_DEPENDENCIES) $(CD)veltext.cpp
+	$(CCC2) $(CD)veltext.cpp $(QTOPT)
 
-fxtext.o:  $(BUILD_DEPENDENCIES) $(CD)fxtext.cpp
-	$(CCC) $(CD)fxtext.cpp $(QTOPT)
+$(T)fxtext.o:  $(BUILD_DEPENDENCIES) $(CD)fxtext.cpp
+	$(CCC2) $(CD)fxtext.cpp $(QTOPT)
 
-data_as_text.o:  $(BUILD_DEPENDENCIES) $(CD)data_as_text.c
-	$(CC) $(CD)data_as_text.c $(OPT)
+$(T)data_as_text.o:  $(BUILD_DEPENDENCIES) $(CD)data_as_text.c
+	$(CC2) $(CD)data_as_text.c $(OPT)
 
-debug.o:  $(BUILD_DEPENDENCIES) $(CD)debug.c
-	$(CC) $(CD)debug.c $(OPT) 
+$(T)debug.o:  $(BUILD_DEPENDENCIES) $(CD)debug.c
+	$(CC2) $(CD)debug.c $(OPT) 
 
-memory.o:  $(BUILD_DEPENDENCIES) $(CD)memory.c
-	$(GCC) $(CD)memory.c $(OPT)
+$(T)memory.o:  $(BUILD_DEPENDENCIES) $(CD)memory.c
+	$(GCC2) $(CD)memory.c $(OPT)
 
-validatemem.o:  $(BUILD_DEPENDENCIES) $(CD)validatemem.cpp $(CD)atomic.h
-	$(CCC) $(CD)validatemem.cpp $(QTOPT)
+$(T)validatemem.o:  $(BUILD_DEPENDENCIES) $(CD)validatemem.cpp $(CD)atomic.h
+	$(CCC2) $(CD)validatemem.cpp $(QTOPT)
 
-placement.o:  $(BUILD_DEPENDENCIES) $(CD)placement.c
-	$(CC) $(CD)placement.c $(OPT)
+$(T)placement.o:  $(BUILD_DEPENDENCIES) $(CD)placement.c
+	$(CC2) $(CD)placement.c $(OPT)
 
-t_gc.o:  $(BUILD_DEPENDENCIES) $(CD)t_gc.c
-	$(CC) $(CD)t_gc.c $(OPT)
+$(T)t_gc.o:  $(BUILD_DEPENDENCIES) $(CD)t_gc.c
+	$(CC2) $(CD)t_gc.c $(OPT)
 
-cursor.o:  $(BUILD_DEPENDENCIES) $(CD)cursor.c
-	$(CC) $(CD)cursor.c $(OPT)
+$(T)cursor.o:  $(BUILD_DEPENDENCIES) $(CD)cursor.c
+	$(CC2) $(CD)cursor.c $(OPT)
 
-cursor_updown.o:  $(BUILD_DEPENDENCIES) $(CD)cursor_updown.cpp
-	$(CCC) $(CD)cursor_updown.cpp $(QTOPT)
+$(T)cursor_updown.o:  $(BUILD_DEPENDENCIES) $(CD)cursor_updown.cpp
+	$(CCC2) $(CD)cursor_updown.cpp $(QTOPT)
 
-velocities.o:  $(BUILD_DEPENDENCIES) $(CD)velocities.cpp
-	$(CCC) $(CD)velocities.cpp $(QTOPT)
+$(T)velocities.o:  $(BUILD_DEPENDENCIES) $(CD)velocities.cpp
+	$(CCC2) $(CD)velocities.cpp $(QTOPT)
 
-realline_calc.o:  $(BUILD_DEPENDENCIES) $(CD)realline_calc.c
-	$(CC) $(CD)realline_calc.c $(OPT)
+$(T)realline_calc.o:  $(BUILD_DEPENDENCIES) $(CD)realline_calc.c
+	$(CC2) $(CD)realline_calc.c $(OPT)
 
-gfx_subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_subtrack.c common/nsmtracker.h
-	$(CC) $(CD)gfx_subtrack.c $(OPT)
+$(T)gfx_subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_subtrack.c common/nsmtracker.h
+	$(CC2) $(CD)gfx_subtrack.c $(OPT)
 
-tempos.o:  $(BUILD_DEPENDENCIES) $(CD)tempos.cpp
-	$(CCC) $(CD)tempos.cpp $(QTOPT)
+$(T)tempos.o:  $(BUILD_DEPENDENCIES) $(CD)tempos.cpp
+	$(CCC2) $(CD)tempos.cpp $(QTOPT)
 
-swing.o:  $(BUILD_DEPENDENCIES) $(CD)swing.cpp
-	$(CCC) $(CD)swing.cpp $(QTOPT)
+$(T)swing.o:  $(BUILD_DEPENDENCIES) $(CD)swing.cpp
+	$(CCC2) $(CD)swing.cpp $(QTOPT)
 
-LPB.o:  $(BUILD_DEPENDENCIES) $(CD)LPB.cpp
-	$(CCC) $(CD)LPB.cpp $(QTOPT)
+$(T)LPB.o:  $(BUILD_DEPENDENCIES) $(CD)LPB.cpp
+	$(CCC2) $(CD)LPB.cpp $(QTOPT)
 
-Signature.o:  $(BUILD_DEPENDENCIES) $(CD)Signature.cpp
-	$(CCC) $(CD)Signature.cpp $(QTOPT)
+$(T)Signature.o:  $(BUILD_DEPENDENCIES) $(CD)Signature.cpp
+	$(CCC2) $(CD)Signature.cpp $(QTOPT)
 
-Beats.o:  $(BUILD_DEPENDENCIES) $(CD)Beats.cpp
-	$(CCC) $(CD)Beats.cpp $(QTOPT)
+$(T)Beats.o:  $(BUILD_DEPENDENCIES) $(CD)Beats.cpp
+	$(CCC2) $(CD)Beats.cpp $(QTOPT)
 
-temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes.c
-	$(CC) $(CD)temponodes.c $(OPT)
+$(T)temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes.c
+	$(CC2) $(CD)temponodes.c $(OPT)
 
-instruments.o:  $(BUILD_DEPENDENCIES) $(CD)instruments.cpp
-	$(CCC) $(CD)instruments.cpp $(CPPOPT)
+$(T)instruments.o:  $(BUILD_DEPENDENCIES) $(CD)instruments.cpp
+	$(CCC2) $(CD)instruments.cpp $(CPPOPT)
 
-fxlines.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines.cpp
-	$(CCC) $(CD)fxlines.cpp $(CPPOPT)
-
-
-tbox.o:  $(BUILD_DEPENDENCIES) $(CD)tbox.c
-	$(CC) $(CD)tbox.c $(OPT)
+$(T)fxlines.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines.cpp
+	$(CCC2) $(CD)fxlines.cpp $(CPPOPT)
 
 
-area.o:  $(BUILD_DEPENDENCIES) $(CD)area.c
-	$(CC) $(CD)area.c $(OPT)
+$(T)tbox.o:  $(BUILD_DEPENDENCIES) $(CD)tbox.c
+	$(CC2) $(CD)tbox.c $(OPT)
 
-nodelines.o:  $(BUILD_DEPENDENCIES) $(CD)nodelines.c
-	$(CC) $(CD)nodelines.c $(OPT)
 
-range.o:  $(BUILD_DEPENDENCIES) $(CD)range.c
-	$(CC) $(CD)range.c $(OPT)
+$(T)area.o:  $(BUILD_DEPENDENCIES) $(CD)area.c
+	$(CC2) $(CD)area.c $(OPT)
 
-sequencer.o:  $(BUILD_DEPENDENCIES) $(CD)sequencer.cpp audio/Envelope.hpp
-	$(CCC) $(CD)sequencer.cpp $(QTOPT)
+$(T)nodelines.o:  $(BUILD_DEPENDENCIES) $(CD)nodelines.c
+	$(CC2) $(CD)nodelines.c $(OPT)
 
-seqtrack_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h common/Vector.hpp
-	$(CCC) $(CD)seqtrack_automation.cpp $(QTOPT) -Wno-null-dereference
+$(T)range.o:  $(BUILD_DEPENDENCIES) $(CD)range.c
+	$(CC2) $(CD)range.c $(OPT)
 
-song_tempo_automation.o:  $(BUILD_DEPENDENCIES) $(CD)song_tempo_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h
-	$(CCC) $(CD)song_tempo_automation.cpp $(QTOPT) -Wno-unknown-pragmas -Wno-null-dereference
+$(T)sequencer.o:  $(BUILD_DEPENDENCIES) $(CD)sequencer.cpp audio/Envelope.hpp
+	$(CCC2) $(CD)sequencer.cpp $(QTOPT)
 
-sequencer_timing.o:  $(BUILD_DEPENDENCIES) $(CD)sequencer_timing.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h
-	$(CCC) $(CD)sequencer_timing.cpp $(QTOPT) -Wno-null-dereference # -Wno-unknown-pragmas
+$(T)seqtrack_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h common/Vector.hpp
+	$(CCC2) $(CD)seqtrack_automation.cpp $(QTOPT) -Wno-null-dereference
 
-seqblock_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h audio/Envelope.hpp common/Vector.hpp
-	$(CCC) $(CD)seqblock_automation.cpp $(QTOPT) -Wno-unknown-pragmas
+$(T)song_tempo_automation.o:  $(BUILD_DEPENDENCIES) $(CD)song_tempo_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h
+	$(CCC2) $(CD)song_tempo_automation.cpp $(QTOPT) -Wno-unknown-pragmas -Wno-null-dereference
+
+$(T)sequencer_timing.o:  $(BUILD_DEPENDENCIES) $(CD)sequencer_timing.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h
+	$(CCC2) $(CD)sequencer_timing.cpp $(QTOPT) -Wno-null-dereference # -Wno-unknown-pragmas
+
+$(T)seqblock_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h audio/Envelope.hpp common/Vector.hpp
+	$(CCC2) $(CD)seqblock_automation.cpp $(QTOPT) -Wno-unknown-pragmas
 
 SEQBLOCK_STRETCHSPEED_OPT=
 ifeq (,$(findstring clang,$(CC)))
  SEQBLOCK_STRETCHSPEED_OPT += -Wno-maybe-uninitialized
 endif
 
-seqblock_stretchspeed.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_stretchspeed.cpp $(CD)SeqAutomation.hpp 
-	$(CCC) $(CD)seqblock_stretchspeed.cpp $(QTOPT) $(SEQBLOCK_STRETCHSPEED_OPT)
+$(T)seqblock_stretchspeed.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_stretchspeed.cpp $(CD)SeqAutomation.hpp 
+	$(CCC2) $(CD)seqblock_stretchspeed.cpp $(QTOPT) $(SEQBLOCK_STRETCHSPEED_OPT)
 
-time.o:  $(BUILD_DEPENDENCIES) $(CD)time.cpp
-	$(CCC) $(CD)time.cpp $(CPPOPT) 
+$(T)time.o:  $(BUILD_DEPENDENCIES) $(CD)time.cpp
+	$(CCC2) $(CD)time.cpp $(CPPOPT) 
 
-reltempo.o:  $(BUILD_DEPENDENCIES) $(CD)reltempo.c
-	$(CC) $(CD)reltempo.c $(OPT)
+$(T)reltempo.o:  $(BUILD_DEPENDENCIES) $(CD)reltempo.c
+	$(CC2) $(CD)reltempo.c $(OPT)
 
 
 #player source-files.
 
-Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) $(CD)Ptask2Mtask.c $(CD)playerclass.h
-	$(CC) $(CD)Ptask2Mtask.c $(OPT) 
+$(T)Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) $(CD)Ptask2Mtask.c $(CD)playerclass.h
+	$(CC2) $(CD)Ptask2Mtask.c $(OPT) 
 
-player.o:  $(BUILD_DEPENDENCIES) $(CD)player.c $(CD)playerclass.h $(CD)scheduler_proc.h
-	$(CC) $(CD)player.c $(OPT) #-fno-sanitize=undefined
+$(T)player.o:  $(BUILD_DEPENDENCIES) $(CD)player.c $(CD)playerclass.h $(CD)scheduler_proc.h
+	$(CC2) $(CD)player.c $(OPT) #-fno-sanitize=undefined
 
-scheduler.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler.c $(OPT) #-fno-sanitize=undefined
+$(T)scheduler.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler.c $(CD)scheduler_proc.h
+	$(CC2) $(CD)scheduler.c $(OPT) #-fno-sanitize=undefined
 
-scheduler_seqtracks.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_seqtracks.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler_seqtracks.c $(OPT) #-fno-sanitize=undefined
+$(T)scheduler_seqtracks.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_seqtracks.c $(CD)scheduler_proc.h
+	$(CC2) $(CD)scheduler_seqtracks.c $(OPT) #-fno-sanitize=undefined
 
-scheduler_notes.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_notes.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler_notes.c $(OPT)
+$(T)scheduler_notes.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_notes.c $(CD)scheduler_proc.h
+	$(CC2) $(CD)scheduler_notes.c $(OPT)
 
-scheduler_pitches.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_pitches.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler_pitches.c $(OPT)
+$(T)scheduler_pitches.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_pitches.c $(CD)scheduler_proc.h
+	$(CC2) $(CD)scheduler_pitches.c $(OPT)
 
-scheduler_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_velocities.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler_velocities.c $(OPT) #-fno-sanitize=undefined -O0
+$(T)scheduler_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_velocities.c $(CD)scheduler_proc.h
+	$(CC2) $(CD)scheduler_velocities.c $(OPT) #-fno-sanitize=undefined -O0
 
-scheduler_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_fxs.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler_fxs.c $(OPT)
+$(T)scheduler_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_fxs.c $(CD)scheduler_proc.h
+	$(CC2) $(CD)scheduler_fxs.c $(OPT)
 
-scheduler_reallines.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_reallines.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler_reallines.c $(OPT)
+$(T)scheduler_reallines.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_reallines.c $(CD)scheduler_proc.h
+	$(CC2) $(CD)scheduler_reallines.c $(OPT)
 
-scheduler_LPB.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_LPB.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler_LPB.c $(OPT)
+$(T)scheduler_LPB.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_LPB.c $(CD)scheduler_proc.h
+	$(CC2) $(CD)scheduler_LPB.c $(OPT)
 
-scheduler_Beats.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_Beats.cpp $(CD)scheduler_proc.h
-	$(CCC) $(CD)scheduler_Beats.cpp $(CPPOPT)
+$(T)scheduler_Beats.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_Beats.cpp $(CD)scheduler_proc.h
+	$(CCC2) $(CD)scheduler_Beats.cpp $(CPPOPT)
 
-scheduler_Signature.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_Signature.c $(CD)scheduler_proc.h
-	$(CC) $(CD)scheduler_Signature.c $(OPT)
+$(T)scheduler_Signature.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_Signature.c $(CD)scheduler_proc.h
+	$(CC2) $(CD)scheduler_Signature.c $(OPT)
 
-playerclass.o:  $(BUILD_DEPENDENCIES) $(CD)playerclass.c $(CD)playerclass.h
-	$(CC) $(CD)playerclass.c $(OPT)
+$(T)playerclass.o:  $(BUILD_DEPENDENCIES) $(CD)playerclass.c $(CD)playerclass.h
+	$(CC2) $(CD)playerclass.c $(OPT)
 
-player_startstop.o:  $(BUILD_DEPENDENCIES) $(CD)player_startstop.cpp $(CD)playerclass.h $(CD)scheduler_proc.h
-	$(CCC) $(CD)player_startstop.cpp $(QTOPT) #-fno-sanitize=undefined
+$(T)player_startstop.o:  $(BUILD_DEPENDENCIES) $(CD)player_startstop.cpp $(CD)playerclass.h $(CD)scheduler_proc.h
+	$(CCC2) $(CD)player_startstop.cpp $(QTOPT) #-fno-sanitize=undefined
 
-patch.o:  $(BUILD_DEPENDENCIES) $(CD)patch.cpp $(CD)nsmtracker.h
-	$(CCC) $(CD)patch.cpp $(QTOPT)
+$(T)patch.o:  $(BUILD_DEPENDENCIES) $(CD)patch.cpp $(CD)nsmtracker.h
+	$(CCC2) $(CD)patch.cpp $(QTOPT)
 
-undo_audio_patch_addremove.o:  $(BUILD_DEPENDENCIES) $(CD)undo_audio_patch_addremove.c $(CD)nsmtracker.h
-	$(CC) $(CD)undo_audio_patch_addremove.c $(OPT)
+$(T)undo_audio_patch_addremove.o:  $(BUILD_DEPENDENCIES) $(CD)undo_audio_patch_addremove.c $(CD)nsmtracker.h
+	$(CC2) $(CD)undo_audio_patch_addremove.c $(OPT)
 
-clipboard_range.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range.c $(CD)clipboard_range.h
-	$(CC) $(CD)clipboard_range.c $(OPT)
+$(T)clipboard_range.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range.c $(CD)clipboard_range.h
+	$(CC2) $(CD)clipboard_range.c $(OPT)
 
-clipboard_range_calc.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_calc.c $(CD)clipboard_range.h
-	$(CC) $(CD)clipboard_range_calc.c $(OPT)
+$(T)clipboard_range_calc.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_calc.c $(CD)clipboard_range.h
+	$(CC2) $(CD)clipboard_range_calc.c $(OPT)
 
-clipboard_range_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_copy.c $(CD)clipboard_range.h
-	$(CC) $(CD)clipboard_range_copy.c $(OPT)
+$(T)clipboard_range_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_copy.c $(CD)clipboard_range.h
+	$(CC2) $(CD)clipboard_range_copy.c $(OPT)
 
-clipboard_range_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_paste.c $(CD)clipboard_range.h
-	$(CC) $(CD)clipboard_range_paste.c $(OPT)
+$(T)clipboard_range_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_paste.c $(CD)clipboard_range.h
+	$(CC2) $(CD)clipboard_range_paste.c $(OPT)
 
-clipboard_range_cut.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_cut.c $(CD)clipboard_range.h
-	$(CC) $(CD)clipboard_range_cut.c $(OPT)
+$(T)clipboard_range_cut.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_cut.c $(CD)clipboard_range.h
+	$(CC2) $(CD)clipboard_range_cut.c $(OPT)
 
-player_pause.o:  $(BUILD_DEPENDENCIES) $(CD)player_pause.c $(CD)playerclass.h
-	$(CC) $(CD)player_pause.c $(OPT)
+$(T)player_pause.o:  $(BUILD_DEPENDENCIES) $(CD)player_pause.c $(CD)playerclass.h
+	$(CC2) $(CD)player_pause.c $(OPT)
 
-PEQ_type.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_type.c $(CD)playerclass.h
-	$(CC) $(CD)PEQ_type.c $(OPT)
-
-
-transpose.o:  $(BUILD_DEPENDENCIES) $(CD)transpose.c
-	$(CC) $(CD)transpose.c $(OPT)
+$(T)PEQ_type.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_type.c $(CD)playerclass.h
+	$(CC2) $(CD)PEQ_type.c $(OPT)
 
 
-
-disk_wblock.o:  $(BUILD_DEPENDENCIES) $(CD)disk_wblock.c $(CD)disk.h
-	$(CC) $(CD)disk_wblock.c $(OPT)
-
-
-disk_localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)disk_localzooms.c $(CD)disk.h
-	$(CC) $(CD)disk_localzooms.c $(OPT)
+$(T)transpose.o:  $(BUILD_DEPENDENCIES) $(CD)transpose.c
+	$(CC2) $(CD)transpose.c $(OPT)
 
 
-disk_track.o:  $(BUILD_DEPENDENCIES) $(CD)disk_track.c $(CD)disk.h
-	$(CC) $(CD)disk_track.c $(OPT)
 
-disk_fx.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fx.c $(CD)disk.h
-	$(CC) $(CD)disk_fx.c $(OPT)
+$(T)disk_wblock.o:  $(BUILD_DEPENDENCIES) $(CD)disk_wblock.c $(CD)disk.h
+	$(CC2) $(CD)disk_wblock.c $(OPT)
 
-disk_fxnodelines.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxnodelines.c $(CD)disk.h
-	$(CC) $(CD)disk_fxnodelines.c $(OPT)
 
-disk_wtrack.o:  $(BUILD_DEPENDENCIES) $(CD)disk_wtrack.c $(CD)disk.h
-	$(CC) $(CD)disk_wtrack.c $(OPT)
+$(T)disk_localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)disk_localzooms.c $(CD)disk.h
+	$(CC2) $(CD)disk_localzooms.c $(OPT)
 
-disk_temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)disk_temponodes.c $(CD)disk.h
-	$(CC) $(CD)disk_temponodes.c $(OPT)
 
-disk_tempos.o:  $(BUILD_DEPENDENCIES) $(CD)disk_tempos.c $(CD)disk.h
-	$(CC) $(CD)disk_tempos.c $(OPT)
+$(T)disk_track.o:  $(BUILD_DEPENDENCIES) $(CD)disk_track.c $(CD)disk.h
+	$(CC2) $(CD)disk_track.c $(OPT)
 
-disk_song.o:  $(BUILD_DEPENDENCIES) $(CD)disk_song.cpp $(CD)disk.h
-	$(CCC) $(CD)disk_song.cpp $(QTOPT)
+$(T)disk_fx.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fx.c $(CD)disk.h
+	$(CC2) $(CD)disk_fx.c $(OPT)
 
-disk_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)disk_velocities.c $(CD)disk.h
-	$(CC) $(CD)disk_velocities.c $(OPT)
+$(T)disk_fxnodelines.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxnodelines.c $(CD)disk.h
+	$(CC2) $(CD)disk_fxnodelines.c $(OPT)
 
-disk_block.o:  $(BUILD_DEPENDENCIES) $(CD)disk_block.c $(CD)disk.h
-	$(CC) $(CD)disk_block.c $(OPT)
+$(T)disk_wtrack.o:  $(BUILD_DEPENDENCIES) $(CD)disk_wtrack.c $(CD)disk.h
+	$(CC2) $(CD)disk_wtrack.c $(OPT)
 
-disk_placement.o:  $(BUILD_DEPENDENCIES) $(CD)disk_placement.c $(CD)disk.h
-	$(CC) $(CD)disk_placement.c $(OPT)
+$(T)disk_temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)disk_temponodes.c $(CD)disk.h
+	$(CC2) $(CD)disk_temponodes.c $(OPT)
 
-disk_stops.o:  $(BUILD_DEPENDENCIES) $(CD)disk_stops.c $(CD)disk.h
-	$(CC) $(CD)disk_stops.c $(OPT)
+$(T)disk_tempos.o:  $(BUILD_DEPENDENCIES) $(CD)disk_tempos.c $(CD)disk.h
+	$(CC2) $(CD)disk_tempos.c $(OPT)
 
-disk_playlist.o:  $(BUILD_DEPENDENCIES) $(CD)disk_playlist.c $(CD)disk.h
-	$(CC) $(CD)disk_playlist.c $(OPT)
+$(T)disk_song.o:  $(BUILD_DEPENDENCIES) $(CD)disk_song.cpp $(CD)disk.h
+	$(CCC2) $(CD)disk_song.cpp $(QTOPT)
 
-disk_root.o:  $(BUILD_DEPENDENCIES) $(CD)disk_root.c $(CD)disk.h
-	$(CC) $(CD)disk_root.c $(OPT)
+$(T)disk_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)disk_velocities.c $(CD)disk.h
+	$(CC2) $(CD)disk_velocities.c $(OPT)
 
-disk_notes.o:  $(BUILD_DEPENDENCIES) $(CD)disk_notes.c $(CD)disk.h
-	$(CC) $(CD)disk_notes.c $(OPT)
+$(T)disk_block.o:  $(BUILD_DEPENDENCIES) $(CD)disk_block.c $(CD)disk.h
+	$(CC2) $(CD)disk_block.c $(OPT)
 
-disk_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_lpbs.c $(CD)disk.h
-	$(CC) $(CD)disk_lpbs.c $(OPT)
+$(T)disk_placement.o:  $(BUILD_DEPENDENCIES) $(CD)disk_placement.c $(CD)disk.h
+	$(CC2) $(CD)disk_placement.c $(OPT)
 
-disk_signatures.o:  $(BUILD_DEPENDENCIES) $(CD)disk_signatures.c $(CD)disk.h
-	$(CC) $(CD)disk_signatures.c $(OPT)
+$(T)disk_stops.o:  $(BUILD_DEPENDENCIES) $(CD)disk_stops.c $(CD)disk.h
+	$(CC2) $(CD)disk_stops.c $(OPT)
 
-disk_swing.o:  $(BUILD_DEPENDENCIES) $(CD)disk_swing.c $(CD)disk.h
-	$(CC) $(CD)disk_swing.c $(OPT)
+$(T)disk_playlist.o:  $(BUILD_DEPENDENCIES) $(CD)disk_playlist.c $(CD)disk.h
+	$(CC2) $(CD)disk_playlist.c $(OPT)
 
-disk_windows.o:  $(BUILD_DEPENDENCIES) $(CD)disk_windows.c $(CD)disk.h
-	$(CC) $(CD)disk_windows.c $(OPT)
+$(T)disk_root.o:  $(BUILD_DEPENDENCIES) $(CD)disk_root.c $(CD)disk.h
+	$(CC2) $(CD)disk_root.c $(OPT)
+
+$(T)disk_notes.o:  $(BUILD_DEPENDENCIES) $(CD)disk_notes.c $(CD)disk.h
+	$(CC2) $(CD)disk_notes.c $(OPT)
+
+$(T)disk_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_lpbs.c $(CD)disk.h
+	$(CC2) $(CD)disk_lpbs.c $(OPT)
+
+$(T)disk_signatures.o:  $(BUILD_DEPENDENCIES) $(CD)disk_signatures.c $(CD)disk.h
+	$(CC2) $(CD)disk_signatures.c $(OPT)
+
+$(T)disk_swing.o:  $(BUILD_DEPENDENCIES) $(CD)disk_swing.c $(CD)disk.h
+	$(CC2) $(CD)disk_swing.c $(OPT)
+
+$(T)disk_windows.o:  $(BUILD_DEPENDENCIES) $(CD)disk_windows.c $(CD)disk.h
+	$(CC2) $(CD)disk_windows.c $(OPT)
 
 DISK_FX_OPT=
 ifeq (,$(findstring clang,$(CC)))
  DISK_FX_OPT += -Wno-jump-misses-init
 endif
-disk_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxs.c $(CD)disk.h
-	$(CC) $(CD)disk_fxs.c $(OPT) $(DISK_FX_OPT)
+$(T)disk_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxs.c $(CD)disk.h
+	$(CC2) $(CD)disk_fxs.c $(OPT) $(DISK_FX_OPT)
 
-disk.o:  $(BUILD_DEPENDENCIES) $(CD)disk.c $(CD)disk.h
-	$(CC) $(CD)disk.c $(OPT)
+$(T)disk.o:  $(BUILD_DEPENDENCIES) $(CD)disk.c $(CD)disk.h
+	$(CC2) $(CD)disk.c $(OPT)
 
-disk_warea.o:  $(BUILD_DEPENDENCIES) $(CD)disk_warea.c $(CD)disk.h
-	$(CC) $(CD)disk_warea.c $(OPT)
+$(T)disk_warea.o:  $(BUILD_DEPENDENCIES) $(CD)disk_warea.c $(CD)disk.h
+	$(CC2) $(CD)disk_warea.c $(OPT)
 
-disk_save.o:  $(BUILD_DEPENDENCIES) $(CD)disk_save.c config/config.h common/nag.h
-	$(CC) $(CD)disk_save.c $(OPT)
+$(T)disk_save.o:  $(BUILD_DEPENDENCIES) $(CD)disk_save.c config/config.h common/nag.h
+	$(CC2) $(CD)disk_save.c $(OPT)
 
-disk_load.o:  $(BUILD_DEPENDENCIES) $(CD)disk_load.c config/config.h
-	$(CC) $(CD)disk_load.c $(OPT)
+$(T)disk_load.o:  $(BUILD_DEPENDENCIES) $(CD)disk_load.c config/config.h
+	$(CC2) $(CD)disk_load.c $(OPT)
 
-disk_saveload_blocktrack.o:  $(BUILD_DEPENDENCIES) $(CD)disk_saveload_blocktrack.c config/config.h
-	$(CC) $(CD)disk_saveload_blocktrack.c $(OPT)
+$(T)disk_saveload_blocktrack.o:  $(BUILD_DEPENDENCIES) $(CD)disk_saveload_blocktrack.c config/config.h
+	$(CC2) $(CD)disk_saveload_blocktrack.c $(OPT)
 
 
-control.o:  $(BUILD_DEPENDENCIES) $(CD)control.c
-	$(CC) $(CD)control.c $(OPT)
+$(T)control.o:  $(BUILD_DEPENDENCIES) $(CD)control.c
+	$(CC2) $(CD)control.c $(OPT)
 
-disk_instrument.o:  $(BUILD_DEPENDENCIES) $(CD)disk_instrument.c $(CD)disk.h
-	$(CC) $(CD)disk_instrument.c $(OPT)
+$(T)disk_instrument.o:  $(BUILD_DEPENDENCIES) $(CD)disk_instrument.c $(CD)disk.h
+	$(CC2) $(CD)disk_instrument.c $(OPT)
 
-disk_patches.o:  $(BUILD_DEPENDENCIES) $(CD)disk_patches.c $(CD)disk.h
-	$(CC) $(CD)disk_patches.c $(OPT)
+$(T)disk_patches.o:  $(BUILD_DEPENDENCIES) $(CD)disk_patches.c $(CD)disk.h
+	$(CC2) $(CD)disk_patches.c $(OPT)
 
-disk_slider.o:  $(BUILD_DEPENDENCIES) $(CD)disk_slider.c
-	$(CC) $(CD)disk_slider.c $(OPT)
+$(T)disk_slider.o:  $(BUILD_DEPENDENCIES) $(CD)disk_slider.c
+	$(CC2) $(CD)disk_slider.c $(OPT)
 
-clipboard_track_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_copy.c
-	$(CC) $(CD)clipboard_track_copy.c $(OPT)
+$(T)clipboard_track_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_copy.c
+	$(CC2) $(CD)clipboard_track_copy.c $(OPT)
 
-clipboard_track_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_paste.c
-	$(CC) $(CD)clipboard_track_paste.c $(OPT)
+$(T)clipboard_track_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_paste.c
+	$(CC2) $(CD)clipboard_track_paste.c $(OPT)
 
-clipboard_track_cut.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_cut.c
-	$(CC) $(CD)clipboard_track_cut.c $(OPT)
+$(T)clipboard_track_cut.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_cut.c
+	$(CC2) $(CD)clipboard_track_cut.c $(OPT)
 
-lines.o:  $(BUILD_DEPENDENCIES) $(CD)lines.cpp
-	$(CCC) $(CD)lines.cpp $(CPPOPT)
+$(T)lines.o:  $(BUILD_DEPENDENCIES) $(CD)lines.cpp
+	$(CCC2) $(CD)lines.cpp $(CPPOPT)
 
-notes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)notes_legalize.c
-	$(CC) $(CD)notes_legalize.c $(OPT)
+$(T)notes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)notes_legalize.c
+	$(CC2) $(CD)notes_legalize.c $(OPT)
 
-temponodes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes_legalize.c
-	$(CC) $(CD)temponodes_legalize.c $(OPT)
+$(T)temponodes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes_legalize.c
+	$(CC2) $(CD)temponodes_legalize.c $(OPT)
 
-fxlines_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines_legalize.c
-	$(CC) $(CD)fxlines_legalize.c $(OPT)
+$(T)fxlines_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines_legalize.c
+	$(CC2) $(CD)fxlines_legalize.c $(OPT)
 
-reallines_insert.o:  $(BUILD_DEPENDENCIES) $(CD)reallines_insert.c
-	$(CC) $(CD)reallines_insert.c $(OPT)
+$(T)reallines_insert.o:  $(BUILD_DEPENDENCIES) $(CD)reallines_insert.c
+	$(CC2) $(CD)reallines_insert.c $(OPT)
 
-block_properties.o:  $(BUILD_DEPENDENCIES) $(CD)block_properties.cpp
-	$(CCC) $(CD)block_properties.cpp $(CPPOPT)
+$(T)block_properties.o:  $(BUILD_DEPENDENCIES) $(CD)block_properties.cpp
+	$(CCC2) $(CD)block_properties.cpp $(CPPOPT)
 
-clipboard_tempos_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_tempos_copy.c
-	$(CC) $(CD)clipboard_tempos_copy.c $(OPT)
+$(T)clipboard_tempos_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_tempos_copy.c
+	$(CC2) $(CD)clipboard_tempos_copy.c $(OPT)
 
-font.o:  $(BUILD_DEPENDENCIES) $(CD)font.c
-	$(CC) $(CD)font.c $(OPT)
+$(T)font.o:  $(BUILD_DEPENDENCIES) $(CD)font.c
+	$(CC2) $(CD)font.c $(OPT)
 
-clipboard_localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_localzooms.c
-	$(CC) $(CD)clipboard_localzooms.c $(OPT)
+$(T)clipboard_localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_localzooms.c
+	$(CC2) $(CD)clipboard_localzooms.c $(OPT)
 
-clipboard_block_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_block_copy.c
-	$(CC) $(CD)clipboard_block_copy.c $(OPT)
+$(T)clipboard_block_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_block_copy.c
+	$(CC2) $(CD)clipboard_block_copy.c $(OPT)
 
-clipboard_block_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_block_paste.c
-	$(CC) $(CD)clipboard_block_paste.c $(OPT)
+$(T)clipboard_block_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_block_paste.c
+	$(CC2) $(CD)clipboard_block_paste.c $(OPT)
 
-undo.o:  $(BUILD_DEPENDENCIES) $(CD)undo.c $(CD)undo.h
-	$(CC) $(CD)undo.c $(OPT) -DMAX_NUM_UNDOS=$(MAX_NUM_UNDOS)
+$(T)undo.o:  $(BUILD_DEPENDENCIES) $(CD)undo.c $(CD)undo.h
+	$(CC2) $(CD)undo.c $(OPT) -DMAX_NUM_UNDOS=$(MAX_NUM_UNDOS)
 
-undo_notes.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notes.c $(CD)undo.h
-	$(CC) $(CD)undo_notes.c $(OPT)
+$(T)undo_notes.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notes.c $(CD)undo.h
+	$(CC2) $(CD)undo_notes.c $(OPT)
 
-undo_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_fxs.c $(CD)undo.h
-	$(CC) $(CD)undo_fxs.c $(OPT)
+$(T)undo_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_fxs.c $(CD)undo.h
+	$(CC2) $(CD)undo_fxs.c $(OPT)
 
-undo_temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)undo_temponodes.c $(CD)undo.h
-	$(CC) $(CD)undo_temponodes.c $(OPT)
+$(T)undo_temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)undo_temponodes.c $(CD)undo.h
+	$(CC2) $(CD)undo_temponodes.c $(OPT)
 
-undo_tempos.o:  $(BUILD_DEPENDENCIES) $(CD)undo_tempos.c $(CD)undo.h
-	$(CC) $(CD)undo_tempos.c $(OPT)
+$(T)undo_tempos.o:  $(BUILD_DEPENDENCIES) $(CD)undo_tempos.c $(CD)undo.h
+	$(CC2) $(CD)undo_tempos.c $(OPT)
 
-undo_swings.o:  $(BUILD_DEPENDENCIES) $(CD)undo_swings.c $(CD)undo.h
-	$(CC) $(CD)undo_swings.c $(OPT)
+$(T)undo_swings.o:  $(BUILD_DEPENDENCIES) $(CD)undo_swings.c $(CD)undo.h
+	$(CC2) $(CD)undo_swings.c $(OPT)
 
-undo_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_lpbs.c $(CD)undo.h
-	$(CC) $(CD)undo_lpbs.c $(OPT)
+$(T)undo_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_lpbs.c $(CD)undo.h
+	$(CC2) $(CD)undo_lpbs.c $(OPT)
 
-undo_signatures.o:  $(BUILD_DEPENDENCIES) $(CD)undo_signatures.c $(CD)undo.h
-	$(CC) $(CD)undo_signatures.c $(OPT)
+$(T)undo_signatures.o:  $(BUILD_DEPENDENCIES) $(CD)undo_signatures.c $(CD)undo.h
+	$(CC2) $(CD)undo_signatures.c $(OPT)
 
-undo_notesandfxs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notesandfxs.c $(CD)undo.h
-	$(CC) $(CD)undo_notesandfxs.c $(OPT)
+$(T)undo_notesandfxs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notesandfxs.c $(CD)undo.h
+	$(CC2) $(CD)undo_notesandfxs.c $(OPT)
 
-undo_reallines.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reallines.c $(CD)undo.h
-	$(CC) $(CD)undo_reallines.c $(OPT)
+$(T)undo_reallines.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reallines.c $(CD)undo.h
+	$(CC2) $(CD)undo_reallines.c $(OPT)
 
-undo_tracks.o:  $(BUILD_DEPENDENCIES) $(CD)undo_tracks.c $(CD)undo.h
-	$(CC) $(CD)undo_tracks.c $(OPT)
+$(T)undo_tracks.o:  $(BUILD_DEPENDENCIES) $(CD)undo_tracks.c $(CD)undo.h
+	$(CC2) $(CD)undo_tracks.c $(OPT)
 
-undo_range.o:  $(BUILD_DEPENDENCIES) $(CD)undo_range.c
-	$(CC) $(CD)undo_range.c $(OPT)
+$(T)undo_range.o:  $(BUILD_DEPENDENCIES) $(CD)undo_range.c
+	$(CC2) $(CD)undo_range.c $(OPT)
 
-undo_blocks.o:  $(BUILD_DEPENDENCIES) $(CD)undo_blocks.c
-	$(CC) $(CD)undo_blocks.c $(OPT)
+$(T)undo_blocks.o:  $(BUILD_DEPENDENCIES) $(CD)undo_blocks.c
+	$(CC2) $(CD)undo_blocks.c $(OPT)
 
-PEQ_calc_64bit.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_calc_64bit.c
-	$(CC) $(CD)PEQ_calc_64bit.c $(OPT)
+$(T)PEQ_calc_64bit.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_calc_64bit.c
+	$(CC2) $(CD)PEQ_calc_64bit.c $(OPT)
 
-track_insert.o:  $(BUILD_DEPENDENCIES) $(CD)track_insert.c
-	$(CC) $(CD)track_insert.c $(OPT)
+$(T)track_insert.o:  $(BUILD_DEPENDENCIES) $(CD)track_insert.c
+	$(CC2) $(CD)track_insert.c $(OPT)
 
-quantitize.o:  $(BUILD_DEPENDENCIES) $(CD)quantitize.c
-	$(CC) $(CD)quantitize.c $(OPT)
+$(T)quantitize.o:  $(BUILD_DEPENDENCIES) $(CD)quantitize.c
+	$(CC2) $(CD)quantitize.c $(OPT)
 
-undo_trackheader.o:  $(BUILD_DEPENDENCIES) $(CD)undo_trackheader.c
-	$(CC) $(CD)undo_trackheader.c $(OPT)
+$(T)undo_trackheader.o:  $(BUILD_DEPENDENCIES) $(CD)undo_trackheader.c
+	$(CC2) $(CD)undo_trackheader.c $(OPT)
 
-undo_reltempomax.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reltempomax.c
-	$(CC) $(CD)undo_reltempomax.c $(OPT)
+$(T)undo_reltempomax.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reltempomax.c
+	$(CC2) $(CD)undo_reltempomax.c $(OPT)
 
-undo_maintempos.o:  $(BUILD_DEPENDENCIES) $(CD)undo_maintempos.c
-	$(CC) $(CD)undo_maintempos.c $(OPT)
+$(T)undo_maintempos.o:  $(BUILD_DEPENDENCIES) $(CD)undo_maintempos.c
+	$(CC2) $(CD)undo_maintempos.c $(OPT)
 
-undo_sequencer.o:  $(BUILD_DEPENDENCIES) $(CD)undo_sequencer.c
-	$(CC) $(CD)undo_sequencer.c $(OPT)
+$(T)undo_sequencer.o:  $(BUILD_DEPENDENCIES) $(CD)undo_sequencer.c
+	$(CC2) $(CD)undo_sequencer.c $(OPT)
 
-undo_song_tempo_automation.o:  $(BUILD_DEPENDENCIES) $(CD)undo_song_tempo_automation.c
-	$(CC) $(CD)undo_song_tempo_automation.c $(OPT)
+$(T)undo_song_tempo_automation.o:  $(BUILD_DEPENDENCIES) $(CD)undo_song_tempo_automation.c
+	$(CC2) $(CD)undo_song_tempo_automation.c $(OPT)
 
-undo_patchvoice.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchvoice.c
-	$(CC) $(CD)undo_patchvoice.c $(OPT)
+$(T)undo_patchvoice.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchvoice.c
+	$(CC2) $(CD)undo_patchvoice.c $(OPT)
 
-undo_patchname.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchname.c
-	$(CC) $(CD)undo_patchname.c $(OPT)
+$(T)undo_patchname.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchname.c
+	$(CC2) $(CD)undo_patchname.c $(OPT)
 
-undo_instrument_color.o:  $(BUILD_DEPENDENCIES) $(CD)undo_instrument_color.c
-	$(CC) $(CD)undo_instrument_color.c $(OPT)
+$(T)undo_instrument_color.o:  $(BUILD_DEPENDENCIES) $(CD)undo_instrument_color.c
+	$(CC2) $(CD)undo_instrument_color.c $(OPT)
 
-window_config.o:  $(BUILD_DEPENDENCIES) $(CD)window_config.cpp
-	$(CCC) $(CD)window_config.cpp $(CPPOPT)
+$(T)window_config.o:  $(BUILD_DEPENDENCIES) $(CD)window_config.cpp
+	$(CCC2) $(CD)window_config.cpp $(CPPOPT)
 
-PEQ_clock.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_clock.c $(CD)playerclass.h
-	$(CC) $(CD)PEQ_clock.c $(OPT)
+$(T)PEQ_clock.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_clock.c $(CD)playerclass.h
+	$(CC2) $(CD)PEQ_clock.c $(OPT)
 
-PEQ_LPB.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_LPB.c $(CD)playerclass.h
-	$(CC) $(CD)PEQ_LPB.c $(OPT)
+$(T)PEQ_LPB.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_LPB.c $(CD)playerclass.h
+	$(CC2) $(CD)PEQ_LPB.c $(OPT)
 
-PEQ_Signature.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_Signature.c $(CD)playerclass.h
-	$(CC) $(CD)PEQ_Signature.c $(OPT)
+$(T)PEQ_Signature.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_Signature.c $(CD)playerclass.h
+	$(CC2) $(CD)PEQ_Signature.c $(OPT)
 
-PEQ_Beats.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_Beats.c $(CD)playerclass.h
-	$(CC) $(CD)PEQ_Beats.c $(OPT)
+$(T)PEQ_Beats.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_Beats.c $(CD)playerclass.h
+	$(CC2) $(CD)PEQ_Beats.c $(OPT)
 
-block_insert.o:  $(BUILD_DEPENDENCIES) $(CD)block_insert.c
-	$(CC) $(CD)block_insert.c $(OPT)
+$(T)block_insert.o:  $(BUILD_DEPENDENCIES) $(CD)block_insert.c
+	$(CC2) $(CD)block_insert.c $(OPT)
 
-block_delete.o:  $(BUILD_DEPENDENCIES) $(CD)block_delete.c
-	$(CC) $(CD)block_delete.c $(OPT)
+$(T)block_delete.o:  $(BUILD_DEPENDENCIES) $(CD)block_delete.c
+	$(CC2) $(CD)block_delete.c $(OPT)
 
-undo_block_insertdelete.o:  $(BUILD_DEPENDENCIES) $(CD)undo_block_insertdelete.c
-	$(CC) $(CD)undo_block_insertdelete.c $(OPT)
+$(T)undo_block_insertdelete.o:  $(BUILD_DEPENDENCIES) $(CD)undo_block_insertdelete.c
+	$(CC2) $(CD)undo_block_insertdelete.c $(OPT)
 
-track_onoff.o:  $(BUILD_DEPENDENCIES) $(CD)track_onoff.c
-	$(CC) $(CD)track_onoff.c $(OPT)
+$(T)track_onoff.o:  $(BUILD_DEPENDENCIES) $(CD)track_onoff.c
+	$(CC2) $(CD)track_onoff.c $(OPT)
 
-backwards.o:  $(BUILD_DEPENDENCIES) $(CD)new/backwards.c
-	$(CC) $(CD)new/backwards.c $(OPT)
+$(T)backwards.o:  $(BUILD_DEPENDENCIES) $(CD)new/backwards.c
+	$(CC2) $(CD)new/backwards.c $(OPT)
 
-invert.o:  $(BUILD_DEPENDENCIES) $(CD)new/invert.c
-	$(CC) $(CD)new/invert.c $(OPT)
+$(T)invert.o:  $(BUILD_DEPENDENCIES) $(CD)new/invert.c
+	$(CC2) $(CD)new/invert.c $(OPT)
 
-gfx_slider.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_slider.c
-	$(CC) $(CD)gfx_slider.c $(OPT)
+$(T)gfx_slider.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_slider.c
+	$(CC2) $(CD)gfx_slider.c $(OPT)
 
-undo_reltemposlider.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reltemposlider.c
-	$(CC) $(CD)undo_reltemposlider.c $(OPT)
+$(T)undo_reltemposlider.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reltemposlider.c
+	$(CC2) $(CD)undo_reltemposlider.c $(OPT)
 
-error.o:  $(BUILD_DEPENDENCIES) $(CD)error.c
-	$(CC) $(CD)error.c $(OPT) -Wno-null-dereference
+$(T)error.o:  $(BUILD_DEPENDENCIES) $(CD)error.c
+	$(CC2) $(CD)error.c $(OPT) -Wno-null-dereference
 
-threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp
-	$(CCC)  $(CD)threading.cpp $(JACKOPT) $(QTOPT)
+$(T)threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp
+	$(CCC2)  $(CD)threading.cpp $(JACKOPT) $(QTOPT)
 
-Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Semaphores.hpp common/OS_Semaphores.h
-	$(CCC) $(CD)Semaphores.cpp $(QTOPT)
+$(T)Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Semaphores.hpp common/OS_Semaphores.h
+	$(CCC2) $(CD)Semaphores.cpp $(QTOPT)
 
-stacktoucher.o: $(CD)stacktoucher.c
-	$(CC) -O0 $(CD)stacktoucher.c -c -O0 -std=c99 -g -Wall $(WERROR)
+$(T)stacktoucher.o: $(CD)stacktoucher.c
+	$(CC2) -O0 $(CD)stacktoucher.c -c -O0 -std=c99 -g -Wall $(WERROR)
 
 
-X11_Main.o:  $(BUILD_DEPENDENCIES) $(P)X11_Main.c 
-	$(CC) $(P)X11_Main.c $(OPT)
+$(T)X11_Main.o:  $(BUILD_DEPENDENCIES) $(P)X11_Main.c 
+	$(CC2) $(P)X11_Main.c $(OPT)
 
-X11_visual.o:  $(BUILD_DEPENDENCIES) $(P)X11_visual.c 
-	$(CC) $(P)X11_visual.c $(OPT) 
+$(T)X11_visual.o:  $(BUILD_DEPENDENCIES) $(P)X11_visual.c 
+	$(CC2) $(P)X11_visual.c $(OPT) 
 
-X11_error.o:  $(BUILD_DEPENDENCIES) X11/X11_error.c 
-	$(CC) X11/X11_error.c $(OPT)
+$(T)X11_error.o:  $(BUILD_DEPENDENCIES) X11/X11_error.c 
+	$(CC2) X11/X11_error.c $(OPT)
 
-W_Error.o:  $(BUILD_DEPENDENCIES) windows/W_Error.c 
-	$(CC) windows/W_Error.c $(OPT)
+$(T)W_Error.o:  $(BUILD_DEPENDENCIES) windows/W_Error.c 
+	$(CC2) windows/W_Error.c $(OPT)
 
-W_Keyboard.o:  $(BUILD_DEPENDENCIES) windows/W_Keyboard.c 
-	$(CC) windows/W_Keyboard.c $(OPT)
+$(T)W_Keyboard.o:  $(BUILD_DEPENDENCIES) windows/W_Keyboard.c 
+	$(CC2) windows/W_Keyboard.c $(OPT)
 
-cocoa_Keyboard.o:  $(BUILD_DEPENDENCIES) macosx/cocoa_Keyboard.m
-	$(CC) macosx/cocoa_Keyboard.m $(OPT)
+$(T)cocoa_Keyboard.o:  $(BUILD_DEPENDENCIES) macosx/cocoa_Keyboard.m
+	$(CC2) macosx/cocoa_Keyboard.m $(OPT)
 
-X11_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) X11/X11_Ptask2Mtask.c 
-	$(CC) X11/X11_Ptask2Mtask.c $(OPT)
+$(T)X11_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) X11/X11_Ptask2Mtask.c 
+	$(CC2) X11/X11_Ptask2Mtask.c $(OPT)
 
-X11_Bs_edit.o:  $(BUILD_DEPENDENCIES) X11/X11_Bs_edit.c
-	$(CC) X11/X11_Bs_edit.c $(OPT)
+$(T)X11_Bs_edit.o:  $(BUILD_DEPENDENCIES) X11/X11_Bs_edit.c
+	$(CC2) X11/X11_Bs_edit.c $(OPT)
 
-X11_endprogram.o:  $(BUILD_DEPENDENCIES) $(P)X11_endprogram.c 
-	$(CC) $(P)X11_endprogram.c $(OPT)
+$(T)X11_endprogram.o:  $(BUILD_DEPENDENCIES) $(P)X11_endprogram.c 
+	$(CC2) $(P)X11_endprogram.c $(OPT)
 
-X11_disk.o:  $(BUILD_DEPENDENCIES) X11/X11_disk.c 
-	$(CC) X11/X11_disk.c $(OPT)
+$(T)X11_disk.o:  $(BUILD_DEPENDENCIES) X11/X11_disk.c 
+	$(CC2) X11/X11_disk.c $(OPT)
 
-posix_Player.o:  $(BUILD_DEPENDENCIES) posix/posix_Player.c 
-	$(CC) posix/posix_Player.c $(OPT)
+$(T)posix_Player.o:  $(BUILD_DEPENDENCIES) posix/posix_Player.c 
+	$(CC2) posix/posix_Player.c $(OPT)
 
-X11_ReqType.o:  $(BUILD_DEPENDENCIES) X11/X11_ReqType.c 
-	$(CC) X11/X11_ReqType.c $(OPT)
+$(T)X11_ReqType.o:  $(BUILD_DEPENDENCIES) X11/X11_ReqType.c 
+	$(CC2) X11/X11_ReqType.c $(OPT)
 
-X11_instrument.o:  $(BUILD_DEPENDENCIES) X11/X11_instrument.c
-	$(CC) X11/X11_instrument.c $(OPT)
+$(T)X11_instrument.o:  $(BUILD_DEPENDENCIES) X11/X11_instrument.c
+	$(CC2) X11/X11_instrument.c $(OPT)
 
-X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
-	$(CCC) X11/X11_keyboard.cpp $(QTOPT) -DUSE_QT$(RADIUM_QT_VERSION)
+$(T)X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
+	$(CCC2) X11/X11_keyboard.cpp $(QTOPT) -DUSE_QT$(RADIUM_QT_VERSION)
 
 #X11_MidiProperties.o:  $(BUILD_DEPENDENCIES) X11/X11_MidiProperties.c
-#	$(CC) X11/X11_MidiProperties.c $(OPT) 
+#	$(CC2) X11/X11_MidiProperties.c $(OPT) 
 
 #X11_ClientMessages.o:  $(BUILD_DEPENDENCIES) X11/X11_ClientMessages.c
-#	$(CC) X11/X11_ClientMessages.c $(OPT)
+#	$(CC2) X11/X11_ClientMessages.c $(OPT)
 
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
-Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
+$(T)Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	cd Qt && $(MOC) -DFOR_LINUX Timer.hpp > mTimer.hpp
-	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
+	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
 
-KeyboardFocus.o:  $(BUILD_DEPENDENCIES) Qt/KeyboardFocus.cpp Qt/KeyboardFocusFrame.hpp
-	$(CCC) $(P)KeyboardFocus.cpp $(QTOPT)
+$(T)KeyboardFocus.o:  $(BUILD_DEPENDENCIES) Qt/KeyboardFocus.cpp Qt/KeyboardFocusFrame.hpp
+	$(CCC2) $(P)KeyboardFocus.cpp $(QTOPT)
 
-Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h
-	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
+$(T)Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h
+	$(CCC2) $(P)Qt_visual.cpp $(QTOPT)
 
-GTK_visual.o:  $(BUILD_DEPENDENCIES) GTK/GTK_visual.c
-	$(CC) GTK/GTK_visual.c $(OPT) $(GTK_CFLAGS)
+$(T)GTK_visual.o:  $(BUILD_DEPENDENCIES) GTK/GTK_visual.c
+	$(CC2) GTK/GTK_visual.c $(OPT) $(GTK_CFLAGS)
 
-GTK_ReqType.o:  $(BUILD_DEPENDENCIES) GTK/GTK_ReqType.c 
-	$(CC) GTK/GTK_ReqType.c $(OPT) $(GTK_CFLAGS)
+$(T)GTK_ReqType.o:  $(BUILD_DEPENDENCIES) GTK/GTK_ReqType.c 
+	$(CC2) GTK/GTK_ReqType.c $(OPT) $(GTK_CFLAGS)
 
-GTK_PopupMenu.o:  $(BUILD_DEPENDENCIES) GTK/GTK_PopupMenu.c
-	$(CC) GTK/GTK_PopupMenu.c $(OPT) $(GTK_CFLAGS)
+$(T)GTK_PopupMenu.o:  $(BUILD_DEPENDENCIES) GTK/GTK_PopupMenu.c
+	$(CC2) GTK/GTK_PopupMenu.c $(OPT) $(GTK_CFLAGS)
 
 
-Qt_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Ptask2Mtask.cpp $(P)EditorWidget.h
-	$(CC) $(P)Qt_Ptask2Mtask.cpp $(OPT)
+$(T)Qt_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Ptask2Mtask.cpp $(P)EditorWidget.h
+	$(CC2) $(P)Qt_Ptask2Mtask.cpp $(OPT)
 
-Qt_endprogram.o:  $(BUILD_DEPENDENCIES) $(P)Qt_endprogram.c $(P)EditorWidget.h
-	$(CC) $(P)Qt_endprogram.c $(OPT)
+$(T)Qt_endprogram.o:  $(BUILD_DEPENDENCIES) $(P)Qt_endprogram.c $(P)EditorWidget.h
+	$(CC2) $(P)Qt_endprogram.c $(OPT)
 
-Qt_Player.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Player.c $(P)EditorWidget.h
-	$(CC) $(P)Qt_Player.c $(OPT)
+$(T)Qt_Player.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Player.c $(P)EditorWidget.h
+	$(CC2) $(P)Qt_Player.c $(OPT)
 
-Qt_EventReceiver.o:  $(BUILD_DEPENDENCIES) $(P)Qt_EventReceiver.cpp $(P)EditorWidget.h
-	$(CCC) $(P)Qt_EventReceiver.cpp $(QTOPT)
+$(T)Qt_EventReceiver.o:  $(BUILD_DEPENDENCIES) $(P)Qt_EventReceiver.cpp $(P)EditorWidget.h
+	$(CCC2) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
-Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp common/visual_proc.h  embedded_scheme/s7extra_proc.h
-	$(CCC) $(P)Qt_colors.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -Wno-overloaded-virtual -Wno-unused-function -Wno-deprecated-declarations #
+$(T)Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp common/visual_proc.h  embedded_scheme/s7extra_proc.h
+	$(CCC2) $(P)Qt_colors.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -Wno-overloaded-virtual -Wno-unused-function -Wno-deprecated-declarations #
 
 $(P)mQt_colors.cpp: $(P)Qt_colors.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_colors.cpp >$(P)mQt_colors.cpp
 
-Qt_Menues.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Menues.cpp $(P)mQt_Menues.cpp
-	$(CCC) $(P)Qt_Menues.cpp $(QTOPT)  -Wno-shadow
+$(T)Qt_Menues.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Menues.cpp $(P)mQt_Menues.cpp
+	$(CCC2) $(P)Qt_Menues.cpp $(QTOPT)  -Wno-shadow
 
 $(P)mQt_Menues.cpp: $(P)Qt_Menues.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Menues.cpp >$(P)mQt_Menues.cpp
 
-Qt_Fonts.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Fonts.cpp
-	$(CCC) $(P)Qt_Fonts.cpp $(QTOPT)
+$(T)Qt_Fonts.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Fonts.cpp
+	$(CCC2) $(P)Qt_Fonts.cpp $(QTOPT)
 
-Qt_ReqType.o:  $(BUILD_DEPENDENCIES) $(P)Qt_ReqType.cpp
-	$(CCC) $(P)Qt_ReqType.cpp $(QTOPT) -Wno-null-dereference
+$(T)Qt_ReqType.o:  $(BUILD_DEPENDENCIES) $(P)Qt_ReqType.cpp
+	$(CCC2) $(P)Qt_ReqType.cpp $(QTOPT) -Wno-null-dereference
 
-Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cpp audio/Envelope.hpp embedded_scheme/s7extra_proc.h Qt/Timer.hpp
-	$(CCC) $(P)Qt_PopupMenu.cpp $(QTOPT) -Wno-null-dereference
+$(T)Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cpp audio/Envelope.hpp embedded_scheme/s7extra_proc.h Qt/Timer.hpp
+	$(CCC2) $(P)Qt_PopupMenu.cpp $(QTOPT) -Wno-null-dereference
 
 $(P)mQt_PopupMenu.cpp: $(P)Qt_PopupMenu.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_PopupMenu.cpp -DUSE_QT_MENU >$(P)mQt_PopupMenu.cpp
 
-Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar_widget_callbacks.h $(P)mQt_upperleft_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h audio/CpuUsage.hpp Qt/EditorWidget.h  Qt/FileRequester.hpp Qt/Qt_MyQCheckBox.h Qt/Qt_MyQLabel.h
-	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
+$(T)Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar_widget_callbacks.h $(P)mQt_upperleft_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h audio/CpuUsage.hpp Qt/EditorWidget.h  Qt/FileRequester.hpp Qt/Qt_MyQCheckBox.h Qt/Qt_MyQLabel.h
+	$(CCC2) $(P)Qt_MainWindow.cpp $(QTOPT)
 
-Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
-	$(CCC) $(P)Qt_Time.cpp $(QTOPT)
+$(T)Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
+	$(CCC2) $(P)Qt_Time.cpp $(QTOPT)
 
 QT_SEQUENCER_OPT=
 ifeq (,$(findstring clang,$(CC)))
  QT_SEQUENCER_OPT += -Wno-duplicated-branches
 endif
 
-Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp common/seqblock_automation_proc.h Qt/KeyboardFocusFrame.hpp Qt/Qt_MyQCheckBox.h
-	$(CCC) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SEQUENCER_OPT)
+$(T)Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp common/seqblock_automation_proc.h Qt/KeyboardFocusFrame.hpp Qt/Qt_MyQCheckBox.h
+	$(CCC2) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SEQUENCER_OPT)
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
 
-Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp  Qt/Qt_MyQScrollBar.hpp
-	$(CCC) $(P)Qt_Bs_edit.cpp $(QTOPT) -Wno-null-dereference #-fno-sanitize=undefined
+$(T)Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp  Qt/Qt_MyQScrollBar.hpp
+	$(CCC2) $(P)Qt_Bs_edit.cpp $(QTOPT) -Wno-null-dereference #-fno-sanitize=undefined
 
 
 INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQLabel.h
@@ -1461,15 +1466,15 @@ INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_i
 
 
 # $(P)midi_instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
-Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS_DEPENDENCIES)
+$(T)Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS_DEPENDENCIES)
 	@echo
 	@echo "Changed (Qt_instruments.o):"
 	@echo $?
 	@echo
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		$(CCC) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -O0 -Wno-null-dereference ; \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -O0 -Wno-null-dereference ; \
 	else \
-		$(CCC) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -Wno-null-dereference ; \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -Wno-null-dereference ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
@@ -1544,8 +1549,8 @@ $(P)Qt_mixer_direction_menu.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_direction_men
 
 
 
-Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(P)Qt_soundfilesaver_widget.h $(P)mQt_soundfilesaver_widget_callbacks.cpp
-	$(CCC) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)  $(SNDFILEOPT)
+$(T)Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(P)Qt_soundfilesaver_widget.h $(P)mQt_soundfilesaver_widget_callbacks.cpp
+	$(CCC2) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)  $(SNDFILEOPT)
 
 $(P)mQt_soundfilesaver_widget_callbacks.cpp: $(P)Qt_soundfilesaver_widget_callbacks.cpp
 	cd $(P) && $(MOC) Qt_soundfilesaver_widget_callbacks.cpp >mQt_soundfilesaver_widget_callbacks.cpp
@@ -1559,25 +1564,25 @@ $(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_wid
 
 # Look at this one for creating Qt dialogs (the other Qt dialogs are hacks since the "create_source_from_uio.sh" script is not called
 ######################################################################################################################################
-Qt_comment_dialog.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.h $(P)Qt_comment_dialog.cpp $(P)qt4_comment_dialog.ui Qt/Qt_MyQCheckBox.h Qt/Qt_MyQLabel.h
+$(T)Qt_comment_dialog.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.h $(P)Qt_comment_dialog.cpp $(P)qt4_comment_dialog.ui Qt/Qt_MyQCheckBox.h Qt/Qt_MyQLabel.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) comment_dialog  DONT_USE_RADIUM_CHECKBOXES
 	ln -sf mQt_comment_dialog_callbacks.h $(P)mQt_comment_dialog_callbacks.cpp
-	$(CCC) $(P)Qt_comment_dialog.cpp $(QTOPT) -o Qt_comment_dialog.o  -Wno-null-dereference
+	$(CCC2) $(P)Qt_comment_dialog.cpp $(QTOPT) -Wno-null-dereference
 
-Qt_song_properties.o: $(BUILD_DEPENDENCIES) $(P)Qt_song_properties_callbacks.h $(P)Qt_song_properties.cpp $(P)qt4_song_properties.ui Qt/Qt_MyQCheckBox.h
+$(T)Qt_song_properties.o: $(BUILD_DEPENDENCIES) $(P)Qt_song_properties_callbacks.h $(P)Qt_song_properties.cpp $(P)qt4_song_properties.ui Qt/Qt_MyQCheckBox.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) song_properties DONT_USE_RADIUM_CHECKBOXES
 	ln -sf mQt_song_properties_callbacks.h $(P)mQt_song_properties_callbacks.cpp
-	$(CCC) $(P)Qt_song_properties.cpp $(QTOPT) -o Qt_song_properties.o  -Wno-null-dereference
+	$(CCC2) $(P)Qt_song_properties.cpp $(QTOPT) -Wno-null-dereference
 
 
 
 
 
-Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h common/visual_proc.h Qt/mQt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h Qt/helpers.h Qt/Qt_MyQScrollBar.hpp
+$(T)Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h common/visual_proc.h Qt/mQt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h Qt/helpers.h Qt/Qt_MyQScrollBar.hpp
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT) -O0  -Wno-null-dereference ; \
+		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT) -O0  -Wno-null-dereference ; \
 	else \
-		$(CCC) $(P)Qt_preferences_callbacks.cpp $(QTOPT)  -Wno-null-dereference ; \
+		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT)  -Wno-null-dereference ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
@@ -1593,41 +1598,41 @@ $(P)Qt_vst_paths_widget.h: $(P)qt4_vst_paths_widget.ui
 	cd $(P) && $(UIC) qt4_vst_paths_widget.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_vst_paths_widget.h
 
 
-Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h midi/midi_i_input_proc.h common/Vector.hpp Qt/ScrollArea.hpp  Qt/Qt_MyQScrollBar.hpp
-	$(CCC) $(P)Qt_tools_callbacks.cpp $(QTOPT)
+$(T)Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h midi/midi_i_input_proc.h common/Vector.hpp Qt/ScrollArea.hpp  Qt/Qt_MyQScrollBar.hpp
+	$(CCC2) $(P)Qt_tools_callbacks.cpp $(QTOPT)
 
 $(P)Qt_tools.h: $(BUILD_DEPENDENCIES) $(P)qt4_tools.ui $(P)Qt_tools_callbacks.h $(P)lzqlineedit.h
 	cd $(P) && $(UIC) qt4_tools.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_tools.h
 	cd $(P) && $(MOC) Qt_tools_callbacks.h >mQt_tools_callbacks.h
 #	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) tools
 
-Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQCheckBox.h
-	$(CCC) $(P)Qt_PluginWidget.cpp $(QTOPT)
+$(T)Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQCheckBox.h
+	$(CCC2) $(P)Qt_PluginWidget.cpp $(QTOPT)
 
 $(P)mQt_PluginWidget.cpp: $(P)Qt_PluginWidget.h
 	cd $(P) && $(MOC) Qt_PluginWidget.h >mQt_PluginWidget.cpp
 
-Qt_SliderPainter.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_SliderPainter.cpp $(P)MySliderPainterPainter.h
-	$(CCC) $(P)Qt_SliderPainter.cpp $(QTOPT)
+$(T)Qt_SliderPainter.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_SliderPainter.cpp $(P)MySliderPainterPainter.h
+	$(CCC2) $(P)Qt_SliderPainter.cpp $(QTOPT)
 
-Qt_memory.o:  $(BUILD_DEPENDENCIES)  $(P)Qt_memory.cpp
-	$(CCC)  $(P)Qt_memory.cpp $(CPPOPT)
+$(T)Qt_memory.o:  $(BUILD_DEPENDENCIES)  $(P)Qt_memory.cpp
+	$(CCC2)  $(P)Qt_memory.cpp $(CPPOPT)
 
-Qt_path_resolver.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_path_resolver.cpp
-	$(CCC) $(P)Qt_path_resolver.cpp $(QTOPT)
+$(T)Qt_path_resolver.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_path_resolver.cpp
+	$(CCC2) $(P)Qt_path_resolver.cpp $(QTOPT)
 
-Qt_settings.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_settings.cpp
-	$(CCC) $(P)Qt_settings.cpp $(QTOPT) $(SNDFILEOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
+$(T)Qt_settings.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_settings.cpp
+	$(CCC2) $(P)Qt_settings.cpp $(QTOPT) $(SNDFILEOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
 
-Qt_disk.o: $(BUILD_DEPENDENCIES) $(P)Qt_disk.cpp
-	$(CCC) $(P)Qt_disk.cpp $(QTOPT)
+$(T)Qt_disk.o: $(BUILD_DEPENDENCIES) $(P)Qt_disk.cpp
+	$(CCC2) $(P)Qt_disk.cpp $(QTOPT)
 
-Qt_Error.o: $(BUILD_DEPENDENCIES) $(P)Qt_Error.cpp
+$(T)Qt_Error.o: $(BUILD_DEPENDENCIES) $(P)Qt_Error.cpp
 	@echo
 	@echo "Changed (Qt_Error.o):"
 	@echo $?
 	@echo
-	$(CCC) $(P)Qt_Error.cpp $(QTOPT)
+	$(CCC2) $(P)Qt_Error.cpp $(QTOPT)
 
 bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
 	@echo
@@ -1643,147 +1648,147 @@ bin/radium_progress_window: $(P)Qt_progresswindow.cpp
 	$(LINKER) `cat buildtype.opt` radium_progress_window.o -o bin/radium_progress_window $(QT_GUI_LDFLAGS)  
 	rm radium_progress_window.o
 
-bin/radium_check_jack_status: audio/KillJackd.cpp Jack_plugin.o find_jack_library.o # Jack_plugin.o depends on all the weakjack things
-	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -o radium_check_jack_status.o -Wno-error=deprecated-declarations -Wno-missing-declarations
-	$(LINKER) `cat buildtype.opt` radium_check_jack_status.o find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) -o bin/radium_check_jack_status $(FPIC)
-	rm radium_check_jack_status.o
+bin/radium_check_jack_status: audio/KillJackd.cpp $(T)Jack_plugin.o $(T)find_jack_library.o # Jack_plugin.o depends on all the weakjack things
+	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -Wno-missing-declarations -o $(T)radium_check_jack_status.o
+	$(LINKER) `cat buildtype.opt` $(T)radium_check_jack_status.o $(T)find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) -o bin/radium_check_jack_status $(FPIC)
+	rm $(T)radium_check_jack_status.o
 
 bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp common/Process.hpp
 	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o
 	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt5OpenGL`
 	rm radium_check_opengl.o
 
-Qt_progresswindow.o: $(BUILD_DEPENDENCIES) $(P)Qt_progresswindow.cpp
-	$(CCC) $(P)Qt_progresswindow.cpp $(QTOPT) -DP_SERVER
+$(T)Qt_progresswindow.o: $(BUILD_DEPENDENCIES) $(P)Qt_progresswindow.cpp
+	$(CCC2) $(P)Qt_progresswindow.cpp $(QTOPT) -DP_SERVER
 
-KillJackd.o:$(BUILD_DEPENDENCIES) audio/KillJackd.cpp weakjack/weak_libjack.c common/Process.hpp
-	$(CCC) audio/KillJackd.cpp $(QTOPT) -Wno-missing-declarations
+$(T)KillJackd.o:$(BUILD_DEPENDENCIES) audio/KillJackd.cpp weakjack/weak_libjack.c common/Process.hpp
+	$(CCC2) audio/KillJackd.cpp $(QTOPT) -Wno-missing-declarations
 
-Rational.o: $(BUILD_DEPENDENCIES) $(P)Rational.cpp
-	$(CCC) $(P)Rational.cpp $(QTOPT)
+$(T)Rational.o: $(BUILD_DEPENDENCIES) $(P)Rational.cpp
+	$(CCC2) $(P)Rational.cpp $(QTOPT)
 
-Qt_check_for_updates.o: $(BUILD_DEPENDENCIES) $(P)Qt_check_for_updates.cpp
+$(T)Qt_check_for_updates.o: $(BUILD_DEPENDENCIES) $(P)Qt_check_for_updates.cpp
 	$(MOC) $(P)/Qt_check_for_updates.cpp >$(P)/mQt_check_for_updates.cpp
-	$(CCC) $(P)Qt_check_for_updates.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
+	$(CCC2) $(P)Qt_check_for_updates.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
 
-Qt_AutoBackups.o: $(BUILD_DEPENDENCIES) $(P)Qt_AutoBackups.cpp audio/SampleRecorder_proc.h
-	$(CCC) $(P)Qt_AutoBackups.cpp $(QTOPT)
+$(T)Qt_AutoBackups.o: $(BUILD_DEPENDENCIES) $(P)Qt_AutoBackups.cpp audio/SampleRecorder_proc.h
+	$(CCC2) $(P)Qt_AutoBackups.cpp $(QTOPT)
 
-flowlayout.o: $(BUILD_DEPENDENCIES) $(P)flowlayout.cpp $(P)flowlayout.h
-	$(CCC) $(P)flowlayout.cpp $(QTOPT)
+$(T)flowlayout.o: $(BUILD_DEPENDENCIES) $(P)flowlayout.cpp $(P)flowlayout.h
+	$(CCC2) $(P)flowlayout.cpp $(QTOPT)
 
-posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
-	$(CC) posix/posix_settings.c $(OPT)
+$(T)posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
+	$(CC2) posix/posix_settings.c $(OPT)
 
-settings.o:  $(BUILD_DEPENDENCIES) $(CD)settings.cpp
-	$(CCC) $(CD)settings.cpp $(QTOPT)
+$(T)settings.o:  $(BUILD_DEPENDENCIES) $(CD)settings.cpp
+	$(CCC2) $(CD)settings.cpp $(QTOPT)
 
-mmd2load.o:  $(BUILD_DEPENDENCIES) mmd2loader/mmd2load.c
-	$(CC) mmd2loader/mmd2load.c $(OPT)
+$(T)mmd2load.o:  $(BUILD_DEPENDENCIES) mmd2loader/mmd2load.c
+	$(CC2) mmd2loader/mmd2load.c $(OPT)
 
-scroll.o:  $(BUILD_DEPENDENCIES) $(CD)scroll.c
-	$(CC) $(CD)scroll.c $(OPT)
+$(T)scroll.o:  $(BUILD_DEPENDENCIES) $(CD)scroll.c
+	$(CC2) $(CD)scroll.c $(OPT)
 
 
-pixmap.o:  $(BUILD_DEPENDENCIES)  $(CD)pixmap.c
-	$(CC)  $(CD)pixmap.c $(OPT)
+$(T)pixmap.o:  $(BUILD_DEPENDENCIES)  $(CD)pixmap.c
+	$(CC2)  $(CD)pixmap.c $(OPT)
 
-X11_memory.o:  $(BUILD_DEPENDENCIES)  $(P)X11_memory.c 
-	$(CC)  $(P)X11_memory.c $(OPT)
+$(T)X11_memory.o:  $(BUILD_DEPENDENCIES)  $(P)X11_memory.c 
+	$(CC2)  $(P)X11_memory.c $(OPT)
 
-gfx_shrink.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_shrink.c
-	$(CC)  $(CD)gfx_shrink.c $(OPT)
+$(T)gfx_shrink.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_shrink.c
+	$(CC2)  $(CD)gfx_shrink.c $(OPT)
 
-gfx_shrink_t.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_shrink_t.c
-	$(CC)  $(CD)gfx_shrink_t.c $(OPT)
+$(T)gfx_shrink_t.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_shrink_t.c
+	$(CC2)  $(CD)gfx_shrink_t.c $(OPT)
 
-scroll_play.o:  $(BUILD_DEPENDENCIES)  $(CD)scroll_play.c
-	$(CC)  $(CD)scroll_play.c $(OPT)
+$(T)scroll_play.o:  $(BUILD_DEPENDENCIES)  $(CD)scroll_play.c
+	$(CC2)  $(CD)scroll_play.c $(OPT)
 
-block_split.o:  $(BUILD_DEPENDENCIES)  $(CD)block_split.c
-	$(CC)  $(CD)block_split.c $(OPT)
+$(T)block_split.o:  $(BUILD_DEPENDENCIES)  $(CD)block_split.c
+	$(CC2)  $(CD)block_split.c $(OPT)
 
-undo_block_mergesplit.o:  $(BUILD_DEPENDENCIES)  $(CD)undo_block_mergesplit.c
-	$(CC)  $(CD)undo_block_mergesplit.c $(OPT)
+$(T)undo_block_mergesplit.o:  $(BUILD_DEPENDENCIES)  $(CD)undo_block_mergesplit.c
+	$(CC2)  $(CD)undo_block_mergesplit.c $(OPT)
 
-glissando.o:  $(BUILD_DEPENDENCIES)  $(CD)new/glissando.c
-	$(CC)  $(CD)new/glissando.c $(OPT)
+$(T)glissando.o:  $(BUILD_DEPENDENCIES)  $(CD)new/glissando.c
+	$(CC2)  $(CD)new/glissando.c $(OPT)
 
-pitchexpand.o:  $(BUILD_DEPENDENCIES)  $(CD)new/pitchexpand.c
-	$(CC)  $(CD)new/pitchexpand.c $(OPT)
+$(T)pitchexpand.o:  $(BUILD_DEPENDENCIES)  $(CD)new/pitchexpand.c
+	$(CC2)  $(CD)new/pitchexpand.c $(OPT)
 
-expand.o:  $(BUILD_DEPENDENCIES)  $(CD)expand.c
-	$(CC)  $(CD)expand.c $(OPT)
+$(T)expand.o:  $(BUILD_DEPENDENCIES)  $(CD)expand.c
+	$(CC2)  $(CD)expand.c $(OPT)
 
-api_common.o:  $(BUILD_DEPENDENCIES)  $(API)api_common.cpp
+$(T)api_common.o:  $(BUILD_DEPENDENCIES)  $(API)api_common.cpp
 	@echo "Changed (api_common.o):"
 	@echo $?
-	$(CCC)  $(API)api_common.cpp $(QTOPT)
+	$(CCC2)  $(API)api_common.cpp $(QTOPT)
 
-api_keyplay.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplay.c
-	$(CC)  $(API)api_keyplay.c $(OPT)
+$(T)api_keyplay.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplay.c
+	$(CC2)  $(API)api_keyplay.c $(OPT)
 
-api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.c 
-	$(CC)  $(API)api_keyplayedit.c $(OPT)
+$(T)api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.c 
+	$(CC2)  $(API)api_keyplayedit.c $(OPT)
 
-api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.c 
-	$(CC)  $(API)api_navigate.c $(OPT)
+$(T)api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.c 
+	$(CC2)  $(API)api_navigate.c $(OPT)
 
-api_disk.o:  $(BUILD_DEPENDENCIES)  $(API)api_disk.cpp 
-	$(CCC)  $(API)api_disk.cpp $(SNDFILEOPT) $(QTOPT)
+$(T)api_disk.o:  $(BUILD_DEPENDENCIES)  $(API)api_disk.cpp 
+	$(CCC2)  $(API)api_disk.cpp $(SNDFILEOPT) $(QTOPT)
 
-api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp 
-	$(CCC)  $(API)api_noteedit.cpp $(QTOPT)
+$(T)api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp 
+	$(CCC2)  $(API)api_noteedit.cpp $(QTOPT)
 
-api_velocities.o:  $(BUILD_DEPENDENCIES)  $(API)api_velocities.c 
-	$(CC)  $(API)api_velocities.c $(OPT)
+$(T)api_velocities.o:  $(BUILD_DEPENDENCIES)  $(API)api_velocities.c 
+	$(CC2)  $(API)api_velocities.c $(OPT)
 
-api_pitches.o:  $(BUILD_DEPENDENCIES)  $(API)api_pitches.c 
-	$(CC)  $(API)api_pitches.c $(OPT)
+$(T)api_pitches.o:  $(BUILD_DEPENDENCIES)  $(API)api_pitches.c 
+	$(CC2)  $(API)api_pitches.c $(OPT)
 
-api_timing.o:  $(BUILD_DEPENDENCIES)  $(API)api_timing.cpp
-	$(CCC)  $(API)api_timing.cpp $(QTOPT)
+$(T)api_timing.o:  $(BUILD_DEPENDENCIES)  $(API)api_timing.cpp
+	$(CCC2)  $(API)api_timing.cpp $(QTOPT)
 
-api_trackonoff.o:  $(BUILD_DEPENDENCIES)  $(API)api_trackonoff.c 
-	$(CC)  $(API)api_trackonoff.c $(OPT)
+$(T)api_trackonoff.o:  $(BUILD_DEPENDENCIES)  $(API)api_trackonoff.c 
+	$(CC2)  $(API)api_trackonoff.c $(OPT)
 
-api_zoom.o:  $(BUILD_DEPENDENCIES)  $(API)api_zoom.cpp
-	$(CCC)  $(API)api_zoom.cpp $(QTOPT)
+$(T)api_zoom.o:  $(BUILD_DEPENDENCIES)  $(API)api_zoom.cpp
+	$(CCC2)  $(API)api_zoom.cpp $(QTOPT)
 
-api_notemanipulate.o:  $(BUILD_DEPENDENCIES)  $(API)api_notemanipulate.c 
-	$(CC)  $(API)api_notemanipulate.c $(OPT)
+$(T)api_notemanipulate.o:  $(BUILD_DEPENDENCIES)  $(API)api_notemanipulate.c 
+	$(CC2)  $(API)api_notemanipulate.c $(OPT)
 
-api_play.o:  $(BUILD_DEPENDENCIES)  $(API)api_play.cpp
-	$(CCC)  $(API)api_play.cpp $(QTOPT)
+$(T)api_play.o:  $(BUILD_DEPENDENCIES)  $(API)api_play.cpp
+	$(CCC2)  $(API)api_play.cpp $(QTOPT)
 
-api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c 
-	$(CC)  $(API)api_clipboard.c $(OPT)
+$(T)api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c 
+	$(CC2)  $(API)api_clipboard.c $(OPT)
 
-api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp  embedded_scheme/s7extra_proc.h
-	$(CCC)  $(API)api_undo.cpp $(QTOPT)
+$(T)api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp  embedded_scheme/s7extra_proc.h
+	$(CCC2)  $(API)api_undo.cpp $(QTOPT)
 
-api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h
-	$(CCC)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference
+$(T)api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h
+	$(CCC2)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference
 
-api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp  $(API)api_instruments_proc.h embedded_scheme/s7extra_proc.h mixergui/QM_chip.h mixergui/QM_MixerWidget.h
-	$(CCC)  $(API)api_instruments.cpp $(QTOPT)
+$(T)api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp  $(API)api_instruments_proc.h embedded_scheme/s7extra_proc.h mixergui/QM_chip.h mixergui/QM_MixerWidget.h
+	$(CCC2)  $(API)api_instruments.cpp $(QTOPT)
 
-api_soundpluginregistry.o:  $(BUILD_DEPENDENCIES) $(API)api_soundpluginregistry.cpp  $(API)api_instruments_proc.h
+$(T)api_soundpluginregistry.o:  $(BUILD_DEPENDENCIES) $(API)api_soundpluginregistry.cpp  $(API)api_instruments_proc.h
 #	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
-	$(CCC)  $(API)api_soundpluginregistry.cpp $(QTOPT)
+	$(CCC2)  $(API)api_soundpluginregistry.cpp $(QTOPT)
 
-api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.cpp 
-	$(CCC)  $(API)api_requesters.cpp $(QTOPT)
+$(T)api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.cpp 
+	$(CCC2)  $(API)api_requesters.cpp $(QTOPT)
 
-api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.cpp
-	$(CCC)  $(API)api_mouse.cpp $(QTOPT)
+$(T)api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.cpp
+	$(CCC2)  $(API)api_mouse.cpp $(QTOPT)
 
-api_sequencer.o:  $(BUILD_DEPENDENCIES)  $(API)api_sequencer.cpp $(API)api_sequencer_proc.h  audio/Envelope.hpp common/seqblock_automation_proc.h embedded_scheme/s7extra_proc.h
-	$(CCC)  $(API)api_sequencer.cpp $(QTOPT)
+$(T)api_sequencer.o:  $(BUILD_DEPENDENCIES)  $(API)api_sequencer.cpp $(API)api_sequencer_proc.h  audio/Envelope.hpp common/seqblock_automation_proc.h embedded_scheme/s7extra_proc.h
+	$(CCC2)  $(API)api_sequencer.cpp $(QTOPT)
 
-api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h
+$(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
-	$(CCC)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) -Wno-null-dereference
+	$(CCC2)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) -Wno-null-dereference
 
 
 NOUNUSEDBUTSETVARIABLEWARNING=
@@ -1791,8 +1796,8 @@ ifeq (,$(findstring clang,$(CC)))
 	NOUNUSEDBUTSETVARIABLEWARNING += -Wno-unused-but-set-variable -Wno-cast-function-type
 endif
 
-radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c 
-	$(CC) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING) -Wno-missing-field-initializers
+$(T)radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c 
+	$(CC2) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING) -Wno-missing-field-initializers
 
 $(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
 	cd $(API) ; bash makeradiumwrap_c.sh $(PYTHONEXE) ; cd ..
@@ -1804,11 +1809,11 @@ $(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser
 #$(API)radium_wrap.c: $(API)radium.i
 #	swig -python $(API)radium.i
 
-api_support.o:  $(BUILD_DEPENDENCIES)  $(API)api_support.c
-	$(CC)  $(API)api_support.c $(OPT)
+$(T)api_support.o:  $(BUILD_DEPENDENCIES)  $(API)api_support.c
+	$(CC2)  $(API)api_support.c $(OPT)
 
-wrapfunclist.o:  $(BUILD_DEPENDENCIES) $(API)wrapfunclist.c
-	$(CC) $(API)wrapfunclist.c $(OPT)
+$(T)wrapfunclist.o:  $(BUILD_DEPENDENCIES) $(API)wrapfunclist.c
+	$(CC2) $(API)wrapfunclist.c $(OPT)
 
 $(API)wrapfunclist.c: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser.py
 	@echo "$(PYTHONEXE) ../bin/protoconfparser.py wrapfunclist.c"
@@ -1822,36 +1827,36 @@ $(API)radium_proc.h: $(API)protos.conf bin/protoconfparser.py
 	@echo "$(PYTHONEXE) ../bin/protoconfparser.py radium_proc.h"
 	cd $(API) ; $(PYTHONEXE) ../bin/protoconfparser.py radium_proc.h ; cd ..
 
-gfx_request.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_request.c
-	$(CC)  $(CD)gfx_request.c $(OPT)
+$(T)gfx_request.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_request.c
+	$(CC2)  $(CD)gfx_request.c $(OPT)
 
 
 
 
 
-midi_playfromstart.o:  $(BUILD_DEPENDENCIES)  midi/midi_playfromstart.c
-	$(CC)  midi/midi_playfromstart.c $(OPT) 
-midi_instrument.o:  $(BUILD_DEPENDENCIES)  midi/midi_instrument.cpp
-	$(CCC)  midi/midi_instrument.cpp $(CPPOPT) 
-midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.cpp  midi/midi_i_input_proc.h common/Vector.hpp
-	$(CCC)  midi/midi_i_input.cpp $(QTOPT) $(JACKOPT)
-midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.cpp
-	$(CCC)  midi/midi_fx.cpp $(CPPOPT) 
+$(T)midi_playfromstart.o:  $(BUILD_DEPENDENCIES)  midi/midi_playfromstart.c
+	$(CC2)  midi/midi_playfromstart.c $(OPT) 
+$(T)midi_instrument.o:  $(BUILD_DEPENDENCIES)  midi/midi_instrument.cpp
+	$(CCC2)  midi/midi_instrument.cpp $(CPPOPT) 
+$(T)midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.cpp  midi/midi_i_input_proc.h common/Vector.hpp
+	$(CCC2)  midi/midi_i_input.cpp $(QTOPT) $(JACKOPT)
+$(T)midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.cpp
+	$(CCC2)  midi/midi_fx.cpp $(CPPOPT) 
 
 #disk_midi_mymidilinks.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_mymidilinks.c
-#	$(CC)  midi/disk_midi_mymidilinks.c $(OPT) 
+#	$(CC2)  midi/disk_midi_mymidilinks.c $(OPT) 
 # TODO
 
-disk_midi_instrument.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_instrument.c $(CD)disk.h
-	$(CC)  midi/disk_midi_instrument.c $(OPT) 
-disk_midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_fx.c $(CD)disk.h
-	$(CC)  midi/disk_midi_fx.c $(OPT) 
-alsaseq_midi.o:  $(BUILD_DEPENDENCIES)  midi/alsaseq/alsaseq_midi.c
-	$(CC)  midi/alsaseq/alsaseq_midi.c $(OPT) 
+$(T)disk_midi_instrument.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_instrument.c $(CD)disk.h
+	$(CC2)  midi/disk_midi_instrument.c $(OPT) 
+$(T)disk_midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_fx.c $(CD)disk.h
+	$(CC2)  midi/disk_midi_fx.c $(OPT) 
+$(T)alsaseq_midi.o:  $(BUILD_DEPENDENCIES)  midi/alsaseq/alsaseq_midi.c
+	$(CC2)  midi/alsaseq/alsaseq_midi.c $(OPT) 
 #midi_getEvents.o:  $(BUILD_DEPENDENCIES)  midi/midi_getEvents.c
-#	$(CC)  midi/midi_getEvents.c $(OPT) 
-midi_menues.o:  $(BUILD_DEPENDENCIES)  midi/midi_menues.c
-	$(CC)  midi/midi_menues.c $(OPT) 
+#	$(CC2)  midi/midi_getEvents.c $(OPT) 
+$(T)midi_menues.o:  $(BUILD_DEPENDENCIES)  midi/midi_menues.c
+	$(CC2)  midi/midi_menues.c $(OPT) 
 
 
 
@@ -1895,80 +1900,80 @@ $(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h $(QM)QM_MixerWidget.cpp $(P)Qt_M
 
 #images.o: $(QM)images.qrc
 #	$(RCC) $(QM)images.qrc -name images -o $(QM)images.cpp
-#	$(CCC) $(QM)images.cpp  `$(PKG) --libs --cflags QtGui` -c
+#	$(CCC2) $(QM)images.cpp  `$(PKG) --libs --cflags QtGui` -c
 
-QM_MixerWidget.o: $(QM)mQM_MixerWidget.cpp $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp Qt/helpers.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/KeyboardFocusFrame.hpp Qt/Timer.hpp Qt/Qt_MyQCheckBox.h
-	$(CCC) $(QM)QM_MixerWidget.cpp $(QTOPT)
+$(T)QM_MixerWidget.o: $(QM)mQM_MixerWidget.cpp $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp Qt/helpers.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/KeyboardFocusFrame.hpp Qt/Timer.hpp Qt/Qt_MyQCheckBox.h
+	$(CCC2) $(QM)QM_MixerWidget.cpp $(QTOPT)
 
-QM_view.o: $(QM)QM_view.cpp $(QM)QM_view.h $(QM)QM_chip.h $(QM)mQM_view.cpp $(QM)QM_MixerWidget.h
-	$(CCC) $(QM)QM_view.cpp $(QTOPT)
+$(T)QM_view.o: $(QM)QM_view.cpp $(QM)QM_view.h $(QM)QM_chip.h $(QM)mQM_view.cpp $(QM)QM_MixerWidget.h
+	$(CCC2) $(QM)QM_view.cpp $(QTOPT)
 
-QM_chip.o: $(QM)QM_chip.cpp $(QM)QM_chip.h $(P)Qt_MyQCheckBox.h $(QM)QM_MixerWidget.h audio/CpuUsage.hpp
-	$(CCC) $(QM)QM_chip.cpp $(QTOPT)
+$(T)QM_chip.o: $(QM)QM_chip.cpp $(QM)QM_chip.h $(P)Qt_MyQCheckBox.h $(QM)QM_MixerWidget.h audio/CpuUsage.hpp
+	$(CCC2) $(QM)QM_chip.cpp $(QTOPT)
 
-undo_chip_position.o: $(QM)undo_chip_position.c $(QM)QM_chip.h
-	$(CC) $(OPT) $(QM)undo_chip_position.c
+$(T)undo_chip_position.o: $(QM)undo_chip_position.c $(QM)QM_chip.h
+	$(CC2) $(OPT) $(QM)undo_chip_position.c
 
-undo_mixer.o: $(QM)undo_mixer.c
-	$(CC) $(OPT) $(QM)undo_mixer.c
+$(T)undo_mixer.o: $(QM)undo_mixer.c
+	$(CC2) $(OPT) $(QM)undo_mixer.c
 
-undo_mixer_connections.o: $(QM)undo_mixer_connections.c
-	$(CC) $(OPT) $(QM)undo_mixer_connections.c
+$(T)undo_mixer_connections.o: $(QM)undo_mixer_connections.c
+	$(CC2) $(OPT) $(QM)undo_mixer_connections.c
 
 #undo_chip_addremove.o: $(QM)undo_chip_addremove.c
-#	$(CC) $(OPT) $(QM)undo_chip_addremove.c
+#	$(CC2) $(OPT) $(QM)undo_chip_addremove.c
 
-Jack_plugin.o: audio/Jack_plugin.cpp weakjack/weak_libjack.def weakjack/weak_libjack.h weakjack/weak_libjack.c
-	$(CCC) $(QTOPT) audio/Jack_plugin.cpp $(JACKOPT) -Wno-missing-declarations -Wno-deprecated-declarations
+$(T)Jack_plugin.o: audio/Jack_plugin.cpp weakjack/weak_libjack.def weakjack/weak_libjack.h weakjack/weak_libjack.c
+	$(CCC2) $(QTOPT) audio/Jack_plugin.cpp $(JACKOPT) -Wno-missing-declarations -Wno-deprecated-declarations
 #-Wno-gnu-designator -Wno-missing-field-initializers
 
-find_jack_library.o: windows/find_jack_library.cpp
-	$(CCC) windows/find_jack_library.cpp $(QTOPT)
+$(T)find_jack_library.o: windows/find_jack_library.cpp
+	$(CCC2) windows/find_jack_library.cpp $(QTOPT)
 
-Sine_plugin.o: audio/Sine_plugin.c
-	$(CC) $(OPT) audio/Sine_plugin.c
+$(T)Sine_plugin.o: audio/Sine_plugin.c
+	$(CC2) $(OPT) audio/Sine_plugin.c
 
-Bus_plugins.o: audio/Bus_plugins.cpp
-	$(CCC) audio/Bus_plugins.cpp $(QTOPT)
+$(T)Bus_plugins.o: audio/Bus_plugins.cpp
+	$(CCC2) audio/Bus_plugins.cpp $(QTOPT)
 
-Timeskew_plugin.o: audio/Timeskew_plugin.cpp audio/SmoothDelay.hpp
-	$(CCC) audio/Timeskew_plugin.cpp $(QTOPT) $(OPTIMIZE_O3)
+$(T)Timeskew_plugin.o: audio/Timeskew_plugin.cpp audio/SmoothDelay.hpp
+	$(CCC2) audio/Timeskew_plugin.cpp $(QTOPT) $(OPTIMIZE_O3)
 
-Patchbay_plugin.o: audio/Patchbay_plugin.cpp
-	$(CCC) audio/Patchbay_plugin.cpp $(QTOPT)
+$(T)Patchbay_plugin.o: audio/Patchbay_plugin.cpp
+	$(CCC2) audio/Patchbay_plugin.cpp $(QTOPT)
 
-MidiMessages_plugin.o: audio/MidiMessages_plugin.c
-	$(CC) audio/MidiMessages_plugin.c $(OPT)
+$(T)MidiMessages_plugin.o: audio/MidiMessages_plugin.c
+	$(CC2) audio/MidiMessages_plugin.c $(OPT)
 
-VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
-	$(CCC) audio/VST_plugins.cpp $(QTOPT) #-Wno-error # uses some Qt stuff to open GUI window
+$(T)VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
+	$(CCC2) audio/VST_plugins.cpp $(QTOPT) #-Wno-error # uses some Qt stuff to open GUI window
 
-Ladspa_plugins.o: audio/Ladspa_plugins.cpp
-	$(CCC) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT) $(IS_LINUX_BINARY)
+$(T)Ladspa_plugins.o: audio/Ladspa_plugins.cpp
+	$(CCC2) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT) $(IS_LINUX_BINARY)
 
-Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h audio/Peaks.hpp audio/SampleRecorder_proc.h common/OS_string_proc.h audio/Granulator.hpp  audio/GranResampler.hpp audio/Fade.hpp
-	$(CCC) $(QTOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) $(OPTIMIZE_O3) #  $(CPUOPT) 
+$(T)Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h audio/Peaks.hpp audio/SampleRecorder_proc.h common/OS_string_proc.h audio/Granulator.hpp  audio/GranResampler.hpp audio/Fade.hpp
+	$(CCC2) $(QTOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) $(OPTIMIZE_O3) #  $(CPUOPT) 
 
-SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS_string_proc.h
-	$(CCC) $(QTOPT) audio/SampleRecorder.cpp $(SNDFILEOPT)
+$(T)SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS_string_proc.h
+	$(CCC2) $(QTOPT) audio/SampleRecorder.cpp $(SNDFILEOPT)
 
-SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
-	$(CCC) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
+$(T)SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
+	$(CCC2) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
 
-Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp common/Random.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h audio/Fade.hpp
-	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) $(OPTIMIZE_O3) # $(CPUOPT) 
+$(T)Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp common/Random.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h audio/Fade.hpp
+	$(CCC2) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) $(OPTIMIZE_O3) # $(CPUOPT) 
 
-FluidSynth_plugin.o: audio/FluidSynth_plugin.cpp
-	$(CCC) $(CPPOPT) $(CPUOPT) audio/FluidSynth_plugin.cpp #-Wno-gnu-designator
+$(T)FluidSynth_plugin.o: audio/FluidSynth_plugin.cpp
+	$(CCC2) $(CPPOPT) $(CPUOPT) audio/FluidSynth_plugin.cpp #-Wno-gnu-designator
 #-Wno-missing-field-initializers
 #`$(PKG) --cflags fluidsynth`
 
-Pd_plugin.o: audio/Pd_plugin.cpp
-	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
+$(T)Pd_plugin.o: audio/Pd_plugin.cpp
+	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
 
-Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
-	$(CCC) $(QTOPT) audio/Modulator_plugin.cpp $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW)
+$(T)Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
+	$(CCC2) $(QTOPT) audio/Modulator_plugin.cpp $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW)
 
 
 FAUST_DEPENDENCIES = audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
@@ -1976,9 +1981,9 @@ FAUST_OPTS1 = $(QTOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANI
 FAUST_OPTS = $(FAUST_OPTS1) -I$(FAUSTDIR)/architecture
 # -Ibin/packages/faust2/architecture 
 
-Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
+$(T)Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
-	$(CCC) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(NOSHORTEN64TO32FLAG) # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
+	$(CCC2) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(NOSHORTEN64TO32FLAG) # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
 
 audio/mfaustqt2.cpp: $(FAUSTDIR)/architecture/faust/gui/QTUI.h #bin/packages/faust2/architecture/faust/gui/faustqt.h
 	cd audio && $(MOC) $(FAUSTDIR)/architecture/faust/gui/QTUI.h >mfaustqt2.cpp
@@ -1987,8 +1992,8 @@ audio/mfaustqt2.cpp: $(FAUSTDIR)/architecture/faust/gui/QTUI.h #bin/packages/fau
 #audio/mfaustqt1.cpp: bin/packages/faust2/architecture/faust/gui/faustqt.h
 #	cd audio && $(MOC) faudiostream/architecture/faust/gui/faustqt.h >mfaustqt1.cpp
 
-zita_rev.o: audio/zita_rev.cpp
-	$(CCC) audio/zita_rev.cpp $(FAUST_OPTS) -DCLASSNAME=Zita_dsp  -DDSP_NAME=\"Zita\ Reverb\" -DCREATE_NAME=create_zita_rev_plugin
+$(T)zita_rev.o: audio/zita_rev.cpp
+	$(CCC2) audio/zita_rev.cpp $(FAUST_OPTS) -DCLASSNAME=Zita_dsp  -DDSP_NAME=\"Zita\ Reverb\" -DCREATE_NAME=create_zita_rev_plugin
 
 # Compiling zita_rev.dsp with -vec results in faster exection on average, but there appears to be much more CPU spikes
 # than without the -vec option.
@@ -2000,16 +2005,16 @@ audio/zita_rev.cpp: audio/zita_rev.dsp $(FAUST_DEPENDENCIES)
 	./fix_faust_code.sh Zita_dsp $@
 
 
-stk_flute.o: audio/stk_flute.cpp
-	$(CCC) audio/stk_flute.cpp $(FAUST_OPTS) -DCLASSNAME=Flute_dsp -DDSP_NAME=\"STK\ Flute\" -DCREATE_NAME=create_stk_flute_plugin
+$(T)stk_flute.o: audio/stk_flute.cpp
+	$(CCC2) audio/stk_flute.cpp $(FAUST_OPTS) -DCLASSNAME=Flute_dsp -DDSP_NAME=\"STK\ Flute\" -DCREATE_NAME=create_stk_flute_plugin
 
 audio/stk_flute.cpp: audio/faust-examples/faust-stk/flute.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Flute_dsp -a ../../Faust_plugins_template.cpp flute.dsp -o ../../stk_flute.cpp
 	./fix_faust_code.sh Flute_dsp $@
 
 
-stk_bowed.o: audio/stk_bowed.cpp
-	$(CCC) audio/stk_bowed.cpp $(FAUST_OPTS) -DCLASSNAME=Bowed_dsp -DDSP_NAME=\"STK\ Bowed\" -DCREATE_NAME=create_stk_bowed_plugin
+$(T)stk_bowed.o: audio/stk_bowed.cpp
+	$(CCC2) audio/stk_bowed.cpp $(FAUST_OPTS) -DCLASSNAME=Bowed_dsp -DDSP_NAME=\"STK\ Bowed\" -DCREATE_NAME=create_stk_bowed_plugin
 
 audio/stk_bowed.cpp: audio/faust-examples/faust-stk/bowed.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Bowed_dsp -a ../../Faust_plugins_template.cpp bowed.dsp -o ../../stk_bowed.cpp
@@ -2017,8 +2022,8 @@ audio/stk_bowed.cpp: audio/faust-examples/faust-stk/bowed.dsp $(FAUST_DEPENDENCI
 
 
 
-stk_blow_bottle.o: audio/stk_blow_bottle.cpp
-	$(CCC) audio/stk_blow_bottle.cpp $(FAUST_OPTS) -DCLASSNAME=Blow_Bottle_dsp -DDSP_NAME=\"STK\ Blow\ Bottle\" -DCREATE_NAME=create_stk_blow_bottle_plugin
+$(T)stk_blow_bottle.o: audio/stk_blow_bottle.cpp
+	$(CCC2) audio/stk_blow_bottle.cpp $(FAUST_OPTS) -DCLASSNAME=Blow_Bottle_dsp -DDSP_NAME=\"STK\ Blow\ Bottle\" -DCREATE_NAME=create_stk_blow_bottle_plugin
 
 audio/stk_blow_bottle.cpp: audio/faust-examples/faust-stk/blowBottle.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Blow_Bottle_dsp -a ../../Faust_plugins_template.cpp blowBottle.dsp -o ../../stk_blow_bottle.cpp
@@ -2026,16 +2031,16 @@ audio/stk_blow_bottle.cpp: audio/faust-examples/faust-stk/blowBottle.dsp $(FAUST
 
 
 
-stk_bass.o: audio/stk_bass.cpp
-	$(CCC) audio/stk_bass.cpp $(FAUST_OPTS) -DCLASSNAME=Bass_dsp -DDSP_NAME=\"STK\ Bass\" -DCREATE_NAME=create_stk_bass_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_bass.o: audio/stk_bass.cpp
+	$(CCC2) audio/stk_bass.cpp $(FAUST_OPTS) -DCLASSNAME=Bass_dsp -DDSP_NAME=\"STK\ Bass\" -DCREATE_NAME=create_stk_bass_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_bass.cpp: audio/faust-examples/faust-stk/bass.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Bass_dsp -a ../../Faust_plugins_template.cpp bass.dsp -o ../../stk_bass.cpp
 	./fix_faust_code.sh Bass_dsp $@
 
 
-stk_blow_hole.o: audio/stk_blow_hole.cpp
-	$(CCC) audio/stk_blow_hole.cpp $(FAUST_OPTS) -DCLASSNAME=Blow_Hole_dsp -DDSP_NAME=\"STK\ Blow\ Hole\ \(clarinet\)\" -DCREATE_NAME=create_stk_blow_hole_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_blow_hole.o: audio/stk_blow_hole.cpp
+	$(CCC2) audio/stk_blow_hole.cpp $(FAUST_OPTS) -DCLASSNAME=Blow_Hole_dsp -DDSP_NAME=\"STK\ Blow\ Hole\ \(clarinet\)\" -DCREATE_NAME=create_stk_blow_hole_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_blow_hole.cpp: audio/faust-examples/faust-stk/blowHole.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Blow_Hole_dsp -a ../../Faust_plugins_template.cpp blowHole.dsp -o ../../stk_blow_hole.cpp
@@ -2043,8 +2048,8 @@ audio/stk_blow_hole.cpp: audio/faust-examples/faust-stk/blowHole.dsp $(FAUST_DEP
 
 
 
-stk_brass.o: audio/stk_brass.cpp
-	$(CCC) audio/stk_brass.cpp $(FAUST_OPTS) -DCLASSNAME=Brass_dsp -DDSP_NAME=\"STK\ Brass\" -DCREATE_NAME=create_stk_brass_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_brass.o: audio/stk_brass.cpp
+	$(CCC2) audio/stk_brass.cpp $(FAUST_OPTS) -DCLASSNAME=Brass_dsp -DDSP_NAME=\"STK\ Brass\" -DCREATE_NAME=create_stk_brass_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_brass.cpp: audio/faust-examples/faust-stk/brass.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Brass_dsp -a ../../Faust_plugins_template.cpp brass.dsp -o ../../stk_brass.cpp
@@ -2052,8 +2057,8 @@ audio/stk_brass.cpp: audio/faust-examples/faust-stk/brass.dsp $(FAUST_DEPENDENCI
 
 
 
-stk_clarinet.o: audio/stk_clarinet.cpp
-	$(CCC) audio/stk_clarinet.cpp $(FAUST_OPTS) -DCLASSNAME=Clarinet_dsp -DDSP_NAME=\"STK\ Clarinet\" -DCREATE_NAME=create_stk_clarinet_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_clarinet.o: audio/stk_clarinet.cpp
+	$(CCC2) audio/stk_clarinet.cpp $(FAUST_OPTS) -DCLASSNAME=Clarinet_dsp -DDSP_NAME=\"STK\ Clarinet\" -DCREATE_NAME=create_stk_clarinet_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_clarinet.cpp: audio/faust-examples/faust-stk/clarinet.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Clarinet_dsp -a ../../Faust_plugins_template.cpp clarinet.dsp -o ../../stk_clarinet.cpp
@@ -2061,8 +2066,8 @@ audio/stk_clarinet.cpp: audio/faust-examples/faust-stk/clarinet.dsp $(FAUST_DEPE
 
 
 
-stk_flute_stk.o: audio/stk_flute_stk.cpp
-	$(CCC) audio/stk_flute_stk.cpp $(FAUST_OPTS) -DCLASSNAME=Flute_Stk_dsp -DDSP_NAME=\"STK\ Flute\ STK\" -DCREATE_NAME=create_stk_flute_stk_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_flute_stk.o: audio/stk_flute_stk.cpp
+	$(CCC2) audio/stk_flute_stk.cpp $(FAUST_OPTS) -DCLASSNAME=Flute_Stk_dsp -DDSP_NAME=\"STK\ Flute\ STK\" -DCREATE_NAME=create_stk_flute_stk_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_flute_stk.cpp: audio/faust-examples/faust-stk/flutestk.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Flute_Stk_dsp -a ../../Faust_plugins_template.cpp flutestk.dsp -o ../../stk_flute_stk.cpp
@@ -2070,8 +2075,8 @@ audio/stk_flute_stk.cpp: audio/faust-examples/faust-stk/flutestk.dsp $(FAUST_DEP
 
 
 
-stk_glass_harmonica.o: audio/stk_glass_harmonica.cpp
-	$(CCC) audio/stk_glass_harmonica.cpp $(FAUST_OPTS) -DCLASSNAME=Glass_Harmonica_dsp -DDSP_NAME=\"STK\ Glass\ Harmonica\" -DCREATE_NAME=create_stk_glass_harmonica_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_glass_harmonica.o: audio/stk_glass_harmonica.cpp
+	$(CCC2) audio/stk_glass_harmonica.cpp $(FAUST_OPTS) -DCLASSNAME=Glass_Harmonica_dsp -DDSP_NAME=\"STK\ Glass\ Harmonica\" -DCREATE_NAME=create_stk_glass_harmonica_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_glass_harmonica.cpp: audio/faust-examples/faust-stk/glassHarmonica.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Glass_Harmonica_dsp -a ../../Faust_plugins_template.cpp glassHarmonica.dsp -o ../../stk_glass_harmonica.cpp
@@ -2079,8 +2084,8 @@ audio/stk_glass_harmonica.cpp: audio/faust-examples/faust-stk/glassHarmonica.dsp
 
 
 
-stk_harpsi.o: audio/stk_harpsi.cpp
-	$(CCC) audio/stk_harpsi.cpp $(FAUST_OPTS) -DCLASSNAME=Harpsi_dsp -DDSP_NAME=\"STK\ Harpsichord\" -DCREATE_NAME=create_stk_harpsi_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_harpsi.o: audio/stk_harpsi.cpp
+	$(CCC2) audio/stk_harpsi.cpp $(FAUST_OPTS) -DCLASSNAME=Harpsi_dsp -DDSP_NAME=\"STK\ Harpsichord\" -DCREATE_NAME=create_stk_harpsi_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_harpsi.cpp: audio/faust-examples/faust-stk/harpsi.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Harpsi_dsp -a ../../Faust_plugins_template.cpp harpsi.dsp -o ../../stk_harpsi.cpp
@@ -2088,8 +2093,8 @@ audio/stk_harpsi.cpp: audio/faust-examples/faust-stk/harpsi.dsp $(FAUST_DEPENDEN
 
 
 
-stk_modal_bar.o: audio/stk_modal_bar.cpp
-	$(CCC) audio/stk_modal_bar.cpp $(FAUST_OPTS) -DCLASSNAME=Modal_Bar_dsp -DDSP_NAME=\"STK\ Modal\ Bar\" -DCREATE_NAME=create_stk_modal_bar_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_modal_bar.o: audio/stk_modal_bar.cpp
+	$(CCC2) audio/stk_modal_bar.cpp $(FAUST_OPTS) -DCLASSNAME=Modal_Bar_dsp -DDSP_NAME=\"STK\ Modal\ Bar\" -DCREATE_NAME=create_stk_modal_bar_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_modal_bar.cpp: audio/faust-examples/faust-stk/modalBar.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Modal_Bar_dsp -a ../../Faust_plugins_template.cpp modalBar.dsp -o ../../stk_modal_bar.cpp
@@ -2098,8 +2103,8 @@ audio/stk_modal_bar.cpp: audio/faust-examples/faust-stk/modalBar.dsp $(FAUST_DEP
 
 
 
-stk_NLF_eks.o: audio/stk_NLF_eks.cpp
-	$(CCC) audio/stk_NLF_eks.cpp $(FAUST_OPTS) -DCLASSNAME=NLF_Eks_dsp -DDSP_NAME=\"STK\ Non\-linear\ Karplus\-Strong\" -DCREATE_NAME=create_stk_NLF_eks_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_NLF_eks.o: audio/stk_NLF_eks.cpp
+	$(CCC2) audio/stk_NLF_eks.cpp $(FAUST_OPTS) -DCLASSNAME=NLF_Eks_dsp -DDSP_NAME=\"STK\ Non\-linear\ Karplus\-Strong\" -DCREATE_NAME=create_stk_NLF_eks_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_NLF_eks.cpp: audio/faust-examples/faust-stk/NLFeks.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn NLF_Eks_dsp -a ../../Faust_plugins_template.cpp NLFeks.dsp -o ../../stk_NLF_eks.cpp
@@ -2108,8 +2113,8 @@ audio/stk_NLF_eks.cpp: audio/faust-examples/faust-stk/NLFeks.dsp $(FAUST_DEPENDE
 
 
 
-stk_NLF_fm.o: audio/stk_NLF_fm.cpp
-	$(CCC) audio/stk_NLF_fm.cpp $(FAUST_OPTS) -DCLASSNAME=NLF_Fm_dsp -DDSP_NAME=\"STK\ Non\-linear\ FM\" -DCREATE_NAME=create_stk_NLF_fm_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_NLF_fm.o: audio/stk_NLF_fm.cpp
+	$(CCC2) audio/stk_NLF_fm.cpp $(FAUST_OPTS) -DCLASSNAME=NLF_Fm_dsp -DDSP_NAME=\"STK\ Non\-linear\ FM\" -DCREATE_NAME=create_stk_NLF_fm_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_NLF_fm.cpp: audio/faust-examples/faust-stk/NLFfm.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn NLF_Fm_dsp -a ../../Faust_plugins_template.cpp NLFfm.dsp -o ../../stk_NLF_fm.cpp
@@ -2118,8 +2123,8 @@ audio/stk_NLF_fm.cpp: audio/faust-examples/faust-stk/NLFfm.dsp $(FAUST_DEPENDENC
 
 
 
-stk_piano.o: audio/stk_piano.cpp
-	$(CCC) audio/stk_piano.cpp $(FAUST_OPTS) -DCLASSNAME=Piano_dsp -DDSP_NAME=\"STK\ Piano\" -DCREATE_NAME=create_stk_piano_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_piano.o: audio/stk_piano.cpp
+	$(CCC2) audio/stk_piano.cpp $(FAUST_OPTS) -DCLASSNAME=Piano_dsp -DDSP_NAME=\"STK\ Piano\" -DCREATE_NAME=create_stk_piano_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_piano.cpp: audio/faust-examples/faust-stk/piano.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Piano_dsp -a ../../Faust_plugins_template.cpp piano.dsp -o ../../stk_piano.cpp
@@ -2128,8 +2133,8 @@ audio/stk_piano.cpp: audio/faust-examples/faust-stk/piano.dsp $(FAUST_DEPENDENCI
 
 
 
-stk_saxophony.o: audio/stk_saxophony.cpp
-	$(CCC) audio/stk_saxophony.cpp $(FAUST_OPTS) -DCLASSNAME=Saxophony_dsp -DDSP_NAME=\"STK\ Saxophony\" -DCREATE_NAME=create_stk_saxophony_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_saxophony.o: audio/stk_saxophony.cpp
+	$(CCC2) audio/stk_saxophony.cpp $(FAUST_OPTS) -DCLASSNAME=Saxophony_dsp -DDSP_NAME=\"STK\ Saxophony\" -DCREATE_NAME=create_stk_saxophony_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_saxophony.cpp: audio/faust-examples/faust-stk/saxophony.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Saxophony_dsp -a ../../Faust_plugins_template.cpp saxophony.dsp -o ../../stk_saxophony.cpp
@@ -2138,8 +2143,8 @@ audio/stk_saxophony.cpp: audio/faust-examples/faust-stk/saxophony.dsp $(FAUST_DE
 
 
 
-stk_sitar.o: audio/stk_sitar.cpp
-	$(CCC) audio/stk_sitar.cpp $(FAUST_OPTS) -DCLASSNAME=Sitar_dsp -DDSP_NAME=\"STK\ Sitar\" -DCREATE_NAME=create_stk_sitar_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_sitar.o: audio/stk_sitar.cpp
+	$(CCC2) audio/stk_sitar.cpp $(FAUST_OPTS) -DCLASSNAME=Sitar_dsp -DDSP_NAME=\"STK\ Sitar\" -DCREATE_NAME=create_stk_sitar_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_sitar.cpp: audio/faust-examples/faust-stk/sitar.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Sitar_dsp -a ../../Faust_plugins_template.cpp sitar.dsp -o ../../stk_sitar.cpp
@@ -2148,8 +2153,8 @@ audio/stk_sitar.cpp: audio/faust-examples/faust-stk/sitar.dsp $(FAUST_DEPENDENCI
 
 
 
-stk_tibetan_bowl.o: audio/stk_tibetan_bowl.cpp
-	$(CCC) audio/stk_tibetan_bowl.cpp $(FAUST_OPTS) -DCLASSNAME=Tibetan_Bowl_dsp -DDSP_NAME=\"STK\ Tibetan\ Bowl\" -DCREATE_NAME=create_stk_tibetan_bowl_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_tibetan_bowl.o: audio/stk_tibetan_bowl.cpp
+	$(CCC2) audio/stk_tibetan_bowl.cpp $(FAUST_OPTS) -DCLASSNAME=Tibetan_Bowl_dsp -DDSP_NAME=\"STK\ Tibetan\ Bowl\" -DCREATE_NAME=create_stk_tibetan_bowl_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_tibetan_bowl.cpp: audio/faust-examples/faust-stk/tibetanBowl.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Tibetan_Bowl_dsp -a ../../Faust_plugins_template.cpp tibetanBowl.dsp -o ../../stk_tibetan_bowl.cpp
@@ -2158,8 +2163,8 @@ audio/stk_tibetan_bowl.cpp: audio/faust-examples/faust-stk/tibetanBowl.dsp $(FAU
 
 
 
-stk_tuned_bar.o: audio/stk_tuned_bar.cpp
-	$(CCC) audio/stk_tuned_bar.cpp $(FAUST_OPTS) -DCLASSNAME=Tuned_Bar_dsp -DDSP_NAME=\"STK\ Tuned\ Bar\" -DCREATE_NAME=create_stk_tuned_bar_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_tuned_bar.o: audio/stk_tuned_bar.cpp
+	$(CCC2) audio/stk_tuned_bar.cpp $(FAUST_OPTS) -DCLASSNAME=Tuned_Bar_dsp -DDSP_NAME=\"STK\ Tuned\ Bar\" -DCREATE_NAME=create_stk_tuned_bar_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_tuned_bar.cpp: audio/faust-examples/faust-stk/tunedBar.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Tuned_Bar_dsp -a ../../Faust_plugins_template.cpp tunedBar.dsp -o ../../stk_tuned_bar.cpp
@@ -2168,8 +2173,8 @@ audio/stk_tuned_bar.cpp: audio/faust-examples/faust-stk/tunedBar.dsp $(FAUST_DEP
 
 
 
-stk_uni_bar.o: audio/stk_uni_bar.cpp
-	$(CCC) audio/stk_uni_bar.cpp $(FAUST_OPTS) -DCLASSNAME=Uni_Bar_dsp -DDSP_NAME=\"STK\ Uni\ Bar\" -DCREATE_NAME=create_stk_uni_bar_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_uni_bar.o: audio/stk_uni_bar.cpp
+	$(CCC2) audio/stk_uni_bar.cpp $(FAUST_OPTS) -DCLASSNAME=Uni_Bar_dsp -DDSP_NAME=\"STK\ Uni\ Bar\" -DCREATE_NAME=create_stk_uni_bar_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_uni_bar.cpp: audio/faust-examples/faust-stk/uniBar.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Uni_Bar_dsp -a ../../Faust_plugins_template.cpp uniBar.dsp -o ../../stk_uni_bar.cpp
@@ -2178,8 +2183,8 @@ audio/stk_uni_bar.cpp: audio/faust-examples/faust-stk/uniBar.dsp $(FAUST_DEPENDE
 
 
 
-stk_voice_form.o: audio/stk_voice_form.cpp
-	$(CCC) audio/stk_voice_form.cpp $(FAUST_OPTS) -DCLASSNAME=Voice_Form_dsp -DDSP_NAME=\"STK\ Voice\" -DCREATE_NAME=create_stk_voice_form_plugin -Iaudio/faust-examples/faust-stk
+$(T)stk_voice_form.o: audio/stk_voice_form.cpp
+	$(CCC2) audio/stk_voice_form.cpp $(FAUST_OPTS) -DCLASSNAME=Voice_Form_dsp -DDSP_NAME=\"STK\ Voice\" -DCREATE_NAME=create_stk_voice_form_plugin -Iaudio/faust-examples/faust-stk
 
 audio/stk_voice_form.cpp: audio/faust-examples/faust-stk/voiceForm.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples/faust-stk && $(FAUST) -cn Voice_Form_dsp -a ../../Faust_plugins_template.cpp voiceForm.dsp -o ../../stk_voice_form.cpp
@@ -2188,8 +2193,8 @@ audio/stk_voice_form.cpp: audio/faust-examples/faust-stk/voiceForm.dsp $(FAUST_D
 
 
 
-faust_tapiir.o: audio/faust_tapiir.cpp
-	$(CCC) audio/faust_tapiir.cpp $(FAUST_OPTS) -DCLASSNAME=Tapiir_dsp -DDSP_NAME=\"Tapiir\" -DCREATE_NAME=create_faust_tapiir_plugin 
+$(T)faust_tapiir.o: audio/faust_tapiir.cpp
+	$(CCC2) audio/faust_tapiir.cpp $(FAUST_OPTS) -DCLASSNAME=Tapiir_dsp -DDSP_NAME=\"Tapiir\" -DCREATE_NAME=create_faust_tapiir_plugin 
 
 audio/faust_tapiir.cpp: audio/faust-examples/tapiir.dsp $(FAUST_DEPENDENCIES)
 	cd audio/faust-examples && $(FAUST) -cn Tapiir_dsp -a ../Faust_plugins_template.cpp tapiir.dsp -o ../faust_tapiir.cpp
@@ -2198,8 +2203,8 @@ audio/faust_tapiir.cpp: audio/faust-examples/tapiir.dsp $(FAUST_DEPENDENCIES)
 
 
 
-faust_multibandcomp.o: audio/faust_multibandcomp.cpp
-	$(CCC) audio/faust_multibandcomp.cpp $(FAUST_OPTS) -DCLASSNAME=Multibandcomp_dsp -DDSP_NAME=\"Multiband\ Compressor\" -DCREATE_NAME=create_faust_multibandcomp_plugin -DFAUST_THAT_ONE
+$(T)faust_multibandcomp.o: audio/faust_multibandcomp.cpp
+	$(CCC2) audio/faust_multibandcomp.cpp $(FAUST_OPTS) -DCLASSNAME=Multibandcomp_dsp -DDSP_NAME=\"Multiband\ Compressor\" -DCREATE_NAME=create_faust_multibandcomp_plugin -DFAUST_THAT_ONE
 
 audio/faust_multibandcomp.cpp: audio/faust_multibandcomp.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -vec -cn Multibandcomp_dsp -a Faust_plugins_template.cpp faust_multibandcomp.dsp -o faust_multibandcomp.cpp
@@ -2208,8 +2213,8 @@ audio/faust_multibandcomp.cpp: audio/faust_multibandcomp.dsp $(FAUST_DEPENDENCIE
 
 
 
-faust_system_eq.o: audio/faust_system_eq.cpp
-	$(CCC) audio/faust_system_eq.cpp $(FAUST_OPTS) -DCLASSNAME=System_Eq_dsp -DDSP_NAME=\"System\ Eq\" -DCREATE_NAME=create_faust_system_eq_plugin -DFAUST_SYSTEM_EFFECT
+$(T)faust_system_eq.o: audio/faust_system_eq.cpp
+	$(CCC2) audio/faust_system_eq.cpp $(FAUST_OPTS) -DCLASSNAME=System_Eq_dsp -DDSP_NAME=\"System\ Eq\" -DCREATE_NAME=create_faust_system_eq_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_eq.cpp: audio/system_eq.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Eq_dsp -a Faust_plugins_template.cpp system_eq.dsp -o faust_system_eq.cpp
@@ -2218,8 +2223,8 @@ audio/faust_system_eq.cpp: audio/system_eq.dsp $(FAUST_DEPENDENCIES) audio/filte
 
 
 
-faust_system_tremolo.o: audio/faust_system_tremolo.cpp
-	$(CCC) audio/faust_system_tremolo.cpp $(FAUST_OPTS) -DCLASSNAME=System_Tremolo_dsp -DDSP_NAME=\"System\ Tremolo\" -DCREATE_NAME=create_faust_system_tremolo_plugin -DFAUST_SYSTEM_EFFECT
+$(T)faust_system_tremolo.o: audio/faust_system_tremolo.cpp
+	$(CCC2) audio/faust_system_tremolo.cpp $(FAUST_OPTS) -DCLASSNAME=System_Tremolo_dsp -DDSP_NAME=\"System\ Tremolo\" -DCREATE_NAME=create_faust_system_tremolo_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_tremolo.cpp: audio/system_tremolo.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Tremolo_dsp -a Faust_plugins_template.cpp system_tremolo.dsp -o faust_system_tremolo.cpp
@@ -2227,8 +2232,8 @@ audio/faust_system_tremolo.cpp: audio/system_tremolo.dsp $(FAUST_DEPENDENCIES) a
 
 
 
-faust_system_lowpass.o: audio/faust_system_lowpass.cpp
-	$(CCC) audio/faust_system_lowpass.cpp $(FAUST_OPTS) -DCLASSNAME=System_Lowpass_dsp -DDSP_NAME=\"System\ Lowpass\" -DCREATE_NAME=create_faust_system_lowpass_plugin -DFAUST_SYSTEM_EFFECT
+$(T)faust_system_lowpass.o: audio/faust_system_lowpass.cpp
+	$(CCC2) audio/faust_system_lowpass.cpp $(FAUST_OPTS) -DCLASSNAME=System_Lowpass_dsp -DDSP_NAME=\"System\ Lowpass\" -DCREATE_NAME=create_faust_system_lowpass_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_lowpass.cpp: audio/system_lowpass.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Lowpass_dsp -a Faust_plugins_template.cpp system_lowpass.dsp -o faust_system_lowpass.cpp
@@ -2237,8 +2242,8 @@ audio/faust_system_lowpass.cpp: audio/system_lowpass.dsp $(FAUST_DEPENDENCIES) a
 
 
 
-faust_system_highpass.o: audio/faust_system_highpass.cpp
-	$(CCC) audio/faust_system_highpass.cpp $(FAUST_OPTS) -DCLASSNAME=System_Highpass_dsp -DDSP_NAME=\"System\ Highpass\" -DCREATE_NAME=create_faust_system_highpass_plugin -DFAUST_SYSTEM_EFFECT
+$(T)faust_system_highpass.o: audio/faust_system_highpass.cpp
+	$(CCC2) audio/faust_system_highpass.cpp $(FAUST_OPTS) -DCLASSNAME=System_Highpass_dsp -DDSP_NAME=\"System\ Highpass\" -DCREATE_NAME=create_faust_system_highpass_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_highpass.cpp: audio/system_highpass.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Highpass_dsp -a Faust_plugins_template.cpp system_highpass.dsp -o faust_system_highpass.cpp
@@ -2247,8 +2252,8 @@ audio/faust_system_highpass.cpp: audio/system_highpass.dsp $(FAUST_DEPENDENCIES)
 
 
 
-faust_system_lowshelf.o: audio/faust_system_lowshelf.cpp
-	$(CCC) audio/faust_system_lowshelf.cpp $(FAUST_OPTS) -DCLASSNAME=System_Lowshelf_dsp -DDSP_NAME=\"System\ Lowshelf\" -DCREATE_NAME=create_faust_system_lowshelf_plugin -DFAUST_SYSTEM_EFFECT
+$(T)faust_system_lowshelf.o: audio/faust_system_lowshelf.cpp
+	$(CCC2) audio/faust_system_lowshelf.cpp $(FAUST_OPTS) -DCLASSNAME=System_Lowshelf_dsp -DDSP_NAME=\"System\ Lowshelf\" -DCREATE_NAME=create_faust_system_lowshelf_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_lowshelf.cpp: audio/system_lowshelf.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Lowshelf_dsp -a Faust_plugins_template.cpp system_lowshelf.dsp -o faust_system_lowshelf.cpp
@@ -2257,8 +2262,8 @@ audio/faust_system_lowshelf.cpp: audio/system_lowshelf.dsp $(FAUST_DEPENDENCIES)
 
 
 
-faust_system_highshelf.o: audio/faust_system_highshelf.cpp
-	$(CCC) audio/faust_system_highshelf.cpp $(FAUST_OPTS) -DCLASSNAME=System_Highshelf_dsp -DDSP_NAME=\"System\ Highshelf\" -DCREATE_NAME=create_faust_system_highshelf_plugin -DFAUST_SYSTEM_EFFECT
+$(T)faust_system_highshelf.o: audio/faust_system_highshelf.cpp
+	$(CCC2) audio/faust_system_highshelf.cpp $(FAUST_OPTS) -DCLASSNAME=System_Highshelf_dsp -DDSP_NAME=\"System\ Highshelf\" -DCREATE_NAME=create_faust_system_highshelf_plugin -DFAUST_SYSTEM_EFFECT
 
 audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -cn System_Highshelf_dsp -a Faust_plugins_template.cpp system_highshelf.dsp -o faust_system_highshelf.cpp
@@ -2268,7 +2273,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 
 
 #faust_system_delay.o: audio/faust_system_delay.cpp
-#	$(CCC) audio/faust_system_delay.cpp $(FAUST_OPTS) -DCLASSNAME=System_Delay_dsp -DDSP_NAME=\"System\ Delay\" -DCREATE_NAME=create_faust_system_delay_plugin -DFAUST_SYSTEM_EFFECT
+#	$(CCC2) audio/faust_system_delay.cpp $(FAUST_OPTS) -DCLASSNAME=System_Delay_dsp -DDSP_NAME=\"System\ Delay\" -DCREATE_NAME=create_faust_system_delay_plugin -DFAUST_SYSTEM_EFFECT
 
 #audio/faust_system_delay.cpp: audio/system_delay.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 #	cd audio && $(FAUST) -cn System_Delay_dsp -a Faust_plugins_template.cpp system_delay.dsp -o faust_system_delay.cpp
@@ -2278,7 +2283,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 
 
 #Faust_plugins.o: $(FAUST_DEPENDENCIES) audio/zita_rev.cpp audio/faust-examples/faust-stk/flute.cpp
-#	$(CCC) audio/Faust_plugins_template.cpp $(FAUST_OPTS) -DDSP_INCLUDE=zita_rev.cpp -DDSP_NAME=\"Zita Reverb\"
+#	$(CCC2) audio/Faust_plugins_template.cpp $(FAUST_OPTS) -DDSP_INCLUDE=zita_rev.cpp -DDSP_NAME=\"Zita Reverb\"
 
 #audio/zita_rev.cpp: audio/zita_rev.dsp
 #	cd audio && $(FAUST) -cn my_dsp zita_rev.dsp -o zita_rev.cpp
@@ -2286,80 +2291,80 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 #audio/faust-examples/faust-stk/flute.cpp: audio/faust-examples/faust-stk/flute.dsp
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp -o flute.cpp
 
-SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/QueueStack.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp
+$(T)SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/QueueStack.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
-	$(CCC) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT) $(OPTIMIZE_O3) # -O3 # $(CPUOPT)
+	$(CCC2) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT) $(OPTIMIZE_O3) # -O3 # $(CPUOPT)
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
 #-ftree-vectorize
 
 #MultiCore.o: audio/MultiCore.cpp audio/fade_envelopes.h
-#	$(CCC) audio/MultiCore.cpp $(QTOPT)
+#	$(CCC2) audio/MultiCore.cpp $(QTOPT)
 
 
-AudioBuffer.o: audio/AudioBuffer.cpp audio/AudioBuffer.hpp
-	$(CCC) audio/AudioBuffer.cpp $(CPPOPT)
+$(T)AudioBuffer.o: audio/AudioBuffer.cpp audio/AudioBuffer.hpp
+	$(CCC2) audio/AudioBuffer.cpp $(CPPOPT)
 
-SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_proc.h common/Vector.hpp
-	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
+$(T)SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_proc.h common/Vector.hpp
+	$(CCC2) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
-SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h Sine_plugin.o # we add Sine_plugin.o here to make sure it is up to date.
-	$(CCC) audio/SoundPlugin.cpp $(QTOPT) $(OPTIMIZE_O3)
+$(T)SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h $(T)Sine_plugin.o # we add Sine_plugin.o here to make sure it is up to date.
+	$(CCC2) audio/SoundPlugin.cpp $(QTOPT) $(OPTIMIZE_O3)
 ### $(CPUOPT)
 
-AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp
-	$(CCC) audio/AudioMeterPeaks.cpp $(QTOPT)
+$(T)AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp
+	$(CCC2) audio/AudioMeterPeaks.cpp $(QTOPT)
 
-Peaks.o: audio/Peaks.cpp audio/Peaks.hpp
-	$(CCC) audio/Peaks.cpp $(SNDFILEOPT) $(QTOPT)
+$(T)Peaks.o: audio/Peaks.cpp audio/Peaks.hpp
+	$(CCC2) audio/Peaks.cpp $(SNDFILEOPT) $(QTOPT)
 
-Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h audio/SampleRecorder_proc.h audio/CpuUsage.hpp
-	$(CCC) audio/Mixer.cpp $(QTOPT) $(JACKOPT)  $(CPUOPT) -Wno-null-dereference
+$(T)Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h audio/SampleRecorder_proc.h audio/CpuUsage.hpp
+	$(CCC2) audio/Mixer.cpp $(QTOPT) $(JACKOPT)  $(CPUOPT) -Wno-null-dereference
 
-get_windows_commandlines.o: audio/get_windows_commandlines.c
-	$(CC) audio/get_windows_commandlines.c $(OPT)
+$(T)get_windows_commandlines.o: audio/get_windows_commandlines.c
+	$(CC2) audio/get_windows_commandlines.c $(OPT)
 
-Envelope.o: audio/Envelope.cpp
-	$(CCC) audio/Envelope.cpp $(CPPOPT) $(CPUOPT)
+$(T)Envelope.o: audio/Envelope.cpp
+	$(CCC2) audio/Envelope.cpp $(CPPOPT) $(CPUOPT)
 
-Resampler.o: audio/Resampler.cpp audio/SampleInterpolator.cpp
-#	$(CCC) audio/Resampler.cpp $(CPPOPT) `$(PKG) --cflags samplerate`
-	$(CCC) audio/Resampler.cpp $(CPPOPT) $(CPUOPT) `$(PKG) --cflags samplerate`
+$(T)Resampler.o: audio/Resampler.cpp audio/SampleInterpolator.cpp
+#	$(CCC2) audio/Resampler.cpp $(CPPOPT) `$(PKG) --cflags samplerate`
+	$(CCC2) audio/Resampler.cpp $(CPPOPT) $(CPUOPT) `$(PKG) --cflags samplerate`
 
-SoundFonts.o: audio/SoundFonts.cpp
-	$(CCC) audio/SoundFonts.cpp $(QTOPT) -Ibin/packages/libgig/src/
+$(T)SoundFonts.o: audio/SoundFonts.cpp
+	$(CCC2) audio/SoundFonts.cpp $(QTOPT) -Ibin/packages/libgig/src/
 # `$(PKG) --cflags glib-2.0`
 
-audio_instrument.o: audio/audio_instrument.cpp $(CD)disk.h audio/SoundPluginRegistry_proc.h
-	$(CCC) audio/audio_instrument.cpp $(QTOPT)
+$(T)audio_instrument.o: audio/audio_instrument.cpp $(CD)disk.h audio/SoundPluginRegistry_proc.h
+	$(CCC2) audio/audio_instrument.cpp $(QTOPT)
 
 #Smooth.o: audio/Smooth.c audio/Smooth_proc.h
-#	$(CC) audio/Smooth.c $(OPT) $(CPUOPT)
+#	$(CC2) audio/Smooth.c $(OPT) $(CPUOPT)
 
-Presets.o: audio/Presets.cpp audio/Presets_proc.h
-	$(CCC) audio/Presets.cpp $(QTOPT)
+$(T)Presets.o: audio/Presets.cpp audio/Presets_proc.h
+	$(CCC2) audio/Presets.cpp $(QTOPT)
 
-undo_audio_effect.o: audio/undo_audio_effect.c
-	$(CC) audio/undo_audio_effect.c $(OPT)
+$(T)undo_audio_effect.o: audio/undo_audio_effect.c
+	$(CC2) audio/undo_audio_effect.c $(OPT)
 
-undo_connection_enabled.o: audio/undo_connection_enabled.c
-	$(CC) audio/undo_connection_enabled.c $(OPT)
+$(T)undo_connection_enabled.o: audio/undo_connection_enabled.c
+	$(CC2) audio/undo_connection_enabled.c $(OPT)
 
-undo_audio_connection_gain.o: audio/undo_audio_connection_gain.c
-	$(CC) audio/undo_audio_connection_gain.c $(OPT)
+$(T)undo_audio_connection_gain.o: audio/undo_audio_connection_gain.c
+	$(CC2) audio/undo_audio_connection_gain.c $(OPT)
 
-undo_pd_controllers.o: audio/undo_pd_controllers.c
-	$(CC) audio/undo_pd_controllers.c $(OPT)
+$(T)undo_pd_controllers.o: audio/undo_pd_controllers.c
+	$(CC2) audio/undo_pd_controllers.c $(OPT)
 
-undo_plugin_state.o: audio/undo_plugin_state.c
-	$(CC) audio/undo_plugin_state.c $(OPT)
+$(T)undo_plugin_state.o: audio/undo_plugin_state.c
+	$(CC2) audio/undo_plugin_state.c $(OPT)
 
-SoundfileSaver.o: audio/SoundfileSaver.c
-	$(CC) audio/SoundfileSaver.c $(OPT) $(SNDFILEOPT)
+$(T)SoundfileSaver.o: audio/SoundfileSaver.c
+	$(CC2) audio/SoundfileSaver.c $(OPT) $(SNDFILEOPT)
 
-system_compressor_wrapper.o: audio/system_compressor_wrapper.cpp audio/system_compressor.cpp
-	$(CCC) $(FAUST_OPTS) audio/system_compressor_wrapper.cpp
+$(T)system_compressor_wrapper.o: audio/system_compressor_wrapper.cpp audio/system_compressor.cpp
+	$(CCC2) $(FAUST_OPTS) audio/system_compressor_wrapper.cpp
 
 audio/system_compressor.cpp: audio/system_compressor.dsp
 	$(FAUST) -I `pwd`/audio -vec -cn Faust_system_compressor audio/system_compressor.dsp -o audio/system_compressor.cpp
@@ -2370,9 +2375,9 @@ bin/radium_crashreporter: crashreporter/crashreporter.cpp common/Process.hpp
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
 	@echo
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -Wno-missing-declarations -o crashbin.o $(WNO_DEPRECATED_COPY)
-	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
-	rm crashbin.o
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -Wno-missing-declarations $(WNO_DEPRECATED_COPY) -o /tmp/crashbin.o
+	$(LINKER) `cat buildtype.opt` /tmp/crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
+	rm /tmp/crashbin.o
 
 bin/radium_addr2line.exe: crashreporter/radium_addr2line.c
 	$(CC_STATIC) crashreporter/radium_addr2line.c -Wall $(ADDR2LINEOPTS) -DPACKAGE -o bin/radium_addr2line.exe -mwindows
@@ -2382,47 +2387,47 @@ ifeq ($(GCC_MAJOR),9)
 	CRASHREPORTER_OPTS += $(WNO_DEPRECATED_COPY)
 endif
 
-crashreporter.o: crashreporter/crashreporter.cpp common/Process.hpp
+$(T)crashreporter.o: crashreporter/crashreporter.cpp common/Process.hpp
 	@echo
 	@echo "Changed (crashreporter.o):"
 	@echo $?
 	@echo
-	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(IS_LINUX_BINARY)
+	$(CCC2) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(IS_LINUX_BINARY)
 
-crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
-	if ! $(CC) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS) ; then \
+$(T)crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
+	if ! $(CC2) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS) ; then \
 		printf '   \n\n\n    ** Note: You might need to uncomment the  PACKAGE AND PACKAGE_VERSION definitions in crashreporter/crashreporter_posix.c ** \n\n\n\n' ; \
 		exit -1 ; \
 	fi
 
-crashreporter_windows.o: crashreporter/crashreporter_windows.c
-	$(CC_STATIC) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE
-#	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
+$(T)crashreporter_windows.o: crashreporter/crashreporter_windows.c
+	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE
+#	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
-GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
-	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) #-Wno-error=unused-variable
+$(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
+	$(CCC2) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) #-Wno-error=unused-variable
 
-T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h 
-	$(CCC) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)    #-Wno-error=unused-variable
+$(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h 
+	$(CCC2) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)    #-Wno-error=unused-variable
 
-Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h
-	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)
+$(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h
+	$(CCC2) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)
 
-Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp
-	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) #-Wno-error=unused-variable
+$(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp
+	$(CCC2) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) #-Wno-error=unused-variable
 
-CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
-	$(CCC) OpenGL/CheckOpenGL.cpp $(QTOPT)
+$(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
+	$(CCC2) OpenGL/CheckOpenGL.cpp $(QTOPT)
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)
 
 #Qt${RADIUM_QT_VERSION}Widget.o: bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.cpp bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.hpp
-#	$(CCC) bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.cpp $(VL_CFLAGS) $(QTOPT)
+#	$(CCC2) bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.cpp $(VL_CFLAGS) $(QTOPT)
 
 #moc_Qt${RADIUM_QT_VERSION}Widget.o: bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.hpp
 #	$(MOC) bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.hpp >moc_Qt${RADIUM_QT_VERSION}Widget.cpp
-#	$(CCC) moc_Qt${RADIUM_QT_VERSION}Widget.cpp $(VL_CFLAGS) $(QTOPT)
+#	$(CCC2) moc_Qt${RADIUM_QT_VERSION}Widget.cpp $(VL_CFLAGS) $(QTOPT)
 
 # embedded scheme
 
@@ -2485,17 +2490,17 @@ bin/packages/sndlib/clm.c: bin/packages/sndlib.tar.gz bin/packages/sndlib.patch
 
 
 #clm.o: audio/clm.h audio/clm.c audio/sndlib.h audio/_sndlib.h audio/xen.h audio/vct.h
-#	$(CC) $(OPT) audio/clm.c -Iembedded_scheme -I/home/kjetil/snd-17/
+#	$(CC2) $(OPT) audio/clm.c -Iembedded_scheme -I/home/kjetil/snd-17/
 
 
-s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp bin/packages/s7/s7.c
-	$(CCC) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++11
+$(T)s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp bin/packages/s7/s7.c
+	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++11
 
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp
 
-scheme.o: embedded_scheme/scheme.cpp  bin/packages/s7/s7.c embedded_scheme/s7extra_proc.h
-	$(CCC) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
+$(T)scheme.o: embedded_scheme/scheme.cpp  bin/packages/s7/s7.c embedded_scheme/s7extra_proc.h
+	$(CCC2) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
 
 QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -Wno-null-dereference -D_REENTRANT #-fno-sanitize=undefined
 
@@ -2515,29 +2520,29 @@ endif
 
 
 
-qhttpconnection.o: bin/packages/qhttpserver-master/src/qhttpconnection.cpp
-	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS) -Wno-missing-declarations #$(QHTTPCONNECTIONFLAGS)
-qhttprequest.o: bin/packages/qhttpserver-master/src/qhttprequest.cpp
-	$(CCC) -c bin/packages/qhttpserver-master/src/qhttprequest.cpp $(QHTTPSERVERFLAGS)
-qhttpresponse.o: bin/packages/qhttpserver-master/src/qhttpresponse.cpp
-	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpresponse.cpp $(QHTTPSERVERFLAGS)
-qhttpserver.o: bin/packages/qhttpserver-master/src/qhttpserver.cpp
-	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpserver.cpp $(QHTTPSERVERFLAGS)
-moc_qhttpconnection.o: bin/packages/qhttpserver-master/build/moc_qhttpconnection.cpp
-	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttpconnection.cpp $(QHTTPSERVERFLAGS)
-moc_qhttprequest.o: bin/packages/qhttpserver-master/build/moc_qhttprequest.cpp
-	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttprequest.cpp $(QHTTPSERVERFLAGS)
-moc_qhttpresponse.o: bin/packages/qhttpserver-master/build/moc_qhttpresponse.cpp
-	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttpresponse.cpp $(QHTTPSERVERFLAGS)
-moc_qhttpserver.o: bin/packages/qhttpserver-master/build/moc_qhttpserver.cpp
-	$(CCC) -c bin/packages/qhttpserver-master/build/moc_qhttpserver.cpp $(QHTTPSERVERFLAGS)
+$(T)qhttpconnection.o: bin/packages/qhttpserver-master/src/qhttpconnection.cpp
+	$(CCC2) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS) -Wno-missing-declarations #$(QHTTPCONNECTIONFLAGS)
+$(T)qhttprequest.o: bin/packages/qhttpserver-master/src/qhttprequest.cpp
+	$(CCC2) -c bin/packages/qhttpserver-master/src/qhttprequest.cpp $(QHTTPSERVERFLAGS)
+$(T)qhttpresponse.o: bin/packages/qhttpserver-master/src/qhttpresponse.cpp
+	$(CCC2) -c bin/packages/qhttpserver-master/src/qhttpresponse.cpp $(QHTTPSERVERFLAGS)
+$(T)qhttpserver.o: bin/packages/qhttpserver-master/src/qhttpserver.cpp
+	$(CCC2) -c bin/packages/qhttpserver-master/src/qhttpserver.cpp $(QHTTPSERVERFLAGS)
+$(T)moc_qhttpconnection.o: bin/packages/qhttpserver-master/build/moc_qhttpconnection.cpp
+	$(CCC2) -c bin/packages/qhttpserver-master/build/moc_qhttpconnection.cpp $(QHTTPSERVERFLAGS)
+$(T)moc_qhttprequest.o: bin/packages/qhttpserver-master/build/moc_qhttprequest.cpp
+	$(CCC2) -c bin/packages/qhttpserver-master/build/moc_qhttprequest.cpp $(QHTTPSERVERFLAGS)
+$(T)moc_qhttpresponse.o: bin/packages/qhttpserver-master/build/moc_qhttpresponse.cpp
+	$(CCC2) -c bin/packages/qhttpserver-master/build/moc_qhttpresponse.cpp $(QHTTPSERVERFLAGS)
+$(T)moc_qhttpserver.o: bin/packages/qhttpserver-master/build/moc_qhttpserver.cpp
+	$(CCC2) -c bin/packages/qhttpserver-master/build/moc_qhttpserver.cpp $(QHTTPSERVERFLAGS)
 #ar cqs libqhttpserver.a qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o
 
-http_parser.o: bin/packages/qhttpserver-master/http-parser/http_parser.c
-	$(CC) -c bin/packages/qhttpserver-master/http-parser/http_parser.c $(OPT) $(HTTPPARSERFLAGS)
+$(T)http_parser.o: bin/packages/qhttpserver-master/http-parser/http_parser.c
+	$(CC2) -c bin/packages/qhttpserver-master/http-parser/http_parser.c $(OPT) $(HTTPPARSERFLAGS)
 
-radium_s7_wrap.o: api/radium_s7_wrap.c 
-	$(CC) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
+$(T)radium_s7_wrap.o: api/radium_s7_wrap.c 
+	$(CC2) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
 
 api/radium_s7_wrap.c: bin/protoconfparser.py api/protos.conf bin/packages/s7/s7.c api/s7_types_code.c api/s7_types_code_init.c
 	cd api && $(PYTHONEXE) ../bin/protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c
@@ -2553,7 +2558,7 @@ bin/scheme/api_protos.scm: bin/protos.conf bin/protoconfparser.py
 
 #bin/zita_rev_ladspa.so: audio/zita_rev.dsp
 #	cd audio && $(FAUST) -a ladspa.cpp -cn zita_rev_radium zita_rev.dsp >zita_rev_ladspa.cpp
-#	$(CCC) -I /usr/share/faust/ audio/zita_rev_ladspa.cpp -shared -o bin/zita_rev_ladspa.so $(FPIC) 
+#	$(CCC2) -I /usr/share/faust/ audio/zita_rev_ladspa.cpp -shared -o bin/zita_rev_ladspa.so $(FPIC) 
 
 
 
