@@ -824,7 +824,7 @@ static const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *w
 static void create_tempograph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   const TempoGraph tg = create_TempoGraph(window,wblock);
 
-  float width = 1.3;
+  float width = 2.3;
 
   //printf("min/max: %d, %d\n",(int)min,(int)max);
 
