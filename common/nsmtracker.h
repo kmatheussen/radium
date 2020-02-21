@@ -393,7 +393,7 @@ static inline double scale_double(const double x, const double x1, const double 
   float diff = x2-x1;
   
 #if !defined(RELEASE)
-  R_ASSERT(diff!=0);
+  R_ASSERT(!equal_doubles(diff,0.0));
   
   if (equal_doubles(diff, 0.0))
     return (y1+y2)/2.0;
@@ -409,7 +409,7 @@ static inline float scale(const float x, const float x1, const float x2, const f
   float diff = x2-x1;
   
 #if !defined(RELEASE)
-  R_ASSERT(diff!=0);
+  R_ASSERT(!equal_floats(diff,0.0));
   
   if (equal_floats(diff, 0.0))
     return (y1+y2)/2.0f;
