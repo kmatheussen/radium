@@ -117,8 +117,10 @@ static inline const struct STimes *get_stimes_from_swinging_mode(const struct Bl
             if (track->times==NULL || track->times->tchanges==NULL)
               abort();
 
-            if (track!=wblock->wtrack->track && track->times==wblock->block->times_with_global_swings)
+            if (track!=wblock->wtrack->track && track->times==wblock->block->times_with_global_swings){
+              track = NextTrack(track);
               continue;
+            }
             
             for(int i = 0;;i++){
               if (equal_doubles(track->times->tchanges[i].y2, 0.0)){
