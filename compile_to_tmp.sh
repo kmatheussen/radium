@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 mkdir -p /tmp/radium_objects
 
 for var in "$@"; do
@@ -24,7 +26,14 @@ done
 
 GREEN='\033[0;32m'
 LIGHT_CYAN='\033[0;36m'
+YELLOW='\033[0;33m'
 NC='\033[0m'
-printf "${GREEN}Compiling${LIGHT_CYAN} $sourcefile${NC}\n"
+printf "${GREEN}Compiling${LIGHT_CYAN} $sourcefile${NC}...\n"
 
+start=`date +%s`
 "$@" -o /tmp/radium_objects/$base.o
+end=`date +%s`
+
+runtime=$((end-start))
+
+printf "          ${LIGHT_CYAN}$sourcefile ${GREEN} compiled.${YELLOW} (${runtime}s)${NC}\n"
