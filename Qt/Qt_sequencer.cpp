@@ -2559,7 +2559,7 @@ public:
 
       const struct SeqTrack *seqtrack = (const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
 
-      if (seqtrack->is_visible){
+      if (seqtrack->y2 > 0 && seqtrack->is_visible){ // if seqtrack->y2==0 it means that position_widgets() haven't been called yet.
         
         R_ASSERT_NON_RELEASE(seqtrack->y2 > seqtrack->y1);
     
