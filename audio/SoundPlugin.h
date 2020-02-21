@@ -52,7 +52,7 @@ extern "C"{
 #define THRESHOLD_GAIN 0.01778279410038923 // = powf(10, MIN_DB_THRESHOLD / 20.0f);
   
 static inline float gain2db(float gain){
-  if (gain == 1.0) { // Common situation, but also to ensure correct conversion (not sure if log10(1.0) always returns exactly 0.0, although it probably does).
+  if (equal_floats(gain, 1.0)) { // Common situation, but also to ensure correct conversion (not sure if log10(1.0) always returns exactly 0.0, although it probably does).
     
     return 0.0;
     
@@ -73,7 +73,7 @@ static inline float gain2db(float gain){
 }
 
 static inline float db2gain(float db){
-  if (db == 0.0) {  // Common situation, but also to ensure correct conversion (not sure if powf(10, 0) always returns exactly 0.0, although it probably does).
+  if (equal_floats(db, 0.0)) {  // Common situation, but also to ensure correct conversion (not sure if powf(10, 0) always returns exactly 0.0, although it probably does).
     
     return 1.0;
     
@@ -96,7 +96,7 @@ static inline float db2gain(float db){
 }
 
 static inline void set_db_display(char *buffer, int buffersize, float db){
-  if(db==MIN_DB)
+  if(db<=MIN_DB)
     snprintf(buffer,buffersize-1,"-inf dB");
   else if (db>-0.01 && db<0.01)
     snprintf(buffer,buffersize-1,"0.00 dB");

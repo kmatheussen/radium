@@ -113,9 +113,9 @@ public:
     }
 
     if(controller->type != EFFECT_FORMAT_BOOL){
-      if (min_value_widget->value() != controller->min_value)
+      if (!equal_floats(min_value_widget->value(), controller->min_value))
         update_gui();
-      if (max_value_widget->value() != controller->max_value)
+      if (!equal_floats(max_value_widget->value(), controller->max_value))
         update_gui();
     }
   }
@@ -205,7 +205,7 @@ public slots:
     }
 
     if(_is_updating_gui==false)
-      if(val!=controller->max_value) {
+      if(!equal_floats(val, controller->max_value)) {
         set_min_max(val, controller->max_value);
       }
   }
@@ -218,7 +218,7 @@ public slots:
     }
 
     if(_is_updating_gui==false)
-      if(val!=controller->min_value) {
+      if(!equal_floats(val, controller->min_value)) {
         set_min_max(controller->min_value, val);
       }
   }

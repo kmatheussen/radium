@@ -1,5 +1,7 @@
 
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 #include <vlCore/Time.hpp>
+#pragma GCC diagnostic pop
 
 // All time values are in milliseconds
 namespace{
@@ -36,7 +38,7 @@ struct VBlankEstimator{
   }
   
   void set_vblank(double period){
-    if (period != base_interval){
+    if (!equal_doubles(period, base_interval)){
       base_interval = period;
       time.start();
       printf("\n\n\n\n ************* Setting vblank to %f ************\n\n\n",period);
@@ -101,13 +103,13 @@ struct Smoother{
   }
 
   double get(double to){
-    float ret = _last_val;
-    if(ret == to)
+    double ret = _last_val;
+    if(equal_doubles(ret, to))
       return to;
     else if(fabs(to-_last_val) < smallest_diff)
       _last_val = to;
     else
-      _last_val = (float) (to*(1.0-_smoothness) + _last_val*_smoothness);
+      _last_val = (double) (to*(1.0-_smoothness) + _last_val*_smoothness);
     return ret;
   }
 };

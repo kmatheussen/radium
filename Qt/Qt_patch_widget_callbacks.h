@@ -322,7 +322,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 
   template <class SpinBox, typename T>
   void update_spinbox_value(SpinBox *spinbox, T new_value){
-    if ((T)spinbox->value() != new_value && false==spinbox->hasFocus())
+    if (!equal_doubles((T)spinbox->value(), new_value) && false==spinbox->hasFocus())
       spinbox->setValue(new_value);
   }
   
@@ -462,7 +462,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     if (_called_from_update)
       return;
 
-    if(voicevalue != new_voicevalue) {
+    if(!equal_floats(voicevalue, new_voicevalue)) {
 
 #if !defined(RELEASE)
       printf("Setting float effect %d to %f. Old: %f\n", first_system_effect, new_voicevalue, voicevalue);
@@ -478,9 +478,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 #if !defined(RELEASE)
     if (_patch->instrument==get_audio_instrument()){
       if (!is_playing() && false==MODULATOR_has_modulator(_patch.data(), get_effect_num(first_system_effect, voicenum)))
-        R_ASSERT(new_voicevalue==voicevalue);
+        R_ASSERT(equal_floats(new_voicevalue, voicevalue));
     } else
-      R_ASSERT(new_voicevalue==voicevalue);
+      R_ASSERT(equal_floats(new_voicevalue, voicevalue));
 #endif
 
     set_editor_focus();

@@ -1114,7 +1114,7 @@ char *notetext_from_notenum(float notenumf){
   int notenum = notenumf;
   int cents = 0;
   
-  if (notenumf!=floorf(notenum)){
+  if (!equal_floats(notenumf, floorf(notenum))){
     float decimals = notenumf - floorf(notenum);
     printf("___ decimals: %f\n",decimals);
     cents = roundf(decimals*100.0f);

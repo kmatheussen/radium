@@ -218,15 +218,15 @@ protected:
   }
   void addVerticalSlider(const char* label, float* zone, float init, float min, float max, float step) override {
     //printf("Add vertical slider %s - %p. %f %f %f %f\n", label, zone, init, min, max, step);
-    addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
+    addEffect(label, zone,  equal_floats(step, 1.0f) ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
   }
   void addHorizontalSlider(const char* label, float* zone, float init, float min, float max, float step) override {
     //printf("Add horizontal slider %s - %p. %f %f %f %f\n", label, zone, init, min, max, step);
-    addEffect(label, zone,  step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
+    addEffect(label, zone,  equal_floats(step, 1.0f) ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max);
   }
   void addNumEntry(const char* label, float* zone, float init, float min, float max, float step) override {
     //printf("Add num entry %s - %p. %f %f %f %f\n", label, zone, init, min, max, step);
-    addEffect(label, zone, step==1.0f ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max); // The INT effect format might not work. Need to go through the code first.
+    addEffect(label, zone, equal_floats(step, 1.0f) ? EFFECT_FORMAT_INT : EFFECT_FORMAT_FLOAT, min, init, max); // The INT effect format might not work. Need to go through the code first.
   }
   
   // -- passive widgets
@@ -389,7 +389,7 @@ static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **i
 
     *start_process = 0;
 
-    if( *(voice->myUI._gate_control)==0.0f){
+    if( equal_floats(*(voice->myUI._gate_control), 0.0f)){
       if(false
          || RT_is_silent(outputs[0],num_frames)
          || voice->frames_since_stop > data->samplerate) // Safety mechanism. Force voice to stop after about 1 second.
@@ -573,7 +573,7 @@ static void faust_gui_zone_callback(float val, void* arg){
 
   //printf("\n  Callback called %f. controller: %p\n      val/auto/stored: %f %f %f\n\n", val, controller, val, data->automation_values[effect_num], stored_value);
   
-  if (val==stored_value)
+  if (equal_floats(val, stored_value))
     return;
 
   // We are now pretty certain that this update was caused by a user interaction in the faust gui, and not a roundtrip from radium.

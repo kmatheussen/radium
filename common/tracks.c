@@ -137,7 +137,7 @@ bool TRACK_get_min_and_max_pitches(const struct Tracks *track, float *ret_min_pi
       max_pitch = 127;
   }
 
-  if(min_pitch == 10000.0f)
+  if(equal_floats(min_pitch, 10000.0f))
     return false;
   else {
     if (num_pitches>3) {

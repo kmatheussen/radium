@@ -45,7 +45,7 @@ StaticRatio STATIC_RATIO_from_string(QString string){
     {
       double value = string.toDouble(&ok);
 
-      if (ok && floor(value)!=value){
+      if (ok && !equal_doubles(floor(value), value)){
         printf("B  string: %s. value: %f. Ok: %d\n", string.toUtf8().constData(), value, ok);
         return make_static_ratio(value*1000, 1000);
       }

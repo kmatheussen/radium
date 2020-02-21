@@ -218,7 +218,7 @@ public:
     if (false==_is_temporary)
       SEQBLOCK_AUTOMATION_cancel_curr_automation();
 
-    R_ASSERT(state_samplerate != 0);
+    R_ASSERT(!equal_doubles(state_samplerate, 0));
 
     if (state.type != UNINITIALIZED_TYPE) {
 
@@ -800,7 +800,7 @@ static void RT_set_seqblock_curr_gain(struct SeqTrack *seqtrack, struct SeqBlock
 
     seqblock->envelope_db = new_db;
 
-    if (new_db==0.0)
+    if (equal_doubles(new_db, 0.0))
       seqblock->curr_gain = 1.0;
     else
       seqblock->curr_gain = db2gain(new_db);
@@ -1008,7 +1008,7 @@ dyn_t SEQBLOCK_AUTOMATION_get_state(const struct SeqblockAutomation *seqblockenv
 
 // only used for undo/redo, and when loading song that has ":envelope" in state instead of seqblock automation.
 void SEQBLOCK_AUTOMATION_apply_state(struct SeqblockAutomation *seqblockenvelope, const dyn_t envelope_state, double state_samplerate){
-  R_ASSERT(state_samplerate != 0);
+  R_ASSERT(!equal_doubles(state_samplerate, 0));
   seqblockenvelope->create_from_state(envelope_state, state_samplerate);
   SEQBLOCK_update(seqblockenvelope->_seqtrack, seqblockenvelope->_seqblock);
 }

@@ -2364,7 +2364,7 @@ bool doAutoCrossfades(void){
   return g_do_auto_crossfades;
 }
 
-void setDoAutoCrossfades(double default_do_auto_crossfades){
+void setDoAutoCrossfades(bool default_do_auto_crossfades){
   g_do_auto_crossfades = default_do_auto_crossfades;
   SETTINGS_write_bool("do_auto_crossfades", g_do_auto_crossfades);
 }
@@ -2719,7 +2719,7 @@ static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
   if (block != NULL)
     reltempo = ATOMIC_DOUBLE_GET(block->reltempo);
 
-  if (block==NULL || reltempo==1.0) {
+  if (block==NULL || equal_doubles(reltempo, 1.0)) {
     
     *end_seqtime = end_abstime;
     
@@ -3695,7 +3695,7 @@ void setSeqblockFadeIn(double fadein, int seqblocknum, int seqtracknum){
     return;
   }
 
-  if (fadein != seqblock->fadein){
+  if (!equal_doubles(fadein, seqblock->fadein)){
     radium::PlayerLock lock(is_playing_song());
     seqblock->fadein = fadein;
   }
@@ -3714,7 +3714,7 @@ void setSeqblockFadeOut(double fadeout, int seqblocknum, int seqtracknum){
     return;
   }
 
-  if (fadeout != seqblock->fadeout){
+  if (!equal_doubles(fadeout, seqblock->fadeout)){
     radium::PlayerLock lock(is_playing_song());
     seqblock->fadeout = fadeout;
   }

@@ -558,7 +558,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(const struct SeqTrack *seqtrack, 
 
   R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch != NULL && seqtrack->patch->patchdata!=NULL, NULL);
     
-  R_ASSERT(state_samplerate!=0);
+  R_ASSERT(!equal_doubles(state_samplerate, 0));
 
   struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
   SEQBLOCK_init(seqtrack,
@@ -1319,7 +1319,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
                             "Illegal sequencer block start-time and end-time values. Start: %d. End: %d", (int)time, (int)time2
                             );
 
-  if (adjust_for_samplerate != 1.0){
+  if (!equal_doubles(adjust_for_samplerate, 1.0)){
     time = round(double(time) * adjust_for_samplerate);
     if (time2 != -1)
       time2 = round(double(time2) * adjust_for_samplerate);
@@ -1339,7 +1339,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
                             );
 
 
-  if (adjust_for_samplerate != 1.0){
+  if (!equal_doubles(adjust_for_samplerate, 1.0)){
     interior_start = round(double(interior_start) * adjust_for_samplerate);
     interior_end   = round(double(interior_end) * adjust_for_samplerate) + 1;  // Add one frame to ensure rounding error doesn't cause gap to the next seqblock.
   }

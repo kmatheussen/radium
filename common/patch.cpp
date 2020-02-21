@@ -1262,7 +1262,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
   for(i=0;i<NUM_PATCH_VOICES;i++){
     const struct PatchVoice &voice = patch->voices[i];
 
-    if(voice.is_on==true && (voice.chance==MAX_PATCHVOICE_CHANCE || voice.chance > rnd(MAX_PATCHVOICE_CHANCE))){
+    if(voice.is_on==true && (equal_floats(voice.chance, MAX_PATCHVOICE_CHANCE) || voice.chance > rnd(MAX_PATCHVOICE_CHANCE))){
 
       float voice_notenum = note.pitch + voice.transpose;
       if (voice_notenum > 0) {
@@ -2258,7 +2258,7 @@ static bool note_duplicator_has_panning(const struct Patch *patch){
   for(int i=0;i<NUM_PATCH_VOICES;i++){
     const struct PatchVoice &voice = patch->voices[i];
 
-    if(voice.is_on==true && voice.pan!=0)
+    if(voice.is_on==true && !equal_floats(voice.pan, 0.0f))
       return true;
   }
 

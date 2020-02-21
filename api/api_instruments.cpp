@@ -1915,7 +1915,7 @@ void createAudioConnection(instrument_t source_id, instrument_t dest_id, float g
   
   MW_connect(source, dest, get_connection_type_from_int(connection_type)); 
 
-  if (gain != 1.0)
+  if (!equal_floats(gain, 1.0f))
     setAudioConnectionGain(source_id, dest_id, gain, true);
 }
 
@@ -3150,7 +3150,7 @@ void API_instruments_call_regularly(void){
 
       if (effect_monitor->monitor_stored){
         stored_now = plugin->stored_effect_values_scaled[effect_monitor->effect_num];
-        if (stored_now != effect_monitor->last_stored_value){
+        if (!equal_floats(stored_now, effect_monitor->last_stored_value)){
           effect_monitor->last_stored_value = stored_now;
           send_stored = true;
         }
@@ -3158,7 +3158,7 @@ void API_instruments_call_regularly(void){
 
       if (effect_monitor->monitor_automation){
         automation_now = safe_float_read(&plugin->slider_automation_values[effect_monitor->effect_num]);
-        if (automation_now != effect_monitor->last_automation_value){
+        if (!equal_floats(automation_now, effect_monitor->last_automation_value)){
           effect_monitor->last_automation_value = automation_now;
           send_automation = true;
         }

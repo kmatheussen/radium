@@ -279,7 +279,7 @@ struct SliderPainter{
 
       float value = data->get_automation_or_peak_value();
 
-      if (value != data->last_value || _last_num_channels!=num_channels) {
+      if (!equal_floats(value, data->last_value) || _last_num_channels!=num_channels) {
 
         float gain;
 
@@ -306,7 +306,7 @@ struct SliderPainter{
                                       0.0f,(float)width());
           
         
-        if(data->last_drawn_pos != data->requested_pos || _last_num_channels!=num_channels){
+        if(!equal_floats(data->last_drawn_pos, data->requested_pos) || _last_num_channels!=num_channels){
           
           //printf("Painting. Last drawn: %d. requested: %d\n",data->last_drawn_pos,data->requested_pos);
 

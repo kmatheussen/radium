@@ -80,7 +80,7 @@ float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,const char *t
 		}
 		if(rettext[0]=='/'){
 			ret=OS_get_double_from_string(rettext+1);
-			if(ret!=0.0f){
+			if(!equal_floats(ret, 0.0f)){
 				ret=(float)1.0f/ret;
 			}else{
 				ret=min-1.0f;

@@ -202,10 +202,12 @@ struct LatencyCompensatorDelay {
     R_ASSERT_NON_RELEASE(num_frames==RADIUM_BLOCKSIZE);
 
 #if !defined(RELEASE)
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     for(int i=0;i<num_frames;i++){
       if(g_empty_sound[i] != 0)
         abort();
     }
+#pragma GCC diagnostic pop
 #endif
 
     if (num_frames==64)
@@ -318,7 +320,7 @@ public:
 
     } else {
 
-      if (link_volume != volume){
+      if (!equal_floats(link_volume, volume)){
         
         link_volume = volume;
         safe_float_write(&RT_link_volume, volume);
@@ -358,7 +360,7 @@ public:
       if (source_ch > 0 || target_ch > 0)
         return false;
 
-    return get_link_volume() != new_volume;
+    return !equal_floats(get_link_volume(), new_volume);
   }
   
   void request_turn_off(void){
@@ -670,11 +672,13 @@ static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_f
       
     sum += sum2;
   }
-  
+
+#pragma GCC diagnostic ignored "-Wfloat-equal"
   if(sum!=0.0f && !myisnormal(sum) )
     return myisnan(sum)?"nan":myisinf(sum)?"inf":myfpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
   else
     return NULL;
+#pragma GCC diagnostic pop
 }
 
 static void show_high_peak_message(const SoundPlugin *plugin, const char *what_did_it_do_questionmark, const float *out, int ch, float peak){

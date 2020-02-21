@@ -137,7 +137,7 @@ static int64_t RT_scheduled_glide_pitch(struct SeqTrack *seqtrack, int64_t time,
     printf("  Sending pitch %f at %d\n",val,(int)time);
 #endif
 
-    if (time==time1 || val1!=val2 || note->scheduler_must_send_pitch_next_block) {
+    if (time==time1 || !equal_floats(val1, val2) || note->scheduler_must_send_pitch_next_block) {
 
       if (note->scheduler_must_send_pitch_next_block)
         note->scheduler_must_send_pitch_next_block = false;
@@ -182,7 +182,7 @@ static void RT_schedule_pitch(struct SeqTrack *seqtrack,
                               )
 {
 
-  if(note->pitches==NULL && note->pitch_end == 0.0) // In case note is changed while playing
+  if(note->pitches==NULL && equal_floats(note->pitch_end, 0.0)) // In case note is changed while playing
     return;
 
   const struct Pitches *pitch2 = pitch1==NULL ? note->pitches : NextPitch(pitch1);
@@ -267,7 +267,7 @@ void RT_schedule_pitches_newnote(int64_t current_time,
   if (track->patch==NULL)
     return;
 
-  if(note->pitches==NULL && note->pitch_end==0.0)
+  if(note->pitches==NULL && equal_floats(note->pitch_end, 0.0))
     return;
 
   RT_schedule_pitch(seqtrack, current_time, seqblock, track, note, NULL, true);

@@ -33,7 +33,7 @@ static inline int64_t SEQBLOCK_get_seq_endtime(const struct SeqBlock *seqblock){
 
 
 static inline double seqtime_to_blocktime_double(const struct SeqBlock *seqblock, double seqtime){
-  if(seqblock->t.stretch==1.0)
+  if(equal_doubles(seqblock->t.stretch, 1.0))
     return seqtime;
   else
     return seqtime / seqblock->t.stretch;
@@ -41,21 +41,21 @@ static inline double seqtime_to_blocktime_double(const struct SeqBlock *seqblock
 
 
 static inline int64_t seqtime_to_blocktime(const struct SeqBlock *seqblock, int64_t seqtime){
-  if(seqblock->t.stretch==1.0)
+  if(equal_doubles(seqblock->t.stretch, 1.0))
     return seqtime;
   else
     return round((double)seqtime / seqblock->t.stretch);
 }
 
 static inline double blocktime_to_seqtime_double(const double stretch, const double blocktime){
-  if(stretch==1.0)
+  if(equal_doubles(stretch, 1.0))
     return blocktime;
   else
     return blocktime * stretch;
 }
 
 static inline int64_t blocktime_to_seqtime2(const double stretch, const int64_t blocktime){
-  if(stretch==1.0)
+  if(equal_doubles(stretch, 1.0))
     return blocktime;
   else
     return round((double)blocktime * stretch);
@@ -67,7 +67,7 @@ static inline int64_t blocktime_to_seqtime(const struct SeqBlock *seqblock, cons
 
 #ifdef __cplusplus
 static inline int64_t blocktime_to_seqtime2(const double stretch, const double blocktime){
-  if(stretch==1.0)
+  if(equal_doubles(stretch, 1.0))
     return blocktime;
   else
     return round(blocktime * stretch);
@@ -126,12 +126,12 @@ static inline double get_seqblock_noninterior_start(const struct SeqBlock *seqbl
   double t1 = timing->time;
   double i1 = timing->interior_start;
   
-  if (i1==0)
+  if (equal_doubles(i1, 0.0))
     return t1;
 
   double stretch = timing->stretch * timing->speed;
 
-  if (stretch==1.0)
+  if (equal_doubles(stretch, 1.0))
     return t1 - i1;
 
   double s1 = t1 - (i1*stretch);
@@ -144,12 +144,12 @@ static inline double get_seqblock_noninterior_end(const struct SeqBlock *seqbloc
   double t2 = timing->time2;
   double i2 = timing->default_duration - timing->interior_end;
 
-  if(i2==0)
+  if(equal_doubles(i2,0.0))
     return t2;
 
   double stretch = timing->stretch * timing->speed;
 
-  if (stretch==1.0)
+  if (equal_doubles(stretch, 1.0))
     return t2 + i2;
 
   double s2 = t2 + (i2*stretch);

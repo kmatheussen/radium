@@ -973,7 +973,7 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
 #if 0
     voice->pitch = voice->end_pitch;
 #else
-    if (voice->end_pitch != voice->pitch){
+    if (!equal_floats(voice->end_pitch, voice->pitch)){
       voice->pitch += voice->pitch_inc*num_frames_to_produce;
       if (voice->pitch_inc < 0){
         if (voice->end_pitch > voice->pitch)
@@ -1223,7 +1223,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     data->tremolo->type->RT_process(data->tremolo, time, num_frames, outputs, outputs);
     if(ATOMIC_GET_RELAXED(data->p.gran_enabled)){
       float gran_volume = data->p.gran_volume;
-      if (gran_volume != 0.0){
+      if (!equal_floats(gran_volume, 0.0)){
         gran_volume = db2gain(gran_volume);
         for(int ch=0;ch<2;ch++)
           for(int i=0;i<num_frames;i++)
@@ -2307,7 +2307,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 #undef GRAN_CASE
 
     case EFF_GRAN_strict_no_jitter:
-      return gran_get_strict_no_jitter(data) ? 1.0 : 0.0;
+      return gran_get_strict_no_jitter(data) >= 0.5 ? 1.0 : 0.0;
       
     default:
       RError("S3. Unknown effect number %d\n",effect_num);
@@ -2379,7 +2379,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 #undef GRAN_CASE
 
     case EFF_GRAN_strict_no_jitter:
-      return gran_get_strict_no_jitter(data) ? 1.0 : 0.0;
+      return gran_get_strict_no_jitter(data) >= 0.5 ? 1.0 : 0.0;
       
     default:
       RError("S4. Unknown effect number %d\n",effect_num);
@@ -2432,7 +2432,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
       snprintf(buffer,buffersize-1,"disabled (multi-sample instrument)");
     else{
       float adjust = data->p.note_adjust;
-      snprintf(buffer,buffersize-1,"%s%.2f note%s",adjust>0?"+":"",adjust,adjust==-1?"":adjust==1?"":"s");
+      snprintf(buffer,buffersize-1,"%s%.2f note%s",adjust>0?"+":"",adjust,equal_floats(adjust, -1)?"":equal_floats(adjust,1)?"":"s");
     }
     break;
 #if 0

@@ -149,7 +149,7 @@ static double get_num_quarters(double seqtime, radium::SeqAutomationReturnType r
 
     case radium::SeqAutomationReturnType::VALUE_OK:{
 
-      if (node1->time==node2->time)
+      if (equal_doubles(node1->time, node2->time))
         return node2->num_quarters;
 
       return scale_double(seqtime, node1->time, node2->time, node1->num_quarters, node2->num_quarters);
@@ -581,9 +581,9 @@ static QVector<TempoAutomationNode> prepare_tempo_automation(const QVector<Tempo
 
   {
     TempoAutomationNode node0 = tempos.at(0);
-    R_ASSERT(node0.time == 0);
+    R_ASSERT(equal_doubles(node0.time, 0.0));
 
-    if (node0.time!=0 || node0.barnum!=1 || node0.beatnum!=1){
+    if (!equal_doubles(node0.time, 0.0) || node0.barnum!=1 || node0.beatnum!=1){
       is_changed = true;
       node0.time=0;
       node0.barnum=1;
@@ -630,7 +630,7 @@ static QVector<TempoAutomationNode> prepare_tempo_automation(const QVector<Tempo
 
     TempoAutomationNode tempo2 = tempo; 
 
-    if (tempo2.time != beat_seqtime ||
+    if (!equal_doubles(tempo2.time, beat_seqtime) ||
         tempo2.beatnum != beatnum ||
         tempo2.barnum != barnum)
       {
@@ -657,9 +657,9 @@ static QVector<SignatureAutomationNode> prepare_signature_automation(const QVect
 
   {
     SignatureAutomationNode node0 = signatures.at(0);
-    R_ASSERT(node0.time == 0);
+    R_ASSERT(equal_doubles(node0.time, 0));
 
-    if(node0.time != 0 || node0.barnum!=1){
+    if(!equal_doubles(node0.time, 0) || node0.barnum!=1){
       is_changed = true;
       node0.time=0;
       node0.barnum=1;
@@ -705,7 +705,7 @@ static QVector<SignatureAutomationNode> prepare_signature_automation(const QVect
 
     SignatureAutomationNode signature2 = signature; 
 
-    if(signature2.barnum != barnum || signature2.time != bar_seqtime){
+    if(signature2.barnum != barnum || !equal_doubles(signature2.time, bar_seqtime)){
       is_changed = true;      
       signature2.barnum = barnum;
       signature2.time = bar_seqtime;

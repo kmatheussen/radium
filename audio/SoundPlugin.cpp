@@ -215,7 +215,7 @@ static float slider_2_gain(float val, const float db_min, const float db_max){
 */
 
 static float gain_2_slider(float gain, const float db_min, const float db_max){
-  if(gain==0.0f)
+  if(gain<=0.0f)
     return 0.0f;
 
   // This one should normally be precalculated, I hope, since db_min and db_max are constants from the caller.
@@ -861,7 +861,7 @@ const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_t
 static void set_db_display2(char *buffer, int buffersize, float value){
   float db = gain_2_db(value,MIN_DB,MAX_DB);
   
-  if(db==MIN_DB)
+  if(equal_floats(db, MIN_DB))
     snprintf(buffer,buffersize-1,"-inf dB");
   else if (db>-0.01 && db<0.01)
     snprintf(buffer,buffersize-1,"0.00 dB");
@@ -1236,7 +1236,7 @@ static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFor
   set_gain_store_value(store_value_native, store_value_scaled, value_format); \
   {                                                                     \
     float old_value = safe_float_read(&plugin->bus_volume[busnum]);       \
-    if(old_value != store_value_native){                                \
+    if(!equal_floats(old_value, store_value_native)){                   \
       safe_float_write(&plugin->bus_volume[busnum], store_value_native); \
       struct Patch *patch = plugin->patch;                     \
       update_instrument_gui(const_cast<struct Patch*>(patch));          \
@@ -1394,7 +1394,7 @@ void PLUGIN_call_me_very_often_from_main_thread(void){
       if(s_stored_effect_nums[eud.patch_id].contains(eud.effect_num)==false){
         s_stored_effect_nums[eud.patch_id].insert(eud.effect_num);
         s_euds.push_back(eud);
-        if(s_last_time == 0)
+        if(equal_doubles(s_last_time, 0))
           s_last_time = curr_time;
       }
 
@@ -1446,7 +1446,7 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
     
     if (make_undo) {
       float old_native_value = safe_float_read(&plugin->stored_effect_values_native[effect_num]);
-      if (old_native_value != native_value) {
+      if (!equal_floats(old_native_value, native_value)) {
         struct Patch *patch = plugin->patch;
         if (patch != NULL){
           EffectUndoData eud;
