@@ -233,6 +233,14 @@ static Place number_to_place(s7_scheme *s7, s7_pointer number, const char **erro
 }
 
 
+static s7_pointer s7extra_make_real(s7_scheme *radiums7_sc, double x){
+#if !defined(RELEASE)
+  if(!sane_isnormal(x))
+    abort();
+#endif
+
+  return s7_make_real(radiums7_sc, x);
+}
 
 /**
  *
@@ -626,7 +634,7 @@ s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
     case INT_TYPE:
       return s7_make_integer(radiums7_sc, dyn.int_number);
     case FLOAT_TYPE:
-      return s7_make_real(radiums7_sc, dyn.float_number);
+      return s7extra_make_real(radiums7_sc, dyn.float_number);
     case HASH_TYPE:
       return hash_to_s7(radiums7_sc, dyn.hash);
     case ARRAY_TYPE:
@@ -1194,7 +1202,7 @@ void s7extra_callFunc_void_double(const func_t *func, double arg1){
              s7_list_nl(s7,
                         2,
                         (s7_pointer)func,
-                        s7_make_real(s7, arg1),
+                        s7extra_make_real(s7, arg1),
                         NULL
                         )
              );
@@ -1228,7 +1236,7 @@ void s7extra_callFunc_void_float(const func_t *func, double arg1){
              s7_list_nl(s7,
                         2,
                         (s7_pointer)func,
-                        s7_make_real(s7, arg1),
+                        s7extra_make_real(s7, arg1),
                         NULL
                         )
              );
@@ -1497,8 +1505,8 @@ void s7extra_callFunc_void_int_float_float(const func_t *func, int64_t arg1, dou
                         4,
                         (s7_pointer)func,
                         s7_make_integer(s7, arg1),
-                        s7_make_real(s7, arg2),
-                        s7_make_real(s7, arg3),
+                        s7extra_make_real(s7, arg2),
+                        s7extra_make_real(s7, arg3),
                         NULL
                         )
              );
@@ -1516,10 +1524,10 @@ void s7extra_callFunc_void_int_float_float_float_float(const func_t *func, int64
                         6,
                         (s7_pointer)func,
                         s7_make_integer(s7, arg1),
-                        s7_make_real(s7, arg2),
-                        s7_make_real(s7, arg3),
-                        s7_make_real(s7, arg4),
-                        s7_make_real(s7, arg5),
+                        s7extra_make_real(s7, arg2),
+                        s7extra_make_real(s7, arg3),
+                        s7extra_make_real(s7, arg4),
+                        s7extra_make_real(s7, arg5),
                         NULL
                         )
              );
@@ -1538,8 +1546,8 @@ void s7extra_callFunc_void_int_int_float_float(const func_t *func, int64_t arg1,
                         (s7_pointer)func,
                         s7_make_integer(s7, arg1),
                         s7_make_integer(s7, arg2),
-                        s7_make_real(s7, arg3),
-                        s7_make_real(s7, arg4),
+                        s7extra_make_real(s7, arg3),
+                        s7extra_make_real(s7, arg4),
                         NULL
                         )
              );
@@ -1558,8 +1566,8 @@ bool s7extra_callFunc_bool_int_int_float_float(const func_t *func, int64_t arg1,
                                          (s7_pointer)func,
                                          s7_make_integer(s7, arg1),
                                          s7_make_integer(s7, arg2),
-                                         s7_make_real(s7, arg3),
-                                         s7_make_real(s7, arg4),
+                                         s7extra_make_real(s7, arg3),
+                                         s7extra_make_real(s7, arg4),
                                          NULL
                                          )
                               );
@@ -1611,8 +1619,8 @@ bool s7extra_callFunc_bool_int_float_float(const func_t *func, int64_t arg1, dou
                                          4,
                                          (s7_pointer)func,
                                          s7_make_integer(s7, arg1),
-                                         s7_make_real(s7, arg2),
-                                         s7_make_real(s7, arg3),
+                                         s7extra_make_real(s7, arg2),
+                                         s7extra_make_real(s7, arg3),
                                          NULL
                                          )
                               );
@@ -1659,8 +1667,8 @@ bool s7extra_callFunc_bool_bool_float_float(const func_t *func, bool arg1, doubl
                                          4,
                                          (s7_pointer)func,
                                          s7_make_boolean(s7, arg1),
-                                         s7_make_real(s7, arg2),
-                                         s7_make_real(s7, arg3),
+                                         s7extra_make_real(s7, arg2),
+                                         s7extra_make_real(s7, arg3),
                                          NULL
                                          )
                               );
@@ -2447,8 +2455,8 @@ bool SCHEME_mousepress(int button, float x, float y){
                             s7_list(s7,
                                     3,
                                     s7_make_integer(s7, button),
-                                    s7_make_real(s7, x),
-                                    s7_make_real(s7, y)
+                                    s7extra_make_real(s7, x),
+                                    s7extra_make_real(s7, y)
                                     )
                             )
                     );

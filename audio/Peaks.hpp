@@ -33,16 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define SAMPLES_PER_PEAK 64 // TODO: This value must be dynamic and placed in the Peaks class. The value must be set higher than 64 if the sample is so long that a 32 bit int becomes too small to use as index. (Need around a 32 day (maybe +32/-16, haven't calculated exactly) long sample (16 days for 96Khz samples) for this to be a problem though, but you never know)
 
-static inline bool proper_isnormal(float val){
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-#if defined(FOR_MACOSX)
-  return val==0.0 || isnormal(val);
-#else
-  return val==0.0 || std::isnormal(val);
-#endif
-#pragma GCC diagnostic pop
-}
-
 static inline int unit_ceiling(int value, int unit){
   if ( (value % unit) == 0)
     return value;
@@ -72,8 +62,8 @@ public:
     : min(min)
     , max(max)
   {    
-    R_ASSERT_NON_RELEASE(proper_isnormal((float)min));
-    R_ASSERT_NON_RELEASE(proper_isnormal((float)max));
+    R_ASSERT_NON_RELEASE(sane_isnormal((float)min));
+    R_ASSERT_NON_RELEASE(sane_isnormal((float)max));
     R_ASSERT_NON_RELEASE(max >= min);
 
     R_ASSERT_NON_RELEASE(sizeof(qfloat16)==2);
@@ -116,7 +106,7 @@ public:
   
   void scale(float scaleval){
     R_ASSERT_RETURN_IF_FALSE(has_data());
-    R_ASSERT_NON_RELEASE(proper_isnormal(scaleval));
+    R_ASSERT_NON_RELEASE(sane_isnormal(scaleval));
     min *= scaleval;
     max *= scaleval;
   }
@@ -523,7 +513,7 @@ private:
 #if READ_EVERYTHING_AT_ONCE
         qfloat16 min=data[i*2], max=data[i*2+1];
 #if !defined(RELEASE)
-        if(!proper_isnormal(min) || !proper_isnormal(max)){
+        if(!sane_isnormal(min) || !sane_isnormal(max)){
           printf("min: %f. max: %f.\n", (float)min, (float)max);
           abort();
         }

@@ -780,6 +780,11 @@ static void put_bool(hash_t *hash, const char *key, int i, bool val){
 }
 
 static void put_float(hash_t *hash, const char *key, int i, double val){
+#if !defined(RELEASE)
+  if(!sane_isnormal(val))
+    abort();
+#endif
+
   put_dyn(hash, key, i, DYN_create_float(val));
 }
 
