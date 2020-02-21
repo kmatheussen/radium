@@ -150,10 +150,12 @@ private:
 public slots:
   void clicked() {
     struct Tracker_Windows *window = root->song->tracker_windows;
+    R_ASSERT_NON_RELEASE(window!=NULL);
+    
     if(checkable==true){
       char temp[500];
       this->checkval = this->checkval==1?0:1; // switch value.
-      sprintf(temp,python_command,checkval?"1":"0");
+      snprintf(temp,480,python_command,checkval?"1":"0");
       EVENTLOG_add_event(talloc_format("menu: %s", temp));
       PyRun_SimpleString(temp);      
     }else{
