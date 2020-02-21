@@ -251,6 +251,15 @@ static inline bool equal_floats(float x, float y) {
 static inline bool equal_doubles(double x, double y) {
   return R_ABS(x - y) < std::numeric_limits<double>::epsilon();
 }
+#else
+extern float g_float_epsilon;
+static inline bool equal_floats(float x, float y) {
+  return R_ABS(x - y) < g_float_epsilon;
+}
+extern float g_double_epsilon;
+static inline bool equal_doubles(double x, double y) {
+  return R_ABS(x - y) < g_double_epsilon;
+}
 #endif
 
 
@@ -372,7 +381,7 @@ static inline int64_t scale_int64(const int64_t x, const int64_t x1, const int64
 #endif
   
   if (diff==0) // this is never supposed to happen, but to avoid integer divide-by-zero, we sacrifice some cycles here.
-    return y1;
+    return (y1+y2)/2;
   else
     return y1 + ( ((x-x1)*(y2-y1))
                   /
@@ -381,23 +390,35 @@ static inline int64_t scale_int64(const int64_t x, const int64_t x1, const int64
 }
 
 static inline double scale_double(const double x, const double x1, const double x2, const double y1, const double y2){
+  float diff = x2-x1;
+  
 #if !defined(RELEASE)
-  R_ASSERT_RETURN_IF_FALSE2(x2!=x1,(y1+y2)/2);
+  R_ASSERT(diff!=0);
+  
+  if (equal_doubles(diff, 0.0))
+    return (y1+y2)/2.0;
+  else
 #endif
-  return y1 + ( ((x-x1)*(y2-y1))
-                /
-                (x2-x1)
-                );
+    return y1 + ( ((x-x1)*(y2-y1))
+                  /
+                  diff
+                  );
 }
 
 static inline float scale(const float x, const float x1, const float x2, const float y1, const float y2){
+  float diff = x2-x1;
+  
 #if !defined(RELEASE)
-  R_ASSERT_RETURN_IF_FALSE2(x2!=x1,(y1+y2)/2);
+  R_ASSERT(diff!=0);
+  
+  if (equal_floats(diff, 0.0))
+    return (y1+y2)/2.0f;
+  else
 #endif
-  return y1 + ( ((x-x1)*(y2-y1))
-                /
-                (x2-x1)
-                );
+    return y1 + ( ((x-x1)*(y2-y1))
+                  /
+                  diff
+                  );
 }
 
 #if defined(_MATH_H) || defined(__MATH_H__) || defined(_MATH_H_)
