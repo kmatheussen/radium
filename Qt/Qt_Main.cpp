@@ -3142,7 +3142,7 @@ int radium_main(const char *arg){
   main_window->updateGeometry();
   
 #if USE_OPENGL
-  GL_create(window);
+  //GL_create(window);
 #endif
 
 #if 0
