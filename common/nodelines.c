@@ -253,8 +253,8 @@ static float get_pitch_x(const struct WBlocks *wblock, const struct ListHeader3 
   struct Pitches *pitch = (struct Pitches*)element;
   *logtype = pitch->logtype;
 
-  if (track_pitch_min==track_pitch_max){
-    R_ASSERT_NON_RELEASE(track_pitch_min==pitch->note);
+  if (equal_floats(track_pitch_min, track_pitch_max)){
+    R_ASSERT_NON_RELEASE(equal_floats(track_pitch_min, pitch->note));
     return (track_notearea_x1 + track_notearea_x2) / 2.0f;
   }
 
@@ -270,7 +270,7 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
   track_notearea_x1 = wtrack->notearea.x;
   track_notearea_x2 = wtrack->notearea.x2;
 
-  if (track_notearea_x1 == track_notearea_x2){
+  if (equal_floats(track_notearea_x1, track_notearea_x2)){
     track_notearea_x1 = 0;
     track_notearea_x2 = 1;
   }

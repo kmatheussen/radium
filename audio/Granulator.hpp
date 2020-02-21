@@ -603,7 +603,7 @@ public:
     
   void set_overlap(double overlap){
     R_ASSERT(_is_processing==false);
-    if (overlap==_p.overlap)
+    if (equal_doubles(overlap, _p.overlap))
       return;
     
     _p.overlap = overlap;
@@ -618,7 +618,7 @@ public:
   void set_grain_length(double grain_length){
     R_ASSERT(_is_processing==false);
 
-    if (grain_length == _p.grain_length)
+    if (equal_doubles(grain_length, _p.grain_length))
       return;
 
     //printf("Setting grain length to %fms\n", frames_to_ms(grain_length));
@@ -634,7 +634,7 @@ public:
   void set_stretch(double stretch){
     R_ASSERT(_is_processing==false);
 
-    if (stretch == _p.stretch)
+    if (equal_doubles(stretch, _p.stretch))
       return;
 
     _p.stretch = stretch;
@@ -650,7 +650,7 @@ public:
     R_ASSERT(_is_processing==false);
     R_ASSERT_RETURN_IF_FALSE(jitter >= 0 && jitter <= 1);
 
-    if (jitter == _p.jitter)
+    if (equal_doubles(jitter, _p.jitter))
       return;
 
     _p.jitter = jitter;

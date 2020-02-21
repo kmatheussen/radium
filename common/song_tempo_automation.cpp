@@ -310,7 +310,7 @@ void TEMPOAUTOMATION_set_length(double end_time, bool do_shrink){
     if (end_time <= second_last.time)
       return;
     
-    if (last.value==1.0 && second_last.value==1.0){
+    if (equal_doubles(last.value, 1.0) && equal_doubles(second_last.value, 1.0)){
       last.time = end_time;
       g_tempo_automation.replace_node(size-1, last);
     } else {

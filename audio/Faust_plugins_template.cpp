@@ -14,6 +14,9 @@ struct Meta
     void declare (const char* key, const char* value) { }
 };
 */
+
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+
 #include "faust/gui/meta.h"
 
 #if __GNUC__ >= 5
@@ -22,6 +25,8 @@ struct Meta
 #endif
 
 #include <faust/dsp/dsp.h>
+
+#pragma GCC diagnostic pop
 
 
 #if 0 //CREATE_NAME==create_zita_rev_plugin
@@ -37,7 +42,9 @@ struct Meta
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 
 //  #include <faust/gui/faustqt.h>
+#pragma GCC diagnostic ignored "-Wfloat-equal"
   #include <faust/gui/QTUI.h>
+#pragma GCC diagnostic pop
 
 #pragma clang diagnostic pop
 

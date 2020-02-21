@@ -1679,12 +1679,12 @@ bool centtextCanBeTurnedOff(int tracknum, int blocknum, int windownum){
   
   struct Notes *note = wtrack->track->notes;
   while(note!=NULL){
-    if (note->note != floorf(note->note))
+    if (!equal_floats(note->note, floorf(note->note)))
       return false;
     
     struct Pitches *pitch = note->pitches;
     while(pitch != NULL){
-      if (pitch->note != floorf(pitch->note))
+      if (!equal_floats(pitch->note, floorf(pitch->note)))
         return false;
       pitch = NextPitch(pitch);
     }
@@ -3001,7 +3001,7 @@ bool useNativeFileRequesters(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    float default_value = false;
+    bool default_value = false;
     g_native_file_requesters = SETTINGS_read_bool("native_file_requesters", default_value);
     has_inited = true;
   }
@@ -3043,7 +3043,7 @@ float getInstrumentBrightness(void){
 }
 
 void setInstrumentBrightness(float val){
-  if (val != g_instrument_brightness){
+  if (!equal_floats(val, g_instrument_brightness)){
     g_instrument_brightness = val;
     update_all_instrument_colors();
     SETTINGS_write_double("color_instrument_brightness_v2", val);
@@ -3065,7 +3065,7 @@ float getInstrumentBrightnessInEditor(void){
 }
 
 void setInstrumentBrightnessInEditor(float val){
-  if (val != g_instrument_brightness_in_editor){
+  if (!equal_floats(val, g_instrument_brightness_in_editor)){
     g_instrument_brightness_in_editor = val;
     update_all_instrument_colors_in_editor();
     SETTINGS_write_double("color_instrument_brightness_in_editor_v2", val);
@@ -3087,7 +3087,7 @@ float getInstrumentSaturation(void){
 }
 
 void setInstrumentSaturation(float val){
-  if (val != g_instrument_saturation){
+  if (!equal_floats(val, g_instrument_saturation)){
     g_instrument_saturation = val;
     update_all_instrument_colors();
     SETTINGS_write_double("color_instrument_saturation_v2", val);
@@ -3109,7 +3109,7 @@ float getInstrumentSaturationInEditor(void){
 }
 
 void setInstrumentSaturationInEditor(float val){
-  if (val != g_instrument_saturation_in_editor){
+  if (!equal_floats(val, g_instrument_saturation_in_editor)){
     g_instrument_saturation_in_editor = val;
     update_all_instrument_colors_in_editor();
     SETTINGS_write_double("color_instrument_saturation_in_editor_v2", val);
@@ -3135,7 +3135,7 @@ float getBlockBrightness(void){
 }
 
 void setBlockBrightness(float val){
-  if (val != g_block_brightness){
+  if (!equal_floats(val, g_block_brightness)){
     g_block_brightness = val;
     update_all_block_colors();
     SETTINGS_write_double("color_block_brightness_v2", val);
@@ -3157,7 +3157,7 @@ float getBlockSaturation(void){
 }
 
 void setBlockSaturation(float val){
-  if (val != g_block_saturation){
+  if (!equal_floats(val, g_block_saturation)){
     g_block_saturation = val;
     update_all_block_colors();
     SETTINGS_write_double("color_block_saturation_v2", val);

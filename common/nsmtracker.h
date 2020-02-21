@@ -246,9 +246,17 @@ extern double g_last_time_mouse_pointer_was_moved_by_the_program; // Only used i
 
 #ifdef __cplusplus
 static inline bool equal_floats(float x, float y) {
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+  if(x==y)
+    return true;
+#pragma GCC diagnostic pop
   return R_ABS(x - y) < std::numeric_limits<float>::epsilon();
 }
 static inline bool equal_doubles(double x, double y) {
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+  if(x==y)
+    return true;
+#pragma GCC diagnostic pop
   return R_ABS(x - y) < std::numeric_limits<double>::epsilon();
 }
 #else
@@ -1132,8 +1140,10 @@ static inline enum DynType DYN_get_type_from_name(const char* type_name){
 // code copied from s7.c
 static inline bool doubles_are_equal(double x, double y){
 
+#pragma GCC diagnostic ignored "-Wfloat-equal"
   if (x == y)
     return(true);
+#pragma GCC diagnostic pop
 
   const double equivalent_float_epsilon = 1.0e-15; // Almost std::numeric_limits<double>::epsilon();
   

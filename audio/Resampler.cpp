@@ -208,7 +208,7 @@ struct SincResampler : public Resampler{
       }
     }
     
-    if(_last_ratio != ratio){
+    if(!equal_doubles(_last_ratio, ratio)){
       if(_last_ratio >= 0.0){        
         src_set_ratio(_src_state, ratio);
       }

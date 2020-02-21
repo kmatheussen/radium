@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QMap>
 
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 #include <vlCore/VisualizationLibrary.hpp>
 #include <vlGraphics/OpenGLContext.hpp>
 #include <vlVG/VectorGraphics.hpp>
@@ -30,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <vlVG/SceneManagerVectorGraphics.hpp>
 #include <vlGraphics/Effect.hpp>
 #include <vlGraphics/GLSL.hpp>
+#pragma GCC diagnostic pop
 
 #define USE_FREETYPE 0
 #define RADIUM_DRAW_FONTS_DIRECTLY 0
@@ -1253,7 +1255,7 @@ static void GE_line_lowlevel(GE_Context *c, std::vector<vl::dvec2> &triangles, f
   // perp
   float perp_x = -dy;
   float perp_y = dx;
-  if ( length ){
+  if (!equal_floats(length, 0.0f)){
     // Normalize the perp
     perp_x /= length;
     perp_y /= length;
@@ -1311,7 +1313,7 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
 
     if (x1 < scissor_x) {
 
-      if (y1 != y2)
+      if (!equal_floats(y1, y2))
         y1 = scale(scissor_x, x1, x2, y1, y2);
       
       x1 = scissor_x;
@@ -1320,14 +1322,14 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
 
     if (x2 > scissor_x2) {
 
-      if (y1 != y2)
+      if (!equal_floats(y1, y2))
         y2 = scale(scissor_x2, x1, x2, y1, y2);
 
       x2 = scissor_x2;
 
     }
 
-    if (x1==x2 && y1==y2)
+    if (equal_floats(x1, x2) && equal_floats(y1, y2))
       return;
   }
   

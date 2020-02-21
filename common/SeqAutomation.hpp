@@ -43,11 +43,11 @@ struct AutomationNode{
 };
 
 static inline bool nodes_are_not_equal(const radium::AutomationNode &node1, const radium::AutomationNode &node2){
-  return node1.time!=node2.time || node1.value!=node2.value || node1.logtype!=node2.logtype;
+  return !equal_doubles(node1.time, node2.time) || !equal_doubles(node1.value, node2.value) || node1.logtype!=node2.logtype;
 }
 
 static inline bool nodes_are_equal(const radium::AutomationNode &node1, const radium::AutomationNode &node2){
-  return node1.time==node2.time && node1.value==node2.value && node1.logtype==node2.logtype;
+  return equal_doubles(node1.time, node2.time) && equal_doubles(node1.value, node2.value) && node1.logtype==node2.logtype;
 }
 
   
@@ -515,9 +515,9 @@ public:
     return at(size()-1);
   }
   
-  static double get_value(double time, double time1, double time2, int das_logtype1_das, double value1, double value2) {
+  static double get_value(double time, const double time1, const double time2, int das_logtype1_das, double value1, double value2) {
     if (das_logtype1_das==LOGTYPE_LINEAR) {
-      if (time1==time2)        
+      if (equal_doubles(time1, time2))
         return value2; // (value1 + value2) / 2.0;
       else
         return scale_double(time, time1, time2, value1, value2);
@@ -534,7 +534,7 @@ public:
     R_ASSERT_NON_RELEASE(time >= time1);
     R_ASSERT_NON_RELEASE(time <= time2);
 
-    if (custom_get_value!=NULL && logtype1==LOGTYPE_LINEAR && time1!=time2)
+    if (custom_get_value!=NULL && logtype1==LOGTYPE_LINEAR && !equal_doubles(time1, time2))
       return custom_get_value(time, node1, node2);
     else
       return get_value(time, time1, time2, logtype1, node1->value, node2->value);
@@ -626,7 +626,7 @@ public:
         
       } else if (time <= rt->nodes[0].time){
 
-        if (time == rt->nodes[0].time){
+        if (equal_doubles(time, rt->nodes[0].time)){
           
           rt_access.node1 = &rt->nodes[0];
           rt_access.node2 = &rt->nodes[1];
@@ -885,7 +885,7 @@ public:
 
     T *node = &_automation[nodenum];
 
-    if (false && node->time != new_node.time){
+    if (false && !equal_doubles(node->time, new_node.time)){
       _automation.remove(nodenum);
       add_node(new_node);
     } else {
@@ -958,7 +958,7 @@ public:
         
         if (node.logtype == LOGTYPE_LINEAR){
 
-          if(node1.time==node2.time){
+          if(equal_doubles(node1.time, node2.time)){
 
             R_ASSERT_NON_RELEASE(false);
             node.value = node2.value;
@@ -1000,7 +1000,7 @@ public:
       
     T &last_node = _automation.last();
     
-    if (new_duration==last_node.time)
+    if (equal_doubles(new_duration, last_node.time))
       return;
     
     for(T &node : _automation){
@@ -1014,7 +1014,7 @@ public:
       
       T second_last_node = _automation.at(size-2);
       
-      if (second_last_node.value == last_node.value)
+      if (equal_doubles(second_last_node.value, last_node.value))
         return extend_last_node(new_duration, lock);
         
     }

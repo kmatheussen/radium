@@ -49,7 +49,9 @@
 #  pragma GCC diagnostic pop
 #endif
 
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 #include "mfaustqt2.cpp"
+#pragma GCC diagnostic pop
 
 std::list<GUI*>  GUI::fGuiList;
 

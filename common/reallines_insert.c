@@ -184,7 +184,7 @@ void InsertRealLines_CurrPos(
 
 	toplace*=num_reallines;
 
-	if(toplace==0.0f) return;	//extra check.
+	if(equal_floats(toplace, 0.0f)) return;	//extra check.
 
 
         PC_Pause();

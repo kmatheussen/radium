@@ -746,7 +746,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         float falloff_pos = db2linear(db_falloff, get_pos_y1(), get_pos_y2());
         _falloff_pos[ch] = falloff_pos;
 
-        if (falloff_pos != prev_falloff_pos){
+        if (!equal_floats(falloff_pos, prev_falloff_pos)){
           myupdate(widget, get_falloff_rect(x1, x2, prev_falloff_pos).toAlignedRect().adjusted(-1,-1,1,1)); // I don't understand why it's necessary to add .adjusted() here.
           myupdate(widget, get_falloff_rect(x1, x2, falloff_pos).toAlignedRect().adjusted(-1,-1,1,1)); // I don't understand why it's necessary to add .adjusted() here.
         }
@@ -1030,12 +1030,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         spinbox->clearFocus();
       }GL_unlock();
 
-      if (value != _last_int_value){
+      int int_value = value;
+      
+      if (int_value != _last_int_value){
         QPointer<Callback> mythis(this);
         
         S7CALL(void_int, _func.v, value);
         if (mythis.isNull()==false)
-          _last_int_value = value;
+          _last_int_value = int_value;
       }
     }
 
@@ -1053,11 +1055,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         spinbox->clearFocus();
       }GL_unlock();
 
-      if (value != _last_int_value){
+      int int_value = value;
+      
+      if (int_value != _last_int_value){
         QPointer<Callback> mythis(this);
         S7CALL(void_double, _func.v, value);
         if (mythis.isNull()==false)
-          _last_double_value = value;
+          _last_double_value = int_value;
       }
     }
 
@@ -2429,7 +2433,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         myupdate(x1-halfwidth, y1-halfwidth, x2+halfwidth, y2+halfwidth);
     }
 
-    void filledBox(const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y, float do_gradient) {
+    void filledBox(const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y, bool do_gradient) {
       QPainter *painter = get_painter();
 
       QRectF rect(x1, y1, x2-x1, y2-y1);
@@ -3379,7 +3383,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 #endif
     {
 
-      R_ASSERT(min!=max);
+      R_ASSERT(!equal_doubles(min, max));
 
       if (orientation==Qt::Vertical){ // Weird Qt vertical slider behavor.
         double temp = max;
@@ -4988,7 +4992,7 @@ int64_t gui_horizontalIntSlider(dyn_t textorfunc, int min, int curr, int max){
   return create_slider(Qt::Horizontal, textorfunc, min, curr, max, true);
 }
 int64_t gui_horizontalSlider(dyn_t textorfunc, double min, double curr, double max){
-  if(min==max){
+  if(equal_doubles(min, max)){
     handleError("Gui slider: minimum and maximum value is the same");
     return -1;
   }
@@ -5004,7 +5008,7 @@ int64_t gui_verticalIntSlider(dyn_t textorfunc, int min, int curr, int max){
   return create_slider(Qt::Vertical, textorfunc, min, curr, max, true);
 }
 int64_t gui_verticalSlider(dyn_t textorfunc, double min, double curr, double max){
-  if(min==max){
+  if(equal_doubles(min, max)){
     handleError("Gui slider: minimum and maximum value is the same");
     return -1;
   }
@@ -5539,7 +5543,7 @@ namespace{
             double val1 = STRING_get_double(STRING_create(b1->text()));
             double val2 = STRING_get_double(STRING_create(b2->text()));
 
-            if (val1==val2)
+            if (equal_doubles(val1,val2))
               return fallback;
             else
               return val1 < val2;

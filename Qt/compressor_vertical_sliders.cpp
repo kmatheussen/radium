@@ -210,7 +210,7 @@ struct Comp
       }
 
       if(y1 > box1.y2){
-        if (y1==y2)
+        if (equal_doubles(y1, y2))
           x1 = 10000; // I.e. not visible
         else
           x1=scale_double(box1.y2, y1,y2, x1,x2);
@@ -218,7 +218,7 @@ struct Comp
       }
 
       if(y2 > box2.y2){
-        if (y1==y2)
+        if (equal_doubles(y1, y2))
           x1 = 10000; // I.e. not visible
         else
           x2=scale_double(box2.y2, y1,y2, x1,x2);
@@ -569,10 +569,10 @@ struct Comp
     double len_in = in_val2-in_val1;
     double len_out = out_val2-out_val1;
 
-    if(len_in==0.0 && len_out==0.0)
+    if(equal_doubles(len_in, 0.0) && equal_doubles(len_out, 0.0))
       return 1.0;
 
-    if(len_out==0.0)
+    if(equal_doubles(len_out, 0.0))
       return 60;
 
     double ratio = fabs(len_in-len_out)<0.00001
@@ -709,9 +709,9 @@ struct Comp
 
   void set_threshold(float val){
     //double bef=in_val2;
-    double old_inval1_scaled = in_val2==0 ? 0 : scale(in_val1,
-                                                      0,in_val2,
-                                                      0,1);
+    double old_inval1_scaled = equal_doubles(in_val2, 0) ? 0 : scale(in_val1,
+                                                                     0,in_val2,
+                                                                     0,1);
     double old_ratio_factor = out_val1 / (in_val2-in_val1);
 
     in_val2 = val;
@@ -1101,9 +1101,11 @@ struct Comp
       c.setAlpha(80);
 #endif
 
+#pragma GCC diagnostic ignored "-Wfloat-equal"
     if(value==-0.0)
       value=0.0;
-
+#pragma GCC diagnostic pop
+    
     char temp[32];
     snprintf(temp,31,"%.1f",value);
     const char *maybeplus = unit.compare("dB")==0 && value>0.0 ? "+" : "";

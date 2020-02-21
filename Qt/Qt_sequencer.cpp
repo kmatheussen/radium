@@ -1086,12 +1086,12 @@ public:
         
         p.setPen(pen1);
         
-        double n_y1 = track_pitch_max==track_pitch_min ? (y1+y2)/2.0 : scale_double(pitch->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
+        double n_y1 = equal_floats(track_pitch_max, track_pitch_min) ? (y1+y2)/2.0 : scale_double(pitch->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
         double n_y2;
 
-        if(track_pitch_max==track_pitch_min)
+        if(equal_floats(track_pitch_max, track_pitch_min))
           n_y2 = (y1+y2)/2.0;
-        else if (next_pitch==&last_pitch && next_pitch->note==0)
+        else if (next_pitch==&last_pitch && equal_floats(next_pitch->note, 0.0f))
           n_y2 = scale_double(note->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
         else if (pitch->logtype==LOGTYPE_HOLD)
           n_y2 = n_y1;
@@ -1099,7 +1099,7 @@ public:
           n_y2 = scale_double(next_pitch->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
                  
 
-        if (last_y == init_last_y){
+        if (equal_doubles(last_y, init_last_y)){
           
           double x2 = R_MIN(n_x2, n_x1+bar_header_length);
           
@@ -2339,7 +2339,7 @@ public:
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
       if (seqtrack->is_visible){
         int i = iterator666;
-        if (max_heights[i]==-1 || max_heights[i] > heights[i]){
+        if (equal_doubles(max_heights[i], -1.0) || max_heights[i] > heights[i]){
           num_seqtracks_to_increase++;
           has_increased[i] = false;
         } else {
@@ -2364,7 +2364,7 @@ public:
           
           int i = iterator666;
           
-          if (max_heights[i] != -1){
+          if (!equal_doubles(max_heights[i], -1.0)){
             
             if (has_increased[i]==false){
               
@@ -3148,7 +3148,7 @@ struct Timeline_widget : public LightWidget { //: public MouseTrackerQWidget {
 
 static int64_t g_sequencer_indicator_x_pos = NO_INDICATOR;
 static double g_sequencer_indicator_y = NO_INDICATOR;
-static double g_sequencer_indicator_type = -1;
+static int g_sequencer_indicator_type = -1;
 static QColor g_sequencer_indicator_color("#123456");
 
 struct CursorPainter : public LightWidget {
@@ -3311,7 +3311,7 @@ public:
         
         double middle = (_start_time+_end_time) / 2.0;
 
-        if (song_abstime != middle){
+        if (!equal_doubles(song_abstime, middle)){
           double diff = song_abstime - middle;
           _start_time += diff;
           _end_time += diff;
@@ -4272,7 +4272,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       
       if (!do_update) {
         if (is_called_every_ms(1000)) // This is only an insurance. SEQUENCER_update is supposed to be called manually when needed.
-          if (_last_visible_song_length != get_visible_song_length()) {
+          if (!equal_doubles(_last_visible_song_length, get_visible_song_length())) {
             do_update = true;
             _last_visible_song_length = get_visible_song_length();
           }

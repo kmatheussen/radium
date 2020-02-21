@@ -22,8 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 #include <vlCore/VisualizationLibrary.hpp>
 #include <vlGraphics/OpenGLContext.hpp>
+#pragma GCC diagnostic pop
 
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
@@ -343,7 +345,7 @@ static GE_Context *drawNodeLines(const struct Tracker_Windows *window, const str
 
     c = c!=NULL ? GE_y(c, y1) : GE_color_alpha_z(colnum, is_selected ? alpha_selected : alpha, GE_Conf(Z_ABOVE(Z_ABOVE(Z_ZERO)), 0, use_scissors));
 
-    bool paint_stipled = hide_vertical && is_selected==false && x1 == x2 && (y2 - y1) > cut_size1*3.5;
+    bool paint_stipled = hide_vertical && is_selected==false && equal_floats(x1, x2) && (y2 - y1) > cut_size1*3.5;
     
     if (paint_stipled) {
 #if 1
@@ -1565,7 +1567,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     }
   }
 
-  if (wtrack->centtext_on==false && cents_d != 0.0 && WTRACK_num_non_polyphonic_subtracks(wtrack)>0 && wtrack->notesonoff==1){
+  if (wtrack->centtext_on==false && !equal_doubles(cents_d, 0.0) && WTRACK_num_non_polyphonic_subtracks(wtrack)>0 && wtrack->notesonoff==1){
     //printf("     %d: cents_d: %f\n",wtrack->l.num, cents_d);
     wtrack->centtext_on = true;
     GFX_ScheduleCalculateCoordinates();
@@ -1614,7 +1616,7 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
     GE_Context *line_color = NULL;
 
     for(const struct NodeLine *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next) {
-      bool vertical_line = nodeline->x1==nodeline->x2;
+      bool vertical_line = equal_floats(nodeline->x1, nodeline->x2);
       bool continues_next_block = nodeline->next==NULL && note_continues_next_block(wblock->block, note);
     
       if(true || !vertical_line) {
@@ -2195,7 +2197,7 @@ static void create_velocity_gradient_background(
 
     bool is_inside = vel_y1>=area_y1 || vel_y2>=area_y1;
 
-    if (is_inside && vel_y1!=vel_y2){
+    if (is_inside && !equal_floats(vel_y1,vel_y2)){
 
       int logtype = nodeline->logtype;
       float x1 = nodeline->x1;
@@ -2250,7 +2252,7 @@ static void create_velocities_gradient_background(
     float start_note;
     float end_note;
 
-    if (track_notearea_x1==track_notearea_x2){
+    if (equal_floats(track_notearea_x1, track_notearea_x2)){
       start_note = scale(x1, 0, 1, track_pitch_min, track_pitch_max);
       end_note   = scale(x2, 0, 1, track_pitch_min, track_pitch_max);
     } else {
@@ -2315,7 +2317,7 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
   subtrack_x1 = GetNoteX1(wtrack,note);
   subtrack_x2 = GetNoteX2(wtrack,note);
 
-  if(subtrack_x1==subtrack_x2)
+  if(equal_floats(subtrack_x1, subtrack_x2))
     return;
   
   const struct NodeLine *nodelines = GetVelocityNodeLines(window, wblock, wtrack, note);

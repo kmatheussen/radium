@@ -864,7 +864,7 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
           if (curr_seqblock != NULL) {
             struct Blocks *block = curr_seqblock->block;
 
-            if (block!=NULL && tempo != ATOMIC_DOUBLE_GET(block->reltempo)){
+            if (block!=NULL && !equal_doubles(tempo, ATOMIC_DOUBLE_GET(block->reltempo))){
               ATOMIC_DOUBLE_SET(block->reltempo, tempo);
               GFX_ScheduleRedraw();
               //printf("   SCHEDULING redraw\n");

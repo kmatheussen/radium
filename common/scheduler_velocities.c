@@ -244,7 +244,7 @@ void RT_schedule_velocities_newnote(int64_t current_time,
   if (track->patch==NULL)
     return;
 
-  if(note->velocities==NULL && note->velocity_end==0.0)
+  if(note->velocities==NULL && equal_floats(note->velocity_end, 0.0))
     return;
 
   RT_schedule_velocity(seqtrack, current_time, seqblock, track, note, NULL, true);

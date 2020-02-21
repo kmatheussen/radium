@@ -113,7 +113,7 @@ void DLoadNotes(const struct Root *newroot,struct Tracks *track, struct Notes *n
   if(notes==NULL) return;
 
   // Fix pitch_end for older songs.
-  if(notes->pitches != NULL && notes->pitch_end==0){
+  if(notes->pitches != NULL && equal_floats(notes->pitch_end, 0)){
     struct Notes *next_note = NextNote(notes);
     if (next_note==NULL)
       next_note = track->notes;

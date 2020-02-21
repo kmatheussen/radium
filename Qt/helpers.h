@@ -1012,7 +1012,7 @@ static inline void myFillRectHorizontalGradient(QPainter &p, QRectF rect, const 
   p.setPen(pen);
 }
 
-static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color, float do_gradient = true, int how_much_gradient = 10){
+static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color, bool do_gradient = true, int how_much_gradient = 10){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
   
@@ -1032,7 +1032,7 @@ static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color, flo
   p.setBrush(Qt::NoBrush);
   p.setPen(pen);
 }
-static inline void myFillRoundedRect(QPainter &p, QRectF rect, const QColor &color, float rounding, float do_gradient = true){
+static inline void myFillRoundedRect(QPainter &p, QRectF rect, const QColor &color, float rounding, bool do_gradient = true){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
   if (do_gradient){

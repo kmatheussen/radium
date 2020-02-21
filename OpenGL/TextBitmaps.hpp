@@ -195,7 +195,7 @@ static inline void set_halfsize_font(void){
 
 static inline void GE_set_new_font(const QFont &nonscaled_font){
   QFont font(nonscaled_font);
-  if(g_opengl_scale_ratio != 1.0)
+  if(!equal_doubles(g_opengl_scale_ratio, 1.0))
     font.setPointSize(font.pointSize() * g_opengl_scale_ratio);
 
   g_qfont = font;

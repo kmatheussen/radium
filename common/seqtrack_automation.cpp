@@ -818,7 +818,7 @@ void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqT
         }
       }
 
-      R_ASSERT(value != -1);
+      R_ASSERT(!equal_floats(value, -1.0f));
       
       PLUGIN_call_me_before_starting_to_play_song_MIDDLE(plugin,
                                                          seqtime_to_send_to_plugin,
@@ -859,13 +859,12 @@ bool RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
 
     } else {
       
-      double latency = RT_SP_get_input_latency(plugin->sp);
-      if (latency!=0){
+      int latency = RT_SP_get_input_latency(plugin->sp);
+      if (latency != 0) {
         struct SeqBlock *seqblock = seqtrack->curr_seqblock;
-        if (seqblock != NULL && seqblock->block!=NULL){
+        if (seqblock != NULL && seqblock->block!=NULL){          
           if (pc->playtype==PLAYSONG)
-            latency *= ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
-          latency = ceil(latency); // Ensure automation is sent out before note start. (probably not necessary)
+            latency = ceil((double)latency * ATOMIC_DOUBLE_GET(seqblock->block->reltempo));
         }
       }
 
@@ -877,7 +876,7 @@ bool RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
 
         case radium::SeqAutomationReturnType::VALUE_OK:{
 
-          if (value != automation->last_value){
+          if (!equal_doubles(value, automation->last_value)){
             FX_when when;
             if (automation->last_value < -0.5)
               when = FX_start;
@@ -898,7 +897,7 @@ bool RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
 
         case radium::SeqAutomationReturnType::NO_VALUES_YET:{
 
-          R_ASSERT_NON_RELEASE(automation->last_value == -1.0);
+          R_ASSERT_NON_RELEASE(equal_doubles(automation->last_value, -1.0));
           more_things_to_do = true;
           automation->last_value = -1.0;
           break;

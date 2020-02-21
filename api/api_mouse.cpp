@@ -1074,7 +1074,7 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
     if (pitch==NULL){
 
       if (ListFindNumElements3((struct ListHeader3*)note->pitches)+1==pianonotenum){
-        if (pianonotenum==1 && note->pitch_end == 0)
+        if (pianonotenum==1 && equal_floats(note->pitch_end, 0))
           return note->note;
         else
           return note->pitch_end;
@@ -1497,11 +1497,13 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place_arg, dyn_t dyn
   
   
     window->must_redraw_editor=true;
-    
-    if(note->pitch_end > 0 || note->pitches!=NULL)
-      note->pitch_end = R_BOUNDARIES(1, value, 127);
-    else
-      note->note = R_BOUNDARIES(1, value, 127);
+
+    if (value > 0){
+      if(note->pitch_end > 0 || note->pitches!=NULL)
+        note->pitch_end = R_BOUNDARIES(1, value, 127);
+      else
+        note->note = R_BOUNDARIES(1, value, 127);
+    }
 
     if (p_is_same_place(place))
       return dynnote;
@@ -1662,7 +1664,7 @@ void addPianonotePitch(float value, Place place, dyn_t dynnote, int tracknum, in
     return;
 
 
-  if (note->pitch_end == 0) {
+  if (equal_floats(note->pitch_end, 0)) {
     window->must_redraw_editor = true;
     note->pitch_end = note->note;
   }
@@ -2363,7 +2365,7 @@ void enablePortamento(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return;
 
-  if (note->pitch_end == 0) {
+  if (equal_floats(note->pitch_end, 0)) {
     window->must_redraw_editor = true;
     note->pitch_end = note->note;
   }

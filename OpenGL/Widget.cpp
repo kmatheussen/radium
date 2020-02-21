@@ -26,9 +26,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 #include <stdio.h>
 
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 #include <vlCore/VisualizationLibrary.hpp>
 #include <vlVG/VectorGraphics.hpp>
 #include <vlGraphics/Rendering.hpp>
+#pragma GCC diagnostic pop
 
 /*
   Note: !THREADED_OPENGL should compile and run (at least without too many modifications), but it hasn't been tested much.
@@ -555,7 +557,7 @@ static double find_current_realline_while_playing(const SharedVariables *sv, dou
       
       if (i_realline==sv->num_reallines)
         return sv->num_reallines;
-      if (stime1==stime2)
+      if (equal_doubles(stime1, stime2))
         i_realline++;
       else
         break;
@@ -1064,7 +1066,7 @@ private:
       viewport->setWidth(current_width * g_opengl_scale_ratio);
       viewport->setHeight(current_height * g_opengl_scale_ratio);
 
-      if(g_opengl_scale_ratio != 1.0){
+      if(!equal_doubles(g_opengl_scale_ratio, 1.0)){
 
 #if 1
         // I think this is correct. Not sure.
@@ -1174,7 +1176,7 @@ private:
       //  printf("blocktime: %f\n",blocktime);
       
 #if !defined(RELEASE)
-      if (blocktime==-100 || blocktime>=0.0){
+      if (equal_doubles(blocktime, -100) || blocktime>=0.0){
       }else{
         fprintf(stderr,"blocktime: %f\n",blocktime);
         //abort();
@@ -1190,7 +1192,7 @@ private:
         if (new_t2_data!=NULL && use_t2_thread)
           T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
         
-        if (t2_data_can_be_used  || blocktime != -100.0){
+        if (t2_data_can_be_used  || !equal_doubles(blocktime, -100.0)){
           _rendering->render();
           //printf("   rettrue1\n");
           return true;
@@ -1235,7 +1237,7 @@ private:
       return false;
     }
 
-    if (!is_playing && scroll_pos == last_scroll_pos && new_t2_data==NULL) {
+    if (!is_playing && equal_floats(scroll_pos, last_scroll_pos) && new_t2_data==NULL) {
       if (t2_data_can_be_used){
         _rendering->render();
         //printf("   rettrue2\n");
@@ -1502,7 +1504,7 @@ private:
 #if !defined(FOR_MACOSX)
       if (doHighCpuOpenGlProtection()) {
         double vblank = GL_get_vblank();
-        if (vblank==-1)
+        if (equal_doubles(vblank, -1))
           vblank = time_estimator.get_vblank();
 
 #if !USE_JUCE_CPU_PROTECTION_LOGIC

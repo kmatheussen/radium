@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+#include <limits>
 
 #ifdef USING_SHARED_MEM
 #  include <QSharedMemory>
@@ -35,6 +36,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "system_compressor_wrapper_proc.h"
 
+#define R_ABS(a) ({ typeof(a) aTEMP = (a) ; aTEMP<0?-aTEMP:aTEMP;})
+
+static inline bool equal_doubles(double x, double y) {
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+  if(x==y)
+    return true;
+#pragma GCC diagnostic pop
+  return R_ABS(x - y) < std::numeric_limits<double>::epsilon();
+}
 
 
 #include <vector>
@@ -206,8 +216,8 @@ struct Compressor_wrapper : public Faust_system_compressor {
 #endif
 
 #ifdef COMPILING_RADIUM
-  if(sample_rate==0.0)
-    fprintf(stderr,"hmm\n");
+    if(equal_doubles(sample_rate, 0.0))
+      fprintf(stderr,"hmm\n");
 #endif
 
   init(sample_rate);

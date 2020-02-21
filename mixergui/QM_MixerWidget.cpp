@@ -1944,7 +1944,7 @@ namespace{
                 bool is_autosuspending = ATOMIC_GET_RELAXED(plugin->_is_autosuspending);
 
                 //printf("last: %f. vol: %f. Equal? %d\n", chip->_last_updated_volume, volume, chip->_last_updated_volume == volume);
-                if (chip->_last_updated_volume != volume){
+                if (!equal_floats(chip->_last_updated_volume, volume)){
                   CHIP_update(chip, plugin);
                   chip->_last_updated_volume = volume;
                 }
