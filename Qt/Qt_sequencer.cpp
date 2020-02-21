@@ -3530,7 +3530,10 @@ public:
 
     double seqtrack0_y1 = getSeqtrackFromNum(0)->y1;
     double seqtrackN_y2 = getSeqtrackFromNum(num_seqtracks-1)->y2;
-      
+
+    if (seqtrackN_y2 < 1)
+      return; // positions have not been calculated yet.
+    
     // Seqblocks
     {
 
