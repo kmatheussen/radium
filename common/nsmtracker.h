@@ -244,8 +244,26 @@ extern double g_last_time_mouse_pointer_was_moved_by_the_program; // Only used i
 #  define R_BOUNDARIES(min,b,max) ({ typeof(min) minTEMP = (min); typeof(b) bTEMP = (b); typeof(max) maxTEMP = (max); maxTEMP < minTEMP ? (abort(),minTEMP) : bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
 #endif
 
+static inline bool sane_isnormal_FLOAT(float x) {
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+  return x==0.0f || isnormal(x);
+#pragma GCC diagnostic pop
+}
+
+static inline bool sane_isnormal_DOUBLE(double x) {
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+  return x==0.0 || isnormal(x);
+#pragma GCC diagnostic pop
+}
+
+#define sane_isnormal(x) (sizeof (x) == sizeof (float) ? sane_isnormal_FLOAT(x) : sane_isnormal_DOUBLE(x))
+  
 #ifdef __cplusplus
 static inline bool equal_floats(float x, float y) {
+#if !defined(RELEASE)
+  if(!sane_isnormal(x) || !sane_isnormal(y))
+    abort();
+#endif
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   if(x==y)
     return true;
@@ -253,6 +271,10 @@ static inline bool equal_floats(float x, float y) {
   return R_ABS(x - y) < std::numeric_limits<float>::epsilon();
 }
 static inline bool equal_doubles(double x, double y) {
+#if !defined(RELEASE)
+  if(!sane_isnormal(x) || !sane_isnormal(y))
+    abort();
+#endif
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   if(x==y)
     return true;
@@ -262,10 +284,26 @@ static inline bool equal_doubles(double x, double y) {
 #else
 extern float g_float_epsilon;
 static inline bool equal_floats(float x, float y) {
+#if !defined(RELEASE)
+  if(!sane_isnormal(x) || !sane_isnormal(y))
+    abort();
+#endif
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+  if(x==y)
+    return true;
+#pragma GCC diagnostic pop
   return R_ABS(x - y) < g_float_epsilon;
 }
 extern float g_double_epsilon;
 static inline bool equal_doubles(double x, double y) {
+#if !defined(RELEASE)
+  if(!sane_isnormal(x) || !sane_isnormal(y))
+    abort();
+#endif
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+  if(x==y)
+    return true;
+#pragma GCC diagnostic pop
   return R_ABS(x - y) < g_double_epsilon;
 }
 #endif
@@ -382,6 +420,7 @@ static inline bool int_to_bool(int value){
   )   
 
 static inline int64_t scale_int64(const int64_t x, const int64_t x1, const int64_t x2, const int64_t y1, const int64_t y2){
+
   int64_t diff = x2-x1;
   
 #if !defined(RELEASE)
@@ -398,10 +437,12 @@ static inline int64_t scale_int64(const int64_t x, const int64_t x1, const int64
 }
 
 static inline double scale_double(const double x, const double x1, const double x2, const double y1, const double y2){
-  float diff = x2-x1;
+  double diff = x2-x1;
   
 #if !defined(RELEASE)
   R_ASSERT(!equal_doubles(diff,0.0));
+  if(!sane_isnormal(x) || !sane_isnormal(x2) || !sane_isnormal(x2) || !sane_isnormal(y1) || !sane_isnormal(y2))
+    abort();
   
   if (equal_doubles(diff, 0.0))
     return (y1+y2)/2.0;
@@ -418,6 +459,8 @@ static inline float scale(const float x, const float x1, const float x2, const f
   
 #if !defined(RELEASE)
   R_ASSERT(!equal_floats(diff,0.0));
+  if(!sane_isnormal(x) || !sane_isnormal(x2) || !sane_isnormal(x2) || !sane_isnormal(y1) || !sane_isnormal(y2))
+    abort();
   
   if (equal_floats(diff, 0.0))
     return (y1+y2)/2.0f;
@@ -1325,6 +1368,11 @@ static inline dyn_t DYN_create_bool(bool bool_number){
 
 
 static inline dyn_t DYN_create_float(double float_number){
+#if !defined(RELEASE)
+  if(!sane_isnormal(float_number))
+    abort();
+#endif
+  
   dyn_t a;
   a.type = FLOAT_TYPE;
   a.float_number = float_number;
