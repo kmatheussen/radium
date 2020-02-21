@@ -204,6 +204,11 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
 #include "Qt_Main_proc.h"
 
 
+
+float g_float_epsilon = std::numeric_limits<float>::epsilon();
+double g_double_epsilon = std::numeric_limits<double>::epsilon();
+
+
   //QApplication *qapplication;
 class MyApplication;
 MyApplication *qapplication = NULL;
@@ -3695,6 +3700,7 @@ bar()
   crashreporter_foo();
 }
 #endif
+
 
 int main(int argc, char **argv){
 

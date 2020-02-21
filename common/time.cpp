@@ -877,12 +877,20 @@ static double get_stime_from_stimechange(const struct STimeChange &c, double y, 
 
 static const struct STimeChange *get_stimechange(const struct STimes *stimes, double y){
   const struct STimeChange *time_change=stimes[(int)y].tchanges;
-  R_ASSERT_NON_RELEASE(time_change!=NULL);
+
+  if (time_change==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return stimes[0].tchanges;
+  }
   
   while(time_change->y2 < y){
     time_change = time_change + 1; // All changes in a block are allocated sequentially.
     //R_ASSERT_RETURN_IF_FALSE2(time_change->t1 > 0, (time_change-1)->t2); // Can happen, for instance if the second tempo node is crammed to the top of the block.
-    R_ASSERT_NON_RELEASE(time_change->y2 != 0);
+
+#if !defined(RELEASE)
+    if (equal_doubles(time_change->y2, 0.0))
+      abort();
+#endif
   }
 
   return time_change;
@@ -1336,10 +1344,12 @@ static dyn_t create_filledout_swings(const dyn_t global_swings, const dyn_t trac
 }
 
 
-static void update_stuff2(struct Blocks *blocks[], int num_blocks,
-                          int default_bpm, int default_lpb, StaticRatio default_signature,
-                          bool only_signature_has_changed, bool update_beats, bool update_swings)
+static void update_stuff2(struct Blocks *blocks[], const int num_blocks,
+                          const int default_bpm, const int default_lpb, const StaticRatio &default_signature,
+                          const bool only_signature_has_changed, const bool update_beats, const bool update_swings)
 {
+  R_ASSERT_NON_RELEASE(update_swings==true);
+  
   struct STimes *stimes_without_global_swings[num_blocks];
   struct STimes *stimes_with_global_swings[num_blocks];
   const struct Beats *beats[num_blocks];
@@ -1501,6 +1511,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
               lock.maybe_pause(track->l.num);
               track->filledout_swings = filledout_trackswingss[i].elements[track->l.num];
               track->times = (const STimes*)trackstimess[i].elements[track->l.num];
+              R_ASSERT(track->times!=NULL);
               track = NextTrack(track);
             }
           }

@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 
 #include "placement_proc.h"
+#include "list_proc.h"
+
 
 static inline bool has_same_tempo(double tempo1, double tempo2){
   return fabs(tempo1 - tempo2) < 0.003; // approx.
@@ -63,14 +65,101 @@ static inline const struct STimes *get_stimes_from_swinging_mode(const struct Bl
     case EDITOR_CURR_TRACK_SWINGING_MODE:
       
       R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
-      
+
       if (root->song->editor_should_swing_along==false)
+        
         return block->times_without_global_swings;
-      else {
-        if (root->song->tracker_windows->curr_track < 0)
+      
+      else if (root->song->tracker_windows->curr_track < 0)
+        
           return block->times_with_global_swings;
-        else
-          return root->song->tracker_windows->wblock->wtrack->track->times;
+      
+      else {
+
+        const struct Tracker_Windows *window = root->song->tracker_windows;
+
+        struct WBlocks *wblock = window->wblock;
+        
+        if (wblock->block != block) {
+          
+          int blocknum = block->l.num;
+          
+          wblock = (struct WBlocks*)ListFindElement1_r0(&window->wblocks->l, blocknum);
+          
+          if (wblock==NULL || wblock->block != block){
+            R_ASSERT_NON_RELEASE(false);
+            return block->times_with_global_swings;
+          }
+          
+        } else {
+
+#if !defined(RELEASE)
+          int tracknum = window->curr_track;
+
+          R_ASSERT(tracknum==wblock->wtrack->l.num);
+          
+          R_ASSERT(window->curr_track==wblock->wtrack->l.num);
+        
+          R_ASSERT(window->curr_track==wblock->wtrack->track->l.num);
+        
+          R_ASSERT(ListFindElement1(&block->tracks->l, window->curr_track) == &wblock->wtrack->track->l);
+#endif
+          
+        }
+
+        const struct WTracks *wtrack = wblock->wtrack;
+              
+#if !defined(RELEASE)
+        {
+          struct Tracks *track = wtrack->track;
+          while(track!=NULL){
+            
+            if (track->times==NULL || track->times->tchanges==NULL)
+              abort();
+
+            for(int i = 0;;i++){
+              if (equal_doubles(track->times->tchanges[i].y2, 0.0)){
+                if(!equal_doubles(track->times->tchanges[i].y1, 0.0))
+                  abort();
+                if(!equal_doubles(track->times->tchanges[i].x1, 0.0))
+                  abort();
+                if(!equal_doubles(track->times->tchanges[i].x2, 0.0))
+                  abort();
+                if(!equal_doubles(track->times->tchanges[i].t1, 0.0))
+                  abort();
+                if(!equal_doubles(track->times->tchanges[i].t2, 0.0))
+                  abort();
+                if(!equal_doubles(track->times->tchanges[i].logt1, 0.0))
+                  abort();
+                if(!equal_doubles(track->times->tchanges[i].logt2t1, 0.0))
+                  abort();
+                if(!equal_doubles(track->times->tchanges[i].glidingswing_scale_value, 0.0))
+                  abort();
+                break;
+              }
+              if(track->times->tchanges[i].y1 < 0 || track->times->tchanges[i].y1 > 99999999)
+                abort();
+            }
+
+            STime last_time=-1;
+            for(int i=0;i<=wblock->block->num_lines;i++){
+              STime time = track->times[i].time;
+              
+              if (time <= last_time)
+                abort();
+              
+              if(track->times[i].tchanges->y1 < 0 || track->times[i].tchanges->y1 > 99999999)
+                abort();
+              
+              last_time = time;
+            }
+            
+            track = NextTrack(track);
+          }
+        }
+#endif
+
+        return wtrack->track->times;
       }
       
 
