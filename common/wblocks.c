@@ -451,17 +451,19 @@ void UpdateWBlocks(struct Tracker_Windows *window){
 }
 
 
-void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
+void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock, bool force_select){
         
       if(wblock==NULL) return;
 
       R_ASSERT_RETURN_IF_FALSE(window!=NULL);
 
-      if (EDITOR_is_legal_track(window, window->curr_track))
-        if (window->wblock==wblock && window->curr_block==wblock->l.num)
-          return;
-
-
+      if (!force_select)
+        if (EDITOR_is_legal_track(window, window->curr_track))
+          if (window->wblock==wblock && window->curr_block==wblock->l.num){
+            //window->must_redraw=true; // At least do this. Just in case. (should probably never return here)
+            return;
+          }
+      
       EVENTLOG_add_event("SelectWBlock 1");
       
       g_assert_not_stopping_player++; // A lot of things happens here. Assert that we are not stopping the player.
@@ -585,7 +587,8 @@ struct Blocks *AppendWBlock(struct Tracker_Windows *window){
           UpdateWBlocks(window);
           SelectWBlock(
                        window,
-                       (struct WBlocks *)ListLast1(&window->wblocks->l)
+                       (struct WBlocks *)ListLast1(&window->wblocks->l),
+                       true
                        );
           BS_UpdateBlockList();
         }PC_StopPause(NULL);
@@ -602,7 +605,8 @@ void AppendWBlock_spes(struct Tracker_Windows *window,int num_lines,NInt num_tra
           UpdateWBlocks(window);
           SelectWBlock(
                        window,
-                       (struct WBlocks *)ListLast1(&window->wblocks->l)
+                       (struct WBlocks *)ListLast1(&window->wblocks->l),
+                       true
                        );
           BS_UpdateBlockList();
         }PC_StopPause(NULL);

@@ -1220,7 +1220,7 @@ protected:
 
     
     // Eventually we will not set window->must_redraw=true here.
-#if 1 //defined(RELEASE)
+#if defined(RELEASE)    
     if (AnyModifierKeyPressed(tevent.keyswitch) || (keynum!=EVENT_UPARROW && keynum!=EVENT_DOWNARROW))
       window->must_redraw = true;
 #endif
@@ -2901,7 +2901,7 @@ int radium_main(const char *arg){
   BS_UpdateBlockList();
   BS_UpdatePlayList();
   //BS_SelectBlock(root->song->blocks);
-  SelectWBlock(window, window->wblocks);
+  SelectWBlock(window, window->wblocks, true);
   BS_SelectPlaylistPos(0, false);
 
   QWidget *main_window = static_cast<QWidget*>(window->os_visual.main_window);

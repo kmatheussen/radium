@@ -81,7 +81,7 @@ void BLOCK_Split_CurrPos(
           
           BLOCK_Split(wblock->block,splitline);
           
-          SelectWBlock(window,window->wblock);
+          SelectWBlock(window,window->wblock,true);
           BS_UpdateBlockList();
           BS_UpdatePlayList();
           

@@ -1282,7 +1282,7 @@ void selectBlock(int blocknum, int windownum){
     if(wblock->curr_realline == wblock->num_reallines-1)
       wblock->curr_realline = 0;
 
-    SelectWBlock(window, wblock);    
+    SelectWBlock(window, wblock, false);
   }PC_StopPause_ForcePlayBlock(NULL);
 }
 

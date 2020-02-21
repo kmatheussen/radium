@@ -202,7 +202,7 @@ void LoadBlockFromDisk(filepath_t filename){
     DLoadBlocks(root, block, false);
     DLoadWBlocks(root, window, wblock, false);  
 
-    SelectWBlock(window,wblock);
+    SelectWBlock(window,wblock,true);
               
     BS_UpdateBlockList();
     BS_UpdatePlayList();
