@@ -540,6 +540,7 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
 
     if (tr2.pitch != NULL) {
       tr2.pitch->note = notenum; // lock not necessary
+      window->must_redraw=true;
       return maybe_scroll_down(window, tr2.note);
     }
 
@@ -557,7 +558,8 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
         if (tr2.note->velocities==NULL)
           tr2.note->velocity_end = velocity;
       }
-      
+
+      window->must_redraw=true;
       return maybe_scroll_down(window, tr2.note);
     }
 
@@ -576,6 +578,8 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
                                   polyphonic
                                   );
 
+  window->must_redraw=true;
+  
   //if(wtrack->l.num==wblock->right_track && polyphonic)
   //  UpdateAllWTracksCoordinates(window,wblock);
 
@@ -672,6 +676,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 
   if (trs.size()==0) {
     InsertStop(window,wblock,wtrack,&realline->l.p);
+    window->must_redraw=true;
     maybe_scroll_down(window, NULL);
     return;
   }
@@ -682,6 +687,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   if (tr2.pitch != NULL) {
     EVENTLOG_add_event("RemoveNoteCurrPos 1");
     DeletePitch(track, tr2.note, tr2.pitch);
+    window->must_redraw=true;
     if (trs.size()==1)
       maybe_scroll_down(window, NULL);
     return;
@@ -705,6 +711,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
     }
     SetNotePolyphonyAttributes(wtrack->track);
     ValidateCursorPos(window);
+    window->must_redraw=true;
     if (trs.size()==1)
       maybe_scroll_down(window, NULL);
     return;
@@ -718,6 +725,8 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
     ListRemoveElement3(&track->stops, &stop->l);
     LengthenNotesTo(wblock->block,track,&realline->l.p);
   }
+
+  window->must_redraw=true;
   
   if (trs.size()==1)
     maybe_scroll_down(window, NULL);
