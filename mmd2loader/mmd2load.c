@@ -355,7 +355,7 @@ static void LoadOctaBlock(
 	wblock->block->lasttemponode=temponode;
 
 	UpdateReallinesDependens(window,wblock);
-	SelectWBlock(window,wblock);
+	SelectWBlock(window,wblock,true);
 }
 
 
@@ -684,7 +684,7 @@ bool LoadMMP2(struct Tracker_Windows *window, filepath_t filename){
         TIME_everything_has_changed();
 
 //	DrawUpTrackerWindow(window);
-	SelectWBlock(window,window->wblocks);
+	SelectWBlock(window,window->wblocks,true);
 
 	ResetUndo();
 

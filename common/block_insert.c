@@ -103,7 +103,7 @@ struct Blocks *InsertBlock_CurrPos(
         PC_Pause();{
           ret = InsertBlock(blockpos,wblock->block->num_tracks,wblock->block->num_lines,"NN");
 
-          SelectWBlock(window,(struct WBlocks *)ListFindElement1(&window->wblocks->l,blockpos));
+          SelectWBlock(window, (struct WBlocks *)ListFindElement1(&window->wblocks->l,blockpos), true);
 
           BS_UpdateBlockList();
           BS_UpdatePlayList();

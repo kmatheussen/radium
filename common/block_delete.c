@@ -74,7 +74,7 @@ void DeleteBlock_CurrPos(
             wblock=ListLast1(&window->wblocks->l);
           }
 
-          SelectWBlock(window,wblock);
+          SelectWBlock(window,wblock,true);
           
           BS_UpdateBlockList();
           BS_UpdatePlayList();

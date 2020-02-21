@@ -761,7 +761,8 @@ currently_undoing = true;
          
          SelectWBlock(
                       window,
-                      wblock
+                      wblock,
+                      true
                       );
 
          if(current_patch!=NULL){

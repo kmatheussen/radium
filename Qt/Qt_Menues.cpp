@@ -155,7 +155,7 @@ public slots:
       this->checkval = this->checkval==1?0:1; // switch value.
       sprintf(temp,python_command,checkval?"1":"0");
       EVENTLOG_add_event(talloc_format("menu: %s", temp));
-      PyRun_SimpleString(temp);
+      PyRun_SimpleString(temp);      
     }else{
       EVENTLOG_add_event(talloc_format("menu: %s", python_command));
       PyRun_SimpleString(python_command);
@@ -163,8 +163,12 @@ public slots:
     
     // closeRequester(); What?
     
-    static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
+    //static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
     //static_cast<EditorWidget*>(window->os_visual.widget)->repaint(); // Why isn't calling updateEditor() enough?
+#if defined(RELEASE)
+    window->must_redraw = true;
+#endif
+    
     if(doquit==true)
       qapplication->quit();
   }

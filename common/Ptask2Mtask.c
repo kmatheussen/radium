@@ -121,7 +121,7 @@ static void set_current_seqblock_and_block_after_stop_playing(struct Tracker_Win
     int64_t curr_seqblock_id = getCurrSeqblockId();
     if (curr_seqblock_id >= 0){
       if (seqblockHoldsSample(getSeqblockSeqblockNum(curr_seqblock_id), getSeqblockSeqtrackNum(curr_seqblock_id), true)){
-        SelectWBlock(window, wblock);
+        SelectWBlock(window, wblock, true);
         return;
       }
     }
@@ -158,7 +158,7 @@ static void set_current_seqblock_and_block_after_stop_playing(struct Tracker_Win
   }
   
   if (window->curr_block!=wblock->l.num)
-    SelectWBlock(window, wblock);
+    SelectWBlock(window, wblock, true);
 }
 
 
@@ -228,7 +228,7 @@ void P2MUpdateSongPosCallBack(void){
       //printf("Bef. w: %d\n",window->curr_block);
       //printf("                 GOT IT\n");
       
-      SelectWBlock(window, wblock);
+      SelectWBlock(window, wblock, false);
       goto gotit;
     }
 
@@ -284,7 +284,8 @@ void P2MUpdateSongPosCallBack(void){
 			if(window->curr_block!=curr_block){
 				SelectWBlock(
 					window,
-					wblock
+					wblock,
+                                        false
 				);
 			}
 

@@ -281,9 +281,9 @@ static bool Load(filepath_t filename){
         }Undo_stop_ignoring_undo_operations();
 
         GFX_ShowProgressMessage("Loading all graphical data into memory", true);
+
         GL_create_all(root->song->tracker_windows);
         
-
         GFX_CloseProgress();
           
         if(COMMENT_show_after_loading())

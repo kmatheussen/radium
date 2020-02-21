@@ -154,8 +154,8 @@ void CB_PasteBlock_CurrPos(
           ADD_UNDO(Block_CurrPos(window));
 
           CB_PasteBlock(window,cb_wblock,window->wblock);
-          SelectWBlock(window,window->wblock);
-          
+          SelectWBlock(window, window->wblock, true);
+
         }PC_StopPause(window);
 }
 
