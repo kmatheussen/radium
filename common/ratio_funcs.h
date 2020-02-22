@@ -1,6 +1,8 @@
 #ifndef _RADIUM_COMMON_RATIO_FUNCS_H
 #define _RADIUM_COMMON_RATIO_FUNCS_H
 
+# include <inttypes.h>
+
 #ifdef TEST_MAIN
 
 #define __STDC_FORMAT_MACROS
@@ -260,7 +262,7 @@ static inline bool RATIO_less_than(const Ratio r1, const Ratio r2){
   if (RATIO_equal(r1, r2))
     return false;
 
-  return !RATIO_greater_than(r2, r1);
+  return !RATIO_greater_than(r1, r2);
 }
 
 static inline bool RATIO_greater_or_equal_than(const Ratio r1, const Ratio r2){
@@ -284,6 +286,14 @@ static inline bool RATIO_less_than_zero(const Ratio r){
 static inline bool RATIO_greater_than_zero(const Ratio r){
   R_ASSERT_NON_RELEASE(r.den > 0);
   return r.num > 0;
+}
+
+static inline Ratio RATIO_floor(const Ratio r){
+  R_ASSERT_NON_RELEASE(r.den > 0);
+  if (r.den==1)
+    return r;
+  else
+    return make_ratio(r.num / r.den, 1);
 }
 
 
@@ -327,7 +337,54 @@ static inline bool operator<=(const Ratio &r1, const Ratio &r2){
   return RATIO_less_or_equal_than(r1, r2);
 }
 
+static inline Ratio& operator+=(Ratio& r1, const Ratio &r2){
+  r1 = r1 + r2;
+  return r1;
+}
+
+static inline Ratio& operator-=(Ratio& r1, const Ratio &r2){
+  r1 = r1 - r2;
+  return r1;
+}
+
+static inline Ratio& operator*=(Ratio& r1, const Ratio &r2){
+  r1 = r1 * r2;
+  return r1;
+}
+
+static inline Ratio& operator/=(Ratio& r1, const Ratio &r2){
+  r1 = r1 / r2;
+  return r1;
+}
+
+static inline Ratio& operator+=(Ratio& r1, int i2){
+  r1 = r1 + make_ratio(i2, 1);
+  return r1;
+}
+
+static inline Ratio& operator-=(Ratio& r1, int i2){
+  r1 = r1 - make_ratio(i2, 1);
+  return r1;
+}
+
+static inline Ratio& operator*=(Ratio& r1, int i2){
+  r1 = r1 * make_ratio(i2, 1);
+  return r1;
+}
+
+static inline Ratio& operator/=(Ratio& r1, int i2){
+  r1 = r1 / make_ratio(i2, 1);
+  return r1;
+}
+
 #endif
+
+static inline char *ratio_to_string(const Ratio ratio){
+  if(ratio.den==1)
+    return talloc_format("%" PRId64 "", ratio.num);
+  else
+    return talloc_format("%" PRId64 "/%" PRId64 "", ratio.num, ratio.den);
+}
 
 #endif
 
@@ -374,6 +431,13 @@ int main(){
   comp(r1+r2-r2, r1);
 
   printf("org: %f. org3: %f. Diff: %f. r: %" PRId64 "/%" PRId64 "\n",org1,org3,fabs(org1-org3),r1.num,r1.den);
+
+  Ratio r3 = make_ratio(2,3);
+  Ratio r4 = make_ratio(4,5);
+  r3 += r4;
+  if (r3 != make_ratio(2,3) + r4)
+    abort();
+         
   return 0;
 }
 
