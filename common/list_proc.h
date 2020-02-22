@@ -224,6 +224,15 @@ extern LANGSPEC void List_InsertPlaceLen3(
 	void (*Insert_PlaceLen_extra)(struct Blocks *block,void *to,struct ListHeader3 *l,float place,float toplace)
 );
 
+extern LANGSPEC void List_InsertRatioLen3(
+	struct Blocks *block,
+	void *to,
+	struct ListHeader3 *l,
+	Ratio ratio,
+	Ratio toratio,
+	void (*Insert_RatioLen_extra)(struct Blocks *block,void *to,struct ListHeader3 *l,Ratio ratio,Ratio toratio)
+);
+
 #ifndef TRACKER_LIST_PROC_MACROS
 #define TRACKER_LIST_PROC_MACROS
 
