@@ -43,60 +43,62 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "player_pause_proc.h"
 #include "Beats_proc.h"
+#include "ratio_funcs.h"
 
 #include "reallines_insert_proc.h"
 
-static void InsertPlace_notes_extra(
+static void InsertRatio_notes_extra(
 	struct Blocks *block,
 	void *tonote,
 	struct ListHeader3 *l,
-	float place,
-	float toplace
+	Ratio ratio,
+	Ratio toratio
 ){
 	struct Notes *note=(struct Notes *)l;
-        float endplace = GetfloatFromPlacement(&note->end);
-        
-	if(endplace >= place){
-          if (endplace+toplace > 0){
-            PlaceAddfloat(&note->end,toplace);
-            List_InsertPlaceLen3(block,&note->velocities,(struct ListHeader3*)note->velocities,place,toplace,NULL);
-            List_InsertPlaceLen3(block,&note->pitches,(struct ListHeader3*)note->pitches,place,toplace,NULL);
+        Ratio endratio = make_ratio_from_place(note->end);
+
+	if(endratio >= ratio){
+          if (RATIO_greater_than_zero(endratio+toratio)){
+            //RatioAddfloat(&note->end,toratio);
+            note->end = make_place_from_ratio(make_ratio_from_place(note->end) + toratio);
+            List_InsertRatioLen3(block,&note->velocities,(struct ListHeader3*)note->velocities,ratio,toratio,NULL);
+            List_InsertRatioLen3(block,&note->pitches,(struct ListHeader3*)note->pitches,ratio,toratio,NULL);
           }
 	}
 }
 
 
-static void InsertPlace_notes(
+static void InsertRatio_notes(
 	struct Blocks *block,
 	struct Tracks *track,
-	float place,
-	float toplace
+	Ratio ratio,
+	Ratio toratio
 ){
-	List_InsertPlaceLen3(
+	List_InsertRatioLen3(
 		block,
 		&track->notes,
 		(struct ListHeader3*)track->notes,
-		place,
-		toplace,
-		InsertPlace_notes_extra
+		ratio,
+		toratio,
+		InsertRatio_notes_extra
 	);
 	LegalizeNotes(block,track);
 }
 
-static void InsertPlace_fxs(
+static void InsertRatio_fxs(
 	struct Blocks *block,
 	struct Tracks *track,
-	float place,
-	float toplace
+	Ratio ratio,
+	Ratio toratio
 ){
 
-  VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
-    List_InsertPlaceLen3(
+  VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
+    List_InsertRatioLen3(
                          block,
                          &fxs->fxnodelines,
                          (struct ListHeader3*)fxs->fxnodelines,
-                         place,
-                         toplace,
+                         ratio,
+                         toratio,
                          NULL
                          );
   }END_VECTOR_FOR_EACH;
@@ -104,57 +106,57 @@ static void InsertPlace_fxs(
   LegalizeFXlines(block,track);
 }
 
-static void InsertPlace_temponodes(
+static void InsertRatio_temponodes(
 	struct Blocks *block,
-	float place,
-	float toplace
+	Ratio ratio,
+	Ratio toratio
 ){
-	List_InsertPlaceLen3(block,&block->temponodes,&block->temponodes->l,place,toplace,NULL);
-	if(toplace>0.0f){
+	List_InsertRatioLen3(block,&block->temponodes,&block->temponodes->l,ratio,toratio,NULL);
+	if(RATIO_greater_than_zero(toratio)){
 		ListAddElement3_a(&block->temponodes,&block->lasttemponode->l);
 	}
 	LegalizeTempoNodes(block);
 }
 
-static void InsertPlace_tempos(
+static void InsertRatio_tempos(
 	struct Blocks *block,
-	float place,
-	float toplace
+	Ratio ratio,
+	Ratio toratio
 ){
-	List_InsertPlaceLen3(block,&block->tempos,(struct ListHeader3*)block->tempos,place,toplace,NULL);
+	List_InsertRatioLen3(block,&block->tempos,(struct ListHeader3*)block->tempos,ratio,toratio,NULL);
 }
 
-static void InsertPlace_lpbs(
+static void InsertRatio_lpbs(
 	struct Blocks *block,
-	float place,
-	float toplace
+	Ratio ratio,
+	Ratio toratio
 ){
-	List_InsertPlaceLen3(block,&block->lpbs,(struct ListHeader3*)block->lpbs,place,toplace,NULL);
+	List_InsertRatioLen3(block,&block->lpbs,(struct ListHeader3*)block->lpbs,ratio,toratio,NULL);
 }
 
-static void InsertPlace_swings(
+static void InsertRatio_swings(
 	struct Blocks *block,
-	float place,
-	float toplace
+	Ratio ratio,
+	Ratio toratio
 ){
-	List_InsertPlaceLen3(block,&block->swings,(struct ListHeader3*)block->swings,place,toplace,NULL);
+	List_InsertRatioLen3(block,&block->swings,(struct ListHeader3*)block->swings,ratio,toratio,NULL);
 }
 
-static void InsertPlace_signatures(
+static void InsertRatio_signatures(
 	struct Blocks *block,
-	float place,
-	float toplace
+	Ratio ratio,
+	Ratio toratio
 ){
-  List_InsertPlaceLen3(block,&block->signatures,(struct ListHeader3*)block->signatures,place,toplace,NULL);
+  List_InsertRatioLen3(block,&block->signatures,(struct ListHeader3*)block->signatures,ratio,toratio,NULL);
 }
 
-static void InsertPlace_stops(
+static void InsertRatio_stops(
 	struct Blocks *block,
 	struct Tracks *track,
-	float place,
-	float toplace
+	Ratio ratio,
+	Ratio toratio
 ){
-	List_InsertPlaceLen3(block,&track->stops,(struct ListHeader3*)track->stops,place,toplace,NULL);
+	List_InsertRatioLen3(block,&track->stops,(struct ListHeader3*)track->stops,ratio,toratio,NULL);
 }
 
 
@@ -162,8 +164,6 @@ void InsertRealLines_CurrPos(
 	struct Tracker_Windows *window,
 	int num_reallines
 ){
-	float place;
-	float toplace;
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
 	const struct LocalZooms **reallines=wblock->reallines;
@@ -172,19 +172,20 @@ void InsertRealLines_CurrPos(
 
 	if(num_reallines==0) return;
 
-	place=GetfloatFromPlace(&realline->l.p);
+        Ratio ratio = make_ratio_from_place(realline->l.p);
 
+	Ratio toratio;
 	if(curr_realline==wblock->num_reallines-1){
-		toplace=floor(place+1.0f);
+          toratio = RATIO_floor(ratio + make_ratio(1,1)); // floor(ratio+1.0f);
 	}else{
-		toplace=GetfloatFromPlace(&reallines[curr_realline+1]->l.p);
+          toratio = make_ratio_from_place(reallines[curr_realline+1]->l.p); // GetfloatFromPlace(&reallines[curr_realline+1]->l.p);
 	}
 
-	toplace-=place;
+	toratio -= ratio;
 
-	toplace*=num_reallines;
+	toratio *= num_reallines;
 
-	if(equal_floats(toplace, 0.0f)) return;	//extra check.
+	if(RATIO_is_zero(toratio)) return;	//extra check.
 
 
         PC_Pause();
@@ -192,17 +193,17 @@ void InsertRealLines_CurrPos(
 	switch(window->curr_track){
 		case SWINGTRACK:
                   ADD_UNDO(Swings_CurrPos(window));
-			InsertPlace_swings(block,place,toplace);
+			InsertRatio_swings(block,ratio,toratio);
                         TIME_block_swings_have_changed(block);
 			break;
 		case SIGNATURETRACK:
                   ADD_UNDO(Signatures_CurrPos(window));
-			InsertPlace_signatures(block,place,toplace);
+			InsertRatio_signatures(block,ratio,toratio);
                         TIME_block_signatures_have_changed(block);
 			break;
 		case LPBTRACK:
                   ADD_UNDO(LPBs_CurrPos(window));
-			InsertPlace_lpbs(block,place,toplace);
+			InsertRatio_lpbs(block,ratio,toratio);
 			//UpdateWLPBs(window,wblock);
 #if !USE_OPENGL
 			DrawUpLPBs(window,wblock);
@@ -211,7 +212,7 @@ void InsertRealLines_CurrPos(
 			break;
 		case TEMPOTRACK:
                   ADD_UNDO(Tempos_CurrPos(window));
-			InsertPlace_tempos(block,place,toplace);
+			InsertRatio_tempos(block,ratio,toratio);
 			//UpdateWTempos(window,wblock);
 #if !USE_OPENGL
 			DrawUpTempos(window,wblock);
@@ -220,7 +221,7 @@ void InsertRealLines_CurrPos(
 			break;
 		case TEMPONODETRACK:
                   ADD_UNDO(TempoNodes_CurrPos(window));
-			InsertPlace_temponodes(block,place,toplace);
+			InsertRatio_temponodes(block,ratio,toratio);
 #if !USE_OPENGL
 			UpdateWTempoNodes(window,wblock);
 			DrawUpWTempoNodes(window,wblock);
@@ -230,22 +231,24 @@ void InsertRealLines_CurrPos(
 		default:
 			if(window->curr_track_sub>=0){
                           ADD_UNDO(NotesAndFXs_CurrPos(window));
-                          InsertPlace_fxs(block,wblock->wtrack->track,place,toplace);
+                          InsertRatio_fxs(block,wblock->wtrack->track,ratio,toratio);
 #if !USE_OPENGL
                           UpdateFXNodeLines(window,wblock,wblock->wtrack);
 #endif
 			}else{
                           ADD_UNDO(Notes_CurrPos(window));
 			}
-			InsertPlace_notes(block,wblock->wtrack->track,place,toplace);
-			InsertPlace_stops(block,wblock->wtrack->track,place,toplace);
+			InsertRatio_notes(block,wblock->wtrack->track,ratio,toratio);
+			InsertRatio_stops(block,wblock->wtrack->track,ratio,toratio);
 #if !USE_OPENGL
 			ClearTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
 			UpdateWTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
 #endif
 			break;
 	}
-        
+
+        window->must_redraw_editor = true;
+
         PC_StopPause(window);	
 
 }

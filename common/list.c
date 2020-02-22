@@ -1033,7 +1033,6 @@ void List_InsertLines3(
 
 }
 
-
 void List_InsertRatio3(
 	void *to,
 	struct ListHeader3 *l,
@@ -1102,6 +1101,41 @@ void List_InsertPlaceLen3(
 				if( ! PlaceLegal(block,&l->p)){
 					ListRemoveElement3(to,l);
 				}
+			}
+		}
+                
+		l = next;
+	}
+
+}
+
+
+void List_InsertRatioLen3(
+	struct Blocks *block,
+	void *to,
+	struct ListHeader3 *l,
+	Ratio ratio,
+	Ratio toratio,
+	void (*Insert_RatioLen_extra)(struct Blocks *block,void *to,struct ListHeader3 *l,Ratio ratio,Ratio toratio)
+){
+
+	while(l!=NULL){
+                struct ListHeader3 *next = l->next;
+
+		if(Insert_RatioLen_extra!=NULL){
+			(*Insert_RatioLen_extra)(block,to,l,ratio,toratio);
+		}
+                Ratio place = make_ratio_from_place(l->p);
+		if(RATIO_greater_or_equal_than(place, ratio)){
+                        if(RATIO_less_than(place, RATIO_sub(ratio, toratio))){
+				ListRemoveElement3(to,l);
+			}else{
+                                place = RATIO_add(place, toratio);
+                                Place place_place = make_place_from_ratio(place);
+				if( ! PlaceLegal(block,&place_place)){
+                                  ListRemoveElement3(to,l);
+                                }else
+                                  l->p = place_place;
 			}
 		}
                 

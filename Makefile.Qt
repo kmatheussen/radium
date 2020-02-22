@@ -1188,8 +1188,8 @@ $(T)temponodes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes_legalize.c
 $(T)fxlines_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines_legalize.c
 	$(CC2) $(CD)fxlines_legalize.c $(OPT)
 
-$(T)reallines_insert.o:  $(BUILD_DEPENDENCIES) $(CD)reallines_insert.c
-	$(CC2) $(CD)reallines_insert.c $(OPT)
+$(T)reallines_insert.o:  $(BUILD_DEPENDENCIES) $(CD)reallines_insert.cpp
+	$(CCC2) $(CD)reallines_insert.cpp $(CPPOPT)
 
 $(T)block_properties.o:  $(BUILD_DEPENDENCIES) $(CD)block_properties.cpp
 	$(CCC2) $(CD)block_properties.cpp $(CPPOPT)
