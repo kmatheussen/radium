@@ -270,7 +270,7 @@ static inline bool RATIO_greater_or_equal_than(const Ratio r1, const Ratio r2){
 }
 
 static inline bool RATIO_less_or_equal_than(const Ratio r1, const Ratio r2){
-  return !RATIO_greater_than(r2, r1);
+  return RATIO_equal(r1, r2) || RATIO_less_than(r1, r2);
 }
 
 static inline bool RATIO_is_zero(const Ratio r){
