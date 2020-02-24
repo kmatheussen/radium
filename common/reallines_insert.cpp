@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_legalize_proc.h"
 #include "temponodes_proc.h"
 #include "swing_proc.h"
+#include "swingtext_proc.h"
 #include "Signature_proc.h"
 #include "LPB_proc.h"
 #include "tempos_proc.h"
@@ -142,6 +143,16 @@ static void InsertRatio_swings(
 	List_InsertRatioLen3(block,&block->swings,(struct ListHeader3*)block->swings,ratio,toratio,NULL);
 }
 
+static void InsertRatio_track_swings(
+                                     struct Blocks *block,
+                                     struct Tracks *track,
+                                     Ratio ratio,
+                                     Ratio toratio
+                                     )
+{
+  List_InsertRatioLen3(block,&track->swings,(struct ListHeader3*)track->swings,ratio,toratio,NULL);
+}
+
 static void InsertRatio_signatures(
 	struct Blocks *block,
 	Ratio ratio,
@@ -229,22 +240,32 @@ void InsertRealLines_CurrPos(
                         TIME_block_tempos_have_changed(block);
 			break;
 		default:
-			if(window->curr_track_sub>=0){
-                          ADD_UNDO(NotesAndFXs_CurrPos(window));
-                          InsertRatio_fxs(block,wblock->wtrack->track,ratio,toratio);
+                  {
+                    struct WTracks *wtrack = wblock->wtrack;
+                    struct Tracks *track = wtrack->track;
+                    if (SWINGTEXT_subsubtrack(window, wtrack) >= 0){
+                      ADD_UNDO(Swings_CurrPos(window));
+                      InsertRatio_track_swings(block,track,ratio,toratio);
+                      TIME_block_swings_have_changed(block);
+                    } else {
+                      if(window->curr_track_sub>=0){
+                        ADD_UNDO(NotesAndFXs_CurrPos(window));
+                        InsertRatio_fxs(block,track,ratio,toratio);
 #if !USE_OPENGL
-                          UpdateFXNodeLines(window,wblock,wblock->wtrack);
+                        UpdateFXNodeLines(window,wblock,wtrack);
 #endif
-			}else{
-                          ADD_UNDO(Notes_CurrPos(window));
-			}
-			InsertRatio_notes(block,wblock->wtrack->track,ratio,toratio);
-			InsertRatio_stops(block,wblock->wtrack->track,ratio,toratio);
+                      }else{
+                        ADD_UNDO(Notes_CurrPos(window));
+                      }
+                      InsertRatio_notes(block,track,ratio,toratio);
+                      InsertRatio_stops(block,track,ratio,toratio);
+                    }
 #if !USE_OPENGL
-			ClearTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
-			UpdateWTrack(window,wblock,wblock->wtrack,wblock->top_realline,wblock->bot_realline);
+                    ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
+                    UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
 #endif
-			break;
+                  }
+                  break;
 	}
 
         window->must_redraw_editor = true;
