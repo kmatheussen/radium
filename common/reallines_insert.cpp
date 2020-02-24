@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_proc.h"
 #include "swing_proc.h"
 #include "swingtext_proc.h"
+#include "fxtext_proc.h"
 #include "Signature_proc.h"
 #include "LPB_proc.h"
 #include "tempos_proc.h"
@@ -41,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_signatures_proc.h"
 #include "undo_notes_proc.h"
 #include "undo_notesandfxs_proc.h"
+#include "undo_fxs_proc.h"
 #include "player_proc.h"
 #include "player_pause_proc.h"
 #include "Beats_proc.h"
@@ -105,6 +107,30 @@ static bool InsertRatio_notes(
 }
 
 static bool InsertRatio_fxs(
+                            struct Blocks *block,
+                            struct Tracks *track,
+                            struct FXs *fxs,
+                            Ratio ratio,
+                            Ratio toratio
+                            )
+{
+
+  bool ret = List_InsertRatioLen3(
+                                  block,
+                                  &fxs->fxnodelines,
+                                  (struct ListHeader3*)fxs->fxnodelines,
+                                  ratio,
+                                  toratio,
+                                  NULL
+                                  );
+  
+  if (ret)
+    LegalizeFXlines(block,track);
+
+  return ret;
+}
+
+static bool InsertRatio_all_fxs(
 	struct Blocks *block,
 	struct Tracks *track,
 	Ratio ratio,
@@ -267,27 +293,42 @@ void InsertRealLines_CurrPos(
                   {
                     struct WTracks *wtrack = wblock->wtrack;
                     struct Tracks *track = wtrack->track;
+                    struct FXs *fxs;
+
                     if (SWINGTEXT_subsubtrack(window, wtrack) >= 0){
+                      
                       ADD_UNDO(Swings_CurrPos(window, track));
                       if (InsertRatio_track_swings(block,track,ratio,toratio))
                         TIME_block_swings_have_changed(block);
                       else
                         UNDO_CANCEL_LAST_UNDO();
+                      
+                    } else if (FXTEXT_subsubtrack(window, wtrack, &fxs) >= 0){
+
+                      ADD_UNDO(FXs_CurrPos(window));
+                      if (!InsertRatio_fxs(block,track,fxs,ratio,toratio))
+                        UNDO_CANCEL_LAST_UNDO();
+                      
                     } else {
+                      
                       bool ret = false;
+                      
                       if(window->curr_track_sub>=0){
                         ADD_UNDO(NotesAndFXs_CurrPos(window));
-                        if (InsertRatio_fxs(block,track,ratio,toratio))
+                        if (InsertRatio_all_fxs(block,track,ratio,toratio))
                           ret = true;
                       }else{
                         ADD_UNDO(Notes_CurrPos(window));
                       }
+                      
                       if (InsertRatio_notes(block,track,ratio,toratio))
                         ret = true;
                       if (InsertRatio_stops(block,track,ratio,toratio))
                         ret = true;
+                      
                       if (!ret)
                         UNDO_CANCEL_LAST_UNDO();
+                      
                     }
                   }
                   break;
