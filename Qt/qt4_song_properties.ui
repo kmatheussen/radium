@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>795</width>
+    <width>882</width>
     <height>436</height>
    </rect>
   </property>
@@ -76,7 +76,7 @@
       <item row="0" column="0">
        <widget class="QCheckBox" name="send_swing_to_plugins">
         <property name="text">
-         <string>Send global swing tempo to plugins, modulators, and jack transport</string>
+         <string>Send global swing tempo to plugins, modulators, metronomes, and jack transport</string>
         </property>
        </widget>
       </item>
