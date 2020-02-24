@@ -303,6 +303,14 @@ static inline Ratio RATIO_floor(const Ratio r){
     return make_ratio(r.num / r.den, 1);
 }
 
+static inline Ratio RATIO_ceil(const Ratio r){
+  R_ASSERT_NON_RELEASE(r.den > 0);
+  if (r.den==1)
+    return r;
+  else
+    return make_ratio(1 + (r.num / r.den), 1);
+}
+
 
 #ifdef __cplusplus                
 static inline Ratio operator+(const Ratio &r1, const Ratio &r2){
@@ -386,12 +394,14 @@ static inline Ratio& operator/=(Ratio& r1, int i2){
 
 #endif
 
+#ifndef TEST_MAIN
 static inline char *ratio_to_string(const Ratio ratio){
   if(ratio.den==1)
     return talloc_format("%" PRId64 "", ratio.num);
   else
     return talloc_format("%" PRId64 "/%" PRId64 "", ratio.num, ratio.den);
 }
+#endif
 
 #endif
 
@@ -441,10 +451,90 @@ int main(){
 
   Ratio r3 = make_ratio(2,3);
   Ratio r4 = make_ratio(4,5);
-  r3 += r4;
-  if (r3 != make_ratio(2,3) + r4)
-    abort();
-         
+  Ratio r5 = r3;
+
+  // test +=
+  {
+    r5 += r4;
+    if (r5 != make_ratio(2,3) + r4)
+      abort();
+  }
+
+  // test >, >=, ==, !=, <, and <= when r3.den != r4.den
+  {
+    if (r3 > r4)
+      abort();
+    if (r3 >= r4)
+      abort();
+    if (r3 == r4)
+      abort();
+    if (! (r3 != r4))
+      abort();
+    if (r4 < r3)
+      abort();
+    if (r4 <= r3)
+      abort();
+  }
+
+  r3 = make_ratio(3,5);
+  r4 = make_ratio(4,5);
+  
+  // test >, >=, ==, !=, <, and <= when r3.den == r4.den
+  {
+    if (r3 > r4)
+      abort();
+    if (r3 >= r4)
+      abort();
+    if (r3 == r4)
+      abort();
+    if (! (r3 != r4))
+      abort();
+    if (r4 < r3)
+      abort();
+    if (r4 <= r3)
+      abort();
+  }
+
+  r3 = make_ratio(3,7);
+  r4 = make_ratio(3,5);
+  
+  // test >, >=, ==, !=, <, and <= when r3.num == r4.num
+  {
+    if (r3 > r4)
+      abort();
+    if (r3 >= r4)
+      abort();
+    if (r3 == r4)
+      abort();
+    if (! (r3 != r4))
+      abort();
+    if (r4 < r3)
+      abort();
+    if (r4 <= r3)
+      abort();
+  }
+
+  r3 = make_ratio(3,7);
+  r4 = make_ratio(3,7);
+  
+  // test >, >=, ==, !=, <, and <= when r3.num == r4.num and r3.den == r3.den
+  {
+    if (r3 > r4)
+      abort();
+    if (! (r3 >= r4))
+      abort();
+    if (! (r3 == r4))
+      abort();
+    if (r3 != r4)
+      abort();
+    if (r4 < r3)
+      abort();
+    if (! (r4 <= r3))
+      abort();
+  }
+
+  printf("Success\n");
+  
   return 0;
 }
 
