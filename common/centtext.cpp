@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "centtext_proc.h"
 
-int CENTTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack){
+int CENTTEXT_subsubtrack(const struct Tracker_Windows *window, const struct WTracks *wtrack){
   int curr_track_sub = window->curr_track_sub;
   if (wtrack->centtext_on == false)
     return -1;

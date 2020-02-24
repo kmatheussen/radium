@@ -14,5 +14,5 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-extern LANGSPEC int CENTTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack);
+extern LANGSPEC int CENTTEXT_subsubtrack(const struct Tracker_Windows *window, const struct WTracks *wtrack);
 extern LANGSPEC bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, const Place *place, int key);
