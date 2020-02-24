@@ -86,7 +86,7 @@ bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, 
     if (dat.is_valid==false)
       return false;
 
-    ADD_UNDO(Swings_CurrPos(window));
+    ADD_UNDO(Swings_CurrPos(window, track));
     AddSwing(block, track, *place, dat.value, dat.logtype);
 
   } else {
@@ -97,7 +97,7 @@ bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, 
   
     if (key == EVENT_DEL) {
 
-      ADD_UNDO(Swings_CurrPos(window));  
+      ADD_UNDO(Swings_CurrPos(window, track));  
       RemoveSwing(block, track, swing);
  
     } else {
@@ -110,7 +110,7 @@ bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, 
       if (dat.value==swing->weight && dat.logtype==swing->logtype)
         return true; // I.e. although the user didn't change anything, the key was valid so we still eat it (by returning true instead of false).
           
-      ADD_UNDO(Swings_CurrPos(window));  
+      ADD_UNDO(Swings_CurrPos(window, track));
 
       AddSwing(block, track, swing->l.p, dat.value, dat.logtype);
     }

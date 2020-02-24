@@ -309,7 +309,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 	switch(window->curr_track){
 		case SWINGTRACK:
                   if(cb_swing==NULL) goto exit;
-			ADD_UNDO(Swings_CurrPos(window));
+                        ADD_UNDO(Swings_CurrPos(window, NULL));
 			block->swings=CB_CopySwings(cb_swing, &lastplace);
                         TIME_block_swings_have_changed(block);
 			break;

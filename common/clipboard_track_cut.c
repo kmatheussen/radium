@@ -144,7 +144,7 @@ static void CB_ClearOrCutTrack_CurrPos(
           
 	switch(window->curr_track){
 		case SWINGTRACK:
-                  ADD_UNDO(Swings_CurrPos(window));
+                  ADD_UNDO(Swings_CurrPos(window, NULL));
                         if (do_cut) cb_swing=CB_CopySwings(block->swings, NULL);
 			block->swings=NULL;
                         TIME_block_swings_have_changed(block);
