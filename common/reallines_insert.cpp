@@ -203,7 +203,7 @@ void InsertRealLines_CurrPos(
           
 	switch(window->curr_track){
 		case SWINGTRACK:
-                  ADD_UNDO(Swings_CurrPos(window));
+                  ADD_UNDO(Swings_CurrPos(window, NULL));
 			InsertRatio_swings(block,ratio,toratio);
                         TIME_block_swings_have_changed(block);
 			break;
@@ -244,7 +244,7 @@ void InsertRealLines_CurrPos(
                     struct WTracks *wtrack = wblock->wtrack;
                     struct Tracks *track = wtrack->track;
                     if (SWINGTEXT_subsubtrack(window, wtrack) >= 0){
-                      ADD_UNDO(Swings_CurrPos(window));
+                      ADD_UNDO(Swings_CurrPos(window, track));
                       InsertRatio_track_swings(block,track,ratio,toratio);
                       TIME_block_swings_have_changed(block);
                     } else {

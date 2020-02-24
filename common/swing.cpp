@@ -150,7 +150,7 @@ void RemoveSwingCurrPos(struct Tracker_Windows *window){
 
 	Place p1,p2;
 
-	ADD_UNDO(Swings_CurrPos(window));
+	ADD_UNDO(Swings_CurrPos(window, NULL));
 
 	PlaceSetReallinePlace(wblock,curr_realline,&p1);
 	PlaceSetReallinePlace(wblock,curr_realline+1,&p2);

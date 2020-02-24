@@ -28,7 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "undo_swings_proc.h"
 
-
+struct SwingUndo{
+  struct Swing *swing;
+  int tracknum;
+};
 
 static void *Undo_Do_Swings(
 	struct Tracker_Windows *window,
@@ -40,30 +43,43 @@ static void *Undo_Do_Swings(
 
 
 static void ADD_UNDO_FUNC(Swings(
-	struct Tracker_Windows *window,
-	struct Blocks *block,
-	NInt tracknum,
-	int realline
+                                 struct Tracker_Windows *window,
+                                 struct Blocks *block,
+                                 struct Tracks *track,
+                                 NInt tracknum,
+                                 int realline
+                                 )
                           )
-                   )
 {
-	Undo_Add(
-                 window->l.num,
-                 block->l.num,
-                 tracknum,
-                 realline,
-                 CB_CopySwings(block->swings, NULL),
-                 Undo_Do_Swings,
-                 "Block BPMs"
-	);
+  struct SwingUndo *su = talloc(sizeof(struct SwingUndo));
+  su->swing = CB_CopySwings(track==NULL ? block->swings : track->swings, NULL);
+  su->tracknum = track==NULL ? -1 : track->l.num;
+  
+  Undo_Add(
+           window->l.num,
+           block->l.num,
+           tracknum,
+           realline,
+           su,
+           Undo_Do_Swings,
+           track==NULL ? "Track Swings" : "Block Swings"
+           );
 }
 
 void ADD_UNDO_FUNC(Swings_CurrPos(
-                                  struct Tracker_Windows *window
+                                  struct Tracker_Windows *window,
+                                  struct Tracks *track
                                   )
                    )
 {
-  CALL_ADD_UNDO_FUNC(Swings(window,window->wblock->block,window->curr_track,window->wblock->curr_realline));
+  struct WBlocks *wblock = window->wblock;
+  CALL_ADD_UNDO_FUNC(Swings(window,
+                            wblock->block,
+                            track,
+                            window->curr_track,
+                            wblock->curr_realline
+                            )
+                     );
 }
 
 static void *Undo_Do_Swings(
@@ -73,14 +89,25 @@ static void *Undo_Do_Swings(
 	int realline,
 	void *pointer
 ){
-	struct Swing *undo_swings=(struct Swing*)pointer;
-	struct Swing *temp=wblock->block->swings;
+  struct SwingUndo *su = (struct SwingUndo*)pointer;
+  struct Swing *undo_swings = su->swing;
 
-	wblock->block->swings=undo_swings;
+  struct Blocks *block = wblock->block;
+  
+  struct Tracks *track = su->tracknum < 0 ? NULL : ListFindElement1(&block->tracks->l,  su->tracknum);
+  
+  struct Swing *temp = track==NULL ? block->swings : track->swings;
 
-        TIME_block_swings_have_changed(wblock->block);
+  if (track==NULL)
+    block->swings = undo_swings;
+  else
+    track->swings = undo_swings;
+  
+  TIME_block_swings_have_changed(wblock->block);
 
-	return temp;
+  su->swing = temp;
+  
+  return su;
 }
 
 
