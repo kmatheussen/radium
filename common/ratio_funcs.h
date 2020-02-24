@@ -233,6 +233,13 @@ static inline bool RATIO_greater_than(const Ratio r1, const Ratio r2){
   if (r1.den == r2.den)
     return r1.num > r2.num;
 
+  if (r1.num >= r2.num &&
+      r1.den < r2.den)
+    return true;
+  
+  if (r2.num >= r1.num &&
+      r2.den < r1.den)
+    return false;
   
   int64_t a,b;
   

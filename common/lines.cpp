@@ -460,16 +460,25 @@ void InsertLines_CurrPos(
           //Ratio num_lines_ratio = make_ratio(wblock->block->num_lines, 1) * lz_ratio;
           //int num_lines = ceil((double)num_lines_ratio.num / (double)num_lines_ratio.den);
 
-          int min_val = -10000; //(num_lines-curr_line);
-          
-	  int num_lines_toinsert = GFX_GetInteger(window,NULL,"Number of lines to insert\n(number can be negative): ",min_val,10000,true);
+	  const char *s = GFX_GetString(window,NULL,"Number of lines to insert\n(number can be negative): ",true);
 
-          printf("num_lines_toinsert: %d. minval: %d\n", num_lines_toinsert, min_val);
+          if(s==NULL || !strcmp(s,""))
+            return;
 
-          if(num_lines_toinsert<=min_val-1)
+          StaticRatio static_ratio = STATIC_RATIO_from_string(STRING_create(s));
+          printf("Static: %d / %d\n", static_ratio.numerator, static_ratio.denominator);
+
+          if(static_ratio.numerator==0 || static_ratio.denominator==0)
             return;
           
-          toinsert = make_ratio(num_lines_toinsert,1) / lz_ratio;
+          Ratio ratio = make_ratio_from_static_ratio(static_ratio);
+          
+          printf("num_lines_toinsert: %s.\n", ratio_to_string(ratio));
+
+          //toinsert = make_ratio(num_lines_toinsert,1) / lz_ratio;
+          toinsert = ratio / lz_ratio;
+
+          printf("toinsert: %s.\n", ratio_to_string(toinsert));
         }
         
         UNDO_OPEN();

@@ -706,8 +706,10 @@ void insertLines(int toinsert,int windownum){
     
     if (lz.type==INT_TYPE)
       lz_ratio = make_ratio(lz.int_number, 1);
+    
     else if (lz.type==RATIO_TYPE)
       lz_ratio = *lz.ratio;
+    
     else {
       R_ASSERT(false);
       return;
