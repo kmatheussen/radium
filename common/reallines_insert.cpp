@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "swing_proc.h"
 #include "swingtext_proc.h"
 #include "fxtext_proc.h"
+#include "chancetext_proc.h"
+#include "centtext_proc.h"
 #include "Signature_proc.h"
 #include "LPB_proc.h"
 #include "tempos_proc.h"
@@ -312,17 +314,25 @@ void InsertRealLines_CurrPos(
                     } else {
                       
                       bool ret = false;
-                      
-                      if(window->curr_track_sub>=0){
+
+                      bool on_chancetext = CHANCETEXT_subsubtrack(window, wtrack) >= 0;
+                      bool on_centtext = CENTTEXT_subsubtrack(window, wtrack) >= 0;
+
+                      if(window->curr_track_sub>=0 && !on_chancetext && !on_centtext){
+                        
                         ADD_UNDO(NotesAndFXs_CurrPos(window));
                         if (InsertRatio_all_fxs(block,track,ratio,toratio))
                           ret = true;
+                        
                       }else{
+                        
                         ADD_UNDO(Notes_CurrPos(window));
+                        
                       }
                       
                       if (InsertRatio_notes(block,track,ratio,toratio))
                         ret = true;
+                      
                       if (InsertRatio_stops(block,track,ratio,toratio))
                         ret = true;
                       
