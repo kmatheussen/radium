@@ -758,11 +758,11 @@ currently_undoing = true;
          ATOMIC_WRITE(window->curr_track, undo->curr_track);
          window->curr_track_sub = undo->curr_track_sub;
          window->curr_othertrack_sub = undo->curr_othertrack_sub;
-         
+
          SelectWBlock(
                       window,
                       wblock,
-                      true
+                      false // Set to false to prevent curr track / sub track to be overridden, for instance if current track is a timing track. Don't know why it was set to true originally.
                       );
 
          if(current_patch!=NULL){
