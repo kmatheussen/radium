@@ -84,7 +84,7 @@ static void write_container_descriptions_to_cache_on_disk(juce::String container
   juce::XmlElement xml_descriptions("plugin_descriptions");
   
   for (auto description : descriptions){
-    juce::XmlElement *xml = description->createXml();
+    juce::XmlElement *xml = new juce::XmlElement(*description->createXml().get()); // This can probably be done in a simpler way.
     xml_descriptions.addChildElement(xml);
   }
 

@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 namespace{
 struct MyMidiPortOs{
-  juce::MidiOutput *midiout;
+  std::unique_ptr<juce::MidiOutput> midiout;
 };
 }
 
@@ -57,12 +57,11 @@ int MIDI_msg_len(uint32_t msg){
 
 namespace{
   struct MyMidiInputCallback : juce::MidiInputCallback{
-    juce::MidiInput *midi_input;
+    std::unique_ptr<juce::MidiInput> midi_input;
     const symbol_t *port_name;
 
     MyMidiInputCallback()
-      : midi_input(NULL)
-      , port_name(NULL)
+      : port_name(NULL)
     {}
 
     /*
@@ -144,7 +143,7 @@ void OS_PutMidi(MidiPortOs port,
            );
 #endif
 
-  juce::MidiOutput *output = myport->midiout;
+  juce::MidiOutput *output = myport->midiout.get();
 
   if (output==NULL) // I.e. the "dummy" driver. (necessary on windows)
     return;
@@ -226,13 +225,14 @@ const char *MIDI_getDefaultOutputPort(void){
 
 void MIDI_closeMidiPortOs(MidiPortOs port){
   MyMidiPortOs *myport = static_cast<MyMidiPortOs*>(port);
-  delete myport->midiout;
-  V_free(myport);
+  delete myport;
+  //delete myport->midiout;
+  //V_free(myport);
 }
 
 MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,const char *name_c){
 
-  MyMidiPortOs *ret = (MyMidiPortOs*)V_calloc(1, sizeof(MyMidiPortOs));
+  MyMidiPortOs *ret = new MyMidiPortOs; //(MyMidiPortOs*)V_calloc(1, sizeof(MyMidiPortOs));
   
   juce::String name(name_c);
 
@@ -264,6 +264,7 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,co
 #else
 
     ret->midiout = juce::MidiOutput::createNewDevice(name);
+    
 #endif
 
   } else {
@@ -330,30 +331,27 @@ static void add_input_port(juce::String name, bool do_update_settings, bool shou
   
   auto *midi_input_callback = new MyMidiInputCallback();
 
-  juce::MidiInput *midi_input = NULL;
-
   if (device_id>=0)
-    midi_input = juce::MidiInput::openDevice(device_id, midi_input_callback);
+    midi_input_callback->midi_input = juce::MidiInput::openDevice(device_id, midi_input_callback);
 #if !JUCE_WINDOWS
   else
-    midi_input = juce::MidiInput::createNewDevice(name, midi_input_callback);
+    midi_input_callback->midi_input = juce::MidiInput::createNewDevice(name, midi_input_callback);
 #endif
   
-  if (midi_input==NULL){
+  if (midi_input_callback->midi_input.get()==NULL){
     GFX_Message(NULL, "Error. Unable to open MIDI input device %s.\n", (const char*)name.toUTF8());
     delete midi_input_callback;
     return;
   }
 
-  midi_input_callback->midi_input = midi_input;
-  midi_input_callback->port_name = get_symbol(midi_input->getName().toUTF8());
+  midi_input_callback->port_name = get_symbol(midi_input_callback->midi_input->getName().toUTF8());
   
   g_inports.push_back(midi_input_callback);
   
   if (do_update_settings)
     update_settings();
   
-  midi_input->start();
+  midi_input_callback->midi_input->start();
 }
 
 void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *name_c){
@@ -375,7 +373,6 @@ static void remove_input_port(juce::String name, bool do_update_settings){
       if (do_update_settings)
         update_settings();
       
-      delete port->midi_input;
       delete port;
       
       return;      
