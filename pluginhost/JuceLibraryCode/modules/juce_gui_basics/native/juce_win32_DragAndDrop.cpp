@@ -125,8 +125,8 @@ namespace DragAndDropHelpers
     class JuceDataObject  : public ComBaseClassHelper <IDataObject>
     {
     public:
-        JuceDataObject (JuceDropSource* s, const FORMATETC* f, const STGMEDIUM* m)
-            : dropSource (s), format (f), medium (m)
+        JuceDataObject (const FORMATETC* f, const STGMEDIUM* m)
+            : format (f), medium (m)
         {
         }
 
@@ -203,7 +203,6 @@ namespace DragAndDropHelpers
         JUCE_COMRESULT EnumDAdvise (IEnumSTATDATA**)                         { return OLE_E_ADVISENOTSUPPORTED; }
 
     private:
-        JuceDropSource* const dropSource;
         const FORMATETC* const format;
         const STGMEDIUM* const medium;
 
@@ -243,10 +242,10 @@ namespace DragAndDropHelpers
 
     struct DragAndDropJob   : public ThreadPoolJob
     {
-        DragAndDropJob (FORMATETC f, STGMEDIUM m, DWORD d, std::function<void()> cb)
+        DragAndDropJob (FORMATETC f, STGMEDIUM m, DWORD d, std::function<void()>&& cb)
             : ThreadPoolJob ("DragAndDrop"),
               format (f), medium (m), whatToDo (d),
-              completionCallback (cb)
+              completionCallback (std::move (cb))
         {
         }
 
@@ -255,7 +254,7 @@ namespace DragAndDropHelpers
             OleInitialize (0);
 
             auto source = new JuceDropSource();
-            auto data = new JuceDataObject (source, &format, &medium);
+            auto data = new JuceDataObject (&format, &medium);
 
             DWORD effect;
             DoDragDrop (data, source, whatToDo, &effect);
@@ -266,7 +265,7 @@ namespace DragAndDropHelpers
             OleUninitialize();
 
             if (completionCallback != nullptr)
-                MessageManager::callAsync (completionCallback);
+                MessageManager::callAsync (std::move (completionCallback));
 
             return jobHasFinished;
         }
@@ -317,7 +316,7 @@ bool DragAndDropContainer::performExternalDragDropOfFiles (const StringArray& fi
     auto& pool = DragAndDropHelpers::ThreadPoolHolder::getInstance()->pool;
     pool.addJob (new DragAndDropHelpers::DragAndDropJob (format, medium,
                                                          canMove ? (DROPEFFECT_COPY | DROPEFFECT_MOVE) : DROPEFFECT_COPY,
-                                                         callback),
+                                                         std::move (callback)),
                 true);
 
     return true;
@@ -345,7 +344,7 @@ bool DragAndDropContainer::performExternalDragDropOfText (const String& text, Co
     pool.addJob (new DragAndDropHelpers::DragAndDropJob (format,
                                                         medium,
                                                         DROPEFFECT_COPY | DROPEFFECT_MOVE,
-                                                        callback),
+                                                        std::move (callback)),
                  true);
 
     return true;

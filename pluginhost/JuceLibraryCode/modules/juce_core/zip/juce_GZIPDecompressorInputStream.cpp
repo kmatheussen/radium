@@ -44,6 +44,14 @@ namespace zlibNamespace
    #endif
   #endif
 
+  #if JUCE_GCC
+   #pragma GCC diagnostic push
+   #pragma GCC diagnostic ignored "-Wconversion"
+   #pragma GCC diagnostic ignored "-Wsign-conversion"
+   #pragma GCC diagnostic ignored "-Wshadow"
+   #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+  #endif
+
   #undef OS_CODE
   #undef fdopen
   #define ZLIB_INTERNAL
@@ -77,6 +85,10 @@ namespace zlibNamespace
 
   #if JUCE_CLANG
    #pragma clang diagnostic pop
+  #endif
+
+  #if JUCE_GCC
+   #pragma GCC diagnostic pop
   #endif
  #else
   #include JUCE_ZLIB_INCLUDE_PATH
@@ -298,13 +310,15 @@ bool GZIPDecompressorInputStream::setPosition (int64 newPos)
     return true;
 }
 
+
+//==============================================================================
 //==============================================================================
 #if JUCE_UNIT_TESTS
 
 struct GZIPDecompressorInputStreamTests   : public UnitTest
 {
     GZIPDecompressorInputStreamTests()
-        : UnitTest ("GZIPDecompressorInputStreamTests", "Streams")
+        : UnitTest ("GZIPDecompressorInputStreamTests", UnitTestCategories::streams)
     {}
 
     void runTest() override

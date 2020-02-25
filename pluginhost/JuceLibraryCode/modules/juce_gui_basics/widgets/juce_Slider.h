@@ -107,7 +107,7 @@ public:
     {
         notDragging,            /**< Dragging is not active.  */
         absoluteDrag,           /**< The dragging corresponds directly to the value that is displayed.  */
-        velocityDrag            /**< The dragging value change is relative to the velocity of the mouse mouvement.  */
+        velocityDrag            /**< The dragging value change is relative to the velocity of the mouse movement.  */
     };
 
     //==============================================================================
@@ -606,10 +606,10 @@ public:
     std::function<void()> onDragEnd;
 
     /** You can assign a lambda that will be used to convert textual values to the slider's normalised position. */
-    std::function<double (const String&)> valueFromTextFunction;
+    std::function<double(const String&)> valueFromTextFunction;
 
     /** You can assign a lambda that will be used to convert the slider's normalised position to a textual value. */
-    std::function<String (double)> textFromValueFunction;
+    std::function<String(double)> textFromValueFunction;
 
     //==============================================================================
     /** This lets you choose whether double-clicking or single-clicking with a specified
@@ -935,14 +935,6 @@ public:
         virtual int getSliderPopupPlacement (Slider&) = 0;
 
         virtual SliderLayout getSliderLayout (Slider&) = 0;
-
-       #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
-        // These methods' parameters have changed: see the new method signatures.
-        virtual void createSliderButton (bool) {}
-        virtual void getSliderEffect() {}
-        virtual void getSliderPopupFont() {}
-        virtual void getSliderPopupPlacement() {}
-       #endif
     };
 
     //==============================================================================
@@ -996,7 +988,6 @@ private:
     JUCE_DEPRECATED (void setMaxValue (double, bool));
     JUCE_DEPRECATED (void setMinAndMaxValues (double, double, bool, bool));
     JUCE_DEPRECATED (void setMinAndMaxValues (double, double, bool));
-    virtual void snapValue (double, bool) {}
    #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slider)

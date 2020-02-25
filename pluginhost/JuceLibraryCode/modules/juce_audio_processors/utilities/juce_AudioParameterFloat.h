@@ -41,11 +41,11 @@ public:
     /** Creates a AudioParameterFloat with the specified parameters.
 
         @param parameterID         The parameter ID to use
-        @param name                The parameter name to use
+        @param parameterName       The parameter name to use
         @param normalisableRange   The NormalisableRange to use
         @param defaultValue        The non-normalised default value
-        @param label               An optional label for the parameter's value
-        @param category            An optional parameter category
+        @param parameterLabel      An optional label for the parameter's value
+        @param parameterCategory   An optional parameter category
         @param stringFromValue     An optional lambda function that converts a non-normalised
                                    value to a string with a maximum length. This may
                                    be used by hosts to display the parameter's value.
@@ -54,13 +54,13 @@ public:
                                    this to allow users to type in parameter values.
     */
     AudioParameterFloat (const String& parameterID,
-                         const String& name,
+                         const String& parameterName,
                          NormalisableRange<float> normalisableRange,
                          float defaultValue,
-                         const String& label = String(),
-                         Category category = AudioProcessorParameter::genericParameter,
-                         std::function<String (float value, int maximumStringLength)> stringFromValue = nullptr,
-                         std::function<float (const String& text)> valueFromString = nullptr);
+                         const String& parameterLabel = String(),
+                         Category parameterCategory = AudioProcessorParameter::genericParameter,
+                         std::function<String(float value, int maximumStringLength)> stringFromValue = nullptr,
+                         std::function<float(const String& text)> valueFromString = nullptr);
 
     /** Creates a AudioParameterFloat with an ID, name, and range.
         On creation, its value is set to the default value.
@@ -68,7 +68,7 @@ public:
         constructor and provide a NormalisableRange.
     */
     AudioParameterFloat (String parameterID,
-                         String name,
+                         String parameterName,
                          float minValue,
                          float maxValue,
                          float defaultValue);
@@ -106,10 +106,10 @@ private:
     String getText (float, int) const override;
     float getValueForText (const String&) const override;
 
-    float value;
+    std::atomic<float> value;
     const float defaultValue;
-    std::function<String (float, int)> stringFromValueFunction;
-    std::function<float (const String&)> valueFromStringFunction;
+    std::function<String(float, int)> stringFromValueFunction;
+    std::function<float(const String&)> valueFromStringFunction;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioParameterFloat)
 };

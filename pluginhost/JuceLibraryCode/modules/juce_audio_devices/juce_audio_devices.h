@@ -20,6 +20,7 @@
   ==============================================================================
 */
 
+
 /*******************************************************************************
  The block below describes the properties of this module, and is read by
  the Projucer to automatically generate project code that uses it.
@@ -29,19 +30,19 @@
 
  BEGIN_JUCE_MODULE_DECLARATION
 
-  ID:               juce_audio_devices
-  vendor:           juce
-  version:          5.4.3
-  name:             JUCE audio and MIDI I/O device classes
-  description:      Classes to play and record from audio and MIDI I/O devices
-  website:          http://www.juce.com/juce
-  license:          ISC
+  ID:                 juce_audio_devices
+  vendor:             juce
+  version:            5.4.7
+  name:               JUCE audio and MIDI I/O device classes
+  description:        Classes to play and record from audio and MIDI I/O devices
+  website:            http://www.juce.com/juce
+  license:            ISC
 
-  dependencies:     juce_audio_basics, juce_events
-  OSXFrameworks:    CoreAudio CoreMIDI AudioToolbox
-  iOSFrameworks:    CoreAudio CoreMIDI AudioToolbox AVFoundation
-  linuxPackages:    alsa
-  mingwLibs:        winmm
+  dependencies:       juce_audio_basics, juce_events
+  OSXFrameworks:      CoreAudio CoreMIDI AudioToolbox
+  iOSFrameworks:      CoreAudio CoreMIDI AudioToolbox AVFoundation
+  linuxPackages:      alsa
+  mingwLibs:          winmm
 
  END_JUCE_MODULE_DECLARATION
 
@@ -63,7 +64,7 @@
     Enables the use of the Windows Runtime API for MIDI, allowing connections
     to Bluetooth Low Energy devices on Windows 10 version 1809 (October 2018
     Update) and later. If you enable this flag then older, unsupported,
-    versions of Windows will automatically fall back to using the regualar
+    versions of Windows will automatically fall back to using the regular
     Win32 MIDI API.
 
     You will need version 10.0.14393.0 of the Windows Standalone SDK to compile
@@ -171,9 +172,8 @@
 #endif
 
 //==============================================================================
-#include "midi_io/juce_MidiInput.h"
+#include "midi_io/juce_MidiDevices.h"
 #include "midi_io/juce_MidiMessageCollector.h"
-#include "midi_io/juce_MidiOutput.h"
 #include "audio_io/juce_AudioIODevice.h"
 #include "audio_io/juce_AudioIODeviceType.h"
 #include "audio_io/juce_SystemAudioVolume.h"

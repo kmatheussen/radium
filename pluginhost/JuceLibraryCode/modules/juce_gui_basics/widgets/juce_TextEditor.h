@@ -279,6 +279,12 @@ public:
     */
     void setTextToShowWhenEmpty (const String& text, Colour colourToUse);
 
+    /** Returns the text that will be shown when the text editor is empty.
+
+        @see setTextToShowWhenEmpty
+    */
+    String getTextToShowWhenEmpty() const noexcept    { return textToShowWhenEmpty; }
+
     //==============================================================================
     /** Changes the size of the scrollbars that are used.
         Handy if you need smaller scrollbars for a small text box.
@@ -476,7 +482,7 @@ public:
     /** Changes the size of border left around the edge of the component.
         @see getBorder
     */
-    void setBorder (const BorderSize<int>& border);
+    void setBorder (BorderSize<int> border);
 
     /** Returns the size of border around the edge of the component.
         @see setBorder

@@ -774,15 +774,16 @@ void LookAndFeel_V2::drawScrollbar (Graphics& g,
     g.setGradientFill (ColourGradient (Colour (0x10000000), gx1, gy1,
                        Colours::transparentBlack, gx2, gy2, false));
 
-    g.saveState();
+    {
+        Graphics::ScopedSaveState ss (g);
 
-    if (isScrollbarVertical)
-        g.reduceClipRegion (x + width / 2, y, width, height);
-    else
-        g.reduceClipRegion (x, y + height / 2, width, height);
+        if (isScrollbarVertical)
+            g.reduceClipRegion (x + width / 2, y, width, height);
+        else
+            g.reduceClipRegion (x, y + height / 2, width, height);
 
-    g.fillPath (thumbPath);
-    g.restoreState();
+        g.fillPath (thumbPath);
+    }
 
     g.setColour (Colour (0x4c000000));
     g.strokePath (thumbPath, PathStrokeType (0.4f));
@@ -1735,7 +1736,8 @@ void LookAndFeel_V2::drawResizableFrame (Graphics& g, int w, int h, const Border
         const Rectangle<int> fullSize (0, 0, w, h);
         auto centreArea = border.subtractedFrom (fullSize);
 
-        g.saveState();
+        Graphics::ScopedSaveState ss (g);
+
         g.excludeClipRegion (centreArea);
 
         g.setColour (Colour (0x50000000));
@@ -1743,8 +1745,6 @@ void LookAndFeel_V2::drawResizableFrame (Graphics& g, int w, int h, const Border
 
         g.setColour (Colour (0x19000000));
         g.drawRect (centreArea.expanded (1, 1));
-
-        g.restoreState();
     }
 }
 
@@ -2315,14 +2315,14 @@ Button* LookAndFeel_V2::createTabBarExtrasButton()
     dp.setFill (Colour (0x59000000));
 
     DrawableComposite normalImage;
-    normalImage.addAndMakeVisible (ellipse.createCopy());
-    normalImage.addAndMakeVisible (dp.createCopy());
+    normalImage.addAndMakeVisible (ellipse.createCopy().release());
+    normalImage.addAndMakeVisible (dp.createCopy().release());
 
     dp.setFill (Colour (0xcc000000));
 
     DrawableComposite overImage;
-    overImage.addAndMakeVisible (ellipse.createCopy());
-    overImage.addAndMakeVisible (dp.createCopy());
+    overImage.addAndMakeVisible (ellipse.createCopy().release());
+    overImage.addAndMakeVisible (dp.createCopy().release());
 
     auto db = new DrawableButton ("tabs", DrawableButton::ImageFitted);
     db->setImages (&normalImage, &overImage, nullptr);
@@ -2513,6 +2513,11 @@ int LookAndFeel_V2::getCallOutBoxBorderSize (const CallOutBox&)
     return 20;
 }
 
+float LookAndFeel_V2::getCallOutBoxCornerSize (const CallOutBox&)
+{
+    return 9.0f;
+}
+
 //==============================================================================
 AttributedString LookAndFeel_V2::createFileChooserHeaderText (const String& title,
                                                            const String& instructions)
@@ -2653,7 +2658,7 @@ void LookAndFeel_V2::layoutFileBrowserComponent (FileBrowserComponent& browserCo
 }
 
 //==============================================================================
-static Drawable* createDrawableFromSVG (const char* data)
+static std::unique_ptr<Drawable> createDrawableFromSVG (const char* data)
 {
     auto xml = parseXML (data);
     jassert (xml != nullptr);
@@ -2663,7 +2668,7 @@ static Drawable* createDrawableFromSVG (const char* data)
 const Drawable* LookAndFeel_V2::getDefaultFolderImage()
 {
     if (folderImage == nullptr)
-        folderImage.reset (createDrawableFromSVG (R"svgdata(
+        folderImage = createDrawableFromSVG (R"svgdata(
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="706" height="532">
   <defs>
     <linearGradient id="a">
@@ -2678,7 +2683,7 @@ const Drawable* LookAndFeel_V2::getDefaultFolderImage()
     <path d="M608.6 136.8L235.2 208a22.7 22.7 0 0 0-16 19l-40.8 241c1.7 8.4 9.6 14.5 17.8 12.3l380-104c8-2.2 10.7-10.2 12.3-18.4l38-210.1c.4-15.4-10.4-11.8-18-11.1z" display="block" fill="url(#c)" opacity=".8" stroke="#446c98" stroke-width="7"/>
   </g>
 </svg>
-)svgdata"));
+)svgdata");
 
     return folderImage.get();
 }
@@ -2686,12 +2691,12 @@ const Drawable* LookAndFeel_V2::getDefaultFolderImage()
 const Drawable* LookAndFeel_V2::getDefaultDocumentFileImage()
 {
     if (documentImage == nullptr)
-        documentImage.reset (createDrawableFromSVG (R"svgdata(
+        documentImage = createDrawableFromSVG (R"svgdata(
 <svg version="1" viewBox="-10 -10 450 600" xmlns="http://www.w3.org/2000/svg">
   <path d="M17 0h290l120 132v426c0 10-8 19-17 19H17c-9 0-17-9-17-19V19C0 8 8 0 17 0z" fill="#e5e5e5" stroke="#888888" stroke-width="7"/>
   <path d="M427 132H324c-9 0-17-9-17-19V0l120 132z" fill="#ccc"/>
 </svg>
-)svgdata"));
+)svgdata");
 
     return documentImage.get();
 }
@@ -2829,7 +2834,7 @@ void LookAndFeel_V2::drawBevel (Graphics& g, const int x, const int y, const int
     if (g.clipRegionIntersects (Rectangle<int> (x, y, width, height)))
     {
         auto& context = g.getInternalContext();
-        context.saveState();
+        Graphics::ScopedSaveState ss (g);
 
         for (int i = bevelThickness; --i >= 0;)
         {
@@ -2845,8 +2850,6 @@ void LookAndFeel_V2::drawBevel (Graphics& g, const int x, const int y, const int
             context.setFill (bottomRightColour.withMultipliedAlpha (op  * 0.75f));
             context.fillRect (Rectangle<int> (x + width - i - 1, y + i + 1, 1, height - i * 2 - 2), false);
         }
-
-        context.restoreState();
     }
 }
 
@@ -3010,11 +3013,11 @@ void LookAndFeel_V2::drawGlassLozenge (Graphics& g,
 
     if (! (flatOnLeft || flatOnTop || flatOnBottom))
     {
-        g.saveState();
+        Graphics::ScopedSaveState ss (g);
+
         g.setGradientFill (cg);
         g.reduceClipRegion (intX, intY, intEdge, intH);
         g.fillPath (outline);
-        g.restoreState();
     }
 
     if (! (flatOnRight || flatOnTop || flatOnBottom))
@@ -3022,11 +3025,11 @@ void LookAndFeel_V2::drawGlassLozenge (Graphics& g,
         cg.point1.setX (x + width - edgeBlurRadius);
         cg.point2.setX (x + width);
 
-        g.saveState();
+        Graphics::ScopedSaveState ss (g);
+
         g.setGradientFill (cg);
         g.reduceClipRegion (intX + intW - intEdge, intY, 2 + intEdge, intH);
         g.fillPath (outline);
-        g.restoreState();
     }
 
     {

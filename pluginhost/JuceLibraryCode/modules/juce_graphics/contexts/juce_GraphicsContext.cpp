@@ -51,8 +51,8 @@ LowLevelGraphicsContext::~LowLevelGraphicsContext() {}
 
 //==============================================================================
 Graphics::Graphics (const Image& imageToDrawOnto)
-    : context (*imageToDrawOnto.createLowLevelContext()),
-      contextToDelete (&context)
+    : contextHolder (imageToDrawOnto.createLowLevelContext()),
+      context (*contextHolder)
 {
     jassert (imageToDrawOnto.isValid()); // Can't draw into a null image!
 }
@@ -274,7 +274,7 @@ void Graphics::drawSingleLineText (const String& text, const int startX, const i
 
 void Graphics::drawMultiLineText (const String& text, const int startX,
                                   const int baselineY, const int maximumLineWidth,
-                                  Justification justification) const
+                                  Justification justification, const float leading) const
 {
     if (text.isNotEmpty()
          && startX < context.getClipBounds().getRight())
@@ -282,7 +282,7 @@ void Graphics::drawMultiLineText (const String& text, const int startX,
         GlyphArrangement arr;
         arr.addJustifiedText (context.getFont(), text,
                               (float) startX, (float) baselineY, (float) maximumLineWidth,
-                              justification);
+                              justification, leading);
         arr.draw (*this);
     }
 }
