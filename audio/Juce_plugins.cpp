@@ -1430,20 +1430,21 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   //juce::AudioSampleBuffer &buffer = data->buffer;
 
   int num_channels = R_MAX(data->num_input_channels, data->num_output_channels);
-  float *floatbuffer[num_channels];
+  float *floatbuffers[num_channels];
   
   for(int ch=0 ; ch<num_channels ; ch++){
     
     if(ch < data->num_output_channels) 
-      floatbuffer[ch] = outputs[ch];
+      floatbuffers[ch] = outputs[ch];
     else
-      floatbuffer[ch] = inputs[ch];
+      floatbuffers[ch] = inputs[ch];
     
-    if(ch < data->num_input_channels)
-      memcpy(floatbuffer[ch], inputs[ch], sizeof(float)*num_frames);
+    if (ch < data->num_input_channels)
+      if (floatbuffers[ch] != inputs[ch])
+        memcpy(floatbuffers[ch], inputs[ch], sizeof(float)*num_frames);
   }
 
-  juce::AudioSampleBuffer buffer(floatbuffer, num_channels, num_frames);
+  juce::AudioSampleBuffer buffer(floatbuffers, num_channels, num_frames);
 
   /*
   for(int ch=0; ch<data->num_input_channels ; ch++)
