@@ -1427,17 +1427,35 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   // 1. Process audio
 
   juce::AudioPluginInstance *instance = data->audio_instance;
-  juce::AudioSampleBuffer &buffer = data->buffer;
+  //juce::AudioSampleBuffer &buffer = data->buffer;
+
+  int num_channels = R_MAX(data->num_input_channels, data->num_output_channels);
+  float *floatbuffer[num_channels];
   
+  for(int ch=0 ; ch<num_channels ; ch++){
+    
+    if(ch < data->num_output_channels) 
+      floatbuffer[ch] = outputs[ch];
+    else
+      floatbuffer[ch] = inputs[ch];
+    
+    if(ch < data->num_input_channels)
+      memcpy(floatbuffer[ch], inputs[ch], sizeof(float)*num_frames);
+  }
+
+  juce::AudioSampleBuffer buffer(floatbuffer, num_channels, num_frames);
+
+  /*
   for(int ch=0; ch<data->num_input_channels ; ch++)
     memcpy(buffer.getWritePointer(ch), inputs[ch], sizeof(float)*num_frames);
-    
+  */
+  
   int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);{
     instance->processBlock(buffer, data->midi_buffer);
   }CRASHREPORTER_unset_plugin_name(pos);
   
-  for(int ch=0; ch<data->num_output_channels ; ch++)
-    memcpy(outputs[ch], buffer.getReadPointer(ch), sizeof(float)*num_frames);
+  //  for(int ch=0; ch<data->num_output_channels ; ch++)
+  //    memcpy(outputs[ch], buffer.getReadPointer(ch), sizeof(float)*num_frames);
 
   // 2. Send out midi
   if (!data->midi_buffer.isEmpty()){
