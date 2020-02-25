@@ -140,6 +140,7 @@ static int g_num_data = 0;
 
 static int RT_get_latency(const struct SoundPlugin *plugin);
 
+static void set_plugin_type_data(juce::AudioPluginInstance *audio_instance, SoundPluginType *plugin_type);
 
 namespace{
 
@@ -449,7 +450,26 @@ namespace{
     }
   };
 
+  struct TypeData{
+    const wchar_t *file_or_identifier; // used by Juce.
+    juce::PluginDescription description;
+    const char **effect_names = NULL; // set the first time the plugin is loaded
+    bool has_shown_noncompatible_warning = false; // TODO: recreate_from_state is called twice when loading preset.
+    TypeData(const wchar_t *file_or_identifier,
+             juce::PluginDescription description
+             )
+      : file_or_identifier(wcsdup(file_or_identifier))
+      , description(description)
+    {}
+
+    ~TypeData(){
+      RError("Not supposed to be called\n");
+      free((void*)file_or_identifier);      
+    }
+  };
+
   struct Data{
+    std::unique_ptr<juce::AudioPluginInstance> audio_instance_holder; // really hard sending unique_ptrs through lambdas.
     juce::AudioPluginInstance *audio_instance;
 
     juce::MidiKeyboardState keyboardState;
@@ -460,13 +480,13 @@ namespace{
 
     MyAudioPlayHead playHead;
 
-    juce::MidiBuffer midi_buffer;
-    juce::AudioSampleBuffer buffer;
-
-    Listener listener;
-
     int num_input_channels;
     int num_output_channels;
+
+    juce::MidiBuffer midi_buffer;
+    //juce::AudioSampleBuffer buffer;
+
+    Listener listener;
 
     /*
     int x;
@@ -488,22 +508,34 @@ namespace{
       return ::is_vst(audio_instance);
     }
     */
-    Data(juce::AudioPluginInstance *audio_instance, SoundPlugin *plugin, int num_input_channels, int num_output_channels)
+    Data(juce::AudioPluginInstance *audio_instance, SoundPlugin *plugin, TypeData *type_data)
       : audio_instance(audio_instance)
       , _plugin(plugin)
       , playHead(audio_instance->getPluginDescription().name, plugin)
-      , buffer(R_MAX(num_input_channels, num_output_channels), RADIUM_BLOCKSIZE)
+      , num_input_channels(audio_instance->getTotalNumInputChannels())
+      , num_output_channels(audio_instance->getTotalNumOutputChannels())
+        //, buffer(R_MAX(num_input_channels, num_output_channels), RADIUM_BLOCKSIZE)
       , listener(plugin)
-      , num_input_channels(num_input_channels)
-      , num_output_channels(num_output_channels)
     {
       g_num_data++;
       audio_instance->addListener(&listener);
       midi_buffer.ensureSize(1024*16);
+
+      audio_instance->setPlayHead(&playHead);
+
+      //buffer.clear(); // Warm cache and ensure the buffer contains physical memory. This call may not be strictly necessary.
+      
+      if(type_data->effect_names==NULL)
+        set_plugin_type_data(audio_instance,plugin->type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
     }
 
     ~Data(){
+      printf("~Data called\n");
       g_num_data--;
+    }
+
+    void transfer_audio_instance_ownership(std::unique_ptr<juce::AudioPluginInstance> &audio_instance_holder){
+      this->audio_instance_holder = std::move(audio_instance_holder);
     }
     
     void plugin_will_be_deleted(void){
@@ -519,24 +551,6 @@ namespace{
     return processor->wrapperType == AudioProcessor::wrapperType_AudioUnit ; // || processor->wrapperType == AudioProcessor::wrapperType_AudioUnitv3;
   }
   */
-
-  struct TypeData{
-    const wchar_t *file_or_identifier; // used by Juce.
-    juce::PluginDescription description;
-    const char **effect_names = NULL; // set the first time the plugin is loaded
-    bool has_shown_noncompatible_warning = false; // TODO: recreate_from_state is called twice when loading preset.
-    TypeData(const wchar_t *file_or_identifier,
-             juce::PluginDescription description
-             )
-      : file_or_identifier(wcsdup(file_or_identifier))
-      , description(description)
-    {}
-
-    ~TypeData(){
-      RError("Not supposed to be called\n");
-      free((void*)file_or_identifier);      
-    }
-  };
 
   struct ContainerData{
     const wchar_t *file_or_identifier; // used by Juce
@@ -1248,10 +1262,12 @@ namespace{
   };
 }
 
+/*
 static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_size){
   Data *data = (Data*)plugin->data;
   data->buffer.setSize(data->buffer.getNumChannels(), new_buffer_size);
 }
+*/
 
 // 
 static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, struct Patch *patch, juce::MidiMessage message, int64_t seq_time){       
@@ -1465,7 +1481,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
     juce::MidiBuffer::Iterator iterator(data->midi_buffer);
     
-    RT_PLAYER_runner_lock();{
+    RT_PLAYER_runner_lock();{ // Why do we obtain this lock? event-connected instruments are not running simultaneously...
       juce::MidiMessage message;
       int samplePosition;
 
@@ -1757,7 +1773,7 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
           if (has_editor)
             editor = data->audio_instance->createEditor(); //IfNeeded();
           else{
-            editor = new juce::GenericAudioProcessorEditor(data->audio_instance);        
+            editor = new juce::GenericAudioProcessorEditor(*data->audio_instance);        
           }
           
           if (editor != NULL) {
@@ -1806,7 +1822,7 @@ static void hide_gui(struct SoundPlugin *plugin){
 }
 
 
-static juce::AudioPluginInstance *create_audio_instance(const TypeData *type_data, float sample_rate, int block_size){
+static std::unique_ptr<juce::AudioPluginInstance> create_audio_instance(const TypeData *type_data, float sample_rate, int block_size){
   
   static bool inited=false;
 
@@ -1829,24 +1845,21 @@ static juce::AudioPluginInstance *create_audio_instance(const TypeData *type_dat
   
   {
     radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+
+    // AudioPluginFormat::createInstanceFromDescription is explicitly made to handle calls not made from the message thread.
+    std::unique_ptr<juce::AudioPluginInstance> instance = formatManager->createPluginInstance(description, sample_rate, block_size, errorMessage);
     
-    juce::AudioPluginInstance *instance;
-    
-    {
-      // const MMLock mmLock; Leads to deadlock. Also, AudioPluginFormat::createInstanceFromDescription is explicitly made to handle calls not made from the message thread.
-      instance = formatManager->createPluginInstance(description, sample_rate, block_size, errorMessage);
-    }
-    
-    if (instance==NULL){
+    if (instance.get()==NULL){
+      
       GFX_addMessage("Unable to open %s plugin %s: %s\n",description.pluginFormatName.toRawUTF8(), description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
-      return NULL;
-    }
+      
+    } else {
     
-    {
       //const MMLock mmLock;
       run_on_message_thread([&](){
           instance->prepareToPlay(sample_rate, block_size);
         });
+      
     }
   
     return instance;
@@ -2003,35 +2016,33 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     }
   }
   
-  juce::AudioPluginInstance *audio_instance = create_audio_instance(type_data, sample_rate, block_size);
-  if (audio_instance==NULL){
+  std::unique_ptr<juce::AudioPluginInstance> audio_instance = create_audio_instance(type_data, sample_rate, block_size);
+  if (audio_instance.get()==NULL){
     return NULL;
   }
 
+  juce::AudioPluginInstance *audio_instance_pointer = audio_instance.get();
+  
   {
     //const MMLock mmLock;
-    Data *data;
     
-    run_on_message_thread([&](){
-        juce::PluginDescription description = audio_instance->getPluginDescription();
-
-        //plugin->name = talloc_strdup(description.name.toUTF8());
-        
-        data = new Data(audio_instance, plugin, audio_instance->getTotalNumInputChannels(), audio_instance->getTotalNumOutputChannels());
-        plugin->data = data;
-        
-        audio_instance->setPlayHead(&data->playHead);
-        
-        if(type_data->effect_names==NULL)
-          set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
-      });
+    run_on_message_thread([audio_instance_pointer, plugin, type_data]() {
+      plugin->data = new Data(audio_instance_pointer, plugin, type_data);        
+    });
     
     if (state!=NULL)
       recreate_from_state(plugin, state, is_loading);
     
     num_running_plugins++;
 
-    return data;
+    static_cast<Data*>(plugin->data)->transfer_audio_instance_ownership(audio_instance);
+
+#if !defined(RELEASE)
+    if(audio_instance.get()!=NULL)
+      abort();
+#endif
+    
+    return plugin->data;
   }
 }
 
@@ -2099,7 +2110,7 @@ static bool g_waiting_to_shut_down = false;
 namespace{
   // Some plugins require that it takes some time between deleting the window and deleting the instance. If we don't do this, some plugins will crash. Only seen it on OSX though, but it doesn't hurt to do it on all platforms.
   struct DelayDeleteData : public juce::Timer {
-    Data *data;
+    std::unique_ptr<Data> data;
     int downcount;
     
     DelayDeleteData(Data *data, int downcount = 10)
@@ -2120,8 +2131,6 @@ namespace{
         radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
         
         fprintf(stderr, "    DelayDeleteData: Deleting.\n");
-        delete data->audio_instance;
-        delete data;
         delete this;
       }
     }
@@ -2308,7 +2317,7 @@ static SoundPluginType *create_plugin_type(const juce::PluginDescription &descri
 
   plugin_type->is_instrument = true; // we don't know yet, so we set it to true.
   
-  plugin_type->buffer_size_is_changed = buffer_size_is_changed;
+  //plugin_type->buffer_size_is_changed = buffer_size_is_changed;
 
   plugin_type->RT_process = RT_process;
   plugin_type->create_plugin_data = create_plugin_data;
@@ -2426,8 +2435,8 @@ static enum PopulateContainerResult get_container_descriptions_from_disk(const S
     return POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED; // Likely to have been caused by the plugin crashing
   }
 
-  juce::XmlElement *xml = juce::XmlDocument::parse(file);
-  if (xml==NULL){
+  std::unique_ptr<juce::XmlElement> xml = juce::XmlDocument::parse(file);
+  if (xml.get()==NULL){
     //GFX_Message2(NULL, true, "Error. Unable to parse xml file \"%s\". You might want to delete this file and try again.\n", filename.toRawUTF8());
     //return POPULATE_RESULT_OTHER_ERROR;
     return POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED; // Likely to have been caused by the plugin crashing
