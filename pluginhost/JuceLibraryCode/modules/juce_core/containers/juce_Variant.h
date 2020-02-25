@@ -49,15 +49,12 @@ public:
     {
         NativeFunctionArgs (const var& thisObject, const var* args, int numArgs) noexcept;
 
-        // Suppress a VS2013 compiler warning
-        NativeFunctionArgs& operator= (const NativeFunctionArgs&) = delete;
-
         const var& thisObject;
         const var* arguments;
         int numArguments;
     };
 
-    using NativeFunction = std::function<var (const NativeFunctionArgs&)>;
+    using NativeFunction = std::function<var(const NativeFunctionArgs&)>;
 
     //==============================================================================
     /** Creates a void variant. */
@@ -305,7 +302,7 @@ private:
         int64 int64Value;
         bool boolValue;
         double doubleValue;
-        char stringValue [sizeof (String)];
+        char stringValue[sizeof (String)];
         ReferenceCountedObject* objectValue;
         MemoryBlock* binaryValue;
         NativeFunction* methodValue;
@@ -322,6 +319,8 @@ private:
     // This is needed to prevent the wrong constructor/operator being called
     var (const ReferenceCountedObject*) = delete;
     var& operator= (const ReferenceCountedObject*) = delete;
+    var (const void*) = delete;
+    var& operator= (const void*) = delete;
 };
 
 /** Compares the values of two var objects, using the var::equals() comparison. */

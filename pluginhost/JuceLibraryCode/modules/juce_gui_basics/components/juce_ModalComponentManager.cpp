@@ -38,6 +38,8 @@ struct ModalComponentManager::ModalItem  : public ComponentMovementWatcher
 
     void componentMovedOrResized (bool, bool) override {}
 
+    using ComponentMovementWatcher::componentMovedOrResized;
+
     void componentPeerChanged() override
     {
         componentVisibilityChanged();
@@ -48,6 +50,8 @@ struct ModalComponentManager::ModalItem  : public ComponentMovementWatcher
         if (! component->isShowing())
             cancel();
     }
+
+    using ComponentMovementWatcher::componentVisibilityChanged;
 
     void componentBeingDeleted (Component& comp) override
     {
@@ -283,8 +287,13 @@ int ModalComponentManager::runEventLoopForCurrentComponent()
 //==============================================================================
 struct LambdaCallback  : public ModalComponentManager::Callback
 {
-    LambdaCallback (std::function<void(int)> fn) noexcept : function (fn) {}
-    void modalStateFinished (int result) override  { function (result); }
+    LambdaCallback (std::function<void(int)> fn) noexcept  : function (fn)  {}
+
+    void modalStateFinished (int result) override
+    {
+        if (function != nullptr)
+            function (result);
+    }
 
     std::function<void(int)> function;
 

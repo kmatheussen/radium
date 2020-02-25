@@ -56,7 +56,7 @@ struct EmptyString
     String::CharPointerType::CharType text;
 };
 
-static const EmptyString emptyString = { 0x3fffffff, sizeof (String::CharPointerType::CharType), 0 };
+static const EmptyString emptyString { 0x3fffffff, sizeof (String::CharPointerType::CharType), 0 };
 
 //==============================================================================
 class StringHolder
@@ -156,13 +156,13 @@ public:
     {
         auto* b = bufferFromText (text);
 
-        if (b != (StringHolder*) &emptyString)
+        if (! isEmptyString (b))
             ++(b->refCount);
     }
 
     static inline void release (StringHolder* const b) noexcept
     {
-        if (b != (StringHolder*) &emptyString)
+        if (! isEmptyString (b))
             if (--(b->refCount) == -1)
                 delete[] reinterpret_cast<char*> (b);
     }
@@ -182,7 +182,7 @@ public:
     {
         auto* b = bufferFromText (text);
 
-        if (b == (StringHolder*) &emptyString)
+        if (isEmptyString (b))
         {
             auto newText = createUninitialisedBytes (numBytes);
             newText.writeNull();
@@ -215,6 +215,11 @@ private:
         // (Can't use offsetof() here because of warnings about this not being a POD)
         return reinterpret_cast<StringHolder*> (reinterpret_cast<char*> (text.getAddress())
                     - (reinterpret_cast<size_t> (reinterpret_cast<StringHolder*> (128)->text) - 128));
+    }
+
+    static inline bool isEmptyString (StringHolder* other)
+    {
+        return (other->refCount.get() & 0x30000000) != 0;
     }
 
     void compileTimeChecks()
@@ -566,16 +571,16 @@ JUCE_API bool JUCE_CALLTYPE operator== (const String& s1, const wchar_t* s2) noe
 JUCE_API bool JUCE_CALLTYPE operator!= (const String& s1, const wchar_t* s2) noexcept           { return s1.compare (s2) != 0; }
 JUCE_API bool JUCE_CALLTYPE operator== (const String& s1, StringRef s2) noexcept                { return s1.getCharPointer().compare (s2.text) == 0; }
 JUCE_API bool JUCE_CALLTYPE operator!= (const String& s1, StringRef s2) noexcept                { return s1.getCharPointer().compare (s2.text) != 0; }
+JUCE_API bool JUCE_CALLTYPE operator<  (const String& s1, StringRef s2) noexcept                { return s1.getCharPointer().compare (s2.text) < 0; }
+JUCE_API bool JUCE_CALLTYPE operator<= (const String& s1, StringRef s2) noexcept                { return s1.getCharPointer().compare (s2.text) <= 0; }
+JUCE_API bool JUCE_CALLTYPE operator>  (const String& s1, StringRef s2) noexcept                { return s1.getCharPointer().compare (s2.text) > 0; }
+JUCE_API bool JUCE_CALLTYPE operator>= (const String& s1, StringRef s2) noexcept                { return s1.getCharPointer().compare (s2.text) >= 0; }
 JUCE_API bool JUCE_CALLTYPE operator== (const String& s1, const CharPointer_UTF8 s2) noexcept   { return s1.getCharPointer().compare (s2) == 0; }
 JUCE_API bool JUCE_CALLTYPE operator!= (const String& s1, const CharPointer_UTF8 s2) noexcept   { return s1.getCharPointer().compare (s2) != 0; }
 JUCE_API bool JUCE_CALLTYPE operator== (const String& s1, const CharPointer_UTF16 s2) noexcept  { return s1.getCharPointer().compare (s2) == 0; }
 JUCE_API bool JUCE_CALLTYPE operator!= (const String& s1, const CharPointer_UTF16 s2) noexcept  { return s1.getCharPointer().compare (s2) != 0; }
 JUCE_API bool JUCE_CALLTYPE operator== (const String& s1, const CharPointer_UTF32 s2) noexcept  { return s1.getCharPointer().compare (s2) == 0; }
 JUCE_API bool JUCE_CALLTYPE operator!= (const String& s1, const CharPointer_UTF32 s2) noexcept  { return s1.getCharPointer().compare (s2) != 0; }
-JUCE_API bool JUCE_CALLTYPE operator>  (const String& s1, const String& s2) noexcept            { return s1.compare (s2) > 0; }
-JUCE_API bool JUCE_CALLTYPE operator<  (const String& s1, const String& s2) noexcept            { return s1.compare (s2) < 0; }
-JUCE_API bool JUCE_CALLTYPE operator>= (const String& s1, const String& s2) noexcept            { return s1.compare (s2) >= 0; }
-JUCE_API bool JUCE_CALLTYPE operator<= (const String& s1, const String& s2) noexcept            { return s1.compare (s2) <= 0; }
 
 bool String::equalsIgnoreCase (const wchar_t* const t) const noexcept
 {
@@ -733,7 +738,7 @@ void String::appendCharPointer (const CharPointerType startOfTextToAppend,
     if (extraBytesNeeded > 0)
     {
         auto byteOffsetOfNull = getByteOffsetOfEnd();
-        preallocateBytes (byteOffsetOfNull + (size_t) extraBytesNeeded);
+        preallocateBytes ((size_t) extraBytesNeeded + byteOffsetOfNull);
 
         auto* newStringStart = addBytesToPointer (text.getAddress(), (int) byteOffsetOfNull);
         memcpy (newStringStart, startOfTextToAppend.getAddress(), (size_t) extraBytesNeeded);
@@ -1929,7 +1934,7 @@ String String::toHexString (const void* const d, const int size, const int group
     if (groupSize > 0)
         numChars += size / groupSize;
 
-    String s (PreallocationBytes (sizeof (CharPointerType::CharType) * (size_t) numChars));
+    String s (PreallocationBytes ((size_t) numChars * sizeof (CharPointerType::CharType)));
 
     auto* data = static_cast<const unsigned char*> (d);
     auto dest = s.text;
@@ -2187,7 +2192,7 @@ StringRef::StringRef (const std::string& string)       : StringRef (string.c_str
 
 //==============================================================================
 
-static String minimiseLengthOfFloatString (const String& input)
+static String reduceLengthOfFloatString (const String& input)
 {
     const auto start = input.getCharPointer();
     const auto end = start + (int) input.length();
@@ -2208,8 +2213,8 @@ static String minimiseLengthOfFloatString (const String& input)
         }
         else if (currentChar == '.')
         {
-            if (trimStart == c + 1)
-                --trimStart;
+            if (trimStart == c + 1 && trimStart != end && *trimStart == '0')
+                ++trimStart;
 
             break;
         }
@@ -2258,6 +2263,49 @@ static String minimiseLengthOfFloatString (const String& input)
     return input;
 }
 
+static String serialiseDouble (double input)
+{
+    auto absInput = std::abs (input);
+
+    if (absInput >= 1.0e6 || absInput <= 1.0e-5)
+        return reduceLengthOfFloatString ({ input, 15, true });
+
+    int intInput = (int) input;
+
+    if ((double) intInput == input)
+        return { input, 1 };
+
+    auto numberOfDecimalPlaces = [absInput]
+    {
+        if (absInput < 1.0)
+        {
+            if (absInput >= 1.0e-3)
+            {
+                if (absInput >= 1.0e-1) return 16;
+                if (absInput >= 1.0e-2) return 17;
+                return 18;
+            }
+
+            if (absInput >= 1.0e-4) return 19;
+            return 20;
+        }
+
+        if (absInput < 1.0e3)
+        {
+            if (absInput < 1.0e1) return 15;
+            if (absInput < 1.0e2) return 14;
+            return 13;
+        }
+
+        if (absInput < 1.0e4) return 12;
+        if (absInput < 1.0e5) return 11;
+        return 10;
+    }();
+
+    return reduceLengthOfFloatString (String (input, numberOfDecimalPlaces));
+}
+
+
 //==============================================================================
 //==============================================================================
 #if JUCE_UNIT_TESTS
@@ -2268,7 +2316,9 @@ static String minimiseLengthOfFloatString (const String& input)
 class StringTests  : public UnitTest
 {
 public:
-    StringTests() : UnitTest ("String class", "Text") {}
+    StringTests()
+        : UnitTest ("String class", UnitTestCategories::text)
+    {}
 
     template <class CharPointerType>
     struct TestUTFConversion
@@ -2794,13 +2844,14 @@ public:
             {
                 StringPairArray tests;
                 tests.set ("1", "1");
+                tests.set ("1.0", "1.0");
                 tests.set ("-1", "-1");
                 tests.set ("-100", "-100");
                 tests.set ("110", "110");
                 tests.set ("9090", "9090");
-                tests.set ("1000.0", "1000");
-                tests.set ("1.0", "1");
-                tests.set ("-1.00", "-1");
+                tests.set ("1000.0", "1000.0");
+                tests.set ("1.0", "1.0");
+                tests.set ("-1.00", "-1.0");
                 tests.set ("1.20", "1.2");
                 tests.set ("1.300", "1.3");
                 tests.set ("1.301", "1.301");
@@ -2815,7 +2866,7 @@ public:
                 tests.set ("-1e-000", "-1");
                 tests.set ("1e100", "1e100");
                 tests.set ("100e100", "100e100");
-                tests.set ("100.0e0100", "100e100");
+                tests.set ("100.0e0100", "100.0e100");
                 tests.set ("-1e1", "-1e1");
                 tests.set ("1e10", "1e10");
                 tests.set ("-1e+10", "-1e10");
@@ -2823,32 +2874,65 @@ public:
                 tests.set ("1e0010", "1e10");
                 tests.set ("1e-0010", "1e-10");
                 tests.set ("1e-1", "1e-1");
-                tests.set ("-1.0e1", "-1e1");
-                tests.set ("1.0e-1", "1e-1");
-                tests.set ("1.00e-1", "1e-1");
+                tests.set ("-1.0e1", "-1.0e1");
+                tests.set ("1.0e-1", "1.0e-1");
+                tests.set ("1.00e-1", "1.0e-1");
                 tests.set ("1.001e1", "1.001e1");
                 tests.set ("1.010e+1", "1.01e1");
                 tests.set ("-1.1000e1", "-1.1e1");
 
                 for (auto& input : tests.getAllKeys())
-                    expectEquals (minimiseLengthOfFloatString (input), tests[input]);
+                    expectEquals (reduceLengthOfFloatString (input), tests[input]);
             }
 
             {
                 std::map<double, String> tests;
-                tests[1] = "1";
+                tests[1] = "1.0";
                 tests[1.1] = "1.1";
                 tests[1.01] = "1.01";
                 tests[0.76378] = "7.6378e-1";
-                tests[-10] = "-1e1";
+                tests[-10] = "-1.0e1";
                 tests[10.01] = "1.001e1";
                 tests[10691.01] = "1.069101e4";
                 tests[0.0123] = "1.23e-2";
                 tests[-3.7e-27] = "-3.7e-27";
-                tests[1e+40] = "1e40";
+                tests[1e+40] = "1.0e40";
 
                 for (auto& test : tests)
-                    expectEquals (minimiseLengthOfFloatString (String (test.first, 15, true)), test.second);
+                    expectEquals (reduceLengthOfFloatString (String (test.first, 15, true)), test.second);
+            }
+        }
+
+        {
+            beginTest ("Serialisation");
+
+            std::map <double, String> tests;
+
+            tests[364] = "364.0";
+            tests[1e7] = "1.0e7";
+            tests[12345678901] = "1.2345678901e10";
+
+            tests[1234567890123456.7] = "1.234567890123457e15";
+            tests[12345678.901234567] = "1.234567890123457e7";
+            tests[1234567.8901234567] = "1.234567890123457e6";
+            tests[123456.78901234567] = "123456.7890123457";
+            tests[12345.678901234567] = "12345.67890123457";
+            tests[1234.5678901234567] = "1234.567890123457";
+            tests[123.45678901234567] = "123.4567890123457";
+            tests[12.345678901234567] = "12.34567890123457";
+            tests[1.2345678901234567] = "1.234567890123457";
+            tests[0.12345678901234567] = "0.1234567890123457";
+            tests[0.012345678901234567] = "0.01234567890123457";
+            tests[0.0012345678901234567] = "0.001234567890123457";
+            tests[0.00012345678901234567] = "0.0001234567890123457";
+            tests[0.000012345678901234567] = "0.00001234567890123457";
+            tests[0.0000012345678901234567] = "1.234567890123457e-6";
+            tests[0.00000012345678901234567] = "1.234567890123457e-7";
+
+            for (auto& test : tests)
+            {
+                expectEquals (serialiseDouble (test.first), test.second);
+                expectEquals (serialiseDouble (-test.first), "-" + test.second);
             }
         }
     }

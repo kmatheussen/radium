@@ -23,18 +23,8 @@
 namespace juce
 {
 
-struct MidiOutput::PendingMessage
-{
-    PendingMessage (const void* data, int len, double timeStamp)
-        : message (data, len, timeStamp)
-    {}
-
-    MidiMessage message;
-    PendingMessage* next;
-};
-
-MidiOutput::MidiOutput (const String& deviceName)
-    : Thread ("midi out"), name (deviceName)
+MidiOutput::MidiOutput (const String& deviceName, const String& deviceIdentifier)
+    : Thread ("midi out"), deviceInfo (deviceName, deviceIdentifier)
 {
 }
 
@@ -116,7 +106,7 @@ void MidiOutput::run()
 {
     while (! threadShouldExit())
     {
-        uint32 now = Time::getMillisecondCounter();
+        auto now = Time::getMillisecondCounter();
         uint32 eventTime = 0;
         uint32 timeToWait = 500;
 

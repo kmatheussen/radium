@@ -24,6 +24,23 @@
   ==============================================================================
 */
 
+//==============================================================================
+#if defined (MAC_OS_X_VERSION_10_8) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_8) \
+  && USE_COREGRAPHICS_RENDERING && JUCE_COREGRAPHICS_DRAW_ASYNC
+static const juce::Identifier disableAsyncLayerBackedViewIdentifier { "disableAsyncLayerBackedView" };
+
+void setComponentAsyncLayerBackedViewDisabled (juce::Component& comp, bool shouldDisableAsyncLayerBackedView)
+{
+    comp.getProperties().set (disableAsyncLayerBackedViewIdentifier, shouldDisableAsyncLayerBackedView);
+}
+
+bool getComponentAsyncLayerBackedViewDisabled (juce::Component& comp)
+{
+    return comp.getProperties()[disableAsyncLayerBackedViewIdentifier];
+}
+#endif
+
+//==============================================================================
 namespace juce
 {
     typedef void (*AppFocusChangeCallback)();
@@ -32,24 +49,15 @@ namespace juce
     extern CheckEventBlockedByModalComps isEventBlockedByModalComps;
 }
 
-//==============================================================================
-#if ! (defined (MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7)
-
-@interface NSEvent (JuceDeviceDelta)
- - (CGFloat) scrollingDeltaX;
- - (CGFloat) scrollingDeltaY;
- - (BOOL) hasPreciseScrollingDeltas;
- - (BOOL) isDirectionInvertedFromDevice;
-@end
-
-#endif
-
 namespace juce
 {
 
 //==============================================================================
 static CGFloat getMainScreenHeight() noexcept
 {
+    if ([[NSScreen screens] count] == 0)
+        return 0.0f;
+
     return [[[NSScreen screens] objectAtIndex: 0] frame].size.height;
 }
 
@@ -94,6 +102,15 @@ public:
 
         [view setPostsFrameChangedNotifications: YES];
 
+       #if defined (MAC_OS_X_VERSION_10_8) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_8) \
+        && USE_COREGRAPHICS_RENDERING && JUCE_COREGRAPHICS_DRAW_ASYNC
+        if (! getComponentAsyncLayerBackedViewDisabled (component))
+        {
+            [view setWantsLayer: YES];
+            [[view layer] setDrawsAsynchronously: YES];
+        }
+       #endif
+
         if (isSharedWindow)
         {
             window = [viewToAttachTo window];
@@ -111,21 +128,15 @@ public:
                                                            defer: YES];
             setOwner (window, this);
             [window orderOut: nil];
-           #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
             [window setDelegate: (id<NSWindowDelegate>) window];
-           #else
-            [window setDelegate: window];
-           #endif
 
             [window setOpaque: component.isOpaque()];
 
-           #if defined (MAC_OS_X_VERSION_10_14)
             if (! [window isOpaque])
                 [window setBackgroundColor: [NSColor clearColor]];
 
-            #if defined (MAC_OS_X_VERSION_10_9) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9)
-             [view setAppearance: [NSAppearance appearanceNamed: NSAppearanceNameAqua]];
-            #endif
+           #if defined (MAC_OS_X_VERSION_10_9) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9)
+            [view setAppearance: [NSAppearance appearanceNamed: NSAppearanceNameAqua]];
            #endif
 
             [window setHasShadow: ((windowStyleFlags & windowHasDropShadow) != 0)];
@@ -134,7 +145,6 @@ public:
                 setAlwaysOnTop (true);
 
             [window setContentView: view];
-            [window setAutodisplay: YES];
             [window setAcceptsMouseMovedEvents: YES];
 
             // We'll both retain and also release this on closing because plugin hosts can unexpectedly
@@ -145,13 +155,11 @@ public:
             [window setExcludedFromWindowsMenu: (windowStyleFlags & windowIsTemporary) != 0];
             [window setIgnoresMouseEvents: (windowStyleFlags & windowIgnoresMouseClicks) != 0];
 
-           #if defined (MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
             if ((windowStyleFlags & (windowHasMaximiseButton | windowHasTitleBar)) == (windowHasMaximiseButton | windowHasTitleBar))
                 [window setCollectionBehavior: NSWindowCollectionBehaviorFullScreenPrimary];
 
             if ([window respondsToSelector: @selector (setRestorable:)])
                 [window setRestorable: NO];
-           #endif
 
            #if defined (MAC_OS_X_VERSION_10_13) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13)
             if ([window respondsToSelector: @selector (setTabbingMode:)])
@@ -188,10 +196,8 @@ public:
 
         getNativeRealtimeModifiers = []
         {
-           #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
             if ([NSEvent respondsToSelector: @selector (modifierFlags)])
                 NSViewComponentPeer::updateModifiers ([NSEvent modifierFlags]);
-           #endif
 
             return ModifierKeys::currentModifiers;
         };
@@ -312,12 +318,7 @@ public:
         if (global && viewWindow != nil)
         {
             r = [[view superview] convertRect: r toView: nil];
-
-           #if defined (MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7
             r = [viewWindow convertRectToScreen: r];
-           #else
-            r.origin = [viewWindow convertBaseToScreen: r.origin];
-           #endif
 
             flipScreenRect (r);
         }
@@ -339,10 +340,14 @@ public:
         return relativePosition + getBounds (true).getPosition().toFloat();
     }
 
+    using ComponentPeer::localToGlobal;
+
     Point<float> globalToLocal (Point<float> screenPosition) override
     {
         return screenPosition - getBounds (true).getPosition().toFloat();
     }
+
+    using ComponentPeer::globalToLocal;
 
     void setAlpha (float newAlpha) override
     {
@@ -409,10 +414,8 @@ public:
 
     static bool isWindowAtPoint (NSWindow* w, NSPoint screenPoint)
     {
-       #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
         if ([NSWindow respondsToSelector: @selector (windowNumberAtPoint:belowWindowWithWindowNumber:)])
             return [NSWindow windowNumberAtPoint: screenPoint belowWindowWithWindowNumber: 0] == [w windowNumber];
-       #endif
 
         return true;
     }
@@ -469,9 +472,7 @@ public:
     {
         if (hasNativeTitleBar())
         {
-           #if defined (MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
             isWindowInKioskMode = (([window styleMask] & NSWindowStyleMaskFullScreen) != 0);
-           #endif
 
             auto screen = getFrameSize().subtractedFrom (component.getParentMonitorArea());
 
@@ -618,18 +619,13 @@ public:
         ModifierKeys::currentModifiers = ModifierKeys::currentModifiers.withoutMouseButtons();
 
         NSPoint windowPos = [ev locationInWindow];
-
-       #if defined (MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7
         NSPoint screenPos = [[ev window] convertRectToScreen: NSMakeRect (windowPos.x, windowPos.y, 1.0f, 1.0f)].origin;
-       #else
-        NSPoint screenPos = [[ev window] convertBaseToScreen: windowPos];
-       #endif
 
         if (isWindowAtPoint ([ev window], screenPos))
             sendMouseEvent (ev);
         else
             // moved into another window which overlaps this one, so trigger an exit
-            handleMouseEvent (MouseInputSource::InputSourceType::mouse, { -1.0f, -1.0f }, ModifierKeys::currentModifiers,
+            handleMouseEvent (MouseInputSource::InputSourceType::mouse, MouseInputSource::offscreenMousePos, ModifierKeys::currentModifiers,
                               getMousePressure (ev), MouseInputSource::invalidOrientation, getMouseTime (ev));
 
         showArrowCursorIfNeeded();
@@ -668,7 +664,6 @@ public:
 
         @try
         {
-           #if defined (MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
             if ([ev respondsToSelector: @selector (isDirectionInvertedFromDevice)])
                 wheel.isReversed = [ev isDirectionInvertedFromDevice];
 
@@ -684,9 +679,7 @@ public:
                     wheel.isSmooth = true;
                 }
             }
-            else
-           #endif
-            if ([ev respondsToSelector: @selector (deviceDeltaX)])
+            else if ([ev respondsToSelector: @selector (deviceDeltaX)])
             {
                 wheel.deltaX = checkDeviceDeltaReturnValue ((float) getMsgSendFPRetFn() (ev, @selector (deviceDeltaX)));
                 wheel.deltaY = checkDeviceDeltaReturnValue ((float) getMsgSendFPRetFn() (ev, @selector (deviceDeltaY)));
@@ -707,13 +700,10 @@ public:
 
     void redirectMagnify (NSEvent* ev)
     {
-       #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
         const float invScale = 1.0f - (float) [ev magnification];
 
         if (invScale > 0.0f)
             handleMagnifyGesture (MouseInputSource::InputSourceType::mouse, getMousePos (ev, view), getMouseTime (ev), 1.0f / invScale);
-       #endif
-        ignoreUnused (ev);
     }
 
     void redirectCopy  (NSObject*) { handleKeyPress (KeyPress ('c', ModifierKeys (ModifierKeys::commandModifier), 'c')); }
@@ -841,18 +831,21 @@ public:
         if (r.size.width < 1.0f || r.size.height < 1.0f)
             return;
 
-        auto cg = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
+        auto cg = (CGContextRef) [[NSGraphicsContext currentContext]
+       #if (defined (MAC_OS_X_VERSION_10_10) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10)
+                                  CGContext];
+       #else
+                                  graphicsPort];
+       #endif
 
         if (! component.isOpaque())
             CGContextClearRect (cg, CGContextGetClipBoundingBox (cg));
 
         float displayScale = 1.0f;
-
-       #if defined (MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
         NSScreen* screen = [[view window] screen];
+
         if ([screen respondsToSelector: @selector (backingScaleFactor)])
             displayScale = (float) screen.backingScaleFactor;
-       #endif
 
        #if USE_COREGRAPHICS_RENDERING && JUCE_COREGRAPHICS_RENDER_WITH_MULTIPLE_PAINT_CALLS
         // This option invokes a separate paint call for each rectangle of the clip region.
@@ -915,8 +908,8 @@ public:
                     if (intScale != 1)
                         clip.scaleAll (intScale);
 
-                    std::unique_ptr<LowLevelGraphicsContext> context (component.getLookAndFeel()
-                                                                        .createGraphicsContext (temp, offset * intScale, clip));
+                    auto context = component.getLookAndFeel()
+                                     .createGraphicsContext (temp, offset * intScale, clip);
 
                     if (intScale != 1)
                         context->addTransform (AffineTransform::scale (displayScale));
@@ -954,7 +947,7 @@ public:
 
         // When windows are being resized, artificially throttling high-frequency repaints helps
         // to stop the event queue getting clogged, and keeps everything working smoothly.
-        // For some reason Logic also needs this throttling to recored parameter events correctly.
+        // For some reason Logic also needs this throttling to record parameter events correctly.
         if (msSinceLastRepaint < minimumRepaintInterval && shouldThrottleRepaint())
         {
             startTimer (static_cast<int> (minimumRepaintInterval - msSinceLastRepaint));
@@ -1004,7 +997,7 @@ public:
     }
 
     //==============================================================================
-    bool sendModalInputAttemptIfBlocked()
+    bool isBlockedByModalComponent()
     {
         if (auto* modal = Component::getCurrentlyModalComponent())
         {
@@ -1012,7 +1005,6 @@ public:
                  && (! getComponent().isParentOf (modal))
                  && getComponent().isCurrentlyBlockedByAnotherModalComponent())
             {
-                modal->inputAttemptWhenModal();
                 return true;
             }
         }
@@ -1020,14 +1012,21 @@ public:
         return false;
     }
 
+    void sendModalInputAttemptIfBlocked()
+    {
+        if (isBlockedByModalComponent())
+            if (auto* modal = Component::getCurrentlyModalComponent())
+                modal->inputAttemptWhenModal();
+    }
+
     bool canBecomeKeyWindow()
     {
-        return (getStyleFlags() & juce::ComponentPeer::windowIgnoresKeyPresses) == 0;
+        return component.isVisible() && (getStyleFlags() & juce::ComponentPeer::windowIgnoresKeyPresses) == 0;
     }
 
     bool canBecomeMainWindow()
     {
-        return dynamic_cast<ResizableWindow*> (&component) != nullptr;
+        return component.isVisible() && dynamic_cast<ResizableWindow*> (&component) != nullptr;
     }
 
     bool worksWhenModal() const
@@ -1099,12 +1098,7 @@ public:
 
             auto screenBounds = Desktop::getInstance().getDisplays().getTotalBounds (true);
 
-           #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6
             const bool inLiveResize = [window inLiveResize];
-           #else
-            const bool inLiveResize = [window respondsToSelector: @selector (inLiveResize)]
-                                   && [window performSelector: @selector (inLiveResize)];
-           #endif
 
             if (! inLiveResize || isFirstLiveResize)
             {
@@ -1285,7 +1279,7 @@ public:
 
     static NSArray* getSupportedDragTypes()
     {
-        return [NSArray arrayWithObjects: NSFilenamesPboardType, NSFilesPromisePboardType, NSStringPboardType, nil];
+        return [NSArray arrayWithObjects: (NSString*) kUTTypeFileURL, (NSString*) kPasteboardTypeFileURLPromise, NSPasteboardTypeString, nil];
     }
 
     BOOL sendDragCallback (const int type, id <NSDraggingInfo> sender)
@@ -1300,8 +1294,8 @@ public:
         ComponentPeer::DragInfo dragInfo;
         dragInfo.position.setXY ((int) p.x, (int) ([view frame].size.height - p.y));
 
-        if (contentType == NSStringPboardType)
-            dragInfo.text = nsStringToJuce ([pasteboard stringForType: NSStringPboardType]);
+        if (contentType == NSPasteboardTypeString)
+            dragInfo.text = nsStringToJuce ([pasteboard stringForType: NSPasteboardTypeString]);
         else
             dragInfo.files = getDroppedFiles (pasteboard, contentType);
 
@@ -1324,7 +1318,7 @@ public:
         StringArray files;
         NSString* iTunesPasteboardType = nsStringLiteral ("CorePasteboardFlavorType 0x6974756E"); // 'itun'
 
-        if (contentType == NSFilesPromisePboardType
+        if ([contentType isEqualToString: (NSString*) kPasteboardTypeFileURLPromise]
              && [[pasteboard types] containsObject: iTunesPasteboardType])
         {
             id list = [pasteboard propertyListForType: iTunesPasteboardType];
@@ -1350,14 +1344,14 @@ public:
         }
         else
         {
-            id list = [pasteboard propertyListForType: NSFilenamesPboardType];
+            NSArray* items = [pasteboard readObjectsForClasses:@[[NSURL class]] options: nil];
 
-            if ([list isKindOfClass: [NSArray class]])
+            for (unsigned int i = 0; i < [items count]; ++i)
             {
-                NSArray* items = (NSArray*) [pasteboard propertyListForType: NSFilenamesPboardType];
+                NSURL* url = [items objectAtIndex: i];
 
-                for (unsigned int i = 0; i < [items count]; ++i)
-                    files.add (nsStringToJuce ((NSString*) [items objectAtIndex: i]));
+                if ([url isFileURL])
+                    files.add (nsStringToJuce ([url path]));
             }
         }
 
@@ -1405,6 +1399,17 @@ public:
     }
 
     void textInputRequired (Point<int>, TextInputTarget&) override {}
+
+    void resetWindowPresentation()
+    {
+        if (hasNativeTitleBar())
+        {
+            [window setStyleMask: (NSViewComponentPeer::getNSWindowStyleMask (getStyleFlags()))];
+            setTitle (getComponent().getName()); // required to force the OS to update the title
+        }
+
+        [NSApp setPresentationOptions: NSApplicationPresentationDefault];
+    }
 
     //==============================================================================
     NSWindow* window = nil;
@@ -1955,6 +1960,7 @@ struct JuceNSWindowClass   : public ObjCClass<NSWindow>
         addMethod (@selector (constrainFrameRect:toScreen:),        constrainFrameRect,        @encode (NSRect), "@:",  @encode (NSRect), "@");
         addMethod (@selector (windowWillResize:toSize:),            windowWillResize,          @encode (NSSize), "@:@", @encode (NSSize));
         addMethod (@selector (windowDidExitFullScreen:),            windowDidExitFullScreen,   "v@:@");
+        addMethod (@selector (windowWillEnterFullScreen:),          windowWillEnterFullScreen, "v@:@");
         addMethod (@selector (zoom:),                               zoom,                      "v@:@");
         addMethod (@selector (windowWillMove:),                     windowWillMove,            "v@:@");
         addMethod (@selector (windowWillStartLiveResize:),          windowWillStartLiveResize, "v@:@");
@@ -1964,9 +1970,7 @@ struct JuceNSWindowClass   : public ObjCClass<NSWindow>
         addMethod (@selector (window:shouldDragDocumentWithEvent:from:withPasteboard:),
                    shouldAllowIconDrag, "B@:@", @encode (NSEvent*), @encode (NSPoint), @encode (NSPasteboard*));
 
-       #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
         addProtocol (@protocol (NSWindowDelegate));
-       #endif
 
         registerClass();
     }
@@ -1984,7 +1988,7 @@ private:
 
         return owner != nullptr
                 && owner->canBecomeKeyWindow()
-                && ! owner->sendModalInputAttemptIfBlocked();
+                && ! owner->isBlockedByModalComponent();
     }
 
     static BOOL canBecomeMainWindow (id self, SEL)
@@ -1993,7 +1997,7 @@ private:
 
         return owner != nullptr
                 && owner->canBecomeMainWindow()
-                && ! owner->sendModalInputAttemptIfBlocked();
+                && ! owner->isBlockedByModalComponent();
     }
 
     static void becomeKeyWindow (id self, SEL)
@@ -2001,7 +2005,17 @@ private:
         sendSuperclassMessage (self, @selector (becomeKeyWindow));
 
         if (auto* owner = getOwner (self))
-            owner->becomeKeyWindow();
+        {
+            if (owner->canBecomeKeyWindow())
+            {
+                owner->becomeKeyWindow();
+                return;
+            }
+
+            // this fixes a bug causing hidden windows to sometimes become visible when the app regains focus
+            if (! owner->getComponent().isVisible())
+                [(NSWindow*) self orderOut: nil];
+        }
     }
 
     static BOOL windowShouldClose (id self, SEL, id /*window*/)
@@ -2037,11 +2051,20 @@ private:
         return frameRect.size;
     }
 
-    static void windowDidExitFullScreen (id, SEL, NSNotification*)
+    static void windowDidExitFullScreen (id self, SEL, NSNotification*)
     {
-       #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
-        [NSApp setPresentationOptions: NSApplicationPresentationDefault];
-       #endif
+        if (auto* owner = getOwner (self))
+            owner->resetWindowPresentation();
+    }
+
+    static void windowWillEnterFullScreen (id self, SEL, NSNotification*)
+    {
+        if (SystemStats::getOperatingSystemType() <= SystemStats::MacOSX_10_9)
+            return;
+
+        if (auto* owner = getOwner (self))
+            if (owner->hasNativeTitleBar() && (owner->getStyleFlags() & ComponentPeer::windowIsResizable) == 0)
+                [owner->window setStyleMask: NSWindowStyleMaskBorderless];
     }
 
     static void zoom (id self, SEL, id sender)
@@ -2147,12 +2170,9 @@ bool MouseInputSource::SourceList::canUseTouch()
 //==============================================================================
 void Desktop::setKioskComponent (Component* kioskComp, bool shouldBeEnabled, bool allowMenusAndBars)
 {
-   #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6
-
     auto* peer = dynamic_cast<NSViewComponentPeer*> (kioskComp->getPeer());
     jassert (peer != nullptr); // (this should have been checked by the caller)
 
-   #if defined (MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
     if (peer->hasNativeTitleBar()
           && [peer->window respondsToSelector: @selector (toggleFullScreen:)])
     {
@@ -2164,7 +2184,6 @@ void Desktop::setKioskComponent (Component* kioskComp, bool shouldBeEnabled, boo
         [peer->window performSelector: @selector (toggleFullScreen:) withObject: nil];
     }
     else
-   #endif
     {
         if (shouldBeEnabled)
         {
@@ -2178,32 +2197,9 @@ void Desktop::setKioskComponent (Component* kioskComp, bool shouldBeEnabled, boo
         }
         else
         {
-            if (peer->hasNativeTitleBar())
-            {
-                [peer->window setStyleMask: (NSViewComponentPeer::getNSWindowStyleMask (peer->getStyleFlags()))];
-                peer->setTitle (peer->getComponent().getName()); // required to force the OS to update the title
-            }
-
-            [NSApp setPresentationOptions: NSApplicationPresentationDefault];
+            peer->resetWindowPresentation();
         }
     }
-   #elif JUCE_SUPPORT_CARBON
-    if (shouldBeEnabled)
-    {
-        SetSystemUIMode (kUIModeAllSuppressed, allowMenusAndBars ? kUIOptionAutoShowMenuBar : 0);
-        kioskComp->setBounds (Desktop::getInstance().getDisplays().getMainDisplay().totalArea);
-    }
-    else
-    {
-        SetSystemUIMode (kUIModeNormal, 0);
-    }
-   #else
-    ignoreUnused (kioskComp, shouldBeEnabled, allowMenusAndBars);
-
-    // If you're targeting OSes earlier than 10.6 and want to use this feature,
-    // you'll need to enable JUCE_SUPPORT_CARBON.
-    jassertfalse;
-   #endif
 }
 
 void Desktop::allowedOrientationsChanged() {}

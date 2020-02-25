@@ -107,10 +107,12 @@ public:
     */
     bool getToggleState() const noexcept                        { return isOn.getValue(); }
 
-    /** Returns the Value object that represents the botton's toggle state.
+    /** Returns the Value object that represents the button's toggle state.
+
         You can use this Value object to connect the button's state to external values or setters,
         either by taking a copy of the Value, or by using Value::referTo() to make it point to
         your own Value object.
+
         @see getToggleState, Value
     */
     Value& getToggleStateValue() noexcept                       { return isOn; }
@@ -391,13 +393,6 @@ public:
 
         virtual void drawDrawableButton (Graphics&, DrawableButton&,
                                          bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) = 0;
-
-    private:
-       #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
-        // These method have been deprecated: see their replacements above.
-        virtual int getTextButtonFont (TextButton&) { return 0; }
-        virtual int changeTextButtonWidthToFitText (TextButton&, int) { return 0; }
-       #endif
     };
 
     // This method's parameters have changed - see the new version.
@@ -517,7 +512,7 @@ private:
     void sendStateMessage();
     void setToggleState (bool shouldBeOn, NotificationType click, NotificationType state);
 
-    bool isMouseOrTouchOver (const MouseEvent& e);
+    bool isMouseSourceOver (const MouseEvent& e);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Button)
 };

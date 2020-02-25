@@ -40,7 +40,7 @@ void Displays::init (Desktop& desktop)
 const Displays::Display& Displays::findDisplayForRect (Rectangle<int> rect, bool isPhysical) const noexcept
 {
     int maxArea = -1;
-    Display* retVal = nullptr;
+    const Display* retVal = nullptr;
 
     for (auto& display : displays)
     {
@@ -65,7 +65,7 @@ const Displays::Display& Displays::findDisplayForRect (Rectangle<int> rect, bool
 const Displays::Display& Displays::findDisplayForPoint (Point<int> point, bool isPhysical) const noexcept
 {
     auto minDistance = std::numeric_limits<int>::max();
-    Display* retVal = nullptr;
+    const Display* retVal = nullptr;
 
     for (auto& display : displays)
     {
@@ -116,8 +116,8 @@ Point<ValueType> Displays::physicalToLogical (Point<ValueType> point, const Disp
 
     auto globalScale = Desktop::getInstance().getGlobalScaleFactor();
 
-    Point<ValueType> logicalTopLeft  (display.totalArea.getX(),       display.totalArea.getY());
-    Point<ValueType> physicalTopLeft (display.topLeftPhysical.getX(), display.topLeftPhysical.getY());
+    Point<ValueType> logicalTopLeft  (static_cast<ValueType> (display.totalArea.getX()),       static_cast<ValueType> (display.totalArea.getY()));
+    Point<ValueType> physicalTopLeft (static_cast<ValueType> (display.topLeftPhysical.getX()), static_cast<ValueType> (display.topLeftPhysical.getY()));
 
     return ((point - physicalTopLeft) / (display.scale / globalScale)) + (logicalTopLeft * globalScale);
 }
@@ -130,8 +130,8 @@ Point<ValueType> Displays::logicalToPhysical (Point<ValueType> point, const Disp
 
     auto globalScale = Desktop::getInstance().getGlobalScaleFactor();
 
-    Point<ValueType> logicalTopLeft  (display.totalArea.getX(),       display.totalArea.getY());
-    Point<ValueType> physicalTopLeft (display.topLeftPhysical.getX(), display.topLeftPhysical.getY());
+    Point<ValueType> logicalTopLeft  (static_cast<ValueType> (display.totalArea.getX()),       static_cast<ValueType> (display.totalArea.getY()));
+    Point<ValueType> physicalTopLeft (static_cast<ValueType> (display.topLeftPhysical.getX()), static_cast<ValueType> (display.topLeftPhysical.getY()));
 
     return ((point - (logicalTopLeft * globalScale)) * (display.scale / globalScale)) + physicalTopLeft;
 }
@@ -146,7 +146,6 @@ const Displays::Display& Displays::getMainDisplay() const noexcept
 
     // no main display!
     jassertfalse;
-    
     return displays.getReference (0);
 }
 
@@ -199,7 +198,7 @@ bool operator!= (const Displays::Display& d1, const Displays::Display& d2) noexc
 const Displays::Display& Displays::getDisplayContaining (Point<int> position) const noexcept
 {
     JUCE_ASSERT_MESSAGE_MANAGER_IS_LOCKED
-    auto* best = &displays.getReference (0);
+    const auto* best = &displays.getReference (0);
     auto bestDistance = std::numeric_limits<int>::max();
 
     for (auto& d : displays)
@@ -250,7 +249,7 @@ struct DisplayNode
 };
 
 /** Recursive - will calculate and set the logicalArea member of current. */
-static void processDisplay (DisplayNode* currentNode, const Array<DisplayNode>& allNodes)
+static void processDisplay (DisplayNode* currentNode, Array<DisplayNode>& allNodes)
 {
     const auto physicalArea = currentNode->display->totalArea.toDouble();
     const auto scale = currentNode->display->scale;
@@ -377,5 +376,14 @@ void Displays::updateToLogical()
         node.display->userArea        = (relativeUserArea + node.logicalArea.getTopLeft()).toNearestInt();
     }
 }
+
+#ifndef DOXYGEN
+ // explicit template instantiations
+ template Point<int>   Displays::physicalToLogical (Point<int>,   const Display*) const noexcept;
+ template Point<float> Displays::physicalToLogical (Point<float>, const Display*) const noexcept;
+
+ template Point<int>   Displays::logicalToPhysical (Point<int>,   const Display*) const noexcept;
+ template Point<float> Displays::logicalToPhysical (Point<float>, const Display*) const noexcept;
+#endif
 
 } // namespace juce

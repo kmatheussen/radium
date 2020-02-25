@@ -41,95 +41,6 @@ bool CriticalSection::tryEnter() const noexcept     { return pthread_mutex_trylo
 void CriticalSection::exit() const noexcept         { pthread_mutex_unlock (&lock); }
 
 //==============================================================================
-WaitableEvent::WaitableEvent (bool useManualReset) noexcept
-    : triggered (false), manualReset (useManualReset)
-{
-    pthread_cond_init (&condition, {});
-
-    pthread_mutexattr_t atts;
-    pthread_mutexattr_init (&atts);
-   #if ! JUCE_ANDROID
-    pthread_mutexattr_setprotocol (&atts, PTHREAD_PRIO_INHERIT);
-   #endif
-    pthread_mutex_init (&mutex, &atts);
-    pthread_mutexattr_destroy (&atts);
-}
-
-WaitableEvent::~WaitableEvent() noexcept
-{
-    pthread_cond_destroy (&condition);
-    pthread_mutex_destroy (&mutex);
-}
-
-bool WaitableEvent::wait (int timeOutMillisecs) const noexcept
-{
-    pthread_mutex_lock (&mutex);
-
-    if (! triggered)
-    {
-        if (timeOutMillisecs < 0)
-        {
-            do
-            {
-                pthread_cond_wait (&condition, &mutex);
-            }
-            while (! triggered);
-        }
-        else
-        {
-            struct timeval now;
-            gettimeofday (&now, nullptr);
-
-            struct timespec time;
-            time.tv_sec  = now.tv_sec  + (timeOutMillisecs / 1000);
-            time.tv_nsec = (now.tv_usec + ((timeOutMillisecs % 1000) * 1000)) * 1000;
-
-            if (time.tv_nsec >= 1000000000)
-            {
-                time.tv_nsec -= 1000000000;
-                time.tv_sec++;
-            }
-
-            do
-            {
-                if (pthread_cond_timedwait (&condition, &mutex, &time) == ETIMEDOUT)
-                {
-                    pthread_mutex_unlock (&mutex);
-                    return false;
-                }
-            }
-            while (! triggered);
-        }
-    }
-
-    if (! manualReset)
-        triggered = false;
-
-    pthread_mutex_unlock (&mutex);
-    return true;
-}
-
-void WaitableEvent::signal() const noexcept
-{
-    pthread_mutex_lock (&mutex);
-
-    if (! triggered)
-    {
-        triggered = true;
-        pthread_cond_broadcast (&condition);
-    }
-
-    pthread_mutex_unlock (&mutex);
-}
-
-void WaitableEvent::reset() const noexcept
-{
-    pthread_mutex_lock (&mutex);
-    triggered = false;
-    pthread_mutex_unlock (&mutex);
-}
-
-//==============================================================================
 void JUCE_CALLTYPE Thread::sleep (int millisecs)
 {
     struct timespec time;
@@ -271,7 +182,7 @@ namespace
         return statfs (f.getFullPathName().toUTF8(), &result) == 0;
     }
 
-   #if (JUCE_MAC && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5) || JUCE_IOS
+   #if JUCE_MAC || JUCE_IOS
     static int64 getCreationTime (const juce_statStruct& s) noexcept     { return (int64) s.st_birthtime; }
    #else
     static int64 getCreationTime (const juce_statStruct& s) noexcept     { return (int64) s.st_ctime; }
@@ -400,13 +311,19 @@ void File::getFileTimesInternal (int64& modificationTime, int64& accessTime, int
 
     if (juce_stat (fullPath, info))
     {
+      #if JUCE_MAC || (JUCE_IOS && __DARWIN_ONLY_64_BIT_INO_T)
+        modificationTime  = (int64) info.st_mtimespec.tv_sec * 1000 + info.st_mtimespec.tv_nsec / 1000000;
+        accessTime        = (int64) info.st_atimespec.tv_sec * 1000 + info.st_atimespec.tv_nsec / 1000000;
+        creationTime      = (int64) info.st_birthtimespec.tv_sec * 1000 + info.st_birthtimespec.tv_nsec / 1000000;
+      #else
         modificationTime  = (int64) info.st_mtime * 1000;
         accessTime        = (int64) info.st_atime * 1000;
-       #if (JUCE_MAC && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5) || JUCE_IOS
+       #if JUCE_IOS
         creationTime      = (int64) info.st_birthtime * 1000;
        #else
         creationTime      = (int64) info.st_ctime * 1000;
        #endif
+      #endif
     }
 }
 
@@ -416,11 +333,32 @@ bool File::setFileTimesInternal (int64 modificationTime, int64 accessTime, int64
 
     if ((modificationTime != 0 || accessTime != 0) && juce_stat (fullPath, info))
     {
+       #if JUCE_MAC || (JUCE_IOS && __DARWIN_ONLY_64_BIT_INO_T)
+        struct timeval times[2];
+
+        bool setModificationTime = (modificationTime != 0);
+        bool setAccessTime       = (accessTime != 0);
+
+        times[0].tv_sec  = setAccessTime ? static_cast<__darwin_time_t> (accessTime / 1000)
+                                         : info.st_atimespec.tv_sec;
+
+        times[0].tv_usec = setAccessTime ? static_cast<__darwin_suseconds_t> ((accessTime % 1000) * 1000)
+                                         : static_cast<__darwin_suseconds_t> (info.st_atimespec.tv_nsec / 1000);
+
+        times[1].tv_sec  = setModificationTime ? static_cast<__darwin_time_t> (modificationTime / 1000)
+                                               : info.st_mtimespec.tv_sec;
+
+        times[1].tv_usec = setModificationTime ? static_cast<__darwin_suseconds_t> ((modificationTime % 1000) * 1000)
+                                               : static_cast<__darwin_suseconds_t> (info.st_mtimespec.tv_nsec / 1000);
+
+        return utimes (fullPath.toUTF8(), times) == 0;
+       #else
         struct utimbuf times;
         times.actime  = accessTime != 0       ? static_cast<time_t> (accessTime / 1000)       : static_cast<time_t> (info.st_atime);
         times.modtime = modificationTime != 0 ? static_cast<time_t> (modificationTime / 1000) : static_cast<time_t> (info.st_mtime);
 
         return utime (fullPath.toUTF8(), &times) == 0;
+       #endif
     }
 
     return false;
@@ -887,8 +825,7 @@ void JUCE_API juce_threadEntryPoint (void*);
 extern JavaVM* androidJNIJavaVM;
 #endif
 
-extern "C" void* threadEntryProc (void*);
-extern "C" void* threadEntryProc (void* userData)
+static void* threadEntryProc (void* userData)
 {
     auto* myself = static_cast<Thread*> (userData);
 
@@ -1044,8 +981,8 @@ void JUCE_CALLTYPE Thread::setCurrentThreadAffinityMask (uint32 affinityMask)
     CPU_ZERO (&affinity);
 
     for (int i = 0; i < 32; ++i)
-        if ((affinityMask & (1 << i)) != 0)
-            CPU_SET (i, &affinity);
+        if ((affinityMask & (uint32) (1 << i)) != 0)
+            CPU_SET ((size_t) i, &affinity);
 
    #if (! JUCE_ANDROID) && ((! JUCE_LINUX) || ((__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2004))
     pthread_setaffinity_np (pthread_self(), sizeof (cpu_set_t), &affinity);
@@ -1155,7 +1092,7 @@ public:
                 argv.add (nullptr);
 
                 execvp (exe.toRawUTF8(), argv.getRawDataPointer());
-                exit (-1);
+                _exit (-1);
             }
             else
             {
@@ -1176,14 +1113,24 @@ public:
             close (pipeHandle);
     }
 
-    bool isRunning() const noexcept
+    bool isRunning() noexcept
     {
         if (childPID == 0)
             return false;
 
         int childState;
         auto pid = waitpid (childPID, &childState, WNOHANG);
-        return pid == 0 || ! (WIFEXITED (childState) || WIFSIGNALED (childState));
+
+        if (pid == 0)
+            return true;
+
+        if (WIFEXITED (childState))
+        {
+            exitCode = WEXITSTATUS (childState);
+            return false;
+        }
+
+        return ! WIFSIGNALED (childState);
     }
 
     int read (void* dest, int numBytes) noexcept
@@ -1198,7 +1145,21 @@ public:
             readHandle = fdopen (pipeHandle, "r");
 
         if (readHandle != nullptr)
-            return (int) fread (dest, 1, (size_t) numBytes, readHandle);
+        {
+            for (;;)
+            {
+                auto numBytesRead = (int) fread (dest, 1, (size_t) numBytes, readHandle);
+
+                if (numBytesRead > 0 || feof (readHandle))
+                    return numBytesRead;
+
+                // signal occurred during fread() so try again
+                if (ferror (readHandle) && errno == EINTR)
+                    continue;
+
+                break;
+            }
+        }
 
         return 0;
     }
@@ -1208,15 +1169,21 @@ public:
         return ::kill (childPID, SIGKILL) == 0;
     }
 
-    uint32 getExitCode() const noexcept
+    uint32 getExitCode() noexcept
     {
+        if (exitCode >= 0)
+            return (uint32) exitCode;
+
         if (childPID != 0)
         {
             int childState = 0;
             auto pid = waitpid (childPID, &childState, WNOHANG);
 
             if (pid >= 0 && WIFEXITED (childState))
-                return WEXITSTATUS (childState);
+            {
+                exitCode = WEXITSTATUS (childState);
+                return (uint32) exitCode;
+            }
         }
 
         return 0;
@@ -1224,6 +1191,7 @@ public:
 
     int childPID = 0;
     int pipeHandle = 0;
+    int exitCode = -1;
     FILE* readHandle = {};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ActiveProcess)
@@ -1321,7 +1289,7 @@ struct HighResolutionTimer::Pimpl
     }
 
     HighResolutionTimer& owner;
-    std::atomic<int> periodMs;
+    std::atomic<int> periodMs { 0 };
 
 private:
     pthread_t thread = {};

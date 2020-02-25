@@ -377,18 +377,9 @@ Desktop::DisplayOrientation Desktop::getCurrentOrientation() const
 }
 
 //==============================================================================
-#if defined (MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7)
- #define JUCE_USE_IOPM_SCREENSAVER_DEFEAT 1
-#endif
-
-#if ! (defined (JUCE_USE_IOPM_SCREENSAVER_DEFEAT) || defined (__POWER__))
- extern "C"  { extern OSErr UpdateSystemActivity (UInt8); } // Some versions of the SDK omit this function..
-#endif
-
 class ScreenSaverDefeater   : public Timer
 {
 public:
-   #if JUCE_USE_IOPM_SCREENSAVER_DEFEAT
     ScreenSaverDefeater()
     {
         startTimer (5000);
@@ -429,19 +420,6 @@ public:
     };
 
     std::unique_ptr<PMAssertion> assertion;
-   #else
-    ScreenSaverDefeater()
-    {
-        startTimer (10000);
-        timerCallback();
-    }
-
-    void timerCallback() override
-    {
-        if (Process::isForegroundProcess())
-            UpdateSystemActivity (1 /*UsrActivity*/);
-    }
-   #endif
 };
 
 static std::unique_ptr<ScreenSaverDefeater> screenSaverDefeater;
@@ -504,10 +482,8 @@ static Displays::Display getDisplayFromScreen (NSScreen* s, CGFloat& mainScreenB
     d.totalArea = convertDisplayRect ([s frame], mainScreenBottom) / masterScale;
     d.scale = masterScale;
 
-   #if defined (MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
     if ([s respondsToSelector: @selector (backingScaleFactor)])
         d.scale *= s.backingScaleFactor;
-   #endif
 
     NSSize dpi = [[[s deviceDescription] objectForKey: NSDeviceResolution] sizeValue];
     d.dpi = (dpi.width + dpi.height) / 2.0;
@@ -542,8 +518,14 @@ bool juce_areThereAnyAlwaysOnTopWindows()
 static void selectImageForDrawing (const Image& image)
 {
     [NSGraphicsContext saveGraphicsState];
+
+   #if (defined (MAC_OS_X_VERSION_10_10) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_10)
+    [NSGraphicsContext setCurrentContext: [NSGraphicsContext graphicsContextWithCGContext: juce_getImageContext (image)
+                                                                                  flipped: false]];
+   #else
     [NSGraphicsContext setCurrentContext: [NSGraphicsContext graphicsContextWithGraphicsPort: juce_getImageContext (image)
                                                                                      flipped: false]];
+   #endif
 }
 
 static void releaseImageAfterDrawing()
@@ -614,16 +596,16 @@ void SystemClipboard::copyTextToClipboard (const String& text)
 {
     NSPasteboard* pb = [NSPasteboard generalPasteboard];
 
-    [pb declareTypes: [NSArray arrayWithObject: NSStringPboardType]
+    [pb declareTypes: [NSArray arrayWithObject: NSPasteboardTypeString]
                owner: nil];
 
     [pb setString: juceStringToNS (text)
-          forType: NSStringPboardType];
+          forType: NSPasteboardTypeString];
 }
 
 String SystemClipboard::getTextFromClipboard()
 {
-    return nsStringToJuce ([[NSPasteboard generalPasteboard] stringForType: NSStringPboardType]);
+    return nsStringToJuce ([[NSPasteboard generalPasteboard] stringForType: NSPasteboardTypeString]);
 }
 
 void Process::setDockIconVisible (bool isVisible)

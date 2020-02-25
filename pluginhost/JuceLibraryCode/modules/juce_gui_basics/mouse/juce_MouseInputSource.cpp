@@ -272,7 +272,9 @@ public:
         if (newScreenPos != lastScreenPos || forceUpdate)
         {
             cancelPendingUpdate();
-            lastScreenPos = newScreenPos;
+
+            if (newScreenPos != MouseInputSource::offscreenMousePos)
+                lastScreenPos = newScreenPos;
 
             if (auto* current = getComponentUnderMouse())
             {
@@ -649,6 +651,8 @@ const float MouseInputSource::invalidRotation = 0.0f;
 const float MouseInputSource::invalidTiltX = 0.0f;
 const float MouseInputSource::invalidTiltY = 0.0f;
 
+const Point<float> MouseInputSource::offscreenMousePos { -10.0f, -10.0f };
+
 // Deprecated method
 bool MouseInputSource::hasMouseMovedSignificantlySincePressed() const noexcept  { return pimpl->hasMouseMovedSignificantlySincePressed(); }
 
@@ -678,7 +682,7 @@ struct MouseInputSource::SourceList  : public Timer
         return &sourceArray.getReference (sourceArray.size() - 1);
     }
 
-    MouseInputSource* getMouseSource (int index) const noexcept
+    MouseInputSource* getMouseSource (int index) noexcept
     {
         return isPositiveAndBelow (index, sourceArray.size()) ? &sourceArray.getReference (index)
                                                               : nullptr;
@@ -720,7 +724,7 @@ struct MouseInputSource::SourceList  : public Timer
         return num;
     }
 
-    MouseInputSource* getDraggingMouseSource (int index) const noexcept
+    MouseInputSource* getDraggingMouseSource (int index) noexcept
     {
         int num = 0;
 

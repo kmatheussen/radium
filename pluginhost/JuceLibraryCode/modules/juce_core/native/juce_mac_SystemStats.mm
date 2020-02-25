@@ -81,9 +81,13 @@ void CPUInformation::initialise() noexcept
     has3DNow = (b & (1u << 31)) != 0;
     hasSSE3  = (c & (1u <<  0)) != 0;
     hasSSSE3 = (c & (1u <<  9)) != 0;
+    hasFMA3  = (c & (1u << 12)) != 0;
     hasSSE41 = (c & (1u << 19)) != 0;
     hasSSE42 = (c & (1u << 20)) != 0;
     hasAVX   = (c & (1u << 28)) != 0;
+
+    SystemStatsHelpers::doCPUID (a, b, c, d, 0x80000001);
+    hasFMA4  = (c & (1u << 16)) != 0;
 
     SystemStatsHelpers::doCPUID (a, b, c, d, 7);
     hasAVX2            = (b & (1u <<  5)) != 0;
@@ -159,11 +163,28 @@ String SystemStats::getDeviceDescription()
    #endif
 
     size_t size;
+
     if (sysctlbyname (name, nullptr, &size, nullptr, 0) >= 0)
     {
         HeapBlock<char> model (size);
-        if (sysctlbyname (name, model,   &size, nullptr, 0) >= 0)
-            return model.get();
+
+        if (sysctlbyname (name, model, &size, nullptr, 0) >= 0)
+        {
+            String description (model.get());
+
+           #if JUCE_IOS
+            if (description == "x86_64") // running in the simulator
+            {
+                if (auto* userInfo = [[NSProcessInfo processInfo] environment])
+                {
+                    if (auto* simDeviceName = [userInfo objectForKey: @"SIMULATOR_DEVICE_NAME"])
+                        return nsStringToJuce (simDeviceName);
+                }
+            }
+          #endif
+
+            return description;
+        }
     }
 
     return {};
