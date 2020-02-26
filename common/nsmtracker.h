@@ -1123,6 +1123,20 @@ namespace radium{
 	hashmap.h
 *********************************************************************/
 
+// (There is also a DYN_get_place function in placement_proc.h, and a DYN_get_liberal_ratio function further down in this file)
+static inline Ratio DYN_get_ratio(const dyn_t dyn){
+  if (dyn.type==INT_TYPE)
+    return make_ratio(dyn.int_number, 1);
+
+  if (dyn.type==RATIO_TYPE)
+    return *dyn.ratio;
+
+  RError("DYN_Get_ratio: dyn (type: %d) can not be converted to a ratio", dyn.type);
+
+  return make_ratio(0,1);      
+}
+
+
 #include "hashmap_proc.h"
 
 
@@ -1430,19 +1444,6 @@ static inline dyn_t DYN_create_place(const Place place){
   return DYN_create_ratio(RATIO_minimize(make_ratio(place.counter + place.line*place.dividor, place.dividor)));
 }
 
-// (There is also a DYN_get_place function in placement_proc.h, and a DYN_get_liberal_ratio function further down in this file)
-static inline Ratio DYN_get_ratio(const dyn_t dyn){
-  if (dyn.type==INT_TYPE)
-    return make_ratio(dyn.int_number, 1);
-
-  if (dyn.type==RATIO_TYPE)
-    return *dyn.ratio;
-
-  RError("DYN_Get_ratio: dyn (type: %d) can not be converted to a ratio", dyn.type);
-
-  return make_ratio(0,1);      
-}
-
 static inline bool DYN_is_ratio(const dyn_t a){
   if (a.type==INT_TYPE)
     return true;
@@ -1732,6 +1733,8 @@ struct Notes{
         bool scheduler_must_send_pitch_next_block; // Can only be set to true if sheduler_may_send_pitch_next_block==true.
         float curr_pitch;
         int64_t curr_pitch_time;
+
+        bool pianonote_is_selected;
   
         int64_t id;
 };

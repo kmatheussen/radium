@@ -63,6 +63,7 @@ extern LANGSPEC void HASH_put_filepath(hash_t *hash, const char *key, filepath_t
 extern LANGSPEC void HASH_put_bool(hash_t *hash, const char *key, bool val);
 extern LANGSPEC void HASH_put_float(hash_t *hash, const char *key, double val);
 extern LANGSPEC void HASH_put_ratio(hash_t *hash, const char *key, const Ratio val);
+extern LANGSPEC void HASH_put_place(hash_t *hash, const char *key, const Place place);
 extern LANGSPEC void HASH_put_hash(hash_t *hash, const char *key, hash_t *val);
 extern LANGSPEC void HASH_put_array(hash_t *hash, const char *key, const dynvec_t dynvec);
 
@@ -83,6 +84,8 @@ extern LANGSPEC instrument_t HASH_get_instrument(const hash_t *hash, const char 
 extern LANGSPEC filepath_t HASH_get_filepath(const hash_t *hash, const char *key);
 extern LANGSPEC bool HASH_get_bool(const hash_t *hash, const char *key);
 extern LANGSPEC double HASH_get_float(const hash_t *hash, const char *key);
+extern LANGSPEC Ratio HASH_get_ratio(hash_t *hash, const char *key);
+extern LANGSPEC Place HASH_get_place(hash_t *hash, const char *key);
 extern LANGSPEC hash_t *HASH_get_hash(const hash_t *hash, const char *key);
 extern LANGSPEC double HASH_get_number(const hash_t *hash, const char *key); // Same as HASH_get_float, but if element is an integer, convert integer to double and return value.
 extern LANGSPEC dynvec_t HASH_get_array(const hash_t *hash, const char *key);
