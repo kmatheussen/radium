@@ -94,8 +94,14 @@ static void write_container_descriptions_to_cache_on_disk(juce::String container
   //fprintf(stderr, "===...===...   %s: GOING TO Write Plugin description file \"%s\".\n", juce::String(container_filename).toRawUTF8(), description_filename.toRawUTF8());
 
   juce::File file(description_filename);
+
+  juce::XmlElement::TextFormat options;
+  options.dtd = "";
+  options.customEncoding = "UTF-8";
+  options.lineWrapLength = 60;
+
   
-  if (xml_descriptions.writeToFile(file, "")==false){
+  if (xml_descriptions.writeTo(file, options)==false){
     //GFX_Message2(NULL, true, "Error: Unable to write to file \"%s\".\n", description_filename.toRawUTF8());
     fprintf(stdout, "Error: Unable to write to file \"%s\".\n", description_filename.toRawUTF8());
     show_alert(juce::String("Unable to write to file \"") + description_filename + "\"");

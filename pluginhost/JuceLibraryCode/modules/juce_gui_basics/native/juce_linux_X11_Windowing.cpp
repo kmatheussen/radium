@@ -3640,12 +3640,6 @@ void Displays::findDisplays (float masterScale)
                     }
                 }
 
-                // xrandr.getOutputPrimary sometimes returns a display without crtc.
-                if (!displays.isEmpty() && !displays.getReference(0).isMain)
-                {
-                  jassert (xrandrMainDisplay);
-                  displays.getReference(0).isMain = true;
-                }
             }
         }
 
