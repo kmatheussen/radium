@@ -697,3 +697,18 @@ dynvec_t getSelectedNotes(int tracknum, int blocknum, int windownum){
   return ret;
 }
 
+bool notesAreSelected(int tracknum, int blocknum, int windownum){
+  const struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  if (wtrack!=NULL){
+
+    struct Notes *note = wtrack->track->notes;
+    while(note != NULL){
+      if (note->pianonote_is_selected)
+        return true;
+
+      note = NextNote(note);
+    }
+  }
+  
+  return false;
+}
