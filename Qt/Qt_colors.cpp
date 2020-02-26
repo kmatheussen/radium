@@ -154,6 +154,7 @@ static const ColorConfig g_colorconfig[] = {
   {PEAKS_4DB_COLOR_NUM,         "peaks4db",                 "Peaks > 4dB", false},
 
   {PIANONOTE_COLOR_NUM,         "pianonote",                "Pianoroll note", false},
+  {PIANONOTE_SELECTED_COLOR_NUM,         "pianonote_selected",                "Pianoroll selected note", false},
 
   {AUTOMATION4_COLOR_NUM,                   "automation4",  "Automation 4", false},
   {AUTOMATION5_COLOR_NUM,                   "automation5",  "Automation 5", false},
@@ -329,6 +330,8 @@ static ReplacementColor g_replacement_color[] = {
   {CHECK_BOX_UNSELECTED_COLOR_NUM,  QColor("#ff34413c")},
   {BUTTONS_TEXT_COLOR_NUM, QColor("#cccccc")},
     
+  {PIANONOTE_SELECTED_COLOR_NUM, QColor("#00c8e6")},
+  
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor("#aa000001")},
   {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
   {LINE_SLIDER_COLOR_NUM, QColor(1,1,1)},
