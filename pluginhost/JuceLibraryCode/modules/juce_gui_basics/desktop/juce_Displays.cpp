@@ -146,6 +146,7 @@ const Displays::Display& Displays::getMainDisplay() const noexcept
 
     // no main display!
     jassertfalse;
+    
     return displays.getReference (0);
 }
 

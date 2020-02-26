@@ -3550,7 +3550,8 @@ void Displays::findDisplays (float masterScale)
                 auto& xrandr = XRandrWrapper::getInstance();
 
                 auto numMonitors = ScreenCount (display);
-                auto mainDisplay = xrandr.getOutputPrimary (display, RootWindow (display, 0));
+                auto xrandrMainDisplay = xrandr.getOutputPrimary (display, RootWindow (display, 0));
+                auto mainDisplay = xrandrMainDisplay;
 
                 for (int i = 0; i < numMonitors; ++i)
                 {
@@ -3637,6 +3638,13 @@ void Displays::findDisplays (float masterScale)
 
                         displays.add (d);
                     }
+                }
+
+                // xrandr.getOutputPrimary sometimes returns a display without crtc.
+                if (!displays.isEmpty() && !displays.getReference(0).isMain)
+                {
+                  jassert (xrandrMainDisplay);
+                  displays.getReference(0).isMain = true;
                 }
             }
         }
