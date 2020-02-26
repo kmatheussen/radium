@@ -2133,6 +2133,7 @@
   :new-note #f
   :ctrl-was-pressed (<ra> :control-pressed)
   :mouse-has-been-moved #f
+  :extra #f
   )
 
 
@@ -2298,8 +2299,11 @@
   ;;(c-display "TYPE:" move-type)
   
   (assert (or move-start move-end move-all))
+
+  (define note-is-selected (<ra> :note-is-selected noteid))
   
-  (define do-set-new-pitch-for-main-note (or move-start
+  (define do-set-new-pitch-for-main-note (or (not note-is-selected)
+                                             move-start
                                              move-all
                                              (sane-pianonote-portamento-enabled pianonotenum
                                                                                 noteid
@@ -2349,8 +2353,9 @@
               (when (< pianonotenum (<ra> :get-num-pianonotes noteid tracknum))
                 
                 (define do-set-new-pitch (and do-set-new-pitch-for-main-note
-                                              (or move-start
-                                                  move-all
+                                              (or (not note-is-selected)
+                                                  move-start
+                                                  move-all                                                  
                                                   (sane-pianonote-portamento-enabled pianonotenum
                                                                                      noteid
                                                                                      tracknum))))
@@ -2369,7 +2374,7 @@
                           (max 0 (+ delta-Place (get-note-place noteid pianonotenum))))
                       noteid
                       tracknum)))
-            (if (<ra> :note-is-selected noteid)
+            (if note-is-selected
                 (<ra> :get-selected-notes tracknum)
                 (list noteid))))
 
@@ -2441,20 +2446,25 @@
                                                            (call-get-existing-node-info-callbacks callback info)))))
                         :Get-min-value (lambda (_) 1)
                         :Get-max-value (lambda (_) 127)
-                        :Get-release-x (lambda (info) (/ (+ (<ra> :get-pianonote-x1 (info :pianonotenum)
-                                                                  (info :noteid)
-                                                                  (info :tracknum))
-                                                            (<ra> :get-pianonote-x2 (info :pianonotenum)
-                                                                  (info :noteid)
-                                                                  (info :tracknum)))
-                                                         2))
+                        :Get-release-x (lambda (info)
+                                         (and (info :noteid)
+                                              (/ (+ (<ra> :get-pianonote-x1 (info :pianonotenum)
+                                                          (info :noteid)
+                                                          (info :tracknum))
+                                                    (<ra> :get-pianonote-x2 (info :pianonotenum)
+                                                          (info :noteid)
+                                                          (info :tracknum)))
+                                                 2)))
                         :Get-release-y (lambda (info)
-                                         (+ (info :mouse-delta)
-                                            (get-pianonote-y (info :pianonotenum)
-                                                             (info :noteid)
-                                                             (info :tracknum)
-                                                             (info :move-type))))
-                        :Make-undo (lambda (_) #f);;(<ra> :undo-notes *current-track-num*))
+                                         (and (info :noteid)
+                                              (+ (info :mouse-delta)
+                                                 (get-pianonote-y (info :pianonotenum)
+                                                                  (info :noteid)
+                                                                  (info :tracknum)
+                                                                  (info :move-type)))))
+                        
+                        :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
+                        
                         :Create-new-node (lambda (X Place callback)
                                            (if (<ra> :control-pressed)
                                                (begin
@@ -2466,25 +2476,43 @@
                                                                    raw-Value
                                                                    (floor raw-Value)))
                                                  (define Next-Place (get-next-place-from-y *left-button* (<ra> :get-mouse-pointer-y)))
-                                                 (define noteid (<ra> :add-pianonote
-                                                                      Value
-                                                                      Place Next-Place *current-track-num*))
+                                                 
+                                                 (define (create-note pianonote-info)
+                                                   (define noteid (<ra> :add-pianonote
+                                                                        Value
+                                                                        Place Next-Place *current-track-num*))
+                                                   (set! (pianonote-info :noteid) noteid)
+                                                   (when (not (and (number? noteid) (= -1 noteid)))
+                                                     (define pitch (<ra> :get-pianonote-value 0 noteid *current-track-num*))
+                                                     (set! (pianonote-info :playing-note-pitch) pitch)
+                                                     (set! (pianonote-info :playing-note-id) (create-play-pianonote pitch))))
+                                                 
+                                                 (define noteid #f)
+
+                                                 (define pianonote-info (make-pianonote-info :tracknum *current-track-num*
+                                                                                             :noteid noteid
+                                                                                             :pianonotenum 0
+                                                                                             :move-type *pianonote-move-end*
+                                                                                             :mouse-delta 0
+                                                                                             :playing-note-id #f ;;(create-play-pianonote pitch)
+                                                                                             :playing-note-pitch #f
+                                                                                             :new-note #t
+                                                                                             :extra create-note))
+                                                 
+                                                 (if (not (<ra> :notes-are-selected *current-track-num*))
+                                                     (create-note pianonote-info))
+                                                 
                                                  (if (and (number? noteid) (= -1 noteid))
                                                      #f
-                                                     (let ((pitch (<ra> :get-pianonote-value 0 noteid *current-track-num*)))
-                                                       (callback (make-pianonote-info :tracknum *current-track-num*
-                                                                                      :noteid noteid
-                                                                                      :pianonotenum 0
-                                                                                      :move-type *pianonote-move-end*
-                                                                                      :mouse-delta 0
-                                                                                      :playing-note-id (create-play-pianonote pitch)
-                                                                                      :playing-note-pitch pitch
-                                                                                      :new-note #t
-                                                                                      )
-                                                                 Value
-                                                                 (<ra> :get-y-from-place Next-Place)))))))
+                                                     (callback pianonote-info
+                                                               Value
+                                                               (<ra> :get-y-from-place Next-Place))))))
+                        
                         :Move-node (lambda (pianonote-info Value Place)
-                                                                          
+
+                                     (if (not (pianonote-info :noteid))
+                                         ((pianonote-info :extra) pianonote-info))
+                                     
                                      (define pianonotenum (pianonote-info :pianonotenum))
                                      (define noteid (pianonote-info :noteid))
                                      (define tracknum (pianonote-info :tracknum))
@@ -2534,8 +2562,8 @@
                                      (define playing-note-id (pianonote-info :playing-note-id))
                                      (define playing-note-pitch (pianonote-info :playing-note-pitch))
                                      
-                                     (if (not (and (number? playing-note-id)
-                                                   (= -1 playing-note-id)))
+                                     (if (and (number? playing-note-id)
+                                              (not (= -1 playing-note-id)))
                                          (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
                                            (if (<ra> :is-legal-instrument instrument-id)
                                                (let ((midi-channel (<ra> :get-track-midi-channel *current-track-num*))
@@ -2565,24 +2593,27 @@
                                      )
 
                         :Release-node (lambda (pianonote-info)
-                                        (if (not (and (number? (pianonote-info :playing-note-id))
-                                                      (= -1 (pianonote-info :playing-note-id))))
+
+                                        (if (and (number? (pianonote-info :playing-note-id))
+                                                 (not (= -1 (pianonote-info :playing-note-id))))
                                             (let ((instrument-id (<ra> :get-instrument-for-track *current-track-num*)))
                                               (if (<ra> :is-legal-instrument instrument-id)
                                                   (<ra> :stop-note (pianonote-info :playing-note-id)
                                                                    (<ra> :get-track-midi-channel *current-track-num*)
                                                                    instrument-id))))
-                                        (if (and (pianonote-info :ctrl-was-pressed)
-                                                 (not (pianonote-info :mouse-has-been-moved)))
+
+                                        (when (not (pianonote-info :mouse-has-been-moved))
+                                          (if (pianonote-info :ctrl-was-pressed)
                                             (if (<ra> :note-is-selected (pianonote-info :noteid) *current-track-num*)
                                                 (<ra> :unselect-note (pianonote-info :noteid) *current-track-num*)
-                                                (<ra> :select-note (pianonote-info :noteid) *current-track-num*))))
-                                                
-
+                                                (<ra> :select-note (pianonote-info :noteid) *current-track-num*))
+                                            (<ra> :unselect-all-notes *current-track-num*))))
+                        
                         :Publicize (lambda (pianonote-info)
-                                     (set-current-pianonote (pianonote-info :pianonotenum)
-                                                            (pianonote-info :noteid)
-                                                            (pianonote-info :tracknum)))
+                                     (if (pianonote-info :noteid)
+                                         (set-current-pianonote (pianonote-info :pianonotenum)
+                                                                (pianonote-info :noteid)
+                                                                (pianonote-info :tracknum))))
                         :Get-pixels-per-value-unit (lambda (_)
                                                      (<ra> :get-pianoroll-low-key *current-track-num*)
                                                      (<ra> :get-pianoroll-high-key *current-track-num*)
