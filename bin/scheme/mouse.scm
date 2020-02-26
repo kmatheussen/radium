@@ -3846,10 +3846,15 @@
                   (define-lazy trackwidth-info (get-trackwidth-info X Y))
                   (set! *current-fx/distance* #f)
 
+                  ;;(c-display "info:" trackwidth-info)
                   ;;(c-display "curr" *current-track-num* *current-track-num-all-tracks*)
                   
                   (cond ((and (<ra> :swingtext-visible *current-track-num*)
                               (inside-box? (<ra> :get-box swingtext *current-track-num*) X Y))
+                         (if trackwidth-info
+                             (begin
+                               (set! resize-mouse-pointer-is-set #t)
+                               (set-mouse-pointer ra:set-horizontal-split-mouse-pointer (<gui> :get-editor-gui))))
                          (set-editor-statusbar (<-> "Swing text for track #" *current-track-num*)))
                         ((and (<ra> :centtext-visible *current-track-num*)
                               (inside-box? (<ra> :get-box centtext *current-track-num*) X Y))
