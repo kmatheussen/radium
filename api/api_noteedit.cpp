@@ -498,6 +498,30 @@ const_char* getNoteId(int notenum, int tracknum, int blocknum, int windownum){
   return GetNoteIdAsCharString(note->id);
 }
 
+int getNoteNum(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
+  if(wtrack==NULL)
+    return -1;
+  
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
+  if (note==NULL)
+    return -1;
+
+  int i = 0;
+  struct Notes *notes = wtrack->track->notes;
+  while(notes != NULL){
+    if (notes==note)
+      return i;
+    i++;
+    notes = NextNote(notes);
+  }
+
+  handleError("getNoteNum: Note not found in track");
+  return -1;
+}
+
 Place getNoteStart(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
@@ -579,19 +603,27 @@ void updateNotesInPlayer(void){
 
 /* Select/unselect notes */
 
-#include <QMap>
+#include <QHash>
 #include <QSet>
 
-static QMap< const struct WBlocks*, QSet<int64_t> > g_selected_notes;
+void unselectAllNotes(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  if (wtrack==NULL)
+    return;
 
-void unselectAllNotes(void){
-  g_selected_notes.clear();
+  struct Notes *notes = wtrack->track->notes;
+  while(notes!=NULL){
+    notes->pianonote_is_selected = false;
+    notes = NextNote(notes);
+  }
+
+  root->song->tracker_windows->must_redraw=true;
 }
 
 bool API_note_is_selected(const struct WBlocks *wblock, const struct Notes *note){
   R_ASSERT_RETURN_IF_FALSE2(wblock!=NULL,false);
   R_ASSERT_RETURN_IF_FALSE2(note!=NULL,false);
-  return g_selected_notes.value(wblock).contains(note->id);
+  return note->pianonote_is_selected;
 }
 
 bool noteIsSelected(dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -601,57 +633,67 @@ bool noteIsSelected(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   const struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return false;
-  
-  return API_note_is_selected(wblock, note);
+
+  return note->pianonote_is_selected;
+  //return API_note_is_selected(wblock, note);
 }
 
 void selectNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  const struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return;
   
-  g_selected_notes[wblock].insert(note->id);
+#if !defined(RELEASE)
+  if (note->pianonote_is_selected==true){
+    handleError("selectNote/DEBUG mode: Note #%d is already selected in block #%d", (int)note->id, blocknum);
+    //R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+#endif
+  
+  note->pianonote_is_selected = true;
+  
+  window->must_redraw=true;
 }
 
 void unselectNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  const struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return;
-  
-  if (g_selected_notes.contains(wblock)==false){
-    R_ASSERT_NON_RELEASE(false);
+
+#if !defined(RELEASE)
+  if (note->pianonote_is_selected==false){
+    handleError("unselectNote/DEBUG mode: Note #%d is already unselected in block #%d", (int)note->id, blocknum);
+    //R_ASSERT_NON_RELEASE(false);
     return;
   }
-
-  auto &theset = g_selected_notes[wblock];
-
-  if (theset.contains(note->id)==false){
-    R_ASSERT_NON_RELEASE(false);
-    return;
-  }
+#endif
   
-  theset.remove(note->id);
+  note->pianonote_is_selected = false;
+
+  window->must_redraw=true;
 }
-  
-dynvec_t getSelectedNotes(int blocknum, int windownum){
+
+dynvec_t getSelectedNotes(int tracknum, int blocknum, int windownum){
   dynvec_t ret = {};
 
-  const struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
-  if (wblock!=NULL){
+  const struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  if (wtrack!=NULL){
 
-    const auto &note_ids = g_selected_notes.value(wblock);
-    for(auto note_id : note_ids){
-      DYNVEC_push_back(&ret, GetNoteIdFromNoteId(note_id));
+    struct Notes *note = wtrack->track->notes;
+    while(note != NULL){
+      if (note->pianonote_is_selected)
+        DYNVEC_push_back(&ret, GetNoteId(note));
+      note = NextNote(note);
     }
-
   }
-
+  
   return ret;
 }
 

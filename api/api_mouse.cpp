@@ -1559,6 +1559,12 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place_arg, dyn_t dyn
   return dynnote;
 }
 
+/*
+dyn_t movePianonoteEnd(int pianonotenum, float value, Place place_arg, dyn_t dynnote_arg, int tracknum, int blocknum, int windownum){
+  
+}
+*/
+
 dyn_t addPianonote(float value, Place place, Place endplace, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;

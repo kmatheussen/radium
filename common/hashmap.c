@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Dynvec_proc.h"
 #include "OS_settings_proc.h"
 #include "OS_disk_proc.h"
+#include "ratio_funcs.h"
 
 #include "../api/api_proc.h"
 
@@ -841,6 +842,11 @@ void HASH_put_ratio(hash_t *hash, const char *key, const Ratio val){
   put_ratio(hash, key, 0, val);
 }
 
+void HASH_put_place(hash_t *hash, const char *key, const Place place){
+  HASH_put_ratio(hash, key, make_ratio_from_place(place));
+}
+
+
 void HASH_put_hash(hash_t *hash, const char *key, hash_t *val){
   put_hash(hash, key, 0, val);
 }
@@ -1128,6 +1134,13 @@ static double get_float(const hash_t *hash, const char *key, int i){
   return element->a.float_number;
 }
 
+static Ratio get_ratio(hash_t *hash, const char *key, int i){
+  hash_element_t *element = HASH_get(hash,key,i, RATIO_TYPE);
+  if(element==NULL)
+    return make_ratio(0,1);
+  
+  return *element->a.ratio;
+}
 
 static hash_t *get_hash(const hash_t *hash, const char *key, int i){
   hash_element_t *element = HASH_get(hash,key,i,HASH_TYPE);
@@ -1188,6 +1201,14 @@ bool HASH_get_bool(const hash_t *hash, const char *key){
 
 double HASH_get_float(const hash_t *hash, const char *key){
   return get_float(hash, key, 0);
+}
+
+Ratio HASH_get_ratio(hash_t *hash, const char *key){
+  return get_ratio(hash, key, 0);
+}
+
+Place HASH_get_place(hash_t *hash, const char *key){
+  return make_place_from_ratio(HASH_get_ratio(hash, key));
 }
 
 double HASH_get_number(const hash_t *hash, const char *key){
