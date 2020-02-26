@@ -1861,7 +1861,7 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
       bool is_selected = API_note_is_selected(wblock, note);
 
       if (is_selected)
-        c = GE_mix_color(GE_get_rgb(c), GE_rgb(0,0,255), 0.5, y1, use_scissors);
+        c = GE_mix_color(GE_get_rgb(c), GE_get_rgb(PIANONOTE_SELECTED_COLOR_NUM), 500, y1, use_scissors);
 
       GE_line(c,
               x1, y1,
