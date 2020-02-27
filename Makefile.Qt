@@ -77,6 +77,7 @@ LINKER ?= g++
 CC2=./compile_to_tmp.sh $(CC)
 CCC2=./compile_to_tmp.sh $(CCC)
 GCC2=./compile_to_tmp.sh $(GCC)
+GPLUSPLUS2=./compile_to_tmp.sh $(GPLUSPLUS)
 CC_STATIC2=./compile_to_tmp.sh $(CC_STATIC)
 
 
@@ -689,8 +690,8 @@ test_audiobuffer:
 	@rm test_audiobuffer
 
 test_smoothdelay:
-	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined -fPIC -DFOR_LINUX
-	$(CCC) test_smoothdelay.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -fsanitize=address -fsanitize=undefined -o test_smoothdelay
+	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined -fPIC -DFOR_LINUX
+	$(CCC) test_smoothdelay.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm  -fsanitize=address -fsanitize=undefined -o test_smoothdelay
 	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_smoothdelay
 	@echo "=== success: test_smoothdelay ==="
 	@rm test_smoothdelay
@@ -1938,7 +1939,7 @@ $(T)Bus_plugins.o: audio/Bus_plugins.cpp
 	$(CCC2) audio/Bus_plugins.cpp $(QTOPT)
 
 $(T)Timeskew_plugin.o: audio/Timeskew_plugin.cpp audio/SmoothDelay.hpp
-	$(CCC2) audio/Timeskew_plugin.cpp $(QTOPT) $(OPTIMIZE_O3)
+	$(CCC2) audio/Timeskew_plugin.cpp $(QTOPT) $(OPTIMIZE_O3) # $(CPUOPT)
 
 $(T)Patchbay_plugin.o: audio/Patchbay_plugin.cpp
 	$(CCC2) audio/Patchbay_plugin.cpp $(QTOPT)
@@ -2295,7 +2296,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 
 $(T)SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/QueueStack.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
-	$(CCC2) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT) $(OPTIMIZE_O3) # -O3 # $(CPUOPT)
+	$(CCC2) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT) $(OPTIMIZE_O3) $(CPUOPT) # -O3 # 
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload

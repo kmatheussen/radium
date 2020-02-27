@@ -1743,32 +1743,45 @@ static void draw_pianonote_text(const struct Tracker_Windows *window, float note
 }
 
 
-struct PianorollRubber g_current_pianobar_rubber = {-1,-1,{0,0,1},{0,0,1},-2,-2};
+struct PianorollRectangle g_current_pianobar_rubber = {-1,-1,{0,0,1},{0,0,1},-2,-2};
+struct PianorollRectangle g_current_pianobar_selection_rectangle = {-1,-1,{0,0,1},{0,0,1},-2,-2};
 
-static void create_pianoroll_rubber(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, float pitch1, float pitch2, const Place &place1, const Place &place2){
-  float reallineF1 = FindReallineForF(wblock, 0, &place1);
-  float reallineF2 = FindReallineForF(wblock, 0, &place2);
+static void maybe_create_pianoroll_rectangle(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack,
+                                             const PianorollRectangle &rectangle,
+                                             const GE_Rgb &border_color,
+                                             const GE_Rgb &filled_color)
+{
+  if (rectangle.blocknum!=-1 &&
+      rectangle.blocknum!=wblock->l.num)
+    return;
+    
+  if (rectangle.tracknum!=-1 &&
+      rectangle.tracknum!=wtrack->l.num)
+    return;
+    
+  float reallineF1 = FindReallineForF(wblock, 0, &rectangle.place1);
+  float reallineF2 = FindReallineForF(wblock, 0, &rectangle.place2);
 
-  float y1 = get_realline_y(window, reallineF1);
-  float y2 = get_realline_y(window, reallineF2);
+  float y1 = get_realline_y(window, R_MIN(reallineF1, reallineF2));
+  float y2 = get_realline_y(window, R_MAX(reallineF1, reallineF2));
 
   //float note_width = get_pianoroll_note_width(wtrack);
 
   float px1 = wtrack->pianoroll_area.x;
   float px2 = wtrack->pianoroll_area.x2;
 
-  float x1 = scale(pitch1, wtrack->pianoroll_lowkey, wtrack->pianoroll_highkey, px1, px2);
-  float x2 = scale(pitch2, wtrack->pianoroll_lowkey, wtrack->pianoroll_highkey, px1, px2);
+  float x1 = scale(R_MIN(rectangle.pitch1, rectangle.pitch2), wtrack->pianoroll_lowkey, wtrack->pianoroll_highkey, px1, px2);
+  float x2 = scale(R_MAX(rectangle.pitch1, rectangle.pitch2), wtrack->pianoroll_lowkey, wtrack->pianoroll_highkey, px1, px2);
 
   const float width = 1.7;
   
   //printf("Painting rubber %f %f %f %f\n", x1, y1, x2, y2);
-  GE_filledBox(GE_color_alpha(WHITE_COLOR_NUM, 0.5, y1, NO_SCISSORS), // grayish background
+  GE_filledBox(GE(filled_color, y1, NO_SCISSORS),
                x1, y1,
                x2, y2
                );
   
-  GE_box(GE_rgba_color(1, 30, 60, 128, y1, NO_SCISSORS), // bluish border
+  GE_box(GE(border_color, y1, NO_SCISSORS),
          x1, y1,
          x2, y2,
          width
@@ -1801,7 +1814,23 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
   GE_Context *border_color = NULL;
   GE_Context *current_note_color = NULL;
   GE_Context *note_color = NULL;
-  
+
+  const struct Notes *current_note = NULL;
+
+  if (wtrack->l.num==current_piano_note.tracknum){
+    const struct Notes *note = wtrack->track->gfx_notes!=NULL ? wtrack->track->gfx_notes : wtrack->track->notes;
+    while(note != NULL){
+      bool is_current = note->id==current_piano_note.noteid;
+
+      if (is_current){
+        current_note = note;
+        break;
+      }
+      
+      note = NextNote(note);
+    }
+  }
+    
   const struct Notes *note = wtrack->track->gfx_notes!=NULL ? wtrack->track->gfx_notes : wtrack->track->notes;
   while(note != NULL){
     const struct NodeLine *nodelines = GetPianorollNodeLines(window,
@@ -1832,8 +1861,12 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
       border_color = border_color!=NULL ? GE_y(border_color, y1) : GE_color_z(PIANOROLL_NOTE_BORDER_COLOR_NUM, GE_Conf(Z_ABOVE(Z_ZERO), y1));
  
 
-      bool is_current = wtrack->l.num==current_piano_note.tracknum && note->id==current_piano_note.noteid && pianonotenum==current_piano_note.pianonotenum;
-
+      bool is_current = note == current_note && pianonotenum==current_piano_note.pianonotenum;
+      
+      if (!is_current && current_note!=NULL && pianonotenum==current_piano_note.pianonotenum)
+        if (current_note->pianonote_is_selected && note->pianonote_is_selected)
+          is_current = true;
+      
       //printf("pianonotenum: %d, curr.pianonotenum: %d, is_current: %s\n",pianonotenum,current_piano_note.pianonotenum,is_current?"true":"false");
 
       enum UseScissors use_scissors = is_current ? NO_SCISSORS : USE_SCISSORS;
@@ -2019,9 +2052,17 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
 
   GE_unset_x_scissor();
 
-  if (g_current_pianobar_rubber.blocknum==-1 || g_current_pianobar_rubber.blocknum==wblock->l.num)
-    if (g_current_pianobar_rubber.tracknum==-1 || g_current_pianobar_rubber.tracknum==wtrack->l.num)
-      create_pianoroll_rubber(window, wblock, wtrack, g_current_pianobar_rubber.pitch1, g_current_pianobar_rubber.pitch2, g_current_pianobar_rubber.place1, g_current_pianobar_rubber.place2);
+  maybe_create_pianoroll_rectangle(window, wblock, wtrack,
+                                   g_current_pianobar_rubber,
+                                   GE_rgba(1, 30, 60, 128),
+                                   GE_rgba(0xff,0xff,0xff,0x80)
+                                   );
+    
+  maybe_create_pianoroll_rectangle(window, wblock, wtrack,
+                                   g_current_pianobar_selection_rectangle,
+                                   GE_rgba(120, 30, 60, 128),
+                                   GE_alpha(GE_get_rgb(SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM), 0.5)
+                                   );
 }
 
 

@@ -601,6 +601,24 @@ void updateNotesInPlayer(void){
   PC_StopPause(NULL);
 }
 
+
+dynvec_t getAllNotes(int tracknum, int blocknum, int windownum){
+  dynvec_t ret = {};
+
+  const struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  if (wtrack!=NULL){
+
+    struct Notes *note = wtrack->track->notes;
+    while(note != NULL){
+      DYNVEC_push_back(&ret, GetNoteId(note));
+      note = NextNote(note);
+    }
+  }
+  
+  return ret;
+}
+
+
 /* Select/unselect notes */
 
 #include <QHash>
@@ -646,13 +664,8 @@ void selectNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return;
   
-#if !defined(RELEASE)
-  if (note->pianonote_is_selected==true){
-    handleError("selectNote/DEBUG mode: Note #%d is already selected in block #%d", (int)note->id, blocknum);
-    //R_ASSERT_NON_RELEASE(false);
+  if (note->pianonote_is_selected==true)
     return;
-  }
-#endif
   
   note->pianonote_is_selected = true;
   
@@ -667,13 +680,8 @@ void unselectNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return;
 
-#if !defined(RELEASE)
-  if (note->pianonote_is_selected==false){
-    handleError("unselectNote/DEBUG mode: Note #%d is already unselected in block #%d", (int)note->id, blocknum);
-    //R_ASSERT_NON_RELEASE(false);
+  if (note->pianonote_is_selected==false)
     return;
-  }
-#endif
   
   note->pianonote_is_selected = false;
 
@@ -697,7 +705,7 @@ dynvec_t getSelectedNotes(int tracknum, int blocknum, int windownum){
   return ret;
 }
 
-bool notesAreSelected(int tracknum, int blocknum, int windownum){
+bool hasSelectedNotes(int tracknum, int blocknum, int windownum){
   const struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   if (wtrack!=NULL){
 

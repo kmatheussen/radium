@@ -82,6 +82,7 @@ else
 fi
 
 export GCC="gcc -mfpmath=sse -msse2"
+export GPLUSPLUS="g++ -mfpmath=sse -msse2"
 export CLANGCC="clang++ -mfpmath=sse -msse2"
 
 export FPIC="-fPIC"
