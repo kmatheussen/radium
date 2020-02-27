@@ -2499,7 +2499,7 @@ static inline NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const st
   return nodelineBox;
 }
 
-struct PianorollRubber{
+struct PianorollRectangle{
   float pitch1;
   float pitch2;
   Place place1;
@@ -2508,7 +2508,8 @@ struct PianorollRubber{
   int blocknum;
 };
 
-extern struct PianorollRubber g_current_pianobar_rubber;
+extern struct PianorollRectangle g_current_pianobar_rubber;
+extern struct PianorollRectangle g_current_pianobar_selection_rectangle;
 
 
 /*********************************************************************

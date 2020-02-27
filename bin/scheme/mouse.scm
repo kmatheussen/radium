@@ -240,6 +240,8 @@
       (<ra> :control-pressed)))
       
 
+(define mouse-control-slow-down-enabled #t)
+
 (delafina (add-delta-mouse-handler :press :move-and-release :release #f :mouse-pointer-is-hidden-func #f)
   (define prev-x #f)
   (define prev-y #f)
@@ -290,14 +292,16 @@
         (begin
           (define dx (cond ((only-y-direction)
                             0)
-                           ((<ra> :control-pressed)
+                           ((and mouse-control-slow-down-enabled
+                                 (<ra> :control-pressed))
                             (/ raw-dx
                                10))
                            (else
                             raw-dx)))
           (define dy (cond ((only-x-direction)
                             0)
-                           ((<ra> :control-pressed)
+                           ((and mouse-control-slow-down-enabled
+                                 (<ra> :control-pressed))                                 
                             (/ raw-dy
                                10))
                            (else
@@ -480,7 +484,8 @@
                           
                           (set! *current-mouse-cycle* #f)
                           (set! *check-mouse-horizontal-modifier* #t)
-
+                          (set! mouse-control-slow-down-enabled #t)
+                          
                           (for-each-seqtracknum (lambda (seqtracknum) ;; cancel everyone just in case, plus that seqtracknum may chang when moving things to another seqtrack.
                                                   (<ra> :cancel-gfx-seqblocks seqtracknum)))
 
@@ -2325,9 +2330,11 @@
           (move-end
            (<ra> :get-pianonote-value pianonotenum noteid tracknum))))
   
-  (define delta-Place (if (eq? place 'same-place)
-                          'same-place
-                          (- place (get-note-place noteid pianonotenum))))
+  (define main-delta-Place (if (eq? place 'same-place)
+                               'same-place
+                               (- place (get-note-place noteid pianonotenum))))
+
+  ;;(c-display "delta-Place:" delta-Place)
   
   (define delta-Value (let ((value2 (get-note-value noteid pianonotenum)))
                         (- value value2)))
@@ -2343,40 +2350,53 @@
            (assert (and (list "UNKNOWN pianonote-info type: " move-type)
                         #f)))))
 
-  ;;(c-display)
-  (for-each (lambda (noteid)
-              (define pianonotenum (if move-all
-                                       (min (- (<ra> :get-num-pianonotes noteid tracknum)
-                                               1)
-                                            pianonotenum)
-                                       pianonotenum))
-              (when (< pianonotenum (<ra> :get-num-pianonotes noteid tracknum))
-                
-                (define do-set-new-pitch (and do-set-new-pitch-for-main-note
-                                              (or (not note-is-selected)
-                                                  move-start
-                                                  move-all                                                  
-                                                  (sane-pianonote-portamento-enabled pianonotenum
-                                                                                     noteid
-                                                                                     tracknum))))
-                
-                ;;(c-display "do-set-new-pitch:" do-set-new-pitch ". Pianonotenum:" pianonotenum "move-start/move-all:" (or move-start move-all)
-                ;;           "logtype:" (<ra> :get-pianonote-logtype
-                ;;                            pianonotenum
-                ;;                            noteid
-                ;;                            tracknum))
-                (func pianonotenum
-                      (if (not do-set-new-pitch)
-                          -1
-                          (+ delta-Value (get-note-value noteid pianonotenum)))
-                      (if (eq? place 'same-place)
-                          'same-place
-                          (max 0 (+ delta-Place (get-note-place noteid pianonotenum))))
-                      noteid
-                      tracknum)))
-            (if note-is-selected
-                (<ra> :get-selected-notes tracknum)
-                (list noteid))))
+  (define (get-new-note-place noteid delta-Place)
+    (if (eq? delta-Place 'same-place)
+        'same-place
+        (max 0 (+ delta-Place (get-note-place noteid pianonotenum)))))
+    
+  (define (setit noteid delta-Place)
+    (define pianonotenum (if move-all
+                             (min (- (<ra> :get-num-pianonotes noteid tracknum)
+                                     1)
+                                  pianonotenum)
+                             pianonotenum))
+    (when (< pianonotenum (<ra> :get-num-pianonotes noteid tracknum))
+      
+      (define do-set-new-pitch (and do-set-new-pitch-for-main-note
+                                    (or (not note-is-selected)
+                                        move-start
+                                        move-all                                                  
+                                        (sane-pianonote-portamento-enabled pianonotenum
+                                                                           noteid
+                                                                           tracknum))))
+      
+      ;;(c-display "do-set-new-pitch:" do-set-new-pitch ". Pianonotenum:" pianonotenum "move-start/move-all:" (or move-start move-all)
+      ;;           "logtype:" (<ra> :get-pianonote-logtype
+      ;;                            pianonotenum
+      ;;                            noteid
+      ;;                            tracknum))
+      (func pianonotenum
+            (if (not do-set-new-pitch)
+                -1
+                (+ delta-Value (get-note-value noteid pianonotenum)))
+            (get-new-note-place noteid delta-Place)
+            noteid
+            tracknum)))
+
+  (setit noteid main-delta-Place)
+
+  (when note-is-selected
+
+    ;; Recalculate delta-place after moving the main pianonote. Want to clamp the other selected notes the same way.
+    (define resulting-delta-Place (if (eq? place 'same-place)
+                                      'same-place
+                                      (- (get-new-note-place noteid main-delta-Place) place)))
+    ;;(c-display)
+    (for-each (lambda (dasnoteid)
+                (if (not (equal? dasnoteid noteid))
+                    (setit dasnoteid resulting-delta-Place)))
+              (<ra> :get-selected-notes tracknum))))
 
 
 #!!
@@ -2468,7 +2488,7 @@
                         :Create-new-node (lambda (X Place callback)
                                            (if (<ra> :control-pressed)
                                                (begin
-                                                 (<ra> :unselect-all-notes *current-track-num*)
+                                                 ;;(<ra> :unselect-all-notes *current-track-num*)
                                                  #f)
                                                (begin
                                                  (define raw-Value (get-pianoroll-key X))
@@ -2501,7 +2521,7 @@
                                                                                              :new-note #t
                                                                                              :extra create-note))
 
-                                                 (define notes-are-selected (<ra> :notes-are-selected *current-track-num*))
+                                                 (define notes-are-selected (<ra> :has-selected-notes *current-track-num*))
                                                  
                                                  (if (not notes-are-selected)
                                                      (create-note pianonote-info))
@@ -2560,7 +2580,7 @@
                                                  (if (<= Place
                                                          note-place)
                                                      (set! move-type *pianonote-move-all*))))
-                                           
+
                                            (move-pianonote pianonotenum
                                                            move-type
                                                            (if (<ra> :control-pressed)
@@ -2626,16 +2646,125 @@
                                                                 (pianonote-info :noteid)
                                                                 (pianonote-info :tracknum))))
                         :Get-pixels-per-value-unit (lambda (_)
-                                                     (<ra> :get-pianoroll-low-key *current-track-num*)
-                                                     (<ra> :get-pianoroll-high-key *current-track-num*)
-                                                     (<ra> :get-half-of-node-width))
+                                                     (/ (- (<ra> :get-track-pianoroll-x2 *current-track-num*)
+                                                           (<ra> :get-track-pianoroll-x1 *current-track-num*))
+                                                        (- (<ra> :get-pianoroll-high-key *current-track-num*)
+                                                           (<ra> :get-pianoroll-low-key *current-track-num*))))
 
                         :Use-Grid-Place #t
                         
                         :Forgiving-box #f
                         )
 
+(define (note-in-selection-rectangle? pitch1 place1 pitch2 place2 noteid tracknum)
+  (define note-pitch1 (<ra> :get-note-value noteid tracknum))
+  (define note-pitch2 (let ((maybe (<ra> :get-note-end-pitch noteid tracknum)))
+                        (if (< maybe 0.01)
+                            note-pitch1
+                            maybe)))
+  (define min-note-pitch (min note-pitch1 note-pitch2))
+  (define max-note-pitch (+ 1 (max note-pitch1 note-pitch2)))
+  ;;(c-display "1/2:" note-pitch1 note-pitch2 ". 3/4:" pitch1 pitch2)
 
+  (define min-note-place (<ra> :get-note-start noteid tracknum))
+  (define max-note-place (<ra> :get-note-end noteid tracknum))
+
+  ;;(c-display "min/max note:" (* 1.0 min-note-place) (* 1.0 max-note-place) ". p1/p2:" (* 1.0 place1) (* 1.0 place2)
+  ;;           "overlaps pitch:"
+  ;;           (vectors-overlap? min-note-pitch max-note-pitch pitch1 pitch2)
+  ;;           "overlaps place:"
+  ;;           (vectors-overlap? min-note-place max-note-place place1 place2))
+
+  (define (vectors-overlap? a1 a2 b1 b2)
+    (or (and (>= a1 b1)
+             (< a1 b2))
+        (and (>= b1 a1)
+             (< b1 a2))))
+
+  (and (vectors-overlap? min-note-pitch max-note-pitch pitch1 pitch2)
+       (vectors-overlap? min-note-place max-note-place place1 place2)))
+
+(define (select-notes-in-rectangle info)
+  (define tracknum (info :tracknum))
+  
+  (define pitch1 (min (info :pitch1) (info :pitch2)))
+  (define pitch2 (max (info :pitch1) (info :pitch2)))
+  
+  (define place1 (min (info :place1) (info :place2)))
+  (define place2 (max (info :place1) (info :place2)))
+
+  (for-each (lambda (noteid)
+              (if (not ((info :org-selected-notes) :contains noteid))
+                  (if (note-in-selection-rectangle? pitch1 place1 pitch2 place2 noteid tracknum)
+                      (<ra> :select-note noteid tracknum)
+                      (<ra> :unselect-note noteid tracknum))))
+            (<ra> :get-all-notes *current-track-num*)))
+  
+  
+;; Select pianonotes (Ctrl + drag)
+(add-node-mouse-handler :Get-area-box get-track-pianoroll-box
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  #f)
+                        :Get-min-value (lambda (_) -127)
+                        :Get-max-value (lambda (_) 127)
+                        :Create-new-node (lambda (X Place callback)
+                                           (set! mouse-control-slow-down-enabled #f)
+                                           (define pitch (get-pianoroll-key X))
+                                           (callback (hash-table :pitch1 pitch
+                                                                 :place1 Place
+                                                                 :pitch2 pitch
+                                                                 :place2 Place
+                                                                 :tracknum *current-track-num*
+                                                                 :org-selected-notes (<new> :container (<ra> :get-selected-notes *current-track-num*)))
+                                                     0))
+                        
+                        :Move-node (lambda (info Delta-Pitch Place)
+                                     (define Place (if (eq? Place 'same-place)
+                                                       (info :place2)
+                                                       Place))
+                                     
+                                     (define Pitch (+ (info :pitch1)
+                                                      Delta-Pitch))
+                                     
+                                     ;;(c-display "Pitch/Place:" (info :pitch1) (* 1.0 (info :place1)) " - " Pitch (* 1.0 Place) ". DELTA:" Delta-Pitch)
+
+                                     (<ra> :show-pianoroll-selection-rectangle 
+                                           (info :pitch1) Pitch
+                                           (info :place1) Place
+                                           (info :tracknum))
+
+                                     (set! info (copy-hash info
+                                                :place2 Place
+                                                :pitch2 Pitch))
+                                     
+                                     (select-notes-in-rectangle info)
+
+                                     info)
+                                     
+
+                        :Release-node (lambda (info)
+                                        (set! mouse-control-slow-down-enabled #t)
+                                        (<ra> :hide-pianoroll-selection-rectangle))
+                        
+                        :Publicize (lambda (info)
+                                     ;;(c-display "pub:" info)
+                                     #t
+                                     )
+                        
+                        :Get-pixels-per-value-unit (lambda (_)
+                                                     (/ (- (<ra> :get-track-pianoroll-x2 *current-track-num*)
+                                                           (<ra> :get-track-pianoroll-x1 *current-track-num*))
+                                                        (- (<ra> :get-pianoroll-high-key *current-track-num*)
+                                                           (<ra> :get-pianoroll-low-key *current-track-num*))))
+
+                        ;;:Use-Grid-Place #t
+
+                        :Mouse-pointer-func ra:set-pointing-mouse-pointer
+                        
+                        ;;:Forgiving-box #f
+                        )
+
+              
 ;; highlight current pianonote
 (add-mouse-move-handler
  :move (lambda ($button $x $y)

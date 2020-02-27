@@ -1695,6 +1695,23 @@ void hidePianorollEraser(int windownum){
   }
 }
 
+void showPianorollSelectionRectangle(float pitch1, float pitch2, Place place1, Place place2, int tracknum, int blocknum, int windownum){
+  g_current_pianobar_selection_rectangle.pitch1 = pitch1;
+  g_current_pianobar_selection_rectangle.pitch2 = pitch2;
+  g_current_pianobar_selection_rectangle.place1 = place1;
+  g_current_pianobar_selection_rectangle.place2 = place2;
+  g_current_pianobar_selection_rectangle.tracknum = tracknum;
+  g_current_pianobar_selection_rectangle.blocknum = blocknum;
+  root->song->tracker_windows->must_redraw_editor = true;
+}
+
+void hidePianorollSelectionRectangle(int windownum){
+  if (g_current_pianobar_selection_rectangle.blocknum != -2){
+    g_current_pianobar_selection_rectangle.blocknum = -2;
+    root->song->tracker_windows->must_redraw_editor = true;
+  }
+}
+
 // pitchnums
 //////////////////////////////////////////////////
 
