@@ -202,6 +202,7 @@ struct LatencyCompensatorDelay {
     R_ASSERT_NON_RELEASE(num_frames==RADIUM_BLOCKSIZE);
 
 #if !defined(RELEASE)
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
     for(int i=0;i<num_frames;i++){
       if(g_empty_sound[i] != 0)
@@ -673,6 +674,7 @@ static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_f
     sum += sum2;
   }
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   if(sum!=0.0f && !myisnormal(sum) )
     return myisnan(sum)?"nan":myisinf(sum)?"inf":myfpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";

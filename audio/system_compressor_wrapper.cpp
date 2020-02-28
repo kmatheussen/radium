@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define R_ABS(a) ({ typeof(a) aTEMP = (a) ; aTEMP<0?-aTEMP:aTEMP;})
 
 static inline bool equal_doubles(double x, double y) {
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   if(x==y)
     return true;

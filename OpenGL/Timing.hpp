@@ -1,4 +1,5 @@
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #include <vlCore/Time.hpp>
 #pragma GCC diagnostic pop
