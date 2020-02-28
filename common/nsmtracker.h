@@ -245,12 +245,14 @@ extern double g_last_time_mouse_pointer_was_moved_by_the_program; // Only used i
 #endif
 
 static inline bool sane_isnormal_FLOAT(float x) {
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   return x==0.0f || isnormal(x);
 #pragma GCC diagnostic pop
 }
 
 static inline bool sane_isnormal_DOUBLE(double x) {
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   return x==0.0 || isnormal(x);
 #pragma GCC diagnostic pop
@@ -264,6 +266,7 @@ static inline bool equal_floats(float x, float y) {
   if(!sane_isnormal(x) || !sane_isnormal(y))
     abort();
 #endif
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   if(x==y)
     return true;
@@ -275,6 +278,7 @@ static inline bool equal_doubles(double x, double y) {
   if(!sane_isnormal(x) || !sane_isnormal(y))
     abort();
 #endif
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   if(x==y)
     return true;
@@ -1198,6 +1202,7 @@ static inline enum DynType DYN_get_type_from_name(const char* type_name){
 // code copied from s7.c
 static inline bool doubles_are_equal(double x, double y){
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   if (x == y)
     return(true);

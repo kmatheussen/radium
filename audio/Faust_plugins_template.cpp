@@ -15,6 +15,7 @@ struct Meta
 };
 */
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 
 #include "faust/gui/meta.h"
@@ -42,6 +43,7 @@ struct Meta
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 
 //  #include <faust/gui/faustqt.h>
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   #include <faust/gui/QTUI.h>
 #pragma GCC diagnostic pop

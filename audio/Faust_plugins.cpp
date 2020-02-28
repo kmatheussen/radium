@@ -49,6 +49,7 @@
 #  pragma GCC diagnostic pop
 #endif
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #include "mfaustqt2.cpp"
 #pragma GCC diagnostic pop

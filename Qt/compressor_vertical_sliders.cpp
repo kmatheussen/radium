@@ -1101,6 +1101,7 @@ struct Comp
       c.setAlpha(80);
 #endif
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
     if(value==-0.0)
       value=0.0;
