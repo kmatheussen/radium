@@ -660,7 +660,7 @@ test_vector:
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
 
 test_placement:
-	$(CC) -g -Wall -Werror -DTEST_PLACEMENT  -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu99
+	$(CC) -g -Wall -Werror -DTEST_PLACEMENT  -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu99 -lm
 #	gdb ./a.out
 	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
@@ -2452,7 +2452,7 @@ S7OPTS += -DS7_ALIGNED -g
 
 
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
-	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
+	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Wno-float-equal -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
 
 bin/packages/s7/s7.c: bin/packages/s7.tar.gz
 	cd bin/packages && rm -fr s7 && tar xvzf s7.tar.gz && touch s7/s7.c

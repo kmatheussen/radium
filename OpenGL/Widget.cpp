@@ -53,6 +53,7 @@ static double g_last_resize_time = -1;
 #  else
 #    include <vlQt5/Qt5Widget.cpp> // Note Q_OBJECT must be removed from Qt5Widget
 #    define USE_COVER 0
+#    error "what?"
 #  endif
 #else
 #  error "error"

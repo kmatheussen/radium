@@ -405,7 +405,9 @@ void PlaceFromLimit(Place *p, const Place *tp){
 #if 0
 gcc -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt bin/packages/gc-7.2/.libs/libgc.a -lpthread && ./a.out
 #endif
-
+  
+  double g_double_epsilon = 0.0000000001;
+  
 #include <stdarg.h>
 #include <assert.h>
 
