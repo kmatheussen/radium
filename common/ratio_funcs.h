@@ -1,12 +1,11 @@
 #ifndef _RADIUM_COMMON_RATIO_FUNCS_H
 #define _RADIUM_COMMON_RATIO_FUNCS_H
 
+#define __STDC_FORMAT_MACROS
 # include <inttypes.h>
 
 #ifdef TEST_MAIN
 
-#define __STDC_FORMAT_MACROS
-# include <inttypes.h>
 # include <stdio.h>
 
 # define R_ASSERT_NON_RELEASE(a) //if(!(a))abort()
