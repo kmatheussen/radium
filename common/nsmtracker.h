@@ -298,7 +298,7 @@ static inline bool equal_floats(float x, float y) {
 #pragma GCC diagnostic pop
   return R_ABS(x - y) < g_float_epsilon;
 }
-extern float g_double_epsilon;
+extern double g_double_epsilon;
 static inline bool equal_doubles(double x, double y) {
 #if !defined(RELEASE)
   if(!sane_isnormal(x) || !sane_isnormal(y))
