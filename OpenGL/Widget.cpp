@@ -664,6 +664,11 @@ static QMouseEvent translate_qmouseevent(const QMouseEvent *qmouseevent){
 
 namespace{
   class MyCoverWidget : public QWidget {
+  public:
+    MyCoverWidget(){
+      //setMouseTracking(true);
+    }
+  private:
     void resizeEvent(QResizeEvent *qresizeevent) override {
       g_last_resize_time = TIME_get_ms();
       radium::ScopedResizeEventTracker resize_event_tracker;
@@ -718,6 +723,8 @@ static void show_layout_cover(void){
   g_editor->gl_widget->hide();
   g_editor->gl_cover->show();
 
+  //g_editor->gl_widget->setMouseTracking(true);
+
   /*
   g_editor->gl_cover->adjustSize();
   g_editor->gl_cover->updateGeometry();
@@ -725,6 +732,8 @@ static void show_layout_cover(void){
 
   QTimer::singleShot(100, []{
       g_editor->editor_layout_widget->setUpdatesEnabled(true);
+      //g_editor->editor_layout_widget->setMouseTracking(true);
+      //g_editor->gl_widget->setMouseTracking(true);
     });
 }
 
@@ -740,7 +749,8 @@ static void hide_layout_cover(void){
   
   g_editor->gl_cover->hide();
   g_editor->gl_widget->show();
-
+  //g_editor->gl_widget->setMouseTracking(true);
+  
   /*
   g_editor->gl_widget->adjustSize();
   g_editor->gl_widget->updateGeometry();
@@ -748,6 +758,7 @@ static void hide_layout_cover(void){
 
   QTimer::singleShot(100, []{
       g_editor->editor_layout_widget->setUpdatesEnabled(true);
+      //g_editor->gl_widget->setMouseTracking(true);
     });
 
   //g_editor->editor_layout_widget->setUpdatesEnabled(true);
@@ -967,6 +978,7 @@ public:
 
   // Main thread
   void fix_mouseMoveEvent( QMouseEvent *qmouseevent) override {
+    //printf("fix_mouseMoveEvent %d %d\n", (int)qmouseevent->x(), (int)qmouseevent->y());
     get_editorwidget()->handle_mouse_move(qmouseevent->button(), qmouseevent->x(), qmouseevent->y() + root->song->tracker_windows->wblock->t.y1);
   }
 
@@ -1588,7 +1600,9 @@ private:
         : QWidget(parent)
           //, _parent(parent)
         , _cover(cover)
-      {}
+      {
+        setMouseTracking(true);
+      }
     
       void paintEvent( QPaintEvent *e ){
         TRACK_PAINT();

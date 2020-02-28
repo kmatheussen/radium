@@ -1302,6 +1302,12 @@ protected:
 
   bool eventFilter(QObject *obj, QEvent *event) override {
 
+  /*
+  if(event->type()==QEvent::MouseMove || event->type()==QEvent::Move || event->type()==QEvent::MouseTrackingChange){
+      printf("          MOVING. %d\n", event->type());
+      }
+  */
+  
     bool activation_changed = event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate;
 
 #if FOR_LINUX
