@@ -62,8 +62,9 @@ for a in * ; do
     fi
 done
 
-if test -f /tmp/radium_linux.bin; then
-    cp -f /tmp/radium_linux.bin "$TARGET/"
+if test -f /tmp/radium_bin/radium_linux.bin; then
+    rm -f "$TARGET/radium_linux.bin"
+    cp -f /tmp/radium_bin/radium_linux.bin "$TARGET/"
 fi
 
 mkdir -p "$TARGET/packages"
