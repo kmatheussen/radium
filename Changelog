@@ -118,7 +118,11 @@ Changes 5.9.96 -> 5.9.98:
   editor.
 * Manual: Various updates, mainly to the editor.
 * API:
-  * sendKeyEvent, optimizedBuild, gui_postKeyEvent, getNoteNum, hasSelectedNotes, showPianorollSelectionRectangle, hidePianorollSelectionRectangle, getAllNotes
+  * sendKeyEvent, optimizedBuild, gui_postKeyEvent,
+    getNoteNum, hasSelectedNotes,
+    showPianorollSelectionRectangle,
+    hidePianorollSelectionRectangle, getAllNotes.
+
 
 
 Changes 5.9.95 -> 5.9.96:
