@@ -386,12 +386,35 @@ void SONG_call_me_before_starting_to_play_song(int64_t seqtime){
   gotit.wait_for_all_future_signals();
 }
 
-  
+#if !defined(RELEASE)
+static int g_finalizer_num = 0;
+namespace{
+struct WithNum{
+  int num = g_finalizer_num++;
+  bool has_been_finalized = false;
+}; 
+}
+#define MAGIC_FINALIZER_NUM 19340834513
+#endif
+
+#if 1
+
 static void seqblockgcfinalizer(void *actual_mem_start, void *user_data){
   struct SeqBlock *seqblock = (struct SeqBlock*)actual_mem_start;
   //printf("=============================FINALIZING seqblock\n");
   //abort();
   //getchar();
+
+#if !defined(RELEASE)
+  WithNum *withnum = (WithNum*)user_data;
+  if (withnum->num<0 || withnum->has_been_finalized==true)
+    abort();
+  withnum->has_been_finalized=true;
+  printf("    Seqblock finalizing %d\n", withnum->num);
+
+  if (seqblock->gcfinalizerdebuggingvariable != MAGIC_FINALIZER_NUM)
+    abort();  
+#endif
   
   for(int i = 0 ; i < NUM_SATS; i++)
     SEQBLOCK_AUTOMATION_free(seqblock->automations[i]);
@@ -401,7 +424,7 @@ static void seqblockgcfinalizer(void *actual_mem_start, void *user_data){
 
   SEQBLOCK_STRETCHSPEED_call_me_when_seqblock_is_released(seqblock);
 }
-
+#endif
 static int64_t get_default_duration_from_num_samples(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t num_samples){
   R_ASSERT_RETURN_IF_FALSE2(seqblock->block==NULL, pc->pfreq);
   R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, pc->pfreq);
@@ -512,12 +535,21 @@ void SEQBLOCK_init(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, s
       }
     }
 
-
+    /*
+    static vector_t temp = {};
+    VECTOR_push_back(&temp, seqblock);
+    */
+    
     seqblock->fade_in_envelope = new radium::Envelope(FADE_LINEAR, 1.0, true);
     seqblock->fade_out_envelope = new radium::Envelope(FADE_LINEAR, 1.0, false);
 
+#if defined(RELEASE)
     GC_register_finalizer(seqblock, seqblockgcfinalizer, NULL, NULL, NULL);
-
+#else
+    seqblock->gcfinalizerdebuggingvariable = MAGIC_FINALIZER_NUM;
+    GC_register_finalizer(seqblock, seqblockgcfinalizer, (void*)new WithNum, NULL, NULL);
+#endif
+    
   }else{
 
     // Happens when starting to play block.

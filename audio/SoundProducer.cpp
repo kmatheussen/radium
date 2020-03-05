@@ -309,6 +309,12 @@ public:
       if (source_ch==0 && target_ch==0){
         
         SoundPlugin *plugin = SP_get_plugin(source);
+#if !defined(RELEASE)
+        if(plugin==NULL){ // silence "null-dereference" warning.
+          abort();
+          return false;
+        }
+#endif
         const SoundPluginType *type = plugin->type;
         int effect_num = type->num_effects + EFFNUM_BUS1 + _bus_num;
         
@@ -340,7 +346,13 @@ public:
     if (_is_bus_link){
       
       SoundPlugin *plugin = SP_get_plugin(source);
-      const SoundPluginType *type = plugin->type;
+#if !defined(RELEASE)
+      if(plugin==NULL){ // silence "null-dereference" warning.
+        abort();
+        return 0;
+      }
+#endif
+      const SoundPluginType *type = plugin->type;      
       int effect_num = type->num_effects + EFFNUM_BUS1 + _bus_num;
       
       //printf("Setting bus volume for %d to %f\n", bus_num, volume);
