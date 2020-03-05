@@ -68,8 +68,11 @@ exec guile -e main -s $0 $*
        (<->
         "  const wchar_t* o = val.id==NULL ? NULL : wcsdup(val.id);\n")
        (<->
+        "#pragma GCC diagnostic push\n"
+        "#pragma GCC diagnostic ignored \"-Wint-to-pointer-cast\"\n"
         "  if (sizeof(" c-type ") <= sizeof(void*))\n"
         "    return s7_make_c_object(s7, g_" type "_type_tag, (void*)(val.id));\n"
+        "#pragma GCC diagnostic pop\n"
         "\n"
         "  " c-type " *o = (" c-type "*)malloc(sizeof(" c-type "));\n"
         "  *o = val.id;\n"))

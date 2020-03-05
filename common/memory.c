@@ -66,10 +66,26 @@ void init_memory(void){
         return;
 }
 
+#if !defined(RELEASE)
+#ifndef DISABLE_BDWGC
+static void dummy_finalizer(void *actual_mem_start, void *user_data){
+}
+#endif    
+#endif
 
 void tfree(void *element){
-  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE()
-  
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
+
+#if !defined(RELEASE)
+#ifndef DISABLE_BDWGC
+    // Check that element has no finalizer.
+  GC_finalization_proc old = NULL;
+  GC_register_finalizer(element, dummy_finalizer, NULL, &old, NULL);
+  if (old!=NULL)
+    abort();
+#endif    
+#endif
+    
 #ifdef DISABLE_BDWGC
 
 	if(element==NULL){
