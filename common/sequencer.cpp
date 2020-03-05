@@ -2236,8 +2236,10 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
 
 #if !defined(RELEASE)
   //memset((void*)seqblock, 0, sizeof(struct SeqBlock));
+  /*
   if(seqblock->block != NULL) // Can't release sample seqblock memory here since it may still be used in Seqtrack_plugin.cpp.
-    tfree((void*)seqblock); // Only for debugging.
+    tfree((void*)seqblock); // Only for debugging. // Commented out, can't tfree memory that has a finalizer.
+  */
 #endif
 }
 
@@ -3206,7 +3208,7 @@ void SEQUENCER_delete_seqtrack(int pos){
 
 #if !defined(RELEASE)
   //memset(old_seqtrack, 0, sizeof(struct SeqTrack));
-  tfree((void*)old_seqtrack);
+  // tfree((void*)old_seqtrack);  // Commented out, can't tfree memory that has a finalizer.
 #endif
 }
 
