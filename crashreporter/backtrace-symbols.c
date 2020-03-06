@@ -57,6 +57,16 @@ Downloaded from http://opensource.apple.com/source/X11libs/X11libs-40.2/cairo/ca
 //#if defined(FOR_LINUX)
 //#  include <libiberty.h> // mac ports doesn't install this file.
 //#endif
+
+#if defined(bfd_get_section_flags)
+#define OLD_BFD_VERSION 1
+#define NEW_BFD_VERSION 0
+#else
+#define OLD_BFD_VERSION 0
+#define NEW_BFD_VERSION 1
+#endif
+
+
 #include <dlfcn.h>
 #include <link.h>
 #if 0
@@ -133,17 +143,33 @@ static void find_address_in_section(bfd *abfd, asection *section, void *data __a
 	if (found)
 		return;
 
-	if ((bfd_get_section_flags(abfd, section) & SEC_ALLOC) == 0)
+#if NEW_BFD_VERSION
+        
+	if ((bfd_section_flags(section) & SEC_ALLOC) == 0)
+		return;
+        
+	vma = bfd_section_vma(section);
+	if (pc2 < vma)
+		return;
+        
+	size = bfd_section_size(section);
+	if (pc2 >= vma + size)
 		return;
 
+#else
+	if ((bfd_get_section_flags(abfd, section) & SEC_ALLOC) == 0)
+		return;
+        
 	vma = bfd_get_section_vma(abfd, section);
 	if (pc2 < vma)
 		return;
-
+        
 	size = bfd_section_size(abfd, section);
 	if (pc2 >= vma + size)
 		return;
 
+#endif
+        
 	found = bfd_find_nearest_line(abfd, section, syms, pc2 - vma,
 				      &filename, &functionname, &line);
 }
