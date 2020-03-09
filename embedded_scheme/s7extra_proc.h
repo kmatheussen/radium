@@ -348,6 +348,7 @@ namespace radium{
           
         if (strcmp(_id, ""))
           printf("   ----  Protecting \"%s\": %p / %p / %d. Size: %d\n", _id, this, v, (int)_pos, size);
+
 #endif
       }
     }
