@@ -1286,6 +1286,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     bool _has_keyboard_focus = false;
 
     radium::ProtectedS7FuncVector _deleted_callbacks;
+    radium::ProtectedS7FuncVector _after_deleted_callbacks;
     
     RememberGeometry remember_geometry;
 
@@ -1331,8 +1332,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       , _take_keyboard_focus(created_from_existing_widget==false)
 #if defined(RELEASE)
       , _deleted_callbacks(false, "api_gui_deleted_callback")
+      , _after_deleted_callbacks(false, "api_gui_after_deleted_callback")
 #else
       , _deleted_callbacks(true, "api_gui_deleted_callback")
+      , _after_deleted_callbacks(true, "api_gui_after_deleted_callback")
 #endif
       , _class_name(widget->metaObject()->className())
     {
@@ -1431,6 +1434,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         g_valid_guis.removeLast();
       }
 
+      apply_after_deleted_callbacks();
     }
 
     void apply_deleted_callbacks(void){
@@ -1440,6 +1444,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         });
 
       _deleted_callbacks.clear();
+    }
+    
+    void apply_after_deleted_callbacks(void){
+      _after_deleted_callbacks.safe_for_all(false, [](func_t *func){
+          S7CALL(void_bool,func, g_radium_runs_custom_exec);
+          return true;
+        });
+
+      _after_deleted_callbacks.clear();
     }
     
     void I_am_the_last_pos_of_valid_guis_move_me_somewhere_else(int new_pos) {
@@ -1996,8 +2009,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
     /************ CLOSE *******************/
 
+#if 0    
+    const char *_p_name = strdup(talloc_format("close_callback: %s", _class_name.toUtf8().constData()));
+    radium::ProtectedS7Extra<func_t*> _close_callback = radium::ProtectedS7Extra<func_t*>(_p_name);//"close_callback");
+#else
     radium::ProtectedS7Extra<func_t*> _close_callback = radium::ProtectedS7Extra<func_t*>("close_callback");
-
+#endif
+    
     // Some scheme code is running (which might be run from an event handler), so we let the garbage collector delete us instead to avoid memory corruption in those event handlers.
     void setDelayedDeletion(QCloseEvent *event){
 
@@ -4732,6 +4750,18 @@ void gui_addDeletedCallback(int64_t guinum, func_t* func){
     return;
   
   gui->_deleted_callbacks.push_back(func);
+}
+                      
+void gui_addAfterDeletedCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  if(check_existing(gui)==false)
+    return;
+  
+  gui->_after_deleted_callbacks.push_back(func);
 }
                       
 void gui_addRealtimeCallback(int64_t guinum, func_t* func){

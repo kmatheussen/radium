@@ -473,9 +473,10 @@
                #t)))
 
   
-  (<gui> :add-deleted-callback parentgui
+  (<gui> :add-after-deleted-callback parentgui
          (lambda (runs-custom-exec)
-           (<gui> :close config-gui)))
+           (if (<gui> :is-open config-gui)
+               (<gui> :close config-gui))))
 
   (define (recreate-config-gui-content)
     (define old-content is-enabled-content)
