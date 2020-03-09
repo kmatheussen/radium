@@ -2541,7 +2541,7 @@ bool GL_check_compatibility(void){
         SETTINGS_write_bool("show_vsync_warning_during_startup", false);
     }
   }
-
+ 
   if (is_opengl_certainly_too_old_questionmark()){
     GFX_Message(NULL,
                 "Your version of OpenGL is too old. Radium can not run.\n"
@@ -2551,7 +2551,7 @@ bool GL_check_compatibility(void){
     //exit(-1);
     return false;
   }
-  
+ 
   if (!is_opengl_version_recent_enough_questionmark()){
     vector_t v = {};
     VECTOR_push_back(&v,"Try to run anywyay"); // (but please don't send a bug report if Radium crashes)");

@@ -104,7 +104,7 @@ wchar_t *STRING_create(const QString s, bool use_gc_alloc){
 
   bool is_main_thread = THREADING_is_main_thread();
   if (is_main_thread==false)
-    R_ASSERT(use_gc_alloc==false);
+    R_ASSERT_NON_RELEASE(use_gc_alloc==false);
   
   if (is_main_thread==false || use_gc_alloc==false){  
     array = (wchar_t*)malloc(size);

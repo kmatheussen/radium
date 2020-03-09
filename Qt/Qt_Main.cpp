@@ -3723,7 +3723,9 @@ int main(int argc, char **argv){
 #endif
   
 #if defined(FOR_WINDOWS)
+#if defined(RELEASE)
   DWORD progress_pid = atoi(argv[2]);
+#endif
   GC_set_no_dls(1);
 #endif
 
@@ -3874,7 +3876,7 @@ int main(int argc, char **argv){
   //QPixmap pixmap(QPixmap(OS_get_full_program_file_path("/home/kjetil/radium/pictures/logo_big.png")).scaled(QSize(256,256), Qt::KeepAspectRatioByExpanding));
   GFX_OpenProgress("Please wait, starting program");
   
-#if defined(FOR_WINDOWS)
+#if defined(RELEASE) && defined(FOR_WINDOWS)
   {
     auto handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, progress_pid);
     if (handle != NULL)

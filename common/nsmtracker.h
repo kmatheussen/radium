@@ -145,8 +145,13 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+
 #include <QList>
 #include <QMap>
+
+#pragma GCC diagnostic pop
 
 #pragma clang diagnostic pop
 
@@ -3285,6 +3290,10 @@ struct SeqBlock{
 
   float envelope_db;     // db version of envelope_volume
 
+#if !defined(RELEASE)
+  int64_t gcfinalizerdebuggingvariable;
+#endif
+  
   struct SeqblockAutomation *automations[NUM_SATS];
 
   struct StretchspeedTimeConversionTable conversion_table;
