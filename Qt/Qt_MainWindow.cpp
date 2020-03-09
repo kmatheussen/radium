@@ -26,7 +26,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QApplication>
 //#include <QSplitter>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
 #include <QCloseEvent>
+#pragma GCC diagnostic pop
+
 #include <QStatusBar>
 #include <QMenuBar>
 #include <QUrl>

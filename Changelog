@@ -1,3 +1,130 @@
+Changes 5.9.96 -> 5.9.98:
+* Windows: Some adjustments to make the 32 bits
+  version run longer without running out of memory.
+  More work needed here.
+* Windows: Fix false positive malware detection in
+  various VP software. Was mainly a problem with the
+  32 bit version of Radium.
+* MacOS: Fix mouse hovering in the editor not working
+  since 5.9.86.
+* Internal: Update S7
+* Editor: Moving a selected note in the pianoroll
+  causes all other pianonotes to be moved as well.
+  Same when moving the start/end/node of a pianonote.
+* Editor: Press Ctrl to select/unselect notes in the
+  pianoroll.
+* Editor: Press Ctrl and drag mouse to create note
+  selection rectangle in the pianoroll.
+* Internal: Upgrade JUCE from 5.4.3 to 5.4.7.
+  * Linux: The old custom patches for the ALSA MIDI
+    code in JUCE is still used, so there will be no
+    change in the port naming scheme, or bad
+    performance, even with the new version of JUCE.
+* VST/AU: Eliminate use of an unnecessary
+  input/output buffer. May reduce CPU cache hits if
+  using many VST/AU plugins.
+* Song properties: Extend the "Send global swing
+  tempo to plugins and jack transport" text to
+  include modulators, metronome, and jack tracksport
+  as well.
+* Editor: Don't move FX if cursor is placed on a
+  chancetext or centtext subtrack when pressing
+  backspace or alt+backspace.
+* Editor: Make backspace and alt+backspace only
+  operate on current FX if cursor is placed on an
+  FX text subtrack.
+* Editor: Only create undo when pressing backspace or
+  alt + backspace result in a change.
+* Editor: Make it possible to input rational and
+  decimal numbers for shift+return.
+* Editor: Use ratios instead of floats for
+  calculation when pressing backspace and
+  alt+backspace. This fixes situations where
+  rounding errors caused notes and other events to
+  sometimes be placed right below the start of a
+  line.
+* Internal: Various assertions that float and
+  double numbers are valid.
+* Build: Compile with -Wfloat-equal.
+* OpenGL: If OpenGL crashes during startup, write
+  explicitly that there's something wrong with the
+  computer, to emphasize that it's not a bug in
+  Radium. (One of the most common cause of crashes
+  is people using the very unstable Nouveau graphics
+  card driver for Nvidia cards on Linux.)
+* Build: Print source file name in green color.
+* Build: Display compilation time for each file.
+* Sequencer: Fix some minor issues when painting the
+  sequencer and navigator bars.
+* Editor: Fix editor not being updated immediately
+  after selecting paste block from the menus.
+* Disk: Fixes loading and saving songs with lineshift
+  in the instrument names.
+* Editor: Make the tempo graph thicker, i.e. the
+  timing track under "Grid". Also adjust color.
+* Swing:
+  * Editor: Fix mouse cursor not changing shape to
+    split-horizontal when cursor is above a place
+    when it's possible to change width of track, and
+    the next track has swing-text visible.
+  * Editor: Fix undoing track swing.
+  * Editor: Make backspace and alt+backspace work on
+    track-swing if cursor is placed on a swing
+    subtrack.
+  * Editor: Let the tempo graph display tempo of
+    current track. Relevant when using track swings.
+  * Player: Fix extreme swing values, and probably
+    extreme values of other tempo types as well,
+    which could cause inaccurate timing,
+    assertions, and perhaps crashes.
+  * Editor: Fix line cursor jumping to the wrong line
+    when stopping to play.
+  * Editor: Fix track swings not being taken into account
+    when starting and stopping to play
+  * Editor: Take track-swing into account when
+    displaying waveforms.
+  * Sequencer: Make it optional whether to display
+    track-swinging beats in editor tracks in editor
+    seqblocks.
+  * Sequencer: Make it optional whether to use
+    block-swing when displaying beats in the
+    timeline.
+  * Sequencer: Make it optional whether to use
+    block-swing for the grid.
+* Editor: Don't set current track to track 0 when
+  undoing/redoing and cursor was positioned on a
+  timing track when creating the undo.
+* Editor: Fix loosing BPM "glide" state when undoing,
+  redoing, copying, pasting, and cutting.
+* GUI: Fix accidentally pressing Ctrl+Z in the
+  terminal after moving a pianonote outside the
+  boundaries of a pianoroll, making it seem
+  like Radium had frozen. What actually happened
+  was that the mouse pointer was forcefully moved
+  outside the the main Radium window.
+* Build: Fix various null-dereference gcc 8 warnings.
+* Build: Fix building using Debian Buster 10.2.
+  (another sh -> bash fix).
+* GUI: Fix memory corruption if first message
+  displayed in the status bar is exactly 10
+  characters long.
+* Preferences: Add line/beat/bar opacity options to
+  the "Editor"-tab.
+* Editor: Fix subtracting 250 from bar and beat
+  opacities before rendering.
+* Editor: Fix dragging vertical scrollbar up and
+  down. Broken in 5.9.96.
+* Editor: Fix mouse wheel not always working in the
+  editor.
+* Manual: Various updates, mainly to the editor.
+* API:
+  * sendKeyEvent, optimizedBuild, gui_postKeyEvent,
+    getNoteNum, hasSelectedNotes,
+    showPianorollSelectionRectangle,
+    hidePianorollSelectionRectangle, getAllNotes.
+
+
+
 Changes 5.9.95 -> 5.9.96:
 * Sequencer/Editor: When moving the sequencer cursor,
   only scroll the current editor block up or down if
