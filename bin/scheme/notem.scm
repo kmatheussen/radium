@@ -400,6 +400,7 @@
   (moduloskew-notes! (get-block-editor-area) how-much))
 
 
+(define *default-microtonal-randomize-pitch* #f)
 
 (define (replace-with-random-pitches! area)  
   (undo-editor-area area)  
@@ -415,8 +416,13 @@
                                             (define range (* 12 (- 1 (sqrt (myrand 0 1))))) ;; A number between 0 and 12, but on average closer to 0.
                                             (define max-pitch (min 127 (+ pitchvalue range)))
                                             (define min-pitch (max 1 (- pitchvalue range)))
-                                            (copy-pitch pitch :value (myrand min-pitch max-pitch)))
-                                          pitch))                                    
+                                            (copy-pitch pitch :value (let ((r (myrand min-pitch max-pitch)))
+                                                                       (if *default-microtonal-randomize-pitch*
+                                                                           r
+                                                                           (between 1 (round r) 127)))))
+                                                                         
+                                          pitch))
+                                    (c-display "NOTE2:" note)
                                     (copy-note note
                                                :pitches (if (= 0 ((last (note :pitches)) :value))
                                                             (map-butlast (note :pitches)
@@ -586,7 +592,10 @@
 
 (define (create-randomize/skew-notem)
 
-  (define random-layout (create-notem-layout (create-keybinding-button "Range" "ra:eval-scheme" '("(replace-with-random-notes-in-range)"))
+  (define random-layout (create-notem-layout (<gui> :checkbox "Microtonal" *default-microtonal-randomize-pitch* #f
+                                                    (lambda (is-on)
+                                                      (set! *default-microtonal-randomize-pitch* is-on)))
+                                             (create-keybinding-button "Range" "ra:eval-scheme" '("(replace-with-random-notes-in-range)"))
                                              (create-keybinding-button "Track" "ra:eval-scheme" '("(replace-with-random-notes-in-track)"))
                                              (create-keybinding-button "Block" "ra:eval-scheme" '("(replace-with-random-notes-in-block)"))))
 
