@@ -14,19 +14,20 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#pragma once
 
+extern LANGSPEC void SetRange(
+                              struct Tracker_Windows *window,
+                              struct WBlocks *wblock,
+                              NInt starttrack,
+                              NInt endtrack,
+                              Place startplace,
+                              Place endplace
+                              );
 
-#ifndef TRACKER_INCLUDE
-
-extern void MarkRange_CurrPos(struct Tracker_Windows *window);
-extern void CancelRange_CurrPos(struct Tracker_Windows *window);
-extern void MakeRangeLegal(
+extern LANGSPEC void MarkRange_CurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void CancelRange_CurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void MakeRangeLegal(
 	struct WBlocks *wblock
 );
-
-
-
-#endif
-
-
 

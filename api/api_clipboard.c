@@ -320,6 +320,48 @@ Place getRangeEndPlace(int blocknum, int windownum){
 }
 
 
+static bool range_is_legal(const struct WBlocks *wblock, const Place p1, const Place p2, int start_track, int end_track){
+  return
+    end_track > start_track &&
+    start_track >= 0 &&
+    end_track <= wblock->block->num_tracks &&
+    p_Greater_Than(p2, p1) &&
+    p_Greater_Or_Equal(p1, p_Create(0,0,1)) &&
+    p_Less_Or_Equal(p2, p_Create(wblock->block->num_lines, 0, 1));
+}
+
+void setRange(Place p1, Place p2, int start_track, int end_track, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL)
+    return;
+
+  if (!range_is_legal(wblock, p1,p2,start_track,end_track)) {
+
+    handleError("setRange: Illegal range. p1: %s. p2: %s. start_track: %d. end_track: %d", p_ToString(p1), p_ToString(p2), start_track, end_track);
+    wblock->isranged=false;
+    
+  } else {
+    
+    SetRange(window, wblock, start_track, end_track, p1, p2);
+    
+    MakeRangeLegal(wblock);
+
+    if (!range_is_legal(wblock, wblock->rangey1, wblock->rangey2, wblock->rangex1, wblock->rangex2))
+      wblock->isranged=false;
+    
+  }
+  
+  window->must_redraw = true;
+}
+
 
 // Mixer
 

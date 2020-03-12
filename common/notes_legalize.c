@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     -No stops is below last legal position.
 ****************************************************/
 
-void LegalizeNotes(struct Blocks *block,struct Tracks *track){
+bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
 	Place *p1,*p2,*p;
 	Place endplace;
 	struct Notes *note=track->notes;
@@ -50,18 +50,22 @@ void LegalizeNotes(struct Blocks *block,struct Tracks *track){
 
 	PlaceSetLastPos(block,&endplace);
 
+        bool ret = false;
+        
 	while(note!=NULL){
                 p1=&note->l.p;
 		p2=&note->end;
 
 		if(PlaceGreaterOrEqual(p2,&endplace)){
 			PlaceCopy(p2,&endplace);
+                        ret = true;
 		}
 
 		if(PlaceLessOrEqual(p2,p1)){
 			notetemp=NextNote(note);
 			ListRemoveElement3(&track->notes,&note->l);
 			note=notetemp;
+                        ret = true;
 			continue;
 		}
 
@@ -75,6 +79,7 @@ void LegalizeNotes(struct Blocks *block,struct Tracks *track){
 				struct Velocities *velocitytemp=NextVelocity(velocity);
 				ListRemoveElement3(&note->velocities,&velocity->l);
 				velocity=velocitytemp;
+                                ret = true;
 				continue;
 			}
 			p1=p;
@@ -94,6 +99,7 @@ void LegalizeNotes(struct Blocks *block,struct Tracks *track){
 				struct Pitches *pitchtemp=NextPitch(pitch);
 				ListRemoveElement3(&note->pitches,&pitch->l);
 				pitch=pitchtemp;
+                                ret = true;
 				continue;
 			}
 			p1=p;
@@ -108,11 +114,15 @@ void LegalizeNotes(struct Blocks *block,struct Tracks *track){
 			stoptemp=NextStop(stop);
 			ListRemoveElement3(&track->stops,&stop->l);
 			stop=stoptemp;
+                        ret = true;
 			continue;
 		}
 
 		stop=NextStop(stop);
 	}
+
+
+        return ret;
 }
 
 

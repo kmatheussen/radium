@@ -909,17 +909,23 @@ Examples:
 (<ra> :get-keybindings-from-command
       (get-keybindings-command (get-python-ra-funcname "ra:eval-scheme")
                                (list (<-> "(c-display " 0 ")"))))
+
+(ensure-range-from-selection!)
 !!#
   
 (delafina (create-keybinding-button :name
                                     :ra-funcname
-                                    :arguments '())
+                                    :arguments '()
+                                    :ensure-range-from-selection #f)
   (define requires-range (string-case-insensitive-contains? (<-> ra-funcname name) "range"))
   (define ra-func (eval-string ra-funcname))
   (define (func)
     (if (and requires-range
-             (not (<ra> :has-range)))
-        (show-async-message :text "No range in block. Select range by using Left Meta + b")
+             ensure-range-from-selection)
+        (ensure-range-from-selection!))
+    (if (and requires-range
+             (not (has-range)))
+        (show-missing-range-message)
         (apply ra-func arguments)))
 
   (define button (<gui> :button name func))  

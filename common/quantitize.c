@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "list_proc.h"
 #include "undo_tracks_proc.h"
+#include "undo_notes_proc.h"
 #include "undo_range_proc.h"
 #include "undo_maintempos_proc.h"
 #include "undo_fxs_proc.h"
@@ -100,29 +101,98 @@ quantitize_options_t Quantitize_get_default_options(void){
   return options;
 }
 
-static void Quantitize_Note(
+static bool Quantitize_Note(
                             struct Blocks *block,
                             struct Notes **notes,
                             struct Notes *note
                             )
 {
-  bool do_add = quantitize_note(block, note);
+  bool was_changed;
+  
+  bool do_add = quantitize_note(block, note, &was_changed);
 
-  if (do_add)
-    ListAddElement3_a(notes,&note->l);        
+  if (do_add){
+    ListAddElement3_a(notes,&note->l);
+    return was_changed;
+  }
+  
+  return false;
 }
 
-static void Quantitize_range(
+static bool Quantitize_track(
+                             struct Blocks *block,
+                             struct Tracks *track,
+                             bool only_selected_notes
+                             )
+{
+	struct Notes *note=NULL;
+	struct Notes *notes=NULL;
+	struct Notes *temp;
+	Place first,last;
+
+	PlaceSetFirstPos(&first);
+	PlaceSetLastPos(block,&last);
+
+        int num_notes_before = getNumNotes(track->l.num, block->l.num, -1);
+        
+	CopyRange_notes(&note,track->notes,&first,&last);
+
+        bool ret = false;
+        
+	while(note!=NULL){
+		temp=NextNote(note);
+                
+                if (!only_selected_notes || note->pianonote_is_selected) {
+                  
+                  if (Quantitize_Note(block,&notes,note))
+                    ret = true;
+
+                } else {
+
+                  ListAddElement3_a(notes,&note->l);
+                  
+                }
+                
+		note=temp;
+	}
+
+        PC_Pause();{
+          track->notes=notes;        
+          if (LegalizeNotes(block,track))
+            ret = true;
+        }PC_StopPause(NULL);
+
+        if (ret==true)
+          return true;
+
+        if (num_notes_before != getNumNotes(track->l.num, block->l.num, -1))
+          return true;
+        else
+          return false;
+}
+
+static bool Quantitize_selected_notes(
                       struct Tracker_Windows *window,
                       struct WBlocks *wblock
 ){
+  return Quantitize_track(wblock->block, wblock->wtrack->track, true);
+}
+
+static bool Quantitize_range(
+                             struct Tracker_Windows *window,
+                             struct WBlocks *wblock
+                             )
+{
 	Place first,last;
 
 	PlaceSetFirstPos(&first);
 	PlaceSetLastPos(wblock->block,&last);
 
-	if( ! wblock->isranged) return;
+	if( ! wblock->isranged)
+          return Quantitize_selected_notes(window,wblock);
 
+        bool ret = false;
+        
         struct Tracks *track = ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 
         int tracknum;
@@ -135,9 +205,10 @@ static void Quantitize_range(
           while(note != NULL) {
             struct Notes *next=NextNote(note);
                         
-            if( p_Greater_Or_Equal(note->l.p, wblock->rangey1) && p_Less_Than(note->l.p, wblock->rangey2))
-              Quantitize_Note(wblock->block,&new_notes,note);
-            else
+            if( p_Greater_Or_Equal(note->l.p, wblock->rangey1) && p_Less_Than(note->l.p, wblock->rangey2)) {
+              if (Quantitize_Note(wblock->block,&new_notes,note))
+                ret = true;
+            } else
               ListAddElement3_a(&new_notes,&note->l);
             
             note=next;
@@ -145,51 +216,32 @@ static void Quantitize_range(
 
           PC_Pause();{
             track->notes=new_notes;          
-            LegalizeNotes(wblock->block,track);
+            if (LegalizeNotes(wblock->block,track))
+              ret = true;
           }PC_StopPause(window);
 
           track=NextTrack(track);
 	}
 
-}
-
-static void Quantitize_track(
-	struct Blocks *block,
-	struct Tracks *track
-){
-	struct Notes *note=NULL;
-	struct Notes *notes=NULL;
-	struct Notes *temp;
-	Place first,last;
-
-	PlaceSetFirstPos(&first);
-	PlaceSetLastPos(block,&last);
-        
-	CopyRange_notes(&note,track->notes,&first,&last);
-
-	while(note!=NULL){
-		temp=NextNote(note);
-		Quantitize_Note(block,&notes,note);
-		note=temp;
-	}
-
-        PC_Pause();{
-          track->notes=notes;        
-          LegalizeNotes(block,track);
-        }PC_StopPause(NULL);
+        return ret;
 
 }
 
-
-static void Quantitize_block(
+static bool Quantitize_block(
 	struct Blocks *block
 ){
+
+        bool ret = false;
+  
 	struct Tracks *track=block->tracks;
 
 	while(track!=NULL){
-		Quantitize_track(block,track);
-		track=NextTrack(track);
+          if (Quantitize_track(block,track,false))
+            ret = true;
+          track=NextTrack(track);
 	}
+
+        return ret;
 }
 
 
@@ -199,7 +251,8 @@ void Quantitize_track_CurrPos(
 	struct WBlocks *wblock=window->wblock;
 
         ADD_UNDO(Track_CurrPos(wblock->l.num, wblock->wtrack->l.num));
-	Quantitize_track(wblock->block,wblock->wtrack->track);
+	if (!Quantitize_track(wblock->block,wblock->wtrack->track,false))
+          UNDO_CANCEL_LAST_UNDO();
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
@@ -228,7 +281,8 @@ void Quantitize_block_CurrPos(
 		window->wblock->curr_realline
                        ));
 
-	Quantitize_block(window->wblock->block);
+	if (!Quantitize_block(window->wblock->block))
+          UNDO_CANCEL_LAST_UNDO();
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
@@ -241,18 +295,22 @@ void Quantitize_block_CurrPos(
 void Quantitize_range_CurrPos(
 	struct Tracker_Windows *window
 ){
-	if(!window->wblock->isranged) return;
+  //if(!window->wblock->isranged) return;
 
-	ADD_UNDO(Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline));
+  if (window->wblock->isranged)    
+    ADD_UNDO(Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline));
+  else
+    ADD_UNDO(Notes_CurrPos(window));
 
-	Quantitize_range(window,window->wblock);
-
-	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
-		window,
-		window->wblock,
-		window->wblock->rangex1,
-		window->wblock->rangex2
-	);
+  if (Quantitize_range(window,window->wblock)==false)
+    UNDO_CANCEL_LAST_UNDO();
+        
+  UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+                                                window,
+                                                window->wblock,
+                                                window->wblock->rangex1,
+                                                window->wblock->rangex2
+                                                );
 }
 
 void SetQuantitize_CurrPos(
