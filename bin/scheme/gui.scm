@@ -1655,3 +1655,33 @@
 #!!
 (<ra> :get-html-from-text "\n ")
 !!#
+
+
+
+
+(define* (has-range (blocknum -1))
+  (or (<ra> :has-range blocknum)
+      (<ra> :has-selected-notes -1 blocknum)))
+
+#!!
+(has-range)
+!!#
+
+(define (show-missing-range-message)
+  (show-async-message :text
+                      (<-> "No range in block, and no notes in the pianroll selected."
+                           "<br>"
+                           "<UL>"
+                           "<LI>To select range:<OL>"
+                           "<br>"
+                           "  <LI>Move cursor to range should start and press Left Meta + B."
+                           "  <LI>Move cursor to range should end and press Left Meta + B, again."
+                           "  </OL>"
+                           "<br>"
+                           "<LI>To select pianoroll notes:<UL>"
+                           "  <LI>Ctrl-click notes (in the pianoroll)."
+                           "  <LI>Ctrl-drag to create selection-rectangle (in the pianoroll)."
+                           "  </UL>"
+                           "</UL>"
+                           )))
+

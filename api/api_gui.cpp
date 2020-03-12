@@ -3989,6 +3989,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     ~FileRequester(){
+      printf("    GUI File Requester deleted\n");
     }
     
     OVERRIDERS(QFileDialog);

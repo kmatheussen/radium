@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 struct Range *range=NULL;
 
 
-static void SetRange(
+void SetRange(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt starttrack,
@@ -156,7 +156,7 @@ static void CancelRange(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
-	wblock->isranged=false;
+  wblock->isranged=false;
 }
 
 void CancelRange_CurrPos(struct Tracker_Windows *window){

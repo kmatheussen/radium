@@ -96,8 +96,8 @@
   (define ra-func (eval-string ra-funcname))
   (define (func . args)
     (if (and funcname-contains-range
-             (not (<ra> :has-range)))
-        (show-async-message :text "No range in block. Select range by using Left Meta + b")
+             (not (has-range)))
+        (show-missing-range-message)
         (apply ra-func args)))
   
   (define (create-button how-much)
@@ -253,8 +253,8 @@
                   area))
 
 (delafina (shuffle-range :chance *default-shuffle-chance* :blocknum -1)
-  (if (not (<ra> :has-range blocknum))
-      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+  (if (not (has-range blocknum))
+      (show-missing-range-message)
       (shuffle-notes! (get-ranged-editor-area blocknum) chance)))
 
 (delafina (shuffle-track :chance *default-shuffle-chance* :tracknum -1 :blocknum -1)
@@ -291,8 +291,8 @@
 
 
 (delafina (distribute-range-evenly :keep-note-durations *default-keep-note-durations* :blocknum -1)
-  (if (not (<ra> :has-range blocknum))
-      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+  (if (not (has-range blocknum))
+      (show-missing-range-message)
       (distribute-notes-evenly! (get-ranged-editor-area blocknum) keep-note-durations)))
 
 #!!
@@ -321,8 +321,8 @@
                   area))
 
 (delafina (fullshuffle-range :chance 1 :blocknum -1)
-  (if (not (<ra> :has-range blocknum))
-      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+  (if (not (has-range blocknum))
+      (show-missing-range-message)
       (fullshuffle-notes! (get-ranged-editor-area blocknum) chance)))
 
 (delafina (fullshuffle-track :chance 1 :tracknum -1 :blocknum -1)
@@ -389,8 +389,9 @@
                   :include-starting-before #f))
 
 (delafina (moduloskew-range :how-much 1 :blocknum -1)
+  (ensure-range-from-selection! blocknum)
   (if (not (<ra> :has-range blocknum))
-      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+      (show-missing-range-message)
       (moduloskew-notes! (get-ranged-editor-area blocknum) how-much)))
 
 (delafina (moduloskew-track :how-much 1 :tracknum -1 :blocknum -1)
@@ -431,8 +432,8 @@
                   area))
 
 (delafina (replace-with-random-notes-in-range :blocknum -1)
-  (if (not (<ra> :has-range blocknum))
-      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+  (if (not (has-range blocknum))
+      (show-missing-range-message)
       (replace-with-random-pitches! (get-ranged-editor-area blocknum))))
 
 (delafina (replace-with-random-notes-in-track :tracknum -1 :blocknum -1)
@@ -446,6 +447,7 @@
 (/ 5 0.5)
 (replace-with-random-notes-in-track)
 (<ra> :get-num-notes)
+(get-ranged-editor-area -1)
 !!#
 
 (define (replace-with-random-velocities! area)  
@@ -469,8 +471,8 @@
                   area))
 
 (delafina (replace-with-random-velocities-in-range :blocknum -1)
-  (if (not (<ra> :has-range blocknum))
-      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+  (if (not (has-range blocknum))
+      (show-missing-range-message)
       (replace-with-random-velocities! (get-ranged-editor-area blocknum))))
 
 (delafina (replace-with-random-velocities-in-track :tracknum -1 :blocknum -1)
@@ -531,8 +533,8 @@
 (define *default-randomize-max-octave* 1)
 
 (delafina (set-random-octaves-for-notes-in-range  :min-oct *default-randomize-min-octave* :max-oct *default-randomize-max-octave* :blocknum -1)
-  (if (not (<ra> :has-range blocknum))
-      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+  (if (not (has-range blocknum))
+      (show-missing-range-message)
       (set-random-octave-pitches! (get-ranged-editor-area blocknum) min-oct max-oct)))
 
 (delafina (set-random-octaves-for-notes-in-track :min-oct *default-randomize-min-octave* :max-oct *default-randomize-max-octave* :tracknum -1 :blocknum -1)
@@ -572,8 +574,8 @@
                   area))
 
 (delafina (randomly-delete-notes-range :chance *default-randomly-delete-chance* :blocknum -1)
-  (if (not (<ra> :has-range blocknum))
-      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+  (if (not (has-range blocknum))
+      (show-missing-range-message)
       (randomly-delete-notes! (get-ranged-editor-area blocknum) chance)))
 
 (delafina (randomly-delete-notes-track :chance *default-randomly-delete-chance* :tracknum -1 :blocknum -1)
@@ -666,20 +668,20 @@
 
 (define (create-various-notem)
 
-  (define lines-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:expand-range")
+  (define lines-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:expand-range" :ensure-range-from-selection #t)
                                             (create-keybinding-button (notem-group-name "Block" "CTRL_L")  "ra:expand-block")))
   
   
-  (define pitches-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:pexpand-range")
+  (define pitches-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:pexpand-range" :ensure-range-from-selection #t)
                                               (create-keybinding-button (notem-group-name "Track" "ALT_L") "ra:pexpand-track")
                                               (create-keybinding-button (notem-group-name "Block" "CTRL_L")  "ra:pexpand-block")))
   
-  (define invert-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:invert-range")
+  (define invert-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:invert-range" :ensure-range-from-selection #t)
                                              (create-keybinding-button (notem-group-name "Track" "ALT_L") "ra:invert-track")
                                              (create-keybinding-button (notem-group-name "Block" "CTRL_L")  "ra:invert-block")))
   
   
-  (define backwards-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:backwards-range")
+  (define backwards-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:backwards-range" :ensure-range-from-selection #t)
                                                 (create-keybinding-button (notem-group-name "Track" "ALT_L") "ra:backwards-track")
                                                 (create-keybinding-button (notem-group-name "Block" "CTRL_L")  "ra:backwards-block")))
   

@@ -2079,6 +2079,8 @@ const char *s7extra_callFunc2_charpointer_charpointer_dyn(const char *funcname, 
   return s7extra_callFunc_charpointer_charpointer_dyn((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
 }
 
+//static int g_num_protected = 0;
+
 #if !defined(RELEASE)
 static QHash<int64_t, void*> g_used_pos;
 #endif
@@ -2092,6 +2094,7 @@ int64_t s7extra_protect(void *v){
 #endif
   
   //printf("           s7extra_protect %p. pos: %d\n", v, (int)ret);
+  //printf("            Protect: %d\n", g_num_protected++);
   return ret;
 }
 
@@ -2121,6 +2124,8 @@ void s7extra_unprotect(void *v, int64_t pos){
   R_ASSERT_RETURN_IF_FALSE(s7_gc_protected_at(s7, pos)==v);
   s7_gc_unprotect_at(s7, pos);
   //s7_gc_safe_unprotect_at(s7, (s7_pointer)v, pos);
+
+  //printf("            Unprotect: %d\n", --g_num_protected);
 }
 
 void s7extra_disable_history(void){
@@ -2196,9 +2201,10 @@ Place p_Scale(const Place x, const Place x1, const Place x2, const Place y1, con
   }
 }
 
-bool quantitize_note(const struct Blocks *block, struct Notes *note) {
+bool quantitize_note(const struct Blocks *block, struct Notes *note, bool *was_changed) {
   ScopedEvalTracker eval_tracker;
 
+  *was_changed = false;
 
   s7_pointer scheme_func = find_scheme_value(s7, "quantitize-note");
   
@@ -2232,11 +2238,18 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note) {
     return false;
   }
 
-  s7_pointer new_start = s7_car(result);
-  s7_pointer new_end = s7_cdr(result);
+  Place new_start = number_to_place(s7, s7_car(result), NULL);
+  Place new_end = number_to_place(s7, s7_cdr(result), NULL);
 
-  note->l.p = number_to_place(s7, new_start, NULL);
-  note->end = number_to_place(s7, new_end, NULL);
+  if (!p_Equal(new_start, note->l.p)){
+    note->l.p = new_start;
+    *was_changed = true;
+  }
+
+  if (!p_Equal(note->end, new_end)){
+    note->end = new_end;
+    *was_changed = true;
+  }
 
   return true;
 }

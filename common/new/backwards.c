@@ -77,6 +77,20 @@ static void BackWards_notes(
 	LegalizeNotes(wblock->block,wtrack->track);
 }
 
+static void BackWardsTrack(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack
+){
+	Place p1,p2;
+
+	PlaceSetFirstPos(&p1);
+	PlaceSetLastPos(wblock->block,&p2);
+
+	BackWards_notes(window,wblock,wtrack,&p1,&p2);
+}
+
+
 static void BackWardsRange(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
@@ -97,20 +111,6 @@ static void BackWardsRange(
 	}
 
 }
-
-static void BackWardsTrack(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
-){
-	Place p1,p2;
-
-	PlaceSetFirstPos(&p1);
-	PlaceSetLastPos(wblock->block,&p2);
-
-	BackWards_notes(window,wblock,wtrack,&p1,&p2);
-}
-
 
 static void BackWardsBlock(
 	struct Tracker_Windows *window,

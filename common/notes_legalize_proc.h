@@ -1,4 +1,5 @@
+#pragma once
 
-extern LANGSPEC void LegalizeNotes(struct Blocks *block,struct Tracks *track);
+extern LANGSPEC bool LegalizeNotes(struct Blocks *block,struct Tracks *track); // returns true if anything was changed.
 
 
