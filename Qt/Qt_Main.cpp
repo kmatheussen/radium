@@ -3888,6 +3888,8 @@ int main(int argc, char **argv){
 
   GFX_ShowProgressMessage("Starting OpenGL", true);
   if (GL_check_compatibility()==false){
+    CRASHREPORTER_dont_report();
+    PLUGINHOST_shut_down();
     GFX_CloseProgress();
     return -1;
   }
@@ -4125,7 +4127,6 @@ int main(int argc, char **argv){
 
   DISKPEAKS_stop();
   D(GFX_ShowProgressMessage("21", true));
-  
   PLUGINHOST_shut_down();
   //msleep(5000);
 
