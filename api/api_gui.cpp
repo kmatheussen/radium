@@ -546,7 +546,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       if (_is_input)
         return plugin->input_volume_peaks;
 
-      R_ASSERT(false);
+      //R_ASSERT(false); // We are here when instrument has no inputs or outputs.
+      
       return _fallback_peaks;
     }
 
