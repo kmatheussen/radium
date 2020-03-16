@@ -102,6 +102,7 @@ JACKOPT ?=
 LRDFOPT ?= `$(PKG) --cflags lrdf`
 SNDFILEOPT ?= `$(PKG) --cflags sndfile`
 SAMPLERATEOPT ?= `$(PKG) --cflags samplerate`
+LIBLOOPT ?= `$(PKG) --cflags liblo`
 # (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 
 PYPATH ?=
@@ -488,7 +489,7 @@ OBJ_WIN ?= $(T)X11_disk.o $(T)W_Keyboard.o
 OBJ_MACOSX ?= $(T)X11_disk.o $(T)cocoa_Keyboard.o do.o
 
 #Python
-OBJ13=$(T)radium_wrap.o $(T)api_common.o $(T)api_keyplay.o $(T)api_keyplayedit.o $(T)api_navigate.o $(T)api_disk.o $(T)api_noteedit.o $(T)api_velocities.o $(T)api_pitches.o $(T)api_timing.o $(T)api_support.o $(T)wrapfunclist.o $(T)api_trackonoff.o $(T)api_zoom.o $(T)api_notemanipulate.o $(T)api_play.o $(T)api_clipboard.o $(T)api_undo.o $(T)api_various.o $(T)api_instruments.o $(T)api_soundpluginregistry.o $(T)api_requesters.o $(T)api_mouse.o $(T)api_sequencer.o $(T)api_gui.o
+OBJ13=$(T)radium_wrap.o $(T)api_common.o $(T)api_keyplay.o $(T)api_keyplayedit.o $(T)api_navigate.o $(T)api_disk.o $(T)api_noteedit.o $(T)api_velocities.o $(T)api_pitches.o $(T)api_timing.o $(T)api_support.o $(T)wrapfunclist.o $(T)api_trackonoff.o $(T)api_zoom.o $(T)api_notemanipulate.o $(T)api_play.o $(T)api_clipboard.o $(T)api_undo.o $(T)api_various.o $(T)api_instruments.o $(T)api_soundpluginregistry.o $(T)api_requesters.o $(T)api_mouse.o $(T)api_sequencer.o $(T)api_gui.o $(T)api_osc.o
 
 #Midi
 OBJ14=$(T)disk_midi_fx.o $(T)disk_midi_instrument.o $(T)midi_fx.o $(T)midi_instrument.o $(T)midi_playfromstart.o $(T)midi_i_input.o $(T)midi_menues.o
@@ -1787,6 +1788,9 @@ $(T)api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.cpp
 
 $(T)api_sequencer.o:  $(BUILD_DEPENDENCIES)  $(API)api_sequencer.cpp $(API)api_sequencer_proc.h  audio/Envelope.hpp common/seqblock_automation_proc.h embedded_scheme/s7extra_proc.h
 	$(CCC2)  $(API)api_sequencer.cpp $(QTOPT)
+
+$(T)api_osc.o:  $(BUILD_DEPENDENCIES)  $(API)api_osc.cpp embedded_scheme/s7extra_proc.h
+	$(CCC2) $(LIBLOOPT) $(API)api_osc.cpp $(QTOPT) -fno-sanitize=undefined # -O0 # Adding -fno-sanitize=undefined since liblo sends misaligned data to calbacks.
 
 $(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
