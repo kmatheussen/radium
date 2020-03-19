@@ -2768,6 +2768,23 @@ void Qt_EventHandler(void){
 }
 
 
+#if defined(FOR_LINUX) || defined(FOR_MACOSX)
+static void sigterm_handler(int sig, siginfo_t *siginfo, void *secret) {
+  printf("--------------------------SIGTERMHANDLER called------------------\n");
+  doquit = true;
+}
+
+static void setup_SIGTERM_handler(void){
+  struct sigaction sa;
+  sigfillset(&sa.sa_mask);
+  sa.sa_flags = SA_SIGINFO;
+  sa.sa_sigaction = sigterm_handler;
+  //sa.sa_handler = crash;
+  sigaction(SIGTERM, &sa, NULL);	
+}
+#endif
+
+
 void GFX_set_bottom_widget_height(int new_height){
   struct Tracker_Windows *window = root->song->tracker_windows;
   window->bottomslider_height = new_height;
@@ -3242,6 +3259,10 @@ int radium_main(const char *arg){
 #if !defined(FOR_WINDOWS)
   start_check_backtrace_process();
 #endif
+
+#if defined(FOR_LINUX) || defined(FOR_MACOSX)
+  setup_SIGTERM_handler();
+#endif
   
 #if USE_QT_VISUAL
   qapplication->exec();
@@ -3249,6 +3270,10 @@ int radium_main(const char *arg){
   GTK_MainLoop();
 #endif
 
+
+  printf("--------------------------qapplication->exec() finished------------------\n");
+
+  
 #define D(A)
 //#define D(A) A
 
