@@ -194,7 +194,9 @@ void CRASHREPORTER_posix_init(void){
 
   setup_callstack_signal_handler(SIGINT);
   setup_callstack_signal_handler(SIGILL);
-  setup_callstack_signal_handler(SIGTERM);
+
+  // Commented out since NSM terminates clients like this. I guess we should probably not catch SIGTERM here anyway, so just remove it whether NSM is used or not.
+  //setup_callstack_signal_handler(SIGTERM);
 
 #if !defined(FOR_MACOSX) // Need to call abort() in order to create system crash log.
   setup_callstack_signal_handler(SIGABRT);
