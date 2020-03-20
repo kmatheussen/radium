@@ -135,6 +135,7 @@ extern void Undo_New(
 #endif
 
 extern LANGSPEC void ResetUndo(void);
+extern LANGSPEC bool Undo_NSM_are_you_sure_questionmark(void);
 extern LANGSPEC bool Undo_are_you_sure_questionmark(void);
 extern LANGSPEC void Undo(void);
 extern LANGSPEC void Redo(void);

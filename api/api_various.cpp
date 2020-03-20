@@ -1119,7 +1119,12 @@ bool save(bool ignore_nsm){
 
 bool saveAs(filepath_t filename, bool with_embedded_samples, bool ignore_nsm){
   if (!ignore_nsm && nsmIsActive()){
+
+    if(Undo_NSM_are_you_sure_questionmark()==false)
+      return false;
+
     evalScheme("(FROM_C-nsm-save-as)");
+    
     return true;
   }
   
@@ -1129,11 +1134,21 @@ bool saveAs(filepath_t filename, bool with_embedded_samples, bool ignore_nsm){
     return SaveWithoutEmbeddedSamples(filename, root);
 }
 
-bool saveWithEmbeddedSamples(void){
+bool saveWithEmbeddedSamples(bool ignore_nsm){
+  if (!ignore_nsm && nsmIsActive()){
+    GFX_addMessage("Option not supported under NSM");
+    return false;
+  }
+  
   return SaveWithEmbeddedSamples(createIllegalFilepath(), root);
 }
 
-bool saveWithoutEmbeddedSamples(void){
+bool saveWithoutEmbeddedSamples(bool ignore_nsm){
+  if (!ignore_nsm && nsmIsActive()){
+    GFX_addMessage("Option not supported under NSM");
+    return false;
+  }
+
   return SaveWithoutEmbeddedSamples(createIllegalFilepath(), root);
 }
 
@@ -1143,9 +1158,12 @@ extern bool isloaded;
 bool load(bool ignore_nsm){
 
   if (!ignore_nsm && nsmIsActive()){
-    //if(Undo_are_you_sure_questionmark()==false)
-    //  return false;
+    
+    if(Undo_NSM_are_you_sure_questionmark()==false)
+      return false;
+    
     evalScheme("(FROM_C-nsm-open)");
+    
     return true;
   }
   
@@ -1182,12 +1200,9 @@ void newSong(bool ignore_nsm){
 
   if (!ignore_nsm && nsmIsActive()){
 
-    /*
-      Comment out since NSM saves anyway, so asking are-you-sure? would create the impression that the session is not saved if answering yes.
-    if(Undo_are_you_sure_questionmark()==false)
+    if(Undo_NSM_are_you_sure_questionmark()==false)
       return;
-    */
-    
+
     evalScheme("(FROM_C-nsm-new-song)");
     return;
   }

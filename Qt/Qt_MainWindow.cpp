@@ -314,8 +314,6 @@ EditorWidget::~EditorWidget()
 }
 
 
-extern bool doquit;
-extern struct Root *root;
 
 EditorWidget *g_editor = NULL;
 
@@ -474,12 +472,7 @@ public:
   void closeEvent(QCloseEvent *ce) override{
     CancelMaybeNavigateMenus();
     ce->ignore();
-    struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
-    doquit = Quit(window);
-#if USE_QT_VISUAL
-    if(doquit==true)
-      QApplication::quit();
-#endif
+    quit(false);
   }
 
 #if 0
