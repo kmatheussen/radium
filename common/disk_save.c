@@ -80,11 +80,15 @@ bool g_is_saving = false;
 
 void Save_Clean(const filepath_t filename,struct Root *theroot, bool is_backup){
 
-        if (g_user_interaction_enabled==false)
+        if (g_user_interaction_enabled==false){
+          dc.success = false;
           return;
-
-        if (Save_Initialize(filename, "RADIUM SONG")==false)
+        }
+        
+        if (Save_Initialize(filename, "RADIUM SONG")==false){
+          dc.success = false;
           return;
+        }
 
         g_is_saving = true;
         
@@ -110,23 +114,45 @@ void Save_Clean(const filepath_t filename,struct Root *theroot, bool is_backup){
         }
 
         g_is_saving = false;
+
+        return;
 }
 
-void SaveAs(struct Root *theroot){
+bool SaveAs2(const filepath_t filename, struct Root *theroot){
+  if (doStopPlayingWhenSavingSong())
+    PlayStop();
+
+  if(isIllegalFilepath(filename)){
+    GFX_addMessage("Could not save song. %S is an illegal filename", filename.id);
+    return false;
+  }
+
+  SETTINGS_write_wchars("filerequester_song_path", DISK_get_absolute_dir_path(filename).id);
+  
+  dc.filename = copy_filepath(filename);
+  
+  Save_Clean(filename,theroot,false);
+  
+  if (dc.success)
+    GFX_SetWindowTitle(theroot->song->tracker_windows,filename.id);
+
+  return dc. success;
+}
+
+
+bool SaveAs(struct Root *theroot){
 
         if (doStopPlayingWhenSavingSong())
           PlayStop();
 
         if (g_user_interaction_enabled==false)
-          return;
+          return false;
 
         filepath_t wdir = make_filepath(SETTINGS_read_wchars("filerequester_song_path", NULL));
         const filepath_t filename = GFX_GetSaveFileName(theroot->song->tracker_windows, NULL, " Select file to save", wdir, "*.rad", NULL, true);
 
-	if(isIllegalFilepath(filename))
-          return;
-
-        SETTINGS_write_wchars("filerequester_song_path", DISK_get_absolute_dir_path(filename).id);
+        if(isIllegalFilepath(filename))
+          return false;
 
 #ifndef GUIISQT // Qt asks this question for us.
 	char *ret=NULL;
@@ -143,36 +169,52 @@ void SaveAs(struct Root *theroot){
 				"File already exists, are you sure? (yes/no)"
 			);
 		}
-		if(!strcmp("no",ret)) return;
+		if(!strcmp("no",ret)) return false;
 	}
 #endif
-	dc.filename = copy_filepath(filename);
 
-	Save_Clean(filename,theroot,false);
-
-        if (dc.success)
-          GFX_SetWindowTitle(theroot->song->tracker_windows,filename.id);
+        return SaveAs2(filename, theroot);
 }
 
 bool g_embed_samples = false;
 
-void SaveWithEmbeddedSamples(struct Root *theroot){
+bool SaveWithEmbeddedSamples(filepath_t filename, struct Root *theroot){
+  bool ret = false;
+  
   g_embed_samples=true;
-  SaveAs(theroot);
+  
+  if (isIllegalFilepath(filename))
+    ret = SaveAs(theroot);
+  else
+    ret = SaveAs2(filename, theroot);
+  
   g_embed_samples=false;
   g_curr_song_contains_embedded_samples = true;
   SONGPROPERTIES_update(theroot->song);
+
+  return ret;
 }
 
-void SaveWithoutEmbeddedSamples(struct Root *theroot){
+bool SaveWithoutEmbeddedSamples(filepath_t filename, struct Root *theroot){
   g_embed_samples=false;
-  SaveAs(theroot);
+
+  bool ret;
+  
+  if (isIllegalFilepath(filename))
+    ret = SaveAs(theroot);
+  else
+    ret = SaveAs2(filename, theroot);
+    
   g_curr_song_contains_embedded_samples = false;
   SONGPROPERTIES_update(theroot->song);
+
+  return ret;
 }
 
-void Save(struct Root *theroot){
+bool Save(struct Root *theroot){
 
+  bool ret = false;
+  
   if (doStopPlayingWhenSavingSong())
     PlayStop();
   
@@ -180,7 +222,7 @@ void Save(struct Root *theroot){
     
     g_embed_samples = g_curr_song_contains_embedded_samples;
 
-    SaveAs(theroot);
+    ret = SaveAs(theroot);
 
     g_embed_samples=false;
     
@@ -191,11 +233,14 @@ void Save(struct Root *theroot){
       g_embed_samples=true;
 
     Save_Clean(dc.filename,theroot,false);
-
+    ret = dc.success;
+    
     if (embed)
       g_embed_samples=false;
     
   }
+
+  return ret;
 }
 
 void Save_Backup(const filepath_t filename, struct Root *theroot){

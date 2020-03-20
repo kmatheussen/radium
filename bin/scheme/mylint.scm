@@ -276,7 +276,7 @@
 
 
 (define (schemecodeparser-get-type-for-pair expr varlist)
-  ;;(c-display "get-type-for-pair:" expr varlist)
+  ;;(c-display "get-type-for-pair:" expr) ;; varlist)
   (define funcname (car expr))
   (cond ((pair? funcname)
          (schemecodeparser-get-type-for-pair funcname varlist))
@@ -305,8 +305,10 @@
          #f)))
 
 (define* (schemecodeparser-get-type expr (varlist schemecodeparser-varlist))
-  ;;(c-display "get-type:" expr varlist)
+  ;;(c-display "get-type:" expr) ;; varlist)
   (cond ((null? expr)
+         'null?)
+        ((equal? expr '(quote ()))
          'null?)
         ((pair? expr)
          (schemecodeparser-get-type-for-pair expr varlist))
@@ -354,6 +356,12 @@
          'procedure?)
         ((hash-table? expr)
          'hash-table?)
+        ((instrument? expr)
+         'instrument?)
+        ((filepath? expr)
+         'filepath?)
+        ((file? expr)
+         'file?)
         (else
          ;;(c-display "schemecodeparser-get-type: Unknown type: " (object->string expr))
          ;;(c-display "varlist:" varlist)
@@ -919,9 +927,10 @@
          
 
 #!!
-(c-macroexpand '(<optional-func> a 2 :rest))
+(c-macroexpand '(*<optional-func>* a 2 :rest))
 (c-macroexpand '(<optional-func>))
 (c-macroexpand '(<optional-func> a 9 c))
+(<optional-func>)
 !!#
 
 
@@ -1488,6 +1497,7 @@
           (let loop ((arguments (cdr expr))
                      (parameters (cdr signature))
                      (argnum 1))
+            ;;(c-display "..." argnum ". arguments:" arguments)
             (if (null? arguments)
                 ""
                 (if (or (eq? #t (car parameters))

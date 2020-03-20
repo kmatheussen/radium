@@ -122,14 +122,16 @@ static void show_star(void){
                                              get_filename()),
                                STRING_create(" **")
                                );
-    GFX_SetWindowTitle(root->song->tracker_windows,s);
+    GFX_SetWindowTitle(root->song->tracker_windows,s);    
     showing_star_in_filename=true;
+    API_call_me_when_dirty_status_has_changed(true);
   }
 }
 static void hide_star(void){
   if(showing_star_in_filename==true){
     GFX_SetWindowTitle(root->song->tracker_windows,get_filename());
     showing_star_in_filename=false;
+    API_call_me_when_dirty_status_has_changed(false);
   }
 }
 

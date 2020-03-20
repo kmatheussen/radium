@@ -39,7 +39,7 @@
                            :type 3 ;; See GUI. Type 1 is "Move start position ...", type 2 is "Move end ...", etc.
                            )
 
-  (c-display "args:" start end q max-length type)
+  ;;(c-display "args:" start end q max-length type)
   
   (define delete-it #f)
 

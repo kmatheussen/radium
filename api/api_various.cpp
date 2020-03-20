@@ -975,7 +975,17 @@ void minimizeBlockTracks(int windownum, int blocknum){
 
 extern bool doquit;
 
-void quit(void){
+void quit(bool ignore_nsm){
+  
+  if (!ignore_nsm && nsmIsActive()){
+
+    if(Undo_are_you_sure_questionmark()==false)
+      return;
+
+    evalScheme("(FROM_C-nsm-quit)");
+    return;
+  }
+
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   doquit=Quit(window);
   if(doquit==true) printf("doquit is really true.\n");
@@ -1097,34 +1107,70 @@ void setEmbeddedAudioFilesPath(filepath_t new_path){
   SETTINGS_write_string("embedded_audio_files_path", g_embedded_audio_files_path);
 }
 
-void save(void){
-  Save(root);
+bool save(bool ignore_nsm){
+
+  if (!ignore_nsm && nsmIsActive()){
+    evalScheme("(FROM_C-nsm-save)");
+    return true;
+  }
+  
+  return Save(root);
 }
 
-void saveAs(void){
-  SaveAs(root);
+bool saveAs(filepath_t filename, bool with_embedded_samples, bool ignore_nsm){
+  if (!ignore_nsm && nsmIsActive()){
+    evalScheme("(FROM_C-nsm-save-as)");
+    return true;
+  }
+  
+  if (with_embedded_samples)
+    return SaveWithEmbeddedSamples(filename, root);
+  else
+    return SaveWithoutEmbeddedSamples(filename, root);
 }
 
-void saveWithEmbeddedSamples(void){
-  SaveWithEmbeddedSamples(root);
+bool saveWithEmbeddedSamples(void){
+  return SaveWithEmbeddedSamples(createIllegalFilepath(), root);
 }
 
-void saveWithoutEmbeddedSamples(void){
-  SaveWithoutEmbeddedSamples(root);
+bool saveWithoutEmbeddedSamples(void){
+  return SaveWithoutEmbeddedSamples(createIllegalFilepath(), root);
 }
 
 
 extern bool isloaded;
 
-void load(void){
+bool load(bool ignore_nsm){
+
+  if (!ignore_nsm && nsmIsActive()){
+    //if(Undo_are_you_sure_questionmark()==false)
+    //  return false;
+    evalScheme("(FROM_C-nsm-open)");
+    return true;
+  }
+  
   if( Load_CurrPos(getWindowFromNum(-1))){
+    
     isloaded=true;
+    return true;
+    
+  } else {
+
+    return false;
+    
   }
 }
 
-void loadSong(filepath_t filename){
+bool loadSong(filepath_t filename){
   if( LoadSong_CurrPos(getWindowFromNum(-1),filename)){
+    
     isloaded=true;
+    return true;
+    
+  } else {
+    
+    return false;
+    
   }
 }
 
@@ -1132,7 +1178,20 @@ bool hasSession(void){
   return isLegalFilepath(dc.filename);
 }
 
-void newSong(void){
+void newSong(bool ignore_nsm){
+
+  if (!ignore_nsm && nsmIsActive()){
+
+    /*
+      Comment out since NSM saves anyway, so asking are-you-sure? would create the impression that the session is not saved if answering yes.
+    if(Undo_are_you_sure_questionmark()==false)
+      return;
+    */
+    
+    evalScheme("(FROM_C-nsm-new-song)");
+    return;
+  }
+  
   NewSong_CurrPos(getWindowFromNum(-1));
 }
 
@@ -3402,6 +3461,14 @@ double getMs(void){
   return TIME_get_ms();
 }
 
+int64_t getPid(void){
+  return getpid();
+}
+
+extern const char *g_argv0;
+const_char* getArgv0(void){
+  return g_argv0;
+}
 
 bool releaseMode(void){
 #if defined(RELEASE)

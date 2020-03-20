@@ -140,3 +140,41 @@ void API_call_me_right_after_undoing_or_redoing(void){
   for(func_t *callback : to_remove)
     g_undo_callbacks.removeAll(callback);
 }
+
+
+
+// dirty/clean callbacks
+//////////////////////////
+
+static radium::ProtectedS7FuncVector g_dirty_callbacks(true,"dirty_status_change_callbacks");
+
+void addDirtyStatusChangeCallback(func_t* callback){
+
+  if(g_dirty_callbacks.push_back(callback)==false)
+    handleError("addDirtyStatusChangeCallback: Callback is already registered");
+}
+
+void removeDirtyStatusChangeCallback(func_t* callback){
+
+  int num_removed = g_dirty_callbacks.removeAll(callback);
+  
+  if (num_removed == 0)
+    handleError("removeDirtyStatusChangeCallback: Callback not found.");
+}
+
+void API_call_me_when_dirty_status_has_changed(bool is_dirty){
+  QVector<func_t*> to_remove; // Need to do it like this since the callback could both remove and add undoredo callbacks.
+
+  g_dirty_callbacks.safe_for_all(true, [&to_remove, is_dirty](func_t *callback){
+      
+      if (S7CALL(bool_bool, callback, is_dirty)==false)
+        to_remove.push_back(callback);
+      
+      return true;
+      
+    });
+  
+  // Don't want to call removeUndoRedoCallback for the entries since a callback could have removed a previous callback, and we don't want to show error if that happens.
+  for(func_t *callback : to_remove)
+    g_dirty_callbacks.removeAll(callback);
+}

@@ -752,7 +752,29 @@ struct Mixer{
   bool start_jack(){
     jack_status_t status;
 
-    _rjack_client=jack_client_open("radium_audio",JackNoStartServer,&status,NULL);
+    const char *client_name;
+
+    if (supportsSwitchNsmCapability()) {
+
+      client_name = "radium_audio";
+
+    } else {
+      
+      waitUntilNsmHasInited();
+      
+      if (!nsmIsActive()) {
+        
+        client_name = "radium_audio";
+        
+      } else {
+        
+        client_name = getNsmClientId();
+        
+      }
+
+    }
+        
+    _rjack_client=jack_client_open(client_name,JackNoStartServer,&status,NULL);
     g_jack_client = _rjack_client;
 
     if (_rjack_client == NULL) {
