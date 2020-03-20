@@ -224,6 +224,61 @@ void ResetUndo(void){
   update_gfx();
 }
 
+
+bool Undo_NSM_are_you_sure_questionmark(void){
+  int num_undos = Undo_num_undos_since_last_save();
+
+  bool boolret = true;
+
+  ReqType reqtype = NULL;
+
+  if (num_undos>0) {
+    
+    reqtype = GFX_OpenReq(root->song->tracker_windows, 200, 100, "");
+    
+    if(num_undos>0){
+      char temp[200];
+      char *ret=NULL;
+      
+      sprintf(
+              temp,
+              "%d change%s been made to file since song was saved.\n"
+              "<p>\n"
+              "<center><u>Your current project will be saved automatically by NSM if you answer yes now.</u></center>\n"
+              "<p>\n"
+              "Are you sure? (yes/no) >",
+              num_undos,
+              num_undos>1 ? "s have" : " has"
+              );
+      do{
+        ret=GFX_GetString(
+                          root->song->tracker_windows,
+                          reqtype,
+                          temp,
+                          true
+                          );
+      }while(
+             ret!=NULL &&
+             strcmp("yes",ret) &&
+             strcmp("no",ret)
+             );
+      
+      if(ret==NULL || !strcmp("no",ret)){
+        boolret = false;
+        goto exit;
+      }
+    }
+  }
+  
+ exit:
+  
+  if (reqtype != NULL)
+    GFX_CloseReq(root->song->tracker_windows, reqtype);
+  
+  return boolret;
+}
+
+
 bool Undo_are_you_sure_questionmark(void){
   EVENTLOG_add_event("Undo_are_you_sure_questionmark 1");
   

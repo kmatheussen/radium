@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_Menues_proc.h"
 
 
-extern bool doquit;
 extern QApplication *qapplication;
 
 namespace{
@@ -95,7 +94,7 @@ public slots:
     setopen();
   }
 
-  
+
 };
   
 struct Menues{
@@ -170,9 +169,7 @@ public slots:
 #if defined(RELEASE)
     window->must_redraw = true;
 #endif
-    
-    if(doquit==true)
-      qapplication->quit();
+
   }
 };
 }
