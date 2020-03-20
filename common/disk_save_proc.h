@@ -1,10 +1,11 @@
 
 extern LANGSPEC bool Save_Initialize(const filepath_t filename, const char *type);
-extern LANGSPEC void Save_Clean(const filepath_t filename,struct Root *theroot, bool is_backup);
-extern LANGSPEC void Save(struct Root *theroot);
-extern LANGSPEC void SaveAs(struct Root *theroot);
-extern LANGSPEC void SaveWithEmbeddedSamples(struct Root *theroot);
-extern LANGSPEC void SaveWithoutEmbeddedSamples(struct Root *theroot);
+extern LANGSPEC void Save_Clean(const filepath_t filename,struct Root *theroot, bool is_backup); // Sets dc.success to false if it fails.
+extern LANGSPEC bool Save(struct Root *theroot);
+extern LANGSPEC bool SaveAs2(const filepath_t filename, struct Root *theroot);
+extern LANGSPEC bool SaveAs(struct Root *theroot); // Opens file requester, and then calls SaveAs2.
+extern LANGSPEC bool SaveWithEmbeddedSamples(filepath_t filename, struct Root *theroot);
+extern LANGSPEC bool SaveWithoutEmbeddedSamples(filepath_t filename, struct Root *theroot);
 extern LANGSPEC void Save_Backup(const filepath_t filename, struct Root *theroot);
 
 

@@ -37,6 +37,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "radium_proc.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/visual_proc.h"
+#include "../common/settings_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -69,14 +71,14 @@ namespace{
     lo_server_thread _server_thread;
     
     radium::ProtectedS7Extra<func_t*> _callback = radium::ProtectedS7Extra<func_t*>("osc_method_callback");
-    radium::GcHolder<const char> _typespec;
+    //radium::GcHolder<const char> _typespec;
     lo_method _method;
     
     OscMethod(int64_t osc_server_id, lo_server_thread server_thread, const_char *path, const char *typespec, func_t *callback)
       : _osc_server_id(osc_server_id)
       , _server_thread(server_thread)
       , _callback(callback)
-      , _typespec(talloc_strdup(typespec))
+        //, _typespec(talloc_strdup(typespec))
       , _method(lo_server_thread_add_method(_server_thread, path, typespec, osc_callback, this))
     {
       g_osc_methods[_id] = this;
@@ -455,3 +457,124 @@ void sendOscMessageFrom(const_char* url, int64_t server_id, const_char* path, co
     lo_address_free(address);
 }
 
+
+
+/* NSM */
+
+
+bool nsmHasInited(void){
+  static bool s_has_inited = false;
+
+  if (s_has_inited==true)
+    return true;
+  
+  dyn_t nsm_has_inited = evalSchemeWithReturn("*nsm-has-inited*");
+  
+  if (nsm_has_inited.type != BOOL_TYPE){
+
+    R_ASSERT(false);
+    return false;
+    
+  } else {
+
+    if (nsm_has_inited.bool_number)
+      s_has_inited = true;
+    
+    return nsm_has_inited.bool_number;
+    
+  }
+}
+
+void waitUntilNsmHasInited(void){
+  int safety = 0;
+  while(!nsmHasInited() && safety < 200){
+    msleep(25);
+    THREADING_call_very_often();
+    safety++;
+  }
+
+  if (safety > 198)
+    GFX_addMessage("NSM took more than 5 seconds to start.");    
+}
+
+bool nsmIsActive(void){
+  if (!nsmHasInited()){
+    handleError("nsmIsActive: NSM has not inited yet");
+    return false;
+  }
+    
+  R_ASSERT(nsmHasInited());
+  
+  dyn_t nsm_is_active = evalSchemeWithReturn("*nsm-is-active*");
+  
+  if (nsm_is_active.type != BOOL_TYPE){
+
+    R_ASSERT(false);
+    return false;
+    
+  } else {
+    
+    return nsm_is_active.bool_number;
+    
+  }
+}
+
+const_char* getNsmClientId(void){
+  if (!nsmHasInited()){
+    handleError("getNsmClientId: NSM has not inited yet");
+    return "";
+  }
+  
+  static const_char* s_client_id = "";
+  
+  static bool s_has_inited = false;
+
+  if (!nsmIsActive())
+    return "";
+    
+  if (s_has_inited==false){
+
+    for(int i = 0 ; i < 200 ; i++) {
+      dyn_t client_id = evalSchemeWithReturn("*nsm-client-id*");
+
+      if (client_id.type!=STRING_TYPE){
+
+        msleep(25);
+        THREADING_call_very_often();
+        
+      } else {
+        
+        s_client_id = strdup(STRING_get_chars(client_id.string));
+        break;
+        
+      }
+
+      if (i > 198)
+        GFX_addMessage("NSM took more than 5 seconds to call /nsm/client/open. Giving up.");    
+
+    }
+    
+    s_has_inited = true;
+  }
+
+  return s_client_id;
+  
+}
+
+static bool g_supportsSwitchNsmCapability = true;
+
+bool supportsSwitchNsmCapability(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_supportsSwitchNsmCapability = SETTINGS_read_bool("supports_switch_nsm_capability", g_supportsSwitchNsmCapability);
+    has_inited = true;
+  }
+
+  return g_supportsSwitchNsmCapability;
+}
+
+void setSupportsSwitchNsmCapability(bool val){
+  g_supportsSwitchNsmCapability = val;
+  SETTINGS_write_bool("supports_switch_nsm_capability", val);
+}

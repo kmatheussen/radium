@@ -3,6 +3,7 @@
 
 (<declare-variable> FROM-C-get-edit-gui) ;; in main_layout.scm
 (<declare-variable> show-keybinding-help-window) ;; in various.scm
+(<declare-variable> ensure-range-from-selection!) ;; in notem.scm
 
 
 

@@ -243,6 +243,15 @@ dyn_t getFileInfo(filepath_t w_path){
   return DYN_create_hash(ret);
 }
 
+bool dirExists(filepath_t path){
+  return DISK_dir_exists(path);
+}
+  
+bool createDir(filepath_t path){
+  return DISK_create_dir(path);
+}
+
+
 static bool call_callback(func_t* callback, bool in_main_thread, bool is_finished, const wchar_t *path){
   int64_t num_calls = g_num_calls_to_handleError;
 

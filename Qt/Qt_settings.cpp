@@ -45,6 +45,8 @@ const char *OS_get_directory_separator(void){
   return ret;
 }
 
+const char *g_argv0 = "";
+
 void OS_set_argv0(char *argv0){
   /*
   //QFileInfo info(QDir::currentPath() + QString(OS_get_directory_separator()) + QString(argv0));
@@ -56,6 +58,8 @@ void OS_set_argv0(char *argv0){
   printf("current path: -%s-\n",g_program_path);
   */
 
+  g_argv0 = strdup(argv0);
+  
   //chdir(QCoreApplication::applicationDirPath().toLocal8Bit().constData());
   QDir::setCurrent(QCoreApplication::applicationDirPath());
 }

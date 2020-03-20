@@ -395,6 +395,9 @@ static dyn_t create_dyn_from_s7(s7_scheme *s7, s7_pointer s, bool undefinedIsErr
   if (s7_is_string(s))
     return DYN_create_string_from_chars(s7_string(s));
 
+  if (s7_is_symbol(s))
+    return DYN_create_symbol(s7_symbol_name(s));
+
   if (s7_is_boolean(s))
     return DYN_create_bool(s7_boolean(s7, s));
 
@@ -437,7 +440,7 @@ bool s7extra_is_dynvec(s7_pointer dynvec){
 }
 
 dynvec_t s7extra_dynvec(s7_scheme *s7, s7_pointer s){
-  if (s7_is_vector(s) || s7_is_pair(s))
+  if (s7_is_vector(s) || s7_is_list(s7, s))
     return s7extra_array(s7, s);
 
   handleError("s7extra_dynvec: Unsupported s7 type");

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ -z "$RADIUM_NSM_EXECUTABLE_NAME" ] ; then
+        export RADIUM_NSM_EXECUTABLE_NAME=$(basename -- "$0")
+fi
+
 export LSAN_OPTIONS=suppressions=`pwd`/SanitizerSuppr.txt
 export ASAN_OPTIONS="detect_leaks=0,allocator_may_return_null=1,abort_on_error=1,new_delete_type_mismatch=0,alloc_dealloc_mismatch=0,max_malloc_fill_size=1048576" # new_delete_type_mismatch=0 because of qt5. alloc_dealloc_mismatch because of various vst plugins. detect_stack_use_after_return=1 sounds nice, but is very slow.
 export UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1"

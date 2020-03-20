@@ -2,6 +2,10 @@
 
 set -e
 
+if [ -z "$RADIUM_NSM_EXECUTABLE_NAME" ] ; then
+        export RADIUM_NSM_EXECUTABLE_NAME=$(basename -- "$0")
+fi
+
 
 THIS_DIR="$(dirname "$(readlink -f "$0")")"
 XCB_LIB_DIR="$THIS_DIR"/packages/libxcb-1.13/src/.libs

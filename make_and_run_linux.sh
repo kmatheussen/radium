@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ -z "$RADIUM_NSM_EXECUTABLE_NAME" ] ; then
+        export RADIUM_NSM_EXECUTABLE_NAME=$(basename -- "$0")
+fi
+
 # This is the command I use to run when developing. -Kjetil
 
 #VL_DATA_PATH=/home/kjetil/Visualization-Library/data BUILDTYPE=DEBUG ./build_linux.sh -j7 &&

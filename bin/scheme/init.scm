@@ -11,7 +11,6 @@
 
 (set! (*s7* 'history-size) 80)
 
-              
 
 (define *is-initializing* #t)
 ;;(define *all-files-loaded #f)
@@ -267,6 +266,11 @@ undo-block
 FROM_C-create-quantitize-gui
 ra:load-song
 quantitize-note
+FROM_C-nsm-open
+FROM_C-nsm-save
+FROM_C-nsm-new-song
+FROM_C-nsm-save-as
+FROM_C-nsm-quit
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*
@@ -935,6 +939,9 @@ quantitize-note
 (my-require 'timing.scm) ;; Note that the program assumes that g_scheme_has_inited1 is true after timing.scm has been loaded.
 
 (my-require 'main_menus.scm)
+
+(my-require 'nsm.scm)
+
 
 (define (FROM-C-assert-that-function-can-be-called-from-C funcname)
   (define sym (string->symbol funcname))

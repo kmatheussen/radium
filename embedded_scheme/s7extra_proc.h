@@ -310,17 +310,17 @@ namespace radium{
 
     const char *_id;
 
-    ProtectedS7Extra(const ProtectedS7Extra &another)
-      : ProtectedS7Extra(another.v, another._id)
-    {
-    }
-    
     ProtectedS7Extra& operator=(const ProtectedS7Extra&) = delete;
 
     ProtectedS7Extra(T val, const char *id = "")
       : _id(id)
     {
       protect(val);
+    }
+    
+    ProtectedS7Extra(const ProtectedS7Extra &another)
+      : ProtectedS7Extra(another.v, another._id)
+    {
     }
     
     ProtectedS7Extra(const char *id = "")
