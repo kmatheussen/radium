@@ -1635,28 +1635,58 @@ void setCurrentPianonote(int num, dyn_t dynnote, int tracknum){
     return;
 
   if (
-      current_piano_note.tracknum != tracknum ||
-      current_piano_note.noteid != note->id || 
-      current_piano_note.pianonotenum != num
+      g_current_piano_note.tracknum != tracknum ||
+      g_current_piano_note.noteid != note->id || 
+      g_current_piano_note.pianonotenum != num
       )
     {  
-      current_piano_note.tracknum = tracknum;
-      current_piano_note.noteid = note->id;
-      current_piano_note.pianonotenum = num;
+      g_current_piano_note.tracknum = tracknum;
+      g_current_piano_note.noteid = note->id;
+      g_current_piano_note.pianonotenum = num;
       root->song->tracker_windows->must_redraw_editor = true;
     }
 }
 
 void cancelCurrentPianonote(void){
   if (
-      current_piano_note.tracknum != -1 ||
-      current_piano_note.noteid != -1 ||
-      current_piano_note.pianonotenum != -1
+      g_current_piano_note.tracknum != -1 ||
+      g_current_piano_note.noteid != -1 ||
+      g_current_piano_note.pianonotenum != -1
       )
     {
-      current_piano_note.tracknum = -1;
-      current_piano_note.noteid = -1;
-      current_piano_note.pianonotenum = -1;
+      g_current_piano_note.tracknum = -1;
+      g_current_piano_note.noteid = -1;
+      g_current_piano_note.pianonotenum = -1;
+      root->song->tracker_windows->must_redraw_editor = true;
+    }
+}
+
+void setCurrentPianoGhostNote(Place place_start, Place place_end, float value, int tracknum){
+  if (tracknum==-1)
+    tracknum = root->song->tracker_windows->wblock->wtrack->l.num;
+
+  if (
+      g_current_piano_ghost_note.tracknum != tracknum ||
+      p_NOT_Equal(g_current_piano_ghost_note.start, place_start) ||
+      p_NOT_Equal(g_current_piano_ghost_note.end, place_end) ||
+      !equal_floats(g_current_piano_ghost_note.value, value)
+      )
+    {
+      g_current_piano_ghost_note.tracknum = tracknum;
+      g_current_piano_ghost_note.start = place_start;
+      g_current_piano_ghost_note.end = place_end;
+      g_current_piano_ghost_note.value = value;
+      root->song->tracker_windows->must_redraw_editor = true;
+    }
+}
+
+void cancelCurrentPianoGhostNote(void){
+
+  if (
+      g_current_piano_ghost_note.tracknum != -1
+      )
+    {
+      g_current_piano_ghost_note.tracknum = -1;
       root->song->tracker_windows->must_redraw_editor = true;
     }
 }
