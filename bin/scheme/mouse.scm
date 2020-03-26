@@ -181,11 +181,14 @@
       place
       (get-gridded-place place)))
 
-(define (get-next-place-from-y Button Y)
+(delafina (get-next-place-from-y :Button
+                                 :Y
+                                 :how-much 1)
   (if (<ra> :control-pressed)
-      (<ra> :get-place-from-y (+ Y 1))
+      (<ra> :get-place-from-y (+ Y how-much))
       (+ (get-gridded-place (<ra> :get-place-from-y Y))
-         (<ra> :get-grid))))
+         (* how-much
+            (<ra> :get-grid)))))
        
 
 
@@ -454,6 +457,13 @@
   (<ra> :set-current-pianonote pianonotenum notenum tracknum))
 ;;  (set-editor-statusbar (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pianonotenum tracknum)))))
 
+(define2 current-piano-ghost-note-has-been-set boolean? #f)
+(define (set-current-piano-ghost-note start end value tracknum)
+  (set! current-piano-ghost-note-has-been-set #t)
+  (set-mouse-pointer ra:set-blank-mouse-pointer (<gui> :get-editor-gui))
+  (<ra> :set-current-piano-ghost-note start end value tracknum))
+;;  (set-editor-statusbar (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pianonotenum tracknum)))))
+
 ;; TODO: block->is_dirty is set unnecessarily often to true this way.
 (define (cancel-current-stuff)
   (<ra> :set-no-mouse-fx)
@@ -461,6 +471,7 @@
   (<ra> :set-no-mouse-track)
   (<ra> :cancel-current-node)
   (<ra> :cancel-current-pianonote)
+  (<ra> :cancel-current-piano-ghost-note)
   (<ra> :cancel-indicator-node)
   )
 
@@ -473,6 +484,7 @@
   (set! custom-seq-indicator-has-been-set #f)
   (set! current-node-has-been-set #f)
   (set! current-pianonote-has-been-set #f)
+  (set! current-piano-ghost-note-has-been-set #f)
   (set! mouse-pointer-has-been-set #f)
 
   ;;(set-editor-statusbar "")
@@ -521,6 +533,9 @@
                           
                           (if (not current-pianonote-has-been-set)
                               (<ra> :cancel-current-pianonote))
+                          
+                          (if (not current-piano-ghost-note-has-been-set)
+                              (<ra> :cancel-current-piano-ghost-note))
                           ;;(if (not mouse-pointer-has-been-set)
                           ;;    (<ra> :set-normal-mouse-pointer))
 
@@ -2119,9 +2134,11 @@
 
 
 
-
 ;; pianoroll
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
 
 (define-constant *pianonote-move-start* 'move-start)
 (define-constant *pianonote-move-all* 'move-all)
@@ -2278,13 +2295,6 @@
               (<ra> :get-track-midi-channel *current-track-num*)
               instrument-id))))
 
-(define (get-pianoroll-key X)
-  (scale X
-         (<ra> :get-track-pianoroll-x1 *current-track-num*)
-         (<ra> :get-track-pianoroll-x2 *current-track-num*)
-         (<ra> :get-pianoroll-low-key *current-track-num*)
-         (<ra> :get-pianoroll-high-key *current-track-num*)))
-
 (define (sane-pianonote-portamento-enabled pianonotenum noteid tracknum)
   (define num-pianonotes (<ra> :get-num-pianonotes noteid tracknum))
   (if (< num-pianonotes 2)
@@ -2432,6 +2442,18 @@
 (<ra> :get-pianonote-value 1 0 0)
 !!#
 
+(define (get-pianoroll-key X)
+  ;;(c-display "X:" X
+  ;;           (<ra> :get-track-pianoroll-x1 *current-track-num*)
+  ;;           (<ra> :get-track-pianoroll-x2 *current-track-num*)
+  ;;           (<ra> :get-pianoroll-low-key *current-track-num*)
+  ;;           (<ra> :get-pianoroll-high-key *current-track-num*))
+  (scale X
+         (<ra> :get-track-pianoroll-x1 *current-track-num*)
+         (<ra> :get-track-pianoroll-x2 *current-track-num*)
+         (<ra> :get-pianoroll-low-key *current-track-num*)
+         (<ra> :get-pianoroll-high-key *current-track-num*)))
+
 
 (define (get-track-pianoroll-box)
   (and *current-track-num*
@@ -2454,6 +2476,8 @@
                                      (assert #f))
                                    (lambda ($button $x $y)
                                      (assert #f))))
+
+
 
 (add-node-mouse-handler :Get-area-box get-track-pianoroll-box
                         :Get-existing-node-info (lambda (X Y callback)
@@ -2795,6 +2819,28 @@
                          )
                     (set-mouse-pointer ra:set-vertical-resize-mouse-pointer (<gui> :get-editor-gui))
                     (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui)))))))
+
+
+;; show ghost-pianonote, i.e. the pianonote that would be created if pressing left mouse.
+(add-mouse-move-handler
+ :move (lambda (Button X Y)
+         (and (= 0 Button)
+              (not current-pianonote-has-been-set)
+              (let ((box (get-track-pianoroll-box)))
+                (and box
+                     (inside-box? box X Y)))
+              (let ()
+                (define Place (get-place-from-y *left-button* Y))
+                (define Next-Place (get-next-place-from-y *left-button* Y))
+                (define raw-Value (get-pianoroll-key X))
+                (define Value (if (<ra> :control-pressed)
+                                  raw-Value
+                                  (floor raw-Value)))
+                ;;(c-display "Start:" (* 1.0 Place) ". End:" (* 1.0 Next-Place) ". Value:" Value)
+                (set-current-piano-ghost-note Place Next-Place Value *current-track-num*)
+                #f))))
+
+
 
 ;; Delete pianonote (shift + right mouse)
 (add-mouse-cycle
