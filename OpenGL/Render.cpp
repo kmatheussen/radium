@@ -1912,7 +1912,7 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
       bool is_selected = API_note_is_selected(wblock, note);
 
       if (is_painting_ghost_note)
-        c = GE(GE_alpha(GE_get_rgb(c), 0.5), y1);
+        c = GE(GE_alpha(GE_get_rgb(c), 0.2), y1);
       
       if (is_selected)
         c = GE_mix_color(GE_get_rgb(c), GE_get_rgb(PIANONOTE_SELECTED_COLOR_NUM), 500, y1, use_scissors);
