@@ -3692,8 +3692,9 @@ static int gc_has_static_roots_func(
   {
     QString name(dlpi_name);
     if (name.contains("libxcb.so")){
-      if (!name.contains("bin/packages/libxcb-1.13/src/.libs/")){
+      if (!name.contains("/packages/libxcb-1.13/src/.libs/")){
         fprintf(stderr,"\n\n%c[31mError. A version of libxcb not included with Radium has been dynamically linked into the program. Something is wrong the installation of Radium.\nOlder versions of libxcb (probably before 1.11.1) are unstable with Radium.%c[0m\n\n", 0x1b, 0x1b);
+        fprintf(stderr, "(\"%s\")\n", name.toUtf8().constData());
         abort();
       }
     }
