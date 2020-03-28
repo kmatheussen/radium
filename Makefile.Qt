@@ -322,7 +322,8 @@ endif
 # -Wunused-parameter
 
 # OPT is C flags
-OPT=$(COMMONOPT) -Wstrict-prototypes -Wmissing-prototypes -std=gnu99
+OPT=$(COMMONOPT) -Wstrict-prototypes -Wmissing-prototypes -std=gnu99 # Note: "-Wmissing-prototypes" is only valid for C files. The equivilant C++ option is "-Wmissing-declarations". However, "-Wmissing-declarations" doesn't always seem to work, don't know why.
+
 # -D_FORTIFY_SOURCE=2 -O2
 
 ifneq (,$(findstring clang,$(CC)))
