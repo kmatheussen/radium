@@ -209,9 +209,11 @@ int main(int argc, char **argv){
 #include "KillJackd_proc.h"
 
 static void kill_jackd(void){
+  
   bool killed_check_program = false;
   
   for(int i=0;i<20;i++){
+  
 #if defined(FOR_LINUX) || defined(FOR_MACOSX)
     const char *command1 = "killall -9 radium_check_jack_status";
     const char *command2 = "killall -9 jackd";
@@ -222,29 +224,37 @@ static void kill_jackd(void){
     const char *command3 = "taskkill /F /T /IM jackdmp.exe";
 #endif
     
-    fprintf(stderr, "Executing\n   \"%s\"\n   \"%s\"\n   \"%s\"\n", command1, command2, command3);
-
-    if (killed_check_program==false)
+    if (killed_check_program==false){
+      GFX_ShowProgressMessage(talloc_format("Killing jack %d/%d: \"%s\"", i+1, 20, command1), true);
       if (system(command1)==0)
         killed_check_program = true;
+      
+      msleep(80);
+    }
     
-    msleep(1);
-    
+    GFX_ShowProgressMessage(talloc_format("Killing jack %d/%d: \"%s\"", i+1, 20, command2), true);
     if (system(command2)==0){
       //return;
     }
+
+    msleep(80);
     
+    GFX_ShowProgressMessage(talloc_format("Killing jack %d/%d: \"%s\"", i+1, 20, command3), true);
     if (system(command3)==0){
       //return;
     }
 
+    msleep(80);
+    
 #if defined(FOR_MACOSX)
     const char *command4 = "killall -9 JackPilot"; // On OSX, jack pilot needs to be restarted after jackd has been killed. (if not, it shows a message about needing to restart the system)
+    GFX_ShowProgressMessage(talloc_format("Killing jack %d/%d: \"%s\"", i+1, 20, command4), true);
     system(command4);
+    msleep(80);
 #endif
     
-    msleep(250);
   }
+
 }
 
 
@@ -325,6 +335,9 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
     
     if (hmmm!=ignore){
       kill_jackd();
+      
+      GFX_CloseProgress();
+
       GFX_Message(NULL, "We have now run several commands that should have stopped the jack process.<p>Now you need to start Jack one more time, and after that start Radium again.");
       return true;
     }
