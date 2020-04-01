@@ -29,6 +29,8 @@ extern LANGSPEC wchar_t *STRING_to_upper(const wchar_t *string);
 extern LANGSPEC wchar_t *STRING_to_lower(const wchar_t *string);
 
 extern LANGSPEC int STRING_find_pos(const wchar_t *string, int start_pos, const char *what_to_find); // returns -1 if not found.
+extern LANGSPEC wchar_t *STRING_remove_start(const wchar_t *string, int new_start_pos);
+extern LANGSPEC wchar_t *STRING_remove_end(const wchar_t *string, int new_end_pos);
 
 
 extern LANGSPEC wchar_t *STRING_toBase64(const wchar_t *s);

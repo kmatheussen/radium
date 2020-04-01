@@ -16,7 +16,7 @@
 #include "../common/OS_Player_proc.h"
 
 #include "SoundProducer_proc.h"
-
+#include "SendReceive_plugins_proc.h"
 
 #include "MultiCore_proc.h"
 
@@ -425,6 +425,10 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
   //fprintf(stderr,"**************** STARTING %d\n",sp_all.size()); fflush(stderr);
 
   for (SoundProducer *sp : sp_all) {
+
+    SoundPlugin *plugin = SP_get_plugin(sp);
+    if (is_receiver_plugin(plugin))
+      RT_SEND_RECEIVE_swap_receiver_send_channels(plugin);
     
     ATOMIC_NAME(sp->_num_active_input_links_left) = sp->_num_active_input_links;
 

@@ -543,7 +543,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
   bool needs_name = patch->name==NULL || (strlen(patch->name)==0);
 
   if (needs_name){
-    const char *name = PLUGIN_generate_new_patchname(type);
+    const char *name = PLUGIN_generate_new_patchname(plugin);
     PATCH_set_name(patch, name);
   }
 

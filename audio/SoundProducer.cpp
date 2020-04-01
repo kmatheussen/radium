@@ -1162,7 +1162,7 @@ public:
 
       R_ASSERT(isrecursive_feedback != NULL);
       
-      GFX_Message(NULL, "Recursive graph not supported\n");
+      GFX_Message(NULL, "Recursive graph not supported directly. Use Send/Receive instead.\n");
 
       for(auto *link : to_add)
         delete link;

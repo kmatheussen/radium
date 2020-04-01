@@ -1717,7 +1717,7 @@ static void create_pianoroll_grid(const struct Tracker_Windows *window, const st
 }
 
 struct CurrentPianoNote g_current_piano_note = {-1,-1,-1};
-struct CurrentPianoGhostNote g_current_piano_ghost_note = {.tracknum = -1};
+struct CurrentPianoGhostNote g_current_piano_ghost_note = {.tracknum = -1, .start={}, .end={}, .value=0.0f};
 
 static void draw_pianonote_text(const struct Tracker_Windows *window, float notenum, bool is_current, float midpos, float y){
   

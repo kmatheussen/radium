@@ -205,6 +205,8 @@ namespace radium{
 
 }
 
+void UNDO_functions(const char *name, std::function<void(void)> redo, std::function<void(void)> undo);
+
 #endif
 
 #endif

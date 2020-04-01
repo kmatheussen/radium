@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "mQt_faust_plugin_widget_callbacks.h"
 #endif
 #include "mQt_jack_plugin_widget_callbacks.h"
+#include "mQt_sendreceive_plugins_widget_callbacks.h"
 
 static QString last_fxb_preset_path = "";
 
@@ -54,6 +55,7 @@ public:
   radium::GcHolder<struct Patch> _patch;
   Pd_Plugin_widget *_pd_plugin_widget;
   Jack_Plugin_widget *_jack_plugin_widget;
+  SendReceive_Plugin_widget *_sendreceive_plugin_widget;
 #ifdef WITH_FAUST_DEV
   Faust_Plugin_widget *_faust_plugin_widget;
 #endif
@@ -74,6 +76,7 @@ public:
     , _patch(patch)
     , _pd_plugin_widget(NULL)
     , _jack_plugin_widget(NULL)
+    , _sendreceive_plugin_widget(NULL)
 #ifdef WITH_FAUST_DEV
     , _faust_plugin_widget(NULL)
 #endif
@@ -204,6 +207,21 @@ public:
       random_button->hide();
       _jack_plugin_widget = new Jack_Plugin_widget(this,_patch.data());
       vertical_layout->insertWidget(1,_jack_plugin_widget);
+
+      // Send/Receive:
+    }else if(!strcmp(plugin->type->type_name, "Send") || !strcmp(plugin->type->type_name, "Receive")) {
+      new_pd_controller_button->hide();
+      faust_load_button->hide();
+      faust_save_button->hide();
+      faust_compilation_status->hide();
+      faust_revert_button->hide();
+      faust_show_button->hide();
+      faust_options_button->hide();
+      faust_interpreted->hide();
+      reset_button->hide();
+      random_button->hide();
+      _sendreceive_plugin_widget = new SendReceive_Plugin_widget(this,_patch.data());
+      vertical_layout->insertWidget(1,_sendreceive_plugin_widget);
 
 #ifdef WITH_FAUST_DEV
       // Faust:
@@ -431,6 +449,9 @@ public:
 
     if(_jack_plugin_widget != NULL)
       _jack_plugin_widget->update_gui();
+
+    if(_sendreceive_plugin_widget != NULL)
+      _sendreceive_plugin_widget->update_gui();
 
 #ifdef WITH_FAUST_DEV
     if(_faust_plugin_widget != NULL)

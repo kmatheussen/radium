@@ -64,6 +64,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundPluginRegistry_proc.h"
 #include "../audio/Mixer_proc.h"
+#include "../audio/SendReceive_plugins_proc.h"
 #include "../Qt/Qt_instruments_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
@@ -407,18 +408,56 @@ struct Patch *PATCH_alloc(void){
   return patch;
 }
 
-void PATCH_set_name(struct Patch *patch, const char *name){
-  patch->name = name==NULL ? "" : talloc_strdup(name);
+void PATCH_set_name2(struct Patch *patch, const char *name, bool update_send_receive_plugin_names){
+  const_char *orgname = patch->name;
   
-  const char *new_name = talloc_format("Event connection from %s", patch->name);
-  
-  if (patch->midi_learn_port_name == NULL)
-    patch->midi_learn_port_name = get_symbol(new_name);
-  else
-    set_symbol_name(patch->midi_learn_port_name, new_name);
+  //R_ASSERT_NON_RELEASE(orgname!=NULL); // commented out since patch->name==NULL when creating a patch.
 
-  printf("       PATCH set name\n");
-  remakeMixerStrips(make_instrument(-1));
+  if (name==NULL)
+    name = "";
+
+  bool must_update_instrument = false;
+  
+  if(update_send_receive_plugin_names)
+    if (patch->instrument==get_audio_instrument())
+      if (patch->patchdata != NULL)
+        must_update_instrument = SEND_RECEIVE_handle_new_patchname((SoundPlugin*)patch->patchdata, name);
+
+  patch->name = talloc_strdup(name);
+
+  {
+    const char *new_midi_learn_port_name = talloc_format("Event connection from %s", patch->name);
+    
+    if (patch->midi_learn_port_name == NULL)
+      patch->midi_learn_port_name = get_symbol(new_midi_learn_port_name);
+    else
+      set_symbol_name(patch->midi_learn_port_name, new_midi_learn_port_name);
+  }
+
+  if (orgname==NULL || strcmp(orgname, patch->name)) {
+    
+    printf("       PATCH set name: %s\n", patch->name);
+
+    if(patch->instrument==get_audio_instrument()){
+
+      remakeMixerStrips(make_instrument(-1));
+      if (patch->patchdata!=NULL)
+        CHIP_update((SoundPlugin*)patch->patchdata);
+    }
+    
+    GFX_update_instrument_widget(patch);
+    must_update_instrument = false;
+    
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    window->must_redraw = true; // update track headers to the new name
+  }
+
+  if (must_update_instrument)
+    GFX_update_instrument_widget(patch);
+}
+
+void PATCH_set_name(struct Patch *patch, const char *name){
+  PATCH_set_name2(patch, name, true);
 }
 
 static struct Patch *create_new_patch(const char *name, bool is_main_pipe){

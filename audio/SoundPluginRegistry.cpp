@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundPlugin.h"
 #include "Jack_plugin_proc.h"
+#include "SendReceive_plugins_proc.h"
 #include "VST_plugins_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
@@ -787,15 +788,15 @@ void PR_init_plugin_types(void){
 
   create_bus_plugins(true);
 
-  PR_add_menu_entry(PluginMenuEntry::level_up("Pipes, inputs and outputs"));
+  PR_add_menu_entry(PluginMenuEntry::level_up("In/Out, Pipe8, Send/Receive"));
   create_jack_plugins();
   PR_add_menu_entry(PluginMenuEntry::separator());
   create_bus_plugins(false);
+  PR_add_menu_entry(PluginMenuEntry::separator());
+  create_sendreceive_plugins();
   
   PR_add_menu_entry(PluginMenuEntry::level_down());
 
-
-  
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   create_seqtrack_plugin();

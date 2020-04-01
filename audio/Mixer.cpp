@@ -1027,10 +1027,10 @@ struct Mixer{
         RT_sort_sound_producers_by_running_time();
 
       //printf("\n\nNew:\n");
-      
+
       for (SoundProducer *sp : _sound_producers)
         SP_RT_called_for_each_soundcard_block1(sp, _time);
-
+      
       for (SoundProducer *sp : _sound_producers)
         SP_RT_called_for_each_soundcard_block2(sp, _time);
 

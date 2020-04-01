@@ -106,6 +106,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Presets_proc.h"
 #include "../audio/CpuUsage.hpp"
 #include "../audio/Sampler_plugin_proc.h"
+#include "../audio/SendReceive_plugins_proc.h"
 
 #include "../api/api_common_proc.h"
 
@@ -2873,6 +2874,7 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   else
     gui_resetAllMixerStrips();
 
+  SEND_RECEIVE_update_send_receivers();
   
   if (!HASH_has_key(state, "volume_applied_before_drywet")){
     evalScheme("(ra:schedule 100 (lambda () (ra:add-message "

@@ -170,7 +170,7 @@ void PLAYER_mute(void){
   OS_GFX_SetVolume(0);
 }
 
-void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
+static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   const char *input_portnames[R_MAX(1, plugin_type->num_outputs)]; // R_MAX is here to make the undefined sanitizer be quiet
   const char *output_portnames[R_MAX(1, plugin_type->num_inputs)]; // R_MAX is here to make the undefined sanitizer be quiet
   int i;

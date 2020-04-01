@@ -704,8 +704,6 @@ void setInstrumentName(const_char *name, instrument_t instrument_id) {
     
     PATCH_set_name(patch, name);
     patch->name_is_edited = true;
-    
-    (*patch->instrument->PP_Update)(patch->instrument,patch,false);
   }
 }
 
