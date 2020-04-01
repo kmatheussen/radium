@@ -911,8 +911,13 @@ void GFX_update_instrument_patch_gui(struct Patch *patch){
 }
 
 static bool tab_name_has_changed(QWidget *tab, QString new_name) {
-  
-  if (PATCH_get_current()->name_is_edited)
+
+  struct Patch *patch = PATCH_get_current();
+  if (patch==NULL){
+    R_ASSERT(false);
+  }
+    
+  if (patch->name_is_edited)
     return false;
 
   if(new_name==""){
@@ -920,13 +925,14 @@ static bool tab_name_has_changed(QWidget *tab, QString new_name) {
     new_name = "pip";
   }
 
-  {
-    printf("         tab_name_has_changed -%s-\n", new_name.toUtf8().constData());
-    PATCH_set_name(PATCH_get_current(), new_name.toUtf8().constData());
-
-    struct Tracker_Windows *window = root->song->tracker_windows;
-    window->must_redraw = true; // update track headers to the new name
-  }
+  if (new_name == QString(patch->name))
+    return false;
+  
+  printf("         tab_name_has_changed -%s-\n", new_name.toUtf8().constData());
+  PATCH_set_name(PATCH_get_current(), new_name.toUtf8().constData());
+  
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  window->must_redraw = true; // update track headers to the new name
 
   return true;
 }

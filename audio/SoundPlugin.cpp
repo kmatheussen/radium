@@ -63,6 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "CpuUsage.hpp"
 #include "SmoothDelay.hpp"
 #include "Modulator_plugin_proc.h"
+#include "SendReceive_plugins_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -2910,8 +2911,12 @@ void PLUGIN_reset_ab(SoundPlugin *plugin, int num){
     plugin->ab_is_valid[num] = false;
 }
 
-char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){
-  return talloc_format("%s %d",plugin_type->name,++plugin_type->instance_num);    
+const char *PLUGIN_generate_new_patchname(SoundPlugin *plugin){
+  const char *maybe = SEND_RECEIVE_maybe_generate_patch_name(plugin);
+  if (maybe)
+    return maybe;
+  else
+    return talloc_format("%s %d",plugin->type->name,++plugin->type->instance_num);    
 }
 
 QString radium::SoundPluginEffectMidiLearn::get_dest_info(void){

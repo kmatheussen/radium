@@ -2469,7 +2469,7 @@ struct WTracks{
 #define TEXTTYPE 0
 #define GFXTYPE1 1
 #define MAXTYPE 1
-
+ 
 struct CurrentPianoNote{
   int tracknum;
   int64_t noteid;

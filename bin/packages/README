@@ -43,7 +43,7 @@ the explicit step called "make packages" in the build process would make it seem
 tries to step on the toes of package managers? Well, that's not my intention. I guess the problem would be solved if there wasn't
 an explicit "make packages" step, and instead "make packages" was baked into the "./build_linux.sh" script?
 Because that's how most builds handle included packages, although one step has several disadvantages (more magic).
-But I guess keeping piece is more important. Anyway, if you are making a Radium package for Linux distribution,
+But I guess keeping piece is more important. Anyway, if you are making a Radium package for a Linux distribution,
 it shouldn't be too hard without getting angry. Just do the following:
 
 BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 make packages

@@ -43,7 +43,8 @@ extern LANGSPEC struct Patch *PATCH_create_from_state(hash_t *state);
 extern LANGSPEC bool PATCH_make_active_audio(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *state, bool set_as_current, float x, float y);
 extern LANGSPEC void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state);
 extern LANGSPEC struct Patch *PATCH_alloc(void);
-extern LANGSPEC void PATCH_set_name(struct Patch *patch, const char *name);
+extern LANGSPEC void PATCH_set_name2(struct Patch *patch, const char *name, bool update_send_receive_plugin_names);
+extern LANGSPEC void PATCH_set_name(struct Patch *patch, const char *name); // same as calling PATCH_set_name(patch, name, true)
 extern LANGSPEC struct Patch *PATCH_create_main_pipe(void);
 extern LANGSPEC struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, bool set_as_current, float x, float y);
 extern LANGSPEC struct Patch *PATCH_create_midi(const char *name);

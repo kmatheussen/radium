@@ -119,7 +119,7 @@ extern LANGSPEC void PLUGIN_DLoad(SoundPlugin *plugin);
 extern LANGSPEC SoundPlugin *PLUGIN_create_from_state(struct Patch *patch, hash_t *state, bool is_loading);
 extern LANGSPEC void PLUGIN_change_ab(SoundPlugin *plugin, int ab); // Only called from AUDIOWIDGET_set_ab. Call AUDIOWIDGET_set_ab instead.
 extern LANGSPEC void PLUGIN_reset_ab(SoundPlugin *plugin, int ab);
-extern LANGSPEC char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type);
+extern LANGSPEC const char *PLUGIN_generate_new_patchname(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num);
 extern LANGSPEC bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here);

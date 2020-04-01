@@ -209,6 +209,35 @@ int STRING_find_pos(const wchar_t *string, int start_pos, const char *what_to_fi
   return STRING_get_qstring(string).indexOf(what_to_find, 0);
 }
 
+wchar_t *STRING_remove_start(const wchar_t *string, int new_start_pos){
+  QString s2 = STRING_get_qstring(string);
+  
+  int len = s2.length();
+  
+  if (new_start_pos >= len || new_start_pos < 0){
+    R_ASSERT_NON_RELEASE(new_start_pos==len);
+    return STRING_create("");
+  }
+  
+  return STRING_create(s2.right(len-new_start_pos));
+}
+
+wchar_t *STRING_remove_end(const wchar_t *string, int new_end_pos){
+  QString s2 = STRING_get_qstring(string);
+  
+  int len = s2.length();
+  
+  if (new_end_pos >= len || new_end_pos < 0){
+    R_ASSERT_NON_RELEASE(new_end_pos==len);
+    if (new_end_pos < 0)
+      return STRING_create("");
+    else
+      return STRING_create(s2);
+  }
+
+  return STRING_create(s2.left(new_end_pos));
+}
+
 wchar_t *STRING_toBase64(const wchar_t *s){
   QString s2 = STRING_get_qstring(s);
   //QString encoded = s2.toLocal8Bit().toBase64();

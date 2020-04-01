@@ -40,7 +40,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "undo.h"
 
-
+namespace{
+  
 struct UndoEntry{
   NInt windownum;
   NInt blocknum;
@@ -62,13 +63,15 @@ struct UnavailableCallback{
   void *data;
   int downcount;
 };
+}
 
-static vector_t g_unavailable_callbacks_to_call = {0};
+static vector_t g_unavailable_callbacks_to_call = {};
 
+namespace radium{
 struct Undo{
-  struct Undo *prev;
-  struct Undo *next;
-  struct Undo *last_next; // Used when cancelling last undo.
+  radium::Undo *prev;
+  radium::Undo *next;
+  radium::Undo *last_next; // Used when cancelling last undo.
 
   vector_t entries;
   int generation;
@@ -84,11 +87,11 @@ struct Undo{
   int curr_track_sub;
   int curr_othertrack_sub;
 };
+}
 
-
-static struct Undo UndoRoot={0};
-static struct Undo *CurrUndo=&UndoRoot;
-static struct Undo *curr_open_undo=NULL;
+static radium::Undo UndoRoot={};
+static radium::Undo *CurrUndo=&UndoRoot;
+static radium::Undo *curr_open_undo=NULL;
 
 static int undo_pos_at_last_saving=0;
 static int num_undos=0;
@@ -148,10 +151,10 @@ static void update_gfx(void){
 
 }
 
-static void run_undo_unavailable_callbacks(const struct Undo *undo){
+static void run_undo_unavailable_callbacks(const radium::Undo *undo){
   while(undo != NULL){
 
-    VECTOR_FOR_EACH(struct UnavailableCallback *unavailable_callback, &undo->unavailable_callbacks){
+    VECTOR_FOR_EACH(struct UnavailableCallback *, unavailable_callback, &undo->unavailable_callbacks){
 
       VECTOR_push_back(&g_unavailable_callbacks_to_call, unavailable_callback);
       
@@ -160,9 +163,9 @@ static void run_undo_unavailable_callbacks(const struct Undo *undo){
     undo = undo->next;
   }
 
-  vector_t next_callbacks = {0};
+  vector_t next_callbacks = {};
   
-  VECTOR_FOR_EACH(struct UnavailableCallback *unavailable_callback, &g_unavailable_callbacks_to_call){
+  VECTOR_FOR_EACH(struct UnavailableCallback *, unavailable_callback, &g_unavailable_callbacks_to_call){
     
     if (unavailable_callback->downcount <= 0 ){
       
@@ -214,7 +217,7 @@ void ResetUndo(void){
 
   run_undo_unavailable_callbacks(UndoRoot.next);
   
-  memset(&UndoRoot,0,sizeof(struct Undo));
+  memset(&UndoRoot,0,sizeof(radium::Undo));
 
   CurrUndo=&UndoRoot;
   
@@ -395,7 +398,7 @@ bool Undo_are_you_sure_questionmark(void){
         break;
     }
       
-    VECTOR_FOR_EACH(const wchar_t *filename, &deletable_audiofiles){      
+    VECTOR_FOR_EACH(const wchar_t *, filename, &deletable_audiofiles){      
       SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(make_filepath(filename), wtt);
     }END_VECTOR_FOR_EACH;
     
@@ -413,7 +416,7 @@ bool Undo_are_you_sure_questionmark(void){
 
 
 static bool g_is_adding_undo = false;
-static source_pos_t g_curr_source_pos;
+static source_pos_t g_curr_source_pos = {};
 
 bool Undo_Currently_Adding_Undo(void){
   return g_is_adding_undo;
@@ -453,7 +456,7 @@ void Das_Undo_Open_rec(void){
     
     //printf("Undo_Open\n");
     
-    curr_open_undo             = talloc(sizeof(struct Undo));
+    curr_open_undo             = (radium::Undo*)talloc(sizeof(radium::Undo));
     curr_open_undo->generation = g_curr_undo_generation;
     curr_open_undo->windownum  = window->l.num;
     curr_open_undo->blocknum   = wblock->l.num;
@@ -520,7 +523,7 @@ bool Das_Undo_Close(void){
     undo_is_open = 0;
   }
 
-  struct Undo *undo = curr_open_undo;
+  radium::Undo *undo = curr_open_undo;
 
   if(undo->entries.num_elements > 0){
 
@@ -585,7 +588,7 @@ UndoFunction Undo_get_last_function(void){
   if(CurrUndo==&UndoRoot)
     return NULL;
 
-  struct UndoEntry *entry=CurrUndo->entries.elements[0];
+  struct UndoEntry *entry=(struct UndoEntry *)CurrUndo->entries.elements[0];
   return entry->function;
 }
 
@@ -600,19 +603,19 @@ static char *get_entry_string(struct UndoEntry *entry){
 }
 
 vector_t Undo_get_history(void){
-  vector_t ret = {0};
+  vector_t ret = {};
 
-  struct Undo *undo = CurrUndo;
+  radium::Undo *undo = CurrUndo;
   int pos = 0;
 
   if (Undo_Is_Open()){
-    VECTOR_FOR_EACH(struct UndoEntry* entry, &curr_open_undo->entries){
+    VECTOR_FOR_EACH(struct UndoEntry*,  entry, &curr_open_undo->entries){
       VECTOR_push_back(&ret, talloc_format("curr: %s", get_entry_string(entry)));
     }END_VECTOR_FOR_EACH;
   }
   
   while(undo != NULL){
-    VECTOR_FOR_EACH(struct UndoEntry* entry, &undo->entries){
+    VECTOR_FOR_EACH(struct UndoEntry*, entry, &undo->entries){
       VECTOR_push_back(&ret, talloc_format("%d: %s", pos, get_entry_string(entry)));
     }END_VECTOR_FOR_EACH;
     undo = undo->prev;
@@ -645,7 +648,7 @@ static void Undo_Add_internal(
 
   Das_Undo_Open_rec();{
 
-    struct UndoEntry *entry = talloc(sizeof(struct UndoEntry));
+    struct UndoEntry *entry = (struct UndoEntry *)talloc(sizeof(struct UndoEntry));
     
     entry->windownum        = windownum;
     entry->blocknum         = blocknum;
@@ -708,7 +711,7 @@ void Undo_stop_ignoring_undo_operations(void){
 static void undo_internal(void){
   R_ASSERT(ignore()==false);
 
-	struct Undo *undo=CurrUndo;
+	radium::Undo *undo=CurrUndo;
 
 	if(undo==&UndoRoot) return;
 
@@ -727,7 +730,7 @@ currently_undoing = true;
           for(i=undo->entries.num_elements-1 ; i>=0 ; i--){
             //for(i=0 ; i < undo->entries.num_elements; i++){
 
-            struct UndoEntry *entry=undo->entries.elements[i];
+            struct UndoEntry *entry=(struct UndoEntry *)undo->entries.elements[i];
 
             EVENTLOG_add_event(talloc_format("        Undoing %s",get_entry_string(entry)));
                     
@@ -736,8 +739,8 @@ currently_undoing = true;
               num_pausing++;
             }
  
-            struct Tracker_Windows *window=ListFindElement1(&root->song->tracker_windows->l,entry->windownum);
-            struct WBlocks *wblock=ListFindElement1_r0(&window->wblocks->l,entry->blocknum);
+            struct Tracker_Windows *window=(struct Tracker_Windows *)ListFindElement1(&root->song->tracker_windows->l,entry->windownum);
+            struct WBlocks *wblock=(struct WBlocks *)ListFindElement1_r0(&window->wblocks->l,entry->blocknum);
             struct WTracks *wtrack=NULL;
             current_patch = entry->current_patch;
 
@@ -746,7 +749,7 @@ currently_undoing = true;
               if(entry->tracknum<0){
                 wtrack=wblock->wtracks;
               }else{
-                wtrack=ListFindElement1_r0(&wblock->wtracks->l,entry->tracknum);
+                wtrack=(struct WTracks *)ListFindElement1_r0(&wblock->wtracks->l,entry->tracknum);
               }
               if(wtrack!=NULL){
                 wblock->wtrack=wtrack;
@@ -757,9 +760,9 @@ currently_undoing = true;
 
             entry->pointer = entry->function(window,wblock,wtrack,entry->realline,entry->pointer);
 
-            wblock=ListFindElement1_r0(&window->wblocks->l,entry->blocknum);
+            wblock=(struct WBlocks *)ListFindElement1_r0(&window->wblocks->l,entry->blocknum);
             if(wblock==NULL)
-              wblock=ListFindElement1_r0(&window->wblocks->l,entry->blocknum-1);
+              wblock=(struct WBlocks *)ListFindElement1_r0(&window->wblocks->l,entry->blocknum-1);
             if(wblock==NULL){
               RError("undo.c: block %d does not exist. Using block 0.",entry->blocknum-1);
               wblock=window->wblocks;
@@ -769,7 +772,7 @@ currently_undoing = true;
             if(entry->tracknum<0){
               wtrack=wblock->wtracks;
             }else{
-              wtrack=ListFindElement1_r0(&wblock->wtracks->l,entry->tracknum);
+              wtrack=(struct WTracks*)ListFindElement1_r0(&wblock->wtracks->l,entry->tracknum);
             }
             wblock->wtrack=wtrack;
             wblock->curr_realline = R_BOUNDARIES(0, entry->realline, wblock->num_reallines-1);
@@ -792,8 +795,8 @@ currently_undoing = true;
        //if (!is_playing())  // <- Not sure if this is safe.
        {
 
-         struct Tracker_Windows *window=ListFindElement1(&root->song->tracker_windows->l,undo->windownum);
-         struct WBlocks *wblock=ListFindElement1_r0(&window->wblocks->l,undo->blocknum);
+         struct Tracker_Windows *window=(struct Tracker_Windows *)ListFindElement1(&root->song->tracker_windows->l,undo->windownum);
+         struct WBlocks *wblock=(struct WBlocks *)ListFindElement1_r0(&window->wblocks->l,undo->blocknum);
          struct WTracks *wtrack;
 
          if(wblock==NULL)
@@ -802,7 +805,7 @@ currently_undoing = true;
          if(undo->tracknum<0){
            wtrack=wblock->wtracks;
          }else{
-           wtrack=ListFindElement1_r0(&wblock->wtracks->l,undo->tracknum);
+           wtrack=(struct WTracks *)ListFindElement1_r0(&wblock->wtracks->l,undo->tracknum);
          }
 
          if(wtrack==NULL)
@@ -885,15 +888,75 @@ void SetMaxUndos(struct Tracker_Windows *window){
 void UNDO_add_callback_when_curr_entry_becomes_unavailable(UndoUnavailableCallback callback, void *data, int delay){
   R_ASSERT_RETURN_IF_FALSE(currently_undoing==false);
   
-  struct UnavailableCallback *unavailable_callback = talloc(sizeof(struct UnavailableCallback));
+  struct UnavailableCallback *unavailable_callback = (struct UnavailableCallback *)talloc(sizeof(struct UnavailableCallback));
   
   unavailable_callback->callback = callback;
   unavailable_callback->data = data;
   unavailable_callback->downcount = delay;
 
-  struct Undo *undo = curr_open_undo != NULL ? curr_open_undo : CurrUndo;
+  radium::Undo *undo = curr_open_undo != NULL ? curr_open_undo : CurrUndo;
   
   VECTOR_push_back(&undo->unavailable_callbacks, unavailable_callback);  
   
   //VECTOR_push_back(&next_unavailable_callbacks, unavailable_callback);  
 };
+
+namespace{
+  struct UndoFunctions{
+    bool must_undo;
+    std::function<void(void)> redo;
+    std::function<void(void)> undo;
+
+    UndoFunctions(std::function<void(void)> &redo, std::function<void(void)> &undo)
+      : redo(redo)
+      , undo(undo)
+    {}
+  };
+}
+
+static void *Undo_Do_Functions(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+){
+  UndoFunctions *functions = static_cast<UndoFunctions*>(pointer);
+
+  if (functions->must_undo)
+    functions->undo();
+  else
+    functions->redo();
+  
+  functions->must_undo = !functions->must_undo;
+  
+  return functions;
+}
+
+static void Undo_free_functions(void *data){
+  //printf("          Freeing %p\n", data);
+  delete static_cast<UndoFunctions*>(data);
+}
+
+void UNDO_functions(const char *name, std::function<void(void)> redo, std::function<void(void)> undo){
+    struct Tracker_Windows *window = root->song->tracker_windows;
+    struct WBlocks *wblock = window->wblock;
+
+    UndoFunctions *functions = new UndoFunctions(redo, undo);
+    //printf("          Allocating %p\n", functions);
+    
+    Undo_Add_dont_stop_playing(
+                               window->l.num,
+                               wblock->l.num,
+                               wblock->wtrack->l.num,
+                               wblock->curr_realline,
+                               functions,
+                               Undo_Do_Functions,
+                               talloc_strdup(name)
+                               );
+
+    UNDO_add_callback_when_curr_entry_becomes_unavailable(Undo_free_functions, functions, 0);
+      
+    redo();
+    functions->must_undo = true;
+}

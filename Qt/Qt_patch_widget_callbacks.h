@@ -641,15 +641,6 @@ public slots:
     {
       PATCH_set_name(_patch.data(), new_name.toUtf8().constData());
       _patch->name_is_edited = true;
-
-      struct Tracker_Windows *window = root->song->tracker_windows;
-      window->must_redraw = true; // update track headers to the new name
-    }
-
-    
-    if(_patch->instrument==get_audio_instrument()){
-      CHIP_update((SoundPlugin*)_patch->patchdata);
-      GFX_update_instrument_widget(_patch.data());
     }
 
     set_editor_focus();

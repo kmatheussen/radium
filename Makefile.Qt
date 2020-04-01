@@ -500,7 +500,7 @@ OBJ14=$(T)disk_midi_fx.o $(T)disk_midi_instrument.o $(T)midi_fx.o $(T)midi_instr
 OBJ_FAUST=$(T)zita_rev.o $(T)stk_flute.o $(T)stk_bowed.o $(T)stk_blow_bottle.o $(T)stk_bass.o $(T)stk_blow_hole.o $(T)stk_brass.o $(T)stk_clarinet.o $(T)stk_flute_stk.o $(T)stk_glass_harmonica.o $(T)stk_harpsi.o $(T)stk_modal_bar.o $(T)stk_NLF_eks.o $(T)stk_NLF_fm.o $(T)stk_piano.o $(T)stk_saxophony.o $(T)stk_sitar.o $(T)stk_tibetan_bowl.o $(T)stk_tuned_bar.o $(T)stk_uni_bar.o $(T)stk_voice_form.o $(T)faust_tapiir.o $(T)faust_system_eq.o $(T)faust_system_tremolo.o $(T)faust_system_lowpass.o $(T)faust_system_highpass.o $(T)faust_system_lowshelf.o $(T)faust_system_highshelf.o $(T)faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o
+OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o
  
 #MultiCore.o $(T)Smooth.o
 
@@ -1213,8 +1213,8 @@ $(T)clipboard_block_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_block_copy.c
 $(T)clipboard_block_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_block_paste.c
 	$(CC2) $(CD)clipboard_block_paste.c $(OPT)
 
-$(T)undo.o:  $(BUILD_DEPENDENCIES) $(CD)undo.c $(CD)undo.h
-	$(CC2) $(CD)undo.c $(OPT) -DMAX_NUM_UNDOS=$(MAX_NUM_UNDOS)
+$(T)undo.o:  $(BUILD_DEPENDENCIES) $(CD)undo.cpp $(CD)undo.h
+	$(CCC2) $(CD)undo.cpp $(CPPOPT) -DMAX_NUM_UNDOS=$(MAX_NUM_UNDOS)
 
 $(T)undo_notes.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notes.c $(CD)undo.h
 	$(CC2) $(CD)undo_notes.c $(OPT)
@@ -1465,7 +1465,7 @@ $(T)Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp  Qt/Qt_MyQScrollBar.h
 	$(CCC2) $(P)Qt_Bs_edit.cpp $(QTOPT) -Wno-null-dereference #-fno-sanitize=undefined
 
 
-INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQLabel.h
+INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_sendreceive_plugins_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQLabel.h
 
 
 
@@ -1522,6 +1522,9 @@ $(P)Qt_faust_plugin_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_faust_plugin_widget
 
 $(P)Qt_jack_plugin_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_jack_plugin_widget.ui $(P)create_source_from_ui.sh $(P)Qt_jack_plugin_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) jack_plugin_widget
+
+$(P)Qt_sendreceive_plugins_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_sendreceive_plugins_widget.ui $(P)create_source_from_ui.sh $(P)Qt_sendreceive_plugins_widget_callbacks.h
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) sendreceive_plugins_widget
 
 $(P)Qt_pd_controller_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_pd_controller_widget.ui $(P)create_source_from_ui.sh $(P)Qt_pd_controller_widget_callbacks.h $(P)Qt_pd_controller_config_dialog.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pd_controller_widget
@@ -1666,7 +1669,7 @@ $(T)Qt_progresswindow.o: $(BUILD_DEPENDENCIES) $(P)Qt_progresswindow.cpp
 	$(CCC2) $(P)Qt_progresswindow.cpp $(QTOPT) -DP_SERVER
 
 $(T)KillJackd.o:$(BUILD_DEPENDENCIES) audio/KillJackd.cpp weakjack/weak_libjack.c common/Process.hpp
-	$(CCC2) audio/KillJackd.cpp $(QTOPT) -Wno-missing-declarations
+	$(CCC2) audio/KillJackd.cpp $(QTOPT)
 
 $(T)Rational.o: $(BUILD_DEPENDENCIES) $(P)Rational.cpp
 	$(CCC2) $(P)Rational.cpp $(QTOPT)
@@ -1931,7 +1934,7 @@ $(T)undo_mixer_connections.o: $(QM)undo_mixer_connections.c
 #	$(CC2) $(OPT) $(QM)undo_chip_addremove.c
 
 $(T)Jack_plugin.o: audio/Jack_plugin.cpp weakjack/weak_libjack.def weakjack/weak_libjack.h weakjack/weak_libjack.c
-	$(CCC2) $(QTOPT) audio/Jack_plugin.cpp $(JACKOPT) -Wno-missing-declarations -Wno-deprecated-declarations
+	$(CCC2) $(QTOPT) audio/Jack_plugin.cpp $(JACKOPT) -Wno-missing-declarations # -Wno-deprecated-declarations
 #-Wno-gnu-designator -Wno-missing-field-initializers
 
 $(T)find_jack_library.o: windows/find_jack_library.cpp
@@ -1981,6 +1984,10 @@ $(T)Pd_plugin.o: audio/Pd_plugin.cpp
 
 $(T)Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
 	$(CCC2) $(QTOPT) audio/Modulator_plugin.cpp $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW)
+
+
+$(T)SendReceive_plugins.o: audio/SendReceive_plugins.cpp common/Vector.hpp
+	$(CCC2) $(QTOPT) audio/SendReceive_plugins.cpp
 
 
 FAUST_DEPENDENCIES = audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
