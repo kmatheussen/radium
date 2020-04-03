@@ -199,9 +199,17 @@ static inline void RT_fade_in(float *__restrict__ out, const float *__restrict__
   
   fader.RT_fade(pos2-pos1, out, in, do_add);
 }
- 
+
+static inline void RT_fade_in(float *__restrict__ out, const float *__restrict__ in, int num_frames){
+  RT_fade_in(out, in, num_frames, 0, num_frames, false);
+}
+
 static inline void RT_fade_in_and_add(float *__restrict__ out, const float *__restrict__ in, int num_frames, int pos1, int pos2){
   RT_fade_in(out, in, num_frames, pos1, pos2, true);
+}
+
+static inline void RT_fade_in_and_add(float *__restrict__ out, const float *__restrict__ in, int num_frames){
+  RT_fade_in_and_add(out, in, num_frames, 0, num_frames);
 }
 
 
@@ -239,9 +247,17 @@ static inline void RT_fade_out(float *__restrict__ out, const float *__restrict_
   
   fader.RT_fade(pos2-pos1, out, in, do_add);
 }
- 
+
+static inline void RT_fade_out(float *__restrict__ out, const float *__restrict__ in, int num_frames){
+  RT_fade_out(out, in, num_frames, 0, num_frames, false);
+}
+
 static inline void RT_fade_out_and_add(float *__restrict__ out, const float *__restrict__ in, int num_frames, int pos1, int pos2){
   RT_fade_out(out, in, num_frames, pos1, pos2, true);
+}
+
+static inline void RT_fade_out_and_add(float *__restrict__ out, const float *__restrict__ in, int num_frames){
+  RT_fade_out_and_add(out, in, num_frames, 0, num_frames);
 }
 
 

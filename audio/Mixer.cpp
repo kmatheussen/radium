@@ -65,6 +65,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Juce_plugins_proc.h"
 #include "Modulator_plugin_proc.h"
 #include "AudioBuffer.hpp"
+#include "SendReceive_plugins_proc.h"
 
 #include "Mixer_proc.h"
 
@@ -710,6 +711,8 @@ struct Mixer{
       V_free(old_g_click_plugins);
       V_free(old_g_click_patches);
     }
+
+    SEND_RECEIVE_update_send_receivers();
   }
 
   // Called from MIXER_remove_SoundProducer, which is called from ~SoundProducer
