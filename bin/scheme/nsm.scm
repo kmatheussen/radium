@@ -142,8 +142,12 @@
          (ceiling (* 1.2 (<gui> :text-width "A typical project name length" window))) ;; width
          (ceiling (* 2 (+ 2 (length projects)) (<gui> :get-system-fontheight)))) ;; height
 
-  (<declare-variable> make-qtarea) ;; from area.scm
-
+  ;; From area.scm :
+  (<declare-variable> make-qtarea)
+  (<declare-variable> vertically-layout-areas)
+  (<declare-variable> new_instance_of_button)
+  
+  
   (define area (make-qtarea))
   
   (define gui (area :get-gui))

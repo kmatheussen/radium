@@ -239,14 +239,15 @@ namespace{
     }
 
     void RT_send(const SoundPlugin *send_plugin, const float **audio, int num_frames, FadeType fade_type){
-      if (_plugin==NULL) // not alive
+      if (_plugin==NULL) // not alive, and soon about to be deleted, or already deleted.
         return;
       
       RT_PLUGIN_touch(_plugin);
       
       int num_channels = R_MIN(send_plugin->type->num_inputs, _num_channels);
 
-      D(printf("Sending %s -> %s. Num channels: %d\n", send_plugin->patch->name, _plugin->patch->name, num_channels));
+      // Might not be safe. _plugin->patch might be NULL at this point, not sure.
+      //D(printf("Sending %s -> %s. Num channels: %d\n", send_plugin->patch->name, _plugin->patch->name, num_channels));
         
       for(int ch=0;ch<num_channels;ch++)
         _RT_send_chs[ch]->send(audio[ch], num_frames, fade_type);
@@ -698,7 +699,7 @@ static void cleanup_receive_plugin_data(SoundPlugin *plugin){
 
   {
     radium::PlayerLock lock;
-    receiver->_plugin = NULL;
+    receiver->_plugin = NULL; // _plugin has not been alive for a while before this call, but we don't use other parts of _plugin than the plugin itself in RT_send. We only call RT_PLUGIN_touch, which only touches the plugin itself (and the memory for the plugin itself has of course not been released yet). We are not using anything pointed to by plugin.
   }
   
   receiver->dec_num_users(); // If we call delete directly a receiver might be used by a sender after it is deleted.
