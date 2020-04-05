@@ -12,6 +12,10 @@ static inline wchar_t *STRING_copy(const wchar_t *s){
   return talloc_wcsdup(s);
 }
 
+static inline int STRING_length(const wchar_t *s){
+  return wcslen(s);
+}
+
 extern LANGSPEC char* STRING_get_chars(const wchar_t *string);
 extern LANGSPEC char* STRING_get_utf8_chars(const char* s);
 

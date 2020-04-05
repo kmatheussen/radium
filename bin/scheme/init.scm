@@ -271,6 +271,10 @@ FROM_C-nsm-save
 FROM_C-nsm-new-song
 FROM_C-nsm-save-as
 FROM_C-nsm-quit
+FROM_C-cut-selected-pianonotes!
+FROM_C-copy-selected-pianonotes
+FROM_C-paste-pianonotes!
+FROM_C-delete-selected-pianonotes!
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

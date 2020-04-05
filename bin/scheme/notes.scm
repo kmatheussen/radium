@@ -218,20 +218,32 @@
 
 (define (transpose-pitch pitch pitch-delta)
   (<copy-pitch> pitch
-                :value (+ (pitch :value) pitch-delta)))
+                :value (if (< (pitch :value) 0.001)
+                           0
+                           (between 0.002 (+ (pitch :value) pitch-delta) 127))))
 
 (define (transpose-note note pitch-delta place-delta)
   (<copy-note> note
                :place (+ (note :place) place-delta)
-               :pitches (map transpose-pitch (note :pitches))))
+               :pitches (map (lambda (pitch)
+                               (transpose-pitch pitch pitch-delta))
+                             (note :pitches))))
   
 (delafina (get-selected-pianonotes :tracknum -1
                                    :blocknum -1
-                                   :note-ids #f)
-  (map (lambda (note-id)
-         (get-note blocknum tracknum note-id startplace))
-       (or note-ids
-           (<ra> :get-selected-notes tracknum blocknum))))
+                                   :note-ids #f) 
+  (if (not note-ids)
+      (set! note-ids (<ra> :get-selected-notes tracknum blocknum)))
+ 
+  (set! note-ids (to-list note-ids))
+
+  (if (null? note-ids)
+      '()
+      (let ((startplace (<ra> :get-note-start (car note-ids) tracknum blocknum)))
+        (map (lambda (note-id)
+               (get-note blocknum tracknum note-id startplace))
+             note-ids))))
+  
 
 (delafina (get-area-notes :area
                           :include-ending-after #t
@@ -606,81 +618,83 @@
 
 ;;;;;;;;; SET NOTES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; returns #f if note was not added, if not returns note-id.
 (define (add-note! note tracknum blocknum)
 
   ;;(pretty-print note)
 
   (define num-lines (<ra> :get-num-lines blocknum))
-  (assert (< (note :place) num-lines))
 
-  (update-notes-after-block
-   (lambda ()  
-
-     ;; add note
-     (define notenum (<ra> :add-note
-                           (note :pitches 0 :value)
-                           (note :velocities 0 :value)
-                           (note :place)
-                           (i-min num-lines (get-note-end note))
-                           tracknum
-                           blocknum))
-
-     (if (note :is-selected)
-         (<ra> :select-note notenum tracknum blocknum))
-     
-     ;; add pitches
-     ;;
-     ;; logtype of first pitch
-     (<ra> :set-pitch-logtype ((car (note :pitches)) :logtype) 0 notenum tracknum blocknum)
-     
-     ;; end-pitch. TODO: end-pitch is not correct if end-place is >= num_lines.
-     (let ((pitch (last (note :pitches))))
-       (if (not (= 0 (pitch :value)))
-           (<ra> :set-pitch
-                 (pitch :value)
+  (if (>= (note :place) num-lines)
+      #f
+      (update-notes-after-block
+       (lambda ()  
+         
+         ;; add note
+         (define note-id (<ra> :add-note
+                               (note :pitches 0 :value)
+                               (note :velocities 0 :value)
+                               (note :place)
+                               (i-min num-lines (get-note-end note))
+                               tracknum
+                               blocknum))
+         
+         (if (note :is-selected)
+             (<ra> :select-note note-id tracknum blocknum))
+         
+         ;; add pitches
+         ;;
+         ;; logtype of first pitch
+         (<ra> :set-pitch-logtype ((car (note :pitches)) :logtype) 0 note-id tracknum blocknum)
+         
+         ;; end-pitch. TODO: end-pitch is not correct if end-place is >= num_lines.
+         (let ((pitch (last (note :pitches))))
+           (if (not (= 0 (pitch :value)))
+               (<ra> :set-pitch
+                     (pitch :value)
+                     'same-place
+                     1  ;; (1==current end-pitch num)
+                     note-id tracknum blocknum)))
+         
+         (for-each (lambda (pitch)
+                     (define place (+ (pitch :place)
+                                      (note :place)))
+                     ;;(c-display "PLACE:" place ". note-place:" (note :place) ". pitch-place:" (pitch :place) ". note-id:" note-id ". note-pitches:" (pp (note :pitches)))
+                     (if (< place num-lines)
+                         (let ((pitchnum (<ra> :add-pitch
+                                               (pitch :value)
+                                               place
+                                               note-id tracknum blocknum)))
+                           ;;(c-display "PITCHNUM:" pitchnum ". place:" place ". note-id:" note-id ". num notes:" (<ra> :get-num-notes tracknum blocknum))
+                           (<ra> :set-pitch-logtype (pitch :logtype) pitchnum note-id tracknum blocknum))))
+                   (cdr (butlast (note :pitches))))
+         
+         ;; add velocities
+         ;;
+         ;; logtype of first velocity.
+         (<ra> :set-velocity-logtype ((car (note :velocities)) :logtype) 0 note-id tracknum blocknum)
+         
+         ;; end-velocity. TODO: end-velocity is not correct if end-place is >= num_lines.
+         (let ((velocity (last (note :velocities))))
+           (<ra> :set-velocity
+                 (velocity :value)
                  'same-place
-                 1  ;; (1==current end-pitch num)
-                 notenum tracknum blocknum)))
-     
-     (for-each (lambda (pitch)
-                 (define place (+ (pitch :place)
-                                  (note :place)))
-                 ;;(c-display "PLACE:" place ". note-place:" (note :place) ". pitch-place:" (pitch :place) ". notenum:" notenum ". note-pitches:" (pp (note :pitches)))
-                 (if (< place num-lines)
-                     (let ((pitchnum (<ra> :add-pitch
-                                           (pitch :value)
-                                           place
-                                           notenum tracknum blocknum)))
-                       ;;(c-display "PITCHNUM:" pitchnum ". place:" place ". notenum:" notenum ". num notes:" (<ra> :get-num-notes tracknum blocknum))
-                       (<ra> :set-pitch-logtype (pitch :logtype) pitchnum notenum tracknum blocknum))))
-               (cdr (butlast (note :pitches))))
-     
-     ;; add velocities
-     ;;
-     ;; logtype of first velocity.
-     (<ra> :set-velocity-logtype ((car (note :velocities)) :logtype) 0 notenum tracknum blocknum)
-     
-     ;; end-velocity. TODO: end-velocity is not correct if end-place is >= num_lines.
-     (let ((velocity (last (note :velocities))))
-       (<ra> :set-velocity
-             (velocity :value)
-             'same-place
-             1 ;; (1==current end-velocity num)
-             notenum tracknum blocknum))
-     
-     (for-each (lambda (velocity)
-                 (define place (+ (velocity :place)
-                                  (note :place)))
-                 (if (< place num-lines)
-                     (let ((velocitynum (<ra> :add-velocity
-                                              (velocity :value)
-                                              place
-                                              notenum tracknum blocknum)))
-                       ;;(c-display "place/value:" place (velocity :value) velocitynum)
-                       (<ra> :set-velocity-logtype (velocity :logtype) velocitynum notenum tracknum blocknum))))
-               (cdr (butlast (note :velocities))))
-     
-     notenum)))
+                 1 ;; (1==current end-velocity num)
+                 note-id tracknum blocknum))
+         
+         (for-each (lambda (velocity)
+                     (define place (+ (velocity :place)
+                                      (note :place)))
+                     (if (< place num-lines)
+                         (let ((velocitynum (<ra> :add-velocity
+                                                  (velocity :value)
+                                                  place
+                                                  note-id tracknum blocknum)))
+                           ;;(c-display "place/value:" place (velocity :value) velocitynum)
+                           (<ra> :set-velocity-logtype (velocity :logtype) velocitynum note-id tracknum blocknum))))
+                   (cdr (butlast (note :velocities))))
+         
+         note-id))))
   
 
 (define (add-notes! area-notes area)
@@ -992,3 +1006,74 @@
 ||#
 
 
+
+;;;;;;;;; Piano roll selected notes clipboard ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define *selected-pianonotes* '())
+
+
+(delafina (FROM_C-copy-selected-pianonotes :tracknum -1
+                                           :blocknum -1
+                                           :note-ids #f)
+  (set! *selected-pianonotes* (get-selected-pianonotes tracknum
+                                                       blocknum
+                                                       (or note-ids
+                                                           (<ra> :get-selected-notes tracknum blocknum)))))
+
+
+(delafina (FROM_C-delete-selected-pianonotes! :tracknum -1
+                                              :blocknum -1
+                                              :note-ids #f)
+  (set! note-ids (or note-ids
+                     (<ra> :get-selected-notes tracknum blocknum)))
+  (when note-ids
+    (<ra> :undo-notes)
+    (for-each (lambda (note-id)
+                (<ra> :delete-note note-id tracknum blocknum))
+              note-ids)))
+
+
+(delafina (FROM_C-cut-selected-pianonotes! :tracknum -1
+                                           :blocknum -1
+                                           :note-ids #f)
+  (set! note-ids (or note-ids
+                     (<ra> :get-selected-notes tracknum blocknum)))
+  (FROM_C-copy-selected-pianonotes tracknum blocknum note-ids)
+  (FROM_C-delete-selected-pianonotes! tracknum blocknum note-ids))
+
+
+(delafina (FROM_C-paste-pianonotes! :pitch (<ra> :get-current-piano-ghost-note-value)
+                                    :startplace (<ra> :get-current-piano-ghost-note-start)
+                                    :tracknum (<ra> :get-current-piano-ghost-note-tracknum)
+                                    :blocknum -1)
+  (when (and (not (null? *selected-pianonotes*))
+             (>= tracknum 0))
+    (<ra> :undo-notes tracknum blocknum)
+    (<ra> :unselect-all-notes tracknum blocknum)
+    (define pitch1 (*selected-pianonotes* 0 :pitches 0 :value))
+    (define pitch-delta (- pitch pitch1))
+    (define gotit #f)
+    (update-notes-after-block
+     (lambda ()  
+       (for-each (lambda (note)
+                   (if (add-note! (transpose-note note
+                                                  pitch-delta
+                                                  startplace)
+                                  tracknum
+                                  blocknum)
+                       (set! gotit #t)))
+                 *selected-pianonotes*)))
+    (if (not gotit)
+        (<ra> :cancel-last-undo)
+        (if (highlight-piano-note-under-mouse (<ra> :get-mouse-pointer-x)
+                                              (<ra> :get-mouse-pointer-y))
+            (<ra> :cancel-current-piano-ghost-note)))))
+
+
+#!!
+(FROM_C-copy-selected-pianonotes)
+(pretty-print *selected-pianonotes*)
+(FROM_C-paste-pianonotes! 2 16 0)
+(FROM_C-cut-selected-pianonotes!)
+(<ra> :get-selected-notes -1 -1)
+!!#

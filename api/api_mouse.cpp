@@ -62,6 +62,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../OpenGL/Render_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "../windows/W_Keyboard_proc.h"
 
 #include "api_common_proc.h"
@@ -1691,6 +1693,32 @@ void cancelCurrentPianoGhostNote(void){
     }
 }
 
+bool hasCurrentPianoGhostNoteStart(void){
+  return g_current_piano_ghost_note.tracknum >= 0;
+}
+  
+int getCurrentPianoGhostNoteTracknum(void){
+  return g_current_piano_ghost_note.tracknum;
+}
+
+Place getCurrentPianoGhostNoteStart(void){
+  if (!hasCurrentPianoGhostNoteStart())
+    return p_Create(0,0,1);
+  
+  return g_current_piano_ghost_note.start;
+}
+
+Place getCurrentPianoGhostNoteEnd(void){
+  if (!hasCurrentPianoGhostNoteStart())
+    return p_Create(0,0,1);
+  
+  return g_current_piano_ghost_note.end;
+}
+
+float getCurrentPianoGhostNoteValue(void){
+  return g_current_piano_ghost_note.value;
+}
+
 static int addPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value);
   
 void addPianonotePitch(float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -1742,6 +1770,30 @@ void hidePianorollSelectionRectangle(int windownum){
     g_current_pianobar_selection_rectangle.blocknum = -2;
     root->song->tracker_windows->must_redraw_editor = true;
   }
+}
+
+void copySelectedPianonotes(int tracknum, int blocknum){
+  S7CALL2(void_dyn_dyn, "FROM_C-copy-selected-pianonotes", DYN_create_int(tracknum), DYN_create_int(blocknum));
+}
+
+void cutSelectedPianonotes(int tracknum, int blocknum){
+  S7CALL2(void_dyn_dyn, "FROM_C-cut-selected-pianonotes!", DYN_create_int(tracknum), DYN_create_int(blocknum));
+}
+
+void deleteSelectedPianonotes(int tracknum, int blocknum){
+  S7CALL2(void_dyn_dyn, "FROM_C-delete-selected-pianonotes!", DYN_create_int(tracknum), DYN_create_int(blocknum));
+}
+
+void pastePianonotes(float pitch, Place start_place, int tracknum, int blocknum){
+  S7EXTRA_GET_FUNC(func, "FROM_C-paste-pianonotes!");
+  
+  s7extra_applyFunc_void_varargs(func,
+                                 DYN_create_float(pitch),
+                                 DYN_create_place(start_place),
+                                 DYN_create_int(tracknum),
+                                 DYN_create_int(blocknum),
+                                 g_uninitialized_dyn
+                                 );
 }
 
 // pitchnums

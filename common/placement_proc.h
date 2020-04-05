@@ -455,13 +455,7 @@ static inline Place p_Absolute_Last_Pos(const struct Blocks *block){
   return p_Create(block->num_lines, 0, 1);
 }
 
-static inline const char* PlaceToString(const Place *a){
-  return talloc_format("%d + %d/%d",(a)->line,(a)->counter,(a)->dividor);
-}
-
-static inline const char* p_ToString(const Place a){
-  return PlaceToString(&a);
-}
+extern LANGSPEC const char* PlaceToString(const Place *a);
 
 
 #define PrintPlace(title,a) printf(title ": %d + %d/%d\n",(a)->line,(a)->counter,(a)->dividor);
