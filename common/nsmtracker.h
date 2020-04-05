@@ -2860,7 +2860,7 @@ struct WBlocks{
         int num_expand_lines;
 
 	struct WTracks *wtracks;
-	struct WTracks *wtrack;			/* Current track. Only referenced. Must use ATOMIC_WRITE when setting. */
+	struct WTracks *wtrack;			/* Current track. Only referenced. Must use ATOMIC_WRITE when setting. Is never (and must never be) NULL. In other threads than the main thread, ATOMIC_READ must be used to read this variable. */
 
   /*
 	NInt left_track;				

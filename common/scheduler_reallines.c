@@ -118,7 +118,7 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
     Place next_place = wblock->reallines[next_realline]->l.p;
 
     //printf("       next_place: %d + %d/%d\n", next_place.line, next_place.counter, next_place.dividor);
-    return get_seqblock_place_time2(seqblock, wblock->wtrack->track, next_place);
+    return get_seqblock_place_time2(seqblock, ATOMIC_READ(wblock->wtrack)->track, next_place);
   }
 }
 
@@ -139,7 +139,7 @@ static void RT_schedule_reallines_in_block2(struct SeqTrack *seqtrack, struct Se
   args[3].int_num = ++seqblock->curr_scheduled_realline_counter;
 
   Place realline_place = wblock->reallines[realline]->l.p;
-  int64_t time = get_seqblock_place_time2(seqblock, wblock->wtrack->track, realline_place);
+  int64_t time = get_seqblock_place_time2(seqblock, ATOMIC_READ(wblock->wtrack)->track, realline_place);
 
   SCHEDULER_add_event(seqtrack, time, RT_scheduled_realline, &args[0], num_args, SCHEDULER_INIT_PRIORITY);
 }
@@ -166,7 +166,7 @@ static void reschedule_reallines_because_num_reallines_have_changed_in_wblock3(s
         if (curr_seqtrack_time < seqblock->t.time2) {
           
           STime stime = seqtime_to_blocktime(seqblock, curr_seqtrack_time - seqblock->t.time);
-          Place place = STime2Place2(block, stime, wblock->wtrack->track);
+          Place place = STime2Place2(block, stime, ATOMIC_READ(wblock->wtrack)->track);
           
           int realline=FindRealLineFor(wblock,0,&place);
 

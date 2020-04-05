@@ -752,7 +752,7 @@ currently_undoing = true;
                 wtrack=(struct WTracks *)ListFindElement1_r0(&wblock->wtracks->l,entry->tracknum);
               }
               if(wtrack!=NULL){
-                wblock->wtrack=wtrack;
+                ATOMIC_WRITE(wblock->wtrack, wtrack);
               }
               wblock->curr_realline = R_BOUNDARIES(0, entry->realline, wblock->num_reallines-1);
               ATOMIC_WRITE(window->curr_track, entry->tracknum);
@@ -774,8 +774,11 @@ currently_undoing = true;
             }else{
               wtrack=(struct WTracks*)ListFindElement1_r0(&wblock->wtracks->l,entry->tracknum);
             }
-            wblock->wtrack=wtrack;
+            
+            ATOMIC_WRITE(wblock->wtrack, wtrack);
+            
             wblock->curr_realline = R_BOUNDARIES(0, entry->realline, wblock->num_reallines-1);
+            
             ATOMIC_WRITE(window->curr_track, entry->tracknum);
           }
 
@@ -811,7 +814,7 @@ currently_undoing = true;
          if(wtrack==NULL)
            wtrack=wblock->wtracks;
            
-         wblock->wtrack=wtrack;
+         ATOMIC_WRITE(wblock->wtrack, wtrack);
          
          wblock->curr_realline = R_BOUNDARIES(0, undo->realline, wblock->num_reallines-1);         
          ATOMIC_WRITE(window->curr_track, undo->tracknum);
