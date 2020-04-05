@@ -2788,37 +2788,40 @@
                         ;;:Forgiving-box #f
                         )
 
-              
+
+(define (highlight-piano-note-under-mouse $x $y)
+  (and *current-track-num*
+       (<ra> :pianoroll-visible *current-track-num*)
+       (inside-box? (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
+       ;;(c-display "current-tracknum:" *current-track-num*)
+       (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
+         '(c-display $x $y pianonote-info
+                     (box-to-string (get-pianonote-box 0 1 0)))
+         (if (and pianonote-info
+                  (let ((pianonote-info pianonote-info)) ;;;(copy-pianonote-info :playing-note-id (create-play-pianonote (pianonote-info :noteid)
+                                                                ;;;                                    (pianonote-info :pianonotenum)))))
+                    ;;(c-display "type: " (pianonote-info :move-type))
+                    (set-current-pianonote (pianonote-info :pianonotenum)
+                                           (pianonote-info :noteid)
+                                           (pianonote-info :tracknum))
+                    ;;(c-display "hello:" (pianonote-info :dir))
+                    (cond ((eq? (pianonote-info :move-type)
+                                *pianonote-move-start*)
+                           #t)
+                          ((eq? (pianonote-info :move-type)
+                                *pianonote-move-end*)
+                           #t)
+                          ((eq? (pianonote-info :move-type)
+                                *pianonote-move-all*)
+                           #f)))
+                  )
+             (set-mouse-pointer ra:set-vertical-resize-mouse-pointer (<gui> :get-editor-gui))
+             (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))))))
+
 ;; highlight current pianonote
 (add-mouse-move-handler
- :move (lambda ($button $x $y)
-         (and *current-track-num*
-              (<ra> :pianoroll-visible *current-track-num*)
-              (inside-box? (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
-              ;;(c-display "current-tracknum:" *current-track-num*)
-              (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
-                '(c-display $x $y pianonote-info
-                            (box-to-string (get-pianonote-box 0 1 0)))
-                (if (and pianonote-info
-                         (let ((pianonote-info pianonote-info)) ;;;(copy-pianonote-info :playing-note-id (create-play-pianonote (pianonote-info :noteid)
-                                                                ;;;                                    (pianonote-info :pianonotenum)))))
-                           ;;(c-display "type: " (pianonote-info :move-type))
-                           (set-current-pianonote (pianonote-info :pianonotenum)
-                                                  (pianonote-info :noteid)
-                                                  (pianonote-info :tracknum))
-                           ;;(c-display "hello:" (pianonote-info :dir))
-                           (cond ((eq? (pianonote-info :move-type)
-                                       *pianonote-move-start*)
-                                  #t)
-                                 ((eq? (pianonote-info :move-type)
-                                       *pianonote-move-end*)
-                                  #t)
-                                 ((eq? (pianonote-info :move-type)
-                                       *pianonote-move-all*)
-                                  #f)))
-                         )
-                    (set-mouse-pointer ra:set-vertical-resize-mouse-pointer (<gui> :get-editor-gui))
-                    (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui)))))))
+ :move (lambda (button x y)
+         (highlight-piano-note-under-mouse x y)))
 
 
 ;; show ghost-pianonote, i.e. the pianonote that would be created if pressing left mouse.

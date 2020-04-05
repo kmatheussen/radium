@@ -18,4 +18,16 @@ struct Placement{
 };
 typedef struct Placement Place;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// Note: p_ToString(a) should be equal to p_toString(p_fromString(p_toString(a))), and so forth.
+extern const char* p_ToString(const Place a);
+extern Place p_FromString(const char* s);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

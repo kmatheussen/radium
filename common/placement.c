@@ -42,6 +42,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 
 #include "nsmtracker.h"
+#include "OS_string_proc.h"
+#include "ratio_funcs.h"
 
 #include "placement_proc.h"
 
@@ -396,6 +398,87 @@ void PlaceFromLimit(Place *p, const Place *tp){
     p->line=tp->line;
     p->counter=new_counter;
     p->dividor = MAX_UINT32;
+  }
+}
+
+const char* PlaceToString(const Place *a){
+  return talloc_format("%d + %d/%d",(a)->line,(a)->counter,(a)->dividor);
+}
+
+const char* p_ToString(const Place a){
+  return PlaceToString(&a);
+}
+
+Place p_FromString(const char* s){
+  wchar_t *w = STRING_create(s);
+
+
+  wchar_t *w_line = NULL;
+  wchar_t *w_ratio = NULL;
+  wchar_t *w_numerator = NULL;
+  wchar_t *w_denominator = NULL;
+  
+  int plus_pos = STRING_find_pos(w, 0, "+");
+
+  if (plus_pos > 0){
+    
+    w_line = STRING_remove_end(w, plus_pos);
+
+    if (plus_pos+1 <= STRING_length(w))
+      w_ratio = STRING_remove_start(w, plus_pos+1);
+      
+  } else {
+
+    w_ratio = w;    
+
+  }
+      
+  if (w_ratio != NULL) {
+    
+    int divide_pos = STRING_find_pos(w_ratio, 0, "/");
+
+    if (divide_pos > 0){
+
+      w_numerator = STRING_remove_end(w_ratio, divide_pos);
+
+      if (divide_pos+1 <= STRING_length(w_ratio))
+        w_denominator = STRING_remove_start(w_ratio, divide_pos+1);
+        
+    } else {
+
+      w_denominator = w_ratio;
+      
+    }
+  }
+    
+
+  {
+    int64_t line = 0;
+    int64_t numerator = 0;
+    int64_t denominator = 1;
+    
+    if (w_line != NULL)
+      line = STRING_get_int64(w_line);
+
+    if (w_numerator != NULL)
+      numerator = STRING_get_int64(w_numerator);
+
+    if (w_denominator != NULL)
+      denominator = STRING_get_int64(w_denominator);
+
+    if (denominator==0){
+#if !defined(RELEASE)
+      printf("-------- Div by zero. s: \"%s\"\n", s);
+      getchar();
+#endif
+      return p_Create(0,0,1);
+    }
+    
+    Ratio ratio = make_ratio(numerator + line*denominator, denominator);
+
+    Place place = make_place_from_ratio(ratio);
+
+    return place;
   }
 }
 
