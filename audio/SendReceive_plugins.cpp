@@ -69,7 +69,7 @@ namespace{
 
   struct ReceiveDatas;
 
-  static radium::Queue<ReceiveDatas*, 8000> *g_free_receivers;
+  static radium::Queue<ReceiveDatas*, 8000> *g_free_RT_receivers;
 
 
   enum class FadeType{
@@ -154,8 +154,7 @@ namespace{
 
     Data(hash_t *state){
       if (state)
-        if (HASH_has_key(state, "name"))
-          _name = HASH_get_qstring(state, "name");
+        _name = HASH_get_qstring(state, "name");
     }
 
     void create_state(hash_t *state) const {
@@ -163,17 +162,21 @@ namespace{
     }
   };
   
-  struct ReceiveData : public Data {
+  class ReceiveData : public Data {
 
-    SoundPlugin *_plugin;
+    SoundPlugin *_plugin; // Important: '_plugin' is used by the player _after_ the plugin has been removed from the audio graph, and even after the program has started cleaning up the instrument. So it's important that we don't use other things (in the RT methods) than atomic data inside the _plugin memory block. Pointers in _plugin might not be valid.
     int _num_channels;
-    bool _RT_compensate_latency = true; // must hold player lock when writing.
     
+    bool _RT_compensate_latency = true; // must hold player lock when writing.
+
     // These two variables are swapped at each cycle.
     RT_Ch **_RT_receive_chs; // Used by the receiver.
     RT_Ch **_RT_send_chs;    // Used by the senders
 
+
     int _num_users = 0; // Don't want to use shared_ptr for various good reasons.
+
+  public:
     
     ReceiveData(SoundPlugin *plugin, hash_t *state, int num_channels, int block_size)
       : Data(state)
@@ -181,8 +184,7 @@ namespace{
       , _num_channels(num_channels)
     {
       if (state)
-        if (HASH_has_key(state, "compensate_latency"))
-          _RT_compensate_latency = HASH_get_bool(state, "compensate_latency");
+        _RT_compensate_latency = HASH_get_bool(state, "compensate_latency");
 
       _RT_receive_chs = (RT_Ch **)V_malloc(sizeof(RT_Ch*) * num_channels);
       _RT_send_chs = (RT_Ch **)V_malloc(sizeof(RT_Ch*) * num_channels);
@@ -198,7 +200,9 @@ namespace{
     
     ~ReceiveData(){
       R_ASSERT_NON_RELEASE(_num_users == 0);
-      
+
+      printf("================== Freeing ReceiveData %p ==============\n", this);
+
       for(int ch=0;ch<_num_channels;ch++){
         delete _RT_receive_chs[ch];
         delete _RT_send_chs[ch];
@@ -223,6 +227,23 @@ namespace{
       R_ASSERT_NON_RELEASE(_num_users >= 0);
       _num_users++;
     }
+
+    void notify_plugin_about_to_be_deleted(void) {
+      radium::PlayerLock lock;
+      _plugin = NULL;
+    }
+
+    void set_compensate_latency(bool doit){
+      if (_RT_compensate_latency==doit)
+        return;
+
+      radium::PlayerLock lock;
+      _RT_compensate_latency = doit;
+    }
+
+    bool get_compensate_latency(void) const {
+      return _RT_compensate_latency;
+    }
     
     void create_state(hash_t *state) const {
       Data::create_state(state);
@@ -238,9 +259,10 @@ namespace{
         _RT_receive_chs[ch]->receive(outputs[ch], num_frames);
     }
 
+    // Called from SendData::RT_send_process
     void RT_send(const SoundPlugin *send_plugin, const float **audio, int num_frames, FadeType fade_type){
-      if (_plugin==NULL) // not alive, and soon about to be deleted, or already deleted.
-        return;
+      if (_plugin==NULL)
+        return; // plugin is soon about to be deleted, or already deleted.
       
       RT_PLUGIN_touch(_plugin);
       
@@ -270,6 +292,14 @@ namespace{
     
   public:
 
+    ReceiveDatas(void){
+    }
+
+    ReceiveDatas(const ReceiveDatas *from){
+      for (auto *receiver : *from)
+        add(receiver);
+    }
+    
     ~ReceiveDatas(){
       for(auto *receiver : _receivers)
         receiver->dec_num_users();
@@ -298,25 +328,40 @@ namespace{
   };
   
 
-  struct SendData : public Data {
+  class SendData : public Data {
 
-    DEFINE_ATOMIC(ReceiveDatas *, _new_receivers) = NULL;
+    ReceiveDatas *_receivers = new ReceiveDatas; // Only used by the main thread for comparison when checking if the receivers have changed.
+    ReceiveDatas *_RT_receivers = new ReceiveDatas;
+
+    DEFINE_ATOMIC(ReceiveDatas *, _RT_new_receivers) = NULL;
+
+  public:
     
-    ReceiveDatas *_receivers = new ReceiveDatas;
-
     SendData(hash_t *state)
       : Data(state)
     {}
 
     ~SendData(){
       delete _receivers;
-      delete ATOMIC_GET(_new_receivers); // _new_receivers is most likely NULL.
+      delete _RT_receivers;
+      delete ATOMIC_GET(_RT_new_receivers); // _RT_new_receivers is most likely NULL.
     }
 
     void create_state(hash_t *state){
       Data::create_state(state);
     }
-    
+
+    void replace_receivers(const ReceiveDatas *new_RT_receivers){
+      delete _receivers;
+      
+      _receivers = new ReceiveDatas(new_RT_receivers);
+    }
+
+    // 'replace_receivers' and 'replace_RT_receivers' are both called by the main thread, and they could have been one function. But we use two functions to increase chance of all RT_receivers to be updated at once.
+    ReceiveDatas *replace_RT_receivers(const ReceiveDatas *RT_new_receivers){
+      return ATOMIC_SET_RETURN_OLD(_RT_new_receivers, RT_new_receivers);
+    }
+      
     ReceiveDatas *create_updated_receivers(const QVector<ReceiveData*> &from_receivers) const {
       ReceiveDatas *to_receivers = new ReceiveDatas;
       
@@ -331,35 +376,35 @@ namespace{
         return create_updated_receivers(new_receivers);
       
       for(auto *new_receiver : new_receivers)
-        if (!_receivers->contains(new_receiver))
+        if (!_receivers->contains(new_receiver))  // Kan ikke gjøre dette. RT kan sette _receivers.
           return create_updated_receivers(new_receivers);
 
       return NULL;
     }
 
     void RT_send_process(SoundPlugin *send_plugin, int num_frames, const float **inputs){
-      ReceiveDatas *new_receivers = ATOMIC_SET_RETURN_OLD(_new_receivers, NULL);
+      ReceiveDatas *new_receivers = ATOMIC_SET_RETURN_OLD(_RT_new_receivers, NULL);
 
       if (new_receivers != NULL) {
         
-        for(ReceiveData *receiver : *_receivers)
+        for(ReceiveData *receiver : *_RT_receivers)
           if (new_receivers->contains(receiver))
             receiver->RT_send(send_plugin, inputs, num_frames, FadeType::NO_FADE);
           else
             receiver->RT_send(send_plugin, inputs, num_frames, FadeType::FADE_OUT);
         
         for(ReceiveData *new_receiver : *new_receivers)          
-          if (!_receivers->contains(new_receiver))
+          if (!_RT_receivers->contains(new_receiver))
             new_receiver->RT_send(send_plugin, inputs, num_frames, FadeType::FADE_IN);
 
-        if (!g_free_receivers->tryPut(_receivers))
+        if (!g_free_RT_receivers->tryPut(_RT_receivers))
           RT_message("Send/Receive: A free-queue is full. That was strange.");
         
-        _receivers = new_receivers;
+        _RT_receivers = new_receivers;
 
       } else {
       
-        for(ReceiveData *receiver : *_receivers)
+        for(ReceiveData *receiver : *_RT_receivers)
           receiver->RT_send(send_plugin, inputs, num_frames, FadeType::NO_FADE);
 
       }
@@ -466,15 +511,16 @@ static void update_all_send_receivers(ReceiveData *receiver_to_be_deleted = NULL
   
   struct Update{
     SendData *sender;
-    ReceiveDatas *receivers;
+    ReceiveDatas *RT_receivers;
+    ReceiveDatas *old_RT_receivers = NULL;
     Update(){ // stupid c++
     }
-    Update(SendData *sender, ReceiveDatas *receivers)
+    Update(SendData *sender, ReceiveDatas *RT_receivers)
       : sender(sender)
-      , receivers(receivers)
+      , RT_receivers(RT_receivers)
     {
       R_ASSERT(sender!=NULL);
-      R_ASSERT(receivers!=NULL);
+      R_ASSERT(RT_receivers!=NULL);
     }
   };
   
@@ -482,47 +528,49 @@ static void update_all_send_receivers(ReceiveData *receiver_to_be_deleted = NULL
   
   for(QString name : names){
     QVector<ReceiveData*> receivers = receiverss[name];
-    printf("AA %s: %d\n", name.toUtf8().constData(), senderss[name].size());
+    D(printf("AA %s: %d\n", name.toUtf8().constData(), senderss[name].size()));
     
     for(SendData *sender : senderss[name]) {
-      ReceiveDatas *new_receivedata = sender->maybe_create_updated_receivers(receivers);
-      printf("BB: %p. Num receivers for sender: %d\n", new_receivedata, new_receivedata==NULL ? -1 : new_receivedata->size());
+      ReceiveDatas *new_RT_receivedata = sender->maybe_create_updated_receivers(receivers);
+      D(printf("BB: %p. Num receivers for sender: %d\n", new_RT_receivedata, new_RT_receivedata==NULL ? -1 : new_RT_receivedata->size()));
       
-      if (new_receivedata != NULL)
-        updates.push_back(Update(sender, new_receivedata));
+      if (new_RT_receivedata != NULL) {
+        sender->replace_receivers(new_RT_receivedata);
+        updates.push_back(Update(sender, new_RT_receivedata));
+      }
     }
   }
   
-  printf("Size of names: %d. Size of updates: %d\n", names.size(), updates.size());
+  D(printf("Size of names: %d. Size of updates: %d\n", names.size(), updates.size()));
          
   // don't really trust c++...
   for(auto update : updates){
-    R_ASSERT_RETURN_IF_FALSE(update.receivers!=NULL);
+    R_ASSERT_RETURN_IF_FALSE(update.RT_receivers!=NULL);
     R_ASSERT_RETURN_IF_FALSE(update.sender!=NULL);
-    R_ASSERT_RETURN_IF_FALSE(update.sender->_receivers!=NULL);
   }
 
-  
-  for(auto update : updates){
-    auto *old = ATOMIC_SET_RETURN_OLD(update.sender->_new_receivers, update.receivers);
-    if (old){
-      printf("SendReceve. Note: Set new receivers before old one was being used.\n");
-      delete old;
+  for(auto update : updates)
+    update.old_RT_receivers = update.sender->replace_RT_receivers(update.RT_receivers);
+
+  for(auto update : updates)
+    if (update.old_RT_receivers){
+      printf("SendReceve. Note: Set new receivers before old one was being used by the player.\n");
+      delete update.old_RT_receivers;   // Could have freed directly above , but we want to call all the 'replace_RT_receivers' methods as much as possible at the same time.
     }
-  }
+
 
   // Free old receivers.
   while(true){
     bool gotit;
-    ReceiveDatas *receivers = g_free_receivers->tryGet(gotit);
+    ReceiveDatas *RT_receivers = g_free_RT_receivers->tryGet(gotit);
     if (gotit){
       printf("    Freeing a receiver\n");
-      delete receivers;
+      delete RT_receivers;
     }else
       break;
   }
   
-  printf("-----------------------------\n");
+  D(printf("-----------------------------\n"));
 }
 
 void SEND_RECEIVE_update_send_receivers(void){
@@ -646,21 +694,12 @@ bool SEND_RECEIVE_handle_new_patchname(SoundPlugin *plugin, const char *s_patch_
 
 void SEND_RECEIVE_set_compensate_latency(SoundPlugin *plugin, bool doit){
   R_ASSERT_RETURN_IF_FALSE(is_receiver(plugin));
-  ReceiveData *receiver = static_cast<ReceiveData*>(plugin->data);
-
-  if (receiver->_RT_compensate_latency==doit)
-    return;
-  
-  {
-    radium::PlayerLock lock;
-    receiver->_RT_compensate_latency = doit;
-  }
+  static_cast<ReceiveData*>(plugin->data)->set_compensate_latency(doit);
 }
   
 bool SEND_RECEIVE_get_compensate_latency(SoundPlugin *plugin){
   R_ASSERT_RETURN_IF_FALSE2(is_receiver(plugin), false);
-  ReceiveData *receiver = static_cast<ReceiveData*>(plugin->data);
-  return receiver->_RT_compensate_latency;
+  return static_cast<ReceiveData*>(plugin->data)->get_compensate_latency();
 }
   
 // This function is called from the audio engine before starting a new cycle.
@@ -697,10 +736,8 @@ static void cleanup_receive_plugin_data(SoundPlugin *plugin){
   
   update_all_send_receivers(receiver);
 
-  {
-    radium::PlayerLock lock;
-    receiver->_plugin = NULL; // _plugin has not been alive for a while before this call, but we don't use other parts of _plugin than the plugin itself in RT_send. We only call RT_PLUGIN_touch, which only touches the plugin itself (and the memory for the plugin itself has of course not been released yet). We are not using anything pointed to by plugin.
-  }
+  // Note: _plugin has not been alive for a while before this call, but we don't use other parts of _plugin than the plugin itself in RT_send. We only call RT_PLUGIN_touch, which only touches the plugin itself (and the memory for the plugin itself has of course not been released yet). We are not using anything pointed to by plugin.
+  receiver->notify_plugin_about_to_be_deleted();
   
   receiver->dec_num_users(); // If we call delete directly a receiver might be used by a sender after it is deleted.
 }
@@ -727,7 +764,7 @@ static int RT_send_get_audio_tail_length(const struct SoundPlugin *plugin){
 static int RT_receive_get_audio_tail_length(const struct SoundPlugin *plugin){
   ReceiveData *receiver = static_cast<ReceiveData*>(plugin->data);
   
-  if(receiver->_RT_compensate_latency)
+  if(receiver->get_compensate_latency())
     return 0;
   else
     return MIXER_get_buffer_size();
@@ -736,7 +773,7 @@ static int RT_receive_get_audio_tail_length(const struct SoundPlugin *plugin){
 static int RT_receive_get_latency(const struct SoundPlugin *plugin){
   ReceiveData *receiver = static_cast<ReceiveData*>(plugin->data);
   
-  if(receiver->_RT_compensate_latency)
+  if(receiver->get_compensate_latency())
     return MIXER_get_buffer_size();
   else
     return 0;
@@ -748,7 +785,7 @@ void create_sendreceive_plugins(void){
 
   if (has_inited==false)
   {
-    g_free_receivers = new radium::Queue<ReceiveDatas*, 8000>;
+    g_free_RT_receivers = new radium::Queue<ReceiveDatas*, 8000>;
     
     // send 2ch
     //////////////
