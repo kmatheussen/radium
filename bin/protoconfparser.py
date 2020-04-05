@@ -372,8 +372,8 @@ class Proto:
         oh.write(");\n");
 
     def write_python_wrap_proc(self,oh):
-        if self.uses_place:
-            return
+        #if self.uses_place:
+        #    return
         if self.uses_dynvec:
             return
         if self.uses_dyn:
@@ -395,11 +395,16 @@ class Proto:
             for qualifier in arg.qualifiers:
                 if sys.platform=="amiga" and qualifier=="float":
                     oh.write("double ")
+                elif qualifier=="Place":
+                    oh.write("const char* ")
                 else:
                     oh.write(qualifier+" ")
                 oh.write("arg%d" % lokke)
             if arg.default!="":
-                oh.write("="+arg.default)
+                if qualifier=="Place":
+                    oh.write("=p_ToString("+arg.default+")")
+                else:
+                    oh.write("="+arg.default)
             oh.write(";\n")
         if not (len(self.proc.qualifiers)==1 and self.proc.qualifiers[len(self.proc.qualifiers)-1]=="void"):
             for lokke in range(len(self.proc.qualifiers)):
@@ -445,6 +450,8 @@ class Proto:
                 t="s"
             elif qualifier=="bool":
                 t="b"
+            elif qualifier=="Place":
+                t="s"
             else:
                 sys.stderr.write("Unknown type '"+qualifier+"'")
                 raise Exception("Unknown type '"+qualifier+"'")
@@ -478,6 +485,8 @@ class Proto:
             qualifier=arg.qualifiers[len(arg.qualifiers)-1]
             if qualifier=="filepath_t":
                 oh.write("make_filepath(talloc_wcsdup(arg%d.id))" % lokke)
+            elif qualifier=="Place":
+                oh.write("p_FromString(arg%d)" % lokke)
             else:
                 oh.write("arg%d" % lokke)
             if lokke<self.arglen-1:
@@ -489,7 +498,7 @@ class Proto:
 
         return_type = self.proc.qualifiers[len(self.proc.qualifiers)-1]
             
-        if (self.returns_dynvec or self.returns_dyn or self.returns_func or self.returns_place or len(self.proc.qualifiers)==1 and return_type=="void"):
+        if (self.returns_dynvec or self.returns_dyn or self.returns_func or len(self.proc.qualifiers)==1 and return_type=="void"):
             oh.write("Py_INCREF(Py_None);\n")
             oh.write("resultobj=Py_None;\n")
         else:
@@ -515,11 +524,15 @@ class Proto:
                     t="PyString_FromString("
                 elif return_type=="bool":
                     t="PyBool_FromLong((long)"
+                elif return_type=="Place":
+                    t="PyString_FromString("
                     
                 if return_type=="instrument_t" or return_type=="file_t":
                     oh.write(t+"result.id);\n")
                 elif return_type=="filepath_t":
                     oh.write(t+"result.id, wcslen(result.id));\n")
+                elif return_type=="Place":
+                    oh.write(t+"p_ToString(result));\n")
                 else:
                     oh.write(t+"result);\n")
                 
@@ -528,8 +541,8 @@ class Proto:
         oh.write("}\n\n")
             
     def write_python_wrap_methodstruct(self,oh):
-        if self.uses_place:
-            return
+        #if self.uses_place:
+        #    return
         if self.uses_dynvec:
             return
         if self.uses_dyn:
