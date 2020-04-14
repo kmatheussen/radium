@@ -2880,7 +2880,8 @@
     (<ra> :add-popup-menu-closed-callback
           (lambda ()
             (set! current-pianonote-has-been-set-force #f)
-            (<ra> :cancel-current-pianonote)
+            (if (not current-pianonote-has-been-set)
+                (<ra> :cancel-current-pianonote))
             #t)))
 
 ;; delete note / add pitch / delete pitch
