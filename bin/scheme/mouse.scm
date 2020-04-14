@@ -2986,7 +2986,8 @@
                                                   (lambda (maybe)
                                                     (if maybe
                                                         (<ra> :select-note (pianonote-info :noteid) (pianonote-info :tracknum))
-                                                        (<ra> :unselect-note (pianonote-info :noteid) (pianonote-info :tracknum)))))                                                        
+                                                        (<ra> :unselect-note (pianonote-info :noteid) (pianonote-info :tracknum)))))
+                                            "Copy" ra:copy-selected-pianonotes
                                             "--------"
                                             "Delete node" :enabled (> num-pianonotes 1) :shortcut *shift-right-mouse* delete-pitch
                                             "Add node at mouse position" add-pitch

@@ -1632,6 +1632,9 @@ void deletePianonote(int pianonotenum, dyn_t dynnote, int tracknum, int blocknum
 
   
 void setCurrentPianonote(int num, dyn_t dynnote, int tracknum){
+  if (tracknum==-1)
+    tracknum = currentTrack(-1,-1);
+  
   struct Notes *note=getNoteFromNum(-1, -1, tracknum, dynnote);
   if (note==NULL)
     return;
@@ -1647,6 +1650,19 @@ void setCurrentPianonote(int num, dyn_t dynnote, int tracknum){
       g_current_piano_note.pianonotenum = num;
       root->song->tracker_windows->must_redraw_editor = true;
     }
+}
+
+dyn_t getCurrentPianonote(int tracknum){
+  if (tracknum==-1)
+    tracknum = currentTrack(-1,-1);
+    
+  if (tracknum != g_current_piano_note.tracknum)
+    return g_dyn_false;
+
+  if (g_current_piano_note.noteid < 0)
+    return g_dyn_false;
+
+  return DYN_create_string_from_chars(GetNoteIdAsCharString(g_current_piano_note.noteid));
 }
 
 void cancelCurrentPianonote(void){
