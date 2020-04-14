@@ -319,6 +319,42 @@ int64_t popupMenu(dynvec_t strings, func_t* callback){
   return GFX_Menu2(window, NULL, "", vec, callback, true, true);
 }
 
+static radium::ProtectedS7FuncVector g_popupmenu_closed_callbacks(true);
+
+void addPopupMenuClosedCallback(func_t* callback){
+  if (g_popupmenu_closed_callbacks.push_back(callback)==false)
+    handleError("addPopupMenuClosedCallback: Callback %p already added\n", callback);
+}
+
+static bool removePopupMenuClosedCallback2(func_t *callback){
+  int num_removed = g_popupmenu_closed_callbacks.removeAll(callback);
+  R_ASSERT_NON_RELEASE(num_removed==0 || num_removed==1);
+  
+  return num_removed > 0;
+}
+
+void removePopupMenuClosedCallback(func_t* callback){
+  if (!removePopupMenuClosedCallback2(callback))
+    handleError("removePopupMenuClosedCallback: Could not find deleted callback %p\n", callback);
+}
+
+void API_call_me_when_a_popup_menu_has_been_closed(void){
+  QVector<func_t*> to_remove;
+
+  g_popupmenu_closed_callbacks.safe_for_all(true, [&to_remove](func_t *callback){
+
+      if (S7CALL(bool_void, callback)==false)
+        to_remove.push_back(callback);
+
+      return true;
+      
+    });
+
+  for(auto *callback : to_remove){
+    printf("   API_call_me_when_a_popup_menu_has_been_closed: Calling removePopupMenuClosedCallback for %p\n", callback);
+    removePopupMenuClosedCallback2(callback);
+  }
+}
 
 int64_t getLastHoveredPopupMenuEntry(void){
   return g_last_hovered_menu_entry_guinum;

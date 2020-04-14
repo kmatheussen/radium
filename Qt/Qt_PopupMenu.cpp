@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../embedded_scheme/s7extra_proc.h"
 
 #include "../api/api_gui_proc.h"
+#include "../api/api_requesters_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -684,6 +685,8 @@ namespace{
         printf(" ... %s deleted\n", _kill_file_name.toUtf8().constData());
       }
 #endif
+
+      API_call_me_when_a_popup_menu_has_been_closed();
     }
 
 #if SAFE_POPUP
