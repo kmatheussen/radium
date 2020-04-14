@@ -1015,17 +1015,33 @@
 (delafina (FROM_C-copy-selected-pianonotes :tracknum -1
                                            :blocknum -1
                                            :note-ids #f)
+  (set! note-ids (or note-ids
+                     (let ((current-note (<ra> :get-current-pianonote tracknum)))
+                       (c-display "curr-note/selected:"
+                                  current-note
+                                  (string? current-note)
+                                  (integer? current-note)
+                                  (and #f current-note
+                                       (<ra> :note-is-selected current-note tracknum)))
+                       (if (and current-note
+                                (not (<ra> :note-is-selected current-note tracknum)))
+                           (list current-note)
+                           (<ra> :get-selected-notes tracknum blocknum)))))
+  
   (set! *selected-pianonotes* (get-selected-pianonotes tracknum
                                                        blocknum
-                                                       (or note-ids
-                                                           (<ra> :get-selected-notes tracknum blocknum)))))
+                                                       note-ids)))
 
 
 (delafina (FROM_C-delete-selected-pianonotes! :tracknum -1
                                               :blocknum -1
                                               :note-ids #f)
   (set! note-ids (or note-ids
-                     (<ra> :get-selected-notes tracknum blocknum)))
+                     (let ((current-note (<ra> :get-current-pianonote tracknum)))
+                       (if (and current-note
+                                (not (<ra> :note-is-selected current-note tracknum)))
+                           (list current-note)
+                           (<ra> :get-selected-notes tracknum blocknum)))))
   (when note-ids
     (<ra> :undo-notes)
     (for-each (lambda (note-id)
@@ -1037,7 +1053,11 @@
                                            :blocknum -1
                                            :note-ids #f)
   (set! note-ids (or note-ids
-                     (<ra> :get-selected-notes tracknum blocknum)))
+                     (let ((current-note (<ra> :get-current-pianonote tracknum)))
+                       (if (and current-note
+                                (not (<ra> :note-is-selected current-note tracknum)))
+                           (list current-note)
+                           (<ra> :get-selected-notes tracknum blocknum)))))
   (FROM_C-copy-selected-pianonotes tracknum blocknum note-ids)
   (FROM_C-delete-selected-pianonotes! tracknum blocknum note-ids))
 
