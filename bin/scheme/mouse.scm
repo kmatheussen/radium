@@ -457,6 +457,12 @@
   (<ra> :set-current-pianonote pianonotenum notenum tracknum))
 ;;  (set-editor-statusbar (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pianonotenum tracknum)))))
 
+(define2 current-pianonote-has-been-set-force boolean? #f)
+(define (set-current-pianonote-force pianonotenum notenum tracknum)
+  (set! current-pianonote-has-been-set #t)
+  (set! current-pianonote-has-been-set-force #t)
+  (<ra> :set-current-pianonote pianonotenum notenum tracknum))
+
 (define2 current-piano-ghost-note-has-been-set boolean? #f)
 (define (set-current-piano-ghost-note start end value tracknum)
   (set! current-piano-ghost-note-has-been-set #t)
@@ -531,7 +537,8 @@
                           (if (not current-node-has-been-set)
                               (<ra> :cancel-current-node))
                           
-                          (if (not current-pianonote-has-been-set)
+                          (if (and (not current-pianonote-has-been-set)
+                                   (not current-pianonote-has-been-set-force))
                               (<ra> :cancel-current-pianonote))
                           
                           (if (not current-piano-ghost-note-has-been-set)
@@ -2868,7 +2875,14 @@
                                         tracknum))
                               #t)))))))
 
-                               
+
+(if (not (defined? '*mouse.scm-loaded*))
+    (<ra> :add-popup-menu-closed-callback
+          (lambda ()
+            (set! current-pianonote-has-been-set-force #f)
+            (<ra> :cancel-current-pianonote)
+            #t)))
+
 ;; delete note / add pitch / delete pitch
 (add-mouse-cycle
  (make-mouse-cycle
@@ -2958,10 +2972,20 @@
                               (let ((do-glide (sane-pianonote-portamento-enabled (pianonote-info :pianonotenum)
                                                                                  (pianonote-info :noteid)
                                                                                  (pianonote-info :tracknum))))
-                                
+
+                                (set! current-pianonote-has-been-set-force #t)
+
                                 (popup-menu "Cut Note at mouse position" cut-note
                                             "Glide to next note at mouse position" :enabled (can-glide-from-here-to-next-note?) glide-from-here-to-next-note
                                             "Delete Note" :shortcut *shift-right-mouse* delete-note
+                                            "--------"
+                                            (list "Selected"
+                                                  :shortcut "Ctrl-click"
+                                                  :check (<ra> :note-is-selected (pianonote-info :noteid) (pianonote-info :tracknum))
+                                                  (lambda (maybe)
+                                                    (if maybe
+                                                        (<ra> :select-note (pianonote-info :noteid) (pianonote-info :tracknum))
+                                                        (<ra> :unselect-note (pianonote-info :noteid) (pianonote-info :tracknum)))))                                                        
                                             "--------"
                                             "Delete node" :enabled (> num-pianonotes 1) :shortcut *shift-right-mouse* delete-pitch
                                             "Add node at mouse position" add-pitch
@@ -8694,3 +8718,5 @@
 
 ||#
 
+
+(define *mouse.scm-loaded* #t)
