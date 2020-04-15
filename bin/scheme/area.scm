@@ -742,6 +742,7 @@
      :add-raw-mouse-cycle! x (apply add-raw-mouse-cycle! x)
      :get-raw-mouse-cycles x raw-mouse-cycles
      :handle-raw-mouse-cycles x (apply handle-raw-mouse-cycles x)
+     :add-mouse-pointerhandler x (apply add-mouse-pointerhandler x)
      :overlaps? x (apply overlaps? x)
      ;;:paint x (apply paint x)
      :paint-internal x (apply paint-internal x)
