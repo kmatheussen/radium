@@ -541,8 +541,9 @@
                                    (not current-pianonote-has-been-set-force))
                               (<ra> :cancel-current-pianonote))
                           
-                          (if (not current-piano-ghost-note-has-been-set)
-                              (<ra> :cancel-current-piano-ghost-note))
+                          (when (not current-piano-ghost-note-has-been-set)
+                            ;;(c-display "CANCEL GHOST 2")
+                            (<ra> :cancel-current-piano-ghost-note))
                           ;;(if (not mouse-pointer-has-been-set)
                           ;;    (<ra> :set-normal-mouse-pointer))
 
@@ -2830,7 +2831,21 @@
  :move (lambda (button x y)
          (highlight-piano-note-under-mouse x y)))
 
+(define (get-ghost-note-values X Y callback)
+  ;;(c-display "Start:" (* 1.0 Place) ". End:" (* 1.0 Next-Place) ". Value:" Value)
+  (define Place (get-place-from-y *left-button* Y))
+  (define Next-Place (get-next-place-from-y *left-button* Y))
+  (define raw-Value (get-pianoroll-key X))
+  (define Value (if (<ra> :control-pressed)
+                    raw-Value
+                    (floor raw-Value)))
+  (callback Place Next-Place Value))
 
+(define (display-ghost-note X Y)
+  (get-ghost-note-values X Y
+                         (lambda (Place Next-Place Value)
+                           (set-current-piano-ghost-note Place Next-Place Value *current-track-num*))))
+  
 ;; show ghost-pianonote, i.e. the pianonote that would be created if pressing left mouse.
 (add-mouse-move-handler
  :move (lambda (Button X Y)
@@ -2839,16 +2854,8 @@
               (let ((box (get-track-pianoroll-box)))
                 (and box
                      (inside-box? box X Y)))
-              (let ()
-                (define Place (get-place-from-y *left-button* Y))
-                (define Next-Place (get-next-place-from-y *left-button* Y))
-                (define raw-Value (get-pianoroll-key X))
-                (define Value (if (<ra> :control-pressed)
-                                  raw-Value
-                                  (floor raw-Value)))
-                ;;(c-display "Start:" (* 1.0 Place) ". End:" (* 1.0 Next-Place) ". Value:" Value)
-                (set-current-piano-ghost-note Place Next-Place Value *current-track-num*)
-                #f))))
+              (display-ghost-note X Y)
+              #f)))
 
 
 
@@ -2976,18 +2983,23 @@
 
                                 (set! current-pianonote-has-been-set-force #t)
 
-                                (popup-menu "Cut Note at mouse position" cut-note
-                                            "Glide to next note at mouse position" :enabled (can-glide-from-here-to-next-note?) glide-from-here-to-next-note
-                                            "Delete Note" :shortcut *shift-right-mouse* delete-note
-                                            "--------"
+                                (popup-menu "--------"
                                             (list "Selected"
-                                                  :shortcut "Ctrl-click"
+                                                  :shortcut "Ctrl + Left Mouse"
                                                   :check (<ra> :note-is-selected (pianonote-info :noteid) (pianonote-info :tracknum))
                                                   (lambda (maybe)
                                                     (if maybe
                                                         (<ra> :select-note (pianonote-info :noteid) (pianonote-info :tracknum))
                                                         (<ra> :unselect-note (pianonote-info :noteid) (pianonote-info :tracknum)))))
                                             "Copy" ra:copy-selected-pianonotes
+                                            "Cut" ra:cut-selected-pianonotes
+                                            (list "Delete all selected notes"
+                                                  :enabled (<ra> :note-is-selected (pianonote-info :noteid) (pianonote-info :tracknum))
+                                                  ra:delete-selected-pianonotes)
+                                            "Delete this note" :shortcut *shift-right-mouse* delete-note
+                                            "--------"
+                                            "Cut Note at mouse position" cut-note
+                                            "Glide to next note at mouse position" :enabled (can-glide-from-here-to-next-note?) glide-from-here-to-next-note
                                             "--------"
                                             "Delete node" :enabled (> num-pianonotes 1) :shortcut *shift-right-mouse* delete-pitch
                                             "Add node at mouse position" add-pitch
@@ -3021,6 +3033,14 @@
                                             ;;                                                                                      (disable-portamento)))
                                             
                                             ;; "Stop note here" stop-note
+
+                                            "----------"
+                                            (list "Pianoroll visible"
+                                                  :check (<ra> :pianoroll-visible (pianonote-info :tracknum))
+                                                  :shortcut ra:show-hide-pianoroll
+                                                  (lambda (onoff)
+                                                    (<ra> :show-pianoroll onoff (pianonote-info :tracknum))))
+                                            
                                             ))
                               #t)))))))
 
@@ -3041,27 +3061,35 @@
 
 
 (define (move-pianoroll-eraser $button $dx $dy $instance)
+  (when (not ($instance :has-moved))
+    (set-mouse-pointer ra:set-blank-mouse-pointer (<gui> :get-editor-gui))
+    )  
   (define $x (+ ($instance :x) $dx))
   (define $y (+ ($instance :y) $dy))
   (define has-made-undo ($instance :has-made-undo))
+  (define has-moved (or ($instance :has-moved)
+                        (not (= 0 $dx))
+                        (not (= 0 $dy))))
   (get-pianoroll-eraser-pitches-and-places $button $x $y
                                            (lambda (pitch1 pitch2 place1 place2)
-                                             (<ra> :show-pianoroll-eraser pitch1 pitch2 place1 place2 *current-track-num*)
-                                             (define made-undo-now (pr-erase! -1 *current-track-num*
-                                                                              (min pitch1 ($instance :pitch1))
-                                                                              (max pitch2 ($instance :pitch2))
-                                                                              (min place1 ($instance :place1))
-                                                                              (max place2 ($instance :place2))
-                                                                              (not has-made-undo)))
+                                             (if has-moved
+                                                 (<ra> :show-pianoroll-eraser pitch1 pitch2 place1 place2 *current-track-num*))
+                                             (define made-undo-now (and has-moved
+                                                                        (pr-erase! -1 *current-track-num*
+                                                                                   (min pitch1 ($instance :pitch1))
+                                                                                   (max pitch2 ($instance :pitch2))
+                                                                                   (min place1 ($instance :place1))
+                                                                                   (max place2 ($instance :place2))
+                                                                                   (not has-made-undo))))
                                              (hash-table :x $x
-                                                          :y $y
-                                                          :has-made-undo (or made-undo-now
-                                                                             has-made-undo)
-                                                          :pitch1 pitch1
-                                                          :pitch2 pitch2
-                                                          :place1 place1
-                                                          :place2 place2))))
-
+                                                         :y $y
+                                                         :has-made-undo (or made-undo-now
+                                                                            has-made-undo)
+                                                         :has-moved has-moved
+                                                         :pitch1 pitch1
+                                                         :pitch2 pitch2
+                                                         :place1 place1
+                                                         :place2 place2))))
 
 (add-delta-mouse-handler :press (lambda ($button $x $y)
                                   (and (= $button *right-button*)
@@ -3069,22 +3097,56 @@
                                        (<ra> :pianoroll-visible *current-track-num*)
                                        (inside-box? (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
                                        (not (get-pianonote-info $x $y *current-track-num*))
-                                       (set-mouse-pointer ra:set-blank-mouse-pointer (<gui> :get-editor-gui))
-                                       (move-pianoroll-eraser $button 0 0 (hash-table :x $x
-                                                                                       :y $y
-                                                                                       :has-made-undo #f
-                                                                                       :pitch1 100000
-                                                                                       :pitch2 -100000
-                                                                                       :place1 1000000
-                                                                                       :place2 -10000000))))
+                                       ;;(set-mouse-pointer ra:set-blank-mouse-pointer (<gui> :get-editor-gui))
+                                       ;;(move-pianoroll-eraser $button 0 0
+                                       (display-ghost-note $x $y)
+                                       (hash-table :x $x
+                                                   :y $y
+                                                   :has-made-undo #f
+                                                   :has-moved #f
+                                                   :pitch1 100000
+                                                   :pitch2 -100000
+                                                   :place1 1000000
+                                                   :place2 -10000000)))
                          
                          :move-and-release move-pianoroll-eraser
 
                          :release (lambda ($button $x $y $instance)
-                                    (<ra> :hide-pianoroll-eraser)
-                                    (<ra> :move-mouse-pointer ($instance :x) ($instance :y))                                          
-                                    (set-mouse-pointer ra:set-normal-mouse-pointer (<gui> :get-editor-gui))
-                                    )
+                                    ;;(c-display "HAS_MOVED:" ($instance :has-moved))
+                                    (if ($instance :has-moved)
+                                        (begin
+                                          (<ra> :hide-pianoroll-eraser)
+                                          (<ra> :move-mouse-pointer ($instance :x) ($instance :y))                                          
+                                          ;;(set-mouse-pointer ra:set-normal-mouse-pointer (<gui> :get-editor-gui))
+                                          )
+                                        (begin
+                                          (popup-menu
+                                           (list "Copy"
+                                                 :enabled (<ra> :has-selected-notes *current-track-num*)
+                                                 ra:copy-selected-pianonotes)
+                                           (list "Cut"
+                                                 :enabled (<ra> :has-selected-notes *current-track-num*)
+                                                 ra:cut-selected-pianonotes)
+                                           (list "Delete"
+                                                 :enabled (<ra> :has-selected-notes *current-track-num*)
+                                                 ra:delete-selected-pianonotes)
+                                           (list "Paste"
+                                                 :enabled (not (null? *selected-pianonotes*))
+                                                 :shortcut ra:paste-pianonotes
+                                                 (lambda ()
+                                                   (get-ghost-note-values ($instance :x) ($instance :y)
+                                                                          (lambda (Place Next-Place Value)
+                                                                            (<ra> :paste-pianonotes Value Place *current-track-num*)))
+                                                   
+                                                   ))
+                                           "----------"
+                                           (list "Pianoroll visible"
+                                                 :check (<ra> :pianoroll-visible *current-track-num*)
+                                                 :shortcut ra:show-hide-pianoroll
+                                                 (lambda (onoff)
+                                                   (<ra> :show-pianoroll onoff *current-track-num*)))
+                                           ))))
+
                          :mouse-pointer-is-hidden-func (lambda () #t)
                          )
 

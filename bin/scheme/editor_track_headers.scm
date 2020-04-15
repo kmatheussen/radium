@@ -34,11 +34,12 @@
                     (lambda (onoff)
                       (<ra> :set-track-on onoff tracknum)))
               "-----------"
-              (list "Pianoroll"
+              (list "Pianoroll visible"
                     :check (<ra> :pianoroll-visible tracknum)
                     :shortcut ra:show-hide-pianoroll
                     (lambda (onoff)
                       (<ra> :show-pianoroll onoff tracknum)))
+              "-----------"
               (list "Keybindings"
                     (list
                      "---------------Pan slider on/off"

@@ -1017,7 +1017,7 @@
                                            :note-ids #f)
   (set! note-ids (or note-ids
                      (let ((current-note (<ra> :get-current-pianonote tracknum)))
-                       (c-display "curr-note/selected:"
+                       '(c-display "curr-note/selected:"
                                   current-note
                                   (string? current-note)
                                   (integer? current-note)
@@ -1083,6 +1083,9 @@
                                   blocknum)
                        (set! gotit #t)))
                  *selected-pianonotes*)))
+    
+    (<declare-variable> highlight-piano-note-under-mouse) ;; in mouse.scm
+    
     (if (not gotit)
         (<ra> :cancel-last-undo)
         (if (highlight-piano-note-under-mouse (<ra> :get-mouse-pointer-x)
