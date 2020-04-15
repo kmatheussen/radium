@@ -584,8 +584,11 @@
                                                                   (<new> :editor-track-headers-area gui 0 0 width height))
                                                             *last-created-editor-track-headers-area*)
                               :enable-mouse-callbacks #t))
-  (define gui (qtarea :get-gui))
 
+  (qtarea :add-mouse-pointerhandler ra:set-normal-mouse-pointer)
+
+  (define gui (qtarea :get-gui))
+  
   (<gui> :dont-autofill-background gui)
   gui)
 
