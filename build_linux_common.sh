@@ -119,7 +119,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse2 -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras`"
+export OS_OPTS="-Werror=array-bounds -msse2 -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras` " # -Ibin/packages/libxcb-1.13/"
 #export OS_OPTS="-Werror=array-bounds -march=native"
 
 
@@ -186,7 +186,9 @@ fi
 fi
 
 export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -ldl -lXext "
-export OS_LDFLAGS="$FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS -llrdf $GCDIR/.libs/libgc.a  $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` `$PKG --libs glib-2.0` `$PKG --libs liblo` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -lgmp -lmpfr -lmpc"
+export OS_LDFLAGS="$FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS -llrdf $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` `$PKG --libs glib-2.0` `$PKG --libs liblo` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -lgmp -lmpfr -lmpc"
+
+#-Lbin/packages/libxcb-1.13/src/.libs
 
 # 
 
@@ -223,9 +225,10 @@ make buildtype.opt --stop
 make flagopts.opt --stop
 make api/radium_proc.h --stop
 make common/keyboard_sub_ids.h --stop
+make bin/radium_check_recent_libxcb --stop
 
 if [[ $1 == "test" ]] ; then
-   make test_seqautomation
+    make test_seqautomation
 else
     make radium $@ --stop
 fi

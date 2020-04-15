@@ -1379,6 +1379,9 @@ $(T)X11_instrument.o:  $(BUILD_DEPENDENCIES) X11/X11_instrument.c
 $(T)X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
 	$(CCC2) X11/X11_keyboard.cpp $(QTOPT) -DUSE_QT$(RADIUM_QT_VERSION)
 
+bin/radium_check_recent_libxcb: X11/check_recent_libxcb.c
+	$(CC) -Wall $(WERROR) X11/check_recent_libxcb.c -ldl -o bin/radium_check_recent_libxcb
+
 #X11_MidiProperties.o:  $(BUILD_DEPENDENCIES) X11/X11_MidiProperties.c
 #	$(CC2) X11/X11_MidiProperties.c $(OPT) 
 

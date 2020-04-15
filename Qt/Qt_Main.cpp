@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/includepython.h"
 
 #include <inttypes.h>
+#include <dlfcn.h>
 
 
 #include <boost/version.hpp>
@@ -3692,8 +3693,24 @@ static int gc_has_static_roots_func(
   {
     QString name(dlpi_name);
     if (name.contains("libxcb.so")){
-      if (!name.contains("/packages/libxcb-1.13/src/.libs/")){
-        fprintf(stderr,"\n\n%c[31mError. A version of libxcb not included with Radium has been dynamically linked into the program. Something is wrong the installation of Radium.\nOlder versions of libxcb (probably before 1.11.1) are unstable with Radium.%c[0m\n\n", 0x1b, 0x1b);
+
+      bool success = false;
+      
+      void *handle = dlopen(dlpi_name, RTLD_NOW|RTLD_LOCAL);
+      if (handle != NULL) {
+        
+        if (dlsym(handle, "xcb_discard_reply64") != NULL)
+          success = true;
+        
+        dlclose(handle);
+      }
+      
+      if (!success) { //name.contains("/packages/libxcb-1.13/src/.libs/")){
+        fprintf(stderr,
+                "\n\n%c[31mError. A too old version of libxcb has been dynamically linked into the program.\n"
+                "Something is wrong the installation of Radium since a replacement version of libxcb should have been used automatically by the startup script if this is the case.\n"
+                "Older versions of libxcb (probably before 1.11.1) are unstable with Radium.%c[0m\n\n",
+                0x1b, 0x1b);
         fprintf(stderr, "(\"%s\")\n", name.toUtf8().constData());
         abort();
       }

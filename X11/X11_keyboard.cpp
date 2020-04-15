@@ -46,7 +46,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/OS_system_proc.h"
 
-
 #ifndef USE_QT5
 static int keycode_to_keynum[256]; // "A KeyCode represents a physical (or logical) key. KeyCodes lie in the inclusive range [8,255]" (keyboard-encoding.html)
 #endif
@@ -263,7 +262,7 @@ static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
 
     if (inited==false){
       xcb_connection_t *connection = QX11Info::connection();
-      
+
       if (xcb_connection_has_error(connection) > 0)
         GFX_Message(NULL, "Seems like the xcb connection has an error. Keyboard might not work. Error code %d.", xcb_connection_has_error(connection));
       
