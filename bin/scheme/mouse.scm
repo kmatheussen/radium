@@ -3134,7 +3134,7 @@
                                                  :enabled (not (null? *selected-pianonotes*))
                                                  :shortcut ra:paste-pianonotes
                                                  (lambda ()
-                                                   (get-ghost-note-values ($instance :x) ($instance :y)
+                                                   (get-ghost-note-values $x $y
                                                                           (lambda (Place Next-Place Value)
                                                                             (<ra> :paste-pianonotes Value Place *current-track-num*)))
                                                    
