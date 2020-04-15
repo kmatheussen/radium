@@ -118,6 +118,10 @@
                                                    *schemecodeparser-global-declarations*
                                                    '()))
 
+(define *schemecodeparser-all-declarations* (if (defined? '*schemecodeparser-all-declarations*)
+                                                *schemecodeparser-all-declarations*
+                                                '()))
+
 (define (declare-variable name)  
   #<undefined>)
 
@@ -127,9 +131,23 @@
   `(begin
      (if (equal? (rootlet) (curlet))
          (push! *schemecodeparser-global-declarations* ',name ))
+     (if (and *is-initializing*
+              (not (ra:release-mode)))
+         (push! *schemecodeparser-all-declarations* ',name))
      (declare-variable ',name)))
 
 (define *optional-func-have-varargs* 'optional-func-have-varargs)
+
+(define (assert-declared-variables-declared)
+  (define tests-and-non-global '(*testgui* *undefined-var2* *undefined-var* Main-Func-Name _ aeorgijaoirgje aoregijoaija c error-no-match matcher-func-temp-name notdefined oiwgrjoewrgi weofij event-to-string))
+  (for-each (lambda (decl)
+              (if (and (not (defined? decl))
+                       (not (memq decl tests-and-non-global)))
+                  (begin
+                    (c-display "-------------------NOT DECLARED:" decl );;(defined? decl))
+                    (error (list "-------------------NOT DECLARED:" decl (defined? decl)))
+                    )))
+            *schemecodeparser-all-declarations*))
 
 (define (<optional-func-func> parameters)
   #f)
@@ -556,6 +574,8 @@
                                          varlist)
                                      (cddr expr))))
               ((memq (car expr) '(declare-variable <declare-variable>))
+               (if (not (ra:release-mode))
+                   (push! *schemecodeparser-all-declarations* (cadr (cadr expr))))
                expr)
               ((eq? 'begin (car expr))
                `(begin
