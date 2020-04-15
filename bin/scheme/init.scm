@@ -735,7 +735,7 @@ FROM_C-delete-selected-pianonotes!
 (define-constant *mylint-load-file-during-startup* (and #t
                                                         (not (ra:release-mode))
                                                         (ra:optimized-build)
-                                                        (= (random 10) 0) ;; Takes a lot of time. Don't want to run every time.
+                                                        (= (random 5) 0) ;; Takes a lot of time. Don't want to run every time.
                                                         (not (string=? (ra:get-os-name) "windows")) ;; Takes even more time, a lot more time, on windows, at least if running in normal console.
                                                         ))
 
@@ -1000,6 +1000,7 @@ FROM_C-delete-selected-pianonotes!
   (my-require 'editor_track_headers.scm)
 
   (assert-functions-and-symbols-called-from-C)
+  (assert-declared-variables-declared)
 
   (common1-finished-loading)
   
