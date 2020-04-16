@@ -4862,16 +4862,15 @@
  :move (lambda (Button X Y)
          (let ((old *current-seqtrack-num*)
                (new (get-seqtracknum X Y)))
-           ;;(c-display "old/new" old new)
+           ;;(c-display "-------------old/new" old new)
            (cond ((and old (not new))
                   (set! *current-seqtrack-num* #f))
                  ((or (and new (not old))
                       (not (morally-equal? new old)))
                   ;;(c-display "set-normal")
                   ;;(<ra> :set-normal-mouse-pointer)
-                  (set! *current-seqtrack-num* new))
-                 (else
-                  #f)))))
+                  (set! *current-seqtrack-num* new)))
+           #f)))
 
 
 
@@ -7618,13 +7617,14 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
+                ;;(c-display "----------------Checing delete. curr: " *current-seqtrack-num*)
                 (and (= Button *right-button*)
                      (<ra> :shift-pressed)
                      (> (<ra> :get-num-seqtracks) 1)
                      (let ((seqtracknum *current-seqtrack-num*))
                        (and seqtracknum
                             (begin
-                              (<ra> :delete-seqtrack)
+                              (<ra> :delete-seqtrack seqtracknum)
                               #t)))))))
 
 
