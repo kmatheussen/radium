@@ -647,8 +647,8 @@
       (ask-user-about-first-audio-seqtrack
        (lambda (doit)
          (if doit
-             (<ra> :delete-seqtrack seqtracknum #t))))
-      (<ra> :delete-seqtrack seqtracknum #t)))
+             (<ra> :force-delete-seqtrack seqtracknum))))
+      (<ra> :force-delete-seqtrack seqtracknum)))
 
 (define (FROM_C-insert-seqtrack for-audiofiles seqtracknum is-bus)
   (if (= -1 seqtracknum)

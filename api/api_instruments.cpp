@@ -2496,7 +2496,7 @@ void deleteInstrument(instrument_t instrument_id){
       int seqtracknum = get_seqtracknum_from_patch(patch);
       R_ASSERT_RETURN_IF_FALSE(seqtracknum>=0);
       
-      deleteSeqtrack(seqtracknum, true);
+      forceDeleteSeqtrack(seqtracknum);
       return;
       
     }
