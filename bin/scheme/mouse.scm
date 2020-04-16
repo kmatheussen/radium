@@ -7620,12 +7620,11 @@
                 ;;(c-display "----------------Checing delete. curr: " *current-seqtrack-num*)
                 (and (= Button *right-button*)
                      (<ra> :shift-pressed)
-                     (> (<ra> :get-num-seqtracks) 1)
-                     (let ((seqtracknum *current-seqtrack-num*))
-                       (and seqtracknum
-                            (begin
-                              (<ra> :delete-seqtrack seqtracknum)
-                              #t)))))))
+                     *current-seqtrack-num*
+                     (begin
+                       (if (> (<ra> :get-num-seqtracks) 1)
+                           (<ra> :delete-seqtrack *current-seqtrack-num*))
+                       #t)))))
 
 
 (define2 *seqblock-clipboard* list? '())
