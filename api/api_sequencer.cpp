@@ -315,7 +315,7 @@ void appendBusSeqtrack(void){
   appendSeqtrack(true, true);
 }
 
-void deleteSeqtrack(int seqtracknum, bool force_delete){
+static void deleteSeqtrack(int seqtracknum, bool force_delete){
   if (seqtracknum==-1)
     seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
   
@@ -345,6 +345,15 @@ void deleteSeqtrack(int seqtracknum, bool force_delete){
   }
   
 }
+
+void deleteSeqtrack(int seqtracknum){
+  deleteSeqtrack(seqtracknum, false);
+}
+
+void forceDeleteSeqtrack(int seqtracknum){
+  deleteSeqtrack(seqtracknum, true);
+}
+
 
 void API_curr_seqtrack_has_changed(void){
   S7EXTRA_GET_FUNC(func, "FROM_C-call-me-when-curr-seqtrack-has-changed");
