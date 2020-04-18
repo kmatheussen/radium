@@ -2891,6 +2891,43 @@
                 (<ra> :cancel-current-pianonote))
             #t)))
 
+(define (get-pianoroll-popup-menu-common-entries)
+  (list
+   "----------"
+   (list "Pianoroll visible"
+         :check (<ra> :pianoroll-visible *current-track-num*)
+         :shortcut ra:show-hide-pianoroll
+         (lambda (onoff)
+           (<ra> :show-pianoroll onoff *current-track-num*)))
+   
+   "-----------"
+   (list "Keybindings"
+         (list
+          "---------------Copy"
+          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:copy-selected-pianonotes"
+                                                           :args '()
+                                                           :focus-keybinding "FOCUS_EDITOR")
+          "---------------Cut"
+          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:cut-selected-pianonotes"
+                                                           :args '()
+                                                           :focus-keybinding "FOCUS_EDITOR")
+          "---------------Delete"
+          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:delete-selected-pianonotes"
+                                                           :args '()
+                                                           :focus-keybinding "FOCUS_EDITOR")
+          "---------------Paste"
+          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:paste-selected-pianonotes"
+                                                           :args '()
+                                                           :focus-keybinding "FOCUS_EDITOR")
+          "---------------Pianoroll visible"
+          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-pianoroll"
+                                                           :args '()
+                                                           :focus-keybinding "FOCUS_EDITOR")
+          "-------------"
+          "Help keybindings" show-keybinding-help-window))))
+ 
+
+  
 ;; delete note / add pitch / delete pitch
 (add-mouse-cycle
  (make-mouse-cycle
@@ -3033,13 +3070,8 @@
                                             ;;                                                                                      (disable-portamento)))
                                             
                                             ;; "Stop note here" stop-note
-
-                                            "----------"
-                                            (list "Pianoroll visible"
-                                                  :check (<ra> :pianoroll-visible (pianonote-info :tracknum))
-                                                  :shortcut ra:show-hide-pianoroll
-                                                  (lambda (onoff)
-                                                    (<ra> :show-pianoroll onoff (pianonote-info :tracknum))))
+                                            
+                                            (get-pianoroll-popup-menu-common-entries)
                                             
                                             ))
                               #t)))))))
@@ -3139,12 +3171,7 @@
                                                                             (<ra> :paste-pianonotes Value Place *current-track-num*)))
                                                    
                                                    ))
-                                           "----------"
-                                           (list "Pianoroll visible"
-                                                 :check (<ra> :pianoroll-visible *current-track-num*)
-                                                 :shortcut ra:show-hide-pianoroll
-                                                 (lambda (onoff)
-                                                   (<ra> :show-pianoroll onoff *current-track-num*)))
+                                           (get-pianoroll-popup-menu-common-entries)
                                            ))))
 
                          :mouse-pointer-is-hidden-func (lambda () #t)
@@ -7617,7 +7644,7 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
-                ;;(c-display "----------------Checing delete. curr: " *current-seqtrack-num*)
+                ;;(c-display "----------------Checking delete. curr: " *current-seqtrack-num*)
                 (and (= Button *right-button*)
                      (<ra> :shift-pressed)
                      *current-seqtrack-num*
@@ -8390,7 +8417,6 @@
                                                           :enabled (and seqblocknum (not blocknum))
                                                           (lambda ()
                                                             (create-audio-seqblock-gui seqblocknum seqtracknum))))))))
-                                          
                                           
                                           
                                           ;;"-----------------Seqtrack Automation"
