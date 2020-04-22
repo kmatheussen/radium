@@ -58,6 +58,6 @@ which would also save you a lot of work). There's no reason to try using system 
 that might resemble something your Linux distribution already provides. It will probably make Radium (more) unstable if you attempt to do so.
 And there's no need to try to minimize the size of the package by removing apparently unused files. Computers have big harddrives these
 days, and the same goes for the web servers. If your distribution has a rule against including modified versions of already existing
-packages within a package (make shure you haven't misunderstood this rule), you should either ignore this rule, or use a different Linux distribution.
+packages within a package (make sure you haven't misunderstood this rule), you should either ignore this rule, or use a different Linux distribution.
 To sum up: Don't make life harder than necessary.
 
