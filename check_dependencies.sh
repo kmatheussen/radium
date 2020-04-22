@@ -225,11 +225,10 @@ if ! pkg-config --cflags glib-2.0 >/dev/null 2>/dev/null ; then
     echo "glib-2.0 not found"
     exit 5
 fi
-if [[ ! -f "${RADIUM_VST2SDK_PATH}/pluginterfaces/vst2.x/aeffect.h" && ! -f ~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/aeffect.h && ! -f ~/SDKs/"VST3 SDK"/pluginterfaces/vst2.x/aeffect.h && ! -f ~/SDKs/VST_SDK/VST2_SDK/pluginterfaces/vst2.x/aeffect.h ]] ; then
-    echo 'Steinberg VST2 headers not found. (Missing "~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/aeffect.h or "~/SDKs/VST3 SDK/pluginterfaces/vst2.x/aeffect.h" or "~/SDKs/VST_SDK/VST2_SDK/pluginterfaces/vst2.x/aeffect.h")'
-    echo 'You may obtain a copy of the VST2 SDK from here: https://www.steinberg.net/sdk_downloads/vstsdk367_03_03_2017_build_352.zip'
-    echo 'It should enough to unzip the file into your ~/SDKs directory.'
-    echo 'Alternatively pass the RADIUM_VST2SDK_PATH environment variable during build which has the above headers to specify another search path.'
+
+if [[ ! -f ~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/aeffect.h && ! -f ~/SDKs/"VST3 SDK"/pluginterfaces/vst2.x/aeffect.h && ! -f ~/SDKs/VST_SDK/VST2_SDK/pluginterfaces/vst2.x/aeffect.h ]] ; then
+    echo 'Steinberg VST headers not found. (Missing "~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/aeffect.h or "~/SDKs/VST3 SDK/pluginterfaces/vst2.x/aeffect.h" or "~/SDKs/VST_SDK/VST2_SDK/pluginterfaces/vst2.x/aeffect.h")'
+    echo 'You should find these files in the "VST Audio Plug-Ins SDK" from http://www.steinberg.net/en/company/developers.html . Unless Steinberg have changed the directory structure again, it should enough to unzip the file into your ~/SDKs directory.'
     exit 5
 fi
 
