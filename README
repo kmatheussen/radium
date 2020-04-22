@@ -13,8 +13,6 @@ HOW TO MAKE IT RUN
           QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` bin/radium
           "
 
-          If you have gcc9, see https://github.com/kmatheussen/radium/issues/1222
-          
           If you want to use clang instead of gcc, first run this line before running "make packages":
           export RADIUM_USE_CLANG=1
 
