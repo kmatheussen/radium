@@ -104,7 +104,10 @@ rm -f libpds.o
 cd "$THIS_DIR/bin"
 
 # libxcb
-cp -a packages/libxcb-1.13 "$TARGET/packages/"
-cd "$TARGET/packages/libxcb-1.13/src"
-rm -f *.o
-cd "$THIS_DIR/bin"
+if [[ $RADIUM_INSTALL_LIBXCB != 0 ]]
+then
+    cp -a packages/libxcb-1.13 "$TARGET/packages/"
+    cd "$TARGET/packages/libxcb-1.13/src"
+    rm -f ./*.o
+    cd "$THIS_DIR/bin"
+fi
