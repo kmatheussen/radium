@@ -207,7 +207,7 @@ then
     cd ../
 fi
 
-if [[ $RADIUM_QT_VERSION == 5 ]]
+if [[ $RADIUM_QT_VERSION == 5 && $RADIUM_BUILD_LIBXCB != 0 ]]
 then
 
     rm -fr xcb-proto-1.13/
