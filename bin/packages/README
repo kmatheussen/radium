@@ -47,10 +47,9 @@ But I guess keeping piece is more important. Anyway, if you are making a Radium 
 it shouldn't be too hard without getting angry. Just do the following:
 
 BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 make packages
-BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j8
+BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j `nproc`
 ./install.sh /opt
-ln -s /opt/radium/run_radium.sh
-chmod a+rx /usr/bin/radium
+ln -s /opt/radium/run_radium.sh /usr/bin/radium
 
 And if "make packages" or "./build_linux.sh" fail, at least send me a bug report before complaining publicly about the build system of Radium.
 
