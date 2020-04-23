@@ -15,6 +15,7 @@ done
 cat frame_template2.html | while IFS= read line; do
     
     if [[ $line == *maybeactive* ]]  && [[ $line == *\"$1_framed.html\"* ]] ; then
+        
         echo "$line" | sed s/maybeactive/active/ >>$1_framed.html
 
     elif [[ $line == *maybeul* ]] ; then
@@ -28,7 +29,9 @@ cat frame_template2.html | while IFS= read line; do
         fi
         
     else
+        
         echo "$line" >>$1_framed.html
+        
     fi
     
 done
