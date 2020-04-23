@@ -64,7 +64,11 @@
 		p {
 			color: #555;
 		}
-
+                
+                ul[hidden] {
+                        display: none
+                }
+                
 		nav ul {
 			list-style-type: none;
 			margin: 0px;
@@ -159,22 +163,51 @@ blockquote {
 		<main>
 			<div class="innertube">
 
-  <h1>Tempo automation track</h1>
+  <h1>Signatures</h1>
+  
+  Signatures specify rhythm. It does so by specifying number of beats (in a bar) above beat type. For instance, a 4/4 signature means that there are 4 beats in the bar, and that each beat is a quarter.
+  <p>
+   Rhytm is used by external plugins, the metronome, modulators, and jack transport.
+  <p>
+    Here are some other common names for the term "signature": time signature, meter signature, meter, metre, measure, and measure signature. 
+  <p>
+  Example 1: If tempo is set to 64 BPM, and the signature is set to 8/8, a new bar will be played every 16 seconds (64/4 * 8/8), and a new beat will be played every 2 seconds (64/4 * 1/8). Example 2: If the signature is set to 2/4, a new bar will be played every 8 seconds (64/4 * 2/4), and a new beat will be played every 4 seconds (64/4 * 1/4).
+  
 
-  <IMG SRC="tempoautomationtrack.png" ALT="Tempo automation track" style="border:10px solid transparent" align="right">
+  <h1>Default Signature</h1>
 
-  Time-varying tempochanges (accelerando/ritardando) can be defined using break point lines in the special tempo automation track.
+  The Signature text entry lets you set the default Signature. The Signature text entry is either placed in the upper left corner of the editor, or in the bottom bar:<br>
+
+  <IMG SRC="globalsignature.png" ALT="Global Signature in the editor" style="border:10px solid transparent">
+  <IMG SRC="globalsignature2.png" ALT="Global Signature in the bottom bar" style="border:10px solid transparent">
+
 
   <p>
-   
-  Tips:
+
+  <IMG SRC="signaturetext.png" ALT="Signature timing track" style="border:10px solid transparent" align="right">
+
+    <h1>Signature track</h1>
+    
+  The Signature track lets you override the default Signature for a block.
+  
+  <p>
+    
+    To enable the Signature track, right-click somewhere in the timing area of the editor (to the left of the note tracks), and enable "Signature".
+    
+<p>
+  <blockquote>
+    <pre>
+      
+ Signature format: <b>u/l</b>. (<b>u</b> = upper numeral, <b>l</b> = lower numeral)
+  </pre>  
+
+  </blockquote>
+
+<p>
+
 <UL>
-  <LI> Press Left Alt + Return to add a node with the value 1.
-  <LI> Press Backspace to delete a node.
-  <LI> Press Left Alt + X to delete all nodes.
-  <LI> Press Left Alt + C to copy all nodes.
-  <LI> Press Left Alt + V to paste nodes.
-  <LI> To adjust accelerando and deaccelerando behavior, go to File -> Song properties.
+  <LI> Press Return to create a new Signature entry or edit an existing Signautre entry.
+  <LI> Press DEL to remove a Signature entry.
 </UL>
 
   
@@ -193,14 +226,15 @@ blockquote {
                             </ul>
                           </li>
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
-                            <ul>
-			      <li><a class="maybeactive" href="editorgrid_framed.html">Grid</a></li>
-			      <li><a class="maybeactive" href="bpmtext_framed.html">BPM</a></li>
+<ul hidden>
+			      <li><a class="maybeactive" href="grid_editor_framed.html">Grid</a></li>
+			      <li><a class="maybeactive" href="bpmtext_editor_framed.html">BPM</a></li>
 			      <li><a class="maybeactive" href="lpbtext_framed.html">LPB</a></li>
-			      <li><a class="maybeactive" href="signaturetext_framed.html">Signatures</a></li>
+			      <li><a class="active" href="signaturetext_framed.html">Signatures</a></li>
 			      <li><a class="maybeactive" href="lztrack_framed.html">LZ</a></li>
-			      <li><a class="active" href="tempoautomationtrack_framed.html">Tempo automation</a></li>
-			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
+			      <li><a class="maybeactive" href="tempoautomationtrack_framed.html">Tempo automation</a></li>
+			      <li><a class="maybeactive" href="pianoroll_framed.html">Pianoroll</a></li>
+                              <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
 			      <li><a class="maybeactive" href="centtext_framed.html">Cent text</a></li>
 			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
 			      <li><a class="maybeactive" href="velocitytext_framed.html">Velocity text</a></li>

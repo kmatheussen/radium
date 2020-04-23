@@ -64,7 +64,11 @@
 		p {
 			color: #555;
 		}
-
+                
+                ul[hidden] {
+                        display: none
+                }
+                
 		nav ul {
 			list-style-type: none;
 			margin: 0px;
@@ -159,51 +163,54 @@ blockquote {
 		<main>
 			<div class="innertube">
 
-  <h1>Signatures</h1>
-  
-  Signatures specify rhythm. It does so by specifying number of beats (in a bar) above beat type. For instance, a 4/4 signature means that there are 4 beats in the bar, and that each beat is a quarter.
-  <p>
-   Rhytm is used by external plugins, the metronome, modulators, and jack transport.
-  <p>
-    Here are some other common names for the term "signature": time signature, meter signature, meter, metre, measure, and measure signature. 
-  <p>
-  Example 1: If tempo is set to 64 BPM, and the signature is set to 8/8, a new bar will be played every 16 seconds (64/4 * 8/8), and a new beat will be played every 2 seconds (64/4 * 1/8). Example 2: If the signature is set to 2/4, a new bar will be played every 8 seconds (64/4 * 2/4), and a new beat will be played every 4 seconds (64/4 * 1/4).
+  <h1>LPB</h1>
+
+
+  LPB stands for <b>L</b>ines <b>P</b>er <b>B</b>eat, and is used to specify how many tracker lines to play in one beat.
+<p>
+  In trackers, this value is often important since it sets the edit resolution. But in Radium, it's usually more convenient to change the LZ value when needed to set edit resolution. In Radium, LPB should in most situations be set to 4 and not be changed afterwards.
   
 
-  <h1>Default Signature</h1>
+  <h1>Default LPB</h1>
 
-  The Signature text entry lets you set the default Signature. The Signature text entry is either placed in the upper left corner of the editor, or in the bottom bar:<br>
+  The LPB text entry lets you set the default LPB. The LPB text entry is either placed in the upper left corner of the editor, or in the bottom bar:<br>
 
-  <IMG SRC="globalsignature.png" ALT="Global Signature in the editor" style="border:10px solid transparent">
-  <IMG SRC="globalsignature2.png" ALT="Global Signature in the bottom bar" style="border:10px solid transparent">
+  <IMG SRC="globallpb.png" ALT="Global LPB in the editor" style="border:10px solid transparent">
+  <IMG SRC="globallpb2.png" ALT="Global LPB in the bottom bar" style="border:10px solid transparent">
 
 
   <p>
+  <p>
 
-  <IMG SRC="signaturetext.png" ALT="Signature timing track" style="border:10px solid transparent" align="right">
+  <IMG SRC="lpbtext.png" ALT="LPB text" style="border:10px solid transparent" align="right">
 
-    <h1>Signature track</h1>
+    <h1>LPB track</h1>
     
-  The Signature track lets you override the default Signature for a block.
+  The LPB track lets you override the default LPB for a block.
   
   <p>
     
-    To enable the Signature track, right-click somewhere in the timing area of the editor (to the left of the note tracks), and enable "Signature".
+    To enable the LPB track, right-click somewhere in the timing area of the editor (to the left of the note tracks), and enable "LPB".
     
 <p>
   <blockquote>
     <pre>
       
- Signature format: <b>u/l</b>. (<b>u</b> = upper numeral, <b>l</b> = lower numeral)
+ LPB format: <b>xx</b>, where xx goes between 1 and 99.
+      
+ Notes:
+  * If <b>xx</b> has an 'm' prefix, it means that the line contains more than one LPB entry. The last LPB is displayed.
+  * If <b>xx</b> has a 'd' prefix, it means that the LPB entry starts below the start of the line.
+      
   </pre>  
 
   </blockquote>
 
 <p>
 
+  Tips:
 <UL>
-  <LI> Press Return to create a new Signature entry or edit an existing Signautre entry.
-  <LI> Press DEL to remove a Signature entry.
+  <LI> To remove an LPB entry, press DEL.
 </UL>
 
   
@@ -222,18 +229,19 @@ blockquote {
                             </ul>
                           </li>
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
-                            <ul>
-			      <li><a class="maybeactive" href="editorgrid_framed.html">Grid</a></li>
-			      <li><a class="maybeactive" href="bpmtext_framed.html">BPM</a></li>
-			      <li><a class="maybeactive" href="lpbtext_framed.html">LPB</a></li>
-			      <li><a class="active" href="signaturetext_framed.html">Signatures</a></li>
-			      <li><a class="maybeactive" href="lztrack_framed.html">LZ</a></li>
-			      <li><a class="maybeactive" href="tempoautomationtrack_framed.html">Tempo automation</a></li>
-			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
-			      <li><a class="maybeactive" href="centtext_framed.html">Cent text</a></li>
-			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
-			      <li><a class="maybeactive" href="velocitytext_framed.html">Velocity text</a></li>
-			      <li><a class="maybeactive" href="fxtext_framed.html">FX text</a></li>
+<ul>
+			      <li><a class="maybeactive" href="grid_editor_framed.html">Grid</a></li>
+			      <li><a class="maybeactive" href="bpmtext_editor_framed.html">BPM</a></li>
+			      <li><a class="active" href="lpbtext_editor_framed.html">LPB</a></li>
+			      <li><a class="maybeactive" href="signaturetext_editor_framed.html">Signatures</a></li>
+			      <li><a class="maybeactive" href="lztrack_editor_framed.html">LZ</a></li>
+			      <li><a class="maybeactive" href="tempoautomationtrack_editor_framed.html">Tempo automation</a></li>
+			      <li><a class="maybeactive" href="pianoroll_editor_framed.html">Pianoroll</a></li>
+                              <li><a class="maybeactive" href="swingtext_editor_framed.html">Swing</a></li>
+			      <li><a class="maybeactive" href="centtext_editor_framed.html">Cent text</a></li>
+			      <li><a class="maybeactive" href="chancetext_editor_framed.html">Chance text</a></li>
+			      <li><a class="maybeactive" href="velocitytext_editor_framed.html">Velocity text</a></li>
+			      <li><a class="maybeactive" href="fxtext_editor_framed.html">FX text</a></li>
                             </ul>
                           </li>
 			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>

@@ -64,7 +64,11 @@
 		p {
 			color: #555;
 		}
-
+                
+                ul[hidden] {
+                        display: none
+                }
+                
 		nav ul {
 			list-style-type: none;
 			margin: 0px;
@@ -160,37 +164,28 @@ blockquote {
 			<div class="innertube">
   <body bgcolor="#ffffff">
 
-    <IMG SRC="velocitytext.png" ALT="Velocity text" style="border:10px solid transparent" align="right">
+    <IMG SRC="centtext.png" ALT="Cent text" style="border:10px solid transparent" align="right">
+    
+<h1>Cent text</h1>
 
-<h1>Velocity text</h1>
-
-Velocity text is an alternative way to edit the velocities of a note.
-Editing text is often quicker than editing velocities graphically.
-
+Cent text lets you set the cent value of a semitone.
 <p>
-  
-To enable Velocity text, right-click inside a track and enable "Velocity text".
+To enable Cent text, right-click inside a track and enable "Cent text".
 
 <p>
   <blockquote>
     <pre>
-Velocity text format: <b>xxt</b>, where
       
-<b>xx</b>  = Velocity value. <b>0</b> = lowest velocity, <b>ff</b> = highest velocity. (hex format)
-  <b>t</b> = Whether to glide to the next velocity or not (denoted by '<b>|</b>').
+Cent text format: <b>xx</b>, where xx goes between 1 and 99.
     </pre>
   </blockquote>
 <p>
-  
-  Tips:
+
   <UL>
-    <LI>Press 'G' to quickly add an <b>ff</b> node.
-    <LI>Press 'T' to switch glide mode (i.e. add or remove the <b>|</b> character).
-    <LI>Press 'Left Alt + Y' to turn on/off velocity text for the current track.
-    <LI>Press 'Left Ctrl + Y' to turn on/off velocity text for all tracks in block.
+    <LI>To remove a cent text (same as setting cent to 0), press <b>DEL</b>.
+    <LI>Cents are not supported by VST instruments, the FluidSynth instrument, and the MIDI instrument.
   </UL>
 
-  
   
 
 				
@@ -207,18 +202,19 @@ Velocity text format: <b>xxt</b>, where
                             </ul>
                           </li>
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
-                            <ul>
-			      <li><a class="maybeactive" href="editorgrid_framed.html">Grid</a></li>
-			      <li><a class="maybeactive" href="bpmtext_framed.html">BPM</a></li>
-			      <li><a class="maybeactive" href="lpbtext_framed.html">LPB</a></li>
-			      <li><a class="maybeactive" href="signaturetext_framed.html">Signatures</a></li>
-			      <li><a class="maybeactive" href="lztrack_framed.html">LZ</a></li>
-			      <li><a class="maybeactive" href="tempoautomationtrack_framed.html">Tempo automation</a></li>
-			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
-			      <li><a class="maybeactive" href="centtext_framed.html">Cent text</a></li>
-			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
-			      <li><a class="active" href="velocitytext_framed.html">Velocity text</a></li>
-			      <li><a class="maybeactive" href="fxtext_framed.html">FX text</a></li>
+<ul>
+			      <li><a class="maybeactive" href="grid_editor_framed.html">Grid</a></li>
+			      <li><a class="maybeactive" href="bpmtext_editor_framed.html">BPM</a></li>
+			      <li><a class="maybeactive" href="lpbtext_editor_framed.html">LPB</a></li>
+			      <li><a class="maybeactive" href="signaturetext_editor_framed.html">Signatures</a></li>
+			      <li><a class="maybeactive" href="lztrack_editor_framed.html">LZ</a></li>
+			      <li><a class="maybeactive" href="tempoautomationtrack_editor_framed.html">Tempo automation</a></li>
+			      <li><a class="maybeactive" href="pianoroll_editor_framed.html">Pianoroll</a></li>
+                              <li><a class="maybeactive" href="swingtext_editor_framed.html">Swing</a></li>
+			      <li><a class="active" href="centtext_editor_framed.html">Cent text</a></li>
+			      <li><a class="maybeactive" href="chancetext_editor_framed.html">Chance text</a></li>
+			      <li><a class="maybeactive" href="velocitytext_editor_framed.html">Velocity text</a></li>
+			      <li><a class="maybeactive" href="fxtext_editor_framed.html">FX text</a></li>
                             </ul>
                           </li>
 			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
