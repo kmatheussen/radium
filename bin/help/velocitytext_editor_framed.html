@@ -64,7 +64,11 @@
 		p {
 			color: #555;
 		}
-
+                
+                ul[hidden] {
+                        display: none
+                }
+                
 		nav ul {
 			list-style-type: none;
 			margin: 0px;
@@ -158,21 +162,38 @@ blockquote {
 				
 		<main>
 			<div class="innertube">
+  <body bgcolor="#ffffff">
 
-  <h1>Line Zoom (LZ)</h1>
+    <IMG SRC="velocitytext.png" ALT="Velocity text" style="border:10px solid transparent" align="right">
 
-  <IMG SRC="lztrack.png" ALT="LZ track" style="border:10px solid transparent" align="right">
+<h1>Velocity text</h1>
 
-  LZ changes editing granularity. It is a dynamic way to change LPB without changing LPB itself. Changing LZ is non-destructive and does not change any musical data.
+Velocity text is an alternative way to edit the velocities of a note.
+Editing text is often quicker than editing velocities graphically.
 
-  <UL>
-    <LI> Press Shift + Up to zoom in.
-    <LI> Press Shift + Down to zoom out.
-  </UL>
+<p>
   
+To enable Velocity text, right-click inside a track and enable "Velocity text".
 
-  Notice the relationship between the LZ value in the upper left corner, and the granularity of the editor:<br>
-  <IMG SRC="linezoom.gif" ALT="Line Zoom" style="border:10px solid transparent">
+<p>
+  <blockquote>
+    <pre>
+Velocity text format: <b>xxt</b>, where
+      
+<b>xx</b>  = Velocity value. <b>0</b> = lowest velocity, <b>ff</b> = highest velocity. (hex format)
+  <b>t</b> = Whether to glide to the next velocity or not (denoted by '<b>|</b>').
+    </pre>
+  </blockquote>
+<p>
+  
+  Tips:
+  <UL>
+    <LI>Press 'G' to quickly add an <b>ff</b> node.
+    <LI>Press 'T' to switch glide mode (i.e. add or remove the <b>|</b> character).
+    <LI>Press 'Left Alt + Y' to turn on/off velocity text for the current track.
+    <LI>Press 'Left Ctrl + Y' to turn on/off velocity text for all tracks in block.
+  </UL>
+
   
   
 
@@ -190,18 +211,19 @@ blockquote {
                             </ul>
                           </li>
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
-                            <ul>
-			      <li><a class="maybeactive" href="editorgrid_framed.html">Grid</a></li>
-			      <li><a class="maybeactive" href="bpmtext_framed.html">BPM</a></li>
-			      <li><a class="maybeactive" href="lpbtext_framed.html">LPB</a></li>
-			      <li><a class="maybeactive" href="signaturetext_framed.html">Signatures</a></li>
-			      <li><a class="active" href="lztrack_framed.html">LZ</a></li>
-			      <li><a class="maybeactive" href="tempoautomationtrack_framed.html">Tempo automation</a></li>
-			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
-			      <li><a class="maybeactive" href="centtext_framed.html">Cent text</a></li>
-			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
-			      <li><a class="maybeactive" href="velocitytext_framed.html">Velocity text</a></li>
-			      <li><a class="maybeactive" href="fxtext_framed.html">FX text</a></li>
+<ul>
+			      <li><a class="maybeactive" href="grid_editor_framed.html">Grid</a></li>
+			      <li><a class="maybeactive" href="bpmtext_editor_framed.html">BPM</a></li>
+			      <li><a class="maybeactive" href="lpbtext_editor_framed.html">LPB</a></li>
+			      <li><a class="maybeactive" href="signaturetext_editor_framed.html">Signatures</a></li>
+			      <li><a class="maybeactive" href="lztrack_editor_framed.html">LZ</a></li>
+			      <li><a class="maybeactive" href="tempoautomationtrack_editor_framed.html">Tempo automation</a></li>
+			      <li><a class="maybeactive" href="pianoroll_editor_framed.html">Pianoroll</a></li>
+                              <li><a class="maybeactive" href="swingtext_editor_framed.html">Swing</a></li>
+			      <li><a class="maybeactive" href="centtext_editor_framed.html">Cent text</a></li>
+			      <li><a class="maybeactive" href="chancetext_editor_framed.html">Chance text</a></li>
+			      <li><a class="active" href="velocitytext_editor_framed.html">Velocity text</a></li>
+			      <li><a class="maybeactive" href="fxtext_editor_framed.html">FX text</a></li>
                             </ul>
                           </li>
 			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
