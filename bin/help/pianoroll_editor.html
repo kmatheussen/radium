@@ -52,33 +52,39 @@
   <LI><b>Paste</b>: Press <b>Ctrl + V</b>
 </UL>
 
+Note that if the <b>mouse cursor is above a single note</b> while copying or cutting, and this note is <b>not</b> selected, this note will be copied/cut instead of the selected notes.
+
 
 
 <h2>Rubber</h2>
 
-The Rubber deletes any playable part of a note under the mouse cursor. Press <b>right mouse button</b> and <b>drag</b> to show the rubber.
+The Rubber deletes any playable part of a note that is under the mouse cursor. Press <b>right mouse button</b> and <b>drag</b> to show the rubber.
+
 
 
 <h2>Selection vs. range</h2>
+
+There are two ways to select notes:
+<OL>
+  <LI> <b>Selection in the pianoroll</b>.
+  <LI> <b>Ranged notes in the note-text subtrack</b>: Define a note-range by pressing <b>Left Extra + B</b>.
+</OL>
+
+<UL>
+  <LI>These two do not share the same clipboard buffer.<br>
+  <LI>All functions operating on a <b>Range</b> will work on the selected notes in the current track instead if there is no range.
+</UL>
 
 
 <h2>Finetuning and other mouse operations</h2>
 See <A href="mouse_framed.html">mouse_framed.html</a>
 
 
+  <p>
+    
 
-<UL>
-<LI>Copy / paste / cut / delete notes.
-<LI>Copy single note vs. selected notes.
-"Edit": When does it work on pianoroll-notes, when does it work on range?
-  En egen "Range vs. Selection"-side?
-Selection rectangle.
-Unselect notes.
-</UL>
+  <p>
 
-* Right-click a note to copy
-* Right-click where you want to paste the clipboard, and select "Paste", or press Ctrl + V.
-
-
+    
 </body>
 </html>
