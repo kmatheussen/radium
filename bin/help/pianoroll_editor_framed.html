@@ -233,8 +233,9 @@ There are two ways to select notes:
 </OL>
 
 <UL>
-  <LI>These two do not share the same clipboard buffer.<br>
-  <LI>All functions operating on a <b>Range</b> will work on the selected notes in the current track instead if there is no range.
+  <LI>These two ways don't share the same clipboard buffer.<br>
+  <LI>A <b>selection</b> operates on a track, while a <b>range</b> operates on a block.
+  <LI>If there is <b>no range</b> in the current block, all functions operating on a range will <b>instead</b> work on the <b>selected notes</b> in the current track.
 </UL>
 
 
