@@ -64,7 +64,11 @@
 		p {
 			color: #555;
 		}
-
+                
+                ul[hidden] {
+                        display: none
+                }
+                
 		nav ul {
 			list-style-type: none;
 			margin: 0px;
@@ -81,12 +85,12 @@
                 nav li a {
                     display: block;
                     color: #000;
-                    padding: 8px 16px;
+                    padding: 4px 16px;
                     text-decoration: none;
                 }
 
                 nav li {
-                    border: 1px solid #555;
+                    border: 2px solid #555;
                 }
                 
                 nav li .active {
@@ -181,24 +185,26 @@ blockquote {
 		  <div class="innertube">
                     
 			<ul>
-			  <li><a class="maybeactive" href="home_framed.html">GUI Overview</a>
-                            <ul>
-                              <li><a class="maybeactive" href="mouse_framed.html">Mouse</a></li>
+			  <li><a class="maybeactive" href="gui_framed.html">GUI</a>
+<ul hidden>
+                              <li><a class="maybeactive" href="mouse_gui_framed.html">Mouse</a></li>
+                              <li><a class="maybeactive" href="popupmenus_gui_framed.html">Popup menus</a></li>
                             </ul>
                           </li>
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
-                            <ul>
-			      <li><a class="active" href="editorgrid_framed.html">Grid</a></li>
-			      <li><a class="maybeactive" href="bpmtext_framed.html">BPM</a></li>
-			      <li><a class="maybeactive" href="lpbtext_framed.html">LPB</a></li>
-			      <li><a class="maybeactive" href="signaturetext_framed.html">Signatures</a></li>
-			      <li><a class="maybeactive" href="lztrack_framed.html">LZ</a></li>
-			      <li><a class="maybeactive" href="tempoautomationtrack_framed.html">Tempo automation</a></li>
-			      <li><a class="maybeactive" href="swingtext_framed.html">Swing</a></li>
-			      <li><a class="maybeactive" href="centtext_framed.html">Cent text</a></li>
-			      <li><a class="maybeactive" href="chancetext_framed.html">Chance text</a></li>
-			      <li><a class="maybeactive" href="velocitytext_framed.html">Velocity text</a></li>
-			      <li><a class="maybeactive" href="fxtext_framed.html">FX text</a></li>
+<ul>
+			      <li><a class="active" href="grid_editor_framed.html">Grid</a></li>
+			      <li><a class="maybeactive" href="bpmtext_editor_framed.html">BPM</a></li>
+			      <li><a class="maybeactive" href="lpbtext_editor_framed.html">LPB</a></li>
+			      <li><a class="maybeactive" href="signaturetext_editor_framed.html">Signatures</a></li>
+			      <li><a class="maybeactive" href="lztrack_editor_framed.html">LZ</a></li>
+			      <li><a class="maybeactive" href="tempoautomationtrack_editor_framed.html">Tempo automation</a></li>
+			      <li><a class="maybeactive" href="pianoroll_editor_framed.html">Pianoroll</a></li>
+                              <li><a class="maybeactive" href="swingtext_editor_framed.html">Swing</a></li>
+			      <li><a class="maybeactive" href="centtext_editor_framed.html">Cent text</a></li>
+			      <li><a class="maybeactive" href="chancetext_editor_framed.html">Chance text</a></li>
+			      <li><a class="maybeactive" href="velocitytext_editor_framed.html">Velocity text</a></li>
+			      <li><a class="maybeactive" href="fxtext_editor_framed.html">FX text</a></li>
                             </ul>
                           </li>
 			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
