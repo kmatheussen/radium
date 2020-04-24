@@ -162,45 +162,23 @@ blockquote {
 				
 		<main>
 			<div class="innertube">
-  <body bgcolor="#ffffff">
-
-    <IMG SRC="chancetext.png" ALT="Chance text" style="border:10px solid transparent" align="right">
-    
-<h1>Chance text</h1>
-
-Chance text lets you set the probability for this note or pitch to play.
-<p>
-To enable Chance text, right-click inside a track and enable "Chance text".
-
-<p>
-  <blockquote>
-    <pre>
-Chance text format: <b>xx</b>, where 
-
- <b>0</b> = Only play if the previous note played. For instance if you want to play a chord with same chance.
- <b>1</b> = 0.004% chance.
-..
-<b>40</b> = 25% chance.
-.. 
-<b>80</b> = 50% chance.
-..
-<b>c0</b> = 75% chance.
-..
-<b>ff</b> = 99.6% chance.
-<b>  </b> = 100% chance. (empty)
-    </pre>
-  </blockquote>
-<p>
-
-  <UL>
-    <LI>To remove a chance text (to make sure the note is always played), press <b>DEL</b>.
-    <LI>To control the chance of individual voices in the note duplicator,
-      you can automate the instrument effects <b>System Chance 1</b>, <b>System Chance 2</b>, and so forth, instead.
-      (Note that the value <b>ff</b> is interpreted as 256 when automating the chance
-      of individual voices in the note duplicator so you don't have to worry about
-      the voices not always playing.)
-  </UL>
-
+<h3>Popup menus</h3>
+<UL>
+  <LI> Press <b>Up arrow</b> to navigate 1 row up.
+  <LI> Press <b>Down arrow</b> to navigate 1 row down.
+  <LI> Press <b>Shift + Up arrow</b> to navigate 4 rows up.
+  <LI> Press <b>Shift + Down arrow</b> to navigate 4 rows down.
+  <LI> Press <b>Page Up</b> to navigate 10 rows up.
+  <LI> Press <b>Page Down</b> to navigate 10 rows down.
+  <LI> Press <b>Home</b> to navigate to first row.
+  <LI> Press <b>End</b> to navigate to last row.
+    <p>
+  <LI> Press <b>Right arrow</b> to navigate sub menu.
+  <LI> Press <b>Left arrow</b> to navigate parent menu.
+    <p>
+  <LI> Press <b>Esc</b> to cancel menu.
+  <LI> Press <b>Return</b> to select entry or to start navigating sub menu.
+</UL>
   
 
 				
@@ -212,13 +190,13 @@ Chance text format: <b>xx</b>, where
                     
 			<ul>
 			  <li><a class="maybeactive" href="gui_framed.html">GUI</a>
-<ul hidden>
+<ul>
                               <li><a class="maybeactive" href="mouse_gui_framed.html">Mouse</a></li>
-                              <li><a class="maybeactive" href="popupmenus_gui_framed.html">Popup menus</a></li>
+                              <li><a class="active" href="popupmenus_gui_framed.html">Popup menus</a></li>
                             </ul>
                           </li>
                           <li><a class="maybeactive" href="editor_framed.html">Editor</a>
-<ul>
+<ul hidden>
 			      <li><a class="maybeactive" href="grid_editor_framed.html">Grid</a></li>
 			      <li><a class="maybeactive" href="bpmtext_editor_framed.html">BPM</a></li>
 			      <li><a class="maybeactive" href="lpbtext_editor_framed.html">LPB</a></li>
@@ -228,7 +206,7 @@ Chance text format: <b>xx</b>, where
 			      <li><a class="maybeactive" href="pianoroll_editor_framed.html">Pianoroll</a></li>
                               <li><a class="maybeactive" href="swingtext_editor_framed.html">Swing</a></li>
 			      <li><a class="maybeactive" href="centtext_editor_framed.html">Cent text</a></li>
-			      <li><a class="active" href="chancetext_editor_framed.html">Chance text</a></li>
+			      <li><a class="maybeactive" href="chancetext_editor_framed.html">Chance text</a></li>
 			      <li><a class="maybeactive" href="velocitytext_editor_framed.html">Velocity text</a></li>
 			      <li><a class="maybeactive" href="fxtext_editor_framed.html">FX text</a></li>
                             </ul>
