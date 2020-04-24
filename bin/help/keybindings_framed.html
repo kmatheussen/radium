@@ -168,7 +168,7 @@ There are two ways to edit keybindings:
 
 <OL>
   <LI> You can right-click a button or checkbox and select "Add keybinding", "Change keybinding", or "Remove keybinding".
-    If you select "Add keybinding" or "Change keybinding", the program will ask you to press a key combination.
+    If you select "Add keybinding" or "Change keybinding", the program will ask you to press a key combination. (Many popup menus have these options as well.)
     <p>
       
   <LI> Not all functions are available through buttons and checkboxes though. Another way to add custom keybindings is to edit a text file.
@@ -357,9 +357,10 @@ F12          : ra.showMixerHelpWindow
   </OL>
 
   
-<p>
+  <p>
   <h3>Bind Scheme code or Python code</h3>
-  <UL>
+
+    <UL>
   If you want to run <A href="https://ccrma.stanford.edu/software/snd/snd/s7.html">S7 Scheme</A> code, or <A href="http://www.python.org">Python</A> code, use the functions ra.evalScheme or ra.evalPython:<br>
   
 
@@ -408,7 +409,8 @@ ra.evalScheme('(load "C:&bsol;Users&bsol;Username&bsol;.radium&bsol;mystuff.scm"
 
   Python is less supported than scheme. Functions taking a "dynvec_t", "dyn_t" or "func_t" argument are not available from python, and functions returning any of those types will return "None" in Python.
 
-<p>
+  <p>
+    
   
 <script>
   function showHide(name) {
@@ -468,6 +470,7 @@ ra.evalScheme('(load "C:&bsol;Users&bsol;Username&bsol;.radium&bsol;mystuff.scm"
 			  <li><a class="maybeactive" href="modulators_framed.html">Modulators</a></li>
 			  <li><a class="maybeactive" href="common_keybindings_framed.html">Common keybindings</a></li>
 			  <li><a class="active" href="keybindings_framed.html">Editing keybindings</a></li>
+			  <li><a class="maybeactive" href="scripting_framed.html">Scripting</a></li>
 			</ul>
                         
 			</div>
