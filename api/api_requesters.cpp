@@ -460,25 +460,22 @@ bool progressWindowIsOpen(void){
 }
 
 void showHomeHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/home_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/gui_framed.html");
 }
 void showMixerHelpWindow(void){
   S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/mixer_framed.html");
 }
 void showChanceHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/chancetext_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/chancetext_editor_framed.html");
 }
 void showVelocityHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/velocitytext_framed.html");
-}
-void showFXHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/fx_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/velocitytext_editor_framed.html");
 }
 void showFXTextHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/fxtext_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/fxtext_editor_framed.html");
 }
 void showSwingHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/swingtext_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/swingtext_editor_framed.html");
 }
 void showKeybindingsHelpWindow(void){
   S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/keybindings_framed.html");

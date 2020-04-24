@@ -1648,7 +1648,6 @@
               (cadr (centtext-popup-elements))
               (cadr (chancetext-popup-elements))
               (cadr (velocitytext-popup-elements))
-              (list "Help FX" ra:show-fx-help-window)
               (cadr (fxtext-popup-elements))
               ))
 
