@@ -1,0 +1,14 @@
+<h1>Scripting</h1>
+
+Radium supports scripting with <A href="https://ccrma.stanford.edu/software/snd/snd/s7.html">S7 Scheme</A> and <A href="http://www.python.org">Python 2</A>.
+
+
+<UL>
+  <LI> List of functions: <A href="https://raw.githubusercontent.com/kmatheussen/radium/master/api/protos.conf">protos.conf</A>.
+  <LI> Python is less supported than scheme. Functions taking a <i>dynvec_t</i>, <i>dyn_t</i> or <i>func_t</i> argument are not available from python, and functions returning any of those types will return <i>None</i> in Python.
+</UL>
+
+  
+To bind Scheme code or Python code to a key, see <A href="keybindings_framed.html">Editing keybindings</A>.
+  
+  
