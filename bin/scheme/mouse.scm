@@ -1559,14 +1559,7 @@
               (car (velocitytext-popup-elements))
               (car (fxtext-popup-elements))
 
-              (<-> "---------Clipboard (track #" tracknum ")")
-              "Copy Track" :shortcut ra:copy-track (lambda ()
-                                                     (<ra> :copy-track tracknum))
-              "Cut Track" :shortcut ra:cut-track (lambda ()
-                                                   (<ra> :cut-track tracknum))
-              "Paste Track" :shortcut ra:paste-track (lambda ()
-                                                       (<ra> :paste-track tracknum))
-              "-------"
+              (<-> "---------Track #" tracknum "")
               "Insert Track" :shortcut (list ra:insert-tracks 1) (lambda ()
                                                                    (<ra> :insert-track tracknum)
                                                                    (set-current-track-num! X Y))
@@ -1580,6 +1573,14 @@
                                                              (<ra> :load-track (<ra> :create-illegal-filepath) tracknum))
               "Save Track" :shortcut ra:save-track (lambda ()
                                                      (<ra> :save-track (<ra> :create-illegal-filepath) tracknum))
+
+              "-----------"
+              "Copy Track" :shortcut ra:copy-track (lambda ()
+                                                     (<ra> :copy-track tracknum))
+              "Cut Track" :shortcut ra:cut-track (lambda ()
+                                                   (<ra> :cut-track tracknum))
+              "Paste Track" :shortcut ra:paste-track (lambda ()
+                                                       (<ra> :paste-track tracknum))
               (<-> "---------Misc (track #" tracknum ")")
               (list "Wide note name"
                     :check (<ra> :track-note-area-width-is-wide tracknum)
