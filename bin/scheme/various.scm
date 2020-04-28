@@ -930,7 +930,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (show-keybinding-help-window)
-  (FROM-C-show-help-window "help/keybindings_framed.html"))
+  (FROM-C-show-help-window "help/keybindings_gui_framed.html"))
 
 (define (FROM_C-show-mixer-config-popup-menu num)
   (popup-menu
