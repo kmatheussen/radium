@@ -796,6 +796,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         float x1,x2;
         get_x1_x2(ch, x1,x2, num_channels);
 
+        if (equal_floats(x1, x2))
+          continue;
+        
         float pos = _pos[ch];
 
         // Background
