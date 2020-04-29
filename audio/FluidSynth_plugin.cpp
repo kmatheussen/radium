@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
+#include "../common/disk.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/OS_settings_proc.h"
@@ -560,7 +561,15 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
-  filepath_t maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename.get());
+  filepath_t filepath = data->filename.get();
+  
+  if (g_is_saving && nsmIsActive()){
+    filepath_t maybe = DISK_link_copy_file(DISK_get_absolute_dir_path(dc.filename_with_full_path), filepath, true);
+    if (isLegalFilepath(maybe))
+      filepath = maybe;
+  }
+
+  filepath_t maybe_relative_filename = OS_saving_get_relative_path_if_possible(filepath);
     
   HASH_put_filepath(state, "filename", maybe_relative_filename);
   HASH_put_int(state, "bank_num", data->bank_num);

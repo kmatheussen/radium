@@ -1031,9 +1031,20 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
     else
       R_ASSERT(false);
 
-    if(g_is_saving || g_is_loading)
-      HASH_put_filepath(state, ":sample", OS_saving_get_relative_path_if_possible(filename));
-    else {
+    if(g_is_saving || g_is_loading) {
+
+      filepath_t filepath = filename;
+      
+      if (g_is_saving && nsmIsActive()){
+        filepath_t maybe = DISK_link_copy_file(DISK_get_absolute_dir_path(dc.filename_with_full_path), filepath, true);
+        if (isLegalFilepath(maybe))
+          filepath = maybe;
+      }
+
+      HASH_put_filepath(state, ":sample", OS_saving_get_relative_path_if_possible(filepath));
+      
+    } else {
+      
       HASH_put_filepath(state, ":sample", filename);
       //#if defined(FOR_WINDOWS)
       //HASH_put_string(state, ":sample-base64", STRING_toBase64(filename)); // char* can"t be used for filenames in windows

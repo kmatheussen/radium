@@ -109,6 +109,85 @@ bool DISK_create_dir(filepath_t wdirname){
   return DISK_dir_exists(wdirname);
 }
 
+
+filepath_t DISK_create_unique_filename(filepath_t template_){
+    
+  for(int i = 0 ; i < 100000 ; i++){
+    filepath_t maybe = make_filepath(STRING_get_qstring(template_.id) + "_" + QString::number(i));
+    
+    if (!DISK_file_exists(maybe))
+      return maybe;
+  }
+
+  GFX_addMessage("Error: Failed creating unique filename from the template %S", template_.id);
+
+  return template_;
+}
+
+filepath_t DISK_get_final_symlink_target(filepath_t filepath){
+
+  QSet<const wchar_t*> visited;
+  
+  while(true){
+    
+    QFileInfo info(STRING_get_qstring(filepath.id));
+
+    if (!info.isSymLink())
+      return filepath;
+
+    filepath_t maybe = make_filepath(info.symLinkTarget());
+
+    if (visited.contains(maybe.id))
+      return filepath; // to avoid never ending loop.
+
+    visited << maybe.id;
+    filepath = maybe;
+  }
+
+  return createIllegalFilepath();
+}
+
+filepath_t DISK_link_copy_file(filepath_t dirname, filepath_t filename, bool show_error){
+
+  if (STRING_starts_with2(filename.id, dirname.id)){
+    printf(" =================== %S startswith %S\n", filename.id, dirname.id);
+    return filename; // file is already in dir.
+  }
+  
+  filepath_t linkfilename = appendFilePaths(dirname, DISK_get_pathless_file_path(filename));
+  
+  if (DISK_file_exists(linkfilename)){
+    
+    QFileInfo info(STRING_get_qstring(linkfilename.id));
+
+    filepath_t symlink_target1 = DISK_get_final_symlink_target(linkfilename);
+    filepath_t symlink_target2 = DISK_get_final_symlink_target(filename);
+    
+    printf(" =====================================  issumlink: %d.  symlinktarget1: \"%S\". symlinktarget2: \"%S\"\n", info.isSymLink(), symlink_target1.id, symlink_target2.id);
+    
+    if (info.isSymLink() && STRING_equals2(symlink_target1.id, symlink_target2.id)) {
+      
+      return linkfilename; // already linked.
+      
+    } else {
+      
+      linkfilename = DISK_create_unique_filename(linkfilename);
+      
+    }
+  }
+
+  if (!QFile::link(STRING_get_qstring(filename.id), STRING_get_qstring(linkfilename.id))) {
+
+    if (show_error)
+      GFX_addMessage("Error: Failed creating the symbolic link %S pointing to %S", linkfilename.id, filename.id);
+
+    return createIllegalFilepath();
+  }
+  
+  return linkfilename;
+}
+
+
 bool DISK_delete_file(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
   

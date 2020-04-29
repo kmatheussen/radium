@@ -14,6 +14,9 @@ extern LANGSPEC int64_t DISK_get_creation_time(filepath_t wfilename);
 extern LANGSPEC bool DISK_file_exists(filepath_t filename);
 extern LANGSPEC bool DISK_dir_exists(filepath_t dirname);
 extern LANGSPEC bool DISK_create_dir(filepath_t wdirname);
+extern LANGSPEC filepath_t DISK_create_unique_filename(filepath_t template_);
+extern LANGSPEC filepath_t DISK_get_final_symlink_target(filepath_t filepath); // traverses all the way down to the actual file.
+extern LANGSPEC filepath_t DISK_link_copy_file(filepath_t dirname, filepath_t filename, bool show_error); // creates a unique symlink to filename in dirname if filename isn't place in dirname.
 extern LANGSPEC bool DISK_delete_file(filepath_t filename);
 extern LANGSPEC void DISK_delete_all_files_in_dir(filepath_t wdirname);
 extern LANGSPEC const wchar_t *DISK_get_dir_separator(void);
