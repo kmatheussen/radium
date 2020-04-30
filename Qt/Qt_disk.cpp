@@ -88,9 +88,12 @@ int64_t DISK_get_creation_time(filepath_t wfilename){
 
 bool DISK_file_exists(filepath_t wfilename){
   ASSERT_NON_RT_NON_RELEASE();
+
   
   QString filename = STRING_get_qstring(wfilename.id);
-  return QFile::exists(filename);
+
+  QFileInfo info(filename);
+  return info.exists() || info.isSymLink();
 }
 
 bool DISK_dir_exists(filepath_t wdirname){
@@ -111,9 +114,12 @@ bool DISK_create_dir(filepath_t wdirname){
 
 
 filepath_t DISK_create_unique_filename(filepath_t template_){
+
+  QString suffix = QFileInfo(STRING_get_qstring(template_.id)).completeSuffix();
+  
     
   for(int i = 0 ; i < 100000 ; i++){
-    filepath_t maybe = make_filepath(STRING_get_qstring(template_.id) + "_" + QString::number(i));
+    filepath_t maybe = make_filepath(STRING_get_qstring(template_.id) + "_" + QString::number(i) + "." + suffix);
     
     if (!DISK_file_exists(maybe))
       return maybe;
@@ -124,7 +130,7 @@ filepath_t DISK_create_unique_filename(filepath_t template_){
   return template_;
 }
 
-filepath_t DISK_get_final_symlink_target(filepath_t filepath){
+filepath_t DISK_get_final_symlink_target(filepath_t filepath, bool show_error){
 
   QSet<const wchar_t*> visited;
   
@@ -137,9 +143,14 @@ filepath_t DISK_get_final_symlink_target(filepath_t filepath){
 
     filepath_t maybe = make_filepath(info.symLinkTarget());
 
-    if (visited.contains(maybe.id))
-      return filepath; // to avoid never ending loop.
-
+    if (visited.contains(maybe.id)){  // to avoid never ending loop.
+      
+      if (show_error)
+        GFX_addMessage("Error: %S is a recursive symlink", filepath.id);
+      
+      return createIllegalFilepath();
+    }
+    
     visited << maybe.id;
     filepath = maybe;
   }
@@ -158,14 +169,15 @@ filepath_t DISK_link_copy_file(filepath_t dirname, filepath_t filename, bool sho
   
   if (DISK_file_exists(linkfilename)){
     
-    QFileInfo info(STRING_get_qstring(linkfilename.id));
+    filepath_t symlink_target1 = DISK_get_final_symlink_target(linkfilename, show_error);
+    filepath_t symlink_target2 = DISK_get_final_symlink_target(filename, show_error);
+    
+    printf(" =====================================  symlinktarget1: \"%S\". symlinktarget2: \"%S\"\n", symlink_target1.id, symlink_target2.id);
 
-    filepath_t symlink_target1 = DISK_get_final_symlink_target(linkfilename);
-    filepath_t symlink_target2 = DISK_get_final_symlink_target(filename);
+    if (isIllegalFilepath(symlink_target1) || isIllegalFilepath(symlink_target2))
+      return filename;
     
-    printf(" =====================================  issumlink: %d.  symlinktarget1: \"%S\". symlinktarget2: \"%S\"\n", info.isSymLink(), symlink_target1.id, symlink_target2.id);
-    
-    if (info.isSymLink() && STRING_equals2(symlink_target1.id, symlink_target2.id)) {
+    if (STRING_equals2(symlink_target1.id, symlink_target2.id)) {
       
       return linkfilename; // already linked.
       
