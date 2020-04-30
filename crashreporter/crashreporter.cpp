@@ -366,7 +366,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       
       text2.setText(QString(
                                    #if FOR_LINUX
-                                   "Linux users: Please don't report bugs caused by a non-properly compiled, or old, version of Radium (usually distributed by Arch linux). "
+                                   "Linux users: Please don't report bugs caused by a non-properly compiled, or old, version of Radium. "
                                    "If you have compiled Radium yourself, or you are using a version of Radium "
                                    "distributed by a third party, please try the official binaries first. "
                                    "At least execute a \"make very_clean\" command to see if the bug disappears. Thank you!\n"
