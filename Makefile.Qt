@@ -557,7 +557,7 @@ clean: clean_pluginhost
 	rm -fr /tmp/radium_bin /tmp/radium_objects
 	rm -f audio/zita_rev.cpp audio/stk_flute.cpp audio/stk_bowed.cpp audio/stk_blow_bottle.cpp audio/stk_bass.cpp audio/stk_blow_hole.cpp audio/stk_brass.cpp audio/stk_clarinet.cpp audio/stk_flute_stk.cpp audio/stk_glass_harmonica.cpp audio/stk_harpsi.cpp audio/stk_modal_bar.cpp audio/stk_NLF_eks.cpp audio/stk_NLF_fm.cpp audio/stk_piano.cpp audio/stk_saxophony.cpp audio/stk_sitar.cpp audio/stk_tibetan_bowl.cpp audio/stk_tuned_bar.cpp audio/stk_uni_bar.cpp audio/stk_voice_form.cpp audio/faust_tapiir.cpp audio/faust_multibandcomp.cpp audio/faust_system_eq.cpp audio/faust_system_tremolo.cpp audio/faust_system_lowpass.cpp audio/faust_system_highpass.cpp audio/faust_system_lowshelf.cpp audio/faust_system_highshelf.cpp audio/system_compressor.cpp 
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
-	cd bin/packages/sndlib && $(MAKE) clean && rm -f sndlib.a sndlib.so
+#	cd bin/packages/sndlib && $(MAKE) clean && rm -f sndlib.a sndlib.so
 
 clean_pluginhost:
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
