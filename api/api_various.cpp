@@ -388,6 +388,18 @@ void setBestGuessKeyboardFocus(void){
   FOCUSFRAMES_set_focus_best_guess();
 }
 
+bool editorHasKeyboardFocus(void){
+  return FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR);
+}
+
+bool mixerHasKeyboardFocus(void){
+  return FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::MIXER);
+}
+
+bool sequencerHasKeyboardFocus(void){
+  return FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::SEQUENCER);
+}
+
 
 void showSequencer(void){
   GFX_ShowSequencer();

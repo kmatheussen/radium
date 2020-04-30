@@ -1432,8 +1432,7 @@
               :shortcut ra:show-hide-swingtext
               (lambda (onoff)
                 (<ra> :show-swingtext onoff *current-track-num*)))
-        (list "Swing help" (lambda ()
-                             (<ra> :show-swing-help-window)))))
+        (list "Swing help" ra:show-swing-help-window)))
 
 (define (centtext-popup-elements)
   (list (list "Cents text"
@@ -1441,8 +1440,14 @@
               :enabled (<ra> :centtext-can-be-turned-off *current-track-num*)
               :shortcut ra:show-hide-centtext
               (lambda (onoff)
-                (<ra> :show-centtext  onoff *current-track-num*)))
+                (<ra> :show-centtext onoff *current-track-num*)))
         '()))
+#!!
+(begin
+  (set! *current-track-num* 0)
+  (popup-menu (centtext-popup-elements)))
+
+!!#
 
 (define (chancetext-popup-elements)
   (list (list "Chance text"
@@ -1450,8 +1455,7 @@
               :shortcut ra:show-hide-chancetext
               (lambda (onoff)
                 (<ra> :show-chancetext onoff *current-track-num*)))
-        (list "Help Chance text" (lambda ()
-                                   (<ra> :show-chance-help-window)))))
+        (list "Help Chance text" ra:show-chance-help-window)))
 
 (define (velocitytext-popup-elements)
   (list (list "Velocity text"
@@ -1459,8 +1463,7 @@
               :shortcut ra:show-hide-veltext
               (lambda (onoff)
                 (<ra> :show-veltext onoff *current-track-num*)))
-        (list "Help Velocity text" (lambda ()
-                                     (<ra> :show-velocity-help-window)))))
+        (list "Help Velocity text" ra:show-velocity-help-window)))
         
 (define (fxtext-popup-elements)
   (list (list "FX text"
@@ -1468,8 +1471,7 @@
               :shortcut ra:show-hide-fxtext
               (lambda (onoff)
                 (<ra> :show-fxtext onoff *current-track-num*)))
-        (list "Help FX text" (lambda ()
-                               (<ra> :show-fx-text-help-window)))))
+        (list "Help FX text" ra:show-fx-text-help-window)))
 
 (define (request-midi-channel now callback)
   (define ready #f)
@@ -2898,8 +2900,9 @@
          :check (<ra> :pianoroll-visible *current-track-num*)
          :shortcut ra:show-hide-pianoroll
          (lambda (onoff)
-           (<ra> :show-pianoroll onoff *current-track-num*)))
-   
+           (<ra> :show-pianoroll onoff *current-track-num*)))))
+
+#!!
    "-----------"
    (list "Keybindings"
          (list
@@ -2925,9 +2928,13 @@
                                                            :focus-keybinding "FOCUS_EDITOR")
           "-------------"
           "Help keybindings" show-keybinding-help-window))))
- 
+!!#
 
-  
+(let ()
+  (define (delete-note)
+    (c-display "hepp"))
+  (popup-menu "Delete this note" :shortcut *shift-right-mouse* delete-note))
+
 ;; delete note / add pitch / delete pitch
 (add-mouse-cycle
  (make-mouse-cycle
@@ -4243,8 +4250,7 @@
 (define (show-global-swing-track-popup-menu)
   (c-display "global swing track popup menu")
   (popup-menu "Hide swing track" ra:show-hide-swing-track
-              (list "Swing help" (lambda ()
-                                   (<ra> :show-swing-help-window)))
+              (list "Swing help" ra:show-swing-help-window)
               "-----------"
               (get-keybinding-configuration-popup-menu-entries "ra:switch-swing-enabled"
                                                                '()

@@ -140,6 +140,9 @@ extern "C" {
   void s7extra_callFunc_void_int_bool(const func_t *func, int64_t arg1, bool arg2);
   void s7extra_callFunc2_void_int_bool(const char *funcname, int64_t arg1, bool arg2);
   
+  void s7extra_callFunc_void_int_int_bool(const func_t *func, int64_t arg1, int64_t arg2, bool arg3);
+  void s7extra_callFunc2_void_int_int_bool(const char *funcname, int64_t arg1, int64_t arg2, bool arg3);
+  
   void s7extra_callFunc_void_int(const func_t *func, int64_t arg1);
   void s7extra_callFunc2_void_int(const char *funcname, int64_t arg1);
 

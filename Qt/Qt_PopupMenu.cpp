@@ -537,6 +537,9 @@ namespace{
     }
 
     void keyPressEvent(QKeyEvent *event) override {
+      
+      evalScheme("(set! *last-pressed-menu-entry-widget-mouse-button* -1)"); // To avoid keybindings-configuration menu to pop up when pressing return.
+      
       bool custom_treat
         = ((event->modifiers() & Qt::ShiftModifier) && (event->key()==Qt::Key_Up || event->key()==Qt::Key_Down))
         || (event->key()==Qt::Key_PageUp || event->key()==Qt::Key_PageDown)

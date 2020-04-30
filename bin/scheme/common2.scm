@@ -216,6 +216,12 @@
 
 
 (define (get-procedure-name procedure)
+  (let ((maybe (format #f "~S" procedure)))
+    (if (string-starts-with? maybe "#")
+        ""
+        maybe)))
+
+#!!
   ;;(c-display "doc:" (documentation procedure))
   (let ((doclist (string-split (documentation procedure) #\space)))
     ;;(c-display "DOCLIST: -" doclist "-")
@@ -224,8 +230,11 @@
         (if (string=? "" (car doclist))
             ""
             (string-drop (car doclist) 1)))))
+!!#
 
-
+#!!
+(get-procedure-name (lambda () #t))
+!!#
 
 ;; force and delay are missing from s7. Simple implementation below.
 (c-define-expansion (*delay* . body)

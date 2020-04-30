@@ -10,72 +10,120 @@
   ;;(pretty-print args)
   ;;(newline)
   ;;(c-display "<<--------\n\n\n")
-  (if (null? args)
-      '()
-      (cond ((and (list? (car args))
-                  (not (null? (car args)))
-                  (eq? (car (car args)) :radio-buttons))
-             (let ((radiobuttons (car args)))
-               ;;(c-display "REST:->>>" radiobuttons "<<<-")
-               (append (list "[radiobuttons start]"
-                             (lambda () #t))
-                       (parse-popup-menu-options (cdr (car args)))
-                       (list "[radiobuttons end]"
-                             (lambda () #t))
-                       (parse-popup-menu-options (cdr args)))))
-             
-            ((list? (car args))
-             (parse-popup-menu-options (append (car args)
-                                               (cdr args))))
-            ((not (car args))
-             (parse-popup-menu-options (cdr args)))
-            
-            ((string-starts-with? (car args) "---")
-             (cons (car args)
-                   (cons (lambda _ #t)
-                         (parse-popup-menu-options (cdr args)))))
-            (else
-             (assert (not (null? (cdr args))))
-             (let ((text (car args))
-                   (arg2 (cadr args)))
-               (cond ((eq? :check arg2)
-                      (let ((check-on (caddr args)))
-                        (parse-popup-menu-options (cons (<-> (if check-on "[check on]" "[check off]") text)
-                                                        (cdddr args)))))                      
-                     ((eq? :enabled arg2)
-                      (let ((enabled (caddr args)))
-                        (if enabled
-                            (parse-popup-menu-options (cons text
-                                                            (cdddr args)))
-                            (parse-popup-menu-options (cons (<-> "[disabled]" text)
-                                                            (cdddr args))))))
-                     ((eq? :icon arg2)
-                      (let ((filename (caddr args)))
-                        ;;(c-display (<-> "stext: -" text "-" " rest:" (cdddr args)))
-                        (parse-popup-menu-options (cons (<-> "[icon]" filename " " text)
-                                                        (cdddr args)))))
-                     ((eq? :shortcut arg2)
-                      (let* ((shortcut (caddr args))
-                             (keybinding (get-displayable-keybinding-from-shortcut shortcut)))
-                        (if (not keybinding)
-                            (parse-popup-menu-options (cons text
-                                                            (cdddr args)))
-                            (parse-popup-menu-options (cons (<-> "[shortcut]" keybinding "[/shortcut]" text)
-                                                            (cdddr args))))))
-                     ((procedure? arg2)
-                      (let ((keybinding (get-displayable-keybinding (get-procedure-name arg2) '())))
-                        (cons (if (not (string=? keybinding ""))
-                                  (<-> "[shortcut]" keybinding "[/shortcut]" text)
-                                  text)
-                              (cons arg2
-                                    (parse-popup-menu-options (cddr args))))))
-                     ((list? arg2)
-                      (append (list (<-> "[submenu start]" text)
-                                    (lambda () #t))
-                              (parse-popup-menu-options arg2)
-                              (list "[submenu end]"
-                                    (lambda () #t))
-                              (parse-popup-menu-options (cddr args))))))))))
+
+  (define (get-keybinding-popup-func funcname args)
+    ;;(c-display "----------------------FUNCNAME:" funcname)
+    (define extra (and funcname
+                       (get-keybinding-configuration-popup-menu-entries :ra-funcname funcname
+                                                                        :args args)))
+    (and extra
+         (lambda ()
+           (popup-menu (<-> "---------Configure keybindings for " funcname)
+                       extra
+                       "-------------"
+                       "Help keybindings" show-keybinding-help-window))))
+
+  
+  (let loop ((args args)
+             (keybinding-func #f))
+    (if (null? args)
+        '()
+        (cond ((and (list? (car args))
+                    (not (null? (car args)))
+                    (eq? (car (car args)) :radio-buttons))
+               (let ((radiobuttons (car args)))
+                 ;;(c-display "REST:->>>" radiobuttons "<<<-")
+                 (append (list "[radiobuttons start]"
+                               (lambda () #t))
+                         (loop (cdr (car args)) keybinding-func)
+                         (list "[radiobuttons end]"
+                               (lambda () #t))
+                         (loop (cdr args) keybinding-func))))
+              
+              ((list? (car args))
+               (loop (append (car args)
+                             (cdr args))
+                     keybinding-func))
+              
+              ((not (car args))
+               (loop (cdr args) keybinding-func))
+              
+              ((string-starts-with? (car args) "---")
+               (cons (car args)
+                     (cons (lambda _ #t)
+                           (loop (cdr args) keybinding-func))))
+              (else
+               (assert (not (null? (cdr args))))
+               (let ((text (car args))
+                     (arg2 (cadr args)))
+                 (cond ((eq? :check arg2)
+                        (let ((check-on (caddr args)))
+                          (loop (cons (<-> (if check-on "[check on]" "[check off]") text)
+                                      (cdddr args))
+                                keybinding-func)))
+                       ((eq? :enabled arg2)
+                        (let ((enabled (caddr args)))
+                          (if enabled
+                              (loop (cons text
+                                          (cdddr args))
+                                    keybinding-func)
+                              (loop (cons (<-> "[disabled]" text)
+                                          (cdddr args))
+                                    keybinding-func))))
+                       ((eq? :icon arg2)
+                        (let ((filename (caddr args)))
+                          ;;(c-display (<-> "stext: -" text "-" " rest:" (cdddr args)))
+                          (loop (cons (<-> "[icon]" filename " " text)
+                                      (cdddr args))
+                                keybinding-func)))
+                       ((eq? :shortcut arg2)
+                        ;;(c-display "----------args:" args)
+                        (let* ((shortcut (caddr args))
+                               (keybinding (get-displayable-keybinding-from-shortcut shortcut)))
+                          (loop (if (not keybinding)
+                                    (cons text
+                                          (cdddr args))
+                                    (cons (<-> "[shortcut]" keybinding "[/shortcut]" text)
+                                          (cdddr args)))
+                                (let ()
+                                      
+                                  ;;(c-display "SHORTCUT:" shortcut)
+                                  ;;(c-display "KEYBINDING:" keybinding)
+                                  (define funcname (let ((proc (if (list? shortcut)
+                                                                   (car shortcut)
+                                                                   shortcut)))
+                                                     (and (procedure? proc)
+                                                          (get-procedure-name proc))))
+                                  (define func-args (and funcname
+                                                         (if (list? shortcut)
+                                                             (cdr shortcut)
+                                                             '())))
+                                  
+                                  ;;(c-display "FUNCNAME/AERGS:" funcname func-args)
+                                  (get-keybinding-popup-func funcname func-args)))))
+                 
+                       ((procedure? arg2)
+                        (let* ((funcname (get-procedure-name arg2))
+                               (keybinding (get-displayable-keybinding funcname '())))
+                          ;;(c-display "---------------funcname:" funcname ". keybinding-func:" keybinding-func ". arg2:" arg2)
+                          (cons (if (not (string=? keybinding ""))
+                                    (<-> "[shortcut]" keybinding "[/shortcut]" text)
+                                    text)
+                                (cons (list arg2
+                                            (or keybinding-func
+                                                (and funcname
+                                                     (not (string=? funcname ""))
+                                                     (defined? (string->symbol funcname))
+                                                     (get-keybinding-popup-func funcname '()))))
+                                      (loop (cddr args)
+                                            #f)))))
+                       ((list? arg2)
+                        (append (list (<-> "[submenu start]" text)
+                                      (lambda () #t))
+                                (loop arg2 keybinding-func)
+                                (list "[submenu end]"
+                                      (lambda () #t))
+                                (loop (cddr args) keybinding-func))))))))))
 
 #!!
 
@@ -179,7 +227,7 @@
 (define (get-popup-menu-args args)
   (define options (parse-popup-menu-options args))
   ;;(c-display "bbb")
-  ;;(c-display "optinos:" options)
+  ;;(c-display "optinos:\n\n" options "\n\n")
   
   (define relations (make-assoc-from-flat-list options))
   (define strings (map car relations))
@@ -201,15 +249,33 @@
     ;;(c-display "N: " n)
     ;;(define result-string (vector-ref strings n))
     ;;(cadr (assoc result-string relations))
-    (cadr (relations n))
+    ;;(c-display "REL:" (cadr (relations n)))
+    (car (cadr (relations n)))
     )
 
+  (define (get-keybinding-func n)
+    ;;(c-display "N: " n)
+    ;;(define result-string (vector-ref strings n))
+    ;;(cadr (assoc result-string relations))
+    (cadr (cadr (relations n)))
+    )
+
+  (define (has-keybinding-func? n)
+    (get-keybinding-func n))
+  
   (list strings
         (lambda (n . checkboxval)
           (define result-string (strings n))
-          (if (null? checkboxval)
-              ((get-func n))
-              ((get-func n) (car checkboxval))))))
+          (if (= *last-pressed-menu-entry-widget-mouse-button* *right-button*)
+              (if (has-keybinding-func? n)
+                  ((get-keybinding-func n))
+                  (<ra> :schedule 0 ;; We schedule it to run a little bit avoiding recursive calls to show-message which can happen in some situations.
+                        (lambda ()
+                          (<ra> :show-message "Can not configure keybinding for this popup menu entry")
+                          #f)))
+              (if (null? checkboxval)
+                  ((get-func n))
+                  ((get-func n) (car checkboxval)))))))
 
 (define (popup-menu-from-args popup-menu-args)
   ;;(c-display "ARGS:") (pretty-print popup-menu-args)
@@ -226,6 +292,11 @@
 
 
 #!!
+(popup-menu (list "Select"
+                  :shortcut ra:copy-block
+                  (lambda x
+                    x)))
+
 (popup-menu (list "Select"
                   :shortcut "Alt + B"
                   (lambda x

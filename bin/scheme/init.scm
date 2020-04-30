@@ -46,6 +46,7 @@
     line-zoom-in-exponentially
     line-zoom-out-exponentially
     begin
+    set!
     c-display
     moduloskew-track
     replace-with-random-notes-in-range
@@ -275,6 +276,7 @@ FROM_C-cut-selected-pianonotes!
 FROM_C-copy-selected-pianonotes
 FROM_C-paste-pianonotes!
 FROM_C-delete-selected-pianonotes!
+show-keybinding-help-window
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

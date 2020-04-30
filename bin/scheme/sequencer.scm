@@ -789,9 +789,7 @@
                 (if doit
                     (<ra> :show-sequencer)
                     (<ra> :hide-sequencer))))
-        (list "Preferences"
-              (lambda ()
-                (<ra> :open-sequencer-preferences-dialog)))))
+        (list "Preferences" ra:open-sequencer-preferences-dialog)))
 
 
 (define (FROM_C-jump-to-mark marknum)

@@ -1481,6 +1481,8 @@
 
 ;; Menu entries
 
+(define *last-pressed-menu-entry-widget-mouse-button* 0)
+
 (define (FROM_C-create-menu-entry-widget entry-id name shortcut is-checkbox is-checked is-radiobutton is-first is-last)
   (if is-radiobutton
       (assert is-checkbox))
@@ -1600,6 +1602,8 @@
 
   (<gui> :add-mouse-callback widget
          (lambda (button state x y)
+           (if (> button 0)
+               (set! *last-pressed-menu-entry-widget-mouse-button* button))
            (when (and (= state *is-entering*)
                       );(<gui> :is-enabled widget))
              ;;(c-display "Entering" name)
