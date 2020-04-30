@@ -375,15 +375,26 @@
 
 
 (define (get-displayable-keybinding rafuncname args)
-  (if (< (string-length rafuncname) 3)
-      ""
-      (let* ((command (get-keybindings-command (get-python-ra-funcname rafuncname) args))
-             (keybindings (get-displayable-keybindings command)))
-        ;;(c-display "command:" command)
-        ;;(c-display "keybindings:" keybindings)
-        (if (null? keybindings)
-            ""
-            (last keybindings)))))
+  ;;(c-display "a/b:" rafuncname args)
+  (cond ((string=? "" rafuncname)
+         "")
+        ((string-starts-with? rafuncname "ra:")
+         (let* ((command (get-keybindings-command (get-python-ra-funcname rafuncname) args))
+                (keybindings (get-displayable-keybindings command)))
+           ;;(c-display "command:" command)
+           ;;(c-display "keybindings:" keybindings)
+           (if (null? keybindings)
+               ""
+               (last keybindings))))
+        ((not (defined? (string->symbol rafuncname)))
+         "")
+        (else
+         (get-displayable-keybinding "ra:eval-scheme" (list (<-> "(" rafuncname
+                                                                 (apply <-> (map (lambda (arg)
+                                                                                   (<-> " " arg))
+                                                                                 args))
+                                                                 ")"))))))
+             
 
 
 (define (FROM_C-get-displayable-keybinding rafuncname args)
@@ -824,31 +835,51 @@ Examples:
 
 (delafina (get-keybinding-configuration-popup-menu-entries :ra-funcname
                                                            :args '()
-                                                           :focus-keybinding ;; Can be either FOCUS_EDITOR, FOCUS_MIXER, FOCUS_SEQUENCER, a combination of those (separate them with space), or an empty string (all). If not set, it will be set automatically from where gui-or-area is placed. It will be set automatically when the user right-clicks so you don't have to set parent gui before calling this function.
+                                                           :focus-keybinding ;; Can be either FOCUS_EDITOR, FOCUS_MIXER, FOCUS_SEQUENCER, a combination of those (separate them with space), or an empty string (all). If not set, it will be set automatically from where gui-or-area is placed. It will be set automatically when the user right-clicks so you don't have to set parent gui before calling this function. If gui-or-area is not set, current focus will be used.
                                                            :gui-or-area ;; if this one is set, and focus-keybinding is #f, focus-keybinding will be set automatically from gui-or-area.
                                                            )
 
-  (assert (or focus-keybinding gui-or-area))
-  
   (define (get-arg-string arg)
     (let ((arg2 (to-displayable-string arg)))
       (if (string? arg)
           (<-> "\"" arg2 "\"")
           arg2)))
-  
+
+  (when (and (not (string-starts-with? ra-funcname "ra:"))
+             (defined? (string->symbol ra-funcname)))
+    (set! args (list (<-> "(" ra-funcname
+                          (apply <-> (map (lambda (arg)
+                                            (<-> " " arg))
+                                          args))
+                          ")")))
+    (set! ra-funcname "ra:eval-scheme"))
+    
+   
   (define command (<-> (get-python-ra-funcname ra-funcname)
                        (apply <-> (map (lambda (arg)
                                          (<-> " " (get-arg-string arg)))
                                        args))))
 
   (if (not focus-keybinding)
-      (set! focus-keybinding (let ((gui (if (integer? gui-or-area)
-                                            gui-or-area
-                                            (gui-or-area :get-gui))))
-                               (get-keyboard-focus-from-gui gui))))
+      (set! focus-keybinding (cond (gui-or-area
+                                    (let ((gui (if (integer? gui-or-area)
+                                                   gui-or-area
+                                                   (gui-or-area :get-gui))))
+                                      (get-keyboard-focus-from-gui gui)))
+                                   ((<ra> :editor-has-keyboard-focus)
+                                    "FOCUS_EDITOR")
+                                   ((<ra> :mixer-has-keyboard-focus)
+                                    "FOCUS_MIXER")
+                                   ((<ra> :sequencer-has-keyboard-focus)
+                                    "FOCUS_SEQUENCER")
+                                   (else
+                                    "FOCUS_EDITOR FOCUS_MIXER FOCUS_SEQUENCER"))))
+                                 
   (define keybinding (get-displayable-keybinding ra-funcname args))
   (define has-keybinding (not (string=? keybinding "")))
-    
+
+  (c-display "------------KEYBINDING:" keybinding)
+  
   (list (if has-keybinding
             (<-> "Change keybinding for \"" command "\". (Now: " keybinding ")")
             (<-> "Add keybinding for \"" command "\""))

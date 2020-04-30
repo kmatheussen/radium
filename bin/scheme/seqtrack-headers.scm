@@ -1449,22 +1449,6 @@
                                                                            :args '()
                                                                            :focus-keybinding "FOCUS_SEQUENCER"
                                                                            :gui-or-area grid-checkbox)
-                          "-------------Set line grid keybinding"
-                          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:set-sequencer-grid-type"
-                                                                           :args '("line")
-                                                                           :focus-keybinding "FOCUS_SEQUENCER"
-                                                                           :gui-or-area grid-checkbox)
-                          "-------------Set beat grid keybinding"
-                          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:set-sequencer-grid-type"
-                                                                           :args '("beat")
-                                                                           :focus-keybinding "FOCUS_SEQUENCER"
-                                                                           :gui-or-area grid-checkbox)
-                          "-------------Set bar grid keybinding"
-                          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:set-sequencer-grid-type"
-                                                                           :args '("bar")
-                                                                           :focus-keybinding "FOCUS_SEQUENCER"
-                                                                           :gui-or-area grid-checkbox)
-                          
                           "-------------"
                           "Help keybindings" show-keybinding-help-window)))))))
                   
