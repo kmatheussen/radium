@@ -1495,7 +1495,7 @@
 
   (define before-width (<gui> :text-width " FoP"))
   (define name-width (<gui> :text-width name))
-  (define shortcut-width (max (<gui> :text-width "Right Ctrl + P")
+  (define shortcut-width (max (ceiling (* 1.5 (<gui> :text-width "Right Ctrl + P")))
                               (<gui> :text-width shortcut)))
   (define between-width (<gui> :text-width " - "))
   
