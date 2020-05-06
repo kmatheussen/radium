@@ -22,26 +22,36 @@
 
 (define (create-menu-line-from-line line)
   (define parts (map string-strip (string-split line #\|)))
+  (define parts2 (map string-strip (string-split (car parts) #\^)))
   (define command (cl-cadr parts))
   ;;(c-display "command:" command (and command (to-list (<ra> :get-keybindings-from-command command))))
-  (define keybindings (and command
-                           (get-displayable-keybindings1 command)))
+  (define keybindings (if (cl-cadr parts2)
+                          (list (list (cl-cadr parts2)))
+                          (and command
+                               (get-displayable-keybindings1 command))))
   
   ;;(c-display "Keybindings:" keybindings)
   (make-menu-line :indentation (get-menu-indent-level line)
-                  :is-separator (string-starts-with? (car parts) "--")
-                  :text (car parts)
+                  :is-separator (string-starts-with? (car parts2) "--")
+                  :text (car parts2)
                   :command command
                   :args (cl-cddr parts)
                   :keybindings keybindings))
 
 #!!
+(pretty-print (create-menu-line-from-line "	Seqblock Delete                         ^ Shift + Right mouse button | ra.deleteSelectedSeqblocks"))
+(pretty-print (create-menu-line-from-line "	Open 		| ra.load"))
+
+
+
 (string-split "# a b c d #" #\#)
 (string-split " " #\#)
 !!#
 
 
-(define (get-menu-lines wfilename)
+(delafina (get-menu-items :wfilename (<ra> :append-file-paths
+                                           (<ra> :get-program-path)
+                                           (<ra> :get-path "menues.conf")))
   (map create-menu-line-from-line
        (remove (lambda (line)
                  (string=? "" (string-strip line))) ;; remove empty lines
