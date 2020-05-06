@@ -178,7 +178,6 @@
               '(("Z" "ALT" "CTRL")))
 
 
-
 (define (get-keybindings-from-command-without-focus-and-mouse command)
   (remove-duplicates-in-sorted-list equal?
                                     (map (lambda (keybindings)
@@ -412,7 +411,7 @@
 (get-displayable-keybinding "ra:copy-paste-seqblocks" '())
 (get-displayable-keybinding "ra:copy-selected-mixer-objects" '())
 
-(<ra> :get-keybinding-from-command "ra.copyEditorTrackOnOffToSeqblock")
+(<ra> :get-keybindings-from-command "ra.copyEditorTrackOnOffToSeqblock")
 
 (get-displayable-keybinding "ra:eval-scheme" '("(moduloskew-track -1)"))
   
@@ -723,7 +722,12 @@ Examples:
 (map c-display "asdf")
 !!#
 
-(define (FROM_C-request-grab-keybinding ra-funcname args focus-editor focus-mixer focus-sequencer)
+(delafina (FROM_C-request-grab-keybinding :ra-funcname
+                                          :args
+                                          :focus-editor     ;; is ignored if command already has keybinding. Then it will use those keybindings.
+                                          :focus-mixer      ;; (same)
+                                          :focus-sequencer  ;; (same)
+                                          :ra-funcname-is-in-python-format)
   (define (get-arg-string arg)
     (cond ((eq? #f arg)
            "False")
@@ -734,11 +738,28 @@ Examples:
              (if (string? arg)
                  (<-> "\"" arg2 "\"")
                  arg2)))))
+
+  (define python-ra-funcname (if ra-funcname-is-in-python-format
+                                 ra-funcname
+                                 (get-python-ra-funcname ra-funcname)))
   
-  (define command (<-> (get-python-ra-funcname ra-funcname)
+  (define command (<-> python-ra-funcname
                        (apply <-> (map (lambda (arg)
                                          (<-> " " (get-arg-string arg)))
                                        args))))
+
+  (let ((keybindings (to-list (<ra> :get-keybindings-from-command command))))
+    (when (not (null? keybindings))
+      (let ((oboy (apply <-> (keep (lambda (key)
+                                     (string-starts-with? key "FOCUS_"))
+                                   (string-split (apply append keybindings)
+                                                 #\space)))))
+        (set! focus-editor (string-contains? oboy "FOCUS_EDITOR"))
+        (set! focus-mixer (string-contains? oboy "FOCUS_MIXER"))
+        (set! focus-sequencer (string-contains? oboy "FOCUS_SEQUENCER"))
+
+        ;;(c-display "========================= " focus-editor focus-mixer focus-sequencer oboy)
+        )))
 
   (define (get-a-mouse-key)
     (cond (focus-editor
