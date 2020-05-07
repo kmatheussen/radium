@@ -1483,7 +1483,7 @@
 
 (define *last-pressed-menu-entry-widget-mouse-button* 0)
 
-(define (FROM_C-create-menu-entry-widget entry-id name shortcut is-checkbox is-checked is-radiobutton is-first is-last)
+(define (FROM_C-create-menu-entry-widget entry-id name shortcut shortcut-width is-checkbox is-checked is-radiobutton is-first is-last)
   (if is-radiobutton
       (assert is-checkbox))
   
@@ -1493,19 +1493,21 @@
 
   (define height (+ fontheight (* 2 b)))
 
-  (define before-width (<gui> :text-width " FoP"))
+  (define before-and-after-width (<gui> :text-width " FoP"))
   (define name-width (<gui> :text-width name))
-  (define shortcut-width (max (ceiling (* 1.5 (<gui> :text-width "Right Ctrl + P")))
-                              (<gui> :text-width shortcut)))
-  (define between-width (<gui> :text-width " - "))
+  
+  ;;(define shortcut-width (max (ceiling (* 1.5 (<gui> :text-width "Right Ctrl + P")))
+  ;;                           (<gui> :text-width shortcut)))
+  
+  (define between-width (* 1.5 (<gui> :text-width " - ")))
   
   (define width (round (+ b
-                          before-width
+                          before-and-after-width
                           (max (+ name-width
                                   between-width
                                   shortcut-width)
                                0) ;;(* (/ 300 19.0) fontheight))
-                          before-width
+                          before-and-after-width
                           b)))
 
   (define widget (<gui> :widget width height))
@@ -1524,7 +1526,7 @@
     
     (define checkbox-x1 (+ b
                            (max 0
-                                (round (/ (- before-width
+                                (round (/ (- before-and-after-width
                                              (<gui> :width checkbox))
                                           2)))))
     (define checkbox-y1 (max 0
@@ -1532,7 +1534,7 @@
                                           (<gui> :height checkbox))
                                        2))))
     
-    ;;(c-display "x1/y1:" checkbox-x1 checkbox-y1 (<gui> :width checkbox) before-width)
+    ;;(c-display "x1/y1:" checkbox-x1 checkbox-y1 (<gui> :width checkbox) before-and-after-width)
     (<gui> :add widget checkbox checkbox-x1 checkbox-y1))
     
   (define nonhover-background-color (<gui> :mix-colors "low_background" "#ffffff" 0.97))
@@ -1575,7 +1577,7 @@
                       *text-color*
                       (<gui> :mix-colors *text-color* nonhover-background-color 0.5))
                   name
-                  (+ b before-width) b (- width b) (- height b)
+                  (+ b before-and-after-width) b (- width b) (- height b)
                   #f ;; wrap lines
                   #f ;; align top
                   #t ;; align left
@@ -1583,12 +1585,13 @@
                   )
 
            (when (not (string=? "" shortcut))
-             (define shortcut-x1 (- width (+ shortcut-width before-width b)))
+             (define shortcut-x1 (- width (+ shortcut-width before-and-after-width b)))
              
              (<gui> :my-draw-text widget
-                    (if (<gui> :is-enabled widget)
-                        *text-color*
-                        (<gui> :mix-colors *text-color* nonhover-background-color 0.5))
+                    (let ((color (<gui> :make-color-lighter (<gui> :mix-colors *text-color* "green" 0.5) 1.3)))
+                      (if (<gui> :is-enabled widget)
+                          color
+                          (<gui> :mix-colors color nonhover-background-color 0.5)))
                     shortcut
                     shortcut-x1 b (- width b) (- height b)
                     #f ;; wrap lines

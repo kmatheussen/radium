@@ -257,8 +257,8 @@ extern "C" {
   int64_t s7extra_callFunc_int_charpointer_charpointer(const func_t *func, const char *arg1, const char *arg2);
   int64_t s7extra_callFunc2_int_charpointer_charpointer(const char *funcname, const char *arg1, const char *arg2);
 
-  int64_t s7extra_callFunc_int_int_charpointer_charpointer_bool_bool_bool_bool_bool(const func_t *func, int64_t arg0, const char *arg1, const char *arg2, bool arg3, bool arg4, bool arg5, bool arg6, bool arg7);
-  int64_t s7extra_callFunc2_int_int_charpointer_charpointer_bool_bool_bool_bool_bool(const char *funcname, int64_t arg0, const char *arg1, const char *arg2, bool arg3, bool arg4, bool arg5, bool arg6, bool arg7);
+  int64_t s7extra_callFunc_int_int_charpointer_charpointer_int_bool_bool_bool_bool_bool(const func_t *func, int64_t arg0, const char *arg1, const char *arg2, int arg3, bool arg4, bool arg5, bool arg6, bool arg7, bool arg8);
+  int64_t s7extra_callFunc2_int_int_charpointer_charpointer_int_bool_bool_bool_bool_bool(const char *funcname, int64_t arg0, const char *arg1, const char *arg2, int arg3, bool arg4, bool arg5, bool arg6, bool arg7, bool arg8);
 
   const char *s7extra_callFunc_charpointer_dyn(const func_t *func, const dyn_t arg1);
   const char *s7extra_callFunc2_charpointer_dyn(const char *funcname, const dyn_t arg1);
