@@ -300,7 +300,7 @@ namespace{
 
     int64_t _entry_id;
     
-    MyQAction(const QString &text, const QString &shortcut, std::shared_ptr<Callbacker> &callbacker, bool is_checkbox, bool is_checked, bool is_radiobutton, bool is_first, bool is_last, QObject *parent = NULL)
+    MyQAction(const QString &text, const QString &shortcut, int shortcut_width, std::shared_ptr<Callbacker> &callbacker, bool is_checkbox, bool is_checked, bool is_radiobutton, bool is_first, bool is_last, QObject *parent = NULL)
       : QWidgetAction(parent)
       , _callbacker(callbacker)
       , _entry_id(g_myactions_counter++)
@@ -311,7 +311,7 @@ namespace{
       
       S7EXTRA_GET_FUNC(s_func, "FROM_C-create-menu-entry-widget");
 
-      _guinum = S7CALL(int_int_charpointer_charpointer_bool_bool_bool_bool_bool, s_func, _entry_id, text.toUtf8().constData(), shortcut.toUtf8().constData(), is_checkbox, is_checked, is_radiobutton, is_first, is_last);
+      _guinum = S7CALL(int_int_charpointer_charpointer_int_bool_bool_bool_bool_bool, s_func, _entry_id, text.toUtf8().constData(), shortcut.toUtf8().constData(), shortcut_width, is_checkbox, is_checked, is_radiobutton, is_first, is_last);
 
       if (_guinum > 0){
         
@@ -360,8 +360,8 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
 
-    CheckableAction(const QString & text_b, const QString &shortcut, bool is_on, bool is_radiobutton, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
-      : MyQAction(text_b, shortcut, callbacker, true, is_on, is_radiobutton, is_first, is_last, callbacker->qmenu)
+    CheckableAction(const QString & text_b, const QString &shortcut, int shortcut_width, bool is_on, bool is_radiobutton, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
+      : MyQAction(text_b, shortcut, shortcut_width, callbacker, true, is_on, is_radiobutton, is_first, is_last, callbacker->qmenu)
     {
       setCheckable(true);
       setChecked(is_on);
@@ -393,6 +393,7 @@ namespace{
     QString _text;
     QString _shortcut;
     bool _is_first, _is_last;
+    int _shortcut_width;
     
     ~ClickableAction(){
       //printf("I was deleted: %s\n",_text.toUtf8().constData());
@@ -400,12 +401,13 @@ namespace{
       g_clickable_actions.remove(_text, this);
     }
     
-    ClickableAction(const QString & text, const QString &shortcut, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
-      : MyQAction(text, shortcut, callbacker, false, false, false, is_first, is_last, callbacker->qmenu)
+    ClickableAction(const QString & text, const QString &shortcut, int shortcut_width, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
+      : MyQAction(text, shortcut, shortcut_width, callbacker, false, false, false, is_first, is_last, callbacker->qmenu)
       , _text(text)
       , _shortcut(shortcut)
       , _is_first(is_first)
       , _is_last(is_last)
+      , _shortcut_width(shortcut_width)
     {
       //printf("  ___4 count %p: %ld\n", callbacker.get(), callbacker.use_count());
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
@@ -435,17 +437,17 @@ namespace{
     //printf("    clickable size: %d\n", g_clickable_actions.size());
   }
   
-  static ClickableAction *get_clickable_action(const QString & text, const QString &shortcut, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker){
+  static ClickableAction *get_clickable_action(const QString & text, const QString &shortcut, int shortcut_width, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker){
 
     for(ClickableAction *action : g_clickable_actions.values(text))
-      if (action->_shortcut == shortcut && action->_is_first==is_first && action->_is_last==is_last){
+      if (action->_shortcut == shortcut && action->_is_first==is_first && action->_is_last==is_last && shortcut_width==action->_shortcut_width){
         g_clickable_actions.remove(text, action);
         action->_callbacker = callbacker;
         action->setEnabled(true); // Might have been set to disabled last time.
         return action;
       }
 
-    return new ClickableAction(text, shortcut, is_first, is_last, callbacker);
+    return new ClickableAction(text, shortcut, shortcut_width, is_first, is_last, callbacker);
   }
 
   
@@ -515,8 +517,11 @@ namespace{
   };
 
   struct MyQMenu : public QMenu {
-    MyQMenu(QWidget *parent, QString title)
+    int _shortcut_width;
+    
+    MyQMenu(QWidget *parent, QString title, int shortcut_width)
       : QMenu(title, parent)
+      , _shortcut_width(shortcut_width)
     {
     }
 
@@ -643,8 +648,8 @@ namespace{
     
     //func_t *_callback;
 
-    MyMainQMenu(QWidget *parent, QString title, bool is_async, func_t *callback)
-      : MyQMenu(parent, title)
+    MyMainQMenu(QWidget *parent, QString title, int shortcut_width, bool is_async, func_t *callback)
+      : MyQMenu(parent, title, shortcut_width)
 #if SAFE_POPUP
       , radium::Timer(1000, false)
       , _do_safe_popup(getenv("USE_SAFE_POPUP") != NULL)
@@ -856,6 +861,52 @@ static void setStyleRecursively(QObject *o, QStyle *style){
   }
 }
 
+static int get_largest_shortcut_width(const vector_t &v, int v_pos){
+
+  QFont font;
+
+  int ret = 0;
+  
+  int indentation = 0;
+  
+  for(int i=v_pos;i<v.num_elements;i++) {
+
+    QString text = (const char*)v.elements[i];
+
+    if (text.startsWith("[submenu start]")){
+      
+      indentation++;
+
+    } else if (text.startsWith("[submenu end]")){
+
+      indentation--;
+
+      if (indentation < 0)
+        break;
+      
+    } else if (indentation==0 && text.startsWith("[shortcut]")){
+
+      QString shortcut;
+      
+      text = text.right(text.size() - 10);
+      
+      int pos = text.indexOf("[/shortcut]");
+      if (pos <= 0){
+        R_ASSERT(false);
+      } else {
+        shortcut = text.left(pos);
+        //printf("shortcut: -%s-. text: -%s-\n", shortcut.toUtf8().constData(), text.toUtf8().constData());
+      }
+
+      const QFontMetrics fn = QFontMetrics(font);
+      ret = R_MAX(ret, ceil(fn.boundingRect(shortcut).width()));
+    }
+
+  }
+
+  return ret;
+}
+
 static QMenu *create_qmenu(
                            const vector_t &v,
                            bool is_async,
@@ -866,7 +917,7 @@ static QMenu *create_qmenu(
 {
   R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
 
-  MyMainQMenu *menu = new MyMainQMenu(NULL, "", is_async, callback2);
+  MyMainQMenu *menu = new MyMainQMenu(NULL, "", get_largest_shortcut_width(v, 0), is_async, callback2);
   menu->setAttribute(Qt::WA_DeleteOnClose);
 
   MyQMenu *curr_menu = menu;
@@ -904,7 +955,7 @@ static QMenu *create_qmenu(
       
       if (n_submenues==getMaxSubmenuEntries()){
         double t = TIME_get_ms();
-        auto *new_menu = new MyQMenu(curr_menu, "Next");
+        auto *new_menu = new MyQMenu(curr_menu, "Next", get_largest_shortcut_width(v, i));
         subdur += TIME_get_ms()-t;
         curr_menu->addMenu(new_menu);
         curr_menu = new_menu;
@@ -977,7 +1028,7 @@ static QMenu *create_qmenu(
         n_submenues = -1;
         parents.push(curr_menu);
         double t = TIME_get_ms();
-        auto *new_menu = new MyQMenu(curr_menu, text.right(text.size() - 15));
+        auto *new_menu = new MyQMenu(curr_menu, text.right(text.size() - 15), get_largest_shortcut_width(v, i+1));
         subdur += TIME_get_ms()-t;
         curr_menu->addMenu(new_menu);
         curr_menu = new_menu;
@@ -1067,7 +1118,7 @@ static QMenu *create_qmenu(
           
         } else if (is_checkable) {
 
-          auto *hepp = new CheckableAction(text, shortcut, is_checked, radio_buttons != NULL, is_first, is_last, callbacker);
+          auto *hepp = new CheckableAction(text, shortcut, curr_menu->_shortcut_width, is_checked, radio_buttons != NULL, is_first, is_last, callbacker);
           
           if (hepp->_success==false){
             radio_buttons=NULL;
@@ -1092,7 +1143,7 @@ static QMenu *create_qmenu(
         } else {
 
           double t = TIME_get_ms();
-          auto *hepp = get_clickable_action(text, shortcut, is_first, is_last, callbacker);
+          auto *hepp = get_clickable_action(text, shortcut, curr_menu->_shortcut_width, is_first, is_last, callbacker);
           clickdur += TIME_get_ms() - t;
 
           if (hepp->_success==false)
