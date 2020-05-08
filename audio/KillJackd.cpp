@@ -133,15 +133,18 @@ int main(int argc, char **argv){
       const char *portname1 = portnames[0];
       
       if (portname1!=NULL){
-        if (jack_connect (client, portname1, jack_port_name (input_port1))){
+        int ret = jack_connect(client, portname1, jack_port_name (input_port1));
+        
+        if (ret!=0 && ret!=EEXIST) {
           fprintf (stderr, "KillJackd.cpp: Could not connect input port 1\n");
           return COULD_NOT_CONNECT_PORT;
         }
         
-        const char *portname2 = portname1==NULL ? NULL : portnames[1];
+        const char *portname2 = portnames[1];
         
         if (portname2!=NULL){
-          if (jack_connect (client, portname2, jack_port_name (input_port2))){
+          int ret = jack_connect(client, portname2, jack_port_name (input_port2));
+          if (ret!=0 && ret!=EEXIST) {
             fprintf (stderr, "KillJackd.cpp: Could not connect input port 2\n");
             return COULD_NOT_CONNECT_PORT;
           }
