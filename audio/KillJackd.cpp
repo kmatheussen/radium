@@ -58,6 +58,41 @@ static int process (jack_nframes_t nframes, void *arg){
 
 //extern void init_weak_jack(void);
 
+static int check_connect_port(jack_client_t *client, jack_port_t *maybe_to_port, const char *portname, int portnum, jack_port_t *maybe_from_port){
+
+  jack_port_t *port = jack_port_by_name(client, portname);
+  
+  if (port==NULL){
+    fprintf (stderr, "KillJackd.cpp: Could not look up port #%d from %s\n", portnum, portname);
+    return COULD_NOT_CONNECT_PORT;
+  }
+
+  jack_port_t *from_port, *to_port;
+  
+  if (maybe_to_port!=NULL){
+    from_port = port;
+    to_port = maybe_to_port;
+  } else {
+    from_port = maybe_from_port;
+    to_port = port;
+  }
+  
+  //printf("Types: %s --- %s\n", jack_port_type(port), jack_port_type(from_port));
+  
+  if (!strcmp(jack_port_type(from_port), jack_port_type(to_port))) {
+    
+    int ret = jack_connect(client, jack_port_name(to_port), jack_port_name(from_port));
+    
+    if (ret!=0 && ret!=EEXIST) {
+      fprintf (stderr, "KillJackd.cpp: Could not connect port #%d. %s -> %s\n", portnum, jack_port_name(from_port), jack_port_name(to_port));
+      return COULD_NOT_CONNECT_PORT;
+    }
+    
+  }
+
+  return JACK_ALIVE_AND_FINE;
+}
+
 int main(int argc, char **argv){
   /*
   usleep(14*1000*1000);
@@ -133,21 +168,21 @@ int main(int argc, char **argv){
       const char *portname1 = portnames[0];
       
       if (portname1!=NULL){
-        int ret = jack_connect(client, portname1, jack_port_name (input_port1));
-        
-        if (ret!=0 && ret!=EEXIST) {
-          fprintf (stderr, "KillJackd.cpp: Could not connect input port 1\n");
-          return COULD_NOT_CONNECT_PORT;
-        }
+
+        int ret = check_connect_port(client, NULL, portname1, 1, input_port1);
+
+        if (ret != JACK_ALIVE_AND_FINE)
+          return ret;
         
         const char *portname2 = portnames[1];
         
         if (portname2!=NULL){
-          int ret = jack_connect(client, portname2, jack_port_name (input_port2));
-          if (ret!=0 && ret!=EEXIST) {
-            fprintf (stderr, "KillJackd.cpp: Could not connect input port 2\n");
-            return COULD_NOT_CONNECT_PORT;
-          }
+
+          int ret = check_connect_port(client, NULL, portname2, 2, input_port2);
+
+          if (ret != JACK_ALIVE_AND_FINE)
+            return ret;
+          
         }
       }
       
@@ -165,18 +200,21 @@ int main(int argc, char **argv){
       const char *portname1 = portnames[0];
       
       if (portname1!=NULL){
-        if (jack_connect (client, jack_port_name (output_port1), portname1)){
-          fprintf (stderr, "KillJackd.cpp: Could not connect output port 1\n");
-          return COULD_NOT_CONNECT_PORT;
-        }
-        
-        const char *portname2 = portname1==NULL ? NULL : portnames[1];
+
+        int ret = check_connect_port(client, output_port1, portname1, 1, NULL);
+
+        if (ret != JACK_ALIVE_AND_FINE)
+          return ret;
+
+        const char *portname2 = portnames[1];
         
         if (portname2!=NULL){
-          if (jack_connect (client, jack_port_name (output_port2), portname2)){
-            fprintf (stderr, "KillJackd.cpp: Could not connect output port 2\n");
-            return COULD_NOT_CONNECT_PORT;
-          }
+
+          int ret = check_connect_port(client, output_port2, portname2, 2, NULL);
+
+          if (ret != JACK_ALIVE_AND_FINE)
+            return ret;
+
         }
       }
       
