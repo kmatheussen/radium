@@ -767,7 +767,7 @@
               :check (<ra> :show-markers-sequencer-lane)
               (lambda (doit)
                 (<ra> :set-show-markers-sequencer-lane doit)))
-        "-------"
+        "-------Timing mode"
         (list :radio-buttons
               (list "Use sequencer timing"
                     :check (<ra> :is-using-sequencer-timing)
