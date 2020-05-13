@@ -1493,7 +1493,7 @@
 
   (define height (+ fontheight (* 2 b)))
 
-  (define before-and-after-width (<gui> :text-width " FoP"))
+  (define before-and-after-width (* 1.1 fontheight)) ;;(<gui> :get-system-fontheight))) ;;(<gui> :text-width "---"))
   (define name-width (<gui> :text-width name))
   
   ;;(define shortcut-width (max (ceiling (* 1.5 (<gui> :text-width "Right Ctrl + P")))

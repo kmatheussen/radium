@@ -108,6 +108,8 @@ private:
 public:
 
   int _interval;
+
+  double _start_time;
   
   Timer(int interval, bool start_now=true)
     : _interval(interval)
@@ -119,7 +121,16 @@ public:
       _mytimer_timer.start();
   }
 
+  bool is_running(void) const {
+    return _mytimer_timer.isActive();
+  }
+
+  double get_duration(void) const {
+    return TIME_get_ms() - _start_time;
+  }
+  
   void start_timer(void){
+    _start_time = TIME_get_ms();
     _mytimer_timer.start();
   }
   

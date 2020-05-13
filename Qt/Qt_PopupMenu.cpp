@@ -42,6 +42,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMenu>
 #include <QProxyStyle>
 #include <QStyleFactory>
+#include <QStyleOption>
+#include <QMenuBar>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -57,6 +59,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Timer.hpp"
 #include "EditorWidget.h"
 
+#include "Qt_PopupMenu_proc.h"
+
 
 
 QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if g_curr_popup_qmenu != NULL
@@ -64,6 +68,10 @@ QPointer<QMenu> g_curr_popup_qmenu;
 
 int64_t g_last_hovered_menu_entry_guinum = -1;
 
+static int g_menu_is_open = 0;
+static QStack<QMenu* >g_curr_menu;  
+
+extern QMenuBar *g_main_menu_bar;
 
 
 namespace{
@@ -154,10 +162,12 @@ namespace{
 
     bool run_have_run = false;
 
-    std::shared_ptr<Callbacker> _extra_destroyed_slot_argument; // Temporarily store it in the object since you can't post custom data to signals handlers in a less inelegant way, I think. The use of smart pointers here is a mess BTW, as it always is, for everyone, in all possible situations, without exception.
+    std::shared_ptr<Callbacker> _extra_destroyed_slot_argument; // Temporarily store it in the object since you can't post custom data to signals handlers in a less inelegant way, I think. The use of smart pointers here is a mess BTW, as it always is when using smart pointers, for everyone, in all possible situations, without exception.
     
     void run_and_delete(bool checked, std::shared_ptr<Callbacker> &callbacker){
+#if !defined(RELEASE)
       R_ASSERT_RETURN_IF_FALSE(run_have_run==false);
+#endif
       run_have_run = true;
 
       R_ASSERT_NON_RELEASE(qmenu.data() != NULL); // Not sure if anything is wrong, just curious whether it happens.
@@ -190,6 +200,9 @@ namespace{
       }
     }
 
+    
+  public:
+    
     void run_callbacks(void){
       EVENTLOG_add_event(talloc_format("popup menu: %s", _text.toUtf8().constData()));
       
@@ -204,7 +217,6 @@ namespace{
         callback3(num, checked);
     }
 
-  public:
     
     void run_checked(bool checked){
       R_ASSERT(is_checkable);
@@ -393,6 +405,7 @@ namespace{
     QString _text;
     QString _shortcut;
     bool _is_first, _is_last;
+    bool _is_permanent;
     int _shortcut_width;
     
     ~ClickableAction(){
@@ -401,12 +414,13 @@ namespace{
       g_clickable_actions.remove(_text, this);
     }
     
-    ClickableAction(const QString & text, const QString &shortcut, int shortcut_width, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
+    ClickableAction(const QString & text, const QString &shortcut, int shortcut_width, bool is_first, bool is_last, bool is_permanent, std::shared_ptr<Callbacker> &callbacker)
       : MyQAction(text, shortcut, shortcut_width, callbacker, false, false, false, is_first, is_last, callbacker->qmenu)
       , _text(text)
       , _shortcut(shortcut)
       , _is_first(is_first)
       , _is_last(is_last)
+      , _is_permanent(is_permanent)
       , _shortcut_width(shortcut_width)
     {
       //printf("  ___4 count %p: %ld\n", callbacker.get(), callbacker.use_count());
@@ -424,7 +438,11 @@ namespace{
         R_ASSERT_NON_RELEASE(false);
         return;
       }
-      _callbacker->run_and_delete_clicked(_callbacker);
+
+      if (_is_permanent)
+        _callbacker->run_callbacks();
+      else
+        _callbacker->run_and_delete_clicked(_callbacker);
     }
   };
 
@@ -436,18 +454,19 @@ namespace{
 
     //printf("    clickable size: %d\n", g_clickable_actions.size());
   }
-  
-  static ClickableAction *get_clickable_action(const QString & text, const QString &shortcut, int shortcut_width, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker){
 
-    for(ClickableAction *action : g_clickable_actions.values(text))
-      if (action->_shortcut == shortcut && action->_is_first==is_first && action->_is_last==is_last && shortcut_width==action->_shortcut_width){
-        g_clickable_actions.remove(text, action);
-        action->_callbacker = callbacker;
-        action->setEnabled(true); // Might have been set to disabled last time.
-        return action;
-      }
+  static ClickableAction *get_clickable_action(const QString & text, const QString &shortcut, int shortcut_width, bool is_first, bool is_last, bool is_permanent, std::shared_ptr<Callbacker> &callbacker){
 
-    return new ClickableAction(text, shortcut, shortcut_width, is_first, is_last, callbacker);
+    if (!is_permanent)
+      for(ClickableAction *action : g_clickable_actions.values(text))
+        if (action->_shortcut == shortcut && action->_is_first==is_first && action->_is_last==is_last && shortcut_width==action->_shortcut_width){
+          g_clickable_actions.remove(text, action);
+          action->_callbacker = callbacker;
+          action->setEnabled(true); // Might have been set to disabled last time.
+          return action;
+        }
+
+    return new ClickableAction(text, shortcut, shortcut_width, is_first, is_last, is_permanent, callbacker);
   }
 
   
@@ -516,13 +535,44 @@ namespace{
     }
   };
 
-  struct MyQMenu : public QMenu {
-    int _shortcut_width;
+  struct MyQMenu : public QMenu /* , radium::Timer */ {
+    Q_OBJECT;
+
+  public:
     
-    MyQMenu(QWidget *parent, QString title, int shortcut_width)
+    int _shortcut_width;
+
+    bool _has_g_menu_is_open = false;
+
+    // Workaround. Sometimes, aboutToHide and/or aboutToShow is not called.
+    struct Workaround : public radium::Timer {
+      
+      MyQMenu *_myqmenu;
+      
+      Workaround(MyQMenu *myqmenu)
+        : radium::Timer((int)scale_int64(qrand(), 0, RAND_MAX, 200, 500), true) 
+        , _myqmenu(myqmenu)
+      {
+      }
+      
+      void calledFromTimer(void) override {
+        if (_myqmenu->isVisible())
+          _myqmenu->setopen();
+        else
+          _myqmenu->setclosed();
+      }
+    };
+
+    Workaround _workaround;
+        
+    MyQMenu(QWidget *parent, QString title, int shortcut_width)      
       : QMenu(title, parent)
+        //, radium::Timer((int)scale_int64(qrand(), 0, RAND_MAX, 200, 500), true)
       , _shortcut_width(shortcut_width)
+      , _workaround(this)
     {
+      connect(this, SIGNAL(aboutToHide()), this, SLOT(aboutToHide()));
+      connect(this, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
     }
 
     ~MyQMenu()
@@ -540,6 +590,27 @@ namespace{
         release_clickable_action(a);
       }
     }
+
+  private:
+    
+    void setclosed(void){
+      if (_has_g_menu_is_open){
+        g_menu_is_open--;
+        _has_g_menu_is_open = false;
+        R_ASSERT_RETURN_IF_FALSE(!g_curr_menu.isEmpty());
+        g_curr_menu.pop();
+      }
+    }
+    
+    void setopen(void){
+      if (!_has_g_menu_is_open){
+        g_menu_is_open++;
+        _has_g_menu_is_open = true;
+        g_curr_menu.push(this);
+      }
+    }
+    
+  public:
 
     void keyPressEvent(QKeyEvent *event) override {
       
@@ -630,8 +701,19 @@ namespace{
       QMenu::keyPressEvent(event);
     }
     
-  };
+
+  public slots:
   
+    void 	aboutToHide(){
+      setclosed();
+    }
+    void 	aboutToShow(){
+      setopen();
+  }
+    
+  };
+
+
   struct MyMainQMenu : public MyQMenu
 #if SAFE_POPUP
     , radium::Timer
@@ -646,33 +728,16 @@ namespace{
     QString _kill_file_name;
 #endif
     
-    //func_t *_callback;
-
-    MyMainQMenu(QWidget *parent, QString title, int shortcut_width, bool is_async, func_t *callback)
+    bool _is_permanent;
+    
+    MyMainQMenu(QWidget *parent, QString title, int shortcut_width, bool is_async, bool is_permanent, func_t *callback)
       : MyQMenu(parent, title, shortcut_width)
 #if SAFE_POPUP
       , radium::Timer(1000, false)
       , _do_safe_popup(getenv("USE_SAFE_POPUP") != NULL)
 #endif
-        //, _callback(callback)
+      , _is_permanent(is_permanent)
     {
-      
-#if SAFE_POPUP
-      if(_do_safe_popup){
-
-        start_timer();
-          
-        _kill_file_name = get_kill_temp_filename();
-        
-        system(talloc_format("\"%S\" %s %d %d &",
-                             OS_get_full_program_file_path("radium_linux_popup_killscript.sh").id,
-                             _kill_file_name.toUtf8().constData(),
-                             KILL_TIME,
-                             getpid()
-                             ));
-        
-      }
-#endif
       
       R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
       
@@ -685,23 +750,42 @@ namespace{
     ~MyMainQMenu(){
       //if(_callback!=NULL)
       //  s7extra_unprotect(_callback);
-      //printf("\n\n\n\n\n===============================              MYMAINQMENU deleted\n\n\n\n\n");
+      //printf("\n\n\n\n\n===============================              MYMAINQMENU deleted: %p\n\n\n\n\n", this);
 #if SAFE_POPUP
-      if(_do_safe_popup){
-        printf("Deleting file %s\n", _kill_file_name.toUtf8().constData());
-        system(talloc_format("rm /tmp/%s", _kill_file_name.toUtf8().constData()));
-        printf(" ... %s deleted\n", _kill_file_name.toUtf8().constData());
-      }
+      if(_do_safe_popup)
+        stop_safe_popup_process();
 #endif
 
       API_call_me_when_a_popup_menu_has_been_closed();
     }
 
 #if SAFE_POPUP
-    double _start_time = TIME_get_ms();
+
+    void start_safe_popup_process(void) {
+      _kill_file_name = get_kill_temp_filename();
+      
+      system(talloc_format("\"%S\" %s %d %d &",
+                           OS_get_full_program_file_path("radium_linux_popup_killscript.sh").id,
+                           _kill_file_name.toUtf8().constData(),
+                           KILL_TIME,
+                           getpid()
+                           ));
+
+      start_timer();
+    }
+    
+    void stop_safe_popup_process(void) {
+      printf("Deleting file %s\n", _kill_file_name.toUtf8().constData());
+      system(talloc_format("rm /tmp/%s", _kill_file_name.toUtf8().constData()));
+      printf(" ... %s deleted\n", _kill_file_name.toUtf8().constData());
+    }
+    
     void calledFromTimer(void) override {
-      if((TIME_get_ms() - _start_time) > CLOSE_TIME * 1000)
-        delete this;
+      if(radium::Timer::get_duration() > CLOSE_TIME * 1000)
+        if (close()){ //delete this;
+          stop_safe_popup_process();
+          stop_timer();
+        }
     }
 
     const char *get_kill_temp_filename(void) const {
@@ -711,34 +795,47 @@ namespace{
 #endif
     
     void showEvent(QShowEvent *event) override {
+#if SAFE_POPUP
+      if(_do_safe_popup && radium::Timer::is_running()==false){
+        start_safe_popup_process();
+      }
+#endif
+
+      //printf("    ========== 1. SHOW\n");
       if (_has_keyboard_focus==false){
         obtain_keyboard_focus_counting();
         _has_keyboard_focus = true;
       }
+      MyQMenu::showEvent(event);
     }
 
     void hideEvent(QHideEvent *event) override {
+      //printf("    ========== 2. HIDE\n");
       if (_has_keyboard_focus==true){
         release_keyboard_focus_counting();
         _has_keyboard_focus = false;
       }
+      MyQMenu::hideEvent(event);
     }
 
     void closeEvent(QCloseEvent *event) override{
+      //printf("    ========== 3. CLOSE\n");
       if (_has_keyboard_focus==true){
         release_keyboard_focus_counting();
         _has_keyboard_focus = false;
       }
       
       setPaintSequencerGrid(false);
+
+      MyQMenu::closeEvent(event);
     }
-  
+
     void mousePressEvent(QMouseEvent *event) override{
       //printf("MOUSEPRESS. Last hovered: %d - %d\n", (int)_my_last_hovered_menu_entry_guinum, (int)g_last_hovered_menu_entry_guinum);
 
       MyQAction *myaction = g_last_hovered_myaction.data();
       
-      if (myaction!=NULL && g_curr_visible_actions.contains(myaction->_entry_id) && myaction->my_clicked()==true){
+      if (_is_permanent==false && myaction!=NULL && g_curr_visible_actions.contains(myaction->_entry_id) && myaction->my_clicked()==true){
         
         if(myaction->_callbacker.get() == NULL){
           
@@ -753,8 +850,9 @@ namespace{
         return;
         
       }
-      
-      QMenu::mousePressEvent(event);
+
+      //printf("          SKIPPING\n");
+      MyQMenu::mousePressEvent(event);
         
     }
     
@@ -912,13 +1010,15 @@ static QMenu *create_qmenu(
                            bool is_async,
                            func_t *callback2,
                            std::function<void(int,bool)> callback3,
-                           int *result
+                           int *result,
+                           bool is_permanent
                            )
 {
   R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
 
-  MyMainQMenu *menu = new MyMainQMenu(NULL, "", get_largest_shortcut_width(v, 0), is_async, callback2);
-  menu->setAttribute(Qt::WA_DeleteOnClose);
+  MyMainQMenu *menu = new MyMainQMenu(NULL, "", get_largest_shortcut_width(v, 0), is_async, is_permanent, callback2);
+  if (!is_permanent)
+    menu->setAttribute(Qt::WA_DeleteOnClose);
 
   MyQMenu *curr_menu = menu;
   
@@ -1009,6 +1109,8 @@ static QMenu *create_qmenu(
         goto parse_next;
       }
 
+      //printf("SHORTCUT: -%s-\n", text.toUtf8().constData());
+      
       if (text.startsWith("[shortcut]")){
         text = text.right(text.size() - 10);
         int pos = text.indexOf("[/shortcut]");
@@ -1029,10 +1131,16 @@ static QMenu *create_qmenu(
         parents.push(curr_menu);
         double t = TIME_get_ms();
         auto *new_menu = new MyQMenu(curr_menu, text.right(text.size() - 15), get_largest_shortcut_width(v, i+1));
+        //new_menu->setStyleSheet("QMenu::item#subMenu{ font : bold ; font-size: 13pt; color: #ff8080;}");
+        //new_menu->setStyleSheet("padding-left: 140px");
+
         subdur += TIME_get_ms()-t;
-        curr_menu->addMenu(new_menu);
+        
+        QAction *action = curr_menu->addMenu(new_menu);
+        (void)action;
+        //action->setDefaultWidget(new Sep);
+        
         curr_menu = new_menu;
-        //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
         
       } else if (text.startsWith("[submenu end]")){
         
@@ -1143,7 +1251,7 @@ static QMenu *create_qmenu(
         } else {
 
           double t = TIME_get_ms();
-          auto *hepp = get_clickable_action(text, shortcut, curr_menu->_shortcut_width, is_first, is_last, callbacker);
+          auto *hepp = get_clickable_action(text, shortcut, curr_menu->_shortcut_width, is_first, is_last, is_permanent, callbacker);
           clickdur += TIME_get_ms() - t;
 
           if (hepp->_success==false)
@@ -1243,6 +1351,14 @@ void GFX_HoverMenuEntry(int entryid){
   }
 }
 
+
+QMenu *GFX_create_qmenu(const vector_t &v,
+                        func_t *callback2)
+{
+  return create_qmenu(v, true,  callback2, NULL, NULL, true);
+}
+
+
 static int64_t GFX_QtMenu(
                           const vector_t &v,
                           func_t *callback2,
@@ -1260,7 +1376,7 @@ static int64_t GFX_QtMenu(
 
   int result = -1;
   
-  QMenu *menu = create_qmenu(v, is_async,  callback2, callback3, is_async ? NULL : &result);
+  QMenu *menu = create_qmenu(v, is_async,  callback2, callback3, is_async ? NULL : &result, false);
   //printf("                CREATED menu %p", menu);
   
   if (is_async){
@@ -1350,6 +1466,75 @@ vector_t GFX_MenuParser(const char *texts, const char *separator){
   }
 
   return ret;
+}
+
+QMenu *GFX_GetActiveMenu(void){
+  //return current_menu->base->activeAction() != NULL;
+  if (GFX_MenuActive()){
+    if (g_curr_menu.isEmpty()){
+      //R_ASSERT_NON_RELEASE(false); // Happens sometimes if "trying_to_make_menu_active" is true.
+      return NULL;
+    } else {
+      return g_curr_menu.top();
+    }
+  } else { 
+    R_ASSERT_NON_RELEASE(g_curr_menu.isEmpty());
+    return NULL;
+  }
+}
+
+static bool trying_to_make_menu_active = false;
+
+static void make_menu_active(int trynum, int ms){
+  //printf("   make_menu_active. trynum: %d. safe: %d\n", trynum, safe_to_run_exec());
+  
+  if (trynum >= 100 || !safe_to_run_exec()){
+    trying_to_make_menu_active = false;
+    return;
+  }
+
+  QTimer::singleShot(ms, [trynum]{
+      
+      //printf(" Hepp: %d. trynum: %d\n", g_menu_is_open, trynum);
+      
+      if(g_menu_is_open==0){
+
+        //g_main_menu_bar->setFocus(Qt::MenuBarFocusReason);
+
+        if (trynum==0 || trynum > 2)
+          send_key_down(g_main_menu_bar, 1);
+
+        if (trynum > 0){
+          QPoint topleft = g_main_menu_bar->rect().topLeft();
+          QPoint center = g_main_menu_bar->rect().center();
+          QPoint point = QPoint(topleft.x() + 40, center.y());
+          auto *event = new QMouseEvent(QEvent::MouseMove, point, Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+          qApp->postEvent(g_main_menu_bar, event);
+        }
+        
+        make_menu_active(trynum + 1, 10);
+
+      } else {
+
+        trying_to_make_menu_active = false;
+
+      }
+
+    });
+
+}
+
+void GFX_MakeMakeMainMenuActive(void){
+  if (trying_to_make_menu_active==true)
+    return;
+
+  trying_to_make_menu_active = true;
+  make_menu_active(0, 10);
+}
+
+bool GFX_MenuActive(void){
+  //return current_menu->base->activeAction() != NULL;
+  return g_menu_is_open > 0 || trying_to_make_menu_active;
 }
 
 #include "mQt_PopupMenu.cpp"

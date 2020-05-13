@@ -32,11 +32,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern QApplication *qapplication;
 
+QMenuBar *g_main_menu_bar = NULL;
+
 namespace{
 
 static QStack<QMenu* >g_curr_menu;
 static int g_menu_is_open = 0;
-static QMenuBar *g_main_menu_bar = NULL;
  
 struct MyMenu : public QMenu, radium::Timer{
   Q_OBJECT;
@@ -84,6 +85,23 @@ public:
     set_editor_focus();
   }
   */
+  /*
+    void showEvent(QShowEvent *event) override {
+    printf("    ========== 1. SHOW\n");
+    QMenu::showEvent(event);
+    }
+    
+    void hideEvent(QHideEvent *event) override {
+    printf("    ========== 2. HIDE\n");
+    QMenu::hideEvent(event);
+    }
+    
+    void closeEvent(QCloseEvent *event) override{
+    printf("    ========== 3. CLOSE\n");
+    QMenu::closeEvent(event);
+    }
+  */
+
 
 public slots:
   
@@ -99,7 +117,7 @@ public slots:
   
 struct Menues{
   struct Menues *up;
-  MyMenu *menu;
+  QMenu *menu;
   QMenuBar *base;
 };
 
@@ -113,7 +131,7 @@ class MenuItem : public QObject
 {
     Q_OBJECT
 public:
-  MenuItem(const char *name, const char *python_command, QMenu *menu = NULL, bool checkable = false, int checkval = 0){
+  MenuItem(const char *name, const char *python_command, bool checkable = false, int checkval = 0){
     this->python_command = V_strdup(python_command);
     this->checkable = checkable;
     this->checkval = checkval;
@@ -121,22 +139,12 @@ public:
     //printf("Adding menu item %s\n",name);
     //getchar();
     
-    if(menu!=NULL) {
-      if(current_menu->base!=NULL){
-        QAction *action = current_menu->base->addMenu(menu);
-        action->setText(name);
-      }else{
-        QAction *action = current_menu->menu->addMenu(menu);
-        action->setText(name);
-      }
-    }else{
-      QAction *action = current_menu->menu->addAction(name, this, SLOT(clicked()));
-      //printf("action: %p\n",action);
-      if(current_menu->base==NULL){
-        if(checkable==true){
-          action->setCheckable(true);
-          action->setChecked(checkval);
-        }
+    QAction *action = current_menu->menu->addAction(name, this, SLOT(clicked()));
+    //printf("action: %p\n",action);
+    if(current_menu->base==NULL){
+      if(checkable==true){
+        action->setCheckable(true);
+        action->setChecked(checkval);
       }
     }
   }
@@ -181,13 +189,27 @@ public slots:
 void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command){
   QString string(name);
   bool addit = true;
-  
+
+  waitUntilNsmHasInited();
+    
   if (string.startsWith("[Linux]"))
 #if defined(FOR_LINUX)
     name += 7;
 #else
     addit = false;
 #endif
+    
+  if (string.startsWith("[NSM]"))
+    if (nsmIsActive())
+      name += 5;
+    else
+      addit = false;
+    
+  if (string.startsWith("[non-NSM]"))
+    if (!nsmIsActive())
+      name += 9;
+    else
+      addit = false;
     
   if (string.startsWith("[Win]"))
 #if defined(FOR_WINDOWS)
@@ -209,7 +231,7 @@ void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const ch
 }
 
 void GFX_AddCheckableMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command, int checkval){
-  new MenuItem(name, python_command, NULL, true, checkval);
+  new MenuItem(name, python_command, true, checkval);
 }
 
 void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual){
@@ -220,13 +242,14 @@ void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual){
   current_menu->menu->addSeparator();
 }
 
-void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const char *command){
+static void add_menu_menu(const char *name, QMenu *mymenu, bool fixed_size_font){
   struct Menues *menu = (struct Menues*)V_calloc(1, sizeof(struct Menues));
   menu->up = current_menu;
-  menu->menu = new MyMenu();
+  menu->menu = mymenu;
+  
   if (g_first_menu==NULL)
     g_first_menu = menu->menu;
-  
+
   //QFont sansFont("Liberation Mono", 8);
   //QFont sansFont("DejaVu Sans Mono", 7);
   //QFont sansFont("Nimbus Mono L", 9);
@@ -234,18 +257,35 @@ void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const ch
   //QFont sansFont("Aurulent Sans Mono",8);
   //QFont sansFont(QApplication::font());
   QFont sansFont;
-
-  sansFont.setFamily("Bitstream Vera Sans Mono");
-  sansFont.setStyleName("Bold");
-  sansFont.setPointSize(QApplication::font().pointSize());
-  //sansFont.setBold(true);
-
-  menu->menu->setFont(sansFont);
-
-  g_all_menus.push_back(menu->menu);
   
-  new MenuItem(name, command, menu->menu);
+  if (fixed_size_font) {
+    sansFont.setFamily("Bitstream Vera Sans Mono");
+    sansFont.setStyleName("Bold");
+    sansFont.setPointSize(QApplication::font().pointSize());
+    //sansFont.setBold(true);
+  }
+  
+  menu->menu->setFont(sansFont);
+  
+  g_all_menus.push_back(menu->menu);
+
+  if(current_menu->base!=NULL){
+    QAction *action = current_menu->base->addMenu(mymenu);
+    action->setText(name);
+  }else{
+    QAction *action = current_menu->menu->addMenu(mymenu);
+    action->setText(name);
+  }
+
   current_menu = menu;
+}
+
+void GFX_AddMenuMenu(const char *name, QMenu *mymenu){  
+  add_menu_menu(name, mymenu, false);
+}
+
+void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const char *command){
+  add_menu_menu(name, new MyMenu(), true);
 }
 
 void GFX_GoPreviousMenuLevel(struct Tracker_Windows *tvisual){
@@ -254,84 +294,6 @@ void GFX_GoPreviousMenuLevel(struct Tracker_Windows *tvisual){
     return;
   }
   current_menu = current_menu->up;
-}
-
-/*
-static Menues *g_base_menues;
-void gakk(){
-  //g_base_menues->base->setActiveAction(g_base_menues->up->base->actionAt(QPoint(0,0)));
-  //g_base_menu->setActiveAction(g_base_menu->actionAt(QPoint(0,0)));
-  g_base_menues->base->show();
-  current_menu->base->show();
-  //current_menu->menu->show();
-}
-*/
-
-static bool trying_to_make_menu_active = false;
-
-static void make_menu_active(int trynum, int ms){
-  if (trynum >= 100 || !safe_to_run_exec()){
-    trying_to_make_menu_active = false;
-    return;
-  }
-
-  QTimer::singleShot(ms, [trynum]{
-      
-      //printf(" Hepp: %d. trynum: %d\n", g_menu_is_open, trynum);
-      
-      if(g_menu_is_open==0){
-
-        //g_main_menu_bar->setFocus(Qt::MenuBarFocusReason);
-
-        if (trynum==0 || trynum > 2)
-          send_key_down(g_main_menu_bar, 1);
-
-        if (trynum > 0){
-          QPoint topleft = g_main_menu_bar->rect().topLeft();
-          QPoint center = g_main_menu_bar->rect().center();
-          QPoint point = QPoint(topleft.x() + 40, center.y());
-          auto *event = new QMouseEvent(QEvent::MouseMove, point, Qt::NoButton, Qt::NoButton, Qt::NoModifier);
-          qApp->postEvent(g_main_menu_bar, event);
-        }
-        
-        make_menu_active(trynum + 1, 10);
-
-      } else {
-
-        trying_to_make_menu_active = false;
-
-      }
-
-    });
-
-}
-
-void GFX_MakeMakeMainMenuActive(void){
-  if (trying_to_make_menu_active==true)
-    return;
-
-  trying_to_make_menu_active = true;
-  make_menu_active(0, 10);
-}
-
-bool GFX_MenuActive(void){
-  //return current_menu->base->activeAction() != NULL;
-  return g_menu_is_open > 0 || trying_to_make_menu_active;
-}
-
-QMenu *GFX_GetActiveMenu(void){
-  //return current_menu->base->activeAction() != NULL;
-  if (GFX_MenuActive()){
-    if (g_curr_menu.isEmpty()){
-      //R_ASSERT_NON_RELEASE(false); // Happens sometimes if "trying_to_make_menu_active" is true.
-      return NULL;
-    } else {
-      return g_curr_menu.top();
-    }
-  } else { 
-    R_ASSERT_NON_RELEASE(g_curr_menu.isEmpty());
-    return NULL;
-  }
 }
 
 bool GFX_MenuVisible(struct Tracker_Windows *tvisual){
@@ -369,12 +331,14 @@ void GFX_SetMenuFontsAgain(void){
   // another stupid osx workaround hack. (this is actually a stupid osx workaround hack for another stupid osx workaround hack)
 
   QFont sansFont;
-  
-  sansFont.setFamily("Bitstream Vera Sans Mono");
-  sansFont.setStyleName("Bold");
-  sansFont.setPointSize(QApplication::font().pointSize());
-  //sansFont.setBold(true);
 
+  if (false){
+    sansFont.setFamily("Bitstream Vera Sans Mono");
+    sansFont.setStyleName("Bold");
+    sansFont.setPointSize(QApplication::font().pointSize());
+    //sansFont.setBold(true);
+  }
+  
   for(auto *menu : g_all_menus)
     menu->setFont(sansFont);
 }
