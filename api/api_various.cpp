@@ -91,6 +91,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_comment_dialog_proc.h"
 #include "../Qt/EditorWidget.h"
 #include "../Qt/KeyboardFocusFrame.hpp"
+#include "../Qt/Qt_PopupMenu_proc.h"
+#include "../Qt/Qt_Menues_proc.h"
 
 #include "../common/PriorityQueue.hpp"
 
@@ -2505,6 +2507,22 @@ void addMenuMenu(const char* name, const_char* command){
   GFX_AddMenuMenu(window, name, command);
 }
 
+void addMenuMenu2(const char* name, dynvec_t strings, func_t* callback){
+  vector_t vec = VECTOR_create(strings.num_elements);
+
+  for(int i=0;i<strings.num_elements;i++){
+    if (strings.elements[i].type != STRING_TYPE){
+      handleError("addMenuMenu2: Element #%d is not a string. Found: %s", i, DYN_type_name(strings.elements[i].type));
+      return;
+    }
+    vec.elements[i] = STRING_get_chars(strings.elements[i].string);
+  }
+
+  QMenu *menu = GFX_create_qmenu(vec, callback);
+  
+  GFX_AddMenuMenu(name, menu);
+}
+
 void goPreviousMenuLevel(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   GFX_GoPreviousMenuLevel(window);
@@ -3528,6 +3546,10 @@ const_char *getOsName(void){
 
 const_char* getProgramLog(void){
   return EVENTLOG_get();
+}
+
+void addToProgramLog(const_char* text){
+  EVENTLOG_add_event(talloc_strdup(text));
 }
 
 void copyWtextToClipboard(const_char* wtext){

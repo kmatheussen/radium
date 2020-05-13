@@ -373,10 +373,20 @@
        (get-keybindings-command rafuncname args)))
 
 
-(define (get-displayable-keybinding rafuncname args)
+(delafina (get-displayable-keybinding :rafuncname
+                                      :args
+                                      :ra-funcname-is-in-python-format #f)
   ;;(c-display "a/b:" rafuncname args)
   (cond ((string=? "" rafuncname)
          "")
+        (ra-funcname-is-in-python-format
+         (let* ((command (get-keybindings-command rafuncname args))
+                (keybindings (get-displayable-keybindings command)))
+           ;;(c-display "command:" command)
+           ;;(c-display "keybindings:" keybindings)
+           (if (null? keybindings)
+               ""
+               (last keybindings))))
         ((string-starts-with? rafuncname "ra:")
          (let* ((command (get-keybindings-command (get-python-ra-funcname rafuncname) args))
                 (keybindings (get-displayable-keybindings command)))
@@ -439,7 +449,8 @@ Examples:
             (begin
               ;;(c-display "Note: No keybinding found for procedure \"" (get-procedure-name shortcut) "\"")
               #f)))
-      (<-> shortcut)))
+      (and shortcut
+           (<-> shortcut))))
 
 
 (define (remove-mouse-from-keybinding keybinding)
@@ -728,6 +739,7 @@ Examples:
                                           :focus-mixer      ;; (same)
                                           :focus-sequencer  ;; (same)
                                           :ra-funcname-is-in-python-format)
+  
   (define (get-arg-string arg)
     (cond ((eq? #f arg)
            "False")
@@ -813,8 +825,8 @@ Examples:
     (c-display "KEYBINDING2:" keybinding ". Existing:" existing-commands ". mouse:" (get-a-mouse-key))
     
     (define (setit!)
-      (<ra> :add-keybinding-to-conf-file keybinding (get-python-ra-funcname ra-funcname) (map get-arg-string args)))
-
+      (<ra> :add-keybinding-to-conf-file keybinding python-ra-funcname (map get-arg-string args)))
+    
     (if (null? existing-commands)
         (setit!)
         (show-async-message :text (<-> "<style>table, th, td {  border: 2px solid white;  border-collapse: collapse;}th, td {  padding: 5px;  text-align: left;    }</style>"
@@ -840,6 +852,25 @@ Examples:
         (FROM_C-request-grab-keybinding "ra.evalScheme" (list "(c-display 50)") #t #t #f)
         #f))
 
+(<ra> :schedule 100
+      (lambda ()
+        (FROM_C-request-grab-keybinding "ra.load" '() #t #t #f)
+        #f))
+
+(apply <-> (keep (lambda (key)
+                   (string-starts-with? key "FOCUS_"))
+                 (string-split (apply append
+                                      (to-list (<ra> :get-keybindings-from-command "ra.copyEditorTrackOnOffToSeqblock")))
+                               #\space)))
+
+(<ra> :get-keybindings-from-command "ra.copyEditorTrackOnOffToSeqblock2")
+
+(apply append (to-list (<ra> :get-keybindings-from-command "ra.copyEditorTrackOnOffToSeqblock")))
+(apply append (to-list (<ra> :get-keybindings-from-command "ra.showHideSequencerInWindow")))
+
+(<ra> :get-keybindings-from-command "ra.showHideSequencerInWindow")
+
+
 (<ra> :get-keybinding-from-keys "R FOCUS_EDITOR FOCUS_MIXER")
 (<ra> :get-keybinding-from-keys "Q MOUSE_EDITOR UP")
 (<ra> :get-keybinding-from-keys "2 FOCUS_EDITOR MOUSE_EDITOR")
@@ -858,6 +889,7 @@ Examples:
                                                            :args '()
                                                            :focus-keybinding ;; Can be either FOCUS_EDITOR, FOCUS_MIXER, FOCUS_SEQUENCER, a combination of those (separate them with space), or an empty string (all). If not set, it will be set automatically from where gui-or-area is placed. It will be set automatically when the user right-clicks so you don't have to set parent gui before calling this function. If gui-or-area is not set, current focus will be used.
                                                            :gui-or-area ;; if this one is set, and focus-keybinding is #f, focus-keybinding will be set automatically from gui-or-area.
+                                                           :ra-funcname-is-in-python-format
                                                            )
 
   (define (get-arg-string arg)
@@ -866,7 +898,8 @@ Examples:
           (<-> "\"" arg2 "\"")
           arg2)))
 
-  (when (and (not (string-starts-with? ra-funcname "ra:"))
+  (when (and (not ra-funcname-is-in-python-format)
+             (not (string-starts-with? ra-funcname "ra:"))
              (defined? (string->symbol ra-funcname)))
     (set! args (list (<-> "(" ra-funcname
                           (apply <-> (map (lambda (arg)
@@ -874,46 +907,54 @@ Examples:
                                           args))
                           ")")))
     (set! ra-funcname "ra:eval-scheme"))
-    
    
-  (define command (<-> (get-python-ra-funcname ra-funcname)
+  (define python-ra-funcname (if ra-funcname-is-in-python-format
+                                 ra-funcname
+                                 (get-python-ra-funcname ra-funcname)))
+  
+  (define command (<-> python-ra-funcname
                        (apply <-> (map (lambda (arg)
                                          (<-> " " (get-arg-string arg)))
                                        args))))
 
-  (if (not focus-keybinding)
-      (set! focus-keybinding (cond (gui-or-area
-                                    (let ((gui (if (integer? gui-or-area)
-                                                   gui-or-area
-                                                   (gui-or-area :get-gui))))
-                                      (get-keyboard-focus-from-gui gui)))
-                                   ((<ra> :editor-has-keyboard-focus)
-                                    "FOCUS_EDITOR")
-                                   ((<ra> :mixer-has-keyboard-focus)
-                                    "FOCUS_MIXER")
-                                   ((<ra> :sequencer-has-keyboard-focus)
-                                    "FOCUS_SEQUENCER")
-                                   (else
-                                    "FOCUS_EDITOR FOCUS_MIXER FOCUS_SEQUENCER"))))
+  (when (not (string? focus-keybinding))
+    (if (not (<ra> :release-mode))
+        (assert (eq? #f focus-keybinding)))
+    (set! focus-keybinding (cond (gui-or-area
+                                  (let ((gui (if (integer? gui-or-area)
+                                                 gui-or-area
+                                                 (gui-or-area :get-gui))))
+                                    (get-keyboard-focus-from-gui gui)))
+                                 ((<ra> :editor-has-keyboard-focus)
+                                  "FOCUS_EDITOR")
+                                 ((<ra> :mixer-has-keyboard-focus)
+                                  "FOCUS_MIXER")
+                                 ((<ra> :sequencer-has-keyboard-focus)
+                                  "FOCUS_SEQUENCER")
+                                 (else
+                                  "FOCUS_EDITOR FOCUS_MIXER FOCUS_SEQUENCER"))))
                                  
-  (define keybinding (get-displayable-keybinding ra-funcname args))
+  (define keybinding (get-displayable-keybinding ra-funcname args ra-funcname-is-in-python-format))
   (define has-keybinding (not (string=? keybinding "")))
 
-  (c-display "------------KEYBINDING:" keybinding)
+  ;;(c-display "------------KEYBINDING:" keybinding)
   
   (list (if has-keybinding
             (<-> "Change keybinding for \"" command "\". (Now: " keybinding ")")
             (<-> "Add keybinding for \"" command "\""))
         (lambda ()
+
+          ;;(c-display "========================  focus-keybindign: " focus-keybinding)
+  
+
           (define focus-editor (string-contains? focus-keybinding "FOCUS_EDITOR"))
           (define focus-mixer (string-contains? focus-keybinding "FOCUS_MIXER"))
           (define focus-sequencer (string-contains? focus-keybinding "FOCUS_SEQUENCER"))
-          (FROM_C-request-grab-keybinding ra-funcname args focus-editor focus-mixer focus-sequencer))
+          (FROM_C-request-grab-keybinding ra-funcname args focus-editor focus-mixer focus-sequencer ra-funcname-is-in-python-format))
         (if has-keybinding
             (list 
              "Remove the keybinding"
              (lambda ()
-               (define python-ra-funcname (get-python-ra-funcname ra-funcname))
                (<ra> :remove-keybinding-from-conf-file
                      (let ((keybinding (last (get-keybindings-from-command-without-focus-and-mouse (get-keybindings-command python-ra-funcname args)))))
                        (define ret (add-qualifier-to-keybinding keybinding focus-keybinding))

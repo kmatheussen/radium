@@ -87,10 +87,10 @@ static inline void send_key_down(QObject *where, int how_many){
 
 static inline bool safe_to_run_exec(void){
 
-  /*
+#if 0
   printf("reason: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
-         !is_main_thread , has_player_lock , g_num_running_resize_events > 0 , g_qt_is_painting , g_is_loading , g_qtgui_has_started==false , g_qtgui_has_stopped==true , g_radium_runs_custom_exec , QApplication::activeModalWidget()!=NULL , !g_curr_popup_qmenu.isNull() , QApplication::activePopupWidget()!=NULL , a_modal_widget_is_open());
-  */
+         !THREADING_is_main_thread(), PLAYER_current_thread_has_lock() , g_num_running_resize_events > 0 , g_qt_is_painting , g_is_loading , g_qtgui_has_started==false , g_qtgui_has_stopped==true , g_radium_runs_custom_exec , QApplication::activeModalWidget()!=NULL , !g_curr_popup_qmenu.isNull() , QApplication::activePopupWidget()!=NULL , a_modal_widget_is_open());
+#endif
 
   bool not_safe = false
     || !THREADING_is_main_thread()
@@ -1047,6 +1047,10 @@ static inline void myFillRoundedRect(QPainter &p, QRectF rect, const QColor &col
   p.setBrush(Qt::NoBrush);
   p.setPen(pen);
 }
+
+// returns true if all text was painted (in Qt_Sequencer.cpp)
+bool myDrawText(QPainter &p, QRectF rect, QString text, int flags = Qt::AlignLeft | Qt::AlignTop, bool wrap_lines = false, int rotate = 0, bool scale_font_size = false, bool cut_text_to_fit = false);
+
 
 
 struct GL_PauseCaller{

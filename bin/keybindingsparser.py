@@ -77,7 +77,10 @@ else:
     def hasConfPath(self, key):
       return True
     def addMessage(self, message):
-      print "ra.addMessage: "+message    
+      print "ra.addMessage: "+message
+    def addKeybinding(self, command, something):
+        print "ra.addKeybinding: " + command + " - " + something
+        
   ra = Mock()
   sys.g_program_path = ""
 
@@ -146,12 +149,13 @@ class LineParser:
                 break
             lokke+=1
 
-
+        #print "LINE: " + line
         for lokke in range(len(line)):
             dasline=line[lokke]
             if dasline=="\t":
                 dasline=" "
-            if dasline=="\"":
+            if dasline=="\"" and insidestring==false:
+                #self.parts.append(line[lokke:])
                 if lokke>0:
                     if insidestring==false:
                         insidestring=true
@@ -174,6 +178,13 @@ class LineParser:
         if not isSpace(line[lokke]):
             self.parts.append(line[partstart:lokke+1])
 
+        new_parts = []
+        for part in self.parts:
+            new_parts.append(part.replace("<string>","\\\""))
+        self.parts=new_parts
+        
+        #print "PARTS:", self.parts
+        
         lokke=0
         while lokke<len(self.parts):
             if defines.has_key(self.parts[lokke]):

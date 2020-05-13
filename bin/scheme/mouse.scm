@@ -2930,10 +2930,6 @@
           "Help keybindings" show-keybinding-help-window))))
 !!#
 
-(let ()
-  (define (delete-note)
-    (c-display "hepp"))
-  (popup-menu "Delete this note" :shortcut *shift-right-mouse* delete-note))
 
 ;; delete note / add pitch / delete pitch
 (add-mouse-cycle

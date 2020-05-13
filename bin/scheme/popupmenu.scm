@@ -11,11 +11,15 @@
   ;;(newline)
   ;;(c-display "<<--------\n\n\n")
 
-  (define (get-keybinding-popup-func funcname args)
-    ;;(c-display "----------------------FUNCNAME:" funcname)
+  (define (get-keybinding-popup-func funcname args ra-funcname-is-in-python-format)
+    ;;(c-display "----------------------FUNCNAME:" funcname ". ra-funciname-python: " ra-funcname-is-in-python-format)
     (define extra (and funcname
                        (get-keybinding-configuration-popup-menu-entries :ra-funcname funcname
-                                                                        :args args)))
+                                                                        :args args
+                                                                        :focus-keybinding (if ra-funcname-is-in-python-format
+                                                                                              "FOCUS_EDITOR FOCUS_MIXER FOCUS_SEQUENCER"
+                                                                                              #f)
+                                                                        :ra-funcname-is-in-python-format ra-funcname-is-in-python-format)))
     (and extra
          (lambda ()
            (popup-menu (<-> "---------Configure keybindings for " funcname)
@@ -76,6 +80,13 @@
                           (loop (cons (<-> "[icon]" filename " " text)
                                       (cdddr args))
                                 keybinding-func)))
+                       
+                       ((eq? :python-ra-command arg2)
+                        (loop (cons text
+                                    (cddddr args))
+                              (and (caddr args)
+                                   (get-keybinding-popup-func (caddr args) (cadddr args) #t))))
+                       
                        ((eq? :shortcut arg2)
                         ;;(c-display "----------args:" args)
                         (let* ((shortcut (caddr args))
@@ -85,22 +96,23 @@
                                           (cdddr args))
                                     (cons (<-> "[shortcut]" keybinding "[/shortcut]" text)
                                           (cdddr args)))
-                                (let ()
+                                (or keybinding-func
+                                    (let ()
                                       
-                                  ;;(c-display "SHORTCUT:" shortcut)
-                                  ;;(c-display "KEYBINDING:" keybinding)
-                                  (define funcname (let ((proc (if (list? shortcut)
-                                                                   (car shortcut)
-                                                                   shortcut)))
-                                                     (and (procedure? proc)
-                                                          (get-procedure-name proc))))
-                                  (define func-args (and funcname
-                                                         (if (list? shortcut)
-                                                             (cdr shortcut)
-                                                             '())))
-                                  
-                                  ;;(c-display "FUNCNAME/AERGS:" funcname func-args)
-                                  (get-keybinding-popup-func funcname func-args)))))
+                                      ;;(c-display "SHORTCUT:" shortcut)
+                                      ;;(c-display "KEYBINDING:" keybinding)
+                                      (define funcname (let ((proc (if (list? shortcut)
+                                                                       (car shortcut)
+                                                                       shortcut)))
+                                                         (and (procedure? proc)
+                                                              (get-procedure-name proc))))
+                                      (define func-args (and funcname
+                                                             (if (list? shortcut)
+                                                                 (cdr shortcut)
+                                                                 '())))
+                                      
+                                      ;;(c-display "FUNCNAME/AERGS:" funcname func-args)
+                                      (get-keybinding-popup-func funcname func-args #f))))))
                  
                        ((procedure? arg2)
                         (let* ((funcname (get-procedure-name arg2))
@@ -114,7 +126,7 @@
                                                 (and funcname
                                                      (not (string=? funcname ""))
                                                      (defined? (string->symbol funcname))
-                                                     (get-keybinding-popup-func funcname '()))))
+                                                     (get-keybinding-popup-func funcname '() #f))))
                                       (loop (cddr args)
                                             #f)))))
                        ((list? arg2)
@@ -284,9 +296,10 @@
         
 ;; Async only. Use ra:simple-popup-menu for sync.
 (define (popup-menu . args)
+  (define args2 (get-popup-menu-args args))
   (<ra> :schedule 0
         (lambda ()
-          (popup-menu-from-args (get-popup-menu-args args))
+          (popup-menu-from-args args2)
           #f)))
                                 
 
