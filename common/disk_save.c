@@ -148,7 +148,8 @@ bool SaveAs(struct Root *theroot){
         if (g_user_interaction_enabled==false)
           return false;
 
-        filepath_t wdir = make_filepath(SETTINGS_read_wchars("filerequester_song_path", NULL));
+        const wchar_t *song_path = SETTINGS_read_wchars("filerequester_song_path", NULL);
+        const filepath_t wdir = song_path==NULL ? createIllegalFilepath() : make_filepath(song_path);
         const filepath_t filename = GFX_GetSaveFileName(theroot->song->tracker_windows, NULL, " Select file to save", wdir, "*.rad", NULL, true);
 
         if(isIllegalFilepath(filename))
@@ -243,12 +244,18 @@ bool Save(struct Root *theroot){
   return ret;
 }
 
-void Save_Backup(const filepath_t filename, struct Root *theroot){
-  printf("not saving backup to %S\n", filename.id);
-
+bool Export_Song(const filepath_t filename, struct Root *theroot){
   const filepath_t filename_org = dc.filename;
 
   Save_Clean(filename, theroot, true);
 
   dc.filename = filename_org;
+
+  return dc.success;
+}
+
+
+void Save_Backup(const filepath_t filename, struct Root *theroot){
+  printf("now saving backup to %S\n", filename.id);
+  Export_Song(filename, theroot);
 }
