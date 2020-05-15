@@ -1148,6 +1148,19 @@ bool saveAs(filepath_t filename, bool with_embedded_samples, bool ignore_nsm){
     return SaveWithoutEmbeddedSamples(filename, root);
 }
 
+bool exportSong(filepath_t filename){
+  if (isIllegalFilepath(filename)){
+    const wchar_t *song_path = SETTINGS_read_wchars("filerequester_song_path", NULL);    
+    const filepath_t wdir = song_path==NULL ? createIllegalFilepath() : make_filepath(song_path);
+    filename = GFX_GetSaveFileName(root->song->tracker_windows, NULL, " Select file to export", wdir, "*.rad", NULL, true);
+
+    if(isIllegalFilepath(filename))
+      return false;
+  }
+  
+  return Export_Song(filename, root);
+}
+
 bool saveWithEmbeddedSamples(bool ignore_nsm){
   if (!ignore_nsm && nsmIsActive()){
     GFX_addMessage("Option not supported under NSM");
@@ -1206,6 +1219,41 @@ bool loadSong(filepath_t filename){
   }
 }
 
+static bool ask_clear_or_import(void){
+  if (Undo_num_undos_since_last_save()==0 && hasSession()==false)
+    return true;
+  
+  vector_t v = {};
+  int yes = VECTOR_push_back(&v, "Yes");
+  VECTOR_push_back(&v, "No");
+
+  bool ret = yes==GFX_Message(&v, "Are you sure? Song will be cleared, and all undo data will be deleted.");
+
+  if (ret)
+    resetUndo();
+
+  return ret;
+}
+
+bool importSong(filepath_t filename){
+  if (ask_clear_or_import()==false)
+    return false;
+
+  const filepath_t filename_org = dc.filename;
+  
+  if (!LoadSong_CurrPos(getWindowFromNum(-1),filename))
+    return false;
+
+  dc.filename = filename_org;
+
+  if (isLegalFilepath(dc.filename))
+    GFX_SetWindowTitle(getWindowFromNum(-1), talloc_wformat(L"** %S **", dc.filename.id));
+  else
+    GFX_SetWindowTitle(root->song->tracker_windows, STRING_create("Radium - New song."));
+
+  return true;
+}
+
 bool hasSession(void){
   return isLegalFilepath(dc.filename);
 }
@@ -1222,6 +1270,20 @@ void newSong(bool ignore_nsm){
   }
   
   NewSong_CurrPos(getWindowFromNum(-1));
+}
+
+void clearSong(void){
+  if (ask_clear_or_import()==false)
+    return;
+  
+  const filepath_t filename = dc.filename;
+
+  NewSong_CurrPos(getWindowFromNum(-1));
+  
+  dc.filename = filename;
+
+  if (isLegalFilepath(dc.filename))
+    GFX_SetWindowTitle(getWindowFromNum(-1), talloc_wformat(L"** %S **", dc.filename.id));
 }
 
 void importMidi(void){

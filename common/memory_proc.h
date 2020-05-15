@@ -89,5 +89,9 @@ extern LANGSPEC char *talloc_format_internal(const char *fmt,...) FORMAT_ATTRIBU
 
 #define talloc_format(FMT, ...) ((void)donothing(0 && printf(FMT,  __VA_ARGS__)), talloc_format_internal(FMT,   __VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT. (the printf call will never be called, or even compiled into the program, but the error runs on it)
 
+extern LANGSPEC wchar_t *talloc_wformat_internal(const wchar_t *fmt,...);
+
+#define talloc_wformat(FMT, ...) ((void)donothing(0 && wprintf(FMT,  __VA_ARGS__)), talloc_wformat_internal(FMT,   __VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT. (the printf call will never be called, or even compiled into the program, but the error runs on it)
+
 
 #endif

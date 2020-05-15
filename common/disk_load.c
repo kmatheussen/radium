@@ -330,7 +330,8 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, filepath_t filename
           goto exit;
 
         if(isIllegalFilepath(filename)){
-          const filepath_t wdir = make_filepath(SETTINGS_read_wchars("filerequester_song_path", NULL));
+          const wchar_t *song_path = SETTINGS_read_wchars("filerequester_song_path", NULL);
+          const filepath_t wdir = song_path==NULL ? createIllegalFilepath() : make_filepath(song_path);
           filename = GFX_GetLoadFileName(window,NULL,"Select file to load", wdir, NULL, NULL, true);
           if (!isIllegalFilepath(filename))
             SETTINGS_write_wchars("filerequester_song_path", DISK_get_absolute_dir_path(filename).id);
