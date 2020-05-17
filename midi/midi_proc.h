@@ -35,6 +35,10 @@ static inline int MIDI_msg_byte1_remove_channel(uint32_t msg){
   return (msg>>16)&0xf0;
 }
 
+static inline int MIDI_msg_byte1_get_channel(uint32_t msg){
+  return (msg>>16)&0x0f;
+}
+
 static inline int MIDI_msg_byte2(uint32_t msg){
   return (msg>>8)&0xff;
 }
