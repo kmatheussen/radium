@@ -290,6 +290,8 @@ extern PlayerClass *pc;
 
 #include "../Qt/helpers.h"
 
+#include "../midi/midi_proc.h"
+
 #include "SoundPluginRegistry_proc.h"
 #include "Mixer_proc.h"
 
@@ -450,6 +452,14 @@ static void RT_set_note_pitch(struct SoundPlugin *plugin, int block_delta_time, 
     
     libpds_list(pd, "radium_receive_pitch", 4, v);
   }
+}
+
+static void RT_send_raw_midi_message(struct SoundPlugin *plugin, int block_delta_time, uint32_t msg){
+  Data *data = (Data*)plugin->data;
+  pd_t *pd = data->pd;
+
+  if (MIDI_msg_byte1_remove_channel(msg)==0xb0)
+    libpds_controlchange(pd, MIDI_msg_byte1_get_channel(msg), MIDI_msg_byte2(msg), MIDI_msg_byte3(msg));
 }
 
 // called from radium
@@ -913,6 +923,23 @@ static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity)
   //printf("Got poly aftertouch %d %d %d (%p)\n",channel,pitch,velocity,d);
 }
 
+// called from Pd
+static void RT_controlchangehook(void *d, int channel, int cc, int value){
+  SoundPlugin *plugin = (SoundPlugin*)d;
+  struct Patch *patch = plugin->patch;
+  
+  //printf("Got MIDI control %x %x %x (%p)\n",channel,cc,value,d);
+  
+  if(patch==NULL)
+    return;
+
+  RT_PLAYER_runner_lock();{
+    struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+    RT_PATCH_send_raw_midi_message_to_receivers(seqtrack, patch, MIDI_msg_pack3(0xb0 | channel, cc, value), -1);
+  }RT_PLAYER_runner_unlock();
+  
+}
+
 static QTemporaryFile *create_temp_pdfile(){
   QString destFileNameTemplate = QDir::tempPath()+QDir::separator()+"radium_XXXXXX.pd";
   return new QTemporaryFile(destFileNameTemplate);
@@ -1006,6 +1033,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 
   libpds_set_noteonhook(pd, RT_noteonhook);
   libpds_set_polyaftertouchhook(pd, RT_polyaftertouchhook);
+  libpds_set_controlchangehook(pd, RT_controlchangehook);
 
   libpds_init_audio(pd, 2, 2, sample_rate);
     
@@ -1329,6 +1357,7 @@ static void add_plugin(const wchar_t *name, QString filename) {
   plugin_type->play_note        = RT_play_note;
   plugin_type->set_note_volume  = RT_set_note_volume;
   plugin_type->set_note_pitch   = RT_set_note_pitch;
+  plugin_type->send_raw_midi_message   = RT_send_raw_midi_message;
   plugin_type->stop_note        = RT_stop_note;
   plugin_type->set_effect_value = RT_set_effect_value;
   plugin_type->get_effect_value = RT_get_effect_value;
