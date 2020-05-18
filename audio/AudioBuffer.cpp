@@ -184,6 +184,8 @@ void RT_AUDIOBUFFER_get_channels(radium::AudioBufferChannel **channels, int num_
 
 #if TEST_AUDIOBUFFER
 
+#include <assert.h>
+
 int g_audio_block_size = 64;
 
 void RT_message_internal(const char *fmt,...){

@@ -504,6 +504,7 @@ typedef struct{
   const char *extra_info;
 } source_pos_t;
 
+
 #define LOC() ({                                          \
       source_pos_t sp = {__FILE__,  __FUNCTION__, __LINE__,NULL};   \
       sp;                                                       \

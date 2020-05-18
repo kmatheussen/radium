@@ -228,7 +228,7 @@ MEMORY_SANITIZE_OPTS=
 
 
 # Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
-OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS)
+OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS)  # -fanalyzer 
 DEBUG_BUILD_OPTS = -Werror -Wfloat-equal -Wall -ggdb3 -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 
 BUILD_DEBUG=NO
@@ -348,9 +348,14 @@ endif
 # -pg
 
 # CPPOPT is CPP flags
-CPPOPT = $(COMMONOPT) -Wmissing-declarations -DNDEBUG  # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
+CPPOPT = $(COMMONOPT) -Wmissing-declarations -DNDEBUG # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
 # -Wno-class-memaccess added because of Qt.
 # -Wno-parentheses added because of boost.
+# -Wno-deprecated-declarations added because of Qt
+# -Wno-deprecated-copy added because of Qt
+
+NO_ANALYZER=
+NO_ANALYZER_MALLOC_LEAK=
 
 ifeq ($(GCC_MAJOR),8)
 	CPPOPT += -Wno-class-memaccess  -Wno-parentheses
@@ -358,6 +363,12 @@ endif
 
 ifeq ($(GCC_MAJOR),9)
 	CPPOPT += -Wno-class-memaccess  -Wno-parentheses
+endif
+
+ifeq ($(GCC_MAJOR),10)
+	CPPOPT += -Wno-class-memaccess  -Wno-parentheses -Wno-deprecated-declarations -Wno-deprecated-copy
+	NO_ANALYZER=-fno-analyzer
+	NO_ANALYZER_MALLOC_LEAK=-Wno-analyzer-malloc-leak
 endif
 
 
@@ -1479,9 +1490,9 @@ $(T)Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS
 	@echo $?
 	@echo
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -O0 -Wno-null-dereference ; \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -O0 -Wno-null-dereference $(NO_ANALYZER) ; \
 	else \
-		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -Wno-null-dereference ; \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -Wno-null-dereference  $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
@@ -1560,7 +1571,7 @@ $(P)Qt_mixer_direction_menu.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_direction_men
 
 
 $(T)Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(P)Qt_soundfilesaver_widget.h $(P)mQt_soundfilesaver_widget_callbacks.cpp
-	$(CCC2) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)  $(SNDFILEOPT)
+	$(CCC2) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)  $(SNDFILEOPT) $(NO_ANALYZER_MALLOC_LEAK) # Might be leak there, but I don't see where.
 
 $(P)mQt_soundfilesaver_widget_callbacks.cpp: $(P)Qt_soundfilesaver_widget_callbacks.cpp
 	cd $(P) && $(MOC) Qt_soundfilesaver_widget_callbacks.cpp >mQt_soundfilesaver_widget_callbacks.cpp
@@ -1590,9 +1601,9 @@ $(T)Qt_song_properties.o: $(BUILD_DEPENDENCIES) $(P)Qt_song_properties_callbacks
 
 $(T)Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h common/visual_proc.h Qt/mQt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h Qt/helpers.h Qt/Qt_MyQScrollBar.hpp
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT) -O0  -Wno-null-dereference ; \
+		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT) -O0  -Wno-null-dereference $(NO_ANALYZER) ; \
 	else \
-		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT)  -Wno-null-dereference ; \
+		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT)  -Wno-null-dereference $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
@@ -1617,7 +1628,7 @@ $(P)Qt_tools.h: $(BUILD_DEPENDENCIES) $(P)qt4_tools.ui $(P)Qt_tools_callbacks.h 
 #	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) tools
 
 $(T)Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQCheckBox.h
-	$(CCC2) $(P)Qt_PluginWidget.cpp $(QTOPT)
+	$(CCC2) $(P)Qt_PluginWidget.cpp $(QTOPT) $(NO_ANALYZER_MALLOC_LEAK) # Might be leak there, but I don't see where.
 
 $(P)mQt_PluginWidget.cpp: $(P)Qt_PluginWidget.h
 	cd $(P) && $(MOC) Qt_PluginWidget.h >mQt_PluginWidget.cpp
@@ -1659,12 +1670,12 @@ bin/radium_progress_window: $(P)Qt_progresswindow.cpp
 	rm radium_progress_window.o
 
 bin/radium_check_jack_status: audio/KillJackd.cpp $(T)Jack_plugin.o $(T)find_jack_library.o # Jack_plugin.o depends on all the weakjack things
-	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -Wno-missing-declarations -o $(T)radium_check_jack_status.o
+	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -o $(T)radium_check_jack_status.o
 	$(LINKER) `cat buildtype.opt` $(T)radium_check_jack_status.o $(T)find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) -o bin/radium_check_jack_status $(FPIC)
 	rm $(T)radium_check_jack_status.o
 
 bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp common/Process.hpp
-	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o
+	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o 
 	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt5OpenGL`
 	rm radium_check_opengl.o
 
@@ -1778,7 +1789,7 @@ $(T)api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp  embedded_scheme/s7ex
 	$(CCC2)  $(API)api_undo.cpp $(QTOPT)
 
 $(T)api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h
-	$(CCC2)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference
+	$(CCC2)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference $(NO_ANALYZER)
 
 $(T)api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp  $(API)api_instruments_proc.h embedded_scheme/s7extra_proc.h mixergui/QM_chip.h mixergui/QM_MixerWidget.h
 	$(CCC2)  $(API)api_instruments.cpp $(QTOPT)
@@ -1801,7 +1812,7 @@ $(T)api_osc.o:  $(BUILD_DEPENDENCIES)  $(API)api_osc.cpp embedded_scheme/s7extra
 
 $(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
-	$(CCC2)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) -Wno-null-dereference
+	$(CCC2)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) -Wno-null-dereference $(NO_ANALYZER)
 
 
 NOUNUSEDBUTSETVARIABLEWARNING=
@@ -1922,7 +1933,7 @@ $(T)QM_view.o: $(QM)QM_view.cpp $(QM)QM_view.h $(QM)QM_chip.h $(QM)mQM_view.cpp 
 	$(CCC2) $(QM)QM_view.cpp $(QTOPT)
 
 $(T)QM_chip.o: $(QM)QM_chip.cpp $(QM)QM_chip.h $(P)Qt_MyQCheckBox.h $(QM)QM_MixerWidget.h audio/CpuUsage.hpp
-	$(CCC2) $(QM)QM_chip.cpp $(QTOPT)
+	$(CCC2) $(QM)QM_chip.cpp $(QTOPT) $(NO_ANALYZER_MALLOC_LEAK)
 
 $(T)undo_chip_position.o: $(QM)undo_chip_position.c $(QM)QM_chip.h
 	$(CC2) $(OPT) $(QM)undo_chip_position.c
@@ -1950,7 +1961,7 @@ $(T)Bus_plugins.o: audio/Bus_plugins.cpp
 	$(CCC2) audio/Bus_plugins.cpp $(QTOPT)
 
 $(T)Timeskew_plugin.o: audio/Timeskew_plugin.cpp audio/SmoothDelay.hpp
-	$(CCC2) audio/Timeskew_plugin.cpp $(QTOPT) $(OPTIMIZE_O3) # $(CPUOPT)
+	$(CCC2) audio/Timeskew_plugin.cpp $(QTOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK) # $(CPUOPT)
 
 $(T)Patchbay_plugin.o: audio/Patchbay_plugin.cpp
 	$(CCC2) audio/Patchbay_plugin.cpp $(QTOPT)
@@ -1965,7 +1976,7 @@ $(T)Ladspa_plugins.o: audio/Ladspa_plugins.cpp
 	$(CCC2) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT) $(IS_LINUX_BINARY)
 
 $(T)Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h audio/Peaks.hpp audio/SampleRecorder_proc.h common/OS_string_proc.h audio/Granulator.hpp  audio/GranResampler.hpp audio/Fade.hpp
-	$(CCC2) $(QTOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) $(OPTIMIZE_O3) #  $(CPUOPT) 
+	$(CCC2) $(QTOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) $(OPTIMIZE_O3) $(NO_ANALYZER) #  $(CPUOPT) 
 
 $(T)SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS_string_proc.h
 	$(CCC2) $(QTOPT) audio/SampleRecorder.cpp $(SNDFILEOPT)
@@ -1974,7 +1985,7 @@ $(T)SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
 	$(CCC2) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
 
 $(T)Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp common/Random.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h audio/Fade.hpp
-	$(CCC2) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) $(OPTIMIZE_O3) # $(CPUOPT) 
+	$(CCC2) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK) # $(CPUOPT) 
 
 $(T)FluidSynth_plugin.o: audio/FluidSynth_plugin.cpp
 	$(CCC2) $(CPPOPT) $(CPUOPT) audio/FluidSynth_plugin.cpp #-Wno-gnu-designator
@@ -1986,7 +1997,7 @@ $(T)Pd_plugin.o: audio/Pd_plugin.cpp
 
 
 $(T)Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
-	$(CCC2) $(QTOPT) audio/Modulator_plugin.cpp $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW)
+	$(CCC2) $(QTOPT) audio/Modulator_plugin.cpp $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) $(NO_ANALYZER_MALLOC_LEAK)
 
 
 $(T)SendReceive_plugins.o: audio/SendReceive_plugins.cpp common/Vector.hpp
@@ -2222,7 +2233,7 @@ audio/faust_tapiir.cpp: audio/faust-examples/tapiir.dsp $(FAUST_DEPENDENCIES)
 
 
 $(T)faust_multibandcomp.o: audio/faust_multibandcomp.cpp
-	$(CCC2) audio/faust_multibandcomp.cpp $(FAUST_OPTS2) -DCLASSNAME=Multibandcomp_dsp -DDSP_NAME=\"Multiband\ Compressor\" -DCREATE_NAME=create_faust_multibandcomp_plugin -DFAUST_THAT_ONE
+	$(CCC2) audio/faust_multibandcomp.cpp $(FAUST_OPTS2) -DCLASSNAME=Multibandcomp_dsp -DDSP_NAME=\"Multiband\ Compressor\" -DCREATE_NAME=create_faust_multibandcomp_plugin -DFAUST_THAT_ONE $(NO_ANALYZER)
 
 audio/faust_multibandcomp.cpp: audio/faust_multibandcomp.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -vec -cn Multibandcomp_dsp -a Faust_plugins_template.cpp faust_multibandcomp.dsp -o faust_multibandcomp.cpp
@@ -2311,7 +2322,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 
 $(T)SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/QueueStack.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
-	$(CCC2) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT) $(OPTIMIZE_O3) $(CPUOPT) # -O3 # 
+	$(CCC2) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT) $(OPTIMIZE_O3) $(CPUOPT) $(NO_ANALYZER_MALLOC_LEAK) # -O3 # 
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
@@ -2328,17 +2339,17 @@ $(T)SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegist
 	$(CCC2) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
 $(T)SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h $(T)Sine_plugin.o # we add Sine_plugin.o here to make sure it is up to date.
-	$(CCC2) audio/SoundPlugin.cpp $(QTOPT) $(OPTIMIZE_O3)
+	$(CCC2) audio/SoundPlugin.cpp $(QTOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK)
 ### $(CPUOPT)
 
 $(T)AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp
-	$(CCC2) audio/AudioMeterPeaks.cpp $(QTOPT)
+	$(CCC2) audio/AudioMeterPeaks.cpp $(QTOPT) $(NO_ANALYZER_MALLOC_LEAK)
 
 $(T)Peaks.o: audio/Peaks.cpp audio/Peaks.hpp
 	$(CCC2) audio/Peaks.cpp $(SNDFILEOPT) $(QTOPT)
 
 $(T)Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h audio/SampleRecorder_proc.h audio/CpuUsage.hpp
-	$(CCC2) audio/Mixer.cpp $(QTOPT) $(JACKOPT)  $(CPUOPT) -Wno-null-dereference
+	$(CCC2) audio/Mixer.cpp $(QTOPT) $(JACKOPT)  $(CPUOPT) -Wno-null-dereference $(NO_ANALYZER_MALLOC_LEAK)
 
 $(T)get_windows_commandlines.o: audio/get_windows_commandlines.c
 	$(CC2) audio/get_windows_commandlines.c $(OPT)
@@ -2410,7 +2421,7 @@ $(T)crashreporter.o: crashreporter/crashreporter.cpp common/Process.hpp
 	@echo "Changed (crashreporter.o):"
 	@echo $?
 	@echo
-	$(CCC2) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(IS_LINUX_BINARY)
+	$(CCC2) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(IS_LINUX_BINARY) $(NO_ANALYZER_MALLOC_LEAK)
 
 $(T)crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
 	if ! $(CC2) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS) ; then \
@@ -2423,7 +2434,7 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.c
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
-	$(CCC2) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) #-Wno-error=unused-variable
+	$(CCC2) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER) #-Wno-error=unused-variable
 
 $(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h 
 	$(CCC2) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)    #-Wno-error=unused-variable
@@ -2432,7 +2443,7 @@ $(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h Open
 	$(CCC2) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)
 
 $(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp
-	$(CCC2) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) #-Wno-error=unused-variable
+	$(CCC2) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) $(NO_ANALYZER)  #-Wno-error=unused-variable
 
 $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
 	$(CCC2) OpenGL/CheckOpenGL.cpp $(QTOPT)
@@ -2520,9 +2531,12 @@ bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 $(T)scheme.o: embedded_scheme/scheme.cpp  bin/packages/s7/s7.c embedded_scheme/s7extra_proc.h
 	$(CCC2) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
 
-QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -Wno-null-dereference -D_REENTRANT #-fno-sanitize=undefined
+QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -Wno-null-dereference -D_REENTRANT  #-fno-sanitize=undefined
 
-ifeq ($(GCC_MAJOR),9)
+ifeq ($(GCC_MAJOR),10)
+	QHTTPCONNECTIONFLAGS=-fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
+	HTTPPARSERFLAGS=-Wno-implicit-fallthrough
+else ifeq ($(GCC_MAJOR),9)
 	QHTTPCONNECTIONFLAGS= -fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
 	HTTPPARSERFLAGS=-Wno-implicit-fallthrough
 else ifeq ($(GCC_MAJOR),8)

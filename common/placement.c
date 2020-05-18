@@ -409,6 +409,8 @@ const char* p_ToString(const Place a){
   return PlaceToString(&a);
 }
 
+#ifndef TEST_PLACEMENT
+
 Place p_FromString(const char* s){
   wchar_t *w = STRING_create(s);
 
@@ -481,6 +483,8 @@ Place p_FromString(const char* s){
     return place;
   }
 }
+
+#endif
 
 
 #ifdef TEST_PLACEMENT
