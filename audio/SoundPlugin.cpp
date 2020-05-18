@@ -2645,7 +2645,7 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   // 2.5. Load bus on/off effects in older songs
   if (HASH_has_key(effects, "System Reverb On/Off")){
   
-    plugin->bus_on_off = (bool*)V_calloc(sizeof(bool), NUM_BUSES);
+    plugin->bus_on_off = (bool*)V_calloc(sizeof(bool), NUM_BUSES); // seems to be freed in QM_chip.cpp
     
     plugin->bus_on_off[0] = HASH_get_float(effects, "System Reverb On/Off") >= 0.5;
     plugin->bus_on_off[1] = HASH_get_float(effects, "System Chorus On/Off") >= 0.5;

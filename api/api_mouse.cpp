@@ -2897,19 +2897,13 @@ const_char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, in
 
   // instead we just do this:
   struct FX *fx = fxs->fx;
-  static char *ret = NULL;
-
-  if (ret==NULL)
-    ret = (char*)calloc(sizeof(char), 512);
 
   if (wtrack->track->patch->instrument==get_MIDI_instrument())
-    snprintf(ret, 511, "%s: %d", fx->name, (int)val);
+    return talloc_format("%s: %d", fx->name, (int)val);
   else if (fx->patch==wtrack->track->patch)
-    snprintf(ret, 511, "%s: %.01f%%", fx->name, scale(val, fx->min, fx->max, 0, 100));
+    return talloc_format("%s: %.01f%%", fx->name, scale(val, fx->min, fx->max, 0, 100));
   else
-    snprintf(ret, 511, "%s (%s): %.01f%%", fx->name, fx->patch->name, scale(val, fx->min, fx->max, 0, 100));
-  
-  return ret;
+    return talloc_format("%s (%s): %.01f%%", fx->name, fx->patch->name, scale(val, fx->min, fx->max, 0, 100));
 }
 
 int getNumFxs(int tracknum, int blocknum, int windownum){

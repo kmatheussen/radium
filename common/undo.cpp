@@ -422,7 +422,7 @@ bool Undo_Currently_Adding_Undo(void){
   return g_is_adding_undo;
 }
 void Undo_Start_Adding_Undo(source_pos_t source_pos){
-  memcpy(&g_curr_source_pos, &source_pos, sizeof(source_pos_t));
+  memcpy(static_cast<void*>(&g_curr_source_pos), &source_pos, sizeof(source_pos_t));
   R_ASSERT(g_is_adding_undo==false);
   g_is_adding_undo = true;
 }
@@ -659,7 +659,7 @@ static void Undo_Add_internal(
     entry->function         = undo_function;
     entry->stop_playing     = stop_playing_when_undoing;
     entry->info             = talloc_strdup(info);    
-    memcpy(&entry->source_pos, &g_curr_source_pos, sizeof(source_pos_t));
+    memcpy(static_cast<void*>(&entry->source_pos), &g_curr_source_pos, sizeof(source_pos_t));
   
     VECTOR_push_back(&curr_open_undo->entries,entry);
 

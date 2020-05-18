@@ -43,6 +43,7 @@ extern LANGSPEC const wchar_t *STRING_get_sha1(const wchar_t *string);
 
 extern LANGSPEC wchar_t *STRING_trim(const wchar_t *string);
 
+#ifndef TEST_PLACEMENT
 
 #include "OS_settings_proc.h"
 
@@ -56,6 +57,7 @@ static inline double STRING_get_double(const wchar_t *string){
   return OS_get_double_from_string(STRING_get_chars(string));
 }
 
+#endif
 
 
 #ifdef USE_QT4
