@@ -3444,7 +3444,8 @@ struct SeqTrack{
   double custom_min_height; // divided by system font height
   double custom_max_height; // divided by system font height
 
-  double y1, y2; // in the sequencer.
+  bool has_calculated_coordinates;
+  double y1, y2; // in the sequencer. Only valid if has_calculated_coordinates is true.
   
   // All variables below are only used when for_audiofiles==true.
   struct Patch *patch; // A "Sequencer audio file recorder/player" audio plugin.

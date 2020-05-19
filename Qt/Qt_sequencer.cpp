@@ -2448,6 +2448,7 @@ public:
         struct SeqTrack *seqtrack=(struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
         seqtrack->y2 = prev_y1;
         seqtrack->y1 = seqtrack->y2 - heights[seqtracknum];
+        seqtrack->has_calculated_coordinates = true;
         prev_y1 = seqtrack->y1;
       }
     }
@@ -2460,6 +2461,7 @@ public:
         struct SeqTrack *seqtrack=(struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
         seqtrack->y1 = next_y1;
         seqtrack->y2 = seqtrack->y1 + heights[seqtracknum];
+        seqtrack->has_calculated_coordinates = true;
         next_y1 = seqtrack->y2;
       }
     }
@@ -2559,7 +2561,7 @@ public:
 
       const struct SeqTrack *seqtrack = (const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
 
-      if (seqtrack->y2 > 0 && seqtrack->is_visible){ // if seqtrack->y2==0 it means that position_widgets() haven't been called yet.
+      if (seqtrack->has_calculated_coordinates && seqtrack->is_visible){ // if seqtrack->y2==0 it means that position_widgets() haven't been called yet.
         
         R_ASSERT_NON_RELEASE(seqtrack->y2 > seqtrack->y1);
     
@@ -3550,6 +3552,9 @@ public:
         */
 
         if(seqtrack->is_visible==false)
+          continue;
+        
+        if(seqtrack->has_calculated_coordinates==false)
           continue;
         
         double y1 = scale_double(seqtrack->y1, seqtrack0_y1, seqtrackN_y2, t_y1 + 3, t_y2 - 3);
