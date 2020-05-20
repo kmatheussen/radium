@@ -14,6 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+
+
+// TODO: Write custom Menu GUI instead of using QMenu. The amount of customizations and ad-hoc bug fixes in here is ridiculous.
+
+
+
 #if USE_QT_MENU
 
 #ifndef SAFE_POPUP
@@ -311,11 +317,18 @@ namespace{
     bool _success = true;
 
     int64_t _entry_id;
+
+#if !defined(RELEASE)
+    QString _text; // only used for debugging
+#endif
     
     MyQAction(const QString &text, const QString &shortcut, int shortcut_width, std::shared_ptr<Callbacker> &callbacker, bool is_checkbox, bool is_checked, bool is_radiobutton, bool is_first, bool is_last, QObject *parent = NULL)
       : QWidgetAction(parent)
       , _callbacker(callbacker)
       , _entry_id(g_myactions_counter++)
+#if !defined(RELEASE)
+      , _text(text)
+#endif
     {
 
       //printf("   ...ADDING %p/%p into cache. C: %ld\n", this, _callbacker.get(), _callbacker.use_count());
@@ -721,13 +734,16 @@ namespace{
   {
     Q_OBJECT
 
+    int _set_active_action_counter = 0; // A counter to ensure we won't go into infinite loop when calling setActiveAction from the 'hovered'-slot.
+    
   public:
 
 #if SAFE_POPUP
     bool _do_safe_popup;
     QString _kill_file_name;
 #endif
-    
+
+    bool _is_root;
     bool _is_permanent;
     
     MyMainQMenu(QWidget *parent, QString title, int shortcut_width, bool is_async, bool is_permanent, func_t *callback)
@@ -736,6 +752,7 @@ namespace{
       , radium::Timer(1000, false)
       , _do_safe_popup(getenv("USE_SAFE_POPUP") != NULL)
 #endif
+      , _is_root(parent==NULL)
       , _is_permanent(is_permanent)
     {
       
@@ -800,8 +817,11 @@ namespace{
         start_safe_popup_process();
       }
 #endif
-
+      
       //printf("    ========== 1. SHOW\n");
+
+      _set_active_action_counter = 0;
+      
       if (_has_keyboard_focus==false){
         obtain_keyboard_focus_counting();
         _has_keyboard_focus = true;
@@ -811,6 +831,9 @@ namespace{
 
     void hideEvent(QHideEvent *event) override {
       //printf("    ========== 2. HIDE\n");
+
+      _set_active_action_counter = 0;
+      
       if (_has_keyboard_focus==true){
         release_keyboard_focus_counting();
         _has_keyboard_focus = false;
@@ -820,6 +843,9 @@ namespace{
 
     void closeEvent(QCloseEvent *event) override{
       //printf("    ========== 3. CLOSE\n");
+
+      _set_active_action_counter = 0;
+        
       if (_has_keyboard_focus==true){
         release_keyboard_focus_counting();
         _has_keyboard_focus = false;
@@ -897,6 +923,20 @@ namespace{
         myaction->_widget->update();
         
         g_last_hovered_menu_entry_guinum = myaction->_guinum;
+
+        if (/*isVisible() && hasFocus() && */ !_is_permanent && _is_root && _set_active_action_counter==0 && action!=activeAction()){
+          
+          IsAlive is_alive1(this);
+          IsAlive is_alive2(action);
+          
+          QTimer::singleShot(20, [is_alive1, is_alive2, this, action]{
+              if (is_alive1 && is_alive2 && /*isVisible() && hasFocus() &&*/ !_is_permanent && _is_root && action!=activeAction()) {
+                setActiveAction(action);
+                _set_active_action_counter++;
+              }
+            });
+        }
+        
         _my_last_hovered_menu_entry_guinum = -1;
         
         g_last_hovered_widget = myaction->_widget;
@@ -919,8 +959,8 @@ namespace{
 
         g_last_hovered_myaction = NULL;
       }
-      
-      //printf("  QMENU::HOVERED action: %p. myaction: %p. Is separator: %d\n", action, myaction, action->isSeparator());
+
+      //if (myaction!=NULL) printf("  QMENU::HOVERED action: %p. myaction: \"%s\" (%p). Is separator: %d\n", action, myaction->_text.toUtf8().constData(), myaction, action->isSeparator());
     }
       
 
