@@ -115,12 +115,12 @@ class Note:
         self.notenum = notenum
         self.velocity = velocity
 
-    def has_set_end(self):
+    def has_end_tick(self):
         return self.end_tick >= 0
 
-    def has_set_legal_end_tick(self):
-        return self.end_tick > self.start_tick
-    
+    def has_legal_end_tick(self):
+        return self.has_end_tick() and self.end_tick > self.start_tick
+
     def set_end(self, end_tick, end_velocity):
         self.end_tick = end_tick
         self.end_velocity = end_velocity
@@ -131,7 +131,7 @@ class Note:
 def is_overlapping(a, b):
     if b.start_tick < a.start_tick:
         return is_overlapping(b, a)
-    elif not a.has_set_end():
+    elif not a.has_end_tick():
         return True
     else:
         return b.start_tick < a.end_tick
@@ -500,7 +500,7 @@ class Events:
 
     def set_endnote(self, end_tick, channel, notenum, velocity):
         for note in self.notes[channel]:
-            if not note.has_set_end() and note.notenum==notenum:
+            if not note.has_end_tick() and note.notenum==notenum:
                 note.set_end(end_tick, velocity)
                 return
         print "Could not find",notenum, channel
@@ -564,14 +564,13 @@ def send_notes_to_radium_track(notes, tracknum, resolution, lpb):
     for note in notes:
         startplace = tick_to_place(note.start_tick, resolution, lpb)
 
-        if note.has_set_end() and not note.has_set_legal_end_tick():
-            continue
-
-        if note.has_set_end():            
+        if not note_has_end_tick():
+            endplace = [radium.getNumLines(), 0, 1]
+        elif note.has_legal_end_tick():
             endplace = tick_to_place(note.end_tick, resolution, lpb)
         else:
-            endplace = [radium.getNumLines(), 0, 1]
-
+            continue
+            
         radium.addNote3(note.notenum, note.velocity / 128.0,
                         startplace[0], startplace[1], startplace[2],
                         endplace[0], endplace[1], endplace[2],
