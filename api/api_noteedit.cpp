@@ -356,23 +356,20 @@ int addNote(float notevalue,
     return -1;
   }
 
-  if (end.line >=0 ) {
-
-    if (validate_place(end)==false)
-      return -1;
-    
-    if (end.line==wblock->block->num_lines && end.counter==0)
-      PlaceSetLastPos(wblock->block, &end);
-
-    if (!PlaceLegal(wblock->block, &end)) {
-      handleError("addNote: End place %d + %d/%d is not legal", end.line, end.counter, end.dividor);
-      return -1;
-    }
-
-    if (PlaceLessOrEqual(&end, &start)){
-      handleError("addNote: Note end (%s) positioned before or at note start (%s)", PlaceToString(&end), PlaceToString(&start));
-      return -1;
-    }
+  if (validate_place(end)==false)
+    return -1;
+  
+  if (end.line==wblock->block->num_lines && end.counter==0)
+    PlaceSetLastPos(wblock->block, &end);
+  
+  if (!PlaceLegal(wblock->block, &end)) {
+    handleError("addNote: End place %d + %d/%d is not legal", end.line, end.counter, end.dividor);
+    return -1;
+  }
+  
+  if (PlaceLessOrEqual(&end, &start)){
+    handleError("addNote: Note end (%s) positioned before or at note start (%s)", PlaceToString(&end), PlaceToString(&start));
+    return -1;
   }
 
   struct Notes *note = InsertNote(wblock,
