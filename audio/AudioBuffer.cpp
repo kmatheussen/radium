@@ -30,7 +30,7 @@ static int g_num_free_elements = 0;
 #endif
 
 static int get_audio_buffer_channel_size(void){
-  return sizeof(float)*RADIUM_BLOCKSIZE;
+  return R_MAX(sizeof(radium::AudioBufferChannel*), sizeof(float)*RADIUM_BLOCKSIZE);
 }
 
 static radium::AudioBufferChannel *get_g_channel(int i){
