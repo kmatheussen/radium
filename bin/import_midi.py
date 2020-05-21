@@ -115,7 +115,12 @@ class Note:
         self.notenum = notenum
         self.velocity = velocity
 
+    def has_set_end(self):
+        return self.end_tick >= 0
 
+    def has_set_legal_end_tick(self):
+        return self.end_tick > self.start_tick
+    
     def set_end(self, end_tick, end_velocity):
         self.end_tick = end_tick
         self.end_velocity = end_velocity
@@ -558,7 +563,14 @@ if 0:
 def send_notes_to_radium_track(notes, tracknum, resolution, lpb):
     for note in notes:
         startplace = tick_to_place(note.start_tick, resolution, lpb)
-        endplace   = tick_to_place(note.end_tick, resolution, lpb)
+
+        if note.has_set_end() and not note.has_set_legal_end_tick():
+            continue
+
+        if note.has_set_end():            
+            endplace = tick_to_place(note.end_tick, resolution, lpb)
+        else:
+            endplace = [radium.getNumLines(), 0, 1]
 
         radium.addNote3(note.notenum, note.velocity / 128.0,
                         startplace[0], startplace[1], startplace[2],
