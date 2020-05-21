@@ -560,14 +560,14 @@ public:
 
   public:
 
-    MultiThreadAccessArray(std::function<T*(int)> get_buffer)
+    MultiThreadAccessArray(std::function<T*(int)> create_buffer)
     {
       // Using V_calloc/V_free instead of new[]/delete[] since V_calloc ensures the memory is actually allocated.
       _buffers = (T**)V_calloc(sizeof(T*),  SIZE);
       ATOMIC_NAME(_in_use) = (bool*)V_calloc(sizeof(bool), SIZE);
       
       for(int i=0;i<SIZE;i++)
-        _buffers[i] = get_buffer(i);
+        _buffers[i] = create_buffer(i);
     }
     
     ~MultiThreadAccessArray(){
