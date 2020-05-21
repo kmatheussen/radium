@@ -131,7 +131,7 @@ class Note:
 def is_overlapping(a, b):
     if b.start_tick < a.start_tick:
         return is_overlapping(b, a)
-    elif a.end_tick==-1:
+    elif not a.has_set_end():
         return True
     else:
         return b.start_tick < a.end_tick
@@ -500,7 +500,7 @@ class Events:
 
     def set_endnote(self, end_tick, channel, notenum, velocity):
         for note in self.notes[channel]:
-            if note.end_tick==-1 and note.notenum==notenum:
+            if not note.has_set_end() and note.notenum==notenum:
                 note.set_end(end_tick, velocity)
                 return
         print "Could not find",notenum, channel
