@@ -541,7 +541,6 @@ public:
 };
 
 
-
   // A fixed-size multithread-accessible array. I.e. an array that ensures that only one thread is using an element at the same time.
   // It also ensures that we use as few buffers as possible and that we always use the lowest possible indexed free element.
   // E.g. if we only use max 5 number of simultaneous buffers out of 5000 available buffers, the last 4995 buffers will never be used.
@@ -550,9 +549,8 @@ public:
   //
   // Use ScopedMultiThreadAccessArrayElement to conveniently access a currently unused buffer.
   //
-  template <typename T> class MultiThreadAccessArray{
+  template <typename T, const int SIZE> class MultiThreadAccessArray {
 
-    int _size;
     DEFINE_ATOMIC(bool*, _in_use) = {};
     
     T **_buffers;
@@ -562,18 +560,16 @@ public:
 
   public:
 
-    MultiThreadAccessArray(const std::vector<T*> &content)
-      : _size(content.size())
+    MultiThreadAccessArray(std::function<T*(int)> get_buffer)
     {
-      // Use V_calloc/V_free instead of new[]/delete[] since V_calloc ensures the memory is actually allocated. (should probably override global new*)
-      _buffers = (T**)V_calloc(sizeof(T*),  _size);
-      ATOMIC_NAME(_in_use) = (bool*)V_calloc(sizeof(bool), _size);
+      // Using V_calloc/V_free instead of new[]/delete[] since V_calloc ensures the memory is actually allocated.
+      _buffers = (T**)V_calloc(sizeof(T*),  SIZE);
+      ATOMIC_NAME(_in_use) = (bool*)V_calloc(sizeof(bool), SIZE);
       
-      for(int i=0;i<_size;i++){
-        _buffers[i] = content.at(i);
-      }
+      for(int i=0;i<SIZE;i++)
+        _buffers[i] = get_buffer(i);
     }
-
+    
     ~MultiThreadAccessArray(){
       for(auto *t : *this)
         delete t;
@@ -583,7 +579,7 @@ public:
     }
       
     T* at(int pos) const {
-      R_ASSERT_NON_RELEASE(pos>=0 && pos<_size);
+      R_ASSERT_NON_RELEASE(pos>=0 && pos<SIZE);
       return _buffers[pos];
     }
     
@@ -592,16 +588,16 @@ public:
     }
 
     T* const * end() const {
-      return &_buffers[_size];
+      return &_buffers[SIZE];
     }
-    
+
     void RT_release(int pos){
       R_ASSERT_NON_RELEASE(ATOMIC_GET_ARRAY(_in_use, pos)==true);
       ATOMIC_SET_ARRAY(_in_use, pos, false);
     }
     
     int RT_obtain(void){
-      for(int i=0;i<_size;i++)
+      for(int i=0;i<SIZE;i++)
         if(ATOMIC_COMPARE_AND_SET_BOOL_ARRAY(_in_use, i, false, true))
           return i;
 
@@ -611,14 +607,14 @@ public:
   };
 
 
-  template <typename T> class ScopedMultiThreadAccessArrayElement{
+  template <typename MTAT> class ScopedMultiThreadAccessArrayElement{
     
-    MultiThreadAccessArray<T> &_buffers;
+    MTAT &_buffers;
     int _pos;
 
   public:
     
-    ScopedMultiThreadAccessArrayElement(MultiThreadAccessArray<T> &buffers)
+    ScopedMultiThreadAccessArrayElement(MTAT &buffers)
       : _buffers(buffers)
       , _pos(buffers.RT_obtain())
     {
@@ -628,7 +624,7 @@ public:
       _buffers.RT_release(_pos);
     }
 
-    T *RT_get(void){
+    decltype(_buffers.at(_pos)) RT_get(void){
       return _buffers.at(_pos);
     }
   };
