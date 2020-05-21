@@ -148,7 +148,7 @@ void *Undo_Do_Block_Delete(
 	BS_UpdateBlockList();
 	BS_UpdatePlayList();
 
-	ubi->wblock=NULL; // In Undo_Do_Block_Delete, we get wblock from ubi->blockpos instead.
+	ubi->wblock=NULL; // In Undo_Do_Block_Insert, we get wblock from ubi->blockpos instead.
         ubi->sequencer_state=prev_state;
         
 	return ubi;
