@@ -877,7 +877,7 @@ struct SoundProducer {
   //radium::AudioBuffer _output_buffer;
   //radium::AudioBuffer **_input_buffers;
   //radium::MultiThreadAccessAudioBuffers _input_buffers;
-  radium::MultiThreadAccessArray<radium::AudioBuffer> _input_buffers;
+  radium::MultiThreadAccessArray<radium::AudioBuffer, MAX_NUM_CPUS> _input_buffers;
   
   // Scheduling, start
   //
@@ -905,14 +905,6 @@ struct SoundProducer {
   SoundProducer(const SoundProducer&) = delete;
   SoundProducer& operator=(const SoundProducer&) = delete;
 
-  std::vector<radium::AudioBuffer*> create_input_buffers(int size){
-    std::vector<radium::AudioBuffer*> ret;
-    for(int i=0;i<size;i++)
-      ret.push_back(new radium::AudioBuffer(_num_inputs));
-
-    return ret;
-  }
-  
 public:
   
   SoundProducer(SoundPlugin *plugin, int num_frames, Buses buses)
@@ -925,7 +917,7 @@ public:
     , _last_time(-1)
     , running_time(0.0)
       //, _output_buffer(_num_outputs)
-    , _input_buffers(create_input_buffers(MAX_NUM_CPUS))
+    , _input_buffers([this](int buffer_num){return new radium::AudioBuffer(_num_inputs);})
     , _num_active_input_links(0)
   {    
     printf("New SoundProducer. Inputs: %d, Ouptuts: %d. plugin->type->name: %s\n",_num_inputs,_num_outputs,plugin->type->name);
@@ -1827,9 +1819,8 @@ public:
     RT_PLUGIN_touch(link->target->_plugin);
 
     {
-      radium::ScopedMultiThreadAccessArrayElement<radium::AudioBuffer> scoped_buffer(_input_buffers);
-      //auto scoped_buffer(_input_buffers);
-      
+      radium::ScopedMultiThreadAccessArrayElement<decltype(_input_buffers)> scoped_buffer(_input_buffers);
+
       auto *buffer = scoped_buffer.RT_get();
       
       if (buffer->RT_obtain_channels_if_necessary(radium::NeedsLock::YES))
