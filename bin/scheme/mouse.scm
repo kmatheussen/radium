@@ -4317,6 +4317,18 @@
          :shortcut ra:show-hide-reltempo-track
          ra:set-reltempo-track-visible)
    "--------------"
+   (list "Help"
+         (list
+          (list "LPB help" ra:show-lpb-text-help-window)
+          (list "BPM help" ra:show-bpm-text-help-window)
+          (list "Signature help" ra:show-signature-text-help-window)
+          "-------"
+          (list "LZ Track help" ra:show-lz-track-help-window)
+          "-------"
+          (list "Swing help" ra:show-swing-help-window)
+          (list "Tempo automation help" ra:show-tempo-automation-track-help-window)
+          ))   
+   "--------------"
    (list "Keybindings"
          (list
           "-------------BPM visibility keybinding"

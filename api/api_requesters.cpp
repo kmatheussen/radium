@@ -481,3 +481,19 @@ void showSwingHelpWindow(void){
 void showKeybindingsHelpWindow(void){
   S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/keybindings_framed.html");
 }
+
+void showBpmTextHelpWindow(void){
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/bpmtext_editor_framed.html");
+}
+void showLpbTextHelpWindow(void){
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/lpbtext_editor_framed.html");
+}
+void showSignatureTextHelpWindow(void){
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/signaturetext_editor_framed.html");
+}
+void showLzTrackHelpWindow(void){
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/lztrack_editor_framed.html");
+}
+void showTempoAutomationTrackHelpWindow(void){
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/tempoautomationtrack_editor_framed.html");
+}
