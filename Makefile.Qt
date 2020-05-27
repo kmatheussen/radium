@@ -366,7 +366,8 @@ ifeq ($(GCC_MAJOR),9)
 endif
 
 ifeq ($(GCC_MAJOR),10)
-	CPPOPT += -Wno-class-memaccess  -Wno-parentheses -Wno-deprecated-declarations -Wno-deprecated-copy
+#	CPPOPT += -Wno-class-memaccess  -Wno-parentheses -Wno-deprecated-declarations -Wno-deprecated-copy
+	CPPOPT += -Wno-parentheses -Wno-deprecated-declarations 
 	NO_ANALYZER=-fno-analyzer
 	NO_ANALYZER_MALLOC_LEAK=-Wno-analyzer-malloc-leak
 endif
@@ -380,7 +381,7 @@ QT_SUB:=$(shell echo $(QT_VERSION) | cut -d'.' -f3)
 WNO_SUGGEST_OVERRIDE=
 
 ifeq ($(BUILDTYPE), DEBUG)
-	CPPOPT += -std=gnu++11 -Woverloaded-virtual
+	CPPOPT += -std=gnu++14 -Woverloaded-virtual
 	ifneq (,$(findstring g++,$(CCC)))
 		ifeq ($(shell test $(QT_MINOR) -gt 8; echo $$?),0)  # Turn off suggest-override if using Qt before 5.9. Almost all c++ files uses qt now.
 #			CPPOPT += -Wsuggest-override
@@ -388,7 +389,7 @@ ifeq ($(BUILDTYPE), DEBUG)
 		endif
 	endif
 else
-	CPPOPT += -std=gnu++11
+	CPPOPT += -std=gnu++14
 endif
 
 WNO_DUPLICATED_BRANCHES=
@@ -650,19 +651,19 @@ test_ratio:
 	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -DTEST_MAIN -Wall -Werror -g -o a.out &&	./a.out
 
 test_samplereader:
-	cd audio && g++ SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++11 -g && ./a.out
+	cd audio && g++ SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++14 -g && ./a.out
 
 test_threading:
 	$(CCC) common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) -fPIC -DFOR_LINUX
 	mv threading.o test_threading.o
-	$(CCC) test_threading.o $(QT_LDFLAGS) -lpthread -fsanitize=address -fsanitize=undefined  -std=gnu++11
+	$(CCC) test_threading.o $(QT_LDFLAGS) -lpthread -fsanitize=address -fsanitize=undefined  -std=gnu++14
 	./a.out
 #	rm -f test_threading.o
 #	echo "GGGGGGGGGGG"
 #	clang++ common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) -fPIC -DFOR_LINUX
 #       mv threading.o test_threading.o
 #	echo "HHHHHHHHH"
-#	clang++ threading.o $(QT_LDFLAGS) -lpthread -fsanitize=address -fsanitize=undefined  -std=gnu++11
+#	clang++ threading.o $(QT_LDFLAGS) -lpthread -fsanitize=address -fsanitize=undefined  -std=gnu++14
 #	./a.out
 
 
@@ -678,13 +679,13 @@ test_placement:
 	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_notes:
-	$(CCC) -g -Wall -Werror -DTEST_NOTES  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.cpp common/memory.c -lm -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu++11
+	$(CCC) -g -Wall -Werror -DTEST_NOTES  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.cpp common/memory.c -lm -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu++14
 #	gdb ./a.out
 	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 # Commented out. Too many link errors.
 test_path_resolver:
-#	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread -fPIC  -DFOR_LINUX -std=gnu++11 -Wno-error=unknown-pragmas -DUSE_QT5 $(SNDFILEOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -lsndfile
+#	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread -fPIC  -DFOR_LINUX -std=gnu++14 -Wno-error=unknown-pragmas -DUSE_QT5 $(SNDFILEOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -lsndfile
 #	./a.out
 #	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
@@ -1479,7 +1480,7 @@ $(T)Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp  Qt/Qt_MyQScrollBar.h
 	$(CCC2) $(P)Qt_Bs_edit.cpp $(QTOPT) -Wno-null-dereference #-fno-sanitize=undefined
 
 
-INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_sendreceive_plugins_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQLabel.h
+INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_sendreceive_plugins_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQLabel.h common/Vector.hpp 
 
 
 
@@ -1489,10 +1490,10 @@ $(T)Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS
 	@echo "Changed (Qt_instruments.o):"
 	@echo $?
 	@echo
-	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -O0 -Wno-null-dereference $(NO_ANALYZER) ; \
-	else \
+	if [ $(BUILDTYPE) = RELEASE ] ; then \
 		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -Wno-null-dereference  $(NO_ANALYZER) ; \
+	else \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -O0 -Wno-null-dereference $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
@@ -1600,10 +1601,10 @@ $(T)Qt_song_properties.o: $(BUILD_DEPENDENCIES) $(P)Qt_song_properties_callbacks
 
 
 $(T)Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h common/visual_proc.h Qt/mQt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h Qt/helpers.h Qt/Qt_MyQScrollBar.hpp
-	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT) -O0  -Wno-null-dereference $(NO_ANALYZER) ; \
-	else \
+	if [ $(BUILDTYPE) = RELEASE ] ; then \
 		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT)  -Wno-null-dereference $(NO_ANALYZER) ; \
+	else \
+		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT) -O0  -Wno-null-dereference $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
@@ -1670,12 +1671,12 @@ bin/radium_progress_window: $(P)Qt_progresswindow.cpp
 	rm radium_progress_window.o
 
 bin/radium_check_jack_status: audio/KillJackd.cpp $(T)Jack_plugin.o $(T)find_jack_library.o # Jack_plugin.o depends on all the weakjack things
-	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -o $(T)radium_check_jack_status.o -Wno-missing-declarations
+	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++14 -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -o $(T)radium_check_jack_status.o -Wno-missing-declarations
 	$(LINKER) `cat buildtype.opt` $(T)radium_check_jack_status.o $(T)find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) -o bin/radium_check_jack_status $(FPIC)
 	rm $(T)radium_check_jack_status.o
 
 bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp common/Process.hpp
-	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o 
+	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++14 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o 
 	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt5OpenGL`
 	rm radium_check_opengl.o
 
@@ -2433,6 +2434,8 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.c
 	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
+VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
+
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
 	$(CCC2) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER) #-Wno-error=unused-variable
 
@@ -2523,7 +2526,7 @@ bin/packages/sndlib/clm.c: bin/packages/sndlib.tar.gz bin/packages/sndlib.patch
 
 
 $(T)s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp bin/packages/s7/s7.c
-	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++11
+	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++14
 
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp

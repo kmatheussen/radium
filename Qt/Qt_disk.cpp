@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QSaveFile>
 #include <QDir>
 #include <QDateTime>
+#include <QSet>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"

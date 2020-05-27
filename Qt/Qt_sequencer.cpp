@@ -2561,7 +2561,7 @@ public:
 
       const struct SeqTrack *seqtrack = (const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
 
-      if (seqtrack->has_calculated_coordinates && seqtrack->is_visible){ // if seqtrack->y2==0 it means that position_widgets() haven't been called yet.
+      if (seqtrack->has_calculated_coordinates && seqtrack->is_visible){
         
         R_ASSERT_NON_RELEASE(seqtrack->y2 > seqtrack->y1);
     
