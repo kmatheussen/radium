@@ -675,7 +675,7 @@ void PLUGIN_delete(SoundPlugin *plugin){
   R_ASSERT(plugin->midi_learns->size()==0);
   delete plugin->midi_learns;
     
-  memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.
+  //memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.
   V_free(plugin);
 }
 

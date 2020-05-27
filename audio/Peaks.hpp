@@ -79,6 +79,11 @@ public:
     , max(-1)
   {}
 
+  void operator=(const radium::Peak &other){
+    min = other.min;
+    max = other.max;
+  }
+  
   qfloat16 get_min(void) const {
     R_ASSERT_RETURN_IF_FALSE2(has_data(), 0);
     return min;
