@@ -739,7 +739,7 @@ namespace radium{
         
       } else {
 
-        y1 = p_Create(0,1,1);
+        y1 = PlaceFirstPos;
         y2 = p_Absolute_Last_Pos(wblock->block);
       }
     }
@@ -986,6 +986,7 @@ static bool general_transform_list2(radium::GeneralTranspose &gt,
   bool ret = false;
   
   while(list!=NULL){
+    //printf("list->l.p: %s. gt.y1: %s\n", PlaceToString(&list->l.p), PlaceToString(&gt.y1));
     if (p_Less_Than(list->l.p, gt.y1))
       goto next;
     if (p_Greater_Or_Equal(list->l.p, gt.y2))
