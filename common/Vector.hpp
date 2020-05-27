@@ -547,6 +547,7 @@ public:
   //
   // All elements in the array are delete-ed in the deconstructor. The "content" argument itself for the constructor is not stored, only the buffers in it.
   //
+  //
   // Use ScopedMultiThreadAccessArrayElement to conveniently access a currently unused buffer.
   //
   template <typename T, const int SIZE> class MultiThreadAccessArray {
@@ -602,6 +603,7 @@ public:
           return i;
 
       R_ASSERT(false);
+
       return 0;
     }
   };

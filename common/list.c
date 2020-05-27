@@ -508,7 +508,7 @@ void ListAddElement1_ff(
 
 void *ListFindElement1(const struct ListHeader1 *list,NInt num){
 	NInt lastnum;
-
+        
 	while(list!=NULL && list->num<=num){
 		lastnum=list->num;
 		if(list->num==num) return (void*)list;

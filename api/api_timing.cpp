@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_tempos_proc.h"
 #include "../common/undo_temponodes_proc.h"
 #include "../common/undo_maintempos_proc.h"
+#include "../common/undo_swings_proc.h"
 #include "../common/Beats_proc.h"
 #include "../common/player_pause_proc.h"
 #include "../common/time_proc.h"
@@ -523,11 +524,7 @@ void setTemponode(int num, double value, Place place, int blocknum, int windownu
     R_ASSERT_RETURN_IF_FALSE(temponode!=NULL);
   }
   
-  if ( (value+1) > wblock->reltempomax) {
-    wblock->reltempomax = value+1;      
-  } else if ( (value-1) < -wblock->reltempomax) {
-    wblock->reltempomax = -1*(value -1);
-  }
+  adjust_reltempomax(wblock, value);
   
   temponode->reltempo = value;
   TIME_block_tempos_have_changed(wblock->block);
@@ -589,12 +586,8 @@ int addTemponode(float value, Place place, int blocknum, int windownum){
 
   if (place.line >= block->num_lines)
     return -1;
-  
-  if ( (value+1) > wblock->reltempomax) {
-    wblock->reltempomax = value+1;      
-  } else if ( (value-1) < -wblock->reltempomax) {
-    wblock->reltempomax = -1*(value -1);
-  }
+
+  adjust_reltempomax(wblock, value);
 
   struct TempoNodes *temponode = AddTempoNode(window,wblock,&place,value); // addtemponode pauses player
 
@@ -722,7 +715,7 @@ dyn_t API_getAllTrackSwings(const struct Tracks *track){
   return DYN_create_array(ret);
 }
   
-dyn_t getAllTrackSwings(int tracknum, int blocknum, int windownum){
+dyn_t getTrackSwings(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   if (wtrack==NULL)
     return DYN_create_bool(false);
@@ -730,6 +723,93 @@ dyn_t getAllTrackSwings(int tracknum, int blocknum, int windownum){
   return API_getAllTrackSwings(wtrack->track);
 }
 
+template<class T>
+static T *getList3FromDynvec(struct Blocks *block,
+                             dynvec_t dynvec,
+                             std::function<T*(const dyn_t&)> get_T)
+{
+  T *ret = NULL;
+  
+  for(dyn_t dyn : dynvec){
+    T *t = get_T(dyn);
+    if (t==NULL)
+      return NULL;
+
+    if (!PlaceLegal(block, &t->l.p)){
+      handleError("Illegal position: %s", PlaceToString(&t->l.p));
+      return NULL;
+    }
+    
+    T *already = (struct Swing*)ListFindElement3(LCAST(ret),&t->l.p);
+    if (already==NULL && p_Equal(already->l.p, t->l.p)){
+      handleError("Two elements are placed on the same position");
+      return NULL;
+    }
+
+    ListAddElement3(&ret, LCAST(t));
+  }
+
+  return ret;
+}
+
+void setTrackSwings(dynvec_t swings, int tracknum, int blocknum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack=getWTrackFromNumA(-1,&window, blocknum, &wblock, tracknum);
+  if(wtrack==NULL)
+    return;
+
+  struct Blocks *block = wblock->block;
+  struct Tracks *track = wtrack->track;
+  
+  Swing *swing = getList3FromDynvec<Swing>(wblock->block, swings, [](const dyn_t &dyn){
+      if (dyn.type != ARRAY_TYPE){
+        handleError("setTrackSwings: An element is not an array");
+        return static_cast<Swing*>(nullptr);
+      }
+      
+      dynvec_t *s = dyn.array;
+      
+      if (s->num_elements != 3){
+        handleError("setTrackSwings: An element does not contain 3 elements, but %d", s->num_elements);
+        return static_cast<Swing*>(nullptr);
+      }
+      
+      if (!DYN_is_ratio(s->elements[0])){
+        handleError("setTrackSwings: Place of an element is not a place, but a %s", DYN_type_name(s->elements[0]));
+        return static_cast<Swing*>(nullptr);
+      }
+          
+      if (s->elements[1].type != INT_TYPE){
+        handleError("setTrackSwings: Weight of an element is not an integer, but a %s", DYN_type_name(s->elements[1]));
+        return static_cast<Swing*>(nullptr);
+      }
+          
+      if (s->elements[2].type != INT_TYPE){
+        handleError("setTrackSwings: Logtype of an element is not an integer, but a %s", DYN_type_name(s->elements[2]));
+        return static_cast<Swing*>(nullptr);
+      }
+          
+      struct Swing *swing = (struct Swing*)talloc(sizeof(struct Swing));
+      
+      swing->l.p = DYN_get_place(s->elements[0]);
+      swing->weight = (int)s->elements[1].int_number;
+      swing->logtype = (int)s->elements[2].int_number;
+
+      if (swing->weight <= 0){
+        handleError("setTrackSwings: Illegal swing weight: %d", swing->weight);
+        return static_cast<Swing*>(nullptr);
+      }
+      
+      return swing;
+    });
+
+  if (swing != NULL){
+    ADD_UNDO(Swings_CurrPos(window, track));
+    track->swings = swing;
+    TIME_block_swings_have_changed(block);
+  }
+}
 
 /*
 #include "../embedded_scheme/scheme_proc.h"

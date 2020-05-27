@@ -64,11 +64,14 @@
               (loop (cdr mergables))
               maybe)))))
 
-(***assert*** (maybe-merge-two-keybindings '("Z" "ALT_R") '("Z" "ALT_L"))
+(***assert*** (maybe-merge-two-keybindings '("Z" "ALT_R")
+                                           '("Z" "ALT_L"))
               '(("Z" "ALT")))
 
-(***assert*** (maybe-merge-two-keybindings '("Z" "ALT_L" "CTRL_R") '("Z" "CTRL_L"))
+(***assert*** (maybe-merge-two-keybindings '("Z" "ALT_L" "CTRL_R")
+                                           '("Z" "CTRL_L"))
               '(("Z" "ALT_L" "CTRL_R") ("Z" "CTRL_L")))
+
 
 ;; keeps order
 (define (replace-merged-keybinding-in-keybindings keybindings keybindingA keybindingB merged-keybinding)
@@ -177,6 +180,13 @@
                                    ))
               '(("Z" "ALT" "CTRL")))
 
+#!!
+(merge-keybindings '(("Z" "ALT_L" "SHIFT_L" "EDITOR")
+                     ("Z" "ALT_L" "SHIFT_R" "EDITOR")
+                     ("Z" "ALT_R" "SHIFT_L" "EDITOR")
+                     ("Z" "ALT_R" "SHIFT_R" "EDITOR")
+                     ))
+!!#
 
 (define (get-keybindings-from-command-without-focus-and-mouse command)
   (remove-duplicates-in-sorted-list equal?
@@ -193,6 +203,8 @@
 (<ra> :get-keybindings-from-command "ra.pasteSeqblocks")
 (get-menu-keybindings "ra.pasteSeqblocks")
 (<ra> :get-qualifier-name "CTRL")
+
+(get-keybindings-from-command-without-focus-and-mouse "ra.transposeTrack 12")
 !!#
 
 
@@ -353,15 +365,22 @@
               (func))
             (copy *reload-keybindings-callbacks*))) ;; need to make a copy in case the callback removes itself.
 
+
+(define (get-python-arg-string arg)
+  (cond ((eq? #f arg)
+         "False")
+        ((eq? #t arg)
+         "True")
+        (else
+         (let ((arg2 (to-displayable-string arg)))
+           (if (string? arg)
+               (<-> "\"" arg2 "\"")
+               arg2)))))
+
 (define (get-keybindings-command rafuncname args)
-  (define (get-arg-string arg)
-    (let ((arg2 (to-displayable-string arg)))
-      (if (string? arg)
-          (<-> "\"" arg2 "\"")
-          arg2)))
   (<-> rafuncname
        (apply <-> (map (lambda (arg)
-                         (<-> " " (get-arg-string arg)))
+                         (<-> " " (get-python-arg-string arg)))
                        args))))
 #!!
 (get-keybindings-command "" '())
@@ -388,6 +407,7 @@
                ""
                (last keybindings))))
         ((string-starts-with? rafuncname "ra:")
+         ;;(c-display "stuff:" (get-python-ra-funcname rafuncname) args)
          (let* ((command (get-keybindings-command (get-python-ra-funcname rafuncname) args))
                 (keybindings (get-displayable-keybindings command)))
            ;;(c-display "command:" command)
@@ -415,6 +435,8 @@
               "")
 
 #!!
+(get-displayable-keybinding "ra:general-transpose-track-up" (list #t))
+(get-displayable-keybinding "ra:general-transpose-track-up" '())
 (get-displayable-keybinding "e" '())
 (get-displayable-keybinding "ra:copy-track" '())
 (get-displayable-keybinding "ra:paste-seqblocks" '())
@@ -740,24 +762,13 @@ Examples:
                                           :focus-sequencer  ;; (same)
                                           :ra-funcname-is-in-python-format)
   
-  (define (get-arg-string arg)
-    (cond ((eq? #f arg)
-           "False")
-          ((eq? #t arg)
-           "True")
-          (else
-           (let ((arg2 (to-displayable-string arg)))
-             (if (string? arg)
-                 (<-> "\"" arg2 "\"")
-                 arg2)))))
-
   (define python-ra-funcname (if ra-funcname-is-in-python-format
                                  ra-funcname
                                  (get-python-ra-funcname ra-funcname)))
   
   (define command (<-> python-ra-funcname
                        (apply <-> (map (lambda (arg)
-                                         (<-> " " (get-arg-string arg)))
+                                         (<-> " " (get-python-arg-string arg)))
                                        args))))
 
   (let ((keybindings (to-list (<ra> :get-keybindings-from-command command))))
@@ -825,7 +836,7 @@ Examples:
     (c-display "KEYBINDING2:" keybinding ". Existing:" existing-commands ". mouse:" (get-a-mouse-key))
     
     (define (setit!)
-      (<ra> :add-keybinding-to-conf-file keybinding python-ra-funcname (map get-arg-string args)))
+      (<ra> :add-keybinding-to-conf-file keybinding python-ra-funcname (map get-python-arg-string args)))
     
     (if (null? existing-commands)
         (setit!)
@@ -892,12 +903,6 @@ Examples:
                                                            :ra-funcname-is-in-python-format
                                                            )
 
-  (define (get-arg-string arg)
-    (let ((arg2 (to-displayable-string arg)))
-      (if (string? arg)
-          (<-> "\"" arg2 "\"")
-          arg2)))
-
   (when (and (not ra-funcname-is-in-python-format)
              (not (string-starts-with? ra-funcname "ra:"))
              (defined? (string->symbol ra-funcname)))
@@ -914,7 +919,7 @@ Examples:
   
   (define command (<-> python-ra-funcname
                        (apply <-> (map (lambda (arg)
-                                         (<-> " " (get-arg-string arg)))
+                                         (<-> " " (get-python-arg-string arg)))
                                        args))))
 
   (when (not (string? focus-keybinding))
@@ -944,7 +949,7 @@ Examples:
             (<-> "Add keybinding for \"" command "\""))
         (lambda ()
 
-          ;;(c-display "========================  focus-keybindign: " focus-keybinding)
+          (c-display "========================  focus-keybindign: " focus-keybinding)
   
 
           (define focus-editor (string-contains? focus-keybinding "FOCUS_EDITOR"))
@@ -961,7 +966,7 @@ Examples:
                        (c-display "RET:" ret)
                        ret)
                      python-ra-funcname
-                     (map get-arg-string args))
+                     (map get-python-arg-string args))
                (c-display "removing")))
             '())))
 

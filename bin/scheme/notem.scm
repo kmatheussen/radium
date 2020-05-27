@@ -93,21 +93,40 @@
 
 (define (create-transpose-buttons groupname ra-funcname)
   (define funcname-contains-range (string-contains? ra-funcname "range"))
-  (define ra-func (eval-string ra-funcname))
-  (define (func . args)
+  
+  (define ra-funcname-up (<-> ra-funcname "-up"))
+  (define ra-funcname-down (<-> ra-funcname "-down"))
+  
+  (define ra-func-up (eval-string ra-funcname-up))
+  (define ra-func-down (eval-string ra-funcname-down))
+  
+  (define (func is-up is-big)
     (if (and funcname-contains-range
              (not (has-range)))
         (show-missing-range-message)
-        (apply ra-func args)))
+        (if is-up
+            (ra-func-up is-big)
+            (ra-func-down is-big))))
   
   (define (create-button how-much)
-    (define arrow (if (> how-much 0) "Up" "Down")) ;; "↑" "↓"))
+    (define is-up (> how-much 0))
+    (define is-big (> (abs how-much) 5))
+    (define arrow (if is-up "Up" "Down")) ;; "↑" "↓"))
     (define button (<gui> :button
                           ""
                           (lambda ()
-                            (func how-much))))
+                            (func is-up is-big))))
+
+    (define funcname-and-args (if is-up
+                                  (list ra-funcname-up (if is-big
+                                                           (list #t)
+                                                           '()))
+                                  (list ra-funcname-down (if is-big
+                                                             (list #t)
+                                                             '()))))
+
     (define (set-button-text!)
-      (<gui> :set-text button (let ((a (get-displayable-keybinding ra-funcname (list how-much))))
+      (<gui> :set-text button (let ((a (get-displayable-keybinding (funcname-and-args 0) (funcname-and-args 1))))
                                 (if (string=? "" a)
                                     "Click me"
                                     a))))
@@ -124,7 +143,7 @@
     
     (add-reload-keybindings-callback reloaded-keybinding-callback)
 
-    (add-keybinding-configuration-to-gui gui ra-funcname (list how-much))
+    (add-keybinding-configuration-to-gui gui (funcname-and-args 0) (funcname-and-args 1))
 
     gui)
 
@@ -132,9 +151,9 @@
                             (<gui> :vertical-layout
                                    (create-button 1)
                                    (create-button -1))
-                            (<gui> :vertical-layout
-                                   (create-button 7)
-                                   (create-button -7))
+                            ;;(<gui> :vertical-layout
+                            ;;       (create-button 7)
+                            ;;       (create-button -7))
                             (<gui> :vertical-layout
                                    (create-button 12)
                                    (create-button -12))))
@@ -150,10 +169,10 @@
 (define *transpose-tab* #f)
 
 (define (create-transpose-notem)
-  (define ret (create-notem-flow-layout (create-transpose-buttons (notem-group-name "Note" "ALT_R")    "ra:transpose-note")
-                                        (create-transpose-buttons (notem-group-name "Range" "EXTRA_L") "ra:transpose-range")
-                                        (create-transpose-buttons (notem-group-name "Track" "ALT_L")   "ra:transpose-track")
-                                        (create-transpose-buttons (notem-group-name "Block" "CTRL_L")  "ra:transpose-block")))
+  (define ret (create-notem-flow-layout (create-transpose-buttons (notem-group-name "Note" "ALT_R")    "ra:general-transpose-entry")
+                                        (create-transpose-buttons (notem-group-name "Range" "EXTRA_L") "ra:general-transpose-range")
+                                        (create-transpose-buttons (notem-group-name "Track" "ALT_L")   "ra:general-transpose-track")
+                                        (create-transpose-buttons (notem-group-name "Block" "CTRL_L")  "ra:general-transpose-block")))
   (set! *transpose-tab* ret)
   ret)
 
@@ -163,6 +182,11 @@
   #t
   )
 
+#!!
+(<gui> :show (create-transpose-notem))
+
+(get-displayable-keybinding "ra:general-transpose-track-up" (list "True"))
+!!#
 
 
 
