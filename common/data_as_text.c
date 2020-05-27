@@ -39,7 +39,7 @@ extern struct TEvent tevent;
 
 static int get_val_from_key(int key){
   int val = -1;
-  
+
   switch (key){ 
     case EVENT_DEL: val = 0; break;
     case EVENT_RETURN: val = 8; break;
@@ -52,17 +52,23 @@ static int get_val_from_key(int key){
     case EVENT_6: val = 6; break;
     case EVENT_7: val = 7; break;
     case EVENT_8: val = 8; break;
-    case EVENT_9: val = 9; break;    
+    case EVENT_9: val = 9; break;
+      // hex
+
     case EVENT_A: val = 10; break;
     case EVENT_B: val = 11; break;
     case EVENT_C: val = 12; break;
     case EVENT_D: val = 13; break;
     case EVENT_E: val = 14; break;
     case EVENT_F: val = 15; break;
-    case EVENT_G: val = 15; break;
-    case EVENT_T: val = 15; break;
+
+    case EVENT_G: val = 16; break;
+    case EVENT_T: val = 17; break;
+
+      /*
     case EVENT_X: val = 15; break;
     case EVENT_LR3: val = 15; break; // TODO: Investigate why this isnt working.
+      */
   }
 
   return val;
@@ -86,7 +92,7 @@ data_as_text_t DAT_get_newvalue(int subsubtrack,
     logtype = LOGTYPE_HOLD;
   printf("Caps1: %d\n", CapsLock(tevent.keyswitch));
   */
-
+  
   int val = get_val_from_key(key);
   if (val==-1)
     return dat;
@@ -234,10 +240,19 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
 
   if (! (tevent.keyswitch & EVENT_FOCUS_EDITOR2))
     return false;
-  
-  if (AnyModifierKeyPressed(tevent.keyswitch))
-    if(!AnyShift(tevent.keyswitch))
+
+  // We allow shift. Shift + key means not moving cursor to next line.
+  // But we only allow shift alone. Other qualifier keys could (and does) interfere with various keybindings.
+  {
+    if (AnyAlt(tevent.keyswitch))
       return false;
+    
+    if (AnyCtrl(tevent.keyswitch))
+      return false;
+    
+    if (AnyExtra(tevent.keyswitch))
+      return false;    
+  }
   
   struct WBlocks *wblock = window->wblock;
   struct WTracks *wtrack = wblock->wtrack;

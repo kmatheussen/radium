@@ -98,7 +98,6 @@ static void legalize_swings(struct Blocks *block, struct Swing **swings){
   */
 }
 
-// TODO: Automatically add swing to first beat in bar, if it doesn't exist.
 void AddSwing(struct Blocks *block, struct Tracks *track, const Place place, int weight, int logtype){
   struct Swing **swings = track==NULL ? &block->swings : &track->swings;
   

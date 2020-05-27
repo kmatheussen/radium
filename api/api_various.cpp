@@ -71,11 +71,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/time_proc.h"
 #include "../common/sequencer_proc.h"
 #include "../common/patch_proc.h"
-#include "../embedded_scheme/scheme_proc.h"
-#include "../OpenGL/Widget_proc.h"
-#include "../OpenGL/Render_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../common/Dynvec_proc.h"
+#include "../common/PriorityQueue.hpp"
+#include "../common/undo_tempos_proc.h"
+#include "../common/undo_temponodes_proc.h"
+#include "../common/undo_lpbs_proc.h"
+#include "../common/undo_swings_proc.h"
+#include "../common/undo_signatures_proc.h"
+#include "../common/undo_notes_proc.h"
+#include "../common/undo_notesandfxs_proc.h"
+#include "../common/undo_fxs_proc.h"
+#include "../common/swingtext_proc.h"
+#include "../common/fxtext_proc.h"
+#include "../common/chancetext_proc.h"
+#include "../common/centtext_proc.h"
+#include "../common/veltext_proc.h"
+
+#include "../embedded_scheme/scheme_proc.h"
+#include "../embedded_scheme/s7extra_proc.h"
+
+#include "../OpenGL/Widget_proc.h"
+#include "../OpenGL/Render_proc.h"
 
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/Mixer_proc.h"
@@ -86,15 +103,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_i_input_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
-#include "../embedded_scheme/s7extra_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 #include "../Qt/Qt_comment_dialog_proc.h"
 #include "../Qt/EditorWidget.h"
 #include "../Qt/KeyboardFocusFrame.hpp"
 #include "../Qt/Qt_PopupMenu_proc.h"
 #include "../Qt/Qt_Menues_proc.h"
-
-#include "../common/PriorityQueue.hpp"
 
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
@@ -678,6 +692,522 @@ void insertReallines(int toinsert,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   InsertRealLines_CurrPos(window,toinsert);
 }
+
+
+namespace radium{
+  struct GeneralTranspose{
+    const bool all_tracks;
+    const bool in_range;
+    const bool for_entry;
+    const bool is_down;
+    const bool big_step;
+    const bool range_or_all_tracks;
+
+    Place y1,y2;
+    
+    GeneralTranspose(bool all_tracks,
+                     bool in_range,
+                     bool for_entry,
+                     bool is_down,
+                     bool big_step)
+      : all_tracks(all_tracks)
+      , in_range(in_range)
+      , for_entry(for_entry)
+      , is_down(is_down)
+      , big_step(big_step)
+      , range_or_all_tracks(all_tracks || in_range)
+    {
+      struct Tracker_Windows *window=root->song->tracker_windows;
+      struct WBlocks *wblock=window->wblock;
+        
+      if (for_entry){
+        
+        int realline = wblock->curr_realline;
+        if (realline < 0 || realline >= wblock->num_reallines){
+          EVENTLOG_add_event(strdup(talloc_format("curr_realline: %d (%d)", wblock->curr_realline, wblock->num_reallines)));
+          R_ASSERT(false);
+          return;
+        }
+
+        y1 = wblock->reallines[realline]->l.p;
+        y2 = realline==wblock->num_reallines-1 ? p_Absolute_Last_Pos(wblock->block) : wblock->reallines[realline+1]->l.p;
+        
+      } else if (in_range) {
+
+        y1 = wblock->rangey1;
+        y2 = wblock->rangey2;
+        
+      } else {
+
+        y1 = p_Create(0,1,1);
+        y2 = p_Absolute_Last_Pos(wblock->block);
+      }
+    }
+    
+  };
+}
+
+static bool TransposeSwing(Swing *swing, radium::GeneralTranspose &gt){
+  int step = gt.big_step ? 10 : 1;
+  if (gt.is_down)
+    step *= -1;
+
+  int new_weight = R_BOUNDARIES(1, swing->weight + step, 99);
+
+  if (new_weight==swing->weight)
+    return false;
+  
+  swing->weight = new_weight;
+
+  return true;
+}
+
+static bool TransposeSignature(Signatures *signature, radium::GeneralTranspose &gt){
+  int step = gt.big_step ? 4 : 1;
+  if (gt.is_down)
+    step *= -1;
+
+  int new_numerator = R_BOUNDARIES(1, signature->signature.numerator + step, 99);
+
+  if (new_numerator==signature->signature.numerator)
+    return false;
+
+  signature->signature.numerator = new_numerator;
+
+  return true;
+}
+
+static bool TransposeLPB(LPBs *lpb, radium::GeneralTranspose &gt){
+  int step = gt.big_step ? 4 : 1;
+  if (gt.is_down)
+    step *= -1;
+
+  int new_lpb = R_BOUNDARIES(1, lpb->lpb + step, 99);
+
+  if (new_lpb==lpb->lpb)
+    return false;
+
+  lpb->lpb = new_lpb;
+
+  return true;
+}
+
+static bool TransposeBPM(Tempos *bpm, radium::GeneralTranspose &gt){
+  int step = gt.big_step ? 10 : 1;
+  if (gt.is_down)
+    step *= -1;
+
+  int new_bpm = R_BOUNDARIES(1, bpm->tempo + step, 999);
+
+  if (new_bpm==bpm->tempo)
+    return false;
+
+  bpm->tempo = new_bpm;
+
+  return true;
+}
+
+static bool TransposeTemponode(struct WBlocks *wblock, TempoNodes *temponode, radium::GeneralTranspose &gt){
+  float step = gt.big_step ? wblock->reltempomax / 5.0f : wblock->reltempomax / 20.0f;
+  if (gt.is_down)
+    step *= -1;
+
+  float new_reltempo = R_BOUNDARIES(-99.999, temponode->reltempo + step, 99.999);
+
+  //printf("       Step: %f. old: %f. new: %f\n", step, temponode->reltempo, new_reltempo);
+  
+  if (equal_floats(new_reltempo, temponode->reltempo))
+    return false;
+
+  temponode->reltempo = new_reltempo;
+
+  adjust_reltempomax(wblock, new_reltempo);
+
+  return true;
+}
+ 
+static bool TransposeFxNode(struct FX *fx, struct FXNodeLines *fxnode, radium::GeneralTranspose &gt){
+  int step = gt.big_step ? 0x10 : 0x1;
+  if (gt.is_down)
+    step *= -1;
+  
+  int old_value = round(scale_double(fxnode->val, fx->min, fx->max, 0, 0x100));
+  if (old_value==0x100)
+    old_value=0xff;
+  
+  int new_value = R_BOUNDARIES(0, old_value + step, 0xff);
+  
+  //printf("       Step: %f. old: %f. new: %f\n", step, temponode->reltempo, new_reltempo);
+  
+  if (old_value==new_value)
+    return false;
+  
+  safe_int_write(&fxnode->val, round(scale_double(new_value, 0, 0x100, fx->min, fx->max)));
+  
+  return true;
+}
+
+namespace{
+
+  struct Pitches2{
+    ListHeader3 l;
+    float *note;
+    int *chance;
+    int *velocity;
+  };
+  
+  Pitches2 *get_pitches2_from_track(struct Tracks *track){
+    struct Pitches2 *pitches2s = NULL;
+    
+    struct Notes *notes = track->notes;
+    
+    while(notes!=NULL){
+      {
+        Pitches2 *pitches2 = (struct Pitches2*)talloc(sizeof(Pitches2));
+        
+        pitches2->l.p = notes->l.p;
+        pitches2->note = &notes->note;
+        pitches2->chance = &notes->chance;
+        pitches2->velocity = &notes->velocity;
+        
+        ListAddElement3(&pitches2s, &pitches2->l);
+      }
+      
+      struct Pitches *pitches = notes->pitches;
+      while(pitches != NULL){
+        Pitches2 *pitches2 = (struct Pitches2*)talloc(sizeof(Pitches2));
+      
+        pitches2->l.p = pitches->l.p;
+        pitches2->note = &pitches->note;
+        pitches2->chance = &pitches->chance;
+
+        ListAddElement3(&pitches2s, &pitches2->l);
+        
+        pitches = NextPitch(pitches);
+      }
+
+      {
+        Pitches2 *pitches2 = (struct Pitches2*)talloc(sizeof(Pitches2));
+        
+        pitches2->l.p = notes->end;
+        if (notes->pitches != NULL && notes->pitch_end > 0.005)
+          pitches2->note = &notes->pitch_end;
+        pitches2->velocity = &notes->velocity_end;
+        
+        ListAddElement3(&pitches2s, &pitches2->l);
+      }
+      
+      notes = NextNote(notes);
+    }
+
+    return pitches2s;
+  }
+}
+
+static bool TransposeChance(Pitches2 *pitches2, radium::GeneralTranspose &gt){
+  if (pitches2->chance==NULL)
+    return false;
+  
+  int step = gt.big_step ? 0x10 : 0x1;
+  if (gt.is_down)
+    step *= -1;
+  
+  int old_value = *pitches2->chance;
+  
+  int new_value = R_BOUNDARIES(0, old_value + step, 0xff);
+  
+  //printf("       Step: %f. old: %f. new: %f\n", step, temponode->reltempo, new_reltempo);
+  
+  if (old_value==new_value)
+    return false;
+  
+  safe_int_write(pitches2->chance, new_value);
+  
+  return true;
+}
+ 
+static bool TransposePitch2(Pitches2 *pitches2, radium::GeneralTranspose &gt, double small_step, double big_step){
+  if (pitches2->note==NULL)
+    return false;
+  
+  double step = gt.big_step ? big_step : small_step;
+  if (gt.is_down)
+    step *= -1;
+
+  double old_value = *pitches2->note;
+  double new_value = R_BOUNDARIES(0.01, old_value + step, 127.99);
+  
+  //printf("       Step: %f. old: %f. new: %f\n", step, temponode->reltempo, new_reltempo);
+  
+  if (equal_floats(old_value, new_value))
+    return false;
+
+  safe_float_write(pitches2->note, new_value);
+  
+  return true;
+}
+
+static bool TransposeCent(Pitches2 *pitches2, radium::GeneralTranspose &gt){
+  return TransposePitch2(pitches2, gt, 0.01, 0.1);
+}
+
+static bool TransposePitch(Pitches2 *pitches2, radium::GeneralTranspose &gt){
+  return TransposePitch2(pitches2, gt, 1, 12);
+}
+ 
+static bool TransposeVelocity(Pitches2 *pitches2, radium::GeneralTranspose &gt){
+  if (pitches2->velocity==NULL)
+    return false;
+  
+  int step = gt.big_step ? 0x10 : 0x1;
+  if (gt.is_down)
+    step *= -1;
+
+  int old_value = round(scale_double(*pitches2->velocity, 0, MAX_VELOCITY, 0, 0x100));
+  int new_value = R_BOUNDARIES(0, scale_double(old_value + step, 0, 0x100, 0, MAX_VELOCITY), MAX_VELOCITY);
+  
+  //printf("       Step: %f. old: %f. new: %f\n", step, temponode->reltempo, new_reltempo);
+  
+  if (old_value==new_value)
+    return false;
+
+  safe_int_write(pitches2->velocity, new_value);
+  
+  return true;
+}
+ 
+
+template <class T>
+static bool general_transform_list2(radium::GeneralTranspose &gt,
+                                    T *list,
+                                    std::function<bool(T*, radium::GeneralTranspose&)> transformer
+                                    )
+{
+  bool ret = false;
+  
+  while(list!=NULL){
+    if (p_Less_Than(list->l.p, gt.y1))
+      goto next;
+    if (p_Greater_Or_Equal(list->l.p, gt.y2))
+      break;
+    
+    if (transformer(list, gt))
+      ret = true;
+
+  next:
+    list = (T*)list->l.next;
+  }
+
+  return ret;
+}
+
+
+template <class T>
+static bool general_transform_list(struct WBlocks *wblock, struct WTracks *wtrack,
+                                   radium::GeneralTranspose &gt,
+                                   std::function<T*(Blocks*, Tracks*)> get_T,
+                                   std::function<bool(T*, radium::GeneralTranspose&)> transformer,
+                                   std::function<void(Tracks*)> make_undo
+                                   ){
+  
+  struct Blocks *block = wblock->block;
+
+  bool ret = false;
+
+  if (!gt.range_or_all_tracks || wtrack==NULL) {
+
+    struct Tracks *track = wtrack==NULL ? NULL : wtrack->track;
+
+    make_undo(track);
+    
+    if (general_transform_list2(gt, get_T(block, track), transformer))
+      ret = true;
+      
+  } else {
+  
+    if (gt.in_range && !wblock->isranged)
+      return false;
+
+    radium::ScopedUndo scoped_undo;
+    
+    struct Tracks *track = block->tracks;
+    
+    while (track != NULL) {
+      
+      if (gt.in_range) {
+        
+        if (track->l.num < wblock->rangex1)
+          goto next;
+        
+        if (track->l.num > wblock->rangex2)
+          break;
+      }
+
+      make_undo(track);
+      
+      if (general_transform_list2(gt, get_T(block, track), transformer))
+        ret = true;
+      
+    next:
+      track = NextTrack(track);
+    }
+      
+  }
+    
+    
+  if(ret)
+    root->song->tracker_windows->must_redraw = true;
+  else
+    UNDO_CANCEL_LAST_UNDO();
+
+  return ret;
+}
+
+
+static void general_transpose(radium::GeneralTranspose gt){
+  struct Tracker_Windows *window=root->song->tracker_windows;
+  struct WBlocks *wblock=window->wblock;
+  struct Blocks *block=wblock->block;
+
+  switch(window->curr_track){
+      
+    case SWINGTRACK:
+        
+      if(general_transform_list<Swing>(wblock, NULL, gt,
+                                       [](auto *block, auto *track){return block->swings;},
+                                       TransposeSwing,
+                                       [window](auto *track){ADD_UNDO(Swings_CurrPos(window, NULL));}))
+        TIME_block_swings_have_changed(block);
+        
+      break;
+        
+    case SIGNATURETRACK:
+      PC_Pause();{
+        if(general_transform_list<Signatures>(wblock, NULL, gt,
+                                              [](auto *block, auto *track){return block->signatures;},
+                                              TransposeSignature,
+                                              [window](auto *track){ADD_UNDO(Signatures_CurrPos(window));}))
+          TIME_block_signatures_have_changed(block); // 
+      }PC_StopPause(NULL);
+      
+      break;
+        
+    case LPBTRACK:
+      PC_Pause();{
+        if(general_transform_list<LPBs>(wblock, NULL, gt,
+                                        [](auto *block, auto *track){return block->lpbs;},
+                                        TransposeLPB,
+                                        [window](auto *track){ADD_UNDO(LPBs_CurrPos(window));}))
+          TIME_block_LPBs_have_changed(block);
+          
+      }PC_StopPause(NULL);
+      break;
+        
+    case TEMPOTRACK:
+      if(general_transform_list<Tempos>(wblock, NULL, gt,
+                                        [](auto *block, auto *track){return block->tempos;},
+                                        TransposeBPM,
+                                        [window](auto *track){ADD_UNDO(Tempos_CurrPos(window));}))
+        TIME_block_tempos_have_changed(block);
+      break;
+        
+    case TEMPONODETRACK:
+      if(general_transform_list<TempoNodes>(wblock, NULL, gt,
+                                            [](auto *block, auto *track){return block->temponodes;},
+                                            [wblock](auto *temponode, auto &gt){return TransposeTemponode(wblock, temponode, gt);},
+                                            [window](auto *track){ADD_UNDO(TempoNodes_CurrPos(window));}))
+        TIME_block_tempos_have_changed(block);
+      break;
+        
+    default:
+
+      R_ASSERT(window->curr_track >= 0);
+
+      struct WTracks *wtrack = wblock->wtrack;
+      //struct Tracks *track = wtrack->track;
+      struct FXs *fxs;
+        
+      if (SWINGTEXT_subsubtrack(window, wtrack) >= 0){
+          
+        if (general_transform_list<Swing>(wblock, wtrack, gt,
+                                          [](auto *block, auto *track){return track->swings;},
+                                          TransposeSwing,
+                                          [window](auto *track){ADD_UNDO(Swings_CurrPos(window, track));}))
+          TIME_block_swings_have_changed(block);
+          
+      } else if (FXTEXT_subsubtrack(window, wtrack, &fxs) >= 0){      
+          
+        general_transform_list<FXNodeLines>(wblock, wtrack, gt,
+                                            [fxs](auto *block, auto *track){return fxs->fxnodelines;},
+                                            [fxs, wblock](auto *node, auto &gt){return TransposeFxNode(fxs->fx, node, gt);},
+                                            [window, wblock](auto *track){ADD_UNDO(FXs(window, wblock->block, track, wblock->curr_realline));});
+          
+      } else if (CHANCETEXT_subsubtrack(window, wtrack) >= 0){      
+          
+        general_transform_list<Pitches2>(wblock, wtrack, gt,
+                                         [](auto *block, auto *track){return get_pitches2_from_track(track);},
+                                         TransposeChance,
+                                         [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));});
+          
+      } else if (CENTTEXT_subsubtrack(window, wtrack) >= 0){      
+          
+        general_transform_list<Pitches2>(wblock, wtrack, gt,
+                                         [](auto *block, auto *track){return get_pitches2_from_track(track);},
+                                         TransposeCent,
+                                         [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));});
+          
+      } else if (VELTEXT_subsubtrack(window, wtrack) >= 0){      
+          
+        general_transform_list<Pitches2>(wblock, wtrack, gt,
+                                         [](auto *block, auto *track){return get_pitches2_from_track(track);},
+                                         TransposeVelocity,
+                                         [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));});
+          
+      } else {
+          
+        general_transform_list<Pitches2>(wblock, wtrack, gt,
+                                         [](auto *block, auto *track){return get_pitches2_from_track(track);},
+                                         TransposePitch,
+                                         [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));});
+          
+      }
+    
+      break;
+  }
+}
+
+void generalTransposeEntryDown(bool big_step){
+  general_transpose(radium::GeneralTranspose(false, false, true, true, big_step));
+}
+                        
+void generalTransposeEntryUp(bool big_step){
+  general_transpose(radium::GeneralTranspose(false, false, true, false, big_step));
+}
+                        
+void generalTransposeTrackDown(bool big_step){
+  general_transpose(radium::GeneralTranspose(false, false, false, true, big_step));
+}
+                        
+void generalTransposeTrackUp(bool big_step){
+  general_transpose(radium::GeneralTranspose(false, false, false, false, big_step));
+}
+                        
+void generalTransposeRangeDown(bool big_step){
+  general_transpose(radium::GeneralTranspose(false, true, false, true, big_step));
+}
+                        
+void generalTransposeRangeUp(bool big_step){
+  general_transpose(radium::GeneralTranspose(false, true, false, false, big_step));
+}
+                        
+void generalTransposeBlockDown(bool big_step){
+  general_transpose(radium::GeneralTranspose(true, false, false, true, big_step));
+}
+                        
+void generalTransposeBlockUp(bool big_step){
+  general_transpose(radium::GeneralTranspose(true, false, false, false, big_step));
+}
+                        
 
 extern int g_downscroll;
 
