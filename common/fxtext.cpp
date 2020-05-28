@@ -51,13 +51,19 @@ static void add_fxtext(const struct WBlocks *wblock, FXText_trss &fxtexts, const
 
 static void move_fxtexts_to_unique_reallines(const struct WBlocks *wblock, FXText_trss &fxtexts){
   for(int realline=0;realline<wblock->num_reallines-1;realline++){
-    FXText_trs &trs1 = fxtexts[realline];
-    FXText_trs &trs2 = fxtexts[realline+1];
 
-    if (trs1.size() > 1 && trs2.size() == 0){
-      trs2.push_back(trs1.takeFirst());
+    if (fxtexts.contains(realline) && !fxtexts.contains(realline+1)) {
+      
+      FXText_trs &trs1 = fxtexts[realline];
 
-      std::swap(fxtexts[realline], fxtexts[realline+1]);
+      if (trs1.size() > 1) {
+        FXText_trs &trs2 = fxtexts[realline+1];
+        
+        trs2.push_back(trs1.takeFirst());
+
+        std::swap(fxtexts[realline], fxtexts[realline+1]);
+
+      }
     }
   }
 }
