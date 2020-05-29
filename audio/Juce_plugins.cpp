@@ -1992,6 +1992,25 @@ static int num_running_plugins = 0;
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   
+  if (juce::String(plugin_type->name).containsIgnoreCase("Zam") && juce::String(plugin_type->name).containsIgnoreCase("Delay")){
+
+    if (SETTINGS_read_bool("show_zamdelay_plugin_warning", true)) {
+
+      vector_t v = {};
+      VECTOR_push_back(&v,"Ok");
+      VECTOR_push_back(&v,"Don't show this message again");
+      
+      int result = GFX_Message(&v,
+                               "Warning!"
+                               "<p>"
+                               "The ZamDelay plugin has been known to be unstable. Use at your own risk."
+                               );
+      
+      if (result==1)
+        SETTINGS_write_bool("show_zamdelay_plugin_warning", false);
+    }
+  }
+  
   TypeData *type_data = (struct TypeData*)plugin_type->data;
 
   if(isFullVersion()==false && num_running_plugins >= 2){
