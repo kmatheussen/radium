@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "chancetext_proc.h"
 #include "veltext_proc.h"
 #include "fxtext_proc.h"
+#include "swingtext_proc.h"
 #include "realline_calc_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
@@ -228,8 +229,25 @@ void ScrollEditorUp(struct Tracker_Windows *window,int num_lines){
 #endif
 }
 
+static QMap<int,bool> get_list3_trss(struct Tracker_Windows *window, struct WBlocks *wblock, struct ListHeader3 *l){
+  QMap<int,bool> ret;
+  int realline = 0;
+  while(l != NULL){
+    realline = FindRealLineFor(wblock,realline,&l->p);
+    ret[realline] = true;
+    l = l->next;
+  }
+  return ret;
+}
+
+
 template <class T>
-static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const QMap<int, T> &trss){
+static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, T *t){
+  scroll_next(window, wblock, get_list3_trss(window, wblock, LCAST(t)));
+}
+
+template <class T>
+static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, const QMap<int, T> &trss){
 	int curr_realline=wblock->curr_realline;
 
         if(curr_realline==wblock->num_reallines-1){ // last line
@@ -247,7 +265,7 @@ static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, 
 }
 
 template <class T>
-static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const QMap<int, T> &trss){
+static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, const QMap<int, T> &trss){
 	int curr_realline=wblock->curr_realline;
 
         if (curr_realline==0){
@@ -264,15 +282,34 @@ static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, 
 	ScrollEditorUp(window,curr_realline-new_realline);
 }
 
+template <class T>
+static void scroll_prev(struct Tracker_Windows *window, struct WBlocks *wblock, T *t){
+  scroll_prev(window, wblock, get_list3_trss(window, wblock, LCAST(t)));
+}
+
+template <class T>
+static void scroll_nextprev(struct Tracker_Windows *window, struct WBlocks *wblock, bool do_next, const QMap<int, T> &trss){
+  if (do_next)
+    scroll_next(window, wblock, trss);
+  else
+    scroll_prev(window, wblock, trss);
+}
+
+template <class T>
+static void scroll_nextprev(struct Tracker_Windows *window, struct WBlocks *wblock, bool do_next, T *t){
+  scroll_nextprev(window, wblock, do_next, get_list3_trss(window, wblock, LCAST(t)));
+}
+
+
 void ScrollEditorNextNote(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
         const Trss &trss = TRSS_get(wblock, wtrack);
 
-        scroll_next(window, wblock, wtrack, trss);
+        scroll_next(window, wblock, trss);
 }
 
 void ScrollEditorPrevNote(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
         const Trss &trss = TRSS_get(wblock, wtrack);
-        scroll_prev(window, wblock, wtrack, trss);
+        scroll_prev(window, wblock, trss);
 }
 
 static Waveform_trss get_waveform_trss(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
@@ -293,86 +330,106 @@ static Waveform_trss get_waveform_trss(struct Tracker_Windows *window, struct WB
   return trss;
 }
 
-
 void ScrollEditorNextWaveform(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
   const Waveform_trss &trss = get_waveform_trss(window, wblock, wtrack, polyphony_num);
-  scroll_next(window, wblock, wtrack, trss);
+  scroll_next(window, wblock, trss);
 }
 
 void ScrollEditorPrevWaveform(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
   const Waveform_trss &trss = get_waveform_trss(window, wblock, wtrack, polyphony_num);
-  scroll_prev(window, wblock, wtrack, trss);
+  scroll_prev(window, wblock, trss);
 }
 
 void ScrollEditorNextVelocity(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
   const VelText_trss &trss = VELTEXTS_get(wblock, wtrack);
-  scroll_next(window, wblock, wtrack, trss);
+  scroll_next(window, wblock, trss);
 }
 
 void ScrollEditorPrevVelocity(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
   const VelText_trss &trss = VELTEXTS_get(wblock, wtrack);
-  scroll_prev(window, wblock, wtrack, trss);
+  scroll_prev(window, wblock, trss);
 }
 
 void ScrollEditorNextFx(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FXs *fxs){
   const FXText_trss &trss = FXTEXTS_get(wblock, wtrack, fxs);
-  scroll_next(window, wblock, wtrack, trss);
+  scroll_next(window, wblock, trss);
 }
 
 void ScrollEditorPrevFx(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct FXs *fxs){
   const FXText_trss &trss = FXTEXTS_get(wblock, wtrack, fxs);
-  scroll_prev(window, wblock, wtrack, trss);
+  scroll_prev(window, wblock, trss);
+}
+
+static void ScrollEditorPrevNext(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, bool do_next){
+  switch(window->curr_track){
+      
+    case SWINGTRACK:        
+      scroll_nextprev(window, wblock, do_next, wblock->block->swings);
+      break;
+        
+    case SIGNATURETRACK:
+      scroll_nextprev(window, wblock, do_next, wblock->block->signatures);
+      break;
+        
+    case LPBTRACK:
+      scroll_nextprev(window, wblock, do_next, wblock->block->lpbs);
+      break;
+        
+    case TEMPOTRACK:
+      scroll_nextprev(window, wblock, do_next, wblock->block->tempos);
+      break;
+        
+    case TEMPONODETRACK:
+      scroll_nextprev(window, wblock, do_next, wblock->block->temponodes);
+      break;
+        
+    default:
+
+      R_ASSERT_NON_RELEASE(window->curr_track >= 0);
+      
+      if (window->curr_track < 0)
+        return;
+      
+      struct Tracks *track = wtrack->track;
+      struct FXs *fxs;
+
+      if (SWINGTEXT_subsubtrack(window, wtrack) >= 0){
+        scroll_nextprev(window, wblock, do_next, track->swings);
+
+      } else if (FXTEXT_subsubtrack(window, wtrack, &fxs) >= 0){      
+        scroll_nextprev(window, wblock, do_next, FXTEXTS_get(wblock, wtrack, fxs));
+          
+      } else if (VELTEXT_subsubtrack(window, wtrack) >= 0){      
+        scroll_nextprev(window, wblock, do_next, VELTEXTS_get(wblock, wtrack));
+        
+      } else if (window->curr_track_sub==-1 || CENTTEXT_subsubtrack(window, wtrack)!=-1 || CHANCETEXT_subsubtrack(window, wtrack)!=-1){
+        scroll_nextprev(window, wblock, do_next, TRSS_get(wblock, wtrack));
+        
+      } else {
+        
+        int curr_polyphony_num = window->curr_track_sub - WTRACK_num_non_polyphonic_subtracks(wtrack);
+
+        if (curr_polyphony_num >= 0){
+          
+          scroll_nextprev(window, wblock, do_next, get_waveform_trss(window, wblock, wtrack, curr_polyphony_num));
+          
+        } else {
+
+          R_ASSERT_NON_RELEASE(false);
+          
+        }
+
+      }
+      break;
+  }
 }
 
 void ScrollEditorNextSomething(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-  if (window->curr_track < 0 || window->curr_track_sub==-1 || CENTTEXT_subsubtrack(window, wtrack)!=-1 || CHANCETEXT_subsubtrack(window, wtrack)!=-1){
-    ScrollEditorNextNote(window, wblock, wtrack);
-    return;
-  }
-
-  int curr_polyphony_num = window->curr_track_sub - WTRACK_num_non_polyphonic_subtracks(wtrack);
-
-  if (curr_polyphony_num >= 0){
-    ScrollEditorNextWaveform(window, wblock, wtrack, curr_polyphony_num);
-    return;
-  }
-
-  if (VELTEXT_subsubtrack(window, wtrack) != -1){
-    ScrollEditorNextVelocity(window, wblock, wtrack);
-    return;
-  }
-
-  struct FXs *fxs;  
-  if (FXTEXT_subsubtrack(window, wtrack, &fxs) != -1){
-    ScrollEditorNextFx(window, wblock, wtrack, fxs);
-    return;
-  }
-
+  ScrollEditorPrevNext(window, wblock, wtrack, true);
 }
 
 void ScrollEditorPrevSomething(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-  if (window->curr_track < 0 || window->curr_track_sub==-1 || CENTTEXT_subsubtrack(window, wtrack)!=-1 || CHANCETEXT_subsubtrack(window, wtrack)!=-1){
-    ScrollEditorPrevNote(window, wblock, wtrack);
-    return;
-  }
-
-  int curr_polyphony_num = window->curr_track_sub - WTRACK_num_non_polyphonic_subtracks(wtrack);
-
-  if (curr_polyphony_num >= 0){
-    ScrollEditorPrevWaveform(window, wblock, wtrack, curr_polyphony_num);
-    return;
-  }
-  
-  if (VELTEXT_subsubtrack(window, wtrack) != -1){
-    ScrollEditorPrevVelocity(window, wblock, wtrack);
-    return;
-  }
-
-  struct FXs *fxs;  
-  if (FXTEXT_subsubtrack(window, wtrack, &fxs) != -1){
-    ScrollEditorPrevFx(window, wblock, wtrack, fxs);
-    return;
-  }
+  ScrollEditorPrevNext(window, wblock, wtrack, false);
 }
 
 void ScrollEditorToRealLine(
