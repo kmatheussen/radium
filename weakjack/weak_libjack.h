@@ -50,6 +50,7 @@ void init_weak_jack(void);
 #ifdef USE_WEAK_JACK
 
 /* <jack/jack.h> */
+#define jack_get_version_string             WJACK_get_version_string
 #define jack_client_close                   WJACK_client_close
 #define jack_get_client_name                WJACK_get_client_name
 #define jack_get_sample_rate                WJACK_get_sample_rate

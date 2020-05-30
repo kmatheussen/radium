@@ -1466,10 +1466,66 @@ static void start_workaround_thread(void){
 }
 #endif
 
+
+static void maybe_warn_about_jack1(void){
+
+  const char *config_name = "show_jack1_warning_during_startup";
+  
+  if (SETTINGS_read_bool(config_name, true)==false)
+    return;
+    
+  bool ok = true;
+  
+  const char *version_string = WJACK_get_version_string();
+
+  if (version_string==NULL) {
+    
+    ok = false;
+
+  } else {
+    
+    auto splitted = QString(version_string).split(".");
+    
+    if (splitted.size() != 3){
+      
+      ok = false;
+      
+    } else {
+      
+      int major = splitted[0].toInt();
+      int minor = splitted[1].toInt();
+      
+      if (major < 1 || (major==1 && minor < 9)){
+        
+        ok = false;
+        
+      }
+    }
+  }
+
+
+  if (!ok) {
+
+    vector_t v = {};
+    
+    VECTOR_push_back(&v,"Ok");
+    int hide = VECTOR_push_back(&v,"Don't show this message again");
+
+    int ret = GFX_Message(&v, "Warning: Jack 1, or an old version of Jack 2, detected. Radium does not work very well with Jack 1. At minimum, you need to provide the option \"-Z\". If not, Radium will freeze now and then.");
+
+    if (ret = hide)
+      SETTINGS_write_bool(config_name, false);
+
+  }
+
+}
+
 bool MIXER_start(void){
   
   R_ASSERT(THREADING_is_main_thread());
 
+  maybe_warn_about_jack1(); 
+  
   if (KILLJACKD_kill_jackd_if_unresponsive()==true){
     return false;
   }
