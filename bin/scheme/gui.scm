@@ -1574,8 +1574,8 @@
            
            (<gui> :my-draw-text widget
                   (if (<gui> :is-enabled widget)
-                      *text-color*
-                      (<gui> :mix-colors *text-color* nonhover-background-color 0.5))
+                      "menu_text"
+                      (<gui> :mix-colors "menu_text" nonhover-background-color 0.5))
                   name
                   (+ b before-and-after-width) b (- width b) (- height b)
                   #f ;; wrap lines
@@ -1588,7 +1588,7 @@
              (define shortcut-x1 (- width (+ shortcut-width before-and-after-width b)))
              
              (<gui> :my-draw-text widget
-                    (let ((color (<gui> :make-color-lighter (<gui> :mix-colors *text-color* "green" 0.5) 1.3)))
+                    (let ((color "menu_keybinding_text")) ;;(<gui> :make-color-lighter (<gui> :mix-colors *text-color* "green" 0.5) 1.3)))
                       (if (<gui> :is-enabled widget)
                           color
                           (<gui> :mix-colors color nonhover-background-color 0.5)))

@@ -88,7 +88,7 @@ namespace{
 }
 
 static const ColorConfig g_colorconfig[] = {
-  {BACKGROUND_SEPARATOR, "", "Background", true},
+  {GUI_SEPARATOR, "", "General", true},
   {BUTTONS_SEPARATOR, "", "Buttons", true},
   {SCROLLBAR_SEPARATOR, "", "Scrollbars", true},
   {SLIDER_SEPARATOR, "", "Sliders", true},
@@ -114,6 +114,8 @@ static const ColorConfig g_colorconfig[] = {
   {LOW_BACKGROUND_COLOR_NUM,                   "low_background",  "Low Background", false},
   {AUTOMATION3_COLOR_NUM,                  "color10", "Automation 3", false},
   {HIGH_BACKGROUND_COLOR_NUM,                  "high_background", "High Background", false},
+  {MENU_TEXT_COLOR_NUM,                  "menu_text", "Menu text", false},
+  {MENU_KEYBINDING_TEXT_COLOR_NUM,                  "menu_keybinding_text", "Menu keybinding text", false},
   {EDITOR_SLIDERS_COLOR_NUM,                  "color12", "Editor sliders", false},
   {TRACK_SLIDER_COLOR_NUM,     "track_slider", "Track slider (bottom of editor)", false},
   {LINE_SLIDER_COLOR_NUM,     "line_slider", "Line slider (left of editor)", false},
@@ -250,7 +252,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
 
   //{BUTTONS_NOT_ENABLED_COLOR_NUM, BUTTONS_COLOR_NUM},
   //{CHECK_BOX_NOT_ENABLED_COLOR_NUM, CHECK_BOX_SELECTED_COLOR_NUM},
-  
+
   {SOUNDFONT_COLOR_NUM, BUTTONS_COLOR_NUM}, // 13=green  
   {SOUNDFILE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM}, // 7=bluish
   {CURRENT_SOUNDFILE_COLOR_NUM, VELOCITY2_COLOR_NUM},
@@ -305,7 +307,8 @@ static ReplacementColor g_replacement_color[] = {
   {LOW_EDITOR_BACKGROUND_COLOR_NUM, QColor("#475253")},
   {LOW_BACKGROUND_COLOR_NUM, QColor("#50585a")},
   {HIGH_BACKGROUND_COLOR_NUM, QColor("#22282a")},
-  {HIGH_EDITOR_BACKGROUND_COLOR_NUM, QColor("#585d55")},
+  {MENU_TEXT_COLOR_NUM, QColor("#f7f5e4")},
+  {MENU_KEYBINDING_TEXT_COLOR_NUM, QColor("#e57c12")},
   
   {SCROLLBAR_COLOR_NUM, QColor("black")},
   {SCROLLBAR_BACKGROUND_COLOR_NUM, QColor("#69b8b8b8")},
