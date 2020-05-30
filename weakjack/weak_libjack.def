@@ -12,6 +12,8 @@
 #ifdef USE_WEAK_JACK
 
 /* <jack/jack.h> */
+JPFUN(0, const char*,    get_version_string, (void), (), NULL)
+
 JCFUN(1, int,            client_close, 0)
 JCFUN(1, char*,          get_client_name, NULL)
 JVFUN(0,                 on_shutdown, (jack_client_t *c, JackShutdownCallback s, void *a), (c,s,a),)
