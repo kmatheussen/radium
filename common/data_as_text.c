@@ -37,7 +37,7 @@ extern struct TEvent tevent;
 
 
 
-static int get_val_from_key(int key){
+static int get_val_from_key(int key, bool include_hex){
   int val = -1;
 
   switch (key){ 
@@ -53,23 +53,25 @@ static int get_val_from_key(int key){
     case EVENT_7: val = 7; break;
     case EVENT_8: val = 8; break;
     case EVENT_9: val = 9; break;
-      // hex
-
-    case EVENT_A: val = 10; break;
-    case EVENT_B: val = 11; break;
-    case EVENT_C: val = 12; break;
-    case EVENT_D: val = 13; break;
-    case EVENT_E: val = 14; break;
-    case EVENT_F: val = 15; break;
-
     case EVENT_G: val = 16; break;
     case EVENT_T: val = 17; break;
-
-      /*
-    case EVENT_X: val = 15; break;
-    case EVENT_LR3: val = 15; break; // TODO: Investigate why this isnt working.
-      */
+    default:
+      break;
   }
+
+  if (val==-1 && include_hex)
+    switch(key){
+      case EVENT_A: val = 10; break;
+      case EVENT_B: val = 11; break;
+      case EVENT_C: val = 12; break;
+      case EVENT_D: val = 13; break;
+      case EVENT_E: val = 14; break;
+      case EVENT_F: val = 15; break;
+      /*
+        case EVENT_X: val = 15; break;
+        case EVENT_LR3: val = 15; break; // TODO: Investigate why this isnt working.
+      */
+    }
 
   return val;
 }
@@ -93,15 +95,15 @@ data_as_text_t DAT_get_newvalue(int subsubtrack,
   printf("Caps1: %d\n", CapsLock(tevent.keyswitch));
   */
   
-  int val = get_val_from_key(key);
-  if (val==-1)
-    return dat;
-
   int base = 10;
   if (is_hex)
     base = 0x10;
 
   int num_subtracks = 1 + log(max_value) / log(base);
+
+  int val = get_val_from_key(key, is_hex && subsubtrack < num_subtracks);
+  if (val==-1)
+    return dat;
 
   int highest_value = pow(base, num_subtracks) - 1;  
   //int highest_value = 0xff;
@@ -158,15 +160,15 @@ data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, in
   data_as_text_t dat;
   dat.is_valid = false;
 
-  int val = get_val_from_key(key);
-  if (val==-1)
-    return dat;
-
   int base = 10;
   if (is_hex)
     base = 0x10;
 
   int num_subtracks = 1 + log(max_value) / log(base);
+
+  int val = get_val_from_key(key, is_hex && subsubtrack < num_subtracks);
+  if (val==-1)
+    return dat;
 
   int vs[num_subtracks];
   for(int i=0;i<num_subtracks;i++){
@@ -268,7 +270,7 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
   }
       
   
-  if (get_val_from_key(key)==-1)
+  if (get_val_from_key(key, true)==-1)
     return false;
 
   if (is_keydown==false)
