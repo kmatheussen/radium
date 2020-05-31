@@ -126,10 +126,15 @@
                                                              '()))))
 
     (define (set-button-text!)
-      (<gui> :set-text button (let ((a (get-displayable-keybinding (funcname-and-args 0) (funcname-and-args 1))))
-                                (if (string=? "" a)
-                                    "Click me"
-                                    a))))
+      (define keybinding (get-displayable-keybinding (funcname-and-args 0) (funcname-and-args 1)))
+      (<gui> :set-text
+             button
+             (if (string=? "" keybinding)
+                 "Click me"
+                 keybinding)
+             (if (string=? "" keybinding)
+                 ""
+                 "menu_keybinding_text")))
 
     (set-button-text!)
     

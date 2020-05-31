@@ -2650,11 +2650,18 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     // Try to put as much as possible in here, since GUIs created from ui files does not use the subclasses
-    virtual void setGuiText(const_char *text){
+    virtual void setGuiText(const_char *chartext, const_char* charcolorname){
+      QString text = chartext;
+
+      QString colorname(charcolorname);
+      QColor color(getQColor(charcolorname));
+    
       {
         QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget.data());
         if (button!=NULL){
           button->setText(text);
+          if (colorname != "" && color.isValid())
+            button->setStyleSheet("color: " + color.name(QColor::HexArgb));
           return;
         }
       }
@@ -2662,6 +2669,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       {
         QLabel *label = dynamic_cast<QLabel*>(_widget.data());
         if (label!=NULL){
+          if (colorname != "" && color.isValid())
+            text = QString("<span style=\" color:") + color.name(QColor::HexArgb) + ";\">" + text + "</span>";
           label->setText(text);
           return;
         }
@@ -3548,6 +3557,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         QColor color = getQColor(colorname);
         if(color.isValid())
           setText("<span style=\" color:" + color.name(QColor::HexArgb) + ";\">" + text + "</span>");
+        else
+          setText(text);
       }
     }
 
@@ -5897,12 +5908,12 @@ void gui_setToolTip(int64_t guinum, const_char *value){
   gui->_widget->setToolTip(value);
 }
   
-void gui_setText(int64_t guinum, const_char *value){
+void gui_setText(int64_t guinum, const_char *value, const_char* colorname){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->setGuiText(value);
+  gui->setGuiText(value, colorname);
 }
 
 void gui_setValue(int64_t guinum, dyn_t value){
