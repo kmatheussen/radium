@@ -1491,11 +1491,13 @@ static void maybe_warn_about_jack1(void){
       ok = false;
       
     } else {
+
+      bool ok1 = true, ok2 = true, ok3 = true;
+      int major = splitted[0].toInt(&ok1);
+      int minor = splitted[1].toInt(&ok2);
+      splitted[2].toInt(&ok3);
       
-      int major = splitted[0].toInt();
-      int minor = splitted[1].toInt();
-      
-      if (major < 1 || (major==1 && minor < 9)){
+      if (!ok1 || !ok2 || !ok3 || major < 1 || (major==1 && minor < 9)){
         
         ok = false;
         
