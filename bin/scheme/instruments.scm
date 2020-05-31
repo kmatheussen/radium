@@ -1901,36 +1901,39 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
           instruments-before)))
     
   (list
-   "<New MIDI Instrument>" (lambda ()
-                             (load (<ra> :create-midi-instrument "Unnamed")))
+   "----------Create new instrument"
    "<New Sample Player>" (lambda ()
                            (load (<ra> :create-audio-instrument "Sample Player" "Sample Player")))
-   "<New FluidSynth>" (lambda ()
-                        (load (<ra> :create-audio-instrument "FluidSynth" "FluidSynth")))
-   (if (<ra> :has-pure-data)
-       (list "<New Pd Instrument>" (lambda ()
-                                     (load (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
-       #f)
+   ;;"<New FluidSynth>" (lambda ()
+   ;;                     (load (<ra> :create-audio-instrument "FluidSynth" "FluidSynth")))
+   ;;(if (<ra> :has-pure-data)
+   ;;    (list "<New Pd Instrument>" (lambda ()
+   ;;                                  (load (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
+   ;;    #f)
+   "----------------"
    "<New Audio Instrument>" (lambda ()
                               (start-instrument-popup-menu (make-instrument-conf :connect-to-main-pipe #t
                                                                                  :parentgui -1)
                                                            (lambda (descr)
                                                              (load (<ra> :create-audio-instrument-from-description descr)))))
+   "<New MIDI Instrument>" (lambda ()
+                             (load (<ra> :create-midi-instrument "Unnamed")))
+   "----------------"
    "<Load New Preset>" (lambda ()
                          (request-select-instrument-preset -1
                                                            (lambda (instrument-description)
                                                              (load (<ra> :create-audio-instrument-from-description instrument-description)))))
    
-   "----------"
-   "Clone Audio Instrument" (map (lambda (num instrument-id)
-                                   (if (<ra> :instrument-is-permanent instrument-id)
-                                       #f
-                                       (list (<-> num ". " (<ra> :get-instrument-name instrument-id))
-                                             (lambda ()
-                                               (load (<ra> :clone-audio-instrument instrument-id))))))
-                                 (iota (length instruments-before))
-                                 instruments-before)
-   "All instruments" (get-instrument-entries #f)
+   "----------Existing instruments"
+   "All" (get-instrument-entries #f)
+   "Clone" (map (lambda (num instrument-id)
+                  (if (<ra> :instrument-is-permanent instrument-id)
+                      #f
+                      (list (<-> num ". " (<ra> :get-instrument-name instrument-id))
+                            (lambda ()
+                              (load (<ra> :clone-audio-instrument instrument-id))))))
+                (iota (length instruments-before))
+                instruments-before)
    (get-instrument-entries #t))
   )
 
