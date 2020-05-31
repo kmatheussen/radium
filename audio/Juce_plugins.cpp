@@ -1477,7 +1477,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   // 2. Send out midi
   if (!data->midi_buffer.isEmpty()){
 
-    volatile struct Patch *patch = plugin->patch;
+    struct Patch *patch = plugin->patch;
 
     juce::MidiBuffer::Iterator iterator(data->midi_buffer);
     

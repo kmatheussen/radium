@@ -1046,7 +1046,7 @@ Examples:
     (define texttext (if (string=? "" keybinding)
                          " "
                          (<-> " (" keybinding ")")))
-    (<gui> :set-text text texttext))
+    (<gui> :set-text text texttext "menu_keybinding_text"))
   
   (set-text-gui)
 
