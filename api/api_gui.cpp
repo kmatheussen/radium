@@ -2654,7 +2654,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       QString text = chartext;
 
       QString colorname(charcolorname);
-      QColor color(getQColor(charcolorname));
+      QColor color(colorname=="" ? "" : getQColor(charcolorname));
     
       {
         QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget.data());
