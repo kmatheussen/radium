@@ -1084,7 +1084,9 @@ static QMenu *create_qmenu(
 
       for(int i = 3 ; i < text.size() ; i++)
         if (text[i] != '-'){
+          QString text2 = text.mid(i);
           separator->setText(text.mid(i));
+          menu->setMinimumWidth(1.6 * GFX_get_text_width(root->song->tracker_windows, text2.toUtf8().constData())); // qt doesn't do this by itself.
           break;
         }
 
