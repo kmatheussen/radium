@@ -1573,12 +1573,17 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
         DYNVEC_push_back(args, DYN_create_int(parentguinum));
 
-        DYNVEC_push_back(args, DYN_create_instrument(CHIP_get_patch(chip_under)->id));
+        dynvec_t instruments = {};
+          
+        DYNVEC_push_back(instruments, DYN_create_instrument(CHIP_get_patch(chip_under)->id));
         
         VECTOR_FOR_EACH(struct Patch *,patch,&patches){
           if (patch!=CHIP_get_patch(chip_under))
-            DYNVEC_push_back(args, DYN_create_instrument(patch->id));
+            DYNVEC_push_back(instruments, DYN_create_instrument(patch->id));
         }END_VECTOR_FOR_EACH;
+        
+        
+        DYNVEC_push_back(args, DYN_create_array(instruments));        
 
         s7extra_applyFunc_void(scheme_func, args);
                                        
