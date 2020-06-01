@@ -118,17 +118,21 @@
                         (let* ((funcname (get-procedure-name arg2))
                                (keybinding (get-displayable-keybinding funcname '())))
                           ;;(c-display "---------------funcname:" funcname ". keybinding-func:" keybinding-func ". arg2:" arg2)
-                          (cons (if (not (string=? keybinding ""))
-                                    (<-> "[shortcut]" keybinding "[/shortcut]" text)
-                                    text)
-                                (cons (list arg2
-                                            (or keybinding-func
-                                                (and funcname
-                                                     (not (string=? funcname ""))
-                                                     (defined? (string->symbol funcname))
-                                                     (get-keybinding-popup-func funcname '() #f))))
-                                      (loop (cddr args)
-                                            #f)))))
+                          (let ((keybinding-func (or keybinding-func
+                                                     (and funcname
+                                                          (not (string=? funcname ""))
+                                                          (defined? (string->symbol funcname))
+                                                          (get-keybinding-popup-func funcname '() #f)))))
+                            `(,(cond ((not (string=? keybinding ""))
+                                      (<-> "[shortcut]" keybinding "[/shortcut]" text))
+                                     (keybinding-func
+                                      (<-> "[shortcut]unassigned[/shortcut]" text))
+                                     (else
+                                      text))
+                              ,(list arg2
+                                     keybinding-func)
+                              ,@(loop (cddr args)
+                                      #f)))))
                        ((list? arg2)
                         (append (list (<-> "[submenu start]" text)
                                       (lambda () #t))

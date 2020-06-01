@@ -1585,10 +1585,19 @@
                   )
 
            (when (not (string=? "" shortcut))
-             (define shortcut-x1 (- width (+ shortcut-width before-and-after-width b)))
+             (define is-unassigned (string=? shortcut "unassigned"))
+             
+             (define shortcut-x1 (if (and #f is-unassigned)
+                                     (- width (+ (<gui> :text-width shortcut) before-and-after-width b))
+                                     (- width (+ shortcut-width before-and-after-width b))))
              
              (<gui> :my-draw-text widget
-                    (let ((color "menu_keybinding_text")) ;;(<gui> :make-color-lighter (<gui> :mix-colors *text-color* "green" 0.5) 1.3)))
+                    (let ((color (if is-unassigned
+                                     (<gui> :mix-colors
+                                            nonhover-background-color 
+                                            (<gui> :mix-colors "menu_text" "menu_keybinding_text" 0.2)
+                                            0.85)
+                                     "menu_keybinding_text")))
                       (if (<gui> :is-enabled widget)
                           color
                           (<gui> :mix-colors color nonhover-background-color 0.5)))
