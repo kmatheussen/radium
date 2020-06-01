@@ -1086,7 +1086,9 @@ static QMenu *create_qmenu(
         if (text[i] != '-'){
           QString text2 = text.mid(i);
           separator->setText(text.mid(i));
-          menu->setMinimumWidth(1.6 * GFX_get_text_width(root->song->tracker_windows, text2.toUtf8().constData())); // qt doesn't do this by itself.
+          int minwidth = 1.6 * GFX_get_text_width(root->song->tracker_windows, text2.toUtf8().constData());
+          if (menu->minimumWidth() < minwidth)
+            menu->setMinimumWidth(minwidth); // qt doesn't do this by itself.
           break;
         }
 
@@ -1306,11 +1308,18 @@ static QMenu *create_qmenu(
         //printf("   Finished. Callbacker %p count: %ld\n", callbacker.get(), callbacker.use_count());
       }
 
-      
+ 
       if (action != NULL){
         //action->setData(i);
         double t = TIME_get_ms();
         curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu? (yes, seems so) (they are probably freed because they are children of the qmenu)
+
+        /*
+        for(auto *widget : action->associatedWidgets())
+          if (curr_menu->minimumWidth() < widget->minimumWidth())
+            curr_menu->setMinimumWidth(widget->minimumWidth());
+        */
+        
         setdatadur += TIME_get_ms() - t;
       }
 
