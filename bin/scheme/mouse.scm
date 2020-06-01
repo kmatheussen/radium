@@ -8150,40 +8150,35 @@
                                                  
                                                  "--------------------Seqblock"
                                                  
-                                                 (list (if (> num-selected-with-current 1)
-                                                           "Copy sequencer blocks"
-                                                           "Copy sequencer block")
+                                                 (list "Copy"
                                                        :enabled (> num-selected-with-current 0)
                                                        :shortcut ra:copy-selected-seqblocks
                                                        (lambda ()
-                                                         (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
+                                                         (if (and seqblocknum
+                                                                  (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
                                                              (<ra> :select-seqblock #t seqblocknum seqtracknum))
                                                          (<ra> :copy-selected-seqblocks)))
                                                  ;;(copy-blocks-to-clipboard (list (make-seqblock-info2 seqtracknum seqblocknum))))))
                                                  
-                                                 (list (if (> num-selected-with-current 1)
-                                                           "Cut sequencer blocks"
-                                                           "Cut sequencer block")
+                                                 (list "Cut"
                                                        :enabled (> num-selected-with-current 0)
                                                        :shortcut ra:cut-selected-seqblocks
                                                        (lambda ()
-                                                         (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
+                                                         (if (and seqblocknum
+                                                                  (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
                                                              (<ra> :select-seqblock #t seqblocknum seqtracknum))
                                                          (<ra> :cut-selected-seqblocks)))
-                                                 
-                                                 (list (if (> num-selected-with-current 1)
-                                                           "Delete sequencer blocks"
-                                                           "Delete sequencer block")
-                                                       :enabled (> num-selected-with-current 0)
+
+                                                 (list "Delete all selected"
+                                                       :enabled (> num-selected-with-current 1)
                                                        :shortcut ra:delete-selected-seqblocks
                                                        (lambda ()
-                                                         (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
+                                                         (if (and seqblocknum
+                                                                  (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
                                                              (<ra> :select-seqblock #t seqblocknum seqtracknum))
                                                          (<ra> :delete-selected-seqblocks)))
                                                  
-                                                 (list (if (> (<ra> :get-num-selected-seqblocks) 1)
-                                                           "Paste sequencer blocks"
-                                                           "Paste sequencer block")
+                                                 (list "Paste"
                                                        :enabled (not (empty? *seqblock-clipboard*))
                                                        :shortcut ra:paste-seqblocks
                                                        (lambda ()
@@ -8227,8 +8222,8 @@
                                                                (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
                                                                  (<ra> :set-audiofile-color color filename))))))
 
-                                                 (list "Delete"
-                                                       :shortcut *shift-right-mouse*
+                                                 (list "Delete current"
+                                                       :shortcut ra:delete-seqblock ;;*shift-right-mouse*
                                                        :enabled seqblock-info
                                                        (lambda ()
                                                          (set! *current-seqblock-info* #f)
