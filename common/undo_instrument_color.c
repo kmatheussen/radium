@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/undo.h"
+#include "../common/patch_proc.h"
 #include "../common/OS_Player_proc.h"
 
 #include "../api/api_instruments_proc.h"
@@ -50,7 +51,13 @@ static void Undo_InstrumentColor(
                                  )
 {
   struct Undo_InstrumentColor *undo_ae=talloc(sizeof(struct Undo_InstrumentColor));
-  
+
+  if (!isLegalInstrument(instrument_id)){
+    struct Patch *patch = PATCH_get_current();
+    R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+    instrument_id = patch->id;
+  }
+      
   undo_ae->instrument_id = instrument_id;
 
   undo_ae->color = getInstrumentColor(instrument_id, true);

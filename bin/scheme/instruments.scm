@@ -1244,8 +1244,8 @@
    
    "Configure color" :shortcut FROM_C-show-instrument-color-dialog (lambda ()
                                                                      (FROM_C-show-instrument-color-dialog parentgui instrument-id))
-   "Generate new color" (lambda ()
-                          (<ra> :generate-new-instrument-color instrument-id))
+   "Generate new color" :shortcut ra:generate-new-instrument-color (lambda ()
+                                                                     (<ra> :generate-new-instrument-color instrument-id))
 
    "--------"
    
