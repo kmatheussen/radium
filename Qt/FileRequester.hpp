@@ -2,11 +2,23 @@
 #include <QFileDialog>
 #include <QSortFilterProxyModel>
 #include <QFileSystemModel>
+#include <QComboBox>
 
 
 extern QByteArray g_filedialog_geometry;
   
 namespace radium{
+
+  static inline void fixqfiledialog(QWidget *widget){
+    if (widget != NULL){
+      QComboBox *box = dynamic_cast<QComboBox*>(widget);
+      if (box != NULL)
+        box->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+      
+      for(auto *c : widget->children())
+        fixqfiledialog(dynamic_cast<QWidget*>(c));
+    }
+  }
 
   struct FileRequester : public QFileDialog {
 
@@ -59,6 +71,8 @@ namespace radium{
       if (!g_filedialog_geometry.isEmpty()){
         restoreGeometry(g_filedialog_geometry);
       }
+
+      fixqfiledialog(this);
     }
 
     ~FileRequester(){
