@@ -125,7 +125,8 @@
                                                           (get-keybinding-popup-func funcname '() #f)))))
                             `(,(cond ((not (string=? keybinding ""))
                                       (<-> "[shortcut]" keybinding "[/shortcut]" text))
-                                     (keybinding-func
+                                     ((and keybinding-func
+                                           (not (string-contains? text "[shortcut]")))
                                       (<-> "[shortcut]unassigned[/shortcut]" text))
                                      (else
                                       text))
