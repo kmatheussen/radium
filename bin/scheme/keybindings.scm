@@ -840,7 +840,7 @@ Examples:
     
     (if (null? existing-commands)
         (setit!)
-        (show-async-message :text (<-> "<style>table, th, td {  border: 2px solid white;  border-collapse: collapse;}th, td {  padding: 5px;  text-align: left;    }</style>"
+        (show-async-message :text (<-> "<style>table, th, td {  border: 2px solid white; background-color:black; border-collapse: collapse;}th, td {  padding: 5px;  text-align: left;    }</style>"
                                        ;;"Keybinding \""
                                        "<center>Keybinding already bound.</center>\n"
                                        "<p>\n"
