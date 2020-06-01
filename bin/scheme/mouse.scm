@@ -1419,12 +1419,26 @@
                         )                        
 
 
-(define (FROM_C-show-instrument-color-dialog parentgui . instrument-ids)
-  (<ra> :color-dialog (<ra> :get-instrument-color (car instrument-ids) #f) parentgui
-        (lambda (color)
-          (for-each (lambda (instrument-id)
-                      (<ra> :set-instrument-color color instrument-id))
-                    instrument-ids))))
+(delafina (FROM_C-show-instrument-color-dialog :parentgui -1
+                                               :instrument-ids #f)
+  (if (not instrument-ids)
+      (let ((current-instrument (<ra> :get-current-instrument)))
+        (if (<ra> :is-legal-instrument current-instrument)
+            (set! instrument-ids current-instrument))))
+
+  (if (vector? instrument-ids)
+      (set! instrument-ids (to-list instrument-ids))
+      (if (not (pair? instrument-ids))
+          (set! instrument-ids (list instrument-ids))))
+  
+  (set! instrument-ids (keep ra:is-legal-instrument instrument-ids))
+  
+  (if (not (null? instrument-ids))
+      (<ra> :color-dialog (<ra> :get-instrument-color (car instrument-ids) #f) parentgui
+            (lambda (color)
+              (for-each (lambda (instrument-id)
+                          (<ra> :set-instrument-color color instrument-id))
+                        instrument-ids)))))
 
 (define (swingtext-popup-elements)
   (list (list "Swing text"
@@ -1619,6 +1633,7 @@
                       (select-track-instrument tracknum)))
               (list "Configure instrument color"
                     :enabled (<ra> :is-legal-instrument instrument-id)
+                    :shortcut FROM_C-show-instrument-color-dialog
                     (lambda ()
                       (FROM_C-show-instrument-color-dialog -1 instrument-id)))
               (list "Generate new instrument color"
