@@ -707,6 +707,8 @@
          "ra.showHideBPMTrack")
         ((string=? funcname "ra:show-hide-lpb-track")
          "ra.showHideLPBTrack")
+        ((string=? funcname "ra:request-fx")
+         "ra.requestFX")
         (else
          (let ((parts (string-split (string-drop funcname 3) #\-)))
            (<-> "ra."
