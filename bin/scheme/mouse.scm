@@ -1638,6 +1638,7 @@
                       (FROM_C-show-instrument-color-dialog -1 instrument-id)))
               (list "Generate new instrument color"
                     :enabled (<ra> :is-legal-instrument instrument-id)
+                    :shortcut ra:generate-new-instrument-color
                     (lambda ()
                       (<ra> :set-instrument-color (<ra> :generate-new-color 0.9) instrument-id)))
 
