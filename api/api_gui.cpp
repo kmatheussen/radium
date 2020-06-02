@@ -267,8 +267,11 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 #define PAINT_OVERRIDER(classname)                                      \
   void paintEvent(QPaintEvent *ev) override {                           \
     ScopedEventHandlerTracker event_handler_tracker;                    \
-    if (Gui::paintEvent(ev, QRegion())==false)                          \
+    if (_paint_on_top)                                                  \
       classname::paintEvent(ev);                                        \
+    if (Gui::paintEvent(ev, QRegion())==false)                          \
+      if(!_paint_on_top)                                                \
+        classname::paintEvent(ev);                                      \
   }
   
 #define SETVISIBLE_OVERRIDER(classname)                                 \
@@ -2193,7 +2196,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     /************ DRAWING *******************/
 
     radium::ProtectedS7Extra<func_t*> _paint_callback = radium::ProtectedS7Extra<func_t*>("paint_callback");
-
+    bool _paint_on_top = false;
+    
     QImage *_image = NULL;
     QPainter *_image_painter = NULL;
     QPainter *_current_painter = NULL;
@@ -2268,7 +2272,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         R_ASSERT_NON_RELEASE(false);
         return false;
       }
-
+        
       QPainter p(widget);
       
       if(maybePaintBackgroundColor(event, p)==false)
@@ -2334,15 +2338,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
 
-    void addPaintCallback(func_t* func){
+    void addPaintCallback(func_t* func, bool paint_on_top){
       if (_paint_callback.v!=NULL){
         handleError("Gui %d already has a paint callback.", (int)_gui_num);
         return;
       }
 
+      _paint_on_top = paint_on_top;
       _paint_callback.set(func);
     }
-
 
     void setNewImage(int width, int height){
       width = R_MAX(1,width);
@@ -4923,7 +4927,7 @@ void gui_addResizeCallback(int64_t guinum, func_t* func){
   gui->addResizeCallback(func);
 }
 
-void gui_addPaintCallback(int64_t guinum, func_t* func){
+void gui_addPaintCallback(int64_t guinum, func_t* func, bool paint_on_top){
   Gui *gui = get_gui(guinum);
 
   if (gui==NULL)
@@ -4933,7 +4937,7 @@ void gui_addPaintCallback(int64_t guinum, func_t* func){
     if(check_existing(gui)==false)
       return;
   
-  gui->addPaintCallback(func);
+  gui->addPaintCallback(func, paint_on_top);
 }
 
 void gui_updateRecursively(int64_t guinum){
