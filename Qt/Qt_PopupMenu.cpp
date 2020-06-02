@@ -1006,11 +1006,14 @@ static int get_largest_shortcut_width(const vector_t &v, int v_pos){
   int ret = 0;
   
   int indentation = 0;
-  
+
+  //printf("\n\n\n\n========================================================\n");
   for(int i=v_pos;i<v.num_elements;i++) {
 
     QString text = (const char*)v.elements[i];
 
+    //printf("         TEXT: -%s-\n", text.toUtf8().constData());
+    
     if (text.startsWith("[submenu start]")){
       
       indentation++;
@@ -1022,17 +1025,20 @@ static int get_largest_shortcut_width(const vector_t &v, int v_pos){
       if (indentation < 0)
         break;
       
-    } else if (indentation==0 && text.startsWith("[shortcut]")){
-
+    } else if (indentation==0 && text.contains("[shortcut]")){
+      
       QString shortcut;
+
+      int pos1 = text.indexOf("[shortcut]");
+      text = text.mid(pos1 + 10);
+
+      //printf("TEXT1: -%s-\n", text.toUtf8().constData());
       
-      text = text.right(text.size() - 10);
-      
-      int pos = text.indexOf("[/shortcut]");
-      if (pos <= 0){
+      int pos2 = text.indexOf("[/shortcut]");
+      if (pos2 <= 0){
         R_ASSERT(false);
       } else {
-        shortcut = text.left(pos);
+        shortcut = text.left(pos2);
         //printf("shortcut: -%s-. text: -%s-\n", shortcut.toUtf8().constData(), text.toUtf8().constData());
       }
 
@@ -1044,6 +1050,22 @@ static int get_largest_shortcut_width(const vector_t &v, int v_pos){
 
   return ret;
 }
+
+#if 0
+static void force_min_width(QWidget *top, QWidget *widget){
+  if (widget != NULL){
+    
+    if (widget->minimumWidth() < widget->minimumWidth())
+      top->setMinimumWidth(widget->minimumWidth());
+    
+    for(auto *c : widget->children()){
+      QWidget *w = dynamic_cast<QWidget*>(c);      
+      doit(top, w);
+    }
+    
+  }
+}
+#endif
 
 static QMenu *create_qmenu(
                            const vector_t &v,
@@ -1314,12 +1336,23 @@ static QMenu *create_qmenu(
         double t = TIME_get_ms();
         curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu? (yes, seems so) (they are probably freed because they are children of the qmenu)
 
+
         /*
-        for(auto *widget : action->associatedWidgets())
+        {
+          for(auto *widget : action->associatedWidgets())
+            doit(menu, widget);
+          
+          auto *myqaction = dynamic_cast<MyQAction*>(action);
+          if (myqaction != NULL){
+            doit(menu, myqaction->_widget);
+          }
+        }
+        */
+        
+        /*
           if (curr_menu->minimumWidth() < widget->minimumWidth())
             curr_menu->setMinimumWidth(widget->minimumWidth());
         */
-        
         setdatadur += TIME_get_ms() - t;
       }
 
