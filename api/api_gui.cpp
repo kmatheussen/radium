@@ -6499,6 +6499,24 @@ int gui_getGlobalY(int64_t guinum){
   return w->mapToGlobal(QPoint(0,0)).y();
 }
 
+float gui_getMouseX(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return 0;
+
+  const QWidget *w = gui->_widget;
+  return w->mapFromGlobal(QCursor::pos()).x();
+}
+
+float gui_getMouseY(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return 0;
+
+  const QWidget *w = gui->_widget;
+  return w->mapFromGlobal(QCursor::pos()).y();
+}
+
 void gui_moveToCentreOf(int64_t guinum, int64_t window_to_move_in_centre_of){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
