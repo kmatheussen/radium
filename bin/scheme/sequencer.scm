@@ -257,11 +257,33 @@
                                (< type curr-min-type))
                           (set! is-disabled #t))))
               
-              (define button (<gui> :radiobutton text (and (not is-disabled)
-                                                           (= type (getter seqtracknum)))
+              (define button (<gui> :radiobutton
+                                    text
+                                    (and (not is-disabled)
+                                         (= type (getter seqtracknum)))
                                     (lambda (val)
                                       (if val
                                           (gotit type)))))
+
+              (define (get-keybinding type)
+                (let ((keybinding (get-displayable-keybinding "ra:set-seqtrack-min-height-type" (list type))))
+                  (if (string=? "" keybinding)
+                      "unassigned"
+                      keybinding)))
+
+              (define width1 (ceiling (* 1.5 (<gui> :text-width "1/3 row   "))))
+              (define width2 (ceiling (* 1.5 (apply max (map (lambda (type)
+                                                               (<gui> :text-width (get-keybinding type)))
+                                                             (iota 4))))))
+              (define text-width (+ width1 width2))
+              
+              (<gui> :set-min-width button text-width)
+
+              (define (paint-keybinding width height)
+                (draw-keybinding button (- width width2) 0 width height (get-keybinding type)))
+            
+              (<gui> :add-paint-callback button paint-keybinding #t)
+            
               (<gui> :add gui button)
               
               (add-keybinding-configuration-to-gui button "ra:set-seqtrack-min-height-type" (list type) "FOCUS_SEQUENCER")
@@ -286,7 +308,11 @@
   (set! has-started #t)
 
   gui)
-  
+
+#!!
+(null? (get-keybindings-from-command-without-focus-and-mouse "ra.setSeqtrackMinHeightType 13"))
+
+!!#
 
 (define *seqtrack-size-gui-uses-popup #f)
 

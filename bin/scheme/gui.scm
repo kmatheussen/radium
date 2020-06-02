@@ -1479,10 +1479,35 @@
 !!#
 
 
-;; Menu entries
+;; Menu entries (note: must call GFX_clear_menu_cache() first to update already displayed menu entries.)
 
 (define *last-pressed-menu-entry-widget-mouse-button* 0)
 
+(define (draw-keybinding gui x1 y1 x2 y2 keybinding)
+  (define nonhover-background-color (<gui> :mix-colors "low_background" "#ffffff" 0.97))
+  
+  (define is-unassigned (string=? keybinding "unassigned"))
+
+  (<gui> :my-draw-text gui
+         (let ((color (if is-unassigned
+                          (<gui> :mix-colors
+                                 nonhover-background-color 
+                                 (<gui> :mix-colors "menu_text" "menu_keybinding_text" 0.2)
+                                 0.85)
+                          "menu_keybinding_text")))
+           (if (<gui> :is-enabled gui)
+               color
+               (<gui> :mix-colors color nonhover-background-color 0.5)))
+         keybinding
+         x1 y1 x2 y2
+         #f ;; wrap lines
+         #f ;; align top
+         #t ;; align left
+         0 ;; rotate
+         ))
+
+
+  
 (define (FROM_C-create-menu-entry-widget entry-id name shortcut shortcut-width is-checkbox is-checked is-radiobutton is-first is-last)
   (if is-radiobutton
       (assert is-checkbox))
@@ -1585,32 +1610,9 @@
                   )
 
            (when (not (string=? "" shortcut))
-             (define is-unassigned (string=? shortcut "unassigned"))
-             
-             (define shortcut-x1 (if (and #f is-unassigned)
-                                     (- width (+ (<gui> :text-width shortcut) before-and-after-width b))
-                                     (- width (+ shortcut-width before-and-after-width b))))
-             
-             (<gui> :my-draw-text widget
-                    (let ((color (if is-unassigned
-                                     (<gui> :mix-colors
-                                            nonhover-background-color 
-                                            (<gui> :mix-colors "menu_text" "menu_keybinding_text" 0.2)
-                                            0.85)
-                                     "menu_keybinding_text")))
-                      (if (<gui> :is-enabled widget)
-                          color
-                          (<gui> :mix-colors color nonhover-background-color 0.5)))
-                    shortcut
-                    shortcut-x1 b (- width b) (- height b)
-                    #f ;; wrap lines
-                    #f ;; align top
-                    #t ;; align left
-                    0 ;; rotate
-                    ))
-
-
-           ))
+             (define shortcut-x1 (- width (+ shortcut-width before-and-after-width b)))
+             (draw-keybinding widget shortcut-x1 b (- width b) (- height b) shortcut)
+             )))
 
   (<gui> :add-mouse-callback widget
          (lambda (button state x y)
