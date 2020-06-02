@@ -7810,7 +7810,9 @@
         (iota (length all-instruments))
         all-instruments)))
  
-(define (create-sequencer-automation seqtracknum X Y)
+(delafina (create-sequencer-automation :seqtracknum (<ra> :get-curr-seqtrack)
+                                       :X (<ra> :get-mouse-pointer-x -2)
+                                       :Y (<ra> :get-mouse-pointer-y -2))
   (request-instrument-id-and-effect-num
    seqtracknum
    (lambda (instrument-id effectnum)
@@ -8033,24 +8035,24 @@
 
                                            "-------------------Automation"
                                            
-                                           "New automation" (lambda ()
-                                                   (create-sequencer-automation seqtracknum X Y))
+                                           "New automation" :shortcut create-sequencer-automation (lambda ()
+                                                                                                    (create-sequencer-automation seqtracknum X Y))
 
-                                          (list (<-> "Paste automation")
-                                                :enabled *clipboard-seqtrack-automation*
-                                                (lambda ()
-                                                  (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
-                                                    (apply-seqtrack-automation seqtracknum pos *clipboard-seqtrack-automation*))))
-
-                                          (map (lambda (automationnum)
-                                                 (list (get-seq-automation-display-name automationnum seqtracknum)
-                                                       :check (<ra> :get-seq-automation-enabled automationnum seqtracknum)
-                                                       (lambda (checked)
-                                                         (<ra> :set-seq-automation-enabled automationnum seqtracknum checked)
-                                                         (c-display "checked" checked)))
-                                                 )
-                                               (iota (<ra> :get-num-seqtrack-automations seqtracknum)))
-
+                                           (list (<-> "Paste automation")
+                                                 :enabled *clipboard-seqtrack-automation*
+                                                 (lambda ()
+                                                   (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
+                                                     (apply-seqtrack-automation seqtracknum pos *clipboard-seqtrack-automation*))))
+                                           
+                                           (map (lambda (automationnum)
+                                                  (list (get-seq-automation-display-name automationnum seqtracknum)
+                                                        :check (<ra> :get-seq-automation-enabled automationnum seqtracknum)
+                                                        (lambda (checked)
+                                                          (<ra> :set-seq-automation-enabled automationnum seqtracknum checked)
+                                                          (c-display "checked" checked)))
+                                                  )
+                                                (iota (<ra> :get-num-seqtrack-automations seqtracknum)))
+                                           
                                            )
                                           (if (not for-blocks)
                                               #f
