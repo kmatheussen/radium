@@ -195,6 +195,7 @@
          (c-display "************** boxname:" boxname)
          (assert #f))))
 
+  
 (define (get-select-seqtrack-size-type-gui seqtracknum is-min gotit-callback)
   (define getter (if is-min ra:get-seqtrack-min-height-type ra:get-seqtrack-max-height-type))
   (define setter (if is-min ra:set-seqtrack-min-height-type ra:set-seqtrack-max-height-type))
@@ -340,7 +341,7 @@
 (define *curr-seqtrack-size-type-gui* #f) ;; only show one at a time.
 (define *curr-seqtrack-size-type-content* #f)
 
-(define (show-select-both-seqtrack-size-types-gui seqtracknum)
+(delafina (show-select-both-seqtrack-size-types-gui :seqtracknum (<ra> :get-curr-seqtrack))
   (set! *seqtrack-size-gui-seqtracknum* seqtracknum)
   (define min-gui (get-select-seqtrack-size-type-gui seqtracknum #t #f))
   (define max-gui (get-select-seqtrack-size-type-gui seqtracknum #f #f))
@@ -688,23 +689,46 @@
    ))
 
    
-   
+(delafina (swap-with-prev-seqtrack :seqtracknum (<ra> :get-curr-seqtrack))
+  (define (swapit)
+    (<ra> :undo-sequencer)
+    (<ra> :swap-seqtracks (- seqtracknum 1) seqtracknum)
+    (<ra> :set-curr-seqtrack (- seqtracknum 1)))
+  (if (and (= 1 seqtracknum)
+           (<ra> :seqtrack-for-audiofiles 1))
+      (ask-user-about-first-audio-seqtrack
+       (lambda (doit)
+         (if doit
+             (swapit))))
+      (swapit)))
+  
+(delafina (swap-with-next-seqtrack :seqtracknum (<ra> :get-curr-seqtrack))
+  (define (swapit)
+    (<ra> :undo-sequencer)
+    (<ra> :swap-seqtracks seqtracknum (1+ seqtracknum))
+    (<ra> :set-curr-seqtrack (1+ seqtracknum)))          
+  (if (and (= 0 seqtracknum)
+           (<ra> :seqtrack-for-audiofiles 1))
+      (ask-user-about-first-audio-seqtrack
+       (lambda (doit)
+         (if doit
+             (swapit))))
+      (swapit)))
+  
 (define (get-seqtrack-popup-menu-entries seqtracknum)
   (list
+   (list "Swap with prev seqtrack"
+         :enabled (> seqtracknum 0)
+         :shortcut swap-with-prev-seqtrack
+         (lambda ()
+           (swap-with-prev-seqtrack seqtracknum)))
    (list "Swap with next seqtrack"
          :enabled (< seqtracknum (- (<ra> :get-num-seqtracks) 1))
+         :shortcut swap-with-next-seqtrack
          (lambda ()
-           (define (swapit)
-             (<ra> :undo-sequencer)
-             (<ra> :swap-seqtracks seqtracknum (1+ seqtracknum)))
-           (if (and (= 0 seqtracknum)
-                    (<ra> :seqtrack-for-audiofiles 1))
-               (ask-user-about-first-audio-seqtrack
-                (lambda (doit)
-                  (if doit
-                      (swapit))))
-               (swapit))))
+           (swap-with-next-seqtrack seqtracknum)))
    (list "Set height"
+         :shortcut show-select-both-seqtrack-size-types-gui
          (lambda ()
            (show-select-both-seqtrack-size-types-gui seqtracknum)))))
 
