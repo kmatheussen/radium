@@ -2205,7 +2205,7 @@ int getSeqtrackMinHeightType(int seqtracknum){
   return (int)seqtrack->min_height_type;
 }
 
-void setSeqtrackMinHeightType(int seqtracknum, int new_type){
+void setSeqtrackMinHeightType(int new_type, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return;
@@ -2234,7 +2234,7 @@ int getSeqtrackMaxHeightType(int seqtracknum){
   return (int)seqtrack->max_height_type;
 }
 
-void setSeqtrackMaxHeightType(int seqtracknum, int new_type){
+void setSeqtrackMaxHeightType(int new_type, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return;

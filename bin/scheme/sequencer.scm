@@ -206,14 +206,14 @@
     (when has-started
       (if #t
           (begin
-            (setter seqtracknum type)
+            (setter type seqtracknum)
             (if gotit-callback
                 (gotit-callback)
                 (show-select-both-seqtrack-size-types-gui seqtracknum)))
           (<ra> :schedule 30
                 (lambda ()
                   (eat-errors :try (lambda ()
-                                      (setter seqtracknum type)
+                                      (setter type seqtracknum)
                                       (if gotit-callback
                                           (gotit-callback)))
                                :finally (lambda ()
@@ -262,7 +262,9 @@
                                       (if val
                                           (gotit type)))))
               (<gui> :add gui button)
-                
+              
+              (add-keybinding-configuration-to-gui button "ra:set-seqtrack-min-height-type" (list type) "FOCUS_SEQUENCER")
+              
               (if is-disabled
                   (<gui> :set-enabled button #f)))
             '(unlimited1
