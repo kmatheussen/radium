@@ -1353,11 +1353,14 @@ SampleReader *SAMPLEREADER_create(filepath_t filename){
 
 vector_t SAMPLEREADER_get_all_filenames(void){
   R_ASSERT(THREADING_is_main_thread());
+
+  auto keys = g_sample_providers.keys();
+  keys.sort(Qt::CaseInsensitive);
   
   vector_t ret = {};
-  for(const auto key : g_sample_providers.keys())
+  for(const auto key : keys)
     VECTOR_push_back(&ret, STRING_create(key));
-
+  
   return ret;
 }
 
