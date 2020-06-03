@@ -81,7 +81,7 @@ struct AutomationNode{
 static AutomationNode create_node(double seqtime, double value, int logtype){
   AutomationNode node = {
     .time = seqtime,
-    .value = value,
+    .value = R_BOUNDARIES(0, value, 1),
     .logtype = logtype
   };
   return node;
@@ -595,8 +595,6 @@ int SEQTRACK_AUTOMATION_add_node(struct SeqtrackAutomation *seqtrackautomation, 
   R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0);
 
   struct Automation *automation = seqtrackautomation->_automations[automationnum];
-
-  value = R_BOUNDARIES(0.0, value, 1.0);
 
   int ret = automation->automation.add_node(create_node(seqtime, value, logtype));
   automation->update(seqtrackautomation->_seqtrack, ret);
