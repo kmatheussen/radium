@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileInfo>
 #include <QSet>
 #include <QUuid>
+#include <QTimer>
 
 #include "nsmtracker.h"
 #include "player_proc.h"
@@ -3725,9 +3726,14 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     g_curr_seqblock_id = new_curr_seqblock_id;
   }
 
+  
   if (HASH_has_key(state, "seqtrack_config"))
     SEQTRACKS_apply_config_state(HASH_get_hash(state, "seqtrack_config"));
 
+  QTimer::singleShot(100, []{  
+      autoscrollSeqtracks(ATOMIC_GET(root->song->curr_seqtracknum));
+    });
+  
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
