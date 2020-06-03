@@ -152,6 +152,24 @@
 (define (one-decimal-percentage-string number)
   (format #f "~,1F" (* 100.0 number)))
 
+(define (get-displayable-seconds s)
+  (if (< s 60)
+      (<-> (if (< s 10)
+               " "
+               "")
+           (two-decimal-string s)
+           "s")
+      (let* ((minutes (floor (/ s 60)))
+             (seconds (floor (- s (* minutes 60)))))
+        (<-> (if (< minutes 10)
+                 (<-> " " minutes)
+                 minutes)
+             ":"
+             (if (< seconds 10)
+                 (<-> "0" seconds)
+                 seconds)
+             "m"))))
+
 (define (to-integer A)
   (inexact->exact (floor A)))
 

@@ -1909,7 +1909,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    "----------Create a new instrument"
    "New Sample Player" (lambda ()
                          (load (<ra> :create-audio-instrument "Sample Player" "Sample Player")))
-   ;;"<New FluidSynth>" (lambda ()
+  ;;"<New FluidSynth>" (lambda ()
    ;;                     (load (<ra> :create-audio-instrument "FluidSynth" "FluidSynth")))
    ;;(if (<ra> :has-pure-data)
    ;;    (list "<New Pd Instrument>" (lambda ()

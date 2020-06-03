@@ -3224,17 +3224,27 @@ int getCurrSeqblockUnderMouse(void){
   return seqblocknum;
 }
 
-int getCurrSeqtrackUnderMouse(void){
-  if (g_curr_seqblock_id_under_mouse==-1)
-    return -1;
-  
-  int seqblocknum, seqtracknum;
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblock_id_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
-  if (seqblock==NULL)
-    return -1;
+int getCurrSeqtrackUnderMouse(bool forgiving, bool only_inside_timeline){
 
-  return seqtracknum;
+  if (only_inside_timeline){
+    int x = getMousePointerX(-2);
+    if (x < SEQTRACK_get_x1(0))
+      return -1;
+    if (x >= SEQTRACK_get_x2(0))
+      return -1;
+  }
+
+  int y = getMousePointerY(-2);
+
+  if (!forgiving)
+    return getSeqtrackFromY(y);
+  
+  for(int i=1;i<root->song->seqtracks.num_elements;i++){
+    if (y < getSeqtrackY1(i))
+      return i-1;
+  }
+
+  return root->song->seqtracks.num_elements-1;
 }
 
 void cancelCurrSeqblockUnderMouse(void){

@@ -821,7 +821,7 @@
                 (loop (cdr seqblocks)
                       end))))))
   
-(define (delete-all-pauses-in-seqtrack seqtracknum)
+(delafina (delete-all-pauses-in-seqtrack :seqtracknum (<ra> :get-curr-seqtrack))
   (define new-seqblocks
     (let loop ((seqblocks (to-list (<ra> :get-seqblocks-state seqtracknum)))
                (time 0))
@@ -899,6 +899,7 @@
   (list
    "Delete all pauses"
    :enabled (have-pauses-in-seqtrack? seqtracknum)
+   :shortcut delete-all-pauses-in-seqtrack
    (lambda ()
      (delete-all-pauses-in-seqtrack seqtracknum))))
 
@@ -947,7 +948,24 @@
    "-------------"
    "Help keybindings" show-keybinding-help-window
    ))
-                                                    
+
+#!!
+(let ((show-keybinding-help-func (lambda () #t)))
+  (assq 'show-keybinding-help-func
+        (let->list (curlet))))
+
+(get-procedure-name (lambda () 2 3))
+(get-displayable-keybinding "show-keybinding-help-window" '())
+
+(popup-menu "aiai"
+            show-keybinding-help-window)
+
+(get-procedure-name show-keybinding-help-window)
+!!#
+
+
+
+
 (define (FROM_C-show-mixer-config-reset-popup-menu num)
   (popup-menu
    (get-keybinding-configuration-popup-menu-entries "ra:reset-mixer-config-num"
