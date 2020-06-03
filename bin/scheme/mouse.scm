@@ -7810,22 +7810,23 @@
         (iota (length all-instruments))
         all-instruments)))
  
-(delafina (create-sequencer-automation :seqtracknum (<ra> :get-curr-seqtrack)
+(delafina (create-sequencer-automation :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t) ;;get-curr-seqtrack)
                                        :X (<ra> :get-mouse-pointer-x -2)
                                        :Y (<ra> :get-mouse-pointer-y -2))
-  (request-instrument-id-and-effect-num
-   seqtracknum
-   (lambda (instrument-id effectnum)
-     (define Time1 (get-sequencer-time X))
-     (define Time2 (get-sequencer-time (+ X (* 5 *seqnode-min-distance*))))
-     (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
-     ;;(c-display effectnum)
-     (<ra> :add-seq-automation
-           (floor Time1) Value
-           (floor Time2) Value
-           effectnum
-           instrument-id
-           seqtracknum))))
+  (if (>= seqtracknum 0)
+      (request-instrument-id-and-effect-num
+       seqtracknum
+       (lambda (instrument-id effectnum)
+         (define Time1 (get-sequencer-time X))
+         (define Time2 (get-sequencer-time (+ X (* 5 *seqnode-min-distance*))))
+         (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
+         ;;(c-display effectnum)
+         (<ra> :add-seq-automation
+               (floor Time1) Value
+               (floor Time2) Value
+               effectnum
+               instrument-id
+               seqtracknum)))))
 
 
 (define (FROM_C-update-seqblock-track-on-off-configuration seqtracknum seqblocknum)
@@ -7996,6 +7997,66 @@
                          (split-sample-seqblock pos seqtracknum seqblocknum)
                          #t))))))))
 
+(delafina (insert-existing-block-or-audiofile-in-sequencer :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
+                                                           :X (<ra> :get-mouse-pointer-x -2))
+
+  (if (>= seqtracknum 0)
+      (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
+        
+        (define (create-new-audiofile)
+          (create-file-requester "Choose audio file" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
+                                 (lambda (filename)
+                                   (<ra> :create-sample-seqblock seqtracknum filename pos))))
+    
+        (if (<ra> :seqtrack-for-audiofiles seqtracknum)
+            
+            (let ((audiofiles (to-list (<ra> :get-audio-files))))
+              (cond ((null? audiofiles)
+                     (create-new-audiofile))
+                    ;;((= 1 (length audiofiles))
+                    ;; (<ra> :create-sample-seqblock seqtracknum (car audiofiles) pos))
+                    (else
+                     (apply popup-menu
+                            `(,@(map (lambda (audiofile)
+                                       (define info (<ra> :get-file-info audiofile))
+                                       (list (<ra> :append-base64-strings
+                                                   (<ra> :get-base64-from-filepath (info :filename))
+                                                   (<ra> :to-base64 (<-> ", " (info :num-ch) "ch, " (get-displayable-seconds (/ (info :num-frames)
+                                                                                                                                (info :samplerate))))))
+                                             ;;(<ra> :get-base64-from-filepath audiofile)
+                                             :base64 #t                       
+                                             (lambda ()
+                                               (<ra> :create-sample-seqblock seqtracknum audiofile pos))))
+                                     audiofiles)
+                              ,(list "------------"
+                                     (list "Add audio file" create-new-audiofile)))))))
+            
+            (if (and #f (= 1 (<ra> :get-num-blocks)))
+                (<ra> :create-seqblock seqtracknum 0 pos)                                          
+                (apply popup-menu
+                       `(,@(map (lambda (blocknum)
+                                  (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                                        (lambda ()
+                                          (<ra> :create-seqblock seqtracknum blocknum pos))))
+                                (iota (<ra> :get-num-blocks)))
+                         ,(list "------------"
+                                (list "Create new block"
+                                      (lambda ()
+                                        (<ra> :create-seqblock seqtracknum (<ra> :append-block) pos)
+                                        ))))))))))
+         
+(delafina (insert-current-block-or-audiofile-in-sequencer :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
+                                                          :X (<ra> :get-mouse-pointer-x -2))
+  (if (>= seqtracknum 0)
+      (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
+        (if (<ra> :seqtrack-for-audiofiles seqtracknum)
+            (let ((audiofiles (to-list (<ra> :get-audio-files))))
+              (if (not (null? audiofiles))
+                  (let ((currnum (between 0 *curr-audiofile-num* (- (length audiofiles) 1))))
+                    (<ra> :create-sample-seqblock seqtracknum (audiofiles currnum) pos))))
+            (<ra> :create-seqblock seqtracknum (<ra> :current-block) pos)))))
+
+
 ;; seqblock menu
 (add-mouse-cycle
  (make-mouse-cycle
@@ -8058,18 +8119,11 @@
                                               #f
                                               (list
                                                "--------------------Editor Seqtrack" ;;Editor blocks"
-                                               "Insert existing block"
-                                               (lambda ()
-                                                 (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
-                                                   (if (= 1 (<ra> :get-num-blocks))
-                                                       (<ra> :create-seqblock seqtracknum 0 pos)                                          
-                                                       (apply popup-menu
-                                                               (map (lambda (blocknum)
-                                                                      (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
-                                                                            (lambda ()
-                                                                              (<ra> :create-seqblock seqtracknum blocknum pos))))
-                                                                    (iota (<ra> :get-num-blocks)))))))
-                                               
+                                               (list
+                                                "Insert block"
+                                                :shortcut insert-existing-block-or-audiofile-in-sequencer
+                                                (lambda ()
+                                                  (insert-existing-block-or-audiofile-in-sequencer seqtracknum X)))
                                                ;;   Sub menues version. It looks better, but it is less convenient.
                                                ;;"Insert existing block" (map (lambda (blocknum)
                                                ;;                               (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
@@ -8081,26 +8135,28 @@
                                                
                                                (list                                          
                                                 "Insert current block"
+                                                :shortcut insert-current-block-or-audiofile-in-sequencer
                                                 (lambda ()
-                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X))))
-                                                         (blocknum (<ra> :current-block)))
-                                                    (<ra> :create-seqblock seqtracknum blocknum pos))))
+                                                  (insert-current-block-or-audiofile-in-sequencer seqtracknum X)))
                                                
-                                               (list                                           
-                                                "Insert new block"
-                                                (lambda ()
-                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X))))
-                                                         (blocknum (<ra> :append-block)))
-                                                    (<ra> :create-seqblock seqtracknum blocknum pos))))
+                                               ;(list                                           
+                                               ; "Insert new block"
+                                               ; (lambda ()
+                                               ;   (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X))))
+                                               ;          (blocknum (<ra> :append-block)x))
+                                               ;     (<ra> :create-seqblock seqtracknum blocknum pos))))
                                                
-                                               (list
-                                                "Insert new block from disk (BETA)"
-                                                (lambda ()
-                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X))))
-                                                         (num-blocks (<ra> :get-num-blocks)))
-                                                    (<ra> :load-block)
-                                                    (if (not (= num-blocks (<ra> :get-num-blocks)))
-                                                        (<ra> :create-seqblock seqtracknum num-blocks pos)))))))
+                                               ;(list
+                                               ; "Insert new block from disk (BETA)"
+                                               ; (lambda ()
+                                               ;   (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X))))
+                                               ;          (num-blocks (<ra> :get-num-blocks)))
+                                               ;     (<ra> :load-block)
+                                               ;     (if (not (= num-blocks (<ra> :get-num-blocks)))
+                                               ;         (<ra> :create-seqblock seqtracknum num-blocks pos))
+                                               ;     )
+                                               ;   )
+                                                ))
                                           (if (not for-audiofiles)
                                               #f
                                               (list
@@ -8119,13 +8175,15 @@
                                                    )
                                                ;;
                                                (list
-                                                "Insert new audio file"
+                                                "Insert audio file"
+                                                :shortcut insert-existing-block-or-audiofile-in-sequencer
                                                 (lambda ()
-                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
-                                                    (create-file-requester "Choose audio file" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
-                                                                           (lambda (filename)
-                                                                             (<ra> :create-sample-seqblock seqtracknum filename pos))))))
-
+                                                  (insert-existing-block-or-audiofile-in-sequencer seqtracknum X)))
+                                               (list                                          
+                                                "Insert current audiofile"
+                                                :shortcut insert-current-block-or-audiofile-in-sequencer
+                                                (lambda ()
+                                                  (insert-current-block-or-audiofile-in-sequencer seqtracknum X)))
                                                (list
                                                 "Recording options"
                                                 (lambda ()

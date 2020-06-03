@@ -2145,22 +2145,7 @@
                                            (<ra> :get-reltempo blocknum))
                                         (/ (file-info :num-frames)
                                            (file-info :samplerate)))))
-                             (if (< s 60)
-                                 (<-> (if (< s 10)
-                                          " "
-                                          "")
-                                      (two-decimal-string s)
-                                      "s")
-                                 (let* ((minutes (floor (/ s 60)))
-                                        (seconds (floor (- s (* minutes 60)))))
-                                   (<-> (if (< minutes 10)
-                                            (<-> " " minutes)
-                                            minutes)
-                                        ":"
-                                        (if (< seconds 10)
-                                            (<-> "0" seconds)
-                                            seconds)
-                                        "m")))))
+                             (get-displayable-seconds s)))
                           (is-dir
                            "")
                           (else

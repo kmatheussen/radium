@@ -74,13 +74,23 @@
                               (loop (cons (<-> "[disabled]" text)
                                           (cdddr args))
                                     keybinding-func))))
+                       ((eq? :base64 arg2)
+                        (let ((enabled (caddr args)))
+                          (if enabled
+                              (loop (cons (<-> "[base64]" text)
+                                          (cdddr args))
+                                    keybinding-func)
+                              (loop (cons text
+                                          (cdddr args))
+                                    keybinding-func))))
+                       
                        ((eq? :icon arg2)
                         (let ((filename (caddr args)))
                           ;;(c-display (<-> "stext: -" text "-" " rest:" (cdddr args)))
                           (loop (cons (<-> "[icon]" filename " " text)
                                       (cdddr args))
                                 keybinding-func)))
-                       
+
                        ((eq? :python-ra-command arg2)
                         (loop (cons text
                                     (cddddr args))
