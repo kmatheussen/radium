@@ -305,7 +305,7 @@
                            (list (<-> "Mouse pointer inside the "
                                       (string-join mouse-keys " or the "))))
                        (map ra:get-qualifier-name (remove-focus-and-mouse-from-keys (cdr keys)))
-                       (list (car keys)))
+                       (list (get-key-name (car keys))))
                " + "))
 
 #!!
@@ -333,6 +333,9 @@
 
   
 #!!
+(get-displayable-keybinding "ra.selectPrevSeqblock" '())
+(get-displayable-keybinding "ra:select-prev-seqblock" '())
+(get-displayable-keybindings "ra.selectPrevSeqblock")
 (get-displayable-keybindings "ra.quantitizeRange")
 (get-displayable-keybinding2 (list "F2" "FOCUS_EDITOR" "MOUSE_EDITOR"))
 (get-displayable-keybindings "ra.undo")
