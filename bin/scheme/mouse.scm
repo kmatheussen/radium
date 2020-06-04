@@ -874,6 +874,8 @@
     :y
     :need-to-make-undo #f)
 
+  ;;(set! Mouse-pointer-func ra:set-normal-mouse-pointer)
+  
   (define (press-existing-node Button X Y)
     (set! *check-mouse-horizontal-modifier* Check-horizontal-modifier)
     (and (Existing-button? Button)
@@ -1799,7 +1801,10 @@
                         :Publicize (lambda (editormove) ;; this version works though. They are, or at least, should be, 100% functionally similar.
                                      (set-indicator-temponode (editormove :Num))
                                      (show-temponode-in-statusbar (<ra> :get-temponode-value (editormove :Num))))
-                        :Get-pixels-per-value-unit #f
+                        :Get-pixels-per-value-unit (lambda (Info)
+                                                     (/ (- (<ra> :get-temponode-area-x2)
+                                                           (<ra> :get-temponode-area-x1))
+                                                        1))
                         )                        
 
 ;; delete temponode
@@ -3453,6 +3458,7 @@
                                        ;;(if (not (symbol? delta-Place))
                                        ;;    (c-display "Place:" (* 1.0 (+ (velocity-info :place) delta-Place)) Place (velocity-info :place) delta-Place)
                                        ;;    (c-display "Place:" Place (velocity-info :place) delta-Place))
+                                       ;;(c-display "Value:" Value)
                                        (set! notenum (<ra> :set-velocity Value Place velocitynum notenum (velocity-info :tracknum))))
 
                                      (if (move-all-nodes?)
@@ -3472,10 +3478,11 @@
                                                          (editormove :notenum)
                                                          (velocity-info :tracknum)))
                                      (set-velocity-statusbar-text value))
+
+                        ;;:Get-pixels-per-value-unit (lambda (editormove)
+                        ;;                             (- (<ra> :get-track-fx-x2)
+                        ;;                                (<ra> :get-track-fx-x1)))
                         
-                        :Get-pixels-per-value-unit (lambda (editormove)
-                                                     (- (<ra> :get-track-fx-x2)
-                                                        (<ra> :get-track-fx-x1)))
                         )
 
     
