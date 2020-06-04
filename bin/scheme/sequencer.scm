@@ -1,6 +1,16 @@
 
 (provide 'sequencer.scm)
 
+(<declare-variable> create-audio-seqblock-gui) ;; in seqblock_audio.scm
+(<declare-variable> show-seqblock-track-on-off-configuration) ;; seqblock_editor.scm
+
+
+(define *seqnode-min-distance* (* 1 (<ra> :get-half-of-node-width)))
+
+(define *clipboard-seqtrack-automation* #f)
+(define2 *seqblock-clipboard* list? '())
+
+
 (define *sequencer-left-part-area* #f)
 (define *sequencer-right-part-area* #f)
 
@@ -15,6 +25,14 @@
                                             (<declare-variable> *sequencer-window-gui-active*)
                                             *sequencer-window-gui-active*)
                                           #f))
+
+
+(define (get-normalized-seqblock-gain seqblockid)
+  (let ((max-gain (<ra> :get-max-seqblock-sample-gain seqblockid)))
+    (if (> max-gain 0)
+        (/ 1.0 max-gain)
+        100)))
+
 
 (define2 *current-seqtrack-num* (curry-or not integer?) #f)
 
@@ -638,6 +656,128 @@
         (set-seqblock-selected-box 'fade-right seqblocknum seqtracknum)
         (set-editor-statusbar (get-fade-string-right seqblocknum seqtracknum)))))
 
+
+(define *open-record-config-windows* (make-hash-table))
+(define *curr-record-config-window* #f) ;; only show one at a time.
+
+(define (show-record-popup-menu seqtracknum)
+  (if *curr-record-config-window*
+      (<gui> :close *curr-record-config-window*))
+  
+  (define popup #f)
+  (define radiobuttons
+    (map (lambda (ch)
+           (<gui> :radiobutton (<-> ch "") #f (lambda (val)
+                                                ;;(if popup
+                                                ;;    (<gui> :close popup))
+                                                #t)))
+         (map 1+ (iota 8))))
+  
+  (define (create-options)
+    (let ((options
+           (<gui> :vertical-layout
+                  
+                  (<gui> :group "Source"
+                         (<gui> :horizontal-layout
+                                (<gui> :radiobutton "System input"
+                                       (<ra> :get-seqtrack-record-from-system-input seqtracknum)
+                                       (lambda (ison)
+                                         (<ra> :set-seqtrack-record-from-system-input seqtracknum ison)))
+                                (<gui> :radiobutton "Input connections to the instrument"
+                                       (not (<ra> :get-seqtrack-record-from-system-input seqtracknum))
+                                       (lambda (ison)
+                                         (<ra> :set-seqtrack-record-from-system-input seqtracknum (not ison))))
+                                
+                                ))
+                                         ;;;(<gui> :radiobutton "Output of instrument main pipe #f")))
+                  
+                  (<gui> :group "Source channel -> Soundfile channel"
+                         (let ((matrix (<gui> :horizontal-layout
+                                              (map (lambda (input-channel)
+                                                     (<gui> :vertical-layout
+                                                            (map (lambda (soundfile-channel)
+                                                                   (<gui> :checkbox (<-> input-channel " -> " soundfile-channel)
+                                                                          (<ra> :get-seqtrack-recording-matrix seqtracknum input-channel soundfile-channel)
+                                                                          #t
+                                                                          (lambda (ison)
+                                                                            (<ra> :set-seqtrack-recording-matrix seqtracknum input-channel soundfile-channel ison)
+                                                                            ;;(c-display (<-> input-channel " -> " soundfile-channel ": " ison))
+                                                                            )))
+                                                                 (iota 8))))
+                                                   (iota 8)))))
+                           matrix))
+                  
+                  (<gui> :group "Use custom settings for this seqtrack?"
+                         (<gui> :vertical-layout
+                                (<gui> :radiobutton "Yes. (These settings apply to this seqtrack only)"
+                                       (<ra> :get-seqtrack-use-custom-recording-config seqtracknum)
+                                       (lambda (ison)
+                                         (<ra> :set-seqtrack-use-custom-recording-config seqtracknum ison)))                                         
+                                (<gui> :radiobutton "No. (These settings apply to all seqtracks with non-custom settings)"
+                                       (not (<ra> :get-seqtrack-use-custom-recording-config seqtracknum))
+                                       (lambda (ison)
+                                         (<ra> :set-seqtrack-use-custom-recording-config seqtracknum (not ison))))))
+                  
+                  )))
+      (<gui> :set-layout-spacing options 5 2 2 2 2)
+      options))
+  
+  (define options #f)
+  
+  (define (recreate-options)
+    (define new-options (create-options))
+    (when options
+      (<gui> :replace content options new-options)
+      (<gui> :close options))
+    (set! options new-options))
+
+  (recreate-options)
+  
+  (define content #f)
+
+  (define reset-button (<gui> :button "Reset values"
+                              (lambda ()
+                                (<ra> :reset-seqtrack-recording-options seqtracknum)
+                                (recreate-options))))
+
+  ;;(when (<ra> :seqtrack-is-recording seqtracknum)
+  ;;  (<gui> :set-enabled options #f)
+  ;;  (<gui> :set-enabled reset-button #f))
+    
+  (set! content (<gui> :vertical-layout
+                       (mid-horizontal-layout (<gui> :text (<-> "Recording options for \"" (<ra> :get-seqtrack-name seqtracknum) "\" (#" seqtracknum ")")))
+                       options
+                       (<gui> :horizontal-layout
+                              reset-button
+                              (<gui> :button "Close"
+                                     (lambda ()
+                                       (if popup
+                                           (<gui> :close popup)))))))
+    
+  (<gui> :set-layout-spacing content 5 2 2 2 2)
+
+  (if #f
+      (set! popup (<gui> :popup))
+      (begin
+        (set! popup (<gui> :widget))
+        ;;(<gui> :set-modal popup #t)
+        (<gui> :set-parent popup -2)))
+  
+  (<gui> :add popup content)
+                                        ;(<gui> :set-parent widget -2)
+  (<gui> :show popup)
+  (<gui> :minimize-as-much-as-possible popup)
+                                        ;(<gui> :set-pos widget (floor (<ra> :get-global-mouse-pointer-x)) (floor (<ra> :get-global-mouse-pointer-y)))
+
+  (set! *curr-record-config-window* popup)
+
+  (<gui> :add-deleted-callback popup
+         (lambda (radium-runs-custom-exec)
+           (set! (*open-record-config-windows* seqtracknum) #f)
+           (set! *curr-record-config-window* #f)))
+  )
+
+
 (define (ask-user-about-first-audio-seqtrack2 callback)
   (show-async-message (<gui> :get-sequencer-gui)
                       (<-> "Are you sure?\n"
@@ -662,8 +802,10 @@
               (<ra> :set-using-sequencer-timing #t))
             (callback arg)))))))
 
+
+(<declare-variable> *current-seqblock-info*)
+
 (define (FROM_C-call-me-after-seqtrack-has-been-deleted)
-  (<declare-variable> *current-seqblock-info*)
   (set! *current-seqblock-info* #f)
   (if *current-seqtrack-num*
       (set! *current-seqtrack-num* (min (- (<ra> :get-num-seqtracks) 1)
@@ -886,6 +1028,17 @@
 !!#
 
 
+(define (get-sequencer-x time)
+  (scale time
+         (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)
+         (<ra> :get-seqtimeline-area-x1) (<ra> :get-seqtimeline-area-x2)))
+
+(define (get-sequencer-time x)
+  (scale x
+         (<ra> :get-seqtimeline-area-x1) (<ra> :get-seqtimeline-area-x2)
+         (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+  
+
 (define (split-sample-seqblock pos seqtracknum seqblocknum)
   (call-with-exit
    (lambda (return)
@@ -995,6 +1148,7 @@
          
 (delafina (insert-current-block-or-audiofile-in-sequencer :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
                                                           :X (<ra> :get-mouse-pointer-x -2))
+  (<declare-variable> *curr-audiofile-num*)
   (if (>= seqtracknum 0)
       (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
         (if (<ra> :seqtrack-for-audiofiles seqtracknum)
@@ -1004,6 +1158,127 @@
                     (<ra> :create-sample-seqblock seqtracknum (audiofiles currnum) pos))))
             (<ra> :create-seqblock seqtracknum (<ra> :current-block) pos)))))
 
+
+(define (request-instrument-id-and-effect-num seqtracknum callback)
+  (define (instrument-popup-menu instrument-id)
+    (popup-menu (map (lambda (effectnum)
+                       (list (<-> effectnum ". " (<ra> :get-instrument-effect-name effectnum instrument-id))
+                             (lambda ()
+                               (callback instrument-id effectnum))))
+                     (iota (<ra> :get-num-instrument-effects instrument-id)))))
+ 
+  (define seqtrack-instrument-id (and (<ra> :seqtrack-for-audiofiles seqtracknum)
+                                      (<ra> :get-seqtrack-instrument seqtracknum)))
+  
+  (define all-instruments (get-all-audio-instruments))
+
+  (popup-menu
+   (if (and seqtrack-instrument-id
+            (<ra> :is-legal-instrument seqtrack-instrument-id))
+       (list (<ra> :get-instrument-name seqtrack-instrument-id)
+             (lambda ()
+               (instrument-popup-menu seqtrack-instrument-id))
+             "---------------------")
+       '())
+   (map (lambda (num instrument-id)
+          (list (<-> num ". " (<ra> :get-instrument-name instrument-id))
+                (lambda ()
+                  (instrument-popup-menu instrument-id))))
+        (iota (length all-instruments))
+        all-instruments)))
+ 
+(define (apply-seqtrack-automation seqtracknum time seqtrack-automation)
+
+  (define instrument-id (seqtrack-automation :instrument-id))
+  (define effect-num (seqtrack-automation :effect-num))
+
+  (define (doit2 instrument-id effect-num)
+    (define nodes (seqtrack-automation :nodes))
+    
+    (define node1 (car nodes))
+    (define node2 (cadr nodes))
+    
+    (define time1 (node1 :time))
+    
+    (define (get-time node)
+      (+ (- (node :time)
+            time1)
+         time))
+    
+    (define (apply-logtype node nodenum automationnum)
+      (<ra> :set-seq-automation-node
+            (get-time node)
+            (node :value)
+            (node :logtype)
+            nodenum
+            automationnum
+            seqtracknum))
+    
+    (define hash (<ra> :add-seq-automation2
+                       (get-time node1) (node1 :value) (get-time node2) (node2 :value)
+                       effect-num
+                       instrument-id
+                       seqtracknum))
+    
+    (define automationnum (hash :automationnum))
+    (define nodenum1 (hash :nodenum1))
+    (define nodenum2 (hash :nodenum2))
+    
+    ;;(c-display "apply automation. seqtracknum:" seqtracknum ". automationnum:" automationnum ". nodenums:" nodenum1 nodenum2)
+    
+    (apply-logtype node1 nodenum1 automationnum)
+    (apply-logtype node2 nodenum2 automationnum)
+    
+    (for-each (lambda (node)
+                ;;(c-display "time node3:" (get-time node))
+                (<ra> :add-seq-automation-node (get-time node) (node :value) (node :logtype) automationnum seqtracknum))
+              (cddr nodes))
+    )
+
+  (define (doit1 instrument-id effect-num)
+    (undo-block
+     (lambda ()
+       (doit2 instrument-id effect-num))))
+  
+  (if (or (not (<ra> :instrument-is-open-and-audio instrument-id))
+          (< effect-num 0)
+          (>= effect-num (<ra> :get-num-instrument-effects instrument-id)))
+      (show-async-message (<gui> :get-sequencer-gui)
+                          "Instrument for automation in clipboard doesn't exist anymore. Do you want to select new effect?"
+                          (list "Yes" "No") #t
+                          (lambda (res)
+                            (if (string=? "Yes" res)                                 
+                                (request-instrument-id-and-effect-num
+                                 seqtracknum
+                                 doit1))))
+      (doit1 instrument-id effect-num)))
+       
+
+(define (get-seq-automation-display-name automationnum seqtracknum)
+  (define instrument-id (<ra> :get-seq-automation-instrument-id automationnum seqtracknum))
+  (define instrument-name (<ra> :get-instrument-name instrument-id))
+  (define effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
+  (define effect-name (<ra> :get-instrument-effect-name effect-num instrument-id))  
+  (<-> instrument-name "/" effect-name))
+
+
+(delafina (create-sequencer-automation :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t) ;;get-curr-seqtrack)
+                                       :X (<ra> :get-mouse-pointer-x -2)
+                                       :Y (<ra> :get-mouse-pointer-y -2))
+  (if (>= seqtracknum 0)
+      (request-instrument-id-and-effect-num
+       seqtracknum
+       (lambda (instrument-id effectnum)
+         (define Time1 (get-sequencer-time X))
+         (define Time2 (get-sequencer-time (+ X (* 5 *seqnode-min-distance*))))
+         (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
+         ;;(c-display effectnum)
+         (<ra> :add-seq-automation
+               (floor Time1) Value
+               (floor Time2) Value
+               effectnum
+               instrument-id
+               seqtracknum)))))
 
 (define (get-seqtrack-menu-entries seqtracknum X Y)
   (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
@@ -1141,6 +1416,7 @@
         :check (<ra> :get-seqblock-automation-enabled automationnum seqblockid)
         (lambda (enable)
           (<ra> :set-seqblock-automation-enabled enable automationnum seqblockid))))
+
 
 (define (get-audio-seqblock-popup-menu-entries seqblocknum seqtracknum seqblockid X)
   (list
