@@ -337,8 +337,12 @@
                                  100
                                  20))
 
-            (let ((x (<ra> :get-mouse-pointer-x))
-                  (y (<ra> :get-mouse-pointer-y))
+            (let ((x (if use-delta
+                         (<ra> :get-mouse-pointer-x)
+                         $x))
+                  (y (if use-delta
+                         (<ra> :get-mouse-pointer-y)
+                         $y))
                   (x2 (- (<ra> :get-seqnav-x2) 1))
                   (y2 (- (<ra> :get-seqnav-y2) 1)))
               
