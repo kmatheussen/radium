@@ -337,7 +337,7 @@
                                  100
                                  20))
 
-            (let ((x (if use-delta
+            (let ((x (if use-delta ;; TODO: Check windows behavior here: 1. Check if (<ra> :get-mouse-pointer-x/y) takes a lot of time to call on Windows as well, and 2. Check if we really need to call (<ra> :get-mouse-pointer-x/y) here. (it doesn't seem logical that we need to call it, but we do strange mouse things on windows, so maybe)
                          (<ra> :get-mouse-pointer-x)
                          $x))
                   (y (if use-delta
