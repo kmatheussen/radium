@@ -8102,7 +8102,18 @@
       (<-> "Set normalized gain (" (db-to-text (<ra> :gain-to-db (get-normalized-gain)) #t) ")")
       (lambda ()
         (<ra> :set-seqblock-gain (get-normalized-gain) seqblockid))))
-   
+
+   ;;(list "Reset stretch"
+   ;;      :enabled (and seqblocknum
+   ;;                    (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
+   ;;      (lambda ()
+   ;;        (c-display "stretch:" (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
+   ;;        (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+   ;;        (define blocklength (<ra> :get-block-length blocknum))
+   ;;        (<ra> :position-seqblock start-time (+ start-time blocklength) seqblocknum seqtracknum)
+   ;;        (c-display "hepp")))
+    
+
    "---------------------"
    
    (list "Copy filename to system clipboard"
@@ -8258,7 +8269,11 @@
                                            0
                                            1)))
   (list
-   
+
+   (if blocknum
+       (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
+       (get-audio-seqblock-popup-menu-entries seqblocknum seqtracknum seqblockid X))
+
    "--------------------Seqblock"
    
    (list "Copy"
@@ -8337,32 +8352,15 @@
            (set! *current-seqblock-info* #f)
            (<ra> :delete-seqblock seqblockid)
            (set! *current-seqblock-info* #f)))
+
+   "---------------------"
    
-   (list
-    (if (not blocknum)
-        '()
-        (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X))
-    
-    ;;(list "Reset stretch"
-    ;;      :enabled (and seqblocknum
-    ;;                    (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
-    ;;      (lambda ()
-    ;;        (c-display "stretch:" (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
-    ;;        (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
-    ;;        (define blocklength (<ra> :get-block-length blocknum))
-    ;;        (<ra> :position-seqblock start-time (+ start-time blocklength) seqblocknum seqtracknum)
-    ;;        (c-display "hepp")))
-    
-    ;;
-    ;;(list "Remove pause"
-    ;;      :enabled #f
-    ;;      (lambda ()
-    ;;        #f))
-    
-    (if (or blocknum
-            (not seqblock-info))
-        '()
-        (get-audio-seqblock-popup-menu-entries seqblocknum seqtracknum seqblockid X)))))
+   (list "Select previous seqblock"
+         ra:select-prev-seqblock)
+   (list "Select next seqblock"
+         ra:select-next-seqblock)))
+
+   
 
 
 ;; seqblock menu
@@ -8373,28 +8371,46 @@
                      (not (<ra> :shift-pressed))
                      (let ((seqtracknum *current-seqtrack-num*))
                        (and seqtracknum
+                            *current-seqblock-info*
                             (let ((seqblock-infos (get-selected-seqblock-infos))
                                   (seqblock-info *current-seqblock-info*))
                               (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
                               (define for-blocks (not for-audiofiles))
-                              (define seqblocknum (and seqblock-info
-                                                       (seqblock-info :seqblocknum)))
-                              (define seqblockid (and seqblock-info
-                                                      (seqblock-info :id)))
+                              (define seqblocknum (seqblock-info :seqblocknum))
+                              (define seqblockid (seqblock-info :id))
 
                               ;;(if seqblock-info
                               ;;    (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
                               ;;        (only-select-one-seqblock seqblocknum seqtracknum)
                               ;;        (<ra> :select-seqblock #t seqblocknum seqtracknum)))
 
-                              (if seqblockid
-                                  (set-current-seqblock! seqtracknum seqblockid)
-                                  (<ra> :set-curr-seqtrack seqtracknum))
+                              (set-current-seqblock! seqtracknum seqblockid)
+                              ;;(<ra> :set-curr-seqtrack seqtracknum)
+                              
+                              (paint-grid! #t)
+                              
+                              (popup-menu (get-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X))
+                              )))))))
+
+;; seqtrack menu
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)
+                     (not (<ra> :shift-pressed))
+                     (let ((seqtracknum *current-seqtrack-num*))
+                       (and seqtracknum
+                            (not *current-seqblock-info*)
+                            (let ()
+                              (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+                              (define for-blocks (not for-audiofiles))
+
+                              (<ra> :set-curr-seqtrack seqtracknum)
                               
                               (paint-grid! #t)
                               
                               (popup-menu (list
-                                           "--------------------Seqtrack"
+                                           (<-> "--------------------Seqtrack #" seqtracknum)
                                            
                                            (get-delete-all-pauses-menu-entry seqtracknum)
                                            (get-seqtrack-popup-menu-entries seqtracknum)
@@ -8420,8 +8436,7 @@
                                                 (iota (<ra> :get-num-seqtrack-automations seqtracknum)))
                                            
                                            )
-                                          (if (not for-blocks)
-                                              #f
+                                          (if for-blocks
                                               (list
                                                "--------------------Editor Seqtrack" ;;Editor blocks"
                                                (list
@@ -8461,9 +8476,7 @@
                                                ;         (<ra> :create-seqblock seqtracknum num-blocks pos))
                                                ;     )
                                                ;   )
-                                                ))
-                                          (if (not for-audiofiles)
-                                              #f
+                                               )
                                               (list
                                                "--------------------Audio Seqtrack"
                                                (if (<ra> :release-mode)
@@ -8492,16 +8505,10 @@
                                                (list
                                                 "Recording options"
                                                 (lambda ()
-                                                  (show-record-popup-menu seqtracknum)))
+                                                   (show-record-popup-menu seqtracknum)))
                                                ))
                                           
                                           "--------------------"
-                                          (list "Select previous seqblock"
-                                                ra:select-prev-seqblock)
-                                          (list "Select next seqblock"
-                                                ra:select-next-seqblock)
-                                          
-                                          (get-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
                               
                                           
                                           ;;"-----------------Seqtrack Automation"
