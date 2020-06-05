@@ -215,18 +215,20 @@
                                                                           (else
                                                                            (assert #f))))))
 
-                 (define seqtrack-height-conv1 (vector 4 1 2 3))
-                 (define seqtrack-height-conv2 (vector -1 1 2 3 0))
                  (if (eq? type 'height)
                      (box :override-method! 'mouse-wheel-moved
                           (lambda (is-up x y)
-                            (define height-type (seqtrack-height-conv2 (<ra> :get-seqtrack-min-height-type seqtracknum)))
-                            (if (and (< height-type 3)
-                                     (not is-up))
-                                (<ra> :set-seqtrack-min-height-type seqtracknum (seqtrack-height-conv1 (+ height-type 1)))
-                                (if (and (> height-type 0)
-                                         is-up)
-                                    (<ra> :set-seqtrack-min-height-type seqtracknum (seqtrack-height-conv1 (- height-type 1)))))
+                            (define height-type (<ra> :get-seqtrack-min-height-type seqtracknum))
+                            ;;(c-display "HEIGHT-type:" height-type is-up)
+                            (if is-up
+                                (if (= height-type 1)
+                                    (<ra> :set-seqtrack-min-height-type 4 seqtracknum)
+                                    (if (not (= height-type 4))
+                                        (<ra> :set-seqtrack-min-height-type (- height-type 1) seqtracknum)))
+                                (if (= height-type 4)
+                                    (<ra> :set-seqtrack-min-height-type 1 seqtracknum)
+                                    (if (not (= height-type 3))
+                                        (<ra> :set-seqtrack-min-height-type (+ height-type 1) seqtracknum))))
                             #t)))
 
                  (cond ((eq? type 'record)
