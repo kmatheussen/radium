@@ -3740,8 +3740,9 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
   if (HASH_has_key(state, "seqtrack_config"))
     SEQTRACKS_apply_config_state(HASH_get_hash(state, "seqtrack_config"));
 
-  QTimer::singleShot(100, []{  
-      autoscrollSeqtracks(ATOMIC_GET(root->song->curr_seqtracknum));
+  QTimer::singleShot(100, []{
+      setTopmostVisibleSeqtrack(0);
+      setCurrSeqtrack(0, true);
     });
   
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
