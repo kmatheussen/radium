@@ -714,8 +714,10 @@ void setSeqtrackName(const_char *name, int seqtracknum){
 
   if (seqtrack->patch != NULL)
     setInstrumentName(name, seqtrack->patch->id);
-  else
+  else {
     seqtrack->name = talloc_strdup(name);
+    SEQUENCER_update(SEQUPDATE_EVERYTHING);
+  }
 }
 
 const_char *getSeqtrackName(int seqtracknum){

@@ -268,17 +268,6 @@
                                               (<ra> :set-seqtrack-name new-name seqtracknum)
                                               new-name)))))
 
-  (if (<ra> :is-legal-instrument instrument-id)
-      (<ra> :schedule (random 1000)
-            (lambda ()
-              (and (line-input :is-alive)
-                   (<gui> :is-open gui)
-                   (<ra> :instrument-is-open-and-audio instrument-id)
-                   (begin
-                     (if (not (string=? last-painted-name (<ra> :get-instrument-name instrument-id)))
-                         (line-input :update-me!))
-                     300)))))
-  
   line-input)
 
 #||                                        
