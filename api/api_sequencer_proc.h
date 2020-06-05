@@ -4,6 +4,8 @@
 
 extern DEFINE_ATOMIC(bool, g_has_seqblock_marked_as_available); // Set to true while moving a seqblock. The player checks this variable and don't stop playing if true.
 
+extern bool g_sequencer_grid_enabled;
+
 extern LANGSPEC void API_setCurrPlaylistPos_while_playing(void);
 extern LANGSPEC void API_curr_seqtrack_has_changed(void);
 extern LANGSPEC void API_seqblock_has_been_deleted(int64_t seqblockid);
