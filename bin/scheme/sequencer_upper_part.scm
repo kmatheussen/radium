@@ -387,7 +387,7 @@
 
     (let loop ((entries (reverse paint-entries))
                (n (- (length paint-entries) 1))
-               (max-x2 10000000000000000000000)
+               (max-x2 10000000000000000000000.0)
                (prev-entry (<optional-hash-table>)))
       (when (not (null? entries))
         (define entry (car entries))
