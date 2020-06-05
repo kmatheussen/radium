@@ -3232,6 +3232,9 @@ void SEQUENCER_set_looping(bool do_loop, int64_t start, int64_t end){
   
   if (end > 0)
     ATOMIC_SET(root->song->looping.end, R_MAX(ATOMIC_GET(root->song->looping.start)+1, end));
+
+  if (do_loop && SEQUENCER_is_punching())
+    ATOMIC_SET(root->song->punching.enabled, false);
       
   ATOMIC_SET(root->song->looping.enabled, do_loop);
   SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
@@ -3263,6 +3266,9 @@ int64_t SEQUENCER_get_loop_end(void){
 // punch in/out
 //
 void SEQUENCER_set_punching(bool do_punch){
+  if (do_punch && SEQUENCER_is_looping())
+    ATOMIC_SET(root->song->looping.enabled, false);
+
   ATOMIC_SET(root->song->punching.enabled, do_punch);
   SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
 }
