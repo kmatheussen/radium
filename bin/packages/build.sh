@@ -198,15 +198,15 @@ make -j`nproc`
 cd ../..
 
 
-if [[ $RADIUM_QT_VERSION == 5 ]]
-then
-    rm -fr qtstyleplugins-src-5.0.0/
-    tar xvzf qtstyleplugins-src-5.0.0.tar.gz
-    cd qtstyleplugins-src-5.0.0/
-    `../../../find_moc_and_uic_paths.sh qmake`
-    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j`nproc`
-    cd ../
-fi
+#if [[ $RADIUM_QT_VERSION == 5 ]]
+#then
+#    rm -fr qtstyleplugins-src-5.0.0/
+#    tar xvzf qtstyleplugins-src-5.0.0.tar.gz
+#    cd qtstyleplugins-src-5.0.0/
+#    `../../../find_moc_and_uic_paths.sh qmake`
+#    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j`nproc`
+#    cd ../
+#fi
 
 if [[ $RADIUM_QT_VERSION == 5 && $RADIUM_BUILD_LIBXCB != 0 ]]
 then
