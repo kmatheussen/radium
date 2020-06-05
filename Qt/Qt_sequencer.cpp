@@ -2516,9 +2516,24 @@ public:
     
     const struct SeqTrack *last_seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[num_seqtracks-1];
 
-    double gap = (seqtracks_y2+get_seqtrack_border_width()/2.0) - last_seqtrack->y2;
+    double b2 = get_seqtrack_border_width()/2.0;
+    
+#if 1
+    double seqtracks_y1 = get_seqtracks_y1();
+    
+    if (last_seqtrack->y2+b2 < seqtracks_y1)
+      return false;
+
+    if (last_seqtrack->y1-b2 > seqtracks_y2)
+      return false;
+
+    return true;
+#else
+    // Original code. I don't understand why it was made like this.
+    double gap = (seqtracks_y2+b2) - last_seqtrack->y2;
     
     return gap >= 0;
+#endif
   }
   
   Seqblocks_widget get_seqblocks_widget(int seqtracknum, bool include_border) {
@@ -4090,7 +4105,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     if (height() <= minimumHeight())
       return;
     
-    bool last_seqtrack_was_visible = SEQUENCER_last_seqtrack_is_visible();
+    bool last_seqtrack_was_visible1 = SEQUENCER_last_seqtrack_is_visible();
     
     //int lowest_topmost_seqtracknum = SEQUENCER_get_lowest_seqtracknum_after_resizing(dy);
 
@@ -4099,11 +4114,15 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     position_widgets();
     
     API_run_resize_event_for_custom_widget(this, qresizeevent);
+    
+    bool last_seqtrack_was_visible2 = SEQUENCER_last_seqtrack_is_visible();
 
-    if (last_seqtrack_was_visible){
+    if (last_seqtrack_was_visible1 || last_seqtrack_was_visible2){
       int lowest_reasonable_topmost_seqtracknum = SEQUENCER_get_lowest_reasonable_topmost_seqtracknum();
       setTopmostVisibleSeqtrack(lowest_reasonable_topmost_seqtracknum);
     }
+
+    autoscrollSeqtracks(ATOMIC_GET(root->song->curr_seqtracknum));
   }
 
   int get_sequencer_left_part_width(void) const {
@@ -4644,7 +4663,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       //printf("              navigator: %d, %d -> %d, %d\n", _navigator_widget.x(), _navigator_widget.y(), _navigator_widget.x()+_navigator_widget.rect().width(), _navigator_widget.y()+_navigator_widget.rect().height());
       );
 
-    
+    D(double t = TIME_get_ms());
+    D(double t1 = t);
+      
     RETURN_IF_DATA_IS_INACCESSIBLE();
 
     bool timelanes_are_painted = ev->rect().top() < _seqtracks_widget.t_y1;
@@ -4665,6 +4686,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       if (seqtracks_are_painted)
         myFillRect(p, _seqtracks_widget.t_rect.adjusted(-10, 0, 0, 10), get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM), true, 15);
 
+      D(t1 = TIME_get_ms());
+      
       if (right_part_is_painted){
         QRectF rect(_seqtracks_widget.t_x2, 0, width() - _seqtracks_widget.t_x2, height());
         myFillRect(p, rect, get_qcolor(HIGH_BACKGROUND_COLOR_NUM), true, 15);
@@ -4675,6 +4698,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         p.eraseRect(rect);
       */
     }
+
+    D(double t2 = TIME_get_ms());
     
     float seqtracks_y_max = _seqtracks_widget.get_seqtracks_y2() + get_seqtrack_border_width();
 
@@ -4688,17 +4713,24 @@ struct Sequencer_widget : public MouseTrackerQWidget {
                                             _seqtracks_widget.get_region()
                                             );
     
+
+    D(double t3 = TIME_get_ms());
     
     // Paint seqblocks and seqtrack backround
     //
     if(seqtracks_are_painted || timelanes_are_painted)
       paint_seqtracks_and_timeline(ev, seqtracks_y_max);
+
+    D(double t4 = TIME_get_ms());
     
     {
       TRACK_PAINT();
 
+      D(double t5 = TIME_get_ms());
       QPainter p(this);
-
+      D(double t6 = TIME_get_ms());
+      D(double t7 = t6);
+      
       // Paint seqtrack borders.
       //
       if (seqtracks_are_painted || left_part_is_painted){
@@ -4707,11 +4739,17 @@ struct Sequencer_widget : public MouseTrackerQWidget {
             
         paintSeqtrackBorders(p);
 
+        D(t7 = TIME_get_ms());
+        
         p.setRenderHints(QPainter::Antialiasing,true);
         
         paintCurrentSeqtrackBorder(p);
       }
 
+      D(double t8 = TIME_get_ms());
+      D(double t9 = t8);
+      D(double t10 = t9);
+      
       // Paint border around current seqblock, seqtrack automation
       //
       if (seqtracks_are_painted) {
@@ -4720,27 +4758,35 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
         paintMarkerGrid(p);
 
+        D(t9 = TIME_get_ms());
+        
         radium::ScopedQClipRect scoped_rect(p, QRectF(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1, _seqtracks_widget.t_width, seqtracks_y_max - _seqtracks_widget.t_y1));
 
         _seqtracks_widget.paint_curr_seqblock_border(ev->region(), p);
 
+        D(t10 = TIME_get_ms());
+        
         _seqtracks_widget.paint_automation(ev->region(), p);    
       }
 
+      D(double t11 = TIME_get_ms());
       
       // Paint seqtracks/timelanes cursors.
       //
       if(seqtracks_are_painted || timelanes_are_painted)
         _cursor_painter.paintCursor(ev->region(), p);
 
+      D(double t12 = TIME_get_ms());
       
       // Paint navigator
       //
       if(_navigator_painter.intersects(ev->region())){
         radium::ScopedQClipRect scoped_rect(p, _navigator_painter.t_rect);
-
+        
         _navigator_painter.paint(ev->region(), p);
       }
+
+      D(double t13 = TIME_get_ms());
       
       // Debugging update.
       D({
@@ -4755,9 +4801,29 @@ struct Sequencer_widget : public MouseTrackerQWidget {
           p.drawText(ev->rect(), QString::number(num_calls));
           */
         });
-    }
 
+      D(double tf = TIME_get_ms());
+    
+      D(printf("* Paint Dur: %f. 1: %f. 2: %f: 3: %f, 4: %f, 5: %f, 6: %f, 7: %f, 8: %f, 9: %f, 10: %f, 11: %f, 12: %f, 13: %fms\n",
+             tf - t,
+             t1 - t,
+             t2 - t,
+             t3 - t,
+             t4 - t,
+             t5 - t,
+             t6 - t,
+             t7 - t,
+             t8 - t,
+               t9 - t,
+               t10 - t,
+               t11 - t,
+             t12 - t,
+               t13 - t
+               ));
+    }
+    
     //MouseTrackerQWidget<radium::KeyboardFocusFrame>::paintEvent(ev);
+
   }
 
 
