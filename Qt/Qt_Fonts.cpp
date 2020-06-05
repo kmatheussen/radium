@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../embedded_scheme/s7extra_proc.h"
 
 #include "EditorWidget.h"
+#include "Qt_PopupMenu_proc.h"
 
 #include "../OpenGL/GfxElements.h"
 
@@ -252,6 +253,8 @@ void GFX_SetSystemFont(QFont font){
     //widget->update();
   }
 
+  GFX_clear_menu_cache();
+  
   remakeMixerStrips(make_instrument(-1));
 
   S7CALL2(void_void,"FROM_C-minimize-lowertab");
