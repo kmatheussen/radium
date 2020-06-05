@@ -1250,7 +1250,7 @@
   (define spacing 2)
   
   (define gridbutton-width (if show-dragger
-                               (myfloor (* 1.5 (<gui> :text-width "G: Beat")))
+                               (myfloor (* 1.3 (<gui> :text-width "Grid: Beat")))
                                (/ (- x2 x1)
                                   2)))
   
@@ -1285,7 +1285,7 @@
                (lambda (new-value)
                  (<ra> :set-sequencer-grid-enabled new-value))
                :text (lambda ()
-                       (<-> "G: " (get-curr-grid)))
+                       (<-> "Grid: " (get-curr-grid)))
                :prepend-checked-marker #t
                :right-mouse-clicked-callback
                (lambda ()
