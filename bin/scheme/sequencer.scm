@@ -882,7 +882,17 @@
          (if doit
              (swapit))))
       (swapit)))
-  
+
+(delafina (show-set-seqtrack-name-requester :seqtracknum (<ra> :get-curr-seqtrack))
+  (define current-name (<ra> :get-seqtrack-name seqtracknum))
+  (<ra> :schedule 0
+        (lambda ()
+          (let ((new-name (<ra> :request-string "New name: " #t current-name)))
+            (if (and (not (string=? "" new-name))
+                     (not (string=? current-name new-name)))
+                (<ra> :set-seqtrack-name new-name seqtracknum)))
+          #f)))
+
 (define (get-seqtrack-popup-menu-entries seqtracknum)
   (list
    (list "Swap with prev seqtrack"
@@ -898,7 +908,12 @@
    (list "Set height"
          :shortcut show-select-both-seqtrack-size-types-gui
          (lambda ()
-           (show-select-both-seqtrack-size-types-gui seqtracknum)))))
+           (show-select-both-seqtrack-size-types-gui seqtracknum)))
+   (list "Set name"
+         :shortcut show-set-seqtrack-name-requester
+         (lambda ()
+           (show-set-seqtrack-name-requester seqtracknum)))))
+           
 
 (define (get-sequencer-conf-menues)
   (list 
