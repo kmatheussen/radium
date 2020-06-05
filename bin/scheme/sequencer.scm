@@ -916,8 +916,20 @@
          :shortcut show-set-seqtrack-name-requester
          (lambda ()
            (show-set-seqtrack-name-requester seqtracknum)))))
-           
 
+;; Note: Used for shortcut
+(define (set-no-looping-or-punching-in-sequencer)
+  (<ra> :set-seqlooping #f)
+  (<ra> :set-seqpunching #f))
+  
+;; Note: Used for shortcut
+(define (switch-looping-in-sequencer)
+  (<ra> :set-seqlooping (not (<ra> :is-seqlooping))))
+  
+;; Note: Used for shortcut
+(define (switch-punching-in-sequencer)
+  (<ra> :set-seqpunching (not (<ra> :is-seqpunching))))
+  
 (define (get-sequencer-conf-menues)
   (list 
         "--------Sequencer timeline"
@@ -926,14 +938,17 @@
          (list "Free"
                :check (and (not (<ra> :is-seqlooping))
                            (not (<ra> :is-seqpunching)))
+               :shortcut set-no-looping-or-punching-in-sequencer
                (lambda (val)
                  (c-display "new no-looping-or-punch:" val)))
          (list "Looping"
                :check (<ra> :is-seqlooping)
+               :shortcut switch-looping-in-sequencer
                (lambda (val)
                  (<ra> :set-seqlooping val)))
          (list "Punch in/out (recording)"
                :check (<ra> :is-seqpunching)
+               :shortcut switch-punching-in-sequencer
                (lambda (val)
                  (<ra> :set-seqpunching val)
                  (c-display "new punch in/out:" val))))
