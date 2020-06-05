@@ -1569,8 +1569,8 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
   (define y (<ra> :get-instrument-y goal-instrument-id))
   (let loop ((instruments (get-all-audio-instruments))
              (best-instrument-id #f)
-             (best-dx 1000000000000)
-             (best-dy 1000000000000))
+             (best-dx 1000000000000.0)
+             (best-dy 1000000000000.0))
     (define instrument-id (cl-car instruments))
     (if (not instrument-id)
         best-instrument-id
