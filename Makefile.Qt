@@ -544,8 +544,10 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 BUILD_DEPENDENCIES = flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 #buildtype.opt 
 
-PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_check_opengl bin/radium_plugin_scanner bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so bin/scheme/api_protos.scm
+PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_check_opengl bin/radium_plugin_scanner bin/scheme/api_protos.scm
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
+
+#bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
 
 all:
 	@echo
@@ -730,21 +732,21 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	@echo
 	@echo "packages successfully built. Now run ./build_linux.sh -j7"
 
-bin/styles/libqcleanlooksstyle.so: bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so bin/styles
-	cp bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so bin/styles/
+#bin/styles/libqcleanlooksstyle.so: bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so bin/styles
+#	cp bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so bin/styles/
 
 
-bin/styles/libqplastiquestyle.so: bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so bin/styles
-	cp bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so bin/styles/
+#bin/styles/libqplastiquestyle.so: bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so bin/styles
+#	cp bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so bin/styles/
 
-bin/styles:
-	mkdir bin/styles
+#bin/styles:
+#	mkdir bin/styles
 
-bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so:
-	@echo "packages not built"
+#bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so:
+#	@echo "packages not built"
 
-bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so:
-	@echo "packages not built"
+#bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqplastiquestyle.so:
+#	@echo "packages not built"
 
 
 start_bin.sh:
