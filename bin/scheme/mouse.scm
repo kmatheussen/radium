@@ -7159,7 +7159,7 @@
 (define (move-seqtrack-automation-to-different-seqtrack from-seqtracknum automationnum to-seqtracknum)
   (define automation (get-seqtrack-automation from-seqtracknum automationnum))
   (define time (automation :nodes 0 :time))
-  (apply-seqtrack-automation to-seqtracknum time automation)
+  (paste-seqtrack-automation to-seqtracknum time automation)
   (remove-seqtrack-automation from-seqtracknum automationnum))
 
                            
@@ -7262,14 +7262,13 @@
                                                      (<ra> :show-instrument-gui instrument-id parentgui #f)
                                                      (<ra> :hide-instrument-gui instrument-id)))))
                                        (list (<-> "Cut automation")
+                                             :shortcut cut-seqtrack-automation
                                              (lambda ()
-                                               (set! *clipboard-seqtrack-automation* (get-seqtrack-automation seqtracknum automationnum))
-                                               (undo-block
-                                                (lambda ()
-                                                  (remove-seqtrack-automation seqtracknum automationnum)))))
+                                               (cut-seqtrack-automation seqtracknum automationnum)))
                                        (list (<-> "Copy automation")
+                                             :shortcut copy-seqtrack-automation
                                              (lambda ()
-                                               (set! *clipboard-seqtrack-automation* (get-seqtrack-automation seqtracknum automationnum))))
+                                               (copy-seqtrack-automation seqtracknum automationnum)))
  
                                        (get-main-sequencer-popup-menu-entries seqtracknum $x $y)
                                          

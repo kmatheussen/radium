@@ -856,7 +856,8 @@
          ra:append-bus-seqtrack)
    ))
 
-   
+
+;; Note: Used for shortcut
 (delafina (swap-with-prev-seqtrack :seqtracknum (<ra> :get-curr-seqtrack))
   (define (swapit)
     (<ra> :undo-sequencer)
@@ -869,7 +870,8 @@
          (if doit
              (swapit))))
       (swapit)))
-  
+
+;; Note: Used for shortcut
 (delafina (swap-with-next-seqtrack :seqtracknum (<ra> :get-curr-seqtrack))
   (define (swapit)
     (<ra> :undo-sequencer)
@@ -883,6 +885,7 @@
              (swapit))))
       (swapit)))
 
+;; Note: Used for shortcut
 (delafina (show-set-seqtrack-name-requester :seqtracknum (<ra> :get-curr-seqtrack))
   (define current-name (<ra> :get-seqtrack-name seqtracknum))
   (<ra> :schedule 0
@@ -1113,6 +1116,7 @@
                          (split-sample-seqblock pos seqtracknum seqblocknum)
                          #t))))))))
 
+;; Note: Used for shortcut
 (delafina (insert-existing-block-or-audiofile-in-sequencer :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
                                                            :X (<ra> :get-mouse-pointer-x -2))
 
@@ -1160,7 +1164,8 @@
                                       (lambda ()
                                         (<ra> :create-seqblock seqtracknum (<ra> :append-block) pos)
                                         ))))))))))
-         
+
+;; Note: Used for shortcut
 (delafina (insert-current-block-or-audiofile-in-sequencer :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
                                                           :X (<ra> :get-mouse-pointer-x -2))
   (<declare-variable> *curr-audiofile-num*)
@@ -1201,73 +1206,101 @@
                   (instrument-popup-menu instrument-id))))
         (iota (length all-instruments))
         all-instruments)))
- 
-(define (apply-seqtrack-automation seqtracknum time seqtrack-automation)
 
-  (define instrument-id (seqtrack-automation :instrument-id))
-  (define effect-num (seqtrack-automation :effect-num))
+;; Note: Used for shortcut
+(delafina (paste-seqtrack-automation :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
+                                     :time (<ra> :get-seq-gridded-time (round (get-sequencer-time (<ra> :get-mouse-pointer-x -2))))
+                                     :seqtrack-automation *clipboard-seqtrack-automation*)
 
-  (define (doit2 instrument-id effect-num)
-    (define nodes (seqtrack-automation :nodes))
+  (when (and seqtracknum
+             seqtrack-automation)
+    (define instrument-id (seqtrack-automation :instrument-id))
+    (define effect-num (seqtrack-automation :effect-num))
     
-    (define node1 (car nodes))
-    (define node2 (cadr nodes))
-    
-    (define time1 (node1 :time))
-    
-    (define (get-time node)
-      (+ (- (node :time)
-            time1)
-         time))
-    
-    (define (apply-logtype node nodenum automationnum)
-      (<ra> :set-seq-automation-node
-            (get-time node)
-            (node :value)
-            (node :logtype)
-            nodenum
-            automationnum
-            seqtracknum))
-    
-    (define hash (<ra> :add-seq-automation2
-                       (get-time node1) (node1 :value) (get-time node2) (node2 :value)
-                       effect-num
-                       instrument-id
-                       seqtracknum))
-    
-    (define automationnum (hash :automationnum))
-    (define nodenum1 (hash :nodenum1))
-    (define nodenum2 (hash :nodenum2))
-    
-    ;;(c-display "apply automation. seqtracknum:" seqtracknum ". automationnum:" automationnum ". nodenums:" nodenum1 nodenum2)
-    
-    (apply-logtype node1 nodenum1 automationnum)
-    (apply-logtype node2 nodenum2 automationnum)
-    
-    (for-each (lambda (node)
-                ;;(c-display "time node3:" (get-time node))
-                (<ra> :add-seq-automation-node (get-time node) (node :value) (node :logtype) automationnum seqtracknum))
-              (cddr nodes))
-    )
+    (define (doit2 instrument-id effect-num)
+      (define nodes (seqtrack-automation :nodes))
+      
+      (define node1 (car nodes))
+      (define node2 (cadr nodes))
+      
+      (define time1 (node1 :time))
+      
+      (define (get-time node)
+        (+ (- (node :time)
+              time1)
+           time))
+      
+      (define (apply-logtype node nodenum automationnum)
+        (<ra> :set-seq-automation-node
+              (get-time node)
+              (node :value)
+              (node :logtype)
+              nodenum
+              automationnum
+              seqtracknum))
 
-  (define (doit1 instrument-id effect-num)
+      (c-display "HEPP:" (get-time node1) (node1 :value) (get-time node2) (node2 :value)
+                         effect-num
+                         instrument-id
+                         seqtracknum)
+      (define hash (<ra> :add-seq-automation2
+                         (get-time node1) (node1 :value) (get-time node2) (node2 :value)
+                         effect-num
+                         instrument-id
+                         seqtracknum))
+      
+      (define automationnum (hash :automationnum))
+      (define nodenum1 (hash :nodenum1))
+      (define nodenum2 (hash :nodenum2))
+      
+      ;;(c-display "apply automation. seqtracknum:" seqtracknum ". automationnum:" automationnum ". nodenums:" nodenum1 nodenum2)
+      
+      (apply-logtype node1 nodenum1 automationnum)
+      (apply-logtype node2 nodenum2 automationnum)
+      
+      (for-each (lambda (node)
+                  ;;(c-display "time node3:" (get-time node))
+                  (<ra> :add-seq-automation-node (get-time node) (node :value) (node :logtype) automationnum seqtracknum))
+                (cddr nodes))
+      )
+    
+    (define (doit1 instrument-id effect-num)
+      (undo-block
+       (lambda ()
+         (doit2 instrument-id effect-num))))
+    
+    (if (or (not (<ra> :instrument-is-open-and-audio instrument-id))
+            (< effect-num 0)
+            (>= effect-num (<ra> :get-num-instrument-effects instrument-id)))
+        (show-async-message (<gui> :get-sequencer-gui)
+                            "Instrument for automation in clipboard doesn't exist anymore. Do you want to select new effect?"
+                            (list "Yes" "No") #t
+                            (lambda (res)
+                              (if (string=? "Yes" res)                                 
+                                  (request-instrument-id-and-effect-num
+                                   seqtracknum
+                                   doit1))))
+        (doit1 instrument-id effect-num))))
+       
+
+;; Note: Used for shortcut
+(delafina (copy-seqtrack-automation :seqtracknum (and *current-seqautomation/distance*
+                                                      (*current-seqautomation/distance* :seqtrack))
+                                    :automationnum (and *current-seqautomation/distance*
+                                                        (*current-seqautomation/distance* :automation-num)))
+  (if seqtracknum
+      (set! *clipboard-seqtrack-automation* (get-seqtrack-automation seqtracknum automationnum))))
+
+;; Note: Used for shortcut
+(delafina (cut-seqtrack-automation :seqtracknum (and *current-seqautomation/distance*
+                                                     (*current-seqautomation/distance* :seqtrack))
+                                   :automationnum (and *current-seqautomation/distance*
+                                                       (*current-seqautomation/distance* :automation-num)))
+  (when seqtracknum
+    (copy-seqtrack-automation seqtracknum automationnum)
     (undo-block
      (lambda ()
-       (doit2 instrument-id effect-num))))
-  
-  (if (or (not (<ra> :instrument-is-open-and-audio instrument-id))
-          (< effect-num 0)
-          (>= effect-num (<ra> :get-num-instrument-effects instrument-id)))
-      (show-async-message (<gui> :get-sequencer-gui)
-                          "Instrument for automation in clipboard doesn't exist anymore. Do you want to select new effect?"
-                          (list "Yes" "No") #t
-                          (lambda (res)
-                            (if (string=? "Yes" res)                                 
-                                (request-instrument-id-and-effect-num
-                                 seqtracknum
-                                 doit1))))
-      (doit1 instrument-id effect-num)))
-       
+       (remove-seqtrack-automation seqtracknum automationnum)))))
 
 (define (get-seq-automation-display-name automationnum seqtracknum)
   (define instrument-id (<ra> :get-seq-automation-instrument-id automationnum seqtracknum))
@@ -1277,6 +1310,7 @@
   (<-> instrument-name "/" effect-name))
 
 
+;; Note: Used for shortcut
 (delafina (create-sequencer-automation :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t) ;;get-curr-seqtrack)
                                        :X (<ra> :get-mouse-pointer-x -2)
                                        :Y (<ra> :get-mouse-pointer-y -2))
@@ -1312,9 +1346,10 @@
    
    (list (<-> "Paste automation")
          :enabled *clipboard-seqtrack-automation*
+         :shortcut paste-seqtrack-automation
          (lambda ()
            (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
-             (apply-seqtrack-automation seqtracknum pos *clipboard-seqtrack-automation*))))
+             (paste-seqtrack-automation seqtracknum pos *clipboard-seqtrack-automation*))))
    
    (map (lambda (automationnum)
           (list (get-seq-automation-display-name automationnum seqtracknum)
