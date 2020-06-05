@@ -1425,6 +1425,7 @@
                         )                        
 
 
+;; Note: Used for shortcut
 (delafina (FROM_C-show-instrument-color-dialog :parentgui -1
                                                :instrument-ids #f)
   (if (not instrument-ids)

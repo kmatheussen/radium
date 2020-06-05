@@ -1316,6 +1316,13 @@
 (define (start-instrument-popup-menu instrconf callback)
   (popup-menu-from-args (get-instrument-popup-menu-args instrconf callback)))
 
+#!!
+(for-each c-display (get-instrument-popup-menu-args (make-instrument-conf :connect-to-main-pipe #t
+                                                      :parentgui -1)
+                                (lambda (descr)
+                                  (c-display "selected:" descr))))
+!!#
+
 (define (create-instrument instrconf description)
   (undo-block
    (lambda ()
