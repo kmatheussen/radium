@@ -1101,7 +1101,8 @@
                              (<ra> :cancel-gfx-seqblocks seqtracknum)))
      #t)))
 
-(define (FROM_C-split-sample-seqblock-under-mouse use-grid)
+;; Note: Used for shortcut
+(delafina (FROM_C-split-sample-seqblock-under-mouse :use-grid (<ra> :sequencer-grid-enabled))
   (let ((seqtracknum *current-seqtrack-num*))
     (and seqtracknum
          (let ((seqblock-info *current-seqblock-info*))
@@ -1480,7 +1481,7 @@
 
    (list
     "Split audio file"
-    :shortcut (list ra:eval-scheme "(FROM_C-split-sample-seqblock-under-mouse (ra:sequencer-grid-enabled))")
+    :shortcut FROM_C-split-sample-seqblock-under-mouse
     (lambda ()
       (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
         (split-sample-seqblock pos seqtracknum seqblocknum))))                                               
