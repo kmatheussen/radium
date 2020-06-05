@@ -2634,7 +2634,7 @@ static SuperConnection *get_connection(int64_t id_from, int64_t id_to, bool is_e
 
 
 hash_t *MW_get_state(const vector_t *patches, bool include_ab){
-  hash_t *state = HASH_create(2);
+  hash_t *state = HASH_create(6);
 
   HASH_put_hash(state, "chips", MW_get_audio_patches_state(patches, true));
   HASH_put_hash(state, "connections", MW_get_connections_state(patches));
@@ -2645,6 +2645,7 @@ hash_t *MW_get_state(const vector_t *patches, bool include_ab){
   HASH_put_dyn(state, "mixer_strips_configuration", MW_get_mixer_strips_state());
 
   HASH_put_bool(state, "volume_applied_before_drywet", true);
+
   return state;
 }
 
@@ -2864,7 +2865,7 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
     MW_recreate_ab_from_state(HASH_get_hash(state, "ab_state"));
   
   AUDIO_update_all_permanent_ids();
-  
+
   GFX_update_all_instrument_widgets();
   MW_update_mixer_widget(true);
   

@@ -227,6 +227,7 @@ int main(){
 #include <inttypes.h>
 
 #include <QHash>
+#include <QSet>
 #include <QThread>
 #include <QFileInfo>
 
@@ -1489,7 +1490,76 @@ bool SAMPLEREADER_has_file(filepath_t filename){
   }
 }
    
- 
+
+dyn_t SAMPLEREADER_get_audiofiles_state(void){
+  dynvec_t ret = {};
+
+  for(auto *provider : g_sample_providers.values()){
+    hash_t *state = HASH_create(2);
+    HASH_put_string(state, "filename", provider->_filename.getString());
+    HASH_put_chars(state, "color", GFX_get_colorname_from_color(provider->_color));
+    DYNVEC_push_back(ret, DYN_create_hash(state));
+  }
+
+  return DYN_create_array(ret);
+}
+
+void SAMPLEREADER_apply_audiofiles_state(const dyn_t state){
+  QSet<SampleProvider*> applied;
+  
+  for(const dyn_t dyn : state.array){
+
+    SampleProvider *provider = NULL;
+    
+    hash_t *state = dyn.hash;
+
+    {
+      const wchar_t *filename = HASH_get_string(state, "filename");
+      R_ASSERT_RETURN_IF_FALSE(filename!=NULL);
+      
+      QString qfilename = STRING_get_qstring(filename);
+          
+      if (!g_sample_providers.contains(qfilename)){
+        
+        // File is not here if it is not available.
+        
+        // Check if there is another file with the same name, but in a different path.
+        const wchar_t *filename_without_path = DISK_get_pathless_file_path(make_filepath(filename)).id;
+        
+        for(auto *provider2 : g_sample_providers.values()){
+          if (applied.contains(provider2))
+            continue;
+          
+          const wchar_t *filename2 = provider2->_filename_without_path.getString();
+          
+          if (STRING_equals2(filename_without_path, filename2)){
+            printf("SAMPLEREADER_apply_audiofiles_state: Note: Using the color stored for \"%S\" for \"%S\".\n", filename, filename2);
+            filename = filename2;
+            provider = provider2;
+            break;
+          }
+        }
+        
+        printf("SAMPLEREADER_apply_audiofiles_state: Note: \"%S\" not found.\n", filename);
+       
+      } else {
+
+        provider = g_sample_providers[qfilename];
+        
+      }
+
+    }
+
+    if (provider != NULL){
+      applied << provider;
+      const char *colorname = HASH_get_chars(state, "color");
+      provider->_color = GFX_get_color_from_colorname(colorname);
+      printf("Note: Applying color \"%s\" to audio file \"%S\"\n", colorname, provider->_filename.getString());
+    }
+    
+  }
+}
+
 bool SAMPLEREADER_add_audiofile(filepath_t filename){
   return get_sample_provider(filename) != NULL;
 }

@@ -46,6 +46,9 @@ extern LANGSPEC void SAMPLEREADER_dec_users(filepath_t filename);
 extern LANGSPEC void SAMPLEREADER_dec_users_undo_callback(void *data);
 extern LANGSPEC bool SAMPLEREADER_has_file(filepath_t filename); // can be called from any thread, but not while holding player lock.
 
+extern LANGSPEC dyn_t SAMPLEREADER_get_audiofiles_state(void);
+void SAMPLEREADER_apply_audiofiles_state(const dyn_t state);
+
 extern LANGSPEC bool SAMPLEREADER_add_audiofile(filepath_t filename);
 extern LANGSPEC int64_t SAMPLEREADER_get_sample_duration(filepath_t filename);
 extern LANGSPEC double SAMPLEREADER_get_samplerate(filepath_t filename);

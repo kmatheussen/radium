@@ -55,7 +55,7 @@ ifeq ($(CONFIG),Release)
 
   CPPFLAGS := $(COMMONCPPFLAGS) -D "DEB1UG=1"
 
-  CFLAGS += $(CPPFLAGS) $(TARGET_ARCH) -g -ggdb -O3 -I../../../Qt `cat ../../../flagopts.opt`
+  CFLAGS += $(CPPFLAGS) $(TARGET_ARCH) -g -ggdb -I../../../Qt `cat ../../../flagopts.opt` -O3 
   CXXFLAGS += $(CFLAGS) -std=gnu++14
   LDFLAGS += $(TARGET_ARCH) -L$(BINDIR) -L$(LIBDIR) -L/usr/X11R6/lib/ -lX11 -lXext -lXinerama -lasound -ldl -lfreetype -lpthread -lrt 
 
