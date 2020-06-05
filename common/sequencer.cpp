@@ -3462,6 +3462,8 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
   // (modifying song tempo automation is a light operation + that it's atomically real time safe, so it doesn't matter much if we do this)
   HASH_put_hash(state, "song_tempo_automation", TEMPOAUTOMATION_get_state());
 
+  HASH_put_bool(state, "grid_enabled", sequencerGridEnabled());
+  
   HASH_put_bool(state, "looping_enabled", SEQUENCER_is_looping());
   HASH_put_int(state, "loop_start", SEQUENCER_get_loop_start());
   HASH_put_int(state, "loop_end", SEQUENCER_get_loop_end());
@@ -3678,6 +3680,9 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     if (root->song==song)
       S7CALL2(void_int, "FROM_C-call-me-when-num-seqtracks-might-have-changed", song->seqtracks.num_elements);
 
+    if (HASH_has_key(state, "grid_enabled"))
+      g_sequencer_grid_enabled = HASH_get_bool(state, "grid_enabled");
+    
     if(HASH_has_key(state, "loop_start")) {
       ATOMIC_SET(song->looping.start, HASH_get_int(state, "loop_start"));
       ATOMIC_SET(song->looping.end, HASH_get_int(state, "loop_end"));
