@@ -2380,7 +2380,7 @@ void setDoAutoCrossfades(bool default_do_auto_crossfades){
 
 
 
-static bool g_sequencer_grid_enabled = true;
+static bool g_sequencer_grid_enabled = false;
 
 void setSequencerGridType(const_char *grid_type){
   bool is_error=false;
