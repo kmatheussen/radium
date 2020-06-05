@@ -1133,6 +1133,7 @@ static QMenu *create_qmenu(
       
       
       bool disabled = false;
+      bool base64 = false;
       bool is_checkable = false;
       bool is_checked = false;
 
@@ -1144,6 +1145,12 @@ static QMenu *create_qmenu(
       if (text.startsWith("[disabled]")){
         text = text.right(text.size() - 10);
         disabled = true;
+        goto parse_next;
+      }
+      
+      if (text.startsWith("[base64]")){
+        text = text.right(text.size() - 8);
+        base64 = true;
         goto parse_next;
       }
       
@@ -1281,6 +1288,9 @@ static QMenu *create_qmenu(
           }
         }
 
+        if (base64)
+          text = QByteArray::fromBase64(text.toUtf8());
+        
         double t = TIME_get_ms();
         auto callbacker = std::make_shared<Callbacker>(menu, i, is_async, text, callback2, callback3, result, is_checkable);
         callbackdur += TIME_get_ms()-t;
@@ -1550,6 +1560,10 @@ vector_t GFX_MenuParser(const char *texts, const char *separator){
   }
 
   return ret;
+}
+
+void GFX_clear_menu_cache(void){
+  g_clickable_actions.clear();
 }
 
 QMenu *GFX_GetActiveMenu(void){

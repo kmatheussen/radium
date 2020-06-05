@@ -36,6 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/ratio_funcs.h"
 
+#include "../Qt/Qt_PopupMenu_proc.h"
+
 #include "../api/api_common_proc.h"
 #include "../api/api_proc.h"
 
@@ -2556,15 +2558,21 @@ s7_pointer RADIUM_SCHEME_eval2(const char *code){
   
   s7extra_add_history(__func__, CR_FORMATEVENT("========== RADIUM_SCHEME_eval2 (Code from s7webserver.)\n\n"));
   
-  return catch_call(s7,
-                    s7_list_nl(s7,
-                               3,                               
-                               Protect(find_scheme_value(s7, errorCheckEvalScheme() ? "mylint-and-eval-string" : "eval-string")).v,
-                               Protect(s7_make_string(s7, code)).v,
-                               s7_rootlet(s7), // Eval in global environment
-                               NULL
-                               )
-                    );
+  s7_pointer ret = catch_call(s7,
+                              s7_list_nl(s7,
+                                         3,                               
+                                         Protect(find_scheme_value(s7, errorCheckEvalScheme() ? "mylint-and-eval-string" : "eval-string")).v,
+                                         Protect(s7_make_string(s7, code)).v,
+                                         s7_rootlet(s7), // Eval in global environment
+                                         NULL
+                                         )
+                              );
+  
+#if !defined(RELEASE)
+  GFX_clear_menu_cache();
+#endif
+  
+  return ret;
 }
 
 void SCHEME_eval(const char *code){

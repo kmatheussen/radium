@@ -3445,7 +3445,9 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
   HASH_put_float(state, "samplerate", pc->pfreq);
 
   HASH_put_hash(state, "default_recording_config", get_state_from_recording_config(root->song->default_recording_config));
-  
+
+  HASH_put_dyn(state, "samplereader", SAMPLEREADER_get_audiofiles_state());
+
   VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
     hash_t *seqtrack_state = SEQTRACK_get_state(seqtrack /*, get_old_format */);
     HASH_put_hash_at(state, "seqtracks", iterator666, seqtrack_state);
@@ -3726,6 +3728,9 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     g_curr_seqblock_id = new_curr_seqblock_id;
   }
 
+  if (HASH_has_key(state, "samplereader"))
+    SAMPLEREADER_apply_audiofiles_state(HASH_get_dyn(state, "samplereader"));
+  
   
   if (HASH_has_key(state, "seqtrack_config"))
     SEQTRACKS_apply_config_state(HASH_get_hash(state, "seqtrack_config"));
