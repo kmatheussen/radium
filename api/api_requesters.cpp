@@ -278,7 +278,7 @@ const_char* requestWString(const_char *text, bool standalone, const_char* defaul
 
   PREREQ("");
 
-  const wchar_t *ret = GFX_ReadWString(requester, true);
+  const wchar_t *ret = GFX_GetWString(window, requester, text, true);
 
   POSTREQ();
 

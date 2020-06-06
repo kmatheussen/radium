@@ -455,7 +455,7 @@ static QString ReadString(ReqType das_reqtype, bool program_state_is_valid){
   return text;
 }
 
-wchar_t *GFX_ReadWString(ReqType das_reqtype, bool program_state_is_valid){
+const wchar_t *GFX_ReadWString(ReqType das_reqtype, bool program_state_is_valid){
   return STRING_create(ReadString(das_reqtype, program_state_is_valid));
 }
 

@@ -100,7 +100,7 @@ extern LANGSPEC void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType reqtyp
 extern LANGSPEC void GFX_WriteString(ReqType reqtype,const char *text);
 extern LANGSPEC void GFX_SetString(ReqType das_reqtype,const char *text);
 extern LANGSPEC void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength,bool program_state_is_valid);
-extern LANGSPEC wchar_t *GFX_ReadWString(ReqType das_reqtype, bool program_state_is_valid);
+extern LANGSPEC const wchar_t *GFX_ReadWString(ReqType das_reqtype, bool program_state_is_valid);
 extern LANGSPEC int GFX_ReqTypeMenu(
                                     struct Tracker_Windows *tvisual,
                                     ReqType reqtype,
@@ -113,8 +113,9 @@ extern LANGSPEC int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqty
 
 extern LANGSPEC float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,float min,float max,bool program_state_is_valid);
 
-extern LANGSPEC char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,bool program_state_is_valid);
-
+extern LANGSPEC const char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,bool program_state_is_valid);
+extern LANGSPEC const wchar_t *GFX_GetWString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,bool program_state_is_valid);
+  
 #ifdef __cplusplus
 
 #include <functional>
