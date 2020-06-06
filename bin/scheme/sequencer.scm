@@ -1534,11 +1534,23 @@
         (lambda ()
           (popup-menu (get-seqtrack-menu-entries seqtracknum X Y)))))
 
-
+;; Note: used for shortcut
+(delafina (switch-seqblock-automation-enabled :automation-num
+                                              :seqblock-id (and *current-seqblock-info*
+                                                                (*current-seqblock-info* :id)))
+  (when (and seqblock-id
+             (< automation-num (<ra> :get-num-seqblock-automations
+                                     (<ra> :get-seqblock-seqblock-num seqblock-id)
+                                     (<ra> :get-seqblock-seqtrack-num seqblock-id))))
+    (<ra> :set-seqblock-automation-enabled
+          (not (<ra> :get-seqblock-automation-enabled automation-num seqblock-id))
+          automation-num
+          seqblock-id)))
 
 (define (create-seqblock-automation-popup-menu-entry automationnum seqblockid)
   (list (<-> (<ra> :get-seqblock-automation-name automationnum) " automation")
         :check (<ra> :get-seqblock-automation-enabled automationnum seqblockid)
+        :shortcut (list switch-seqblock-automation-enabled automationnum)
         (lambda (enable)
           (<ra> :set-seqblock-automation-enabled enable automationnum seqblockid))))
 
