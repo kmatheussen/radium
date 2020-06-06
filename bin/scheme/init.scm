@@ -733,12 +733,11 @@ show-keybinding-help-window
         
 
 
-
 (define-constant *mylint-load-file-during-startup* (and #t
                                                         (not (ra:release-mode))
                                                         (ra:optimized-build)
-                                                        (= (random 5) 0) ;; Takes a lot of time. Don't want to run every time.
-                                                        (not (string=? (ra:get-os-name) "windows")) ;; Takes even more time, a lot more time, on windows, at least if running in normal console.
+                                                        (= (random 5) 0) ;; Takes a little bit time. Don't want to run every time.
+                                                        (not (string=? (ra:get-os-name) "windows")) ;; Printing to the console takes a lot of time on windows.
                                                         ))
 
   

@@ -7129,40 +7129,6 @@
                         )         
   
 
-(define (remove-seqtrack-automation seqtracknum automationnum)
-  (define num-automations (<ra> :get-num-seqtrack-automations seqtracknum))
-  (while (= num-automations (<ra> :get-num-seqtrack-automations seqtracknum))
-    (<ra> :delete-seq-automation-node 0 automationnum seqtracknum)))
-
-(define-struct seqtrack-automation
-  :instrument-id
-  :effect-num
-  :nodes)
-
-(define-struct seqtrack-automation-node
-  :time
-  :value
-  :logtype)
-  
-(define (get-seqtrack-automation seqtracknum automationnum)
-  (make-seqtrack-automation :instrument-id (<ra> :get-seq-automation-instrument-id automationnum seqtracknum)
-                            :effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum)
-                            :nodes (map (lambda (nodenum)
-                                          (make-seqtrack-automation-node :time (<ra> :get-seq-automation-time nodenum automationnum seqtracknum)
-                                                                         :value (<ra> :get-seq-automation-value nodenum automationnum seqtracknum)
-                                                                         :logtype (<ra> :get-seq-automation-logtype  nodenum automationnum seqtracknum)))
-                                        (iota (<ra> :get-num-seqtrack-automation-nodes automationnum seqtracknum)))))
-#!!
-(pretty-print (get-seqtrack-automation 1 2))
-(pretty-print (get-seqtrack-automation 0 0))
-!!#
-
-(define (move-seqtrack-automation-to-different-seqtrack from-seqtracknum automationnum to-seqtracknum)
-  (define automation (get-seqtrack-automation from-seqtracknum automationnum))
-  (define time (automation :nodes 0 :time))
-  (paste-seqtrack-automation to-seqtracknum time automation)
-  (remove-seqtrack-automation from-seqtracknum automationnum))
-
                            
 ;; delete seqautomation / popupmenu
 (add-mouse-cycle
