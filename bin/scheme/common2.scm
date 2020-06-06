@@ -1597,6 +1597,28 @@ for .emacs:
   :get (pos)
   ((get-vector) pos)
 
+  :remove! (element)
+  (let ((eq-func (get-eq-func)))
+    (let loop ((elements (get-list))
+               (new-elements '())
+               (num-removed 0))
+      (cond ((null? elements)
+             (let ((new-elements (reverse! new-elements)))
+               (clear! new-elements
+                       #f
+                       new-elements
+                       #f
+                       #f)
+               num-removed))
+            ((eq-func (car elements) element)
+             (loop (cdr elements)
+                   new-elements
+                   (+ 1 num-removed)))
+            (else
+             (loop (cdr elements)
+                   (cons (car elements) new-elements)
+                   num-removed)))))
+  
   :add! (element) ;; Very inefficient if primary format is hash-table.
   (let ((elements (cons element (get-list))))
     (clear! elements
@@ -1650,8 +1672,7 @@ for .emacs:
           (error (<-> "Method \"" methodname "\" not found in class list-and-set"))))))
 ||#
 
-
-
+  
 
 
 

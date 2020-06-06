@@ -277,6 +277,7 @@ FROM_C-copy-selected-pianonotes
 FROM_C-paste-pianonotes!
 FROM_C-delete-selected-pianonotes!
 show-keybinding-help-window
+FROM_C-ensure-curr-block-is-visible-in-blocklist
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

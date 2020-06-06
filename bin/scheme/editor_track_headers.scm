@@ -378,7 +378,7 @@
                             ))
   (add-sub-area-plain! high-button)
    
-  (low-button :override-method! 'mouse-wheel-moved-last
+  (low-button :override-method! :mouse-wheel-moved-last
               (lambda (is-up x* y*)
                 (<ra> :set-pianoroll-low-key (legalize-low (+ (<ra> :get-pianoroll-low-key tracknum)
                                                               (if is-up
@@ -386,7 +386,7 @@
                                                                   -1)))
                       tracknum)
                 #t))
-  (high-button :override-method! 'mouse-wheel-moved-last
+  (high-button :override-method! :mouse-wheel-moved-last
                (lambda (is-up x* y*)
                  (<ra> :set-pianoroll-high-key (legalize-high (+ (<ra> :get-pianoroll-high-key tracknum)
                                                                  (if is-up
