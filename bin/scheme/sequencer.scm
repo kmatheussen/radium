@@ -1666,7 +1666,9 @@
   (list
    "-----------------Editor Seqblock"
    (create-seqblock-automation-popup-menu-entry 0 seqblockid)
+   
    "------------------------"
+   
    (list (if (pair? seqblock-infos) "Clone editor blocks" "Clone editor block")
          :enabled (and blocknum
                        (or (pair? seqblock-infos) seqblock-info)

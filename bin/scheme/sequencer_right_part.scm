@@ -170,58 +170,73 @@
       (and (= button *right-button*)
            (<ra> :shift-pressed))))
 
+(define *blocklist-has-been-overridden* (defined? '*blocklist-areas*))
+(define *blocklist-areas* (<new> :container '() eq?))
+
 (define (create-blocks-browser-area gui x1 y1 x2 y2 draggable state)
 
+  (define entry-areas '())
+  
   (define (recreate x1 y1 x2 y2 state)
-    (define area
-      (<new> :vertical-list-area gui x1 y1 x2 y2
-             (lambda (x1 x2)
-               (map (lambda (blocknum)
-                      (define color (<ra> :get-block-color blocknum))
+    (set! entry-areas
+          (map (lambda (blocknum)
+                 (define color (<ra> :get-block-color blocknum))
                   ;;;(set! color (<gui> :make-color-lighter color 1.5))
-                      (set! color (<gui> :set-alpha-for-color color 0.5))
-                      (define is-current (= (<ra> :current-block) blocknum))
-                      (define (mouse-callback button x y . rest)
-                        (cond ((and (= button *right-button*)
-                                    (<ra> :shift-pressed))
-                               (<ra> :delete-block blocknum))
-                              ((and (= button *left-button*)
-                                    (<gui> :is-double-clicking gui))
-                               (<ra> :create-seqblock -1 blocknum))
-                              ((not (<ra> :is-playing-song))
-                               (<ra> :select-block blocknum)))
-                        (update)
-                        #f)
-                      
-                      (if draggable
-                          (<new> :seqblock-table-entry-area gui 10 0 100 (round (* 1.2 (get-fontheight)))
-                                 :is-current is-current
-                                 :entry-num blocknum
-                                 :blocknum blocknum
-                                 :allow-dragging #t
-                                 :background-color color ;(if (= (<ra> :current-block) blocknum)
+                 (set! color (<gui> :set-alpha-for-color color 0.5))
+                 (define is-current (= (<ra> :current-block) blocknum))
+                 (define (mouse-callback button x y . rest)
+                   (cond ((and (= button *right-button*)
+                               (<ra> :shift-pressed))
+                          (<ra> :delete-block blocknum))
+                         ((and (= button *left-button*)
+                               (<gui> :is-double-clicking gui))
+                          (<ra> :create-seqblock -1 blocknum))
+                         ((not (<ra> :is-playing-song))
+                          (<ra> :select-block blocknum)))
+                   (update)
+                   #f)
+                 
+                 (define entry
+                   (if draggable
+                       (<new> :seqblock-table-entry-area gui 10 0 100 (round (* 1.2 (get-fontheight)))
+                              :is-current is-current
+                              :entry-num blocknum
+                              :blocknum blocknum
+                              :allow-dragging #t
+                              :background-color color ;(if (= (<ra> :current-block) blocknum)
                                         ;(<gui> :mix-colors color "green" 0.1)
                                         ;color)
-                                 :callback mouse-callback)
-                          (let ()
-                            (let ((text-area (<new> :text-area gui 10 0 100 (round (* 0.8 (get-fontheight)))
-                                                    (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum))
-                                                    :background-color (let ((base (<gui> :set-alpha-for-color color 0.05)))
-                                                                        (if is-current
-                                                                            (<gui> :mix-colors "high_background" base 0.95)
-                                                                            base))
-                                                    :text-color (if is-current
-                                                                    *text-color*
-                                                                    "black")
-                                                    :align-left #t
-                                                    :paint-border #f
-                                                    :cut-text-to-fit #t
-                                                    )))
-                              (text-area :add-mouse-cycle! mouse-callback)
-                              text-area))))
-                    (iota (<ra> :get-num-blocks))))))
+                              :callback mouse-callback)
+                       (let ()
+                         (let ((text-area (<new> :text-area gui 10 0 100 (round (* 0.8 (get-fontheight)))
+                                                 (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum))
+                                                 :background-color (let ((base (<gui> :set-alpha-for-color color 0.05)))
+                                                                     (if is-current
+                                                                         (<gui> :mix-colors "high_background" base 0.95)
+                                                                         base))
+                                                 :text-color (if is-current
+                                                                 *text-color*
+                                                                 "black")
+                                                 :align-left #t
+                                                 :paint-border #f
+                                                 :cut-text-to-fit #t
+                                                 )))
+                           (text-area :add-mouse-cycle! mouse-callback)
+                           text-area))))
+                 
+                 (entry :add-method! :is-current? (lambda ()
+                                                    is-current))
+                 entry)
+               
+               (iota (<ra> :get-num-blocks))))
+    
+    (define area (<new> :vertical-list-area gui x1 y1 x2 y2
+                        (lambda (x1 x2)
+                          entry-areas)))
+    
     (if state
         (area :apply-state! state))
+    
     area)
   
   (define area (<new> :use-first-subarea-state-as-state-area gui x1 y1 x2 y2))
@@ -238,6 +253,20 @@
   
   ;;(c-display "state:" state)
 
+  (define (ensure-entry-area-visible vertical-area entry-area)
+    (vertical-area :ensure-area-is-visible entry-area))
+
+  (define (get-vertical-list-area)
+    (car (area :get-sub-areas)))
+  
+  (area :add-method! :ensure-curr-block-is-visible (lambda ()
+                                                     (let loop ((entry-areas entry-areas))
+                                                       (when (not (null? entry-areas))
+                                                         (define entry-area (car entry-areas))
+                                                         (if (entry-area :is-current?)
+                                                             (ensure-entry-area-visible (get-vertical-list-area) entry-area)
+                                                             (loop (cdr entry-areas)))))))
+
   (define (update)
     (define state (area :get-state))
     (area :remove-sub-areas!)
@@ -253,11 +282,35 @@
                     (begin
                       (update)
                       #t))))
-    
+
+
+  (*blocklist-areas* :add! area)
+
+  (area :override-method! :about-to-be-removed-callback
+        (lambda ()
+          (define num-removed (*blocklist-areas* :remove! area))
+          (when (not (= 1 num-removed))
+            (define may-have-been-a-good-reason-for-it (and *blocklist-has-been-overridden*
+                                                            (= num-removed 0)))
+            ;;(c-display "*gakk-num-removed*:" *gakk-num-removed* ". *gakk-num-added*:" *gakk-num-added* ". *blocklist-areas*:" (*blocklist-areas* :list) ". Before:" list-before)
+            (c-display "\n\n\nERROR: Blocklist: Removed wrong number of areas:" num-removed ". Expected 1. May have been a good reason for it:" may-have-been-a-good-reason-for-it)
+            (if (and (not (<ra> :release-mode))
+                     (not may-have-been-a-good-reason-for-it))
+                (assert #f)))))
+  
   area
   )
 
+(define (FROM_C-ensure-curr-block-is-visible-in-blocklist)
+  (for-each (lambda (blocklist)
+              (blocklist :ensure-curr-block-is-visible))
+            (*blocklist-areas* :list)))
+
+
 #!!
+(*blocklist-areas* :list)
+
+
 (let ()
   (define testarea (make-qtarea :width 450 :height 750
                                 :sub-area-creation-callback (lambda (gui width height state)

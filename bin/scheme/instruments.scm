@@ -1859,7 +1859,6 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 (define (FROM_C-move-current-instrument-down)
   (and-let* ((res (find-instrument-to-the-down-of)))
             (<ra> :set-current-instrument res)))
-  
 
 (define (get-select-track-instrument-popup-entries tracknum)
   (define midi-instruments (get-all-midi-instruments))

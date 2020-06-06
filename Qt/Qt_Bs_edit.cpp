@@ -325,9 +325,9 @@ void BS_UpdatePlayList(void){
 void BS_SelectBlock(struct Blocks *block){
   ScopedVisitors v;
   //g_bs->blocklist.setSelected(block->l.num, true);
-  // TODO: Update blocklists. Call scheme.
   R_ASSERT_NON_RELEASE(currentBlock(-1)==block->l.num);
   BS_UpdateBlockList();
+  S7CALL2(void_void, "FROM_C-ensure-curr-block-is-visible-in-blocklist");
 }
 
 void BS_SelectPlaylistPos(int pos, bool change_song_pos_too){

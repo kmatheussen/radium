@@ -752,11 +752,13 @@
      :reset! x (apply reset! x)
      :about-to-be-removed-internal! x (apply about-to-be-removed-internal! x)
      :add-statusbar-text-handler x (apply add-statusbar-text-handler x)
-     :override-method! (funcname func) (let* ((org (<_> "super:" funcname)))
-                                         (eval `(let ((,org ,funcname))
-                                                  ;;(c-display "FUNCNAME:" ',funcname ". old:" ,funcname)
-                                                  (set! ,funcname ,func)
-                                                  )))
+     :override-method! (funcname func) (let ((funcname (keyword->symbol funcname)))
+                                         (let* ((org (<_> "super:" funcname)))
+                                           (eval `(let ((,org ,funcname))
+                                                    ;;(c-display "FUNCNAME:" ',funcname ". old:" ,funcname)
+                                                    (set! ,funcname ,func)
+                                                    ;;(c-display "GOTIT")
+                                                    ))))
      :class-name () class-name
      ))
  
@@ -2083,6 +2085,7 @@
         #t))
 (<ra> :iterate-directory "L3RtcA==" #f c-display)
 !!#
+
 
 (def-area-subclass (<seqblock-table-entry-area> :gui :x1 :y1 :x2 :y2
                                                 :is-current

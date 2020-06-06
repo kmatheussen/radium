@@ -216,7 +216,7 @@
                                                                            (assert #f))))))
 
                  (if (eq? type 'height)
-                     (box :override-method! 'mouse-wheel-moved
+                     (box :override-method! :mouse-wheel-moved
                           (lambda (is-up x y)
                             (define height-type (<ra> :get-seqtrack-min-height-type seqtracknum))
                             ;;(c-display "HEIGHT-type:" height-type is-up)
