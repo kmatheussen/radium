@@ -4356,35 +4356,35 @@
           (list "Swing help" ra:show-swing-help-window)
           (list "Tempo automation help" ra:show-tempo-automation-track-help-window)
           ))   
-   "--------------"
-   (list "Keybindings"
-         (list
-          "-------------BPM visibility keybinding"
-          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-bpm-track"
-                                                           :args '()
-                                                           :focus-keybinding "FOCUS_EDITOR")
-          "-------------LPB visibility keybinding"
-          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-lpb-track"
-                                                           :args '()
-                                                           :focus-keybinding "FOCUS_EDITOR")
-          "-------------Signature visibility keybinding"
-          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-signature-track"
-                                                           :args '()
-                                                           :focus-keybinding "FOCUS_EDITOR")
-          "-------------Switch bars and beats / line numbers keybinding"
-          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-linenumbers"
-                                                           :args '()
-                                                           :focus-keybinding "FOCUS_EDITOR")
-          "-------------Swing visibility keybinding"
-          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-swing-track"
-                                                           :args '()
-                                                           :focus-keybinding "FOCUS_EDITOR")
-          "-------------Tempo automation visibility keybinding"
-          (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-reltempo-track"
-                                                           :args '()
-                                                           :focus-keybinding "FOCUS_EDITOR")
-          "-------------"
-          "Help keybindings" show-keybinding-help-window))
+   ;;"--------------"
+   ;;(list "Keybindings"
+   ;;      (list
+   ;;       "-------------BPM visibility keybinding"
+   ;;       (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-bpm-track"
+   ;;                                                        :args '()
+   ;;                                                        :focus-keybinding "FOCUS_EDITOR")
+   ;;       "-------------LPB visibility keybinding"
+   ;;       (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-lpb-track"
+   ;;                                                        :args '()
+   ;;                                                        :focus-keybinding "FOCUS_EDITOR")
+   ;;       "-------------Signature visibility keybinding"
+   ;;       (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-signature-track"
+   ;;                                                        :args '()
+   ;;                                                        :focus-keybinding "FOCUS_EDITOR")
+   ;;       "-------------Switch bars and beats / line numbers keybinding"
+   ;;       (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-linenumbers"
+   ;;                                                        :args '()
+   ;;                                                        :focus-keybinding "FOCUS_EDITOR")
+   ;;       "-------------Swing visibility keybinding"
+   ;;       (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-swing-track"
+   ;;                                                        :args '()
+   ;;                                                        :focus-keybinding "FOCUS_EDITOR")
+   ;;       "-------------Tempo automation visibility keybinding"
+   ;;       (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-reltempo-track"
+   ;;                                                        :args '()
+   ;;                                                        :focus-keybinding "FOCUS_EDITOR")
+   ;;       "-------------"
+   ;;       "Help keybindings" show-keybinding-help-window))
    "---------Editor"
    (get-editor-editor-menu-entries)
    ))
