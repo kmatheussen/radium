@@ -954,6 +954,10 @@
 (define (switch-show-markers-sequencer-lane)
   (<ra> :set-show-markers-sequencer-lane (not (<ra> :show-markers-sequencer-lane))))
 
+;; Note: Used for shortcut
+(define (switch-set-using-sequencer-timing)
+  (<ra> :set-using-sequencer-timing (not (<ra> :is-using-sequencer-timing))))
+
 
 (define (get-sequencer-conf-menues)
   (list 
@@ -1014,12 +1018,14 @@
               (list "Use sequencer timing"
                     :check (<ra> :is-using-sequencer-timing)
                     :enabled (not (<ra> :seqtrack-for-audiofiles 0))
+                    :shortcut switch-set-using-sequencer-timing
                     (lambda (doit)
                       (if doit
                           (<ra> :set-using-sequencer-timing #t))))
               (list "Use editor timing"
                     :check (not (<ra> :is-using-sequencer-timing))
                     :enabled (not (<ra> :seqtrack-for-audiofiles 0))
+                    :shortcut switch-set-using-sequencer-timing
                     (lambda (doit)
                       (when doit
                         (<ra> :set-using-sequencer-timing #f)))))
