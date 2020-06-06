@@ -1669,24 +1669,6 @@
    
    "------------------------"
    
-   (list (if (pair? seqblock-infos) "Clone editor blocks" "Clone editor block")
-         :enabled (and blocknum
-                       (or (pair? seqblock-infos) seqblock-info)
-                       (not (<ra> :is-playing-song)))
-         (lambda ()
-           (<ra> :select-block blocknum)
-           (<ra> :copy-block)
-           (undo-block
-            (lambda ()
-              (for-each (lambda (seqblock-info)
-                          (define new-blocknum (<ra> :append-block))
-                          (<ra> :select-block new-blocknum)
-                          (<ra> :paste-block))
-                        (if (null? seqblock-infos)
-                            (list seqblock-info)
-                            seqblock-infos))))))
-   
-   
    ;;(list "Replace with current block"
    ;;      :enabled seqblock-info
    ;;      (lambda ()
@@ -1786,7 +1768,28 @@
          :enabled (and blocknum seqblocknum)
          :shortcut "Double-click"
          (lambda ()
-           (show-seqblock-track-on-off-configuration seqblockid)))))
+           (show-seqblock-track-on-off-configuration seqblockid)))
+
+   "-----------------------------"
+      (list (<-> "Clone (create new block" (if (pair? seqblock-infos) "s" "") ")")
+         :enabled (and blocknum
+                       (or (pair? seqblock-infos) seqblock-info)
+                       (not (<ra> :is-playing-song)))
+         (lambda ()
+           (<ra> :select-block blocknum)
+           (<ra> :copy-block)
+           (undo-block
+            (lambda ()
+              (for-each (lambda (seqblock-info)
+                          (define new-blocknum (<ra> :append-block))
+                          (<ra> :select-block new-blocknum)
+                          (<ra> :paste-block))
+                        (if (null? seqblock-infos)
+                            (list seqblock-info)
+                            seqblock-infos))))))
+      ))
+   
+
 
 
 (define (get-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X Y)
