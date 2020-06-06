@@ -1527,12 +1527,19 @@
    (get-sequencer-conf-menues)
    ))
 
+;; Note: used for shortcut
+(delafina (show-seqtrack-popup-menu :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
+                                    :X (<ra> :get-mouse-pointer-x -2)
+                                    :Y (<ra> :get-mouse-pointer-y -2))
+  (popup-menu (get-seqtrack-menu-entries seqtracknum X Y)))
 
 (define (get-main-sequencer-popup-menu-entries seqtracknum X Y)
   (list "---------------------Sequencer"
         (<-> "Popup menu for seqtrack #" seqtracknum)
+        :shortcut show-seqtrack-popup-menu
         (lambda ()
-          (popup-menu (get-seqtrack-menu-entries seqtracknum X Y)))))
+          (show-seqtrack-popup-menu seqtracknum X Y))))
+
 
 ;; Note: used for shortcut
 (delafina (switch-seqblock-automation-enabled :automation-num
