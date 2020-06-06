@@ -6052,22 +6052,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-;; Current seqblock, and sequencer block order
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define (set-current-seqblock! seqtracknum id)
-  ;;(assert (<ra> :seqblock-is-alive id))
-  (define old-order (to-list (<ra> :get-seqblock-z-order seqtracknum)))  
-  (define new-order (cons id (delete-maybe id old-order =)))
-  ;;(c-display "id:" id "old:" old-order ". new-order: " new-order)
-  (<ra> :set-curr-seqblock id)
-  (<ra> :set-seqblock-z-order
-        new-order
-        seqtracknum))
-
-(define (FROM_C-set-current-seqblock! seqtracknum id)
-  (set-current-seqblock! seqtracknum id))
-
 ;; swap sequencer blocks
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 

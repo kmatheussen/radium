@@ -36,6 +36,23 @@
 
 (define2 *current-seqtrack-num* (curry-or not integer?) #f)
 
+;; Current seqblock, and sequencer block order
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (set-current-seqblock! seqtracknum id)
+  ;;(assert (<ra> :seqblock-is-alive id))
+  (define old-order (to-list (<ra> :get-seqblock-z-order seqtracknum)))  
+  (define new-order (cons id (delete-maybe id old-order =)))
+  ;;(c-display "id:" id "old:" old-order ". new-order: " new-order)
+  (<ra> :set-curr-seqblock id)
+  (<ra> :set-seqblock-z-order
+        new-order
+        seqtracknum))
+
+(define (FROM_C-set-current-seqblock! seqtracknum id)
+  (set-current-seqblock! seqtracknum id))
+
+
 
 (define (find-first-visible-seqtrack)
   (let loop ((seqtracknum 0))
@@ -886,15 +903,32 @@
       (swapit)))
 
 ;; Note: Used for shortcut
-(delafina (show-set-seqtrack-name-requester :seqtracknum (<ra> :get-curr-seqtrack))
-  (define current-name (<ra> :get-seqtrack-name seqtracknum))
-  (<ra> :schedule 0
-        (lambda ()
-          (let ((new-name (<ra> :request-string "New name: " #t current-name)))
-            (if (and (not (string=? "" new-name))
-                     (not (string=? current-name new-name)))
-                (<ra> :set-seqtrack-name new-name seqtracknum)))
-          #f)))
+(delafina (show-set-seqtrack/seqblock-name-requester :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t) ;; (<ra> :get-curr-seqtrack)
+                                                     :seqblock-id (and *current-seqblock-info*
+                                                                       (*current-seqblock-info* :id)))
+  (if seqblock-id
+      (set! seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id)))
+
+  (when seqtracknum
+    
+    (if seqblock-id
+        (set-current-seqblock! seqtracknum seqblock-id)
+        (<ra> :set-curr-seqtrack seqtracknum))
+    
+    (define current-name (if seqblock-id
+                             (<ra> :get-seqblock-name seqblock-id)
+                             (<ra> :get-seqtrack-name seqtracknum)))
+    (<ra> :schedule 0
+          (lambda ()
+            (let ((new-name (if seqblock-id
+                                (<ra> :request-w-string (<-> "New seqblock name: ") #t current-name)
+                                (<ra> :request-string (<-> "New seqtrack name: ") #t current-name))))
+              (if (and (not (string=? "" new-name))
+                       (not (string=? current-name new-name)))
+                  (if seqblock-id
+                      (<ra> :set-seqblock-name new-name seqblock-id #t)
+                      (<ra> :set-seqtrack-name new-name seqtracknum))))
+            #f))))
 
 (define (get-seqtrack-popup-menu-entries seqtracknum)
   (list
@@ -913,9 +947,9 @@
          (lambda ()
            (show-select-both-seqtrack-size-types-gui seqtracknum)))
    (list "Set name"
-         :shortcut show-set-seqtrack-name-requester
+         :shortcut show-set-seqtrack/seqblock-name-requester
          (lambda ()
-           (show-set-seqtrack-name-requester seqtracknum)))))
+           (show-set-seqtrack/seqblock-name-requester seqtracknum)))))
 
 ;; Note: Used for shortcut
 (define (set-no-looping-or-punching-in-sequencer)
@@ -1813,14 +1847,11 @@
    "------------------"
    
    (list
-    "Rename"
+    "Set name"
     :enabled seqblock-info
+    :shortcut show-set-seqtrack/seqblock-name-requester
     (lambda ()
-      (let* ((old-name (<ra> :get-seqblock-name seqblockid))
-             (new-name (<ra> :request-w-string "New name:" #t old-name)))
-        (when (and (not (string=? (<ra> :from-base64 new-name) ""))
-                   (not (string=? new-name old-name)))
-          (<ra> :set-seqblock-name new-name seqblockid #t)))))
+      (show-set-seqtrack/seqblock-name-requester seqtracknum seqblockid)))
    
    (list "Configure color"
          :enabled seqblock-info
