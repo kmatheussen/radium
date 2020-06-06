@@ -930,6 +930,31 @@
 (define (switch-punching-in-sequencer)
   (<ra> :set-seqpunching (not (<ra> :is-seqpunching))))
   
+;; Note: Used for shortcut
+(define (switch-seqtempo-visible)
+  (<ra> :set-seqtempo-visible (not (<ra> :seqtempo-visible))))
+
+;; Note: Used for shortcut
+(define (switch-show-time-sequencer-lane)
+  (<ra> :set-show-time-sequencer-lane (not (<ra> :show-time-sequencer-lane))))
+
+;; Note: Used for shortcut
+(define (switch-show-bars-and-beats-sequencer-lane)
+  (<ra> :set-show-bars-and-beats-sequencer-lane (not (<ra> :show-bars-and-beats-sequencer-lane))))
+
+;; Note: Used for shortcut
+(define (switch-show-tempos-sequencer-lane)
+  (<ra> :set-show-tempos-sequencer-lane (not (<ra> :show-tempos-sequencer-lane))))
+
+;; Note: Used for shortcut
+(define (switch-show-signatures-sequencer-lane)
+  (<ra> :set-show-signatures-sequencer-lane (not (<ra> :show-signatures-sequencer-lane))))
+
+;; Note: Used for shortcut
+(define (switch-show-markers-sequencer-lane)
+  (<ra> :set-show-markers-sequencer-lane (not (<ra> :show-markers-sequencer-lane))))
+
+
 (define (get-sequencer-conf-menues)
   (list 
         "--------Sequencer timeline"
@@ -956,42 +981,32 @@
         "-------Sequencer lanes"
         (list "Song tempo automation"
               :check (<ra> :seqtempo-visible)
+              :shortcut switch-seqtempo-visible
               (lambda (doit)
                 (<ra> :set-seqtempo-visible doit)))
         (list "Time"
               :check (<ra> :show-time-sequencer-lane)
-              :enabled (or #t
-                           (not (<ra> :show-time-sequencer-lane))
-                           (<ra> :show-bars-and-beats-sequencer-lane))
+              :shortcut switch-show-time-sequencer-lane
               (lambda (doit)
-                (if (and (not doit)
-                         (not (<ra> :show-bars-and-beats-sequencer-lane)))
-                    (<ra> :set-show-bars-and-beats-sequencer-lane #t))
-                    ;;(show-async-message (<gui> :get-sequencer-gui)
-                    ;;                    "Either the time lane or the bars+beats lane must be visible")
                 (<ra> :set-show-time-sequencer-lane doit)))
         (list "Bars and beats"
               :check (<ra> :show-bars-and-beats-sequencer-lane)
-              :enabled (or #t
-                           (not (<ra> :show-bars-and-beats-sequencer-lane))
-                           (<ra> :show-time-sequencer-lane))
+              :shortcut switch-show-bars-and-beats-sequencer-lane
               (lambda (doit)
-                (if (and (not doit)
-                         (not (<ra> :show-time-sequencer-lane)))
-                    (<ra> :set-show-time-sequencer-lane #t))
-                    ;;(show-async-message (<gui> :get-sequencer-gui)
-                    ;;                    "Either the time lane or the bars+beats lane must be visible")
                 (<ra> :set-show-bars-and-beats-sequencer-lane doit)))
         (list "Tempos"
               :check (<ra> :show-tempos-sequencer-lane)
+              :shortcut switch-show-tempos-sequencer-lane
               (lambda (doit)
                 (<ra> :set-show-tempos-sequencer-lane doit)))
         (list "Signatures"
               :check (<ra> :show-signatures-sequencer-lane)
+              :shortcut switch-show-signatures-sequencer-lane
               (lambda (doit)
                 (<ra> :set-show-signatures-sequencer-lane doit)))
         (list "Markers"
               :check (<ra> :show-markers-sequencer-lane)
+              :shortcut switch-show-markers-sequencer-lane
               (lambda (doit)
                 (<ra> :set-show-markers-sequencer-lane doit)))
         "-------Timing mode"
