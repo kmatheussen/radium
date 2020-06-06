@@ -98,10 +98,10 @@ float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,const char *t
 }
 
 
-char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,bool program_state_is_valid){
+const char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,bool program_state_is_valid){
 	ReqType file;
 	char temp[70];
-	char *rettext=NULL;
+	const char *rettext=NULL;
 
 	if(reqtype==NULL){
           file=GFX_OpenReq(tvisual,(int)strlen(text)+10,4,"");
@@ -116,11 +116,33 @@ char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *
 	GFX_WriteString(file,text);
 	GFX_ReadString(file,temp,49,program_state_is_valid);
         
-	if(temp[0] !='\0' ){
-          rettext=talloc_atomic((int)strlen(temp)+2);
-          sprintf(rettext,"%s",temp);
+	if(temp[0] !='\0' )
+          rettext=talloc_strdup(temp);
+
+	if(reqtype==NULL){
+		GFX_CloseReq(tvisual,file);
 	}
 
+	return rettext;
+}
+
+
+const wchar_t *GFX_GetWString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,bool program_state_is_valid){
+	ReqType file;
+
+	if(reqtype==NULL){
+          file=GFX_OpenReq(tvisual,(int)strlen(text)+10,4,"");
+	}else{
+          file=reqtype;
+	}
+
+	if(file==0){
+		return NULL;
+	}
+
+	GFX_WriteString(file,text);
+	const wchar_t *rettext = GFX_ReadWString(file,program_state_is_valid);
+        
 	if(reqtype==NULL){
 		GFX_CloseReq(tvisual,file);
 	}
