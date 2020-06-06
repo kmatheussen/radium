@@ -4710,8 +4710,9 @@ bool showBarsAndBeatsSequencerLane(void){
 }
 void setShowBarsAndBeatsSequencerLane(bool doit){
   if (!doit && !showTimeSequencerLane()){
-    handleError("Either the time lane or the bars+beats lane must be visible");
-    return;
+    //handleError("Either the time lane or the bars+beats lane must be visible");
+    root->song->show_time_sequencer_lane = true;
+    //return;
   }
   
   root->song->show_bars_and_beats_sequencer_lane = doit;
@@ -4722,8 +4723,9 @@ bool showTimeSequencerLane(void){
 }
 void setShowTimeSequencerLane(bool doit){
   if (!doit && !showBarsAndBeatsSequencerLane()){
-    handleError("Either the time lane or the bars+beats lane must be visible");
-    return;
+    //handleError("Either the time lane or the bars+beats lane must be visible");
+    root->song->show_tempos_sequencer_lane = true;
+    //return;
   }
   
   root->song->show_time_sequencer_lane = doit;
