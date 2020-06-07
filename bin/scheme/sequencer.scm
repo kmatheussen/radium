@@ -1127,73 +1127,70 @@
          (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
   
 
-(define (split-sample-seqblock pos seqtracknum seqblocknum)
-  (call-with-exit
-   (lambda (return)
-     (define seqblocks-state (to-list (<ra> :get-seqblocks-state seqtracknum)))
-     (define seqblock (seqblocks-state seqblocknum))
-     
-     (define stretch (<ra> :get-seqblock-stretch-speed (seqblock :id)))
-     (define t1 (seqblock :start-time))
-     (define i1 (seqblock :interior-start))
-     (define i2 (seqblock :interior-end))
-     (define s1 (- t1 (* i1 stretch)))
-     
-     (define interior-split (to-integer (/ (- pos s1) stretch)))
-     
-     (if (<= interior-split i1)
-         (return #f))
-     (if (>= interior-split i2)
-         (return #f))
-
-     (define seqblock1 (copy-hash seqblock
-                                  :end-time pos
-                                  :interior-end interior-split))
-     
-     (define seqblock2 (copy-hash seqblock
-                                  :id -1
-                                  :start-time pos
-                                  :interior-start interior-split))
-     
-     (define new-seqblocks-state (append (if (= 0 seqblocknum)
-                                             '()
-                                             (take seqblocks-state seqblocknum))
-                                         (list seqblock1 seqblock2)
-                                         (if (= (1- (length seqblocks-state)) seqblocknum)
-                                             '()
-                                             (sublist seqblocks-state (1+ seqblocknum) (length seqblocks-state)))))
-     
-     (try-finally :try (lambda ()                   
-                         (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
-                         (<ra> :undo-sequencer)
-                         (<ra> :apply-gfx-seqblocks seqtracknum))
-                  :failure (lambda ()
-                             (<ra> :cancel-gfx-seqblocks seqtracknum)))
-     #t)))
-
 ;; Note: Used for shortcut
-(delafina (FROM_C-split-sample-seqblock-under-mouse :use-grid (<ra> :sequencer-grid-enabled))
-  (let ((seqtracknum *current-seqtrack-num*))
-    (and seqtracknum
-         (let ((seqblock-info *current-seqblock-info*))
-           (and seqblock-info          
-                (let ((seqblocknum (seqblock-info :seqblocknum)))
-                  (and (not (<ra> :seqblock-holds-block seqblocknum seqtracknum))
-                       (let* ((X (<ra> :get-mouse-pointer-x -2))
-                              (seqpos (round (get-sequencer-time X)))
-                              (pos (if use-grid
-                                       (<ra> :get-seq-gridded-time seqpos)
-                                       seqpos)))
-                         (split-sample-seqblock pos seqtracknum seqblocknum)
-                         #t))))))))
+(delafina (split-seqblock :pos (<ra> :get-seq-gridded-time (round (get-sequencer-time (<ra> :get-mouse-pointer-x -2))))
+                          :seqblock-id (and *current-seqblock-info*
+                                            (*current-seqblock-info* :id)))
+  (when seqblock-id
+    (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
+    (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
+    (call-with-exit
+     (lambda (return)
+       (if (not (<ra> :seqtrack-for-audiofiles seqtracknum))
+           (return #f)) ;; not supported yet. (difficult)
+       (define seqblocks-state (to-list (<ra> :get-seqblocks-state seqtracknum)))
+       (define seqblock (seqblocks-state seqblocknum))
+       
+       (define stretch (<ra> :get-seqblock-stretch-speed (seqblock :id)))
+       (define t1 (seqblock :start-time))
+       (define i1 (seqblock :interior-start))
+       (define i2 (seqblock :interior-end))
+       (define s1 (- t1 (* i1 stretch)))
+       
+       (define interior-split (to-integer (/ (- pos s1) stretch)))
+       (if (<= interior-split i1)
+           (return #f))
+       (if (>= interior-split i2)
+           (return #f))
+       (define seqblock1 (copy-hash seqblock
+                                    :end-time pos
+                                    :interior-end interior-split))
+       
+       (define seqblock2 (copy-hash seqblock
+                                    :id -1
+                                    :start-time pos
+                                    :interior-start interior-split))
+       
+       (define new-seqblocks-state (append (if (= 0 seqblocknum)
+                                               '()
+                                               (take seqblocks-state seqblocknum))
+                                           (list seqblock1 seqblock2)
+                                           (if (= (1- (length seqblocks-state)) seqblocknum)
+                                               '()
+                                               (sublist seqblocks-state (1+ seqblocknum) (length seqblocks-state)))))
+       
+       (try-finally :try (lambda ()                   
+                           (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
+                           (<ra> :undo-sequencer)
+                           (<ra> :apply-gfx-seqblocks seqtracknum))
+                    :failure (lambda ()
+                               (<ra> :cancel-gfx-seqblocks seqtracknum)))
+       #t))))
+
+(define (get-audiofile-menu-entry-text audiofile)
+  (define info (<ra> :get-file-info audiofile))
+  (<ra> :append-base64-strings
+        (<ra> :get-base64-from-filepath (info :filename))
+        (<ra> :to-base64 (<-> ", " (info :num-ch) "ch, " (get-displayable-seconds (/ (info :num-frames)
+                                                                                     (info :samplerate)))))))
 
 ;; Note: Used for shortcut
 (delafina (insert-existing-block-or-audiofile-in-sequencer :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
                                                            :X (<ra> :get-mouse-pointer-x -2))
-
+  ;;(c-display "X:" X "seqgracknum:" seqtracknum)
   (if (>= seqtracknum 0)
       (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
-        
+        (c-display "POS:" pos)
         (define (create-new-audiofile)
           (create-file-requester "Choose audio file" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
                                  (lambda (filename)
@@ -1208,13 +1205,8 @@
                     ;; (<ra> :create-sample-seqblock seqtracknum (car audiofiles) pos))
                     (else
                      (apply popup-menu
-                            `(,@(map (lambda (audiofile)
-                                       (define info (<ra> :get-file-info audiofile))
-                                       (list (<ra> :append-base64-strings
-                                                   (<ra> :get-base64-from-filepath (info :filename))
-                                                   (<ra> :to-base64 (<-> ", " (info :num-ch) "ch, " (get-displayable-seconds (/ (info :num-frames)
-                                                                                                                                (info :samplerate))))))
-                                             ;;(<ra> :get-base64-from-filepath audiofile)
+                            `(,@(map (lambda (audiofile)  
+                                       (list (get-audiofile-menu-entry-text audiofile)
                                              :base64 #t                       
                                              (lambda ()
                                                (<ra> :create-sample-seqblock seqtracknum audiofile pos))))
@@ -1225,16 +1217,16 @@
             (if (and #f (= 1 (<ra> :get-num-blocks)))
                 (<ra> :create-seqblock seqtracknum 0 pos)                                          
                 (apply popup-menu
-                       `(,@(map (lambda (blocknum)
+                       `(,(list "Create new block"
+                                (lambda ()
+                                  (<ra> :create-seqblock seqtracknum (<ra> :append-block) pos)
+                                  ))
+                         "------------Existing blocks:"
+                         ,@(map (lambda (blocknum)
                                   (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
                                         (lambda ()
                                           (<ra> :create-seqblock seqtracknum blocknum pos))))
-                                (iota (<ra> :get-num-blocks)))
-                         ,(list "------------"
-                                (list "Create new block"
-                                      (lambda ()
-                                        (<ra> :create-seqblock seqtracknum (<ra> :append-block) pos)
-                                        ))))))))))
+                                (iota (<ra> :get-num-blocks))))))))))
 
 ;; Note: Used for shortcut
 (delafina (insert-current-block-or-audiofile-in-sequencer :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
@@ -1473,6 +1465,13 @@
        
        (list
         "--------------------Editor Seqtrack" ;;Editor blocks"
+
+        (list                                          
+         "Insert current block"
+         :shortcut insert-current-block-or-audiofile-in-sequencer
+         (lambda ()
+           (insert-current-block-or-audiofile-in-sequencer seqtracknum X)))
+        
         (list
          "Insert block"
          :shortcut insert-existing-block-or-audiofile-in-sequencer
@@ -1486,12 +1485,6 @@
         ;;                                         (<ra> :add-block-to-seqtrack seqtracknum blocknum pos))
         ;;                                       (<ra> :select-block blocknum))))
         ;;                             (iota (<ra> :get-num-blocks)))
-        
-        (list                                          
-         "Insert current block"
-         :shortcut insert-current-block-or-audiofile-in-sequencer
-         (lambda ()
-           (insert-current-block-or-audiofile-in-sequencer seqtracknum X)))
         
                                         ;(list                                           
                                         ; "Insert new block"
@@ -1608,10 +1601,10 @@
 
    (list
     "Split audio file"
-    :shortcut FROM_C-split-sample-seqblock-under-mouse
+    :shortcut split-seqblock
     (lambda ()
       (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
-        (split-sample-seqblock pos seqtracknum seqblocknum))))                                               
+        (split-seqblock pos seqblockid))))
    
    "---------------------"
    
@@ -1660,9 +1653,119 @@
            (create-audio-seqblock-gui seqblocknum seqtracknum)))))
 
 
+(delafina (get-curr-seqblock-infos-under-mouse :mix-audio-and-editor-seqblocks #f
+                                               :selected-seqblock-infos (get-selected-seqblock-infos)
+                                               :current-seqblock-info *current-seqblock-info*)
+  
+  (define seqblock-infos (if current-seqblock-info
+                             (if (<ra> :is-seqblock-selected (current-seqblock-info :seqblocknum) (current-seqblock-info :seqtracknum))
+                                 selected-seqblock-infos
+                                 (list current-seqblock-info))
+                             selected-seqblock-infos))
+  
+  (if (or (null? seqblock-infos)
+          mix-audio-and-editor-seqblocks)
+      seqblock-infos
+      (let ((seqtracknum (if current-seqblock-info
+                             (current-seqblock-info :seqtracknum)
+                             (<ra> :get-curr-seqtrack-under-mouse #t #t))))
+        
+        (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+        
+        (keep (lambda (seqblock-info)
+                (eq? (<ra> :seqtrack-for-audiofiles (seqblock-info :seqtracknum))
+                     for-audiofiles))
+              seqblock-infos))))
+
+#!!
+(get-curr-seqblock-infos-under-mouse)
+!!#
+
+;; Note: Used for shortcut
+(define (replace-seqblocks seqblock-infos
+                           get-block-or-audiofile)
+  (c-display seqblock-infos)
+  
+  (when (not (null? seqblock-infos))
+    (define for-audiofiles (<ra> :seqtrack-for-audiofiles (seqblock-infos 0 :seqtracknum)))
+    
+    (if (not (null? seqblock-infos))
+        (if for-audiofiles
+            (get-block-or-audiofile for-audiofiles
+                                    (lambda (audiofile)
+                                      (undo-block
+                                       (lambda ()
+                                         (for-each (lambda (seqblock-info)
+                                                     (let* ((seqblocknum (seqblock-info :seqblocknum))
+                                                            (seqtracknum (seqblock-info :seqtracknum))
+                                                            (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                                                       (set! *current-seqblock-info* #f)
+                                                       (<ra> :delete-seqblock (seqblock-info :id))
+                                                       (<ra> :create-sample-seqblock seqtracknum audiofile pos)))
+                                                   seqblock-infos)))))
+            (get-block-or-audiofile for-audiofiles
+                                    (lambda (blocknum)
+                                      (undo-block
+                                       (lambda ()
+                                         (for-each (lambda (seqblock-info)
+                                                     (let* ((seqblocknum (seqblock-info :seqblocknum))
+                                                            (seqtracknum (seqblock-info :seqtracknum))
+                                                            (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                                                       (set! *current-seqblock-info* #f)
+                                                       (<ra> :delete-seqblock (seqblock-info :id))
+                                                       (<ra> :create-seqblock seqtracknum blocknum pos)))
+                                                   seqblock-infos)))
+                                      (<ra> :select-block blocknum)))))))
+
+(delafina (replace-seqblocks-with-existing-or-new-block-or-audiofile :seqblock-infos (get-curr-seqblock-infos-under-mouse))
+  (replace-seqblocks seqblock-infos
+                     (lambda (for-audiofiles gotit)
+                       (if for-audiofiles
+                           (let ((audiofiles (to-list (<ra> :get-audio-files))))
+                             (if (not (null? audiofiles))          
+                                 (apply popup-menu
+                                        (map (lambda (audiofile)
+                                               (list (get-audiofile-menu-entry-text audiofile)
+                                                     :base64 #t
+                                                     (lambda ()
+                                                       (gotit audiofile))))
+                                             audiofiles))))
+                           (apply popup-menu
+                                  (list "Create new block"
+                                        (lambda ()
+                                          (undo-block
+                                           (lambda ()
+                                             (gotit (<ra> :append-block))))))
+                                  "-----------Existing blocks:"
+                                  (map (lambda (blocknum)
+                                         (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                                               (lambda ()
+                                                 (gotit blocknum))))
+                                       (iota (<ra> :get-num-blocks))))))))
+
+(delafina (replace-seqblocks-with-current-block-or-audiofile :seqblock-infos (get-curr-seqblock-infos-under-mouse))
+  (replace-seqblocks seqblock-infos
+                     (lambda (for-audiofiles gotit)
+                       (if for-audiofiles
+                           (let ((audiofiles (to-list (<ra> :get-audio-files))))
+                             (if (not (null? audiofiles))          
+                                 (apply popup-menu
+                                        (map (lambda (audiofile)
+                                               (list (get-audiofile-menu-entry-text audiofile)
+                                                     :base64 #t
+                                                     (lambda ()
+                                                       (gotit audiofile))))
+                                             audiofiles))))
+                           (gotit (<ra> :current-block))))))
+
+                       
+#!!
+(get-curr-seqblock-infos-under-mouse)
+!!#
 (define (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
   (define seqblock-info *current-seqblock-info*)
   (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
+  (define seqblock-infos-under-mouse (get-curr-seqblock-infos-under-mouse #f seqblock-infos seqblock-info))
   (list
    "-----------------Editor Seqblock"
    (create-seqblock-automation-popup-menu-entry 0 seqblockid)
@@ -1677,28 +1780,25 @@
    ;;           (define pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
    ;;           (<ra> :delete-seqblock seqblocknum seqtracknum)                 
    ;;           (<ra> :add-block-to-seqtrack seqtracknum (<ra> :current-block) pos)))))
+
+   ;; Doesn't work since current block is changed when right-clicking a seqblock.
+   ;;(list (if (and seqblock-info
+   ;;               (= 1 (length seqblock-infos-under-mouse)))
+   ;;          "Replace with current block"
+   ;;          "Replace selected blocks with current block")
+   ;;      :enabled (not (null? seqblock-infos-under-mouse))
+   ;;      :shortcut replace-seqblocks-with-current-block-or-audiofile
+   ;;      (lambda ()
+   ;;        (replace-seqblocks-with-current-block-or-audiofile seqblock-infos-under-mouse)))
    
-   (list (if (pair? seqblock-infos) "Replace blocks with existing block" "Replace with existing block")
-         :enabled (or seqblock-info (pair? seqblock-infos))
+   (list (if (and seqblock-info
+                  (= 1 (length seqblock-infos-under-mouse)))
+             "Replace block"
+             "Replace selected blocks")
+         :enabled (not (null? seqblock-infos-under-mouse))
+         :shortcut replace-seqblocks-with-existing-or-new-block-or-audiofile
          (lambda ()
-           (apply popup-menu
-                  (map (lambda (blocknum)
-                         (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
-                               (lambda ()
-                                 (undo-block
-                                  (lambda ()
-                                    (for-each (lambda (seqblock-info)
-                                                (let* ((seqblocknum (seqblock-info :seqblocknum))
-                                                       (seqtracknum (seqblock-info :seqtracknum))
-                                                       (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
-                                                  (set! *current-seqblock-info* #f)
-                                                  (<ra> :delete-seqblock (seqblock-info :id))
-                                                  (<ra> :create-seqblock seqtracknum blocknum pos)))
-                                              (if (null? seqblock-infos)
-                                                  (list seqblock-info)
-                                                  seqblock-infos))))
-                                 (<ra> :select-block blocknum))))                                                         
-                       (iota (<ra> :get-num-blocks))))))
+           (replace-seqblocks-with-existing-or-new-block-or-audiofile seqblock-infos-under-mouse)))
    
    ;;   Sub menues version. It looks better, but it is less convenient.
    ;;(list "Replace with existing block"
@@ -1728,25 +1828,26 @@
    ;;             (<ra> :delete-seqblock seqblocknum seqtracknum)
    ;;             (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
    ;;          (<ra> :select-block blocknum))))
-   
-   (list (if (pair? seqblock-infos) "Replace blocks with new block" "Replace with new block")
-         :enabled (or (pair? seqblock-infos)
-                      seqblock-info)
-         (lambda ()                                                                 
-           (undo-block
-            (lambda ()
-              (let ((blocknum (<ra> :append-block)))
-                (for-each (lambda (seqblock-info)
-                            (let* ((seqblocknum (seqblock-info :seqblocknum))
-                                   (seqtracknum (seqblock-info :seqtracknum))
-                                   (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
-                              (set! *current-seqblock-info* #f)
-                              (<ra> :delete-seqblock (seqblock-info :id))
-                              (<ra> :create-seqblock seqtracknum blocknum pos)))
-                          (if (null? seqblock-infos)
-                              (list seqblock-info)
-                              seqblock-infos))
-                (<ra> :select-block blocknum))))))
+
+   ;; Put this functionality into replace-seqblocks
+   ;;(list (if (pair? seqblock-infos) "Replace blocks with new block" "Replace with new block")
+   ;;      :enabled (or (pair? seqblock-infos)
+   ;;                   seqblock-info)
+   ;;      (lambda ()                                                                 
+   ;;        (undo-block
+   ;;         (lambda ()
+   ;;           (let ((blocknum (<ra> :append-block)))
+   ;;             (for-each (lambda (seqblock-info)
+   ;;                         (let* ((seqblocknum (seqblock-info :seqblocknum))
+   ;;                                (seqtracknum (seqblock-info :seqtracknum))
+   ;;                                (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+   ;;                           (set! *current-seqblock-info* #f)
+   ;;                           (<ra> :delete-seqblock (seqblock-info :id))
+   ;;                           (<ra> :create-seqblock seqtracknum blocknum pos)))
+   ;;                       (if (null? seqblock-infos)
+   ;;                           (list seqblock-info)
+   ;;                           seqblock-infos))
+   ;;             (<ra> :select-block blocknum))))))
    
    "------------------------"
    (list "Configure block"

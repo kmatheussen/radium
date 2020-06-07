@@ -85,7 +85,6 @@
     randomly-delete-notes-range
     randomly-delete-notes-track
     randomly-delete-notes-block
-    FROM_C-split-sample-seqblock-under-mouse
     if
     ra:set-instrument-color
     load

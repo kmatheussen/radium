@@ -2868,6 +2868,8 @@ int radium_main(const char *arg){
 #endif
   }
 
+  //QApplication::setStyle(QStyleFactory::create("Windows"));
+  
   //QApplication::setEffectEnabled(Qt::UI_AnimateMenu,true);
   //QApplication::setEffectEnabled(Qt::UI_AnimateCombo,true);
 
@@ -3479,9 +3481,11 @@ static void myMessageOutput(QtMsgType type, const char *localMsg)
     case QtWarningMsg:
       snprintf(temp, 1000, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
       fprintf(stderr, "%s", temp);
+#if 0 // too much information.
 #ifndef RELEASE
 #if !RADIUM_USES_TSAN
       SYSTEM_show_error_message(temp);
+#endif
 #endif
 #endif
       break;
