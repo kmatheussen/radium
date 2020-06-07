@@ -1951,7 +1951,7 @@ $(T)undo_mixer_connections.o: $(QM)undo_mixer_connections.c
 #	$(CC2) $(OPT) $(QM)undo_chip_addremove.c
 
 $(T)Jack_plugin.o: audio/Jack_plugin.cpp weakjack/weak_libjack.def weakjack/weak_libjack.h weakjack/weak_libjack.c
-	$(CCC2) $(QTOPT) audio/Jack_plugin.cpp $(JACKOPT) -Wno-missing-declarations # -Wno-deprecated-declarations
+	$(CCC2) $(JACKOPT) $(QTOPT) audio/Jack_plugin.cpp -Wno-missing-declarations # -Wno-deprecated-declarations
 #-Wno-gnu-designator -Wno-missing-field-initializers
 
 $(T)find_jack_library.o: windows/find_jack_library.cpp
@@ -2325,7 +2325,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 
 $(T)SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/QueueStack.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
-	$(CCC2) audio/SoundProducer.cpp $(QTOPT) $(JACKOPT) $(OPTIMIZE_O3) $(CPUOPT) $(NO_ANALYZER_MALLOC_LEAK) # -O3 # 
+	$(CCC2) audio/SoundProducer.cpp $(JACKOPT) $(QTOPT) $(OPTIMIZE_O3) $(CPUOPT) $(NO_ANALYZER_MALLOC_LEAK) # -O3 # 
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
@@ -2352,7 +2352,7 @@ $(T)Peaks.o: audio/Peaks.cpp audio/Peaks.hpp
 	$(CCC2) audio/Peaks.cpp $(SNDFILEOPT) $(QTOPT)
 
 $(T)Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h audio/SampleRecorder_proc.h audio/CpuUsage.hpp
-	$(CCC2) audio/Mixer.cpp $(QTOPT) $(JACKOPT)  $(CPUOPT) -Wno-null-dereference $(NO_ANALYZER_MALLOC_LEAK)
+	$(CCC2) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT) -Wno-null-dereference $(NO_ANALYZER_MALLOC_LEAK)
 
 $(T)get_windows_commandlines.o: audio/get_windows_commandlines.c
 	$(CC2) audio/get_windows_commandlines.c $(OPT)
@@ -2473,7 +2473,7 @@ S7AlignmentSanitize=
 endif
 
 ifeq ($(BUILDTYPE), DEBUG)
-	S7OPTS += -DS7_DEBUGGING=1 -DWITH_MULTITHREAD_CHECKS=1 -DS7_ALIGNED #-DWITH_GMP -DWITH_PROFILE=1 
+	S7OPTS += -DS7_DEBUGGING=1 -DWITH_MULTITHREAD_CHECKS=1 -DS7_ALIGNED # -DWITH_PROFILE=1 
 	ifneq (,$(findstring clang,$(CC)))
 		S7OPTS +=  -fno-sanitize=integer
 	endif
@@ -2481,6 +2481,7 @@ endif
 
 S7OPTS += -DS7_ALIGNED -g
 
+#S7OPTS += -DWITH_GMP
 
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
 	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Wno-float-equal -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1

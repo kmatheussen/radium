@@ -189,7 +189,9 @@ int main(int argc, char **argv){
   testmidi();
   
 #else
-  
+
+  juce::initialiseJuce_GUI();
+
   juce::MemoryOutputStream a(1024);
   juce::MemoryOutputStream b(1024);
   
