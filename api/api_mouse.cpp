@@ -3591,7 +3591,7 @@ float getMousePointerX(int windownum){
   
   if (windownum==-2){
 
-    if (sequencerInWindow())
+    if (sequencerInFullMode() || sequencerInWindow())
       return GetPointerPos(NULL).x + 10000;
     else
       windownum=-1;
@@ -3607,7 +3607,7 @@ float getMousePointerX(int windownum){
 float getMousePointerY(int windownum){
   if (windownum==-2){
 
-    if (sequencerInWindow())
+    if (sequencerInFullMode() || sequencerInWindow())
       return GetPointerPos(NULL).y + 10000;
     else
       windownum=-1;
