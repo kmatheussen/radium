@@ -1205,14 +1205,15 @@
                     ;; (<ra> :create-sample-seqblock seqtracknum (car audiofiles) pos))
                     (else
                      (apply popup-menu
-                            `(,@(map (lambda (audiofile)  
+                            `(,(list "New audio file" create-new-audiofile)
+                              "------------"
+                              ,@(map (lambda (audiofile)  
                                        (list (get-audiofile-menu-entry-text audiofile)
                                              :base64 #t                       
                                              (lambda ()
                                                (<ra> :create-sample-seqblock seqtracknum audiofile pos))))
-                                     audiofiles)
-                              ,(list "------------"
-                                     (list "Add audio file" create-new-audiofile)))))))
+                                     audiofiles))))))
+                                     
             
             (if (and #f (= 1 (<ra> :get-num-blocks)))
                 (<ra> :create-seqblock seqtracknum 0 pos)                                          
@@ -1568,91 +1569,6 @@
           (show-seqtrack-popup-menu seqtracknum X Y))))
 
 
-;; Note: used for shortcut
-(delafina (switch-seqblock-automation-enabled :automation-num
-                                              :seqblock-id (and *current-seqblock-info*
-                                                                (*current-seqblock-info* :id)))
-  (when (and seqblock-id
-             (< automation-num (<ra> :get-num-seqblock-automations
-                                     (<ra> :get-seqblock-seqblock-num seqblock-id)
-                                     (<ra> :get-seqblock-seqtrack-num seqblock-id))))
-    (<ra> :set-seqblock-automation-enabled
-          (not (<ra> :get-seqblock-automation-enabled automation-num seqblock-id))
-          automation-num
-          seqblock-id)))
-
-(define (create-seqblock-automation-popup-menu-entry automationnum seqblockid)
-  (list (<-> (<ra> :get-seqblock-automation-name automationnum) " automation")
-        :check (<ra> :get-seqblock-automation-enabled automationnum seqblockid)
-        :shortcut (list switch-seqblock-automation-enabled automationnum)
-        (lambda (enable)
-          (<ra> :set-seqblock-automation-enabled enable automationnum seqblockid))))
-
-
-(define (get-audio-seqblock-popup-menu-entries seqblocknum seqtracknum seqblockid X)
-  (list
-   "-----------------Audio Seqblock"
-   
-   (map (lambda (automationnum)
-          (create-seqblock-automation-popup-menu-entry automationnum seqblockid))
-        (iota (<ra> :get-num-seqblock-automations seqblocknum seqtracknum)))
-   
-   "---------------------"
-
-   (list
-    "Split audio file"
-    :shortcut split-seqblock
-    (lambda ()
-      (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
-        (split-seqblock pos seqblockid))))
-   
-   "---------------------"
-   
-   (let ((get-old-gain (lambda ()
-                         (db-to-text (if seqblocknum
-                                         (<ra> :gain-to-db (<ra> :get-seqblock-gain seqblockid))
-                                         0.0)
-                                     #t))))
-     (list
-      (<-> "Set gain (now: " (get-old-gain) ")")
-      (lambda ()
-        (define new (<ra> :request-float (<-> "New gain (now: " (get-old-gain) ")")
-                          -1000
-                          1000))
-        (if (>= new -1000)
-            (<ra> :set-seqblock-gain (<ra> :db-to-gain new) seqblockid)))))
-   
-   (let ((get-normalized-gain (lambda ()
-                                (get-normalized-seqblock-gain seqblockid))))
-     (list
-      (<-> "Set normalized gain (" (db-to-text (<ra> :gain-to-db (get-normalized-gain)) #t) ")")
-      (lambda ()
-        (<ra> :set-seqblock-gain (get-normalized-gain) seqblockid))))
-
-   ;;(list "Reset stretch"
-   ;;      :enabled (and seqblocknum
-   ;;                    (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
-   ;;      (lambda ()
-   ;;        (c-display "stretch:" (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
-   ;;        (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
-   ;;        (define blocklength (<ra> :get-block-length blocknum))
-   ;;        (<ra> :position-seqblock start-time (+ start-time blocklength) seqblocknum seqtracknum)
-   ;;        (c-display "hepp")))
-    
-
-   "---------------------"
-   
-   (list "Copy filename to system clipboard"
-         (lambda ()
-           (<ra> :copy-filepath-to-clipboard (<ra> :get-seqblock-sample seqblocknum seqtracknum))
-           #t))
-   
-   (list "Settings"
-         :shortcut "Double-click"
-         (lambda ()
-           (create-audio-seqblock-gui seqblocknum seqtracknum)))))
-
-
 (delafina (get-curr-seqblock-infos-under-mouse :mix-audio-and-editor-seqblocks #f
                                                :selected-seqblock-infos (get-selected-seqblock-infos)
                                                :current-seqblock-info *current-seqblock-info*)
@@ -1724,12 +1640,17 @@
                            (let ((audiofiles (to-list (<ra> :get-audio-files))))
                              (if (not (null? audiofiles))          
                                  (apply popup-menu
-                                        (map (lambda (audiofile)
-                                               (list (get-audiofile-menu-entry-text audiofile)
-                                                     :base64 #t
-                                                     (lambda ()
-                                                       (gotit audiofile))))
-                                             audiofiles))))
+                                        `(,(list "New audio file"
+                                                 (lambda ()
+                                                   (create-file-requester "Choose audio file" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
+                                                                          gotit)))
+                                          "------------"
+                                          ,@(map (lambda (audiofile)
+                                                   (list (get-audiofile-menu-entry-text audiofile)
+                                                         :base64 #t
+                                                         (lambda ()
+                                                           (gotit audiofile))))
+                                                 audiofiles)))))
                            (apply popup-menu
                                   (list "Create new block"
                                         (lambda ()
@@ -1747,21 +1668,110 @@
   (replace-seqblocks seqblock-infos
                      (lambda (for-audiofiles gotit)
                        (if for-audiofiles
-                           (let ((audiofiles (to-list (<ra> :get-audio-files))))
-                             (if (not (null? audiofiles))          
-                                 (apply popup-menu
-                                        (map (lambda (audiofile)
-                                               (list (get-audiofile-menu-entry-text audiofile)
-                                                     :base64 #t
-                                                     (lambda ()
-                                                       (gotit audiofile))))
-                                             audiofiles))))
+                           (c-display "not implemented")
                            (gotit (<ra> :current-block))))))
 
                        
 #!!
 (get-curr-seqblock-infos-under-mouse)
 !!#
+
+;; Note: used for shortcut
+(delafina (switch-seqblock-automation-enabled :automation-num
+                                              :seqblock-id (and *current-seqblock-info*
+                                                                (*current-seqblock-info* :id)))
+  (when (and seqblock-id
+             (< automation-num (<ra> :get-num-seqblock-automations
+                                     (<ra> :get-seqblock-seqblock-num seqblock-id)
+                                     (<ra> :get-seqblock-seqtrack-num seqblock-id))))
+    (<ra> :set-seqblock-automation-enabled
+          (not (<ra> :get-seqblock-automation-enabled automation-num seqblock-id))
+          automation-num
+          seqblock-id)))
+
+(define (create-seqblock-automation-popup-menu-entry automationnum seqblockid)
+  (list (<-> (<ra> :get-seqblock-automation-name automationnum) " automation")
+        :check (<ra> :get-seqblock-automation-enabled automationnum seqblockid)
+        :shortcut (list switch-seqblock-automation-enabled automationnum)
+        (lambda (enable)
+          (<ra> :set-seqblock-automation-enabled enable automationnum seqblockid))))
+
+
+(define (get-audio-seqblock-popup-menu-entries seqblocknum seqtracknum seqblockid X)
+  (define seqblock-info *current-seqblock-info*)
+  (define seqblock-infos-under-mouse (get-curr-seqblock-infos-under-mouse #f))
+  (list
+   "-----------------Audio Seqblock"
+   
+   (map (lambda (automationnum)
+          (create-seqblock-automation-popup-menu-entry automationnum seqblockid))
+        (iota (<ra> :get-num-seqblock-automations seqblocknum seqtracknum)))
+   
+   "---------------------"
+
+   (list (if (and seqblock-info
+                  (= 1 (length seqblock-infos-under-mouse)))
+             "Replace audio file"
+             "Replace selected audio files")
+         :enabled (not (null? seqblock-infos-under-mouse))
+         :shortcut replace-seqblocks-with-existing-or-new-block-or-audiofile
+         (lambda ()
+           (replace-seqblocks-with-existing-or-new-block-or-audiofile seqblock-infos-under-mouse)))
+
+   (list
+    "Split audio file"
+    :shortcut split-seqblock
+    (lambda ()
+      (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
+        (split-seqblock pos seqblockid))))
+   
+   "---------------------"
+   
+   (let ((get-old-gain (lambda ()
+                         (db-to-text (if seqblocknum
+                                         (<ra> :gain-to-db (<ra> :get-seqblock-gain seqblockid))
+                                         0.0)
+                                     #t))))
+     (list
+      (<-> "Set gain (now: " (get-old-gain) ")")
+      (lambda ()
+        (define new (<ra> :request-float (<-> "New gain (now: " (get-old-gain) ")")
+                          -1000
+                          1000))
+        (if (>= new -1000)
+            (<ra> :set-seqblock-gain (<ra> :db-to-gain new) seqblockid)))))
+   
+   (let ((get-normalized-gain (lambda ()
+                                (get-normalized-seqblock-gain seqblockid))))
+     (list
+      (<-> "Set normalized gain (" (db-to-text (<ra> :gain-to-db (get-normalized-gain)) #t) ")")
+      (lambda ()
+        (<ra> :set-seqblock-gain (get-normalized-gain) seqblockid))))
+
+   ;;(list "Reset stretch"
+   ;;      :enabled (and seqblocknum
+   ;;                    (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
+   ;;      (lambda ()
+   ;;        (c-display "stretch:" (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
+   ;;        (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+   ;;        (define blocklength (<ra> :get-block-length blocknum))
+   ;;        (<ra> :position-seqblock start-time (+ start-time blocklength) seqblocknum seqtracknum)
+   ;;        (c-display "hepp")))
+    
+
+   "---------------------"
+   
+   (list "Copy filename to system clipboard"
+         (lambda ()
+           (<ra> :copy-filepath-to-clipboard (<ra> :get-seqblock-sample seqblocknum seqtracknum))
+           #t))
+   
+   (list "Settings"
+         :shortcut "Double-click"
+         (lambda ()
+           (create-audio-seqblock-gui seqblocknum seqtracknum)))))
+
+
 (define (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
   (define seqblock-info *current-seqblock-info*)
   (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
