@@ -241,7 +241,7 @@ bool Undo_NSM_are_you_sure_questionmark(void){
     
     if(num_undos>0){
       char temp[200];
-      char *ret=NULL;
+      const char *ret=NULL;
       
       sprintf(
               temp,
@@ -309,7 +309,7 @@ bool Undo_are_you_sure_questionmark(void){
     
     if(num_undos>0){
       char temp[200];
-      char *ret=NULL;
+      const char *ret=NULL;
       
       sprintf(
               temp,
@@ -357,7 +357,7 @@ bool Undo_are_you_sure_questionmark(void){
             reqtype = GFX_OpenReq(root->song->tracker_windows, 200, 100, "");
           
           char temp[200];
-          char *ret=NULL;
+          const char *ret=NULL;
           sprintf(
                   temp,
                   "There %s %d unused/unsaved recording take%s. Do you want to delete %s file%s? (yes/no) > ",

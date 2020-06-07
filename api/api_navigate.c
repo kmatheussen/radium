@@ -262,7 +262,7 @@ static int get_realline_from_beat(struct WBlocks *wblock, int barnum, int beatnu
   return FindRealLineFor(wblock, 0, &beat->l.p);
 }
 
-static int string_charpos(char *s, char c){
+static int string_charpos(const char *s, char c){
   int pos=0;
   while(s[pos]!=0){
     if(s[pos]==c)
@@ -278,7 +278,7 @@ void requestCursorMove(void){
 
   ReqType reqtype = GFX_OpenReq(window, 50, 4, "");
   
-  char *line = GFX_GetString(window,reqtype,"Move cursor (write \"h\" to get examples): >",true);
+  const char *line = GFX_GetString(window,reqtype,"Move cursor (write \"h\" to get examples): >",true);
   //char *line = GFX_GetString(window,NULL,"'2' jumps to bar 2. '2/3' jumps to bar 2, beat 3. '2/3,4' jumps to bar 2, beat 3, track 4: >");
   if (line==NULL)
     goto exit;
@@ -308,8 +308,12 @@ void requestCursorMove(void){
     if (split_pos>=len-1)
       goto exit;
     
-    char *trackstring = &line[split_pos+1];
-    line[split_pos] = 0;
+    const char *trackstring = &line[split_pos+1];
+    {
+      char *line2 = talloc_strdup(line);
+      line2[split_pos] = 0;
+      line = line2;
+    }
     
     int tracknum = atoi(trackstring);
     if (tracknum >= 0)

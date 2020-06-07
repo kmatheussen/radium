@@ -156,7 +156,7 @@ bool SaveAs(struct Root *theroot){
           return false;
 
 #ifndef GUIISQT // Qt asks this question for us.
-	char *ret=NULL;
+	const char *ret=NULL;
 	if( ! access(filename,F_OK)){
 		while(
 			ret==NULL || (

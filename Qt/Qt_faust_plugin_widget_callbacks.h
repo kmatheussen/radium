@@ -328,7 +328,7 @@ class Editor : public FocusSnifferQsciScintilla{
     
     else if (event->key()==Qt::Key_F3 || (event->key()==Qt::Key_F && (event->modifiers() & Qt::ControlModifier))) {
       printf("Ctrl+F\n");
-      char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ", true);
+      const char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ", true);
       if (s!=NULL && strlen(s)>0)
         search(s);
       setFocus(Qt::OtherFocusReason);

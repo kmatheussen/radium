@@ -232,7 +232,7 @@ public slots:
       struct Tracker_Windows *window=root->song->tracker_windows;
       ReqType reqtype=GFX_OpenReq(window,70,50,(char*)"Create port");
 
-      char *name = GFX_GetString(window,reqtype,(char*)"Name: ", true);
+      const char *name = GFX_GetString(window,reqtype,(char*)"Name: ", true);
       if(name!=NULL)
         patchdata->midi_port = MIDIgetPort(window,reqtype,name,true);
 

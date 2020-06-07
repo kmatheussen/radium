@@ -1147,11 +1147,11 @@ static float request_notenum(struct Tracker_Windows *window, const char *title, 
   sprintf(temp, "%s (for example: \"c4\" or \"c#5,50\") >", title);
   
   while(notenum <= 0.0f){
-    char *notetext = GFX_GetString(
-                                   window,
-                                   reqtype,
-                                   temp,
-                                   true
+    const char *notetext = GFX_GetString(
+                                         window,
+                                         reqtype,
+                                         temp,
+                                         true
                                    );
     if(notetext==NULL)
       break;
