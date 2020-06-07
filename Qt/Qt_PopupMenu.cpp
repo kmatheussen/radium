@@ -448,7 +448,8 @@ namespace{
   public slots:
     void triggered(){
       if(_callbacker.get()==NULL){
-        R_ASSERT_NON_RELEASE(false);
+        //R_ASSERT_NON_RELEASE(false); // Happens very often. Don't know if it's a problem. Better not to crash the system in non-release mode, because then we will never test what happens in release mode.
+        printf("ERROR! QT_POPUPMENU/triggered: _callbacker.get()==NULL\n");
         return;
       }
 
@@ -865,8 +866,9 @@ namespace{
         
         if(myaction->_callbacker.get() == NULL){
           
-          R_ASSERT_NON_RELEASE(false);
-          
+          //R_ASSERT_NON_RELEASE(false); // Happens very often. Don't know if it's a problem. Better not to crash the system in non-release mode, because then we will never test what happens in release mode.
+          printf("ERROR! QT_POPUPMENU/mousePressEvent: _callbacker.get()==NULL\n");
+        
         } else {
           
           event->accept();

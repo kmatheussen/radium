@@ -1772,11 +1772,14 @@
            (create-audio-seqblock-gui seqblocknum seqtracknum)))))
 
 ;; Note: used for shortcut
-(define (config-current-seqblock-block)
-  (define seqblock-info *current-seqblock-info*)
-  (when seqblock-info
-    (define blocknum (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))
-    (<ra> :config-block blocknum)))
+(delafina (config-seqblock-block :seqblock-id (and *current-seqblock-info*
+                                                   (*current-seqblock-info* :id)))
+  (when seqblock-id
+    (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
+    (when (not (<ra> :seqtrack-for-audiofiles seqtracknum))
+      (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
+      (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
+      (<ra> :config-block blocknum))))
 
 
 (define (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
@@ -1887,10 +1890,9 @@
                    
           (list "Configure block"
                 :enabled (and blocknum seqblock-info (not (<ra> :is-playing-song)))
-                :shortcut config-current-seqblock-block
+                :shortcut config-seqblock-block
                 (lambda ()
-                  (<ra> :select-block blocknum)
-                  (<ra> :config-block)))
+                  (config-seqblock-block seqblockid)))
           
           "-----------------------------"
           (list (<-> "Clone (create new block" (if (pair? seqblock-infos) "s" "") " from selected block " (if (pair? seqblock-infos) "s" "") ")")
