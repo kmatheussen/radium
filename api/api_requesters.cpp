@@ -127,9 +127,10 @@ void configWindow(int windownum){
   Window_config(window);
 }
 
-void configBlock(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  Block_Properties_CurrPos(window);
+void configBlock(int blocknum, int windownum){
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if (wblock != NULL)
+    Block_Properties_CurrPos(wblock->block);
 }
 
 void configVST(int windownum){

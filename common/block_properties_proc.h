@@ -46,9 +46,7 @@ extern LANGSPEC void Block_Properties(
 	int num_lines
 );
 
-extern LANGSPEC void Block_Properties_CurrPos(
-	struct Tracker_Windows *window
-);
+extern LANGSPEC void Block_Properties_CurrPos(struct Blocks *block);
 
 #endif
 
