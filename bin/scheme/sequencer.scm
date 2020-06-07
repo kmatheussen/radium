@@ -1859,21 +1859,6 @@
    ;;                           seqblock-infos))
    ;;             (<ra> :select-block blocknum))))))
    
-   "------------------------"
-   (list "Configure block"
-         :enabled (and blocknum seqblock-info (not (<ra> :is-playing-song)))
-         (lambda ()
-           (<ra> :select-block blocknum)
-           (<ra> :config-block)))
-   
-   "------------------------"
-   (list "Copy track on/off editor => seqblock"
-         :enabled (and blocknum seqblocknum)
-         ra:copy-editor-track-on-off-to-seqblock)
-   
-   (list "Copy track on/off seqblock => editor"
-         :enabled (and blocknum seqblocknum)
-         ra:copy-seqblock-track-on-off-to-editor)
    
    (list "Seqblock track on/off editor" ;;Enable/disable editor tracks (double click)"
          :enabled (and blocknum seqblocknum)
@@ -1881,24 +1866,43 @@
          (lambda ()
            (show-seqblock-track-on-off-configuration seqblockid)))
 
-   "-----------------------------"
-      (list (<-> "Clone (create new block" (if (pair? seqblock-infos) "s" "") ")")
-         :enabled (and blocknum
-                       (or (pair? seqblock-infos) seqblock-info)
-                       (not (<ra> :is-playing-song)))
-         (lambda ()
-           (<ra> :select-block blocknum)
-           (<ra> :copy-block)
-           (undo-block
-            (lambda ()
-              (for-each (lambda (seqblock-info)
-                          (define new-blocknum (<ra> :append-block))
-                          (<ra> :select-block new-blocknum)
-                          (<ra> :paste-block))
-                        (if (null? seqblock-infos)
-                            (list seqblock-info)
-                            seqblock-infos))))))
-      ))
+   "------------------------"
+   
+   (list "Advanced"
+         (list
+          (list "Copy track on/off editor => seqblock"
+                :enabled (and blocknum seqblocknum)
+                ra:copy-editor-track-on-off-to-seqblock)
+          
+          (list "Copy track on/off seqblock => editor"
+                :enabled (and blocknum seqblocknum)
+                ra:copy-seqblock-track-on-off-to-editor)
+                   
+          (list "Configure block"
+                :enabled (and blocknum seqblock-info (not (<ra> :is-playing-song)))
+                (lambda ()
+                  (<ra> :select-block blocknum)
+                  (<ra> :config-block)))
+          
+          "-----------------------------"
+          (list (<-> "Clone (create new block" (if (pair? seqblock-infos) "s" "") " from selected block " (if (pair? seqblock-infos) "s" "") ")")
+                :enabled (and blocknum
+                              (or (pair? seqblock-infos) seqblock-info)
+                              (not (<ra> :is-playing-song)))
+                (lambda ()
+                  (<ra> :select-block blocknum)
+                  (<ra> :copy-block)
+                  (undo-block
+                   (lambda ()
+                     (for-each (lambda (seqblock-info)
+                                 (define new-blocknum (<ra> :append-block))
+                                 (<ra> :select-block new-blocknum)
+                                 (<ra> :paste-block))
+                               (if (null? seqblock-infos)
+                                   (list seqblock-info)
+                                   seqblock-infos))))))))
+   )
+  )
    
 
 
