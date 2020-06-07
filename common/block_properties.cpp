@@ -273,40 +273,37 @@ static void create_undo(struct Tracker_Windows *window){
   }UNDO_CLOSE();
 }
 
-void Block_Properties_CurrPos(
-	struct Tracker_Windows *window
-){
+void Block_Properties_CurrPos(struct Blocks *block){
 	char seltext[500];
 	ReqType reqtype;
 
+        struct Tracker_Windows *window = root->song->tracker_windows;
+        
         bool has_made_undo = false;
         
-	struct WBlocks *wblock=window->wblock;
-	struct Blocks *block=wblock->block;
-
-        int num_tracks = wblock->block->num_tracks;
-        int num_lines = wblock->block->num_lines;
+        int num_tracks = block->num_tracks;
+        int num_lines = block->num_lines;
         
 	reqtype=GFX_OpenReq(window,33,5,"Edit block properties. Press return to keep old value");
 
-	sprintf(seltext,"Number of tracks (now %d): ",wblock->block->num_tracks);
+	sprintf(seltext,"Number of tracks (now %d): ",block->num_tracks);
 	num_tracks=GFX_GetInteger(window,reqtype,seltext,1,200,true);
-	if(num_tracks==0) num_tracks=wblock->block->num_tracks;
+	if(num_tracks==0) num_tracks=block->num_tracks;
 
         if (g_reqtype_cancelled==false){
-          sprintf(seltext,"Number of lines (now %d): ",wblock->block->num_lines);
+          sprintf(seltext,"Number of lines (now %d): ",block->num_lines);
           num_lines=GFX_GetInteger(window,reqtype,seltext,2,2000,true);
-          if(num_lines==1) num_lines=wblock->block->num_lines;
+          if(num_lines==1) num_lines=block->num_lines;
         }
 
         if (g_reqtype_cancelled==false){
-          sprintf(seltext,"Name (now: '%s'): ",wblock->block->name);
+          sprintf(seltext,"Name (now: '%s'): ",block->name);
           const char *blockname=GFX_GetString(window,reqtype,seltext,true);
           
           if(blockname!=NULL){
             create_undo(window);
             has_made_undo = true;
-            Block_set_name(wblock->block, blockname);
+            Block_set_name(block, blockname);
           }
         }
 
@@ -315,7 +312,7 @@ void Block_Properties_CurrPos(
         if(g_reqtype_cancelled==true)
           return;
           
-	if(num_tracks==wblock->block->num_tracks && num_lines==wblock->block->num_lines){
+	if(num_tracks==block->num_tracks && num_lines==block->num_lines){
           return;
 	}
 
