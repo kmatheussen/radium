@@ -3904,7 +3904,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       // search
       if (event->key()==Qt::Key_F && event->modifiers()&Qt::ControlModifier){
-        char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ", true);
+        const char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ", true);
         if (s!=NULL && strlen(s)>0){
           _last_search_text = s;
           searchForward();

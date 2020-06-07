@@ -1160,7 +1160,7 @@ public slots:
                 printf("I'm here, actually\n");
                 
                 if (num == num_presets+1) {
-                  char *new_name = GFX_GetString(NULL, NULL, "new name: ", true);
+                  const char *new_name = GFX_GetString(NULL, NULL, "new name: ", true);
                   if (new_name != NULL){
                     type->set_preset_name(plugin, type->get_current_preset(plugin), new_name);
                     update_widget();
