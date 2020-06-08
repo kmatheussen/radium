@@ -6671,11 +6671,14 @@
                                         (delete-all-gfx-gfx-seqblocks)
                                         ;;(c-display "has-moved:" has-moved gakkgakk-start-pos gakkgakk-last-value gakkgakk-was-selected)
                                         (if has-moved
-                                            (apply-gfx-gfx-seqblocks seqblock-infos))
-
-                                        (if (and (not has-moved)
-                                                 (<ra> :control-pressed))
-                                            (<ra> :select-seqblock (not gakkgakk-was-selected) gakkgakk-startseqblocknum gakkgakk-startseqtracknum))
+                                            (begin
+                                              (apply-gfx-gfx-seqblocks seqblock-infos)
+                                              (for-each (lambda (seqblock-info)
+                                                          (<ra> :select-seqblock #t (<ra> :get-seqblock-seqblock-num (seqblock-info :id)) (<ra> :get-seqblock-seqtrack-num (seqblock-info :id))))
+                                                        seqblock-infos))
+                                            (begin
+                                              (if (<ra> :control-pressed)
+                                                  (<ra> :select-seqblock (not gakkgakk-was-selected) gakkgakk-startseqblocknum gakkgakk-startseqtracknum))))
                                         
                                         (paint-grid! #f)
 
