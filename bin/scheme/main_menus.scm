@@ -3,6 +3,27 @@
 (my-require 'keybindings.scm)
 
 
+(define (include-menu-item? line)
+  (set! line (string-strip line))
+  (cond ((and (string-starts-with? line "[linux]")
+              (not (string=? (<ra> :get-os-name) "linux")))
+         #f)
+        ((and (string-starts-with? line "[windows]")
+              (not (string=? (<ra> :get-os-name) "windows")))
+         #f)
+        ((and (string-starts-with? line "[macosx]")
+              (not (string=? (<ra> :get-os-name) "macosx")))
+         #f)
+        ((and (string-starts-with? line "[NSM]")
+              (not (<ra> :nsm-is-active)))
+         #f)
+        ((and (string-starts-with? line "[non-NSM]")
+              (<ra> :nsm-is-active))
+         #f)
+        (else
+         #t)))
+
+
 (define (get-menu-indent-level line)
   (let loop ((level 0)
              (chars (string->list line)))
@@ -16,6 +37,7 @@
   :indentation
   :is-separator
   :text
+  :include?
   :command
   :args
   :keybindings
@@ -34,13 +56,16 @@
   
   ;;(c-display "Keybindings:" keybindings)
 
+  (define text (let ((text (car parts2)))
+                 (if (string-starts-with? text "[")
+                     (string-drop text
+                                  (+ 1 (string-position "]" text)))
+                     text)))
+  
   (make-menu-line :indentation (get-menu-indent-level line)
-                  :is-separator (string-starts-with? (car parts2) "--")
-                  :text (let ((text (car parts2)))
-                          (if (string-starts-with? text "[")
-                              (string-drop text
-                                           (+ 1 (string-position "]" text)))
-                              text))
+                  :is-separator (string-starts-with? text "--")
+                  :text text
+                  :include? (include-menu-item? (car parts2))
                   :command command
                   :args (cl-cddr parts)
                   :keybindings keybindings))
@@ -62,25 +87,7 @@
        (keep (lambda (line)
                (set! line (string-strip line))
                ;;(c-display "LINE:" line " - " (string? line) (string=? "" line))
-               (cond ((string=? "" line) ;; remove empty lines
-                      #f)
-                     ((and (string-starts-with? line "[linux]")
-                           (not (string=? (<ra> :get-os-name) "linux")))
-                      #f)
-                     ((and (string-starts-with? line "[windows]")
-                           (not (string=? (<ra> :get-os-name) "windows")))
-                      #f)
-                     ((and (string-starts-with? line "[macosx]")
-                           (not (string=? (<ra> :get-os-name) "macosx")))
-                      #f)
-                     ((and (string-starts-with? line "[NSM]")
-                           (not (<ra> :nsm-is-active)))
-                      #f)
-                     ((and (string-starts-with? line "[non-NSM]")
-                           (<ra> :nsm-is-active))
-                      #f)
-                     (else
-                      #t)))
+               (not (string=? "" line))) ;; remove empty lines
              (map (lambda (line)
                     (if (or (string=? "" line)
                             (string-starts-with? line "#"))
@@ -128,13 +135,18 @@
                        (lambda (sub-result rest)
                          (loop rest
                                indentation
-                               (append result (list (hash-table :text (line :text)
-                                                                :sub-menu sub-result)))
+                               (if (line :include?)
+                                   (append result
+                                           (list (hash-table :text (line :text)
+                                                             :sub-menu sub-result)))
+                                   result)
                                finished))))
                 ((= (line :indentation) indentation)
                  (loop (cdr lines)
                        indentation
-                       (append result (list line))
+                       (if (line :include?)
+                           (append result (list line))
+                           result)
                        finished))
                 ((< (line :indentation) indentation)
                  (finished result lines))
