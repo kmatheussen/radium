@@ -654,7 +654,12 @@ QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool in
   auto *ret = new Bottom_bar_widget(parent, include_navigator);
   if(!include_editor_elements)
     ret->remove_editor_elements();
-
+  
+  {
+    const QFontMetrics fn = QFontMetrics(QApplication::font());
+    ret->status_label->setMinimumWidth(fn.boundingRect("Main Pipe/System Compression Release: 9.99").width());
+  }
+  
   {
     QColor system_color = get_qcolor(HIGH_BACKGROUND_COLOR_NUM);
     QPalette pal(ret->palette());
