@@ -1782,6 +1782,27 @@
       (<ra> :config-block blocknum))))
 
 
+;; Note: used for shortcut
+(delafina (clone-seqblock-block :seqblock-id (and *current-seqblock-info*
+                                                  (*current-seqblock-info* :id))
+                                :seqblock-infos (get-curr-seqblock-infos-under-mouse))
+  (when seqblock-id
+    (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
+    (when (not (<ra> :seqtrack-for-audiofiles seqtracknum))
+      (when (and (not (null? seqblock-infos))
+                 (not (<ra> :seqtrack-for-audiofiles (seqblock-infos 0 :seqtracknum))))
+        (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
+        (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
+        (undo-block
+         (lambda ()
+           (<ra> :select-block blocknum)
+           (<ra> :copy-block)
+           (for-each (lambda (seqblock-info)
+                       (define new-blocknum (<ra> :append-block))
+                       (<ra> :select-block new-blocknum)
+                       (<ra> :paste-block))
+                     seqblock-infos)))))))
+
 (define (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
   (define seqblock-info *current-seqblock-info*)
   (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
@@ -1897,20 +1918,12 @@
           "-----------------------------"
           (list (<-> "Clone (create new block" (if (pair? seqblock-infos) "s" "") " from selected block " (if (pair? seqblock-infos) "s" "") ")")
                 :enabled (and blocknum
-                              (or (pair? seqblock-infos) seqblock-info)
+                              (not (null? seqblock-infos-under-mouse))
                               (not (<ra> :is-playing-song)))
+                :shortcut clone-seqblock-block
                 (lambda ()
-                  (<ra> :select-block blocknum)
-                  (<ra> :copy-block)
-                  (undo-block
-                   (lambda ()
-                     (for-each (lambda (seqblock-info)
-                                 (define new-blocknum (<ra> :append-block))
-                                 (<ra> :select-block new-blocknum)
-                                 (<ra> :paste-block))
-                               (if (null? seqblock-infos)
-                                   (list seqblock-info)
-                                   seqblock-infos))))))))
+                  (clone-seqblock-block seqblockid seqblock-infos-under-mouse)))
+          ))
    )
   )
    
