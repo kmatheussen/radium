@@ -4294,8 +4294,7 @@ void schedule(double ms, func_t *callback){
 }
 
 void removeSchedule(func_t *callback){
-  for(int i = 0 ; i<g_scheduled_events.size(); i++){
-    auto *event = g_scheduled_events.get_event_n(i);
+  for(auto *event : g_scheduled_events){
     if (event->_callback.v==callback){
       event->call_after_usage();
       event->stop_me = true;
