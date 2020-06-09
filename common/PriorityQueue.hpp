@@ -111,7 +111,16 @@ public:
     R_ASSERT_RETURN_IF_FALSE2(n<_queue_size,NULL);
     return _queue[1+n];
   }
-  
+
+  // Note: Iteration is not in priority order, just the order it is stored internally.
+  Event* const *begin() const {
+    return &_queue[1];
+  }
+    
+  Event* const *end() const {
+    return &_queue[_queue_size];
+  }
+    
   int size(void) const {
     return _queue_size;
   }
