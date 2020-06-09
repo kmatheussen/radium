@@ -305,6 +305,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
 
 static ReplacementColor g_replacement_color[] = {
   {LOW_EDITOR_BACKGROUND_COLOR_NUM, QColor("#475253")},
+  {HIGH_EDITOR_BACKGROUND_COLOR_NUM, QColor("#ff585d55")},
   {LOW_BACKGROUND_COLOR_NUM, QColor("#50585a")},
   {HIGH_BACKGROUND_COLOR_NUM, QColor("#22282a")},
   {MENU_TEXT_COLOR_NUM, QColor("#f7f5e4")},
