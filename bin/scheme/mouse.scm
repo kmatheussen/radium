@@ -6488,7 +6488,7 @@
                                                                                   ;;(only-select-one-seqblock seqblocknum seqtracknum)
                                                                                   )
                                                                                  (else
-                                                                                  (<ra> :select-seqblock #t seqblocknum seqtracknum)
+                                                                                  (<ra> :select-seqblock (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)) seqblocknum seqtracknum)
                                                                                   )
                                                                                  )
 
