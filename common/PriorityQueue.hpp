@@ -118,7 +118,7 @@ public:
   }
     
   Event* const *end() const {
-    return &_queue[_queue_size];
+    return &_queue[_queue_size+1];
   }
     
   int size(void) const {
