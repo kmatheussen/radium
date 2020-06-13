@@ -866,7 +866,7 @@ QColor get_qcolor(enum ColorNums colornum){
 QColor get_config_qcolor(QString colorname){
   static bool has_inited = false;
 
-  static QHash<QString,enum ColorNums> colors;
+  static QHash<QString,enum ColorNums> s_colors; // Can't we store QColors as values here? (no, because then it doesn't work adjusting colors after startup)
 
   if (has_inited==false){
     int i=0;
@@ -874,16 +874,28 @@ QColor get_config_qcolor(QString colorname){
       const ColorConfig &config = g_colorconfig[i];
       if(config.num == END_CONFIG_COLOR_NUM)
         break;
-      colors[config.config_name] = config.num;
+      s_colors[config.config_name] = config.num;
       i++;
     }
     has_inited = true;
   }
 
-  if (colors.contains(colorname))
-    return get_qcolor_really(colors[colorname]);
-  else
-    return QColor(colorname);
+  static QHash<QString, QColor> s_error_colors;
+  
+  if (s_colors.contains(colorname))
+    return get_qcolor_really(s_colors[colorname]);
+  else {
+    auto ret = QColor(colorname);
+    if (!ret.isValid()){
+      
+      if (s_error_colors.contains(colorname))
+        return s_error_colors[colorname];
+      
+      // Store a valid color for this colorname to avoid the same error message popping up again. (only need to see the error once)
+      s_error_colors[colorname] = get_next_color().name(QColor::HexArgb);
+    }
+    return ret;
+  }
 }
 
 static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pal){
