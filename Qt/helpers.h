@@ -411,7 +411,7 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags 
   if (a==b)
     return;
   */
-  R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent has common ancestor: %p, %p", a, b);
+  R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
 
   w->setParent(parent, f);
 }
@@ -425,7 +425,7 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, enum ShowAsserti
     return;
   */
   
-  R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent has common ancestor: %p, %p", a, b);
+  R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
   
   w->setParent(parent);
 }
