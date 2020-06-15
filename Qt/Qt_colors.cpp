@@ -308,8 +308,16 @@ static ReplacementColor g_replacement_color[] = {
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM, QColor("#ff585d55")},
   {LOW_BACKGROUND_COLOR_NUM, QColor("#50585a")},
   {HIGH_BACKGROUND_COLOR_NUM, QColor("#22282a")},
+  {TEXT_COLOR_NUM, QColor("#ffffffff")},
   {MENU_TEXT_COLOR_NUM, QColor("#f7f5e4")},
   {MENU_KEYBINDING_TEXT_COLOR_NUM, QColor("#e57c12")},
+  
+  {INSTRUMENT_NAME_COLOR_NUM, QColor("#fffdfec8")},
+  {CURSOR_EDIT_ON_COLOR_NUM, QColor("#ff0b186c")},
+  {EDITOR_SLIDERS_COLOR_NUM, QColor("#ff96a3a7")},
+  {AUTOMATION1_COLOR_NUM, QColor("#ffffffff")},
+  {AUTOMATION2_COLOR_NUM, QColor("#ff71e54e")},
+  {AUTOMATION3_COLOR_NUM, QColor("#fff4ff23")},
   
   {SCROLLBAR_COLOR_NUM, QColor("black")},
   {SCROLLBAR_BACKGROUND_COLOR_NUM, QColor("#69b8b8b8")},
@@ -334,7 +342,9 @@ static ReplacementColor g_replacement_color[] = {
   {CHECK_BOX_SELECTED_COLOR_NUM,  QColor("#ff115a2e")},
   {CHECK_BOX_UNSELECTED_COLOR_NUM,  QColor("#ff34413c")},
   {BUTTONS_TEXT_COLOR_NUM, QColor("#cccccc")},
-    
+
+  {PORTAMENTO_NOTE_TEXT_COLOR_NUM, QColor("#ffc28963")},
+  {WAVEFORM_COLOR_NUM, QColor("#ff090909")},
   {PIANONOTE_SELECTED_COLOR_NUM, QColor("#00c8e6")},
   
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor("#aa000001")},
