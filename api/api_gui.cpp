@@ -1194,7 +1194,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       layout()->removeWidget(_child);
 
       QWidget *parentWidget = dynamic_cast<QWidget*>(_original_parent.data()); // Might be null, not only if _original_parent is not a qwidget, but also if the original parent was deleted.
-      _child->setParent(parentWidget, _original_flags); // Must set a different parent to the child. If not the child will be deleted in the destructor of this class.
+      safe_set_parent(_child, parentWidget, _original_flags, THROW_API_EXCEPTION); // Must set a different parent to the child. If not the child will be deleted in the destructor of this class.
       
       _child->setGeometry(_original_geometry);
     }
@@ -5995,7 +5995,7 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
       ScrollArea *scroll_area = dynamic_cast<ScrollArea*>(parent); // Think this one should be changed to parent->_widget.
       if (scroll_area != NULL){
         //printf("      Adding to scroll child\n");
-        child->_widget->setParent(scroll_area->contents);
+        safe_set_parent(child->_widget, scroll_area->contents, THROW_API_EXCEPTION);
         child->_widget->move(x1,y1);
         if (parent->_widget->isVisible())
           child->_widget->show();
@@ -6018,7 +6018,7 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
           }
         }
         
-        child->_widget->setParent(parent->_widget);
+        safe_set_parent(child->_widget, parent->_widget, THROW_API_EXCEPTION);
         child->_widget->move(x1,y1);
         if (parent->_widget->isVisible())
           child->_widget->show();
@@ -6114,7 +6114,7 @@ void gui_replace(int64_t parentnum, int64_t oldchildnum, int64_t newchildnum){
   // Trying to see if this prevents Qt from sometimes freezing. (Stuck in QWidgetPrivate::invalidateGraphicsEffectsRecursively())
   // (don't remove, it seems to work.)
   if (newchild->_widget->parent() != NULL)
-    newchild->_widget->setParent(NULL);
+    safe_set_parent(newchild->_widget, NULL, THROW_API_EXCEPTION);
   
   QLayoutItem *old_item = layout->replaceWidget(oldchild->_widget, newchild->_widget, Qt::FindDirectChildrenOnly);
 
@@ -6289,7 +6289,7 @@ int64_t gui_getParentGui(int64_t guinum){
   return API_get_gui_from_widget(w);
 }
 
-static bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
+static bool gui_setParent2(const int64_t guinum, const int64_t parentgui, const bool mustBeWindow){
   //return false;
   
   Gui *gui = get_gui(guinum);
@@ -6329,7 +6329,7 @@ static bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow)
       
       QWidget *child_window =  gui->_widget->window();
       QWidget *parent_window = parent==NULL ? NULL : parent->window();
-      
+
       if (child_window!=NULL && parent_window!=NULL){
         if (child_window==parent_window){
           handleError("gui_setParent2: Will not set gui #%d as a child of gui #%d (parentgui parameter: %d) since they both belong to the same window. (Qt often freezes if trying to do that plus that it's likely that there is a bug somewhere since this call was made. If this is not a bug, you can, as a workaround, remove the old parent of the child before calling gui_add. If the child is already a window, then it's definitely a bug since it means that parent is a child of the child.)", (int)gui->get_gui_num(), (int)API_get_gui_from_widget(parent), (int)parentgui);
@@ -6342,13 +6342,16 @@ static bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow)
       handleError("gui_setParent2: Trying to set parent of a permanent widget. This is probably a bug.");
       return false;
     }
-      
+
+    //printf("gui->_widget: %p / w: %p / pw: %p. p: %p. parent: %p / %p / %p. main_window: %p\n", gui->_widget.data(), gui->_widget->window(), gui->_widget->parentWidget(), gui->_widget->parent(), parent, parent==NULL ? NULL : parent->window(), parent==NULL ? NULL : parent->parentWidget(), g_main_window);
+    
     // Trying to see if this prevents Qt from sometimes freezing the program when calling QWidget::setParent() in Qt/helpers.h. (Stuck in QWidgetPrivate::invalidateGraphicsEffectsRecursively())
     // (don't remove, it seems to work.)
     if (gui->_widget->parent() != NULL)
-      gui->_widget->setParent(NULL);
+      safe_set_parent(gui->_widget, NULL, THROW_API_EXCEPTION);
 
-    set_window_parent(gui->_widget, parent, gui->_modality);
+
+    set_window_parent(gui->_widget, parent, gui->_modality, THROW_API_EXCEPTION);
 
     if (isvisible)
       gui->_widget->show();
@@ -6374,7 +6377,7 @@ bool gui_removeParent(int64_t guinum){
   if (gui->_widget->parent()==NULL)
     return false;
 
-  gui->_widget->setParent(NULL);
+  safe_set_parent(gui->_widget, NULL, THROW_API_EXCEPTION);
   return true;
 }
 

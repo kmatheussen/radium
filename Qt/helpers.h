@@ -220,32 +220,61 @@ static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget, QRect parent
 #endif
 
 
-static inline bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_to_run_custom_exec){
+static inline QObject *get_oldest_parent(QObject *w){
   if (w==NULL)
+    return NULL;
+
+  int safety = 0;
+
+  while(w->parent() != NULL){
+    w = w->parent();
+    safety++;
+    if (safety >= 1000){
+      RError("widget::setParent: recursive widget->parent->widget.");
+      return NULL;
+    }
+  }
+
+  //printf("...........Safety: %d\n", safety);
+  return w;
+}
+
+
+static inline bool can_widget_be_parent_questionmark(QWidget *child, QWidget *parent, bool is_going_to_run_custom_exec){
+  if (parent==NULL)
     return false;
+
+  {
+    auto *a = get_oldest_parent(child);
+    auto *b = get_oldest_parent(parent);
+
+    if (a==b)
+      return false;
+  }
+
   /*
-  if (w==g_curr_popup_qmenu)
+  if (parent==g_curr_popup_qmenu)
     return false;
-  if (w->windowFlags() & Qt::Popup)
+  if (parent->windowFlags() & Qt::Popup)
     return false;
-  if (w->windowFlags() & Qt::ToolTip)
+  if (parent->windowFlags() & Qt::ToolTip)
     return false;
   */
 
-  if (w->isVisible()==false)
+  if (parent->isVisible()==false)
     return false;
   
-  if (w==g_curr_popup_qmenu){
+  if (parent==g_curr_popup_qmenu){
     D(printf("iscurrpopup\n"));
     return false;
   }
 
-  if (w->windowFlags() & Qt::ToolTip){
+  if (parent->windowFlags() & Qt::ToolTip){
     D(printf("istooltip\n"));
     return false;
   }
   
-  if (dynamic_cast<QMenu*>(w) != NULL){
+  if (dynamic_cast<QMenu*>(parent) != NULL){
     D(printf("ismenu\n"));
     return false;
   }
@@ -254,7 +283,7 @@ static inline bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_t
   //if(is_going_to_run_custom_exec==true)
   //  return true;
 
-  if (w->windowFlags() & Qt::Popup){
+  if (parent->windowFlags() & Qt::Popup){
     D(printf("ispopup\n"));
     return false;
   }
@@ -299,27 +328,27 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
 
   QWidget *ret = QApplication::activeModalWidget(); // TODO: Fix. This one returns NULL if the widget is not active. But the active window could be the parent (seems like), and we don't want to return the parent. At least we don't want to return g_main_window when it has a modal window as child. (tried that, but qt behaved strange)
   D(printf("2222 %p\n", ret));
-  if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
+  if (can_widget_be_parent_questionmark(child, ret, is_going_to_run_custom_exec)){
     return ret;
   }
 
   ret = QApplication::focusWidget();
   D(printf("333 %p\n", ret));
-  if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
+  if (can_widget_be_parent_questionmark(child, ret, is_going_to_run_custom_exec)){
     return ret->window();
   }
 
   /*
   ret = QApplication::activePopupWidget();
   D(printf("333555 %p\n", ret));
-  if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
+  if (can_widget_be_parent_questionmark(child, ret, is_going_to_run_custom_exec)){
     return ret->window();
   }
   */
   
   ret = QApplication::activeWindow();
   D(printf("444 %p\n", ret));
-  if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
+  if (can_widget_be_parent_questionmark(child, ret, is_going_to_run_custom_exec)){
     return ret;
   }
 
@@ -374,8 +403,36 @@ namespace radium{
   };
 }
 
+static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags f, enum ShowAssertionOrThrowAPIException error_type){
+  //printf("w: %p. parent: %p. parent==w->parentWidget(): %d\n", w, parent, (w==NULL ? NULL : w->parentWidget()) == parent);
+  auto *a = get_oldest_parent(w);
+  auto *b = get_oldest_parent(parent);
+  /*
+  if (a==b)
+    return;
+  */
+  R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent has common ancestor: %p, %p", a, b);
+
+  w->setParent(parent, f);
+}
+
+static inline void safe_set_parent(QWidget *w, QWidget *parent, enum ShowAssertionOrThrowAPIException error_type){
+  auto *a = get_oldest_parent(w);
+  auto *b = get_oldest_parent(parent);
+
+  /*
+  if (a==b)
+    return;
+  */
+  
+  R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent has common ancestor: %p, %p", a, b);
+  
+  w->setParent(parent);
+}
+
+
 // Returns true if modality is turned on when 'is_modal'==false.
-static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *parent, radium::Modality modality, bool only_set_flags, bool is_converting_widget_to_window = false){ //bool is_modal, bool only_set_flags){
+static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *parent, radium::Modality modality, bool only_set_flags, bool is_converting_widget_to_window, enum ShowAssertionOrThrowAPIException error_type){ //bool is_modal, bool only_set_flags){
 
 //  #if defined(FOR_MACOSX)
 #if 1
@@ -449,9 +506,11 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
 
   if (parent==window || only_set_flags)
     window->setWindowFlags(f);
-  else
-    window->setParent(parent, f);
- 
+  else {
+    
+    safe_set_parent(window, parent, f, error_type);
+  }
+  
   if (true &&
       //(parent==NULL || !parent->isModal()) && // Uncomment this line to prevent a modal window to be parent of another modal window. Should be fine though. It's modal siblings that can lock up the program (most likely a qt bug)
       (force_modal || modality==radium::IS_MODAL)
@@ -477,18 +536,18 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
 }
 
 // Returns true if modality is turned on when 'is_modal'==false.
-static inline bool set_window_parent(QWidget *window, QWidget *parent, radium::Modality modality){
-  return set_window_parent_andor_flags(window, parent, modality, false);
+static inline bool set_window_parent(QWidget *window, QWidget *parent, radium::Modality modality, enum ShowAssertionOrThrowAPIException error_type){
+  return set_window_parent_andor_flags(window, parent, modality, false, false, error_type);
 }
 
 // Returns true if modality is turned on when 'is_modal'==false.
-static inline bool convert_widget_to_window(QWidget *widget, QWidget *parent, radium::Modality modality){
-  return set_window_parent_andor_flags(widget, parent, modality, false, true);
+static inline bool convert_widget_to_window(QWidget *widget, QWidget *parent, radium::Modality modality, enum ShowAssertionOrThrowAPIException error_type){
+  return set_window_parent_andor_flags(widget, parent, modality, false, true, error_type);
 }
 
 // Returns true if modality is turned on when 'is_modal'==false.
 static inline bool set_window_flags(QWidget *window, radium::Modality modality){
-  return set_window_parent_andor_flags(window, window->parentWidget(), modality, true);
+  return set_window_parent_andor_flags(window, window->parentWidget(), modality, true, false, ShowAssertionOrThrowAPIException::SHOW_ASSERTION);
 }
 
 static inline void set_widget_takes_care_of_painting_everything(QWidget *widget){

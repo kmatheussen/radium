@@ -1498,7 +1498,7 @@ namespace{
       , _delete_child_handle_func(delete_child_handle_func)
     {
 #if 1
-      widget->setParent(this);
+      safe_set_parent(widget, this, ShowAssertionOrThrowAPIException::SHOW_ASSERTION);
       widget->move(0,0);
 #else
       QVBoxLayout *layout = new QVBoxLayout(this);
@@ -1550,7 +1550,7 @@ void *OS_GFX_create_embedded_native_window(void *child_handle, int x, int y, int
   
 #endif
 
-  set_window_parent(main_widget, g_main_window, radium::NOT_MODAL);
+  set_window_parent(main_widget, g_main_window, radium::NOT_MODAL, ShowAssertionOrThrowAPIException::SHOW_ASSERTION);
 
   for(int height2=height + 2, i=0 ; height2 >= height ; height2--, i++){
     
@@ -1945,7 +1945,7 @@ protected:
         
         if (parent != rt_msgBox->window() && parent != rt_msgBox->parent()){
           //printf(" 3. Setting window parent\n");
-          set_window_parent(rt_msgBox, parent, radium::NOT_MODAL);
+          set_window_parent(rt_msgBox, parent, radium::NOT_MODAL, ShowAssertionOrThrowAPIException::SHOW_ASSERTION);
         }
 
         rt_msgBox->setText(message);
@@ -2642,7 +2642,7 @@ void GFX_toggleCurrWindowFullScreen(void){
 
           /*
           if (toplevel->parent() != NULL)
-            toplevel->setParent(NULL, Qt::Window  | DEFAULT_WINDOW_FLAGS);
+            safe_set_parent(toplevel, NULL, Qt::Window  | DEFAULT_WINDOW_FLAGS);
           */
           
           printf("Trying to set full screen\n");
