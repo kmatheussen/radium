@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct MyQLabel : public QLabel {
 
+  bool _use_custom_painter = false;
+  
   MyQLabel(QWidget * parent = 0)
     : QLabel(parent)
   {}
@@ -32,17 +34,25 @@ struct MyQLabel : public QLabel {
     : QLabel(text, parent)
   {}
 
-#if 0
+
+  
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
-    
-    QPainter p(this);
-    
-    p.setRenderHints(QPainter::Antialiasing,true);
+      
+    if (!_use_custom_painter) {
 
-    myDrawText(p, rect(), text(), Qt::AlignCenter, false, 0, true, false);
+      QLabel::paintEvent(ev);
+      
+    } else {
+      
+      QPainter p(this);
+      
+      p.setRenderHints(QPainter::Antialiasing,true);
+      
+      myDrawText(p, rect(), text(), alignment(), false, 0, true, false);
+
+    }
   }
-#endif
 };
   
 

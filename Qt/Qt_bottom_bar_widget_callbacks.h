@@ -657,7 +657,8 @@ QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool in
   
   {
     const QFontMetrics fn = QFontMetrics(QApplication::font());
-    ret->status_label->setMinimumWidth(fn.boundingRect("Main Pipe/System Compression Release: 9.99").width());
+    ret->status_label->setMinimumWidth(fn.boundingRect("Main Pipe/System Compression Release").width()); // sion Release: 9.99
+    ret->status_label->_use_custom_painter = true;
   }
   
   {
