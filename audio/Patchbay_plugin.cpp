@@ -102,12 +102,13 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 }
 
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
-  static char **names = NULL;
-
-  if (names==NULL)
-    names = (char**)calloc(sizeof(char*), MAX_NUM_CHANNELS*MAX_NUM_CHANNELS);
-  
   SoundPluginType *type = plugin->type;
+
+  if(type->data==NULL)
+    type->data = calloc(sizeof(char*), type->num_effects);
+  
+  char **names = (char**)type->data;
+
   int from = effect_num / type->num_inputs; // not sure if it's num_inputs or num_outputs here
   int to = effect_num % type->num_inputs; // same here
   
