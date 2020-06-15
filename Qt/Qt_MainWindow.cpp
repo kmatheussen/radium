@@ -178,7 +178,7 @@ void GFX_UpdateUpperLeft(struct Tracker_Windows *tvisual, struct WBlocks *wblock
 void add_upper_left_widget(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   //editor->upperleft_widget = new Upperleft_widget(editor->header_widget);
-  editor->upperleft_widget->setParent(editor->header_widget);
+  safe_set_parent(editor->upperleft_widget, editor->header_widget, ShowAssertionOrThrowAPIException::SHOW_ASSERTION);
   editor->upperleft_widget->move(0,0);
 }
 

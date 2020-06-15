@@ -391,7 +391,7 @@ public:
         if (_mixer_strips_gui != -1){
           show_modular_mixer_widget_widgets(false);
           QWidget *w = API_gui_get_widget(_mixer_strips_gui);
-          //w->setParent(bottom_widget);
+          //safe_set_parent(w, bottom_widget);
           //w->setFixedSize(width(), height()-50);
           verticalLayout->insertWidget(1, w, 1);
           view->hide();
@@ -635,7 +635,7 @@ public:
             
       w->hide();
       _bottom_bar->show();
-      convert_widget_to_window(w, mixerWindowIsChildOfMainWindow() ? g_main_window : NULL, radium::NOT_MODAL);
+      convert_widget_to_window(w, mixerWindowIsChildOfMainWindow() ? g_main_window : NULL, radium::NOT_MODAL, ShowAssertionOrThrowAPIException::SHOW_ASSERTION);
 
       w->adjustSize();
 

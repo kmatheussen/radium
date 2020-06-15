@@ -571,7 +571,7 @@ void GFX_InstrumentWindowToFront(void){
 
   if (!instrumentWidgetIsInMixer()){
     //EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-    //g_instruments_widget->setParent(editor->ysplitter);
+    //safe_set_parent(g_instruments_widget, editor->ysplitter);
     //editor->ysplitter->handle(2)->setEnabled(false);
     //editor->ysplitter->setStretchFactor(2,0);
 
