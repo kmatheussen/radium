@@ -4454,7 +4454,7 @@
                                   (when (and seqtracknum
                                              (= Button *left-button*)
                                              (not *current-seqautomation/distance*))
-                                    (<ra> :set-curr-seqtrack seqtracknum)
+                                    ;;(<ra> :set-curr-seqtrack seqtracknum)
                                     (let ((seqblock-info *current-seqblock-info*))
                                       ;;(c-display "get-existing " seqblock-info X Y seqtracknum)
                                       (if seqblock-info
@@ -6477,7 +6477,7 @@
                                                     (and (not *current-seqautomation/distance*)
                                                          seqtracknum
                                                          (begin
-                                                           (<ra> :set-curr-seqtrack seqtracknum)
+                                                           ;;(<ra> :set-curr-seqtrack seqtracknum)
                                                            (let ((seqblock-info *current-seqblock-info*))
                                                              ;;(c-display "get-existing " seqblock-info X Y seqtracknum)
                                                              (and seqblock-info
@@ -6583,7 +6583,7 @@
                                                     (and (not *current-seqautomation/distance*)
                                                          seqtracknum
                                                          (begin
-                                                           (<ra> :set-curr-seqtrack seqtracknum)
+                                                           ;;(<ra> :set-curr-seqtrack seqtracknum)
                                                            (let ((seqblock-info *current-seqblock-info*))
                                                              ;;(c-display "get-existing " seqblock-info X Y)
                                                              (and seqblock-info
