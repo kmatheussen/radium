@@ -2992,6 +2992,8 @@ int getPlaylistPosForSeqblock(int64_t seqblockid){
 
 // seqblocks
 
+#define CURR_SEQBLOCK_EQUALS_SEQBLOCKS_UNDER_MOUSE 1
+
 static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
 
   if (seqblockid < 0 && seqblockid!=-2){
@@ -3059,6 +3061,10 @@ static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
       seqtrack->last_curr_seqblock_id = -2;
     }END_ALL_SEQTRACKS_FOR_EACH;
   }
+
+#if  CURR_SEQBLOCK_EQUALS_SEQBLOCKS_UNDER_MOUSE
+  setCurrSeqblockUnderMouse(seqblockid);
+#endif
 }
 
 void setCurrSeqblock(int64_t seqblockid){
@@ -3176,6 +3182,10 @@ int getCurrSeqtrack(void){
 
 
 void setCurrSeqblockUnderMouse(int64_t seqblockid){
+#if CURR_SEQBLOCK_EQUALS_SEQBLOCKS_UNDER_MOUSE
+  setCurrSeqblock(seqblockid);
+#endif
+  
   if (seqblockid==g_curr_seqblock_id_under_mouse)
     return;
   
@@ -3185,6 +3195,9 @@ void setCurrSeqblockUnderMouse(int64_t seqblockid){
 
   //g_curr_seqblock_id_under_mouse = seqblock;    
   g_curr_seqblock_id_under_mouse = seqblockid;
+
+  S7EXTRA_GET_FUNC(func, "FROM_C-call-me-after-curr-seqblock-under-mouse-has-been-called");
+  S7CALL(void_int, func, seqblockid);
   
   /*
   static int s_prev_curr_seqtracknum_under_mouse = -1;
