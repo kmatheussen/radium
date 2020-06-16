@@ -1230,7 +1230,12 @@
 (add-mouse-move-handler
  :move (lambda (Button X Y)
          (set-and-highlight-current-seqautomation Button X Y)))
- 
+
+(define (FROM_C-call-me-after-curr-seqblock-under-mouse-has-been-called seqblockid)
+  (when (or (not *current-seqblock-info*)
+            (not (= (*current-seqblock-info* :id) seqblockid)))    
+    (set! *current-seqblock-info* (make-seqblock-info3 seqblockid))))
+
 (add-mouse-move-handler
  :move (lambda (Button X Y)
          (let ((old *current-seqblock-info*)
@@ -1248,8 +1253,10 @@
                   ;;(set-custom-seq-indicator (<ra> :get-seqblock-start-time (new :seqblocknum) (new :seqtracknum))
                   ;;                          -1
                   ;;                          (<ra> :get-seqblock-color id))
-                  (<ra> :set-curr-seqblock-under-mouse id)
-                  (set! *current-seqblock-info* new))
+                  (set! *current-seqblock-info* new) ;; set this one first, so we don't have to create seqblock-info twice.
+                  ;;(<ra> :set-curr-seqblock-under-mouse id)
+                  (<ra> :set-curr-seqblock id)
+                  ) ;; ...because this one calls FROM_C-call-me-after-curr-seqblock-under-mouse-has-been-called.
                  (else
                   ;;(c-display "old/new:" (if old #t #f) (if new #t #f))
                   #f)))))
