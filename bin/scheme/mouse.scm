@@ -1236,31 +1236,33 @@
             (not (= (*current-seqblock-info* :id) seqblockid)))    
     (set! *current-seqblock-info* (make-seqblock-info3 seqblockid))))
 
+(define (set-curr-seqblock-info! X Y)
+  (let ((old *current-seqblock-info*)
+        (new (or (maybe-get-seqblock-info-from-current-seqautomation)
+                 (get-seqblock-info X Y))))
+    ;;(c-display "old/new seqblock-info" old new)
+    (cond ((and old (not new))
+           (<ra> :cancel-curr-seqblock-under-mouse)
+           (set! *current-seqblock-info* #f))
+          ((or (and new (not old))
+               (not (morally-equal? new old)))
+           ;;(c-display "set-normal")
+           ;;(<ra> :set-normal-mouse-pointer)
+           (define id (new :id))
+           ;;(set-custom-seq-indicator (<ra> :get-seqblock-start-time (new :seqblocknum) (new :seqtracknum))
+           ;;                          -1
+           ;;                          (<ra> :get-seqblock-color id))
+           (set! *current-seqblock-info* new) ;; set this one first, so we don't have to create seqblock-info twice.
+           ;;(<ra> :set-curr-seqblock-under-mouse id)
+           (<ra> :set-curr-seqblock id)
+           ) ;; ...because this one calls FROM_C-call-me-after-curr-seqblock-under-mouse-has-been-called.
+          (else
+           ;;(c-display "old/new:" (if old #t #f) (if new #t #f))
+           #f))))
+  
 (add-mouse-move-handler
  :move (lambda (Button X Y)
-         (let ((old *current-seqblock-info*)
-               (new (or (maybe-get-seqblock-info-from-current-seqautomation)
-                        (get-seqblock-info X Y))))
-           ;;(c-display "old/new seqblock-info" old new)
-           (cond ((and old (not new))
-                  (<ra> :cancel-curr-seqblock-under-mouse)
-                  (set! *current-seqblock-info* #f))
-                 ((or (and new (not old))
-                      (not (morally-equal? new old)))
-                  ;;(c-display "set-normal")
-                  ;;(<ra> :set-normal-mouse-pointer)
-                  (define id (new :id))
-                  ;;(set-custom-seq-indicator (<ra> :get-seqblock-start-time (new :seqblocknum) (new :seqtracknum))
-                  ;;                          -1
-                  ;;                          (<ra> :get-seqblock-color id))
-                  (set! *current-seqblock-info* new) ;; set this one first, so we don't have to create seqblock-info twice.
-                  ;;(<ra> :set-curr-seqblock-under-mouse id)
-                  (<ra> :set-curr-seqblock id)
-                  ) ;; ...because this one calls FROM_C-call-me-after-curr-seqblock-under-mouse-has-been-called.
-                 (else
-                  ;;(c-display "old/new:" (if old #t #f) (if new #t #f))
-                  #f)))))
-
+         (set-curr-seqblock-info! X Y)))
 
 ;; status bar and Update mouse pointer shape when moved above various things
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -7785,28 +7787,30 @@
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      (not (<ra> :shift-pressed))
-                     (let ((seqtracknum *current-seqtrack-num*))
-                       (and seqtracknum
-                            *current-seqblock-info*
-                            (let ((seqblock-infos (get-selected-seqblock-infos))
-                                  (seqblock-info *current-seqblock-info*))
-                              (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
-                              (define for-blocks (not for-audiofiles))
-                              (define seqblocknum (seqblock-info :seqblocknum))
-                              (define seqblockid (seqblock-info :id))
-
-                              ;;(if seqblock-info
-                              ;;    (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
-                              ;;        (only-select-one-seqblock seqblocknum seqtracknum)
-                              ;;        (<ra> :select-seqblock #t seqblocknum seqtracknum)))
-
-                              (set-current-seqblock! seqtracknum seqblockid)
-                              ;;(<ra> :set-curr-seqtrack seqtracknum)
-                              
-                              (paint-grid! #t)
-                              
-                              (popup-menu (get-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X Y))
-                              )))))))
+                     (begin
+                       (set-curr-seqblock-info! X Y) ;; *curr-seqblock-info* is not set after right-clicking a menu. (FIX: Should call set-curr-seqblock-info! after hiding a popup menu)
+                       (let ((seqtracknum *current-seqtrack-num*))
+                         (and seqtracknum
+                              *current-seqblock-info*
+                              (let ((seqblock-infos (get-selected-seqblock-infos))
+                                    (seqblock-info *current-seqblock-info*))
+                                (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+                                (define for-blocks (not for-audiofiles))
+                                (define seqblocknum (seqblock-info :seqblocknum))
+                                (define seqblockid (seqblock-info :id))
+                                
+                                ;;(if seqblock-info
+                                ;;    (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
+                                ;;        (only-select-one-seqblock seqblocknum seqtracknum)
+                                ;;        (<ra> :select-seqblock #t seqblocknum seqtracknum)))
+                                
+                                (set-current-seqblock! seqtracknum seqblockid)
+                                ;;(<ra> :set-curr-seqtrack seqtracknum)
+                                
+                                (paint-grid! #t)
+                                
+                                (popup-menu (get-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X Y))
+                                ))))))))
 
 ;; seqtrack menu
 (add-mouse-cycle
