@@ -4068,6 +4068,10 @@ const_char *appendBase64Strings(const_char* w1, const_char* w2){
   return qstring_to_w(w_to_qstring(w1) + w_to_qstring(w2));
 }
 
+bool base64StringIs8bitCompatible(const_char* w){
+  return STRING_is_local8Bit_compatible(STRING_get_qstring(STRING_fromBase64(STRING_create(w))));
+}
+  
 int getStringLength(const_char* s){
   return QString(s).length();
 }

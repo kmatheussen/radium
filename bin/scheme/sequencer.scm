@@ -1697,12 +1697,38 @@
           (<ra> :set-seqblock-automation-enabled enable automationnum seqblockid))))
 
 
+(define (get-seqblock-separator-text text seqblockid)
+  (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
+  (define seqtracknum  (<ra> :get-seqblock-seqtrack-num seqblockid))
+  
+  (define for-audio (<ra> :seqtrack-for-audiofiles seqtracknum))
+  (define for-editor (not for-audio))
+  
+  (define name (<ra> :get-seqblock-name seqblockid))
+  (define name-is-compatible (and #t (<ra> :base64-string-is-8bit-compatible name)))
+  (define name8 (and name-is-compatible
+                     (<ra> :from-base64 name)))
+
+  (define blocknum (and for-editor
+                        (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
+  
+  (define display-name (cond ((and for-editor
+                                   name-is-compatible)
+                              (<-> " (#" blocknum ": " name8 ")"))
+                             (for-editor
+                              (<-> " (#" blocknum ")"))
+                             (name-is-compatible
+                              (<-> " (" name8 ")"))
+                             (else
+                              "")))
+  (<-> "------------" text (cut-string-if-longer-than display-name
+                                                      50)))
+  
 (define (get-audio-seqblock-popup-menu-entries seqblocknum seqtracknum seqblockid X)
   (define seqblock-info *current-seqblock-info*)
   (define seqblock-infos-under-mouse (get-curr-seqblock-infos-under-mouse #f))
   (list
-   "-----------------Audio Seqblock"
-   
+   (get-seqblock-separator-text "Audio Seqblock" seqblockid)
    (map (lambda (automationnum)
           (create-seqblock-automation-popup-menu-entry automationnum seqblockid))
         (iota (<ra> :get-num-seqblock-automations seqblocknum seqtracknum)))
@@ -1808,7 +1834,7 @@
   (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
   (define seqblock-infos-under-mouse (get-curr-seqblock-infos-under-mouse #f seqblock-infos seqblock-info))
   (list
-   "-----------------Editor Seqblock"
+   (get-seqblock-separator-text "Editor Seqblock" seqblockid)
    (create-seqblock-automation-popup-menu-entry 0 seqblockid)
    
    "------------------------"
@@ -1950,7 +1976,9 @@
        (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
        (get-audio-seqblock-popup-menu-entries seqblocknum seqtracknum seqblockid X))
 
-   "--------------------Seqblock"
+   (if (> num-selected-with-current 1)       
+       "-----------Seqblocks (selection)"
+       (get-seqblock-separator-text "Seqblock" seqblockid))
    
    (list "Copy"
          :enabled (> num-selected-with-current 0)
