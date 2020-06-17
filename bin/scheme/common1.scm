@@ -530,6 +530,11 @@
 (***assert*** (string-take "1234" 2)
               "12")
 
+(define (cut-string-if-longer-than s max-length)
+  (if (< (string-length s) max-length)
+      s
+      (string-take s max-length)))
+
 ;; Other variants (not implemented): string-take, string-drop-right, string-take-right
 (define (string-drop string* pos)
   (substring string* pos))
