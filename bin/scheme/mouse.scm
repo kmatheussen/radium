@@ -6216,15 +6216,15 @@
                                          :start-x
                                          :start-y
                                          :has-made-undo #f)
-
+  
   (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
   (define seqblock (seqblocks seqblocknum))
   ;;(pretty-print seqblock)
   (set! *current-seqblocks-state* seqblocks)
-
+  
   (set-current-seqblock! seqtracknum (seqblock :id))
   (<ra> :lock-curr-playlist-pos-to-curr-seqblock #t)
-   
+  
   (define start-pos (seqblock :start-time))
   (define curr-pos start-pos)
 
@@ -6233,6 +6233,8 @@
   (define is-sample (seqblock :sample))
   (define is-block (seqblock :blocknum))
 
+  (define is-selected (<ra> :is-seqblock-selected seqblocknum seqtracknum))
+  
   (define allowed-to-overlap is-sample)
   (define allowed-to-swap is-block)
   
@@ -6460,13 +6462,20 @@
     (if has-moved
         (try-finally :try (lambda ()
                             (maybe-make-undo)
-                            (<ra> :apply-gfx-seqblocks seqtracknum))
+                            (<ra> :apply-gfx-seqblocks seqtracknum)
+                            ;;(<ra> :select-seqblock #t (<ra> :get-seqblock-seqblock-num (seqblock :id)) (<ra> :get-seqblock-seqtrack-num (seqblock :id)))
+                            )
                      :failure (lambda ()
                                 (<ra> :cancel-gfx-seqblocks seqtracknum)))
-        (<ra> :cancel-gfx-seqblocks seqtracknum)))
+        (begin
+          (if (<ra> :control-pressed)
+              (<ra> :select-seqblock (not is-selected) seqblocknum seqtracknum))
+          (<ra> :cancel-gfx-seqblocks seqtracknum))))
   )
 
-                          
+#!!
+(pretty-print (<ra> :get-gfx-seqblocks-state 0))
+!!#
 
 
 ;; Move single seqblock
@@ -6484,22 +6493,22 @@
                                                              ;;(c-display "get-existing " seqblock-info X Y seqtracknum)
                                                              (and seqblock-info
                                                                   (let* ((seqtracknum (and seqblock-info (seqblock-info :seqtracknum)))
-                                                                         (seqblocknum (and seqblock-info (seqblock-info :seqblocknum)))
-                                                                         (is-selected (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
+                                                                         (seqblocknum (and seqblock-info (seqblock-info :seqblocknum))))
+                                                                         ;;(is-selected (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
                                                                     
                                                                     (cond ((<= (<ra> :get-num-selected-seqblocks) 1)
                                                                            
-                                                                           (if (and (not (<ra> :is-playing-song))
-                                                                                    (<ra> :seqblock-holds-block seqblocknum seqtracknum))
-                                                                               (<ra> :select-block (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
-                                                                           (cond ((and (not is-selected)
-                                                                                       (not (<ra> :control-pressed)))
-                                                                                  ;;(only-select-one-seqblock seqblocknum seqtracknum)
-                                                                                  )
-                                                                                 (else
-                                                                                  (<ra> :select-seqblock (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)) seqblocknum seqtracknum)
-                                                                                  )
-                                                                                 )
+                                                                           ;;(if (and (not (<ra> :is-playing-song))
+                                                                           ;;         (<ra> :seqblock-holds-block seqblocknum seqtracknum))
+                                                                           ;;    (<ra> :select-block (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
+                                                                           ;;(cond ((and (not is-selected)
+                                                                           ;;            (not (<ra> :control-pressed)))
+                                                                           ;;       ;;(only-select-one-seqblock seqblocknum seqtracknum)
+                                                                           ;;       )
+                                                                           ;;      (else
+                                                                           ;;       (<ra> :select-seqblock #t seqblocknum seqtracknum)
+                                                                           ;;       )
+                                                                           ;;      )
 
                                                                            (paint-grid! #t)
 
@@ -6680,14 +6689,12 @@
                                         (delete-all-gfx-gfx-seqblocks)
                                         ;;(c-display "has-moved:" has-moved gakkgakk-start-pos gakkgakk-last-value gakkgakk-was-selected)
                                         (if has-moved
+                                            (apply-gfx-gfx-seqblocks seqblock-infos)
                                             (begin
-                                              (apply-gfx-gfx-seqblocks seqblock-infos)
-                                              (for-each (lambda (seqblock-info)
-                                                          (<ra> :select-seqblock #t (<ra> :get-seqblock-seqblock-num (seqblock-info :id)) (<ra> :get-seqblock-seqtrack-num (seqblock-info :id))))
-                                                        seqblock-infos))
-                                            (begin
-                                              (if (<ra> :control-pressed)
-                                                  (<ra> :select-seqblock (not gakkgakk-was-selected) gakkgakk-startseqblocknum gakkgakk-startseqtracknum))))
+                                              ;;(c-display "NOT MOVED")
+                                              (when (<ra> :control-pressed)
+                                                ;;(c-display "SETTING SELECTED TO" (not gakkgakk-was-selected))
+                                                (<ra> :select-seqblock (not gakkgakk-was-selected) gakkgakk-startseqblocknum gakkgakk-startseqtracknum))))
                                         
                                         (paint-grid! #f)
 

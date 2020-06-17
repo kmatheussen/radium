@@ -1107,6 +1107,8 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
   HASH_put_chars(state, ":fade-in-shape", fade_shape_to_string(seqblock->fade_in_envelope->_shape));
   HASH_put_chars(state, ":fade-out-shape", fade_shape_to_string(seqblock->fade_out_envelope->_shape));
 
+  HASH_put_bool(state, ":is-selected", seqblock->is_selected);
+  
   /*
   if (g_is_saving) { // so that we can load song into older versions of Radium.
     HASH_put_bool(state, ":envelope-enabled", RT_seqblock_automation_is_enabled(seqblock->automations[SAT_VOLUME]));
@@ -1332,7 +1334,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
   //R_ASSERT(is_gfx==true);
 
   //bool may_have_different_audiofile = false;
-  
+
   double adjust_for_samplerate = 1.0;
   double state_samplerate = -1.0;
   
@@ -1471,6 +1473,10 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
       seqblock->name = HASH_get_string(state, ":name");
   }
 
+
+  if (HASH_has_key(state, ":is-selected"))
+    seqblock->is_selected = HASH_get_bool(state, ":is-selected");
+  
 
   int64_t default_duration = seqblock->block!=NULL ? get_seqblock_stime_default_duration(seqtrack, seqblock) : get_default_duration_from_num_samples(seqtrack, seqblock, -1);
   
