@@ -368,6 +368,10 @@ bool GFX_EditorIsVisible(void){
 }
 
 void GFX_ShowEditor(void){
+  if (sequencerInFullMode() && !sequencerInWindow()){
+    setSequencerInFullMode(false);    
+  }
+  
   GL_lock();{
     setEditorKeyboardFocus(true);
     g_editor->editor_layout_widget->show();
@@ -383,13 +387,22 @@ void GFX_HideEditor(void){
 }
 
 void GFX_showHideEditor(void){
+  bool must_show = false;
+  
+  if (sequencerInFullMode() && !sequencerInWindow()){
+    setSequencerInFullMode(false);
+    must_show = true;
+  }
+  
   GL_lock();{
     if(g_editor->editor_layout_widget->isHidden()){
       setEditorKeyboardFocus(true);
       g_editor->editor_layout_widget->show();
     }else{
-      g_editor->editor_layout_widget->hide();
-      FOCUSFRAMES_set_focus_best_guess();
+      if (must_show==false) {
+        g_editor->editor_layout_widget->hide();
+        FOCUSFRAMES_set_focus_best_guess();
+      }
     }
   }GL_unlock();
   
