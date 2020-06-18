@@ -491,9 +491,9 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
 
 }
 
-void autoscrollSeqtracks(int seqtracknum){
+void autoscrollSeqtracks(int seqtracknum, bool make_fully_visible){
   int topmost_visible = getTopmostVisibleSeqtrack();
-  int lowest_visible = getLowestVisibleSeqtrack();
+  int lowest_visible = getLowestVisibleSeqtrack(make_fully_visible);
 
   if (seqtracknum >= topmost_visible && seqtracknum <= lowest_visible)
     return;
@@ -517,7 +517,7 @@ void autoscrollSeqtracks(int seqtracknum){
     if (topmost_visible==lowest_possible)
       return;
 
-    if (seqtracknum <= getLowestVisibleSeqtrack())
+    if (seqtracknum <= getLowestVisibleSeqtrack(make_fully_visible))
       return;
   };
 }
@@ -537,7 +537,7 @@ void setCurrSeqtrack(int seqtracknum, bool auto_scroll_to_make_seqtrack_visible)
       return;
 
     if (seqtrack->is_visible)
-      autoscrollSeqtracks(seqtracknum);
+      autoscrollSeqtracks(seqtracknum, true);
   }
   
   setCurrSeqtrack2(seqtracknum, false);
@@ -593,11 +593,27 @@ int getNumSeqtracks(void){
   return root->song->seqtracks.num_elements;
 }
 
-int getLowestVisibleSeqtrack(void){
+int getLowestVisibleSeqtrack(bool must_be_fully_visible){
 
-  for(int i=getTopmostVisibleSeqtrack() ; i < root->song->seqtracks.num_elements ; i++){
-    if (SEQTRACK_get_y2(i) >= SEQTRACKS_get_y2())
-      return i;
+  int topmost = getTopmostVisibleSeqtrack();
+  
+  for(int i=topmost ; i < root->song->seqtracks.num_elements ; i++){
+    
+    if (must_be_fully_visible) {
+      
+      if (equal_floats(SEQTRACK_get_y2(i), SEQTRACKS_get_y2()))
+        return i;
+      
+      if (SEQTRACK_get_y2(i) > SEQTRACKS_get_y2())
+        return R_MAX(topmost, i-1);
+      
+    } else {
+
+      if (SEQTRACK_get_y2(i) >= SEQTRACKS_get_y2())
+        return i;      
+      
+    }
+        
   }
 
   return root->song->seqtracks.num_elements-1;
