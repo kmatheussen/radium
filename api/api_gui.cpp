@@ -3270,7 +3270,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       , Gui(this)        
     {
       QVBoxLayout *mainLayout = new QVBoxLayout;
-      //setDefaultSpacing(mainLayout); // Doesn't make sense to remove spacing from group boxes. Without spacking, they will just look like a vertical layout with a header.
+      //setDefaultSpacing(mainLayout); // Doesn't make sense to remove spacing from group boxes. Without spacing, they will just look like a vertical layout with a header.
       setLayout(mainLayout);
     }
 

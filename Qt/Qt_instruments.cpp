@@ -1034,6 +1034,10 @@ bool MIXERSTRIP_is_visible(void){
 }
 
 void MIXERSTRIP_show(void){
+  if (sequencerInFullMode() && !sequencerInWindow()){
+    setSequencerInFullMode(false);    
+  }
+
   g_mixerstrip_is_visible = true;
 }
 
@@ -1042,9 +1046,17 @@ void MIXERSTRIP_hide(void){
 }
 
 void GFX_showHideMixerStrip(struct Tracker_Windows *window){
-  if (MIXERSTRIP_is_visible())
-    MIXERSTRIP_hide();
-  else
+  bool must_show = false;
+  
+  if (sequencerInFullMode() && !sequencerInWindow()){
+    setSequencerInFullMode(false);
+    must_show = true;
+  }
+  
+  if (MIXERSTRIP_is_visible()) {
+    if (!must_show)
+      MIXERSTRIP_hide();
+  } else
     MIXERSTRIP_show();
 }
 

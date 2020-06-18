@@ -272,6 +272,8 @@ class Argument:
             return "ra:add-lpb3"
         if self.varname=="setBPMs":
             return "ra:set-bpms"
+        if self.varname=="base64StringIs8bitCompatible":
+            return "ra:base64-string-is-8bit-compatible"
         
         result = ""
         for element in loop(string.capitalize(self.varname[0]),self.varname[1:]+" ", True):
