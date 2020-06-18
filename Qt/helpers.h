@@ -231,7 +231,9 @@ static inline QObject *get_oldest_parent(QObject *w){
     safety++;
     if (safety >= 1000){
 #ifndef COMPILE_EXECUTABLE
+#ifndef CRASHREPORTER_BIN
       RError("widget::setParent: recursive widget->parent->widget.");
+#endif
 #endif
       return NULL;
     }
@@ -415,11 +417,17 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags 
   */
   if (a==b){
 #if !defined(RELEASE)
+#ifndef CRASHREPORTER_BIN
+#ifndef COMPILE_EXECUTABLE
     R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
 #endif
-  } else {
-    w->setParent(parent, f);
-  }    
+#endif
+#endif
+  }
+
+  
+  w->setParent(parent, f);
+  
 }
 
 static inline void safe_set_parent(QWidget *w, QWidget *parent, enum ShowAssertionOrThrowAPIException error_type){
@@ -433,11 +441,15 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, enum ShowAsserti
   
   if (a==b){
 #if !defined(RELEASE)
+#ifndef CRASHREPORTER_BIN
+#ifndef COMPILE_EXECUTABLE
     R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
 #endif
-  } else {
-    w->setParent(parent);
+#endif
+#endif
   }
+
+  w->setParent(parent);
 }
 
 
