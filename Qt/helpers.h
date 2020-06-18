@@ -413,9 +413,13 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags 
   if (a==b)
     return;
   */
-  R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
-
-  w->setParent(parent, f);
+  if (a==b){
+#if !defined(RELEASE)
+    R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
+#endif
+  } else {
+    w->setParent(parent, f);
+  }    
 }
 
 static inline void safe_set_parent(QWidget *w, QWidget *parent, enum ShowAssertionOrThrowAPIException error_type){
@@ -427,9 +431,13 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, enum ShowAsserti
     return;
   */
   
-  R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
-  
-  w->setParent(parent);
+  if (a==b){
+#if !defined(RELEASE)
+    R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
+#endif
+  } else {
+    w->setParent(parent);
+  }
 }
 
 
@@ -507,7 +515,9 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
   
 
   if (parent==window || only_set_flags)
+    
     window->setWindowFlags(f);
+  
   else {
     
     safe_set_parent(window, parent, f, error_type);
