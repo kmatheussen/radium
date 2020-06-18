@@ -4122,7 +4122,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       setTopmostVisibleSeqtrack(lowest_reasonable_topmost_seqtracknum);
     }
 
-    autoscrollSeqtracks(ATOMIC_GET(root->song->curr_seqtracknum));
+    autoscrollSeqtracks(ATOMIC_GET(root->song->curr_seqtracknum), false);
   }
 
   int get_sequencer_left_part_width(void) const {
