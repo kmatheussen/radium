@@ -316,8 +316,11 @@ public:
     , _is_implicitly_enabled(is_implicitly_enabled)
     , from(_from)
     , to(_to)
-    , visible_line(this)
-      //, arrow_line1(this)
+    , visible_line1(this)
+    , visible_line2(this)
+    , arrow_line1(this)
+    , arrow_line2(this)
+    , arrow_line3(this)
   {
     QPen pen(Qt::red, 50);
     pen.setJoinStyle(Qt::RoundJoin);
@@ -336,8 +339,20 @@ public:
     
     setAcceptHoverEvents(true);
 
-    visible_line.setPen(getPen());
-    parent->addItem(&visible_line);
+    visible_line1.setPen(getPen());
+    parent->addItem(&visible_line1);
+
+    visible_line2.setPen(getPen());
+    parent->addItem(&visible_line2);
+
+    arrow_line1.setPen(getPen());
+    parent->addItem(&arrow_line1);
+
+    arrow_line2.setPen(getPen());
+    parent->addItem(&arrow_line2);
+
+    arrow_line3.setPen(getPen());
+    parent->addItem(&arrow_line3);
 
     update_visibility();
   }
@@ -371,14 +386,30 @@ public:
     override
   {
     update_colors();
-    QGraphicsLineItem::paint(painter,option,widget);    
+
+    //QGraphicsLineItem::paint(painter,option,widget);
+    
+    painter->setPen(pen());
+    //painter->setBrush(d->brush);
+    painter->drawLine(line());
+    //if (option->state & QStyle::State_Selected)
+    //  qt_graphicsItem_highlightSelected(this, painter, option);
+    
   }
 
-  QGraphicsLineItem visible_line;
-  //QGraphicsLineItem arrow_line1;
+  qreal get_angle(qreal x1, qreal y1, qreal x2, qreal y2) const {
+    qreal dx = x2 - x1;
+    qreal dy = y2 - y1;
+    return atan2(dy, dx);
+  }
+  
+  QGraphicsLineItem visible_line1;
+  QGraphicsLineItem visible_line2;
+  QGraphicsLineItem arrow_line1;
+  QGraphicsLineItem arrow_line2;
+  QGraphicsLineItem arrow_line3;
 
   void setLine ( qreal x1, qreal y1, qreal x2, qreal y2 ){
-    visible_line.setLine(x1,y1,x2,y2);
 
     /*
     if(_is_event_connection){
@@ -398,11 +429,51 @@ public:
     QGraphicsLineItem::setLine(x1-14,y1,x2+14,y2);
     */
 
+    {
+      qreal xmid = (x1+x2)/2;
+      qreal ymid = (y1+y2)/2;
+      
+      qreal angle = 180 + (get_angle(x1, y1, x2, y2) * -180.0 / M_PI);
+
+      qreal len = is_selected ? 10 : 6;
+      
+      QLineF line1(xmid+len/2.0,ymid, xmid+len*3.0/2.0,ymid);
+      QLineF line2(xmid+len/2.0,ymid, xmid+len*3.0/2.0,ymid);
+
+      line1.setAngle(angle - 22.5);
+      line2.setAngle(angle + 22.5);
+      
+      QLineF line3(line1.pointAt(1), line2.pointAt(1));
+
+      arrow_line1.setLine(line1);
+      arrow_line2.setLine(line2);
+      arrow_line3.setLine(line3);
+
+
+      qreal xmid2 = (line1.pointAt(1).x() + line2.pointAt(1).x()) / 2.0;
+      qreal ymid2 = (line1.pointAt(1).y() + line2.pointAt(1).y()) / 2.0;
+      
+      visible_line1.setLine(x2,y2, line1.pointAt(0).x(), line1.pointAt(0).y());
+      visible_line2.setLine(xmid2, ymid2, x1, y1);
+                   
+      /*
+      qreal xmid = (x1+x2)/2;
+      qreal ymid = (y1+y2)/2;
+      
+      arrow_line1.setLine(xmid - 10, ymid - 10, x2, y2);
+      arrow_line2.setLine(x1, y1, xmid + 10, ymid + 10);
+      */
+    }
+        
     QGraphicsLineItem::setLine(x1,y1,x2,y2);
   }
 
   void update_colors(void){
-    visible_line.setPen(getPen());
+    visible_line1.setPen(getPen());
+    visible_line2.setPen(getPen());
+    arrow_line1.setPen(getPen());
+    arrow_line2.setPen(getPen());
+    arrow_line3.setPen(getPen());
   }
   
   virtual void update_position(void) = 0;
@@ -416,7 +487,11 @@ public:
 #endif
 
   void setVisibility(bool show){
-    visible_line.setVisible(show);
+    visible_line1.setVisible(show);
+    visible_line2.setVisible(show);
+    arrow_line1.setVisible(show);
+    arrow_line2.setVisible(show);
+    arrow_line3.setVisible(show);
   }
   
   void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ) override {
@@ -484,6 +559,7 @@ public:
     if (is_selected != selected){
       update_colors();
       is_selected = selected;
+      setLine(line().x1(), line().y1(), line().x2(), line().y2());
     }
     QGraphicsLineItem::setSelected(selected);    
   }
