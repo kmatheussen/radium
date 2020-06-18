@@ -1518,10 +1518,11 @@ void CONNECTION_update(struct Patch *source, struct Patch *target){
 }
 
 void AudioConnection::update_position(void){
-  int x1 = to->pos().x()+port_width/2;
-  int x2 = from->pos().x()+grid_width-port_width/2;
-  int y1 = CHIP_get_port_y(to);
-  int y2 = CHIP_get_port_y(from);
+  int x1 = from->pos().x()+grid_width-port_width/2;
+  int y1 = CHIP_get_port_y(from);
+  
+  int x2 = to->pos().x()+port_width/2;
+  int y2 = CHIP_get_port_y(to);
   
   this->setLine(x1,y1,x2,y2);
 }
