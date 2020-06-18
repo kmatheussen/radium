@@ -709,12 +709,9 @@ struct Comp
 
   void set_threshold(float val){
     //double bef=in_val2;
-    double old_inval1_scaled = equal_doubles(in_val2, 0) ? 0 : scale(in_val1,
-                                                                     0,in_val2,
-                                                                     0,1);
-    double old_ratio_factor = out_val1 / (in_val2-in_val1);
-
+        
     in_val2 = val;
+    
     if(in_val2<=0.0)
       in_val2=0.00001;
     if(in_val2>0.9999)
@@ -723,11 +720,24 @@ struct Comp
     out_val2 = in_val2;
 
     if(in_val1<=0.0){
+
+      if (equal_doubles(in_val2,in_val1))
+        return;
+
+      double old_ratio_factor = out_val1 / (in_val2-in_val1);
+
       set_ratio(old_ratio_factor*in_val2);
+      
     }else{
+
+      double old_inval1_scaled = equal_doubles(in_val2, 0) ? 0 : scale(in_val1,
+                                                                       0,in_val2,
+                                                                       0,1);
+
       in_val1 = scale(old_inval1_scaled,0,1,0,in_val2);
       set_makeupgain(vol_val1);
       //printf("b %.2f - %.2f. Bef: %.2f, now: %.2f\n",in_val1,old_inval1_scaled,bef,in_val2);
+      
     }
   }
 
