@@ -2050,6 +2050,10 @@ bool GFX_MixerIsVisible(void){
   return !g_mixer_widget->isHidden();
 }
 void GFX_ShowMixer(void){
+  if (sequencerInFullMode() && !sequencerInWindow()){
+    setSequencerInFullMode(false);    
+  }
+  
   GL_lock();{
     setMixerKeyboardFocus(true);
     g_mixer_widget->show();
@@ -2061,13 +2065,22 @@ void GFX_HideMixer(void){
 }
 
 void GFX_showHideMixerWidget(void){
+  bool must_show = false;
+  
+  if (sequencerInFullMode() && !sequencerInWindow()){
+    setSequencerInFullMode(false);
+    must_show = true;
+  }
+
   GL_lock();{
     if(g_mixer_widget->isHidden()){
       setMixerKeyboardFocus(true);
       g_mixer_widget->show();
-    }else {
-      g_mixer_widget->hide();
-      FOCUSFRAMES_set_focus_best_guess();
+    } else {
+      if (!must_show){
+        g_mixer_widget->hide();
+        FOCUSFRAMES_set_focus_best_guess();
+      }
     }
   }GL_unlock();
   set_editor_focus();

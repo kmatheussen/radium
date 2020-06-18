@@ -373,6 +373,18 @@ enum ShowAssertionOrThrowAPIException{
   }while(0)
     
 
+#define R_ASSERT_RETURN_IF_FALSE4(Test, Handle_Error_Type, Fmt, ...)    \
+  do{                                                                   \
+    if(!(Test)){                                                        \
+      if(Handle_Error_Type==SHOW_ASSERTION)                             \
+        RError(Fmt, __VA_ARGS__);                                       \
+      else                                                              \
+        handleError(Fmt, __VA_ARGS__);                                  \
+      return;                                                           \
+    }                                                                   \
+  }while(0)
+    
+
 
 
 #if 1 //defined(USE_CUSTOM_NUM_FRAMES)

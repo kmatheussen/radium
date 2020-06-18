@@ -375,6 +375,10 @@ bool GFX_PlaylistWindowIsVisible(void){
 void GFX_PlayListWindowToFront(void){
   ScopedVisitors v;
 
+  if (sequencerInFullMode() && !sequencerInWindow()){
+    setSequencerInFullMode(false);    
+  }
+
   g_block_and_playlist->show();
   
   g_is_hidden = false;
@@ -390,8 +394,16 @@ void GFX_PlayListWindowToBack(void){
 void GFX_showHidePlaylist(struct Tracker_Windows *window){
   ScopedVisitors v;
 
+  bool must_show = false;
+  
+  if (sequencerInFullMode() && !sequencerInWindow()){
+    setSequencerInFullMode(false);
+    must_show = true;
+  }
+
   if(g_is_hidden)
     GFX_PlayListWindowToFront();
   else
-    GFX_PlayListWindowToBack();
+    if (!must_show)
+      GFX_PlayListWindowToBack();
 }

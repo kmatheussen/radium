@@ -230,7 +230,9 @@ static inline QObject *get_oldest_parent(QObject *w){
     w = w->parent();
     safety++;
     if (safety >= 1000){
+#ifndef COMPILE_EXECUTABLE
       RError("widget::setParent: recursive widget->parent->widget.");
+#endif
       return NULL;
     }
   }
