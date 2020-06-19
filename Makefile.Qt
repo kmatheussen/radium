@@ -194,7 +194,7 @@ ifeq ($(GCC_MAJOR),10)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 #	UNDEFINED_SANITIZE_OPTS=
-else if ($(GCC_MAJOR),9)
+else ifeq ($(GCC_MAJOR),9)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 #	UNDEFINED_SANITIZE_OPTS=
@@ -1442,7 +1442,7 @@ $(T)Qt_EventReceiver.o:  $(BUILD_DEPENDENCIES) $(P)Qt_EventReceiver.cpp $(P)Edit
 	$(CCC2) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
 $(T)Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp common/visual_proc.h  embedded_scheme/s7extra_proc.h
-	$(CCC2) $(P)Qt_colors.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -Wno-overloaded-virtual -Wno-unused-function -Wno-deprecated-declarations #
+	$(CCC2) $(P)Qt_colors.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -Wno-overloaded-virtual -Wno-unused-function -Wno-deprecated-declarations
 
 $(P)mQt_colors.cpp: $(P)Qt_colors.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_colors.cpp >$(P)mQt_colors.cpp
