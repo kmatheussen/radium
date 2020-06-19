@@ -460,7 +460,7 @@ static bool dev_show_gui(struct SoundPlugin *plugin, int64_t parentgui){
     
     QWidget *parent = API_gui_get_parentwidget(NULL, parentgui);
     if (parent != NULL)
-      set_window_parent(devdata->qtgui_parent.data(), parent, radium::NOT_MODAL);
+      set_window_parent(devdata->qtgui_parent.data(), parent, radium::NOT_MODAL, ShowAssertionOrThrowAPIException::SHOW_ASSERTION);
     
     data->qtgui->update(); // prevent flicker (update slider positions before showing gui)
     safeShow(devdata->qtgui_parent.data());
