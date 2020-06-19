@@ -1938,7 +1938,9 @@ namespace{
                   //printf("intencity: %d\n",ATOMIC_GET(patch->visual_note_intencity));
                   int x1,y1,x2,y2;
                   CHIP_get_note_indicator_coordinates(x1,y1,x2,y2);
-                  chip->update(x1,y1,x2-x1,y2-y1);
+                  chip->update(x1,y1,x2-x1,y2-y1);                  
+                  for(auto *connection : chip->event_connections)
+                    connection->update();
                 }
 
                 float volume = chip->get_slider_volume();

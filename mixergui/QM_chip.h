@@ -72,11 +72,13 @@ struct SoundPlugin;
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QStyleOptionGraphicsItem>
+#include <QPainter>
 
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../Qt/Qt_SliderPainter_proc.h"
 #include "../Qt/Qt_colors_proc.h"
+#include "../Qt/Qt_mix_colors.h"
 
 #include "../api/api_proc.h"
 
@@ -272,17 +274,27 @@ public:
   //bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
 
   QColor getColor(void) const {
-    QColor col = get_qcolor(color_num); // !_is_implicitly_enabled ? Qt::green : 
+    QColor col = get_qcolor(color_num); // !_is_implicitly_enabled ? Qt::green :
+
+    if (is_event_connection && _from != NULL) {
+      int intencity = ATOMIC_GET_RELAXED(CHIP_get_patch(_from)->visual_note_intencity);
+      if(intencity>0)
+        return mix_colors(Qt::white, col, ::scale(intencity, 0, MAX_NOTE_INTENCITY, 0.0, 1.0));
+    }
+
+    return col;
+    /*
     if (is_selected)
       return col.lighter(198);
     else
       return col;
+    */
   }
   
   QPen getPen() const {
     QPen pen(Qt::gray, 50);
     if (is_selected)
-      pen.setWidthF(2.2);
+      pen.setWidthF(1.8);
     else
       pen.setWidthF(1.2);
     pen.setJoinStyle(Qt::RoundJoin);
@@ -435,7 +447,7 @@ public:
       
       qreal angle = 180 + (get_angle(x1, y1, x2, y2) * -180.0 / M_PI);
 
-      qreal len = is_selected ? 10 : 6;
+      qreal len = 6; //is_selected ? 10 : 6;
       
       QLineF line1(xmid+len/2.0,ymid, xmid+len*3.0/2.0,ymid);
       QLineF line2(xmid+len/2.0,ymid, xmid+len*3.0/2.0,ymid);
