@@ -999,7 +999,7 @@ void PATCH_remove_all_event_receivers(struct Patch *patch, radium::PlayerLockOnl
 
 
 void PATCH_call_very_often(void){
-  if (is_called_every_ms(50)){
+  if (is_called_every_ms(15)){
     
     struct Instruments *instrument = get_all_instruments();
     
