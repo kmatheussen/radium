@@ -50,6 +50,7 @@ struct CpuUsage{
     ATOMIC_ADD(num_cpu_usage, 1);
   }
 
+  
 private:
   
   float min(void){

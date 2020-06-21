@@ -441,6 +441,7 @@ typedef struct {
   DEFINE_ATOMIC(float *, RT_max_gains);   // Gain format. Written to by the realtime thread. Only read from the AudioMeterPeakTreater.  
   float *max_dbs;        // Transfer variable between audio thread and main thread. Contains last max peaks. Read by the gui. Written by the AudioMeterPeakTreater. Db format.
   float *decaying_dbs;    // Db format. Contains decaying peaks. Read by the gui. Written by the AudioMeterPeakTreater.
+  float *decaying_dbs_10x;    // Db format. Contains peaks decaying 5X faster. Read by the gui. Written by the AudioMeterPeakTreater.
   float *falloff_dbs;    // Db format. Contains maximum peak values the last x seconds. Read by the gui. Written by the AudioMeterPeakTreater.
   float *peaks;          // Db format. Contains max peaks. Read by the gui. Is set to -100 by the user when clicking on the peak text in the mixer.
 } AudioMeterPeaks;
