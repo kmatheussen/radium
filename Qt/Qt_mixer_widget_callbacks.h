@@ -635,6 +635,7 @@ public:
             
       w->hide();
       _bottom_bar->show();
+
       convert_widget_to_window(w, mixerWindowIsChildOfMainWindow() ? g_main_window : NULL, radium::NOT_MODAL, ShowAssertionOrThrowAPIException::SHOW_ASSERTION);
 
       w->adjustSize();

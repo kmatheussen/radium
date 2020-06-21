@@ -128,8 +128,12 @@ public:
   int _num_inputs;
   int _num_outputs;
   QColor _color;
-  radium::Vector<AudioConnection*> audio_connections;
-  radium::Vector<EventConnection*> event_connections;
+  
+  radium::Vector<AudioConnection*> _input_audio_connections;
+  radium::Vector<AudioConnection*> _output_audio_connections;
+  
+  radium::Vector<EventConnection*> _input_event_connections;
+  radium::Vector<EventConnection*> _output_event_connections;
 
   SliderPainter *_input_slider;
   SliderPainter *_output_slider;
@@ -206,17 +210,22 @@ class SuperConnection  : public QGraphicsLineItem {
 
 public:
 
-  bool is_selected; // for some reason isSelected() doesn't work.
-  bool is_event_connection;
-  enum ColorNums color_num;
+  bool _is_selected; // for some reason isSelected() doesn't work.
+  bool _is_event_connection;
+  enum ColorNums _color_num;
 
-private:
+  float _last_displayed_db_peak = 0.0f;
+  
   Chip *_from; // Note: If we ever need to set this variable after constructor (we currently don't), we also need to ensure that the new from-chip doesn't have more than one PLUGIN connection.
   Chip *_to;
 
   bool _is_enabled;
   bool _is_implicitly_enabled; // Set to false if solo has caused this connection to be implicitly disabled.
 
+private:
+
+  bool _is_hovered_visible = false;
+  
 public:
 
   bool set_enabled(bool is_enabled, const char **error){
@@ -232,6 +241,8 @@ public:
 
     //printf("set enabled2 %d -> %d: is_enabled: %d. _is_enabled: %d, is_implicitly_enabled: %d\n", (int)CHIP_get_patch(_from)->id, (int)CHIP_get_patch(_to)->id, is_enabled, _is_enabled, _is_implicitly_enabled);
 
+    update_shape();
+    
     return true;
   }
 
@@ -271,16 +282,53 @@ public:
   const ChipPointer &from; // Set to const. See comment about _from above.
   const ChipPointer &to;
 
+  void update_shape(void);
+  
   //bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
 
   QColor getColor(void) const {
-    QColor col = get_qcolor(color_num); // !_is_implicitly_enabled ? Qt::green :
+    QColor col = get_qcolor(_color_num); // !_is_implicitly_enabled ? Qt::green :
 
-    if (is_event_connection && _from != NULL) {
-      int intencity = ATOMIC_GET_RELAXED(CHIP_get_patch(_from)->visual_note_intencity);
-      if(intencity>0)
-        return mix_colors(Qt::white, col, ::scale(intencity, 0, MAX_NOTE_INTENCITY, 0.0, 1.0));
+    if (_from==NULL)
+      return col;
+    
+    int intencity = ATOMIC_GET_RELAXED(CHIP_get_patch(_from)->visual_note_intencity);
+
+    if (!_is_event_connection) {
+
+      struct SoundPlugin *plugin = SP_get_plugin(_from->_sound_producer);
+      
+      if (plugin->type->num_outputs > 0){
+        
+        float db = _last_displayed_db_peak;
+        
+        if(db>=4.0f)
+          
+          col = mix_colors(get_qcolor(PEAKS_4DB_COLOR_NUM), QColor("410000"), ::scale(db, 4, MAX_DB, 1, 0));
+        
+        if(db>=0.0f)
+          
+          col = mix_colors(get_qcolor(PEAKS_0DB_COLOR_NUM), get_qcolor(PEAKS_4DB_COLOR_NUM), ::scale(db, 0, 4, 1, 0));
+        
+        else if(db>=-30.0f)
+          
+          col = mix_colors(get_qcolor(PEAKS_COLOR_NUM), get_qcolor(PEAKS_0DB_COLOR_NUM), ::scale(db, -30, 0, 1, 0));
+        
+        else
+          
+          col = get_qcolor(MIXER_AUDIO_CONNECTION_COLOR_NUM); //PEAKS_COLOR_NUM); //.darker(150);
+        
+      }
+      
     }
+
+    if(_is_event_connection && intencity>0)
+      return mix_colors(Qt::white, col,
+                        intencity < (MAX_NOTE_INTENCITY * 4.0 / 5.0)
+                        ? 0.0
+                        : ::scale(intencity,  // divide by 10 to make it 10 times faster.
+                                  MAX_NOTE_INTENCITY, MAX_NOTE_INTENCITY * 4.0 / 5.0,
+                                  1.0, 0.0));
 
     return col;
     /*
@@ -292,11 +340,47 @@ public:
   }
   
   QPen getPen() const {
-    QPen pen(Qt::gray, 50);
-    if (is_selected)
-      pen.setWidthF(1.8);
+    QColor c = getColor();
+
+    if (!_is_enabled || !_is_implicitly_enabled)
+      c.setAlpha(30);
+    else if(_is_selected)
+      c.setAlpha(250);
     else
-      pen.setWidthF(1.2);
+      c.setAlpha(140);
+
+    float pen_width = 1.0; //intencity < (MAX_NOTE_INTENCITY * 4.0 / 5.0)
+    //      ? 1.0
+    //                             : ::scale(intencity,  // divide by 10 to make it 10 times faster.
+      //                                      MAX_NOTE_INTENCITY, MAX_NOTE_INTENCITY * 4.0 / 5.0,
+    //                                    1.0, 2.0);
+
+    float db = _last_displayed_db_peak;
+    /*    
+    if(db>=4.0f)
+      
+      pen_width *= ::scale(db, 4, MAX_DB, 8, 20);
+    
+    if(db>=0.0f)
+      
+      pen_width *= ::scale(db, 0, 4, 4.5, 8);
+    
+    else if(db>=-35.0f)
+
+      pen_width *= ::scale(db, -35, 0, 0.3, 4.5);
+    
+    else
+
+      pen_width *= 0.3;
+    */
+
+    if (db >= -35)
+      pen_width *= ::scale(db, -35, MAX_DB, 0.3, 10);
+    else
+      pen_width *= 0.3;
+    
+    QPen pen(c, pen_width * (_is_selected ? 1.8 : 1.2));
+    
     pen.setJoinStyle(Qt::RoundJoin);
     pen.setCapStyle(Qt::RoundCap);
     //pen.setColor(QColor(30,25,70,6));
@@ -305,67 +389,59 @@ public:
     //bool is_enabled = from==NULL||to==NULL ? true : SP_get_link_enabled(CHIP_get_soundproducer(to), CHIP_get_soundproducer(from), &error);
     //R_ASSERT_NON_RELEASE(error==NULL); // link doesn't exist during startup.
     
-    QColor c = getColor();
-
-    if (!_is_enabled || !_is_implicitly_enabled)
-      c.setAlpha(30);
-    else if(is_selected)
-      c.setAlpha(250);
-    else
-      c.setAlpha(140);
-    pen.setColor(c);
     return pen;
   }
 
   SuperConnection(QGraphicsScene *parent, Chip *from, Chip *to, bool is_event_connection, enum ColorNums color_num, bool is_enabled, bool is_implicitly_enabled)
     : QGraphicsLineItem()
-    , is_selected(false)
-    , is_event_connection(is_event_connection)
-    , color_num(color_num)
+    , _is_selected(false)
+    , _is_event_connection(is_event_connection)
+    , _color_num(color_num)
     , _from(from)
     , _to(to)
     , _is_enabled(is_enabled)
     , _is_implicitly_enabled(is_implicitly_enabled)
     , from(_from)
     , to(_to)
-    , visible_line1(this)
-    , visible_line2(this)
-    , arrow_line1(this)
-    , arrow_line2(this)
-    , arrow_line3(this)
+    , _visible_line1(this)
+    , _visible_line2(this)
+    , _arrow_line1(this)
+    , _arrow_line2(this)
+    , _arrow_line3(this)
   {
-    QPen pen(Qt::red, 50);
-    pen.setJoinStyle(Qt::RoundJoin);
-    pen.setCapStyle(Qt::RoundCap);
-    pen.setWidth(3);
 
     QColor c(30,25,70,0);
-    c.setAlpha(0);
-    pen.setColor(c);
+    c.setAlpha(100);
+
+    QPen pen(c, 26); // width of the line when hovered.
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
 
     setPen(pen);
-    //_line_item->setPen(QPen(Qt::black, 2));
-    //_line_item->setPos(QPointF(x+50,y+50));
 
     setZValue(-2);    
     
     setAcceptHoverEvents(true);
 
-    visible_line1.setPen(getPen());
-    parent->addItem(&visible_line1);
+    {
+      QPen pen = getPen();
+      
+      _visible_line1.setPen(pen);
+      parent->addItem(&_visible_line1);
+      
+      _visible_line2.setPen(pen);
+      parent->addItem(&_visible_line2);
 
-    visible_line2.setPen(getPen());
-    parent->addItem(&visible_line2);
-
-    arrow_line1.setPen(getPen());
-    parent->addItem(&arrow_line1);
-
-    arrow_line2.setPen(getPen());
-    parent->addItem(&arrow_line2);
-
-    arrow_line3.setPen(getPen());
-    parent->addItem(&arrow_line3);
-
+      _arrow_line1.setPen(pen);
+      parent->addItem(&_arrow_line1);
+      
+      _arrow_line2.setPen(pen);
+      parent->addItem(&_arrow_line2);
+      
+      _arrow_line3.setPen(pen);
+      parent->addItem(&_arrow_line3);
+    }
+    
     update_visibility();
   }
 
@@ -387,7 +463,7 @@ public:
   void update_visibility(void){
     if (to==NULL)
       setVisibility(true);
-    else if (!is_event_connection && SP_get_bus_num(to->_sound_producer) >= 0)
+    else if (!_is_event_connection && SP_get_bus_num(to->_sound_producer) >= 0)
       setVisibility(MW_get_bus_connections_visibility());
     else
       setVisibility(MW_get_connections_visibility());
@@ -397,96 +473,16 @@ public:
              QWidget *widget)
     override
   {
-    update_colors();
-
-    //QGraphicsLineItem::paint(painter,option,widget);
-    
-    painter->setPen(pen());
-    //painter->setBrush(d->brush);
-    painter->drawLine(line());
-    //if (option->state & QStyle::State_Selected)
-    //  qt_graphicsItem_highlightSelected(this, painter, option);
-    
+    if (_is_hovered_visible)
+      QGraphicsLineItem::paint(painter,option,widget);
   }
 
-  qreal get_angle(qreal x1, qreal y1, qreal x2, qreal y2) const {
-    qreal dx = x2 - x1;
-    qreal dy = y2 - y1;
-    return atan2(dy, dx);
-  }
-  
-  QGraphicsLineItem visible_line1;
-  QGraphicsLineItem visible_line2;
-  QGraphicsLineItem arrow_line1;
-  QGraphicsLineItem arrow_line2;
-  QGraphicsLineItem arrow_line3;
+  QGraphicsLineItem _visible_line1;
+  QGraphicsLineItem _visible_line2;
+  QGraphicsLineItem _arrow_line1;
+  QGraphicsLineItem _arrow_line2;
+  QGraphicsLineItem _arrow_line3;
 
-  void setLine ( qreal x1, qreal y1, qreal x2, qreal y2 ){
-
-    /*
-    if(_is_event_connection){
-      qreal x = x2;
-      qreal y = y2;
-      qreal xb,yb;
-      if(x2>x1)
-        xb=x-10;
-      else
-        xb=x+10;
-      if(y2>y1)
-        yb=y-10;
-      else
-        yb=y+10;
-      arrow_line1.setLine(x,y,xb,yb);
-    }
-    QGraphicsLineItem::setLine(x1-14,y1,x2+14,y2);
-    */
-
-    {
-      qreal xmid = (x1+x2)/2;
-      qreal ymid = (y1+y2)/2;
-      
-      qreal angle = 180 + (get_angle(x1, y1, x2, y2) * -180.0 / M_PI);
-
-      qreal len = 6; //is_selected ? 10 : 6;
-      
-      QLineF line1(xmid+len/2.0,ymid, xmid+len*3.0/2.0,ymid);
-      QLineF line2(xmid+len/2.0,ymid, xmid+len*3.0/2.0,ymid);
-
-      line1.setAngle(angle - 22.5);
-      line2.setAngle(angle + 22.5);
-      
-      QLineF line3(line1.pointAt(1), line2.pointAt(1));
-
-      arrow_line1.setLine(line1);
-      arrow_line2.setLine(line2);
-      arrow_line3.setLine(line3);
-
-
-      qreal xmid2 = (line1.pointAt(1).x() + line2.pointAt(1).x()) / 2.0;
-      qreal ymid2 = (line1.pointAt(1).y() + line2.pointAt(1).y()) / 2.0;
-      
-      visible_line1.setLine(x2,y2, line1.pointAt(0).x(), line1.pointAt(0).y());
-      visible_line2.setLine(xmid2, ymid2, x1, y1);
-                   
-      /*
-      qreal xmid = (x1+x2)/2;
-      qreal ymid = (y1+y2)/2;
-      
-      arrow_line1.setLine(xmid - 10, ymid - 10, x2, y2);
-      arrow_line2.setLine(x1, y1, xmid + 10, ymid + 10);
-      */
-    }
-        
-    QGraphicsLineItem::setLine(x1,y1,x2,y2);
-  }
-
-  void update_colors(void){
-    visible_line1.setPen(getPen());
-    visible_line2.setPen(getPen());
-    arrow_line1.setPen(getPen());
-    arrow_line2.setPen(getPen());
-    arrow_line3.setPen(getPen());
-  }
   
   virtual void update_position(void) = 0;
 
@@ -499,11 +495,11 @@ public:
 #endif
 
   void setVisibility(bool show){
-    visible_line1.setVisible(show);
-    visible_line2.setVisible(show);
-    arrow_line1.setVisible(show);
-    arrow_line2.setVisible(show);
-    arrow_line3.setVisible(show);
+    _visible_line1.setVisible(show);
+    _visible_line2.setVisible(show);
+    _arrow_line1.setVisible(show);
+    _arrow_line2.setVisible(show);
+    _arrow_line3.setVisible(show);
   }
   
   void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ) override {
@@ -517,7 +513,8 @@ public:
 
     visible_line.setPen(pen);
     */
-    
+
+#if 0
     {
       QPen pen(Qt::gray, 50);
       pen.setJoinStyle(Qt::RoundJoin);
@@ -534,8 +531,10 @@ public:
       
       setPen(pen);
     }
-
-    setVisible(true);
+#endif
+    //setVisible(true);
+    _is_hovered_visible = true;
+    update();
   }
 
   void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ) override {
@@ -549,7 +548,8 @@ public:
     */
 
     //visible_line.setPen(getPen());
-
+#if 0
+    // Same size, but make invisible. (same size ensures hovering still works)
     {
       QPen pen(Qt::gray, 50);
       pen.setJoinStyle(Qt::RoundJoin);
@@ -563,15 +563,17 @@ public:
 
       setPen(pen);
     }
-
+#endif
     //setVisible(false);
+    _is_hovered_visible = false;
+    update();
   }
 
   void mySetSelected(bool selected){
-    if (is_selected != selected){
-      update_colors();
-      is_selected = selected;
-      setLine(line().x1(), line().y1(), line().x2(), line().y2());
+    if (_is_selected != selected){
+      _is_selected = selected;
+      update_shape();
+      //setLine(line().x1(), line().y1(), line().x2(), line().y2());
     }
     QGraphicsLineItem::setSelected(selected);    
   }
@@ -612,7 +614,7 @@ static inline int get_int_from_connection_type(ConnectionType connection_type){
 }
 
 class AudioConnection : public SuperConnection {
-  
+
   ConnectionType _connection_type;
 
 public:
@@ -621,37 +623,41 @@ public:
     : SuperConnection(parent, from, to, false, MIXER_AUDIO_CONNECTION_COLOR_NUM, is_enabled, is_implicitly_enabled)
     , _connection_type(ConnectionType::NOT_SET)
   {
-    if (from!=NULL){
-      R_ASSERT_RETURN_IF_FALSE(to!=NULL);
+    if (from!=NULL && to!=NULL){
+      //R_ASSERT_RETURN_IF_FALSE(to!=NULL);
 
+      // add connection to from
       {
         bool already_gotit = false;
         
-        for(auto *connection : from->audio_connections){
-          if(connection->from==from && connection->to==to){
+        for(auto *connection : from->_output_audio_connections){
+          R_ASSERT(connection->from == from);
+          
+          if(connection->to==to){
             R_ASSERT(false);
             already_gotit = true;
           }
         }
         
-        if (already_gotit==false){
-          from->audio_connections.push_back(this);
-        }
+        if (already_gotit==false)
+          from->_output_audio_connections.push_back(this);
       }
 
-      
+      // add connection to to
       {
         bool already_gotit = false;
         
-        for(auto *connection : to->audio_connections){
-          if(connection->from==from && connection->to==to){
+        for(auto *connection : to->_input_audio_connections){
+          R_ASSERT(connection->to == to);
+          
+          if(connection->from==from){
             R_ASSERT(false);
             already_gotit = true;
           }
         }
         
         if (already_gotit==false)          
-          to->audio_connections.push_back(this);
+          to->_input_audio_connections.push_back(this);
       }
     }
 
@@ -660,8 +666,7 @@ public:
     else
       _connection_type = connection_type;
 
-    if (from != NULL && to != NULL)
-      update_position();
+    update_position();
   }
 
   void update_position(void) override;
@@ -686,12 +691,43 @@ public:
     : SuperConnection(parent, from, to, true, MIXER_EVENT_CONNECTION_COLOR_NUM, true, true)
   {
 
-    if (from!=NULL){
-      R_ASSERT_RETURN_IF_FALSE(to!=NULL);
+    if (from!=NULL && to!=NULL){
+      //R_ASSERT_RETURN_IF_FALSE(to!=NULL);
       
-      from->event_connections.push_back(this);
-      to->event_connections.push_back(this);
+      // add connection to from
+      {
+        bool already_gotit = false;
+        
+        for(auto *connection : from->_output_event_connections){
+          R_ASSERT(connection->from == from);
+          
+          if(connection->to==to){
+            R_ASSERT(false);
+            already_gotit = true;
+          }
+        }
+        
+        if (already_gotit==false)
+          from->_output_event_connections.push_back(this);
+      }
 
+      // add connection to to
+      {
+        bool already_gotit = false;
+        
+        for(auto *connection : to->_input_event_connections){
+          R_ASSERT(connection->to == to);
+          
+          if(connection->from==from){
+            R_ASSERT(false);
+            already_gotit = true;
+          }
+        }
+        
+        if (already_gotit==false)
+          to->_input_event_connections.push_back(this);
+      }
+      
       update_position();
     }
     

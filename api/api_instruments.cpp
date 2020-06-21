@@ -2103,6 +2103,9 @@ void undoConnectionEnabled(instrument_t source_id, instrument_t dest_id){
   if(dest==NULL)
     return;
 
+  //if(source==dest){
+  //  abort();
+  
   ADD_UNDO(ConnectionEnabled_CurrPos(source, dest));
 }
 

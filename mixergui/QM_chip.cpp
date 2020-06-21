@@ -640,8 +640,8 @@ bool CHIPS_are_connected(const Chip *from, const Chip *to){
 }
 
 bool CHIPS_are_econnected(const Chip *from, const Chip *to){
-  for(EventConnection *connection : from->event_connections)
-    if(connection->from==from && connection->to==to)
+  for(EventConnection *connection : from->_output_event_connections)
+    if(connection->to==to)
       return true;
 
   return false;
@@ -1295,124 +1295,76 @@ int CHIP_get_num_in_connections(const Patch *patch){
   Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
-  int num=0;
-
-  for (AudioConnection *connection : chip->audio_connections)
-    if(connection->to==chip)
-      num++;
-
-  return num;
+  return chip->_input_audio_connections.size();
 }
 
 int CHIP_get_num_out_connections(const Patch *patch){
   Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
-  int num=0;
-
-  for (AudioConnection *connection : chip->audio_connections)
-    if(connection->from==chip)
-      num++;
-
-  return num;
+  return chip->_output_audio_connections.size();
 }
 
 int CHIP_get_num_in_econnections(const Patch *patch){
   Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
-  int num=0;
-
-  for (EventConnection *econnection : chip->event_connections)
-    if(econnection->to==chip)
-      num++;
-
-  return num;
+  return chip->_input_event_connections.size();
 }
 
 int CHIP_get_num_out_econnections(const Patch *patch){
   Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
-  int num=0;
-
-  for (EventConnection *econnection : chip->event_connections)
-    if(econnection->from==chip)
-      num++;
-
-  return num;
+  return chip->_output_event_connections.size();
 }
 
 struct Patch* CHIP_get_source(const struct Patch *patch, int connectionnum){
   Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
-  int num=0;
+  if (connectionnum >= chip->_input_audio_connections.size())
+    return NULL;
 
-  for (AudioConnection *connection : chip->audio_connections)
-    if(connection->to==chip){
-      if (num==connectionnum)
-        return CHIP_get_patch(connection->from);
-      num++;
-    }
-
-  return NULL;  
+  return CHIP_get_patch(chip->_input_audio_connections.at(connectionnum)->from);
 }
   
 struct Patch* CHIP_get_dest(const struct Patch *patch, int connectionnum){
   Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
-  int num=0;
+  if (connectionnum >= chip->_output_audio_connections.size())
+    return NULL;
 
-  for (AudioConnection *connection : chip->audio_connections)
-    if(connection->from==chip){
-      if (num==connectionnum)
-        return CHIP_get_patch(connection->to);
-      num++;
-    }
-
-  return NULL;  
+  return CHIP_get_patch(chip->_output_audio_connections.at(connectionnum)->to);
 }
   
 struct Patch* CHIP_get_esource(const struct Patch *patch, int connectionnum){
   Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
-  int num=0;
+  if (connectionnum >= chip->_input_event_connections.size())
+    return NULL;
 
-  for (EventConnection *econnection : chip->event_connections)
-    if(econnection->to==chip){
-      if (num==connectionnum)
-        return CHIP_get_patch(econnection->from);
-      num++;
-    }
-
-  return NULL;  
+  return CHIP_get_patch(chip->_input_event_connections.at(connectionnum)->from);
 }
   
 struct Patch* CHIP_get_edest(const struct Patch *patch, int connectionnum){
   Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
-  int num=0;
+  if (connectionnum >= chip->_output_event_connections.size())
+    return NULL;
 
-  for (EventConnection *econnection : chip->event_connections)
-    if(econnection->from==chip){
-      if (num==connectionnum)
-        return CHIP_get_patch(econnection->to);
-      num++;
-    }
-
-  return NULL;  
+  return CHIP_get_patch(chip->_output_event_connections.at(connectionnum)->to);
 }
   
 void CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(AudioConnection *connection){
   Chip *from = connection->from;
   Chip *to = connection->to;
 
-  from->audio_connections.remove(connection);
-  to->audio_connections.remove(connection);
+  from->_output_audio_connections.remove(connection);
+  to->_input_audio_connections.remove(connection);
 
   delete connection;
 
@@ -1431,8 +1383,8 @@ void CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(Eve
   Chip *from = connection->from;
   Chip *to = connection->to;
 
-  from->event_connections.remove(connection);
-  to->event_connections.remove(connection);
+  from->_output_event_connections.remove(connection);
+  to->_input_event_connections.remove(connection);
   
   delete connection;
 }
@@ -1463,7 +1415,7 @@ void CONNECTION_delete_event_connection(EventConnection *connection){
 }
 
 void CONNECTION_delete_connection(SuperConnection *connection){
-  if (connection->is_event_connection) {
+  if (connection->_is_event_connection) {
     R_ASSERT_RETURN_IF_FALSE(dynamic_cast<EventConnection*>(connection) != NULL);
     CONNECTION_delete_event_connection(dynamic_cast<EventConnection*>(connection));
   } else {
@@ -1476,13 +1428,10 @@ bool CONNECTION_are_connected_somehow(const Chip *source, const Chip *target){
   if (source==target)
     return true;
   
-  for(const AudioConnection *source_connection : source->audio_connections) {
+  for(const AudioConnection *source_connection : source->_output_audio_connections) {
 
-    bool is_output_connection = source_connection->from==source;
-    
-    if(is_output_connection)
-      if (CONNECTION_are_connected_somehow(source_connection->to, target)==true)
-        return true;
+    if (CONNECTION_are_connected_somehow(source_connection->to, target)==true)
+      return true;
 
   }
   
@@ -1504,27 +1453,219 @@ void CONNECTION_update(struct Patch *source, struct Patch *target){
   Chip *from = CHIP_get(get_scene(g_mixer_widget), source);
   Chip *to = CHIP_get(get_scene(g_mixer_widget), target);
 
-  for(AudioConnection *connection : from->audio_connections)
-    if(connection->from==from && connection->to==to){
+  for(AudioConnection *connection : from->_output_audio_connections)
+    if(connection->to==to){
       connection->update();
-      return;
+      break;
     }
 
-  for(auto *connection : from->event_connections)
-    if(connection->from==from && connection->to==to){
+  for(auto *connection : from->_output_event_connections)
+    if(connection->to==to){
       connection->update();
-      return;
+      break;
     }
 }
 
+static float get_connection_note_intencity(const SuperConnection *connection){
+  if (connection->_from==NULL)
+    return 0.0;
+  
+  int intencity = ATOMIC_GET_RELAXED(CHIP_get_patch(connection->_from)->visual_note_intencity);
+
+  float min_intencity = MAX_NOTE_INTENCITY * 4.0 / 5.0;
+  
+  if(intencity < min_intencity)
+    return 0.0;
+  else
+    return scale(intencity,
+                 min_intencity, MAX_NOTE_INTENCITY,
+                 0.0, 1.0);
+}
+
+static QColor get_main_connection_color(const SuperConnection *connection){
+  QColor col = get_qcolor(connection->_color_num);
+  
+  const Chip *from = connection->_from;
+  
+  if (from==NULL)
+    return col;
+
+  if (connection->_is_event_connection) {
+
+    float intencity = get_connection_note_intencity(connection);
+    if (intencity > 0.001)
+      return mix_colors(Qt::white, col, intencity);
+    
+  } else {
+    
+    const struct SoundPlugin *plugin = SP_get_plugin(from->_sound_producer);
+
+    R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, col);
+    
+    if (plugin->type->num_outputs > 0){
+      
+      float db = connection->_last_displayed_db_peak;
+      
+      if(db>=4.0f)
+        
+        col = mix_colors(get_qcolor(PEAKS_4DB_COLOR_NUM), QColor("410000"),                ::scale(db,   4, MAX_DB, 1, 0));
+      
+      if(db>=0.0f)
+        
+        col = mix_colors(get_qcolor(PEAKS_0DB_COLOR_NUM), get_qcolor(PEAKS_4DB_COLOR_NUM), ::scale(db,   0, 4,      1, 0));
+      
+      else if(db>=-30.0f)
+        
+          col = mix_colors(get_qcolor(PEAKS_COLOR_NUM), get_qcolor(PEAKS_0DB_COLOR_NUM),   ::scale(db, -30, 0,      1, 0));
+        
+      else
+        
+        col = get_qcolor(MIXER_AUDIO_CONNECTION_COLOR_NUM); //PEAKS_COLOR_NUM); //.darker(150);
+      
+    }
+    
+  }
+
+
+  return col;
+  /*
+    if (is_selected)
+    return col.lighter(198);
+    else
+    return col;
+  */
+}
+
+static QColor get_arrow_connection_color(const SuperConnection *connection, QColor main_color){
+
+  float intencity = get_connection_note_intencity(connection);
+  
+  if (intencity > 0.001)
+    return mix_colors(main_color, Qt::white, intencity);
+  else
+    return main_color;
+}
+
+static void update_connection_subline_positions(SuperConnection *connection){
+  const QLineF &line = connection->line();
+  
+  if (line.length()< 0.001)
+    return;
+
+  float db = connection->_last_displayed_db_peak;
+  
+  qreal len = 6; //is_selected ? 10 : 6;
+  
+  if (! connection->_is_event_connection) {    
+    if (db >= -35)
+      len *= scale(db, -35, MAX_DB, 0.5, 10);
+    else
+      len *= 0.5;
+  }
+
+  qreal normalized_len = scale_double(len, 0, line.length(), 0, 1);
+  if(normalized_len > 0.99)
+    normalized_len = 0.99;
+  
+  QPointF p1 = line.pointAt(scale(db, MIN_DB, MAX_DB, normalized_len/2.0, 1.0-normalized_len/2.0) - normalized_len/2.0); // arrow start pos (on line)
+  QPointF p2 = line.pointAt(scale(db, MIN_DB, MAX_DB, normalized_len/2.0, 1.0-normalized_len/2.0) + normalized_len/2.0); // arrow end pos (on line)
+
+  QLineF gakk(line);
+  gakk.setLength(len / 2.0); // Set half size width compared to the length of the arrow.
+  
+  QPointF arrow1p(p1.x() + gakk.dy(), p1.y() - gakk.dx()); // arrow corner above line
+  QPointF arrow2p(p1.x() - gakk.dy(), p1.y() + gakk.dx()); // arrow corner below line
+  
+  QLineF line1(arrow1p, p2);
+  QLineF line2(arrow2p, p2);
+  
+  QLineF line3(arrow1p, arrow2p); //line1.pointAt(1), line2.pointAt(1));
+  
+  connection->_arrow_line1.setLine(line1);
+  connection->_arrow_line2.setLine(line2);
+  connection->_arrow_line3.setLine(line3);
+  
+  connection->_visible_line1.setLine(QLineF(line.p1(), p1));
+  connection->_visible_line2.setLine(QLineF(p2, line.p2()));
+}
+
+static float get_connection_width(const SuperConnection *connection){
+  if (connection->_is_event_connection)
+    return 1.0;
+    
+  float db = connection->_last_displayed_db_peak;
+  
+  float pen_width;
+  
+  if (db >= -35)
+    pen_width = ::scale(db, -35, MAX_DB, 0.3, 10);
+  else
+    pen_width = 0.3;
+
+  if (connection->_is_selected)
+    pen_width *= 1.8;
+  else
+    pen_width *= 1.2;
+
+  return pen_width;
+}
+
+static QPen get_connection_pen(const SuperConnection *connection, const QColor &color){
+
+  float width = get_connection_width(connection);
+  
+  QPen pen(color, width);
+  
+  pen.setJoinStyle(Qt::RoundJoin);
+  pen.setCapStyle(Qt::RoundCap);
+  
+  return pen;
+}
+
+static float get_connection_color_alpha(SuperConnection *connection){
+  if (!connection->_is_enabled || !connection->_is_implicitly_enabled)
+    return 30;
+  else if(connection->_is_selected)
+    return 250;
+  else
+    return 140;
+}
+
+void SuperConnection::update_shape(void){
+  QColor main_color = get_main_connection_color(this);
+  QColor arrow_color = get_arrow_connection_color(this, main_color);
+
+  {
+    int alpha = get_connection_color_alpha(this);
+    main_color.setAlpha(alpha);
+    arrow_color.setAlpha(alpha);
+  }
+  
+  QPen visible_pen = get_connection_pen(this, main_color);
+  QPen arrow_pen = get_connection_pen(this, arrow_color);
+  
+  _visible_line1.setPen(visible_pen);
+  _visible_line2.setPen(visible_pen);
+  _arrow_line1.setPen(arrow_pen);
+  _arrow_line2.setPen(arrow_pen);
+  _arrow_line3.setPen(arrow_pen);
+
+  update_connection_subline_positions(this);
+}
+
 void AudioConnection::update_position(void){
+  if (from==NULL || to==NULL)
+    return;
+  
   int x1 = from->pos().x()+grid_width-port_width/2;
   int y1 = CHIP_get_port_y(from);
   
   int x2 = to->pos().x()+port_width/2;
   int y2 = CHIP_get_port_y(to);
+
+  setLine(x1,y1,x2,y2);
   
-  this->setLine(x1,y1,x2,y2);
+  update_shape();  
 }
 
 void AudioConnection::set_connection_type(ConnectionType connection_type){
@@ -1535,18 +1676,15 @@ void AudioConnection::set_connection_type(ConnectionType connection_type){
 
   // Ensure there is only one plugin connection from 'from'.
   if(connection_type==ConnectionType::IS_PLUGIN)
-    for(auto *connection : from->audio_connections)
+    for(auto *connection : from->_output_audio_connections)
 
-      if(connection->from == from) { // <-- (Both incoming and outgoing connections are stored in Chip::audio_connections)
+      if(connection->to != to && connection->_connection_type==ConnectionType::IS_PLUGIN){
+          
+        R_ASSERT(has_set==false);
         
-        if(connection->to != to && connection->_connection_type==ConnectionType::IS_PLUGIN){
-          
-          R_ASSERT(has_set==false);
-          
-          connection->_connection_type=ConnectionType::NOT_SET;
-          
-          has_set=true;
-        }
+        connection->_connection_type=ConnectionType::NOT_SET;
+        
+        has_set=true;
         
       }
 
@@ -1554,6 +1692,9 @@ void AudioConnection::set_connection_type(ConnectionType connection_type){
 }
 
 void EventConnection::update_position(void){
+  if (from==NULL || to==NULL)
+    return;
+  
   int x1 = CHIP_get_eport_x(from);
   int x2 = CHIP_get_eport_x(to);
   int y1 = CHIP_get_output_eport_y(from);
@@ -1568,19 +1709,20 @@ void EventConnection::update_position(void){
     x2 += 10;
     }
   */
+
+  setLine(x1,y1,x2,y2);
   
-  this->setLine(x1,y1,x2,y2);
+  update_shape();
 }
 
 // 'right_chip' is inserted in the middle of 'left_chip' and all chips 'left_chip' sends to.
 void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip){
   changes::AudioGraph changes;
   
-  for (AudioConnection *connection : left_chip->audio_connections)
-    if(connection->from==left_chip){
-      changes.remove(connection);
-      changes.add(right_chip, connection->to, -1.0, radium::EnableType::ENABLE, radium::get_enable_type_from_bool(connection->get_implicitly_enabled()), connection->get_connection_type());
-    }
+  for (AudioConnection *connection : left_chip->_output_audio_connections){
+    changes.remove(connection);
+    changes.add(right_chip, connection->to, -1.0, radium::EnableType::ENABLE, radium::get_enable_type_from_bool(connection->get_implicitly_enabled()), connection->get_connection_type());
+  }
 
   changes.add(left_chip, right_chip, -1.0, radium::EnableType::ENABLE, radium::EnableType::ENABLE, ConnectionType::IS_PLUGIN);
 
@@ -1591,11 +1733,10 @@ void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip)
 void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip){
   changes::AudioGraph changes;
 
-  for (AudioConnection *connection : right_chip->audio_connections)
-    if(connection->to==right_chip){
-      changes.remove(connection);
-      changes.add(connection->from, left_chip, -1.0, radium::EnableType::ENABLE, radium::get_enable_type_from_bool(connection->get_implicitly_enabled()), connection->get_connection_type());
-    }
+  for (AudioConnection *connection : right_chip->_input_audio_connections){
+    changes.remove(connection);
+    changes.add(connection->from, left_chip, -1.0, radium::EnableType::ENABLE, radium::get_enable_type_from_bool(connection->get_implicitly_enabled()), connection->get_connection_type());
+  }
 
   changes.add(left_chip, right_chip, -1.0, radium::EnableType::ENABLE, radium::EnableType::ENABLE, ConnectionType::IS_PLUGIN);
 
@@ -1697,13 +1838,22 @@ Chip::~Chip(){
 
   remakeMixerStrips(CHIP_get_patch(this)->id);
     
-  while(audio_connections.size()>0){
-    fprintf(stderr,"Deleting connection. Connections left: %d\n",(int)audio_connections.size());
-    CONNECTION_delete_audio_connection(audio_connections[0]);
+  while(_input_audio_connections.size()>0){
+    fprintf(stderr,"Deleting input connection. Connections left: %d\n",(int)_input_audio_connections.size());
+    CONNECTION_delete_audio_connection(_input_audio_connections[0]);
   }
-  while(event_connections.size()>0){
-    fprintf(stderr,"Deleting econnection. EConnections left: %d\n",(int)event_connections.size());
-    CONNECTION_delete_event_connection(event_connections[0]);
+  while(_output_audio_connections.size()>0){
+    fprintf(stderr,"Deleting output_connection. Connections left: %d\n",(int)_output_audio_connections.size());
+    CONNECTION_delete_audio_connection(_output_audio_connections[0]);
+  }
+  
+  while(_input_event_connections.size()>0){
+    fprintf(stderr,"Deleting input econnection. EConnections left: %d\n",(int)_input_event_connections.size());
+    CONNECTION_delete_event_connection(_input_event_connections[0]);
+  }
+  while(_output_event_connections.size()>0){
+    fprintf(stderr,"Deleting output econnection. EConnections left: %d\n",(int)_output_event_connections.size());
+    CONNECTION_delete_event_connection(_output_event_connections[0]);
   }
 
   SLIDERPAINTER_delete(_input_slider);
@@ -2435,9 +2585,13 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 QVariant Chip::itemChange(GraphicsItemChange change, const QVariant &value) {
   if (change == ItemPositionHasChanged && this->scene()) {
-    for (AudioConnection *connection : audio_connections)
+    for (AudioConnection *connection : _input_audio_connections)
       connection->update_position();
-    for (EventConnection *connection : event_connections)
+    for (AudioConnection *connection : _output_audio_connections)
+      connection->update_position();
+    for (EventConnection *connection : _input_event_connections)
+      connection->update_position();
+    for (EventConnection *connection : _output_event_connections)
       connection->update_position();
     //printf("item pos changed\n");
   }
@@ -2542,10 +2696,14 @@ void Chip::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 }
 
 void Chip::mySetSelected(bool selected) {
-  for(auto audio_connection : audio_connections)
+  for(auto audio_connection : _input_audio_connections)
+    audio_connection->mySetSelected(selected);
+  for(auto audio_connection : _output_audio_connections)
     audio_connection->mySetSelected(selected);
   
-  for(auto event_connection : event_connections)
+  for(auto event_connection : _input_event_connections)
+    event_connection->mySetSelected(selected);
+  for(auto event_connection : _output_event_connections)
     event_connection->mySetSelected(selected);
   
   QGraphicsItem::setSelected(selected);
@@ -2559,10 +2717,17 @@ void Chip::mySetSelected(bool selected) {
 
 
 struct Patch *CHIP_get_patch(const Chip *chip){
+#if !defined(RELEASE)
+  if(chip==NULL)
+    abort();
+#endif
+  
+  R_ASSERT_RETURN_IF_FALSE2(chip!=NULL, PATCH_get_current());
+  
   const SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
-  volatile struct Patch *patch = plugin->patch;
+  struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, PATCH_get_current());
-  return (struct Patch*)patch;
+  return patch;
 }
 
 Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch){
@@ -2583,8 +2748,8 @@ Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch){
 }
 
 AudioConnection *CONNECTION_find_audio_connection(const Chip *from, const Chip *to){
-  for(AudioConnection *connection : from->audio_connections)
-    if(connection->from==from && connection->to==to)
+  for(AudioConnection *connection : from->_output_audio_connections)
+    if(connection->to==to)
       return connection;
   
   return NULL;
@@ -2622,8 +2787,8 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
   
   HASH_put_instrument(state, "from_patch", get_saving_patch_id_or_index(from, patches));
   HASH_put_instrument(state, "to_patch",   get_saving_patch_id_or_index(to,   patches));
-  HASH_put_bool(state, "is_event_connection", connection->is_event_connection);
-  if (!connection->is_event_connection){
+  HASH_put_bool(state, "is_event_connection", connection->_is_event_connection);
+  if (!connection->_is_event_connection){
     HASH_put_float(state, "gain", getAudioConnectionGain(from->id, to->id, true));
     const AudioConnection *audio_connection = dynamic_cast<const AudioConnection *>(connection);
     if(audio_connection==NULL)

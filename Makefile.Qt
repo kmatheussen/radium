@@ -1297,7 +1297,7 @@ $(T)undo_song_tempo_automation.o:  $(BUILD_DEPENDENCIES) $(CD)undo_song_tempo_au
 $(T)undo_patchvoice.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchvoice.c
 	$(CC2) $(CD)undo_patchvoice.c $(OPT)
 
-$(T)undo_patchname.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchname.c
+$(T)undo_patchname.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchname.c mixergui/QM_chip.h
 	$(CC2) $(CD)undo_patchname.c $(OPT)
 
 $(T)undo_instrument_color.o:  $(BUILD_DEPENDENCIES) $(CD)undo_instrument_color.c
@@ -1577,7 +1577,7 @@ $(P)Qt_mixer_direction_menu.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_direction_men
 
 
 
-$(T)Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(P)Qt_soundfilesaver_widget.h $(P)mQt_soundfilesaver_widget_callbacks.cpp
+$(T)Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(P)Qt_soundfilesaver_widget.h $(P)mQt_soundfilesaver_widget_callbacks.cpp mixergui/QM_chip.h
 	$(CCC2) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)  $(SNDFILEOPT) $(NO_ANALYZER_MALLOC_LEAK) # Might be leak there, but I don't see where.
 
 $(P)mQt_soundfilesaver_widget_callbacks.cpp: $(P)Qt_soundfilesaver_widget_callbacks.cpp
@@ -1634,7 +1634,7 @@ $(P)Qt_tools.h: $(BUILD_DEPENDENCIES) $(P)qt4_tools.ui $(P)Qt_tools_callbacks.h 
 	cd $(P) && $(MOC) Qt_tools_callbacks.h >mQt_tools_callbacks.h
 #	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) tools
 
-$(T)Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQCheckBox.h
+$(T)Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQCheckBox.h mixergui/QM_chip.h
 	$(CCC2) $(P)Qt_PluginWidget.cpp $(QTOPT) $(NO_ANALYZER_MALLOC_LEAK) # Might be leak there, but I don't see where.
 
 $(P)mQt_PluginWidget.cpp: $(P)Qt_PluginWidget.h
@@ -2345,7 +2345,7 @@ $(T)AudioBuffer.o: audio/AudioBuffer.cpp audio/AudioBuffer.hpp
 $(T)SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_proc.h common/Vector.hpp
 	$(CCC2) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
-$(T)SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h $(T)Sine_plugin.o # we add Sine_plugin.o here to make sure it is up to date.
+$(T)SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h $(T)Sine_plugin.o mixergui/QM_chip.h # we add Sine_plugin.o here to make sure it is up to date.
 	$(CCC2) audio/SoundPlugin.cpp $(QTOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK)
 ### $(CPUOPT)
 
@@ -2372,7 +2372,7 @@ $(T)SoundFonts.o: audio/SoundFonts.cpp
 	$(CCC2) audio/SoundFonts.cpp $(QTOPT) -Ibin/packages/libgig/src/
 # `$(PKG) --cflags glib-2.0`
 
-$(T)audio_instrument.o: audio/audio_instrument.cpp $(CD)disk.h audio/SoundPluginRegistry_proc.h
+$(T)audio_instrument.o: audio/audio_instrument.cpp $(CD)disk.h audio/SoundPluginRegistry_proc.h mixergui/QM_chip.h
 	$(CCC2) audio/audio_instrument.cpp $(QTOPT)
 
 #Smooth.o: audio/Smooth.c audio/Smooth_proc.h

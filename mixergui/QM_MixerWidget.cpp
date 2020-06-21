@@ -342,6 +342,7 @@ MyScene::MyScene(QWidget *parent)
   
   addItem(_slot_indicator);
   //new HelpText(this);
+  
 }
 
 static void get_slot_coordinates(int slot_x, int slot_y, float &x1, float &y1, float &x2, float &y2){
@@ -602,7 +603,7 @@ static AudioConnection *find_clean_connection_at(MyScene *scene, float x, float 
 
 // Also kicks.
 static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
-  bool do_autoconnect = chip->audio_connections.size()==0; // don't autoconnect if the chip already has connections.  
+  bool do_autoconnect = chip->_input_audio_connections.size()==0 && chip->_output_audio_connections.size()==0; // don't autoconnect if the chip already has connections.  
   
   Chip *chip_under = MW_get_chip_at(x,y,chip);
   //printf("   do_autocnn: %d. chip_under: %p\n",do_autoconnect,chip_under);
@@ -750,6 +751,7 @@ void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
     int y2 = pos.y();
 
     _current_connection->setLine(x1,y1,x2,y2);
+    _current_connection->update_shape();
 
     event->accept();
 
@@ -769,7 +771,8 @@ void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
     int y2 = pos.y();
 
     _current_econnection->setLine(x1,y1,x2,y2);
-
+    _current_econnection->update_shape();
+    
     event->accept();
 
   } else if(_moving_chips.size()>0){
@@ -903,25 +906,36 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
 
     // connection
     {
+      
       if(CHIP_is_at_output_port(chip,mouse_x,mouse_y)) {
         if (chip->_num_outputs==0)
           return false;
         
         scene->_current_from_chip = chip;
-
+        R_ASSERT(scene->_current_to_chip==NULL);
+                 
       } else if(CHIP_is_at_input_port(chip,mouse_x,mouse_y)) {
-        scene->_current_to_chip = chip;
-
+        
         if (chip->_num_inputs==0)
           return false;
-
-      } if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
-        //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
         
-        scene->_current_connection = new AudioConnection(scene, NULL, NULL, ConnectionType::IS_SEND, true, true);
+        scene->_current_to_chip = chip;
+        R_ASSERT(scene->_current_from_chip==NULL);
+      }
+
+      if(scene->_current_from_chip!=NULL || scene->_current_to_chip!=NULL){
+        //printf("x: %d, y: %d. Item: %p. input/output: %d/%d\n",(int)mouse_x,(int)mouse_y,item,_current_input_port,_current_output_port);
+
+        if (scene->_current_from_chip!=NULL && scene->_current_to_chip!=NULL){
+          R_ASSERT(false);
+          return false;
+        }
+        
+        scene->_current_connection = new AudioConnection(scene, scene->_current_from_chip, scene->_current_to_chip, ConnectionType::IS_SEND, true, true);
         scene->addItem(scene->_current_connection);
         
         scene->_current_connection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
+        scene->_current_connection->update_shape();
         
         event->accept();
         return true;
@@ -938,10 +952,17 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
         scene->_ecurrent_to_chip = chip;
 
       if(scene->_ecurrent_from_chip!=NULL || scene->_ecurrent_to_chip!=NULL){
-        scene->_current_econnection = new EventConnection(scene, NULL, NULL);
+
+        if (scene->_current_from_chip!=NULL && scene->_current_to_chip!=NULL){
+          R_ASSERT(false);
+          return false;
+        }
+
+        scene->_current_econnection = new EventConnection(scene, scene->_ecurrent_from_chip, scene->_ecurrent_to_chip);
         scene->addItem(scene->_current_econnection);
         
         scene->_current_econnection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
+        scene->_current_econnection->update_shape();
         
         event->accept();
         return true;
@@ -1907,6 +1928,13 @@ namespace{
 
       if (modular_mixer_visible()){
 
+        if (g_mixer_widget->scene._current_connection != NULL)
+          g_mixer_widget->scene._current_connection->update_shape();
+          
+        if (g_mixer_widget->scene._current_econnection != NULL)
+          g_mixer_widget->scene._current_econnection->update_shape();
+          
+        
         for (QGraphicsItem *das_item : g_mixer_widget->scene.items()){
           
           Chip *chip = dynamic_cast<Chip*>(das_item);
@@ -1939,8 +1967,8 @@ namespace{
                   int x1,y1,x2,y2;
                   CHIP_get_note_indicator_coordinates(x1,y1,x2,y2);
                   chip->update(x1,y1,x2-x1,y2-y1);                  
-                  for(auto *connection : chip->event_connections)
-                    connection->update();
+                  for(auto *connection : chip->_output_event_connections)
+                    connection->update_shape();
                 }
 
                 float volume = chip->get_slider_volume();
@@ -2004,6 +2032,43 @@ namespace{
                   }
                 }
 
+                if (plugin->type->num_outputs>0 && chip->_output_audio_connections.size() > 0){
+
+                  float db = -35;
+
+                  for(int ch=0;ch<plugin->type->num_outputs;ch++)
+                    db = R_MAX(db, plugin->output_volume_peaks.decaying_dbs_10x[ch]);
+                  
+                  for(auto *connection : chip->_output_audio_connections) {
+
+                    float connection_db = db;
+
+                    if (connection->to != NULL) {
+
+                      const char *error = NULL;
+                      float link_gain = SP_get_link_gain(connection->to->_sound_producer, chip->_sound_producer, &error);
+                      R_ASSERT_NON_RELEASE(error==NULL);
+                      
+                      if (!equal_floats(link_gain, 1.0) && !equal_floats(link_gain, 0.0)){
+                        printf("      LINK_GAIN %s ->%s: %f.  db: %f\n", CHIP_get_patch(connection->from)->name, CHIP_get_patch(connection->to)->name, link_gain, gain2db(link_gain));
+                      }
+                      
+                      connection_db = R_BOUNDARIES(MIN_DB, connection_db + gain2db(link_gain), MAX_DB);
+                    }
+                  
+                    if (fabs(connection_db - connection->_last_displayed_db_peak) > 0.1){
+                      static int num = 0;
+                      printf("    %d: Update \"%s\" (\"%s\") -> \"%s\". Old: %f. New: %f\n",
+                             num++,
+                             CHIP_get_patch(connection->from)->name, patch->name, CHIP_get_patch(connection->to)->name,
+                             connection->_last_displayed_db_peak,
+                             connection_db);
+                      
+                      connection->_last_displayed_db_peak = connection_db;
+                      connection->update_shape();
+                    }
+                  }
+                }
                 
                 if (chip->_input_slider != NULL)
                   SLIDERPAINTER_call_regularly(chip->_input_slider, -1);
@@ -2041,7 +2106,7 @@ MixerWidget::MixerWidget(QWidget *parent)
   
   {
     MixerWidgetTimer *timer = new MixerWidgetTimer;
-    timer->setInterval(50); // 3*16.666
+    timer->setInterval(16);//50); // 3*16.666
     timer->start();
   }
 
