@@ -110,7 +110,7 @@ static inline const struct STimes *get_stimes_from_swinging_mode(const struct Bl
         const struct WTracks *wtrack = wblock->wtrack;
               
 #if !defined(RELEASE)
-        {
+        if((rand() % 1000) == 0){ // this function is called very often, and therefore this block uses lots of cpu.
           struct Tracks *track = wtrack->track;
           while(track!=NULL){
             
