@@ -327,6 +327,18 @@ public:
 
     } else {
 
+      // Assert that we don't set link volume of a sink target (e.g. system out or jack out) to anything other than 1.0. The reason is that there isn't an interface in the mixer to set volume for links to sinks, so it must always stay at 1.0 / 0dB.
+      {
+        const SoundPlugin *plugin = SP_get_plugin(target);
+        if (plugin->type->num_outputs==0){
+          if (!equal_floats(volume, 1.0f)){
+            printf("Warning! Trying to set volume of a sink-link. To avoid unintentional muted sink-links, a sink-link is always set to have volume 1.0. Now trying to set it to %f\n", volume);
+            R_ASSERT_NON_RELEASE(false);
+            return false;
+          }
+        }
+      }
+      
       if (!equal_floats(link_volume, volume)){
         
         link_volume = volume;
@@ -2090,8 +2102,10 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
           link_enable_changes.push_back(LinkEnabledChange(existing_link, link_is_enabled));
       }
       
-      if (parm.must_set_volume && existing_link->need_to_create_volume_change(parm.volume))
+      if (parm.must_set_volume && existing_link->need_to_create_volume_change(parm.volume)) {
+        //printf("    Old volume: %f. New volume: %f. ch %d -> ch %d\n", existing_link->get_link_volume(), parm.volume, existing_link->source_ch, existing_link->target_ch);
         volume_changes.push_back(VolumeChange(existing_link, parm.volume));
+      }
       
     } else {
       
@@ -2337,6 +2351,7 @@ void SP_print_tree(void){
       fprintf(stderr, "  %s%s. Ch: %d->%d. Latency: %d\n",
               link->target->_plugin->patch->name,
               link->is_active?"":" (inactive)",
+              //link->volume.target_audio_will_be_modified?"":" (inactive2)",
               link->source_ch, link->target_ch,
               link->_delay._delay.getSize()
               );
