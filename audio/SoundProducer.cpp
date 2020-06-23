@@ -1145,6 +1145,8 @@ public:
     R_ASSERT(to_remove.only_unique_elements(SoundProducerLink::equal));
     R_ASSERT(!to_add.intersects(to_remove, SoundProducerLink::equal));
 
+
+    //printf("SoundProducer::add_and_remove_links. Num to add: %d. Num to remove: %d. num volume changes: %d. Num link enabled changes: %d\n", to_add.size(), to_remove.size(), volume_changes.size(), link_enabled_changes.size());
     
     radium::Vector<SoundProducerLink*> links_that_must_be_removed_first; // Sometimes it is not possible to add and remove everything in one go without creating a recursive graph.
 
@@ -1174,7 +1176,6 @@ public:
       return false;      
     }
 
-    
     // 2. REMOVING: Remove links that must be removed first to avoid recursive graph. (these are found in the is_recursive function)
     //
     {
@@ -1182,7 +1183,6 @@ public:
       SoundProducer::add_and_remove_links(empty, links_that_must_be_removed_first);
     }
 
-    
     // 3. ADDING: Allocate memory for new links in the radium::Vector vectors.
     //
     {
@@ -1208,7 +1208,6 @@ public:
         linkvector->ensure_there_is_room_for_more_without_having_to_allocate_memory(howmanys.value(linkvector));
       }
     }
-
 
     // 4. REMOVING/ADDING: Request links to be removed to turn off, and add new links.
     //
@@ -2078,6 +2077,8 @@ const radium::LinkParameters g_empty_linkparameters;
 // Only audio links.
 bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove){
   ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
+
+  //printf("     SP_add_and-remove. Num to add: %d. Num to remove: %d.\n", parm_to_add.size(), parm_to_remove.size());
   
   if (PLAYER_is_running()==false)
     return false;
