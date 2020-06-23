@@ -700,14 +700,17 @@
     (map (lambda (send-id)
            (list (create-entry-text send-id)
                  :enabled (and (> (<ra> :get-num-input-channels send-id) 0)
-                               (<ra> :can-audio-connect instrument-id send-id))
+                               (<ra> :can-audio-connect instrument-id send-id)
+                               (not (<ra> :has-audio-connection instrument-id send-id)))
                  (lambda ()
                    (callback (lambda (gain changes)
                                (push-audio-connection-change! changes (list :type "connect"
                                                                             :source instrument-id
                                                                             :target send-id
                                                                             :connection-type *send-connection-type*
-                                                                            :gain gain))
+                                                                            :gain (if (= 0 (<ra> :get-num-output-channels send-id))
+                                                                                      1.0 ;; Sink-links must always have gain 1.0 since you can't change sink-link volume.
+                                                                                      gain)))
                                (apply-changes changes))))))
          instrument-ids))
     
