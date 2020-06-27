@@ -699,9 +699,7 @@
   (define (create-bus-entries instrument-ids)
     (map (lambda (send-id)
            (list (create-entry-text send-id)
-                 :enabled (and (> (<ra> :get-num-input-channels send-id) 0)
-                               (<ra> :can-audio-connect instrument-id send-id)
-                               (not (<ra> :has-audio-connection instrument-id send-id)))
+                 :enabled (<ra> :can-audio-connect instrument-id send-id)
                  (lambda ()
                    (callback (lambda (gain changes)
                                (push-audio-connection-change! changes (list :type "connect"
@@ -727,7 +725,7 @@
                              (keep (lambda (id)
                                      (not (member id buses)))
                                    (begin
-                                     (define ret (get-all-instruments-that-we-can-send-to instrument-id))
+                                     (define ret (get-all-instruments-that-we-might-send-to instrument-id))
                                      ret))))))))
   
   (apply popup-menu args))
