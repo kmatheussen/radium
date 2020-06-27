@@ -920,12 +920,11 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
   }
 
 
-  bool ret = true;
-  
   if (PLAYER_is_running()==true){
     
     // Create/remove mixer connections
-    ret = SP_add_and_remove_links(add_linkparameters, remove_linkparameters);
+    if (SP_add_and_remove_links(add_linkparameters, remove_linkparameters)==false)
+      return false;
         
   } else {
 
@@ -1010,12 +1009,10 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
       remakeMixerStrips(patch->id);
   }
 
-  if (creating_or_deleting_connections_and_have_solo){
+  if (creating_or_deleting_connections_and_have_solo)
     S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
-    return true;
-  }
-  
-  return ret;
+
+  return true;
 }
 
 bool CONNECTIONS_apply_changes(const dynvec_t dynchanges){
