@@ -362,38 +362,40 @@
         (get-all-audio-instruments)))
 
 
-(define-instrument-memoized (would-this-create-a-recursive-connection? goal-id id)
-  (or (begin
-        (define visited (make-hash-table 16 equal?))
-        (let loop ((id id))
-          (cond ((visited id)
-                 #f)
-                ((equal? goal-id id)
-                 #t)
-                (else
-                 (hash-table-set! visited id #t)
-                 (any? loop
-                       (get-instruments-connecting-from-instrument id))))))
-      (begin
-        (define visited (make-hash-table 16 equal?))
-        (let loop ((id id))
-          (cond ((visited id)
-                 #f)
-                ((equal? goal-id id)
-                 #t)
-                (else
-                 (hash-table-set! visited id #t)
-                 (any? loop
-                       (get-instruments-econnecting-from-instrument id))))))))
-        
+(define-instrument-memoized (is-connected-somehow? id goal-id)
+  (define visited (make-hash-table 16 equal?))
+  (call-with-exit
+   (lambda (return)
+     (let loop ((id id))
+       ;;(c-display "  REC TEST:" (<ra> :get-instrument-name id) "->" (<ra> :get-instrument-name goal-id)
+       ;;           ". From:" (map ra:get-instrument-name (get-instruments-connecting-from-instrument id))
+       ;;           ". Efrom:" (map ra:get-instrument-name (get-instruments-econnecting-from-instrument id))
+       ;;           ". Num audio from:" (<ra> :get-num-out-audio-connections id))
+       (cond ((visited id)
+              #f)
+             ((equal? goal-id id)
+              (return #t))
+             (else
+              (hash-table-set! visited id #t)
+              (for-each loop (get-instruments-connecting-from-instrument id))
+              (for-each loop (get-instruments-econnecting-from-instrument id))
+              )))
+     #f)))
 
-(define-instrument-memoized (get-all-instruments-that-we-can-send-to from-id)
+
+;; Returns all instruments that is natural to list up as send targets.
+;; Note that not all of these are necessarily possible to connect to. (use ra:can-audio-connect for that)
+(define-instrument-memoized (get-all-instruments-that-we-might-send-to from-id)
   (remove (lambda (to-id)
             ;;(c-display "      " (<ra> :get-instrument-name from-id) "->" (<ra> :get-instrument-name to-id)
             ;;           ". has_audio_connection:" (<ra> :has-audio-connection from-id to-id)
             ;;           ". is_recursive:" (would-this-create-a-recursive-connection? from-id to-id))
             (or ;;(<ra> :has-audio-connection from-id to-id)
-                (would-this-create-a-recursive-connection? from-id to-id)))
+                (<ra> :has-audio-connection to-id from-id)
+                (equal? from-id to-id)
+                ;;(is-connected-somehow? to-id from-id)
+                (= (<ra> :get-num-input-channels to-id) 0)
+                ))
           (get-all-audio-instruments)))
 
 
