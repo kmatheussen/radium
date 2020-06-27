@@ -1980,6 +1980,27 @@ bool canAudioConnect(instrument_t source_id, instrument_t dest_id){
   if(dest==NULL)
     return false;
 
+  if (MW_are_connected(source, dest))
+    return false;
+
+  struct SoundPlugin *source_plugin = (struct SoundPlugin*)source->patchdata;
+  if (source_plugin==NULL){
+    handleError("canAudioConnect: Instrument #%d has been closed", (int)source_id.id);
+    return false;
+  }
+
+  struct SoundPlugin *dest_plugin = (struct SoundPlugin*)dest->patchdata;
+  if (dest_plugin==NULL){
+    handleError("canAudioConnect: Instrument #%d has been closed", (int)dest_id.id);
+    return false;
+  }
+
+  if (source_plugin->type->num_outputs==0)
+    return false;
+
+  if (dest_plugin->type->num_inputs==0)
+    return false;
+
   return CONNECTION_can_connect(source, dest);
 }
 

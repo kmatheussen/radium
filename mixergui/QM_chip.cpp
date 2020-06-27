@@ -1421,20 +1421,32 @@ void CONNECTION_delete_connection(SuperConnection *connection){
   }
 }
 
-bool CONNECTION_are_connected_somehow(const Chip *source, const Chip *target){
+static bool are_connected_somehow(QSet<const Chip*> &already_checked, const Chip *source, const Chip *target){
+
+  if (already_checked.contains(source))
+    return false;
+  
   if (source==target)
     return true;
+
+  already_checked << source;
   
-  for(const AudioConnection *source_connection : source->_output_audio_connections) {
-
-    if (CONNECTION_are_connected_somehow(source_connection->to, target)==true)
+  for(const AudioConnection *source_connection : source->_output_audio_connections)
+    if (are_connected_somehow(already_checked, source_connection->to, target)==true)
       return true;
-
-  }
+  
+  for(const EventConnection *source_connection : source->_output_event_connections)
+    if (are_connected_somehow(already_checked, source_connection->to, target)==true)
+      return true;
   
   return false;
 }
-  
+
+bool CONNECTION_are_connected_somehow(const Chip *source, const Chip *target){
+  QSet<const Chip*> already_checked;
+  return are_connected_somehow(already_checked, source, target);
+}
+
 bool CONNECTION_can_connect(const Chip *source, const Chip *target){
   return !CONNECTION_are_connected_somehow(target, source);
 }
