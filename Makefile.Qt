@@ -1940,7 +1940,7 @@ $(T)QM_view.o: $(QM)QM_view.cpp $(QM)QM_view.h $(QM)QM_chip.h $(QM)mQM_view.cpp 
 	$(CCC2) $(QM)QM_view.cpp $(QTOPT)
 
 $(T)QM_chip.o: $(QM)QM_chip.cpp $(QM)QM_chip.h $(P)Qt_MyQCheckBox.h $(QM)QM_MixerWidget.h audio/CpuUsage.hpp
-	$(CCC2) $(QM)QM_chip.cpp $(QTOPT) $(NO_ANALYZER_MALLOC_LEAK)
+	$(CCC2) $(QM)QM_chip.cpp $(QTOPT) $(NO_ANALYZER_MALLOC_LEAK) #-O0
 
 $(T)undo_chip_position.o: $(QM)undo_chip_position.c $(QM)QM_chip.h
 	$(CC2) $(OPT) $(QM)undo_chip_position.c
