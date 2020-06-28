@@ -44,10 +44,14 @@ static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms
         return;
       }
       
-      // Give up after 64 tries. If the RT thread is very busy, I guess it could happen that we stall here.
+      // Give up after 64 tries. Should not happen, but just in case.
       // (also note that RT_max_gains[ch] is not resetted when we fail, so we don't destroy max peak detection, which is most important)
-      if(i==64)
+      if(i==64){
+#if !defined(RELEASE)
+        printf("    Warning: Giving up getting max gain\n");
+#endif        
         return;
+      }
     }
 
     float max_db = gain2db(max_gain);

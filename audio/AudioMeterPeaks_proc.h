@@ -51,8 +51,13 @@ extern LANGSPEC void AUDIOMETERPEAKS_delete(AudioMeterPeaks peaks);
 static inline void RT_AUDIOMETERPEAKS_add(AudioMeterPeaks &peaks, int ch, float val){
   for(;;){
     float old_val = atomic_get_float_relaxed(&ATOMIC_NAME(peaks.RT_max_gains)[ch]);
-    float max_val = R_MAX(old_val, val);
-    if(atomic_compare_and_set_float(&ATOMIC_NAME(peaks.RT_max_gains)[ch], old_val, max_val)==true)
+
+    // It is possible to miss a peak when transfering to the interface here and val < old_val.
+    // However, the GUI is really struggling for this to make a notable difference, and then it doesn't matter.
+    if (val < old_val)
+      return;
+    
+    if(atomic_compare_and_set_float(&ATOMIC_NAME(peaks.RT_max_gains)[ch], old_val, val)==true)
       break;
   }
 }
