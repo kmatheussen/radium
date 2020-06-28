@@ -10,6 +10,11 @@
 
 #include "AudioMeterPeaks_proc.h"
 
+#define UNTOUCHED_MAX_GAIN_VALUE -100
+
+static bool gain_is_untouched(float gain){
+  return gain < -0.1;
+}
 
 // NOTE. All the 'call_very_often' functions can be called from a custom exec().
 // This means that _patch->plugin might be gone, and the same goes for soundproducer.
@@ -25,9 +30,20 @@ static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms
     //
     for(int i = 0 ; ; i++){
       max_gain = atomic_get_float_relaxed(&ATOMIC_NAME(peaks.RT_max_gains)[ch]);
-      if(atomic_compare_and_set_float(&ATOMIC_NAME(peaks.RT_max_gains)[ch], max_gain, 0.0f)==true)
+      if(atomic_compare_and_set_float(&ATOMIC_NAME(peaks.RT_max_gains)[ch], max_gain, UNTOUCHED_MAX_GAIN_VALUE)==true)
         break;
 
+      R_ASSERT_NON_RELEASE(equal_doubles(max_gain, UNTOUCHED_MAX_GAIN_VALUE) || max_gain >= -0.000000001);
+
+      if (gain_is_untouched(max_gain)){
+#if !defined(RELEASE)
+        printf("    Warning: Gain is untouched: %f\n", max_gain);
+#endif
+
+        // Returning here screws up fall off speed, but it probably only happens if jack has crashed or something like that. (and in any case, we have a bigger problem then screwing up fallof speed if max gain hasn't been updated since last time.
+        return;
+      }
+      
       // Give up after 64 tries. If the RT thread is very busy, I guess it could happen that we stall here.
       // (also note that RT_max_gains[ch] is not resetted when we fail, so we don't destroy max peak detection, which is most important)
       if(i==64)
@@ -89,18 +105,26 @@ static double g_last_time;
 
 // NOTE. This function can be called from a custom exec().
 void AUDIOMETERPEAKS_call_very_often(int what_to_update){
-  static int counter = 0;
+  static double time_since_last_reset_fallof = 0;
 
   double time = TIME_get_ms();
   double ms = time - g_last_time;
+
+  if (ms < 10){ // in case qt bubbles up calls to timer callbacks. don't know if it will though, but the documentation is unclear. Really need a homemade and trusted timer.
+#if !defined(RELEASE)
+    printf("Note: AUDIOMETERPEAKS_call_very_often called less than 5ms since last time: %f\n", ms);
+#endif
+    return;
+  }
+  
   g_last_time = time;
   
-  counter+=ms;
+  time_since_last_reset_fallof += ms;
 
   bool reset_falloff = false;
 
-  if (counter>=1000*g_falloff_reset){
-    counter = 0;
+  if (time_since_last_reset_fallof >= 1000*g_falloff_reset){
+    time_since_last_reset_fallof = 0;
     reset_falloff = true;
   }
 
@@ -146,11 +170,11 @@ AudioMeterPeaks AUDIOMETERPEAKS_create(int num_channels){
   g_last_time = TIME_get_ms();
 
   for(int ch=0;ch<num_channels;ch++){
-    peaks.max_dbs[ch] = -100;
-    peaks.decaying_dbs[ch] = -100;
-    peaks.decaying_dbs_10x[ch] = -100;
-    peaks.falloff_dbs[ch] = -100;
-    peaks.peaks[ch] = -100;
+    peaks.max_dbs[ch] = UNTOUCHED_MAX_GAIN_VALUE;
+    peaks.decaying_dbs[ch] = UNTOUCHED_MAX_GAIN_VALUE;
+    peaks.decaying_dbs_10x[ch] = UNTOUCHED_MAX_GAIN_VALUE;
+    peaks.falloff_dbs[ch] = UNTOUCHED_MAX_GAIN_VALUE;
+    peaks.peaks[ch] = UNTOUCHED_MAX_GAIN_VALUE;
   }
 
   return peaks;
