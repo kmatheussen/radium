@@ -1914,10 +1914,11 @@ protected:
       int interval = useCPUFriendlyAudiometerUpdates() ? 50 : 15;
 
       if (is_called_every_ms(interval)){
-        API_gui_call_regularly();
         
         AUDIOMETERPEAKS_call_very_often(-1);
 
+        API_gui_call_regularly();
+        
         RTWIDGET_call_often();
       }
     }
