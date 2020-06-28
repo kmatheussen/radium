@@ -105,6 +105,39 @@ static inline bool atomic_compare_and_set_pointer(void **variable, void *old_val
 // Were doing type punning of float below.
 static_assert (sizeof(float) == 4, "Size of float is not correct");
 
+static inline void atomic_set_float(float *variable, float new_value){
+  union{
+    float new_float;
+    uint32_t new_uint32;
+  };
+  
+  new_float = new_value;
+  
+  __atomic_store_n ((uint32_t*)variable, new_uint32, __ATOMIC_SEQ_CST);
+}
+                                             
+static inline void atomic_set_float_relaxed(float *variable, float new_value){
+  union{
+    float new_float;
+    uint32_t new_uint32;
+  };
+  
+  new_float = new_value;
+  
+  __atomic_store_n ((uint32_t*)variable, new_uint32, __ATOMIC_RELAXED);
+}
+                                             
+static inline float atomic_get_float(float *variable){
+  union{
+    float new_float;
+    uint32_t new_uint32;
+  };
+  
+  new_uint32 = __atomic_load_n ((uint32_t*)variable, __ATOMIC_SEQ_CST);
+
+  return new_float;
+}
+                                             
 static inline float atomic_get_float_relaxed(float *variable){
   union{
     float new_float;

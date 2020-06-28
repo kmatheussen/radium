@@ -48,17 +48,33 @@ extern LANGSPEC AudioMeterPeaks AUDIOMETERPEAKS_create(int num_channels);
 extern LANGSPEC void AUDIOMETERPEAKS_delete(AudioMeterPeaks peaks);
 
 #ifdef __cplusplus
+
+#if 0
+
+// Use this one if there are multiple writers, which I'm pretty sure we don't have. (not sure we need it then either)
 static inline void RT_AUDIOMETERPEAKS_add(AudioMeterPeaks &peaks, int ch, float val){
   for(;;){
     float old_val = atomic_get_float_relaxed(&ATOMIC_NAME(peaks.RT_max_gains)[ch]);
-
-    // It is possible to miss a peak when transfering to the interface here and val < old_val.
-    // However, the GUI is really struggling for this to make a notable difference, and then it doesn't matter.
-    if (val < old_val)
-      return;
-    
-    if(atomic_compare_and_set_float(&ATOMIC_NAME(peaks.RT_max_gains)[ch], old_val, val)==true)
+    float max_val = R_MAX(old_val, val);
+    if(atomic_compare_and_set_float(&ATOMIC_NAME(peaks.RT_max_gains)[ch], old_val, max_val)==true)
       break;
   }
 }
+
+#else
+
+static inline void RT_AUDIOMETERPEAKS_add(AudioMeterPeaks &peaks, int ch, float val){
+  float *pos = &ATOMIC_NAME(peaks.RT_max_gains)[ch];
+  
+  float old_val = atomic_get_float(pos);
+
+  // This is fine.
+  if (val <= old_val)
+    return;
+
+  atomic_set_float(pos, val);
+}
+
+#endif
+
 #endif
