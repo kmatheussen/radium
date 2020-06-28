@@ -89,7 +89,6 @@ mixer_text_color = #ff010101
 mixer_border_color = #ff010101
 note_event_indicator_color = #ff3f5b56
 note_event_indicator_border_color = #ff23405d
-mixer_event_connection_color = #8c1e5f46
 mixer_audio_connection_color = #8c321946
 mixer_autosuspension_color = #3ca6a6a6
 mixer_current_object_border_color_num = #ff041da7
