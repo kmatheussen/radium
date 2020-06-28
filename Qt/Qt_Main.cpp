@@ -1906,7 +1906,7 @@ protected:
         if (useCPUFriendlyAudiometerUpdates())
           what_to_update = (counter % 2) == 0;
 
-        AUDIOMETERPEAKS_call_very_often(20, what_to_update);
+        AUDIOMETERPEAKS_call_very_often(what_to_update);
       }
     }
 #else
@@ -1916,7 +1916,7 @@ protected:
       if (is_called_every_ms(interval)){
         API_gui_call_regularly();
         
-        AUDIOMETERPEAKS_call_very_often(interval, -1);
+        AUDIOMETERPEAKS_call_very_often(-1);
 
         RTWIDGET_call_often();
       }

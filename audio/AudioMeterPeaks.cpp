@@ -23,10 +23,15 @@ static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms
 
     // Atomically read and write RT_max_gains[ch]
     //
-    for(int i = 0; i < 64; i++){ // Give up after 64 tries. If the RT thread is very busy, I guess it could happen that we stall here. (also note that RT_max_gains[ch] is not resetted when we fail, so we don't destroy max peak detection, which is most important)
+    for(int i = 0 ; ; i++){
       max_gain = atomic_get_float_relaxed(&ATOMIC_NAME(peaks.RT_max_gains)[ch]);
       if(atomic_compare_and_set_float(&ATOMIC_NAME(peaks.RT_max_gains)[ch], max_gain, 0.0f)==true)
         break;
+
+      // Give up after 64 tries. If the RT thread is very busy, I guess it could happen that we stall here.
+      // (also note that RT_max_gains[ch] is not resetted when we fail, so we don't destroy max peak detection, which is most important)
+      if(i==64)
+        return;
     }
 
     float max_db = gain2db(max_gain);
@@ -37,13 +42,15 @@ static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms
 
     // decaying db
     //
-    if (max_db > peaks.decaying_dbs[ch]) {
+    if (max_db > peaks.decaying_dbs[ch])
       peaks.decaying_dbs[ch] = max_db;
+    else
+      peaks.decaying_dbs[ch] -= ms / 50;
+    
+    if (max_db > peaks.decaying_dbs_10x[ch])
       peaks.decaying_dbs_10x[ch] = max_db;
-    } else {
-      peaks.decaying_dbs[ch] -= ms / 50;  // TODO/FIX.
-      peaks.decaying_dbs_10x[ch] -= ms / 5;  // TODO/FIX.
-    }
+    else
+      peaks.decaying_dbs_10x[ch] -= ms / 5; //(ATOMIC_GET(root->editonoff) ? 10 : 5);
     
     // falloff db
     if (reset_falloff || max_db > peaks.falloff_dbs[ch])
@@ -78,10 +85,16 @@ static const int g_falloff_reset = 5; // 5 seconds between each falloff reset.
       1 => Second half
  */
 
+static double g_last_time;
+
 // NOTE. This function can be called from a custom exec().
-void AUDIOMETERPEAKS_call_very_often(int ms, int what_to_update){
+void AUDIOMETERPEAKS_call_very_often(int what_to_update){
   static int counter = 0;
 
+  double time = TIME_get_ms();
+  double ms = time - g_last_time;
+  g_last_time = time;
+  
   counter+=ms;
 
   bool reset_falloff = false;
@@ -129,6 +142,8 @@ AudioMeterPeaks AUDIOMETERPEAKS_create(int num_channels){
   peaks.decaying_dbs_10x = (float*)V_calloc(num_channels, sizeof(float));
   peaks.falloff_dbs = (float*)V_calloc(num_channels, sizeof(float));  
   peaks.peaks = (float*)V_calloc(num_channels, sizeof(float));  
+
+  g_last_time = TIME_get_ms();
 
   for(int ch=0;ch<num_channels;ch++){
     peaks.max_dbs[ch] = -100;
