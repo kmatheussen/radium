@@ -76,6 +76,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundProducer_proc.h"
+#include "../audio/AudioMeterPeaks_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/CpuUsage.hpp"
@@ -1491,8 +1492,8 @@ static float get_connection_note_intencity(const SuperConnection *connection){
                  0.0, 1.0);
 }
 
-static QColor get_main_connection_color(const SuperConnection *connection){
-  QColor col = get_qcolor(connection->_color_num);
+static QColor get_arrow_color(const SuperConnection *connection, const QColor &connection_color){
+  const QColor &col = connection_color;
   
   const Chip *from = connection->_from;
   
@@ -1517,19 +1518,19 @@ static QColor get_main_connection_color(const SuperConnection *connection){
       
       if(db>=4.0f)
         
-        col = mix_colors(get_qcolor(PEAKS_4DB_COLOR_NUM), QColor("410000"),                ::scale(db,   4, MAX_DB, 1, 0));
+        return mix_colors(get_qcolor(PEAKS_4DB_COLOR_NUM), QColor("410000"),                ::scale(db,   4, MAX_DB, 1, 0));
       
       if(db>=0.0f)
         
-        col = mix_colors(get_qcolor(PEAKS_0DB_COLOR_NUM), get_qcolor(PEAKS_4DB_COLOR_NUM), ::scale(db,   0, 4,      1, 0));
+        return mix_colors(get_qcolor(PEAKS_0DB_COLOR_NUM), get_qcolor(PEAKS_4DB_COLOR_NUM), ::scale(db,   0, 4,      1, 0));
       
       else if(db>=-30.0f)
         
-          col = mix_colors(get_qcolor(PEAKS_COLOR_NUM), get_qcolor(PEAKS_0DB_COLOR_NUM),   ::scale(db, -30, 0,      1, 0));
+        return mix_colors(get_qcolor(PEAKS_COLOR_NUM), get_qcolor(PEAKS_0DB_COLOR_NUM),   ::scale(db, -30, 0,      1, 0));
         
       else
         
-        col = get_qcolor(MIXER_AUDIO_CONNECTION_COLOR_NUM); //PEAKS_COLOR_NUM); //.darker(150);
+        return get_qcolor(MIXER_AUDIO_CONNECTION_COLOR_NUM); //PEAKS_COLOR_NUM); //.darker(150);
       
     }
     
@@ -1545,71 +1546,91 @@ static QColor get_main_connection_color(const SuperConnection *connection){
   */
 }
 
-static QColor get_arrow_connection_color(const SuperConnection *connection, QColor main_color){
-
+static QColor get_line_color(const SuperConnection *connection, const QColor &connection_color){
+  
   float intencity = get_connection_note_intencity(connection);
   
   if (intencity > 0.001)
-    return mix_colors(main_color, Qt::white, intencity);
+    return mix_colors(connection_color, Qt::white, intencity);
   else
-    return main_color;
+    return connection_color;
 }
 
-static void update_connection_subline_positions(SuperConnection *connection){
-  const QLineF &line = connection->line();
+static QPolygonF create_arrow_polygon(const QLineF &line,
+                                      qreal arrow_width  // Distance between the arrow corners.
+                                      )
+{
+  QLineF gakk(line);
+  gakk.setLength(arrow_width / 2.0);
+
+  QPolygonF ret;
+  ret << QPointF(line.p1().x() + gakk.dy(), line.p1().y() - gakk.dx()) // arrow corner above line
+      << line.p2()
+      << QPointF(line.p1().x() - gakk.dy(), line.p1().y() + gakk.dx()); // arrow corner below line
   
-  if (line.length()< 0.001)
+  return ret;
+}
+
+static void update_subline_connection_positions(SuperConnection *connection, bool update_line, bool update_arrow){
+  const QLineF &line = connection->line();
+
+  const double line_length = line.length();
+  
+  if (line_length< 0.001)
     return;
 
   float db = connection->_last_displayed_db_peak;
   
-  qreal len = 6; //is_selected ? 10 : 6;
+  qreal len = 12; //is_selected ? 10 : 6;
   
-  if (! connection->_is_event_connection) {    
-    if (db >= -35)
-      len *= scale(db, -35, MAX_DB, 0.5, 10);
-    else
-      len *= 0.5;
-  }
+  if (connection->_is_event_connection)
+    len *= 2;
+  else if (db >= MIN_DB_A_LITTLE_BIT_ABOVE)
+    len *= scale(db, MIN_DB_A_LITTLE_BIT_ABOVE, MAX_DB, 0.25, 5);
 
-  qreal normalized_len = scale_double(len, 0, line.length(), 0, 1);
-  if(normalized_len > 0.99)
-    normalized_len = 0.99;
-  
-  QPointF p1 = line.pointAt(scale(db, MIN_DB, MAX_DB, normalized_len/2.0, 1.0-normalized_len/2.0) - normalized_len/2.0); // arrow start pos (on line)
-  QPointF p2 = line.pointAt(scale(db, MIN_DB, MAX_DB, normalized_len/2.0, 1.0-normalized_len/2.0) + normalized_len/2.0); // arrow end pos (on line)
+  qreal normalized_arrow_len = scale_double(len, 0, line_length, 0, 1);
+  if(normalized_arrow_len > 0.99)
+    normalized_arrow_len = 0.99;
 
-  QLineF gakk(line);
-  gakk.setLength(len / 2.0); // Set half size width compared to the length of the arrow.
   
-  QPointF arrow1p(p1.x() + gakk.dy(), p1.y() - gakk.dx()); // arrow corner above line
-  QPointF arrow2p(p1.x() - gakk.dy(), p1.y() + gakk.dx()); // arrow corner below line
+  double normalized_p;
+
+  if (connection->_is_event_connection)
+    normalized_p = 0.5; //scale_double(0.5, 0, 1, normalized_arrow_len/2.0, 1.0-normalized_arrow_len/2.0);
+  else
+    normalized_p = scale_double(db, MIN_DB, MAX_DB, normalized_arrow_len/2.0, 1.0-normalized_arrow_len/2.0);
   
-  QLineF line1(arrow1p, p2);
-  QLineF line2(arrow2p, p2);
+  /*
+    double linear = db2linear(db, 1, 0);
+  double normalized_p = scale_double(linear, 0, 1, normalized_arrow_len/2.0, 1.0-normalized_arrow_len/2.0);
+  if (ATOMIC_GET(root->editonoff))
+    normalized_p = scale_double(db, MIN_DB, MAX_DB, normalized_arrow_len/2.0, 1.0-normalized_arrow_len/2.0);
+  */
   
-  QLineF line3(arrow1p, arrow2p); //line1.pointAt(1), line2.pointAt(1));
+  double normalized_p1 = R_MAX(0.0, normalized_p - normalized_arrow_len/2.0);
+  double normalized_p2 = R_MIN(1.0, normalized_p + normalized_arrow_len/2.0);
   
-  connection->_arrow_line1.setLine(line1);
-  connection->_arrow_line2.setLine(line2);
-  connection->_arrow_line3.setLine(line3);
+  QPointF p1 = line.pointAt(normalized_p1); // arrow start pos (on line)
+  QPointF p2 = line.pointAt(normalized_p2); // arrow end pos (on line)
+
+  connection->_arrow.setPolygon(create_arrow_polygon(QLineF(p1, p2), len / 2.0));
   
-  connection->_visible_line1.setLine(QLineF(line.p1(), p1));
-  connection->_visible_line2.setLine(QLineF(p2, line.p2()));
+  connection->_visible_line.setLine(QLineF(line.p1(), line.p2()));
 }
+
 
 static float get_connection_width(const SuperConnection *connection){
   if (connection->_is_event_connection)
     return 1.0;
     
-  float db = connection->_last_displayed_db_peak;
+  //float db = connection->_last_displayed_db_peak;
   
   float pen_width;
   
-  if (db >= -35)
-    pen_width = ::scale(db, -35, MAX_DB, 0.3, 10);
-  else
-    pen_width = 0.3;
+  //if (db >= -35)
+  //  pen_width = ::scale(db, -35, MAX_DB, 0.3, 10);
+  //else
+  pen_width = 0.6;
 
   if (connection->_is_selected)
     pen_width *= 1.8;
@@ -1640,26 +1661,27 @@ static float get_connection_color_alpha(SuperConnection *connection){
     return 140;
 }
 
-void SuperConnection::update_shape(void){
-  QColor main_color = get_main_connection_color(this);
-  QColor arrow_color = get_arrow_connection_color(this, main_color);
+static void update_subline_connection_colors(SuperConnection *connection, const bool update_line, bool update_arrow){
+  QColor connection_color = get_qcolor(connection->_color_num);
+  int alpha = get_connection_color_alpha(connection);
 
-  {
-    int alpha = get_connection_color_alpha(this);
+  if (update_line) {
+    QColor main_color = get_line_color(connection, connection_color);
     main_color.setAlpha(alpha);
-    arrow_color.setAlpha(alpha);
+    QPen visible_pen = get_connection_pen(connection, main_color);
+    connection->_visible_line.setPen(visible_pen);
   }
-  
-  QPen visible_pen = get_connection_pen(this, main_color);
-  QPen arrow_pen = get_connection_pen(this, arrow_color);
-  
-  _visible_line1.setPen(visible_pen);
-  _visible_line2.setPen(visible_pen);
-  _arrow_line1.setPen(arrow_pen);
-  _arrow_line2.setPen(arrow_pen);
-  _arrow_line3.setPen(arrow_pen);
 
-  update_connection_subline_positions(this);
+  if (update_arrow){  
+    QColor arrow_color = get_arrow_color(connection, connection_color);
+    arrow_color.setAlpha(alpha);
+    connection->_arrow.setBrush(arrow_color);
+  }
+}
+
+void SuperConnection::update_shape(bool update_line, bool update_arrow){
+  update_subline_connection_colors(this, update_line, update_arrow);
+  update_subline_connection_positions(this, update_line, update_arrow);
 }
 
 void AudioConnection::update_position(void){
@@ -1674,7 +1696,7 @@ void AudioConnection::update_position(void){
 
   setLine(x1,y1,x2,y2);
   
-  update_shape();  
+  update_shape(true, true);
 }
 
 void AudioConnection::set_connection_type(ConnectionType connection_type){
@@ -1721,7 +1743,7 @@ void EventConnection::update_position(void){
 
   setLine(x1,y1,x2,y2);
   
-  update_shape();
+  update_shape(true, true);
 }
 
 // 'right_chip' is inserted in the middle of 'left_chip' and all chips 'left_chip' sends to.
