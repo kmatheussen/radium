@@ -1816,13 +1816,14 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
       if(_current_from_chip != NULL && chip != _current_from_chip){
 
         ADD_UNDO(MixerConnections_CurrPos());
-        CHIP_connect_chips(this, _current_from_chip, chip, ConnectionType::IS_SEND);
+        if (!CHIP_connect_chips(this, _current_from_chip, chip, ConnectionType::IS_SEND))
+          UNDO_CANCEL_LAST_UNDO();
 
       }else if(_current_to_chip != NULL && chip != _current_to_chip){
 
         ADD_UNDO(MixerConnections_CurrPos());
-        CHIP_connect_chips(this, chip, _current_to_chip, ConnectionType::IS_SEND);
-
+        if (!CHIP_connect_chips(this, chip, _current_to_chip, ConnectionType::IS_SEND))
+          UNDO_CANCEL_LAST_UNDO();
       }
     }
 
@@ -1844,12 +1845,14 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
       if(_ecurrent_from_chip != NULL && chip != _ecurrent_from_chip){
 
         ADD_UNDO(MixerConnections_CurrPos());
-        CHIP_econnect_chips(this, _ecurrent_from_chip, chip);
+        if (!CHIP_econnect_chips(this, _ecurrent_from_chip, chip))
+          UNDO_CANCEL_LAST_UNDO();
 
       }else if(_ecurrent_to_chip != NULL && chip != _ecurrent_to_chip){
 
         ADD_UNDO(MixerConnections_CurrPos());
-        CHIP_econnect_chips(this, chip, _ecurrent_to_chip);
+        if (!CHIP_econnect_chips(this, chip, _ecurrent_to_chip))
+          UNDO_CANCEL_LAST_UNDO();
 
       }
     }

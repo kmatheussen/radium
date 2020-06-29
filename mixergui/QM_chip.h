@@ -745,8 +745,8 @@ extern void CHIP_kick_left(Chip *chip);
 extern void CHIP_kick_right(Chip *chip);
 
 extern Chip *find_chip_for_plugin(QGraphicsScene *scene, SoundPlugin *plugin);
-extern void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to, ConnectionType connection_type);
-extern void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to, ConnectionType connection_type);
+extern bool CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to, ConnectionType connection_type);
+extern bool CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to, ConnectionType connection_type);
 extern bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
 extern bool CHIPS_are_connected(const Chip *from, const Chip *to);
 extern bool CHIPS_are_econnected(const Chip *from, const Chip *to);
@@ -762,8 +762,8 @@ extern bool CONNECTION_can_connect(struct Patch *source, struct Patch *target);
 
 extern void CONNECTION_update(struct Patch *source, struct Patch *target);
   
-extern void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
-extern void CHIP_econnect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to);
+extern bool CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
+extern bool CHIP_econnect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to);
 
 extern void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip);
 extern void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip);
