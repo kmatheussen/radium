@@ -983,7 +983,7 @@ static bool mousepress_delete_connection(MyScene *scene, QGraphicsSceneMouseEven
     QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
     for (int i = 0; i < das_items.size(); ++i) {
       connection = dynamic_cast<SuperConnection*>(das_items.at(i));
-      if(connection!=NULL && connection->isUnderMouse()==true)
+      if(connection!=NULL && connection->isVisible() && connection->isUnderMouse()==true)
         break;
       else
         connection = NULL;
