@@ -499,6 +499,7 @@ public:
   void setVisibility(bool show){
     _visible_line.setVisible(show);
     _arrow.setVisible(show);
+    setVisible(show);
   }
   
   void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ) override {
