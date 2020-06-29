@@ -618,11 +618,11 @@ static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
 
   SoundPlugin *plugin1 = SP_get_plugin(from->_sound_producer);
   volatile struct Patch *patch1 = plugin1->patch;
-  R_ASSERT_RETURN_IF_FALSE2(patch1!=NULL, false);
+  R_ASSERT_RETURN_IF_FALSE2(patch1!=NULL, true);
 
   SoundPlugin *plugin2 = SP_get_plugin(to->_sound_producer);
   volatile struct Patch *patch2 = plugin2->patch;
-  R_ASSERT_RETURN_IF_FALSE2(patch2!=NULL, false);
+  R_ASSERT_RETURN_IF_FALSE2(patch2!=NULL, true);
 
   if (PATCH_add_event_receiver((struct Patch*)patch1,
                                (struct Patch*)patch2)
@@ -630,7 +630,7 @@ static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
       )
     {
       RError("Impossible situation: PATCH_add_event_receiver()==true and SP_add_elink()==false");
-      return false;
+      //return false;
     }
   
   return true;
@@ -1118,17 +1118,17 @@ bool CONNECTIONS_apply_changes(const dynvec_t dynchanges){
   return CONNECTIONS_apply_changes(scene, changes);
 }
 
-void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to, ConnectionType connection_type){
+bool CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to, ConnectionType connection_type){
 //printf("Connect chips\n");
-  CONNECTIONS_apply_changes(scene, changes::Connect(from, to, connection_type));
+  return CONNECTIONS_apply_changes(scene, changes::Connect(from, to, connection_type));
 }
 
 bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){  
   return CONNECTIONS_apply_changes(scene, changes::Disconnect(from, to));
 }
 
-void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to, ConnectionType connection_type){
-  CHIP_connect_chips(scene, find_chip_for_plugin(scene, from), find_chip_for_plugin(scene, to), connection_type);
+bool CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to, ConnectionType connection_type){
+  return CHIP_connect_chips(scene, find_chip_for_plugin(scene, from), find_chip_for_plugin(scene, to), connection_type);
 }
 
 static void changeremove_all_audio_connections(const QGraphicsScene *scene, changes::AudioGraph &changes){
@@ -1253,22 +1253,23 @@ void CHIP_add_chip_to_connection_sequence(QGraphicsScene *scene, Chip *before, C
   CONNECTIONS_apply_changes(scene, changes);
 }
 
-void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
+bool CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   if(CHIPS_are_econnected(from,to)==true){
     printf("Chips are already econnected\n");
-    return;
+    return false;
   }
 
   if(econnect(scene, from, to)==false)
-    return; // trying to make recursive connection
+    return false; // trying to make recursive connection
 
   EventConnection *econnection = new EventConnection(scene, from, to);
   
   scene->addItem(econnection);
+  return true;
 }
 
-void CHIP_econnect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to){
-  CHIP_econnect_chips(scene, find_chip_for_plugin(scene, from), find_chip_for_plugin(scene, to));
+bool CHIP_econnect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to){
+  return CHIP_econnect_chips(scene, find_chip_for_plugin(scene, from), find_chip_for_plugin(scene, to));
 }
 
 /*
