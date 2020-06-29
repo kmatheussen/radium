@@ -62,12 +62,12 @@ static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms
     if (max_db > peaks.decaying_dbs[ch])
       peaks.decaying_dbs[ch] = max_db;
     else
-      peaks.decaying_dbs[ch] -= ms / 50;
+      peaks.decaying_dbs[ch] -= ms / 50.0;
     
     if (max_db > peaks.decaying_dbs_10x[ch])
       peaks.decaying_dbs_10x[ch] = max_db;
     else
-      peaks.decaying_dbs_10x[ch] -= ms / 5; //(ATOMIC_GET(root->editonoff) ? 10 : 5);
+      peaks.decaying_dbs_10x[ch] -= ms / 5.0; //(ATOMIC_GET(root->editonoff) ? 10 : 5);
     
     // falloff db
     if (reset_falloff || max_db > peaks.falloff_dbs[ch])
@@ -109,13 +109,15 @@ void AUDIOMETERPEAKS_call_very_often(int what_to_update){
 
   int64_t mixer_time = MIXER_get_last_used_time();
 
-  if (mixer_time+(RADIUM_BLOCKSIZE*3) <= s_last_mixer_time) // must add some radium_bloksize as well to ensure a cycle really has had time to run.
+  if (mixer_time <= s_last_mixer_time+RADIUM_BLOCKSIZE) // add radium_bloksize as well to ensure (almost certainly) that a cycle really has had time to run.
     return;
   
   static double time_since_last_reset_falloff = 0;
 
   double ms = 1000.0 * (double)(mixer_time - s_last_mixer_time) / (double)pc->pfreq;
 
+  //printf("ms: %f\n", ms);
+  
   s_last_mixer_time = mixer_time;
   
   time_since_last_reset_falloff += ms;

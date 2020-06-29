@@ -1911,6 +1911,8 @@ protected:
     }
 #else
     {
+      //AUDIOMETERPEAKS_call_very_often(-1);
+      
       int interval = useCPUFriendlyAudiometerUpdates() ? 50 : 15;
 
       if (is_called_every_ms(interval)){
