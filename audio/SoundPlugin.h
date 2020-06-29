@@ -45,6 +45,7 @@ extern "C"{
   
 // Used by the volume sliders and peak meters.
 #define MIN_DB -40           // "gain value" = 0.0. "scaled effect value" = 0.0.
+#define MIN_DB_A_LITTLE_BIT_ABOVE -39.9 // GUI can assume that no sound is produced if peak is less than this value.
 #define MIN_DB_THRESHOLD -35 // "gain_value" = 0.01778279410038923. Between MIN_DB and MIN_DB_THRESHOLD, we do linear gain<->db conversion. "scaled effect value" = 0.06666666666666667.
 #define MAX_DB 35            // "gain value" = 56.23413251903491. "scaled effect value" = 1.0.
   

@@ -241,7 +241,7 @@ public:
 
     //printf("set enabled2 %d -> %d: is_enabled: %d. _is_enabled: %d, is_implicitly_enabled: %d\n", (int)CHIP_get_patch(_from)->id, (int)CHIP_get_patch(_to)->id, is_enabled, _is_enabled, _is_implicitly_enabled);
 
-    update_shape();
+    update_shape(true, true);
     
     return true;
   }
@@ -282,7 +282,23 @@ public:
   const ChipPointer &from; // Set to const. See comment about _from above.
   const ChipPointer &to;
 
-  void update_shape(void);
+  void update_shape(bool update_line, bool update_arrow);
+
+  bool _must_update_line_shape = false;
+  bool _must_update_arrow_shape = false;
+
+  void schedule_update_shape(bool update_line, bool update_arrow){
+    _must_update_line_shape  = _must_update_line_shape || update_line;
+    _must_update_arrow_shape = _must_update_arrow_shape || update_arrow;
+  }
+  
+  void apply_update_shapes(void) {
+    if (_must_update_line_shape || _must_update_arrow_shape)
+      update_shape(_must_update_line_shape, _must_update_arrow_shape);
+    
+    _must_update_line_shape = false;
+    _must_update_arrow_shape = false;
+  }
   
   //bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
 
@@ -403,11 +419,8 @@ public:
     , _is_implicitly_enabled(is_implicitly_enabled)
     , from(_from)
     , to(_to)
-    , _visible_line1(this)
-    , _visible_line2(this)
-    , _arrow_line1(this)
-    , _arrow_line2(this)
-    , _arrow_line3(this)
+    , _visible_line(this)
+    , _arrow(this)
   {
 
     QColor c(30,25,70,0);
@@ -419,27 +432,19 @@ public:
 
     setPen(pen);
 
-    setZValue(-2);    
-    
+    setZValue(-2);
+    _arrow.setZValue(1);
+        
     setAcceptHoverEvents(true);
 
     {
       QPen pen = getPen();
       
-      _visible_line1.setPen(pen);
-      parent->addItem(&_visible_line1);
+      _visible_line.setPen(pen);
+      parent->addItem(&_visible_line);
       
-      _visible_line2.setPen(pen);
-      parent->addItem(&_visible_line2);
-
-      _arrow_line1.setPen(pen);
-      parent->addItem(&_arrow_line1);
-      
-      _arrow_line2.setPen(pen);
-      parent->addItem(&_arrow_line2);
-      
-      _arrow_line3.setPen(pen);
-      parent->addItem(&_arrow_line3);
+      //_arrow.setPen(pen);
+      parent->addItem(&_arrow);
     }
     
     update_visibility();
@@ -477,11 +482,8 @@ public:
       QGraphicsLineItem::paint(painter,option,widget);
   }
 
-  QGraphicsLineItem _visible_line1;
-  QGraphicsLineItem _visible_line2;
-  QGraphicsLineItem _arrow_line1;
-  QGraphicsLineItem _arrow_line2;
-  QGraphicsLineItem _arrow_line3;
+  QGraphicsLineItem _visible_line;
+  QGraphicsPolygonItem _arrow;
 
   
   virtual void update_position(void) = 0;
@@ -495,11 +497,8 @@ public:
 #endif
 
   void setVisibility(bool show){
-    _visible_line1.setVisible(show);
-    _visible_line2.setVisible(show);
-    _arrow_line1.setVisible(show);
-    _arrow_line2.setVisible(show);
-    _arrow_line3.setVisible(show);
+    _visible_line.setVisible(show);
+    _arrow.setVisible(show);
   }
   
   void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ) override {
@@ -572,7 +571,7 @@ public:
   void mySetSelected(bool selected){
     if (_is_selected != selected){
       _is_selected = selected;
-      update_shape();
+      update_shape(true, true);
       //setLine(line().x1(), line().y1(), line().x2(), line().y2());
     }
     QGraphicsLineItem::setSelected(selected);    

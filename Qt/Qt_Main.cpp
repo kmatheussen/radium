@@ -1920,6 +1920,8 @@ protected:
         AUDIOMETERPEAKS_call_very_often(-1);
 
         API_gui_call_regularly();
+
+        MW_call_each_16ms(interval);
         
         RTWIDGET_call_often();
       }

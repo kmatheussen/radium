@@ -61,7 +61,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <inttypes.h>
 #include <unistd.h>
 
-#include <QTimer>
 #include <QFont>
 #include <QGraphicsSceneMouseEvent>
 #include <QAction>
@@ -513,8 +512,11 @@ void MW_update_all_chips(void){
   QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip2 = dynamic_cast<Chip*>(das_items.at(i));
-    if(chip2!=NULL)
+    if(chip2!=NULL){
       chip2->update();
+      for(auto *connection : chip2->_output_audio_connections)
+        connection->update_shape(true, true);
+    }
   }
 }
 
@@ -751,7 +753,7 @@ void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
     int y2 = pos.y();
 
     _current_connection->setLine(x1,y1,x2,y2);
-    _current_connection->update_shape();
+    _current_connection->update_shape(true, true);
 
     event->accept();
 
@@ -771,7 +773,7 @@ void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
     int y2 = pos.y();
 
     _current_econnection->setLine(x1,y1,x2,y2);
-    _current_econnection->update_shape();
+    _current_econnection->update_shape(true, true);
     
     event->accept();
 
@@ -935,7 +937,7 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
         scene->addItem(scene->_current_connection);
         
         scene->_current_connection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
-        scene->_current_connection->update_shape();
+        scene->_current_connection->update_shape(true, true);
         
         event->accept();
         return true;
@@ -962,7 +964,7 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
         scene->addItem(scene->_current_econnection);
         
         scene->_current_econnection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
-        scene->_current_econnection->update_shape();
+        scene->_current_econnection->update_shape(true, true);
         
         event->accept();
         return true;
@@ -1917,24 +1919,58 @@ DEFINE_ATOMIC(bool, g_show_cpu_usage_in_mixer) = false;
 MixerWidget *g_mixer_widget = NULL;
 
 namespace{
-  class MixerWidgetTimer : public QTimer{
+  struct MixerWidgetTimer {
 
     int64_t counter = 0;
+
+    void maybe_schedule_update_audio_connection(AudioConnection *connection, const float db) const {
+      float connection_db = db;
+      
+      if (connection->to != NULL) {
+        
+        const char *error = NULL;
+        float link_gain = SP_get_link_gain(connection->to->_sound_producer, connection->from->_sound_producer, &error);
+        if (error != NULL)
+          printf("\n\n\n\n=======================ERROR: %s\n\n\n\n\n", error);
+        /*
+          if (!equal_floats(link_gain, 1.0) && !equal_floats(link_gain, 0.0)){
+          printf("      LINK_GAIN %s ->%s: %f.  db: %f\n", CHIP_get_patch(connection->from)->name, CHIP_get_patch(connection->to)->name, link_gain, gain2db(link_gain));
+          }
+        */
+        if (error==NULL)
+          connection_db = R_BOUNDARIES(MIN_DB, connection_db + gain2db(link_gain), MAX_DB);
+      }
+      
+      constexpr double gakk = 0.05;
+      
+      static_assert(MIN_DB_A_LITTLE_BIT_ABOVE - MIN_DB > gakk);
+      
+      if (fabs(connection_db - connection->_last_displayed_db_peak) > gakk){                      
+#if 0
+        static int num = 0;
+        printf("    %d: Update \"%s\" -> \"%s\". Old: %f. New: %f\n",
+               num++,
+               CHIP_get_patch(connection->from)->name, connection->to==NULL ? "(NULL)" : CHIP_get_patch(connection->to)->name,
+               connection->_last_displayed_db_peak,
+               connection_db);
+#endif                 
+        connection->_last_displayed_db_peak = connection_db;
+        connection->schedule_update_shape(false, true);
+      }
+
+    }
     
-    void 	timerEvent ( QTimerEvent * e ) override {
+    void call_each_16ms(double ms) {
       counter++;
 
       RETURN_IF_DATA_IS_INACCESSIBLE();
 
       if (modular_mixer_visible()){
 
-        if (g_mixer_widget->scene._current_connection != NULL)
-          g_mixer_widget->scene._current_connection->update_shape();
-          
-        if (g_mixer_widget->scene._current_econnection != NULL)
-          g_mixer_widget->scene._current_econnection->update_shape();
-          
+        bool less_frequently_updated = (counter % 3) == 0;
         
+        bool show_cpu_update = less_frequently_updated && ATOMIC_GET_RELAXED(g_show_cpu_usage_in_mixer);
+              
         for (QGraphicsItem *das_item : g_mixer_widget->scene.items()){
           
           Chip *chip = dynamic_cast<Chip*>(das_item);
@@ -1945,8 +1981,6 @@ namespace{
             
             if(plugin != NULL){
 
-              bool show_cpu_update = ATOMIC_GET_RELAXED(g_show_cpu_usage_in_mixer);
-              
               if (show_cpu_update){
                 CpuUsage *cpu_usage = (CpuUsage*)ATOMIC_GET(plugin->cpu_usage);
                 
@@ -1956,120 +1990,122 @@ namespace{
 
               ATOMIC_SET(plugin->is_selected, chip->isSelected()); // Ensurance. Unfortunately QGraphicsItem::setSelected is not virtual
 
-              volatile struct Patch *patch = plugin->patch;
+              struct Patch *patch = plugin->patch;
               
               if(patch!=NULL){
 
-                int note_intencity = ATOMIC_GET_RELAXED(patch->visual_note_intencity);
-                if(note_intencity != chip->_last_note_intencity){
-                  chip->_last_note_intencity = note_intencity;
-                  //printf("intencity: %d\n",ATOMIC_GET(patch->visual_note_intencity));
-                  int x1,y1,x2,y2;
-                  CHIP_get_note_indicator_coordinates(x1,y1,x2,y2);
-                  chip->update(x1,y1,x2-x1,y2-y1);                  
-                  for(auto *connection : chip->_output_event_connections)
-                    connection->update_shape();
-                }
-
-                float volume = chip->get_slider_volume();
-                bool is_muted = !ATOMIC_GET_RELAXED(plugin->volume_is_on);
-                //bool is_implicitly_muted = SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
-                bool is_solo = ATOMIC_GET_RELAXED(plugin->solo_is_on);
-                bool is_bypass = !ATOMIC_GET_RELAXED(plugin->effects_are_on);
-                bool is_recording = ATOMIC_GET_RELAXED(patch->is_recording);
-                bool is_autosuspending = ATOMIC_GET_RELAXED(plugin->_is_autosuspending);
-
-                //printf("last: %f. vol: %f. Equal? %d\n", chip->_last_updated_volume, volume, chip->_last_updated_volume == volume);
-                if (!equal_floats(chip->_last_updated_volume, volume)){
-                  CHIP_update(chip, plugin);
-                  chip->_last_updated_volume = volume;
-                }
+                if (less_frequently_updated) {
+                  float volume = chip->get_slider_volume();
+                  bool is_muted = !ATOMIC_GET_RELAXED(plugin->volume_is_on);
+                  //bool is_implicitly_muted = SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
+                  bool is_solo = ATOMIC_GET_RELAXED(plugin->solo_is_on);
+                  bool is_bypass = !ATOMIC_GET_RELAXED(plugin->effects_are_on);
+                  bool is_recording = ATOMIC_GET_RELAXED(patch->is_recording);
+                  bool is_autosuspending = ATOMIC_GET_RELAXED(plugin->_is_autosuspending);
                   
-                if (chip->_last_updated_mute != is_muted){
-                  chip->update();
-                  chip->_last_updated_mute = is_muted;
-                }
-
-                /*
-                // CHIP_update() should be called manually when implicit mute changes.
-                if (chip->_last_updated_implicitly_mute != is_implicitly_muted){
-                  chip->update();
-                  chip->_last_updated_implicitly_mute = is_implicitly_muted;
-                }
-                */
-                
-                if (chip->_last_updated_solo != is_solo){
-                  chip->update();
-                  chip->_last_updated_solo = is_solo;
-                }
-                
-                if (chip->_last_updated_bypass != is_bypass){
-                  chip->update();
-                  chip->_last_updated_bypass = is_bypass;
-                }
-                
-                if (chip->_last_updated_recording != is_recording){
-                  chip->update();
-                  chip->_last_updated_recording = is_recording;
-                }
-
-                // turn on is_autosuspending (only gfx)
-                if (chip->_last_updated_autosuspending==true &&  is_autosuspending==false){
-                  chip->_last_updated_autosuspending = false;
-                  chip->update();
-                  //printf("Turned off autosuspending for %s\n", patch->name);
-                }
-
-                if (is_autosuspending==false)
-                  chip->_autosuspend_on_time = counter;
-                                  
-                // turn off is_autosuspending (only gfx) (wait at least one second to turn if on, to avoid flickering)
-                if (chip->_last_updated_autosuspending==false && is_autosuspending==true){
-                  //printf("Turned on autosuspending for %s (%f)\n", patch->name, (TIME_get_ms() - _autosuspend_on_time));
-                  if ( (counter - chip->_autosuspend_on_time) > (1000 / interval())){
-                    chip->_last_updated_autosuspending = true;
+                  //printf("last: %f. vol: %f. Equal? %d\n", chip->_last_updated_volume, volume, chip->_last_updated_volume == volume);
+                  if (!equal_floats(chip->_last_updated_volume, volume)){
+                    CHIP_update(chip, plugin);
+                    chip->_last_updated_volume = volume;
+                  }
+                  
+                  if (chip->_last_updated_mute != is_muted){
                     chip->update();
+                    chip->_last_updated_mute = is_muted;
+                  }
+
+                  /*
+                  // CHIP_update() should be called manually when implicit mute changes.
+                  if (chip->_last_updated_implicitly_mute != is_implicitly_muted){
+                    chip->update();
+                    chip->_last_updated_implicitly_mute = is_implicitly_muted;
+                  }
+                  */
+                
+                  if (chip->_last_updated_solo != is_solo){
+                    chip->update();
+                    chip->_last_updated_solo = is_solo;
+                  }
+                  
+                  if (chip->_last_updated_bypass != is_bypass){
+                    chip->update();
+                    chip->_last_updated_bypass = is_bypass;
+                  }
+                  
+                  if (chip->_last_updated_recording != is_recording){
+                    chip->update();
+                    chip->_last_updated_recording = is_recording;
+                  }
+                  
+                  // turn on is_autosuspending (only gfx)
+                  if (chip->_last_updated_autosuspending==true &&  is_autosuspending==false){
+                    chip->_last_updated_autosuspending = false;
+                    chip->update();
+                    //printf("Turned off autosuspending for %s\n", patch->name);
+                  }
+
+                  if (is_autosuspending==false)
+                    chip->_autosuspend_on_time = counter;
+                  
+                  // turn off is_autosuspending (only gfx) (wait at least one second to turn if on, to avoid flickering)
+                  if (chip->_last_updated_autosuspending==false && is_autosuspending==true){
+                    //printf("Turned on autosuspending for %s (%f)\n", patch->name, (TIME_get_ms() - _autosuspend_on_time));
+                    if ( (counter - chip->_autosuspend_on_time) > (1000 / ms)){
+                      chip->_last_updated_autosuspending = true;
+                      chip->update();
+                    }
                   }
                 }
 
                 if (plugin->type->num_outputs>0 && chip->_output_audio_connections.size() > 0){
 
-                  float db = -35;
+                  float db = MIN_DB;
 
                   for(int ch=0;ch<plugin->type->num_outputs;ch++)
                     db = R_MAX(db, plugin->output_volume_peaks.decaying_dbs_10x[ch]);
                   
-                  for(auto *connection : chip->_output_audio_connections) {
+                  for(auto *connection : chip->_output_audio_connections)
+                    maybe_schedule_update_audio_connection(connection, db);
 
-                    float connection_db = db;
-
-                    if (connection->to != NULL) {
-
-                      const char *error = NULL;
-                      float link_gain = SP_get_link_gain(connection->to->_sound_producer, chip->_sound_producer, &error);
-                      R_ASSERT_NON_RELEASE(error==NULL);
-                      
-                      if (!equal_floats(link_gain, 1.0) && !equal_floats(link_gain, 0.0)){
-                        printf("      LINK_GAIN %s ->%s: %f.  db: %f\n", CHIP_get_patch(connection->from)->name, CHIP_get_patch(connection->to)->name, link_gain, gain2db(link_gain));
-                      }
-                      
-                      connection_db = R_BOUNDARIES(MIN_DB, connection_db + gain2db(link_gain), MAX_DB);
-                    }
-                  
-                    if (fabs(connection_db - connection->_last_displayed_db_peak) > 0.1){
-                      static int num = 0;
-                      printf("    %d: Update \"%s\" (\"%s\") -> \"%s\". Old: %f. New: %f\n",
-                             num++,
-                             CHIP_get_patch(connection->from)->name, patch->name, CHIP_get_patch(connection->to)->name,
-                             connection->_last_displayed_db_peak,
-                             connection_db);
-                      
-                      connection->_last_displayed_db_peak = connection_db;
-                      connection->update_shape();
-                    }
-                  }
+                  if (g_mixer_widget->scene._current_connection != NULL && g_mixer_widget->scene._current_connection->from==chip)
+                    maybe_schedule_update_audio_connection(g_mixer_widget->scene._current_connection, db);
                 }
                 
+                {
+                  int note_intencity = ATOMIC_GET_RELAXED(patch->visual_note_intencity);
+                  if(note_intencity != chip->_last_note_intencity){
+                    chip->_last_note_intencity = note_intencity;
+                    //printf("intencity: %d\n",ATOMIC_GET(patch->visual_note_intencity));
+                    int x1,y1,x2,y2;
+                    CHIP_get_note_indicator_coordinates(x1,y1,x2,y2);
+                    chip->update(x1,y1,x2-x1,y2-y1);
+
+                    for(auto *connection : chip->_output_event_connections)
+                      connection->schedule_update_shape(true, true);
+                    
+                    for(auto *connection : chip->_output_audio_connections)
+                      connection->schedule_update_shape(true, false);
+                    
+                    if (g_mixer_widget->scene._current_econnection != NULL && g_mixer_widget->scene._current_econnection->from==chip)
+                      g_mixer_widget->scene._current_econnection->schedule_update_shape(true, true);
+                    
+                    if (g_mixer_widget->scene._current_connection != NULL && g_mixer_widget->scene._current_connection->from==chip)
+                      g_mixer_widget->scene._current_connection->schedule_update_shape(true, false);                  
+                  }
+                }
+
+                if (g_mixer_widget->scene._current_econnection != NULL)
+                  g_mixer_widget->scene._current_econnection->apply_update_shapes();
+                
+                if (g_mixer_widget->scene._current_connection != NULL)
+                  g_mixer_widget->scene._current_connection->apply_update_shapes();
+
+                for(auto *connection : chip->_output_event_connections)
+                  connection->apply_update_shapes();
+                
+                for(auto *connection : chip->_output_audio_connections)
+                  connection->apply_update_shapes();
+
                 if (chip->_input_slider != NULL)
                   SLIDERPAINTER_call_regularly(chip->_input_slider, -1);
                 
@@ -2082,6 +2118,12 @@ namespace{
       }
     }
   };
+
+  static MixerWidgetTimer g_mixer_widget_timer;
+}
+
+void MW_call_each_16ms(double ms){
+  g_mixer_widget_timer.call_each_16ms(ms);
 }
 
 MixerWidget::MixerWidget(QWidget *parent)
@@ -2104,12 +2146,6 @@ MixerWidget::MixerWidget(QWidget *parent)
   
   setWindowTitle(tr("Radium Mixer"));
   
-  {
-    MixerWidgetTimer *timer = new MixerWidgetTimer;
-    timer->setInterval(16);//50); // 3*16.666
-    timer->start();
-  }
-
   //qApp->installEventFilter(this);
 }
 

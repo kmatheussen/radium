@@ -97,7 +97,9 @@ extern MixerWidget *g_mixer_widget;
 QGraphicsScene *get_scene(MixerWidget *mixer_widget);
 QWidget *get_qwidget(MixerWidget *mixer_widget);
 MixerWidget *create_mixer_widget(QWidget *parent);
-  
+
+void MW_call_each_16ms(double ms);
+
 void MW_set_autopos(double *x, double *y);
   
 bool MW_move_chip_to_slot(Chip *chip, float x, float y);
