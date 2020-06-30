@@ -3013,6 +3013,8 @@ int getPlaylistPosForSeqblock(int64_t seqblockid){
 
 #define CURR_SEQBLOCK_EQUALS_SEQBLOCKS_UNDER_MOUSE 1
 
+static int g_set_curr_seqblock_level = 0;
+
 static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
 
   if (seqblockid < 0 && seqblockid!=-2){
@@ -3020,29 +3022,31 @@ static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
     return;
   }
     
+  if(g_set_curr_seqblock_level != 0){
+    R_ASSERT_NON_RELEASE(false);
+  }
   
-  if (seqblockid==g_curr_seqblock_id)
-    return;
+  radium::ScopedGeneration is_changing(g_set_curr_seqblock_level);
 
+  if(g_set_curr_seqblock_level > 10){ // Even though it works now, don't remove this test. There's lots of situations where we easily could end up in an infinite loop here if code is changed slightly.
+    R_ASSERT(false);
+    return;
+  }
+
+  
+  if (seqblockid==g_curr_seqblock_id){
+#if  CURR_SEQBLOCK_EQUALS_SEQBLOCKS_UNDER_MOUSE
+    setCurrSeqblockUnderMouse(seqblockid);
+#endif
+    return;
+  }
+  
   if (SEQUENCER_getWidget_r0()==NULL){
     // starting up.
     g_curr_seqblock_id = seqblockid;
     return;
   }
     
-  static int level = 0;
-
-  if(level != 0){
-    R_ASSERT_NON_RELEASE(false);
-  }
-  
-  radium::ScopedGeneration is_changing(level);
-
-  if(level > 10){ // Even though it works now, don't remove this test. There's lots of situations where we easily could end up in an infinite loop here if code is changed slightly.
-    R_ASSERT(false);
-    return;
-  }
-
   if (seqblockid==-2){
     cancelCurrSeqblock(); // Update GFX of old seqblock.
     g_curr_seqblock_id = seqblockid;
@@ -3202,7 +3206,8 @@ int getCurrSeqtrack(void){
 
 void setCurrSeqblockUnderMouse(int64_t seqblockid){
 #if CURR_SEQBLOCK_EQUALS_SEQBLOCKS_UNDER_MOUSE
-  setCurrSeqblock(seqblockid);
+  if (g_set_curr_seqblock_level==0)
+    setCurrSeqblock(seqblockid);
 #endif
   
   if (seqblockid==g_curr_seqblock_id_under_mouse)
