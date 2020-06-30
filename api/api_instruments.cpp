@@ -2945,6 +2945,45 @@ void setCurrentInstrumentDown(void){
   S7CALL2(void_void,"FROM_C-move-current-instrument-down");
 }
 
+static bool g_curr_instrument_is_locked = false;// = createIllegalInstrument();
+
+void setCurrentInstrumentLocked(bool lockit){
+  if (lockit==g_curr_instrument_is_locked)
+    return;
+  
+  g_curr_instrument_is_locked = lockit;
+  
+  GFX_update_instrument_widget(PATCH_get_current());
+  
+  /*
+  if (lockit)
+    g_curr_locked_instrument = getCurrentInstrument();
+  else
+    g_curr_locked_instrument = createIllegalInstrument();
+  */
+}
+
+bool isCurrentInstrumentLocked(void){
+  return g_curr_instrument_is_locked;
+  /*
+  if (isIllegalInstrument(g_curr_locked_instrument))
+    return false;
+  else
+    return PATCH_get_from_id(g_curr_locked_instrument) != NULL;
+  */
+}
+
+void switchSetCurrentInstrumentLocked(void){
+  setCurrentInstrumentLocked(!isCurrentInstrumentLocked());
+
+  /*
+  if (lockit)
+    g_curr_locked_instrument = getCurrentInstrument();
+  else
+    g_curr_locked_instrument = createIllegalInstrument();
+  */
+}
+
 void showInstrumentInfo(dyn_t instrument_id_or_description, int64_t parentgui){
   if (instrument_id_or_description.type==INSTRUMENT_TYPE){
     

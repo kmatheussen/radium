@@ -1161,6 +1161,16 @@
   
 
 
+(define (FROM_C-show-lock-instrument-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-set-current-instrument-locked"
+                                                    '()
+                                                    "")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+ 
+
 (define (FROM_C-show-bottom-bar-octave-down-popup-menu)
   (popup-menu
    (get-keybinding-configuration-popup-menu-entries "ra:dec-key-add"
