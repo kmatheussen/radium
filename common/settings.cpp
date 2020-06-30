@@ -101,7 +101,8 @@ static QVector<QString> get_lines(const char* key){
   
   QFile file(filename);
 
-  if(file.open(QIODevice::ReadOnly | QIODevice::Text)==false){
+  if(!file.open(QIODevice::ReadOnly | QIODevice::Text)){
+    
 #if 0
     const char* curr_dir = OS_get_program_path();
     const char* separator = OS_get_directory_separator();
@@ -110,6 +111,7 @@ static QVector<QString> get_lines(const char* key){
     sprintf(filename,"%s%s%s",curr_dir,separator,basefilename);
     file = fopen(filename,"r");
 #endif
+    
     QString bin_filename = STRING_get_qstring(OS_get_full_program_file_path(is_color_config ? "colors" : "config").id);
     
     file.setFileName(bin_filename);

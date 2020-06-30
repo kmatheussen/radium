@@ -502,6 +502,10 @@ filepath_t OS_get_config_filename(const char *key){
   return make_filepath(config_info.absoluteFilePath());
 }
 
+bool OS_use_custom_config(bool for_colors){
+  return DISK_file_exists(OS_get_config_filename(for_colors ? "color9" : "gakkgakk"));
+}
+
 double OS_get_double_from_string(const char *s){
   QLocale::setDefault(QLocale::C);
   QString string(s);

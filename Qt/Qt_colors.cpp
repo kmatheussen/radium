@@ -252,42 +252,13 @@ static ReplacementColorNum g_replacement_color_num[] = {
 
   //{BUTTONS_NOT_ENABLED_COLOR_NUM, BUTTONS_COLOR_NUM},
   //{CHECK_BOX_NOT_ENABLED_COLOR_NUM, CHECK_BOX_SELECTED_COLOR_NUM},
-
-  {SOUNDFONT_COLOR_NUM, BUTTONS_COLOR_NUM}, // 13=green  
-  {SOUNDFILE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM}, // 7=bluish
-  {CURRENT_SOUNDFILE_COLOR_NUM, VELOCITY2_COLOR_NUM},
     
-  {SLIDER2_COLOR_NUM, BUTTONS_COLOR_NUM},
-  {SLIDER_DISABLED_COLOR_NUM, HIGH_BACKGROUND_COLOR_NUM},
-  {TRACK_SLIDER_COLOR_NUM, TEXT_COLOR_NUM},
-
-  {PEAKS_COLOR_NUM, BUTTONS_COLOR_NUM},
-  {PEAKS_0DB_COLOR_NUM, VELOCITY2_COLOR_NUM},
-  {PEAKS_4DB_COLOR_NUM, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
-  {VELOCITY_TEXT_COLOR_NUM, TEXT_COLOR_NUM},
-
   {PIANONOTE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
   
-  {NOTE_EVENT_INDICATOR_COLOR_NUM, EDITOR_SLIDERS_COLOR_NUM},
-  {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
-  
-  {AUTOMATION4_COLOR_NUM, WAVEFORM_COLOR_NUM},
-  {AUTOMATION5_COLOR_NUM, VELOCITY1_COLOR_NUM},
-  {AUTOMATION6_COLOR_NUM, VELOCITY2_COLOR_NUM},
-  {AUTOMATION7_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
-  {AUTOMATION8_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
   {AUTOMATION_INDICATOR_COLOR_NUM, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
-
-  {TRACK_SEPARATOR1_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
-  {TRACK_SEPARATOR2B_COLOR_NUM, LOW_BACKGROUND_COLOR_NUM},
 
   {BAR_TEXT_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
   {ZOOMLINE_TEXT_COLOR_NUM1, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
-  {ZOOMLINE_TEXT_COLOR_NUM2, WAVEFORM_COLOR_NUM},
-  {ZOOMLINE_TEXT_COLOR_NUM3, AUTOMATION1_COLOR_NUM},
-  {ZOOMLINE_TEXT_COLOR_NUM4, AUTOMATION2_COLOR_NUM},
-  {ZOOMLINE_TEXT_COLOR_NUM5, VELOCITY1_COLOR_NUM},
-  {ZOOMLINE_TEXT_COLOR_NUM6, VELOCITY2_COLOR_NUM},
   {ZOOMLINE_TEXT_COLOR_NUM7, CURSOR_EDIT_ON_COLOR_NUM},
 
   {PITCH_LINE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
@@ -295,8 +266,6 @@ static ReplacementColorNum g_replacement_color_num[] = {
   {PIANOROLL_OCTAVE_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
   {PIANOROLL_NOTE_NAME_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
   
-  {CURSOR_EDIT_OFF_COLOR_NUM, VELOCITY1_COLOR_NUM},
-
   {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
 
   {END_CONFIG_COLOR_NUM, ILLEGAL_COLOR_NUM}
@@ -314,10 +283,22 @@ static ReplacementColor g_replacement_color[] = {
   
   {INSTRUMENT_NAME_COLOR_NUM, QColor("#fffdfec8")},
   {CURSOR_EDIT_ON_COLOR_NUM, QColor("#ff0b186c")},
+  {CURSOR_EDIT_OFF_COLOR_NUM, QColor("#ff434a43")},
   {EDITOR_SLIDERS_COLOR_NUM, QColor("#ff96a3a7")},
   {AUTOMATION1_COLOR_NUM, QColor("#ffffffff")},
   {AUTOMATION2_COLOR_NUM, QColor("#ff71e54e")},
   {AUTOMATION3_COLOR_NUM, QColor("#fff4ff23")},
+  {AUTOMATION4_COLOR_NUM, QColor("#ff63acd9")},
+  {AUTOMATION5_COLOR_NUM, QColor("#ffff355a")},
+  {AUTOMATION6_COLOR_NUM, QColor("#ff86ffd3")},
+  {AUTOMATION7_COLOR_NUM, QColor("#ffc495c0")},
+  {AUTOMATION8_COLOR_NUM, QColor("#fffe920f")},
+
+  {ZOOMLINE_TEXT_COLOR_NUM2, QColor("#ff000000")},
+  {ZOOMLINE_TEXT_COLOR_NUM3, QColor("#ff98006d")},
+  {ZOOMLINE_TEXT_COLOR_NUM4, QColor("#ff6437a7")},
+  {ZOOMLINE_TEXT_COLOR_NUM5, QColor("#ff434a43")},
+  {ZOOMLINE_TEXT_COLOR_NUM6, QColor("#ff93794f")},
   
   {SCROLLBAR_COLOR_NUM, QColor("black")},
   {SCROLLBAR_BACKGROUND_COLOR_NUM, QColor("#69b8b8b8")},
@@ -329,10 +310,19 @@ static ReplacementColor g_replacement_color[] = {
 
   {VELOCITY1_COLOR_NUM, QColor("#ff1e211e")},
   {VELOCITY2_COLOR_NUM, QColor("#ffab8d5c")},
+  {VELOCITY_TEXT_COLOR_NUM, QColor("#ffffcf82")},
+
+  {SLIDER1_COLOR_NUM, QColor("#ff3d0001")},
+  {SLIDER2_COLOR_NUM, QColor("#ff00551f")},
+  {SLIDER_DISABLED_COLOR_NUM, QColor("#ff454d4f")},
+  {TRACK_SLIDER_COLOR_NUM, QColor("#ff939393")},
   
-  {SLIDER1_COLOR_NUM, QColor(108,65,36)},
-  {SLIDER_TEXT_COLOR_NUM, QColor(0,0,0)},
-  {SLIDER_RECORDING_COLOR_NUM, QColor(197,0,3)},
+  {SLIDER_TEXT_COLOR_NUM, QColor("#ffe1ddd3")},
+  {SLIDER_RECORDING_COLOR_NUM, QColor("#ffc50003")},
+
+  {PEAKS_COLOR_NUM,     QColor("#ff0eec60")},
+  {PEAKS_0DB_COLOR_NUM, QColor("#ffffe200")},
+  {PEAKS_4DB_COLOR_NUM, QColor("#ffff0707")},
 
   {TAB_SELECTED_COLOR_NUM,  QColor("green")},
   {TAB_UNSELECTED_COLOR_NUM,  QColor("#004000")},
@@ -341,37 +331,45 @@ static ReplacementColor g_replacement_color[] = {
   {BUTTONS_PRESSED_COLOR_NUM, QColor("#ff082441")},
   {CHECK_BOX_SELECTED_COLOR_NUM,  QColor("#ff115a2e")},
   {CHECK_BOX_UNSELECTED_COLOR_NUM,  QColor("#ff34413c")},
-  {BUTTONS_TEXT_COLOR_NUM, QColor("#cccccc")},
+  {BUTTONS_TEXT_COLOR_NUM, QColor("#ffe9e9e9")},
 
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM, QColor("#ffc28963")},
   {WAVEFORM_COLOR_NUM, QColor("#ff090909")},
   {PIANONOTE_SELECTED_COLOR_NUM, QColor("#00c8e6")},
   
-  {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor("#aa000001")},
-  {PLAY_CURSOR_COLOR_NUM, QColor(255, 0, 0)},
-  {LINE_SLIDER_COLOR_NUM, QColor(1,1,1)},
+  {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor("#ff010101")},
+  {PLAY_CURSOR_COLOR_NUM, QColor("#ff000000")},
+  {LINE_SLIDER_COLOR_NUM, QColor("#ff000000")},
 
-  {RANGE_COLOR_NUM, QColor("#3e4e4790")},
+  {RANGE_COLOR_NUM, QColor("#ff3e4e47")},
 
   {TRACK_SEPARATOR1_COLOR_NUM, QColor("#ff0b186c")},
   {TRACK_SEPARATOR2A_COLOR_NUM, QColor("#ff303030")},
+  {TRACK_SEPARATOR2B_COLOR_NUM, QColor("#ff777e7f")},
 
-  {TEMPOGRAPH_COLOR_NUM, QColor("#ff192273")},
+  {TEMPOGRAPH_COLOR_NUM, QColor("#ff434a43")},
+
+  {SOUNDFONT_COLOR_NUM, QColor("#ff009000")},
+  {SOUNDFILE_COLOR_NUM, QColor("#ff0000f0")},
+  {CURRENT_SOUNDFILE_COLOR_NUM, QColor("#ff9a9a9a")},
 
   {MIXER_TEXT_COLOR_NUM, QColor(1,1,1)},
   {MIXER_BORDER_COLOR_NUM, QColor(1,1,1)},
 
-  {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor("#061990")},
-  {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor("#8c321946")},
+  {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor("#8c061990")},
+  {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor("#ff2e0359")},
   {MIXER_AUTOSUSPENSION_COLOR_NUM, QColor("#3ca6a6a6")},
   {MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM, QColor("#ff041da7")},
   {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, QColor("#ff81080a")},
   {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, QColor("white")},
 
+  {NOTE_EVENT_INDICATOR_COLOR_NUM, QColor("#ffcadce1")},
+  {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, QColor("#ff0b186c")},
+
   {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, QColor("#1b5f72")},
   {SEQTRACK_INSTRUMENT_DEFAULT_COLOR_NUM, QColor("#692426")},
 
-  {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, QColor("#ffffffff")},
+  {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, QColor("#ffc8c8c8")},
   {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, QColor("#ebc909")},
   {SEQUENCER_LANES_BACKGROUND_COLOR_NUM, QColor("#ff464d47")},
   {SEQTRACKS_BACKGROUND_COLOR_NUM, QColor("#ff3a4844")},
@@ -401,7 +399,7 @@ static ReplacementColor g_replacement_color[] = {
   {SEQUENCER_TRACK_BORDER2_COLOR_NUM, QColor("#80141414")},
   {SEQUENCER_CURSOR_COLOR_NUM, QColor("#ffc81414")},
   {SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM, QColor("#ff8c8c8c")},
-  {SEQUENCER_TIMELINE_ARROW_COLOR_NUM, QColor("#ff2b9d4c")},
+  {SEQUENCER_TIMELINE_ARROW_COLOR_NUM, QColor("#ffb50003")},
   {SEQUENCER_NAVIGATOR_HANDLER_COLOR_NUM, QColor("#5a141414")},
   {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM, QColor("#96323232")},
   {SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM, QColor("#baab88")},
@@ -802,13 +800,40 @@ static QColor get_config_qcolor(enum ColorNums colornum){
   const char *colorstring = SETTINGS_read_string(colorname, "");
   
   if (strlen(colorstring) <= 1) {
+    
     enum ColorNums replacement_colornum = get_replacement_colornum(colornum);
     if (replacement_colornum != ILLEGAL_COLOR_NUM)
       col = get_config_qcolor(replacement_colornum);
     else
       col = get_replacement_color(colornum);
+    
   } else {
+    
     col = QColor(colorstring);
+
+#if !defined(RELEASE)
+    // Check that the default colors are hardcoded into the program.
+    {
+      static QSet<enum ColorNums> checked;
+
+      if (!checked.contains(colornum)){
+        
+        checked << colornum;
+          
+        enum ColorNums replacement_colornum = get_replacement_colornum(colornum);
+        QColor col2;
+        if (replacement_colornum != ILLEGAL_COLOR_NUM)
+          col2 = get_config_qcolor(replacement_colornum);
+        else
+          col2 = get_replacement_color(colornum);
+        
+        if (col != col2){
+          GFX_addMessage("Wrong colors for %s: %s / %s\n", colorname, colorstring, col2.name(QColor::HexArgb).toUtf8().constData());
+        }
+      }
+    }
+#endif
+    
   }
 
   g_config_colors[colornum] = new QColor(col);

@@ -21,10 +21,10 @@ color15 = #767369
 system_color = #827e76
 button_color = #65645c
 
-range_color = #ff3e4e47
+range_color = #ffa8d3c0
 
 override_default_qt_colors = true
-last_color_version = 3.3.5
+last_color_version = 3.7.3
 
 
 color_instrument_saturation = 0.6669999957084656
@@ -48,8 +48,8 @@ tab_unselected_color = #ff004000
 peaks_color = #ff293c58
 peaks0db_color = #ff91734e
 peaks4db_color = #ff550000
-low_editor_background_color = #ff475253
-high_editor_color = #ff585d55
+low_editor_background_color = #ff7a776e
+high_editor_color = #ff64686a
 keyboard_focus_border_color = #ffff9d00
 bar_text_color = #ff310062
 portamento_end_note_text_color = #ff23405d
@@ -57,8 +57,8 @@ velocity_text_color = #ff00001d
 track_slider_color = #ff00001d
 line_slider_color = #ff010101
 track_separator1_color = #ff23405d
-track_separator2_darkened_color = #ff303030
-track_separator2_color = #ff50585a
+track_separator2_darkened_color = #ff000000
+track_separator2_color = #ffacacac
 pitchlines_color = #ff23405d
 cursor_edit_off_color = #ff4e6160
 cursor_border_color = #50000000
@@ -127,3 +127,10 @@ sequencer_navigator_handler_color = #5a141414
 sequencer_navigator_grayout_color = #96323232
 sequencer_tempo_automation_color = #ffbaab88
 sequencer_marker_color = #ff0a0632
+menu_text_color = #fff7f5e4
+menu_keybinding_text_color = #ffe57c12
+scroll_bar_v2_color = #ff000000
+scroll_bar_background_v2_color = #69b8b8b8
+pianonote_selected_color = #ff00c8e6
+mixer_event_connection_color = #8c061990
+sequencer_curr_entry_border_color = #ff005a00
