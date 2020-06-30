@@ -66,6 +66,16 @@
        <number>0</number>
       </property>
       <item>
+       <widget class="QCheckBox" name="locked_instrument">
+        <property name="toolTip">
+         <string>Lock Instrument. Right-click to assign keybinding</string>
+        </property>
+        <property name="text">
+         <string>🔒</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QLineEdit" name="name_widget">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Maximum">

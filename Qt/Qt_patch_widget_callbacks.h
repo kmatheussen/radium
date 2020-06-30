@@ -370,6 +370,33 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 
     adjust_labels();
 
+    {
+      QFont font;
+      locked_instrument->setFont(font); // don't know why
+
+      if (isCurrentInstrumentLocked())
+        locked_instrument->setText("🔒");
+      else
+        locked_instrument->setText("🔓");
+
+      locked_instrument->_show_enabled_marker = false;
+      
+      /*
+      const QFontMetrics fn = QFontMetrics(font);
+      float width = 1.5 * fn.boundingRect("L").width();
+      */
+      
+      locked_instrument->setMinimumWidth(locked_instrument->height());
+      locked_instrument->setMaximumWidth(locked_instrument->height());
+    
+      locked_instrument->setChecked(isCurrentInstrumentLocked());
+
+      locked_instrument->_show_popup_menu = [](){
+        S7CALL2(void_void,"FROM_C-show-lock-instrument-popup-menu");
+      };
+
+    }
+    
     _called_from_update = false;
   }
 
@@ -520,6 +547,11 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   
 public slots:
 
+  void on_locked_instrument_toggled(bool val){
+    if (!_called_from_update)
+      setCurrentInstrumentLocked(val);
+  }
+  
   void on_o1_toggled(bool val){onoff_toggled(0,val);}
   void on_o2_toggled(bool val){onoff_toggled(1,val);}
   void on_o3_toggled(bool val){onoff_toggled(2,val);}

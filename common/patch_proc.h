@@ -27,7 +27,7 @@ extern LANGSPEC instrument_t PATCH_get_new_id(void);
 extern LANGSPEC int PATCH_get_effect_num(const struct Patch *patch, const char *effect_name, char **error_message);
 
 extern LANGSPEC void PATCH_remove_current(void);
-extern LANGSPEC void PATCH_set_current(struct Patch *patch);
+extern LANGSPEC void PATCH_set_current(struct Patch *patch); // only called from GFX_PP_Update
 extern LANGSPEC struct Patch *PATCH_get_current(void); // Can only return NULL during startup.
 
 extern LANGSPEC void PATCH_handle_fx_when_theres_a_new_patch_for_track(struct Blocks *block, struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch, bool *has_paused);

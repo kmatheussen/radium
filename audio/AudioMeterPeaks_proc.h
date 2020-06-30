@@ -51,7 +51,7 @@ extern LANGSPEC void AUDIOMETERPEAKS_delete(AudioMeterPeaks peaks);
 
 #if 0
 
-// Use this one if there are multiple writers, which I'm pretty sure we don't have. (not sure we need it then either)
+// Use this one if there are multiple writers, which I'm pretty sure we don't have.
 static inline void RT_AUDIOMETERPEAKS_add(AudioMeterPeaks &peaks, int ch, float val){
   for(;;){
     float old_val = atomic_get_float_relaxed(&ATOMIC_NAME(peaks.RT_max_gains)[ch]);

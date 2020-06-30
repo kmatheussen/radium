@@ -801,6 +801,9 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
   printf("GFX_PP_Update %s\n", patch==NULL?"(null)":patch->name);
 
   struct Patch *old_current = PATCH_get_current();
+
+  if (old_current != NULL && g_is_loading==false && isCurrentInstrumentLocked())
+    return;
   
   called_from_pp_update = true;{
     //if(PATCH_get_current()==patch)
