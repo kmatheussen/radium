@@ -229,15 +229,17 @@ static inline QObject *get_oldest_parent(QObject *w){
   while(w->parent() != NULL){
     w = w->parent();
     safety++;
-    if (safety >= 1000){
+    if (w!=NULL && safety >= 1000){
 #ifndef COMPILE_EXECUTABLE
 #ifndef CRASHREPORTER_BIN
-      RError("widget::setParent: recursive widget->parent->widget.");
+      RError("Error! Recursive widget parent for %p. Setting parent to NULL.", w);
+      w->setParent(NULL);
 #endif
 #endif
       return NULL;
     }
   }
+
 
   //printf("...........Safety: %d\n", safety);
   return w;
@@ -407,14 +409,39 @@ namespace radium{
   };
 }
 
-static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags f, enum ShowAssertionOrThrowAPIException error_type){
-  //printf("w: %p. parent: %p. parent==w->parentWidget(): %d\n", w, parent, (w==NULL ? NULL : w->parentWidget()) == parent);
+
+static inline bool a_is_a_parent_of_b(QObject *a, QObject *b){
+  
+  for(int safety=0 ; safety < 1000 ; safety++){
+    if (a==b)
+      return true;
+    
+    if (b==NULL)
+      return false;
+
+    b = b->parent();
+  }
+
+  if (b != NULL){
+    RError("Error! Recursive widget parent for %p. Setting parent to NULL.", b);
+    b->setParent(NULL);
+  }
+  
+  return false;
+}
+  
+
+static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags f, bool set_window_flags, enum ShowAssertionOrThrowAPIException error_type){
+  //printf("w: %p. parent: %p. parent==w->parentWidget(): %d. main window: %p\n", w, parent, (w==NULL ? NULL : w->parentWidget()) == parent, g_main_window);
+
+  if (a_is_a_parent_of_b(w, parent)){
+    RError("Error in safe_set_parent(w, parent): \"w\" is a parent of parent. Without this check, Qt would have gone into an infinite recursive loop");
+    return;
+  }
+
   auto *a = get_oldest_parent(w);
   auto *b = get_oldest_parent(parent);
-  /*
-  if (a==b)
-    return;
-  */
+  
   if (a==b){
 #if !defined(RELEASE)
 #ifndef CRASHREPORTER_BIN
@@ -423,33 +450,21 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags 
 #endif
 #endif
 #endif
+    //return; // it's probably okay to set parent below. I think the "a_is_a_parent_of_b" check above covers all situations that causes crash.
   }
 
-  
-  w->setParent(parent, f);
-  
+  if (set_window_flags)
+    w->setParent(parent, f);
+  else
+    w->setParent(parent);
+}
+
+static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags f, enum ShowAssertionOrThrowAPIException error_type){
+  safe_set_parent(w, parent, f, true, error_type);
 }
 
 static inline void safe_set_parent(QWidget *w, QWidget *parent, enum ShowAssertionOrThrowAPIException error_type){
-  auto *a = get_oldest_parent(w);
-  auto *b = get_oldest_parent(parent);
-
-  /*
-  if (a==b)
-    return;
-  */
-  
-  if (a==b){
-#if !defined(RELEASE)
-#ifndef CRASHREPORTER_BIN
-#ifndef COMPILE_EXECUTABLE
-    R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
-#endif
-#endif
-#endif
-  }
-
-  w->setParent(parent);
+  safe_set_parent(w, parent, 0, false, error_type);
 }
 
 
@@ -473,6 +488,10 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
     if(window->isWindow())
       abort();
 #endif
+
+    // Not sure if this is any point. But it seems kind of right.
+    if (window->parent() != NULL)
+      safe_set_parent(window, NULL, error_type);
     
   } else {
 
