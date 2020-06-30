@@ -1,4 +1,7 @@
 settings_version = 0.73 # dont change this one
+last_color_version = 3.7.3
+
+# Colors below must be defined in order to run radium 5.9.86 and older. (this file is copied into ~/.radium/)
 
 color0 = #ff505b59
 color1 = #ffffffff
@@ -13,94 +16,3 @@ color9 = #ff63696a
 color10 = #fff4ff23
 color12 = #ff96a3a7
 color14 = #ffc28963
-
-range_color = #ff3e4e47
-
-soundfont_color = #ff009000
-soundfile_color = #ff0000f0
-current_soundfile_color = #ff9a9a9a
-
-override_default_qt_colors = true
-last_color_version = 3.7.2
-
-colored_tracks = true
-bar_text_color = #fffdfec8
-portamento_end_note_text_color = #ff0b186c
-peaks_color = #ff0ba644
-peaks0db_color = #ffffe200
-peaks4db_color = #ffff0707
-note_event_indicator_color = #ffcadce1
-note_event_indicator_border_color = #ff0b186c
-slider1_color = #ff3d0001
-slider2_color = #ff00551f
-slider_disabled_color = #ff454d4f
-track_separator1_color = #ff0b186c
-track_separator2_color = #ff777e7f
-track_separator2_darkened_color = #ff303030
-pitchlines_color = #ff0b186c
-cursor_edit_off_color = #ff434a43
-play_cursor_edit_off_color = #ff000000
-automation_indicator_color = #ffc28963
-automation4_color = #ff63acd9
-automation5_color = #ffff355a
-automation6_color = #ff86ffd3
-automation7_color = #ffc495c0
-automation8_color = #fffe920f
-tempograph_color = #ff434a43
-pianonote_color = #ff0b186c
-pianoroll_octave_color = #fffdfec8
-pianoroll_note_name_color = #fffdfec8
-pianoroll_note_border_color = #ff010101
-zoomline_text1_color = #ffc28963
-zoomline_text2_color = #ff000000
-zoomline_text3_color = #ff98006d
-zoomline_text4_color = #ff6437a7
-zoomline_text5_color = #ff434a43
-zoomline_text6_color = #ff93794f
-zoomline_text7_color = #ff0b186c
-velocity_text_color = #ffffcf82
-slider_text_color = #ffe1ddd3
-mixer_text_color = #ff010101
-mixer_border_color = #ff010101
-mixer_event_connection_color = #ffcfcf00
-mixer_audio_connection_color = #ff2e0359
-track_slider_color = #ff939393
-buttons_text_color = #ffe9e9e9
-line_slider_color = #ff000000
-slider_recording_color = #ffc50003
-mixer_autosuspension_color = #3ca6a6a6
-sequencer_currtrack_border_color = #ffc8c8c8
-sequencer_border_color = #ff010101
-sequencer_text_color = #ff010101
-sequencer_note_color = #960101c8
-sequencer_note_start_color = #ff000000
-sequencer_block_background_color = #ff8c8c8c
-sequencer_block_border_color = #ff321423
-sequencer_block_bar_color = #d2000000
-sequencer_block_beat_color = #460a1e17
-sequencer_track_border1_color = #ff141414
-sequencer_track_border2_color = #80141414
-sequencer_cursor_color = #ffc81414
-sequencer_timeline_background_color = #ff8c8c8c
-sequencer_tinmeline_arrow_color = #ffb50003
-sequencer_navigator_handler_color = #5a141414
-sequencer_navigator_grayout_color = #96323232
-mixer_selected_object_color_num = #54071780
-sequencer_block_selected_color = #5400801d
-sequencer_multiselect_block_background_color = #ffff4811
-sequencer_grid_color = #99281980
-sequencer_tempo_automation_color = #ffbaab88
-mixerstrips_selected_object_color_num = #ffffffff
-sequencer_block_audio_file_background_color = #64eeeeee
-sequencer_waveform_color = #c8000000
-sequencer_marker_color = #ff0a0632
-
-
-# These three colores are not used, but they are needed by older versions of Radium. (This file is copied to the users home area)
-color11 = #ff22282a
-color13 = #ff2c543c
-color15 = #ff585d55
-
-
-
-# edited colors:

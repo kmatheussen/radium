@@ -45,7 +45,8 @@ extern LANGSPEC bool OS_config_key_is_color(const char *key);
 
 extern LANGSPEC bool OS_has_conf_filename(filepath_t filename);
 extern LANGSPEC filepath_t OS_get_conf_filename(filepath_t filename);
-
+extern LANGSPEC bool OS_use_custom_config(bool for_colors);
+  
 #ifdef USE_QT4
 #include <QString>
 QString OS_get_home_path(void);
