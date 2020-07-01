@@ -449,48 +449,51 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
   if (seqtrack==NULL)
     return;
 
-  int old = ATOMIC_GET(root->song->curr_seqtracknum);
+  const int old = ATOMIC_GET(root->song->curr_seqtracknum);
   
   //if (true || seqtracknum != ATOMIC_GET(root->song->curr_seqtracknum)){ // We always go in here since the function is sometimes called just for the update() calls.
 
-  if (seqtracknum== old)
-    return;
-    
+  if (seqtracknum != old) {
 
-  if (old >= 0 && old < root->song->seqtracks.num_elements){
-    SEQTRACK_update_with_borders(getSeqtrackFromNum(old));
+    if (old >= 0 && old < root->song->seqtracks.num_elements){
+      SEQTRACK_update_with_borders(getSeqtrackFromNum(old));
+    }
+  
+    ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
+  
+    {
+      struct SeqTrack *old_seqtrack = getSeqtrackFromNum(old);
+      if (old_seqtrack != NULL)
+        old_seqtrack->last_curr_seqblock_id = g_curr_seqblock_id;
+    
+      R_ASSERT_NON_RELEASE(old_seqtrack != seqtrack);
+    }
+  
+    if (called_from_set_curr_seqblock==false)
+      change_curr_seqblock_when_curr_seqtrack_has_changed(seqtracknum, seqtrack);
+  
+    SEQTRACK_update_with_borders(seqtrack);
+    SEQUENCER_update(SEQUPDATE_HEADERS | SEQUPDATE_PLAYLIST | SEQUPDATE_BLOCKLIST | SEQUPDATE_RIGHT_PART);
+
   }
   
-  ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
-  
-  {
-    struct SeqTrack *old_seqtrack = getSeqtrackFromNum(old);
-    if (old_seqtrack != NULL)
-      old_seqtrack->last_curr_seqblock_id = g_curr_seqblock_id;
-    
-    R_ASSERT_NON_RELEASE(old_seqtrack != seqtrack);
-  }
-  
-  if (called_from_set_curr_seqblock==false)
-    change_curr_seqblock_when_curr_seqtrack_has_changed(seqtracknum, seqtrack);
-  
-  SEQTRACK_update_with_borders(seqtrack);
-  SEQUENCER_update(SEQUPDATE_HEADERS | SEQUPDATE_PLAYLIST | SEQUPDATE_BLOCKLIST | SEQUPDATE_RIGHT_PART);
-
   if(change_curr_instrument){
     struct Patch *patch = seqtrack->patch;
     if(patch!=NULL)
       patch->instrument->PP_Update(patch->instrument, patch, false);
   }
-  
-  if(root->song != NULL && root->song->tracker_windows!=NULL)
-    root->song->tracker_windows->must_redraw_editor=true;
-  else{
-    R_ASSERT_NON_RELEASE(false);
+
+  if (seqtracknum != old) {
+
+    if(root->song != NULL && root->song->tracker_windows!=NULL)
+      root->song->tracker_windows->must_redraw_editor=true;
+    else{
+      R_ASSERT_NON_RELEASE(false);
+    }
+
+    API_curr_seqtrack_has_changed();
   }
   
-  API_curr_seqtrack_has_changed();
-
 }
 
 void autoscrollSeqtracks(int seqtracknum, bool make_fully_visible){
