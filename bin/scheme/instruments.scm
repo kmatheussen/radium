@@ -1535,6 +1535,18 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 !!#
 
 
+
+(define (show-set-current-instrument-popup-menu)
+  (popup-menu (map (lambda (instrument-id)
+                     (list (<ra> :get-instrument-name instrument-id)
+                           :enabled (not (equal? instrument-id (<ra> :get-current-instrument)))
+                           (lambda ()
+                             (<ra> :set-current-instrument instrument-id #f)
+                             )))
+                   (sort-instruments-by-mixer-position-and-connections 
+                    (get-all-audio-instruments)))))
+
+
 (define (delete-all-unused-MIDI-instruments)
   (define used-instruments (<new> :container '() equal?))
   (define unused-MIDI-instruments '())
