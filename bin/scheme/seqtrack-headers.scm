@@ -974,7 +974,7 @@
   (define-override (get-mouse-cycle button x* y*)
     (when (inside? x* y*)
       ;;(c-display "2222222222222____HEADER seqtracknum:" seqtracknum)
-      (<ra> :set-curr-seqtrack seqtracknum #f))
+      (<ra> :set-curr-seqtrack seqtracknum #f #t))
     (super:get-mouse-cycle button x* y*))
 
   (add-mouse-cycle! :press-func (lambda (button x* y*)

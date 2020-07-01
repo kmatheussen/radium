@@ -269,7 +269,7 @@ void insertSeqtrack(bool for_audiofiles, int pos, bool is_bus, bool force_insert
   if (force_insert){
     
     SEQUENCER_insert_seqtrack(pos, for_audiofiles, is_bus);
-    setCurrSeqtrack(pos, false);
+    setCurrSeqtrack(pos, false, true);
     
   } else {
 
@@ -300,7 +300,7 @@ void appendSeqtrack(bool for_audiofiles, bool is_bus){
   
   SEQUENCER_append_seqtrack(for_audiofiles, is_bus);
 
-  setCurrSeqtrack(root->song->seqtracks.num_elements - 1, false);
+  setCurrSeqtrack(root->song->seqtracks.num_elements - 1, false, true);
 }
 
 void appendEditorSeqtrack(void){
@@ -437,7 +437,7 @@ static void change_curr_seqblock_when_curr_seqtrack_has_changed(int new_seqtrack
 
 static int g_is_changing_curr_seqtrack = 0;
 
-static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock){
+static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock, bool change_curr_instrument){
   radium::ScopedGeneration is_changing(g_is_changing_curr_seqtrack);
     
   if (seqtracknum < 0)
@@ -476,10 +476,12 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
   
   SEQTRACK_update_with_borders(seqtrack);
   SEQUENCER_update(SEQUPDATE_HEADERS | SEQUPDATE_PLAYLIST | SEQUPDATE_BLOCKLIST | SEQUPDATE_RIGHT_PART);
-  
-  struct Patch *patch = seqtrack->patch;
-  if(patch!=NULL)
-    patch->instrument->PP_Update(patch->instrument, patch, false);
+
+  if(change_curr_instrument){
+    struct Patch *patch = seqtrack->patch;
+    if(patch!=NULL)
+      patch->instrument->PP_Update(patch->instrument, patch, false);
+  }
   
   if(root->song != NULL && root->song->tracker_windows!=NULL)
     root->song->tracker_windows->must_redraw_editor=true;
@@ -522,7 +524,7 @@ void autoscrollSeqtracks(int seqtracknum, bool make_fully_visible){
   };
 }
 
-void setCurrSeqtrack(int seqtracknum, bool auto_scroll_to_make_seqtrack_visible){
+void setCurrSeqtrack(int seqtracknum, bool auto_scroll_to_make_seqtrack_visible, bool change_curr_instrument){
   //static int num=0; printf("   SETCURRSEQTRACK %d (%d)\n", seqtracknum, num++);
   
   if (auto_scroll_to_make_seqtrack_visible){
@@ -540,7 +542,7 @@ void setCurrSeqtrack(int seqtracknum, bool auto_scroll_to_make_seqtrack_visible)
       autoscrollSeqtracks(seqtracknum, true);
   }
   
-  setCurrSeqtrack2(seqtracknum, false);
+  setCurrSeqtrack2(seqtracknum, false, change_curr_instrument);
 }
 
 void setCurrSeqtrackDown(int num_seqtracks, bool auto_scroll_to_make_seqtrack_visible){
@@ -556,7 +558,7 @@ void setCurrSeqtrackDown(int num_seqtracks, bool auto_scroll_to_make_seqtrack_vi
     if (seqtrack->is_visible){
       num_seqtracks--;
       if (num_seqtracks==0){
-        setCurrSeqtrack(seqtracknum, auto_scroll_to_make_seqtrack_visible);
+        setCurrSeqtrack(seqtracknum, auto_scroll_to_make_seqtrack_visible, false);
         return;
       }
     }
@@ -577,7 +579,7 @@ void setCurrSeqtrackUp(int num_seqtracks, bool auto_scroll_to_make_seqtrack_visi
     if (seqtrack->is_visible){
       num_seqtracks--;
       if (num_seqtracks==0){
-        setCurrSeqtrack(seqtracknum, auto_scroll_to_make_seqtrack_visible);
+        setCurrSeqtrack(seqtracknum, auto_scroll_to_make_seqtrack_visible, false);
         return;
       }
     }
@@ -3060,7 +3062,7 @@ static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
   g_curr_seqblock_id = seqblockid;
 
   if (g_is_changing_curr_seqtrack==0)
-    setCurrSeqtrack2(seqtracknum, true);
+    setCurrSeqtrack2(seqtracknum, true, false);
 
   SEQBLOCK_update_with_borders(seqtrack, seqblock);
   
