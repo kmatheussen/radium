@@ -68,7 +68,7 @@
       <item>
        <widget class="QCheckBox" name="locked_instrument">
         <property name="toolTip">
-         <string>Lock Instrument. Right-click to assign keybinding</string>
+         <string/>
         </property>
         <property name="text">
          <string>🔒</string>

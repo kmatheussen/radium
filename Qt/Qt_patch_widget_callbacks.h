@@ -15,6 +15,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include <QToolTip>
+
+
 #include "../common/patch_proc.h"
 #include "../common/undo_patchname_proc.h"
 
@@ -186,6 +189,29 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     }
     
     setup_popup_menus_and_stuff();
+
+    IsAlive is_alive(this);
+    
+    locked_instrument->_hovered_callback = [is_alive, this](bool do_enter){
+      if (is_alive){
+        if (do_enter){
+          
+          QString settings_key, default_dir;
+          QString path = QString((isCurrentInstrumentLocked() ? "Locked instrument. Click to unlock." : "Unlocked instrument. Click to lock.")) + " Right-click to configure keybinding.";
+          
+          //QToolTip::showText(QCursor::pos(),path + "gakk",NULL,QRect()); // QToolTip tries to be smart, but does of course fail. Why not let the programmer decide how things should behave instead? (shold probably make a custom tooltip function to avoid alle these workarounds)
+          QToolTip::showText(QCursor::pos(),path,NULL,QRect());
+          
+          GFX_SetStatusBar(path.toUtf8().constData());
+          
+        } else {
+          
+          QToolTip::hideText();
+          GFX_SetStatusBar("");
+          
+        }
+      }
+    };
     
     updateWidgets();
     initing = false;
