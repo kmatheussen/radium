@@ -1241,7 +1241,10 @@
         (new (or (maybe-get-seqblock-info-from-current-seqautomation)
                  (get-seqblock-info X Y))))
     ;;(c-display "old/new seqblock-info" old new)
+    ;;(c-display "seqtrack-under-mouse:" new)
     (cond ((and old (not new))
+           (if *current-seqtrack-num*
+               (<ra> :set-curr-seqtrack *current-seqtrack-num* #f))
            (<ra> :cancel-curr-seqblock-under-mouse)
            (set! *current-seqblock-info* #f))
           ((or (and new (not old))
@@ -1258,6 +1261,8 @@
            ) ;; ...because this one calls FROM_C-call-me-after-curr-seqblock-under-mouse-has-been-called.
           (else
            ;;(c-display "old/new:" (if old #t #f) (if new #t #f))
+           (if *current-seqtrack-num*
+               (<ra> :set-curr-seqtrack *current-seqtrack-num* #f))
            #f))))
   
 (add-mouse-move-handler
@@ -6317,7 +6322,7 @@
                                                          :seqtracknum seqtracknum
                                                          :seqblocknum seqblocknum))))
        
-    (<ra> :set-curr-seqtrack seqtracknum)
+    (<ra> :set-curr-seqtrack seqtracknum #f #f)
     )
 
   ;;:seqtracknum ()
@@ -7025,7 +7030,7 @@
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (let ((automationnum (*current-seqautomation/distance* :automation-num))
                                                         (seqtracknum (*current-seqautomation/distance* :seqtrack)))
-                                                    (<ra> :set-curr-seqtrack seqtracknum)
+                                                    ;;(<ra> :set-curr-seqtrack seqtracknum)
                                                     (define (get-nodebox $num)
                                                       (get-common-node-box (<ra> :get-seq-automation-node-x $num automationnum seqtracknum)
                                                                            (<ra> :get-seq-automation-node-y $num automationnum seqtracknum)))
@@ -7829,7 +7834,7 @@
                        (and seqtracknum
                             (not *current-seqblock-info*)
                             (let ()
-                              (<ra> :set-curr-seqtrack seqtracknum)
+                              ;;(<ra> :set-curr-seqtrack seqtracknum)
                               
                               (paint-grid! #t)
                               
