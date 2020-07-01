@@ -801,7 +801,7 @@
                 (loop (+ seqtracknum2 1))))))
      (set! *hovering-seqtrack-number* new-seqtracknum)
      (set! seqtracknum new-seqtracknum)
-     (<ra> :set-curr-seqtrack seqtracknum)
+     (<ra> :set-curr-seqtrack seqtracknum #f)
      )
    (lambda (button x* y* dx dy)
      ;;(c-display (not was-using-sequencer-timing)
@@ -974,7 +974,7 @@
   (define-override (get-mouse-cycle button x* y*)
     (when (inside? x* y*)
       ;;(c-display "2222222222222____HEADER seqtracknum:" seqtracknum)
-      (<ra> :set-curr-seqtrack seqtracknum))
+      (<ra> :set-curr-seqtrack seqtracknum #f))
     (super:get-mouse-cycle button x* y*))
 
   (add-mouse-cycle! :press-func (lambda (button x* y*)
