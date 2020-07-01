@@ -967,6 +967,7 @@
 
   (add-raw-mouse-cycle!
    :enter-func (lambda (button x* y)
+                 (<ra> :set-curr-seqtrack seqtracknum #f #f)
                  (if (= 0 button)
                      (set-mouse-pointer ra:set-normal-mouse-pointer gui))
                  #f))
