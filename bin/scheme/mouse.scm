@@ -4454,6 +4454,8 @@
 
 (define *clicked-seqblock* #f)
 
+;; 1. Change current instrument when clicking in a seqtrack in the sequencer. (not in the header)
+;; 2. Handle double-clicking seqblock.
 (add-mouse-cycle-front (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (let ((seqtracknum *current-seqtrack-num*))
@@ -4461,7 +4463,7 @@
                                   (when (and seqtracknum
                                              (= Button *left-button*)
                                              (not *current-seqautomation/distance*))
-                                    ;;(<ra> :set-curr-seqtrack seqtracknum)
+                                    (<ra> :set-curr-seqtrack seqtracknum #f #t)
                                     (let ((seqblock-info *current-seqblock-info*))
                                       ;;(c-display "get-existing " seqblock-info X Y seqtracknum)
                                       (if seqblock-info
@@ -4479,7 +4481,8 @@
                                                            (*clicked-seqblock* :time))
                                                         (<ra> :get-double-click-interval)))
                                                 (begin
-                                                  ;;(c-display "double-clicked")
+                                                  ;;(c-display "double-clicked " seqtracknum)
+                                                  ;;(<ra> :set-curr-seqtrack seqtracknum #f #t)
                                                   (set! *clicked-seqblock* #f)
                                                   (define blocknum (and seqblock-info
                                                                         (<ra> :seqblock-holds-block seqblocknum seqtracknum)
