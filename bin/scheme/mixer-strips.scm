@@ -143,14 +143,7 @@
               (lambda ()
                 (strips-config :show-config-gui))))
 
-   "Set current instrument" (lambda ()
-                              (popup-menu (map (lambda (instrument-id)
-                                                 (list (<ra> :get-instrument-name instrument-id)
-                                                       (lambda ()
-                                                         (<ra> :set-current-instrument instrument-id #f)
-                                                         )))
-                                               (sort-instruments-by-mixer-position-and-connections 
-                                                (get-all-audio-instruments)))))
+   "Set current instrument" show-set-current-instrument-popup-menu
       
    "----------"
    
