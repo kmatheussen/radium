@@ -479,7 +479,7 @@
                                   :curr-selected-row-changed-callback (lambda (table row-num row-content)
                                                                         (when doit
                                                                           ;;(c-display "ROW_CONTENT:" row-content row-num)
-                                                                          (define instrument-id (to-integer (string->number (first row-content))))
+                                                                          (define instrument-id (<ra> :get-audio-instrument-id (to-integer (string->number (first row-content)))))
                                                                           (when (not (equal? instrument-id (<ra> :get-current-instrument)))
                                                                             (<ra> :set-current-instrument instrument-id)
                                                                             (update-rows!)
