@@ -895,6 +895,12 @@ void InstrumentWidget_delete(struct Patch *patch){
     delete w2;
   }
 
+  // Show current instrument
+  if (!g_is_starting_up && !g_is_loading){
+    struct Patch *patch = PATCH_get_current();
+    if (patch!=NULL)
+      GFX_PP_Update(patch, false);
+  }
 }
 
 void GFX_update_instrument_patch_gui(struct Patch *patch){

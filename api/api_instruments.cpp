@@ -2952,8 +2952,9 @@ void setCurrentInstrumentLocked(bool lockit){
     return;
   
   g_curr_instrument_is_locked = lockit;
-  
-  GFX_update_instrument_widget(PATCH_get_current());
+
+  GFX_update_all_instrument_widgets();
+  //  GFX_update_instrument_widget(PATCH_get_current());
   
   /*
   if (lockit)
