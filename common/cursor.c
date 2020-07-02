@@ -427,7 +427,7 @@ static void show_curr_track_in_statusbar(struct Tracker_Windows *window,struct W
     message = talloc_format(PRE "Velocity text, track #%d", wtrack->l.num);;
 
   } else if (FXTEXT_subsubtrack(window, wtrack, &fxs) >= 0){
-    message = talloc_format(PRE "Fx text, track #%d", wtrack->l.num);;
+    message = talloc_format(PRE "\"%s\", track #%d", fxs->fx->name, wtrack->l.num);;
 
   } else if (CHANCETEXT_subsubtrack(window, wtrack) >= 0){
     message = talloc_format(PRE "Chance text, track #%d", wtrack->l.num);;
