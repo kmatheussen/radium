@@ -1860,19 +1860,19 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
 (define (FROM_C-move-current-instrument-left)
   (and-let* ((res (find-instrument-to-the-left-of)))
-            (<ra> :set-current-instrument res)))
+            (<ra> :set-current-instrument res #f #t)))
   
 (define (FROM_C-move-current-instrument-right)
   (and-let* ((res (find-instrument-to-the-right-of)))
-            (<ra> :set-current-instrument res)))
+            (<ra> :set-current-instrument res #f #t)))
   
 (define (FROM_C-move-current-instrument-up)
   (and-let* ((res (find-instrument-to-the-up-of)))
-            (<ra> :set-current-instrument res)))
+            (<ra> :set-current-instrument res #f #t)))
   
 (define (FROM_C-move-current-instrument-down)
   (and-let* ((res (find-instrument-to-the-down-of)))
-            (<ra> :set-current-instrument res)))
+            (<ra> :set-current-instrument res #f #t)))
 
 (define (get-select-track-instrument-popup-entries tracknum)
   (define midi-instruments (get-all-midi-instruments))

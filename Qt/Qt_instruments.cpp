@@ -797,12 +797,12 @@ static bool patch_used_in_current_editor_block(struct Patch *patch){
   return false;
 }
 
-void GFX_PP_Update(struct Patch *patch, bool is_loading){
+static void GFX_PP_Update_internal(struct Patch *patch, bool is_loading, bool open_even_if_locked){
   printf("GFX_PP_Update %s\n", patch==NULL?"(null)":patch->name);
 
   struct Patch *old_current = PATCH_get_current();
 
-  if (old_current != NULL && g_is_loading==false && isCurrentInstrumentLocked())
+  if (old_current != NULL && g_is_loading==false && open_even_if_locked==false && isCurrentInstrumentLocked())
     return;
   
   called_from_pp_update = true;{
@@ -865,6 +865,13 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
   called_from_pp_update = false;
 }
 
+void GFX_PP_Update(struct Patch *patch, bool is_loading){
+  GFX_PP_Update_internal(patch, is_loading, false);
+}
+
+void GFX_PP_Update_even_if_locked(struct Patch *patch, bool is_loading){
+  GFX_PP_Update_internal(patch, is_loading, true);
+}
 
 void InstrumentWidget_prepare_for_deletion(struct Patch *patch){
   Audio_instrument_widget *w2 = get_audio_instrument_widget(patch);

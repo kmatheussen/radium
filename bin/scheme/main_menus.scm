@@ -417,6 +417,7 @@
 #!!
 (generate-main-menus)
 
-(<ra> :get-keybindings-from-command "ra.switchSoloTrack")
+(<ra> :get-keybindings-from-command "ra.toggleCurrWindowFullScreen")
+(<ra> :get-keybindings-from-command "ra.toggleFullScreen")
 !!#
                      
