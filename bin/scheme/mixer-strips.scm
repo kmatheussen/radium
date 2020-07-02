@@ -143,6 +143,11 @@
               (lambda ()
                 (strips-config :show-config-gui))))
 
+   (and is-standalone
+        (list "Prevent program from switching instrument"
+              :check (<ra> :is-current-instrument-locked)
+              ra:set-current-instrument-locked))     
+
    "Set current instrument" show-set-current-instrument-popup-menu
       
    "----------"
@@ -647,6 +652,12 @@
                    (show-name-tool-tip)
                    (<gui> :set-tool-tip label "")))
            (<gui> :draw-box label "#202020" 0 0 width height 1.0 2 2)))
+
+  (add-safe-double-click-callback label (lambda (button x y)
+                                          (when (= button *left-button*)
+                                            ;;(c-display "DOUBLE" (<ra> :has-wide-instrument-strip instrument-id))
+                                            (<ra> :set-wide-instrument-strip instrument-id (not (<ra> :has-wide-instrument-strip instrument-id)))
+                                            (remake-mixer-strips instrument-id))))
   
   (add-safe-mouse-callback label (lambda (button state x y)
                                      (if (= state *is-pressing*)
@@ -659,11 +670,13 @@
                                                       (set! *current-mixer-strip-is-wide* is-minimized)
                                                       (remake-mixer-strips instrument-id))
                                                      ((equal? instrument-id (<ra> :get-current-instrument))
-                                                      (<ra> :set-wide-instrument-strip instrument-id is-minimized)
-                                                      (remake-mixer-strips instrument-id))
+                                                      ;;(<ra> :set-wide-instrument-strip instrument-id is-minimized)
+                                                      ;;(remake-mixer-strips instrument-id)
+                                                      #t
+                                                      )
                                                      (else
                                                       ;;(c-display "         SETTING CURRENT")
-                                                      (<ra> :set-current-instrument instrument-id)
+                                                      (<ra> :set-current-instrument instrument-id #f #t)
                                                       ;;(remake-mixer-strips instrument-id)
                                                       )))))
                                      #t))
@@ -860,7 +873,7 @@
               )
 
   (if (and strips-config (not (strips-config :is-standalone)))
-      (<ra> :set-current-instrument instrument-id))
+      (<ra> :set-current-instrument instrument-id #f #t))
   )
     
 
@@ -1035,7 +1048,7 @@
                                     ;;(c-display "state:" state)
                                     (if (and (and strips-config (not (strips-config :is-standalone)))
                                              (= state *is-pressing*))
-                                        (<ra> :set-current-instrument instrument-id))
+                                        (<ra> :set-current-instrument instrument-id #f #t))
                                     (define is-left-pressing (and (= button *left-button*)
                                                                   (= state *is-pressing*)))
 
@@ -2246,6 +2259,14 @@
                                                   #t)
                                                 #f)))
   comment-edit)
+
+#!!
+(let ((instrument (<ra> :get-instrument-for-track 1)))
+  (c-display (<ra> :get-instrument-name instrument))
+  (<ra> :get-num-out-audio-connections instrument)
+  (<ra> :get-instrument-name (<ra> :get-audio-connection-dest-instrument 0 instrument)))
+
+!!#
 
 (define (mydrawbox gui color x1 y1 x2 y2 line-width rounding)
   (define w (/ line-width 2))

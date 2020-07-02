@@ -2896,7 +2896,7 @@ instrument_t getCurrentInstrument(void){
   return PATCH_get_current()->id;
 }
 
-void setCurrentInstrument(instrument_t instrument_id, bool show_instrument_window_if_not_visible){
+void setCurrentInstrument(instrument_t instrument_id, bool show_instrument_window_if_not_visible, bool only_change_if_unlocked){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -2909,8 +2909,11 @@ void setCurrentInstrument(instrument_t instrument_id, bool show_instrument_windo
   //if(showInstrumentWidgetWhenDoubleClickingSoundObject())
   if(show_instrument_window_if_not_visible)
     GFX_InstrumentWindowToFront();
-  
-  patch->instrument->PP_Update(patch->instrument, patch, false);
+
+  if (only_change_if_unlocked)
+    GFX_PP_Update(patch, false);
+  else
+    GFX_PP_Update_even_if_locked(patch, false);
 
   if (instrumentIsOpenAndAudio(instrument_id)){
     Chip *chip = CHIP_get(NULL, patch);

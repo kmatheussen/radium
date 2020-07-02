@@ -197,12 +197,17 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
         if (do_enter){
           
           QString settings_key, default_dir;
-          QString path = QString((isCurrentInstrumentLocked() ? "Locked instrument. Click to unlock." : "Unlocked instrument. Click to lock.")) + " Right-click to configure keybinding.";
+          QString path =
+          "Select whether Radium is allowed to change to a different instrument by itself.<br>"
+          "<p>Right-click to configure keybinding and change current instrument.";
           
           //QToolTip::showText(QCursor::pos(),path + "gakk",NULL,QRect()); // QToolTip tries to be smart, but does of course fail. Why not let the programmer decide how things should behave instead? (shold probably make a custom tooltip function to avoid alle these workarounds)
           QToolTip::showText(QCursor::pos(),path,NULL,QRect());
-          
-          GFX_SetStatusBar(path.toUtf8().constData());
+
+          if (isCurrentInstrumentLocked())
+            GFX_SetStatusBar("Current instrument locked");
+          else
+            GFX_SetStatusBar("Current instrument unlocked");
           
         } else {
           
