@@ -677,124 +677,126 @@
 (define *open-record-config-windows* (make-hash-table))
 (define *curr-record-config-window* #f) ;; only show one at a time.
 
-(define (show-record-popup-menu seqtracknum)
-  (if *curr-record-config-window*
-      (<gui> :close *curr-record-config-window*))
-  
-  (define popup #f)
-  (define radiobuttons
-    (map (lambda (ch)
-           (<gui> :radiobutton (<-> ch "") #f (lambda (val)
-                                                ;;(if popup
-                                                ;;    (<gui> :close popup))
-                                                #t)))
-         (map 1+ (iota 8))))
-  
-  (define (create-options)
-    (let ((options
-           (<gui> :vertical-layout
-                  
-                  (<gui> :group "Source"
-                         (<gui> :horizontal-layout
-                                (<gui> :radiobutton "System input"
-                                       (<ra> :get-seqtrack-record-from-system-input seqtracknum)
-                                       (lambda (ison)
-                                         (<ra> :set-seqtrack-record-from-system-input seqtracknum ison)))
-                                (<gui> :radiobutton "Input connections to the instrument"
-                                       (not (<ra> :get-seqtrack-record-from-system-input seqtracknum))
-                                       (lambda (ison)
-                                         (<ra> :set-seqtrack-record-from-system-input seqtracknum (not ison))))
-                                
-                                ))
+;; Note: used for shortcut
+(delafina (show-record-popup-menu :seqtracknum (<ra> :get-curr-seqtrack))
+  (when (<ra> :seqtrack-for-audiofiles seqtracknum)
+    (if *curr-record-config-window*
+        (<gui> :close *curr-record-config-window*))
+    
+    (define popup #f)
+    (define radiobuttons
+      (map (lambda (ch)
+             (<gui> :radiobutton (<-> ch "") #f (lambda (val)
+                                                  ;;(if popup
+                                                  ;;    (<gui> :close popup))
+                                                  #t)))
+           (map 1+ (iota 8))))
+    
+    (define (create-options)
+      (let ((options
+             (<gui> :vertical-layout
+                    
+                    (<gui> :group "Source"
+                           (<gui> :horizontal-layout
+                                  (<gui> :radiobutton "System input"
+                                         (<ra> :get-seqtrack-record-from-system-input seqtracknum)
+                                         (lambda (ison)
+                                           (<ra> :set-seqtrack-record-from-system-input seqtracknum ison)))
+                                  (<gui> :radiobutton "Input connections to the instrument"
+                                         (not (<ra> :get-seqtrack-record-from-system-input seqtracknum))
+                                         (lambda (ison)
+                                           (<ra> :set-seqtrack-record-from-system-input seqtracknum (not ison))))
+                                  
+                                  ))
                                          ;;;(<gui> :radiobutton "Output of instrument main pipe #f")))
-                  
-                  (<gui> :group "Source channel -> Soundfile channel"
-                         (let ((matrix (<gui> :horizontal-layout
-                                              (map (lambda (input-channel)
-                                                     (<gui> :vertical-layout
-                                                            (map (lambda (soundfile-channel)
-                                                                   (<gui> :checkbox (<-> input-channel " -> " soundfile-channel)
-                                                                          (<ra> :get-seqtrack-recording-matrix seqtracknum input-channel soundfile-channel)
-                                                                          #t
-                                                                          (lambda (ison)
-                                                                            (<ra> :set-seqtrack-recording-matrix seqtracknum input-channel soundfile-channel ison)
-                                                                            ;;(c-display (<-> input-channel " -> " soundfile-channel ": " ison))
-                                                                            )))
-                                                                 (iota 8))))
-                                                   (iota 8)))))
-                           matrix))
-                  
-                  (<gui> :group "Use custom settings for this seqtrack?"
-                         (<gui> :vertical-layout
-                                (<gui> :radiobutton "Yes. (These settings apply to this seqtrack only)"
-                                       (<ra> :get-seqtrack-use-custom-recording-config seqtracknum)
-                                       (lambda (ison)
-                                         (<ra> :set-seqtrack-use-custom-recording-config seqtracknum ison)))                                         
-                                (<gui> :radiobutton "No. (These settings apply to all seqtracks with non-custom settings)"
-                                       (not (<ra> :get-seqtrack-use-custom-recording-config seqtracknum))
-                                       (lambda (ison)
-                                         (<ra> :set-seqtrack-use-custom-recording-config seqtracknum (not ison))))))
-                  
-                  )))
-      (<gui> :set-layout-spacing options 5 2 2 2 2)
-      options))
-  
-  (define options #f)
-  
-  (define (recreate-options)
-    (define new-options (create-options))
-    (when options
-      (<gui> :replace content options new-options)
-      (<gui> :close options))
-    (set! options new-options))
-
-  (recreate-options)
-  
-  (define content #f)
-
-  (define reset-button (<gui> :button "Reset values"
-                              (lambda ()
-                                (<ra> :reset-seqtrack-recording-options seqtracknum)
-                                (recreate-options))))
-
-  ;;(when (<ra> :seqtrack-is-recording seqtracknum)
-  ;;  (<gui> :set-enabled options #f)
-  ;;  (<gui> :set-enabled reset-button #f))
+                    
+                    (<gui> :group "Source channel -> Soundfile channel"
+                           (let ((matrix (<gui> :horizontal-layout
+                                                (map (lambda (input-channel)
+                                                       (<gui> :vertical-layout
+                                                              (map (lambda (soundfile-channel)
+                                                                     (<gui> :checkbox (<-> input-channel " -> " soundfile-channel)
+                                                                            (<ra> :get-seqtrack-recording-matrix seqtracknum input-channel soundfile-channel)
+                                                                            #t
+                                                                            (lambda (ison)
+                                                                              (<ra> :set-seqtrack-recording-matrix seqtracknum input-channel soundfile-channel ison)
+                                                                              ;;(c-display (<-> input-channel " -> " soundfile-channel ": " ison))
+                                                                              )))
+                                                                   (iota 8))))
+                                                     (iota 8)))))
+                             matrix))
+                    
+                    (<gui> :group "Use custom settings for this seqtrack?"
+                           (<gui> :vertical-layout
+                                  (<gui> :radiobutton "Yes. (These settings apply to this seqtrack only)"
+                                         (<ra> :get-seqtrack-use-custom-recording-config seqtracknum)
+                                         (lambda (ison)
+                                           (<ra> :set-seqtrack-use-custom-recording-config seqtracknum ison)))                                         
+                                  (<gui> :radiobutton "No. (These settings apply to all seqtracks with non-custom settings)"
+                                         (not (<ra> :get-seqtrack-use-custom-recording-config seqtracknum))
+                                         (lambda (ison)
+                                           (<ra> :set-seqtrack-use-custom-recording-config seqtracknum (not ison))))))
+                    
+                    )))
+        (<gui> :set-layout-spacing options 5 2 2 2 2)
+        options))
     
-  (set! content (<gui> :vertical-layout
-                       (mid-horizontal-layout (<gui> :text (<-> "Recording options for \"" (<ra> :get-seqtrack-name seqtracknum) "\" (#" seqtracknum ")")))
-                       options
-                       (<gui> :horizontal-layout
-                              reset-button
-                              (<gui> :button "Close"
-                                     (lambda ()
-                                       (if popup
-                                           (<gui> :close popup)))))))
+    (define options #f)
     
-  (<gui> :set-layout-spacing content 5 2 2 2 2)
-
-  (if #f
-      (set! popup (<gui> :popup))
-      (begin
-        (set! popup (<gui> :widget))
-        ;;(<gui> :set-modal popup #t)
-        (<gui> :set-parent popup -2)))
-  
-  (<gui> :add popup content)
+    (define (recreate-options)
+      (define new-options (create-options))
+      (when options
+        (<gui> :replace content options new-options)
+        (<gui> :close options))
+      (set! options new-options))
+    
+    (recreate-options)
+    
+    (define content #f)
+    
+    (define reset-button (<gui> :button "Reset values"
+                                (lambda ()
+                                  (<ra> :reset-seqtrack-recording-options seqtracknum)
+                                  (recreate-options))))
+    
+    ;;(when (<ra> :seqtrack-is-recording seqtracknum)
+    ;;  (<gui> :set-enabled options #f)
+    ;;  (<gui> :set-enabled reset-button #f))
+    
+    (set! content (<gui> :vertical-layout
+                         (mid-horizontal-layout (<gui> :text (<-> "Recording options for \"" (<ra> :get-seqtrack-name seqtracknum) "\" (#" seqtracknum ")")))
+                         options
+                         (<gui> :horizontal-layout
+                                reset-button
+                                (<gui> :button "Close"
+                                       (lambda ()
+                                         (if popup
+                                             (<gui> :close popup)))))))
+    
+    (<gui> :set-layout-spacing content 5 2 2 2 2)
+    
+    (if #f
+        (set! popup (<gui> :popup))
+        (begin
+          (set! popup (<gui> :widget))
+          ;;(<gui> :set-modal popup #t)
+          (<gui> :set-parent popup -2)))
+    
+    (<gui> :add popup content)
                                         ;(<gui> :set-parent widget -2)
-  (<gui> :show popup)
-  (<gui> :minimize-as-much-as-possible popup)
+    (<gui> :show popup)
+    (<gui> :minimize-as-much-as-possible popup)
                                         ;(<gui> :set-pos widget (floor (<ra> :get-global-mouse-pointer-x)) (floor (<ra> :get-global-mouse-pointer-y)))
-
-  (set! *curr-record-config-window* popup)
-
-  (<gui> :add-deleted-callback popup
-         (lambda (radium-runs-custom-exec)
-           (set! (*open-record-config-windows* seqtracknum) #f)
-           (set! *curr-record-config-window* #f)))
-  )
-
-
+    
+    (set! *curr-record-config-window* popup)
+    
+    (<gui> :add-deleted-callback popup
+           (lambda (radium-runs-custom-exec)
+             (set! (*open-record-config-windows* seqtracknum) #f)
+             (set! *curr-record-config-window* #f)))
+    ))
+  
+  
 (define (ask-user-about-first-audio-seqtrack2 callback)
   (show-async-message (<gui> :get-sequencer-gui)
                       (<-> "Are you sure?\n"
@@ -1533,6 +1535,7 @@
            (insert-current-block-or-audiofile-in-sequencer seqtracknum X)))
         (list
          "Recording options"
+         :shortcut show-record-popup-menu
          (lambda ()
            (show-record-popup-menu seqtracknum)))
         ))
