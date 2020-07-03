@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<!-- Template by quackit.com -->
+<html><head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>Radium manual</title>
+		<style type="text/css">
+		
+		body{
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			height: 100%; 
+			max-height: 100%; 
+			font-family:Sans-serif;
+			line-height: 1.5em;
+		}
+		
+		#nav{
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+                        right: 0px;
+                        margin: 0px;
+                        padding: 0px;
+			width: 200px; /* Width of navigation frame */
+			height: 100%;
+			/*overflow: hidden;*/ /* Disables scrollbars on the navigation frame. To enable scrollbars, change "hidden" to "scroll" */
+                        overflow-y: auto;
+			background: #eee;
+		}
+		
+		main{
+			margin-left: 0px;
+			padding-left: 10px;
+			padding-right: 10px;
+			position: fixed;
+			top: 0; 
+			left: 200px; /* Set this to the width of the navigation frame */
+			right: 0;
+			bottom: 0;
+			overflow: auto; 
+			background: #fff;
+		}
+		
+		.innertube{
+		    margin: 0px; /* Provides padding for the content */
+                    overflow-y: auto;
+		}
+
+                pre
+                {
+                    background: #eeeeee;
+                    border: solid 1px #19A347;  
+                    color: #191919;  
+                    display: block;  
+                    font-family: monospace;  
+                    font-size: 16px;  
+                    margin: 8px;  
+                    padding: 4px;
+                    white-space: pre;
+                }
+                
+		p {
+			color: #555;
+		}
+                
+                ul[hidden] {
+                        display: none
+                }
+                
+		nav ul {
+			list-style-type: none;
+			margin: 0px;
+			padding: 10px;
+                        top-border: 0;
+                        bottom-border: 0;
+                        top: 0;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        border-bottom: 1px solid #555;
+		}
+
+                nav li a {
+                    display: block;
+                    color: #000;
+                    padding: 4px 16px;
+                    text-decoration: none;
+                }
+
+                nav li {
+                    border: 2px solid #555;
+                }
+                
+                nav li .active {
+                    background-color: #4CAF50;
+                    color: white;
+                    top-border: 0;
+                    bottom-border: 0;
+                }
+
+                nav li a:hover {
+                    background-color: gray;
+                }
+                
+		margin: 25px;
+		padding: 0px;
+
+
+		/*IE6 fix*/
+		* html body{
+			padding: 0 0 0 230px; /* Set the last value to the width of the navigation frame */
+		}
+		
+		* html main{ 
+			height: 100%; 
+			width: 100%; 
+		}
+
+table {
+font-family: arial, sans-serif;
+font-style: normal;
+border-collapse: collapse;
+}
+
+body{
+font-family: arial, sans-serif;
+}
+
+td, th {
+border: 1px solid #dddddd;
+text-align: left;
+padding: 8px;
+}
+
+tr:nth-child(odd) {
+background-color: #e8e8e8;
+}
+tr:nth-child(even) {
+background-color: #eeeeee;
+}
+
+pre, code {
+/*    white-space: pre-wrap; */
+/*    margin-left: 50px; */
+}
+
+.boxed {
+  border: 1px solid green ;
+}
+
+blockquote {
+  display: inline-block;
+}
+
+</style>
+		
+</head>
+	
+	<body>		
+				
+		<main>
+			<div class="innertube">
+
+  <h1>Note text</h1>
+
+<IMG SRC="pianoroll.png" ALT="Pianoroll" style="border:10px solid transparent" align="right">
+
+
+  <p>
+
+    "Note text" is a way to define notes by text. "Note text" are placed in the "Note text" sub-track.
+    <p>
+    Examples:
+    <UL>
+      <LI> <b>C-3</b> defines the note <b>C</b> at octave <b>3</b>
+      <LI> <b>F#4</b> defines the note <b>F sharp</b> at octave <b>4</b>
+    </UL>
+
+  <p>
+
+    The "Note text" sub-track is visible by default. To hide or show the "Note text" sub-track:
+    <OL>
+      <LI><b>Move mouse pointer</b> inside the track you want to edit.
+      <LI><b>Right-click</b> to open the popup menu.
+      <LI><b>Toggle</b> the "Note text" entry.
+    </OL>    
+
+
+<h2>Create/Delete note</h2>
+
+<UL>
+  <LI><b>Create note</b>:
+    <OL>
+      <LI> Press <b>Ctrl + F5</b> to give keyboard focus to the editor.
+      <LI> Press <b>Esc</b>, if necessary, to enable <b>Editing mode</b>. Editing mode is enabled when the cursor is <b style="color:blue">Blue</b>
+      <LI> Press various keys on the keyboard to add notes:
+        <UL>
+          <LI><b>Z</b> is C, <b>S</b> is C#, <b>X</b> is D, and so forth.
+          <LI>Press <b>F1</b> to select octave down.
+          <LI>Press <b>F2</b> to select octave up.
+        </UL>
+        Note that locale setting is ignored when adding notes. Radium always uses a <A onclick="showHide('qwerty3')" href="#!">QWERTY</A> keyboard for note editing.
+        <div id="qwerty3" style="display: none">
+          <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
+        </div>
+      <LI> You can also add notes by sending MIDI. Configure MIDI input devices under <b>MIDI -> Midi Preferences -> Input ports</b>
+    </OL>
+  <LI><b>Delete note</b>:
+    <OL>
+      <LI> Move cursor above note.
+      <LI> Press <b>Del</b>
+    </OL>
+</UL>
+
+<h2>Insert/delete lines</h2>
+
+<UL>
+  <LI><b>Insert lines</b> in <b>current</b> track:
+    <UL>
+      <LI> Press <b>Backspace</b> to delete <b>1</b> line.
+      <LI> Press <b>Left Alt + Backspace</b> to insert <b>1</b> line.
+    </UL>
+  <LI><b>Insert lines</b> in <b>all</b> tracks:
+    <UL>
+      <LI> Press <b>Shift + Return</b> to insert or delete <b>1</b> line.
+      <LI> Press <b>Left Alt + Up</b> to delete <b>1</b> line.
+      <LI> Press <b>Left Alt + Down</b> to insert <b>1</b> line.
+    </UL>
+</UL>
+
+    
+<h2>Selection vs. range</h2>
+
+There are two ways to select notes:
+<OL>
+  <LI> <b>Selection in the pianoroll</b>.
+  <LI> <b>Ranged notes in the note-text subtrack</b> (see below).
+</OL>
+
+<UL>
+  <LI>These two ways don't share the same clipboard buffer, and while a <b>selection</b> operates on a track, a <b>range</b> operates on a block.
+  <LI>If there is <b>no range</b> in the current block, all <b>functions</b> operating on a range, e.g. transpose and quantitize, <b>will operate on the selected notes in the current track instead</b>.
+</UL>
+
+
+<h2>Range</h2>
+
+<UL>
+  <LI>To <b>create range</b>:
+    <OL>
+      <LI>Press <b>Left Win + Z</b> to cancel current range, if necessary.
+      <LI><b>Move cursor</b> to the upper left corner of the range you want to create.
+      <LI>Press <b>Left Win + B</b>
+      <LI><b>Move cursor</b> to the lower right corner of the range you want to create.
+      <LI>Press <b>Left Win + B</b> again.
+    </OL>
+  <LI>To <b>copy range</b>: Press <b>Left Win + C</b>
+  <LI>To <b>cut range</b>: Press <b>Left Win + X</b>
+  <LI>To <b>paste range</b>: Press <b>Left Win + V</b>
+</UL>
+
+(Mac users: the "<b>Left Win</b>" key corresponds to the "<b>Left Cmd</b>" key on a Mac.)
+
+
+    
+<h2>Finetuning and other mouse operations</h2>
+See <A href="mouse_gui_framed.html">Mouse</a>
+
+
+  <p>
+    
+
+  <p>
+
+
+
+  
+
+				
+			</div>
+		</main>
+	
+		<nav id="nav">
+		  <div class="innertube">
+                    
+			<ul>
+			  <li><a class="maybeactive" href="gui_framed.html">GUI</a>
+<ul hidden>
+                              <li><a class="maybeactive" href="mouse_gui_framed.html">Mouse</a></li>
+                              <li><a class="maybeactive" href="menus_gui_framed.html">Menus</a></li>
+                              <li><a class="maybeactive" href="common_keybindings_gui_framed.html">Common keybindings</a></li>
+			      <li><a class="maybeactive" href="keybindings_gui_framed.html">Editing keybindings</a></li>
+                            </ul>
+                          </li>
+                          <li><a class="maybeactive" href="editor_framed.html">Editor</a>
+<ul>
+			      <li><a class="maybeactive" href="grid_editor_framed.html">Grid</a></li>
+			      <li><a class="maybeactive" href="bpmtext_editor_framed.html">BPM</a></li>
+			      <li><a class="maybeactive" href="lpbtext_editor_framed.html">LPB</a></li>
+			      <li><a class="maybeactive" href="signaturetext_editor_framed.html">Signatures</a></li>
+			      <li><a class="maybeactive" href="lztrack_editor_framed.html">LZ</a></li>
+                              <li><a class="maybeactive" href="swingtext_editor_framed.html">Swing</a></li>
+			      <li><a class="maybeactive" href="tempoautomationtrack_editor_framed.html">Tempo automation</a></li>
+			      <li><a class="maybeactive" href="pianoroll_editor_framed.html">Pianoroll</a></li>
+			      <li><a class="active" href="notetext_editor_framed.html">Note text</a></li>
+			      <li><a class="maybeactive" href="centtext_editor_framed.html">Cent text</a></li>
+			      <li><a class="maybeactive" href="chancetext_editor_framed.html">Chance text</a></li>
+			      <li><a class="maybeactive" href="velocitytext_editor_framed.html">Velocity text</a></li>
+			      <li><a class="maybeactive" href="fxtext_editor_framed.html">FX text</a></li>
+			      <li><a class="maybeactive" href="fxarea_editor_framed.html">FX automation and Velocity automation</a></li>
+                            </ul>
+                          </li>
+			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
+			  <li><a class="maybeactive" href="sequencer_framed.html">Sequencer</a></li>
+                          <li><a class="maybeactive" href="instrument_framed.html">Instrument</a>
+<ul hidden>
+			      <li><a class="maybeactive" href="faustdev_instrument_framed.html">FaustDev</a></li>
+			      <li><a class="maybeactive" href="puredata_instrument_framed.html">Pure Data</a></li>
+			      <li><a class="maybeactive" href="sampler_instrument_framed.html">Sample player</a></li>
+			      <li><a class="maybeactive" href="effect_popup_menu_instrument_framed.html">Instrument effect popup menu</a></li>
+                            </ul>
+                          </li>
+			  <li><a class="maybeactive" href="timing_framed.html">Timing</a></li>
+			  <li><a class="maybeactive" href="modulators_framed.html">Modulators</a></li>
+			  <li><a class="maybeactive" href="scripting_framed.html">Scripting</a></li>
+			</ul>
+                        
+			</div>
+		</nav>
+
+
+	
+
+<script>
+  function showHide(name) {
+    var x = document.getElementById(name);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+    } else {
+        x.style.display = 'none';
+    }
+}
+
+function showHide2(divname,linkname) {
+    var x = document.getElementById(divname);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+        document.getElementById(linkname).innerHTML="Hide";
+    } else {
+        x.style.display = 'none';
+        document.getElementById(linkname).innerHTML="Show";
+    }
+}
+
+</script>
+
+
+</body></html>
