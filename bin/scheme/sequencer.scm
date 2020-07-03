@@ -1697,6 +1697,32 @@
           (<ra> :set-seqblock-automation-enabled enable automationnum seqblockid))))
 
 
+
+(define (get-seqblock-gain-text seqblock-id)
+  (db-to-text (<ra> :gain-to-db (<ra> :get-seqblock-gain seqblock-id)) #t))
+
+;; Note: Used for shortcut
+(delafina (set-seqblock-gain :seqblock-id (and *current-seqblock-info*
+                                               (*current-seqblock-info* :id)))
+  (when seqblock-id
+    (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
+    (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
+    (define new (<ra> :request-float (<-> "New gain (now: " (get-seqblock-gain-text seqblock-id)  ")")
+                      -1000
+                      1000))
+    (if (>= new -1000)
+        (<ra> :set-seqblock-gain (<ra> :db-to-gain new) seqblock-id))))
+
+(define (get-set-seqblock-gain-popup-menu-entries seqblock-id)
+  (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
+  (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
+  (list
+   (<-> "Set gain (now: " (get-seqblock-gain-text seqblock-id) ")")
+   :shortcut set-seqblock-gain
+   (lambda ()
+     (set-seqblock-gain seqblock-id))))
+  
+
 (define (get-seqblock-separator-text text seqblockid)
   (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
   (define seqtracknum  (<ra> :get-seqblock-seqtrack-num seqblockid))
@@ -1723,7 +1749,7 @@
                               "")))
   (<-> "------------" text (cut-string-if-longer-than display-name
                                                       50)))
-  
+
 (define (get-audio-seqblock-popup-menu-entries seqblocknum seqtracknum seqblockid X)
   (define seqblock-info *current-seqblock-info*)
   (define seqblock-infos-under-mouse (get-curr-seqblock-infos-under-mouse #f))
@@ -1752,20 +1778,8 @@
         (split-seqblock pos seqblockid))))
    
    "---------------------"
-   
-   (let ((get-old-gain (lambda ()
-                         (db-to-text (if seqblocknum
-                                         (<ra> :gain-to-db (<ra> :get-seqblock-gain seqblockid))
-                                         0.0)
-                                     #t))))
-     (list
-      (<-> "Set gain (now: " (get-old-gain) ")")
-      (lambda ()
-        (define new (<ra> :request-float (<-> "New gain (now: " (get-old-gain) ")")
-                          -1000
-                          1000))
-        (if (>= new -1000)
-            (<ra> :set-seqblock-gain (<ra> :db-to-gain new) seqblockid)))))
+
+   (get-set-seqblock-gain-popup-menu-entries seqblockid)
    
    (let ((get-normalized-gain (lambda ()
                                 (get-normalized-seqblock-gain seqblockid))))
@@ -1831,8 +1845,7 @@
 
 ;; Note: used for shortcut
 (delafina (configure-seqblock-color :seqblock-id (and *current-seqblock-info*
-                                                      (*current-seqblock-info* :id))
-                                    :seqblock-infos (get-curr-seqblock-infos-under-mouse))
+                                                      (*current-seqblock-info* :id)))
   (when seqblock-id
     (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
     (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
@@ -1845,6 +1858,7 @@
           (<ra> :color-dialog (<ra> :get-block-color blocknum -1 #f) -1
                 (lambda (color)
                   (<ra> :set-block-color color blocknum)))))))
+
 
 (define (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
   (define seqblock-info *current-seqblock-info*)
@@ -1940,6 +1954,10 @@
          (lambda ()
            (show-seqblock-track-on-off-configuration seqblockid)))
 
+   "------------------------"
+   
+   (get-set-seqblock-gain-popup-menu-entries seqblockid)
+   
    "------------------------"
    
    (list "Advanced"
@@ -2043,7 +2061,9 @@
    
    (list "Configure color"
          :enabled seqblock-info
-         configure-seqblock-color)
+         :shortcut configure-seqblock-color
+         (lambda ()
+           (configure-seqblock-color seqblockid)))
    
    (list "Generate new color"
          :enabled seqblock-info
