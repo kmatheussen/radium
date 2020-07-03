@@ -180,8 +180,6 @@ Time area:
                       <LI> Double-click a seqblock to open a GUI for it.
                     </UL> 
                   <LI> Use the popup menu to add effect automations, tempo automations, loop start and end positions, and other operations.
-                  <LI> To quickly start playing at the position of the mouse cursor, scroll the mouse wheel <b>up</b>, and stop by scrolling <b>down</b>.
-                  <LI> To record audio, click the "R" button in the seqtrack header of audio seqtracks, and start playing. To configure number of audio channels and where to get audio from, right-click the "R" button. You might also want to select beforehand when to start and stop recording, and you can do this by by right-clicking in the seqblock area and select the "Punch in/out" option under "Sequencer timeline".
                   <LI> For information about the different types of fade in and fade out shapes, look in the Ardour manual <A href="http://manual.ardour.org/editing-and-arranging/create-region-fades-and-crossfades/">here</A>.
                   <LI> Drag seqtrack number to change track order.
                 </UL>
@@ -190,15 +188,23 @@ Time area:
       
                 Timeline:
                 <UL>
-                  <LI> Left-click the <b>G:Bar</b> button to enable/disable grid.
-                  <LI> Right-click the <b>G:Bar</b> button to set grid type.
+                  <LI> Left-click the <b>Grid: Bar</b> button to enable/disable grid.
+                  <LI> Right-click the <b>Grid: Bar</b> button to set grid type.
                   <LI> Double-click a marker to loop between that marker and the next marker. (If you double-click the last marker, you will be asked to rename that marker instead)
                 </UL>
 
     <p>
                 Recording:
                 <UL>
+                  <LI> To record audio, click the "R" button in the seqtrack header of audio seqtracks, and start playing. To configure number of audio channels and where to get audio from, right-click the "R" button. You might also want to select beforehand when to start and stop recording, and you can do this by by right-clicking in the seqblock area and select the "Punch in/out" option under "Sequencer timeline".
                   <LI> Right-click the "R" button in a seqtrack header to set recording options.
+                </UL>
+
+    <p>
+                Tips:
+                <UL>
+                  <LI> The quickest way to <b>start and stop playing</b> is to use the <b>mouse scroll wheel</b>. Scroll up to play, scroll down to stop.
+                  <LI> The quickest way to <b>scroll the seqtracks up or down</b> is to hold <b>shift</b> and use the <b>mouse scroll wheel</b>. You can also use the mouse scroll wheel inside the track headers, without having to press shift.
                 </UL>
   
 
@@ -228,10 +234,12 @@ Time area:
                               <li><a class="maybeactive" href="swingtext_editor_framed.html">Swing</a></li>
 			      <li><a class="maybeactive" href="tempoautomationtrack_editor_framed.html">Tempo automation</a></li>
 			      <li><a class="maybeactive" href="pianoroll_editor_framed.html">Pianoroll</a></li>
+			      <li><a class="maybeactive" href="notetext_editor_framed.html">Note text</a></li>
 			      <li><a class="maybeactive" href="centtext_editor_framed.html">Cent text</a></li>
 			      <li><a class="maybeactive" href="chancetext_editor_framed.html">Chance text</a></li>
 			      <li><a class="maybeactive" href="velocitytext_editor_framed.html">Velocity text</a></li>
 			      <li><a class="maybeactive" href="fxtext_editor_framed.html">FX text</a></li>
+			      <li><a class="maybeactive" href="fxarea_editor_framed.html">FX automation and Velocity automation</a></li>
                             </ul>
                           </li>
 			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
@@ -251,7 +259,32 @@ Time area:
                         
 			</div>
 		</nav>
+
+
 	
-	
+
+<script>
+  function showHide(name) {
+    var x = document.getElementById(name);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+    } else {
+        x.style.display = 'none';
+    }
+}
+
+function showHide2(divname,linkname) {
+    var x = document.getElementById(divname);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+        document.getElementById(linkname).innerHTML="Hide";
+    } else {
+        x.style.display = 'none';
+        document.getElementById(linkname).innerHTML="Show";
+    }
+}
+
+</script>
+
 
 </body></html>

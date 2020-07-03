@@ -180,8 +180,9 @@ blockquote {
 
   <IMG SRC="globalsignature.png" ALT="Global Signature in the editor" style="border:10px solid transparent">
   <IMG SRC="globalsignature2.png" ALT="Global Signature in the bottom bar" style="border:10px solid transparent">
-
-
+  <br>
+  This entry is shown in the bottom bar if the signature track is hidden in the editor.
+  
   <p>
 
   <IMG SRC="signaturetext.png" ALT="Signature timing track" style="border:10px solid transparent" align="right">
@@ -192,7 +193,7 @@ blockquote {
   
   <p>
     
-    To enable the Signature track, right-click somewhere in the timing area of the editor (to the left of the note tracks), and enable "Signature".
+    To show the Signature track, right-click somewhere in the timing area of the editor (to the left of the note tracks), and enable "Signature".
     
 <p>
   <blockquote>
@@ -206,7 +207,7 @@ blockquote {
 <p>
 
 <UL>
-  <LI> Press Return to create a new Signature entry or edit an existing Signautre entry.
+  <LI> Press Return to create a new Signature entry or to edit an existing Signautre entry.
   <LI> Press DEL to remove a Signature entry.
 </UL>
 
@@ -238,10 +239,12 @@ blockquote {
                               <li><a class="maybeactive" href="swingtext_editor_framed.html">Swing</a></li>
 			      <li><a class="maybeactive" href="tempoautomationtrack_editor_framed.html">Tempo automation</a></li>
 			      <li><a class="maybeactive" href="pianoroll_editor_framed.html">Pianoroll</a></li>
+			      <li><a class="maybeactive" href="notetext_editor_framed.html">Note text</a></li>
 			      <li><a class="maybeactive" href="centtext_editor_framed.html">Cent text</a></li>
 			      <li><a class="maybeactive" href="chancetext_editor_framed.html">Chance text</a></li>
 			      <li><a class="maybeactive" href="velocitytext_editor_framed.html">Velocity text</a></li>
 			      <li><a class="maybeactive" href="fxtext_editor_framed.html">FX text</a></li>
+			      <li><a class="maybeactive" href="fxarea_editor_framed.html">FX automation and Velocity automation</a></li>
                             </ul>
                           </li>
 			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
@@ -261,7 +264,32 @@ blockquote {
                         
 			</div>
 		</nav>
+
+
 	
-	
+
+<script>
+  function showHide(name) {
+    var x = document.getElementById(name);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+    } else {
+        x.style.display = 'none';
+    }
+}
+
+function showHide2(divname,linkname) {
+    var x = document.getElementById(divname);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+        document.getElementById(linkname).innerHTML="Hide";
+    } else {
+        x.style.display = 'none';
+        document.getElementById(linkname).innerHTML="Show";
+    }
+}
+
+</script>
+
 
 </body></html>
