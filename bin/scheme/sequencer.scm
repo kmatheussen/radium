@@ -1829,6 +1829,23 @@
                        (<ra> :paste-block))
                      seqblock-infos)))))))
 
+;; Note: used for shortcut
+(delafina (configure-seqblock-color :seqblock-id (and *current-seqblock-info*
+                                                      (*current-seqblock-info* :id))
+                                    :seqblock-infos (get-curr-seqblock-infos-under-mouse))
+  (when seqblock-id
+    (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
+    (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
+    (if (<ra> :seqtrack-for-audiofiles seqtracknum)
+        (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
+          (<ra> :color-dialog (<ra> :get-audiofile-color filename #f) -1
+                (lambda (color)
+                  (<ra> :set-audiofile-color color filename))))
+        (let ((blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
+          (<ra> :color-dialog (<ra> :get-block-color blocknum -1 #f) -1
+                (lambda (color)
+                  (<ra> :set-block-color color blocknum)))))))
+
 (define (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
   (define seqblock-info *current-seqblock-info*)
   (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
@@ -2026,15 +2043,7 @@
    
    (list "Configure color"
          :enabled seqblock-info
-         (lambda ()
-           (if blocknum
-               (<ra> :color-dialog (<ra> :get-block-color blocknum -1 #f) -1
-                     (lambda (color)
-                       (<ra> :set-block-color color blocknum)))
-               (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
-                 (<ra> :color-dialog (<ra> :get-audiofile-color filename #f) -1
-                       (lambda (color)
-                         (<ra> :set-audiofile-color color filename)))))))
+         configure-seqblock-color)
    
    (list "Generate new color"
          :enabled seqblock-info

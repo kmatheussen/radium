@@ -4194,7 +4194,7 @@ filepath_t getSeqblockSample(int seqblocknum, int seqtracknum){
     return createIllegalFilepath();
   
   if (seqblock->block!=NULL){
-    handleError("getSeqblockSampleId: Seqblock %d in seqtrack %d holds a block and not a sample", seqblocknum, seqtracknum);
+    handleError("getSeqblockSample: Seqblock %d in seqtrack %d holds a block and not a sample", seqblocknum, seqtracknum);
     return createIllegalFilepath();
   }
 
