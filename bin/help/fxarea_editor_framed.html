@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<!-- Template by quackit.com -->
+<html><head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>Radium manual</title>
+		<style type="text/css">
+		
+		body{
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			height: 100%; 
+			max-height: 100%; 
+			font-family:Sans-serif;
+			line-height: 1.5em;
+		}
+		
+		#nav{
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+                        right: 0px;
+                        margin: 0px;
+                        padding: 0px;
+			width: 200px; /* Width of navigation frame */
+			height: 100%;
+			/*overflow: hidden;*/ /* Disables scrollbars on the navigation frame. To enable scrollbars, change "hidden" to "scroll" */
+                        overflow-y: auto;
+			background: #eee;
+		}
+		
+		main{
+			margin-left: 0px;
+			padding-left: 10px;
+			padding-right: 10px;
+			position: fixed;
+			top: 0; 
+			left: 200px; /* Set this to the width of the navigation frame */
+			right: 0;
+			bottom: 0;
+			overflow: auto; 
+			background: #fff;
+		}
+		
+		.innertube{
+		    margin: 0px; /* Provides padding for the content */
+                    overflow-y: auto;
+		}
+
+                pre
+                {
+                    background: #eeeeee;
+                    border: solid 1px #19A347;  
+                    color: #191919;  
+                    display: block;  
+                    font-family: monospace;  
+                    font-size: 16px;  
+                    margin: 8px;  
+                    padding: 4px;
+                    white-space: pre;
+                }
+                
+		p {
+			color: #555;
+		}
+                
+                ul[hidden] {
+                        display: none
+                }
+                
+		nav ul {
+			list-style-type: none;
+			margin: 0px;
+			padding: 10px;
+                        top-border: 0;
+                        bottom-border: 0;
+                        top: 0;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        border-bottom: 1px solid #555;
+		}
+
+                nav li a {
+                    display: block;
+                    color: #000;
+                    padding: 4px 16px;
+                    text-decoration: none;
+                }
+
+                nav li {
+                    border: 2px solid #555;
+                }
+                
+                nav li .active {
+                    background-color: #4CAF50;
+                    color: white;
+                    top-border: 0;
+                    bottom-border: 0;
+                }
+
+                nav li a:hover {
+                    background-color: gray;
+                }
+                
+		margin: 25px;
+		padding: 0px;
+
+
+		/*IE6 fix*/
+		* html body{
+			padding: 0 0 0 230px; /* Set the last value to the width of the navigation frame */
+		}
+		
+		* html main{ 
+			height: 100%; 
+			width: 100%; 
+		}
+
+table {
+font-family: arial, sans-serif;
+font-style: normal;
+border-collapse: collapse;
+}
+
+body{
+font-family: arial, sans-serif;
+}
+
+td, th {
+border: 1px solid #dddddd;
+text-align: left;
+padding: 8px;
+}
+
+tr:nth-child(odd) {
+background-color: #e8e8e8;
+}
+tr:nth-child(even) {
+background-color: #eeeeee;
+}
+
+pre, code {
+/*    white-space: pre-wrap; */
+/*    margin-left: 50px; */
+}
+
+.boxed {
+  border: 1px solid green ;
+}
+
+blockquote {
+  display: inline-block;
+}
+
+</style>
+		
+</head>
+	
+	<body>		
+				
+		<main>
+			<div class="innertube">
+  <body bgcolor="#ffffff">
+
+<!--    <IMG SRC="fxtext.png" ALT="FX text" style="border:10px solid transparent" align="right"> -->
+    
+<h1>FX automation</h1>
+
+
+<h1>Velocity automation</h1>
+
+  
+  
+
+				
+			</div>
+		</main>
+	
+		<nav id="nav">
+		  <div class="innertube">
+                    
+			<ul>
+			  <li><a class="maybeactive" href="gui_framed.html">GUI</a>
+<ul hidden>
+                              <li><a class="maybeactive" href="mouse_gui_framed.html">Mouse</a></li>
+                              <li><a class="maybeactive" href="menus_gui_framed.html">Menus</a></li>
+                              <li><a class="maybeactive" href="common_keybindings_gui_framed.html">Common keybindings</a></li>
+			      <li><a class="maybeactive" href="keybindings_gui_framed.html">Editing keybindings</a></li>
+                            </ul>
+                          </li>
+                          <li><a class="maybeactive" href="editor_framed.html">Editor</a>
+<ul>
+			      <li><a class="maybeactive" href="grid_editor_framed.html">Grid</a></li>
+			      <li><a class="maybeactive" href="bpmtext_editor_framed.html">BPM</a></li>
+			      <li><a class="maybeactive" href="lpbtext_editor_framed.html">LPB</a></li>
+			      <li><a class="maybeactive" href="signaturetext_editor_framed.html">Signatures</a></li>
+			      <li><a class="maybeactive" href="lztrack_editor_framed.html">LZ</a></li>
+                              <li><a class="maybeactive" href="swingtext_editor_framed.html">Swing</a></li>
+			      <li><a class="maybeactive" href="tempoautomationtrack_editor_framed.html">Tempo automation</a></li>
+			      <li><a class="maybeactive" href="pianoroll_editor_framed.html">Pianoroll</a></li>
+			      <li><a class="maybeactive" href="notetext_editor_framed.html">Note text</a></li>
+			      <li><a class="maybeactive" href="centtext_editor_framed.html">Cent text</a></li>
+			      <li><a class="maybeactive" href="chancetext_editor_framed.html">Chance text</a></li>
+			      <li><a class="maybeactive" href="velocitytext_editor_framed.html">Velocity text</a></li>
+			      <li><a class="maybeactive" href="fxtext_editor_framed.html">FX text</a></li>
+			      <li><a class="active" href="fxarea_editor_framed.html">FX automation and Velocity automation</a></li>
+                            </ul>
+                          </li>
+			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
+			  <li><a class="maybeactive" href="sequencer_framed.html">Sequencer</a></li>
+                          <li><a class="maybeactive" href="instrument_framed.html">Instrument</a>
+<ul hidden>
+			      <li><a class="maybeactive" href="faustdev_instrument_framed.html">FaustDev</a></li>
+			      <li><a class="maybeactive" href="puredata_instrument_framed.html">Pure Data</a></li>
+			      <li><a class="maybeactive" href="sampler_instrument_framed.html">Sample player</a></li>
+			      <li><a class="maybeactive" href="effect_popup_menu_instrument_framed.html">Instrument effect popup menu</a></li>
+                            </ul>
+                          </li>
+			  <li><a class="maybeactive" href="timing_framed.html">Timing</a></li>
+			  <li><a class="maybeactive" href="modulators_framed.html">Modulators</a></li>
+			  <li><a class="maybeactive" href="scripting_framed.html">Scripting</a></li>
+			</ul>
+                        
+			</div>
+		</nav>
+
+
+	
+
+<script>
+  function showHide(name) {
+    var x = document.getElementById(name);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+    } else {
+        x.style.display = 'none';
+    }
+}
+
+function showHide2(divname,linkname) {
+    var x = document.getElementById(divname);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+        document.getElementById(linkname).innerHTML="Hide";
+    } else {
+        x.style.display = 'none';
+        document.getElementById(linkname).innerHTML="Show";
+    }
+}
+
+</script>
+
+
+</body></html>
