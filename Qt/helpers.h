@@ -605,6 +605,7 @@ bool MOUSE_CYCLE_move(QWidget *widget, QMouseEvent *event);
 bool MOUSE_CYCLE_unregister(QWidget *widget);
 void MOUSE_CYCLE_schedule_unregister_all(void); // Can safely be called at any moment when we know that the current mouse cycle should not run (schedules a call to mouseReleaseEvent if there is a mouse event).
 Qt::MouseButtons MOUSE_CYCLE_get_mouse_buttons(void); // Use this one instead of QApplication::mouseButtons() to avoid getting false positives. (It will always return Qt::NoButton for non-mousecycle widgets though)
+bool MOUSE_CYCLE_has_moved(void); // returns true if MOUSE_CYCLE_move has been called after MOUSE_CYCLE_register
 
 namespace radium{
 

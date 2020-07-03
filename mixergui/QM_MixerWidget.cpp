@@ -729,8 +729,24 @@ static bool stop_moving_chips(MyScene *myscene, const QPointF &mouse_pos){
     return false;
 }
 
-void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
+static QMouseEvent *get_qmouseevent(const QGraphicsSceneMouseEvent *event){
+  static QMouseEvent e(QEvent::MouseButtonRelease,
+                       event->scenePos(),
+                       event->button(),
+                       event->buttons(),
+                       event->modifiers());
+  
+  e = QMouseEvent(QEvent::MouseButtonRelease,
+                  event->scenePos(),
+                  event->button(),
+                  event->buttons(),
+                  event->modifiers());
+  return &e;
+}
 
+void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
+  MOUSE_CYCLE_move(g_mixer_widget, get_qmouseevent(event));
+  
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
   QPointF pos=event->scenePos();
@@ -1695,14 +1711,7 @@ static bool g_is_pressed = false; // Workaround for nasty Qt bug.
 void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
   
-  {
-    QMouseEvent e(QEvent::MouseButtonRelease,
-                  event->scenePos(),
-                  event->button(),
-                  event->buttons(),
-                  event->modifiers());
-    MOUSE_CYCLE_register(g_mixer_widget, &e);
-  }
+  MOUSE_CYCLE_register(g_mixer_widget, get_qmouseevent(event));
   
   if (g_is_pressed==true)
     return;
@@ -1896,7 +1905,7 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
       chip_is_under = true;
     }
     
-    if(chip_is_under==false){
+    if(chip_is_under==false && !MOUSE_CYCLE_has_moved()){
       mouserelease_create_chip(this,mouse_x,mouse_y);
       event->accept();
       return;

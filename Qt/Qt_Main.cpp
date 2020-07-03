@@ -643,10 +643,12 @@ namespace{
   struct MouseCycle{    
     QPointer<QWidget> widget;
     int64_t id;
+    QPointF start_pos;
     QPointF local_pos;
     Qt::MouseButton button;
     Qt::MouseButtons buttons;
     Qt::KeyboardModifiers modifiers;
+    bool has_moved;
   };
 }
 
@@ -663,11 +665,17 @@ Qt::MouseButtons MOUSE_CYCLE_get_mouse_buttons(void){
   
 static void MOUSE_CYCLE_unregister_all(int64_t id);
 
-static void set_curr_mouse_cycle(QMouseEvent *event){
+static void set_curr_mouse_cycle(QMouseEvent *event, bool is_pressing){
   g_curr_mouse_cycle.local_pos = event->localPos();
+  
+  if (is_pressing)
+    g_curr_mouse_cycle.start_pos = g_curr_mouse_cycle.local_pos = event->localPos();
+
   g_curr_mouse_cycle.button = event->button();
   g_curr_mouse_cycle.buttons = event->buttons();
   g_curr_mouse_cycle.modifiers = event->modifiers();
+
+  g_curr_mouse_cycle.has_moved = is_pressing ? false : true;
 }
 
 bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event){
@@ -702,7 +710,7 @@ bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event){
   static int64_t g_mouse_cycle_id = 0;
   g_curr_mouse_cycle.id = g_mouse_cycle_id++;
 
-  set_curr_mouse_cycle(event);
+  set_curr_mouse_cycle(event, true);
 
   return true;
 }
@@ -730,9 +738,13 @@ bool MOUSE_CYCLE_move(QWidget *widget, QMouseEvent *event){
     
   //printf("CYCLE: moving %p\n", widget);
   
-  set_curr_mouse_cycle(event);
+  set_curr_mouse_cycle(event, false);
 
   return true;
+}
+
+bool MOUSE_CYCLE_has_moved(void){
+  return g_curr_mouse_cycle.has_moved;
 }
 
 bool MOUSE_CYCLE_unregister(QWidget *widget){
