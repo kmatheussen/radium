@@ -169,7 +169,7 @@ Menus are used a lot in Radium. Most graphical elements, buttons, sliders, and e
 <p>
 
   If a menu entry has a keybinding assigned to it, or it says <font color="#e57c12">unassigned</font>,
-  you can <b>Right-click</b> to configure keybinding.
+  you can usually <b>Right-click</b> to configure keybinding.
 <p>
 
 To navigate menus using the keyboard:
@@ -217,10 +217,12 @@ To navigate menus using the keyboard:
                               <li><a class="maybeactive" href="swingtext_editor_framed.html">Swing</a></li>
 			      <li><a class="maybeactive" href="tempoautomationtrack_editor_framed.html">Tempo automation</a></li>
 			      <li><a class="maybeactive" href="pianoroll_editor_framed.html">Pianoroll</a></li>
+			      <li><a class="maybeactive" href="notetext_editor_framed.html">Note text</a></li>
 			      <li><a class="maybeactive" href="centtext_editor_framed.html">Cent text</a></li>
 			      <li><a class="maybeactive" href="chancetext_editor_framed.html">Chance text</a></li>
 			      <li><a class="maybeactive" href="velocitytext_editor_framed.html">Velocity text</a></li>
 			      <li><a class="maybeactive" href="fxtext_editor_framed.html">FX text</a></li>
+			      <li><a class="maybeactive" href="fxarea_editor_framed.html">FX automation and Velocity automation</a></li>
                             </ul>
                           </li>
 			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
@@ -240,7 +242,32 @@ To navigate menus using the keyboard:
                         
 			</div>
 		</nav>
+
+
 	
-	
+
+<script>
+  function showHide(name) {
+    var x = document.getElementById(name);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+    } else {
+        x.style.display = 'none';
+    }
+}
+
+function showHide2(divname,linkname) {
+    var x = document.getElementById(divname);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+        document.getElementById(linkname).innerHTML="Hide";
+    } else {
+        x.style.display = 'none';
+        document.getElementById(linkname).innerHTML="Show";
+    }
+}
+
+</script>
+
 
 </body></html>

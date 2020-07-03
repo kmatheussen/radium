@@ -166,22 +166,45 @@ blockquote {
 
 <IMG SRC="editor.png" ALT="editor" style="border:10px solid transparent" width="50%" align="right">
 
+See <A href="notetext_editor_framed.html">Note text</a> or <A href="pianoroll_editor_framed.html">Pianoroll</a> for instructions on how to edit notes to the editor.
 
-            <UL>
-              <LI>The editor consists of tempo tracks and note tracks. In the lower left area, there is a slider to change tempo in realtime, and a track scrollbar.
-              <LI>Press F12 to assign an instrument to the current track.
-              <LI>Press Right Shift to play current block.
-              <LI>Press right mouse button to erase notes in the piano roll.
-              <LI> Some documentation for the note tracks:
-                <UL>
-                  <LI> <A href="fxtext_framed.html">FX text</A>
-                  <LI> <A href="chancetext_framed.html">Chance text</A>
-                  <LI> <A href="swingtext_framed.html">Swing text</A>
-                  <LI> <A href="velocitytext_framed.html">Velocity text</A>
-                </UL>
-            </UL>
+<p>
 
+  <UL>
+    <LI>The editor consists of tempo tracks and note tracks. In the lower left area, there is a slider to change tempo in realtime, and a track scrollbar.
+    <LI>Press <b>F12</b> to assign an instrument to the current track.
+    <LI>Press <b>Right Shift</b> to play current block.
+    <LI>Hold <b>Shift</b> to prevent editor from scrolling down when editing text.
+    <LI>Press <b>Backspace</b> to scroll up the content of the current sub track one line.
+    <LI>Press <b>Left Alt + Backspace</b> to scroll down the content of the current sub track one line.
+  </UL>
 
+  
+  <h2>Text sub tracks</h2>
+  
+  <UL>
+    <LI> Pressing <b>A</b> inserts 10, <b>B</b> inserts 11, <b>C</b> inserts 12, <b>D</b> inserts <b>13</b>, <b>E</b> inserts 14, and <b>F</b> inserts 15.
+    <LI> Press <b>G</b> to add max value.
+    <LI> Press <b>T</b> to switch glide.
+    <LI> Hold <b>Shift</b> to prevent cursor from moving down when editing.
+  </UL>
+
+<h2>Transpose notes and numbers</h2>
+The <b>U</b> and <b>D</b> keys, in combination with various qualifier keys, can be used to transpose notes up and down. But the same key combinations works on all text tracks :
+  <UL>
+    <LI> Press <b>Left Alt + U</b> to transpose all numbers in the current sub track a little bit up. (Press <b>Shift</b>  to transpose more)
+    <LI> Press <b>Left Alt + D</b> to transpose all numbers in the current sub track a little down. (Press <b>Shift</b>  to transpose more)
+    <LI> Press <b>Right Alt + U</b> to transpose the current number inside the red rectangle a little bit up. (Press <b>Shift</b>  to transpose more)
+    <LI> Press <b>Right Alt + D</b> to transpose the current number inside the red rectangle a little down. (Press <b>Shift</b>  to transpose more)
+    <LI> Press <b>Ctrl + U</b> to transpose all numbers of the current type in the block a little bit up. (Press <b>Shift</b>  to transpose more)
+    <LI> Press <b>Ctrl + D</b> to transpose all numbers of the current type in the block a little down. (Press <b>Shift</b>  to transpose more)
+    <LI> Press <b>Left Win + U</b> to transpose all numbers of the current type in the range a little bit up. (Press <b>Shift</b>  to transpose more)
+    <LI> Press <b>Left Win + D</b> to transpose all numbers of the current type in the range a little down. (Press <b>Shift</b>  to transpose more)
+      
+      
+  </UL>
+            
+            
 <small>            
 Note that the editor was from the start in 1999 designed to be a pure step machine. It wasn't designed to support editing while playing because that wasn't the intended workflow of the program. Instead, the player stopped automatically when starting to edit, which is actually a very efficient way to work. However, after numerous requests, editing while playing was eventually possible. But, to avoid having to rewrite almost the whole program, the player was just paused when editing, which caused all playing notes to stop permanently. However, more and more functions have later been rewritten in such a way that the player does not have to pause while editing. There's still many functions left where the player is paused while editing though and that's the reason playing notes sometimes are silenced while editing. Hopefully, all these situations will be removed in the future. This is not the case for the sequencer though. The sequencer was built from the ground up to support editing while playing.
 </small>
@@ -215,10 +238,12 @@ Note that the editor was from the start in 1999 designed to be a pure step machi
                               <li><a class="maybeactive" href="swingtext_editor_framed.html">Swing</a></li>
 			      <li><a class="maybeactive" href="tempoautomationtrack_editor_framed.html">Tempo automation</a></li>
 			      <li><a class="maybeactive" href="pianoroll_editor_framed.html">Pianoroll</a></li>
+			      <li><a class="maybeactive" href="notetext_editor_framed.html">Note text</a></li>
 			      <li><a class="maybeactive" href="centtext_editor_framed.html">Cent text</a></li>
 			      <li><a class="maybeactive" href="chancetext_editor_framed.html">Chance text</a></li>
 			      <li><a class="maybeactive" href="velocitytext_editor_framed.html">Velocity text</a></li>
 			      <li><a class="maybeactive" href="fxtext_editor_framed.html">FX text</a></li>
+			      <li><a class="maybeactive" href="fxarea_editor_framed.html">FX automation and Velocity automation</a></li>
                             </ul>
                           </li>
 			  <li><a class="maybeactive" href="mixer_framed.html">Mixer</a></li>
@@ -238,7 +263,32 @@ Note that the editor was from the start in 1999 designed to be a pure step machi
                         
 			</div>
 		</nav>
+
+
 	
-	
+
+<script>
+  function showHide(name) {
+    var x = document.getElementById(name);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+    } else {
+        x.style.display = 'none';
+    }
+}
+
+function showHide2(divname,linkname) {
+    var x = document.getElementById(divname);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+        document.getElementById(linkname).innerHTML="Hide";
+    } else {
+        x.style.display = 'none';
+        document.getElementById(linkname).innerHTML="Show";
+    }
+}
+
+</script>
+
 
 </body></html>
