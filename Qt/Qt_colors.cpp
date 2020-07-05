@@ -164,7 +164,7 @@ static const ColorConfig g_colorconfig[] = {
   {AUTOMATION6_COLOR_NUM,                   "automation6",  "Automation 6", false},
   {AUTOMATION7_COLOR_NUM,                   "automation7",  "Automation 7", false},
   {AUTOMATION8_COLOR_NUM,                   "automation8",  "Automation 8", false},  
-  {AUTOMATION_INDICATOR_COLOR_NUM,          "automation_indicator", "Automation indicator", false},
+  //{AUTOMATION_INDICATOR_COLOR_NUM,          "automation_indicator", "Automation indicator", false},
 
   {TRACK_SEPARATOR1_COLOR_NUM,              "track_separator1", "Track separator 1", false},
   {TRACK_SEPARATOR2A_COLOR_NUM,             "track_separator2_darkened", "Track separator 2 left part", false},
@@ -255,7 +255,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
     
   {PIANONOTE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
   
-  {AUTOMATION_INDICATOR_COLOR_NUM, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
+  //{AUTOMATION_INDICATOR_COLOR_NUM, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
 
   {BAR_TEXT_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
   {ZOOMLINE_TEXT_COLOR_NUM1, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
