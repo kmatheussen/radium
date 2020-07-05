@@ -184,9 +184,11 @@ static void draw_text_num(
 
 
 static void draw_node_indicator(float x,
-                                float y)
+                                float y,
+                                enum ColorNums color)
 {  
-  GE_Context *c = GE_color_alpha_z(AUTOMATION_INDICATOR_COLOR_NUM, 0.6, GE_Conf(Z_MAX_SCROLLTRANSFORM, NOMASK_Y, NO_SCISSORS));
+  //GE_Context *c = GE_color_alpha_z(AUTOMATION_INDICATOR_COLOR_NUM, 0.6, GE_Conf(Z_MAX_SCROLLTRANSFORM, NOMASK_Y, NO_SCISSORS));
+  GE_Context *c = GE_color_alpha_z(color, 0.6, GE_Conf(Z_MAX_SCROLLTRANSFORM, NOMASK_Y, NO_SCISSORS));
   
   float away1 = 1024;
   float away2 = 5;
@@ -1158,7 +1160,7 @@ static void create_reltempotrack(const struct Tracker_Windows *window, struct WB
       if(wblock->mouse_track==TEMPONODETRACK)
         draw_skewed_box(window, node->element, TEXT_COLOR_NUM, node->x, node->y - wblock->t.y1, NO_SCISSORS);
       if (node->element==g_indicator_node)
-        draw_node_indicator(node->x, node->y - wblock->t.y1);
+        draw_node_indicator(node->x, node->y - wblock->t.y1, AUTOMATION2_COLOR_NUM);
     }END_VECTOR_FOR_EACH;
 
   }
@@ -1664,7 +1666,7 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
     if (g_indicator_pitch_num < nodes->num_elements) {
       //printf("g_indicator_pitch_num: %d\n",g_indicator_pitch_num);
       struct Node *node = (struct Node *)nodes->elements[g_indicator_pitch_num];
-      draw_node_indicator(node->x, node->y-wblock->t.y1);
+      draw_node_indicator(node->x, node->y-wblock->t.y1, PITCH_LINE_COLOR_NUM);
     }    
   }
 }
@@ -2474,7 +2476,7 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
       printf("g_indicator_velocity_node_num(%d) >= nodes->num_elements(%d)\n",g_indicator_velocity_num,nodes->num_elements); // TODO: Find out why this happens so often.
     else {
       struct Node *node = (struct Node *)nodes->elements[g_indicator_velocity_num];
-      draw_node_indicator(node->x, node->y-wblock->t.y1);
+      draw_node_indicator(node->x, node->y-wblock->t.y1, VELOCITY_TEXT_COLOR_NUM);
     }
   }
 }
@@ -2494,7 +2496,7 @@ static void create_track_fxs(const struct Tracker_Windows *window, const struct 
       if (wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs)
         draw_skewed_box(window, node->element, TEXT_COLOR_NUM, node->x, node->y - wblock->t.y1, USE_SCISSORS);
       if (node->element==g_indicator_node)
-        draw_node_indicator(node->x, node->y - wblock->t.y1);
+        draw_node_indicator(node->x, node->y - wblock->t.y1, fxs->fx->color);
     }END_VECTOR_FOR_EACH;
 
   }
