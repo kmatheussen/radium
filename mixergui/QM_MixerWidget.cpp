@@ -579,6 +579,14 @@ void MW_get_slotted_x_y(float from_x, float from_y, float *x, float *y){
   *y = to_y;
 }
 
+void MW_get_curr_mixer_slot(float &x, float &y){
+    QPoint viewPoint = g_mixer_widget->view->mapFromGlobal(QCursor::pos());
+    QPointF scenePoint = g_mixer_widget->view->mapToScene(viewPoint);
+
+    get_slotted_x_y(scenePoint.x(), scenePoint.y(), x, y);
+  
+}
+
 static bool move_chip_to_slot(Chip *chip, float from_x, float from_y){
   float x,y;
   get_slotted_x_y(from_x, from_y, x, y);
@@ -1089,13 +1097,15 @@ static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_
   float x, y;
   get_slotted_x_y(mouse_x, mouse_y, x, y);
 
+  S7CALL2(void_float_float, "FROM_C-show-mixer-popup-menu", x, y);
+  /*
   createInstrumentDescriptionPopupMenu(createNewInstrumentConf(x, y, false, true,
                                                                true,
                                                                false, false,
                                                                API_get_gui_from_existing_widget(g_mixer_widget->window())
                                                                )
                                        );
-
+  */
   /*                                       
   const char *instrument_description = instrumentDescriptionPopupMenu(false, false);
   printf("   instrument_description: %s\n",instrument_description);
@@ -1189,12 +1199,8 @@ instrument_t MW_paste(float x, float y){
   if (PRESET_has_copy()==false)
     return make_instrument(-1);
 
-  if (x <= -10000 || y <= -10000){
-    QPoint viewPoint = g_mixer_widget->view->mapFromGlobal(QCursor::pos());
-    QPointF scenePoint = g_mixer_widget->view->mapToScene(viewPoint);
-
-    get_slotted_x_y(scenePoint.x(), scenePoint.y(), x, y);
-  }
+  if (x <= -10000 || y <= -10000)
+    MW_get_curr_mixer_slot(x, y);
 
   return PRESET_paste(x, y);
 }

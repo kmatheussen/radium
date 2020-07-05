@@ -1254,6 +1254,77 @@
    "Help keybindings" show-keybinding-help-window
    ))
 
+;; Note: Used for shortcut
+(delafina (insert-new-sound-object-in-mixer :x (<ra> :get-curr-mixer-slot-x)
+                                            :y (<ra> :get-curr-mixer-slot-y))
+  (define descr (make-instrument-conf :x x
+                                      :y y
+                                      :connect-to-main-pipe #f
+                                      :do-autoconnect #t
+                                      :include-load-preset #t
+                                      :must-have-inputs #f
+                                      :must-have-outputs #f
+                                      :parentgui (<gui> :get-main-mixer-gui)))
+  (<ra> :create-instrument-description-popup-menu descr))
+
+         
+(define (FROM_C-show-mixer-popup-menu x y)
+  (popup-menu
+   "-----------Insert"
+   (list "Insert new sound object"
+         :shortcut insert-new-sound-object-in-mixer
+         (lambda ()
+           (insert-new-sound-object-in-mixer x y)))
+   "---------------"
+   (list "Paste"
+         :enabled #t
+         :shortcut ra:paste-mixer-objects
+         (lambda ()
+           (<ra> :paste-mixer-objects x y)))
+   "---------------GUI"
+   (list "Mixer in it's own window (W)"
+         :check (<ra> :main-mixer-is-in-window)
+         :shortcut ra:switch-mixer-is-in-window
+         (lambda (doit)
+           (<ra> :set-main-mixer-in-window doit)))
+   (list "Show mixer-strips (M)"
+         :check (not (<ra> :main-mixer-is-modular))
+         :shortcut ra:switch-main-mixer-is-modular
+         (lambda (doit)
+           (<ra> :set-main-mixer-is-modular (not doit))))
+   (list "Instrument widget in mixer (I)"
+         :check (<ra> :instrument-widget-is-in-mixer)
+         :shortcut ra:switch-instrument-widget-in-mixer
+         (lambda (showit)
+           (<ra> :set-instrument-widget-in-mixer showit)))
+   "---------------------"
+   (list "Mixer Visible"
+         :check #t
+         :shortcut ra:show-hide-focus-mixer
+         (lambda (doit)
+           (<ra> :show-hide-mixer-widget)))
+   "---------------Display"
+   (list "Show CPU usage (CPU)"
+         :check (<ra> :get-show-cpu-usage-in-mixer)
+         :shortcut ra:switch-show-cpu-usage-in-mixer
+         (lambda (doit)
+           (<ra> :set-show-cpu-usage-in-mixer doit)))
+   (list "Show connections (C1)"
+         :check (<ra> :get-visible-mixer-connections)
+         :shortcut ra:switch-visible-mixer-connections
+         (lambda (doit)
+           (<ra> :set-visible-mixer-connections doit)))
+   (list "Show bus connections (C2)"
+         :check (<ra> :get-visible-mixer-bus-connections)
+         :shortcut ra:switch-visible-mixer-bus-connections
+         (lambda (doit)
+           (<ra> :set-visible-mixer-bus-connections doit)))
+   (list "Reset zoom (~Zoom)"
+         ra:unzoom)
+   "---------------Help"
+   (list "Help"
+         ra:show-mixer-help-window)
+   ))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

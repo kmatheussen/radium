@@ -1270,6 +1270,24 @@ void s7extra_callFunc2_void_float(const char *funcname, double arg1){
   s7extra_callFunc_void_float((const func_t*)find_scheme_value(s7, funcname), arg1);
 }
 
+void s7extra_callFunc_void_float_float(const func_t *func, double arg1, double arg2){
+  ScopedEvalTracker eval_tracker;
+  
+  catch_call(s7,
+             s7_list_nl(s7,
+                        3,
+                        (s7_pointer)func,
+                        s7extra_make_real(s7, arg1),
+                        s7extra_make_real(s7, arg2),
+                        NULL
+                        )
+             );
+}
+
+void s7extra_callFunc2_void_float_float(const char *funcname, double arg1, double arg2){
+  s7extra_callFunc_void_float_float((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
+}
+
 void s7extra_callFunc_void_dyn(const func_t *func, const dyn_t arg1){
   ScopedEvalTracker eval_tracker;
   

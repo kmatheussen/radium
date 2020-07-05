@@ -7912,6 +7912,22 @@ int64_t gui_createSingleMixerStrip(instrument_t instrument_id, int width, int he
 }
 
 
+///////////////// Modular mixer
+///////////////////////////////
+float getCurrMixerSlotX(void){
+  float x,y;
+  MW_get_curr_mixer_slot(x,y);
+  return x;
+}
+float getCurrMixerSlotY(void){
+  float x,y;
+  MW_get_curr_mixer_slot(x,y);
+  return y;
+}
+
+
+
+
 ///////////////// Triangle collision detection
 //////////////////////////////////////////////
 

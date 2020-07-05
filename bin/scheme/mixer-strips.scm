@@ -661,7 +661,7 @@
   
   (add-safe-mouse-callback label (lambda (button state x y)
                                      (if (= state *is-pressing*)
-                                         (if (= button *right-button*)
+                                         (if (= button *right-button*)                                             
                                              (if (<ra> :shift-pressed)
                                                  (<ra> :delete-instrument instrument-id)
                                                  (create-default-mixer-path-popup instrument-id strips-config label))
