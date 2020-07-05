@@ -182,6 +182,9 @@ extern LANGSPEC void MW_update_all_chips(void);
 extern LANGSPEC void MW_cleanup(bool is_loading); // Deletes all chips
 extern LANGSPEC void MW_cleanup_chip_positions(void); // Cleans up chip positions.
 extern LANGSPEC void MW_get_slotted_x_y(float from_x, float from_y, float *x, float *y); // Workaround.
+#ifdef __cplusplus
+extern LANGSPEC void MW_get_curr_mixer_slot(float &x, float &y);
+#endif
 
 extern LANGSPEC hash_t *MW_get_connections_state(const vector_t *patches);
 extern LANGSPEC hash_t *MW_get_state(const vector_t *patches, bool include_ab);

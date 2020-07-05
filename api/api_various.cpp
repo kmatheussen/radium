@@ -376,6 +376,13 @@ void showHideEditor(int windownum){
   GFX_showHideEditor();
 }
 
+void showHideFocusEditor(void){
+  if (editorIsVisible(-1) && !editorHasKeyboardFocus())
+    setEditorKeyboardFocus(true);
+  else
+    showHideEditor(-1);
+}
+  
 bool editorIsVisible(int windownum){
   return GFX_EditorIsVisible();
 }
@@ -387,7 +394,7 @@ void showEditor(void){
 void hideEditor(void){
   GFX_HideEditor();
 }
-  
+
 void setEditorKeyboardFocus(bool setit){
   FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, setit);
 }
@@ -435,6 +442,14 @@ void showHideSequencer(void){
   else
     showSequencer();
 }
+
+void showHideFocusSequencer(void){
+  if (sequencerIsVisible() && !sequencerHasKeyboardFocus())
+    setSequencerKeyboardFocus(true);
+  else
+    showHideSequencer();
+}
+
 
 void setSequencerInWindow(bool doit){
   S7CALL2(void_bool, "FROM-C-sequencer-set-gui-in-window!", doit);
@@ -490,6 +505,18 @@ void switchSequencerPlaylistConfiguration(void){
 void showHideMixerWidget(void){
   GFX_showHideMixerWidget();
 }
+
+bool mixerIsVisible(void){
+  return GFX_MixerIsVisible();
+}
+
+void showHideFocusMixer(void){
+  if (mixerIsVisible() && !mixerHasKeyboardFocus())
+    setMixerKeyboardFocus(true);
+  else
+    showHideMixerWidget();
+}
+
 
 void showHideInstrumentWidget(int windownum){
   //struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;

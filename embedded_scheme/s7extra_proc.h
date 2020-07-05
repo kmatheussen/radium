@@ -155,6 +155,9 @@ extern "C" {
   void s7extra_callFunc2_void_float(const char *funcname, double arg1);
   void s7extra_callFunc_void_float(const func_t *func, double arg1);
 
+  void s7extra_callFunc2_void_float_float(const char *funcname, double arg1, double arg2);
+  void s7extra_callFunc_void_float_float(const func_t *func, double arg1, double arg2);
+
   void s7extra_callFunc_void_dyn(const func_t *func, const dyn_t arg1);
   void s7extra_callFunc2_void_dyn(const char *funcname, const dyn_t arg1);
 
