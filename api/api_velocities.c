@@ -378,7 +378,7 @@ void setCurrentVelocityNode(int velocitynum, dyn_t dynnote, int tracknum, int bl
   struct Node *node = nodes->elements[velocitynum];
   struct Velocities *current = (struct Velocities*)node->element;
 
-  setCurrentNode(&current->l);
+  API_setCurrentNode(&current->l);
 }
 
 void setIndicatorVelocityNode(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -395,8 +395,8 @@ void setIndicatorVelocityNode(int velocitynum, dyn_t dynnote, int tracknum, int 
     return;
   }
 
-  setIndicatorNode(&note->l);
-  indicator_velocity_num = velocitynum;
+  API_setIndicatorNode(&note->l);
+  g_indicator_velocity_num = velocitynum;
 }
 
 

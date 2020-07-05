@@ -102,30 +102,30 @@ void ensureCleanStateOutsideMouseCycle(void){
 }
 
 
-void setCurrentNode(struct ListHeader3 *new_current_node){
-  if (current_node != new_current_node){
-    current_node = new_current_node;
+void API_setCurrentNode(struct ListHeader3 *new_current_node){
+  if (g_current_node != new_current_node){
+    g_current_node = new_current_node;
     root->song->tracker_windows->must_redraw_editor = true;
     //printf("current node dirty\n");
   }
 }
 
 void cancelCurrentNode(void){
-  setCurrentNode(NULL);
+  API_setCurrentNode(NULL);
 }
 
-void setIndicatorNode(const struct ListHeader3 *new_indicator_node){
-  if (indicator_node != new_indicator_node){
-    indicator_node = new_indicator_node;
+void API_setIndicatorNode(const struct ListHeader3 *new_indicator_node){
+  if (g_indicator_node != new_indicator_node){
+    g_indicator_node = new_indicator_node;
     root->song->tracker_windows->must_redraw_editor = true;
     //printf("indicator node dirty\n");
   }
 }
 
 void cancelIndicatorNode(void){
-  setIndicatorNode(NULL);
-  indicator_velocity_num = -1;
-  indicator_pitch_num = -1;
+  API_setIndicatorNode(NULL);
+  g_indicator_velocity_num = -1;
+  g_indicator_pitch_num = -1;
 }
 
 
@@ -1015,7 +1015,7 @@ void setCurrentTemponode(int num, int blocknum){
   
   struct TempoNodes *temponode = (struct TempoNodes *)ListFindElement3_num(&block->temponodes->l, num);
 
-  setCurrentNode(temponode==NULL ? NULL : &temponode->l);
+  API_setCurrentNode(temponode==NULL ? NULL : &temponode->l);
 }
 
 void setIndicatorTemponode(int num, int blocknum){
@@ -1027,7 +1027,7 @@ void setIndicatorTemponode(int num, int blocknum){
   
   struct TempoNodes *temponode = (struct TempoNodes *)ListFindElement3_num(&block->temponodes->l, num);
 
-  setIndicatorNode(temponode==NULL ? NULL : &temponode->l);
+  API_setIndicatorNode(temponode==NULL ? NULL : &temponode->l);
 }
 
 
@@ -2270,7 +2270,7 @@ void setCurrentPitchnum(int num, int tracknum, int blocknum){
     return;
 
   struct ListHeader3 *listHeader3 = pitch!=NULL ? &pitch->l : &note->l;
-  setCurrentNode(listHeader3);
+  API_setCurrentNode(listHeader3);
 }
 
 void setIndicatorPitchnum(int num, int tracknum, int blocknum){
@@ -2287,16 +2287,16 @@ void setIndicatorPitchnum(int num, int tracknum, int blocknum){
   if (getPitch(num, &pitch, &note, &is_end_pitch, wtrack->track)==false)
     return;
 
-  setIndicatorNode(&note->l);
+  API_setIndicatorNode(&note->l);
 
   if (pitch==NULL) {
     if (is_end_pitch)
-      indicator_pitch_num = 1 + ListFindNumElements3((struct ListHeader3*)note->pitches);
+      g_indicator_pitch_num = 1 + ListFindNumElements3((struct ListHeader3*)note->pitches);
     else
-      indicator_pitch_num = 0;
+      g_indicator_pitch_num = 0;
   } else {
     int pitchnum = ListPosition3(&note->pitches->l, &pitch->l);
-    indicator_pitch_num = pitchnum + 1;
+    g_indicator_pitch_num = pitchnum + 1;
   }
 }
 
@@ -3136,7 +3136,7 @@ void setCurrentFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int 
   struct Node *node = (struct Node *)nodes->elements[fxnodenum];
   struct FXNodeLines *current = (struct FXNodeLines*)node->element;
 
-  setCurrentNode(&current->l);
+  API_setCurrentNode(&current->l);
 }
 
 void setIndicatorFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
@@ -3154,7 +3154,7 @@ void setIndicatorFxnode(int fxnodenum, int fxnum, int tracknum, int blocknum, in
   }
 
   struct Node *node = (struct Node *)nodes->elements[fxnodenum];
-  setIndicatorNode(node->element);
+  API_setIndicatorNode(node->element);
 }
 
 void setNoMouseFx(int blocknum, int windownum){
