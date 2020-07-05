@@ -737,82 +737,6 @@ static bool stop_moving_chips(MyScene *myscene, const QPointF &mouse_pos){
     return false;
 }
 
-static QMouseEvent *get_qmouseevent(const QGraphicsSceneMouseEvent *event){
-  static QMouseEvent e(QEvent::MouseButtonRelease,
-                       event->scenePos(),
-                       event->button(),
-                       event->buttons(),
-                       event->modifiers());
-  
-  e = QMouseEvent(QEvent::MouseButtonRelease,
-                  event->scenePos(),
-                  event->button(),
-                  event->buttons(),
-                  event->modifiers());
-  return &e;
-}
-
-void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
-  MOUSE_CYCLE_move(g_mixer_widget, get_qmouseevent(event));
-  
-  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
-
-  QPointF pos=event->scenePos();
-
-  draw_slot(this, pos.x(), pos.y());
-
-  if(_current_connection != NULL){
-
-    int x1,y1;
-
-    if(_current_from_chip != NULL){
-      x1 = CHIP_get_output_port_x(_current_from_chip);
-      y1 = CHIP_get_port_y(_current_from_chip);
-    }else{
-      x1 = CHIP_get_input_port_x(_current_to_chip);
-      y1 = CHIP_get_port_y(_current_to_chip);
-    }
-
-    int x2 = pos.x();
-    int y2 = pos.y();
-
-    _current_connection->setLine(x1,y1,x2,y2);
-    _current_connection->update_shape(true, true);
-
-    event->accept();
-
-  }else if(_current_econnection != NULL){
-
-    int x1,y1;
-
-    if(_ecurrent_from_chip != NULL){
-      x1 = CHIP_get_eport_x(_ecurrent_from_chip);
-      y1 = CHIP_get_output_eport_y(_ecurrent_from_chip);
-    }else{
-      x1 = CHIP_get_eport_x(_ecurrent_to_chip);
-      y1 = CHIP_get_input_eport_y(_ecurrent_to_chip);
-    }
-
-    int x2 = pos.x();
-    int y2 = pos.y();
-
-    _current_econnection->setLine(x1,y1,x2,y2);
-    _current_econnection->update_shape(true, true);
-    
-    event->accept();
-
-  } else if(_moving_chips.size()>0){
-
-    move_moving_chips(this,pos.x(),pos.y());
-        
-  }else{
-    
-    QGraphicsScene::mouseMoveEvent(event);
-  
-  }
-
-}
-
 Chip *MW_get_chip_at(float x, float y, Chip *except){
   int slot_x = get_slot_x(x);
   int slot_y = get_slot_y(y);
@@ -1712,6 +1636,21 @@ void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
   QGraphicsScene::mouseDoubleClickEvent(event);
 }
 
+static QMouseEvent *get_qmouseevent(const QGraphicsSceneMouseEvent *event){
+  static QMouseEvent e(QEvent::MouseButtonRelease,
+                       event->scenePos(),
+                       event->button(),
+                       event->buttons(),
+                       event->modifiers());
+  
+  e = QMouseEvent(QEvent::MouseButtonRelease,
+                  event->scenePos(),
+                  event->button(),
+                  event->buttons(),
+                  event->modifiers());
+  return &e;
+}
+
 static bool g_is_pressed = false; // Workaround for nasty Qt bug.
 
 void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
@@ -1799,7 +1738,70 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
     //  return;
   }
 
-  QGraphicsScene::mousePressEvent(event);
+  //if(event->button()!=Qt::RightButton)
+    QGraphicsScene::mousePressEvent(event);
+}
+
+void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
+  MOUSE_CYCLE_move(g_mixer_widget, get_qmouseevent(event));
+  
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
+
+  QPointF pos=event->scenePos();
+
+  draw_slot(this, pos.x(), pos.y());
+
+  if(_current_connection != NULL){
+
+    int x1,y1;
+
+    if(_current_from_chip != NULL){
+      x1 = CHIP_get_output_port_x(_current_from_chip);
+      y1 = CHIP_get_port_y(_current_from_chip);
+    }else{
+      x1 = CHIP_get_input_port_x(_current_to_chip);
+      y1 = CHIP_get_port_y(_current_to_chip);
+    }
+
+    int x2 = pos.x();
+    int y2 = pos.y();
+
+    _current_connection->setLine(x1,y1,x2,y2);
+    _current_connection->update_shape(true, true);
+
+    event->accept();
+
+  }else if(_current_econnection != NULL){
+
+    int x1,y1;
+
+    if(_ecurrent_from_chip != NULL){
+      x1 = CHIP_get_eport_x(_ecurrent_from_chip);
+      y1 = CHIP_get_output_eport_y(_ecurrent_from_chip);
+    }else{
+      x1 = CHIP_get_eport_x(_ecurrent_to_chip);
+      y1 = CHIP_get_input_eport_y(_ecurrent_to_chip);
+    }
+
+    int x2 = pos.x();
+    int y2 = pos.y();
+
+    _current_econnection->setLine(x1,y1,x2,y2);
+    _current_econnection->update_shape(true, true);
+    
+    event->accept();
+
+  } else if(_moving_chips.size()>0){
+
+    move_moving_chips(this,pos.x(),pos.y());
+        
+  }else{
+
+    //if(event->button()!=Qt::RightButton)
+      QGraphicsScene::mouseMoveEvent(event);
+  
+  }
+
 }
 
 void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
@@ -1927,8 +1929,9 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
       return;
     */
   }
-  
-  QGraphicsScene::mouseReleaseEvent(event);
+
+  //if(event->button()!=Qt::RightButton)
+    QGraphicsScene::mouseReleaseEvent(event);
 }
 
 
@@ -2006,7 +2009,7 @@ namespace{
                   chip->update();
               }
 
-              ATOMIC_SET(plugin->is_selected, chip->isSelected()); // Ensurance. Unfortunately QGraphicsItem::setSelected is not virtual
+              plugin->is_selected = chip->isSelected(); // Ensurance. Unfortunately QGraphicsItem::setSelected is not virtual
 
               struct Patch *patch = plugin->patch;
               
