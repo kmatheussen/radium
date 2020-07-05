@@ -1735,7 +1735,7 @@ dynvec_t getSelectedInstruments(void){
   dynvec_t ret = {};
   vector_t patches = MW_get_selected_patches();
 
-  VECTOR_FOR_EACH(struct Patch *, patch,&patches){
+  VECTOR_FOR_EACH(struct Patch *, patch, &patches){
     DYNVEC_push_back(&ret, DYN_create_instrument(patch->id));
   }END_VECTOR_FOR_EACH;
 

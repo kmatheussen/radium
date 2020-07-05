@@ -3030,7 +3030,7 @@ bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num){
 
 
 bool PLUGIN_get_muted(SoundPlugin *plugin){
-  return !ATOMIC_GET(plugin->volume_is_on);
+  return is_muted(plugin);
 }
 
 void PLUGIN_set_muted(SoundPlugin *plugin, bool muteit){
