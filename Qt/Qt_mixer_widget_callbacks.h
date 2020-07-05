@@ -299,6 +299,10 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
           buttons[i]->setChecked(true);
       }
     }
+
+    // Note: The y1 value of buttons looks like they are 1 pixel above y1 value of checkboxes. It only happens in the mixer top bar. I don't understand why, and I can't even figure out an easy way to fix it.
+    ab_reset->setMinimumWidth(_ab_checkbox_width);
+    ab_reset->setMaximumWidth(_ab_checkbox_width);
   }
 
   MyQCheckBox *get_ab_checkbox(int num){

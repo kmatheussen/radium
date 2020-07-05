@@ -55,7 +55,7 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
   int x1_border = 1;
   int x2_border = 1;
   int y1_border = 1;
-  int y2_border = 0;
+  int y2_border = 1;
   
   void fix_mousePressEvent( QMouseEvent *qmouseevent) override {
     _is_hovered = true;
