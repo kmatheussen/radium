@@ -1408,7 +1408,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
     VECTOR_push_back(&v, "--------");
         
-    if (!ATOMIC_GET(plugin->volume_is_on)){
+    if (is_muted_relaxed(plugin)){
       mute = create_menu_entry(&v, "[check on]Mute", "ra:switch-mute-for-selected-instruments");
       //unmute = VECTOR_push_back(&v, "Un-mute");
     }else{
@@ -2014,7 +2014,7 @@ namespace{
 
                 if (less_frequently_updated) {
                   float volume = chip->get_slider_volume();
-                  bool is_muted = !ATOMIC_GET_RELAXED(plugin->volume_is_on);
+                  bool is_muted = is_muted_relaxed(plugin);
                   //bool is_implicitly_muted = SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
                   bool is_solo = ATOMIC_GET_RELAXED(plugin->solo_is_on);
                   bool is_bypass = !ATOMIC_GET_RELAXED(plugin->effects_are_on);
@@ -2159,6 +2159,7 @@ MixerWidget::MixerWidget(QWidget *parent)
 
   Mixer_widget *mixer_widget = new Mixer_widget(this);
   mixer_widget->view->setScene(&scene);
+
   layout()->addWidget(mixer_widget);
   this->view = mixer_widget->view;
   

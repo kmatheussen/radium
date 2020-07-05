@@ -910,7 +910,7 @@ bool getSeqtrackMute(int seqtracknum){
     struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
     R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, false);
 
-    return !ATOMIC_GET(plugin->volume_is_on);
+    return is_muted(plugin);
   }
 }
 
