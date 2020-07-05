@@ -2349,7 +2349,7 @@ static void apply_seqtracks_config(int confignum){
   SEQUENCER_update(SEQUPDATE_TRACKORDER | SEQUPDATE_TRACKCOORDINATES | SEQUPDATE_RIGHT_PART); // Must be called before setCurrSeqtrack to ensure coordinates are updated first.
 
   if (curr_seqtracknum != -1)
-    setCurrSeqtrack(curr_seqtracknum, false);
+    setCurrSeqtrack(curr_seqtracknum, false, false);
 }
 
 void SEQTRACKS_set_curr_config(int confignum){
@@ -3217,7 +3217,7 @@ void SEQUENCER_delete_seqtrack(int pos){
     setTopmostVisibleSeqtrack(num_seqtracks-1);    
   
   if (new_seqtracknum >= 0)
-    setCurrSeqtrack(new_seqtracknum, false);
+    setCurrSeqtrack(new_seqtracknum, false, false);
 
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
   
@@ -3754,7 +3754,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
 
   QTimer::singleShot(100, []{
       setTopmostVisibleSeqtrack(0);
-      setCurrSeqtrack(0, true);
+      setCurrSeqtrack(0, true, false);
     });
   
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
