@@ -1773,7 +1773,7 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
     //  return;
   }
 
-  //if(event->button()!=Qt::RightButton)
+  if(event->button()!=Qt::RightButton)
     QGraphicsScene::mousePressEvent(event);
 }
 
