@@ -191,7 +191,13 @@ public:
   }
   
   void mySetSelected(bool selected);
-
+  
+  void setSelected(bool selected){
+    fprintf(stderr, "Error: Use MySetSelected instead\n");
+#if !defined(RELEASE)
+    abort();
+#endif
+  }
 };
 
 static inline struct SoundProducer *CHIP_get_soundproducer(const Chip *chip){

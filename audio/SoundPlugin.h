@@ -618,7 +618,7 @@ typedef struct SoundPlugin{
 
   DEFINE_ATOMIC(bool, enable_sample_seek);
   
-  DEFINE_ATOMIC(bool, is_selected);
+  bool is_selected; // Call Chip::mySetSelected() to set/unset.
 
   // Both these values are set to true when PLUGIN_create() has ended.
   bool has_initialized;                    // Use this value if it's certain that PLUGIN_create() is finished, or we are the main thread.
