@@ -1733,7 +1733,7 @@ const_char* getInstrumentInfo(instrument_t instrument_id){
 
 dynvec_t getSelectedInstruments(void){
   dynvec_t ret = {};
-  vector_t patches = MW_get_selected_patches();
+  const vector_t &patches = MW_get_selected_patches();
 
   VECTOR_FOR_EACH(struct Patch *, patch, &patches){
     DYNVEC_push_back(&ret, DYN_create_instrument(patch->id));
@@ -1762,7 +1762,7 @@ int numSelectedInstruments(void){
   
   VECTOR_FOR_EACH(struct Patch *, patch, &get_audio_instrument()->patches){
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
-    if (plugin!=NULL && ATOMIC_GET(plugin->is_selected))
+    if (plugin!=NULL && plugin->is_selected)
       ret++;
   }END_VECTOR_FOR_EACH;
 
@@ -1780,7 +1780,7 @@ bool instrumentIsSelected(instrument_t instrument_id){
     return false;
   }  
 
-  return ATOMIC_GET(plugin->is_selected);
+  return plugin->is_selected;
 }
 
 
