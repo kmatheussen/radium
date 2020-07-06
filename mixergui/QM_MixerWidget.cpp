@@ -165,6 +165,8 @@ class MyScene : public QGraphicsScene{
 
   QPointF _start_mouse_pos;
 
+  QRubberBand *_rubber_band = NULL;
+  
 #if 0
   public slots:
     void on_scene_changed ( const QList<QRectF> & region ){
@@ -480,18 +482,18 @@ static void move_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 
       if(mouse_x < chip->pos().x()+(chip_width/2)){
 
-        myscene->_parent->setCursor(QCursor(Qt::SizeBDiagCursor));
+        g_mixer_widget->view->viewport()->setCursor(QCursor(Qt::SizeBDiagCursor));
 
       }else{
 
-        myscene->_parent->setCursor(QCursor(Qt::SizeFDiagCursor));
+        g_mixer_widget->view->viewport()->setCursor(QCursor(Qt::SizeFDiagCursor));
 
       }
 
     }else{
 
       //printf("got no chip\n");      
-      myscene->_parent->setCursor(QCursor(Qt::SizeHorCursor));
+      g_mixer_widget->view->viewport()->setCursor(QCursor(Qt::SizeHorCursor));
 
     }
   }
@@ -693,7 +695,7 @@ static bool stop_moving_chips(MyScene *myscene, const QPointF &mouse_pos){
   float mouse_y = mouse_pos.y();
 
   //myscene->removeItem(_slot_indicator);
-  myscene->_parent->setCursor(QCursor(Qt::ArrowCursor));
+  g_mixer_widget->view->viewport()->setCursor(QCursor(Qt::ArrowCursor));
 
   Chip *main_chip = myscene->_moving_chips.at(0);
   float main_chip_x = main_chip->pos().x();
@@ -731,7 +733,7 @@ static bool stop_moving_chips(MyScene *myscene, const QPointF &mouse_pos){
 
   if (has_updated)
     return true;
-  else if (myscene->_start_mouse_pos != mouse_pos)
+  else if (myscene->_start_mouse_pos != QCursor::pos())
     return true;
   else
     return false;
@@ -1065,17 +1067,16 @@ static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_
 }
 
 static vector_t get_selected_patches(void){
-  QVector<Chip*> chips = get_selected_chips();
-  
-  vector_t patches = {};
+  vector_t ret = {};
+  const vector_t &patches = get_audio_instrument()->patches;//MW_get_selected_patches();
 
-  for(auto *chip : chips){
-    struct Patch *patch = CHIP_get_patch(chip);
-    R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&patches, patch), patches);
-    VECTOR_push_back(&patches, patch);
-  }
+  VECTOR_FOR_EACH(struct Patch *, patch, &patches){
+    struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    if (plugin != NULL && plugin->is_selected)
+      VECTOR_push_back(&ret, patch);
+  }END_VECTOR_FOR_EACH;
 
-  return patches;
+  return ret;
 }
 
 vector_t MW_get_selected_patches(void){
@@ -1653,6 +1654,13 @@ static QMouseEvent *get_qmouseevent(const QGraphicsSceneMouseEvent *event){
 
 static bool g_is_pressed = false; // Workaround for nasty Qt bug.
 
+static bool g_is_moving_rubberband = false;
+static QPointF g_start_rubberband;
+
+static bool g_is_dragging_everything = false;
+static double g_startpos_scrollbar_x;
+static double g_startpos_scrollbar_y;
+
 void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
   
@@ -1673,14 +1681,27 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   float mouse_x = pos.x();
   float mouse_y = pos.y();
 
-  _start_mouse_pos = pos;
+  _start_mouse_pos = QCursor::pos(); //pos;
 
+  if(event->button()==Qt::MidButton) {
+    
+    g_is_dragging_everything = true;
+    g_startpos_scrollbar_x = g_mixer_widget->view->horizontalScrollBar()==NULL ? 0 : g_mixer_widget->view->horizontalScrollBar()->value();
+    g_startpos_scrollbar_y = g_mixer_widget->view->verticalScrollBar()==NULL ? 0 : g_mixer_widget->view->verticalScrollBar()->value();
+
+    event->accept();
+
+    g_mixer_widget->view->viewport()->setCursor(Qt::OpenHandCursor);
+    return;
+    
+  }
+  
   QGraphicsItem *item = itemAt(event->scenePos(), QTransform());
-
-  printf("mouse button: %d %d\n",event->button(),Qt::MiddleButton);
-
+  
+  //printf("mouse button: %d %d\n",event->button(),Qt::MiddleButton);
+  
   root->song->tracker_windows->must_redraw = true;
-
+  
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
   
   if(event_can_delete(event)) {
@@ -1689,20 +1710,34 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
       event->accept();
       return;
     }
-
+    
     if(mousepress_delete_connection(this,event,item,mouse_x,mouse_y)==true)
       return;
-
+    
   }
   
   if(event->button()==Qt::LeftButton) {
+    
     if(ctrl_pressed==false && mousepress_start_connection(this,event,item,mouse_x,mouse_y)==true)
       return;
 
     if(ctrl_pressed==true && mousepress_select_chip(this,event,item,mouse_x,mouse_y,ctrl_pressed)==true) // select
       return;
 
-  } if(event->button()==Qt::RightButton){
+    if (dynamic_cast<Chip*>(item) == NULL) {
+      
+      clearSelection();
+      g_is_moving_rubberband = true;
+      g_start_rubberband = pos;
+      
+      _rubber_band = new QRubberBand(QRubberBand::Rectangle, g_mixer_widget->view->viewport());
+      QPoint p(g_mixer_widget->view->mapFromScene(pos));
+      _rubber_band->setGeometry(QRect(p, p));
+      _rubber_band->show();
+      
+    }
+    
+  } else if (event->button()==Qt::RightButton){
 
     /*
     if(ctrl_pressed==false && mousepress_create_chip(this,event,item,mouse_x,mouse_y)==true) { // create
@@ -1749,8 +1784,6 @@ void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
 
   QPointF pos=event->scenePos();
 
-  draw_slot(this, pos.x(), pos.y());
-
   if(_current_connection != NULL){
 
     int x1,y1;
@@ -1794,11 +1827,34 @@ void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
   } else if(_moving_chips.size()>0){
 
     move_moving_chips(this,pos.x(),pos.y());
-        
+
+  } else if (g_is_moving_rubberband) {
+
+    QPainterPath path;
+    path.addRect(QRectF(g_start_rubberband, pos));
+    
+    setSelectionArea(path, QTransform());
+
+    QRectF rect(g_mixer_widget->view->mapFromScene(g_start_rubberband), g_mixer_widget->view->mapFromScene(pos));
+    
+    _rubber_band->setGeometry(rect.toRect().normalized());
+    
+    //printf(".......................Selection set to\n");
+
+  } else if (g_is_dragging_everything) {
+
+    g_mixer_widget->view->viewport()->setCursor(Qt::ClosedHandCursor);
+    
+    QPointF end_mouse_pos = QCursor::pos();
+    qreal dx = _start_mouse_pos.x() - end_mouse_pos.x();
+    qreal dy = _start_mouse_pos.y() - end_mouse_pos.y();
+
+    g_mixer_widget->view->gakk(g_startpos_scrollbar_x, g_startpos_scrollbar_y, dx, dy);
+    
   }else{
 
-    //if(event->button()!=Qt::RightButton)
-      QGraphicsScene::mouseMoveEvent(event);
+    draw_slot(this, pos.x(), pos.y());
+    QGraphicsScene::mouseMoveEvent(event);
   
   }
 
@@ -1806,10 +1862,10 @@ void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
 
 void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   MOUSE_CYCLE_unregister(g_mixer_widget);
-  
+
   g_is_pressed = false;
 
-  printf("mouse release: %p\n",_current_connection);
+  //printf("mouse release: %p\n",_current_connection);
 
   EVENTLOG_add_event(talloc_format("<<<< MyScene::mouseReleaseEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, (int)_moving_chips.size()));
 
@@ -1851,9 +1907,8 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     _current_to_chip = NULL;
 
     must_accept = true;
-  }
-
-  if(_current_econnection!=NULL){
+    
+  } else if (_current_econnection!=NULL){
 
     R_ASSERT(_moving_chips.size()==0);
         
@@ -1881,14 +1936,26 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     _ecurrent_to_chip = NULL;
 
     must_accept = true;
-  }
     
-  if(_moving_chips.size()>0 && stop_moving_chips(this, pos)) {
+  } else if (_moving_chips.size()>0 && stop_moving_chips(this, pos)) {
 
     printf("       Remake: mousereleaseevent\n");
     remakeMixerStrips(make_instrument(-2));
     
     must_accept = true;
+    
+  } else if (g_is_moving_rubberband) {
+
+    g_is_moving_rubberband = false;
+    must_accept = true;
+    delete _rubber_band;
+    
+  } else if (g_is_dragging_everything) {
+
+    g_mixer_widget->view->viewport()->setCursor(Qt::ArrowCursor);
+    g_is_dragging_everything = false;
+    must_accept = true;
+    
   }
 
   if (must_accept){
@@ -2009,8 +2076,11 @@ namespace{
                   chip->update();
               }
 
-              plugin->is_selected = chip->isSelected(); // Ensurance. Unfortunately QGraphicsItem::setSelected is not virtual
-
+              // Unfortunately QGraphicsItem::setSelected is not virtual. Workaround.
+              if (chip->isSelected() != plugin->is_selected){
+                chip->mySetSelected(chip->isSelected());
+              }
+              
               struct Patch *patch = plugin->patch;
               
               if(patch!=NULL){
@@ -2165,9 +2235,13 @@ MixerWidget::MixerWidget(QWidget *parent)
 
   layout()->addWidget(mixer_widget);
   this->view = mixer_widget->view;
-  
+
+  //this->view->setDragMode(QGraphicsView::ScrollHandDrag);
+  this->view->setDragMode(QGraphicsView::NoDrag);
+
   setWindowTitle(tr("Radium Mixer"));
-  
+
+  //this->view->installEventFilter(this->view);
   //qApp->installEventFilter(this);
 }
 

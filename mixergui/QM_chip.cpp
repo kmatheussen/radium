@@ -2742,7 +2742,7 @@ void Chip::mySetSelected(bool selected) {
   
   SoundPlugin *plugin = SP_get_plugin(_sound_producer);
   if (plugin!=NULL){
-    ATOMIC_SET(plugin->is_selected, selected);
+    plugin->is_selected = selected;
     //remakeMixerStrips();
   }
 }

@@ -53,11 +53,16 @@ public:
     //verticalScrollBar()->setCursor(Qt::OpenHandCursor);
     setCornerWidget(NULL);
 
+    // Turn off the default rubber band drag. For some reason, it drags on right mouse button, and this is impossible to turn off.
+    //setDragMode(QGraphicsView::ScrollHandDrag);
+                
     // Tro to find default zoom level based on system font
     QFont font = g_editor->main_window->font();
     _middle_zoom = 230 - (font.pointSize()-12) * 4.0;
     
     set_zoom_value(_zoom_value);
+
+    //setDragMode(DragMode::ScrollHandDrag);
   }
 
   qreal _rotate = 0;
@@ -66,13 +71,17 @@ public:
   const int _min_slider = 0;
   const int _max_slider = 500;
   int _zoom_value = 250;
+
+  double get_scale_from_zoom(double zoom) const {
+    return qPow(qreal(2), (zoom - _middle_zoom) / qreal(50));
+  }
   
   void set_zoom_value(int val){
     val = R_BOUNDARIES(_min_slider, val, _max_slider);
 
     _zoom_value = val;
     
-    qreal scale = qPow(qreal(2), (val - _middle_zoom) / qreal(50));
+    qreal scale = get_scale_from_zoom(val);
     
     QMatrix matrix;
     matrix.scale(scale, scale);
@@ -90,13 +99,7 @@ public:
   void set_rotate(qreal rotate){
     _rotate = rotate;
 
-    qreal scale = qPow(qreal(2), (_zoom_value - 250) / qreal(50));
-
-    QMatrix matrix;
-    matrix.scale(scale, scale);
-    matrix.rotate(_rotate);
-
-    setMatrix(matrix);    
+    set_zoom_value(_zoom_value);
   }
 
 
@@ -109,6 +112,53 @@ public:
     return QRectF( A, B );
   }
 
+  void setScrollbarFromDelta(QScrollBar *scrollbar, double total_height, double init_value, double delta){
+      double min = scrollbar->minimum();
+      double max = scrollbar->maximum();
+
+      qreal scale = get_scale_from_zoom(_zoom_value);
+
+      const int page_step = scrollbar->pageStep();
+
+      const double slider_xy1 = scale_double(init_value,
+                                             min, max+page_step,
+                                             0, total_height);
+      const double slider_xy2 = scale_double(init_value + page_step,
+                                             min, max+page_step,
+                                             0, total_height);
+      
+      double slider_inner_height = slider_xy2 - slider_xy1;
+      
+      double new_value = init_value + delta / ((total_height-slider_inner_height) * scale) * (max-min);
+
+      /*
+      printf("min: %f. max: %f. scale: %f. old_value: %d. new_value: %f\n",
+             min,max,scale,scrollbar->value(), new_value);
+      */
+      scrollbar->setValue(new_value);
+  }
+  
+  void gakk(double start_scrollbar_x, double start_scrollbar_y, double dx, double dy){
+    //printf("x: %f. y: %f. dx: %f. dy: %f\n", start_scrollbar_x, start_scrollbar_y, dx, dy);
+
+    // horizontal
+    if (!equal_doubles(dx, 0)){
+      QScrollBar *scrollbar = horizontalScrollBar();
+
+      if (scrollbar != NULL)
+        setScrollbarFromDelta(scrollbar, sceneRect().width(), start_scrollbar_x, dx);
+    }
+    
+    // vertical
+    if (!equal_doubles(dy, 0)){
+      QScrollBar *scrollbar = verticalScrollBar();
+
+      if (scrollbar != NULL)
+        setScrollbarFromDelta(scrollbar, sceneRect().height(), start_scrollbar_y, dy);
+    }
+
+  }
+  
   void enterEvent(QEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
@@ -120,7 +170,7 @@ public:
   void zoom(int inc){
     set_zoom_value(_zoom_value + inc);
   }
-  
+
   void wheelEvent(QWheelEvent *e) override
   {
     if (e->modifiers() & Qt::ControlModifier) {
