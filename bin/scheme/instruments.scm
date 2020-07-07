@@ -685,6 +685,15 @@
                  (replace description)
                  #f)))))
 
+;; Note: Used for shortcut
+(delafina (replace-instrument :instrument-id (<ra> :get-current-instrument)
+                              :must-have-inputs #f
+                              :must-have-outputs #f
+                              :gui -2)
+  (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs must-have-inputs :must-have-outputs must-have-outputs :parentgui gui)))
+
+  
+  
 (define (create-load-instrument-preset-description filename)
   (<-> "2" (<ra> :get-base64-from-filepath filename)))
 
@@ -1204,6 +1213,7 @@
 (<ra> :get-sound-plugin-registry #t)
 ||#
 
+;; Note: Used for shortcut
 (delafina (FROM_C-request-rename-instrument :instrument-id (<ra> :get-current-instrument))
   (when (<ra> :is-legal-instrument instrument-id)
     (define old-name (<ra> :get-instrument-name instrument-id))
@@ -1213,6 +1223,47 @@
         (<ra> :set-instrument-name new-name instrument-id))))
 
   
+(define (is-connected-to-main-pipe id)
+  (define main-pipe (<ra> :get-main-pipe-instrument))
+  (let loop ((id id))
+    (or (equal? id main-pipe)
+        (any? loop
+              (get-instruments-connecting-from-instrument id)))))
+
+(define (is-directly-connected-to-main-pipe id)
+  (<ra> :has-audio-connection id (<ra> :get-main-pipe-instrument)))
+
+
+;; Note: Used for shortcut
+(delafina (switch-connect-current-instrument-to-main-pipe)
+  (define instrument-id (<ra> :get-current-instrument))  
+  (when (and (<ra> :is-legal-instrument instrument-id)
+             (> (<ra> :get-num-output-channels instrument-id) 0))
+    (if (is-connected-to-main-pipe instrument-id)
+        (begin
+          (<ra> :undo-mixer-connections)
+          (<ra> :delete-audio-connection instrument-id (<ra> :get-main-pipe-instrument)))
+        (<ra> :connect-audio-instrument-to-main-pipe instrument-id))))
+
+
+(define (get-sample-player-mixer-popup-menu-entries instruments)
+  (if (not (any? (lambda (id)
+                   (string=? "Sample Player" (<ra> :get-instrument-type-name id)))
+                 instruments))
+      #f
+      (list ;;"-----------Sample player"
+            (list "Load random sample" ;;s from folders"
+                  ra:set-random-sample-for-all-selected-instruments))))
+
+;; Note: Used for shortcut
+(delafina (insert-plugin-for-instrument :instrument-id (<ra> :get-current-instrument)
+                                        :gui -2)
+  (insert-new-instrument-between instrument-id
+                                 (get-instruments-connecting-from-instrument instrument-id)
+                                 #t
+                                 -2
+                                 #f))
+
 
 (delafina (get-instrument-popup-entries :instrument-id
                                         :parentgui
@@ -1233,63 +1284,111 @@
                       (lambda ()
                         (<ra> :set-current-instrument instrument-id #f)))
                 "------------------"))))
+
+   (get-sample-player-mixer-popup-menu-entries (list instrument-id))
+   (list "Connected to main pipe"
+         :enabled (and (> (<ra> :get-num-output-channels instrument-id) 0)
+                       (if (is-connected-to-main-pipe instrument-id)
+                           (is-directly-connected-to-main-pipe instrument-id)
+                           #t))
+         :check (is-connected-to-main-pipe instrument-id)
+         :shortcut switch-connect-current-instrument-to-main-pipe
+         (lambda (doit)
+           (switch-connect-current-instrument-to-main-pipe)))
+
+   "------------------"
+   
+   (list "Insert plugin"
+         :shortcut insert-plugin-for-instrument
+         (lambda ()
+           (insert-plugin-for-instrument instrument-id)))
+   
+   "---------------"
    
    (list "Delete"
          :enabled (not (<ra> :instrument-is-permanent instrument-id))
+         :shortcut ra:delete-instrument
          (lambda ()
            (<ra> :delete-instrument instrument-id)))
    (list "Replace"
          :enabled (and include-replace
                        (not (<ra> :instrument-is-permanent instrument-id)))
-         (lambda ()           
-           (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs must-have-inputs :must-have-outputs must-have-outputs :parentgui parentgui)))
-         )
+         :shortcut replace-instrument
+         (lambda ()
+           (replace-instrument instrument-id must-have-inputs must-have-outputs parentgui)))
+   (list "Rename"
+         :shortcut FROM_C-request-rename-instrument
+         (lambda ()
+           (FROM_C-request-rename-instrument instrument-id)))
    
-   "------------------"
-   
-   "Rename" (lambda ()
-              (FROM_C-request-rename-instrument instrument-id))
-   
+   "-----------"
+
+   (list "Mute "
+         :check (<ra> :get-instrument-mute instrument-id)
+         :shortcut ra:switch-mute-for-selected-instruments
+         (lambda (doit)
+           (<ra> :set-instrument-mute doit instrument-id)))   
+   (list "Solo"
+         :check (<ra> :get-instrument-solo instrument-id)
+         :shortcut ra:switch-solo-for-selected-instruments
+         (lambda (doit)
+           (<ra> :set-instrument-solo doit instrument-id)))
+   (list "Bypass"
+         :check (<ra> :get-instrument-bypass instrument-id)
+         :shortcut ra:switch-bypass-for-selected-instruments
+         (lambda (doit)
+           (<ra> :set-instrument-bypass doit instrument-id)))
+
    "-----------"
    
    (list "Load Preset (.rec)" :enabled instrument-id
          :enabled (and include-replace
                        (not (<ra> :instrument-is-permanent instrument-id)))
+         :shortcut ra:request-load-instrument-preset
          (lambda ()
            (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
    (list "Save Preset (.rec)" :enabled instrument-id
          :enabled (and include-replace
                        (not (<ra> :instrument-is-permanent instrument-id)))
+         :shortcut (list ra:eval-scheme "(ra:save-instrument-preset)") ;; ra:save-instrument-preset is not available from python since it has a dynvec_t argument
          (lambda ()
            (<ra> :save-instrument-preset (list instrument-id) parentgui)))
    
    "------------------"
-   
-   "Configure color" :shortcut FROM_C-show-instrument-color-dialog (lambda ()
-                                                                     (FROM_C-show-instrument-color-dialog parentgui instrument-id))
-   "Generate new color" :shortcut ra:generate-new-instrument-color (lambda ()
-                                                                     (<ra> :generate-new-instrument-color instrument-id))
 
+   (list "Configure color"
+         :shortcut FROM_C-show-instrument-color-dialog
+         (lambda ()
+           (FROM_C-show-instrument-color-dialog parentgui instrument-id)))
+   (list "Generate new color"
+         :shortcut ra:generate-new-instrument-color
+         (lambda ()
+           (<ra> :generate-new-instrument-color instrument-id)))
+         
    "--------"
    
    (list "Show GUI"
          :enabled (<ra> :has-native-instrument-gui instrument-id)
          :check (<ra> :instrument-gui-is-visible instrument-id parentgui)
+         :shortcut ra:show-hide-instrument-gui
          (lambda (enabled)
            (if enabled
                (<ra> :show-instrument-gui instrument-id parentgui #f)
                (<ra> :hide-instrument-gui instrument-id))))
    (list "Recv. external MIDI"
          :check (<ra> :instrument-always-receive-midi-input instrument-id)
+         :shortcut ra:switch-set-instrument-always-receive-midi-input
          (lambda (onoff)
            (<ra> :set-instrument-always-receive-midi-input instrument-id onoff)))
    
    "--------"
    
-   "Show Info" (lambda ()
-                 (<ra> :show-instrument-info instrument-id parentgui))
-
-   ))
+   (list "Show Info"
+         :shortcut (list ra:eval-scheme "(ra:show-instrument-info)")
+         (lambda ()
+           (<ra> :show-instrument-info instrument-id parentgui))
+         
+         )))
               
 
 
@@ -2050,7 +2149,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                          :seqtracknum #f) ;; needs to be set if type is 'height
 
   (define (get-muted)
-    (<ra> :get-instrument-muted instrument-id))
+    (<ra> :get-instrument-mute instrument-id))
   (define (get-soloed)
     (<ra> :get-instrument-solo instrument-id))
   (define (get-recording)

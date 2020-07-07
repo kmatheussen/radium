@@ -1940,7 +1940,7 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
 #if !defined(RELEASE)
   if (where==VALUE_FROM_STORAGE)
     if (!THREADING_is_player_thread())
-      if (PLAYER_current_thread_has_lock())
+      if (PLAYER_current_thread_has_lock()) // Should be no need to obtain lock here. Get values first, then obtain lock.
         abort();
   
   //if (where==VALUE_FROM_PLUGIN)
@@ -2236,7 +2236,7 @@ bool PLUGIN_open_gui(SoundPlugin *plugin, int64_t parentgui){
              (int)p3, (int)API_get_gui_from_widget(widget));
       fflush(stdout);
       getchar();
-      abort();
+      //abort();
     }
   }
 #endif

@@ -9,10 +9,11 @@
 
 #define STRING_IS_BASE64 "________STRING_IS_BASE64__"
 
-static const dynvec_t g_empty_dynvec_dynvec = {0};
-const dyn_t g_empty_dynvec = {
+const dynvec_t g_empty_dynvec = {0};
+
+const dyn_t g_empty_dynvec_dyn = {
  .type = ARRAY_TYPE,
- .array = (dynvec_t*)&g_empty_dynvec_dynvec
+ .array = (dynvec_t*)&g_empty_dynvec
 };
 
 const dyn_t g_dyn_false = {

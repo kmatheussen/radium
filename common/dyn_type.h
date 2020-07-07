@@ -52,7 +52,8 @@ struct _dynvec_t{
   dyn_t *elements;
 };
 
-extern const dyn_t g_empty_dynvec;
+extern const dynvec_t g_empty_dynvec;
+extern const dyn_t g_empty_dynvec_dyn;
 extern const dyn_t g_uninitialized_dyn;
 
 extern const dyn_t g_dyn_false;

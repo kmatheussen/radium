@@ -989,11 +989,11 @@ bool MODULATOR_is_modulator(instrument_t modulator_patch_id){
 dynvec_t MODULATOR_get_modulator_targets(instrument_t modulator_patch_id){
   Modulator *modulator = get_modulator(modulator_patch_id);
   if (modulator==NULL)
-    return *g_empty_dynvec.array;
+    return g_empty_dynvec;
 
   hash_t *state = modulator->get_state();
   dyn_t dyn = HASH_get_dyn(state, "targets");
-  R_ASSERT_RETURN_IF_FALSE2(dyn.type==ARRAY_TYPE, *g_empty_dynvec.array);
+  R_ASSERT_RETURN_IF_FALSE2(dyn.type==ARRAY_TYPE, g_empty_dynvec);
   
   return *dyn.array;
 }

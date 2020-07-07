@@ -2910,7 +2910,7 @@ dyn_t getSeqblocksState(int seqtracknum){
   const struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL){
     handleError("getSeqblocksState: No sequencer track %d", seqtracknum);
-    return g_empty_dynvec;
+    return g_empty_dynvec_dyn;
   }
 
   return SEQTRACK_get_seqblocks_state(seqtrack);
@@ -2920,7 +2920,7 @@ dyn_t getGfxSeqblocksState(int seqtracknum){
   const struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL){
     handleError("getSeqblocksState: No sequencer track %d", seqtracknum);
-    return g_empty_dynvec;
+    return g_empty_dynvec_dyn;
   }
 
   return SEQTRACK_get_gfx_seqblocks_state(seqtrack);
