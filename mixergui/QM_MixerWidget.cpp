@@ -392,6 +392,7 @@ static int get_chip_slot_y(Chip *chip){
   return get_slot_y(chip->pos().y()+chip_height/2);
 }
 
+/*
 static bool chip_body_is_placed_at(Chip *chip, float mouse_x, float mouse_y){
   if(mouse_x < (get_chip_slot_x(chip)*grid_width + port_width))
     return false;
@@ -402,6 +403,7 @@ static bool chip_body_is_placed_at(Chip *chip, float mouse_x, float mouse_y){
   else
     return true;
 }
+*/
 
 static Chip *get_chip_with_port_at(QGraphicsScene *scene,int x, int y);
 static void draw_slot(MyScene *myscene, float x, float y){
@@ -971,6 +973,7 @@ static bool mousepress_select_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
   return false;
 }
 
+/*
 static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mouse_y){
   Chip *chip_under = MW_get_chip_at(mouse_x,mouse_y,NULL);
   if(chip_under!=NULL){
@@ -987,7 +990,7 @@ static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mous
   }
   return false;
 }
-
+*/
 
 static QVector<Chip*> get_selected_chips(void){
   QVector<Chip*> ret;
@@ -1023,7 +1026,14 @@ static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_
   float x, y;
   get_slotted_x_y(mouse_x, mouse_y, x, y);
 
-  S7CALL2(void_float_float, "FROM_C-show-mixer-popup-menu", x, y);
+  S7EXTRA_GET_FUNC(func, "FROM_C-show-mixer-popup-menu");
+
+  s7extra_applyFunc_void_varargs(func,
+                                 DYN_create_instrument(createIllegalInstrument()),
+                                 DYN_create_float(x),
+                                 DYN_create_float(y),
+                                 g_uninitialized_dyn);
+  
   /*
   createInstrumentDescriptionPopupMenu(createNewInstrumentConf(x, y, false, true,
                                                                true,
@@ -1186,6 +1196,7 @@ void MW_reset_zoom(void){
   g_mixer_widget->view->reset_zoom();
 }
 
+/*
 static const char *get_displayable_keybinding(const char *prefix, const char *racommand, const dynvec_t &args){
   const char *result = S7CALL2(charpointer_charpointer_dyn, "FROM_C-get-displayable-keybinding", racommand, DYN_create_array(args));
 
@@ -1195,10 +1206,10 @@ static const char *get_displayable_keybinding(const char *prefix, const char *ra
     return talloc_format("[shortcut]%s[/shortcut]%s", result, prefix);
 }
 
-static int create_menu_entry(vector_t *v, const char *prefix, const char *racommand, const dynvec_t &args = *g_empty_dynvec.array){
+static int create_menu_entry(vector_t *v, const char *prefix, const char *racommand, const dynvec_t &args = g_empty_dynvec){
   return VECTOR_push_back(v, get_displayable_keybinding(prefix, racommand, args));
 }
-  
+*/
                              
 static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent * event, float mouse_x, float mouse_y){
 
@@ -1209,7 +1220,18 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   const vector_t patches = get_selected_patches();
   if (patches.num_elements==0)
     return false;
-  
+
+  S7EXTRA_GET_FUNC(func, "FROM_C-show-mixer-popup-menu");
+
+  s7extra_applyFunc_void_varargs(func,
+                                 DYN_create_instrument(CHIP_get_patch(chip_under)->id),
+                                 DYN_create_float(mouse_x),
+                                 DYN_create_float(mouse_y),
+                                 g_uninitialized_dyn);
+
+  return true;
+
+  /*
   vector_t v = {};
 
   int connect_to_main_pipe = -1;
@@ -1593,6 +1615,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     });
 
   return true;
+  */
 }
 
 static bool event_can_delete(QGraphicsSceneMouseEvent *event){

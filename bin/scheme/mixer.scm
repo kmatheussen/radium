@@ -282,47 +282,106 @@
 ;; Note: Used for shortcut
 (delafina (unmute-all-selected-instruments)
   (<ra> :set-mute-for-instruments (<ra> :get-selected-instruments) #f))
+
+;; Note: Used for shortcut
+(delafina (save-preset-for-instruments :instruments (<ra> :get-selected-instruments)
+                                       :gui (<gui> :get-main-mixer-gui))
   
-(define (FROM_C-show-mixer-popup-menu x y)
-  (popup-menu
-   "-----------Insert"
-   (list "Insert new sound object"
-         :shortcut insert-new-sound-object-in-mixer
-         (lambda ()
-           (insert-new-sound-object-in-mixer x y)))
-   "---------------"
-   (list "Paste"
-         :enabled (<ra> :instrument-preset-in-clipboard)
-         :shortcut ra:paste-mixer-objects
-         (lambda ()
-           (<ra> :paste-mixer-objects x y)))
-   (<-> "---------------Selected objects (" (<ra> :num-selected-instruments) ")")
-   (list "Mute "
-         :enabled (> (<ra> :num-selected-instruments) 0)
-         ra:switch-mute-for-selected-instruments)
-   (list "Solo"
-         :enabled (> (<ra> :num-selected-instruments) 0)
-         ra:switch-solo-for-selected-instruments)
-   (list "Bypass"
-         :enabled (> (<ra> :num-selected-instruments) 0)
-         ra:switch-bypass-for-selected-instruments)
-   (list "Copy"
-         :enabled (> (<ra> :num-selected-instruments) 0)
-         ra:copy-selected-mixer-objects)
-   (list "Cut"
-         :enabled (> (<ra> :num-selected-instruments) 0)
-         ra:cut-selected-mixer-objects)
-   (list "Delete"
-         :enabled (> (<ra> :num-selected-instruments) 0)
-         ra:delete-selected-mixer-objects)
+  (<ra> :save-instrument-preset instruments gui))
+
+;; Note: Used for shortcut
+(delafina (show-mixer-strips-for-instruments :instruments (<ra> :get-selected-instruments)
+                                             :num-rows 1)
+  (<ra> :show-mixer-strips2 num-rows instruments))
+
+(define (get-mixer-popup-menu-selected-objects-entries selected-instruments)
+  (define enabled (> (<ra> :num-selected-instruments) 0))
+  (define num-selected-instruments (<ra> :num-selected-instruments))
+  (define header-text (<-> "---------------Selected objects (" num-selected-instruments ")"))
+  (if (= 0 num-selected-instruments)
+      (list
+       header-text
+       (list "(no selected objects)"
+             :enabled #f
+             (lambda ()
+               #t)))
+      (list
+       header-text
+       (get-sample-player-mixer-popup-menu-entries selected-instruments)
+       (list "Mute "
+             :enabled enabled
+             ra:switch-mute-for-selected-instruments)
+       (list "Solo"
+             :enabled enabled
+             ra:switch-solo-for-selected-instruments)
+       (list "Bypass"
+             :enabled enabled
+             ra:switch-bypass-for-selected-instruments)
+       "-------------"
+       (list "Copy"
+             :enabled enabled
+             ra:copy-selected-mixer-objects)
+       (list "Cut"
+             :enabled enabled
+             ra:cut-selected-mixer-objects)
+       (list "Delete"
+             :enabled enabled
+             ra:delete-selected-mixer-objects)
+       "-----------"
+       (list (if (> num-selected-instruments 1)
+                 "Save multi preset (.mrec)"
+                 "Save preset (.rec)")
+             :enabled enabled
+             save-preset-for-instruments)
+       (list "Show mixer strips window"
+             :enabled enabled
+             show-mixer-strips-for-instruments)
+       (list "Configure color"
+             :enabled enabled
+             show-instrument-color-dialog-for-all-selected-instruments)
+       (list "Generate new color"
+             :enabled enabled
+             ra:generate-new-color-for-all-selected-instruments)
+       )))
+
+(define (get-mixer-all-objects-popup-menu-entries x y)
+  (define all-audio-instruments (get-all-audio-instruments))
+  (list
    "---------------All objects"
    (list "Un-solo"
+         :enabled (or (any? ra:get-instrument-solo all-audio-instruments)
+                      (any? ra:get-instrument-solo-from-storage all-audio-instruments))
          unsolo-all-instruments)
    (list "Un-mute"
+         :enabled (or (any? ra:get-instrument-mute all-audio-instruments)
+                      (any? ra:get-instrument-mute-from-storage all-audio-instruments))
          unmute-all-instruments)
    (list "Un-bypass"
-         unbypass-all-instruments)
-   "---------------GUI"
+         :enabled (or (any? ra:get-instrument-bypass all-audio-instruments)
+                      (any? ra:get-instrument-bypass-from-storage all-audio-instruments))
+         unbypass-all-instruments)))
+
+(define (get-mixer-popup-menu-entries x y)
+  (list
+   "---------------Display"
+   (list "Show CPU usage (CPU)"
+         :check (<ra> :get-show-cpu-usage-in-mixer)
+         :shortcut ra:switch-show-cpu-usage-in-mixer
+         (lambda (doit)
+           (<ra> :set-show-cpu-usage-in-mixer doit)))
+   (list "Show connections (C1)"
+         :check (<ra> :get-visible-mixer-connections)
+         :shortcut ra:switch-visible-mixer-connections
+         (lambda (doit)
+           (<ra> :set-visible-mixer-connections doit)))
+   (list "Show bus connections (C2)"
+         :check (<ra> :get-visible-mixer-bus-connections)
+         :shortcut ra:switch-visible-mixer-bus-connections
+         (lambda (doit)
+           (<ra> :set-visible-mixer-bus-connections doit)))
+   (list "Reset zoom (~Zoom)"
+         ra:unzoom)
+   "---------------Windows"
    (list "Mixer in it's own window (W)"
          :check (<ra> :main-mixer-is-in-window)
          :shortcut ra:switch-mixer-is-in-window
@@ -344,28 +403,58 @@
          :shortcut ra:show-hide-focus-mixer
          (lambda (doit)
            (<ra> :show-hide-mixer-widget)))
-   "---------------Display"
-   (list "Show CPU usage (CPU)"
-         :check (<ra> :get-show-cpu-usage-in-mixer)
-         :shortcut ra:switch-show-cpu-usage-in-mixer
-         (lambda (doit)
-           (<ra> :set-show-cpu-usage-in-mixer doit)))
-   (list "Show connections (C1)"
-         :check (<ra> :get-visible-mixer-connections)
-         :shortcut ra:switch-visible-mixer-connections
-         (lambda (doit)
-           (<ra> :set-visible-mixer-connections doit)))
-   (list "Show bus connections (C2)"
-         :check (<ra> :get-visible-mixer-bus-connections)
-         :shortcut ra:switch-visible-mixer-bus-connections
-         (lambda (doit)
-           (<ra> :set-visible-mixer-bus-connections doit)))
-   (list "Reset zoom (~Zoom)"
-         ra:unzoom)
    "---------------Help"
    (list "Help"
          ra:show-mixer-help-window)
    ))
+
+(define (show-mixer-popup-menu-no-chip-under x y selected-instruments)
+  (popup-menu
+   (list
+    "-----------Insert"
+    (list "Insert new sound object"
+          :shortcut insert-new-sound-object-in-mixer
+          (lambda ()
+            (insert-new-sound-object-in-mixer x y)))
+    "---------------"
+    (list "Paste"
+          :enabled (<ra> :instrument-preset-in-clipboard)
+          :shortcut ra:paste-mixer-objects
+          (lambda ()
+            (<ra> :paste-mixer-objects x y)))
+    (get-mixer-popup-menu-selected-objects-entries selected-instruments)
+    (get-mixer-all-objects-popup-menu-entries x y)
+    (get-mixer-popup-menu-entries x y))))
+
+(define (get-current-instrument-mixer-popup-menu-entries instrument-id)
+  (get-instrument-popup-entries instrument-id (<gui> :get-main-mixer-gui)))
+  
+(define (show-mixer-popup-menu-several-selected-instruments current-instrument-id selected-instruments x y)
+  (popup-menu (list
+               (get-current-instrument-mixer-popup-menu-entries current-instrument-id)
+               (get-mixer-popup-menu-selected-objects-entries selected-instruments)
+               (get-mixer-all-objects-popup-menu-entries x y)
+               "------------Mixer"
+               (list "Mixer"
+                     (get-mixer-popup-menu-entries x y))
+               )))
+
+(define (show-mixer-popup-menu-one-instrument instrument-id x y)
+  (popup-menu (get-current-instrument-mixer-popup-menu-entries instrument-id)
+              ;;"------------Mixer"
+              ;;(list "Mixer"
+              (get-mixer-all-objects-popup-menu-entries x y)
+              (get-mixer-popup-menu-entries x y)
+              ))
+
+(define (FROM_C-show-mixer-popup-menu curr-instrument-id x y)
+  (define selected-instruments (<ra> :get-selected-instruments))
+  (if (not (<ra> :is-legal-instrument curr-instrument-id))
+      (show-mixer-popup-menu-no-chip-under x y selected-instruments)
+      (if (> (length selected-instruments) 1)
+          (show-mixer-popup-menu-several-selected-instruments curr-instrument-id selected-instruments x y)
+          (show-mixer-popup-menu-one-instrument curr-instrument-id x y))))
+
 
 
 #!!
