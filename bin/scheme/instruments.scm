@@ -1268,7 +1268,9 @@
 (delafina (get-instrument-popup-entries :instrument-id
                                         :parentgui
                                         :include-replace #t
-                                        :must-have-inputs #f :must-have-outputs #f)
+                                        :must-have-inputs #f :must-have-outputs #f
+                                        :include-insert-plugin #t
+                                        )
 
   (list
    (<-> "----------Instrument: \"" (<ra> :get-instrument-name instrument-id) "\"");; " instrument")
@@ -1296,12 +1298,14 @@
          (lambda (doit)
            (switch-connect-current-instrument-to-main-pipe)))
 
-   "------------------"
-   
-   (list "Insert plugin"
-         :shortcut insert-plugin-for-instrument
-         (lambda ()
-           (insert-plugin-for-instrument instrument-id)))
+   (and include-insert-plugin
+        "------------------")
+   (and include-insert-plugin
+        (list "Insert plugin"
+              :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
+              :shortcut insert-plugin-for-instrument
+              (lambda ()
+                (insert-plugin-for-instrument instrument-id))))
    
    "---------------"
    

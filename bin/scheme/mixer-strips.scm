@@ -768,8 +768,8 @@
   
   (popup-menu (<-> "----------Insert")
               (list (if is-top-instrument
-                        "Insert Plugin"
-                        (<-> "Insert Plugin after " (<ra> :get-instrument-name curr-plugin-instrument)))
+                        "Insert plugin"
+                        (<-> "Insert plugin after " (<ra> :get-instrument-name curr-plugin-instrument)))
                     :enabled (> (<ra> :get-num-output-channels first-instrument-id) 0)
                     (lambda ()
                       (insert-new-instrument-between curr-plugin-instrument
@@ -778,7 +778,7 @@
                                                      parentgui
                                                      #f)))
               
-              (list (<-> "Insert Send for " (if is-send?
+              (list (<-> "Insert send for " (if is-send?
                                                 (<ra> :get-instrument-name parent-instrument-id)
                                                 (<ra> :get-instrument-name instrument-id)))
                     :enabled (> (<ra> :get-num-output-channels first-instrument-id) 0)
@@ -867,7 +867,7 @@
                                    (<ra> :set-audio-connection-type parent-instrument-id instrument-id *auto-connection-type*)))))))
               
 
-              (get-instrument-popup-entries instrument-id parentgui :must-have-inputs effect-name :must-have-outputs effect-name)
+              (get-instrument-popup-entries instrument-id parentgui :must-have-inputs effect-name :must-have-outputs effect-name :include-insert-plugin (not is-top-instrument))
 
               (get-global-mixer-strips-popup-entries first-instrument-id strips-config parent-instrument-id)
               )
