@@ -1291,8 +1291,8 @@
    (list "Connected to main pipe"
          :enabled (and (> (<ra> :get-num-output-channels instrument-id) 0)
                        (if (is-connected-to-main-pipe instrument-id)
-                           (is-directly-connected-to-main-pipe instrument-id)
-                           #t))
+                           (is-directly-connected-to-main-pipe instrument-id) ;; Connected, but only enable entry if connected directly.
+                           (not (is-connected-somehow? (<ra> :get-main-pipe-instrument) instrument-id)))) ;; Don't enable if connecting would create a recursive graph.
          :check (is-connected-to-main-pipe instrument-id)
          :shortcut switch-connect-current-instrument-to-main-pipe
          (lambda (doit)
