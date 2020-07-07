@@ -3047,6 +3047,10 @@ bool PLUGIN_get_soloed(SoundPlugin *plugin){
   return ATOMIC_GET(plugin->solo_is_on);
 }
 
+bool PLUGIN_get_soloed_relaxed(SoundPlugin *plugin){
+  return ATOMIC_GET_RELAXED(plugin->solo_is_on);
+}
+
 void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit){
   if (soloit==PLUGIN_get_soloed(plugin))
     return;

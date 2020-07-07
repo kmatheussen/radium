@@ -1335,7 +1335,7 @@ bool getInstrumentSolo(instrument_t instrument_id){
     return false;
   }
   
-  return PLUGIN_get_soloed(plugin);
+  return PLUGIN_get_soloed_relaxed(plugin);
 }
 
 void setInstrumentSolo(bool do_solo, instrument_t instrument_id){
@@ -1376,7 +1376,7 @@ bool getInstrumentMute(instrument_t instrument_id){
     return false;
   }
   
-  return PLUGIN_get_muted(plugin);
+  return is_muted_relaxed(plugin);
 }
 
 void setInstrumentMute(bool do_mute, instrument_t instrument_id){
@@ -1409,7 +1409,7 @@ bool getInstrumentBypass(instrument_t instrument_id){
     return false;
   }
 
-  return PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_PLUGIN) < 0.5;
+  return PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_STORAGE) < 0.5;
 }
 
 void setInstrumentBypass(bool do_bypass, instrument_t instrument_id){
@@ -1421,7 +1421,7 @@ void setInstrumentBypass(bool do_bypass, instrument_t instrument_id){
   int num_effects = plugin->type->num_effects;
   int effect_num = num_effects+EFFNUM_EFFECTS_ONOFF;
 
-  bool is_bypassed = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_PLUGIN) < 0.5;
+  bool is_bypassed = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE) < 0.5;
 
   //printf("  old val: %f. is_bypassed: %d. do_bypass: %d\n", PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_PLUGIN), is_bypassed, do_bypass);
 

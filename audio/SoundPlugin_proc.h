@@ -137,6 +137,7 @@ extern LANGSPEC bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int e
 extern LANGSPEC bool PLUGIN_get_muted(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_set_muted(SoundPlugin *plugin, bool muteit);
 extern LANGSPEC bool PLUGIN_get_soloed(SoundPlugin *plugin);
+extern LANGSPEC bool PLUGIN_get_soloed_relaxed(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit);
 
 // Note: The Send plugin may call RT_PLUGIN_touch for all receiving plugins after they are not live anymore. Therefore, we can not use anything pointed to by the plugin here. Only the memory in the plugin itself can/should be accessed.
