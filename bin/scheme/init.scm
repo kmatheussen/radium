@@ -1003,6 +1003,8 @@ FROM_C-show-mixer-popup-menu
   (my-require 'editor_lower_part.scm)
   (my-require 'editor_track_headers.scm)
 
+  (my-require 'mixer.scm)
+
   (assert-functions-and-symbols-called-from-C)
   (assert-declared-variables-declared)
 

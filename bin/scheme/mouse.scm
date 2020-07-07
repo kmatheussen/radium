@@ -1461,6 +1461,11 @@
                           (<ra> :set-instrument-color color instrument-id))
                         instrument-ids)))))
 
+;; Note: Used for shortcut
+(delafina (show-instrument-color-dialog-for-all-selected-instruments)
+  (FROM_C-show-instrument-color-dialog (<gui> :get-main-mixer-gui) (<ra> :get-selected-instruments)))
+                                       
+                                       
 (define (swingtext-popup-elements)
   (list (list "Swing text"
               :check (<ra> :swingtext-visible *current-track-num*)
