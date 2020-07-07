@@ -115,16 +115,23 @@
 !!#
 
 
-(define (get-all-solo-instruments all-instruments)
-  (keep ra:get-instrument-solo all-instruments))
+(delafina (get-all-solo-instruments :all-instruments (get-all-audio-instruments)
+                                    :from-storage #t)  
+  (keep (lambda (instrument-id)
+          (if from-storage
+              (<ra> :get-instrument-solo-from-storage instrument-id)
+              (<ra> :get-instrument-solo instrument-id)))
+        all-instruments))
 
 #!!
-(get-all-solo-instruments (get-all-audio-instruments))
+(get-all-solo-instruments)
 !!#
 
-(define (get-all-non-solo-connections-in-mixer all-instruments)  
+;; not used.
+(delafina (get-all-non-solo-connections-in-mixer :all-instruments (get-all-audio-instruments)
+                                                 :from-storage #t)
   (define all-connections (<new> :container (get-all-connections-in-mixer all-instruments)))
-  (define all-solo-connections (<new> :container (get-all-solo-connections-in-mixer (get-all-solo-instruments all-instruments))))
+  (define all-solo-connections (<new> :container (get-all-solo-connections-in-mixer (get-all-solo-instruments all-instruments from-storage))))
   ;;(c-display (all-connections :length)
   ;;           (all-solo-connections :length)
   ;;           (length (get-all-connections-in-mixer all-instruments)))
@@ -204,7 +211,7 @@
 
 
 (define (update-implicit-solo-connections! all-instruments)
-  (define all-solo-instruments (get-all-solo-instruments all-instruments))
+  (define all-solo-instruments (get-all-solo-instruments all-instruments :from-storage #f))
   (define all-connections (<new> :container (get-all-connections-in-mixer all-instruments)))
   (define all-solo-connections (<new> :container (get-all-solo-connections-in-mixer all-solo-instruments)))
   ;;(c-display "solo len:" (all-solo-connections :size) ". solo:" (pp-audio-connections (all-solo-connections :hash)))

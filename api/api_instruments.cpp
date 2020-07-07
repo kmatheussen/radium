@@ -1324,7 +1324,7 @@ void startRecordingInstrumentAutomationInEditor(instrument_t instrument_id, cons
   PLUGIN_set_recording_automation(plugin, effect_num, do_start_recording_not_stop_recording);
 }
 
-bool getInstrumentSolo(instrument_t instrument_id){
+static bool get_instrument_solo(instrument_t instrument_id, bool from_storage){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1334,11 +1334,27 @@ bool getInstrumentSolo(instrument_t instrument_id){
     handleError("getInstrumentSolo: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
-  
-  return PLUGIN_get_soloed_relaxed(plugin);
+
+  if (!from_storage)
+    return ATOMIC_GET_RELAXED(plugin->solo_is_on);
+  else
+    return PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_SOLO_ONOFF, VALUE_FROM_STORAGE) >= 0.5;
+}
+
+bool getInstrumentSolo(instrument_t instrument_id){
+  return get_instrument_solo(instrument_id, false);
+}
+
+bool getInstrumentSoloFromStorage(instrument_t instrument_id){
+  return get_instrument_solo(instrument_id, true);
 }
 
 void setInstrumentSolo(bool do_solo, instrument_t instrument_id){
+  bool equal_in_storage = getInstrumentSoloFromStorage(instrument_id)==do_solo;
+  bool equal_in_plugin = getInstrumentSolo(instrument_id)==do_solo;
+  if (equal_in_storage && equal_in_plugin)
+    return;
+    
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1349,23 +1365,21 @@ void setInstrumentSolo(bool do_solo, instrument_t instrument_id){
     return;
   }
 
-  if (do_solo==PLUGIN_get_soloed(plugin))
-    return;
-
   int effect_num = plugin->type->num_effects + EFFNUM_SOLO_ONOFF;
 
-  ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
+  if (!equal_in_storage)
+    ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
 
   PLUGIN_set_soloed(plugin, do_solo);
 }
 
 bool switchInstrumentSolo(instrument_t instrument_id){
-  bool set_to = !getInstrumentSolo(instrument_id);
+  bool set_to = !getInstrumentSoloFromStorage(instrument_id);
   setInstrumentSolo(set_to, instrument_id);
   return set_to;
 }
   
-bool getInstrumentMute(instrument_t instrument_id){
+static bool get_instrument_mute(instrument_t instrument_id, bool from_storage){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1375,11 +1389,29 @@ bool getInstrumentMute(instrument_t instrument_id){
     handleError("getInstrumentMute: Instrument #%d has been closed", (int)instrument_id.id);
     return false;
   }
+
+  if (!from_storage)
+    return is_muted(plugin);
+                    
+  int effect_num = get_mute_effectnum(plugin->type);
   
-  return is_muted_relaxed(plugin);
+  return PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE) < 0.5;
+}
+
+bool getInstrumentMute(instrument_t instrument_id){
+  return get_instrument_mute(instrument_id, false);
+}
+
+bool getInstrumentMuteFromStorage(instrument_t instrument_id){
+  return get_instrument_mute(instrument_id, true);
 }
 
 void setInstrumentMute(bool do_mute, instrument_t instrument_id){
+  bool equal_in_storage = getInstrumentMuteFromStorage(instrument_id)==do_mute;
+  bool equal_in_plugin = getInstrumentMute(instrument_id)==do_mute;
+  if (equal_in_storage && equal_in_plugin)
+    return;
+        
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1387,18 +1419,19 @@ void setInstrumentMute(bool do_mute, instrument_t instrument_id){
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   int effect_num = get_mute_effectnum(plugin->type);
 
-  ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
+  if (!equal_in_storage)
+    ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
 
   PLUGIN_set_muted(plugin, do_mute);
 }
 
 bool switchInstrumentMute(instrument_t instrument_id){
-  bool set_to = !getInstrumentMute(instrument_id);
+  bool set_to = !getInstrumentMuteFromStorage(instrument_id);
   setInstrumentMute(set_to, instrument_id);
   return set_to;
 }
   
-bool getInstrumentBypass(instrument_t instrument_id){
+static bool get_instrument_bypass(instrument_t instrument_id, bool from_storage){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1409,10 +1442,26 @@ bool getInstrumentBypass(instrument_t instrument_id){
     return false;
   }
 
-  return PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_STORAGE) < 0.5;
+  if (!from_storage)
+    return PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_PLUGIN) < 0.5;
+  else
+    return PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_STORAGE) < 0.5;
+}
+
+bool getInstrumentBypass(instrument_t instrument_id){
+  return get_instrument_bypass(instrument_id, false);
+}
+
+bool getInstrumentBypassFromStorage(instrument_t instrument_id){
+  return get_instrument_bypass(instrument_id, true);
 }
 
 void setInstrumentBypass(bool do_bypass, instrument_t instrument_id){
+  bool equal_in_storage = getInstrumentBypassFromStorage(instrument_id)==do_bypass;
+  bool equal_in_plugin = getInstrumentBypass(instrument_id)==do_bypass;
+  if (equal_in_storage && equal_in_plugin)
+    return;
+        
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1421,21 +1470,15 @@ void setInstrumentBypass(bool do_bypass, instrument_t instrument_id){
   int num_effects = plugin->type->num_effects;
   int effect_num = num_effects+EFFNUM_EFFECTS_ONOFF;
 
-  bool is_bypassed = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE) < 0.5;
-
-  //printf("  old val: %f. is_bypassed: %d. do_bypass: %d\n", PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_PLUGIN), is_bypassed, do_bypass);
-
-  if(is_bypassed==do_bypass)
-    return;
-     
-  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num, AE_NO_FLAGS));
+  if (!equal_in_storage)
+    ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num, AE_NO_FLAGS));
   
   float new_val = do_bypass ? 0.0 : 1.0;
-  PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+  PLUGIN_set_effect_value(plugin, -1, effect_num, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 }
 
 bool switchInstrumentBypass(instrument_t instrument_id){
-  bool set_to = !getInstrumentBypass(instrument_id);
+  bool set_to = !getInstrumentBypassFromStorage(instrument_id);
   setInstrumentBypass(set_to, instrument_id);
   return set_to;
 }
@@ -2892,6 +2935,14 @@ void internal_instrumentGuiHasBeenHidden(instrument_t instrument_id){
   }
 }
 
+bool showHideInstrumentGui(instrument_t instrument_id, int64_t parentgui, bool show_instrument_window_if_not_visible){
+  if (instrumentGuiIsVisible(instrument_id, parentgui)){
+    hideInstrumentGui(instrument_id);
+    return false;
+  }else
+    return showInstrumentGui(instrument_id, parentgui, show_instrument_window_if_not_visible);
+}
+  
 instrument_t getCurrentInstrument(void){
   return PATCH_get_current()->id;
 }

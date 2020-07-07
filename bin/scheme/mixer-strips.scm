@@ -1784,9 +1784,9 @@
   (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
 
   (define (get-muted)
-    (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
+    (<ra> :get-instrument-mute instrument-id))
   (define (get-soloed)
-    (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
+    (<ra> :get-instrument-solo instrument-id))
            
   (define (turn-off-all-mute except)
     (for-each (lambda (instrument-id)
