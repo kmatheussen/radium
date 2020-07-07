@@ -37,6 +37,20 @@
 (define (add-safe-double-click-callback gui callback)
   (add-safe-instrument-callback gui ra:gui_add-double-click-callback callback))
 
+;; Note: Used for shortcut
+(define (make-all-mixer-strips-wide)
+  (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #t)) (get-all-audio-instruments))
+  (<ra> :remake-mixer-strips))
+
+(define (make-no-mixer-strips-wide)
+  (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #f)) (get-all-audio-instruments))
+  (<ra> :remake-mixer-strips))
+
+(define (switch-all-no-mixer-strips-wide)
+  (if (<ra> :has-wide-instrument-strip (<ra> :get-current-instrument))
+      (make-no-mixer-strips-wide)
+      (make-all-mixer-strips-wide)))
+       
 (delafina (get-global-mixer-strips-popup-entries :instrument-id
                                                  :strips-config
                                                  :wide-mode-instrument-id #f
@@ -89,12 +103,12 @@
    (and (not is-standalone)
         (list
          "---------Mixer"
-         (list "Make all strips wide" (lambda ()
-                                        (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #t)) (get-all-audio-instruments))
-                                        (<ra> :remake-mixer-strips)))
-         (list "Make no strips wide" (lambda ()
-                                       (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #f)) (get-all-audio-instruments))
-                                       (<ra> :remake-mixer-strips)))
+         (list "Make all strips wide"
+               :shortcut switch-all-no-mixer-strips-wide
+               make-all-mixer-strips-wide)
+         (list "Make no strips wide"
+               :shortcut switch-all-no-mixer-strips-wide
+               make-no-mixer-strips-wide)
 
          "----------"
 
