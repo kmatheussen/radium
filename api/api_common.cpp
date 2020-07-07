@@ -113,7 +113,61 @@ void printExceptionIfError(void){
 // Warning, is likely to cause a longjmp!
 void throwExceptionIfError(void){
   R_ASSERT_NON_RELEASE(g_is_going_to_call_throwExceptionIfError==true);
+
+  static int s_counter = 0;
+
+  if (((s_counter++) % 1024)==0) {
+
+    //printf("\n\n\nn\n\n\n--------------------------------Checking=============================!\n\n\n\n\n\n");
+    //getchar();
     
+    s_counter = 1;
+    
+    if (g_empty_dynvec.num_elements != 0){
+      R_ASSERT_NON_RELEASE(false);
+      dynvec_t *dynvec = (dynvec_t*)&g_empty_dynvec;
+      dynvec->num_elements = 0;
+      R_ASSERT(false);
+    }
+    
+    if (g_empty_dynvec_dyn.type != ARRAY_TYPE){
+      dyn_t *dyn = (dyn_t*)&g_empty_dynvec_dyn;
+      dyn->type = ARRAY_TYPE;
+      R_ASSERT(false);
+    }
+    
+    if (g_empty_dynvec_dyn.array != &g_empty_dynvec){
+      dyn_t *dyn = (dyn_t*)&g_empty_dynvec_dyn;
+      dyn->array = (dynvec_t*)&g_empty_dynvec;
+      R_ASSERT(false);
+    }
+    
+    if (g_uninitialized_dyn.type != UNINITIALIZED_TYPE) {
+      dyn_t *dyn = (dyn_t*)&g_uninitialized_dyn;
+      dyn->type = UNINITIALIZED_TYPE;
+      R_ASSERT(false);
+    }
+    
+    if (g_dyn_false.type != BOOL_TYPE) {
+      dyn_t *dyn = (dyn_t*)&g_dyn_false;
+      dyn->type = BOOL_TYPE;
+      R_ASSERT(false);
+    }
+    
+    if (g_dyn_true.type != BOOL_TYPE) {
+      dyn_t *dyn = (dyn_t*)&g_dyn_true;
+      dyn->type = BOOL_TYPE;
+      R_ASSERT(false);
+    }
+    
+    R_ASSERT(g_dyn_false.bool_number==false);
+    R_ASSERT(g_dyn_true.bool_number==true);
+    
+    R_ASSERT(g_dyn_minus_one.type==INT_TYPE);
+    R_ASSERT(g_dyn_minus_one.int_number==-1);
+    
+  }
+  
   if(g_scheme_nested_level==0){
     R_ASSERT_NON_RELEASE(false);
     return;

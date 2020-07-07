@@ -1054,7 +1054,7 @@ static dyn_t get_fallback_timings(const struct Blocks *block, const dyn_t dynbea
                        API_getAllLPB(block),
                        API_getAllTemponodes(block),
                        dynbeats,
-                       g_empty_dynvec
+                       g_empty_dynvec_dyn
                        );
     
     if (ret.type==ARRAY_TYPE)
@@ -1395,7 +1395,7 @@ static void update_stuff2(struct Blocks *blocks[], const int num_blocks,
           bool has_block_swings = blocks[i]->swing_enabled==true && blocks[i]->swings!=NULL;
             
           const dyn_t block_swings = API_getAllBlockSwings(blocks[i]);
-          filledout_swingss[i] = create_filledout_swings(g_empty_dynvec, block_swings, blocks[i]->num_lines, dynbeats[i]);
+          filledout_swingss[i] = create_filledout_swings(g_empty_dynvec_dyn, block_swings, blocks[i]->num_lines, dynbeats[i]);
           
           dyn_t empty_track_swing = {};
           
@@ -1407,7 +1407,7 @@ static void update_stuff2(struct Blocks *blocks[], const int num_blocks,
                 if (has_block_swings==false)
                   empty_track_swing = filledout_swingss[i];
                 else
-                  empty_track_swing = create_filledout_swings(block_swings, g_empty_dynvec, blocks[i]->num_lines, dynbeats[i]); // Same as block_swings, except that everything is auto-filled out.
+                  empty_track_swing = create_filledout_swings(block_swings, g_empty_dynvec_dyn, blocks[i]->num_lines, dynbeats[i]); // Same as block_swings, except that everything is auto-filled out.
               }
               DYNVEC_push_back(&filledout_trackswingss[i], empty_track_swing);
             }else{
@@ -1432,7 +1432,7 @@ static void update_stuff2(struct Blocks *blocks[], const int num_blocks,
         
         int num_lines = blocks[i]->num_lines;
 
-        stimes_without_global_swings[i] = create_stimes(blocks[i], dynbeats[i], beats[i], g_empty_dynvec, NULL, default_bpm, default_lpb);
+        stimes_without_global_swings[i] = create_stimes(blocks[i], dynbeats[i], beats[i], g_empty_dynvec_dyn, NULL, default_bpm, default_lpb);
         int64_t blocklen = stimes_without_global_swings[i][num_lines].time;
         
         if (!has_block_swings)

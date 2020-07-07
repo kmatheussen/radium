@@ -213,25 +213,35 @@ void requestLoadInstrumentPreset(instrument_t instrument_id, const_char* instrum
 
 void saveInstrumentPreset(dynvec_t instrument_ids, int64_t parentgui){
 
-  if (instrument_ids.num_elements<1){
-    handleError("saveInstrumentPreset: \"instrument_ids\" is an empty array");
-    return;
-  }
-
   vector_t patches = {};
 
-  for(int i=0;i<instrument_ids.num_elements;i++){
+  if (instrument_ids.num_elements==0) {
     
-    if (instrument_ids.elements[i].type != INSTRUMENT_TYPE){
-      handleError("saveInstrumentPreset: Element #%d is not an instrument id. Found: %s", i, DYN_type_name(instrument_ids.elements[i].type));
+    struct Patch *patch = PATCH_get_current();
+
+    if(patch==NULL){
+      R_ASSERT_NON_RELEASE(false);
       return;
     }
     
-    struct Patch *patch = getPatchFromNum(instrument_ids.elements[i].instrument);
-    if(patch==NULL)
-      return;
-    
     VECTOR_push_back(&patches, patch);
+    
+  } else {
+    
+    for(int i=0;i<instrument_ids.num_elements;i++){
+      
+      if (instrument_ids.elements[i].type != INSTRUMENT_TYPE){
+        handleError("saveInstrumentPreset: Element #%d is not an instrument id. Found: %s", i, DYN_type_name(instrument_ids.elements[i].type));
+        return;
+      }
+      
+      struct Patch *patch = getPatchFromNum(instrument_ids.elements[i].instrument);
+      if(patch==NULL)
+      return;
+      
+      VECTOR_push_back(&patches, patch);
+    }
+
   }
 
   PRESET_save(&patches, false, parentgui);
@@ -1038,6 +1048,14 @@ void setInstrumentAlwaysReceiveMidiInput(instrument_t instrument_id, bool always
     return;
   
   ATOMIC_SET(patch->always_receive_midi_input, always_receive_midi_input);
+}
+
+void switchSetInstrumentAlwaysReceiveMidiInput(instrument_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+  
+  ATOMIC_SET(patch->always_receive_midi_input, !ATOMIC_GET(patch->always_receive_midi_input));
 }
 
 bool getNoteDuplicatorSetNewValueImmediately(instrument_t instrument_id, const_char* effect_name){
@@ -3040,17 +3058,18 @@ void switchSetCurrentInstrumentLocked(void){
 }
 
 void showInstrumentInfo(dyn_t instrument_id_or_description, int64_t parentgui){
-  if (instrument_id_or_description.type==INSTRUMENT_TYPE){
+  struct Patch *patch = NULL;
+  struct SoundPluginType *type = NULL;
+  
+  if (instrument_id_or_description.type==UNINITIALIZED_TYPE){
+    
+    patch = PATCH_get_current();
+    
+  } else if (instrument_id_or_description.type==INSTRUMENT_TYPE){
     
     instrument_t instrument_id = instrument_id_or_description.instrument;
-    struct Patch *patch = getAudioPatchFromNum(instrument_id);
-    if(patch==NULL)
-      return;
+    patch = getAudioPatchFromNum(instrument_id);
   
-    struct SoundPlugin *plugin = (struct SoundPlugin *)patch->patchdata;
-    if (plugin != NULL)
-      PLUGIN_show_info_window(plugin->type, plugin, parentgui);
-    
   } else if (instrument_id_or_description.type==STRING_TYPE){
     
     const char *instrument_description = STRING_get_chars(instrument_id_or_description.string);
@@ -3063,21 +3082,36 @@ void showInstrumentInfo(dyn_t instrument_id_or_description, int64_t parentgui){
       
       printf("  ---------- Container: -%s-, type: -%s-, plugin: -%s-\n", container_name, type_name, plugin_name);
 
-      SoundPluginType *type = PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
+      type = PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
 
-      if (type != NULL){
-        PLUGIN_show_info_window(type, NULL, parentgui);
-      }
+      R_ASSERT_NON_RELEASE(type!=NULL);
       
-    } else
+    } else {
+      
       handleError("Unable to determine instrument type from description");
-    
-
-  } else {
-    
-    handleError("Illegal first argument for showInstrumentInfo. Expected INSTRUMENT_TYPE or STRING_TYPE, found %s", DYN_type_name(instrument_id_or_description.type));
+      return;
       
+    }
+    
   }
+
+  struct SoundPlugin *plugin = NULL;
+
+  if (patch != NULL) {
+    plugin = (struct SoundPlugin *)patch->patchdata;    
+    if (plugin != NULL)
+      type = plugin->type;
+    else{
+      R_ASSERT_NON_RELEASE(false);
+    }
+  }
+  
+  if (type==NULL) {    
+    handleError("Illegal first argument for showInstrumentInfo. Expected UNINITIALIZED_TYPE, INSTRUMENT_TYPE, or STRING_TYPE, found %s", DYN_type_name(instrument_id_or_description.type));
+    return;
+  }
+
+  PLUGIN_show_info_window(type, plugin, parentgui);
 }
 
 
