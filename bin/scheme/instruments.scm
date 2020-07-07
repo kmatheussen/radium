@@ -907,7 +907,7 @@
 (define (FROM_C-switch-solo-for-selected-instruments)
   (let ((instruments (to-list (<ra> :get-extended-selected-instruments))))
     (if (not (null? instruments))
-        (let ((doit (not (> (<ra> :get-instrument-effect (car instruments) "System Solo On/Off") 0.5))))
+        (let ((doit (not (<ra> :get-instrument-solo (car instruments))))) ;; use get-instrument-solo instead of get-instrument-solo-from-storage here to avoid confusion.
           (FROM_C-set-solo-for-instruments instruments doit)))))
 
 
@@ -942,11 +942,17 @@
 
 ;; Note: Must return status bar id.
 (define (FROM_C-display-mute-status-in-statusbar instrument-id)  
+  (define in-storage (<ra> :get-instrument-solo-from-storage instrument-id))
+  (define in-plugin (<ra> :get-instrument-solo instrument-id))
   (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": "
-                                 (cond ((<ra> :get-instrument-mute instrument-id)
+                                 (cond ((and in-storage in-plugin)                                        
                                         "Mute On")
+                                       ((and in-plugin (not in-storage))
+                                        "Mute On by automation")
                                        ((<ra> :instrument-is-implicitly-muted instrument-id)
                                         "Mute Implicitly on")
+                                       ((and (not in-plugin) in-storage)
+                                        "Mute Off by automation")
                                        (else
                                         "Mute Off"))
                                  (let ((keybinding (or (get-displayable-keybinding-from-shortcut ra:switch-instrument-mute)
@@ -956,12 +962,19 @@
                                        "")))))
 
 ;; Note: Must return status bar id.
-(define (FROM_C-display-solo-status-in-statusbar instrument-id)  
+(define (FROM_C-display-solo-status-in-statusbar instrument-id)
+  (define in-storage (<ra> :get-instrument-solo-from-storage instrument-id))
+  (define in-plugin (<ra> :get-instrument-solo instrument-id))
+  
   (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": "
-                                 (cond ((<ra> :get-instrument-solo instrument-id)
+                                 (cond ((and in-plugin in-storage)
                                         "Solo On")
+                                       ((and in-plugin (not in-storage))
+                                        "Solo On by automation")
                                        ((<ra> :instrument-is-implicitly-soloed instrument-id)
                                         "Solo Implicitly on")
+                                       ((and (not in-plugin) in-storage)
+                                        "Solo Off by automation")
                                        (else
                                         "Solo Off"))
                                  (let ((keybinding (or (get-displayable-keybinding-from-shortcut ra:switch-instrument-solo)
@@ -972,10 +985,18 @@
 
 ;; Note: Must return status bar id.
 (define (FROM_C-display-bypass-status-in-statusbar instrument-id)  
+  (define in-storage (<ra> :get-instrument-solo-from-storage instrument-id))
+  (define in-plugin (<ra> :get-instrument-solo instrument-id))
+  
   (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": "
-                                 (if (<ra> :get-instrument-bypass instrument-id)
-                                     "Bypass On"
-                                     "Bypass Off")
+                                 (cond ((and in-plugin in-storage)
+                                        "Bypass On")
+                                       ((and in-plugin (not in-storage))
+                                        "Bypass On by automation")
+                                       ((and (not in-plugin) in-storage)
+                                        "Bypass Off by automation")
+                                       (else
+                                        "Bypass Off"))
                                  (let ((keybinding (or (get-displayable-keybinding-from-shortcut ra:switch-instrument-bypass)
                                                        (get-displayable-keybinding-from-shortcut ra:switch-bypass-for-selected-instruments))))
                                    (if keybinding
@@ -2029,10 +2050,9 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                          :seqtracknum #f) ;; needs to be set if type is 'height
 
   (define (get-muted)
-    (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
-    (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
+    (<ra> :get-instrument-muted instrument-id))
   (define (get-soloed)
-    (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
+    (<ra> :get-instrument-solo instrument-id))
   (define (get-recording)
     ;;(<ra> :seqtrack-is-recording seqtracknum)) We don't have seqtracknum here.
     (if (not (<ra> :release-mode))

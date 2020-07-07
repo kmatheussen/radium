@@ -1926,6 +1926,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
                                                   when,
                                                   false,
                                                   sent_from_midi_learn);
+
 }
 
 void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum StoreitType storeit_type, FX_when when, enum ValueFormat value_format){
@@ -3029,37 +3030,47 @@ bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num){
 }
 
 
-bool PLUGIN_get_muted(SoundPlugin *plugin){
-  return is_muted(plugin);
+void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit){
+  float new_value = soloit ? 1.0 : 0.0;
+  int effect_num = plugin->type->num_effects + EFFNUM_SOLO_ONOFF;
+
+  PLUGIN_set_effect_value(plugin, -1, effect_num, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 }
 
 void PLUGIN_set_muted(SoundPlugin *plugin, bool muteit){
-  if (muteit==PLUGIN_get_muted(plugin))
+  /*
+  if (muteit==PLUGIN_get_muted(plugin)) // can't do this when we use STORE_VALUE
     return;
-
+  */
+  
   float new_val = muteit ? 0.0 : 1.0;
   int effect_num = get_mute_effectnum(plugin->type);
   
   PLUGIN_set_effect_value(plugin, -1, effect_num, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 }
 
+
+#if 0
+
+// These ones are too easy to use the wrong way. Use PLUGIN_set_effect_value / PLUGIN_get_effect_value instead, or plugin->solo_is_on/etc. for graphics.
+
+bool PLUGIN_get_muted(SoundPlugin *plugin){
+  return is_muted(plugin);
+}
+
 bool PLUGIN_get_soloed(SoundPlugin *plugin){
   return ATOMIC_GET(plugin->solo_is_on);
 }
 
+/*
+No: Use PLUGIN_get_effect_value instead.
 bool PLUGIN_get_soloed_relaxed(SoundPlugin *plugin){
   return ATOMIC_GET_RELAXED(plugin->solo_is_on);
 }
+*/
 
-void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit){
-  if (soloit==PLUGIN_get_soloed(plugin))
-    return;
+#endif
 
-  float new_value = soloit ? 1.0 : 0.0;
-  int effect_num = plugin->type->num_effects + EFFNUM_SOLO_ONOFF;
-
-  PLUGIN_set_effect_value(plugin, -1, effect_num, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-}
 
 // only called from Soundproducer.cpp, one time per soundcard block per instrument
 bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time){

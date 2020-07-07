@@ -134,11 +134,17 @@ extern LANGSPEC enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(const S
 extern LANGSPEC void PLUGIN_set_random_behavior(SoundPlugin *plugin, const int effect_num, bool do_random);
 extern LANGSPEC bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num);
 
-extern LANGSPEC bool PLUGIN_get_muted(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_set_muted(SoundPlugin *plugin, bool muteit);
-extern LANGSPEC bool PLUGIN_get_soloed(SoundPlugin *plugin);
-extern LANGSPEC bool PLUGIN_get_soloed_relaxed(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit);
+
+#if 0
+// These ones are too easy to use the wrong way. Use PLUGIN_get_effect_value instead, or plugin->solo_is_on/etc. for graphics.
+
+extern LANGSPEC bool PLUGIN_get_muted(SoundPlugin *plugin);
+extern LANGSPEC bool PLUGIN_get_soloed(SoundPlugin *plugin);
+/*extern LANGSPEC bool PLUGIN_get_soloed_relaxed(SoundPlugin *plugin); Use PLUGIN_get_effect_value instead */
+#endif
+
 
 // Note: The Send plugin may call RT_PLUGIN_touch for all receiving plugins after they are not live anymore. Therefore, we can not use anything pointed to by the plugin here. Only the memory in the plugin itself can/should be accessed.
 static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
