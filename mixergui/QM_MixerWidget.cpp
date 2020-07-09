@@ -2302,6 +2302,8 @@ void GFX_showHideMixerWidget(void){
       if (!must_show){
         g_mixer_widget->hide();
         FOCUSFRAMES_set_focus_best_guess();
+      } else {
+        setMixerKeyboardFocus(true);
       }
     }
   }GL_unlock();
