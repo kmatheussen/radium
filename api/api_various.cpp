@@ -376,8 +376,12 @@ void showHideEditor(int windownum){
   GFX_showHideEditor();
 }
 
+static bool sequencer_really_in_full_mode(void){
+  return sequencerInFullMode() && !sequencerInWindow();
+}
+
 void showHideFocusEditor(void){
-  if (editorIsVisible(-1) && !editorHasKeyboardFocus())
+  if (editorIsVisible(-1) && !editorHasKeyboardFocus() && !sequencer_really_in_full_mode())
     setEditorKeyboardFocus(true);
   else
     showHideEditor(-1);
@@ -511,7 +515,7 @@ bool mixerIsVisible(void){
 }
 
 void showHideFocusMixer(void){
-  if (mixerIsVisible() && !mixerHasKeyboardFocus())
+  if (mixerIsVisible() && !mixerHasKeyboardFocus() && !sequencer_really_in_full_mode())
     setMixerKeyboardFocus(true);
   else
     showHideMixerWidget();
