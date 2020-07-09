@@ -392,7 +392,16 @@ void GFX_showHideEditor(void){
   if (sequencerInFullMode() && !sequencerInWindow()){
     setSequencerInFullMode(false);
     must_show = true;
+
+    /*
+  } else if (editorIsVisible(-1) && !editorHasKeyboardFocus()) {
+    
+    setEditorKeyboardFocus(true);
+    return;
+    */
+    
   }
+
   
   GL_lock();{
     if(g_editor->editor_layout_widget->isHidden()){
@@ -402,6 +411,8 @@ void GFX_showHideEditor(void){
       if (must_show==false) {
         g_editor->editor_layout_widget->hide();
         FOCUSFRAMES_set_focus_best_guess();
+      } else {
+        setEditorKeyboardFocus(true);
       }
     }
   }GL_unlock();
