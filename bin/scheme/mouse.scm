@@ -1476,7 +1476,8 @@
     (<ra> :set-curr-realline (between 0 (- start-realline
                                            (round (/ (- new-y start-y)
                                                      realline-height)))
-                                      (<ra> :get-num-reallines blocknum))
+                                      (- (<ra> :get-num-reallines blocknum)
+                                         1))
           blocknum)
 
 
