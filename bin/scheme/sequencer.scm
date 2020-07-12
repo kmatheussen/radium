@@ -2077,6 +2077,22 @@
                 (lambda (color)
                   (<ra> :set-block-color color blocknum)))))))
 
+;; Note: used for shortcut
+(delafina (switch-force-as-current-block :seqblock-id (and *current-seqblock-info*
+                                                           (*current-seqblock-info* :id)))
+  (when seqblock-id
+    (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
+    (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
+    (when (not (<ra> :seqtrack-for-audiofiles seqtracknum))
+      (let ((blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
+        (define is-forced (and (not (<ra> :allow-automatically-changing-current-block))
+                               (= blocknum (<ra> :current-block))))
+        (if is-forced
+            (<ra> :set-allow-automatically-changing-current-block #t)
+            (begin
+              (<ra> :set-allow-automatically-changing-current-block #f)
+              (<ra> :select-block blocknum)))))))
+
 
 (define (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
   (define seqblock-info *current-seqblock-info*)
@@ -2180,7 +2196,7 @@
    (list "Forced as current block"
          :check (and (not (<ra> :allow-automatically-changing-current-block))
                      (= blocknum (<ra> :current-block)))
-         :shortcut ra:switch-allow-automatically-changing-current-block
+         :shortcut switch-force-as-current-block
          (lambda (setit)
            (if setit
                (begin
