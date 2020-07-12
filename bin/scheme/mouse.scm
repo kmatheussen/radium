@@ -6708,7 +6708,7 @@
                                                                     
                                                                     (if (and (not (<ra> :is-playing-song))
                                                                              (<ra> :seqblock-holds-block seqblocknum seqtracknum))
-                                                                        (<ra> :select-block (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
+                                                                        (<ra> :select-block (<ra> :get-seqblock-blocknum seqblocknum seqtracknum) -1 #t))
                                                                     
                                                                     (cond ((and (not is-selected)
                                                                                 (not (<ra> :control-pressed)))

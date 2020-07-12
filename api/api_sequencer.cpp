@@ -3082,7 +3082,7 @@ static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
   
   if (!is_playing_song())
     if (seqblock->block != NULL)
-      selectBlock(seqblock->block->l.num, -1);
+      selectBlock(seqblock->block->l.num, -1, true);
 
   if(g_is_changing_curr_seqtrack==0){
     ALL_SEQTRACKS_FOR_EACH(){

@@ -351,7 +351,7 @@ void selectNextBlock(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-        selectBlock(R_MIN(getNumBlocks()-1, currentBlock(windownum)+1), windownum);
+        selectBlock(R_MIN(getNumBlocks()-1, currentBlock(windownum)+1), windownum, false);
 	//SelectNextWBlock(window);
 }
 
@@ -361,7 +361,7 @@ void selectPrevBlock(int windownum){
 
         //EVENTLOG_add_event("selectPrevBlock");        
 	//SelectPrevWBlock(window);
-        selectBlock(R_MAX(0, currentBlock(windownum)-1), windownum);
+        selectBlock(R_MAX(0, currentBlock(windownum)-1), windownum, false);
 }
 
 void selectNextPlaylistBlock(void){

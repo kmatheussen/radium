@@ -192,7 +192,7 @@
                                (<gui> :is-double-clicking gui))
                           (<ra> :create-seqblock -1 blocknum))
                          ((not (<ra> :is-playing-song))
-                          (<ra> :select-block blocknum)))
+                          (<ra> :select-block blocknum -1 #f)))
                    (update)
                    #f)
                  

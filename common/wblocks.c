@@ -297,15 +297,15 @@ void UpdateWBlockCoordinates(
         wblock->bottombar.x2 = wblock->a.y2-1;
         wblock->bottombar.y2 = window->height;
 
-        int midi_record_button_width = wblock->bottombar.y2-wblock->bottombar.y1 + 2;
+        int editor_button_width = wblock->bottombar.y2-wblock->bottombar.y1 + 2;
         
-	wblock->reltempo.x1=midi_record_button_width;
+	wblock->reltempo.x1=editor_button_width * 2;
 	wblock->reltempo.y1=wblock->bottombar.y1+2;
 	wblock->reltempo.x2=wblock->bottombar.x1 - 1;
 	wblock->reltempo.y2=wblock->bottombar.y2-1;
 
         {
-          int m_width = midi_record_button_width;
+          int m_width = editor_button_width;
           int r_width = wblock->reltempo.x2 - wblock->reltempo.x1;
           if (m_width > r_width){
             wblock->reltempo.x1 = R_MAX(1, (wblock->t.x1 - 3) / 2);
