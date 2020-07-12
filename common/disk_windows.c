@@ -73,7 +73,7 @@ DC_start("TRACKER_WINDOW");
         {
           DC_SaveS("leftslider");SaveSlider(&window->leftslider);
 
-          struct Slider bottomslider = {1, window->bottomslider_height, getTrackSliderX1(), getTrackSliderX2(), getTrackSliderX1(), getTrackSliderX2()};
+          struct Slider bottomslider = {1, window->bottomslider_height, getTrackSliderX1(-1,-1), getTrackSliderX2(-1,-1), getTrackSliderX1(-1,-1), getTrackSliderX2(-1,-1)};
           DC_SaveS("bottomslider");SaveSlider(&bottomslider);
         }
         

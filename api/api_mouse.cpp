@@ -354,22 +354,37 @@ bool hasBlockMultiplierMidiLearn(void){
 // The track scrollbar (horizontal scrollbar)
 ///////////////////////////////////////////////////
 
-float getTrackSliderX1(void){  
-  return root->song->tracker_windows->wblock->t.x1;
+float getTrackSliderX1(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return wblock->t.x1;
 }
-float getTrackSliderY1(void){
-  return root->song->tracker_windows->wblock->reltempo.y1;
+float getTrackSliderY1(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return wblock->reltempo.y1;
 }
-float getTrackSliderX2(void){
+float getTrackSliderX2(int blocknum, int windownum){
   return getBottomSliderX2(root->song->tracker_windows);
 }
-float getTrackSliderY2(void){
-  return root->song->tracker_windows->wblock->reltempo.y2;
+float getTrackSliderY2(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return wblock->reltempo.y2;
 }
 
 float getTrackSliderPos(int blocknum, int windownum){
   struct Tracker_Windows *window;
-  struct WBlocks *wblock = getWBlockFromNumA(blocknum, &window, windownum);
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if(wblock==NULL)
     return 0;
 
@@ -380,11 +395,11 @@ float getTrackSliderPos(int blocknum, int windownum){
 
 void setTrackSliderPos(float pos, int blocknum, int windownum){
   struct Tracker_Windows *window;
-  struct WBlocks *wblock = getWBlockFromNumA(blocknum, &window, windownum);
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if(wblock==NULL)
     return;
 
-  int visible_width = getTrackSliderX2() - getTrackSliderX1();
+  int visible_width = getTrackSliderX2(blocknum, windownum) - getTrackSliderX1(blocknum, windownum);
   int total_width = WTRACKS_getWidth(window, wblock);
   //printf("      total_width: %d\n", total_width);
   
@@ -501,7 +516,7 @@ float getEditorScrollbarScrollerX1(void){
 
 float getEditorScrollbarScrollerY1(int blocknum, int windownum){
   struct Tracker_Windows *window;
-  struct WBlocks *wblock = getWBlockFromNumA(blocknum, &window, windownum);
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if(wblock==NULL)
     return 0.0;
 
