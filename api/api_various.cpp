@@ -719,6 +719,24 @@ bool switchEditorFollowsPlayCursor(void){
   return ret;
 }
 
+static bool g_allow_changing_current_block = true;
+
+bool allowAutomaticallyChangingCurrentBlock(void){
+  return g_allow_changing_current_block;
+}
+
+void setAllowAutomaticallyChangingCurrentBlock(bool allow){
+  g_allow_changing_current_block = allow;
+  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
+  window->must_redraw = true;  
+}
+
+bool switchAllowAutomaticallyChangingCurrentBlock(void){
+  setAllowAutomaticallyChangingCurrentBlock(!allowAutomaticallyChangingCurrentBlock());
+  return allowAutomaticallyChangingCurrentBlock();
+}
+
+
 void insertReallines(int toinsert,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   InsertRealLines_CurrPos(window,toinsert);
@@ -1978,7 +1996,11 @@ int getNumBlocks(void){
   return root->song->num_blocks;
 }
 
-void selectBlock(int blocknum, int windownum){
+void selectBlock(int blocknum, int windownum, bool only_select_if_allowed_to_automatically_change){
+
+  if (only_select_if_allowed_to_automatically_change==true && allowAutomaticallyChangingCurrentBlock()==false)
+    return;
+  
   struct Tracker_Windows *window=NULL;
   struct WBlocks *wblock = getWBlockFromNumA(
                                              windownum,

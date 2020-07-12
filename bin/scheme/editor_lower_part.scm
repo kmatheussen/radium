@@ -198,6 +198,32 @@
 
   )
 
+
+(define (create-editor-lock-checkbox gui x1 y1 x2 y2)
+  (define enabled #t)
+  (define area (<new> :checkbox gui x1 y1 x2 y2
+                      (lambda ()
+                        (not (<ra> :allow-automatically-changing-current-block)))
+                      (lambda (val)
+                        (<ra> :set-allow-automatically-changing-current-block (not val)))
+                      :text (lambda ()
+                              (if (<ra> :allow-automatically-changing-current-block)
+                                  "🔓"
+                                  "🔒"))
+                      :selected-color "#225522"
+                      :prepend-checked-marker #f
+                      ))
+  (area :add-statusbar-text-handler "Prevent program from automatically changing block")
+  (add-keybinding-configuration-to-gui area
+                                       "ra:switch-allow-automatically-changing-current-block"
+                                       '())
+  area)
+
+
+#!!
+(c-display "hepp:" (<ra> :allow-automatically-changing-current-block))
+!!#
+
 (define (create-editor-midi-record-checkbox gui x1 y1 x2 y2)
   (define area (<new> :checkbox gui x1 y1 x2 y2
                       ra:record-accurately-from-midi
@@ -221,7 +247,10 @@
     (define track-x1 (<ra> :get-track-slider-x1))
     (define track-x2 (<ra> :get-track-slider-x2))
 
-    (add-sub-area-plain! (create-editor-midi-record-checkbox gui 0 y1 (- reltempo-x1 0) y2))
+    (define lock-x2 (/ reltempo-x1 2))
+    
+    (add-sub-area-plain! (create-editor-lock-checkbox gui 0 y1 lock-x2 y2))
+    (add-sub-area-plain! (create-editor-midi-record-checkbox gui lock-x2 y1 reltempo-x1 y2))
     (add-sub-area-plain! (<new> :reltempo-slider gui reltempo-x1 y1 reltempo-x2 y2))
     (add-sub-area-plain! (create-editor-track-scrollbar-area gui track-x1 y1 track-x2 y2)))
 
