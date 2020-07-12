@@ -6772,6 +6772,96 @@
                     ))))
 
 
+;; Hand-drag sequencer.
+(add-mouse-cycle
+ (let* ((start-x #f)
+        (start-y #f)
+        (new-x #f)
+        (new-y #f))
+        
+   (define start-time #f)
+   (define end-time #f)
+
+   (define org-percentage #f)
+   (define total-seqtracks-height #f)
+   (define has-dragged #f)
+   
+   (define (move! dx dy)
+     (set! new-x (+ new-x dx))
+     (set! new-y (+ new-y dy))
+     (set! has-dragged #t)
+     (define width (- (<ra> :get-sequencer-x2) (<ra> :get-sequencer-x1)))
+     
+     (set! start-time (<ra> :get-sequencer-visible-start-time))
+     (set! end-time (<ra> :get-sequencer-visible-end-time))
+
+     (define duration (- end-time start-time))
+     (define time-dx (scale dx 0 width 0 duration))
+     
+     (define new-start (round (max 0 (round (- start-time time-dx)))))
+     (when (< new-start 0)
+       (set! time-dx (+ time-dx (- new-start)))
+       (set! new-start 0))
+     
+     (define new-end (+ new-start duration))
+     (define max-end (<ra> :get-sequencer-song-length-in-frames))
+     (when (> new-end max-end)
+       (define skew (- new-end max-end))
+       (set! time-dx (+ time-dx (- skew)))
+       (set! new-start (- new-start skew))
+       (set! new-end max-end))
+       
+     (<ra> :set-sequencer-visible-start-time new-start)
+     (<ra> :set-sequencer-visible-end-time new-end)
+     
+     (define percentage (between 0
+                                 (- org-percentage
+                                    (/ (- new-y start-y)
+                                       total-seqtracks-height))
+                                 1))
+       
+     (set-topmost-visible-seqtrack-from-percentage percentage)
+     
+     ;;(c-display "dx/dy:" (- new-x start-x) (- new-y start-y))
+     )
+   
+   (add-delta-mouse-handler
+    :press (lambda ($button $x $y)
+             ;;(c-display "in-sequencer: " (inside-box? (<ra> :get-box seqtracks) $x $y) (< $y (<ra> :get-seqnav-y1)))
+             (and (= $button *middle-button*)
+                  (inside-box? (<ra> :get-box seqtracks) $x $y)
+                  (< $y (<ra> :get-seqnav-y1))
+                  (begin
+                    (set! start-time (<ra> :get-sequencer-visible-start-time))
+                    (set! end-time (<ra> :get-sequencer-visible-end-time))
+                    (set! start-x $x)
+                    (set! start-y $y)
+                    (set! new-x $x)
+                    (set! new-y $y)
+                    (set! has-dragged #f)
+                    (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))
+
+                    (define first-visible-seqtrack (find-first-visible-seqtrack))
+                    (set! total-seqtracks-height (get-actual-total-seqtracks-height))
+                    
+                    (set! org-percentage (scale (<ra> :get-seqtrack-y1 (<ra> :get-topmost-visible-seqtrack))
+                                                (<ra> :get-seqtrack-y1 first-visible-seqtrack)
+                                                (+ (<ra> :get-seqtrack-y1 first-visible-seqtrack)
+                                                   total-seqtracks-height)
+                                                0 1))
+
+                    #t)))
+    
+    :move-and-release (lambda ($button $dx $dy $instance)
+                        (set-mouse-pointer ra:set-closed-hand-mouse-pointer (<gui> :get-sequencer-gui))
+                        (move! $dx $dy))
+    
+    :release (lambda ($button $x $y $instance)
+               (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-sequencer-gui))
+               #t)
+    )))
+
+
 
 
 
