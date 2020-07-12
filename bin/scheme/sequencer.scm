@@ -53,7 +53,8 @@
   (set-current-seqblock! seqtracknum id))
 
 
-
+;; Note: "visible" means existing seqtrack where (<ra> :seqtrack-is-visible) is #t.
+;; I.e. NOT necessarily visible on screen, but instead marked as visible in the "Tracks" tab.
 (define (find-first-visible-seqtrack)
   (let loop ((seqtracknum 0))
     (cond ((= seqtracknum (<ra> :get-num-seqtracks))
@@ -62,7 +63,9 @@
            seqtracknum)
           (else
            (loop (+ 1 seqtracknum))))))
-        
+
+;; Note: "visible" means existing seqtrack where (<ra> :seqtrack-is-visible) is #t.
+;; I.e. NOT necessarily visible on screen, but instead marked as visible in the "Tracks" tab.
 (define (find-last-visible-seqtrack)
   (let loop ((seqtracknum (- (<ra> :get-num-seqtracks) 1)))
     (cond ((= seqtracknum 0)
@@ -76,6 +79,97 @@
 (find-first-visible-seqtrack)
 (find-last-visible-seqtrack)
 !!#
+
+;; "percentage" is a number between 0 and 1.
+(define (set-topmost-visible-seqtrack-from-percentage percentage)
+  (define first-visible-seqtrack (find-first-visible-seqtrack))
+  (define last-visible-seqtrack (find-last-visible-seqtrack))
+
+  (define total-height (get-actual-total-seqtracks-height))
+  
+  (define seqtrack0-y1 (<ra> :get-seqtrack-y1 first-visible-seqtrack))
+  (define ideal-pos (+ seqtrack0-y1 (* percentage total-height)))
+  (define lowest-seqtracknum (<ra> :get-lowest-possible-topmost-visible-seqtrack))
+  (define new-seqtracknum
+    (let loop ((seqtracknum first-visible-seqtrack)
+               (last-legal 0)
+               (prev-dist #f))
+      (cond ((>= seqtracknum (+ lowest-seqtracknum 1))
+             last-legal)
+            ((not (<ra> :get-seqtrack-visible seqtracknum))
+             (loop (+ seqtracknum 1)
+                   last-legal
+                   prev-dist))
+            (else
+             (define curr-pos (<ra> :get-seqtrack-y1 seqtracknum))
+             (define dist (abs (- curr-pos ideal-pos)))
+             ;;(c-display "---. " seqtracknum ". Prev dist:" prev-dist ". Dist:" dist ". curr-pos:" curr-pos ". ideal pos:" ideal-pos)
+             (if (and prev-dist
+                      (< prev-dist dist))
+                 last-legal
+                 (loop (+ seqtracknum 1)
+                       seqtracknum
+                       dist))))))
+
+  ;;(c-display "percentage:" percentage ". new:" new-seqtracknum ". lowest:" lowest-seqtracknum)
+  (<ra> :set-topmost-visible-seqtrack new-seqtracknum))
+
+
+(define (get-actual-total-seqtracks-height)
+  (define first-visible (find-first-visible-seqtrack))
+  (define last-visible (find-last-visible-seqtrack))
+  (define lowest-topmost-visible (<ra> :get-lowest-possible-topmost-visible-seqtrack))
+  (define seqtracks-height (- (get-sequencer-left-part-seqtracks-y2)
+                              (get-sequencer-left-part-seqtracks-y1)))
+  
+  (define bottom-empty-space (- (- seqtracks-height
+                                   (- (<ra> :get-seqtrack-y2 last-visible)
+                                      (<ra> :get-seqtrack-y1 lowest-topmost-visible)))
+                                (ra:get-seqtrack-border-width)))
+  
+  '(c-display ":bottom-empty-space:" bottom-empty-space
+              ":lowest-topmost-visible:" lowest-topmost-visible
+              ":seqtracks-height:" seqtracks-height
+              ":height of last visible seqtracks:" (- (<ra> :get-seqtrack-y2 last-visible)
+                                                      (<ra> :get-seqtrack-y1 lowest-topmost-visible))
+              ". " last-visible lowest-topmost-visible
+              "first y1: " (<ra> :get-seqtrack-y1 lowest-topmost-visible)
+              "last y2:" (<ra> :get-seqtrack-y2 last-visible)
+              ":last-visible:" last-visible
+              ":...:" (get-sequencer-left-part-seqtracks-y2) (<ra> :get-seqtracks-y1))
+  
+  (+ (- (<ra> :get-seqtrack-y2 last-visible)
+        (<ra> :get-seqtrack-y1 first-visible))
+     bottom-empty-space))
+
+#!
+(<ra> :get-seqtrack-y1 10)
+(<ra> :get-seqtrack-y1 11)
+(<ra> :get-seqtrack-y1 12)
+(<ra> :get-seqtrack-y1 13)
+(<ra> :get-seqtrack-y1 14)
+
+(<ra> :get-lowest-possible-topmost-visible-seqtrack)
+
+(get-actual-total-seqtracks-height)
+(<ra> :get-seqtrack-y1 17)
+(<ra> :get-seqtrack-y2 18)
+(get-visible-seqtracks-y2)
+(list (get-visible-seqtracks-y2)
+      (<ra> :get-seqtracks-y2)
+      (<ra> :get-seqtracks-y1))
+
+(list (- (<ra> :get-seqtrack-y2 18)
+         (<ra> :get-seqtrack-y1 17))
+      (- (get-sequencer-left-part-seqtracks-y2)
+         (get-sequencer-left-part-seqtracks-y1))
+      (- (<ra> :get-seqtracks-y2)
+         (<ra> :get-seqtracks-y1))
+      )
+
+!!#
+
+
 
 (define (for-each-seqtracknum func)
   (let loop ((seqtracknum 0))
