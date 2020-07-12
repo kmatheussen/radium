@@ -1439,6 +1439,96 @@
                         )                        
 
 
+
+
+;; Hand-drag editor.
+(let* ((start-x #f)
+       (start-y #f)
+       (new-x #f)
+       (new-y #f))
+  
+  (define has-dragged #f)
+
+  (define blocknum #f)
+  (define start-realline #f)
+  (define realline-height #f)
+
+  (define start-slider-pos #f)
+  (define do-move-slider #f)
+  
+  (define (get-editor-total-width blocknum)
+    (- (<ra> :get-track-x2 (- (<ra> :get-num-tracks blocknum) 1) blocknum)
+       (<ra> :get-track-x1 0 blocknum)))
+
+  (define (get-slider-length blocknum)
+    (define editor-width (- (<ra> :get-track-slider-x2 blocknum)
+                            (<ra> :get-track-slider-x1 blocknum)))
+    (/ editor-width
+       (get-editor-total-width blocknum)))
+
+  (define (move! dx dy)
+    (set! has-dragged #t)
+    (set! new-x (+ new-x dx))
+    (set! new-y (+ new-y dy))
+    (set! has-dragged #t)
+    ;;(c-display "dx/dy:" dx dy)
+
+    (<ra> :set-curr-realline (between 0 (- start-realline
+                                           (round (/ (- new-y start-y)
+                                                     realline-height)))
+                                      (<ra> :get-num-reallines blocknum))
+          blocknum)
+
+
+    (if do-move-slider
+        (<ra> :set-track-slider-pos
+              (between 0
+                       (- start-slider-pos (/ (- new-x start-x)
+                                              (get-editor-total-width blocknum)))
+                       (- 1.0 (get-slider-length blocknum)))
+              blocknum))
+    
+    #t)
+  
+  (add-delta-mouse-handler
+   :press (lambda ($button $x $y)
+            (and (= $button *middle-button*)
+                 (inside-box? (<ra> :get-box editor) $x $y)
+                 (begin
+                   (set! start-x $x)
+                   (set! start-y $y)
+                   (set! new-x $x)
+                   (set! new-y $y)
+
+                   (set! blocknum (<ra> :current-block))
+                   (set! start-realline (<ra> :get-curr-realline))
+                   (set! realline-height (- (<ra> :get-y-from-place (+ start-realline 1))
+                                            (<ra> :get-y-from-place start-realline)))
+
+                   (set! start-slider-pos (<ra> :get-track-slider-pos))
+                   (set! do-move-slider (>= $x (<ra> :get-track-slider-x1)))
+                   
+                   (set! has-dragged #f)
+                   (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))
+                   
+                   #t)))
+   
+   :move-and-release (lambda ($button $dx $dy $instance)
+                       (set-mouse-pointer ra:set-closed-hand-mouse-pointer (<gui> :get-editor-gui))
+                       (move! $dx $dy)
+                       #t)
+   
+   :release (lambda ($button $x $y $instance)
+              (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
+              #t)
+   ))
+
+
+
+
+;; Various
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;; Note: Used for shortcut
 (delafina (FROM_C-show-instrument-color-dialog :parentgui -1
                                                :instrument-ids #f)

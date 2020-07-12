@@ -115,6 +115,17 @@
   (<ra> :set-topmost-visible-seqtrack new-seqtracknum))
 
 
+(define (get-sequencer-left-part-seqtracks-y1)
+  (define seqtrack0-y1 (<ra> :get-seqtracks-y1)) ;;(<ra> :get-seqtrack-y1 topmost-seqtrack))
+  (define ty1-height (myfloor (- seqtrack0-y1
+                                 (<ra> :get-sequencer-y1))))
+  (+ (<ra> :get-sequencer-left-part-y1)
+     ty1-height))
+
+(define (get-sequencer-left-part-seqtracks-y2)
+  (- (<ra> :get-sequencer-left-part-buttons-y1) 1))
+
+
 (define (get-actual-total-seqtracks-height)
   (define first-visible (find-first-visible-seqtrack))
   (define last-visible (find-last-visible-seqtrack))
