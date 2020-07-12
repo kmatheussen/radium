@@ -2177,6 +2177,17 @@
    (get-set-seqblock-gain-popup-menu-entries seqblockid)
    
    "------------------------"
+   (list "Forced as current block"
+         :check (and (not (<ra> :allow-automatically-changing-current-block))
+                     (= blocknum (<ra> :current-block)))
+         :shortcut ra:switch-allow-automatically-changing-current-block
+         (lambda (setit)
+           (if setit
+               (begin
+                 (<ra> :set-allow-automatically-changing-current-block #f)
+                 (<ra> :select-block blocknum))
+               (<ra> :set-allow-automatically-changing-current-block #t))))
+   "------------------------"
    
    (list "Advanced"
          (list
