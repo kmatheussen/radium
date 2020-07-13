@@ -42,15 +42,23 @@
   (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #t)) (get-all-audio-instruments))
   (<ra> :remake-mixer-strips))
 
+;; Note: Used for shortcut
 (define (make-no-mixer-strips-wide)
   (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #f)) (get-all-audio-instruments))
   (<ra> :remake-mixer-strips))
 
+;; Note: Used for shortcut
 (define (switch-all-no-mixer-strips-wide)
   (if (<ra> :has-wide-instrument-strip (<ra> :get-current-instrument))
       (make-no-mixer-strips-wide)
       (make-all-mixer-strips-wide)))
-       
+
+;; Note: Used for shortcut
+(define (switch-wide-mixer-strip-for-current-instrument)
+  (set! *current-mixer-strip-is-wide* (not *current-mixer-strip-is-wide*))
+  (remake-mixer-strips (<ra> :get-current-instrument)))
+
+
 (delafina (get-global-mixer-strips-popup-entries :instrument-id
                                                  :strips-config
                                                  :wide-mode-instrument-id #f
@@ -68,37 +76,51 @@
    (and effect-name
         (get-effect-popup-entries instrument-id effect-name))
 
-   (if instrument-id
-       (list
-        (<-> "------------Mixer strip for " (<ra> :get-instrument-name instrument-id))
-        
-        ;;(list "Pan Enabled"
-        ;;      :check (pan-enabled? instrument-id)
-        ;;      (lambda (onoff)
-        ;;        (pan-enable! instrument-id onoff)))
-        
-        (list "Wide"
-              :check (if is-standalone
-                         *current-mixer-strip-is-wide*
-                         (and wide-mode-instrument-id
-                              (<ra> :has-wide-instrument-strip wide-mode-instrument-id)))
-              :enabled wide-mode-instrument-id
-              (lambda (enabled)
-                (if is-standalone
-                    (set! *current-mixer-strip-is-wide* enabled)
-                    (<ra> :set-wide-instrument-strip wide-mode-instrument-id enabled))
-                (remake-mixer-strips instrument-id)))
-        
-        (list "Visible" :enabled (or instrument-id
-                                     (not strips-config))
-              :check #t
-              (lambda (enabled)
-                ;;(c-display "STRIPS_CONFIG:" strips-config)
-                (if (or is-standalone
-                        (not strips-config))
-                    (<ra> :show-hide-mixer-strip)
-                    (set! (strips-config :is-enabled instrument-id) enabled)))))
-       '())
+   (and instrument-id
+        (if (not is-standalone)
+            (list (<-> "------------Mixer strip for " (<ra> :get-instrument-name instrument-id))
+                  
+                  ;;(list "Pan Enabled"
+                  ;;      :check (pan-enabled? instrument-id)
+                  ;;      (lambda (onoff)
+                  ;;        (pan-enable! instrument-id onoff)))
+                  
+                  (list "Wide"
+                        :check (and wide-mode-instrument-id
+                                    (<ra> :has-wide-instrument-strip wide-mode-instrument-id))
+                        :enabled wide-mode-instrument-id
+                        (lambda (enabled)
+                          (<ra> :set-wide-instrument-strip wide-mode-instrument-id enabled)
+                          (remake-mixer-strips instrument-id)))
+                  
+                  (list "Visible" :enabled (or instrument-id
+                                               (not strips-config))
+                        :check #t
+                        (lambda (enabled)
+                          ;;(c-display "STRIPS_CONFIG:" strips-config)
+                          (if (not strips-config)
+                              (<ra> :show-hide-mixer-strip)
+                              (set! (strips-config :is-enabled instrument-id) enabled)))))
+            (list (<-> "------------Mixer strip for current instrument")
+                  
+                  ;;(list "Pan Enabled"
+                  ;;      :check (pan-enabled? instrument-id)
+                  ;;      (lambda (onoff)
+                  ;;        (pan-enable! instrument-id onoff)))
+                  
+                  (list "Wide"
+                        :check *current-mixer-strip-is-wide*
+                        :enabled wide-mode-instrument-id
+                        :shortcut switch-wide-mixer-strip-for-current-instrument
+                        (lambda (enabled)
+                          (set! *current-mixer-strip-is-wide* enabled)
+                          (remake-mixer-strips instrument-id)))
+                  
+                  (list "Visible" :enabled (or instrument-id
+                                               (not strips-config))
+                        :check #t
+                        ra:show-hide-mixer-strip)))
+        )
 
    (and (not is-standalone)
         (list
@@ -921,7 +943,7 @@
                                (lambda ()
                                  (reset-func)))))
               
-              (list "----------Objects"
+              (list "----------Mixer strip objects"
                     (map (lambda (instrument-id)
                            (get-instrument-popup-entries instrument-id
                                                          parentgui
