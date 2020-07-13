@@ -533,11 +533,12 @@
                                    buses-plugin-buses)
                            equal?))
 
-  (define instrument-plugins (keep (lambda (id)
-                                     (> (<ra> :get-num-in-audio-connections id) 0))
-                                   (apply append (map find-all-nonbus-plugins-used-in-mixer-strip instruments))))
-
   (define buses-plugins (apply append (map find-all-plugins-used-in-mixer-strip (all-buses :list))))
+
+  (define instrument-plugins (keep (lambda (id)
+                                     (and (> (<ra> :get-num-in-audio-connections id) 0)
+                                          (not (all-buses :contains id)))) ;; Can happen if a bus is set to be displayed as a plugin in mixer strip.
+                                   (apply append (map find-all-nonbus-plugins-used-in-mixer-strip instruments))))
 
   (define all-instrument-instruments (append no-inputs-or-outputs
                                              instruments
