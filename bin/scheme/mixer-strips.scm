@@ -886,10 +886,15 @@
                                    (<ra> :set-audio-connection-type parent-instrument-id instrument-id *auto-connection-type*)))))))
 
               (and effect-name
-                   "------------")
+                   (<-> "------------Plugin \"" (<ra> :get-instrument-name instrument-id) "\""))
               
               (and effect-name
-                   (list "Plugin-slider" ;; TODO: FIX
+                   (list "Delete"
+                         (lambda ()
+                           #t)))
+              
+              (and effect-name
+                   (list "Dry/Wet"
                          (get-effect-popup-entries midi-learn-instrument-id
                                                    effect-name
                                                    :automation-error-message (if effect-name
@@ -901,20 +906,20 @@
 
 
               (and is-send?
-                  (list "------------Send"
-                        (list "Delete"
-                              :enabled (and is-send? delete-func)
-                              (lambda ()
-                                (delete-func)))
-                        (list "Replace"
-                              :enabled (and is-send? replace-func)
-                              (lambda ()
-                                (replace-func)))
-                        "----------------"
-                        (list "Set to 0.0 dB"
-                              :enabled (and is-send? reset-func)
-                              (lambda ()
-                                (reset-func)))))
+                   (list (<-> "------------Send \"" (<ra> :get-instrument-name instrument-id) "\"")
+                         (list "Delete"
+                               :enabled (and is-send? delete-func)
+                               (lambda ()
+                                 (delete-func)))
+                         (list "Replace"
+                               :enabled (and is-send? replace-func)
+                               (lambda ()
+                                 (replace-func)))
+                         "----------------"
+                         (list "Set to 0.0 dB"
+                               :enabled (and is-send? reset-func)
+                               (lambda ()
+                                 (reset-func)))))
               
               (list "----------Objects"
                     (map (lambda (instrument-id)
