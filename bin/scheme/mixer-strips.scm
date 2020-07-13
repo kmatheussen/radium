@@ -751,6 +751,37 @@
   (apply popup-menu args))
 
 
+(define (get-mixer-strip-path-instruments instrument-id kont)
+  (define out-instruments (sort-instruments-by-mixer-position
+                           (get-instruments-connecting-from-instrument instrument-id)))
+  (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
+
+  (define instrument-sends (keep (lambda (out-instrument)
+                                   (or (not next-plugin-instrument)
+                                       (not (equal? next-plugin-instrument out-instrument))))
+                                 out-instruments))
+  
+  (kont instrument-sends
+        next-plugin-instrument))
+
+
+(define (get-list-of-mixer-strip-path-instruments instrument-id)
+  (let loop ((instrument-id instrument-id)
+             (ret '()))                            
+    (get-mixer-strip-path-instruments instrument-id
+                                      (lambda (instrument-sends next-plugin-instrument)
+                                        (let ((ret (append ret instrument-sends)))
+                                          (if next-plugin-instrument
+                                              (loop next-plugin-instrument
+                                                    (append ret
+                                                            (list next-plugin-instrument)))
+                                              ret))))))
+
+#!!
+(map ra:get-instrument-name (get-list-of-mixer-strip-path-instruments (<ra> :get-main-pipe-instrument)))
+!!#
+
+
 (define (show-mixer-path-popup first-instrument-id
                                parent-instrument-id
                                instrument-id
@@ -809,40 +840,14 @@
               ;;     (list
               ;;      "----------Plugin"
 
-              (and is-send?
-                  (list "------------Send-slider"
-                        (list "Delete"
-                              :enabled (and is-send? delete-func)
-                              (lambda ()
-                                (delete-func)))
-                        (list "Replace"
-                              :enabled (and is-send? replace-func)
-                              (lambda ()
-                                (replace-func)))
-                        "----------------"
-                        (list "Set to 0.0 dB"
-                              :enabled (and is-send? reset-func)
-                              (lambda ()
-                                (reset-func)))))
-              
-              (and effect-name
-                   (list
-                    ;;"------------Plugin-slider"
-                    (get-effect-popup-entries midi-learn-instrument-id
-                                              effect-name
-                                              :automation-error-message (if effect-name
-                                                                            #f
-                                                                            "(Connection gain automation not supported yet)")
-                                              :modulation-error-message (if effect-name
-                                                                            #f
-                                                                            "(Connection gain modulation not supported yet)"))))
               ;;"----------"
               ;;"Convert to standalone strip" (lambda ()
               ;;                                #t)
 
               (list (<-> "------------Slider");. Connection" (if (equal? parent-instrument-id instrument-id)
                                                ;               ""
-                                                ;              (<-> " " (<ra> :get-instrument-name parent-instrument-id) "-->" (<ra> :get-instrument-name instrument-id) "")))
+                                        ;              (<-> " " (<ra> :get-instrument-name parent-instrument-id) "-->" (<ra> :get-instrument-name instrument-id) "")))
+                    
                     (let ((connection-type (if (or (not parent-instrument-id)
                                                    (not instrument-id))
                                                *auto-connection-type*
@@ -879,9 +884,48 @@
                              (lambda (ison)
                                (if ison
                                    (<ra> :set-audio-connection-type parent-instrument-id instrument-id *auto-connection-type*)))))))
-              
 
-              (get-instrument-popup-entries instrument-id parentgui :must-have-inputs effect-name :must-have-outputs effect-name :include-insert-plugin (not is-top-instrument))
+              (and effect-name
+                   "------------")
+              
+              (and effect-name
+                   (list "Plugin-slider" ;; TODO: FIX
+                         (get-effect-popup-entries midi-learn-instrument-id
+                                                   effect-name
+                                                   :automation-error-message (if effect-name
+                                                                                 #f
+                                                                                 "(Connection gain automation not supported yet)")
+                                                   :modulation-error-message (if effect-name
+                                                                                 #f
+                                                                                 "(Connection gain modulation not supported yet)"))))
+
+
+              (and is-send?
+                  (list "------------Send"
+                        (list "Delete"
+                              :enabled (and is-send? delete-func)
+                              (lambda ()
+                                (delete-func)))
+                        (list "Replace"
+                              :enabled (and is-send? replace-func)
+                              (lambda ()
+                                (replace-func)))
+                        "----------------"
+                        (list "Set to 0.0 dB"
+                              :enabled (and is-send? reset-func)
+                              (lambda ()
+                                (reset-func)))))
+              
+              (list "----------Objects"
+                    (map (lambda (instrument-id)
+                           (get-instrument-popup-entries instrument-id
+                                                         parentgui
+                                                         :must-have-inputs effect-name
+                                                         :must-have-outputs effect-name
+                                                         :include-insert-plugin #t
+                                                         :put-in-submenu #t))
+                         (cons first-instrument-id
+                               (get-list-of-mixer-strip-path-instruments first-instrument-id))))
 
               (get-global-mixer-strips-popup-entries first-instrument-id strips-config parent-instrument-id)
               )
@@ -1576,20 +1620,6 @@
                                           #f ;;bus-effect-name
                                           ))
   send-gui)
-
-
-(define (get-mixer-strip-path-instruments instrument-id kont)
-  (define out-instruments (sort-instruments-by-mixer-position
-                           (get-instruments-connecting-from-instrument instrument-id)))
-  (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
-
-  (define instrument-sends (keep (lambda (out-instrument)
-                                   (or (not next-plugin-instrument)
-                                       (not (equal? next-plugin-instrument out-instrument))))
-                                 out-instruments))
-  
-  (kont instrument-sends
-        next-plugin-instrument))
 
 
 ;; Returns the last plugin.
@@ -2708,9 +2738,15 @@
   ;;(c-display "...scan1")
   (strips-config :scan-instruments!)
 
-  (define num-visible-strips (length (keep (lambda (id)
-                                             (strips-config :is-enabled id))
-                                           (get-all-audio-instruments))))
+  (define enabled-audio-instruments (keep (lambda (id)
+                                            (strips-config :is-enabled id))
+                                          (get-all-audio-instruments)))
+
+  (for-each c-display
+            (map ra:get-instrument-name
+                 enabled-audio-instruments))
+  
+  (define num-visible-strips (length enabled-audio-instruments))
   
   (define num-strips-per-row (ceiling (/ num-visible-strips num-rows)))
   
