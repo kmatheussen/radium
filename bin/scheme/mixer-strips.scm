@@ -886,10 +886,10 @@
                                    (<ra> :set-audio-connection-type parent-instrument-id instrument-id *auto-connection-type*)))))))
 
               (and effect-name
-                   (<-> "------------Plugin \"" (<ra> :get-instrument-name instrument-id) "\""))
+                   (<-> "------------"));Plugin \"" (<ra> :get-instrument-name instrument-id) "\""))
               
               (and effect-name
-                   (list "Delete"
+                   (list (<-> "Delete plugin \"" (<ra> :get-instrument-name instrument-id) "\"")
                          (lambda ()
                            #t)))
               
@@ -906,12 +906,12 @@
 
 
               (and is-send?
-                   (list (<-> "------------Send \"" (<ra> :get-instrument-name instrument-id) "\"")
-                         (list "Delete"
+                   (list (<-> "------------") ;;Send \"" (<ra> :get-instrument-name instrument-id) "\"")
+                         (list (<-> "Delete send \"" (<ra> :get-instrument-name instrument-id) "\"")
                                :enabled (and is-send? delete-func)
                                (lambda ()
                                  (delete-func)))
-                         (list "Replace"
+                         (list (<-> "Replace send \"" (<ra> :get-instrument-name instrument-id) "\"")
                                :enabled (and is-send? replace-func)
                                (lambda ()
                                  (replace-func)))
