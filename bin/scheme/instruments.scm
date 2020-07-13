@@ -1225,18 +1225,19 @@
   
 (define (is-connected-to-main-pipe id)
   (define main-pipe (<ra> :get-main-pipe-instrument))
-  (let loop ((id id))
-    (or (equal? id main-pipe)
-        (any? loop
-              (get-instruments-connecting-from-instrument id)))))
+  (if (equal? id main-pipe)
+      #f
+      (let loop ((id id))
+        (or (equal? id main-pipe)
+            (any? loop
+                  (get-instruments-connecting-from-instrument id))))))
 
 (define (is-directly-connected-to-main-pipe id)
   (<ra> :has-audio-connection id (<ra> :get-main-pipe-instrument)))
 
 
 ;; Note: Used for shortcut
-(delafina (switch-connect-current-instrument-to-main-pipe)
-  (define instrument-id (<ra> :get-current-instrument))  
+(delafina (switch-connect-instrument-to-main-pipe :instrument-id (<ra> :get-current-instrument))
   (when (and (<ra> :is-legal-instrument instrument-id)
              (> (<ra> :get-num-output-channels instrument-id) 0))
     (if (is-connected-to-main-pipe instrument-id)
@@ -1264,135 +1265,153 @@
                                  -2
                                  #f))
 
+#!!
+(for-each c-display
+          (map (lambda (id)
+                 (list id (ra:get-instrument-name id)))
+               (get-all-audio-instruments)))
+!!#
 
 (delafina (get-instrument-popup-entries :instrument-id
                                         :parentgui
                                         :include-replace #t
                                         :must-have-inputs #f :must-have-outputs #f
                                         :include-insert-plugin #t
+                                        :put-in-submenu #f
                                         )
 
-  (list
-   (<-> "----------Instrument: \"" (<ra> :get-instrument-name instrument-id) "\"");; " instrument")
-   ;;"-----------Instrument"
-   
-   (and #f ;; Seems like instrument-id is always current instrument.
-        (let ((is-current (equal? (<ra> :get-current-instrument)
-                                  instrument-id)))
-          (and (not is-current)
-               (list
-                (list "Set as current instrument"
-                      :enabled (not is-current)
-                      (lambda ()
-                        (<ra> :set-current-instrument instrument-id #f)))
-                "------------------"))))
+  (define plain
+    (list
+     (and #f ;; Seems like instrument-id is always current instrument.
+          (let ((is-current (equal? (<ra> :get-current-instrument)
+                                    instrument-id)))
+            (and (not is-current)
+                 (list
+                  (list "Set as current instrument"
+                        :enabled (not is-current)
+                        (lambda ()
+                          (<ra> :set-current-instrument instrument-id #f)))
+                  "------------------"))))
+     
+     (get-sample-player-mixer-popup-menu-entries (list instrument-id))
+     (list "Connected to main pipe"
+           :enabled (and (> (<ra> :get-num-output-channels instrument-id) 0)
+                         (if (is-connected-to-main-pipe instrument-id)
+                             (is-directly-connected-to-main-pipe instrument-id) ;; Connected, but only enable entry if connected directly.
+                             (not (is-connected-somehow? (<ra> :get-main-pipe-instrument) instrument-id)))) ;; Don't enable if connecting would create a recursive graph.
+           :check (is-connected-to-main-pipe instrument-id)
+           :shortcut switch-connect-instrument-to-main-pipe
+           (lambda (doit)
+             (switch-connect-instrument-to-main-pipe instrument-id)))
 
-   (get-sample-player-mixer-popup-menu-entries (list instrument-id))
-   (list "Connected to main pipe"
-         :enabled (and (> (<ra> :get-num-output-channels instrument-id) 0)
-                       (if (is-connected-to-main-pipe instrument-id)
-                           (is-directly-connected-to-main-pipe instrument-id) ;; Connected, but only enable entry if connected directly.
-                           (not (is-connected-somehow? (<ra> :get-main-pipe-instrument) instrument-id)))) ;; Don't enable if connecting would create a recursive graph.
-         :check (is-connected-to-main-pipe instrument-id)
-         :shortcut switch-connect-current-instrument-to-main-pipe
-         (lambda (doit)
-           (switch-connect-current-instrument-to-main-pipe)))
+     (and include-insert-plugin
+          "------------------")
+     (and include-insert-plugin
+          (list "Insert plugin"
+                :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
+                :shortcut insert-plugin-for-instrument
+                (lambda ()
+                  (insert-plugin-for-instrument instrument-id))))
+     
+     "---------------"
+     
+     (list "Delete"
+           :enabled (not (<ra> :instrument-is-permanent instrument-id))
+           :shortcut ra:delete-instrument
+           (lambda ()
+             (<ra> :delete-instrument instrument-id)))
+     (list "Replace"
+           :enabled (and include-replace
+                         (not (<ra> :instrument-is-permanent instrument-id)))
+           :shortcut replace-instrument
+           (lambda ()
+             (replace-instrument instrument-id must-have-inputs must-have-outputs parentgui)))
+     (list "Rename"
+           :shortcut FROM_C-request-rename-instrument
+           (lambda ()
+             (FROM_C-request-rename-instrument instrument-id)))
+     
+     "-----------"
+     
+     (list "Mute "
+           :check (<ra> :get-instrument-mute instrument-id)
+           :shortcut ra:switch-mute-for-selected-instruments
+           (lambda (doit)
+             (<ra> :set-instrument-mute doit instrument-id)))   
+     (list "Solo"
+           :check (<ra> :get-instrument-solo instrument-id)
+           :shortcut ra:switch-solo-for-selected-instruments
+           (lambda (doit)
+             (<ra> :set-instrument-solo doit instrument-id)))
+     (list "Bypass"
+           :check (<ra> :get-instrument-bypass instrument-id)
+           :shortcut ra:switch-bypass-for-selected-instruments
+           (lambda (doit)
+             (<ra> :set-instrument-bypass doit instrument-id)))
+     
+     "-----------"
+     
+     (list "Load Preset (.rec)" :enabled instrument-id
+           :enabled (and include-replace
+                         (not (<ra> :instrument-is-permanent instrument-id)))
+           :shortcut ra:request-load-instrument-preset
+           (lambda ()
+             (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
+     (list "Save Preset (.rec)" :enabled instrument-id
+           :enabled (and include-replace
+                         (not (<ra> :instrument-is-permanent instrument-id)))
+           :shortcut (list ra:eval-scheme "(ra:save-instrument-preset)") ;; ra:save-instrument-preset is not available from python since it has a dynvec_t argument
+           (lambda ()
+             (<ra> :save-instrument-preset (list instrument-id) parentgui)))
+     
+     "------------------"
+     
+     (list "Configure color"
+           :shortcut FROM_C-show-instrument-color-dialog
+           (lambda ()
+             (FROM_C-show-instrument-color-dialog parentgui instrument-id)))
+     (list "Generate new color"
+           :shortcut ra:generate-new-instrument-color
+           (lambda ()
+             (<ra> :generate-new-instrument-color instrument-id)))
+     
+     "--------"
+     
+     (list "Show GUI"
+           :enabled (<ra> :has-native-instrument-gui instrument-id)
+           :check (<ra> :instrument-gui-is-visible instrument-id parentgui)
+           :shortcut ra:show-hide-instrument-gui
+           (lambda (enabled)
+             (if enabled
+                 (<ra> :show-instrument-gui instrument-id parentgui #f)
+                 (<ra> :hide-instrument-gui instrument-id))))
+     (list "Recv. external MIDI"
+           :check (<ra> :instrument-always-receive-midi-input instrument-id)
+           :shortcut ra:switch-set-instrument-always-receive-midi-input
+           (lambda (onoff)
+             (<ra> :set-instrument-always-receive-midi-input instrument-id onoff)))
+     
+     "--------"
+   
+     (list "Show Info"
+           :shortcut (list ra:eval-scheme "(ra:show-instrument-info)")
+           (lambda ()
+             (<ra> :show-instrument-info instrument-id parentgui))
+           
+           )
+     ))
 
-   (and include-insert-plugin
-        "------------------")
-   (and include-insert-plugin
-        (list "Insert plugin"
-              :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
-              :shortcut insert-plugin-for-instrument
-              (lambda ()
-                (insert-plugin-for-instrument instrument-id))))
-   
-   "---------------"
-   
-   (list "Delete"
-         :enabled (not (<ra> :instrument-is-permanent instrument-id))
-         :shortcut ra:delete-instrument
-         (lambda ()
-           (<ra> :delete-instrument instrument-id)))
-   (list "Replace"
-         :enabled (and include-replace
-                       (not (<ra> :instrument-is-permanent instrument-id)))
-         :shortcut replace-instrument
-         (lambda ()
-           (replace-instrument instrument-id must-have-inputs must-have-outputs parentgui)))
-   (list "Rename"
-         :shortcut FROM_C-request-rename-instrument
-         (lambda ()
-           (FROM_C-request-rename-instrument instrument-id)))
-   
-   "-----------"
+  (define instrument-name (<-> "\"" (<ra> :get-instrument-name instrument-id) "\""))
+  
+  (define header (<-> "Instrument: " instrument-name))
 
-   (list "Mute "
-         :check (<ra> :get-instrument-mute instrument-id)
-         :shortcut ra:switch-mute-for-selected-instruments
-         (lambda (doit)
-           (<ra> :set-instrument-mute doit instrument-id)))   
-   (list "Solo"
-         :check (<ra> :get-instrument-solo instrument-id)
-         :shortcut ra:switch-solo-for-selected-instruments
-         (lambda (doit)
-           (<ra> :set-instrument-solo doit instrument-id)))
-   (list "Bypass"
-         :check (<ra> :get-instrument-bypass instrument-id)
-         :shortcut ra:switch-bypass-for-selected-instruments
-         (lambda (doit)
-           (<ra> :set-instrument-bypass doit instrument-id)))
+  (if put-in-submenu
+      (list instrument-name
+            plain)
+      (cons (<-> "--------------" header)
+            plain)))
 
-   "-----------"
-   
-   (list "Load Preset (.rec)" :enabled instrument-id
-         :enabled (and include-replace
-                       (not (<ra> :instrument-is-permanent instrument-id)))
-         :shortcut ra:request-load-instrument-preset
-         (lambda ()
-           (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
-   (list "Save Preset (.rec)" :enabled instrument-id
-         :enabled (and include-replace
-                       (not (<ra> :instrument-is-permanent instrument-id)))
-         :shortcut (list ra:eval-scheme "(ra:save-instrument-preset)") ;; ra:save-instrument-preset is not available from python since it has a dynvec_t argument
-         (lambda ()
-           (<ra> :save-instrument-preset (list instrument-id) parentgui)))
-   
-   "------------------"
 
-   (list "Configure color"
-         :shortcut FROM_C-show-instrument-color-dialog
-         (lambda ()
-           (FROM_C-show-instrument-color-dialog parentgui instrument-id)))
-   (list "Generate new color"
-         :shortcut ra:generate-new-instrument-color
-         (lambda ()
-           (<ra> :generate-new-instrument-color instrument-id)))
-         
-   "--------"
-   
-   (list "Show GUI"
-         :enabled (<ra> :has-native-instrument-gui instrument-id)
-         :check (<ra> :instrument-gui-is-visible instrument-id parentgui)
-         :shortcut ra:show-hide-instrument-gui
-         (lambda (enabled)
-           (if enabled
-               (<ra> :show-instrument-gui instrument-id parentgui #f)
-               (<ra> :hide-instrument-gui instrument-id))))
-   (list "Recv. external MIDI"
-         :check (<ra> :instrument-always-receive-midi-input instrument-id)
-         :shortcut ra:switch-set-instrument-always-receive-midi-input
-         (lambda (onoff)
-           (<ra> :set-instrument-always-receive-midi-input instrument-id onoff)))
-   
-   "--------"
-   
-   (list "Show Info"
-         :shortcut (list ra:eval-scheme "(ra:show-instrument-info)")
-         (lambda ()
-           (<ra> :show-instrument-info instrument-id parentgui))
-         
-         )))
               
 
 
