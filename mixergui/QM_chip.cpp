@@ -1848,7 +1848,9 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
    setZValue(10);
    
    init_new_plugin();
-   
+
+   MW_set_selected_chip(this); // To unselect previously selected chip.
+
    printf("New Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
 }
 
