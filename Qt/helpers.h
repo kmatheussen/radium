@@ -920,17 +920,22 @@ static inline void pauseUpdates(QWidget *w, int ms = 50){
   new PauseUpdatesTimer(w, ms);
 }
 
-static inline void updateWidgetRecursively(QObject *object){
+static inline void updateWidgetRecursively(QObject *object, bool is_child = false){
   if (object != NULL){
 
     QWidget *w = dynamic_cast<QWidget*>(object);
-    if (w!=NULL){
-      //printf("Updating %p. (%s)\n", w, w->metaObject()->className());
+
+    if (w != NULL && w->isVisible()) {
+
+      if (is_child && w->isWindow())
+        return;
+      
       w->update();
+        
+      for(auto *c : object->children())
+        updateWidgetRecursively(c, true);
+      
     }
-    
-    for(auto *c : object->children())
-      updateWidgetRecursively(c);
   }
 }
 
