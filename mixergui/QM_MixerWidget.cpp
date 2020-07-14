@@ -1877,8 +1877,9 @@ void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
   }else{
 
     draw_slot(this, pos.x(), pos.y());
+
     QGraphicsScene::mouseMoveEvent(event);
-  
+    
   }
 
 }

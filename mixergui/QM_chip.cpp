@@ -2392,6 +2392,8 @@ static void show_hover_statusbar_message(const Chip *chip, const QGraphicsSceneH
     g_statusbar_id = setStatusbarText("Press mouse button to create new event-connection");
     
   }
+
+  setCurrentInstrument(CHIP_get_patch(chip)->id, false, true);
 }
 
 void Chip::hoverEnterEvent ( QGraphicsSceneHoverEvent * event ){
@@ -2641,7 +2643,7 @@ QVariant Chip::itemChange(GraphicsItemChange change, const QVariant &value) {
 void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
-  
+
   if (_slider_being_edited != 0){
 
     R_ASSERT_RETURN_IF_FALSE(_slider_being_edited == 1 || _slider_being_edited == 2);
