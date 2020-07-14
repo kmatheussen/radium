@@ -37,6 +37,15 @@
 (define (add-safe-double-click-callback gui callback)
   (add-safe-instrument-callback gui ra:gui_add-double-click-callback callback))
 
+(delafina (set-curr-instrument-in-mouse-callback :instrument-id
+                                                 :gui #f ;; Only need to be set if also setting force-if-pressing-left-button to #t.
+                                                 :force-if-pressing-left-button #f)
+  (<ra> :set-current-instrument instrument-id #f (if (not force-if-pressing-left-button)
+                                                     #t
+                                                     (if (= *left-button* (<gui> :get-curr-mouse-button gui))
+                                                         #f
+                                                         #t))))
+  
 ;; Note: Used for shortcut
 (define (make-all-mixer-strips-wide)
   (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #t)) (get-all-audio-instruments))
@@ -119,7 +128,8 @@
                   (list "Visible" :enabled (or instrument-id
                                                (not strips-config))
                         :check #t
-                        ra:show-hide-mixer-strip)))
+                        (lambda (on)
+                          (<ra> :show-hide-mixer-strip)))))
         )
 
    (and (not is-standalone)
@@ -696,6 +706,7 @@
                                             (remake-mixer-strips instrument-id))))
   
   (add-safe-mouse-callback label (lambda (button state x y)
+                                   (set-curr-instrument-in-mouse-callback instrument-id label :force-if-pressing-left-button #t)
                                      (if (= state *is-pressing*)
                                          (if (= button *right-button*)                                             
                                              (if (<ra> :shift-pressed)
@@ -1130,10 +1141,10 @@
   (define has-made-undo #t)
   
   (add-safe-mouse-callback widget (lambda (button state x y)
-                                    ;;(c-display "state:" state)
+                                    ;;(c-display "state:" state button)
                                     (if (and (and strips-config (not (strips-config :is-standalone)))
-                                             (= state *is-pressing*))
-                                        (<ra> :set-current-instrument instrument-id #f #t))
+                                             (or #t (= state *is-pressing*)))
+                                        (set-curr-instrument-in-mouse-callback instrument-id widget))
                                     (define is-left-pressing (and (= button *left-button*)
                                                                   (= state *is-pressing*)))
 
@@ -1802,6 +1813,7 @@
    slider
    (lambda (button state x y)
      (<ra> :set-statusbar-text (<-> "Pan: " (get-pan)))
+     (set-curr-instrument-in-mouse-callback instrument-id slider)
      (cond ((and (= button *left-button*)
                  (= state *is-pressing*))
             (set! has-made-undo #f)
@@ -1893,6 +1905,7 @@
                                                      (lambda ()
                                                        (<ra> :set-instrument-mute is-muted instrument-id)
                                                        ;;(c-display "mute: " is-muted)
+                                                       ;;(<ra> :set-current-instrument instrument-id #f)
                                                        (if (<ra> :control-pressed)
                                                            (turn-off-all-mute instrument-id))
                                                        )))
@@ -1900,8 +1913,11 @@
                                                   min-height
                                                   :effect-name "System Volume On/Off"
                                                   :hovered-callback (lambda (button state x y)
-                                                                      (FROM_C-display-mute-status-in-statusbar instrument-id))
- 
+                                                                      (FROM_C-display-mute-status-in-statusbar instrument-id)
+                                                                      ;(c-display "MUTE3")
+                                                                      (<ra> :set-current-instrument instrument-id #f #t)
+                                                                      )
+                                                  
                                                   ))
 
   ;;(add-safe-mouse-callback (cadr mute)
@@ -1936,6 +1952,7 @@
                                                        ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
                                         ;(<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
                                                        (<ra> :set-instrument-solo is-selected instrument-id)
+                                                       ;;(<ra> :set-current-instrument instrument-id #f)
                                                        (if (<ra> :control-pressed)
                                                            (turn-off-all-solo instrument-id))
                                                        )))
@@ -1943,7 +1960,9 @@
                                                   min-height
                                                   :effect-name "System Solo On/Off"
                                                   :hovered-callback (lambda (button state x y)
-                                                                      (FROM_C-display-solo-status-in-statusbar instrument-id))
+                                                                      (FROM_C-display-solo-status-in-statusbar instrument-id)
+                                                                      (<ra> :set-current-instrument instrument-id #f #t)
+                                                                      )
                                                   ))
   
   (add-gui-effect-monitor (cadr mute) instrument-id volume-on-off-name #t #t
@@ -2172,11 +2191,12 @@
 
   (define has-made-undo #t)
 
-  (define (create-vol-mouse-callback is-slider)    
+  (define (create-vol-mouse-callback gui is-slider)    
     (lambda (button state x y)
       (if is-slider
           (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": " (db-to-text (get-volume) #t))))
       ;;(<ra> :set-statusbar-text (<-> "volume:" (db-to-text (get-volume) #t))))
+      (set-curr-instrument-in-mouse-callback instrument-id gui)
       (cond ((and (= button *left-button*)
                   (= state *is-pressing*))
              (set! has-made-undo #f))
@@ -2199,8 +2219,8 @@
                     (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name))))))
       #f))
   
-  (add-safe-mouse-callback volslider (create-vol-mouse-callback #t))
-  (add-safe-mouse-callback volmeter (create-vol-mouse-callback #f))
+  (add-safe-mouse-callback volslider (create-vol-mouse-callback volslider #t))
+  (add-safe-mouse-callback volmeter (create-vol-mouse-callback volmeter #f))
 
 
   ;;(<gui> :add volslider volmeter 0 0 5 5) ;; Set parent of volmeter to volslider (gui_setParent should be renamed to something else, this is awkward)
@@ -2218,6 +2238,7 @@
     (add-safe-mouse-callback voltext
                              (lambda (button state x y)
                                (<ra> :set-statusbar-text "Click to set new volume.") ;;(<-> (<ra> :get-instrument-name instrument-id) ": " (db-to-text (get-volume) #t) ". Click to set new value"))
+                               (set-curr-instrument-in-mouse-callback instrument-id voltext)
                                (cond ((and (= button *right-button*)
                                            (= state *is-pressing*))
                                       (if (and effect-name
@@ -2256,6 +2277,7 @@
     (add-safe-mouse-callback peaktext
                              (lambda (button state x y)
                                (<ra> :set-statusbar-text "Click to reset peak.") ;;(<-> (<ra> :get-instrument-name instrument-id) ": " (db-to-text (get-volume) #t) ". Click to set new value"))
+                               (set-curr-instrument-in-mouse-callback instrument-id peaktext)
                                (cond ((and (= button *right-button*)
                                            (= state *is-pressing*))
                                       (if (<ra> :shift-pressed)
@@ -2321,6 +2343,7 @@
   (set-fixed-height comment-edit height)
 
   (add-safe-mouse-callback comment-edit (lambda (button state x y)
+                                          (set-curr-instrument-in-mouse-callback instrument-id comment-edit)
                                             (if (and (= button *right-button*)
                                                      (= state *is-pressing*))
                                                 (begin
@@ -2524,6 +2547,7 @@
 
   
   (add-safe-mouse-callback mixer-strip-path-gui (lambda (button state x y)
+                                                  (set-curr-instrument-in-mouse-callback instrument-id mixer-strip-path-gui)
                                                     (if (and (= button *right-button*)
                                                              (= state *is-pressing*))
                                                         (begin (if (<ra> :shift-pressed)
