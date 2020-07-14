@@ -4823,6 +4823,15 @@ void gui_addMouseCallback(int64_t guinum, func_t* func){
   gui->addMouseCallback(func);
 }
 
+int gui_getCurrMouseButton(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return 0;
+  
+  return gui->_currentButton;
+}
+  
 void gui_addMouseWheelCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
 
