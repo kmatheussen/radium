@@ -1273,6 +1273,16 @@
                (get-all-audio-instruments)))
 !!#
 
+;; Note: used for shortcut
+(delafina (switch-force-as-current-instrument :instrument-id (<ra> :get-current-instrument))
+  (define is-forced (and (<ra> :is-current-instrument-locked)
+                         (equal? instrument-id (<ra> :get-current-instrument))))
+  (if is-forced
+      (<ra> :set-current-instrument-locked #f)
+      (begin
+        (<ra> :set-current-instrument-locked #t)
+        (<ra> :set-current-instrument instrument-id))))
+
 (delafina (get-instrument-popup-entries :instrument-id
                                         :parentgui
                                         :include-replace #t
@@ -1305,6 +1315,18 @@
            (lambda (doit)
              (switch-connect-instrument-to-main-pipe instrument-id)))
 
+     (list "Forced as current instrument"
+           :check (and (<ra> :is-current-instrument-locked)
+                       (equal? instrument-id (<ra> :get-current-instrument)))
+           :shortcut switch-force-as-current-instrument
+           (lambda (setit)
+             (if setit
+                 (begin
+                   (<ra> :set-current-instrument-locked #t)
+                   (<ra> :set-current-instrument instrument-id))
+                 (<ra> :set-current-instrument-locked #f))))
+     
+                         
      (and include-insert-plugin
           "------------------")
      (and include-insert-plugin
