@@ -2984,13 +2984,15 @@ void setCurrentInstrument(instrument_t instrument_id, bool show_instrument_windo
   else
     GFX_PP_Update_even_if_locked(patch, false);
 
+  /*
   if (instrumentIsOpenAndAudio(instrument_id)){
     Chip *chip = CHIP_get(NULL, patch);
     R_ASSERT(chip!=NULL);
     if (chip!=NULL)
       MW_set_selected_chip(chip); // To unselect previously selected chip. (if not the program looks buggy)
   }
-                       
+  */
+
   /*
   if(old_currpatch!=NULL && instrumentIsOpenAndAudio(old_currpatch->id)){
     struct SoundPlugin *plugin = (struct SoundPlugin*)old_currpatch->patchdata;
