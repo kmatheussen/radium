@@ -218,6 +218,8 @@
                                              :effect-name #f
                                              :hovered-callback #f
                                              )
+
+  (define is-hovering #f)
   
   (define checkbox (<gui> :widget))
   (if min-height
@@ -225,8 +227,17 @@
 
   (add-safe-mouse-callback checkbox (lambda (button state x y)
                                       ;;(c-display "state" state)
-                                      (if hovered-callback
-                                          (hovered-callback button state x y))
+
+                                        (cond ((= state *is-entering*)
+                                               (set! is-hovering #t)
+                                               (<gui> :update checkbox))
+                                              ((= state *is-leaving*)
+                                               (set! is-hovering #f)
+                                               (<gui> :update checkbox)))
+
+                                        (if hovered-callback
+                                            (hovered-callback button state x y))
+                                        
                                         (if (and (= button *right-button*)
                                                  (= state *is-pressing*))
                                             (if (<ra> :shift-pressed)
@@ -244,7 +255,7 @@
   
   (add-safe-paint-callback checkbox
                            (lambda (width height)
-                             (paint-func checkbox is-selected width height)))
+                             (paint-func checkbox is-selected is-hovering width height)))
 
   (list (lambda (new-value)
           (set! is-selected new-value)
@@ -1825,7 +1836,7 @@
                                        :use-single-letters 
                                        :stack-horizontally
                                        :set-fixed-size #t)
-  
+
   (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
 
   (define (get-muted)
@@ -1849,13 +1860,14 @@
               (get-all-audio-instruments)))
 
   
-  (define (draw-mute mute is-muted width height)
+  (define (draw-mute mute is-muted is-hovering width height)
     (draw-mutesolo mute
                    'mute
                    instrument-id
                    0 0 width height
                    is-muted 
                    use-single-letters
+                   is-hovering
                    background-color))
 
   (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
@@ -1876,7 +1888,7 @@
                                                   :effect-name "System Volume On/Off"
                                                   :hovered-callback (lambda (button state x y)
                                                                       (FROM_C-display-mute-status-in-statusbar instrument-id)
-                                                                      ;(c-display "MUTE3")
+                                                                      ;;(c-display "MUTE3")
                                                                       (<ra> :set-current-instrument instrument-id #f #t)
                                                                       )
                                                   
@@ -1900,19 +1912,20 @@
                                         #f))))
   
   (define solo (create-instrument-effect-checkbox instrument-id strips-config
-                                                  (lambda (solo is-soloed width height)
+                                                  (lambda (solo is-soloed is-hovering width height)
                                                     (draw-mutesolo solo 
                                                                    'solo
                                                                    instrument-id
                                                                    0 0 width height
                                                                    is-soloed
                                                                    use-single-letters
+                                                                   is-hovering
                                                                    background-color))
                                                   (lambda (is-selected)
                                                     (undo-block
                                                      (lambda ()
                                                        ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
-                                        ;(<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
+                                                       ;;(<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
                                                        (<ra> :set-instrument-solo is-selected instrument-id)
                                                        ;;(<ra> :set-current-instrument instrument-id #f)
                                                        (if (<ra> :control-pressed)
