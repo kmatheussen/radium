@@ -1266,15 +1266,63 @@
                                  -2
                                  #f))
 
-#!!
-(for-each c-display
-          (map (lambda (id)
-                 (list id (ra:get-instrument-name id)))
-               (get-all-audio-instruments)))
-!!#
+(define (request-send-instrument instrument-id callback)
+  ;;(define is-bus-descendant (<ra> :instrument-is-bus-descendant instrument-id))
+  (define pure-buses (get-pure-buses))
+  (define seqtrack-buses (get-seqtrack-buses))
+  (define buses (append pure-buses seqtrack-buses))
+  (define (create-entry-text instrument-id)
+    (<-> *arrow-text* " " (<ra> :get-instrument-name instrument-id)))
+
+  (define (apply-changes changes)
+    (<ra> :undo-mixer-connections)
+    (<ra> :change-audio-connections changes))
+
+  (define (create-bus-entries instrument-ids)
+    (map (lambda (send-id)
+           (list (create-entry-text send-id)
+                 :enabled (<ra> :can-audio-connect instrument-id send-id)
+                 (lambda ()
+                   (callback (lambda (gain changes)
+                               (push-audio-connection-change! changes (list :type "connect"
+                                                                            :source instrument-id
+                                                                            :target send-id
+                                                                            :connection-type *send-connection-type*
+                                                                            :gain (if (= 0 (<ra> :get-num-output-channels send-id))
+                                                                                      1.0 ;; Sink-links must always have gain 1.0 since you can't change sink-link volume.
+                                                                                      gain)))
+                               (apply-changes changes))))))
+         instrument-ids))
+    
+  (define args
+    (run-instrument-data-memoized
+     (lambda()
+       (list
+        (create-bus-entries buses)
+        
+        "------------"
+        
+        ;; audio connections
+        (create-bus-entries (sort-instruments-by-mixer-position-and-connections
+                             (keep (lambda (id)
+                                     (not (member id buses)))
+                                   (begin
+                                     (define ret (get-all-instruments-that-we-might-send-to instrument-id))
+                                     ret))))))))
+  
+  (apply popup-menu args))
+
+
+;; Note: Used for shortcut
+(delafina (insert-send-for-instrument :instrument-id (<ra> :get-current-instrument))
+  (request-send-instrument instrument-id
+                           (lambda (create-send-func)
+                             (create-send-func 0 '()))))
+
 
 ;; Note: used for shortcut
 (delafina (switch-force-as-current-instrument :instrument-id (<ra> :get-current-instrument))
+  
   (define is-forced (and (<ra> :is-current-instrument-locked)
                          (equal? instrument-id (<ra> :get-current-instrument))))
   (if is-forced
@@ -1335,7 +1383,13 @@
                 :shortcut insert-plugin-for-instrument
                 (lambda ()
                   (insert-plugin-for-instrument instrument-id))))
-     
+
+     (and include-insert-plugin
+          (list "Insert send"
+                :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
+                :shortcut insert-send-for-instrument
+                (lambda ()
+                  (insert-send-for-instrument instrument-id))))
      "---------------"
      
      (list "Delete"
