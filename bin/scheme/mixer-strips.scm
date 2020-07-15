@@ -744,12 +744,6 @@
 
   label)
 
-#!!
-(define (trysomething)
-  (define id (last (get-all-audio-instruments)))
-  (<ra> :set-wide-instrument-strip id (not (<ra> :has-wide-instrument-strip id)))
-  (remake-mixer-strips))
-!!#
 
 
 
@@ -1048,6 +1042,8 @@
               couldnt-fit-all-text)))
   
   (define fontheight (get-fontheight))
+
+  (define is-hovering-on/off #f)
   
   (define (get-on/off-box x1-on/off width height kont)
     ;;(define b1 10)
@@ -1070,16 +1066,19 @@
     
                       ;;(c-display x1-on/off b1 height "-" (* 1.0 x1) (* 1.0 y1) (* 1.0 x2) (* 1.0 y2))
                       ;;(c-display x1_i y2_i x2_i y2_i "\n\n")
-                      
-                      (cond ((is-enabled?)
-                             (<gui> :filled-ellipse widget "black" x1 y1 x2 y2)
-                             (<gui> :filled-ellipse widget "#22aa22" x1_i y1_i x2_i y2_i))
-                            (else
-                             (<gui> :filled-ellipse widget "#000000" x1 y1 x2 y2)
-                             (<gui> :filled-ellipse widget "#003f00" x1_i y1_i x2_i y2_i)))
+
+                      (define color (let ((color (if (is-enabled?)
+                                                     "#22aa22"
+                                                     "#003f00")))
+                                      (if is-hovering-on/off
+                                          (<gui> :mix-colors color "white" 0.75)
+                                          color)))
+                                        
+                      (<gui> :filled-ellipse widget "black" x1 y1 x2 y2)
+                      (<gui> :filled-ellipse widget color x1_i y1_i x2_i y2_i)
                       
                       ;; border
-                      (<gui> :draw-ellipse widget "#88111111" x1 y1 x2 y2 2.0))))
+                      (<gui> :draw-ellipse widget (if is-hovering-on/off "#aa333333" "#88111111") x1 y1 x2 y2 (if is-hovering-on/off 3.0 2.0)))))
 
   (define (get-x1-on/off)
     fontheight)
@@ -1125,8 +1124,14 @@
                                         (begin
                                           (if is-left-pressing
                                               (toggle-enabled))
+                                          (when (not is-hovering-on/off)
+                                            (set! is-hovering-on/off #t)
+                                            (<gui> :update widget))
                                           #t)
                                         (begin
+                                          (when is-hovering-on/off
+                                            (set! is-hovering-on/off #f)
+                                            (<gui> :update widget))
                                           (when is-left-pressing
                                             (set! couldnt-fit-all-text #f)
                                             (set! is-changing-value #t)
