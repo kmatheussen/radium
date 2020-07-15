@@ -695,8 +695,9 @@
                               :must-have-inputs #f
                               :must-have-outputs #f
                               :gui -2)
-  (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs must-have-inputs :must-have-outputs must-have-outputs :parentgui gui)))
-
+  (if (is-legal-audio-instrument? instrument-id)
+      (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs must-have-inputs :must-have-outputs must-have-outputs :parentgui gui))))
+  
   
   
 (define (create-load-instrument-preset-description filename)
@@ -1243,7 +1244,7 @@
 
 ;; Note: Used for shortcut
 (delafina (switch-connect-instrument-to-main-pipe :instrument-id (<ra> :get-current-instrument))
-  (when (and (<ra> :is-legal-instrument instrument-id)
+  (when (and (is-legal-audio-instrument? instrument-id)
              (> (<ra> :get-num-output-channels instrument-id) 0))
     (if (is-connected-to-main-pipe instrument-id)
         (begin
@@ -1264,11 +1265,12 @@
 ;; Note: Used for shortcut
 (delafina (insert-plugin-for-instrument :instrument-id (<ra> :get-current-instrument)
                                         :gui -2)
-  (insert-new-instrument-between instrument-id
-                                 (get-instruments-connecting-from-instrument instrument-id)
-                                 #t
-                                 -2
-                                 #f))
+  (if (<ra> :is-legal-instrument instrument-id)
+      (insert-new-instrument-between instrument-id
+                                     (get-instruments-connecting-from-instrument instrument-id)
+                                     #t
+                                     -2
+                                     #f)))
 
 (define (request-send-instrument instrument-id callback)
   ;;(define is-bus-descendant (<ra> :instrument-is-bus-descendant instrument-id))
@@ -1319,14 +1321,14 @@
 
 ;; Note: Used for shortcut
 (delafina (insert-send-for-instrument :instrument-id (<ra> :get-current-instrument))
-  (request-send-instrument instrument-id
-                           (lambda (create-send-func)
-                             (create-send-func 0 '()))))
+  (if (<ra> :is-legal-instrument instrument-id)
+      (request-send-instrument instrument-id
+                               (lambda (create-send-func)
+                                 (create-send-func 0 '())))))
 
 
 ;; Note: used for shortcut
 (delafina (switch-force-as-current-instrument :instrument-id (<ra> :get-current-instrument))
-  
   (define is-forced (and (<ra> :is-current-instrument-locked)
                          (equal? instrument-id (<ra> :get-current-instrument))))
   (if is-forced
