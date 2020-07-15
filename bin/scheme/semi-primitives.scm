@@ -1,3 +1,7 @@
+(define-constant *arrow-text* "↳")
+(define-constant *arrow-text2* "→")
+
+
 (define (remove func list*)
   (if (null? list*)
       '()

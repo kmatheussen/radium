@@ -3359,8 +3359,15 @@ void setWideInstrumentStrip(instrument_t instrument_id, bool is_wide){
     return;
 
   patch->wide_mixer_strip=is_wide;
+
+  RT_schedule_mixer_strips_remake(instrument_id);
 }
 
+bool switchWideInstrumentStrip(instrument_t instrument_id){
+  setWideInstrumentStrip(instrument_id, !hasWideInstrumentStrip(instrument_id));
+  return hasWideInstrumentStrip(instrument_id);
+}
+  
 void setMixerStripCommentsVisible(bool val){
   if(root->song->mixer_comments_visible != val){
     root->song->mixer_comments_visible = val;
