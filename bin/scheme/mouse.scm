@@ -6165,6 +6165,31 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+(define (show-seqblock-popup-menu X Y)
+  (let ((seqtracknum *current-seqtrack-num*))
+    (and seqtracknum
+         *current-seqblock-info*
+         (let ((seqblock-infos (get-selected-seqblock-infos))
+               (seqblock-info *current-seqblock-info*))
+           (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+           (define for-blocks (not for-audiofiles))
+           (define seqblocknum (seqblock-info :seqblocknum))
+           (define seqblockid (seqblock-info :id))
+           
+           ;;(if seqblock-info
+           ;;    (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
+           ;;        (only-select-one-seqblock seqblocknum seqtracknum)
+           ;;        (<ra> :select-seqblock #t seqblocknum seqtracknum)))
+           
+           (set-current-seqblock! seqtracknum seqblockid)
+           ;;(<ra> :set-curr-seqtrack seqtracknum)
+           
+           (paint-grid! #t)
+           
+           (popup-menu (get-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X Y))
+           ))))
+
+
 ;; swap sequencer blocks
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -6320,6 +6345,8 @@
                                          :start-x
                                          :start-y
                                          :has-made-undo #f)
+
+  (define using-right-button (<ra> :is-right-mouse-pressed))
   
   (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
   (define seqblock (seqblocks seqblocknum))
@@ -6572,9 +6599,12 @@
                      :failure (lambda ()
                                 (<ra> :cancel-gfx-seqblocks seqtracknum)))
         (begin
-          (if (<ra> :control-pressed)
-              (<ra> :select-seqblock (not is-selected) seqblocknum seqtracknum))
-          (<ra> :cancel-gfx-seqblocks seqtracknum))))
+          (cond (using-right-button
+                 (show-seqblock-popup-menu start-x start-y))
+                (else
+                 (if (<ra> :control-pressed)
+                     (<ra> :select-seqblock (not is-selected) seqblocknum seqtracknum))
+                 (<ra> :cancel-gfx-seqblocks seqtracknum))))))
   )
 
 #!!
@@ -6582,7 +6612,7 @@
 !!#
 
 
-;; Move single seqblock
+;; Move single seqblock, and seqblock popup menu
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (<ra> :get-box seqtracks))
                         :Get-existing-node-info (lambda (X Y callback)
@@ -6671,6 +6701,8 @@
                         :Get-pixels-per-value-unit (lambda (move-single)
                                                      (get-sequencer-pixels-per-value-unit))
 
+                        :Existing-button? left-or-right-button?
+
                         :Use-Place #f
 
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
@@ -6690,10 +6722,15 @@
 (define2 gakkgakk-startseqblocknum integer? 0)
 (define2 gakkgakk-earliest-time number? 0)
 
+(define2 gakkgakk-start-x number? 0)
+(define2 gakkgakk-start-y number? 0)
+(define2 gakkgakk-using-right-button boolean? #f)
+(define2 gakkgakk-has-moved boolean? #f)
+
 ;; Move multiple seqblocks
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (<ra> :get-box seqtracks))
-                        :Get-existing-node-info (lambda (X Y callback)                                                  
+                        :Get-existing-node-info (lambda (X Y callback)
                                                   (let ((seqtracknum *current-seqtrack-num*))
                                                     (and (not *current-seqautomation/distance*)
                                                          seqtracknum
@@ -6737,6 +6774,11 @@
 
                                                                            (set! gakkgakk-start-pos (list 0 Y))
 
+                                                                           (set! gakkgakk-start-x X)
+                                                                           (set! gakkgakk-start-y Y)
+                                                                           (set! gakkgakk-using-right-button (<ra> :is-right-mouse-pressed))
+                                                                           (set! gakkgakk-has-moved #f)
+
                                                                            (callback seqblock-infos 0 Y))
 
                                                                           (else
@@ -6773,6 +6815,7 @@
                                            #f)
 
                         :Move-node (lambda (seqblock-infos Value Y)
+                                     (set! gakkgakk-has-moved #t)
                                      (set! gakkgakk-last-value (list Value Y))
 
                                      (define first-visible-seqtrack (find-first-visible-seqtrack))
@@ -6789,16 +6832,18 @@
                                      seqblock-infos)
                                           
                         :Release-node (lambda (seqblock-infos)
-                                        (define has-moved (and gakkgakk-last-value (not (morally-equal? gakkgakk-start-pos gakkgakk-last-value))))
+                                        ;;(define has-moved (and gakkgakk-last-value (not (morally-equal? gakkgakk-start-pos gakkgakk-last-value))))
                                         (delete-all-gfx-gfx-seqblocks)
                                         ;;(c-display "has-moved:" has-moved gakkgakk-start-pos gakkgakk-last-value gakkgakk-was-selected)
-                                        (if has-moved
+                                        (if gakkgakk-has-moved
                                             (apply-gfx-gfx-seqblocks seqblock-infos)
                                             (begin
-                                              ;;(c-display "NOT MOVED")
-                                              (when (<ra> :control-pressed)
-                                                ;;(c-display "SETTING SELECTED TO" (not gakkgakk-was-selected))
-                                                (<ra> :select-seqblock (not gakkgakk-was-selected) gakkgakk-startseqblocknum gakkgakk-startseqtracknum))))
+                                              ;;(c-display "NOT MOVED" gakkgakk-using-right-button)
+                                              (cond (gakkgakk-using-right-button
+                                                     (show-seqblock-popup-menu gakkgakk-start-x gakkgakk-start-y))
+                                                    ((<ra> :control-pressed)
+                                                     ;;(c-display "SETTING SELECTED TO" (not gakkgakk-was-selected))
+                                                     (<ra> :select-seqblock (not gakkgakk-was-selected) gakkgakk-startseqblocknum gakkgakk-startseqtracknum)))))
                                         
                                         (paint-grid! #f)
 
@@ -6814,6 +6859,8 @@
                                                         (- (<ra> :get-sequencer-visible-end-time)
                                                            (<ra> :get-sequencer-visible-start-time))))
 
+                        :Existing-button? left-or-right-button?
+                        
                         :Use-Place #f
 
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
@@ -7988,37 +8035,15 @@
 
    
 
-
-;; seqblock menu
-(add-mouse-cycle
+;; Commented out. Using move single/multiple instead.
+'(add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      (not (<ra> :shift-pressed))
                      (begin
                        (set-curr-seqblock-info! X Y) ;; *curr-seqblock-info* is not set after right-clicking a menu. (FIX: Should call set-curr-seqblock-info! after hiding a popup menu)
-                       (let ((seqtracknum *current-seqtrack-num*))
-                         (and seqtracknum
-                              *current-seqblock-info*
-                              (let ((seqblock-infos (get-selected-seqblock-infos))
-                                    (seqblock-info *current-seqblock-info*))
-                                (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
-                                (define for-blocks (not for-audiofiles))
-                                (define seqblocknum (seqblock-info :seqblocknum))
-                                (define seqblockid (seqblock-info :id))
-                                
-                                ;;(if seqblock-info
-                                ;;    (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
-                                ;;        (only-select-one-seqblock seqblocknum seqtracknum)
-                                ;;        (<ra> :select-seqblock #t seqblocknum seqtracknum)))
-                                
-                                (set-current-seqblock! seqtracknum seqblockid)
-                                ;;(<ra> :set-curr-seqtrack seqtracknum)
-                                
-                                (paint-grid! #t)
-                                
-                                (popup-menu (get-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X Y))
-                                ))))))))
+                       (show-seqblock-popup-menu start-x start-y))))))
 
 ;; seqtrack menu
 (add-mouse-cycle
