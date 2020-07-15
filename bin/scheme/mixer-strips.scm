@@ -8,9 +8,6 @@
 ;; When adding a new mixer strip, we could slice the various mixer strips windows.
 
 
-(define-constant *arrow-text* "↳")
-(define-constant *arrow-text2* "→")
-
 (define *pan-mutesolo-voltext-scale-factor* 0.75)
 
 (define *current-mixer-strip-is-wide* #f)
@@ -48,13 +45,15 @@
   
 ;; Note: Used for shortcut
 (define (make-all-mixer-strips-wide)
-  (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #t)) (get-all-audio-instruments))
-  (<ra> :remake-mixer-strips))
+  (for-each (lambda (i)
+              (<ra> :set-wide-instrument-strip i #t))
+            (get-all-audio-instruments)))
 
 ;; Note: Used for shortcut
 (define (make-no-mixer-strips-wide)
-  (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #f)) (get-all-audio-instruments))
-  (<ra> :remake-mixer-strips))
+  (for-each (lambda (i)
+              (<ra> :set-wide-instrument-strip i #f))
+            (get-all-audio-instruments)))
 
 ;; Note: Used for shortcut
 (define (switch-all-no-mixer-strips-wide)
@@ -98,13 +97,16 @@
                         :check (and wide-mode-instrument-id
                                     (<ra> :has-wide-instrument-strip wide-mode-instrument-id))
                         :enabled wide-mode-instrument-id
+                        :shortcut ra:switch-wide-instrument-strip
                         (lambda (enabled)
-                          (<ra> :set-wide-instrument-strip wide-mode-instrument-id enabled)
-                          (remake-mixer-strips instrument-id)))
+                          (<ra> :set-wide-instrument-strip wide-mode-instrument-id enabled)))
                   
                   (list "Visible" :enabled (or instrument-id
                                                (not strips-config))
                         :check #t
+                        :shortcut (if (not strips-config)
+                                      ra:show-hide-mixer-strip
+                                      mixer-strip-switch-visibility)
                         (lambda (enabled)
                           ;;(c-display "STRIPS_CONFIG:" strips-config)
                           (if (not strips-config)
@@ -128,6 +130,7 @@
                   (list "Visible" :enabled (or instrument-id
                                                (not strips-config))
                         :check #t
+                        :shortcut ra:show-hide-mixer-strip
                         (lambda (on)
                           (<ra> :show-hide-mixer-strip)))))
         )
@@ -149,6 +152,7 @@
           (map (lambda (num-rows)
                  (list (<-> num-rows " row" (if (> num-rows 1) "s" ""))
                        :check (= (strips-config :num-rows) num-rows)
+                       :shortcut (list ra:gui_set-num-rows-in-mixer-strips num-rows)
                        (lambda (ison)
                          (if ison
                              (set! (strips-config :num-rows) num-rows)))))
@@ -161,6 +165,7 @@
          (let ((makeit (lambda (name vert-ratio)
                          (list name
                                :check (= (strips-config :vert-ratio) vert-ratio)
+                               :shortcut (list ra:eval-scheme (<-> "(ra:gui_set-vert-ratio-in-mixer-strips " vert-ratio ")"))
                                (lambda (ison)
                                  (if ison
                                      (set! (strips-config :vert-ratio) vert-ratio)))))))
@@ -186,20 +191,20 @@
 
    (and (not is-standalone)
         (list "Configure mixer strips on/off" :enabled strips-config
+              :shortcut mixer-strip-show-strips-config
               (lambda ()
                 (strips-config :show-config-gui))))
 
-   (and is-standalone
-        (list "Prevent program from switching instrument"
-              :check (<ra> :is-current-instrument-locked)
-              ra:set-current-instrument-locked))     
+   (get-forced-as-current-instrument-menu-entry instrument-id)
 
-   "Set current instrument" show-set-current-instrument-popup-menu
+   (and (<ra> :is-current-instrument-locked)
+        (list "Set current instrument"
+              show-set-current-instrument-popup-menu))
       
    "----------"
    
-   "Help" (lambda ()
-            (<ra> :show-mixer-help-window))
+   (list "Help"
+         ra:show-mixer-help-window)
 
    ))
 
@@ -702,8 +707,7 @@
   (add-safe-double-click-callback label (lambda (button x y)
                                           (when (= button *left-button*)
                                             ;;(c-display "DOUBLE" (<ra> :has-wide-instrument-strip instrument-id))
-                                            (<ra> :set-wide-instrument-strip instrument-id (not (<ra> :has-wide-instrument-strip instrument-id)))
-                                            (remake-mixer-strips instrument-id))))
+                                            (<ra> :set-wide-instrument-strip instrument-id (not (<ra> :has-wide-instrument-strip instrument-id))))))
   
   (add-safe-mouse-callback label (lambda (button state x y)
                                    (set-curr-instrument-in-mouse-callback instrument-id label :force-if-pressing-left-button #t)
@@ -718,7 +722,6 @@
                                                       (remake-mixer-strips instrument-id))
                                                      ((equal? instrument-id (<ra> :get-current-instrument))
                                                       ;;(<ra> :set-wide-instrument-strip instrument-id is-minimized)
-                                                      ;;(remake-mixer-strips instrument-id)
                                                       #t
                                                       )
                                                      (else
@@ -804,6 +807,8 @@
                         "Insert plugin"
                         (<-> "Insert plugin after " (<ra> :get-instrument-name curr-plugin-instrument)))
                     :enabled (> (<ra> :get-num-output-channels first-instrument-id) 0)
+                    :shortcut (and is-top-instrument
+                                   insert-plugin-for-instrument)
                     (lambda ()
                       (insert-new-instrument-between curr-plugin-instrument
                                                      (get-instruments-connecting-from-instrument curr-plugin-instrument)
@@ -815,6 +820,8 @@
                                                 (<ra> :get-instrument-name parent-instrument-id)
                                                 (<ra> :get-instrument-name instrument-id)))
                     :enabled (> (<ra> :get-num-output-channels first-instrument-id) 0)
+                    :shortcut (and is-top-instrument
+                                   insert-send-for-instrument)
                     (lambda ()
                       (let ((instrument-id (cond (is-send?
                                                   parent-instrument-id)
@@ -3100,6 +3107,26 @@
 #!!
 (FROM_C-mixer-strips-change-num-rows ((car *mixer-strips-objects*) :gui) 6)
 !!#
+
+;; Note: Used for shortcut
+(delafina (mixer-strip-switch-visibility :instrument-id (<ra> :get-current-instrument)
+                                         :mixer-strips-gui (<gui> :get-main-mixer-strips-gui))
+  (when (is-legal-audio-instrument? instrument-id)
+    (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
+      ;;(c-display "OBJECT:" object (object :strips-config :is-enabled instrument-id))
+      (if object
+          (let ((config (object :strips-config)))
+            (set! (config :is-enabled instrument-id)
+                  (not (config :is-enabled instrument-id))))))))
+
+
+;; Note: Used for shortcut
+(delafina (mixer-strip-show-strips-config :mixer-strips-gui (<gui> :get-main-mixer-strips-gui))
+  (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
+    ;;(c-display "OBJECT:" object (object :strips-config :is-enabled instrument-id))
+    (if object
+        (let ((config (object :strips-config)))
+          (config :show-config-gui)))))
 
 
 (define (mixer-strips-get-vert-ratio mixer-strips-gui)

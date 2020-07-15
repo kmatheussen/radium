@@ -210,6 +210,10 @@
             (car instruments)
             (loop (cdr instruments))))))
 
+(define (is-legal-audio-instrument? instrument-id)
+  (and (<ra> :is-legal-instrument instrument-id)
+       (<ra> :instrument-is-audio instrument-id)))
+
 #||
 (for-each (lambda (i) (<ra> :set-instrument-effect i "System Solo On/Off" 0)) (get-all-audio-instruments))
 ||#
@@ -1331,6 +1335,18 @@
         (<ra> :set-current-instrument-locked #t)
         (<ra> :set-current-instrument instrument-id))))
 
+(define (get-forced-as-current-instrument-menu-entry instrument-id)
+  (list "Forced as current instrument"
+        :check (and (<ra> :is-current-instrument-locked)
+                    (equal? instrument-id (<ra> :get-current-instrument)))
+        :shortcut switch-force-as-current-instrument
+        (lambda (setit)
+          (if setit
+              (begin
+                (<ra> :set-current-instrument-locked #t)
+                (<ra> :set-current-instrument instrument-id))
+              (<ra> :set-current-instrument-locked #f)))))
+
 (delafina (get-instrument-popup-entries :instrument-id
                                         :parentgui
                                         :include-replace #t
@@ -1363,17 +1379,7 @@
            (lambda (doit)
              (switch-connect-instrument-to-main-pipe instrument-id)))
 
-     (list "Forced as current instrument"
-           :check (and (<ra> :is-current-instrument-locked)
-                       (equal? instrument-id (<ra> :get-current-instrument)))
-           :shortcut switch-force-as-current-instrument
-           (lambda (setit)
-             (if setit
-                 (begin
-                   (<ra> :set-current-instrument-locked #t)
-                   (<ra> :set-current-instrument instrument-id))
-                 (<ra> :set-current-instrument-locked #f))))
-     
+     (get-forced-as-current-instrument-menu-entry instrument-id)     
                          
      (and include-insert-plugin
           "------------------")
