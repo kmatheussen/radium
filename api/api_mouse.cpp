@@ -269,7 +269,51 @@ Place getNextPlaceInGridFromY(float y, int blocknum, int windownum) {
                        );
 }
 
+Place getPlaceFromRealline(int realline, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return p_Create(0,0,1);
 
+  if (realline < 0 || realline > wblock->num_reallines){
+    handleError("getPlaceFromRealline: Illegal realline %d\n", realline);
+    return p_Create(0,0,1);
+  }
+
+  if (realline==wblock->num_reallines)
+    return p_Absolute_Last_Pos(wblock->block);
+
+  return wblock->reallines[realline]->l.p;
+}
+
+float getReallineY1(int realline, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return 0;
+
+  if (realline < 0 || realline > wblock->num_reallines){
+    handleError("getY1FromRealline: Illegal realline %d\n", realline);
+    return 0.0;
+  }
+
+  return get_realline_y1(window, realline);
+}
+  
+float getReallineY2(int realline, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return 0;
+
+  if (realline < 0 || realline > wblock->num_reallines){
+    handleError("getY1FromRealline: Illegal realline %d\n", realline);
+    return 0.0;
+  }
+
+  return get_realline_y2(window, realline);
+}
+  
 
 // reltempo
 ///////////////////////////////////////////////////
