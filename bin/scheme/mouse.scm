@@ -1503,8 +1503,8 @@
 
                    (set! blocknum (<ra> :current-block))
                    (set! start-realline (<ra> :get-curr-realline))
-                   (set! realline-height (- (<ra> :get-y-from-place (+ start-realline 1))
-                                            (<ra> :get-y-from-place start-realline)))
+                   (set! realline-height (- (<ra> :get-realline-y1 (+ start-realline 1))
+                                            (<ra> :get-realline-y1 start-realline)))
 
                    (set! start-slider-pos (<ra> :get-track-slider-pos))
                    (set! do-move-slider (>= $x (<ra> :get-track-slider-x1)))
