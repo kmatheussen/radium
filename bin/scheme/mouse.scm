@@ -4342,15 +4342,46 @@
                          #f)))))
          (if (or (not result)
                  (not resize-mouse-pointer-is-set))
-             (if (and (> Y (<ra> :get-block-header-y2))
-                      (< Y (<ra> :get-reltempo-slider-y1))
-                      *current-track-num*
-                      (or (not (<ra> :pianoroll-visible *current-track-num*))
-                          (not (inside-box? (<ra> :get-box track-pianoroll *current-track-num*) X Y))))
-                 (begin
-                   ;;(c-display "normal3")
-                   (<ra> :set-normal-mouse-pointer (<gui> :get-editor-gui)))))
-         result))
+             (cond ((and (> Y (<ra> :get-block-header-y2))
+                         (< Y (<ra> :get-reltempo-slider-y1))
+                         *current-track-num*
+                         (or (not (<ra> :pianoroll-visible *current-track-num*))
+                             (not (inside-box? (<ra> :get-box track-pianoroll *current-track-num*) X Y))))
+                    ;;(c-display "normal3")
+                    (<ra> :set-normal-mouse-pointer (<gui> :get-editor-gui)))
+                   
+                   ((inside-box? (<ra> :get-box track (<ra> :get-tempo-visualizer-tracknum)) X Y)
+                    (set-editor-statusbar "Tempo visualizer track"))
+                   
+                   ((and (<ra> :bpm-track-visible)
+                         (inside-box? (<ra> :get-box track (<ra> :get-bpm-tracknum)) X Y))
+                    (set-editor-statusbar "BPM track"))
+                   
+                   ((and (<ra> :lpb-track-visible)
+                         (inside-box? (<ra> :get-box track (<ra> :get-lpb-tracknum)) X Y))
+                    (set-editor-statusbar "LPB track"))
+                   
+                   ((and (<ra> :signature-track-visible)
+                         (inside-box? (<ra> :get-box track (<ra> :get-signature-tracknum)) X Y))
+                    (set-editor-statusbar "Signature track"))
+                   
+                   ((inside-box? (<ra> :get-box track (<ra> :get-beat-tracknum)) X Y)
+                    (if (<ra> :linenumbers-visible)
+                        (set-editor-statusbar "Linenumbers track")
+                        (set-editor-statusbar "Bars and beats track")))
+                   
+                   ((and (<ra> :swing-track-visible)
+                         (inside-box? (<ra> :get-box track (<ra> :get-swing-tracknum)) X Y))
+                    (set-editor-statusbar "Global swing track"))
+                   
+                   ((and (<ra> :reltempo-track-visible)
+                         (inside-box? (<ra> :get-box track (<ra> :get-tempo-automation-tracknum)) X Y))
+                    (set-editor-statusbar "Tempo automation track"))
+                   
+                   (else
+                    #f))
+             result)))
+
 
 
 ;; Show main popup menu for editor track, or delete track if shift is pressed.

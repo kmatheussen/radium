@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/fxtext_proc.h"
 #include "../common/windows_proc.h"
 #include "../common/cursor_proc.h"
+#include "../common/Signature_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -776,8 +777,17 @@ float getTrackX1(int tracknum, int blocknum, int windownum){
 }
 
 float getTrackY1(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+  
+  return wblock->a.y1;
+  
+  /*
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   return wtrack==NULL ? 0 : wtrack->y;
+  */
 }
 
 float getTrackX2(int tracknum, int blocknum, int windownum){
@@ -795,9 +805,54 @@ float getTrackX2(int tracknum, int blocknum, int windownum){
 }
 
 float getTrackY2(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+  
+  return wblock->a.y2;
+  /*
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   return wtrack==NULL ? 0 : wtrack->y2;
+  */
 }
+
+int getTempoVisualizerTracknum(void){
+  return TEMPOCOLORTRACK;
+}
+
+int getBpmTracknum(void){
+  return TEMPOTRACK;
+}
+
+int getLpbTracknum(void){
+  return LPBTRACK;
+}
+
+
+int getSignatureTracknum(void){
+  return SIGNATURETRACK;
+}
+
+
+int getLinenumTracknum(void){
+  return LINENUMBTRACK;
+}
+
+int getBeatTracknum(void){
+  return LINENUMBTRACK;
+}
+
+int getSwingTracknum(void){
+  return SWINGTRACK;
+}
+
+
+int getTempoAutomationTracknum(void){
+  return TEMPONODETRACK;
+}
+
+
 
 float getTrackPianorollX1(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
