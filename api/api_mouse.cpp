@@ -58,6 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/windows_proc.h"
 #include "../common/cursor_proc.h"
 #include "../common/Signature_proc.h"
+#include "../common/Beats_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -2091,6 +2092,110 @@ dynvec_t getBeats(int startline, int endline, int blocknum, int windownum){
 
   for(int i=0;i<size;i++)
     DYNVEC_set(ret, i, get_beat(wsignatures_trss, i + startline));
+
+  return ret;
+}
+
+Place getBeatStart(int barnum, int beatnum, int blocknum){
+  Place ret = p_Create(0,0,1);
+
+  struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
+
+  if (block==NULL)
+    return ret;
+
+  if (beatnum==-1)
+    beatnum = g_current_beat_num;
+
+  if (barnum==-1)
+    barnum = g_current_bar_num;
+
+  if (barnum < 1){
+    handleError("getBeatStart: Illegal barnum: %d\n", barnum);
+    return ret;
+  }
+
+  if (beatnum < 1){
+    handleError("getBeatStart: Illegal beatnum: %d\n", beatnum);
+    return ret;
+  }
+  
+  if (get_barbeat_start_and_end(block, barnum, beatnum, &ret, NULL)==false)
+    handleError("getBeatStart: There is no barnum %d / beatnum %d.", barnum, beatnum);
+
+  return ret;
+}
+
+Place getBeatEnd(int barnum, int beatnum, int blocknum){
+  Place ret = p_Create(0,0,1);
+
+  struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
+
+  if (block==NULL)
+    return ret;
+
+  if (beatnum==-1)
+    beatnum = g_current_beat_num;
+
+  if (barnum==-1)
+    barnum = g_current_bar_num;
+
+  if (barnum < 1){
+    handleError("getBeatEnd: Illegal barnum: %d\n", barnum);
+    return ret;
+  }
+
+  if (beatnum < 1){
+    handleError("getBeatEnd: Illegal beatnum: %d\n", beatnum);
+    return ret;
+  }
+  
+  if (get_barbeat_start_and_end(block, barnum, beatnum, NULL, &ret)==false)
+    handleError("getBeatStart: There is no barnum %d / beatnum %d.", barnum, beatnum);
+
+  return ret;
+}
+
+Place getBarStart(int barnum, int blocknum){
+  Place ret = p_Create(0,0,1);
+
+  struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
+
+  if (block==NULL)
+    return ret;
+
+  if (barnum==-1)
+    barnum = g_current_bar_num;
+
+  if (barnum < 1){
+    handleError("getBarStart: Illegal barnum: %d\n", barnum);
+    return ret;
+  }
+
+  if (get_barbeat_start_and_end(block, barnum, -1, &ret, NULL)==false)
+    handleError("getBarStart: There is no barnum %d", barnum);
+
+  return ret;
+}
+
+Place getBarEnd(int barnum, int blocknum){
+  Place ret = p_Create(0,0,1);
+
+  struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
+
+  if (block==NULL)
+    return ret;
+
+  if (barnum==-1)
+    barnum = g_current_bar_num;
+
+  if (barnum < 1){
+    handleError("getBarEnd: Illegal barnum: %d\n", barnum);
+    return ret;
+  }
+
+  if (get_barbeat_start_and_end(block, barnum, -1, NULL, &ret)==false)
+    handleError("getBarEnd: There is no barnum %d", barnum);
 
   return ret;
 }

@@ -475,6 +475,18 @@
 ;;  (set-editor-statusbar (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pianonotenum tracknum)))))
 
 (define2 current-barbeat-has-been-set boolean? #f)
+(delafina (set-current-barbeat :barnum
+                               :beatnum #f)
+  (set! current-barbeat-has-been-set #t)
+  (if beatnum
+      (<ra> :set-current-beat barnum beatnum)
+      (<ra> :set-current-bar barnum)))
+
+(define2 current-barbeat-has-been-set-force boolean? #f)
+(delafina (set-current-barbeat-force :barnum
+                                     :beatnum #f)
+  (set! current-barbeat-has-been-set-force #t)
+  (set-current-barbeat barnum beatnum))
 
 
 ;; TODO: block->is_dirty is set unnecessarily often to true this way.
@@ -495,11 +507,11 @@
   (set! mouse-track-has-been-set #f)
   (set! mouse-note-has-been-set #f)
   (set! indicator-node-has-been-set #f)
-  (set! current-barbeat-has-been-set #f)
   (set! custom-seq-indicator-has-been-set #f)
   (set! current-node-has-been-set #f)
   (set! current-pianonote-has-been-set #f)
   (set! current-piano-ghost-note-has-been-set #f)
+  (set! current-barbeat-has-been-set #f)
   (set! mouse-pointer-has-been-set #f)
 
   ;;(set-editor-statusbar "")
@@ -540,9 +552,6 @@
                           (if (not indicator-node-has-been-set)
                               (<ra> :cancel-indicator-node))
                           
-                          (if (not current-barbeat-has-been-set)
-                              (<ra> :cancel-current-beat))
-                          
                           ;;(if (not custom-seq-indicator-has-been-set)
                           ;;    (<ra> :cancel-seq-indicator))
                           
@@ -561,6 +570,12 @@
 
                           (if (= state *is-releasing*)
                               (<ra> :hide-pianoroll-eraser))
+                          
+                          (if (and (not (= state *is-releasing*))
+                                   (not current-barbeat-has-been-set)
+                                   (not current-barbeat-has-been-set-force))
+                              (<ra> :cancel-current-beat))
+                          
                           )))
 
 
@@ -4292,7 +4307,22 @@
                 beat
                 (loop (- realline 1))))))))
 
-        
+
+(define (set-current-barbeat-from-X-Y X Y)
+  (define is-bar (< X (<ra> :get-beat-bar-border-x)))
+  (define realline (<ra> :get-realline-from-y Y))
+  (define has-set-statusbar #f)
+  (if (and (>= realline 0)
+           (< realline (<ra> :get-num-reallines))
+           (not (<ra> :linenumbers-visible)))
+      (let ((beat (find-beat-or-bar-for-Y Y is-bar)))
+        (if beat
+            (set-current-barbeat (beat :bar) (and (not is-bar)
+                                                  (beat :beat)))))
+      (if is-bar
+          (set-editor-statusbar "Bar track")
+          (set-editor-statusbar "Beats track"))))
+  
 ;; Show and set:
 ;;  1. current fx or current note, depending on which nodeline is closest to the mouse pointer
 ;;  2. current velocity node, or current fxnode
@@ -4422,23 +4452,7 @@
                    ((inside-box? (<ra> :get-box track (<ra> :get-beat-tracknum)) X Y)
                     (if (<ra> :linenumbers-visible)
                         (set-editor-statusbar "Line numbers track")
-                        (let ()
-                          (define is-bar (< X (<ra> :get-beat-bar-border-x)))
-                          (define realline (<ra> :get-realline-from-y Y))
-                          (define has-set-statusbar #f)
-                          (if (and (>= realline 0)
-                                   (< realline (<ra> :get-num-reallines))
-                                   (not (<ra> :linenumbers-visible)))
-                              (let ((beat (find-beat-or-bar-for-Y Y is-bar)))
-                                (if beat
-                                    (begin
-                                      (set! current-barbeat-has-been-set #t)
-                                      (if is-bar
-                                          (<ra> :set-current-bar (beat :bar))
-                                          (<ra> :set-current-beat (beat :bar) (beat :beat))))))
-                              (if is-bar
-                                  (set-editor-statusbar "Bar track")
-                                  (set-editor-statusbar "Beats track"))))))
+                        (set-current-barbeat-from-X-Y X Y)))
                    
                    ((and (<ra> :swing-track-visible)
                          (inside-box? (<ra> :get-box track (<ra> :get-swing-tracknum)) X Y))
@@ -4468,6 +4482,102 @@
                      ;;(<ra> :change-track-note-area-width *current-track-num*)
                      (<ra> :select-track *current-track-num*)
                      #f))))
+
+
+
+
+;; Popup menu for bars and beats track in editor
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(let ()
+  
+  (define-struct range
+    :x1
+    :y1
+    :x2
+    :y2)
+
+  (define (get-range)
+    (and (<ra> :has-range)
+         (make-range :x1 (<ra> :get-range-start-track)
+                     :y1 (<ra> :get-range-start-place)
+                     :x2 (<ra> :get-range-end-track)
+                     :y2 (<ra> :get-range-end-place))))
+  
+  (define (set-range range)
+    (<ra> :set-range (range :y1) (range :y2) (range :x1) (range :x2)))
+
+  (define (range-equals? range1 range2)
+    (structs-equal? range1 range2))
+     
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (inside-box? (<ra> :get-box track (<ra> :get-beat-tracknum)) X Y)
+                     (not (<ra> :linenumbers-visible))
+                     (let ((is-bar (< X (<ra> :get-beat-bar-border-x))))
+                       
+                       (set-current-barbeat-from-X-Y X Y)
+
+                       (if (= Button *right-button*)
+                           (let ()
+                             (set! current-barbeat-has-been-set-force #t)
+                             
+                             (if is-bar
+                                 (popup-menu
+                                  (list "Delete bar"
+                                        (lambda ()
+                                          #t)))
+                                 (popup-menu
+                                  (list "Delete beat"
+                                        (lambda ()
+                                          #t)))))
+                           (let ((time (<ra> :get-ms)))
+                             (define beat (if is-bar
+                                              (<ra> :get-current-bar)
+                                              (<ra> :get-current-beat)))
+                             
+                             (when (and beat
+                                        (= (beat :blocknum) (<ra> :current-block)))
+                               
+                               (define y1 (if is-bar (<ra> :get-bar-start) (<ra> :get-beat-start)))
+                               (define y2 (if is-bar (<ra> :get-bar-end) (<ra> :get-beat-end)))
+                               
+                               (define curr-track-range (make-range :x1 (max 0 (<ra> :current-track))
+                                                                    :y1 y1
+                                                                    :x2 (+ 1 (max 0 (<ra> :current-track)))
+                                                                    :y2 y2))
+                               
+                               (define all-tracks-range (make-range :x1 0
+                                                                    :y1 y1
+                                                                    :x2 (<ra> :get-num-tracks)
+                                                                    :y2 y2))
+
+                               (define curr-range (get-range))
+                               
+                               (cond ((not curr-range)
+                                      (set-range curr-track-range))
+                                     ((range-equals? curr-range curr-track-range)
+                                      (set-range all-tracks-range))
+                                     ((range-equals? curr-range all-tracks-range)
+                                      (<ra> :cancel-range))
+                                     (else
+                                      (set-range curr-track-range)))
+                               )))
+                           
+                       #t)))))
+)
+
+
+(if (not (defined? '*mouse.scm-loaded*))
+    (<ra> :add-popup-menu-closed-callback
+          (lambda ()
+            (set! current-barbeat-has-been-set-force #f)
+            (if (not current-barbeat-has-been-set)
+                (<ra> :cancel-current-beat))
+            #t)))
+
 
 
 
