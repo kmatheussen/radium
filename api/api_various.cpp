@@ -82,6 +82,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_notes_proc.h"
 #include "../common/undo_notesandfxs_proc.h"
 #include "../common/undo_fxs_proc.h"
+#include "../common/undo_sequencer_proc.h"
 #include "../common/swingtext_proc.h"
 #include "../common/fxtext_proc.h"
 #include "../common/chancetext_proc.h"

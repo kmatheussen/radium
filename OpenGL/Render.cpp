@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/notes_proc.h"
 #include "../common/nodelines_proc.h"
 #include "../common/Signature_proc.h"
+#include "../common/Beats_proc.h"
 #include "../common/LPB_proc.h"
 #include "../common/tempos_proc.h"
 #include "../common/notestext_proc.h"
@@ -2909,69 +2910,12 @@ static void create_playcursor(const struct Tracker_Windows *window, const struct
   }
 }
 
-static bool get_barbeat_start_and_end(const struct Blocks *block, int barnum, int beatnum, Place &start, Place &end){
-
-  bool find_beat_only = true;
-    
-  if (beatnum < 1){
-    find_beat_only = false;
-    beatnum = 1;
-  }
-  
-  bool found_start = false;
-  
-  const struct Beats *beat = block->beats;
-
-  while(beat != NULL){
-    if (beat->bar_num==barnum && beat->beat_num==beatnum){
-
-      if (found_start==false) {
-        
-        start = beat->l.p;
-        found_start = true;
-        
-        if (find_beat_only) {
-
-          beat = NextBeat(beat);
-
-          if (beat==NULL)
-            end = p_Absolute_Last_Pos(block);
-          else
-            end = beat->l.p;
-
-          return true;
-          
-        } else {
-
-          barnum++;
-          
-        }
-        
-      } else {
-
-        end = beat->l.p;
-        return true;
-        
-      }
-    }
-
-    beat = NextBeat(beat);
-  }
-
-  if (found_start){
-    end = p_Absolute_Last_Pos(block);
-    return true;
-  }
-  
-  return false;
-}
-
 static void create_current_barbeat_mark(const WSignature_trss &wsignatures_trss, const struct Tracker_Windows *window, const struct WBlocks *wblock){
   if (g_current_barbeat_block_num != wblock->l.num) // Don't need to check for more. g_current_barbeat_block_num is always -1 if there is no current bar or beat.
     return;
 
   Place start,end;
-  if (get_barbeat_start_and_end(wblock->block, g_current_bar_num, g_current_beat_num, start, end)==false){
+  if (get_barbeat_start_and_end(wblock->block, g_current_bar_num, g_current_beat_num, &start, &end)==false){
     R_ASSERT_NON_RELEASE(false);
     return;
   }
