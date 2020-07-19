@@ -2975,6 +2975,8 @@ void setCurrentInstrument(instrument_t instrument_id, bool show_instrument_windo
   if (patch==old_currpatch)
     return;
 
+  //redrawMixerStrips(true);
+    
   //if(showInstrumentWidgetWhenDoubleClickingSoundObject())
   if(show_instrument_window_if_not_visible)
     GFX_InstrumentWindowToFront();

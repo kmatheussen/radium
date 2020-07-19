@@ -316,6 +316,7 @@ void RT_schedule_mixer_strips_remake(instrument_t id){
 
 DEFINE_ATOMIC(bool, g_mixer_strips_needs_redraw) = false;
 void RT_schedule_mixer_strips_redraw(void){
+  //redrawMixerStrips(true);
   ATOMIC_SET(g_mixer_strips_needs_redraw, true);
 }
 
@@ -1931,6 +1932,8 @@ protected:
         
         AUDIOMETERPEAKS_call_very_often(-1);
 
+        // I think all of the tings below depends om audiometerpeaks being updated first.
+        
         API_gui_call_regularly();
 
         MW_call_each_16ms(interval);

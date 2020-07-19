@@ -171,6 +171,9 @@ static const ColorConfig g_colorconfig[] = {
   {TRACK_SEPARATOR2B_COLOR_NUM,             "track_separator2",  "Track separator 2 right part", false},
 
   {BAR_TEXT_COLOR_NUM,                      "bar_text", "Bar text", false},
+  {CURRENT_BEAT_TEXT_COLOR_NUM,     "current_beat_text",  "Current Beat text", false},
+  {CURRENT_BEAT_RANGE_COLOR_NUM,    "current_beat_range",  "Current Beat range", false},
+
   {ZOOMLINE_TEXT_COLOR_NUM1, "zoomline_text1", "Zoom line 1", false},
   {ZOOMLINE_TEXT_COLOR_NUM2, "zoomline_text2", "Zoom line 2", false},
   {ZOOMLINE_TEXT_COLOR_NUM3, "zoomline_text3", "Zoom line 3", false},
@@ -340,6 +343,9 @@ static ReplacementColor g_replacement_color[] = {
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor("#ff010101")},
   {PLAY_CURSOR_COLOR_NUM, QColor("#ff000000")},
   {LINE_SLIDER_COLOR_NUM, QColor("#ff000000")},
+
+  {CURRENT_BEAT_TEXT_COLOR_NUM, QColor("#ff000000")},
+  {CURRENT_BEAT_RANGE_COLOR_NUM, QColor("#321dfa0d")},
 
   {RANGE_COLOR_NUM, QColor("#ff3e4e47")},
 

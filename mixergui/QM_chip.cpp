@@ -991,6 +991,9 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
   }
 
   
+  //remakeMixerStrips(make_instrument(-1));
+        
+  
   //printf("       Remake: CONNECTIONS_apply_changes\n");
   for(const auto *patch : mixerstrips_to_redraw){
     if (patch==NULL){

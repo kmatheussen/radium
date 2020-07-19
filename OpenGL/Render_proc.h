@@ -1,4 +1,13 @@
 
+extern const struct ListHeader3 *g_current_node;
+extern const struct ListHeader3 *g_indicator_node;
+extern int g_indicator_velocity_num;
+extern int g_indicator_pitch_num;
+
+extern int g_current_bar_num;
+extern int g_current_beat_num;
+extern int g_current_barbeat_block_num;
+
 extern void GL_set_colored_tracks(bool onoff);
 extern bool GL_get_colored_tracks(void);
 

@@ -9,6 +9,8 @@
 #include "../common/undo_notes_proc.h"
 #include "../common/notes_proc.h"
 
+#include "../OpenGL/Render_proc.h"
+
 #include "api_mouse_proc.h"
 
 #include "api_common_proc.h"

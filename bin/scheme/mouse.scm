@@ -474,6 +474,9 @@
   (<ra> :set-current-piano-ghost-note start end value tracknum))
 ;;  (set-editor-statusbar (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pianonotenum tracknum)))))
 
+(define2 current-barbeat-has-been-set boolean? #f)
+
+
 ;; TODO: block->is_dirty is set unnecessarily often to true this way.
 (define (cancel-current-stuff)
   (<ra> :set-no-mouse-fx)
@@ -483,6 +486,7 @@
   (<ra> :cancel-current-pianonote)
   (<ra> :cancel-current-piano-ghost-note)
   (<ra> :cancel-indicator-node)
+  (<ra> :cancel-current-beat)
   )
 
 
@@ -491,6 +495,7 @@
   (set! mouse-track-has-been-set #f)
   (set! mouse-note-has-been-set #f)
   (set! indicator-node-has-been-set #f)
+  (set! current-barbeat-has-been-set #f)
   (set! custom-seq-indicator-has-been-set #f)
   (set! current-node-has-been-set #f)
   (set! current-pianonote-has-been-set #f)
@@ -534,6 +539,9 @@
                           
                           (if (not indicator-node-has-been-set)
                               (<ra> :cancel-indicator-node))
+                          
+                          (if (not current-barbeat-has-been-set)
+                              (<ra> :cancel-current-beat))
                           
                           ;;(if (not custom-seq-indicator-has-been-set)
                           ;;    (<ra> :cancel-seq-indicator))
@@ -4238,7 +4246,53 @@
                             #t)
                            (else
                             #f))))))
-                                        
+
+
+(define (realline-above-is-closest? top-realline bot-realline realline Y)
+  (cond ((<= realline top-realline)
+         #f)
+        ((>= realline (- bot-realline 1))
+         #t)
+        (else
+         (let ((y1 (<ra> :get-realline-y1 realline))
+               (y2 (<ra> :get-realline-y2 realline)))
+           (< (- Y y1)
+              (- y2 Y))))))
+                
+(define (get-curr-editor-beat X Y)
+  (define realline (<ra> :get-realline-from-y Y))
+  (define top-realline (<ra> :get-top-realline))
+  (define bot-realline (<ra> :get-bot-realline))
+  (define beats (<ra> :get-beats top-realline bot-realline))
+  (let loop ((next-up (- realline 1))
+             (next-down (+ realline 1))
+             (next-is-up (realline-above-is-closest? top-realline bot-realline realline Y)))
+    (let ((beat (beats (- realline top-realline))))
+      (if beat
+          beat
+          #f))))
+
+;; Search upwards, starting at realline at Y.
+(define (find-beat-or-bar-for-Y Y is-bar)
+  (define realline (<ra> :get-realline-from-y Y))
+  (if (< realline 0)
+      #f
+      (begin
+        (define top-realline (max 0 (<ra> :get-top-realline)))
+        (define beats (<ra> :get-beats top-realline (between 0
+                                                             (+ realline 1)
+                                                             (<ra> :get-num-reallines))))
+        (let loop ((realline realline))
+          (let ((beat (if (< realline top-realline)
+                          (<ra> :get-beat-at-realline realline)
+                          (beats (- realline top-realline)))))
+            (if (and beat
+                     (or (not is-bar)
+                         (= 1 (beat :beat))))
+                beat
+                (loop (- realline 1))))))))
+
+        
 ;; Show and set:
 ;;  1. current fx or current note, depending on which nodeline is closest to the mouse pointer
 ;;  2. current velocity node, or current fxnode
@@ -4367,8 +4421,24 @@
                    
                    ((inside-box? (<ra> :get-box track (<ra> :get-beat-tracknum)) X Y)
                     (if (<ra> :linenumbers-visible)
-                        (set-editor-statusbar "Linenumbers track")
-                        (set-editor-statusbar "Bars and beats track")))
+                        (set-editor-statusbar "Line numbers track")
+                        (let ()
+                          (define is-bar (< X (<ra> :get-beat-bar-border-x)))
+                          (define realline (<ra> :get-realline-from-y Y))
+                          (define has-set-statusbar #f)
+                          (if (and (>= realline 0)
+                                   (< realline (<ra> :get-num-reallines))
+                                   (not (<ra> :linenumbers-visible)))
+                              (let ((beat (find-beat-or-bar-for-Y Y is-bar)))
+                                (if beat
+                                    (begin
+                                      (set! current-barbeat-has-been-set #t)
+                                      (if is-bar
+                                          (<ra> :set-current-bar (beat :bar))
+                                          (<ra> :set-current-beat (beat :bar) (beat :beat))))))
+                              (if is-bar
+                                  (set-editor-statusbar "Bar track")
+                                  (set-editor-statusbar "Beats track"))))))
                    
                    ((and (<ra> :swing-track-visible)
                          (inside-box? (<ra> :get-box track (<ra> :get-swing-tracknum)) X Y))

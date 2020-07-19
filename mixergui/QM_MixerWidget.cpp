@@ -2078,7 +2078,7 @@ namespace{
       RETURN_IF_DATA_IS_INACCESSIBLE();
 
       if (modular_mixer_visible()){
-
+        
         bool less_frequently_updated = (counter % 3) == 0;
         
         bool show_cpu_update = less_frequently_updated && ATOMIC_GET_RELAXED(g_show_cpu_usage_in_mixer);

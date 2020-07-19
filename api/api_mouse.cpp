@@ -294,11 +294,15 @@ float getReallineY1(int realline, int blocknum, int windownum){
     return 0;
 
   if (realline < 0 || realline > wblock->num_reallines){
-    handleError("getY1FromRealline: Illegal realline %d\n", realline);
+    handleError("getReallineY1: Illegal realline %d\n", realline);
     return 0.0;
   }
 
-  return get_realline_y1(window, realline);
+  float abs_y = get_realline_y1(window, realline);
+
+  int top_realline = wblock->top_realline;
+  float y = abs_y - ((float)top_realline*(float)window->fontheight) + wblock->t.y1;
+  return y;
 }
   
 float getReallineY2(int realline, int blocknum, int windownum){
@@ -308,13 +312,46 @@ float getReallineY2(int realline, int blocknum, int windownum){
     return 0;
 
   if (realline < 0 || realline > wblock->num_reallines){
-    handleError("getY1FromRealline: Illegal realline %d\n", realline);
+    handleError("getReallineY2: Illegal realline %d\n", realline);
     return 0.0;
   }
 
-  return get_realline_y2(window, realline);
-}
+  float abs_y = get_realline_y2(window, realline);
   
+  int top_realline = wblock->top_realline;
+  float y = abs_y - ((float)top_realline*(float)window->fontheight) + wblock->t.y1;
+  return y;
+}
+
+  
+int getReallineFromY(float y, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return 0;
+
+  return ( (y-wblock->t.y1) /(float)window->fontheight) + wblock->top_realline;
+}
+
+int getTopRealline(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return 0;
+
+  return wblock->top_realline;
+}
+
+int getBotRealline(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if (wblock==NULL)
+    return 0;
+
+  return wblock->bot_realline;
+}
+
+
 
 // reltempo
 ///////////////////////////////////////////////////
@@ -815,6 +852,15 @@ float getTrackY2(int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   return wtrack==NULL ? 0 : wtrack->y2;
   */
+}
+
+float getBeatBarBorderX(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return 0;
+
+  return wblock->beats_x;
 }
 
 int getTempoVisualizerTracknum(void){
@@ -1925,6 +1971,130 @@ void pastePianonotes(float pitch, Place start_place, int tracknum, int blocknum)
                                  g_uninitialized_dyn
                                  );
 }
+
+
+
+// Bars and beats in the editor
+//////////////////////////////////////////////////
+
+void setCurrentBar(int barnum, int blocknum){
+  setCurrentBeat(barnum, -1, blocknum);
+}
+
+void setCurrentBeat(int barnum, int beatnum, int blocknum){
+  if (blocknum==-1)
+    blocknum = root->song->tracker_windows->wblock->l.num;
+
+  if (barnum != g_current_bar_num || g_current_beat_num != beatnum || g_current_barbeat_block_num != blocknum){
+    g_current_bar_num = barnum;
+    g_current_beat_num = beatnum;
+    g_current_barbeat_block_num = blocknum;
+    root->song->tracker_windows->must_redraw_editor = true;
+  }
+}
+
+dyn_t getCurrentBar(void){
+  if (g_current_barbeat_block_num < 0 || g_current_beat_num >= 1)
+    return g_dyn_false;
+
+  hash_t *ret = HASH_create(2);
+  HASH_put_int(ret, ":bar", g_current_bar_num);
+  HASH_put_int(ret, ":blocknum", g_current_barbeat_block_num);
+
+  return DYN_create_hash(ret);
+}
+
+dyn_t getCurrentBeat(void){
+  if (g_current_barbeat_block_num < 0)
+    return g_dyn_false;
+
+  hash_t *ret = HASH_create(2);
+  HASH_put_int(ret, ":bar", g_current_bar_num);
+  HASH_put_int(ret, ":beat", g_current_beat_num);
+  HASH_put_int(ret, ":blocknum", g_current_barbeat_block_num);
+
+  return DYN_create_hash(ret);
+}
+
+void cancelCurrentBeat(void){
+  if (g_current_barbeat_block_num != -1) {
+    g_current_bar_num = -1;
+    g_current_beat_num = -1;
+    g_current_barbeat_block_num = -1;
+    root->song->tracker_windows->must_redraw_editor = true;
+  }
+}
+
+
+static dyn_t get_beat(const WSignature_trss &wsignatures_trss, int realline){
+  const WSignature &wsignature = wsignatures_trss.at(realline);
+
+  if (wsignature.beat_num > 0){
+
+    hash_t *hash = HASH_create(2);
+
+    HASH_put_int(hash, ":bar", wsignature.bar_num);      
+    HASH_put_int(hash, ":beat", wsignature.beat_num);
+
+    return DYN_create_hash(hash);
+  }
+
+  return g_dyn_false;
+}
+
+
+
+dyn_t getBeatAtRealline(int realline, int blocknum, int windownum){
+  
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return g_dyn_false;
+
+  if (realline < 0 || realline >= wblock->num_reallines){
+    handleError("getBeatAtRealline: Illegal realline %d", realline);
+    return g_dyn_false;
+  }
+  
+  const WSignature_trss wsignatures_trss = WSignatures_get(window, wblock);
+
+  R_ASSERT_RETURN_IF_FALSE2(wsignatures_trss.size()==wblock->num_reallines, g_dyn_false);
+  
+  return get_beat(wsignatures_trss, realline);
+}
+  
+
+dynvec_t getBeats(int startline, int endline, int blocknum, int windownum){
+  dynvec_t ret = {};
+  
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return ret;
+
+  if (endline == -1)
+    endline = wblock->num_reallines;
+
+  if (startline < 0 || endline > wblock->num_reallines || endline < startline){
+    handleError("getBeats: Illegal startline/endline: %d / %d", startline, endline);
+    return ret;
+  }
+
+
+  const WSignature_trss wsignatures_trss = WSignatures_get(window, wblock);
+
+  R_ASSERT_RETURN_IF_FALSE2(wsignatures_trss.size()==wblock->num_reallines, ret);
+
+  int size = endline-startline;
+  
+  ret = DYNVEC_create(size);
+
+  for(int i=0;i<size;i++)
+    DYNVEC_set(ret, i, get_beat(wsignatures_trss, i + startline));
+
+  return ret;
+}
+
 
 // pitchnums
 //////////////////////////////////////////////////

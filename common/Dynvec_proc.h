@@ -27,17 +27,22 @@ extern dyn_t DYN_load(disk_t *file, bool *success);
 
 static inline dyn_t DYN_copy(const dyn_t a);
 
-static inline dynvec_t DYNVEC_copy(const dynvec_t *v){
+static inline dynvec_t DYNVEC_create(int num_elements){
   dynvec_t ret;
   
-  ret.num_elements_allocated = v->num_elements_allocated;
-  ret.num_elements = v->num_elements;
+  ret.num_elements_allocated = num_elements;
+  ret.num_elements = num_elements;
   
-  ret.elements = (dyn_t*)talloc(ret.num_elements_allocated*(int)sizeof(dyn_t));
+  ret.elements = num_elements==0 ? NULL : (dyn_t*)talloc(ret.num_elements_allocated*(int)sizeof(dyn_t));
   
-  for(int i=0;i<ret.num_elements;i++){
+  return ret;
+}
+
+static inline dynvec_t DYNVEC_copy(const dynvec_t *v){
+  dynvec_t ret = DYNVEC_create(v->num_elements_allocated);
+  
+  for(int i=0;i<ret.num_elements;i++)
     ret.elements[i] = DYN_copy(v->elements[i]);
-  }
 
   return ret;
 }
@@ -46,13 +51,6 @@ extern LANGSPEC bool DYNVEC_equal(dynvec_t *v1, dynvec_t *v2);
 
 extern LANGSPEC void DYNVEC_save(disk_t *file, const dynvec_t dynvec);
 extern LANGSPEC dynvec_t DYNVEC_load(disk_t *file, bool *success);
-
-static inline dynvec_t *DYNVEC_create(int num_init){
-  dynvec_t *ret = (dynvec_t*)talloc(sizeof(dynvec_t));
-  ret->num_elements_allocated = num_init;
-  ret->elements = (dyn_t*)talloc(num_init*(int)sizeof(dyn_t));
-  return ret;
-}
 
 static inline void DYNVEC_ensure_space_for_one_more_element(dynvec_t *v){
   const int num_elements = v->num_elements;
@@ -158,6 +156,12 @@ static inline bool DYNVEC_remove_element(dynvec_t &v, const dyn_t &element){
 
 static inline int DYNVEC_push_back(dynvec_t &v, const dyn_t element){
   return DYNVEC_push_back(&v, element);
+}
+
+static inline void DYNVEC_set(dynvec_t &v, int pos, const dyn_t element){
+  R_ASSERT_RETURN_IF_FALSE(pos>=0 && pos < v.num_elements);
+
+  v.elements[pos] = element;
 }
 
 
