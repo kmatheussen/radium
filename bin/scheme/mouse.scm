@@ -549,7 +549,9 @@
                           (if (not mouse-note-has-been-set)
                               (<ra> :set-no-mouse-note))
                           
-                          (if (not indicator-node-has-been-set)
+                          (if (and (not (= state *is-pressing*))
+                                   (not (= state *is-releasing*))
+                                   (not indicator-node-has-been-set))
                               (<ra> :cancel-indicator-node))
                           
                           ;;(if (not custom-seq-indicator-has-been-set)
@@ -636,6 +638,14 @@
                       #f))))))
     (<ra> :ensure-clean-state-outside-mouse-cycle)
     ret))
+
+
+(if (not (defined? '*mouse.scm-loaded*))
+    (<ra> :add-popup-menu-closed-callback
+          (lambda ()
+            (<ra> :cancel-indicator-node)
+            #t)))
+
 
 
 #||
@@ -4521,6 +4531,7 @@
                        (set-current-barbeat-from-X-Y X Y)
 
                        (if (= Button *right-button*)
+                           
                            (let ()
                              (set! current-barbeat-has-been-set-force #t)
                              
@@ -4533,7 +4544,9 @@
                                   (list "Delete beat"
                                         (lambda ()
                                           #t)))))
-                           (let ((time (<ra> :get-ms)))
+                           
+                           (let ()
+                             
                              (define beat (if is-bar
                                               (<ra> :get-current-bar)
                                               (<ra> :get-current-beat)))
