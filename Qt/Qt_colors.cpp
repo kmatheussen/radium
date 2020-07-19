@@ -347,7 +347,7 @@ static ReplacementColor g_replacement_color[] = {
   {CURRENT_BEAT_TEXT_COLOR_NUM, QColor("#ff000000")},
   {CURRENT_BEAT_RANGE_COLOR_NUM, QColor("#321dfa0d")},
 
-  {RANGE_COLOR_NUM, QColor("#ff3e4e47")},
+  {RANGE_COLOR_NUM, QColor("#629d75")},
 
   {TRACK_SEPARATOR1_COLOR_NUM, QColor("#ff0b186c")},
   {TRACK_SEPARATOR2A_COLOR_NUM, QColor("#ff303030")},
