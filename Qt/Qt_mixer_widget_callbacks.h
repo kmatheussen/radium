@@ -620,8 +620,9 @@ public:
 
       if (dynratio.type != RATIO_TYPE && dynratio.type != INT_TYPE){
         
-        R_ASSERT_NON_RELEASE(false);
-        
+        //R_ASSERT_NON_RELEASE(false);
+        printf("Error: gui_getVertRatioInMixerStrips returned %s\n", DYN_type_name(dynratio.type));
+               
       } else {
 
         int curr_intratio = RATIO_get_intratio(_vert_ratio);
