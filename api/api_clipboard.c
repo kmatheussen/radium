@@ -254,6 +254,7 @@ int getRangeStartTrack(int blocknum, int windownum){
 
   if (wblock->rangex1 < 0)
     return 0;
+  
   if (wblock->rangex1 >= wblock->block->num_tracks)
     return wblock->block->num_tracks-1;
 
@@ -274,9 +275,10 @@ int getRangeEndTrack(int blocknum, int windownum){
     return 0;
 
   if (wblock->rangex1 < 0)
-    return 0;
+    return 1;
+  
   if (wblock->rangex1 >= wblock->block->num_tracks)
-    return wblock->block->num_tracks-1;
+    return wblock->block->num_tracks;
 
   return wblock->rangex2+1;
 }
@@ -350,11 +352,11 @@ void setRange(Place p1, Place p2, int start_track, int end_track, int blocknum, 
     
   } else {
     
-    SetRange(window, wblock, start_track, end_track, p1, p2);
+    SetRange(window, wblock, start_track, end_track-1, p1, p2);
     
     MakeRangeLegal(wblock);
 
-    if (!range_is_legal(wblock, wblock->rangey1, wblock->rangey2, wblock->rangex1, wblock->rangex2))
+    if (!range_is_legal(wblock, wblock->rangey1, wblock->rangey2, wblock->rangex1, wblock->rangex2+1))
       wblock->isranged=false;
     
   }
