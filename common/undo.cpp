@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_pause_proc.h"
 #include "player_proc.h"
 #include "sequencer_proc.h"
+#include "clipboard_range_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 
@@ -852,10 +853,22 @@ currently_undoing = true;
                       );
 
          if (update_range){
-           if (undo->isranged)
-             setRange(undo->rangey1, undo->rangey2, undo->rangex1, undo->rangex2+1, wblock->l.num, window->l.num);
-           else
-             cancelRange(window->l.num);
+           
+           if (undo->isranged) {
+
+             SetRange(window, wblock, undo->rangex1, undo->rangex2, undo->rangey1, undo->rangey2);
+             MakeRangeLegal(wblock);
+
+             if (!range_is_legal2(wblock)){
+               R_ASSERT_NON_RELEASE(false);
+               wblock->isranged=false;
+             }
+
+           } else {
+             
+             CancelRange(window, wblock);
+
+           }
          }
          
          if(current_patch!=NULL){
