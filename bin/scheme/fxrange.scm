@@ -83,9 +83,14 @@
                   (remove-fx (cdr fxs) name))))))
 
 ;; A list of fxs, one fxs for each track
-(define *clipboard-fxs* '())
+(define *clipboard-fxs* (make-hash-table 100 =))
 
-      
+(define (get-clipboard-fxs rangetype)
+  (or (*clipboard-fxs* rangetype)
+      '()))
+
+(define (set-clipboard-fxs! rangetype fxss)
+  (set! (*clipboard-fxs* rangetype) fxss))
 
 (define (scissor-fxnodes-keep-outside fxnodes startplace endplace)
   (assert (> endplace startplace))
@@ -919,15 +924,15 @@
                   fxs))))
 
 
-(define (copy-fx-range! blocknum starttrack endtrack startplace endplace)
+(define (copy-fx-range! blocknum starttrack endtrack startplace endplace rangetype)
   (c-display "COPY " startplace endplace)
-  (set! *clipboard-fxs*
-        (map (lambda (tracknum)
-               (skew-fxs (scissor-fxs-keep-inside (get-track-fxs blocknum tracknum)
-                                                  startplace
-                                                  endplace)
-                         (- startplace)))
-             (integer-range starttrack endtrack))))
+  (set-clipboard-fxs! rangetype
+                      (map (lambda (tracknum)
+                             (skew-fxs (scissor-fxs-keep-inside (get-track-fxs blocknum tracknum)
+                                                                startplace
+                                                                endplace)
+                                       (- startplace)))
+                           (integer-range starttrack endtrack))))
 
 
 (define (cut-fx-range! blocknum starttrack endtrack startplace endplace)
@@ -943,7 +948,7 @@
   
 
 
-(define (paste-fx-range! blocknum starttrack startplace)
+(define (paste-fx-range! blocknum starttrack startplace rangetype)
   (assert (>= starttrack 0))
   
   (define endplace (-line (<ra> :get-num-lines blocknum)))
@@ -961,10 +966,10 @@
                   (paste-track-fxs! blocknum
                                     tracknum
                                     (merge-fxs track-fxs scissored-range-fxs)))))
-            *clipboard-fxs*
+            (get-clipboard-fxs rangetype)
             (map (lambda (tracknum)
                    (+ starttrack tracknum))
-                 (iota (length *clipboard-fxs*)))))
+                 (iota (length (get-clipboard-fxs rangetype))))))
               
 
 #||

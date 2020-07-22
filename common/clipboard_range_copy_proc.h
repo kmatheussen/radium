@@ -14,6 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#pragma once
+
+
+#include "clipboard_range.h"
+
 extern LANGSPEC void CopyRange_notes(
                             struct Notes **tonote,
                             const struct Notes *fromnote,
@@ -36,10 +41,12 @@ extern LANGSPEC void CopyRange_fxs(
 );
 
 extern LANGSPEC void CopyRange(
-                      struct WBlocks *wblock
+                               struct WBlocks *wblock,
+                               int rangenum
 );
 
 extern LANGSPEC void CopyRange_CurrPos(
-                              struct Tracker_Windows *window
-);
+                                       struct Tracker_Windows *window,
+                                       int rangenum
+                                       );
 

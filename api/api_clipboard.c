@@ -38,19 +38,34 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "api_common_proc.h"
 
+static bool legal_range(int rangetype){
+  if (rangetype < 0 || rangetype > 4){
+    handleError("Illegal rangetype: %d", rangetype);
+    return false;
+  }
 
-extern struct Range *range;
+  return true;
+}
 
-
+static struct Range *get_range(int rangetype){
+  if (!legal_range(rangetype))
+    return NULL;
+  
+  return g_ranges[rangetype];
+}
 
 void cancelRange(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   CancelRange_CurrPos(window);
 }
 
-void cutRange(int windownum){
+void cutRange(int rangetype, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  CutRange_CurrPos(window);
+
+  if (!legal_range(rangetype))
+    return;
+  
+  CutRange_CurrPos(window, rangetype);
 }
 
 void cutTrack(int tracknum, int blocknum, int windownum){
@@ -117,9 +132,13 @@ void clearTrack(int tracknum, int blocknum, int windownum){
   }
 }
 
-void copyRange(int windownum){
+void copyRange(int rangetype, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  CopyRange_CurrPos(window);
+
+  if (!legal_range(rangetype))
+    return;
+
+  CopyRange_CurrPos(window, rangetype);
 }
 
 void copyTrack(int tracknum, int blocknum, int windownum){
@@ -157,10 +176,44 @@ void copyBlock(int windownum){
   CB_CopyBlock_CurrPos(window);
 }
 
-void pasteRange(int windownum){
+void pasteRange(int rangetype, int windownum){  
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  PasteRange_CurrPos(window);
+  struct Range *range = get_range(rangetype);
+  if (range != NULL)
+    PasteRange_CurrPos(window, range);
 }
+
+
+void pasteRange2(Place startplace, int starttracknum, int rangetype, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL)
+    return;
+
+  struct Blocks *block = wblock->block;
+  
+  if (starttracknum < 0 || starttracknum >= block->num_tracks){
+    handleError("pasteRange2: Illegal starttracknum: %d", starttracknum);
+    return;
+  }
+
+  if (!PlaceLegal(block, &startplace)){
+    handleError("pasteRange2: Illegal startplace: %s", PlaceToString(&startplace));
+    return;
+  }
+
+  struct Range *range = get_range(rangetype);
+  if (range != NULL)
+    PasteRange(block, starttracknum, &startplace, range);
+}
+
 
 void pasteTrack(int tracknum, int blocknum, int windownum){
   if (tracknum==-1 && blocknum==-1){
@@ -206,15 +259,17 @@ void markRange(int windownum){
 }
 
 
-int getNumTracksInRange(void){
-  if (range==NULL)
+int getNumTracksInRange(int rangetype){
+  struct Range *range = get_range(rangetype);
+  if (!range)
     return 0;
 
   return range->num_tracks;
 }
 
-Place getRangeLength(void){
-  if (range==NULL)
+Place getRangeLength(int rangetype){
+  struct Range *range = get_range(rangetype);
+  if (!range)
     return p_Create(0,0,1);
 
   return range->length;

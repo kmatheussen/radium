@@ -15,8 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef TRACKER_INCLUDE
+#pragma once
 
+
+// Note: only deleting, not copying
 void CutRange_notes(
                     struct Notes **tonote,
                     const struct Notes *fromnote,
@@ -24,6 +26,7 @@ void CutRange_notes(
                     const Place *p2
 );
 
+// Note: only deleting, not copying
 extern void CutRange(
                      struct Blocks *block,
                      NInt starttrack,
@@ -32,11 +35,11 @@ extern void CutRange(
                      const Place *p2
 );
 
+// Both copying and deleting.
 extern void CutRange_CurrPos(
-	struct Tracker_Windows *window
+                             struct Tracker_Windows *window,
+                             int rangenum
 );
 
-
-#endif
 
 
