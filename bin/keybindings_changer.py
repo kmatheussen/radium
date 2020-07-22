@@ -245,7 +245,7 @@ def remove_keybinding_from_conf_file(keybinding, command):
             new_lines += [line]
 
     if num_removed==0:
-        message2 = "Could not remove keybinding \"%s\".<br>It might be a default keybinding, and those can't be removed. They can be overridden to be used for something else though." % line_to_remove
+        message2 = "Could not remove keybinding \"%s\".<br>It might be a default keybinding, and those can't be removed. Default keybindings can be overridden though." % line_to_remove
         print message2
         ra.addMessage(message2)
     else:
