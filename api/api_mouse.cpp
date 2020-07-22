@@ -2083,6 +2083,8 @@ dyn_t getBeatAtPlace(Place place, int blocknum, int windownum){
       break;
     }
 
+    prev_beat = beat;
+
     beat = NextBeat(beat);
   }
 
