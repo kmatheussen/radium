@@ -835,11 +835,15 @@ currently_undoing = true;
          window->curr_track_sub = undo->curr_track_sub;
          window->curr_othertrack_sub = undo->curr_othertrack_sub;
 
-         bool set_range = wblock->isranged != undo->isranged;
-         set_range = set_range || wblock->rangex1 != undo->rangex1;
-         set_range = set_range || wblock->rangex1 != undo->rangex2;
-         set_range = set_range || p_NOT_Equal(wblock->rangey1, undo->rangey1);
-         set_range = set_range || p_NOT_Equal(wblock->rangey2, undo->rangey2);
+         bool update_range = wblock->isranged != undo->isranged;
+
+         if (!update_range && undo->isranged) {
+           update_range = false
+             || wblock->rangex1 != undo->rangex1
+             || wblock->rangex1 != undo->rangex2
+             || p_NOT_Equal(wblock->rangey1, undo->rangey1)
+             || p_NOT_Equal(wblock->rangey2, undo->rangey2);
+         }
          
          SelectWBlock(
                       window,
@@ -847,9 +851,13 @@ currently_undoing = true;
                       false // Set to false to prevent curr track / sub track to be overridden, for instance if current track is a timing track. Don't know why it was set to true originally.
                       );
 
-         if (set_range)
-           setRange(undo->rangey1, undo->rangey2, undo->rangex1, undo->rangex2+1, wblock->l.num, window->l.num);
-             
+         if (update_range){
+           if (undo->isranged)
+             setRange(undo->rangey1, undo->rangey2, undo->rangex1, undo->rangex2+1, wblock->l.num, window->l.num);
+           else
+             cancelRange(window->l.num);
+         }
+         
          if(current_patch!=NULL){
            GFX_update_instrument_patch_gui(current_patch);
            GFX_update_instrument_widget(current_patch);
