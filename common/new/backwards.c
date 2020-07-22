@@ -131,10 +131,10 @@ void BackWardsRange_CurrPos(
 	if(!window->wblock->isranged) return;
 
 	ADD_UNDO(Range(
-		window,
-		window->wblock,
-		0,window->wblock->block->num_tracks-1,
-		window->wblock->curr_realline
+                       window,
+                       window->wblock,
+                       0,window->wblock->block->num_tracks,
+                       window->wblock->curr_realline
                        ));
 
         PC_Pause();{
@@ -179,7 +179,7 @@ void BackWardsBlock_CurrPos(
           ADD_UNDO(Range(
                          window,
                          window->wblock,
-                         0,window->wblock->block->num_tracks-1,
+                         0,window->wblock->block->num_tracks,
                          window->wblock->curr_realline
                          ));
           

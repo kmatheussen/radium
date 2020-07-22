@@ -547,6 +547,7 @@
 ;; Returns the range fx for a track, skewed into 'startplace'. All fx after 'endplace' is not included.
 
 ;; Used when track fx was stored in C
+#||
 (define (get-range-fxs rangetracknum startplace endplace)
   (map (lambda (fxnum)
          (define fxname (<_> (<ra> :get-fxrange-name fxnum rangetracknum)))
@@ -580,7 +581,7 @@
                          (eqv? #f fxnode))
                        fxnodes)))
        (iota (<ra> :get-num-fxs-in-range rangetracknum))))
-
+||#
 
 
 #||

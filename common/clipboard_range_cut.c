@@ -153,11 +153,11 @@ void CutRange_CurrPos(
 	wblock->isranged=true;
 
         ADD_UNDO(Range(
-                   window,
-                   window->wblock,
-                   window->wblock->rangex1,
-                   window->wblock->rangex2,
-                   window->wblock->curr_realline
+                       window,
+                       window->wblock,
+                       window->wblock->rangex1,
+                       window->wblock->rangex2+1,
+                       window->wblock->curr_realline
                        ));
 
         Undo_start_ignoring_undo_operations();{

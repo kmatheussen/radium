@@ -83,6 +83,12 @@ struct Undo{
   NInt tracknum;
   int realline;
 
+  bool isranged;
+  NInt rangex1;
+  NInt rangex2;
+  Place rangey1;
+  Place rangey2;
+
   int curr_track;
   int curr_track_sub;
   int curr_othertrack_sub;
@@ -462,6 +468,13 @@ void Das_Undo_Open_rec(void){
     curr_open_undo->blocknum   = wblock->l.num;
     curr_open_undo->tracknum   = wtrack->l.num;
     curr_open_undo->realline   = realline;
+    
+    curr_open_undo->isranged = wblock->isranged;
+    curr_open_undo->rangex1 = wblock->rangex1;
+    curr_open_undo->rangex2 = wblock->rangex2;
+    curr_open_undo->rangey1 = wblock->rangey1;
+    curr_open_undo->rangey2 = wblock->rangey2;
+      
     curr_open_undo->curr_track = window->curr_track;
     curr_open_undo->curr_track_sub = window->curr_track_sub;
     curr_open_undo->curr_othertrack_sub = window->curr_othertrack_sub;
@@ -822,12 +835,21 @@ currently_undoing = true;
          window->curr_track_sub = undo->curr_track_sub;
          window->curr_othertrack_sub = undo->curr_othertrack_sub;
 
+         bool set_range = wblock->isranged != undo->isranged;
+         set_range = set_range || wblock->rangex1 != undo->rangex1;
+         set_range = set_range || wblock->rangex1 != undo->rangex2;
+         set_range = set_range || p_NOT_Equal(wblock->rangey1, undo->rangey1);
+         set_range = set_range || p_NOT_Equal(wblock->rangey2, undo->rangey2);
+         
          SelectWBlock(
                       window,
                       wblock,
                       false // Set to false to prevent curr track / sub track to be overridden, for instance if current track is a timing track. Don't know why it was set to true originally.
                       );
 
+         if (set_range)
+           setRange(undo->rangey1, undo->rangey2, undo->rangex1, undo->rangex2+1, wblock->l.num, window->l.num);
+             
          if(current_patch!=NULL){
            GFX_update_instrument_patch_gui(current_patch);
            GFX_update_instrument_widget(current_patch);

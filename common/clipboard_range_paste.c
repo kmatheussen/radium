@@ -229,7 +229,7 @@ void PasteRange_CurrPos(
                        window,
                        wblock,
                        curr_track,
-                       curr_track+range->num_tracks-1,
+                       curr_track+range->num_tracks,
                        wblock->curr_realline
                        )
                  );
