@@ -33,9 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-extern struct Range *range;
-
-
 void CutRange_notes(
                     struct Notes **tonote,
                     const struct Notes *fromnote,
@@ -132,7 +129,7 @@ void CutRange(
     area. (decided to wait with FXes)
 **********************************************/
 static void CutRangedRange(
-                    struct WBlocks *wblock
+                           struct WBlocks *wblock
 ){
 
 	if(!wblock->isranged) return;
@@ -144,13 +141,14 @@ static void CutRangedRange(
 
 
 void CutRange_CurrPos(
-                      struct Tracker_Windows *window
+                      struct Tracker_Windows *window,
+                      int rangenum
 ){
         struct WBlocks *wblock = window->wblock;
   
 	if( ! window->wblock->isranged) return;
 
-	CopyRange(wblock);
+	CopyRange(wblock, rangenum);
 
 	wblock->isranged=true;
 

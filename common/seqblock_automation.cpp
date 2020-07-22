@@ -828,6 +828,7 @@ static void RT_set_seqblock_curr_gain(struct SeqTrack *seqtrack, struct SeqBlock
       seqblock->curr_gain_changed_this_block = true;
       
     }
+    
   }
   
       

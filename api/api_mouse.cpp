@@ -3690,20 +3690,24 @@ void undoFxs(int tracknum, int blocknum, int windownum){
 ////////////////////////
 // fxs, clipboard
 
+
+#if 0
+
 #include "../common/clipboard_range.h"
 
-extern struct Range *range;
+
+// Used when track fx was stored in C
 
 Place getFxrangenodePlace(int fxnodenum, int fxnum, int rangetracknum){
-  if (range==NULL)
+  if (g_ranges[0]==NULL)
     return p_Create(0,0,1);
 
-  if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
-    handleError("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+  if (rangetracknum >= g_ranges[0]->num_tracks || rangetracknum < 0 || fxnum < 0){
+    handleError("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, g_ranges[0]->num_tracks, fxnum);
     return p_Create(0,0,1);
   }
   
-  struct FXs *fxs = (struct FXs *)VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = (struct FXs *)VECTOR_get2(&g_ranges[0]->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     return p_Create(0,0,1);
   }
@@ -3720,15 +3724,15 @@ Place getFxrangenodePlace(int fxnodenum, int fxnum, int rangetracknum){
 
 
 float getFxrangenodeValue(int fxnodenum, int fxnum, int rangetracknum){
-  if (range==NULL)
+  if (g_ranges[0]==NULL)
     return 0;
 
-  if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
-    handleError("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+  if (rangetracknum >= g_ranges[0]->num_tracks || rangetracknum < 0 || fxnum < 0){
+    handleError("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, g_ranges[0]->num_tracks, fxnum);
     return 0;
   }
   
-  struct FXs *fxs = (struct FXs *)VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = (struct FXs *)VECTOR_get2(&g_ranges[0]->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     return 0;
   }
@@ -3747,15 +3751,15 @@ float getFxrangenodeValue(int fxnodenum, int fxnum, int rangetracknum){
 }
 
 int getFxrangenodeLogtype(int fxnodenum, int fxnum, int rangetracknum){
-  if (range==NULL)
+  if (g_ranges[0]==NULL)
     return 0;
 
-  if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
-    handleError("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+  if (rangetracknum >= g_ranges[0]->num_tracks || rangetracknum < 0 || fxnum < 0){
+    handleError("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, g_ranges[0]->num_tracks, fxnum);
     return 0;
   }
   
-  struct FXs *fxs = (struct FXs *)VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = (struct FXs *)VECTOR_get2(&g_ranges[0]->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     return 0;
   }
@@ -3771,15 +3775,15 @@ int getFxrangenodeLogtype(int fxnodenum, int fxnum, int rangetracknum){
 }
 
 const char* getFxrangeName(int fxnum, int rangetracknum){
-  if (range==NULL)
+  if (g_ranges[0]==NULL)
     return 0;
 
-  if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
-    handleError("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+  if (rangetracknum >= g_ranges[0]->num_tracks || rangetracknum < 0 || fxnum < 0){
+    handleError("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, g_ranges[0]->num_tracks, fxnum);
     return 0;
   }
 
-  struct FXs *fxs = (struct FXs *)VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = (struct FXs *)VECTOR_get2(&g_ranges[0]->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     return "";
   }
@@ -3788,15 +3792,15 @@ const char* getFxrangeName(int fxnum, int rangetracknum){
 }
 
 int getNumFxrangenodes(int fxnum, int rangetracknum){
-  if (range==NULL)
+  if (g_ranges[0]==NULL)
     return 0;
 
-  if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
-    handleError("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
+  if (rangetracknum >= g_ranges[0]->num_tracks || rangetracknum < 0 || fxnum < 0){
+    handleError("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, g_ranges[0]->num_tracks, fxnum);
     return 0;
   }
 
-  struct FXs *fxs = (struct FXs *)VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = (struct FXs *)VECTOR_get2(&g_ranges[0]->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
     return 0;
   }
@@ -3805,16 +3809,18 @@ int getNumFxrangenodes(int fxnum, int rangetracknum){
 }
 
 int getNumFxsInRange(int rangetracknum){
-  if (range==NULL)
+  if (g_ranges[0]==NULL)
     return 0;
 
-  if (rangetracknum >= range->num_tracks || rangetracknum < 0){
-    handleError("rangetracknum >= range->num_tracks: %d >= %d",rangetracknum, range->num_tracks);
+  if (rangetracknum >= g_ranges[0]->num_tracks || rangetracknum < 0){
+    handleError("rangetracknum >= range->num_tracks: %d >= %d",rangetracknum, g_ranges[0]->num_tracks);
     return 0;
   }
 
-  return range->fxs[rangetracknum].num_elements;
+  return g_ranges[0]->fxs[rangetracknum].num_elements;
 }
+
+#endif
 
 void clearTrackFX(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;

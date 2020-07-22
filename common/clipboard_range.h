@@ -18,7 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef RADIUM_COMMON_CLIPBOARD_RANGE_H
 #define RADIUM_COMMON_CLIPBOARD_RANGE_H
 
+#define NUM_RANGES 5 // see "rangetype" under api/protos.conf
+
 struct Range{
+        int rangenum;
 	NInt num_tracks;
 	struct Notes **notes;
 	struct Stops **stops;
@@ -26,5 +29,8 @@ struct Range{
         vector_t *fxs;
 	Place length;
 };
+
+extern struct Range *g_ranges[NUM_RANGES]; // see "rangetype" under api/protos.conf
+
 
 #endif

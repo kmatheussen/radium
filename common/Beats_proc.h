@@ -1,7 +1,7 @@
 
 extern LANGSPEC struct Beats *Beats_get(struct Blocks *block, StaticRatio default_signature, int default_lpb);
 
-static bool get_barbeat_start_and_end(const struct Blocks *block, int barnum, int beatnum, Place *start, Place *end){
+static inline bool get_barbeat_start_and_end(const struct Blocks *block, int barnum, int beatnum, Place *start, Place *end){
 
   bool find_beat_only = true;
     

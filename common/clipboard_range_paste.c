@@ -38,9 +38,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_range_paste_proc.h"
 
 
-
-extern struct Range *range;
-
 static void PasteRange_velocities(
                                   const struct Blocks *block,
                                   struct Velocities **tovelocity,
@@ -66,14 +63,16 @@ static void PasteRange_velocities(
 static bool PasteRange_FXs(
                            struct Blocks *block,
                            NInt starttrack,
-                           const Place *startplace
+                           const Place *startplace,
+                           struct Range *range
 ){
 
   SCHEME_eval(
-              talloc_format("(paste-fx-range! %d %d (+ %d (/ %d %d)))",
+              talloc_format("(paste-fx-range! %d %d (+ %d (/ %d %d)) %d)",
                             block->l.num,
                             starttrack,
-                            startplace->line, startplace->counter, startplace->dividor
+                            startplace->line, startplace->counter, startplace->dividor,
+                            range->rangenum
                             )
               );
 
@@ -169,10 +168,11 @@ static void PasteRange_stops(
 }
 
 
-static void PasteRange(
+void PasteRange(
 	struct Blocks *block,
 	NInt tracknum,
-	const Place *place
+	const Place *place,
+        struct Range *range
 ){
 	NInt lokke;
 	Place p2;
@@ -198,7 +198,7 @@ static void PasteRange(
 
             if (doRangePasteCut()) {
               struct Notes *note = FindNextNote(track, &p2);
-              printf("   p2: %d, NOTE: %d\n",p2.line, note == NULL ? -1 : note->l.p.line);
+              //printf("   p2: %d, NOTE: %d\n",p2.line, note == NULL ? -1 : note->l.p.line);
               if (note !=NULL )
                 StopAllNotesAtPlace(block,track,&note->l.p);
             }
@@ -209,13 +209,15 @@ static void PasteRange(
           }
         }
         
-        PasteRange_FXs(block, tracknum, place);
+        PasteRange_FXs(block, tracknum, place, range);
 }
 
 void PasteRange_CurrPos(
-	struct Tracker_Windows *window
-){
-
+                        struct Tracker_Windows *window,
+                        struct Range *range
+                        )
+{
+  
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
 	NInt curr_track=window->curr_track;
@@ -234,7 +236,7 @@ void PasteRange_CurrPos(
 
         Undo_start_ignoring_undo_operations();{
           PC_Pause();{
-            PasteRange(block,curr_track,&wblock->reallines[curr_realline]->l.p);
+            PasteRange(block,curr_track,&wblock->reallines[curr_realline]->l.p, range);
           }PC_StopPause(window);
         }Undo_stop_ignoring_undo_operations();
 

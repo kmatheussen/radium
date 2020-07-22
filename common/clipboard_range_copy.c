@@ -31,9 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-extern struct Range *range;
-
-
 static void CopyRange_velocities(
                           struct Velocities **tovelocity,
                           const struct Velocities *fromvelocity,
@@ -247,7 +244,8 @@ void CopyRange_fxs(
 
 
 void CopyRange(
-               struct WBlocks *wblock
+               struct WBlocks *wblock,
+               int rangenum
 ){
 	NInt num_tracks;
 	int lokke;
@@ -259,7 +257,13 @@ void CopyRange(
         if (endtrack < starttrack)
           return;
 
-	range=talloc(sizeof(struct Range));
+        R_ASSERT_RETURN_IF_FALSE(rangenum >= 0 && rangenum < NUM_RANGES);
+        
+	struct Range *range=talloc(sizeof(struct Range));
+        range->rangenum = rangenum;
+        
+        g_ranges[rangenum] = range;
+        
 	range->num_tracks = num_tracks = wblock->rangex2-wblock->rangex1+1;
 
 	range->notes=talloc((int)sizeof(struct Notes *)*num_tracks);
@@ -287,12 +291,13 @@ void CopyRange(
         const Place *endplace = &wblock->rangey2;
         
         SCHEME_eval(
-                    talloc_format("(copy-fx-range! %d %d %d (+ %d (/ %d %d)) (+ %d (/ %d %d)))",
+                    talloc_format("(copy-fx-range! %d %d %d (+ %d (/ %d %d)) (+ %d (/ %d %d)) %d)",
                                   wblock->block->l.num,
                                   starttrack,
                                   endtrack,
                                   startplace->line, startplace->counter, startplace->dividor,
-                                  endplace->line, endplace->counter, endplace->dividor
+                                  endplace->line, endplace->counter, endplace->dividor,
+                                  rangenum
                                   )
                     );
 
@@ -300,10 +305,11 @@ void CopyRange(
 }
 
 void CopyRange_CurrPos(
-                       struct Tracker_Windows *window
+                       struct Tracker_Windows *window,
+                       int rangenum
                        )
 {
-	CopyRange(window->wblock);
+        CopyRange(window->wblock, rangenum);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
