@@ -2026,21 +2026,22 @@ void cancelCurrentBeat(void){
   }
 }
 
+static dyn_t get_beat2(int barnum, int beatnum){
+  hash_t *hash = HASH_create(2);
+  
+  HASH_put_int(hash, ":bar", barnum);      
+  HASH_put_int(hash, ":beat", beatnum);
+  
+  return DYN_create_hash(hash);
+}
 
 static dyn_t get_beat(const WSignature_trss &wsignatures_trss, int realline){
   const WSignature &wsignature = wsignatures_trss.at(realline);
 
-  if (wsignature.beat_num > 0){
-
-    hash_t *hash = HASH_create(2);
-
-    HASH_put_int(hash, ":bar", wsignature.bar_num);      
-    HASH_put_int(hash, ":beat", wsignature.beat_num);
-
-    return DYN_create_hash(hash);
-  }
-
-  return g_dyn_false;
+  if (wsignature.beat_num > 0)
+    return get_beat2(wsignature.bar_num, wsignature.beat_num);
+  else
+    return g_dyn_false;
 }
 
 
@@ -2062,6 +2063,30 @@ dyn_t getBeatAtRealline(int realline, int blocknum, int windownum){
   R_ASSERT_RETURN_IF_FALSE2(wsignatures_trss.size()==wblock->num_reallines, g_dyn_false);
   
   return get_beat(wsignatures_trss, realline);
+}
+  
+
+dyn_t getBeatAtPlace(Place place, int blocknum, int windownum){
+  
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return g_dyn_false;
+
+  const struct Beats *prev_beat = NULL;
+  const struct Beats *beat = wblock->block->beats;
+
+  while(beat != NULL){
+    if (p_Greater_Than(beat->l.p, place)) {
+      if (prev_beat != NULL)
+        return get_beat2(prev_beat->bar_num, prev_beat->beat_num);
+      break;
+    }
+
+    beat = NextBeat(beat);
+  }
+
+  return g_dyn_false;
 }
   
 
@@ -2198,6 +2223,59 @@ Place getBarEnd(int barnum, int blocknum){
     handleError("getBarEnd: There is no barnum %d", barnum);
 
   return ret;
+}
+
+bool hasBeat(int barnum, int beatnum, int blocknum){
+  struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
+
+  if (block==NULL)
+    return false;
+
+  if (beatnum==-1){
+
+    if (g_current_barbeat_block_num==-1)
+      return false;
+
+    beatnum = g_current_beat_num;
+  }
+
+  if (barnum==-1){
+
+    if (g_current_barbeat_block_num==-1)
+      return false;
+
+    barnum = g_current_bar_num;
+  }
+
+  if (barnum < 1){
+    handleError("hasBeat: Illegal barnum: %d\n", barnum);
+    return false;
+  }
+
+  if (beatnum < 1){
+    handleError("hasBeat: Illegal beatnum: %d\n", beatnum);
+    return false;
+  }
+  
+  const struct Beats *beat = block->beats;
+
+  while(beat != NULL){
+    if (beat->bar_num==barnum){
+
+      if (beat->beat_num == beatnum)
+        return true;
+
+      if (beat->beat_num > beatnum)
+        return false;
+    }
+
+    if (beat->bar_num > barnum)
+      return false;
+
+    beat = NextBeat(beat);
+  }
+
+  return false;
 }
 
 

@@ -280,6 +280,8 @@ FROM_C-ensure-curr-block-is-visible-in-blocklist
 FROM_C-call-me-after-curr-seqblock-under-mouse-has-been-called
 FROM_C-show-lock-instrument-popup-menu
 FROM_C-show-mixer-popup-menu
+FROM_C-delete-editor-beat
+FROM_C-delete-editor-bar
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

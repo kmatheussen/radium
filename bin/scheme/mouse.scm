@@ -3096,7 +3096,7 @@
                                                            :args '()
                                                            :focus-keybinding "FOCUS_EDITOR")
           "-------------"
-          "Help keybindings" show-keybinding-help-window))))
+          "Help keybindings" show-keybinding-help-window))
 !!#
 
 
@@ -4498,6 +4498,55 @@
 
 ;; Popup menu for bars and beats track in editor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(delafina (FROM_C-delete-editor-beat :barnum #f
+                              :beatnum #f
+                              :blocknum (<ra> :current-block))
+  
+  (define-optional-hash-table beat)
+  
+  (if (or (not barnum)
+          (not beatnum))
+      (let ((maybe (<ra> :get-current-beat)))
+        (if (= blocknum (maybe :blocknum))
+            (set! beat maybe))))
+
+  (if (and (not beat)
+           (or (not barnum)
+               (not beatnum)))
+      (let* ((realline (<ra> :get-curr-realline blocknum))
+             (place (<ra> :get-place-from-realline realline blocknum)))
+        (set! beat (<ra> :get-beat-at-place place blocknum))))
+  
+  (when beat
+    (set! barnum (beat :bar))
+    (set! beatnum (beat :beat)))
+                                     
+  (if (and barnum
+           beatnum
+           (<ra> :has-beat barnum beatnum blocknum))
+      (<ra> :delete-lines2
+            (<ra> :get-beat-start barnum beatnum)
+            (<ra> :get-beat-end barnum beatnum)
+            blocknum)))
+
+
+(delafina (FROM_C-delete-editor-bar :barnum #f
+                                    :blocknum (<ra> :current-block))  
+  (if (not barnum)
+      (let ((bar (<ra> :get-current-bar)))
+        (if (and bar
+                 (= (bar :blocknum) blocknum))
+            (set! barnum (bar :bar))
+            (let* ((realline (<ra> :get-curr-realline blocknum))
+                   (place (<ra> :get-place-from-realline realline blocknum))
+                   (beat (<ra> :get-beat-at-place place blocknum)))
+              (if beat
+                  (set! barnum (beat :bar)))))))
+  
+  (if (and barnum
+           (<ra> :has-beat barnum 1 blocknum))
+      (<ra> :delete-lines2 (<ra> :get-bar-start barnum) (<ra> :get-bar-end barnum) blocknum)))
 
 
 (let ()
