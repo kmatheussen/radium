@@ -1265,6 +1265,16 @@ extern int g_downscroll;
 void generalDelete(bool scroll_down, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
 
+  // first check if there is a current bar or beat
+  if (g_current_barbeat_block_num==window->wblock->l.num){
+    if (g_current_beat_num >= 1)
+      S7CALL2(void_void, "FROM_C-delete-editor-beat");
+    else
+      S7CALL2(void_void, "FROM_C-delete-editor-bar");
+
+    return;
+  }
+  
   int downscroll = g_downscroll;
   if (!scroll_down)
     g_downscroll = 0;
@@ -1315,6 +1325,79 @@ void insertLines(int toinsert,int windownum){
 
   Ratio toinsert_ratio = make_ratio(toinsert,1) / lz_ratio;
   InsertLines_CurrPos(window,toinsert_ratio);
+}
+
+
+void insertLines2(Place start, Place how_much, int blocknum){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
+  struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
+  if (block==NULL)
+    return;
+
+  Ratio r_start = make_ratio_from_place(start);
+      
+  if (p_Greater_Or_Equal(start, p_Absolute_Last_Pos(block)) || r_start < make_ratio(0,1)){
+    handleError("insertLines2: Illegal start: %s", PlaceToString(&start));
+    return;
+  }
+
+  Ratio r_how_much = make_ratio_from_place(how_much);
+  if (r_how_much < make_ratio(0,1)){
+    handleError("insertLines2: Illegal how_much: %s", PlaceToString(&how_much));
+    return;
+  }
+    
+  UNDO_OPEN();
+  ADD_UNDO(Sequencer());
+  ADD_UNDO(Block_CurrPos(window));
+  UNDO_CLOSE();
+
+  InsertLines(block,start,r_how_much);
+  root->song->tracker_windows->must_redraw = true;  
+}
+
+
+void deleteLines2(Place start, Place end, int blocknum){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
+  struct Blocks *block = blocknum==-1 ? root->song->tracker_windows->wblock->block : getBlockFromNum(blocknum);
+  if (block==NULL)
+    return;
+
+  Ratio r_start = make_ratio_from_place(start);
+  Ratio r_end = make_ratio_from_place(end);
+
+  if (r_start < make_ratio(0,1))
+    goto failed;
+
+  if (r_end < r_start)
+    goto failed;
+    
+
+  if (r_end > make_ratio_from_place(p_Absolute_Last_Pos(block)))
+    goto failed;
+  
+  if (r_end==r_start)
+    return;
+
+  {
+    UNDO_OPEN();
+    ADD_UNDO(Sequencer());
+    ADD_UNDO(Block_CurrPos(window));
+    UNDO_CLOSE();
+
+    Ratio toinsert = r_start - r_end;
+    
+    InsertLines(block,start,toinsert);
+    
+    root->song->tracker_windows->must_redraw = true;
+  
+    return;
+  }
+  
+ failed:
+  handleError("deleteLines: Illegal start / end: %s / %s", PlaceToString(&start), PlaceToString(&end));
 }
 
 void generalReturn(int windownum){
