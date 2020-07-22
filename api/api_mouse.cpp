@@ -2069,26 +2069,32 @@ dyn_t getBeatAtRealline(int realline, int blocknum, int windownum){
 dyn_t getBeatAtPlace(Place place, int blocknum, int windownum){
   
   struct Tracker_Windows *window;
-  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  const struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if(wblock==NULL)
     return g_dyn_false;
+
+  const struct Blocks *block = wblock->block;
+
+  if (place.line < 0 || p_Greater_Or_Equal(place, p_Absolute_Last_Pos(block))){
+    handleError("getBeatAtPlace: Illegal place %s", PlaceToString(&place));
+    return g_dyn_false;
+  }
 
   const struct Beats *prev_beat = NULL;
   const struct Beats *beat = wblock->block->beats;
 
   while(beat != NULL){
-    if (p_Greater_Than(beat->l.p, place)) {
-      if (prev_beat != NULL)
-        return get_beat2(prev_beat->bar_num, prev_beat->beat_num);
+    if (p_Greater_Than(beat->l.p, place))
       break;
-    }
 
     prev_beat = beat;
-
     beat = NextBeat(beat);
   }
 
-  return g_dyn_false;
+  if (prev_beat != NULL)
+    return get_beat2(prev_beat->bar_num, prev_beat->beat_num);
+  else
+    return g_dyn_false;
 }
   
 
