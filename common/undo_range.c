@@ -20,11 +20,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "undo.h"
+#include "undo_tracks_proc.h"
 #include "undo_blocks_proc.h"
+/*
 #include "clipboard_range.h"
 #include "placement_proc.h"
 #include "list_proc.h"
 #include "clipboard_range_copy_proc.h"
+*/
 
 #include "undo_range_proc.h"
 
@@ -38,11 +41,25 @@ void ADD_UNDO_FUNC(Range(
                          )
                    )
 {
-  CALL_ADD_UNDO_FUNC(Block(window,
-                           wblock,
-                           wblock->wtrack,
-                           wblock->curr_realline
-                           ));
+  R_ASSERT_NON_RELEASE(endtrack > starttrack);
+
+  UNDO_OPEN();
+
+  for(int i=starttrack;i<endtrack;i++){
+    if (i < 0 || i >= wblock->block->num_tracks){
+      R_ASSERT_NON_RELEASE(false);
+    } else {
+      CALL_ADD_UNDO_FUNC(Track(window,
+                               wblock,
+                               wblock->wtrack,
+                               wblock->curr_realline,
+                               wblock->l.num,
+                               i
+                               ));
+    }
+  }
+
+  UNDO_CLOSE();
 }
 
 /*

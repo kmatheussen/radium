@@ -155,7 +155,7 @@ void TransposeRange_CurrPos(
   //if(!window->wblock->isranged) return;
 
   if (window->wblock->isranged)    
-    ADD_UNDO(Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2,window->wblock->curr_realline));
+    ADD_UNDO(Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2+1,window->wblock->curr_realline));
   else
     ADD_UNDO(Notes_CurrPos(window));
   
@@ -219,12 +219,12 @@ void TransposeBlock_CurrPos(
 ){
 
 	ADD_UNDO(Range(
-		window,
-		window->wblock,
-		0,window->wblock->block->num_tracks-1,
-		window->wblock->curr_realline
-                                   ));
-
+                       window,
+                       window->wblock,
+                       0,window->wblock->block->num_tracks,
+                       window->wblock->curr_realline
+                       ));
+        
 	TransposeBlock(window->wblock->block,trans);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(

@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define UNDOPREFIX U_N_D_O_
 
 #define CALL_ADD_UNDO_FUNC(call) \
-  UNDOPREFIX ## call;
+  UNDOPREFIX ## call
   
 #define ADD_UNDO(call)                                                  \
   do{                                                                   \

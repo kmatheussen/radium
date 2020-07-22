@@ -111,11 +111,11 @@ void InvertRange_CurrPos(
 
 
 	ADD_UNDO(Range(
-		window,
-		window->wblock,
-		window->wblock->rangex1,
-		window->wblock->rangex2,
-		window->wblock->curr_realline
+                       window,
+                       window->wblock,
+                       window->wblock->rangex1,
+                       window->wblock->rangex2+1,
+                       window->wblock->curr_realline
                        ));
 
 	InvertRange(window->wblock);
@@ -154,7 +154,7 @@ void InvertBlock_CurrPos(
 	ADD_UNDO(Range(
 		window,
 		window->wblock,
-		0,window->wblock->block->num_tracks-1,
+		0,window->wblock->block->num_tracks,
 		window->wblock->curr_realline
                        ));
 
