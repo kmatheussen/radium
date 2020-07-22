@@ -26,8 +26,29 @@ extern LANGSPEC void SetRange(
                               );
 
 extern LANGSPEC void MarkRange_CurrPos(struct Tracker_Windows *window);
+
+extern LANGSPEC void CancelRange(
+                                 struct Tracker_Windows *window,
+                                 struct WBlocks *wblock
+                                 );
 extern LANGSPEC void CancelRange_CurrPos(struct Tracker_Windows *window);
+
 extern LANGSPEC void MakeRangeLegal(
 	struct WBlocks *wblock
 );
+
+static inline bool range_is_legal(const struct WBlocks *wblock, const Place p1, const Place p2, int start_track, int end_track){
+  return
+    end_track > start_track &&
+    start_track >= 0 &&
+    end_track <= wblock->block->num_tracks &&
+    p_Greater_Than(p2, p1) &&
+    p_Greater_Or_Equal(p1, p_Create(0,0,1)) &&
+    p_Less_Or_Equal(p2, p_Create(wblock->block->num_lines, 0, 1));
+}
+
+static inline bool range_is_legal2(const struct WBlocks *wblock){
+  return range_is_legal(wblock, wblock->rangey1, wblock->rangey2, wblock->rangex1, wblock->rangex2+1);
+}
+  
 

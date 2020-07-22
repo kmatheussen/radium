@@ -152,7 +152,7 @@ void MarkRange_CurrPos(struct Tracker_Windows *window){
 }
 
 
-static void CancelRange(
+void CancelRange(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
