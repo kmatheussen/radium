@@ -60,6 +60,52 @@ void cancelRange(int windownum){
   CancelRange_CurrPos(window);
 }
 
+void clearRange(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+
+  struct WBlocks *wblock = window->wblock;
+  
+  const range_t range = wblock->range;
+  
+  if(! range.enabled)
+    return;
+
+  clearRange2(range.y1, range.y2, range.x1, range.x2+1, wblock->l.num, windownum);
+}
+
+void clearRange2(Place p1, Place p2, int start_track, int end_track, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL)
+    return;
+  
+  range_t range = make_range(true, start_track, end_track, p1, p2);
+
+  if (!range_is_legal3(wblock, range)){
+    handleError("clearRange2: Illegal range. p1: %s. p2: %s. start_track: %d. end_track: %d", p_ToString(range.y1), p_ToString(range.y2), range.x1, range.x2);
+    return;
+  }
+
+  ADD_UNDO(Range(
+                 window,
+                 wblock,
+                 range.x1,
+                 range.x2+1,
+                 window->wblock->curr_realline
+                 ));
+
+  ClearRange2(wblock->block, range);
+
+  window->must_redraw = true;
+}
+
 void cutRange(int rangetype, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
 
