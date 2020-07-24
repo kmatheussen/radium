@@ -18,16 +18,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #pragma once
 
 
-// Note: only deleting, not copying
-void CutRange_notes(
+void ClearRange_notes(
                     struct Notes **tonote,
                     const struct Notes *fromnote,
                     const Place *p1,
                     const Place *p2
 );
 
-// Note: only deleting, not copying
-extern void CutRange(
+extern void ClearRange(
                      struct Blocks *block,
                      NInt starttrack,
                      NInt endtrack,
@@ -35,7 +33,16 @@ extern void CutRange(
                      const Place *p2
 );
 
-// Both copying and deleting.
+void ClearRange2(
+              struct Blocks *block,
+              range_t range);
+
+void CutRange(
+              struct Blocks *block,
+              range_t range,
+              int rangenum
+              );
+
 extern void CutRange_CurrPos(
                              struct Tracker_Windows *window,
                              int rangenum

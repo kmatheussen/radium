@@ -188,15 +188,15 @@ static bool Quantitize_range(
 	PlaceSetFirstPos(&first);
 	PlaceSetLastPos(wblock->block,&last);
 
-	if( ! wblock->isranged)
+	if( ! wblock->range.enabled)
           return Quantitize_selected_notes(window,wblock);
 
         bool ret = false;
         
-        struct Tracks *track = ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
+        struct Tracks *track = ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
 
         int tracknum;
-	for(tracknum=0;tracknum<=wblock->rangex2-wblock->rangex1;tracknum++){
+	for(tracknum=0;tracknum<=wblock->range.x2-wblock->range.x1;tracknum++){
 
           struct Notes *new_notes=NULL;
 
@@ -205,7 +205,7 @@ static bool Quantitize_range(
           while(note != NULL) {
             struct Notes *next=NextNote(note);
                         
-            if( p_Greater_Or_Equal(note->l.p, wblock->rangey1) && p_Less_Than(note->l.p, wblock->rangey2)) {
+            if( p_Greater_Or_Equal(note->l.p, wblock->range.y1) && p_Less_Than(note->l.p, wblock->range.y2)) {
               if (Quantitize_Note(wblock->block,&new_notes,note))
                 ret = true;
             } else
@@ -295,10 +295,10 @@ void Quantitize_block_CurrPos(
 void Quantitize_range_CurrPos(
 	struct Tracker_Windows *window
 ){
-  //if(!window->wblock->isranged) return;
+  //if(!window->wblock->range.enabled) return;
 
-  if (window->wblock->isranged)    
-    ADD_UNDO(Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2+1,window->wblock->curr_realline));
+  if (window->wblock->range.enabled)    
+    ADD_UNDO(Range(window,window->wblock,window->wblock->range.x1,window->wblock->range.x2+1,window->wblock->curr_realline));
   else
     ADD_UNDO(Notes_CurrPos(window));
 
@@ -308,8 +308,8 @@ void Quantitize_range_CurrPos(
   UpdateAndClearSomeTrackReallinesAndGfxWTracks(
                                                 window,
                                                 window->wblock,
-                                                window->wblock->rangex1,
-                                                window->wblock->rangex2
+                                                window->wblock->range.x1,
+                                                window->wblock->range.x2
                                                 );
 }
 

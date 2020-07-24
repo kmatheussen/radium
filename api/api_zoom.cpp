@@ -57,15 +57,15 @@ void expandRange(int blocknum, int windownum){
   if (wblock==NULL)
     return;
 
-  if (wblock->isranged==false){
+  if (wblock->range.enabled==false){
     showAsyncMessage("No range in block. Select range by using Left Meta + b");
     return;
   }
 
   float num_lines_before = 0.0f;
 
-  if (p_Greater_Or_Equal(wblock->rangey2, wblock->rangey1)){
-    Place duration = p_Sub(wblock->rangey2, wblock->rangey1);
+  if (p_Greater_Or_Equal(wblock->range.y2, wblock->range.y1)){
+    Place duration = p_Sub(wblock->range.y2, wblock->range.y1);
     num_lines_before = p_float(duration);
   }
 

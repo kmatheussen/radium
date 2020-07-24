@@ -244,42 +244,44 @@ void CopyRange_fxs(
 
 
 void CopyRange(
-               struct WBlocks *wblock,
+               struct Blocks *block,
+               range_t range,
                int rangenum
 ){
 	NInt num_tracks;
 	int lokke;
 
-	if( ! wblock->isranged) return;
+	if( ! range.enabled)
+          return;
 
-        int starttrack = wblock->rangex1;
-        int endtrack = R_MIN(wblock->block->num_tracks-1, wblock->rangex2);
+        int starttrack = range.x1;
+        int endtrack = R_MIN(block->num_tracks-1, range.x2);
         if (endtrack < starttrack)
           return;
 
         R_ASSERT_RETURN_IF_FALSE(rangenum >= 0 && rangenum < NUM_RANGES);
         
-	struct Range *range=talloc(sizeof(struct Range));
-        range->rangenum = rangenum;
+	struct RangeClip *range_clip=talloc(sizeof(struct RangeClip));
+        range_clip->rangenum = rangenum;
         
-        g_ranges[rangenum] = range;
+        g_range_clips[rangenum] = range_clip;
         
-	range->num_tracks = num_tracks = wblock->rangex2-wblock->rangex1+1;
+	range_clip->num_tracks = num_tracks = range.x2-range.x1+1;
 
-	range->notes=talloc((int)sizeof(struct Notes *)*num_tracks);
-        range->stops=talloc((int)sizeof(struct Stops *)*num_tracks);
-	//range->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
-	range->fxs=talloc((int)sizeof(vector_t)*num_tracks);
+	range_clip->notes=talloc((int)sizeof(struct Notes *)*num_tracks);
+        range_clip->stops=talloc((int)sizeof(struct Stops *)*num_tracks);
+	//range_clip->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
+	range_clip->fxs=talloc((int)sizeof(vector_t)*num_tracks);
 
-	GetRangePlaceLength(&range->length,wblock);
+	range_clip->length = p_Sub(range.y2, range.y1);
         
-	const struct Tracks *track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
+	const struct Tracks *track=ListFindElement1(&block->tracks->l,range.x1);
 
-	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){
-          //range->instruments[lokke]=track->instrument;
-          CopyRange_notes(&range->notes[lokke], track->notes, &wblock->rangey1, &wblock->rangey2);
-          CopyRange_stops(&range->stops[lokke], track->stops, &wblock->rangey1, &wblock->rangey2);
-          CopyRange_fxs(&range->fxs[lokke], &track->fxs,      &wblock->rangey1, &wblock->rangey2);
+	for(lokke=0;lokke<=range.x2-range.x1;lokke++){
+          //range_clip->instruments[lokke]=track->instrument;
+          CopyRange_notes(&range_clip->notes[lokke], track->notes, &range.y1, &range.y2);
+          CopyRange_stops(&range_clip->stops[lokke], track->stops, &range.y1, &range.y2);
+          CopyRange_fxs(&range_clip->fxs[lokke], &track->fxs,      &range.y1, &range.y2);
 
           track=NextTrack(track);
           if (track==NULL)
@@ -287,12 +289,12 @@ void CopyRange(
 	}
 
         
-        const Place *startplace = &wblock->rangey1;
-        const Place *endplace = &wblock->rangey2;
+        const Place *startplace = &range.y1;
+        const Place *endplace = &range.y2;
         
         SCHEME_eval(
                     talloc_format("(copy-fx-range! %d %d %d (+ %d (/ %d %d)) (+ %d (/ %d %d)) %d)",
-                                  wblock->block->l.num,
+                                  block->l.num,
                                   starttrack,
                                   endtrack,
                                   startplace->line, startplace->counter, startplace->dividor,
@@ -301,7 +303,6 @@ void CopyRange(
                                   )
                     );
 
-	wblock->isranged=false;
 }
 
 void CopyRange_CurrPos(
@@ -309,17 +310,9 @@ void CopyRange_CurrPos(
                        int rangenum
                        )
 {
-        CopyRange(window->wblock, rangenum);
+        CopyRange(window->wblock->block, window->wblock->range, rangenum);
 
-	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
-		window,
-		window->wblock,
-		window->wblock->rangex1,
-		window->wblock->rangex2
-	);
-
+        window->wblock->range.enabled = false;
+        window->must_redraw = true;
 }
-
-
-
 

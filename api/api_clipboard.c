@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/clipboard_block_copy_proc.h"
 #include "../common/clipboard_block_paste_proc.h"
 #include "../common/clipboard_range.h"
+#include "../common/undo_range_proc.h"
 #include "../common/disk_saveload_blocktrack_proc.h"
 #include "../mixergui/QM_MixerWidget.h"
 #include "../common/undo_tracks_proc.h"
@@ -38,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "api_common_proc.h"
 
-static bool legal_range(int rangetype){
+static bool legal_rangetype(int rangetype){
   if (rangetype < 0 || rangetype > 4){
     handleError("Illegal rangetype: %d", rangetype);
     return false;
@@ -47,11 +48,11 @@ static bool legal_range(int rangetype){
   return true;
 }
 
-static struct Range *get_range(int rangetype){
-  if (!legal_range(rangetype))
+static struct RangeClip *get_range_clip(int rangetype){
+  if (!legal_rangetype(rangetype))
     return NULL;
   
-  return g_ranges[rangetype];
+  return g_range_clips[rangetype];
 }
 
 void cancelRange(int windownum){
@@ -62,10 +63,46 @@ void cancelRange(int windownum){
 void cutRange(int rangetype, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
 
-  if (!legal_range(rangetype))
+  if (!legal_rangetype(rangetype))
     return;
   
   CutRange_CurrPos(window, rangetype);
+}
+
+void cutRange2(Place p1, Place p2, int start_track, int end_track, int rangetype, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL)
+    return;
+
+  if (!legal_rangetype(rangetype))
+    return;
+  
+  range_t range = make_range(true, start_track, end_track, p1, p2);
+
+  if (!range_is_legal3(wblock, range)){
+    handleError("cutRange2: Illegal range. p1: %s. p2: %s. start_track: %d. end_track: %d", p_ToString(range.y1), p_ToString(range.y2), range.x1, range.x2);
+    return;
+  }
+
+  ADD_UNDO(Range(
+                 window,
+                 wblock,
+                 range.x1,
+                 range.x2+1,
+                 window->wblock->curr_realline
+                 ));
+
+  CutRange(wblock->block, range, rangetype);
+
+  window->must_redraw = true;
 }
 
 void cutTrack(int tracknum, int blocknum, int windownum){
@@ -135,10 +172,36 @@ void clearTrack(int tracknum, int blocknum, int windownum){
 void copyRange(int rangetype, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
 
-  if (!legal_range(rangetype))
+  if (!legal_rangetype(rangetype))
     return;
 
   CopyRange_CurrPos(window, rangetype);
+}
+
+void copyRange2(Place p1, Place p2, int start_track, int end_track, int rangetype, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL)
+    return;
+
+  if (!legal_rangetype(rangetype))
+    return;
+  
+  range_t range = make_range(true, start_track, end_track, p1, p2);
+
+  if (!range_is_legal3(wblock, range)){
+    handleError("copyRange2: Illegal range. p1: %s. p2: %s. start_track: %d. end_track: %d", p_ToString(range.y1), p_ToString(range.y2), range.x1, range.x2);
+    return;
+  }
+  
+  CopyRange(wblock->block, range, rangetype);
 }
 
 void copyTrack(int tracknum, int blocknum, int windownum){
@@ -178,9 +241,9 @@ void copyBlock(int windownum){
 
 void pasteRange(int rangetype, int windownum){  
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  struct Range *range = get_range(rangetype);
-  if (range != NULL)
-    PasteRange_CurrPos(window, range);
+  struct RangeClip *range_clip = get_range_clip(rangetype);
+  if (range_clip != NULL)
+    PasteRange_CurrPos(window, range_clip);
 }
 
 
@@ -209,9 +272,19 @@ void pasteRange2(Place startplace, int starttracknum, int rangetype, int blocknu
     return;
   }
 
-  struct Range *range = get_range(rangetype);
-  if (range != NULL)
-    PasteRange(block, starttracknum, &startplace, range);
+  struct RangeClip *range_clip = get_range_clip(rangetype);
+  if (range_clip == NULL)
+    return;
+
+  ADD_UNDO(Range(
+                 window,
+                 wblock,
+                 starttracknum,
+                 starttracknum + range_clip->num_tracks,
+                 window->wblock->curr_realline
+                 ));
+  
+  PasteRange(block, starttracknum, &startplace, range_clip);
 }
 
 
@@ -260,19 +333,19 @@ void markRange(int windownum){
 
 
 int getNumTracksInRange(int rangetype){
-  struct Range *range = get_range(rangetype);
-  if (!range)
+  struct RangeClip *range_clip = get_range_clip(rangetype);
+  if (!range_clip)
     return 0;
 
-  return range->num_tracks;
+  return range_clip->num_tracks;
 }
 
 Place getRangeLength(int rangetype){
-  struct Range *range = get_range(rangetype);
-  if (!range)
+  struct RangeClip *range_clip = get_range_clip(rangetype);
+  if (!range_clip)
     return p_Create(0,0,1);
 
-  return range->length;
+  return range_clip->length;
 }
 
 
@@ -291,7 +364,7 @@ bool hasRange(int blocknum, int windownum){
   if(wblock==NULL)
     return false;
 
-  return wblock->isranged;
+  return wblock->range.enabled;
 }
 
 int getRangeStartTrack(int blocknum, int windownum){
@@ -307,13 +380,13 @@ int getRangeStartTrack(int blocknum, int windownum){
   if(wblock==NULL)
     return 0;
 
-  if (wblock->rangex1 < 0)
+  if (wblock->range.x1 < 0)
     return 0;
   
-  if (wblock->rangex1 >= wblock->block->num_tracks)
+  if (wblock->range.x1 >= wblock->block->num_tracks)
     return wblock->block->num_tracks-1;
 
-  return wblock->rangex1;
+  return wblock->range.x1;
 }
 
 int getRangeEndTrack(int blocknum, int windownum){
@@ -329,13 +402,13 @@ int getRangeEndTrack(int blocknum, int windownum){
   if(wblock==NULL)
     return 0;
 
-  if (wblock->rangex1 < 0)
+  if (wblock->range.x1 < 0)
     return 1;
   
-  if (wblock->rangex1 >= wblock->block->num_tracks)
+  if (wblock->range.x1 >= wblock->block->num_tracks)
     return wblock->block->num_tracks;
 
-  return wblock->rangex2+1;
+  return wblock->range.x2+1;
 }
 
 Place getRangeStartPlace(int blocknum, int windownum){
@@ -351,10 +424,10 @@ Place getRangeStartPlace(int blocknum, int windownum){
   if(wblock==NULL)
     return p_Create(0,0,1);
 
-  if (p_Greater_Than(wblock->rangey1, p_Last_Pos(wblock->block)))
+  if (p_Greater_Than(wblock->range.y1, p_Last_Pos(wblock->block)))
     return p_Last_Pos(wblock->block);
 
-  return wblock->rangey1;
+  return wblock->range.y1;
 }
 
 Place getRangeEndPlace(int blocknum, int windownum){
@@ -370,22 +443,12 @@ Place getRangeEndPlace(int blocknum, int windownum){
   if(wblock==NULL)
     return p_Create(1,0,1);
 
-  if (p_Greater_Than(wblock->rangey1, p_Create(wblock->block->num_lines, 0, 1)))
+  if (p_Greater_Than(wblock->range.y1, p_Create(wblock->block->num_lines, 0, 1)))
     return p_Create(wblock->block->num_lines, 0, 1);
 
-  return wblock->rangey2;
+  return wblock->range.y2;
 }
 
-
-static bool range_is_legal(const struct WBlocks *wblock, const Place p1, const Place p2, int start_track, int end_track){
-  return
-    end_track > start_track &&
-    start_track >= 0 &&
-    end_track <= wblock->block->num_tracks &&
-    p_Greater_Than(p2, p1) &&
-    p_Greater_Or_Equal(p1, p_Create(0,0,1)) &&
-    p_Less_Or_Equal(p2, p_Create(wblock->block->num_lines, 0, 1));
-}
 
 void setRange(Place p1, Place p2, int start_track, int end_track, int blocknum, int windownum){
   struct Tracker_Windows *window;
@@ -403,17 +466,18 @@ void setRange(Place p1, Place p2, int start_track, int end_track, int blocknum, 
   if (!range_is_legal(wblock, p1,p2,start_track,end_track)) {
 
     handleError("setRange: Illegal range. p1: %s. p2: %s. start_track: %d. end_track: %d", p_ToString(p1), p_ToString(p2), start_track, end_track);
-    wblock->isranged=false;
+    return;
     
-  } else {
     
-    SetRange(window, wblock, start_track, end_track-1, p1, p2);
+  } 
     
-    MakeRangeLegal(wblock);
+  SetRange(window, wblock, start_track, end_track-1, p1, p2);
+    
+  MakeRangeLegal(wblock);
 
-    if (!range_is_legal(wblock, wblock->rangey1, wblock->rangey2, wblock->rangex1, wblock->rangex2+1))
-      wblock->isranged=false;
-    
+  if (!range_is_legal2(wblock)){
+    R_ASSERT_NON_RELEASE(false);
+    wblock->range.enabled=false;
   }
   
   window->must_redraw = true;

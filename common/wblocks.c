@@ -388,8 +388,8 @@ void NewWBlock(
 
 	wblock->tempotrackonoff=1;
 
-        wblock->rangey1 = p_Create(0,0,1);
-        wblock->rangey2 = p_Create(0,0,1);
+        wblock->range.y1 = p_Create(0,0,1);
+        wblock->range.y2 = p_Create(0,0,1);
 
         UpdateWTracks(window,wblock);
 

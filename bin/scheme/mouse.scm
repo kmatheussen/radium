@@ -4508,7 +4508,8 @@
   (if (or (not barnum)
           (not beatnum))
       (let ((maybe (<ra> :get-current-beat)))
-        (if (= blocknum (maybe :blocknum))
+        (if (and maybe
+                 (= blocknum (maybe :blocknum)))
             (set! beat maybe))))
 
   (if (and (not beat)

@@ -101,21 +101,21 @@ static void PExpandRange(
 	int lokke;
 	bool firsttime=true;
 
-	if( ! wblock->isranged) return;
+	if( ! wblock->range.enabled) return;
 
-	const Place *p1=&wblock->rangey1;
-	const Place *p2=&wblock->rangey2;
+	const Place *p1=&wblock->range.y1;
+	const Place *p2=&wblock->range.y2;
 
-	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
+	track=ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
 
-	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){
+	for(lokke=0;lokke<=wblock->range.x2-wblock->range.x1;lokke++){
 	  PExpand_SetMinMax(track->notes,p1,p2,firsttime);
 	  firsttime=false;
 	  track=NextTrack(track);
 	}
 
-	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
-	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){
+	track=ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
+	for(lokke=0;lokke<=wblock->range.x2-wblock->range.x1;lokke++){
 	  PExpand_DoIt(track->notes,p1,p2,scalefactor);
 	  track=NextTrack(track);
 	}
@@ -177,7 +177,7 @@ void PExpandRange_CurrPos(
 			  struct Tracker_Windows *window,
 			  float scalefactor
 ){
-	if(!window->wblock->isranged) return;
+	if(!window->wblock->range.enabled) return;
 
         scalefactor=GetScaleFactor(window);
         if (scalefactor<0)
@@ -187,8 +187,8 @@ void PExpandRange_CurrPos(
           ADD_UNDO(Range(
                          window,
                          window->wblock,
-                         window->wblock->rangex1,
-                         window->wblock->rangex2+1,
+                         window->wblock->range.x1,
+                         window->wblock->range.x2+1,
                          window->wblock->curr_realline
                          ));
           
@@ -199,8 +199,8 @@ void PExpandRange_CurrPos(
         UpdateAndClearSomeTrackReallinesAndGfxWTracks(
                                                       window,
                                                       window->wblock,
-                                                      window->wblock->rangex1,
-                                                      window->wblock->rangex2
+                                                      window->wblock->range.x1,
+                                                      window->wblock->range.x2
                                                       );
 
 }

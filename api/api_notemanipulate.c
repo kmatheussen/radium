@@ -118,7 +118,7 @@ void pexpandRange(int f,int windownum){
   if (wblock==NULL)
     return;
 
-  if (wblock->isranged==false){
+  if (wblock->range.enabled==false){
     showAsyncMessage("No range in block. Select range by using Left Meta + b");
     return;
   }

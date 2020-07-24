@@ -2753,11 +2753,11 @@ static void create_tracks(const struct Tracker_Windows *window, const struct WBl
 
 static void create_range(const struct Tracker_Windows *window, const struct WBlocks *wblock){
 
-  if (!wblock->isranged)
+  if (!wblock->range.enabled)
     return;
   
-  int tracknum1 = R_MIN(wblock->block->num_tracks-1, wblock->rangex1);
-  int tracknum2 = R_MIN(wblock->block->num_tracks-1, wblock->rangex2);
+  int tracknum1 = R_MIN(wblock->block->num_tracks-1, wblock->range.x1);
+  int tracknum2 = R_MIN(wblock->block->num_tracks-1, wblock->range.x2);
 
   struct WTracks *wtrack1=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,tracknum1);
   struct WTracks *wtrack2=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,tracknum2);
@@ -2768,8 +2768,8 @@ static void create_range(const struct Tracker_Windows *window, const struct WBlo
   float x1 = wtrack1->x;
   float x2 = wtrack2->x2;
 
-  float realline1 = FindReallineForF(wblock, 0, &wblock->rangey1);
-  float realline2 = FindReallineForF(wblock, realline1, &wblock->rangey2);
+  float realline1 = FindReallineForF(wblock, 0, &wblock->range.y1);
+  float realline2 = FindReallineForF(wblock, realline1, &wblock->range.y2);
   int y1 = get_realline_y(window, realline1);
   int y2 = get_realline_y(window, realline2)-1;
 

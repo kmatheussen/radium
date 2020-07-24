@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define NUM_RANGES 5 // see "rangetype" under api/protos.conf
 
-struct Range{
+struct RangeClip{
         int rangenum;
 	NInt num_tracks;
 	struct Notes **notes;
@@ -30,7 +30,7 @@ struct Range{
 	Place length;
 };
 
-extern struct Range *g_ranges[NUM_RANGES]; // see "rangetype" under api/protos.conf
+extern struct RangeClip *g_range_clips[NUM_RANGES]; // see "rangetype" under api/protos.conf
 
 
 #endif

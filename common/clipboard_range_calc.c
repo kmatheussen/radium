@@ -33,8 +33,8 @@ bool IsPlaceRanged(
                    const struct WBlocks *wblock,
                    const Place *p
 ){
-  if(PlaceLessThan(p,&wblock->rangey1)) return false;
-  if(PlaceGreaterOrEqual(p,&wblock->rangey2)) return false;
+  if(PlaceLessThan(p,&wblock->range.y1)) return false;
+  if(PlaceGreaterOrEqual(p,&wblock->range.y2)) return false;
   
   return true;
 
@@ -50,5 +50,5 @@ void GetRangePlaceLength(
                          Place *place,
                          const struct WBlocks *wblock
 ){
-  *place = p_Sub(wblock->rangey2, wblock->rangey1);
+  *place = p_Sub(wblock->range.y2, wblock->range.y1);
 }

@@ -2812,7 +2812,18 @@ struct LocalZooms{
 /*********************************************************************
 	wblocks.h
 *********************************************************************/
+typedef struct {
+  bool enabled;
+  int x1;
+  int x2;
+  Place y1;
+  Place y2;
+} range_t;
 
+static inline range_t make_range(bool enabled, int x1, int x2, Place y1, Place y2){
+  range_t range = {enabled, x1, x2, y1, y2};
+  return range;
+}
 
 struct WBlocks{
 	struct ListHeader1 l;
@@ -2890,12 +2901,8 @@ struct WBlocks{
         //struct WTempos *wtempos;
 	double reltempomax;
 
-	bool isranged;
-	NInt rangex1;
-	NInt rangex2;
-	Place rangey1;
-	Place rangey2;
-
+        range_t range;
+  
 	bool isgfxdatahere;
 
 	TBox reltempo; // API: (x1 y1 x2 y2) getWBlockFromNum(-1,-1)

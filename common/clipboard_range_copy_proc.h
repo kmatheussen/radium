@@ -41,7 +41,8 @@ extern LANGSPEC void CopyRange_fxs(
 );
 
 extern LANGSPEC void CopyRange(
-                               struct WBlocks *wblock,
+                               struct Blocks *wblock,
+                               range_t range,
                                int rangenum
 );
 

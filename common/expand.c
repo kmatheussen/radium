@@ -138,8 +138,8 @@ static void expand_block(struct WBlocks *wblock, struct Blocks *block, const Pla
   
   expand_list3(&block->temponodes->l, start, end, new_end, last_place);
 
-  wblock->rangey1 = expand_place(wblock->rangey1, start, end, new_end, last_place);
-  wblock->rangey2 = expand_place(wblock->rangey2, start, end, new_end, p_Create(wblock->block->num_lines, 0, 1));
+  wblock->range.y1 = expand_place(wblock->range.y1, start, end, new_end, last_place);
+  wblock->range.y2 = expand_place(wblock->range.y2, start, end, new_end, p_Create(wblock->block->num_lines, 0, 1));
 
   struct Tracks *track = block->tracks;
   while(track!=NULL){
@@ -235,7 +235,7 @@ void EXPAND_Block_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 }
 
 void EXPAND_Block_from_range_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, const Place range_duration_after){
-  if (wblock->isranged==false){
+  if (wblock->range.enabled==false){
     GFX_Message2(NULL, true,"No range in block");
     return;
   }
@@ -245,8 +245,8 @@ void EXPAND_Block_from_range_CurrPos(struct Tracker_Windows *window, struct WBlo
     return;
   }
 
-  Place start = wblock->rangey1;
-  Place end = wblock->rangey2;
+  Place start = wblock->range.y1;
+  Place end = wblock->range.y2;
   Place new_end = p_Add(start, range_duration_after);
 
   //printf("line1: %d, line2: %d, num_lines_before: %d\n",line1,line2,num_lines_before);

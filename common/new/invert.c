@@ -66,14 +66,14 @@ static void InvertRange(
 	struct Tracks *track;
 	int lokke;
 
-	if( ! wblock->isranged) return;
+	if( ! wblock->range.enabled) return;
 
-	const Place *p1=&wblock->rangey1;
-	const Place *p2=&wblock->rangey2;
+	const Place *p1=&wblock->range.y1;
+	const Place *p2=&wblock->range.y2;
 
-	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
+	track=ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
 
-	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){
+	for(lokke=0;lokke<=wblock->range.x2-wblock->range.x1;lokke++){
                 Invert_notes(track->notes,p1,p2,true,0,0);
 		track=NextTrack(track);
 	}
@@ -107,14 +107,14 @@ static void InvertBlock(
 void InvertRange_CurrPos(
 	struct Tracker_Windows *window
 ){
-	if(!window->wblock->isranged) return;
+	if(!window->wblock->range.enabled) return;
 
 
 	ADD_UNDO(Range(
                        window,
                        window->wblock,
-                       window->wblock->rangex1,
-                       window->wblock->rangex2+1,
+                       window->wblock->range.x1,
+                       window->wblock->range.x2+1,
                        window->wblock->curr_realline
                        ));
 
@@ -123,8 +123,8 @@ void InvertRange_CurrPos(
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,
-		window->wblock->rangex1,
-		window->wblock->rangex2
+		window->wblock->range.x1,
+		window->wblock->range.x2
 	);
 
 }

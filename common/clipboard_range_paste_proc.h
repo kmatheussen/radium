@@ -21,12 +21,12 @@ extern LANGSPEC void PasteRange(
                                 struct Blocks *block,
                                 NInt tracknum,
                                 const Place *place,
-                                struct Range *range
+                                struct RangeClip *range_clip
                                 );
 
 extern LANGSPEC void PasteRange_CurrPos(
                                         struct Tracker_Windows *window,
-                                        struct Range *range
+                                        struct RangeClip *range_clip
                                         
 );
 
