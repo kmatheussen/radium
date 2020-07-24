@@ -43,20 +43,21 @@ void ADD_UNDO_FUNC(Range(
 {
   R_ASSERT_NON_RELEASE(endtrack > starttrack);
 
+  if (starttrack < 0){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+
   UNDO_OPEN();
 
-  for(int i=starttrack;i<endtrack;i++){
-    if (i < 0 || i >= wblock->block->num_tracks){
-      R_ASSERT_NON_RELEASE(false);
-    } else {
-      CALL_ADD_UNDO_FUNC(Track(window,
-                               wblock,
-                               wblock->wtrack,
-                               wblock->curr_realline,
-                               wblock->l.num,
-                               i
-                               ));
-    }
+  for(int i=starttrack;i<R_MIN(wblock->num_reallines, endtrack);i++){
+    CALL_ADD_UNDO_FUNC(Track(window,
+                             wblock,
+                             wblock->wtrack,
+                             wblock->curr_realline,
+                             wblock->l.num,
+                             i
+                             ));
   }
 
   UNDO_CLOSE();
