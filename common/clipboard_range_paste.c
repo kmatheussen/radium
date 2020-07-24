@@ -64,7 +64,7 @@ static bool PasteRange_FXs(
                            struct Blocks *block,
                            NInt starttrack,
                            const Place *startplace,
-                           struct Range *range
+                           struct RangeClip *range_clip
 ){
 
   SCHEME_eval(
@@ -72,14 +72,14 @@ static bool PasteRange_FXs(
                             block->l.num,
                             starttrack,
                             startplace->line, startplace->counter, startplace->dividor,
-                            range->rangenum
+                            range_clip->rangenum
                             )
               );
 
 
   struct Tracks *track=ListFindElement1(&block->tracks->l,starttrack);
   int lokke;
-  for(lokke=0;lokke<range->num_tracks;lokke++){
+  for(lokke=0;lokke<range_clip->num_tracks;lokke++){
     LegalizeFXlines(block,track); // should not be not necessary though.
     track=NextTrack(track);
     if(track==NULL) break;
@@ -172,29 +172,29 @@ void PasteRange(
 	struct Blocks *block,
 	NInt tracknum,
 	const Place *place,
-        struct Range *range
+        struct RangeClip *range_clip
 ){
 	NInt lokke;
 	Place p2;
 
-	if(range==NULL) return;
+	if(range_clip==NULL) return;
 
         struct Tracks *track=ListFindElement1(&block->tracks->l,tracknum);
         if (track==NULL)
             return;
         
 	PlaceCopy(&p2,place);
-	PlaceAdd(&p2,&range->length);
-	CutRange(block,tracknum,tracknum+range->num_tracks-1,place,&p2);
+	PlaceAdd(&p2,&range_clip->length);
+	ClearRange(block,tracknum,tracknum+range_clip->num_tracks-1,place,&p2);
 
         {
           
-          for(lokke=0;lokke<range->num_tracks;lokke++){            
+          for(lokke=0;lokke<range_clip->num_tracks;lokke++){            
             if (doRangePasteCut())
               StopAllNotesAtPlace(block,track,place);
 
-            PasteRange_notes(block,track,range->notes[lokke],place);
-            PasteRange_stops(block,track,range->stops[lokke],place);
+            PasteRange_notes(block,track,range_clip->notes[lokke],place);
+            PasteRange_stops(block,track,range_clip->stops[lokke],place);
 
             if (doRangePasteCut()) {
               struct Notes *note = FindNextNote(track, &p2);
@@ -209,12 +209,12 @@ void PasteRange(
           }
         }
         
-        PasteRange_FXs(block, tracknum, place, range);
+        PasteRange_FXs(block, tracknum, place, range_clip);
 }
 
 void PasteRange_CurrPos(
                         struct Tracker_Windows *window,
-                        struct Range *range
+                        struct RangeClip *range_clip
                         )
 {
   
@@ -223,20 +223,20 @@ void PasteRange_CurrPos(
 	NInt curr_track=window->curr_track;
 	int curr_realline=wblock->curr_realline;
 
-	if(curr_track<0 || range==NULL) return;
+	if(curr_track<0 || range_clip==NULL) return;
 
         ADD_UNDO(Range(
                        window,
                        wblock,
                        curr_track,
-                       curr_track+range->num_tracks,
+                       curr_track+range_clip->num_tracks,
                        wblock->curr_realline
                        )
                  );
 
         Undo_start_ignoring_undo_operations();{
           PC_Pause();{
-            PasteRange(block,curr_track,&wblock->reallines[curr_realline]->l.p, range);
+            PasteRange(block,curr_track,&wblock->reallines[curr_realline]->l.p, range_clip);
           }PC_StopPause(window);
         }Undo_stop_ignoring_undo_operations();
 
@@ -244,12 +244,12 @@ void PasteRange_CurrPos(
 		window,
 		window->wblock,
 		curr_track,
-		curr_track+range->num_tracks-1
+		curr_track+range_clip->num_tracks-1
 	);
 
         if (doRangePasteScrollDown()){
           int next_realline = curr_realline + 1;
-          Place next_place = p_Add(wblock->reallines[curr_realline]->l.p, range->length);
+          Place next_place = p_Add(wblock->reallines[curr_realline]->l.p, range_clip->length);
           while(next_realline < wblock->num_reallines && p_Less_Than(wblock->reallines[next_realline]->l.p, next_place))
             next_realline++;
           ScrollEditorDown(window, next_realline - curr_realline, NULL);

@@ -63,14 +63,14 @@ DC_start("WBLOCK");
 
 	DC_SSF("reltempomax",wblock->reltempomax);
 
-	DC_SSB("isranged",wblock->isranged);
-	DC_SSL("rangex1",wblock->rangex1);
-	DC_SSL("rangex2",wblock->rangex2);
+	DC_SSB("isranged",wblock->range.enabled);
+	DC_SSL("rangex1",wblock->range.x1);
+	DC_SSL("rangex2",wblock->range.x2);
         DC_start("RANGE_START");{
-          SavePlace(&wblock->rangey1);
+          SavePlace(&wblock->range.y1);
         }DC_end();
         DC_start("RANGE_END");{
-          SavePlace(&wblock->rangey2);
+          SavePlace(&wblock->range.y2);
         }DC_end();
 
 	SaveLocalZooms(wblock->localzooms,wblock->block->num_lines);
@@ -115,8 +115,8 @@ struct WBlocks *LoadWBlock(void){
 	wblock->l.num=DC_LoadN();
 	wblock->tempocolorarea.width=22;
         wblock->num_expand_lines=1;
-        wblock->rangey1 = p_Create(0,0,1);
-        wblock->rangey2 = p_Create(1,0,1);
+        wblock->range.y1 = p_Create(0,0,1);
+        wblock->range.y2 = p_Create(1,0,1);
 
         WArea dummy;
 
@@ -173,21 +173,21 @@ var13:
 	wblock->reltempomax=DC_LoadF();
 	goto start;
 var14:
-	wblock->isranged=DC_LoadB();
+	wblock->range.enabled=DC_LoadB();
 	goto start;
 var15:
-	wblock->rangex1=DC_LoadN();
+	wblock->range.x1=DC_LoadN();
 	goto start;
 var16:
-	wblock->rangex2=DC_LoadN();
+	wblock->range.x2=DC_LoadN();
 	goto start;
 var17:
-	wblock->rangey1=p_Create(DC_LoadN(), 0, 1);
-        wblock->rangey1.dividor=0; // to identify old type. value fixed later
+	wblock->range.y1=p_Create(DC_LoadN(), 0, 1);
+        wblock->range.y1.dividor=0; // to identify old type. value fixed later
 	goto start;
 var18:
-	wblock->rangey2=p_Create(DC_LoadN(), 0, 1);
-        wblock->rangey2.dividor=0; // to identify old type. value fixed later
+	wblock->range.y2=p_Create(DC_LoadN(), 0, 1);
+        wblock->range.y2.dividor=0; // to identify old type. value fixed later
 	goto start;
 
 obj0:
@@ -197,11 +197,11 @@ obj1:
 	DC_ListAdd1(&wblock->wtracks,LoadWTrack());
 	goto start;
 obj2:
-	LoadPlace(&wblock->rangey1);
+	LoadPlace(&wblock->range.y1);
         DC_Next();
 	goto start;
 obj3:
-	LoadPlace(&wblock->rangey2);
+	LoadPlace(&wblock->range.y2);
         DC_Next();
 	goto start;
 
@@ -245,32 +245,32 @@ if(wblock==NULL) return;
         UpdateWBlockCoordinates(window,wblock);	//Also updates wtrack coordinates
 
         // Range
-        if (wblock->rangey1.dividor==0){ // I.e. old type
-          int realline = wblock->rangey1.line;
+        if (wblock->range.y1.dividor==0){ // I.e. old type
+          int realline = wblock->range.y1.line;
           if (realline<0)
             realline = 0;
 
           if (realline >= wblock->num_reallines)
-            wblock->rangey1 = p_Create(wblock->block->num_lines, 0, 1);
+            wblock->range.y1 = p_Create(wblock->block->num_lines, 0, 1);
           else
-            wblock->rangey1 = wblock->reallines[realline]->l.p;
+            wblock->range.y1 = wblock->reallines[realline]->l.p;
         }
 
-        if (wblock->rangey2.dividor==0){ // I.e. old type.
-          int realline = wblock->rangey2.line;
+        if (wblock->range.y2.dividor==0){ // I.e. old type.
+          int realline = wblock->range.y2.line;
           if (realline<0)
             realline = 0;
 
           if (realline >= wblock->num_reallines)
-            wblock->rangey2 = p_Create(wblock->block->num_lines, 0, 1);
+            wblock->range.y2 = p_Create(wblock->block->num_lines, 0, 1);
           else
-            wblock->rangey2 = wblock->reallines[realline]->l.p;
+            wblock->range.y2 = wblock->reallines[realline]->l.p;
         }
 
-        if (p_Greater_Or_Equal(wblock->rangey1, wblock->rangey2)){ // General sanitizer.
-          wblock->rangey1 = p_Create(0,0,1);
-          wblock->rangey2 = p_Create(1,0,1);
-          wblock->isranged = false;
+        if (p_Greater_Or_Equal(wblock->range.y1, wblock->range.y2)){ // General sanitizer.
+          wblock->range.y1 = p_Create(0,0,1);
+          wblock->range.y2 = p_Create(1,0,1);
+          wblock->range.enabled = false;
         }
 
 if(dload_all)        

@@ -16,6 +16,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #pragma once
 
+#include "placement_proc.h"
+
+
 extern LANGSPEC void SetRange(
                               struct Tracker_Windows *window,
                               struct WBlocks *wblock,
@@ -47,8 +50,12 @@ static inline bool range_is_legal(const struct WBlocks *wblock, const Place p1, 
     p_Less_Or_Equal(p2, p_Create(wblock->block->num_lines, 0, 1));
 }
 
+static inline bool range_is_legal3(const struct WBlocks *wblock, range_t range){
+  return range_is_legal(wblock, range.y1, range.y2, range.x1, range.x2+1);
+}
+  
 static inline bool range_is_legal2(const struct WBlocks *wblock){
-  return range_is_legal(wblock, wblock->rangey1, wblock->rangey2, wblock->rangex1, wblock->rangex2+1);
+  return range_is_legal3(wblock, wblock->range);
 }
   
 

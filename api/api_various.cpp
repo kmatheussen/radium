@@ -784,8 +784,8 @@ namespace radium{
         
       } else if (in_range) {
 
-        y1 = wblock->rangey1;
-        y2 = wblock->rangey2;
+        y1 = wblock->range.y1;
+        y2 = wblock->range.y2;
         
       } else {
 
@@ -1076,7 +1076,7 @@ static bool general_transform_list(struct WBlocks *wblock, struct WTracks *wtrac
       
   } else {
   
-    if (gt.in_range && !wblock->isranged)
+    if (gt.in_range && !wblock->range.enabled)
       return false;
 
     radium::ScopedUndo scoped_undo;
@@ -1087,10 +1087,10 @@ static bool general_transform_list(struct WBlocks *wblock, struct WTracks *wtrac
       
       if (gt.in_range) {
         
-        if (track->l.num < wblock->rangex1)
+        if (track->l.num < wblock->range.x1)
           goto next;
         
-        if (track->l.num > wblock->rangex2)
+        if (track->l.num > wblock->range.x2)
           break;
       }
 

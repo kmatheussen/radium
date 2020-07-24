@@ -63,7 +63,8 @@ static void BackWards_notes(
 	addfloat-=GetfloatFromPlace(&wblock->reallines[realline]->l.p);
 
 	CopyRange_notes(&notes,wtrack->track->notes,p1,p2);
-	CutRange_notes(&wtrack->track->notes,wtrack->track->notes,p1,p2);
+        
+	ClearRange_notes(&wtrack->track->notes,wtrack->track->notes,p1,p2);
 
 	while(notes!=NULL){
 		f=GetfloatFromPlace(&notes->l.p);
@@ -98,14 +99,14 @@ static void BackWardsRange(
 	struct WTracks *wtrack;
 	int lokke;
 
-	if( ! wblock->isranged) return;
+	if( ! wblock->range.enabled) return;
 
-	const Place *p1=&wblock->rangey1;
-	const Place *p2=&wblock->rangey2;
+	const Place *p1=&wblock->range.y1;
+	const Place *p2=&wblock->range.y2;
 
-	wtrack=ListFindElement1(&wblock->wtracks->l,wblock->rangex1);
+	wtrack=ListFindElement1(&wblock->wtracks->l,wblock->range.x1);
 
-	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){
+	for(lokke=0;lokke<=wblock->range.x2-wblock->range.x1;lokke++){
 		BackWards_notes(window,wblock,wtrack,p1,p2);
 		wtrack=NextWTrack(wtrack);
 	}
@@ -128,7 +129,7 @@ static void BackWardsBlock(
 void BackWardsRange_CurrPos(
 	struct Tracker_Windows *window
 ){
-	if(!window->wblock->isranged) return;
+	if(!window->wblock->range.enabled) return;
 
 	ADD_UNDO(Range(
                        window,
@@ -144,8 +145,8 @@ void BackWardsRange_CurrPos(
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,
-		window->wblock->rangex1,
-		window->wblock->rangex2
+		window->wblock->range.x1,
+		window->wblock->range.x2
 	);
 
 }

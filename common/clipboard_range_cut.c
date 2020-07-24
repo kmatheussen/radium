@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void CutRange_notes(
+void ClearRange_notes(
                     struct Notes **tonote,
                     const struct Notes *fromnote,
                     const Place *p1,
@@ -45,7 +45,7 @@ void CutRange_notes(
 	const struct Notes *next=NextNote(fromnote);
 
 	if(PlaceLessThan(&fromnote->l.p,p1)){
-		CutRange_notes(tonote,next,p1,p2);
+		ClearRange_notes(tonote,next,p1,p2);
 		return;
 	}
 
@@ -53,11 +53,11 @@ void CutRange_notes(
 
 	ListRemoveElement3(tonote,&fromnote->l);
 
-	CutRange_notes(tonote,next,p1,p2);
+	ClearRange_notes(tonote,next,p1,p2);
 }
 
 
-static void CutRange_stops(
+static void ClearRange_stops(
                     struct Stops **tostop,
                     const struct Stops *fromstop,
                     const Place *p1,
@@ -70,7 +70,7 @@ static void CutRange_stops(
 	next=NextStop(fromstop);
 
 	if(PlaceLessThan(&fromstop->l.p,p1)){
-		CutRange_stops(tostop,next,p1,p2);
+		ClearRange_stops(tostop,next,p1,p2);
 		return;
 	}
 
@@ -78,11 +78,11 @@ static void CutRange_stops(
 
 	ListRemoveElement3(tostop,&fromstop->l);
 
-	CutRange_stops(tostop,next,p1,p2);
+	ClearRange_stops(tostop,next,p1,p2);
 }
 
 
-void CutRange(
+void ClearRange(
               struct Blocks *block,
               NInt starttrack,
               NInt endtrack,
@@ -101,8 +101,8 @@ void CutRange(
         PC_Pause();{
 
           for(lokke=0;lokke<=endtrack-starttrack;lokke++){
-            CutRange_notes(&track->notes,track->notes,p1,p2);
-            CutRange_stops(&track->stops,track->stops,p1,p2);
+            ClearRange_notes(&track->notes,track->notes,p1,p2);
+            ClearRange_stops(&track->stops,track->stops,p1,p2);
             track=NextTrack(track);
             if(track==NULL) break;
           }
@@ -123,20 +123,26 @@ void CutRange(
         }PC_StopPause(NULL);
 }
 
-/**********************************************
-  FUNCTION
-    Does only remove all notes in the ranged
-    area. (decided to wait with FXes)
-**********************************************/
-static void CutRangedRange(
-                           struct WBlocks *wblock
-){
+void ClearRange2(
+              struct Blocks *block,
+              range_t range)
+{
+  ClearRange(block, range.x1, range.x2, &range.y1, &range.y2);
+}
 
-	if(!wblock->isranged) return;
 
-	CutRange(wblock->block,wblock->rangex1,wblock->rangex2, &wblock->rangey1, &wblock->rangey2);
-        
-	wblock->isranged=false;
+void CutRange(
+              struct Blocks *block,
+              range_t range,
+              int rangenum
+              )
+{
+	if(! range.enabled)
+          return;
+
+	CopyRange(block, range, rangenum);
+
+        ClearRange2(block, range);
 }
 
 
@@ -145,31 +151,21 @@ void CutRange_CurrPos(
                       int rangenum
 ){
         struct WBlocks *wblock = window->wblock;
-  
-	if( ! window->wblock->isranged) return;
 
-	CopyRange(wblock, rangenum);
-
-	wblock->isranged=true;
-
+	if( ! wblock->range.enabled)
+          return;
+        
         ADD_UNDO(Range(
                        window,
                        window->wblock,
-                       window->wblock->rangex1,
-                       window->wblock->rangex2+1,
+                       window->wblock->range.x1,
+                       window->wblock->range.x2+1,
                        window->wblock->curr_realline
                        ));
 
-        Undo_start_ignoring_undo_operations();{
-          CutRangedRange(wblock);
-        }Undo_stop_ignoring_undo_operations();
+        CutRange(wblock->block, wblock->range, rangenum);
 
-	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
-                                                      window,
-                                                      wblock,
-                                                      wblock->rangex1,
-                                                      wblock->rangex2
-                                                      );
+        wblock->range.enabled = false;
         
         window->must_redraw = true;
 }

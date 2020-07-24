@@ -84,11 +84,7 @@ struct Undo{
   NInt tracknum;
   int realline;
 
-  bool isranged;
-  NInt rangex1;
-  NInt rangex2;
-  Place rangey1;
-  Place rangey2;
+  range_t range;
 
   int curr_track;
   int curr_track_sub;
@@ -470,11 +466,7 @@ void Das_Undo_Open_rec(void){
     curr_open_undo->tracknum   = wtrack->l.num;
     curr_open_undo->realline   = realline;
     
-    curr_open_undo->isranged = wblock->isranged;
-    curr_open_undo->rangex1 = wblock->rangex1;
-    curr_open_undo->rangex2 = wblock->rangex2;
-    curr_open_undo->rangey1 = wblock->rangey1;
-    curr_open_undo->rangey2 = wblock->rangey2;
+    curr_open_undo->range = wblock->range;
       
     curr_open_undo->curr_track = window->curr_track;
     curr_open_undo->curr_track_sub = window->curr_track_sub;
@@ -836,14 +828,14 @@ currently_undoing = true;
          window->curr_track_sub = undo->curr_track_sub;
          window->curr_othertrack_sub = undo->curr_othertrack_sub;
 
-         bool update_range = wblock->isranged != undo->isranged;
+         bool update_range = wblock->range.enabled != undo->range.enabled;
 
-         if (!update_range && undo->isranged) {
+         if (!update_range && undo->range.enabled) {
            update_range = false
-             || wblock->rangex1 != undo->rangex1
-             || wblock->rangex1 != undo->rangex2
-             || p_NOT_Equal(wblock->rangey1, undo->rangey1)
-             || p_NOT_Equal(wblock->rangey2, undo->rangey2);
+             || wblock->range.x1 != undo->range.x1
+             || wblock->range.x1 != undo->range.x2
+             || p_NOT_Equal(wblock->range.y1, undo->range.y1)
+             || p_NOT_Equal(wblock->range.y2, undo->range.y2);
          }
          
          SelectWBlock(
@@ -854,14 +846,14 @@ currently_undoing = true;
 
          if (update_range){
            
-           if (undo->isranged) {
+           if (undo->range.enabled) {
 
-             SetRange(window, wblock, undo->rangex1, undo->rangex2, undo->rangey1, undo->rangey2);
+             SetRange(window, wblock, undo->range.x1, undo->range.x2, undo->range.y1, undo->range.y2);
              MakeRangeLegal(wblock);
 
              if (!range_is_legal2(wblock)){
                R_ASSERT_NON_RELEASE(false);
-               wblock->isranged=false;
+               wblock->range.enabled=false;
              }
 
            } else {

@@ -91,7 +91,7 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
     */
   } else if (pc->playtype==PLAYBLOCK && pc->is_playing_range == true){
 
-    if (next_realline>=num_reallines || p_Greater_Than(wblock->reallines[next_realline]->l.p, wblock->rangey2)){
+    if (next_realline>=num_reallines || p_Greater_Than(wblock->reallines[next_realline]->l.p, wblock->range.y2)){
 
       ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
       

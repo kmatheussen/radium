@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "range_proc.h"
 
 bool is_track_ranged(struct WBlocks *wblock, struct WTracks *wtrack){
-  return wblock->isranged && wtrack->l.num>=wblock->rangex1 && wtrack->l.num<=wblock->rangex2;
+  return wblock->range.enabled && wtrack->l.num>=wblock->range.x1 && wtrack->l.num<=wblock->range.x2;
 }
 
 bool is_realline_ranged(struct WBlocks *wblock, int realline){
@@ -34,7 +34,7 @@ bool is_realline_ranged(struct WBlocks *wblock, int realline){
     return false;
   }
   Place p = wblock->reallines[realline]->l.p;
-  return wblock->isranged && p_Greater_Or_Equal(p, wblock->rangey1) && p_Less_Or_Equal(p, wblock->rangey2);
+  return wblock->range.enabled && p_Greater_Or_Equal(p, wblock->range.y1) && p_Less_Or_Equal(p, wblock->range.y2);
 }
 
 vector_t get_all_ranged_notes(struct WBlocks *wblock){

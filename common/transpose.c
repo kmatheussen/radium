@@ -100,19 +100,19 @@ static bool TransposeRange(
 	struct Tracks *track;
 	int lokke;
 
-	const Place *p1=&wblock->rangey1;
-	const Place *p2=&wblock->rangey2;
+	const Place *p1=&wblock->range.y1;
+	const Place *p2=&wblock->range.y2;
 
-        if(!wblock->isranged){
+        if(!wblock->range.enabled){
           return Transpose_notes(wblock->wtrack->track->notes,p1,p2,trans,true);
         }
 
 
         bool ret = false;
         
-	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
+	track=ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
 
-	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){
+	for(lokke=0;lokke<=wblock->range.x2-wblock->range.x1;lokke++){
           if (Transpose_notes(track->notes,p1,p2,trans, false))
             ret = true;
           track=NextTrack(track);
@@ -152,10 +152,10 @@ void TransposeRange_CurrPos(
 	struct Tracker_Windows *window,
 	int trans
 ){
-  //if(!window->wblock->isranged) return;
+  //if(!window->wblock->range.enabled) return;
 
-  if (window->wblock->isranged)    
-    ADD_UNDO(Range(window,window->wblock,window->wblock->rangex1,window->wblock->rangex2+1,window->wblock->curr_realline));
+  if (window->wblock->range.enabled)    
+    ADD_UNDO(Range(window,window->wblock,window->wblock->range.x1,window->wblock->range.x2+1,window->wblock->curr_realline));
   else
     ADD_UNDO(Notes_CurrPos(window));
   
@@ -166,8 +166,8 @@ void TransposeRange_CurrPos(
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,
-		window->wblock->rangex1,
-		window->wblock->rangex2
+		window->wblock->range.x1,
+		window->wblock->range.x2
 	);
 }
 

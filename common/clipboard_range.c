@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-struct Range *g_ranges[NUM_RANGES] = {0};
+struct RangeClip *g_range_clips[NUM_RANGES] = {0};
 
 
 void SetRange(
@@ -40,12 +40,12 @@ void SetRange(
         R_ASSERT_RETURN_IF_FALSE(p_Greater_Or_Equal(startplace, p_Create(0,0,1)));
         R_ASSERT_RETURN_IF_FALSE(p_Less_Or_Equal(endplace, p_Create(wblock->block->num_lines, 0, 1)));
 
-	wblock->isranged=true;
-	wblock->rangex1=starttrack;
-	wblock->rangex2=endtrack;
+	wblock->range.enabled=true;
+	wblock->range.x1=starttrack;
+	wblock->range.x2=endtrack;
 
-	wblock->rangey1=startplace;
-	wblock->rangey2=endplace;
+	wblock->range.y1=startplace;
+	wblock->range.y2=endplace;
 }
 
 
@@ -62,16 +62,16 @@ static void MarkRange(
         R_ASSERT_RETURN_IF_FALSE(realline>=0);
         R_ASSERT_RETURN_IF_FALSE(realline<wblock->num_reallines);
 
-	if(wblock->isranged){
+	if(wblock->range.enabled){
 
-		starttrack=wblock->rangex1;
+		starttrack=wblock->range.x1;
 		endtrack=track;
 		if(starttrack>endtrack){
 			starttrack=track;
-			endtrack=wblock->rangex2;
+			endtrack=wblock->range.x2;
 		}
 		
-		startplace=wblock->rangey1;
+		startplace=wblock->range.y1;
 
                 if (realline+1 >= wblock->num_reallines)
                   endplace = p_Create(wblock->block->num_lines, 0, 1);
@@ -80,7 +80,7 @@ static void MarkRange(
 
 		if(p_Greater_Or_Equal(startplace, endplace)){
                   startplace = wblock->reallines[realline]->l.p;
-                  endplace = wblock->rangey2;
+                  endplace = wblock->range.y2;
 		}
 
 		while(p_Greater_Or_Equal(startplace, endplace)){
@@ -133,15 +133,15 @@ void MarkRange_CurrPos(struct Tracker_Windows *window){
 
 #if !USE_OPENGL
 	bool isranged=wblock->isranged;
-	NInt y1=wblock->rangey1;
-	NInt y2=wblock->rangey2;
+	NInt y1=wblock->range.y1;
+	NInt y2=wblock->range.y2;
 
-	if( isranged && (wblock->rangey1>y1 || wblock->rangey2<y2)){
+	if( isranged && (wblock->range.y1>y1 || wblock->range.y2<y2)){
 		UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 			window,
 			window->wblock,
-			window->wblock->rangex1,
-			window->wblock->rangex2
+			window->wblock->range.x1,
+			window->wblock->range.x2
 		);
 	}else{
 		UpdateAllWTracks(window,wblock,0,wblock->num_reallines);
@@ -156,7 +156,7 @@ void CancelRange(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
-  wblock->isranged=false;
+  wblock->range.enabled=false;
 }
 
 void CancelRange_CurrPos(struct Tracker_Windows *window){
@@ -165,8 +165,8 @@ void CancelRange_CurrPos(struct Tracker_Windows *window){
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 		window,
 		window->wblock,
-		window->wblock->rangex1,
-		window->wblock->rangex2
+		window->wblock->range.x1,
+		window->wblock->range.x2
 	);
 #endif
 
@@ -184,28 +184,28 @@ void MakeRangeLegal(
 	struct WBlocks *wblock
 ){
 
-	if(p_Greater_Or_Equal(wblock->rangey1, wblock->rangey2)){
-          if (wblock->rangey1.line==0)
-            wblock->rangey2 = p_Add(wblock->rangey1, p_Create(1,0,1));
+	if(p_Greater_Or_Equal(wblock->range.y1, wblock->range.y2)){
+          if (wblock->range.y1.line==0)
+            wblock->range.y2 = p_Add(wblock->range.y1, p_Create(1,0,1));
           else
-            wblock->rangey1 = p_Sub(wblock->rangey2, p_Create(1,0,1));
+            wblock->range.y1 = p_Sub(wblock->range.y2, p_Create(1,0,1));
         };
 
-        if (p_Greater_Than(wblock->rangey2, p_Create(wblock->block->num_lines, 0, 1)))
-          wblock->rangey2=p_Create(wblock->block->num_lines, 0, 1);
+        if (p_Greater_Than(wblock->range.y2, p_Create(wblock->block->num_lines, 0, 1)))
+          wblock->range.y2=p_Create(wblock->block->num_lines, 0, 1);
 
-        if (p_Greater_Than(wblock->rangey1, p_Create(wblock->block->num_lines, 0, 1))){
-          wblock->rangey1=p_Create(wblock->block->num_lines-1, 0, 1);
-          wblock->rangey2=p_Create(wblock->block->num_lines,   0, 1);
+        if (p_Greater_Than(wblock->range.y1, p_Create(wblock->block->num_lines, 0, 1))){
+          wblock->range.y1=p_Create(wblock->block->num_lines-1, 0, 1);
+          wblock->range.y2=p_Create(wblock->block->num_lines,   0, 1);
         }
 
-        if(p_Greater_Or_Equal(wblock->rangey1, wblock->rangey2)){
+        if(p_Greater_Or_Equal(wblock->range.y1, wblock->range.y2)){
           R_ASSERT_NON_RELEASE(false);
-          wblock->rangey1 = p_Create(0,0,1);
-          wblock->rangey1 = p_Create(1,0,1);
+          wblock->range.y1 = p_Create(0,0,1);
+          wblock->range.y1 = p_Create(1,0,1);
         }
 
-	wblock->rangex2=R_MIN(wblock->rangex2,wblock->block->num_tracks-1);
-	wblock->rangex1=R_MIN(wblock->rangex1,wblock->rangex2);
+	wblock->range.x2=R_MIN(wblock->range.x2,wblock->block->num_tracks-1);
+	wblock->range.x1=R_MIN(wblock->range.x1,wblock->range.x2);
 }
 
