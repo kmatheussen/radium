@@ -2821,7 +2821,8 @@ typedef struct {
 } range_t;
 
 static inline range_t make_range(bool enabled, int x1, int x2, Place y1, Place y2){
-  range_t range = {enabled, x1, x2, y1, y2};
+  R_ASSERT_NON_RELEASE(x2>=x1);
+  range_t range = {enabled, x1, x2-1, y1, y2};
   return range;
 }
 
