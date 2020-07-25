@@ -36,16 +36,30 @@ void SetRange(
 	Place endplace
 ){
 
-        R_ASSERT_RETURN_IF_FALSE(p_Less_Than(startplace, endplace));
-        R_ASSERT_RETURN_IF_FALSE(p_Greater_Or_Equal(startplace, p_Create(0,0,1)));
-        R_ASSERT_RETURN_IF_FALSE(p_Less_Or_Equal(endplace, p_Create(wblock->block->num_lines, 0, 1)));
+  R_ASSERT_RETURN_IF_FALSE(p_Less_Than(startplace, endplace));
+  R_ASSERT_RETURN_IF_FALSE(p_Greater_Or_Equal(startplace, p_Create(0,0,1)));
+  
+  /*
+    R_ASSERT_RETURN_IF_FALSE(p_Less_Or_Equal(endplace, p_Create(wblock->block->num_lines, 0, 1)));
+  */
 
-	wblock->range.enabled=true;
-	wblock->range.x1=starttrack;
-	wblock->range.x2=endtrack;
+  if (p_Greater_Than(endplace, p_Absolute_Last_Pos(wblock->block)))
+    endplace = p_Absolute_Last_Pos(wblock->block);
 
-	wblock->range.y1=startplace;
-	wblock->range.y2=endplace;
+  if (endtrack > wblock->block->num_tracks) {
+    endtrack = wblock->block->num_tracks;
+    if (endtrack < starttrack)
+      return;
+  }
+
+                                   
+  
+  wblock->range.enabled=true;
+  wblock->range.x1=starttrack;
+  wblock->range.x2=endtrack;
+  
+  wblock->range.y1=startplace;
+  wblock->range.y2=endplace;
 }
 
 
