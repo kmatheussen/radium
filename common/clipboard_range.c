@@ -36,7 +36,6 @@ void SetRange(
 	Place endplace
 ){
 
-  R_ASSERT_RETURN_IF_FALSE(p_Less_Than(startplace, endplace));
   R_ASSERT_RETURN_IF_FALSE(p_Greater_Or_Equal(startplace, p_Create(0,0,1)));
   
   /*
@@ -45,6 +44,9 @@ void SetRange(
 
   if (p_Greater_Than(endplace, p_Absolute_Last_Pos(wblock->block)))
     endplace = p_Absolute_Last_Pos(wblock->block);
+
+  if (p_Greater_Or_Equal(startplace, endplace))
+    return;
 
   if (endtrack > wblock->block->num_tracks) {
     endtrack = wblock->block->num_tracks;
