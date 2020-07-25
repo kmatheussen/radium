@@ -2916,7 +2916,7 @@ static void create_current_barbeat_mark(const WSignature_trss &wsignatures_trss,
 
   Place start,end;
   if (get_barbeat_start_and_end(wblock->block, g_current_bar_num, g_current_beat_num, &start, &end)==false){
-    R_ASSERT_NON_RELEASE(false);
+    //R_ASSERT_NON_RELEASE(false); // Happens, for instance, when deleting last bar.
     return;
   }
                             
