@@ -35,11 +35,11 @@ extern void ClearRange(
 
 void ClearRange2(
               struct Blocks *block,
-              range_t range);
+              const range_t range);
 
 void CutRange(
               struct Blocks *block,
-              range_t range,
+              const range_t range,
               int rangenum
               );
 

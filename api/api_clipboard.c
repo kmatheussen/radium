@@ -394,6 +394,10 @@ Place getRangeLength(int rangetype){
   return range_clip->length;
 }
 
+bool hasRangeInClipboard(int rangetype){
+  return get_range_clip(rangetype) != NULL;
+}
+
 
 // # These functions works on the currently marked range, not the clipboard. The functions above works on the range copied into the clipboard.
 

@@ -345,7 +345,7 @@ static ReplacementColor g_replacement_color[] = {
   {LINE_SLIDER_COLOR_NUM, QColor("#ff000000")},
 
   {CURRENT_BEAT_TEXT_COLOR_NUM, QColor("#ff000000")},
-  {CURRENT_BEAT_RANGE_COLOR_NUM, QColor("#321dfa0d")},
+  {CURRENT_BEAT_RANGE_COLOR_NUM, QColor("#32fa0b43")},
 
   {RANGE_COLOR_NUM, QColor("#629d75")},
 

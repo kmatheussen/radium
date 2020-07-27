@@ -125,7 +125,7 @@ void ClearRange(
 
 void ClearRange2(
               struct Blocks *block,
-              range_t range)
+              const range_t range)
 {
   ClearRange(block, range.x1, range.x2, &range.y1, &range.y2);
 }
@@ -133,7 +133,7 @@ void ClearRange2(
 
 void CutRange(
               struct Blocks *block,
-              range_t range,
+              const range_t range,
               int rangenum
               )
 {

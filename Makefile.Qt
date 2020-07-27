@@ -1808,7 +1808,7 @@ $(T)api_soundpluginregistry.o:  $(BUILD_DEPENDENCIES) $(API)api_soundpluginregis
 $(T)api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.cpp 
 	$(CCC2)  $(API)api_requesters.cpp $(QTOPT)
 
-$(T)api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.cpp
+$(T)api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.cpp common/Beats_proc.h
 	$(CCC2)  $(API)api_mouse.cpp $(QTOPT)
 
 $(T)api_sequencer.o:  $(BUILD_DEPENDENCIES)  $(API)api_sequencer.cpp $(API)api_sequencer_proc.h  audio/Envelope.hpp common/seqblock_automation_proc.h embedded_scheme/s7extra_proc.h
@@ -2448,7 +2448,7 @@ $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxEleme
 $(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h 
 	$(CCC2) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)    #-Wno-error=unused-variable
 
-$(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h
+$(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h common/Beats_proc.h
 	$(CCC2) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)
 
 $(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp
