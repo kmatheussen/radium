@@ -4320,7 +4320,7 @@ float gui_textWidth(const_char* text, int64_t guinum){
   if (guinum >= 0){
     Gui *gui = get_gui(guinum);
     if (gui != NULL) {
-      QPainter *painter = gui->get_painter();
+      QPainter *painter = gui->_current_painter;
       if (painter == NULL)
         font = gui->_widget->font();
       else
