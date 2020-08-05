@@ -1782,12 +1782,14 @@ void setEmbeddedAudioFilesPath(filepath_t new_path){
   SETTINGS_write_string("embedded_audio_files_path", g_embedded_audio_files_path);
 }
 
-bool save(bool ignore_nsm){
+bool save(void /*bool ignore_nsm*/){
 
+  /*
   if (!ignore_nsm && nsmIsActive()){
     nsmSave();
     return true;
   }
+  */
   
   return Save(root);
 }

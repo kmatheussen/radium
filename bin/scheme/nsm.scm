@@ -93,7 +93,7 @@
 
 (define (nsm-save-method url)
   (c-display "   NSM-SAVE:" url)
-  (if (<ra> :save #t)
+  (if (<ra> :save)
       (<ra> :send-osc-message-from *nsm-addr* *nsm-osc-server* "/reply" "ss" (list url "OK"))
       (<ra> :send-osc-message-from *nsm-addr* *nsm-osc-server* "/error" "sis" (list url -1 "Saving Failed")))
   'grab)
