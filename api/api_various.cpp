@@ -1792,6 +1792,14 @@ bool save(bool ignore_nsm){
   return Save(root);
 }
 
+bool saveAsOrExportSong(filepath_t filename){
+  if (nsmIsActive())
+    return exportSong(filename);
+  else
+    return saveAs(filename, false, true);
+}
+  
+
 bool saveAs(filepath_t filename, bool with_embedded_samples, bool ignore_nsm){
   if (!ignore_nsm && nsmIsActive()){
 
@@ -1859,6 +1867,9 @@ bool load(bool ignore_nsm){
 }
 
 bool loadSong(filepath_t filename){
+  if (isIllegalFilepath(filename))
+    return load(false);
+
   if( LoadSong_CurrPos(getWindowFromNum(-1),filename)){
     
     isloaded=true;
@@ -1871,6 +1882,13 @@ bool loadSong(filepath_t filename){
   }
 }
 
+bool loadOrImportSong(filepath_t filename){
+  if (nsmIsActive())
+    return importSong(filename);
+  else
+    return loadSong(filename);
+}
+  
 static bool ask_clear_or_import(void){
   if (Undo_num_undos_since_last_save()==0 && hasSession()==false)
     return true;
@@ -1914,10 +1932,8 @@ void newSong(bool ignore_nsm){
 
   if (!ignore_nsm && nsmIsActive()){
 
-    if(Undo_NSM_are_you_sure_questionmark()==false)
-      return;
-
-    evalScheme("(FROM_C-nsm-new-song)");
+    // This function shouldn't be called at all in NSM mode, but calling NewSong_CurrPos will screw things up, so instead we do this.
+    nsmNewSong();
     return;
   }
   
