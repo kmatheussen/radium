@@ -1657,10 +1657,7 @@ void quit(bool ignore_nsm){
   
   if (!ignore_nsm && nsmIsActive()){
 
-    if(Undo_are_you_sure_questionmark()==false)
-      return;
-
-    evalScheme("(FROM_C-nsm-quit)");
+    nsmQuit();
     return;
   }
 
@@ -1788,7 +1785,7 @@ void setEmbeddedAudioFilesPath(filepath_t new_path){
 bool save(bool ignore_nsm){
 
   if (!ignore_nsm && nsmIsActive()){
-    evalScheme("(FROM_C-nsm-save)");
+    nsmSave();
     return true;
   }
   
@@ -1798,10 +1795,7 @@ bool save(bool ignore_nsm){
 bool saveAs(filepath_t filename, bool with_embedded_samples, bool ignore_nsm){
   if (!ignore_nsm && nsmIsActive()){
 
-    if(Undo_NSM_are_you_sure_questionmark()==false)
-      return false;
-
-    evalScheme("(FROM_C-nsm-save-as)");
+    nsmDuplicate();
     
     return true;
   }
@@ -1848,14 +1842,8 @@ extern bool isloaded;
 
 bool load(bool ignore_nsm){
 
-  if (!ignore_nsm && nsmIsActive()){
-    
-    if(Undo_NSM_are_you_sure_questionmark()==false)
-      return false;
-    
-    evalScheme("(FROM_C-nsm-open)");
-    
-    return true;
+  if (!ignore_nsm && nsmIsActive()){    
+    return nsmOpen();
   }
   
   if( Load_CurrPos(getWindowFromNum(-1))){
@@ -1948,6 +1936,13 @@ void clearSong(void){
 
   if (isLegalFilepath(dc.filename))
     GFX_SetWindowTitle(getWindowFromNum(-1), talloc_wformat(L"** %S **", dc.filename.id));
+}
+
+void newOrClearSong(void){
+  if (nsmIsActive())
+    clearSong();
+  else
+    newSong(false);
 }
 
 void importMidi(void){
