@@ -1805,9 +1805,8 @@ bool saveAsOrExportSong(filepath_t filename){
 bool saveAs(filepath_t filename, bool with_embedded_samples, bool ignore_nsm){
   if (!ignore_nsm && nsmIsActive()){
 
-    nsmDuplicate();
-    
-    return true;
+    handleError("saveAs: Can not call SaveAs in NSM-mode. Use exportSong instead.");
+    return false;
   }
   
   if (with_embedded_samples)
@@ -1852,8 +1851,11 @@ extern bool isloaded;
 
 bool load(bool ignore_nsm){
 
-  if (!ignore_nsm && nsmIsActive()){    
-    return nsmOpen();
+  if (!ignore_nsm && nsmIsActive()){
+
+    handleError("load: Can not call Load in NSM-mode. Use importSong instead.");
+    return false;
+    //return nsmOpen();
   }
   
   if( Load_CurrPos(getWindowFromNum(-1))){
@@ -1934,8 +1936,7 @@ void newSong(bool ignore_nsm){
 
   if (!ignore_nsm && nsmIsActive()){
 
-    // This function shouldn't be called at all in NSM mode, but calling NewSong_CurrPos will screw things up, so instead we do this.
-    nsmNewSong();
+    handleError("newSong: Can not call newSong in NSM-mode. Use clearSong instead.");
     return;
   }
   
