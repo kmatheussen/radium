@@ -338,6 +338,7 @@ void pasteTrack(int tracknum, int blocknum, int windownum){
   if (tracknum==-1 && blocknum==-1){
     struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
     CB_PasteTrack_CurrPos(window);
+    window->must_redraw = true;
     return;
   }
 
