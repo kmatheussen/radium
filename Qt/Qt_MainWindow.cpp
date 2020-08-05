@@ -496,7 +496,7 @@ public:
   void closeEvent(QCloseEvent *ce) override{
     CancelMaybeNavigateMenus();
     ce->ignore();
-    quit(false);
+    quit();
   }
 
 #if 0

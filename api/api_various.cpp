@@ -1653,14 +1653,14 @@ void minimizeBlockTracks(int windownum, int blocknum){
 
 extern bool doquit;
 
-void quit(bool ignore_nsm){
-  
+void quit(void/*bool ignore_nsm*/){
+  /*
   if (!ignore_nsm && nsmIsActive()){
 
     nsmQuit();
     return;
   }
-
+  */
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   doquit=Quit(window);
   if(doquit==true) printf("doquit is really true.\n");
