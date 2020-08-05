@@ -578,3 +578,61 @@ void setSupportsSwitchNsmCapability(bool val){
   g_supportsSwitchNsmCapability = val;
   SETTINGS_write_bool("supports_switch_nsm_capability", val);
 }
+
+void nsmNewSong(void){
+  if (!nsmIsActive()){
+    handleError("nsmNewSong: NSM is not active");
+    return;
+  }
+  
+  if(Undo_NSM_are_you_sure_questionmark()==false)
+    return;
+
+  evalScheme("(FROM_C-nsm-new-song)");
+}
+
+void nsmSave(void){
+  if (!nsmIsActive()){
+    handleError("nsmNewSong: NSM is not active");
+    return;
+  }
+  
+  evalScheme("(FROM_C-nsm-save)");
+}
+
+void nsmDuplicate(void){
+  if (!nsmIsActive()){
+    handleError("nsmNewSong: NSM is not active");
+    return;
+  }
+  
+  if(Undo_NSM_are_you_sure_questionmark()==false)
+    return;
+
+  evalScheme("(FROM_C-nsm-save-as)");
+}
+
+bool nsmOpen(void){
+  if (!nsmIsActive()){
+    handleError("nsmNewSong: NSM is not active");
+    return false;
+  }
+  
+  if(Undo_NSM_are_you_sure_questionmark()==false)
+    return false;
+  
+  evalScheme("(FROM_C-nsm-open)");
+  return true;
+}
+
+void nsmQuit(void){
+  if (!nsmIsActive()){
+    handleError("nsmNewSong: NSM is not active");
+    return;
+  }
+  
+  if(Undo_are_you_sure_questionmark()==false)
+    return;
+
+  evalScheme("(FROM_C-nsm-quit)");
+}
