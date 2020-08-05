@@ -445,6 +445,8 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 
  exit:
         PC_StopPause(window);
+
+        window->must_redraw=true;
 }
 
 
