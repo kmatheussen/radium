@@ -62,6 +62,13 @@
                                    (let ((gui (my-tabs #t)))
                                      (<gui> :set-static-toplevel-widget gui #t)
                                      
+                                     (<gui> :add-mouse-callback gui
+                                            (lambda (button state x y)
+                                              ;;(c-display "MOUSEMOVE. state:" state)
+                                              (if (= state 5)
+                                                  (<ra> :set-editor-keyboard-focus))
+                                              #f))
+
                                      ;; Just hide window when closing it.
                                      (<gui> :add-close-callback gui
                                             (lambda (radium-runs-custom-exec)
