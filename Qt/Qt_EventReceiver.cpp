@@ -554,6 +554,8 @@ void EditorWidget::handle_mouse_move(Qt::MouseButton button, float x, float y) c
   if(g_is_starting_up==true)
     return;
 
+  FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, true);
+  
   tevent.ID=TR_MOUSEMOVE;
   tevent.x  = x;
   tevent.y  = y;

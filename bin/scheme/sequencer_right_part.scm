@@ -769,6 +769,12 @@
   (define-override (paint) ;; workaround for osx.
     (<gui> :filled-box gui "low_background" x1 y1 x2 y2 0 0 #t))
 
+
+  (add-raw-mouse-cycle!
+   :enter-func (lambda (button x y)
+                 (<ra> :set-editor-keyboard-focus)
+                 #f))
+  
   (define-override (get-state)
     (hash-table :blocklist-class-name (blocklist :class-name)
                 :blocklist (blocklist :get-state)

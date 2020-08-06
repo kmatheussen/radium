@@ -685,6 +685,8 @@ public:
   void	fix_mouseMoveEvent(QMouseEvent *event) override{
     //printf("sequencer. mouseMove: %d,%d\n", event->x(), event->y());
 
+    FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
+    
     event->accept();
     
     if (_is_sequencer_widget)

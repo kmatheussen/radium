@@ -1801,6 +1801,8 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 }
 
 void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
+  FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
+  
   MOUSE_CYCLE_move(g_mixer_widget, get_qmouseevent(event));
   
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();

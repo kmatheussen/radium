@@ -2694,6 +2694,13 @@
 
   (push-back! *mixer-strips-objects* mixer-strips-object)
 
+  (<gui> :add-mouse-callback parent
+         (lambda (button state x y)
+           ;;(c-display "MOUSEMOVE9. state:" state)
+           (if (= state 5)
+               (<ra> :set-mixer-keyboard-focus))
+           #f))
+  
   (<gui> :add-deleted-callback parent
          (lambda (radium-runs-custom-exec)
            (set! *mixer-strips-objects*
@@ -2980,14 +2987,17 @@
   (define strips-config (create-strips-config instrument-ids num-rows vert-ratio remake gui))
 
   (add-safe-mouse-callback gui
-         (lambda (button state x y)
-           (cond ((and (= button *right-button*)
-                       (= state *is-releasing*))
-                  (popup-menu
-                   (get-global-mixer-strips-popup-entries #f strips-config))))
-           #f))
+                           (lambda (button state x y)
+                             ;;(c-display "MOUSEMOVE. state:" state)
+                             (if (= state 5)
+                                 (<ra> :set-mixer-keyboard-focus))
+                             (cond ((and (= button *right-button*)
+                                         (= state *is-releasing*))
+                                    (popup-menu
+                                     (get-global-mixer-strips-popup-entries #f strips-config))))
+                             #f))
 
-    
+
   (define mixer-strips-object (make-mixer-strips-object :gui gui
                                                         :remake remake
                                                         :strips-config strips-config
