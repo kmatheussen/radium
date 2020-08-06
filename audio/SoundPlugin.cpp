@@ -1493,7 +1493,9 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
   }
 }
 
-                               
+
+bool g_calling_set_effect_value_from_pd = false;
+
 static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time, const int effect_num, float value, const enum StoreitType storeit_type, const FX_when when, const enum ValueFormat value_format, const bool sent_from_midi_learn){
   float store_value_native = value;
   float store_value_scaled = value;
@@ -1519,8 +1521,8 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
 
   } else {
 
-    if (false==THREADING_is_main_thread()) {
-      R_ASSERT(THREADING_is_player_thread() || THREADING_is_juce_thread()); // Called from midi learn or juce. Note that we get a hit here if controlling from Pd (executed in a runner thread), but that's a false positive.
+    if (g_calling_set_effect_value_from_pd==false && false==THREADING_is_main_thread()) {
+      R_ASSERT(THREADING_is_player_thread() || THREADING_is_juce_thread()); // Called from midi learn or juce.
 
       if (THREADING_is_player_thread())
         R_ASSERT(sent_from_midi_learn);

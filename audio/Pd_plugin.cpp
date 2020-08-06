@@ -643,7 +643,10 @@ static void RT_pdfloathook(void *d, const char *sym, float val){
     
     controller->calling_from_pd = true; {
       RT_PLAYER_runner_lock();{
-        PLUGIN_set_effect_value(controller->plugin, -1, controller->num, scaled_value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED); // PLUGIN_set_effect_value only works with NONSTORED_TYPE for system effects. (should be fixed)
+#if !defined(RELEASE)
+        radium::ScopedBoolean scoped(g_calling_set_effect_value_from_pd);
+#endif
+        PLUGIN_set_effect_value(controller->plugin, -1, controller->num, scaled_value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
       }RT_PLAYER_runner_unlock();
     } controller->calling_from_pd = false;
   }
@@ -1035,7 +1038,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   libpds_set_polyaftertouchhook(pd, RT_polyaftertouchhook);
   libpds_set_controlchangehook(pd, RT_controlchangehook);
 
-  libpds_init_audio(pd, 2, 2, sample_rate);
+  libpds_init_audio(pd, plugin->type->num_inputs, plugin->type->num_outputs, sample_rate);
     
   blocksize = libpds_blocksize(pd);
 
@@ -1110,6 +1113,9 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
     g_instances = data;
   }PLAYER_unlock();
 
+  plugin->num_visible_outputs = 2;
+  plugin->automatically_set_num_visible_outputs = true;
+  
   return data;
 }
 
@@ -1338,8 +1344,8 @@ static void add_plugin(const wchar_t *name, QString filename) {
   plugin_type->type_name                = "Pd";
   plugin_type->name                     = V_strdup(STRING_get_chars(name));
   plugin_type->info                     = "Pd is made by Miller Puckette. Radium uses a modified version of libpd to access it.\nlibpd is made by Peter Brinkmann.";
-  plugin_type->num_inputs               = 2;
-  plugin_type->num_outputs              = 2;
+  plugin_type->num_inputs               = 16;
+  plugin_type->num_outputs              = 16;
   plugin_type->is_instrument            = true;
   plugin_type->note_handling_is_RT      = false;
   plugin_type->num_effects              = NUM_PD_CONTROLLERS;
