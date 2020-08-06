@@ -12,11 +12,18 @@
 #include "AudioMeterPeaks_proc.h"
 
 
+static int next_power_of_two(int n){
+  int ret = 1;
+  while(ret < n)
+    ret*=2;
+  return ret;
+}
+
 // NOTE. All the 'call_very_often' functions can be called from a custom exec().
 // This means that _patch->plugin might be gone, and the same goes for soundproducer.
 // (Note that _patch is never deleted, except when loading song.)
 
-static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms){
+static void call_very_often(SoundPlugin *plugin, AudioMeterPeaks &peaks, bool reset_falloff, float ms){
 
   for(int ch=0;ch<peaks.num_channels;ch++){
 
@@ -72,24 +79,34 @@ static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms
     // falloff db
     if (reset_falloff || max_db > peaks.falloff_dbs[ch])
       peaks.falloff_dbs[ch] = max_db;
-
+    
     if (max_db > peaks.peaks[ch])
       peaks.peaks[ch] = max_db;
+
+    if (plugin->automatically_set_num_visible_outputs && ch+1 > plugin->num_visible_outputs && plugin->type->num_outputs >= 2)
+      if (ch >= plugin->type->num_outputs){
+        R_ASSERT_NON_RELEASE(false);
+      } else {
+        if (max_db >= MIN_DB_A_LITTLE_BIT_ABOVE){
+          //printf("Before: %d. Now: %d. max_db: %f. MIN_DB: %f\n", plugin->num_visible_outputs, R_BOUNDARIES(2, next_power_of_two(ch+1), plugin->type->num_outputs), max_db, MIN_DB_A_LITTLE_BIT_ABOVE);
+          plugin->num_visible_outputs = R_BOUNDARIES(2, next_power_of_two(ch+1), plugin->type->num_outputs);
+        }
+      }
   }
 }
 
 static void call_very_often(SoundPlugin *plugin, bool reset_falloff, int ms){
-  call_very_often(plugin->volume_peaks, reset_falloff, ms);
+  call_very_often(plugin, plugin->volume_peaks, reset_falloff, ms);
 
-  call_very_often(plugin->output_volume_peaks, reset_falloff, ms);
+  call_very_often(plugin, plugin->output_volume_peaks, reset_falloff, ms);
 
-  call_very_often(plugin->input_volume_peaks, reset_falloff, ms);
+  call_very_often(plugin, plugin->input_volume_peaks, reset_falloff, ms);
   
-  call_very_often(plugin->bus0_volume_peaks, reset_falloff, ms);
-  call_very_often(plugin->bus1_volume_peaks, reset_falloff, ms);
-  call_very_often(plugin->bus2_volume_peaks, reset_falloff, ms);
-  call_very_often(plugin->bus3_volume_peaks, reset_falloff, ms);
-  call_very_often(plugin->bus4_volume_peaks, reset_falloff, ms);
+  call_very_often(plugin, plugin->bus0_volume_peaks, reset_falloff, ms);
+  call_very_often(plugin, plugin->bus1_volume_peaks, reset_falloff, ms);
+  call_very_often(plugin, plugin->bus2_volume_peaks, reset_falloff, ms);
+  call_very_often(plugin, plugin->bus3_volume_peaks, reset_falloff, ms);
+  call_very_often(plugin, plugin->bus4_volume_peaks, reset_falloff, ms);
 }
 
 

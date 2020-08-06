@@ -51,6 +51,10 @@ extern "C"{
   
 #define MAX_DB_GAIN 56.23413251903491 // = powf(10, MAX_DB/20.0f);
 #define THRESHOLD_GAIN 0.01778279410038923 // = powf(10, MIN_DB_THRESHOLD / 20.0f);
+
+#if !defined(RELEASE)
+  extern bool g_calling_set_effect_value_from_pd;
+#endif
   
 static inline float gain2db(float gain){
   if (equal_floats(gain, 1.0)) { // Common situation, but also to ensure correct conversion (not sure if log10(1.0) always returns exactly 0.0, although it probably does).
@@ -467,6 +471,7 @@ typedef struct SoundPlugin{
   void *data;
 
   int num_visible_outputs; // Used by the peak meters. Must never be higher than num_outputs. If the value is -1, it is ignored. Only used by the main thread.
+  bool automatically_set_num_visible_outputs; // false by default.
   
   // Data below handled by Radium.
 
