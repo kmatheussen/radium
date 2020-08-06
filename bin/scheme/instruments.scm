@@ -2129,7 +2129,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
   (define (get-instrument-entries only-if-used)
     (list
      (and (> (length midi-instruments) 0)
-          (list "----------"
+          (list "----------MIDI instruments currently used"
                 (map (lambda (num instrument-id)
                        (and (or (not only-if-used)
                                 (<ra> :instrument-has-been-used instrument-id))
@@ -2138,7 +2138,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                     (load instrument-id)))))
                      (iota (length midi-instruments))
                      midi-instruments)))
-     "----------"
+     "----------Audio instruments currently used"
      (map (lambda (num instrument-id)
             (and (or (not only-if-used)
                      (<ra> :instrument-has-been-used instrument-id))
@@ -2174,7 +2174,9 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    "----------------"
    "Show plugin manager" (lambda ()
                            (pmg-start instr-conf callback))
-
+   
+   "----------Use an existing instrument"
+   "All" (get-instrument-entries #f)
    "----------Clone an existing instrument"
    "All" (map (lambda (num instrument-id)
                 (if (<ra> :instrument-is-permanent instrument-id)
@@ -2184,9 +2186,8 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                             (load (<ra> :clone-audio-instrument instrument-id))))))
               (iota (length instruments-before))
               instruments-before)
-   "----------Use an existing instrument"
-   "All" (get-instrument-entries #f)
-   (get-instrument-entries #t))
+   (get-instrument-entries #t)
+   )
   )
 
 ;; async
