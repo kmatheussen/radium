@@ -257,8 +257,9 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
     if (AnyExtra(tevent.keyswitch))
       return false;    
   }
-  
-  if (key == EVENT_DEL && g_current_barbeat_block_num >= 0)
+
+  // Do nothing if mouse is above a bar or a beat in the bar/beat track.
+  if (g_current_barbeat_block_num >= 0)
     return false;
       
   struct WBlocks *wblock = window->wblock;
