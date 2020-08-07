@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "cursor_updown_proc.h"
 #include "wtracks_proc.h"
 
+#include "../OpenGL/Render_proc.h"
+
 #include "data_as_text_proc.h"
 
 
@@ -256,6 +258,9 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
       return false;    
   }
   
+  if (key == EVENT_DEL && g_current_barbeat_block_num >= 0)
+    return false;
+      
   struct WBlocks *wblock = window->wblock;
   struct WTracks *wtrack = wblock->wtrack;
 
