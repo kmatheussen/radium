@@ -109,10 +109,17 @@ public:
   QString get_source_info(void){
     if (ATOMIC_GET(is_learning))
       return "Learning...";
-    else if (ATOMIC_GET(byte1)>=0xe0)
-      return talloc_format("%s: %2X", ATOMIC_GET(port_name)->name, ATOMIC_GET(byte1));
-    else
-      return talloc_format("%s: %2X / %2X", ATOMIC_GET(port_name)->name, ATOMIC_GET(byte1), ATOMIC_GET(byte2));
+    else {
+
+      const symbol_t *portname = ATOMIC_GET(port_name);
+      R_ASSERT_RETURN_IF_FALSE2(portname!=NULL, "(error)");
+                                
+      if (ATOMIC_GET(byte1)>=0xe0)
+        return talloc_format("%s: %2X", ATOMIC_GET(port_name)->name, ATOMIC_GET(byte1));
+      else
+        return talloc_format("%s: %2X / %2X", ATOMIC_GET(port_name)->name, ATOMIC_GET(byte1), ATOMIC_GET(byte2));
+
+    }
   }
 
   // may be overridden. Returns -2 if no instrument should match, or -1 if all instruments should match.
