@@ -800,8 +800,8 @@ bool radium::MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
   if (ATOMIC_GET(is_learning)){
     ATOMIC_SET(byte1, d1);
     ATOMIC_SET(byte2, d2);
-    ATOMIC_SET(is_learning, false);
     ATOMIC_SET(this->port_name, port_name);
+    ATOMIC_SET(is_learning, false);
   }
 
   //printf("Got msg %x. byte1: %x, byte2: %x\n", msg, byte1, byte2);
