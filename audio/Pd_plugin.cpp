@@ -936,10 +936,24 @@ static void RT_controlchangehook(void *d, int channel, int cc, int value){
   if(patch==NULL)
     return;
 
-  RT_PLAYER_runner_lock();{
+  if (patch->patchdata==NULL) // Happens when loading song.
+    return;
+  
+  bool is_player_or_runner_thread = THREADING_is_player_or_runner_thread();
+  
+  if (is_player_or_runner_thread)
+    RT_PLAYER_runner_lock();
+  else{
+    R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+  }
+    
+  {
     struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
     RT_PATCH_send_raw_midi_message_to_receivers(seqtrack, patch, MIDI_msg_pack3(0xb0 | channel, cc, value), -1);
-  }RT_PLAYER_runner_unlock();
+  }
+
+  if (is_player_or_runner_thread)
+    RT_PLAYER_runner_unlock();
   
 }
 
