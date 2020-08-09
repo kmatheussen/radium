@@ -115,9 +115,9 @@ public:
       R_ASSERT_RETURN_IF_FALSE2(portname!=NULL, "(error)");
                                 
       if (ATOMIC_GET(byte1)>=0xe0)
-        return talloc_format("%s: %2X", ATOMIC_GET(port_name)->name, ATOMIC_GET(byte1));
+        return talloc_format("%s: %2X", portname->name, ATOMIC_GET(byte1));
       else
-        return talloc_format("%s: %2X / %2X", ATOMIC_GET(port_name)->name, ATOMIC_GET(byte1), ATOMIC_GET(byte2));
+        return talloc_format("%s: %2X / %2X", portname->name, ATOMIC_GET(byte1), ATOMIC_GET(byte2));
 
     }
   }
