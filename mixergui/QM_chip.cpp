@@ -2696,7 +2696,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
       
       chip->_slider_start_value = value;
 
-      int effect_num = get_volume_effect_num();
+      int effect_num = chip->get_volume_effect_num();
       
       if (_has_made_volume_effect_undo==false)
         ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
