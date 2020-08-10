@@ -437,7 +437,7 @@ static void add_recorded_note(std::vector<midi_event_t> &midi_events, struct WBl
 
 static void add_recorded_fx(std::vector<midi_event_t> &midi_events, struct Tracker_Windows *window, struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int midi_events_pos, const midi_event_t &first_event){
 
-  printf("Add recorded fx %s / %d. %x\n",first_event.plugin->patch->name, first_event.effect_num, first_event.msg);
+  //printf("Add recorded fx %s / %d. %x\n",first_event.plugin->patch->name, first_event.effect_num, first_event.msg);
 
   int blocknum = wblock->l.num;
   int tracknum = wtrack->l.num;
@@ -797,6 +797,8 @@ bool radium::MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
   if (d1 >= 0xf0)
     return false;
 
+  //printf("a5: -%s- -%s-\n", ATOMIC_GET(this->port_name)==NULL ? "NULL" : ATOMIC_GET(this->port_name)->name, port_name==NULL ? "NULL" : port_name->name);
+
   if (ATOMIC_GET(is_learning)){
     ATOMIC_SET(byte1, d1);
     ATOMIC_SET(byte2, d2);
@@ -824,15 +826,20 @@ bool radium::MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
       return true;
   }
 
+
   return false;
 }
 
-bool radium::MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){  
+bool radium::MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){
+  //printf("RT_MAYBE_USE: %x\n", msg);
+  
   if (RT_matching(port_name, msg)==false)
     return false;
 
   float value = get_msg_fx_value(msg);
 
+  //printf("....Value: %f\n", value);
+  
   RT_callback(value);
   
   return true;

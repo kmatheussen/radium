@@ -410,6 +410,20 @@ struct Patch *PATCH_alloc(void){
   return patch;
 }
 
+static void set_name3(struct Patch *patch, const char *name){
+  patch->name = talloc_strdup(name);
+
+  {
+    const char *new_midi_learn_port_name = talloc_format("Event connection from %s^%" PRId64 "", patch->name, patch->id.id);
+    
+    if (patch->midi_learn_port_name == NULL)
+      patch->midi_learn_port_name = get_symbol(new_midi_learn_port_name);
+    else
+      set_symbol_name(patch->midi_learn_port_name, new_midi_learn_port_name);
+  }
+
+}
+  
 void PATCH_set_name2(struct Patch *patch, const char *name, bool update_send_receive_plugin_names){
   const_char *orgname = patch->name;
   
@@ -425,17 +439,8 @@ void PATCH_set_name2(struct Patch *patch, const char *name, bool update_send_rec
       if (patch->patchdata != NULL)
         must_update_instrument = SEND_RECEIVE_handle_new_patchname((SoundPlugin*)patch->patchdata, name);
 
-  patch->name = talloc_strdup(name);
-
-  {
-    const char *new_midi_learn_port_name = talloc_format("Event connection from %s", patch->name);
-    
-    if (patch->midi_learn_port_name == NULL)
-      patch->midi_learn_port_name = get_symbol(new_midi_learn_port_name);
-    else
-      set_symbol_name(patch->midi_learn_port_name, new_midi_learn_port_name);
-  }
-
+  set_name3(patch, name);
+  
   if (orgname==NULL || strcmp(orgname, patch->name)) {
     
     printf("       PATCH set name: %s\n", patch->name);
@@ -592,8 +597,9 @@ static void apply_patch_state(struct Patch *patch, hash_t *state){
   for (i=0;i<HASH_get_array_size(state, "patchvoice"); i++)
     apply_patchvoice_state(patch->voices[i], HASH_get_hash_at(state, "patchvoice", i));
 
-  if (HASH_has_key(state, "name"))
-    patch->name = HASH_get_chars(state, "name");
+  if (HASH_has_key(state, "name")){
+    set_name3(patch, HASH_get_chars(state, "name"));
+  }
   
   if (HASH_has_key(state, "color"))
     patch->color = GFX_get_color_from_colorname(HASH_get_chars(state, "color"));
@@ -607,9 +613,10 @@ struct Patch *PATCH_create_from_state(hash_t *state){
   struct Patch *patch=PATCH_alloc();
   patch->is_usable = true;
   
+  patch->id = HASH_get_instrument(state, "id");
+  
   apply_patch_state(patch, state);
 
-  patch->id = HASH_get_instrument(state, "id");
   patch->name_is_edited = HASH_get_int(state, "name_is_edited")==1 ? true : false;
   patch->uuid = HASH_get_chars(state, "uuid");
 
