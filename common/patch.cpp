@@ -250,8 +250,10 @@ struct Patch *PATCH_get_current(void){
       
     g_curr_patch = g_main_pipe_patch;
 
-    R_ASSERT_NON_RELEASE(g_curr_patch!=NULL);
-    R_ASSERT_NON_RELEASE(PATCH_get_from_id(g_curr_patch->id)!=NULL);
+    if (g_is_starting_up==false && g_is_loading==false){
+      R_ASSERT_NON_RELEASE(g_curr_patch!=NULL);
+      R_ASSERT_NON_RELEASE(PATCH_get_from_id(g_curr_patch->id)!=NULL);
+    }
     
     if (g_curr_patch==NULL){
       
