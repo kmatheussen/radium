@@ -729,6 +729,16 @@
                         (append single-entries (list "--------") multi-entries))))))
 
 
+;; Note: Used for shortcut.
+(delafina (new-instrument-from-preset :parentgui (<gui> :get-main-mixer-gui)
+                                      :x (<ra> :get-curr-mixer-slot-x)
+                                      :y (<ra> :get-curr-mixer-slot-y))
+  (request-select-instrument-preset
+   parentgui
+   (lambda (descr)
+     (<ra> :create-audio-instrument-from-description descr "" x y))))
+  
+
 ;; Called from the outside. 'instrument-description' can be false or empty string.
 ;; Async. Returns immediately.
 (define (async-load-instrument-preset id-instrument instrument-description parentgui)
@@ -741,6 +751,7 @@
                 (string=? instrument-description ""))
             (request-select-instrument-preset parentgui gotit)
             (gotit instrument-description)))))
+
 
 
 #!!
@@ -1173,6 +1184,7 @@
                  (cons (if (<ra> :is-illegal-filepath (entry :preset-filename))
                            (list "Load Preset(s)"
                                  :enabled (instrconf :include-load-preset)
+                                 :shortcut new-instrument-from-preset
                                  mcallback)
                            (list (entry :name)
                                  mcallback))
