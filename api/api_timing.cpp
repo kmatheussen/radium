@@ -741,7 +741,7 @@ static T *getList3FromDynvec(struct Blocks *block,
     }
     
     T *already = (struct Swing*)ListFindElement3(LCAST(ret),&t->l.p);
-    if (already==NULL && p_Equal(already->l.p, t->l.p)){
+    if (already!=NULL && p_Equal(already->l.p, t->l.p)){
       handleError("Two elements are placed on the same position");
       return NULL;
     }
