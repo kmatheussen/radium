@@ -19,7 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/includepython.h"
 
 #include <inttypes.h>
+#if defined(FOR_LINUX)
 #include <dlfcn.h>
+#endif
 
 
 #include <boost/version.hpp>
