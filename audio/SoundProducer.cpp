@@ -330,7 +330,7 @@ public:
       // Assert that we don't set link volume of a sink target (e.g. system out or jack out) to anything other than 1.0. The reason is that there isn't an interface in the mixer to set volume for links to sinks, so it must always stay at 1.0 / 0dB.
       {
         const SoundPlugin *plugin = SP_get_plugin(target);
-        if (plugin->type->num_outputs==0){
+        if (plugin!=NULL && plugin->type->num_outputs==0){
           if (!equal_floats(volume, 1.0f)){
             printf("Warning! Trying to set volume of a sink-link. To avoid unintentional muted sink-links, a sink-link is always set to have volume 1.0. Now trying to set it to %f\n", volume);
             R_ASSERT_NON_RELEASE(false);
