@@ -2057,7 +2057,7 @@ namespace{
       
       constexpr double gakk = 0.05;
       
-      static_assert(MIN_DB_A_LITTLE_BIT_ABOVE - MIN_DB > gakk);
+      static_assert(MIN_DB_A_LITTLE_BIT_ABOVE - MIN_DB > gakk, "wrong");
       
       if (fabs(connection_db - connection->_last_displayed_db_peak) > gakk){                      
 #if 0

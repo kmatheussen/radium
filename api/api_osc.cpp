@@ -17,10 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-
-
-
 #define __STDC_FORMAT_MACROS
 
 #include "../common/includepython.h"
@@ -49,7 +45,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_common_proc.h"
 
 #include "radium_proc.h"
-
 
 static int64_t g_curr_oscservernum = 0;
 static int64_t g_curr_oscmethodnum = 0;
@@ -640,3 +635,5 @@ void nsmQuit(void){
 
   evalScheme("(FROM_C-nsm-quit)");
 }
+
+

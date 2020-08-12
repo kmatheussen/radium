@@ -83,7 +83,7 @@ static void call_very_often(SoundPlugin *plugin, AudioMeterPeaks &peaks, bool re
     if (max_db > peaks.peaks[ch])
       peaks.peaks[ch] = max_db;
 
-    if (automatically_set_num_visible_outputs && ch+1 > plugin->num_visible_outputs && plugin->type->num_outputs >= 2)
+    if (automatically_set_num_visible_outputs && ch+1 > plugin->num_visible_outputs && plugin->type->num_outputs >= 2){
       if (ch >= plugin->type->num_outputs){
         R_ASSERT_NON_RELEASE(false);
       } else {
@@ -92,6 +92,7 @@ static void call_very_often(SoundPlugin *plugin, AudioMeterPeaks &peaks, bool re
           plugin->num_visible_outputs = R_BOUNDARIES(2, next_power_of_two(ch+1), plugin->type->num_outputs);
         }
       }
+    }
   }
 }
 

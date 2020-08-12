@@ -192,7 +192,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 
     IsAlive is_alive(this);
     
-    locked_instrument->_hovered_callback = [is_alive, this](bool do_enter){
+    locked_instrument->_hovered_callback = [is_alive](bool do_enter){
       if (is_alive){
         if (do_enter){
           

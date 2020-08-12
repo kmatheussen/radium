@@ -1190,7 +1190,7 @@ static void general_transpose(radium::GeneralTranspose gt){
           
         general_transform_list<FXNodeLines>(wblock, wtrack, gt,
                                             [fxs](auto *block, auto *track){return fxs->fxnodelines;},
-                                            [fxs, wblock](auto *node, auto &gt){return TransposeFxNode(fxs->fx, node, gt);},
+                                            [fxs](auto *node, auto &gt){return TransposeFxNode(fxs->fx, node, gt);},
                                             [window, wblock](auto *track){ADD_UNDO(FXs(window, wblock->block, track, wblock->curr_realline));});
           
       } else if (CHANCETEXT_subsubtrack(window, wtrack) >= 0){      
