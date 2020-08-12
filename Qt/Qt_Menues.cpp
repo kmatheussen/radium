@@ -192,39 +192,44 @@ void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const ch
 
   waitUntilNsmHasInited();
     
-  if (string.startsWith("[Linux]"))
+  if (string.startsWith("[Linux]")) {
 #if defined(FOR_LINUX)
     name += 7;
 #else
     addit = false;
 #endif
-    
-  if (string.startsWith("[NSM]"))
+  }
+  
+  if (string.startsWith("[NSM]")) {
     if (nsmIsActive())
       name += 5;
     else
       addit = false;
+  }
     
-  if (string.startsWith("[non-NSM]"))
+  if (string.startsWith("[non-NSM]")) {
     if (!nsmIsActive())
       name += 9;
     else
       addit = false;
-    
-  if (string.startsWith("[Win]"))
+  }
+  
+  if (string.startsWith("[Win]")) {
 #if defined(FOR_WINDOWS)
     name += 5;
 #else
     addit = false;
 #endif
-    
-  if (string.startsWith("[Darwin]"))
+  }
+  
+  if (string.startsWith("[Darwin]")) {
 #if defined(FOR_MACOSX)
     name += 8;
 #else
     addit = false;
 #endif
-    
+  }
+  
   if (addit)
     new MenuItem(name, python_command);
 

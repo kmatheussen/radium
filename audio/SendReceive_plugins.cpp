@@ -67,7 +67,7 @@ SoundPluginType *g_receive_type8 = &receive_type8;
 
 namespace{
 
-  struct ReceiveDatas;
+  class ReceiveDatas;
 
   static radium::Queue<ReceiveDatas*, 8000> *g_free_RT_receivers;
 
@@ -358,7 +358,7 @@ namespace{
     }
 
     // 'replace_receivers' and 'replace_RT_receivers' are both called by the main thread, and they could have been one function. But we use two functions to increase chance of all RT_receivers to be updated at once.
-    ReceiveDatas *replace_RT_receivers(const ReceiveDatas *RT_new_receivers){
+    ReceiveDatas *replace_RT_receivers(ReceiveDatas *RT_new_receivers) {
       return ATOMIC_SET_RETURN_OLD(_RT_new_receivers, RT_new_receivers);
     }
       

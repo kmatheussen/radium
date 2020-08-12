@@ -1515,7 +1515,7 @@ static void maybe_warn_about_jack1(void){
 
     int ret = GFX_Message(&v, "Warning: Jack 1, or an old version of Jack 2, detected. Radium does not work very well with Jack 1. At minimum, you need to provide the option \"-Z\". If not, Radium will freeze now and then.");
 
-    if (ret = hide)
+    if (ret == hide)
       SETTINGS_write_bool(config_name, false);
 
   }

@@ -427,7 +427,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
   for (SoundProducer *sp : sp_all) {
 
     SoundPlugin *plugin = SP_get_plugin(sp);
-    if (is_receiver_plugin(plugin))
+    if (plugin && is_receiver_plugin(plugin))
       RT_SEND_RECEIVE_swap_receiver_send_channels(plugin);
     
     ATOMIC_NAME(sp->_num_active_input_links_left) = sp->_num_active_input_links;
