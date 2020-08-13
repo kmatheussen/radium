@@ -55,6 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QScreen>
 #include <QMimeData>
 #include <QDrag>
+#include <QSvgRenderer>
 
 #include <QDesktopServices>
 #include <QtWebKitWidgets/QWebView>
@@ -2646,6 +2647,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       return ret;
     }
 
+    void drawSvg(QSvgRenderer *renderer, float x1, float y1, float x2, float y2){
+      QPainter *painter = get_painter();
+
+      renderer->render(painter, QRectF(x1, y1, x2, y2));
+      
+      if (_current_painter==NULL)
+        myupdate(x1, y1, x2, y2);
+    }
 
     /************ VIRTUAL METHODS *******************/
     
@@ -7584,6 +7593,37 @@ void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, f
     return;
   
   gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, 90, true, true);
+}
+
+void gui_drawSvg(int64_t guinum, filepath_t svgfile, float x1, float y1, float x2, float y2){
+  static QHash<QString, QSvgRenderer*> s_svgs;
+
+  QString name = STRING_get_qstring(svgfile.id);
+
+  if (!s_svgs.contains(name)) {
+
+    if (!DISK_file_exists(svgfile)){
+      handleError("gui_drawSvg: The file \"%S\" does not exist", svgfile.id);
+      return;
+    }
+                   
+    QSvgRenderer *renderer = new QSvgRenderer(name);
+    
+    if (!renderer->isValid()){
+      handleError("gui_drawSvg: The file \"%S\" is not a valid SVG file", svgfile.id);
+      delete renderer;
+      return;
+    }
+    
+    s_svgs[name] = renderer;
+  }
+
+  
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+  
+  gui->drawSvg(s_svgs[name], x1, y1, x2, y2);
 }
 
 bool gui_areaNeedsPainting(int64_t guinum, float x1, float y1, float x2, float y2){

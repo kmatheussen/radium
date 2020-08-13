@@ -142,6 +142,8 @@ ifeq ($(RADIUM_QT_VERSION),5)
 	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs Qt5Network` $(FPIC)
 	QT_UI_CFLAGS ?= `$(PKGqt) --cflags Qt5UiTools` $(FPIC)
 	QT_UI_LDFLAGS ?= `$(PKGqt) --libs Qt5UiTools` $(FPIC)
+	QT_SVG_CFLAGS ?= `$(PKGqt) --cflags Qt5Svg` $(FPIC)
+	QT_SVG_LDFLAGS ?= `$(PKGqt) --libs Qt5Svg` $(FPIC)
 
 #	If using QtWebEngine: (Not recommended, dragging doesn't work using it)
 #	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.8/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5
@@ -149,7 +151,7 @@ ifeq ($(RADIUM_QT_VERSION),5)
 
 #	If using QtWebKit:
 	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets --cflags Qt5WebKit --cflags Qt5Concurrent` -Ibin/packages/qhttpserver-master/src -I$(QSCINTILLA_PATH)/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
-	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets --libs Qt5WebKit` $(FPIC)
+	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets --libs Qt5WebKit` $(FPIC)
 endif
 
 WNO_DEPRECATED_COPY=
@@ -1819,7 +1821,7 @@ $(T)api_osc.o:  $(BUILD_DEPENDENCIES)  $(API)api_osc.cpp embedded_scheme/s7extra
 
 $(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
-	$(CCC2)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) -Wno-null-dereference $(NO_ANALYZER)
+	$(CCC2)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER)
 
 
 NOUNUSEDBUTSETVARIABLEWARNING=
