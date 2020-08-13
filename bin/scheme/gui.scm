@@ -755,38 +755,48 @@
                gradient-background))
 
     ;;(set! text "Gakk")
-
-    (define text-len (<ra> :get-string-length text))
-
-    (if (or (> text-len 0)
-            (and is-selected
-                 prepend-checked-marker))
-        (<gui> :my-draw-text
-               gui
-               (if is-enabled
-                   text-color ;;(if is-hovering "black" text-color)
-                   (<gui> :set-alpha-for-color text-color 0.35))
-               (cond ((= text-len 0)
-                      "✔")
-                     ((not prepend-checked-marker)
-                      text)
-                     (is-selected
-                      (<-> "✔ " text))
-                     (prepend-space-if-prepending-checked-marker
-                      (<-> "     " text))
-                     (else
-                      text))
-               ;;(+ x1 2) (+ y1 2) (- x2 2) (- y2 2)
-               (+ x1 0) (+ y1 0) (- x2 0) (- y2 -1)
-               #f
-               #f
-               #f
-               (if vertical-text
-                   90
-                   0)
-               #f
-               #t
-               )))
+    
+    (if (string-ends-with? text ".svg")
+        (let ()
+          (define b 2)
+          (<gui> :draw-svg gui
+                 (<ra> :append-file-paths
+                       (<ra> :get-program-path)
+                       (<ra> :get-path text))
+                 (+ x1 b) (+ y1 b) (- x2 b) (- y2 b))
+          #t)
+        (let ()
+          (define text-len (<ra> :get-string-length text))
+          
+          (if (or (> text-len 0)
+                  (and is-selected
+                       prepend-checked-marker))
+              (<gui> :my-draw-text
+                     gui
+                     (if is-enabled
+                         text-color ;;(if is-hovering "black" text-color)
+                         (<gui> :set-alpha-for-color text-color 0.35))
+                     (cond ((= text-len 0)
+                            "✔")
+                           ((not prepend-checked-marker)
+                            text)
+                           (is-selected
+                            (<-> "✔ " text))
+                           (prepend-space-if-prepending-checked-marker
+                            (<-> "     " text))
+                           (else
+                            text))
+                     ;;(+ x1 2) (+ y1 2) (- x2 2) (- y2 2)
+                     (+ x1 0) (+ y1 0) (- x2 0) (- y2 -1)
+                     #f
+                     #f
+                     #f
+                     (if vertical-text
+                         90
+                         0)
+                     #f
+                     #t
+                     )))))
 
   (if (and #f is-hovering)
       (<gui> :do-alpha gui 0.5 paintit)
