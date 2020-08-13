@@ -2650,7 +2650,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     void drawSvg(QSvgRenderer *renderer, float x1, float y1, float x2, float y2){
       QPainter *painter = get_painter();
 
-      renderer->render(painter, QRectF(x1, y1, x2, y2));
+      renderer->render(painter, QRectF(x1, y1, x2-x1, y2-y1));
       
       if (_current_painter==NULL)
         myupdate(x1, y1, x2, y2);
