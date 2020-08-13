@@ -406,9 +406,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       locked_instrument->setFont(font); // don't know why
 
       if (isCurrentInstrumentLocked())
-        locked_instrument->setText("🔒");
+        locked_instrument->setText("locked.svg");
       else
-        locked_instrument->setText("🔓");
+        locked_instrument->setText("unlocked.svg");
 
       locked_instrument->_show_enabled_marker = false;
       

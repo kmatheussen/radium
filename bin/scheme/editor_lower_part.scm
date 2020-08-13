@@ -206,10 +206,13 @@
                         (not (<ra> :allow-automatically-changing-current-block)))
                       (lambda (val)
                         (<ra> :set-allow-automatically-changing-current-block (not val)))
+                      ;;:paint-func
+                      ;;(lambda (gui x1 y1 x2 y2 is-selected is-hovering)
                       :text (lambda ()
                               (if (<ra> :allow-automatically-changing-current-block)
-                                  "🔓"
-                                  "🔒"))
+                                  "unlocked.svg"
+                                  "locked.svg"))
+                      ;;"🔓" "🔒"
                       :selected-color "#225522"
                       :prepend-checked-marker #f
                       ))
