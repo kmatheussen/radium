@@ -4799,11 +4799,16 @@
 
   (define (range-equals? range1 range2)
     (structs-equal? range1 range2))
-     
+  
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
+                ;;(c-display "inside?" (inside-box? (<ra> :get-box track (<ra> :get-beat-tracknum)) X Y))
                 (and (inside-box? (<ra> :get-box track (<ra> :get-beat-tracknum)) X Y)
+                     ;;(>= Y (<ra> :get-block-header-y2))
+                     ;;(< Y (<ra> :get-reltempo-slider-y1))
+                     ;;(>= X (<ra> :get-track-x1 (<ra> :get-beat-tracknum)))
+                     ;;(< X (<ra> :get-track-x2 (<ra> :get-beat-tracknum)))
                      (not (<ra> :linenumbers-visible))
                      (let ((is-bar (< X (<ra> :get-beat-bar-border-x))))
                        
@@ -4815,178 +4820,178 @@
                                         (<ra> :get-current-bar)
                                         (<ra> :get-current-beat)))
                        
-                       (when (and beat
-                                  (= (beat :blocknum) (<ra> :current-block)))
-                         
-                         (define blocknum (beat :blocknum))
-                         (define tracknum (<ra> :current-track))
-                         (define barnum (beat :bar))
-                         (define beatnum (and is-beat (beat :beat)))
-                         
-                         (define y1 (if is-bar (<ra> :get-bar-start) (<ra> :get-beat-start)))
-                         (define y2 (if is-bar (<ra> :get-bar-end) (<ra> :get-beat-end)))
-
-                         (define curr-range (get-current-range))
-
-                         (define curr-track-range (make-range :x1 (max 0 (<ra> :current-track))
-                                                              :y1 y1
-                                                              :x2 (+ 1 (max 0 (<ra> :current-track)))
-                                                              :y2 y2))
-                         
-                         (define all-tracks-range (make-range :x1 0
-                                                              :y1 y1
-                                                              :x2 (<ra> :get-num-tracks)
-                                                              :y2 y2))
-
-                         (if (= Button *right-button*)
-                             
-                             (let ()
-                               (set! current-barbeat-has-been-set-force #t)
-                               
-                               (if is-bar
-                                   
-                                   (popup-menu
-                                    "----------Delete/insert lines"
-                                    (list (<-> "Delete bar #" barnum)
-                                          :shortcut (list ra:general-delete #t)
-                                          (lambda ()
-                                            (delete-editor-bar barnum blocknum)))
-                                    (list "."
-                                          :shortcut delete-editor-bar
-                                          (lambda ()
-                                            (delete-editor-bar barnum blocknum)))
-                                    (list (<-> "Insert new bar at #" barnum)
-                                          :shortcut insert-editor-bar
-                                          (lambda ()
-                                            (insert-editor-bar barnum blocknum)))
+                       (and beat
+                            (= (beat :blocknum) (<ra> :current-block))
+                            (let ()
+                       
+                              (define blocknum (beat :blocknum))
+                              (define tracknum (<ra> :current-track))
+                              (define barnum (beat :bar))
+                              (define beatnum (and is-beat (beat :beat)))
+                              
+                              (define y1 (if is-bar (<ra> :get-bar-start) (<ra> :get-beat-start)))
+                              (define y2 (if is-bar (<ra> :get-bar-end) (<ra> :get-beat-end)))
+                              
+                              (define curr-range (get-current-range))
+                              
+                              (define curr-track-range (make-range :x1 (max 0 (<ra> :current-track))
+                                                                   :y1 y1
+                                                                   :x2 (+ 1 (max 0 (<ra> :current-track)))
+                                                                   :y2 y2))
+                              
+                              (define all-tracks-range (make-range :x1 0
+                                                                   :y1 y1
+                                                                   :x2 (<ra> :get-num-tracks)
+                                                                   :y2 y2))
+                              
+                              (if (= Button *right-button*)
+                                  
+                                  (let ()
+                                    (set! current-barbeat-has-been-set-force #t)
                                     
-                                    "-------------All tracks"
-                                    (list (<-> "Clear bar #" barnum)
-                                          :shortcut clear-editor-bar-all-tracks
-                                          (lambda ()
-                                            (clear-editor-bar-all-tracks barnum blocknum)))
-                                    (list (<-> "Cut bar #" barnum)
-                                          :shortcut cut-editor-bar-all-tracks
-                                          (lambda ()
-                                            (cut-editor-bar-all-tracks barnum blocknum)))
-                                    (list (<-> "Copy bar #" barnum)
-                                          :shortcut copy-editor-bar-all-tracks
-                                          (lambda ()
-                                            (copy-editor-bar-all-tracks barnum blocknum)))
-                                    (list (<-> "Paste bar #" barnum)
-                                          :enabled (<ra> :has-range-in-clipboard 2)
-                                          :shortcut paste-editor-bar-all-tracks                                          
-                                          (lambda ()
-                                            (paste-editor-bar-all-tracks barnum blocknum)))
-                                    
-                                    (<-> "-------------Track #" tracknum "")
-                                    (list (<-> "Clear bar #" barnum)
-                                          :shortcut clear-editor-bar-one-track
-                                          (lambda ()
-                                            (clear-editor-bar-one-track barnum tracknum blocknum)))
-                                    (list (<-> "Cut bar #" barnum)
-                                          :shortcut cut-editor-bar-one-track
-                                          (lambda ()
-                                            (cut-editor-bar-one-track barnum tracknum blocknum)))
-                                    (list (<-> "Copy bar #" barnum)
-                                          :shortcut copy-editor-bar-one-track
-                                          (lambda ()
-                                            (copy-editor-bar-one-track barnum tracknum blocknum)))
-                                    (list (<-> "Paste bar #" barnum)
-                                          :enabled (<ra> :has-range-in-clipboard 1)
-                                          :shortcut paste-editor-bar-one-track
-                                          (lambda ()
-                                            (paste-editor-bar-one-track barnum tracknum blocknum)))
-                                    
-                                    "---------------Mark range"
-                                    (list (<-> "Mark range at bar #" barnum ", all tracks")
-                                          :shortcut "Left mouse button"
-                                          (lambda ()
-                                            (set-range all-tracks-range)))
-                                    (list (<-> "Mark range at bar #" barnum ", only track #" tracknum)
-                                          :shortcut "Left mouse button"
-                                          (lambda ()
-                                            (set-range curr-track-range)))
-                                    )
-
-                                   (let ((beatname (<-> "beat #" beatnum))) ;; "(bar #" barnum ")")))
-                                     (popup-menu
-                                      "----------Delete/insert lines"
-                                      (list (<-> "Delete " beatname)
-                                            :shortcut (list ra:general-delete #t)
-                                            (lambda ()
-                                              (FROM_C-delete-editor-beat barnum beatnum blocknum)))
-                                      (list "."
-                                            :shortcut FROM_C-delete-editor-beat
-                                            (lambda ()
-                                              (FROM_C-delete-editor-beat barnum beatnum blocknum)))
-                                      (list (<-> "Insert new beat at " beatname)
-                                            :shortcut insert-editor-beat
-                                            (lambda ()
-                                              (insert-editor-beat barnum beatnum blocknum)))
+                                    (if is-bar
+                                        
+                                        (popup-menu
+                                         "----------Delete/insert lines"
+                                         (list (<-> "Delete bar #" barnum)
+                                               :shortcut (list ra:general-delete #t)
+                                               (lambda ()
+                                                 (delete-editor-bar barnum blocknum)))
+                                         (list "."
+                                               :shortcut delete-editor-bar
+                                               (lambda ()
+                                                 (delete-editor-bar barnum blocknum)))
+                                         (list (<-> "Insert new bar at #" barnum)
+                                               :shortcut insert-editor-bar
+                                               (lambda ()
+                                                 (insert-editor-bar barnum blocknum)))
+                                         
+                                         "-------------All tracks"
+                                         (list (<-> "Clear bar #" barnum)
+                                               :shortcut clear-editor-bar-all-tracks
+                                               (lambda ()
+                                                 (clear-editor-bar-all-tracks barnum blocknum)))
+                                         (list (<-> "Cut bar #" barnum)
+                                               :shortcut cut-editor-bar-all-tracks
+                                               (lambda ()
+                                                 (cut-editor-bar-all-tracks barnum blocknum)))
+                                         (list (<-> "Copy bar #" barnum)
+                                               :shortcut copy-editor-bar-all-tracks
+                                               (lambda ()
+                                                 (copy-editor-bar-all-tracks barnum blocknum)))
+                                         (list (<-> "Paste bar #" barnum)
+                                               :enabled (<ra> :has-range-in-clipboard 2)
+                                               :shortcut paste-editor-bar-all-tracks                                          
+                                               (lambda ()
+                                                 (paste-editor-bar-all-tracks barnum blocknum)))
+                                         
+                                         (<-> "-------------Track #" tracknum "")
+                                         (list (<-> "Clear bar #" barnum)
+                                               :shortcut clear-editor-bar-one-track
+                                               (lambda ()
+                                                 (clear-editor-bar-one-track barnum tracknum blocknum)))
+                                         (list (<-> "Cut bar #" barnum)
+                                               :shortcut cut-editor-bar-one-track
+                                               (lambda ()
+                                                 (cut-editor-bar-one-track barnum tracknum blocknum)))
+                                         (list (<-> "Copy bar #" barnum)
+                                               :shortcut copy-editor-bar-one-track
+                                               (lambda ()
+                                                 (copy-editor-bar-one-track barnum tracknum blocknum)))
+                                         (list (<-> "Paste bar #" barnum)
+                                               :enabled (<ra> :has-range-in-clipboard 1)
+                                               :shortcut paste-editor-bar-one-track
+                                               (lambda ()
+                                                 (paste-editor-bar-one-track barnum tracknum blocknum)))
+                                         
+                                         "---------------Mark range"
+                                         (list (<-> "Mark range at bar #" barnum ", all tracks")
+                                               :shortcut "Left mouse button"
+                                               (lambda ()
+                                                 (set-range all-tracks-range)))
+                                         (list (<-> "Mark range at bar #" barnum ", only track #" tracknum)
+                                               :shortcut "Left mouse button"
+                                               (lambda ()
+                                                 (set-range curr-track-range)))
+                                         )
+                                        
+                                        (let ((beatname (<-> "beat #" beatnum))) ;; "(bar #" barnum ")")))
+                                          (popup-menu
+                                           "----------Delete/insert lines"
+                                           (list (<-> "Delete " beatname)
+                                                 :shortcut (list ra:general-delete #t)
+                                                 (lambda ()
+                                                   (FROM_C-delete-editor-beat barnum beatnum blocknum)))
+                                           (list "."
+                                                 :shortcut FROM_C-delete-editor-beat
+                                                 (lambda ()
+                                                   (FROM_C-delete-editor-beat barnum beatnum blocknum)))
+                                           (list (<-> "Insert new beat at " beatname)
+                                                 :shortcut insert-editor-beat
+                                                 (lambda ()
+                                                   (insert-editor-beat barnum beatnum blocknum)))
                                       
-                                    "-------------All tracks"
-                                    (list (<-> "Clear " beatname)
-                                          :shortcut clear-editor-beat-all-tracks
-                                          (lambda ()
-                                            (clear-editor-beat-all-tracks barnum beatnum blocknum)))
-                                    (list (<-> "Cut " beatname)
-                                          :shortcut cut-editor-beat-all-tracks
-                                          (lambda ()
-                                            (cut-editor-beat-all-tracks barnum beatnum blocknum)))
-                                    (list (<-> "Copy " beatname)
-                                          :shortcut copy-editor-beat-all-tracks
-                                          (lambda ()
-                                            (copy-editor-beat-all-tracks barnum beatnum blocknum)))
-                                    (list (<-> "Paste " beatname)
-                                          :enabled (<ra> :has-range-in-clipboard 4)
-                                          :shortcut paste-editor-beat-all-tracks
-                                          (lambda ()
-                                            (paste-editor-beat-all-tracks barnum beatnum blocknum)))
+                                           "-------------All tracks"
+                                           (list (<-> "Clear " beatname)
+                                                 :shortcut clear-editor-beat-all-tracks
+                                                 (lambda ()
+                                                   (clear-editor-beat-all-tracks barnum beatnum blocknum)))
+                                           (list (<-> "Cut " beatname)
+                                                 :shortcut cut-editor-beat-all-tracks
+                                                 (lambda ()
+                                                   (cut-editor-beat-all-tracks barnum beatnum blocknum)))
+                                           (list (<-> "Copy " beatname)
+                                                 :shortcut copy-editor-beat-all-tracks
+                                                 (lambda ()
+                                                   (copy-editor-beat-all-tracks barnum beatnum blocknum)))
+                                           (list (<-> "Paste " beatname)
+                                                 :enabled (<ra> :has-range-in-clipboard 4)
+                                                 :shortcut paste-editor-beat-all-tracks
+                                                 (lambda ()
+                                                   (paste-editor-beat-all-tracks barnum beatnum blocknum)))
+                                           
+                                           (<-> "-------------Track #" tracknum "")
+                                           (list (<-> "Clear " beatname)
+                                                 :shortcut clear-editor-beat-one-track
+                                                 (lambda ()
+                                                   (clear-editor-beat-one-track barnum beatnum tracknum blocknum)))
+                                           (list (<-> "Cut " beatname)
+                                                 :shortcut cut-editor-beat-one-track
+                                                 (lambda ()
+                                                   (cut-editor-beat-one-track barnum beatnum tracknum blocknum)))
+                                           (list (<-> "Copy " beatname)
+                                                 :shortcut copy-editor-beat-one-track
+                                                 (lambda ()
+                                                   (copy-editor-beat-one-track barnum beatnum tracknum blocknum)))
+                                           (list (<-> "Paste " beatname)
+                                                 :enabled (<ra> :has-range-in-clipboard 3)
+                                                 :shortcut paste-editor-beat-one-track
+                                                 (lambda ()
+                                                   (paste-editor-beat-one-track barnum beatnum tracknum blocknum)))
+                                           
+                                           "---------------Mark range"
+                                           (list (<-> "Mark range at " beatname ", all tracks")
+                                                 :shortcut "Left mouse button"
+                                                 (lambda ()
+                                                   (set-range all-tracks-range)))
+                                           (list (<-> "Mark range at " beatname ", only track #" tracknum)
+                                                 :shortcut "Left mouse button"
+                                                 (lambda ()
+                                                   (set-range curr-track-range)))
+                                           ))))
+                                  
+                                  (let ()
                                     
-                                    (<-> "-------------Track #" tracknum "")
-                                    (list (<-> "Clear " beatname)
-                                          :shortcut clear-editor-beat-one-track
-                                          (lambda ()
-                                            (clear-editor-beat-one-track barnum beatnum tracknum blocknum)))
-                                    (list (<-> "Cut " beatname)
-                                          :shortcut cut-editor-beat-one-track
-                                          (lambda ()
-                                            (cut-editor-beat-one-track barnum beatnum tracknum blocknum)))
-                                    (list (<-> "Copy " beatname)
-                                          :shortcut copy-editor-beat-one-track
-                                          (lambda ()
-                                            (copy-editor-beat-one-track barnum beatnum tracknum blocknum)))
-                                    (list (<-> "Paste " beatname)
-                                          :enabled (<ra> :has-range-in-clipboard 3)
-                                          :shortcut paste-editor-beat-one-track
-                                          (lambda ()
-                                            (paste-editor-beat-one-track barnum beatnum tracknum blocknum)))
-                                    
-                                      "---------------Mark range"
-                                      (list (<-> "Mark range at " beatname ", all tracks")
-                                            :shortcut "Left mouse button"
-                                            (lambda ()
-                                              (set-range all-tracks-range)))
-                                      (list (<-> "Mark range at " beatname ", only track #" tracknum)
-                                            :shortcut "Left mouse button"
-                                            (lambda ()
-                                              (set-range curr-track-range)))
-                                      ))))
-                             
-                             (let ()
-                               
-                               (cond ((not curr-range)
-                                      (set-range curr-track-range))
-                                     ((range-equals? curr-range curr-track-range)
-                                      (set-range all-tracks-range))
-                                     ((range-equals? curr-range all-tracks-range)
-                                      (<ra> :cancel-range))
-                                     (else
-                                      (set-range curr-track-range)))
-                               )))
-                           
-                       #t)))))
+                                    (cond ((not curr-range)
+                                           (set-range curr-track-range))
+                                          ((range-equals? curr-range curr-track-range)
+                                           (set-range all-tracks-range))
+                                          ((range-equals? curr-range all-tracks-range)
+                                           (<ra> :cancel-range))
+                                          (else
+                                           (set-range curr-track-range)))
+                                    )))
+                            #t))))))
 )
 
 
