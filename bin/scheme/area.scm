@@ -1576,7 +1576,7 @@
 
 
   (define-override (get-state)
-    (hash-table :areas areas
+    (hash-table ;;:areas areas
                 :y1 y1
                 :start-y1 (if (null? areas)
                               0
