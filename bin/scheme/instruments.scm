@@ -933,10 +933,12 @@
          
 (define (FROM_C-switch-solo-for-selected-instruments)
   (let ((instruments (to-list (<ra> :get-extended-selected-instruments))))
-    (if (not (null? instruments))
-        (let ((doit (not (<ra> :get-instrument-solo (car instruments))))) ;; use get-instrument-solo instead of get-instrument-solo-from-storage here to avoid confusion.
-          (FROM_C-set-solo-for-instruments instruments doit)))))
-
+    (undo-block
+     (lambda ()           
+       (for-each (lambda (instrument-id)
+                   (c-display "WHAT?" instrument-id (<ra> :get-instrument-solo instrument-id))
+                   (<ra> :set-instrument-solo (not (<ra> :get-instrument-solo instrument-id)) instrument-id))
+                 instruments)))))
 
 
 (define (FROM_C-set-mute-for-instruments instruments doit)
@@ -965,9 +967,11 @@
 
 (define (FROM_C-switch-bypass-for-selected-instruments)
   (let ((instruments (to-list (<ra> :get-extended-selected-instruments))))
-    (if (not (null? instruments))
-        (let ((doit (not (< (<ra> :get-instrument-effect (car instruments) "System Effects On/Off") 0.5))))
-          (FROM_C-set-bypass-for-instruments instruments doit)))))
+    (undo-block
+     (lambda ()           
+       (for-each (lambda (instrument-id)
+                   (<ra> :set-instrument-bypass (not (<ra> :get-instrument-bypass instrument-id)) instrument-id))
+                 instruments)))))
 
 ;; Note: Must return status bar id.
 (define (FROM_C-display-mute-status-in-statusbar instrument-id)  
