@@ -688,7 +688,8 @@
                                                               (lambda (val)
                                                                 (when has-run
                                                                   (set! *default-fixed-velocity* (/ val 100))
-                                                                  (*last-fixed-velocity-func*))
+                                                                  ;;(*last-fixed-velocity-func*)
+                                                                  )
                                                                 (set! has-run #t)))
                                                        (<gui> :vertical-layout
                                                               (create-keybinding-button "Range" "ra:eval-scheme" '("(replace-with-fixed-velocities-in-range)")))
