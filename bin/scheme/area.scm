@@ -1191,7 +1191,7 @@
   )
 
 (define *button-is-pressing* (make-hash-table 10 eq?))
-(define *button-is-pressing-num-stoppers* (make-hash-table 10 =))
+(define *button-is-pressing-num-stoppers* (make-hash-table 10 eq?))
 
 (def-area-subclass (<button> :gui :x1 :y1 :x2 :y2
                              :paint-func #f
@@ -1228,10 +1228,10 @@
 
   (define (mypaint)
     ;;(<gui> :filled-box gui background-color x1 y1 x2 y2)
-    (draw-button gui text (is-pressing?)
+    (draw-button gui (if (procedure? text) (text) text) (is-pressing?)
                  x1 y1 x2 y2
                  :selected-color "button_pressed_v2"
-                 :background-color background-color
+                 :background-color (if (procedure? background-color) (background-color) background-color)
                  :is-hovering is-hovering))
 
   (define (start-show-pressed!)
@@ -1691,7 +1691,7 @@
     ;;(c-display "is-up:" is-up x* y* first-y1 last-y2)
     
     (call-with-exit
-     (lambda (exit)
+     (lambda (exit2)
        (let loop ((areas areas)
                   (n 0))
          (when (not (null? areas))
@@ -1710,7 +1710,7 @@
                                        new-last-y2
                                        0 1)
                                 #f)
-                     (exit))
+                     (exit2))
                    (if is-up
                        (when (>= a-y2 (- y1 0.0001)) ;; subtracting 0.0001 to eliminate rounding error
                          ;;(c-display "  " n " how-much1:" (- y1 a-y1))
@@ -1737,7 +1737,6 @@
                                           :get-sub-area-height ;; Either a number (if all sub-areas have the same height) or a function taking (area-num x1 x2) as arguments
                                           :create-sub-area ;; Function taking (area-num x1 x2) as arguments
                                           :sub-areas-can-be-cached #f
-                                          :scrollbar-color "#400010"
                                           :background-color #f
                                           :num-areas-to-mousewheel-scroll 3
                                           )
@@ -2000,7 +1999,7 @@
         (area :apply-state! state))
     area)
 
-  (define testarea (make-qtarea :width 450 :height 750
+  (define testarea (make-qtarea :width 452 :height 750
                                 :sub-area-creation-callback recreate))
   (<gui> :show (testarea :get-gui))
   )
@@ -2085,6 +2084,10 @@
         #t))
 (<ra> :iterate-directory "L3RtcA==" #f c-display)
 !!#
+
+
+(define (get-block-table-entry-text blocknum)
+  (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum)))
 
 
 (def-area-subclass (<seqblock-table-entry-area> :gui :x1 :y1 :x2 :y2
@@ -2686,6 +2689,430 @@
   
 !!#
 
+
+
+(define-struct table-area-column
+  :name
+  :width ;; Can also be a string, for instance "Hello hello". Used to approximate the width.
+  :max-width ;; Can also be #f.
+  :keyword ;; The keyword used to get the column value out of a row hash table.
+  :value-format ;; A symbol. Used to know how to sort. Must be either string, number, boolean, or undefined. (If "undefined", the column won't/can't be sorted)
+  :create-area #f ;; A function taking a row entry and a column value as arguments. The function returns an area for this column. If #f, a simple text area will be created instead.
+)
+
+(delafina (get-table-column-widths :columns
+                                   :space-left 
+                                   :column-widths #f
+                                   :counter 0)
+
+  (if (not column-widths)
+      (set! column-widths (make-list (length columns) 0)))
+  
+  (define (can-be-expanded? column-width column)
+    (if (not (column :max-width))
+         #t
+         (< column-width (column :max-width))))
+    
+    (define columns-that-can-be-expanded (map cadr
+                                              (keep2 can-be-expanded?
+                                                     column-widths
+                                                     columns)))
+                                                 
+    (define num-columns-to-be-expanded (length columns-that-can-be-expanded))
+    
+    (define total-weight (apply + (map (lambda (column)
+                                         (column :width))
+                                       columns-that-can-be-expanded)))
+
+    (define new-space-left 0)
+    
+    (define new-widths (map (lambda (column-width column)
+                              (if (can-be-expanded? column-width column)
+                                  (let ((new-width (+ column-width
+                                                      (* space-left
+                                                         (/ (column :width)
+                                                            total-weight)))))
+                                    (if (and (column :max-width)
+                                             (> new-width (column :max-width)))
+                                        (begin
+                                          (inc! new-space-left (- new-width (column :max-width)))
+                                          (column :max-width))
+                                        new-width))
+                                  column-width))
+                            column-widths
+                            columns))
+    
+    ;;(c-display ":old " column-widths ". :new" new-widths ". :old-space-left" space-left ". :new-space-left" new-space-left ". :total-weight" total-weight ". num-to-be-expanded:" num-columns-to-be-expanded)
+    
+    (if (and (> new-space-left 0.5)
+             (< counter 1000)) ;; safety
+        (get-table-column-widths columns new-space-left new-widths (+ counter 1))
+        new-widths))
+
+(define (sort-table-rows! column rows do-down)
+  (define keyword (symbol->keyword (column :keyword)))
+  (define less-than? (cond ((eq? (column :value-format) 'number)
+                            (if do-down
+                                (lambda (a b)
+                                  (< (a keyword)
+                                     (b keyword)))
+                                (lambda (a b)
+                                  (< (b keyword)
+                                     (a keyword)))))
+                           ((eq? (column :value-format) 'string)
+                            (if do-down
+                                (lambda (a b)
+                                  (string<? (a keyword)
+                                            (b keyword)))
+                                (lambda (a b)
+                                  (string<? (b keyword)
+                                            (a keyword)))))
+                           ((eq? (column :value-format) 'boolean)
+                            (if do-down
+                                (lambda (a b)
+                                  (and (not (a keyword))
+                                       (b keyword)))
+                                (lambda (a b)
+                                  (and (not (b keyword))
+                                       (a keyword)))))
+                           (else
+                            #f)))
+  (if less-than?
+      (sort! rows less-than?)
+      rows))
+
+
+(def-area-subclass (<table> :gui :x1 :y1 :x2 :y2
+                            :columns ;; A list of table-area-column structs
+                            :rows ;; Either a vector of rows, or a function returning a vector of rows.
+                            )
+
+  (define fontheight (get-fontheight))
+  (define entry-height (round (* 1.2 fontheight)))
+  
+  (define border 1)
+  
+  (define header-y2 (round (+ y1 (* 1.2 fontheight))))
+  
+  (define entries-y1 (+ header-y2 border))
+  
+  (set! rows (let ((rows (if (procedure? rows)
+                             (rows)
+                             rows)))
+               (for-each (lambda (row num)
+                           (set! (row :num) num))
+                         rows
+                         (iota (vector-length rows)))
+               rows))
+
+  (define num-rows (length rows))
+
+  (let ((num-width (<-> (+ 1 num-rows))))
+    (set! columns (cons (make-table-area-column "#"
+                                                num-width
+                                                num-width
+                                                #f
+                                                'undefined)
+                        ;(lambda (gui x1 y1 x2 y2 entry num)
+                        ;                            (<new> :text-area gui x1 y1 x2 y2
+                        ;                                   :text (<-> num))))
+                        columns)))
+
+  ;; Convert :width and :max-width into numbers
+  (let ((text-border (* 2 (<gui> :text-width "-" gui))))
+    (for-each (lambda (column)
+                (if (string? (column :width))
+                    (set! (column :width) (+ text-border
+                                             (<gui> :text-width (column :width) gui))))
+                (if (string? (column :max-width))
+                    (set! (column :max-width) (+ text-border
+                                                 (<gui> :text-width (column :max-width) gui)))))
+              columns))
+
+  (define column-widths (map round (get-table-column-widths columns (- width (* border 2)))))
+
+  (define table-x1s '())
+  (define table-x2s '())
+  
+  (let loop ((x1 border)
+             (widths column-widths))
+    (if (null? widths)
+        '()
+        (let* ((width (max 2 (car widths)))
+               (next-x1 (min x2 (+ x1 width))))
+          (push-back! table-x1s x1)
+          (push-back! table-x2s (if (null? (cdr widths))
+                                    (- x2 border)
+                                    (- next-x1 border)))
+          (loop next-x1
+                (cdr widths)))))
+
+  (define sorted-column-num 1)
+  (define sorted-down #t)
+  
+  ;; table headers
+  ;;;;;;;;;;;;;;;;;
+  (for-each (lambda (column-num column x1 x2)
+              (if (= 0 column-num)
+                  (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 header-y2 :text "#"))
+                  (let ((button #f))
+                    (set! button (<new> :button gui x1 y1 x2 header-y2
+                                        :text (lambda ()
+                                                (if (= sorted-column-num column-num)
+                                                    (if sorted-down
+                                                        (<-> (column :name) "⇓")
+                                                        (<-> (column :name) "⇑"))
+                                                    (column :name)))
+                                        :background-color (lambda ()
+                                                            (if (= sorted-column-num column-num)
+                                                                "green"
+                                                                "blue"))
+                                        :callback-release
+                                        (lambda ()
+                                          (if (= sorted-column-num column-num)
+                                              (set! sorted-down (not sorted-down))
+                                              (set! sorted-column-num column-num))
+                                          (set! rows (sort-table-rows! column rows sorted-down))
+                                          ;;(c-display (rows 0) (rows 1))
+                                          (update-me!))))
+                    (add-sub-area-plain! button))))
+            (iota (length columns))
+            columns
+            table-x1s
+            table-x2s)
+
+  ;; table itself
+  ;;;;;;;;;;;;;;;;;
+  (define (create-entry-area gui x1 y1 x2 y2 column columnnum rownum)
+    (define area (<new> :text-area gui x1 y1 x2 y2
+                        :text (if (= 0 columnnum)
+                                  (<-> rownum)
+                                  (lambda ()
+                                    (<-> ((rows rownum) (symbol->keyword (column :keyword))))))
+                        :align-left (not (= 0 columnnum))
+                        ))
+    area)
+    
+  (define (create-row-area gui x1 x2 num)
+    (define row (vector-ref rows num))
+    (define y1 0)
+    (define y2 (- entry-height border))
+    (define row-area (<new> :area gui x1 y1 x2 y2))
+    (for-each (lambda (columnnum column x1 x2)
+                (row-area :add-sub-area-plain! (create-entry-area gui x1 y1 x2 y2 column columnnum num)))
+              (iota (length columns))
+              columns
+              table-x1s
+              table-x2s)
+    row-area)
+
+  (define table (<new> :vertical-list-area2 gui x1 entries-y1 x2 y2
+                       :num-sub-areas (vector-length rows)
+                       :get-sub-area-height entry-height
+                       :create-sub-area
+                       (lambda (num x1 x2)
+                         (create-row-area gui x1 x2 num)))
+    )
+  
+  (add-sub-area-plain! table)
+
+  (define-override (get-state)
+    (hash-table :sorted-column-num sorted-column-num
+                :sorted-down sorted-down
+                :rows (copy rows)
+                :table-state (table :get-state)))
+  
+  (define-override (apply-state! state)
+    (set! sorted-column-num (state :sorted-column-num))
+    (set! sorted-down (state :sorted-down))    
+    ;;(set! rows (state :rows))
+    (set! rows (sort-table-rows! (columns sorted-column-num) rows sorted-down))
+    (table :apply-state! (state :table-state))
+    (update-me!))
+  
+  '(define-override (paint)
+    (<gui> :filled-box gui "black" x1 y1 x2 y2)) ;; fill in space between rows (didn't fix it, looks like a qt bug)
+  
+  ;(c-display "ROWS:" x1 y1 x2 y2 rows)
+  ;(c-display "COLUMNS:" (length columns) table-x1s table-x2s "--- x1/x2:" x1 x2 ":column-widths:" column-widths ":sum" (apply + column-widths) ":width" width)
+  )
+
+'(def-area-subclass (<table> :gui :x1 :y1 :x2 :y2
+                            :columns ;; A list of table-area-column structs
+                            :rows ;; Either a vector of rows, or a function returning a vector of rows. Note that each row will get an additional ":num" entry.
+                            )
+  (define-override (paint)
+    ;;(c-display "x1:" gui x1 y1 x2 y2 (<ra> :generate-new-color))
+   (<gui> :filled-box gui (<ra> :generate-new-color 1) x1 y1 x2 y2)
+   (<gui> :draw-text gui "green" "hello" x1 y1 x2 y2)
+   (<gui> :draw-line gui "white" x1 y1 x2 y2 2.3)))
+
+#!!
+(let ((columns (list (make-table-area-column "col1"
+                                             "aiai"
+                                             "wefiwe"
+                                             'col1-keyword
+                                             'string)
+                     (make-table-area-column "col2"
+                                             "ai2"
+                                             #f
+                                             'col2-keyword
+                                             'string)
+                     (make-table-area-column "col3"
+                                             "aiai3"
+                                             #f
+                                             'col3-keyword
+                                             'string))))
+
+  (define rows (list (hash-table :col1-keyword "row11"
+                                 :col2-keyword "row12"
+                                 :col3-keyword "row13")
+                     (hash-table :col1-keyword "row21"
+                                 :col2-keyword "row22"
+                                 :col3-keyword "row23")
+                     (hash-table :col1-keyword "row31"
+                                 :col2-keyword "row32"
+                                 :col3-keyword "row33")
+                     (hash-table :col1-keyword "row41"
+                                 :col2-keyword "row42"
+                                 :col3-keyword "row43")
+                     (hash-table :col1-keyword "row51"
+                                 :col2-keyword "row52"
+                                 :col3-keyword "row53")))
+  
+  (set! rows (append rows
+                     (map copy (make-list 500 (car rows)))))
+
+  (set! columns (list (make-table-area-column "Keys"
+                                              "CTRL + SHIFT + HOME"
+                                              #f
+                                              'keys
+                                              'string)
+                      (make-table-area-column "Function"
+                                              "ra.doLotsOfEvil"
+                                              #f
+                                              'function
+                                              'string)
+                      (make-table-area-column "Argument"
+                                              "True"
+                                              #f
+                                              'argument
+                                              'string)))
+
+  (define search-string "")
+  
+  '(set! rows
+        (keep identity
+              (map (lambda (keybinding)
+                     (define keys (to-string (car keybinding)))
+                     ;;(c-display "KEYBINDING:" keys (string? keys))
+                     ;;(c-display "KEYBINDING2:" (cdr keybinding) (string? (cdr keybinding)))
+                     (define func-and-arg (string-split (cdr keybinding) #\space))
+                     (define func (car func-and-arg))
+                     (define arg (string-join (cdr func-and-arg) " "))
+                     
+                     (and (or (string=? search-string "")
+                              (string-case-insensitive-contains? keys search-string)
+                              (string-case-insensitive-contains? func search-string)
+                              (string-case-insensitive-contains? arg search-string))
+                          (hash-table :keys keys
+                                      :function func
+                                      :argument arg)))
+                   (map identity (<ra> :get-keybindings-from-keys)))))
+
+  (set! search-string "switch-show-time-sequencer-lane")
+  
+  (set! rows
+        (keep identity
+              (apply append
+                     (map (lambda (keybindings)
+                            (define func-and-arg-string (symbol->string (car keybindings)))
+                            (define func-and-arg (string-split func-and-arg-string #\space))
+                            ;;(c-display "FUNC_AND_ART:" func-and-arg)
+                            (define func (car func-and-arg))
+                            (define arg (string-join (cdr func-and-arg) " "))                     
+                            (map (lambda (keys)
+                                   (set! keys (string-join keys " "))
+                                   ;;(define keys (to-string (car keybinding)))
+                                   ;;(c-display "KEYBINDING:" keys (string? keys))
+                                   ;;(c-display "KEYBINDING2:" (cdr keybinding) (string? (cdr keybinding)))
+                                   (and (or (string=? search-string "")
+                                            (string-case-insensitive-contains? keys search-string)
+                                            (string-case-insensitive-contains? func search-string)
+                                            (string-case-insensitive-contains? arg search-string))
+                                        (hash-table :keys keys
+                                                    :function func
+                                                    :argument arg)))
+                                 (remove-duplicates-in-sorted-list equal?  ;; call remove-duplicates again since merge-keybindings may have merged into several equal keybindings
+                                                                   (merge-keybindings (to-list (<ra> :get-keybindings-from-command func-and-arg-string))))))
+                            
+                                 ;;(get-displayable-keybindings1 func-and-arg-string)))
+                          (map identity (<ra> :get-keybindings-from-commands))))))
+
+  
+  '(set! rows '())
+        
+  '(for-each (lambda (keybinding)
+              (define keys (to-string (car keybinding)))
+              (for-each (lambda (prepared)
+                          (for-each (lambda (keys)
+                                      (define func-and-arg (string-split (prepared :command) #\space))
+                                      (define func (car func-and-arg))
+                                      (define arg (string-join (cdr func-and-arg) " "))
+                                      
+                                      (and (or (string=? search-string "")
+                                               (string-case-insensitive-contains? keys search-string)
+                                               (string-case-insensitive-contains? func search-string)
+                                               (string-case-insensitive-contains? arg search-string))
+                                           (begin
+                                             (c-display "PrePARED:" keys " - " prepared)
+                                             (push! rows
+                                                    (hash-table :keys keys
+                                                                :function func
+                                                                :argument arg)))))
+                                    (prepared :keybindings)))
+                        (get-prepared-existing-keybindings-from-keys keys)))
+            (<ra> :get-keybindings-from-keys))
+  
+  (set! rows (list->vector rows))
+
+  ;;(for-each c-display rows)
+  
+  (define width 400)
+    
+  (define qtarea (make-qtarea :width width :height (floor (* width 0.6))
+                              :sub-area-creation-callback
+                              (lambda (gui width height state)
+                                (define table (<new> :table gui 0 0 width height
+                                                     columns
+                                                     rows))
+                                ;;(if state
+                                ;;    (table :apply-state! state))
+                                table)))
+  
+  (define gui (qtarea :get-gui))
+
+  ;;(<gui> :set-background-color gui "low_background")
+
+  (<gui> :set-parent gui -1)
+  
+  (<gui> :show gui))
+                                                      
+
+(<ra> :get-keybindings-from-command "ra.switchShowTimeSequencerLane(2)")
+
+(merge-keybindings (map (lambda (keys)
+                          (string-split keys #\space))
+                        (to-list (<ra> :get-keybindings-from-command "ra.quantitizeRange"))))
+
+
+(car (map identity (<ra> :get-keybindings-from-commands)))
+
+(get-displayable-keybindings1 (<-> (car (car (map identity (<ra> :get-keybindings-from-commands))))))
+
+(for-each c-display (<ra> :get-keybindings-from-keys))
+
+!!#
 
 (delafina (horizontally-layout-areas :x1 :y1 :x2 :y2
                                      :args
