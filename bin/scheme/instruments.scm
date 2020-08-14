@@ -737,7 +737,8 @@
    parentgui
    (lambda (descr)
      (<ra> :create-audio-instrument-from-description descr "" x y))))
-  
+
+
 
 ;; Called from the outside. 'instrument-description' can be false or empty string.
 ;; Async. Returns immediately.
@@ -1131,6 +1132,7 @@
        (or (not (instrconf :must-have-outputs))
            (> (entry :num-outputs) 0))))
 
+  
 ;; The callback is a function that takes an spr entry as argument
 (define (spr-entries->menu-entries entries instrconf callback level-down-func)
 
@@ -1360,6 +1362,7 @@
                 (<ra> :set-current-instrument-locked #t)
                 (<ra> :set-current-instrument instrument-id))
               (<ra> :set-current-instrument-locked #f)))))
+
 
 (delafina (get-instrument-popup-entries :instrument-id
                                         :parentgui

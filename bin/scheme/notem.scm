@@ -486,6 +486,11 @@
 (get-ranged-editor-area -1)
 !!#
 
+
+;; Set random velocities
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 (define (replace-with-random-velocities! area)  
   (undo-editor-area area)  
   (replace-notes! (map-area-notes (get-area-notes area)
@@ -518,6 +523,42 @@
   (replace-with-random-velocities! (get-block-editor-area)))
 
 
+;; Set fixed velocities
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define *default-fixed-velocity* 1.0)
+(define *last-fixed-velocity-func* (lambda () #f))
+
+(define (replace-with-fixed-velocities! area)
+  (undo-editor-area area)  
+  (replace-notes! (map-area-notes (get-area-notes area)
+                                  (lambda (note)
+                                    (define (changevelocity velocity)
+                                      (if (in-editor-area (+ (area :start-place)
+                                                             (note :place)
+                                                             (velocity :place))
+                                                          :area area)
+                                          (copy-velocity velocity :value *default-fixed-velocity*)
+                                          velocity))                                    
+                                    (copy-note note
+                                               :velocities (map changevelocity (note :velocities)))))
+                  area))
+
+(delafina (replace-with-fixed-velocities-in-range :blocknum -1)
+  (set! *last-fixed-velocity-func* replace-with-fixed-velocities-in-range)
+  (if (not (has-range blocknum))
+      (show-missing-range-message)
+      (replace-with-fixed-velocities! (get-ranged-editor-area blocknum))))
+
+(delafina (replace-with-fixed-velocities-in-track :tracknum -1 :blocknum -1)
+  (set! *last-fixed-velocity-func* replace-with-fixed-velocities-in-track)
+  (replace-with-fixed-velocities! (get-track-editor-area tracknum blocknum)))
+
+(define (replace-with-fixed-velocities-in-block)
+  (set! *last-fixed-velocity-func* replace-with-fixed-velocities-in-block)
+  (replace-with-fixed-velocities! (get-block-editor-area)))
+
+(set! *last-fixed-velocity-func* replace-with-fixed-velocities-in-track)
 
 
 ;; Randomize note positions
@@ -641,6 +682,21 @@
                                                         (create-keybinding-button "Track" "ra:eval-scheme" '("(replace-with-random-velocities-in-track)"))
                                                         (create-keybinding-button "Block" "ra:eval-scheme" '("(replace-with-random-velocities-in-block)"))))
 
+  (define has-run #f)
+  (define fixed-velocities-layout (create-notem-layout (<gui> :horizontal-int-slider "velocity %: "
+                                                              0 (floor (* 100 *default-fixed-velocity*)) 100
+                                                              (lambda (val)
+                                                                (when has-run
+                                                                  (set! *default-fixed-velocity* (/ val 100))
+                                                                  (*last-fixed-velocity-func*))
+                                                                (set! has-run #t)))
+                                                       (<gui> :vertical-layout
+                                                              (create-keybinding-button "Range" "ra:eval-scheme" '("(replace-with-fixed-velocities-in-range)")))
+                                                       (<gui> :vertical-layout
+                                                              (create-keybinding-button "Track" "ra:eval-scheme" '("(replace-with-fixed-velocities-in-track)")))
+                                                       (<gui> :vertical-layout
+                                                              (create-keybinding-button "Block" "ra:eval-scheme" '("(replace-with-fixed-velocities-in-block)")))))
+  
   (define moduloskew-notes-layout (create-notem-layout (<gui> :vertical-layout
                                                               (create-keybinding-button "Range Up" "ra:eval-scheme" '("(moduloskew-range -1)"))
                                                               (create-keybinding-button "Range Down" "ra:eval-scheme" '("(moduloskew-range 1)")))
@@ -691,6 +747,7 @@
   
   (define ret (create-notem-flow-layout (<gui> :group "Randomize pitch" random-layout)
                                         (<gui> :group "Randomize velocities" random-velocities-layout)
+                                        (<gui> :group "Fixed velocities" fixed-velocities-layout)                                        
                                         (<gui> :group "Randomize note positions and durations" randomize-note-durations-layout)
                                         (<gui> :group "Randomly delete notes" randomly-delete-notes-layout)
                                         (<gui> :group "Modulo skew" moduloskew-notes-layout)

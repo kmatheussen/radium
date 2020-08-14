@@ -931,9 +931,5 @@
       (<-> (* 1.0 place))))
 
 
-(define (get-block-table-entry-text blocknum)
-  (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum)))
-
-
   
 

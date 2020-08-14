@@ -76,6 +76,9 @@
     randomize-note-durations-range
     randomize-note-durations-track
     randomize-note-durations-block
+    replace-with-fixed-velocities-in-range
+    replace-with-fixed-velocities-in-track
+    replace-with-fixed-velocities-in-block
     show-bars-and-beats-or-line-numbers-popup-menu
     popup-menu
     delete-all-unused-MIDI-instruments
