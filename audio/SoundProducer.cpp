@@ -141,6 +141,8 @@ static float iec_scale(float db) {
 #endif
 
 
+bool g_RT_enable_latency_compensation = true;
+
 
 namespace{
 
@@ -1628,7 +1630,7 @@ public:
     // 3. Find and set plugin latency, _latency and _highest_input_link_latency
     //
     
-    const int plugin_latency = _plugin->type->RT_get_latency!=NULL ? _plugin->type->RT_get_latency(_plugin) : 0;
+    const int plugin_latency = (_plugin->type->RT_get_latency==NULL || !g_RT_enable_latency_compensation) ? 0 : _plugin->type->RT_get_latency(_plugin);
 
     // Used by dry/wet
     for(int ch = 0 ; ch < _num_dry_sounds ; ch++)

@@ -148,6 +148,18 @@ void setAutobypassDelay(int val){
 }
 
 
+bool latencyCompensationEnabled(void){
+  return g_RT_enable_latency_compensation;
+}
+
+void setLatencyCompensationEnabled(bool doit){
+  if (doit != g_RT_enable_latency_compensation) {
+    radium::PlayerLock lock;
+    g_RT_enable_latency_compensation = doit;
+  }
+}
+
+
 static bool g_undo_solo = false;
 
 bool doUndoSolo(void){

@@ -544,6 +544,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       undo_solo->setChecked(doUndoSolo());
       undo_bypass->setChecked(doUndoBypass());
 
+      enable_latency_compensation->setChecked(latencyCompensationEnabled());
+      
       switch(RADIUM_BLOCKSIZE){
       case 64: b64->setChecked(true); break;
       case 128: b128->setChecked(true); break;
@@ -977,6 +979,11 @@ public slots:
       setAutobypassDelay(val);
   }
 
+  void on_enable_latency_compensation_toggled(bool val){
+    if (_initing==false)
+      setLatencyCompensationEnabled(val);
+  }
+  
   void on_undo_solo_toggled(bool val){
     if (_initing==false)
       setUndoSolo(val);
