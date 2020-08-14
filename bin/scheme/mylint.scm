@@ -19,6 +19,17 @@
                 (keep func (cdr list)))
           (keep func (cdr list)))))
 
+(define (keep2 func list1 list2)
+  (if (or (null? list1)
+          (null? list2))
+      '()
+      (if (func (car list1)
+                (car list2))
+          (cons (list (car list1)
+                      (car list2))
+                (keep2 func (cdr list1) (cdr list2)))
+          (keep2 func (cdr list1) (cdr list2)))))
+
 ;;(keep (lambda (x) (= x 1)) (list 1 3 1 5))
 
 
