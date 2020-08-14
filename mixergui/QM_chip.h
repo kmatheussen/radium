@@ -157,6 +157,8 @@ public:
   float _moving_x_offset;
   float _moving_y_offset;
 
+  bool _mouse_has_moved = false;
+  
   bool has_output_slider(void) const {
     if (_sound_producer==NULL)
       return false;

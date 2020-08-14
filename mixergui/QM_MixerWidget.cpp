@@ -164,7 +164,8 @@ class MyScene : public QGraphicsScene{
   std::vector<Chip*>_moving_chips;
 
   QPointF _start_mouse_pos;
-
+  bool _mouse_has_moved;
+  
   QRubberBand *_rubber_band = NULL;
   
 #if 0
@@ -1688,6 +1689,8 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
   
   MOUSE_CYCLE_register(g_mixer_widget, get_qmouseevent(event));
+
+  _mouse_has_moved = false;
   
   if (g_is_pressed==true)
     return;
@@ -1802,6 +1805,8 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 
 void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
   FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
+
+  _mouse_has_moved = true;
   
   MOUSE_CYCLE_move(g_mixer_widget, get_qmouseevent(event));
   
@@ -1909,6 +1914,16 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
 
     R_ASSERT(_current_econnection==NULL);
     R_ASSERT(_moving_chips.size()==0);
+
+    if (!_mouse_has_moved){
+      if (_current_from_chip!=NULL){
+        struct Patch *patch = CHIP_get_patch(_current_from_chip);
+        GFX_PP_Update_even_if_locked(patch, false);
+      } else if (_current_to_chip!=NULL){
+        struct Patch *patch = CHIP_get_patch(_current_to_chip);
+        GFX_PP_Update_even_if_locked(patch, false);
+      }
+    }
     
     if(chip!=NULL){ // TODO: Must check if the connection is already made.
 
@@ -1937,7 +1952,17 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   } else if (_current_econnection!=NULL){
 
     R_ASSERT(_moving_chips.size()==0);
-        
+
+    if (!_mouse_has_moved){
+      if (_ecurrent_from_chip!=NULL){
+        struct Patch *patch = CHIP_get_patch(_ecurrent_from_chip);
+        GFX_PP_Update_even_if_locked(patch, false);
+      } else if (_ecurrent_to_chip!=NULL){
+        struct Patch *patch = CHIP_get_patch(_ecurrent_to_chip);
+        GFX_PP_Update_even_if_locked(patch, false);
+      }
+    }
+
     if(can_internal_data_be_accessed_questionmark_safer()==true && chip!=NULL){ // TODO: Must check if the connection is already made.
 
       if(_ecurrent_from_chip != NULL && chip != _ecurrent_from_chip){

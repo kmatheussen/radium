@@ -2422,6 +2422,8 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
   //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
+
+  _mouse_has_moved = false;
   
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
     
@@ -2649,6 +2651,8 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
+  _mouse_has_moved = true;
+  
   if (_slider_being_edited != 0){
 
     R_ASSERT_RETURN_IF_FALSE(_slider_being_edited == 1 || _slider_being_edited == 2);
@@ -2731,6 +2735,14 @@ void Chip::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
   if(_slider_being_edited>0)
     _slider_being_edited=0;
 
+#if 0
+  // Commented out. When we are here, we have either just clicked the slider or the buttons.
+  if (!_mouse_has_moved){
+    struct Patch *patch = CHIP_get_patch(this);
+    GFX_PP_Update_even_if_locked(patch, false);
+  }
+#endif
+  
   event->accept();
 }
 
