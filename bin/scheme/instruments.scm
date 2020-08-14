@@ -948,9 +948,11 @@
 
 (define (FROM_C-switch-mute-for-selected-instruments)
   (let ((instruments (to-list (<ra> :get-extended-selected-instruments))))
-    (if (not (null? instruments))
-        (let ((doit (not (< (<ra> :get-instrument-effect (car instruments) "System Volume On/Off") 0.5))))
-          (FROM_C-set-mute-for-instruments instruments doit)))))
+    (undo-block
+     (lambda ()           
+       (for-each (lambda (instrument-id)
+                   (<ra> :set-instrument-mute (not (<ra> :get-instrument-mute instrument-id)) instrument-id))
+                 instruments)))))
 
 
 
