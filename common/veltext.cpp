@@ -227,9 +227,19 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
         return false;
 
       if (vt.is_first_velocity){
-        
+
+        bool is_equal = false;
+
+        if (note->velocities==NULL)
+          is_equal = note->velocity==note->velocity_end; // Don't use equal_floats since note->velocity is an integer.
+        else if (dat.logtype==LOGTYPE_HOLD && note->velocities->l.next==NULL)
+          is_equal = note->velocity==note->velocity_end;
+                                    
         safe_int_write(&note->velocity, dat.value);
         safe_int_write(&note->velocity_first_logtype, dat.logtype);
+
+        if (is_equal)
+          safe_int_write(&note->velocity_end, dat.value);
         
       } else if (vt.is_last_velocity){
         
@@ -237,9 +247,17 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
         
       } else {
         
+        bool is_equal = false;
+
+        if (dat.logtype==LOGTYPE_HOLD && note->velocities->l.next==NULL)
+          is_equal = velocity->velocity==note->velocity_end;
+        
         safe_int_write(&velocity->velocity, dat.value);
         safe_int_write(&velocity->logtype, dat.logtype);
-        
+
+        if (is_equal)
+          safe_int_write(&note->velocity_end, dat.value);
+
       }
       
     }    
