@@ -1,3 +1,621 @@
+Changes 5.9.98 -> 5.9.99:
+* GUI: Make it possible to edit keybinding for most popup menu entries.
+* GUI: Make it possible to edit keybinding for most main menu entries.
+* GUI: Display keybindings in a different color in the menu entries.
+* Manual: Lots of improvements.
+* Audio: Option to turn off latency compensation.
+  May be useful when recording audio.
+* Mixer: When switching mute/solo/bypass for several
+  selected instruments, switch each one
+  individually.
+* Edit: New function "replace with fixed
+  velocities".
+* General: Reduced memory usage.
+* MIDI learn: Fix loading/saving song with
+  parameters learning from event-connections. Note
+  that loading old song still don't work (due to a
+  necessary format change), but after relearning
+  loading should work.
+* Modular Mixer: Fix setting the volume of all
+  selected sound objects at once.
+* Pd: Fix assertion popping up in debug mode when
+  sending effect value.
+* Midi learn: Fix rare crash.
+* Pd: Increase number of input and output channels
+  from 2 to 16.
+* Editor: Minor improvement to the track header popup menu
+* Edit: Immediately give keyboard focus to editor
+  when mouse enters the edit tab.
+* GUI: Immediately give keyboard focus to widget
+  under mouse.
+* Editor: Fix graphics not updating immediately
+  after pasting subtrack or timing track. For
+  instance if pasting swing, fx, or BPM.
+* Editor: Various new entries
+  (clear/cut/insert/delete/mark/etc.) to the
+  bar/beat popup menus.
+* Editor: Remember range positions when undoing and
+  redoing.
+* Editor: Optimize undo.
+* Editor: Let the Delete key delete beat or bar
+  if hovered by mouse.
+* Menus: Fix delete / stop notes / delete velocity.
+* Editor: Removed QWERTY_A keybinding (alternative
+  to pressing DEL). Probably pressed most by
+  accident.
+* Editor: Don't hide indicator graphics when opening
+  popup menu.
+* Editor: Mark range when clicking in the beats
+  track.
+* Editor: Tweak range color. Increase saturation.
+* Editor: Draw transparent green color above bar or
+  beat above all tracks when mouse is above a bar
+  or a beat in the bar/beat track.
+* Editor: Draw current bar or beat number in a
+  different color when hovered.
+* Editor: Display name of timing tracks and so forth
+  in status bar when hovered. I.e. the tracks to the
+  left of the note tracks.
+* Sequencer: Make it possible to move seqblocks with
+  right mouse button too. (The brain might sometimes
+  wants to do that since you move objects with right
+  button in the mixer.)
+* fix
+* Mixer strips: Change color slightly for the slider
+  on/off button when hovered.
+* Mixer strips: Fix paint mute/solo buttons when
+  hovered.
+* Instruments: Add "Insert send" entry to the
+  instrument popup menu.
+* Instruments: Add "Forced as current instrument"
+  checkbox to the instrument popup menu options.
+* Mixer: Don't unset selected instruments when
+  setting current instrument.
+* Mixer: Set newly created instrument as the only
+  selected instrument after creating new instrument.
+* Mixer: Automatically select instrument when
+  hovering over an object.
+* GUI: Possible optimization
+* Mixer strips: Automatically change current
+  instrument when hovering, except when current
+  instrument is locked.  
+* Mixer strips: Fix sometimes displaying wrong
+  number of rows if a bus is set to be displayed as
+  a plugin in a mixer strip.
+* Sequencer: Add "Forced as current block" checkbox
+  to the editor seqblock popup menu.
+* Editor: Add padlock-checkbox in lower left corner
+  to prevent program from automatically changing
+  current block.
+* Editor: Drag the world when dragging using middle
+  mouse button.
+* Sequencer: Drag the world when dragging using
+  middle mouse button.
+* GUI: Make sure editor always becomes visible when
+  pressing F5 and sequencer is in Full mode.
+* GUI: Make sure mixer always becomes visible when
+  pressing F7 and sequencer is in Full mode.
+* GUI: Make sure editor gets keyboard focus when
+  pressing F5 and sequencer is in Full mode.
+* GUI: Make sure mixer gets keyboard focus when
+  pressing F7 and sequencer is in Full mode.
+* Mixer strips: Various fixes to popup menus.
+* Modular mixer: Rewrite all popup menus.
+* Instruments: Add "Load random sample",
+  "Connect to main pipe", "Insert plugin", "Mute",
+  "Solo", and "Bypass" entries to the instrument
+  popup menu.
+* Instruments: Write in the status bar if
+  solo/mute/bypass under mouse cursor has been
+  turned on/off by automation.
+* Instruments: Clean up various solo/mute/bypass
+  behaviors.* Mixer: Fix mouse cursor not changing shape when
+  doing things. Bug probably introduced when
+  switching to qt 5.
+* Mixer: Drag the world when dragging using middle
+  mouse button.
+* Audio: Fix some strange behaviors when muting and
+  unmuting System out" and other sink objects.
+* GUI: Tweak button size.
+* Editor: Paint automation indicator arrow (i.e. the
+  long vertical and horizontal lines) in the same
+  color as they are pointing to. E.g. indicator
+  arrows are painted in automation color or velocity
+  color depending on whether we are editing
+  automation or velocity.
+* Mixer: New general main popup menu. To add a new
+  sound object, now select "Insert new sound object"
+  from the new general main popup menu.
+* GUI: When pressing F5 and editor is visible but
+  doesn't have keyboard focus, give keyboard focus
+  to editor instead of hiding editor. Same behavior
+  for F7 (mixer) an and F8 (sequencer).
+* Sequencer: Make it possible to set gain for editor
+  seqblocks as well, not just sample seqblocks.
+* Mixer: Don't show popup menu after creating
+  selection rectangle with right-mouse button.
+* Editor: Write the name of the FX instead of
+  "Fx text" in the status bar when moving the cursor
+  to an FX text subtrack.
+* Mixer: Let double-click switch between
+  wide and non-wide. Before, it was enough to click
+  two times.
+* Mixer: Add option "Prevent program from switching
+  instrument" to the popup menu of the current
+  instrument.
+* Instruments: Add "Set current instrument" option
+  to the instrument lock popup menu.
+* Sequencer: Don't autoscroll seqtracks when using
+  seqtrack header interface.
+* Instruments: Add a "lock" checkbox in the upper
+  left corner to prevent the program from changing
+  current instrument.
+* Mixer: Don't create unnecessary undo when trying
+  to create connection between two sound objects
+  that were already connected.
+* Mixer: Don't delete invisible connection when
+  Shift+rightclicking on top of one.
+* Mixer: Don't show thick line of invisible
+  connections when mouse cursor is above one.
+* Mixer: Paint "vu arrows" on the connection lines.
+* Mixer: Let the connection lines blink when notes
+  are played.
+* Audio meters: Various fixes and optimizations.
+* Audio: Fix audio meters updating/decaying at
+  correct speed when CPU is too buzy to update
+  graphics every frame.
+* Mixer: Fix list of instruments listed up as
+  alternatives for creating send connections.
+* Mixer: Fix creating recursive connection. Before,
+  interface connection lines in the mixer were
+  created after attempting to create recursive
+  connections, causing all sorts of errors and
+  assertions to pop up.
+* Mixer: Fix no sound when inserting a Send to a
+  sound object without audio outputs.
+* Mixer: Reduce CPU usage.
+* Mixer: Paint arrow on connections in the modular
+  mixer.
+* Mixer: Let connection both increase in size, and
+  change color, when the sound is higher.
+* Mixer: Update modular mixer graphics each frame,
+  not each third frame.
+* Mixer: Speed up the note event led display 3X.
+* Mixer: Tweak event connection graphics.
+* Mixer: Light up event connections when events go
+  through them.
+* Mixer: Paint direction arrows on audio and event
+  connections.
+* Sequencer: Make sure current seqtrack is always
+  fully visible after changing current seqtrack.
+* GUI: Automatically unshow sequencer in full mode,
+  if necessary, when pressing F5 to show editor, F6
+  to show playlist, F7 to show Mixer, and when
+  showing mixer strip for current instrument.
+* GUI: Automatically unshow sequencer in full mode,
+  if necessary, when pressing .
+* Sequencer: Save seqblock selected status to disk.
+* Sequencer: Remember seqblock selected status after
+  finishing moving seqblocks.
+* Sequencer: Fix ctrl-press to select/deselect
+  single seqblock.
+* Sequencer: Display seqblock name in the separator
+  texts in the seqblock popup menus.
+* Sequencer: Display "Seqblocks (selection)" as
+  separator text for the seqblock separator text in
+  the seqblock popup menus when more than one
+  seqblock is selected (for cut/copy/paste/etc).
+* Sequencer: Fix right-clicking a seqblock two times
+  in a row in such a way that current seqblock
+  wasn't updated.
+* Sequencer: Always let seqblock under mouse be
+  current seqblock.
+* Bottom bar: Scale down font size if text doesn't
+  fit in status label.
+* Audio/Patchbay: Fix screwed up effect names when
+  using more than one type (e.g both using 8x8 and
+  16x16).
+* GUI: Fix rare freeze when showing a window.
+* GUI: Only show warning about a missing color the
+  first time, not every time the color is used.
+* Startup: fix missing "high_editor" color during
+  startup.
+* Sequencer: Let selected seqblocks still be
+  selected after moving them.
+* GUI: Reserve more vertical space for the status
+  bar.
+* Sequencer: Put esoteric/confusing options into the
+  "Advanced" sub menu in the editor seqblock
+  popup menu.
+* Sequencer: Add "Replace audio file" options to the
+  audio seqblock popup menu.
+* Sequencer: Clean up "replace" options in the
+  editor seqblock popup menu.
+* Sequencer: Make the "Clone editor block(s)" popup
+  menu entry less confusing.
+* Blocklists: Automatically scroll blocklist
+  (if necessary) after changing current block,
+  to ensure current block is visible.
+* Sequencer: Let "set seqblock name" and
+  "set seqtrack name" share shortcut (i.e. same
+  function is called for both.)
+* Internal: Avoid bignums.
+* Build: Remove qtstyleplugins.
+* API: Prevent looping and punching from being
+  enabled at the same time.
+* Sequencer: Add "Set name" to seqtrack popup menu.
+* Sequencer: Fix seqtrack names not always updating
+  immediately after being changed.
+* Sequencer: Set current seqtrack to 0 and scroll to
+  the top after loading.
+* GUI: Fix popup menu layout of already opened menus
+  after changing system font.
+* Sequencer: Store grid enabled/disabled to song
+  files.
+* Sequencer: Grid is now disabled by default.
+* Sequencer: Store the color of audio file seqblocks
+  to disk.
+* Sequencer: Fix some unnecessary space that
+  sometimes were left in the bottom of the
+  sequencer after increasing height of sequencer.
+* Sequencer: Make sure current seqtrack is always
+  visible after resizing.
+* Sequencer: Write "Grid: <gridtype>" instead of
+  "G: <gridtype>" on the grid button
+* Sequencer: Add "Popup menu for seqtrack #" entry
+  to the bottom of the popup menus for seqblock,
+  seqtrack automation, and seqblock automation.
+* Editor: Fix mouse speed when editing velocity
+  tempo automation.
+* Editor: Improve GFX performance a lot when moving
+  mouse, at least on Linux.
+* Sequencer: Make Windoews + up/down keybindings
+  select prev/next seqtrack.
+* Sequencer: Fix keybinding displayed for selecting
+  previous/next seqblock.
+* Sequencer: Only show seqblock entries in the
+  popup menu when right-clicking a seqblock.
+* Sequencer: Don't show the seqblock entries in the
+  main popup menu.
+* Sequencer: Add "Insert current audio file" to
+  popup menu.
+* Sequencer: Rename "Insert existing block" to
+  "Insert block".
+* Sequencer: Rename "Insert new audio file" to
+  "Insert audio file".
+* Sequencer: Remove "Insert new block from disk"
+  from the popup menu.
+* Sequencer: Moved the functionality of
+  "Insert new block" into "Insert block".
+* Sequencer: Change "Insert audio file" to select
+  from current audio files + option to load from
+  disk, instead of only having to load from disk.
+* Sequencer: Order audio files alphabetically.
+* Sequencer: Make sure initial value is within the
+  legal boundaries when creating new automation.
+* Menus: Fix displaying various keybinding names.
+  E.g. instead of "Left", "LEFTARROW" was displayed.
+* Sequencer: Fix showing current seqtrack after
+  loading.
+* Sequencer: Add "Swap with prev seqtrack" to popup
+  menu.
+* Sequencer: Make it possible to add keybinding for
+  setting seqtrack height by right-clicking the "H"
+  radio buttons.
+* GUI: Workaround for broken qfiledialog in Qt 5.15.
+  Wrong sizeadjustpolicy for the filetype combo
+  caused extremely wide windows.
+* Sequencer: Some improvements to the popup menu.
+* Sequencer: Don't show error message if copying,
+  cutting or deleting selected seqblocks while there
+  is no seqblock directly under mouse cursor.
+* GUI: Fix background color for the
+  "override keybinding?" table when using Qt 5.15.
+* GUI: Fix popup menus not being wide enough for
+  menus with long separator texts (workaround for Qt
+  bug).
+* Editor: Clean up menu to select track for
+  instrument. (F12)
+* Editor: Remove the keybindings for 1 and 1L1.
+  These splitted / unsplitted lines, which are
+  probably not very useful functions, but they
+  could also be confusing if hitting the keys by
+  mistake.
+* Editor: Fix Shift + F not always creating new
+  block.
+* Audio: Show warning window during startup if using
+  Jack 1. Radium is likely to freeze when using
+  Jack 1.
+* Editor: Make Right Alt + Up/Down work on
+  everything, not just note text, velocity, and
+  fxtext.
+* Editor: Fix Right Alt + Up/Down not working on
+  fxtext and velocity.
+* VST: Show warning message when loading the
+  ZamDelay VST plugin.
+* Internal: Optimize velocity and fx rendering.
+* Editor: Make transpose functions general so that
+  they work on BPM, swing, fx, velocity, etc.
+* Update S7
+* Editor: Include entries to show help pages for the
+  various timing tracks in the timing popup menu.  
+* Linux: Remove "Edit Menus" from the help menu.
+* Linux: Let "Edit Keybindings" in the help menu
+  open ~/.radium/keybindings.conf and not
+  keybindings.conf in the Radium binary directory.
+* Import MIDI: Fix importing songs that have more
+  start-note messages than stop-note messages.
+* Blocks: Fix undo delete and undo insert block.
+  Before it messed up the block order and/or pauses
+  in the sequencer and playlist.
+* Menus/Linux: Check the name of the process to kill
+  in the script to prevent X from locking up.
+  Debug-mode only.
+* GUI: Fix keyboard up/down keys selecting correct
+  prev/next entry right after opening a popup menu.
+  Before it always behaved as if the first entry was
+  selected, even when the mouse hovered an entry in
+  the middle of the popup menu.
+* Sequencer: Fix vertical seqtrack scrollbar not
+  always working. Bug introduced in 5.9.98.
+* Build: Support gcc 10.
+* Pd: Support the ctlin and ctlout Pd objects.
+* GUI: Use popup-menu code to create the main menus
+  as well. Looks nicer and it works to right-click
+  to configure keybindings.
+* GUI: Tweak menu graphics.
+* Sequencer: Name the sequencer timing part of the
+  popup menu to "Timing mode" (previously unnamed).
+* MIDI: Don't apply channel to MIDI system messages
+  (0xf0->0xff) when using track channel for MIDI
+  input.
+* Jack sanity checker: Ensure that the physical
+  ports that we connect to are Audio ports (not MIDI
+  ports or anything else.)
+* Jack: Don't ask user if he wants to kill jack if
+  creating test-connections failed because they
+  already existed.
+* GUI: In the change-keybinding-window, set the
+  default values for the editor/mixer/sequencer
+  focus buttons to what is currently used, if a
+  keybinding already existed for the command.
+* Crashreporter: Remove Arch linux namedropping. The
+  package is decent now.
+* Build: Fixed install instructions
+* Build: Fix "make clean" failing
+* Editor: Reorganize popup menu entries under
+  "Clipboard (track ...)". Not all entries were
+  clipboard entries.
+* Sequencer: Fix Shift + rightclick to delete
+  seqtrack. (It deleted current seqtrack instead of
+  the seqtrack under mouse.)
+* Linux: Only use included libxcb if the
+  system-version of libxcb is too old or doesn't
+  exist.
+* Editor: Add "Cut", "Delete all selected notes",
+  and "Delete this note" to the pianonote popup
+  menu.
+* Editor: Made copy/cut/delete operate on the
+  current note in the popup menu instead of the
+  selected notes, if current note is not selected.
+* Editor: Add "Pianoroll visible" to the pianonote
+  popup menu.
+* Editor: If right-clicking in the pianoroll without
+  clicking on a pianonote, and cursor is not moved,
+  make to options copy/cut/delete/paste/pianoroll
+  options visible in the popup menu.
+* Internal: Check that "declare-variable" variables
+  have actually been declared after starting up.
+* Editor: Add "Copy" option to pianonote popup menu.
+* minor fix for prev. commit
+* Editor: Don't unhighlight pianonote when
+  right-clicking it.
+* Editor: Add "Selected" option to the pianonote
+  popup menu.  
+* Editor: Make Ctrl + X cut selected notes in the
+  pianoroll.
+* Editor: Make Ctrl + C copy selected notes in the
+  pianoroll.
+* Editor: Make Ctrl + V paste into pianoroll.
+* Editor: Keybinding to copy block is now CTRL+SHIFT+C.
+* Editor: Keybinding to paste block is now CTRL+SHIFT+V.
+* Mixer: Mouse pointer doesn't have to be inside the
+  mixer when copying/cutting mixer objects.
+* Sequencer: Mouse pointer doesn't have to be inside
+  the mixer when copying and cutting seqblocks.
+* Audio: Possible to create recursive audio graphs
+  by using new sound objects "Send" and "Receive".
+* Build: Fix running Radium after running ./install.sh.
+* Build: Inform about the files install.sh and
+  bin/packages/README when running "make install".
+* Build: Display total compilation time when
+  finished.
+* Jack: If killing jack during startup, display
+  what's happening in the progress window.
+* Startup: Hide progress window before displaying
+  final message.
+* Editor: Display "ghost note" in piano roll.
+* General: Support NSM. (session manager system used
+  in Linux.)
+* macOS/Linux: Make Radium quit in a clean way when
+  receiving SIGTERM.
+* Editor: Fix assertion window popping up when
+  assigning track to an audio instrument without
+  inputs or outputs.
+* Edit: Make all "Range" operations operate on the
+  selected notes in the pianoroll if current block
+  has no range.
+* Edit: Don't create undo when nothing was
+  quantitized or transposed.
+* Startup: Don't show crash reporter if program
+  failed to start OpenGL.
+* Edit: Add "Microtonal" checkbox to
+  "Randomize pitch". Tt always created microtonal
+  pitches before.
+* Mixer: Fix minor memory leak.
+* Linux/Macosx: Fix compiling with newer bdf.h
+* Sequencer: Fix program sometimes crashing in debug
+  mode when finalizing a seqblock or seqtrack.
+* API:
+  * New: gui_addAfterDeletedCallback, setRange,
+    createOscServer, closeOscServer,
+    getOscProtocolFromUrl, addOscMethod,
+    closeOscMethod, sendOscMessage,
+    sendOscMessageFrom,
+    addDirtyStatusChangeCallback,
+    removeDirtyStatusChangeCallback, getPid,
+    getArgv0, nsmHasInited, waitUntilNsmHasInited,
+    nsmIsActive, getNsmClientId,
+    supportsSwitchNsmCapability,
+    setSupportsSwitchNsmCapability, dirExists,
+    createDir, setCurrentPianoGhostNote,
+    cancelCurrentPianoGhostNote,
+    hasCurrentPianoGhostNoteStart,
+    getCurrentPianoGhostNoteTracknum,
+    getCurrentPianoGhostNoteStart,
+    getCurrentPianoGhostNoteEnd,
+    getCurrentPianoGhostNoteValue,
+    copySelectedPianonotes,
+    cutSelectedPianonotes,
+    deleteSelectedPianonotes, pastePianonotes,
+    addPopupMenuClosedCallback,
+    removePopupMenuClosedCallback,
+    getCurrentPianonote, forceDeleteSeqtrack,
+    editorHasKeyboardFocus, mixerHasKeyboardFocus,
+    sequencerHasKeyboardFocus, addMenuMenu2,
+    addToProgramLog, exportSong, importSong,
+    clearSong, showBpmTextHelpWindow,
+    showLpbTextHelpWindow,
+    showSignatureTextHelpWindow,
+    showLzTrackHelpWindow,
+    showTempoAutomationTrackHelpWindow,
+    setTrackSwings, generalTransposeEntryDown,
+    generalTransposeEntryUp,
+    generalTransposeTrackDown,
+    generalTransposeTrackUp,
+    generalTransposeRangeDown,
+    generalTransposeRangeUp,
+    generalTransposeBlockDown,
+    generalTransposeBlockUp, setInstrumentColor,
+    gui_getMouseX, gui_getMouseY, requestWString,
+    base64StringIs8bitCompatible,
+    setCurrentInstrumentLocked,
+    isCurrentInstrumentLocked,
+    switchSetCurrentInstrumentLocked,
+    showHideFocusEditor, showHideFocusSequencer,
+    mixerIsVisible, showHideFocusMixer,
+    getCurrMixerSlotX, getCurrMixerSlotY,
+    showHideInstrumentGui,
+    getInstrumentSoloFromStorage,
+    getInstrumentMuteFromStorage,
+    getInstrumentBypassFromStorage,
+    allowAutomaticallyChangingCurrentBlock,
+    setAllowAutomaticallyChangingCurrentBlock,
+    switchAllowAutomaticallyChangingCurrentBlock,
+    gui_getCurrMouseButton,
+    switchSetInstrumentAlwaysReceiveMidiInput,
+    switchWideInstrumentStrip, getPlaceFromRealline,
+    getReallineY1, getReallineY2,
+    getTempoVisualizerTracknum, getBpmTracknum,
+    getLpbTracknum, getSignatureTracknum,
+    getLinenumTracknum, getBeatTracknum,
+    getSwingTracknum, getTempoAutomationTracknum,
+    getReallineFromY, getTopRealline,
+    getBotRealline, getBeatBarBorderX,
+    setCurrentBar, setCurrentBeat, getCurrentBar,
+    getCurrentBeat, cancelCurrentBeat,
+    getBeatAtRealline, getBeats, getBeatStart,
+    getBeatEnd, getBarStart, getBarEnd,
+    insertLines2, deleteLines2, getBeatAtPlace,
+    hasBeat, pasteRange2, cutRange2, copyRange2,
+    clearRange, clearRange2, hasRangeInClipboard,
+    nsmNewSong, nsmSave, nsmDuplicate, nsmOpen,
+    nsmQuit, newOrClearSong, saveAsOrExportSong,
+    loadOrImportSong, gui_drawSvg
+  * Deleted: showFXHelpWindow, getFxrangenodePlace,
+    getFxrangenodeValue, getFxrangenodeLogtype,
+    getFxrangeName, getNumFxrangenodes,
+    getNumFxsInRange
+  * Optional argument "ignore_nsm" for saveAs, load,
+    newSong, saveWithEmbeddedSamples, and
+    saveWithoutEmbeddedSamples.
+  * Python: Support for the "Place" type.
+  * Remove optional argument "force_delete" from
+    deleteSeqtrack.
+  * Don't allow sending negative place as argument
+    for addNote to InsertNote. It's not a valid
+    place and program isn't able to handle it
+    either.
+  * Remove the default arguments for end_line,
+    end_counter, and end_dividor since none of them
+    were legal.
+  * Renamed getAllTrackSwings to getTrackSwings
+  * generateNewInstrumentColor: Let default argument
+    for "instrument_id" be the current instrument.
+  * Change order of arguments for
+    setSeqtrackMinHeightType and
+    setSeqtrackMaxHeightType.
+  * Let current seqtrack be the default seqtrack
+    argument for getSeqtrackMinHeightType,
+    setSeqtrackMinHeightType,
+    getSeqtrackMaxHeightType, and
+    setSeqtrackMaxHeightType.
+  * Add optional argument "paint_on_top" to
+    api_addPaintCallback.
+  * Add optional arguments "forgiving" and
+    "only_inside_timeline" to
+    getCurrSeqtrackUnderMouse.
+  * Fix getCurrSeqtrackUnderMouse.
+  * setShowBarsAndBeatsSequencerLane: Automatically
+    show time sequencer lane instead of throwing
+    error.
+  * setShowTimeSequencerLane: Automatically show
+    bars and beats sequencer lane instead of
+    throwing error.
+  * configBlock: Add optional argument "blocknum"
+  * removeSchedule: Release callback immediately.
+    Minor memory usage improvement.
+  * autoscrollSeqtracks: Add optional argument
+    "make_fully_visible".
+  * Fix canAudioConnect. It only returned false
+    if it would create a recursive audio connection,
+    not even taking event connections into account.
+  * Add optional argument
+    "bool change_curr_instrument" to
+    setCurrSeqtrack.
+  * Add optional argument
+    "bool only_change_if_unlocked" to
+    setCurrentInstrument.
+  * Minor fixes to getInstrumentBypass,
+    setInstrumentBypass, and getInstrumentSoloed.
+  * deleteInstrument/showInstrumentGUI/hideInstrumentGUI:
+    Give default values to all arguments so they can
+    be used as keybindings.
+  * Add optional arguments blocknum and windownum to
+    getTrackSliderX1/X2/Y1/Y2.
+  * Add optional argument
+    only_select_if_allowed_to_automatically_change
+    to selectBlock.
+  * requestLoadInstrumentPreset/saveInstrumentPreset/showInstrumentInfo:
+    Give default values to all arguments so they can
+    be used for keybinding.
+  * Fix getRangeEndTrack and setRange.
+  * Fix getBeatAtPlace
+  * Add optional argument "rangetype" to cutRange,
+    copyRange, pasteRange, getNumTracksInRange, and
+    getRangeLength.
+  * Fix gui_textWidth causing all later calls to
+    paintEvent to fail if gui_textWidth was not
+    called from a paint callback and guinum is 0 or
+    bigger.
+  * Let "createIllegalFilepath()" be the default
+    argument for loadSong.
+  * API: Show error message if trying to call
+    saveAs, load, or newSong in NSM-mode.
+  * Fix crash in setTrackSwings if providing two
+    swings on the same position.
+
+
 Changes 5.9.96 -> 5.9.98:
 * Windows: Some adjustments to make the 32 bits
   version run longer without running out of memory.
