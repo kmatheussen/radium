@@ -169,7 +169,17 @@ static void PExpandBlock(
 
 
 static float GetScaleFactor(struct Tracker_Windows *window){
-  return GFX_GetFloat(window,NULL,"Pitch expand factor (0-10): ",0.0f,10.0f,true);
+  ReqType reqtype = GFX_OpenReq(window, 50, 20, "");
+
+  GFX_WriteString(reqtype, "Pitch shrink/expand\n");
+  GFX_WriteString(reqtype, "Shrink range: 0-1\n");
+  GFX_WriteString(reqtype, "Expand range: 1-10\n");
+  
+  float ret = GFX_GetFloat(window,reqtype," (0-10): ",0.0f,10.0f,true);
+
+  GFX_CloseReq(window, reqtype);
+  
+  return ret;  
 }
 
 
