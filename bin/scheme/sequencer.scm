@@ -2040,6 +2040,25 @@
       (<ra> :config-block blocknum))))
 
 
+(define (get-unique-editor-block-name blockname)
+  (define (name-exists? blockname)
+    (any? (lambda (blocknum)
+            (string=? blockname (<ra> :get-block-name blocknum)))
+          (iota (<ra> :get-num-blocks))))
+
+  (if (not (name-exists? blockname))
+      blockname
+      (let loop ((added 2))
+        (let ((new-name (<-> blockname " " added)))
+          (if (name-exists? new-name)
+              (loop (+ added 1))
+              new-name)))))
+      
+#!!
+(get-unique-editor-block-name "First Block")
+!!#
+
+
 ;; Note: used for shortcut
 (delafina (clone-seqblock-block :seqblock-id (and *current-seqblock-info*
                                                   (*current-seqblock-info* :id))
@@ -2056,9 +2075,11 @@
            (<ra> :select-block blocknum)
            (<ra> :copy-block)
            (for-each (lambda (seqblock-info)
+                       (define new-name (get-unique-editor-block-name (<ra> :get-block-name blocknum)))
                        (define new-blocknum (<ra> :append-block))
                        (<ra> :select-block new-blocknum)
-                       (<ra> :paste-block))
+                       (<ra> :paste-block)
+                       (<ra> :set-block-name new-name new-blocknum))
                      seqblock-infos)))))))
 
 ;; Note: used for shortcut
