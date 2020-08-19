@@ -150,7 +150,7 @@ namespace{
   };
 
   struct Data {
-    QString _name = "";
+    QString _name = "default";
 
     Data(hash_t *state){
       if (state)
