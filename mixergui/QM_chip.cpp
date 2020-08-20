@@ -92,6 +92,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_common_proc.h"
 #include "../api/api_gui_proc.h"
+#include "../api/api_instruments_proc.h"
 
 #include "../common/patch_proc.h"
 
@@ -2031,14 +2032,15 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   */
 
   bool is_current_patch = get_current_instruments_gui_patch()==patch;
+  bool is_current_patch_under_mouse = patch->id.id == getCurrentInstrumentUnderMouse().id;
 
-  QColor text_color = get_qcolor(MIXER_TEXT_COLOR_NUM);
+  QColor text_color = get_qcolor(is_current_patch ? SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM : MIXER_TEXT_COLOR_NUM);
   //if(is_current_patch==false)
   text_color.setAlpha(160);
   
 
   QColor border_color = get_qcolor(MIXER_BORDER_COLOR_NUM);
-  if(is_current_patch==false)
+  if(is_current_patch_under_mouse==false)
     border_color.setAlpha(160);
 
   painter->setPen(QPen(border_color, 2));
@@ -2194,8 +2196,8 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     //    if(is_current_patch==true){
       //}
-    if (is_current_patch || is_selected){      
-      QColor c = is_current_patch
+    if (is_current_patch_under_mouse || is_selected){      
+      QColor c = is_current_patch_under_mouse
         ? (is_selected ? mix_colors(get_qcolor(MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM), get_qcolor(MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM), 0.5) : get_qcolor(MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM))
         : get_qcolor(MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM);
       painter->setPen(QPen(c, 4));
@@ -2369,7 +2371,7 @@ static void set_slider_statusbar(const Chip *chip){
   g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, temp));
 }
 
-static void show_hover_statusbar_message(const Chip *chip, const QGraphicsSceneHoverEvent * event ){
+static void handle_mouse_hover_chip(const Chip *chip, const QGraphicsSceneHoverEvent * event ){
   const QPointF pos = event->pos();
   
   if (in_solo_button(pos)){
@@ -2398,18 +2400,22 @@ static void show_hover_statusbar_message(const Chip *chip, const QGraphicsSceneH
     
   }
 
-  setCurrentInstrument(CHIP_get_patch(chip)->id, false, true);
+  API_set_mousePointerCurrentlyPointsAtInstrument(true);
+
+  setCurrentInstrumentUnderMouse(CHIP_get_patch(chip)->id);
 }
 
 void Chip::hoverEnterEvent ( QGraphicsSceneHoverEvent * event ){
-  show_hover_statusbar_message(this, event);
+  handle_mouse_hover_chip(this, event);
 }
 
 void Chip::hoverMoveEvent ( QGraphicsSceneHoverEvent * event ){
-  show_hover_statusbar_message(this, event);
+  handle_mouse_hover_chip(this, event);
 }
 
 void Chip::hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ){
+  API_set_mousePointerCurrentlyPointsAtInstrument(false);
+  
   if (g_statusbar_id >= 0){
     
     removeStatusbarText(g_statusbar_id);
