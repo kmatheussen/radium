@@ -1253,6 +1253,24 @@ void s7extra_callFunc2_void_bool(const char *funcname, bool arg1){
   s7extra_callFunc_void_bool((const func_t*)find_scheme_value(s7, funcname), arg1);
 }
 
+void s7extra_callFunc_void_bool_bool(const func_t *func, bool arg1, bool arg2){
+  ScopedEvalTracker eval_tracker;
+  
+  catch_call(s7,
+             s7_list_nl(s7,
+                        3,
+                        (s7_pointer)func,
+                        s7_make_boolean(s7, arg1),
+                        s7_make_boolean(s7, arg2),
+                        NULL
+                        )
+             );
+}
+
+void s7extra_callFunc2_void_bool_bool(const char *funcname, bool arg1, bool arg2){
+  s7extra_callFunc_void_bool_bool((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
+}
+
 void s7extra_callFunc_void_float(const func_t *func, double arg1){
   ScopedEvalTracker eval_tracker;
   

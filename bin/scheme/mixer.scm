@@ -277,20 +277,20 @@
 
 ;; Note: Used for shortcut
 (delafina (unsolo-all-selected-instruments)
-  (<ra> :set-solo-for-instruments (<ra> :get-selected-instruments) #f))
+  (<ra> :set-solo-for-instruments (<ra> :get-curr-mixer-instruments) #f))
 
 ;; Note: Used for shortcut
 (delafina (unmute-all-selected-instruments)
-  (<ra> :set-mute-for-instruments (<ra> :get-selected-instruments) #f))
+  (<ra> :set-mute-for-instruments (<ra> :get-curr-mixer-instruments) #f))
 
 ;; Note: Used for shortcut
-(delafina (save-preset-for-instruments :instruments (<ra> :get-selected-instruments)
+(delafina (save-preset-for-instruments :instruments (<ra> :get-curr-mixer-instruments)
                                        :gui (<gui> :get-main-mixer-gui))
   
   (<ra> :save-instrument-preset instruments gui))
 
 ;; Note: Used for shortcut
-(delafina (show-mixer-strips-for-instruments :instruments (<ra> :get-selected-instruments)
+(delafina (show-mixer-strips-for-instruments :instruments (<ra> :get-curr-mixer-instruments)
                                              :num-rows 1)
   (<ra> :show-mixer-strips2 num-rows instruments))
 
@@ -448,7 +448,7 @@
               ))
 
 (define (FROM_C-show-mixer-popup-menu curr-instrument-id x y)
-  (define selected-instruments (<ra> :get-selected-instruments))
+  (define selected-instruments (<ra> :get-curr-mixer-instruments))
   (if (not (<ra> :is-legal-instrument curr-instrument-id))
       (show-mixer-popup-menu-no-chip-under x y selected-instruments)
       (if (> (length selected-instruments) 1)

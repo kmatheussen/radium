@@ -1804,17 +1804,55 @@ const_char* getInstrumentInfo(instrument_t instrument_id){
   return "";
 }
 
+static bool instrument_in_patch_vector(instrument_t instrument, const vector_t &patches){
+  VECTOR_FOR_EACH(struct Patch *, patch, &patches){
+    if (patch->id.id==instrument.id)
+      return true;
+  }END_VECTOR_FOR_EACH;
+
+  return false;
+}
+
+dynvec_t getCurrMixerInstruments(void){
+  dynvec_t ret = {};
+  
+  const vector_t &selected_patches = MW_get_selected_patches();
+
+  if (selected_patches.num_elements==0 || mousePointerCurrentlyPointsAtInstrument()) {
+    
+    instrument_t instrument_under_mouse = getCurrentInstrumentUnderMouse();
+  
+    if (isLegalInstrument(instrument_under_mouse)){
+      
+      if (!instrument_in_patch_vector(instrument_under_mouse, selected_patches)){
+        
+        DYNVEC_push_back(&ret, DYN_create_instrument(instrument_under_mouse));
+        return ret;
+        
+      }
+    }
+    
+  }
+
+  VECTOR_FOR_EACH(struct Patch *, patch, &selected_patches){
+    DYNVEC_push_back(&ret, DYN_create_instrument(patch->id));
+  }END_VECTOR_FOR_EACH;
+
+  return ret;
+}
+  
 dynvec_t getSelectedInstruments(void){
   dynvec_t ret = {};
-  const vector_t &patches = MW_get_selected_patches();
+  const vector_t &selected_patches = MW_get_selected_patches();
 
-  VECTOR_FOR_EACH(struct Patch *, patch, &patches){
+  VECTOR_FOR_EACH(struct Patch *, patch, &selected_patches){
     DYNVEC_push_back(&ret, DYN_create_instrument(patch->id));
   }END_VECTOR_FOR_EACH;
 
   return ret;
 }
 
+/*
 dynvec_t getExtendedSelectedInstruments(void){
   dynvec_t ret = getSelectedInstruments();
 
@@ -1828,7 +1866,7 @@ dynvec_t getExtendedSelectedInstruments(void){
   
   return ret;
 }
-    
+*/  
 
 int numSelectedInstruments(void){
   int ret = 0;
@@ -2972,7 +3010,60 @@ bool showHideInstrumentGui(instrument_t instrument_id, int64_t parentgui, bool s
   }else
     return showInstrumentGui(instrument_id, parentgui, show_instrument_window_if_not_visible);
 }
+
+
+static instrument_t g_curr_instrument_under_mouse = createIllegalInstrument();
+
+instrument_t getCurrentInstrumentUnderMouse(void){
+  instrument_t ret = g_curr_instrument_under_mouse;
   
+  if (!isLegalInstrument(ret) || !instrumentIsOpen(ret) || !instrumentIsAudio(ret))
+    return getCurrentInstrument();
+
+  return ret;
+}
+
+void setCurrentInstrumentUnderMouse(instrument_t instrument){ 
+  struct Patch *patch = getAudioPatchFromNum(instrument);
+  if(patch==NULL)
+    return;
+  
+  if (instrument.id != g_curr_instrument_under_mouse.id){
+
+    struct Patch *old_patch = PATCH_get_from_id(getCurrentInstrumentUnderMouse());
+    
+    g_curr_instrument_under_mouse = instrument;
+
+    {
+      struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+      R_ASSERT(plugin!=NULL);
+      if (plugin!=NULL)
+        CHIP_update(plugin);
+    }
+    
+    if(old_patch!=NULL){
+      struct SoundPlugin *plugin = (struct SoundPlugin*)old_patch->patchdata;
+      R_ASSERT(plugin!=NULL);
+      if (plugin!=NULL)
+        CHIP_update(plugin);
+    }
+    
+  }
+}
+
+static bool g_mouse_pointer_currently_points_at_instrument = false;
+
+bool mousePointerCurrentlyPointsAtInstrument(void){
+  return true;
+}
+
+void API_set_mousePointerCurrentlyPointsAtInstrument(bool ispointing){
+  if (g_mouse_pointer_currently_points_at_instrument != ispointing){
+    //printf("        CURRENTLY: %d\n", ispointing);
+    g_mouse_pointer_currently_points_at_instrument = ispointing;
+  }
+}
+
 instrument_t getCurrentInstrument(void){
   return PATCH_get_current()->id;
 }
@@ -2982,6 +3073,11 @@ void setCurrentInstrument(instrument_t instrument_id, bool show_instrument_windo
   if(patch==NULL)
     return;
 
+  /*
+  if (instrumentIsAudio(instrument_id))
+    setCurrentInstrumentUnderMouse(instrument_id);
+  */
+  
   struct Patch *old_currpatch = PATCH_get_current();
 
   if (patch==old_currpatch)
@@ -3017,20 +3113,20 @@ void setCurrentInstrument(instrument_t instrument_id, bool show_instrument_windo
   */
 }
 
-void setCurrentInstrumentLeft(void){
-  S7CALL2(void_void,"FROM_C-move-current-instrument-left");
+void setCurrentInstrumentLeft(bool set_current_instrument, bool set_current_instrument_under_mouse){
+  S7CALL2(void_bool_bool,"FROM_C-move-current-instrument-left", set_current_instrument, set_current_instrument_under_mouse);
 }
 
-void setCurrentInstrumentRight(void){
-  S7CALL2(void_void,"FROM_C-move-current-instrument-right");
+void setCurrentInstrumentRight(bool set_current_instrument, bool set_current_instrument_under_mouse){
+  S7CALL2(void_bool_bool,"FROM_C-move-current-instrument-right", set_current_instrument, set_current_instrument_under_mouse);
 }
 
-void setCurrentInstrumentUp(void){
-  S7CALL2(void_void,"FROM_C-move-current-instrument-up");
+void setCurrentInstrumentUp(bool set_current_instrument, bool set_current_instrument_under_mouse){
+  S7CALL2(void_bool_bool,"FROM_C-move-current-instrument-up", set_current_instrument, set_current_instrument_under_mouse);
 }
 
-void setCurrentInstrumentDown(void){
-  S7CALL2(void_void,"FROM_C-move-current-instrument-down");
+void setCurrentInstrumentDown(bool set_current_instrument, bool set_current_instrument_under_mouse){
+  S7CALL2(void_bool_bool,"FROM_C-move-current-instrument-down", set_current_instrument, set_current_instrument_under_mouse);
 }
 
 static bool g_curr_instrument_is_locked = false;// = createIllegalInstrument();

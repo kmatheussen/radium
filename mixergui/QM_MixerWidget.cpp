@@ -126,7 +126,7 @@ class MyScene : public QGraphicsScene{
   void 	mousePressEvent ( QGraphicsSceneMouseEvent * event ) override;
   void 	mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ) override;
 
-
+    
   /*
   void dragEnterEvent(QGraphicsSceneDragDropEvent *e){
     printf("               GOT DRAG\n");
@@ -1094,9 +1094,27 @@ vector_t MW_get_selected_patches(void){
   return get_selected_patches();
 }
 
+static vector_t get_curr_mixer_patches(void){
+  vector_t ret = {};
+
+  const dynvec_t patchids = getCurrMixerInstruments();
+  
+  for(const dyn_t dyn : patchids){
+    R_ASSERT_RETURN_IF_FALSE2(dyn.type==INSTRUMENT_TYPE, ret);
+
+    struct Patch *patch = PATCH_get_from_id(dyn.instrument);
+
+    R_ASSERT_NON_RELEASE(patch!=NULL);
+      
+    if (patch != NULL)
+      VECTOR_push_back(&ret, patch);
+  }
+
+  return ret;  
+}
 
 void MW_copy(void){
-  vector_t patches = get_selected_patches();
+  const vector_t patches = get_curr_mixer_patches(); //get_selected_patches();
 
   if (patches.num_elements==0){
     GFX_Message2(NULL, true, "No sound object selected");
@@ -1107,7 +1125,7 @@ void MW_copy(void){
 }
 
 static void MW_delete2(float mouse_x, float mouse_y, bool has_mouse_coordinates){
-  vector_t patches = get_selected_patches();
+  vector_t patches = get_curr_mixer_patches(); //get_selected_patches();
   delete_several_chips(patches);
 }
 
@@ -1116,7 +1134,7 @@ void MW_delete(void){
 }
 
 static void MW_cut2(float mouse_x, float mouse_y, bool has_mouse_coordinates){
-  vector_t patches = get_selected_patches();
+  vector_t patches = get_curr_mixer_patches(); //get_selected_patches();
 
   if (patches.num_elements==0){
     GFX_Message2(NULL, true, "No sound object selected");
@@ -1218,7 +1236,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   if(chip_under==NULL)
     return false;
 
-  const vector_t patches = get_selected_patches();
+  const vector_t patches = get_curr_mixer_patches(); //get_selected_patches();
   if (patches.num_elements==0)
     return false;
 

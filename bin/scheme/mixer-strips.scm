@@ -671,6 +671,17 @@
   name)
 ||#
 
+(define (get-instrument-name-text-color instrument-id)
+  (define is-current (equal? instrument-id (<ra> :get-current-instrument)))
+  (define text-color (if is-current *text-color* "mixer_text_color"))
+  (if (not is-current)
+      (set! text-color (<gui> :set-alpha-for-color text-color 0.63)))
+  text-color)
+
+(define (get-instrument-name-background-color instrument-id)
+  (let ((color (<ra> :get-instrument-color instrument-id)))
+    (<gui> :make-color-lighter color 1.4)))
+    
 (define (create-mixer-strip-name instrument-id strips-config is-minimized is-current-mixer-strip)
   (define name (get-mixer-strip-name instrument-id strips-config))
 
@@ -691,26 +702,28 @@
   
   (add-safe-paint-callback label
          (lambda (width height)
-           (define color (<ra> :get-instrument-color instrument-id))
 
-           (<gui> :filled-box label color 0 0 width height)
+           (define text-color (get-instrument-name-text-color instrument-id))
+           
+           (<gui> :filled-box label (get-instrument-name-background-color instrument-id) 0 0 width height)
+           
            (if is-minimized
                (begin
                  (define ysplit (if (<= num-in-path 1)
                                     height
-                                    (- height (* 1.5 (<gui> :get-system-fontheight)))))                                    
-                 (<gui> :draw-vertical-text label *text-color* name 2 7 (+ width 0) ysplit #t #f #t)
+                                    (- height (* 1.5 (<gui> :get-system-fontheight)))))
+                 (<gui> :draw-vertical-text label text-color name 2 7 (+ width 0) ysplit #t #f #t)
                  (if (> num-in-path 1)
                      (<gui> :do-alpha label 0.7
                             (lambda () 
-                              (<gui> :draw-text label *text-color* (<-> "(" (- num-in-path 1) ")")
+                              (<gui> :draw-text label text-color (<-> "(" (- num-in-path 1) ")")
                                      2 ysplit
                                      (+ width 0) height
                                      #f ;; wrap
                                      #f ;; align top
                                      #f ;; align left
                                      )))))
-               (if (not (<gui> :my-draw-text label *text-color* name 5 0 width height #f #f #f 0 #t #t))
+               (if (not (<gui> :my-draw-text label text-color name 5 0 width height #f #f #f 0 #t #t))
                    (show-name-tool-tip)
                    (<gui> :set-tool-tip label "")))
            (<gui> :draw-box label "#202020" 0 0 width height 1.0 2 2)))

@@ -932,7 +932,7 @@
 
          
 (define (FROM_C-switch-solo-for-selected-instruments)
-  (let ((instruments (to-list (<ra> :get-extended-selected-instruments))))
+  (let ((instruments (to-list (<ra> :get-curr-mixer-instruments))))
     (undo-block
      (lambda ()           
        (for-each (lambda (instrument-id)
@@ -949,7 +949,7 @@
                instruments))))
 
 (define (FROM_C-switch-mute-for-selected-instruments)
-  (let ((instruments (to-list (<ra> :get-extended-selected-instruments))))
+  (let ((instruments (to-list (<ra> :get-curr-mixer-instruments))))
     (undo-block
      (lambda ()           
        (for-each (lambda (instrument-id)
@@ -966,7 +966,7 @@
                instruments))))
 
 (define (FROM_C-switch-bypass-for-selected-instruments)
-  (let ((instruments (to-list (<ra> :get-extended-selected-instruments))))
+  (let ((instruments (to-list (<ra> :get-curr-mixer-instruments))))
     (undo-block
      (lambda ()           
        (for-each (lambda (instrument-id)
@@ -1043,21 +1043,21 @@
 ;                            
 ;                            (if (string=? "Sample Player" (<ra> :get-instrument-type-name id-instrument))
 ;                                (<ra> :set-random-instrument-sample id-instrument)))
-;                          (<ra> :get-extended-selected-instruments)))))
+;                          (<ra> :get-curr-mixer-instruments)))))
                 
 (define (set-random-sample-for-all-selected-sampler-instruments)
   (undo-block (lambda ()
                 (for-each (lambda (id-instrument)
                             (if (string=? "Sample Player" (<ra> :get-instrument-type-name id-instrument))
                                 (<ra> :set-random-instrument-sample id-instrument)))
-                          (<ra> :get-extended-selected-instruments)))))
+                          (<ra> :get-curr-mixer-instruments)))))
 
 (define (FROM-C-generate-new-color-for-all-selected-instruments mix-background)
   (define new-color (<ra> :generate-new-color mix-background))
   (undo-block (lambda ()
                 (for-each (lambda (id-instrument)
                             (<ra> :set-instrument-color new-color id-instrument))
-                          (<ra> :get-extended-selected-instruments)))))
+                          (<ra> :get-curr-mixer-instruments)))))
 
 
 #||
@@ -2028,7 +2028,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 !!#
 
 
-(define* (find-instrument-in-modular-mixer-to-the-left-of (goal-instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-in-modular-mixer-to-the-left-of (goal-instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-in-modular-mixer-coordinate-relation-to goal-instrument-id
                                                                       (lambda (x y x2 y2 dx dy best-dx best-dy)
                                                                         (and (< x2 x)
@@ -2036,7 +2036,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                                                                  (and (= dy best-dy)
                                                                                       (< dx best-dx)))))))
                       
-(define* (find-instrument-in-modular-mixer-to-the-right-of (goal-instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-in-modular-mixer-to-the-right-of (goal-instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-in-modular-mixer-coordinate-relation-to goal-instrument-id
                                                                       (lambda (x y x2 y2 dx dy best-dx best-dy)
                                                                         (and (> x2 x)
@@ -2044,7 +2044,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                                                                  (and (= dy best-dy)
                                                                                       (< dx best-dx)))))))
                       
-(define* (find-instrument-in-modular-mixer-to-the-up-of (goal-instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-in-modular-mixer-to-the-up-of (goal-instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-in-modular-mixer-coordinate-relation-to goal-instrument-id
                                                                       (lambda (x y x2 y2 dx dy best-dx best-dy)
                                                                         (and (< y2 y)
@@ -2052,7 +2052,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                                                                  (and (= dx best-dx)
                                                                                       (< dy best-dy)))))))
                       
-(define* (find-instrument-in-modular-mixer-to-the-down-of (goal-instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-in-modular-mixer-to-the-down-of (goal-instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-in-modular-mixer-coordinate-relation-to goal-instrument-id
                                                                       (lambda (x y x2 y2 dx dy best-dx best-dy)
                                                                         (and (> y2 y)
@@ -2061,7 +2061,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                                                                       (< dy best-dy)))))))
                       
 
-(define* (find-instrument-to-the-X-of modular-func strips-func (goal-instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-to-the-X-of modular-func strips-func (goal-instrument-id (ra:get-current-instrument-under-mouse)))
   (cond ;;((a-mixer-strip-window-is-active?)
         ;; (strips-func goal-instrument-id))
         ((and (<gui> :is-active-window  (<gui> :get-main-mixer-gui))
@@ -2070,22 +2070,22 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
         (else
          (strips-func goal-instrument-id))))
 
-(define* (find-instrument-to-the-left-of (goal-instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-to-the-left-of (goal-instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-to-the-X-of find-instrument-in-modular-mixer-to-the-left-of
                                find-instrument-in-mixer-strips-to-the-left-of
                                goal-instrument-id))
 
-(define* (find-instrument-to-the-right-of (goal-instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-to-the-right-of (goal-instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-to-the-X-of find-instrument-in-modular-mixer-to-the-right-of
                                find-instrument-in-mixer-strips-to-the-right-of
                                goal-instrument-id))
 
-(define* (find-instrument-to-the-up-of (goal-instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-to-the-up-of (goal-instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-to-the-X-of find-instrument-in-modular-mixer-to-the-up-of
                                find-instrument-in-mixer-strips-to-the-up-of
                                goal-instrument-id))
 
-(define* (find-instrument-to-the-down-of (goal-instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-to-the-down-of (goal-instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-to-the-X-of find-instrument-in-modular-mixer-to-the-down-of
                                find-instrument-in-mixer-strips-to-the-down-of
                                goal-instrument-id))
@@ -2107,21 +2107,39 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 (<ra> :switch-main-mixer-is-modular)
 !!#
 
-(define (FROM_C-move-current-instrument-left)
+(define (FROM_C-move-current-instrument-left move-current move-current-under-mouse)
   (and-let* ((res (find-instrument-to-the-left-of)))
-            (<ra> :set-current-instrument res #f #t)))
-  
-(define (FROM_C-move-current-instrument-right)
+            (begin
+              ;;(c-display "LEFT:" move-current move-current-under-mouse)
+              (if move-current
+                  (<ra> :set-current-instrument res #f #t))
+              (if move-current-under-mouse
+                  (<ra> :set-current-instrument-under-mouse res)))))
+            
+(define (FROM_C-move-current-instrument-right move-current move-current-under-mouse)
   (and-let* ((res (find-instrument-to-the-right-of)))
-            (<ra> :set-current-instrument res #f #t)))
+            (begin
+              (if move-current
+                  (<ra> :set-current-instrument res #f #t))
+              (if move-current-under-mouse
+                  (<ra> :set-current-instrument-under-mouse res)))))
   
-(define (FROM_C-move-current-instrument-up)
+(define (FROM_C-move-current-instrument-up move-current move-current-under-mouse)
   (and-let* ((res (find-instrument-to-the-up-of)))
-            (<ra> :set-current-instrument res #f #t)))
+            (begin
+              (if move-current
+                  (<ra> :set-current-instrument res #f #t))
+              (if move-current-under-mouse
+                  (<ra> :set-current-instrument-under-mouse res)))))
   
-(define (FROM_C-move-current-instrument-down)
+(define (FROM_C-move-current-instrument-down move-current move-current-under-mouse)
   (and-let* ((res (find-instrument-to-the-down-of)))
-            (<ra> :set-current-instrument res #f #t)))
+            (begin
+              ;;(c-display "DOWN:" move-current move-current-under-mouse)
+              (if move-current
+                  (<ra> :set-current-instrument res #f #t))
+              (if move-current-under-mouse
+                  (<ra> :set-current-instrument-under-mouse res)))))
 
 (define (get-select-track-instrument-popup-entries tracknum)
   (define midi-instruments (get-all-midi-instruments))
