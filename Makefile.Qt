@@ -1458,7 +1458,7 @@ $(T)Qt_Menues.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Menues.cpp $(P)mQt_Menues.cpp
 $(P)mQt_Menues.cpp: $(P)Qt_Menues.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Menues.cpp >$(P)mQt_Menues.cpp
 
-$(T)Qt_Fonts.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Fonts.cpp
+$(T)Qt_Fonts.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Fonts.cpp OpenGL/GfxElements.h
 	$(CCC2) $(P)Qt_Fonts.cpp $(QTOPT)
 
 $(T)Qt_ReqType.o:  $(BUILD_DEPENDENCIES) $(P)Qt_ReqType.cpp
@@ -1785,7 +1785,7 @@ $(T)api_timing.o:  $(BUILD_DEPENDENCIES)  $(API)api_timing.cpp
 $(T)api_trackonoff.o:  $(BUILD_DEPENDENCIES)  $(API)api_trackonoff.c 
 	$(CC2)  $(API)api_trackonoff.c $(OPT)
 
-$(T)api_zoom.o:  $(BUILD_DEPENDENCIES)  $(API)api_zoom.cpp
+$(T)api_zoom.o:  $(BUILD_DEPENDENCIES)  $(API)api_zoom.cpp Qt/KeyboardFocusFrame.hpp 
 	$(CCC2)  $(API)api_zoom.cpp $(QTOPT)
 
 $(T)api_notemanipulate.o:  $(BUILD_DEPENDENCIES)  $(API)api_notemanipulate.c 
@@ -1800,7 +1800,7 @@ $(T)api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c
 $(T)api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp  embedded_scheme/s7extra_proc.h
 	$(CCC2)  $(API)api_undo.cpp $(QTOPT)
 
-$(T)api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h
+$(T)api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h Qt/KeyboardFocusFrame.hpp 
 	$(CCC2)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference $(NO_ANALYZER)
 
 $(T)api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp  $(API)api_instruments_proc.h embedded_scheme/s7extra_proc.h mixergui/QM_chip.h mixergui/QM_MixerWidget.h
@@ -1809,6 +1809,17 @@ $(T)api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp  $(API)
 $(T)api_soundpluginregistry.o:  $(BUILD_DEPENDENCIES) $(API)api_soundpluginregistry.cpp  $(API)api_instruments_proc.h
 #	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC2)  $(API)api_soundpluginregistry.cpp $(QTOPT)
+
+
+
+OpenGL/GfxElements.h: $(P)EditorWidget.h
+Qt/Qt_MyQCheckBox.h: $(P)EditorWidget.h
+Qt/Qt_MyQSlider.h: $(P)EditorWidget.h
+common/windows_proc.h: $(P)EditorWidget.h
+
+$(P)EditorWidget.h: Qt/KeyboardFocusFrame.hpp
+
+
 
 $(T)api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.cpp 
 	$(CCC2)  $(API)api_requesters.cpp $(QTOPT)

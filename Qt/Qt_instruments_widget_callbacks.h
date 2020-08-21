@@ -74,10 +74,12 @@ public:
     GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }
 
-  void enterEvent(QEvent * event){
+  void enterEvent(QEvent * event) override {
     instrument_t current = getCurrentInstrument();
     if (isLegalInstrument(current) && instrumentIsAudio(current))
       setCurrentInstrumentUnderMouse(current);
+
+    //setMixerKeyboardFocus(true);
   }
 
 public slots:

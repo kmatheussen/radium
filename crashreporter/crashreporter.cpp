@@ -565,6 +565,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 #if defined(CRASHREPORTER_BIN)
 
 
+#include "../api/api_gui_proc.h"
 
 
 QWidget *g_main_window = NULL; // referenced by helpers.h
