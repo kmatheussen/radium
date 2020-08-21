@@ -1469,7 +1469,8 @@
 
   (define (reset)
     (set-db-value 0)
-    (<ra> :redraw-mixer-strips))
+    ;;(<ra> :redraw-mixer-strips)
+    )
 
   (define automation-value #f)
   (define (get-automation-data kont)
