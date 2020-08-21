@@ -685,12 +685,11 @@
 ||#
 
 (define (create-mixer-strip-name instrument-id strips-config is-minimized is-current-mixer-strip)
-  (define name (get-mixer-strip-name instrument-id strips-config))
 
   (define label (<gui> :widget))
 
   (define (show-name-tool-tip)
-    (<gui> :set-tool-tip label name))
+    (<gui> :set-tool-tip label (get-mixer-strip-name instrument-id strips-config)))
   
   (if is-minimized
       (show-name-tool-tip))
@@ -705,6 +704,8 @@
   (add-safe-paint-callback label
          (lambda (width height)
 
+           (define name (get-mixer-strip-name instrument-id strips-config))
+           
            (define text-color (get-instrument-name-text-color instrument-id))
            
            (<gui> :filled-box label (get-instrument-name-background-color instrument-id) 0 0 width height)
@@ -751,10 +752,12 @@
                                                (<ra> :delete-instrument instrument-id)
                                                (create-default-mixer-path-popup instrument-id strips-config label))
                                            (when (= button *left-button*)
-                                             (c-display "gakk")
+                                             ;;(c-display "gakk")
                                              (cond (is-current-mixer-strip
                                                     (set! *current-mixer-strip-is-wide* is-minimized)
                                                     (remake-mixer-strips instrument-id))
+                                                   ((<ra> :control-pressed)
+                                                    (<ra> :switch-instrument-is-selected instrument-id))
                                                    ((equal? instrument-id (<ra> :get-current-instrument))
                                                     ;;(<ra> :set-wide-instrument-strip instrument-id is-minimized)
                                                     #t
