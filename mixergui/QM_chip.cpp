@@ -2768,6 +2768,7 @@ void Chip::mySetSelected(bool selected) {
   SoundPlugin *plugin = SP_get_plugin(_sound_producer);
   if (plugin!=NULL){
     plugin->is_selected = selected;
+    redrawMixerStrips(false);
     //remakeMixerStrips();
   }
 }

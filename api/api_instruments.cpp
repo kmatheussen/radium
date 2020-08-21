@@ -1894,6 +1894,20 @@ bool instrumentIsSelected(instrument_t instrument_id){
   return plugin->is_selected;
 }
 
+void setInstrumentIsSelected(instrument_t instrument_id, bool doit){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+  
+  Chip *chip = CHIP_get(NULL, patch);
+  R_ASSERT(chip!=NULL);
+  if (chip!=NULL)
+    chip->mySetSelected(doit);
+}
+
+void switchInstrumentIsSelected(instrument_t instrument_id){
+  setInstrumentIsSelected(instrument_id, !instrumentIsSelected(instrument_id));
+}
 
 
 // connections

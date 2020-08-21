@@ -2283,10 +2283,9 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
   (if (equal? (<ra> :get-current-instrument-under-mouse) instrument-id)
       (set! color *current-mixer-strip-border-color*))
   (if (<ra> :instrument-is-selected instrument-id)
-      ;;(let ((selcolor "#8888ee"))
-      (let ((selcolor "#999999"))
+      (let ((selcolor "red"))
         (if color
-            (set! color (<gui> :mix-colors color selcolor 0.5))
+            (set! color (<gui> :mix-colors color selcolor 0.6))
             (set! color selcolor))))
   color)
 
