@@ -257,9 +257,21 @@ QWidget *BS_get(void){
   */
   
   if (g_block_and_playlist==NULL){
+#if 0
+    radium::KeyboardFocusFrame *frame = new radium::KeyboardFocusFrame(g_main_window, radium::KeyboardFocusFrameType::EDITOR, true);
+    
     int64_t guinum = S7CALL2(int_void, "FROM_C-create-bock-and-playlist-gui");
+    
+    QWidget *bs = API_gui_get_widget(guinum);
 
+    frame->layout()->addWidget(bs);
+    
+    g_block_and_playlist = frame;
+#else
+    int64_t guinum = S7CALL2(int_void, "FROM_C-create-bock-and-playlist-gui");
+    
     g_block_and_playlist = API_gui_get_widget(guinum);
+#endif
   }
 
   return g_block_and_playlist;

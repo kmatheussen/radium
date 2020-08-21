@@ -1,4 +1,5 @@
 
+#include <QVector>
 
 #include "../common/nsmtracker.h"
 #include "../api/api_gui_proc.h"
@@ -9,7 +10,7 @@
 #include "KeyboardFocusFrame.hpp"
 
 
-radium::KeyboardFocusFrame* g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::NUM_TYPES] = {};
+QVector<radium::KeyboardFocusFrame*> g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::NUM_TYPES] = {};
 
 namespace{
   
@@ -23,17 +24,18 @@ namespace{
 
       if (_edit_gui==NULL)
         _edit_gui = API_get_editGui();
+
+      radium::KeyboardFocusFrame *gakk = dynamic_cast<radium::KeyboardFocusFrame *>(w);
       
-      if (w==g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::EDITOR] || w==_edit_gui || w==BS_get())
+      if (g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::EDITOR].contains(gakk) || w==_edit_gui || w==BS_get())
         FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, true);
       
-      else if (w==g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::MIXER])
+      else if (g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::MIXER].contains(gakk))
         FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
       
-      else if (w==g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::SEQUENCER])
+      else if (g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::SEQUENCER].contains(gakk))
         FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
 
-      
       else
         handle_mouse_pressed_widget(w->parentWidget());
     }
@@ -64,20 +66,20 @@ radium::KeyboardFocusFrameType g_curr_focus_type = radium::KeyboardFocusFrameTyp
 radium::KeyboardFocusFrameType g_prev_focus_type = radium::KeyboardFocusFrameType::SEQUENCER;
   
 void FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType type, bool has_focus){
-  R_ASSERT_RETURN_IF_FALSE(g_keyboard_focus_frames[(int)type] != NULL);
-  
-  g_keyboard_focus_frames[(int)type]->set_focus(has_focus);
+  //R_ASSERT_RETURN_IF_FALSE(g_keyboard_focus_frames[(int)type] != NULL);
+
+  for(auto *frame : g_keyboard_focus_frames[(int)type])
+    frame->set_focus(has_focus);
 }
 
 static bool set_if_visible(radium::KeyboardFocusFrameType type){
-  auto *frame = g_keyboard_focus_frames[(int)type];
-  if (frame==NULL)
-    return false;
-  
-  if (frame->isVisible()){
-    FOCUSFRAMES_set_focus(type, true);
-    return true;
-  }
+
+  for(auto *frame : g_keyboard_focus_frames[(int)type])
+    if (frame->isVisible()){
+      FOCUSFRAMES_set_focus(type, true);
+      return true;
+    }
+
 
   return false;
 }
@@ -96,10 +98,10 @@ void FOCUSFRAMES_set_focus_best_guess(void){
 }
   
 bool FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType type){
-  auto *frame = g_keyboard_focus_frames[(int)type];
-  if (frame==NULL)
-    return false;
-  
-  return frame->has_focus();
+  for(auto *frame : g_keyboard_focus_frames[(int)type])
+    if (frame->has_focus())
+      return true;
+
+  return false;
 }
 

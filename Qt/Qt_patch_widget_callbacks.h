@@ -366,6 +366,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     header->setMinimumHeight(header_height);
     header->setMaximumHeight(header_height);
 
+    locked_instrument->setMinimumWidth(header_height);
+    locked_instrument->setMaximumWidth(header_height);
+    
     for(int i=0;i<NUM_PATCH_VOICES;i++){
       const PatchVoice &voice=_patch->voices[i];
 
@@ -411,15 +414,12 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
         locked_instrument->setText("unlocked.svg");
 
       locked_instrument->_show_enabled_marker = false;
-      
+
       /*
       const QFontMetrics fn = QFontMetrics(font);
       float width = 1.5 * fn.boundingRect("L").width();
       */
       
-      locked_instrument->setMinimumWidth(locked_instrument->height());
-      locked_instrument->setMaximumWidth(locked_instrument->height());
-    
       locked_instrument->setChecked(isCurrentInstrumentLocked());
 
       locked_instrument->_show_popup_menu = [](){

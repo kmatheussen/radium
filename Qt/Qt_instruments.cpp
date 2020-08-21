@@ -99,6 +99,7 @@ void set_editor_focus(void){
 
 
 class Instruments_widget;
+static radium::KeyboardFocusFrame *g_instruments_widget_frame;
 static Instruments_widget *g_instruments_widget;
 
 //class No_instrument_widget;
@@ -504,7 +505,9 @@ static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch){
 
 // TODO: Rename to INSTRUMENTWIDGET_init(), or similar. (
 QWidget *createInstrumentsWidget(void){
-  g_instruments_widget = new Instruments_widget();
+  g_instruments_widget_frame = new radium::KeyboardFocusFrame(g_main_window, radium::KeyboardFocusFrameType::MIXER, true);
+  g_instruments_widget = new Instruments_widget(g_instruments_widget_frame);
+  g_instruments_widget_frame->layout()->addWidget(g_instruments_widget);
 
   {
     //const char *name = "<No Instrument>";
@@ -518,11 +521,11 @@ QWidget *createInstrumentsWidget(void){
 
   setWidgetColors(g_instruments_widget);
 
-  return g_instruments_widget;
+  return g_instruments_widget_frame;
 }
 
 QWidget *getInstrumentsWidget(void){
-  return g_instruments_widget;
+  return g_instruments_widget_frame;
 }
 
 #if 1
