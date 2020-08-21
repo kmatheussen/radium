@@ -2444,9 +2444,11 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
     QPointF pos = event->pos();
 
     //printf("Pressed. %f / %f\n",pos.x(),pos.y());
+    /*
     struct Instruments *instrument = get_audio_instrument();
     instrument->PP_Update(instrument,(struct Patch*)patch,false);
-
+    */
+    
     // solo onoff
     if(in_solo_button(pos)){
   
