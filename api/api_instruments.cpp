@@ -3023,6 +3023,8 @@ instrument_t getCurrentInstrumentUnderMouse(void){
   return ret;
 }
 
+static void API_call_me_when_current_instrument_under_mouse_has_been_changed(void);
+
 void setCurrentInstrumentUnderMouse(instrument_t instrument){ 
   struct Patch *patch = getAudioPatchFromNum(instrument);
   if(patch==NULL)
@@ -3053,7 +3055,7 @@ void setCurrentInstrumentUnderMouse(instrument_t instrument){
       
     }
 
-    redrawMixerStrips(false);
+    API_call_me_when_current_instrument_under_mouse_has_been_changed();
   }
 }
 
@@ -3218,6 +3220,54 @@ void API_call_me_when_current_instrument_has_been_changed(void){
                        for(auto *callback : to_remove){
                          //printf("   API_call_me_when_current_instrument_has_been_changed: Calling currentInstrumentChangedCallback for %p\n", callback);
                          removeCurrentInstrumentChangedCallback2(callback);
+                       }
+                       
+                     });
+}
+
+
+static radium::ProtectedS7FuncVector g_current_instrument_under_mouse_changed_callbacks(true);
+
+void addCurrentInstrumentUnderMouseChangedCallback(func_t* callback){
+  if (g_current_instrument_under_mouse_changed_callbacks.push_back(callback)==false)
+    handleError("addCurrentInstrumentUnderMouseChangedCallback: Callback %p already added\n", callback);
+
+  //printf("\n\n\n=====================================      INSTRUMENT-under-mouse CHANGE callbacks: %d\n\n\n\n", g_current_instrument_under_mouse_changed_callbacks.size());
+}
+
+static bool removeCurrentInstrumentUnderMouseChangedCallback2(func_t *callback){
+  int num_removed = g_current_instrument_under_mouse_changed_callbacks.removeAll(callback);
+  R_ASSERT_NON_RELEASE(num_removed==0 || num_removed==1);
+  
+  return num_removed > 0;
+}
+
+void removeCurrentInstrumentUnderMouseChangedCallback(func_t* callback){
+  if (!removeCurrentInstrumentUnderMouseChangedCallback2(callback))
+    handleError("removeCurrentInstrumentUnderMouseChangedCallback: Could not find deleted callback %p\n", callback);
+}
+
+static void API_call_me_when_current_instrument_under_mouse_has_been_changed(void){
+  
+  // schedule to run later. May have been called from places that are complicated, for instance when deleting an instrument.
+
+  QTimer::singleShot(1,[]
+                     {
+  
+                       QVector<func_t*> to_remove;
+                       
+                       g_current_instrument_under_mouse_changed_callbacks.safe_for_all(true, [&to_remove](func_t *callback){
+                           
+                           if (S7CALL(bool_void, callback)==false)
+                             to_remove.push_back(callback);
+                           
+                           return true;
+                           
+                         });
+                       
+                       for(auto *callback : to_remove){
+                         //printf("   API_call_me_when_current_instrument_under_mouse_has_been_changed: Calling currentInstrumentChangedCallback for %p\n", callback);
+                         removeCurrentInstrumentUnderMouseChangedCallback2(callback);
                        }
                        
                      });

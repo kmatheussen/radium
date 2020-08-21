@@ -2454,6 +2454,14 @@
            )
          )
 
+  (<ra> :add-current-instrument-under-mouse-changed-callback
+        (lambda ()
+          (if (not (<gui> :is-open gui))
+              #f
+              (begin
+                (<gui> :update gui)
+                #t))))
+
   gui)
 
 
@@ -2592,6 +2600,14 @@
                            (lambda (width height)
                              (<gui> :filled-box gui background-color 0 0 width height 0 0)
                              (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip bsize)))
+
+  (<ra> :add-current-instrument-under-mouse-changed-callback
+        (lambda ()
+          (if (not (<gui> :is-open gui))
+              #f
+              (begin
+                (<gui> :update gui)
+                #t))))
   
   gui)
 
