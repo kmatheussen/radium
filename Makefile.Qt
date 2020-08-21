@@ -192,6 +192,8 @@ FULL_VERSION ?= 1
 #UNDEFINED_SANITIZE_OPTS= -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=object-size -fsanitize=vptr -fno-sanitize-recover
 #  -fsanitize=alignment
 
+WNO_DEPRECATED_DECLARATIONS=
+
 ifeq ($(GCC_MAJOR),10)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
@@ -200,6 +202,7 @@ else ifeq ($(GCC_MAJOR),9)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 #	UNDEFINED_SANITIZE_OPTS=
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 else ifeq ($(GCC_MAJOR),8)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
@@ -303,7 +306,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference 
+COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference 
 #-fdelete-null-pointer-checks 
 # -Werror
 
@@ -1444,7 +1447,7 @@ $(T)Qt_EventReceiver.o:  $(BUILD_DEPENDENCIES) $(P)Qt_EventReceiver.cpp $(P)Edit
 	$(CCC2) $(P)Qt_EventReceiver.cpp $(QTOPT)
 
 $(T)Qt_colors.o:  $(BUILD_DEPENDENCIES) $(P)Qt_colors.cpp $(P)mQt_colors.cpp common/visual_proc.h  embedded_scheme/s7extra_proc.h
-	$(CCC2) $(P)Qt_colors.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -Wno-overloaded-virtual -Wno-unused-function -Wno-deprecated-declarations
+	$(CCC2) $(P)Qt_colors.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -Wno-overloaded-virtual -Wno-unused-function $(WNO_DEPRECATED_DECLARATIONS)
 
 $(P)mQt_colors.cpp: $(P)Qt_colors.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_colors.cpp >$(P)mQt_colors.cpp
@@ -1957,7 +1960,7 @@ $(T)undo_mixer_connections.o: $(QM)undo_mixer_connections.c
 #	$(CC2) $(OPT) $(QM)undo_chip_addremove.c
 
 $(T)Jack_plugin.o: audio/Jack_plugin.cpp weakjack/weak_libjack.def weakjack/weak_libjack.h weakjack/weak_libjack.c
-	$(CCC2) $(JACKOPT) $(QTOPT) audio/Jack_plugin.cpp -Wno-missing-declarations # -Wno-deprecated-declarations
+	$(CCC2) $(JACKOPT) $(QTOPT) audio/Jack_plugin.cpp -Wno-missing-declarations $(WNO_DEPRECATED_DECLARATIONS)
 #-Wno-gnu-designator -Wno-missing-field-initializers
 
 $(T)find_jack_library.o: windows/find_jack_library.cpp
@@ -2413,7 +2416,7 @@ bin/radium_crashreporter: crashreporter/crashreporter.cpp common/Process.hpp
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
 	@echo
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -Wno-missing-declarations $(WNO_DEPRECATED_COPY) -o /tmp/crashbin.o
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(RADIUM_BFD_CFLAGS) $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_DEPRECATED_COPY) -o /tmp/crashbin.o
 	$(LINKER) `cat buildtype.opt` /tmp/crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm /tmp/crashbin.o
 
@@ -2433,7 +2436,7 @@ $(T)crashreporter.o: crashreporter/crashreporter.cpp common/Process.hpp
 	$(CCC2) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(IS_LINUX_BINARY) $(NO_ANALYZER_MALLOC_LEAK)
 
 $(T)crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
-	if ! $(CC2) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS) ; then \
+	if ! $(CC2) $(RADIUM_BFD_CFLAGS) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS) ; then \
 		printf '   \n\n\n    ** Note: You might need to uncomment the  PACKAGE AND PACKAGE_VERSION definitions in crashreporter/crashreporter_posix.c ** \n\n\n\n' ; \
 		exit -1 ; \
 	fi
