@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern LANGSPEC void API_set_mousePointerCurrentlyPointsAtInstrument(bool ispointing);
+extern LANGSPEC void API_call_me_when_current_instrument_has_been_changed(void);
 
 extern LANGSPEC void API_setInstrumentColor(const char *colorname, instrument_t instrument_id, bool create_undo); // same as setInstrumentColor(colorname, instrument_id, true)
   

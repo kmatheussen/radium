@@ -37,11 +37,15 @@
 (delafina (set-curr-instrument-in-mouse-callback :instrument-id
                                                  :gui #f ;; Only need to be set if also setting force-if-pressing-left-button to #t.
                                                  :force-if-pressing-left-button #f)
-  (<ra> :set-current-instrument instrument-id #f (if (not force-if-pressing-left-button)
-                                                     #t
-                                                     (if (= *left-button* (<gui> :get-curr-mouse-button gui))
-                                                         #f
-                                                         #t))))
+  ;;(c-display "HEPP")
+  ;;(<ra> :remake-mixer-strips)
+  (if #f
+      (<ra> :set-current-instrument instrument-id #f (if (not force-if-pressing-left-button)
+                                                         #t
+                                                         (if (= *left-button* (<gui> :get-curr-mouse-button gui))
+                                                             #f
+                                                             #t)))
+      (<ra> :set-current-instrument-under-mouse instrument-id)))
   
 ;; Note: Used for shortcut
 (define (make-all-mixer-strips-wide)
@@ -57,7 +61,7 @@
 
 ;; Note: Used for shortcut
 (define (switch-all-no-mixer-strips-wide)
-  (if (<ra> :has-wide-instrument-strip (<ra> :get-current-instrument))
+  (if (<ra> :has-wide-instrument-strip (<ra> :get-current-instrument-under-mouse))
       (make-no-mixer-strips-wide)
       (make-all-mixer-strips-wide)))
 
@@ -358,9 +362,9 @@
                                       (lambda (is-on)
                                         (if (not is-initing)
                                             (set! (strips-config :is-enabled instrument-id) is-on)))))
-                (define background-color (<gui> :get-background-color vertical-layout))
-                (define instrument-color (<ra> :get-instrument-color instrument-id))
-                (define unselected-color (<gui> :mix-colors instrument-color background-color 0.1))
+                (define unenabled-background-color (<gui> :get-background-color vertical-layout))
+                (define instrument-color (get-instrument-name-background-color instrument-id)) ;;(<ra> :get-instrument-color instrument-id))
+                (define unselected-color (<gui> :mix-colors instrument-color unenabled-background-color 0.2))
                 (add-safe-paint-callback button
                                          (lambda (width height)
                                            (define is-enabled (strips-config :is-enabled instrument-id))
@@ -373,7 +377,7 @@
                                                (begin
                                                  (<gui> :filled-box
                                                         button
-                                                        background-color
+                                                        unenabled-background-color
                                                         0 0 width height)
                                                  (let ((border 5))
                                                    (set! x1 border) ;;(floor (/ width border)))
@@ -390,15 +394,24 @@
 
                                            (<gui> :my-draw-text
                                                   button
-                                                  (if is-enabled
-                                                      *text-color*
-                                                      "gray")
+                                                  (get-instrument-name-text-color instrument-id)
+                                                  ;(if is-enabled
+                                                  ;   *text-color*
+                                                  ;    "gray")
                                                   name
                                                   (+ x1 3) (+ y1 2) (- x2 3) (- y2 2)
                                                   )
 
                                            (<gui> :draw-box button "#202020" 0 0 width height 1.0 2 2)))
 
+                (<ra> :add-current-instrument-changed-callback
+                      (lambda ()
+                        (if (not (<gui> :is-open button))
+                            #f
+                            (begin
+                              (<gui> :update button)
+                              #t))))
+  
                 (set! is-initing #f)
                 (<gui> :set-size-policy button #t #t)
                 (inc! column-num 1)
@@ -671,17 +684,6 @@
   name)
 ||#
 
-(define (get-instrument-name-text-color instrument-id)
-  (define is-current (equal? instrument-id (<ra> :get-current-instrument)))
-  (define text-color (if is-current *text-color* "mixer_text_color"))
-  (if (not is-current)
-      (set! text-color (<gui> :set-alpha-for-color text-color 0.63)))
-  text-color)
-
-(define (get-instrument-name-background-color instrument-id)
-  (let ((color (<ra> :get-instrument-color instrument-id)))
-    (<gui> :make-color-lighter color 1.4)))
-    
 (define (create-mixer-strip-name instrument-id strips-config is-minimized is-current-mixer-strip)
   (define name (get-mixer-strip-name instrument-id strips-config))
 
@@ -728,6 +730,14 @@
                    (<gui> :set-tool-tip label "")))
            (<gui> :draw-box label "#202020" 0 0 width height 1.0 2 2)))
 
+  (<ra> :add-current-instrument-changed-callback
+        (lambda ()
+          (if (not (<gui> :is-open label))
+              #f
+              (begin
+                (<gui> :update label)
+                #t))))
+  
   (add-safe-double-click-callback label (lambda (button x y)
                                           (when (= button *left-button*)
                                             ;;(c-display "DOUBLE" (<ra> :has-wide-instrument-strip instrument-id))
@@ -735,25 +745,26 @@
   
   (add-safe-mouse-callback label (lambda (button state x y)
                                    (set-curr-instrument-in-mouse-callback instrument-id label :force-if-pressing-left-button #t)
-                                     (if (= state *is-pressing*)
-                                         (if (= button *right-button*)                                             
-                                             (if (<ra> :shift-pressed)
-                                                 (<ra> :delete-instrument instrument-id)
-                                                 (create-default-mixer-path-popup instrument-id strips-config label))
-                                             (when (= button *left-button*)
-                                               (cond (is-current-mixer-strip
-                                                      (set! *current-mixer-strip-is-wide* is-minimized)
-                                                      (remake-mixer-strips instrument-id))
-                                                     ((equal? instrument-id (<ra> :get-current-instrument))
-                                                      ;;(<ra> :set-wide-instrument-strip instrument-id is-minimized)
-                                                      #t
-                                                      )
-                                                     (else
-                                                      ;;(c-display "         SETTING CURRENT")
-                                                      (<ra> :set-current-instrument instrument-id #f #t)
-                                                      ;;(remake-mixer-strips instrument-id)
-                                                      )))))
-                                     #t))
+                                   (if (= state *is-pressing*)
+                                       (if (= button *right-button*)                                             
+                                           (if (<ra> :shift-pressed)
+                                               (<ra> :delete-instrument instrument-id)
+                                               (create-default-mixer-path-popup instrument-id strips-config label))
+                                           (when (= button *left-button*)
+                                             (c-display "gakk")
+                                             (cond (is-current-mixer-strip
+                                                    (set! *current-mixer-strip-is-wide* is-minimized)
+                                                    (remake-mixer-strips instrument-id))
+                                                   ((equal? instrument-id (<ra> :get-current-instrument))
+                                                    ;;(<ra> :set-wide-instrument-strip instrument-id is-minimized)
+                                                    #t
+                                                    )
+                                                   (else
+                                                    ;;(c-display "         SETTING CURRENT")
+                                                    (<ra> :set-current-instrument instrument-id #f #t)
+                                                    ;;(remake-mixer-strips instrument-id)
+                                                    )))))
+                                   #t))
 
   label)
 
@@ -948,8 +959,8 @@
               (get-global-mixer-strips-popup-entries first-instrument-id strips-config parent-instrument-id)
               )
 
-  (if (and strips-config (not (strips-config :is-standalone)))
-      (<ra> :set-current-instrument instrument-id #f #t))
+  ;;(when (and strips-config (not (strips-config :is-standalone)))
+  ;;  (<ra> :set-current-instrument instrument-id #f #t))
   )
     
 
@@ -1046,7 +1057,7 @@
                                                        value
                                                        (get-slider-text value)
                                                        (is-enabled?)
-                                                       (equal? (<ra> :get-current-instrument) instrument-id)
+                                                       (equal? (<ra> :get-current-instrument-under-mouse) instrument-id)
                                                        get-automation-data
                                                        x1-on/off
                                                        0 0 width height
@@ -1127,7 +1138,7 @@
   
   (add-safe-mouse-callback widget (lambda (button state x y)
                                     ;;(c-display "state:" state button)
-                                    (if (and (and strips-config (not (strips-config :is-standalone)))
+                                    '(if (and (and strips-config (not (strips-config :is-standalone)))
                                              (or #t (= state *is-pressing*)))
                                         (set-curr-instrument-in-mouse-callback instrument-id widget))
                                     (define is-left-pressing (and (= button *left-button*)
@@ -1907,7 +1918,7 @@
                                                   :hovered-callback (lambda (button state x y)
                                                                       (FROM_C-display-mute-status-in-statusbar instrument-id)
                                                                       ;;(c-display "MUTE3")
-                                                                      (<ra> :set-current-instrument instrument-id #f #t)
+                                                                      (<ra> :set-current-instrument-under-mouse instrument-id)
                                                                       )
                                                   
                                                   ))
@@ -1954,7 +1965,7 @@
                                                   :effect-name "System Solo On/Off"
                                                   :hovered-callback (lambda (button state x y)
                                                                       (FROM_C-display-solo-status-in-statusbar instrument-id)
-                                                                      (<ra> :set-current-instrument instrument-id #f #t)
+                                                                      (<ra> :set-current-instrument-under-mouse instrument-id)
                                                                       )
                                                   ))
   
@@ -2374,7 +2385,8 @@
 
 (define (create-current-instrument-border gui instrument-id)
   (define rubberband-resize (gui-rubberband gui 5 "#bb111144" (lambda ()
-                                                                (equal? (<ra> :get-current-instrument) instrument-id))))
+                                                                ;;(c-display "IS_ENABLED:" (equal? (<ra> :get-current-instrument-under-mouse) instrument-id))
+                                                                (equal? (<ra> :get-current-instrument-under-mouse) instrument-id))))
   (add-safe-resize-callback gui (lambda (width height)
                                   (rubberband-resize 0 0 width height))))
 
@@ -3150,7 +3162,7 @@
 !!#
 
 ;; Note: Used for shortcut
-(delafina (mixer-strip-switch-visibility :instrument-id (<ra> :get-current-instrument)
+(delafina (mixer-strip-switch-visibility :instrument-id (<ra> :get-current-instrument-under-mouse)
                                          :mixer-strips-gui (<gui> :get-main-mixer-strips-gui))
   (when (is-legal-audio-instrument? instrument-id)
     (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
