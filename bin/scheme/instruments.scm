@@ -68,6 +68,18 @@
              val))))
 
 
+(define (get-instrument-name-text-color instrument-id)
+  (define is-current (equal? instrument-id (<ra> :get-current-instrument)))
+  (define text-color (if is-current *text-color* "mixer_text_color"))
+  (if (not is-current)
+      (set! text-color (<gui> :set-alpha-for-color text-color 0.63)))
+  text-color)
+
+(define (get-instrument-name-background-color instrument-id)
+  (let ((color (<ra> :get-instrument-color instrument-id)))
+    (<gui> :make-color-lighter color 1.4)))
+    
+
 
 (define *instrument-memoized-generation* 0)
 (define *using-instrument-memoization* #f)
@@ -691,7 +703,7 @@
                  #f)))))
 
 ;; Note: Used for shortcut
-(delafina (replace-instrument :instrument-id (<ra> :get-current-instrument)
+(delafina (replace-instrument :instrument-id (<ra> :get-current-instrument-under-mouse)
                               :must-have-inputs #f
                               :must-have-outputs #f
                               :gui -2)
@@ -1240,7 +1252,7 @@
 ||#
 
 ;; Note: Used for shortcut
-(delafina (FROM_C-request-rename-instrument :instrument-id (<ra> :get-current-instrument))
+(delafina (FROM_C-request-rename-instrument :instrument-id (<ra> :get-current-instrument-under-mouse))
   (when (<ra> :is-legal-instrument instrument-id)
     (define old-name (<ra> :get-instrument-name instrument-id))
     (define new-name (<ra> :request-string "" #t old-name))
@@ -1263,7 +1275,7 @@
 
 
 ;; Note: Used for shortcut
-(delafina (switch-connect-instrument-to-main-pipe :instrument-id (<ra> :get-current-instrument))
+(delafina (switch-connect-instrument-to-main-pipe :instrument-id (<ra> :get-current-instrument-under-mouse))
   (when (and (is-legal-audio-instrument? instrument-id)
              (> (<ra> :get-num-output-channels instrument-id) 0))
     (if (is-connected-to-main-pipe instrument-id)
@@ -1283,7 +1295,7 @@
                   ra:set-random-sample-for-all-selected-instruments))))
 
 ;; Note: Used for shortcut
-(delafina (insert-plugin-for-instrument :instrument-id (<ra> :get-current-instrument)
+(delafina (insert-plugin-for-instrument :instrument-id (<ra> :get-current-instrument-under-mouse)
                                         :gui -2)
   (if (<ra> :is-legal-instrument instrument-id)
       (insert-new-instrument-between instrument-id
@@ -1340,7 +1352,7 @@
 
 
 ;; Note: Used for shortcut
-(delafina (insert-send-for-instrument :instrument-id (<ra> :get-current-instrument))
+(delafina (insert-send-for-instrument :instrument-id (<ra> :get-current-instrument-under-mouse))
   (if (<ra> :is-legal-instrument instrument-id)
       (request-send-instrument instrument-id
                                (lambda (create-send-func)
@@ -1348,9 +1360,9 @@
 
 
 ;; Note: used for shortcut
-(delafina (switch-force-as-current-instrument :instrument-id (<ra> :get-current-instrument))
+(delafina (switch-force-as-current-instrument :instrument-id (<ra> :get-current-instrument-under-mouse))
   (define is-forced (and (<ra> :is-current-instrument-locked)
-                         (equal? instrument-id (<ra> :get-current-instrument))))
+                         (equal? instrument-id (<ra> :get-current-instrument-under-mouse))))
   (if is-forced
       (<ra> :set-current-instrument-locked #f)
       (begin
@@ -1899,7 +1911,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                        (loop (cdr datas)
                              best-data)))))))))
 
-(define* (find-instrument-in-mixer-strips-to-the-up-of (instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-in-mixer-strips-to-the-up-of (instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-in-mixer-strips-coordinate-relation-to
    instrument-id
    (lambda (box best-data data)
@@ -1915,7 +1927,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
           (or (not best-y)
               (> maybe-y best-y))))))
                                                                         
-(define* (find-instrument-in-mixer-strips-to-the-down-of (instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-in-mixer-strips-to-the-down-of (instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-in-mixer-strips-coordinate-relation-to
    instrument-id
    (lambda (box best-data data)
@@ -1931,7 +1943,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
           (or (not best-y)
               (< maybe-y best-y))))))
                                                                         
-(define* (find-instrument-in-mixer-strips-to-the-left-of (instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-in-mixer-strips-to-the-left-of (instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-in-mixer-strips-coordinate-relation-to
    instrument-id
    (lambda (box best-data data)
@@ -1969,7 +1981,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
            (else
             #f)))))
 
-(define* (find-instrument-in-mixer-strips-to-the-right-of (instrument-id (ra:get-current-instrument)))
+(define* (find-instrument-in-mixer-strips-to-the-right-of (instrument-id (ra:get-current-instrument-under-mouse)))
   (find-instrument-in-mixer-strips-coordinate-relation-to
    instrument-id
    (lambda (box best-data data)
@@ -2240,7 +2252,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
 (define (show/hide-instrument-gui)
   (define parentgui -2) ;; current window
-  (let ((id (ra:get-current-instrument)))
+  (let ((id (ra:get-current-instrument-under-mouse)))
     (when (<ra> :is-legal-instrument id)
       (if (ra:has-native-instrument-gui id)
           (if (ra:instrument-gui-is-visible id parentgui)
@@ -2268,7 +2280,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
 (define (get-instrument-border-color instrument-id)
   (define color #f)
-  (if (equal? (<ra> :get-current-instrument) instrument-id)
+  (if (equal? (<ra> :get-current-instrument-under-mouse) instrument-id)
       (set! color *current-mixer-strip-border-color*))
   (if (<ra> :instrument-is-selected instrument-id)
       ;;(let ((selcolor "#8888ee"))

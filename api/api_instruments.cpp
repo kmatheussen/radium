@@ -3029,7 +3029,10 @@ void setCurrentInstrumentUnderMouse(instrument_t instrument){
     return;
   
   if (instrument.id != g_curr_instrument_under_mouse.id){
-
+    
+    //remakeMixerStrips(instrument);
+    //remakeMixerStrips(getCurrentInstrumentUnderMouse());
+    
     struct Patch *old_patch = PATCH_get_from_id(getCurrentInstrumentUnderMouse());
     
     g_curr_instrument_under_mouse = instrument;
@@ -3039,6 +3042,7 @@ void setCurrentInstrumentUnderMouse(instrument_t instrument){
       R_ASSERT(plugin!=NULL);
       if (plugin!=NULL)
         CHIP_update(plugin);
+
     }
     
     if(old_patch!=NULL){
@@ -3046,8 +3050,10 @@ void setCurrentInstrumentUnderMouse(instrument_t instrument){
       R_ASSERT(plugin!=NULL);
       if (plugin!=NULL)
         CHIP_update(plugin);
+      
     }
-    
+
+    redrawMixerStrips(false);
   }
 }
 
@@ -3083,8 +3089,6 @@ void setCurrentInstrument(instrument_t instrument_id, bool show_instrument_windo
   if (patch==old_currpatch)
     return;
 
-  //redrawMixerStrips(true);
-    
   //if(showInstrumentWidgetWhenDoubleClickingSoundObject())
   if(show_instrument_window_if_not_visible)
     GFX_InstrumentWindowToFront();
@@ -3094,6 +3098,8 @@ void setCurrentInstrument(instrument_t instrument_id, bool show_instrument_windo
   else
     GFX_PP_Update_even_if_locked(patch, false);
 
+  //redrawMixerStrips(false); // name of current instrument is drawn in different color, so we only have to redraw, not remake.
+    
   /*
   if (instrumentIsOpenAndAudio(instrument_id)){
     Chip *chip = CHIP_get(NULL, patch);
@@ -3168,6 +3174,55 @@ void switchSetCurrentInstrumentLocked(void){
     g_curr_locked_instrument = createIllegalInstrument();
   */
 }
+
+
+static radium::ProtectedS7FuncVector g_current_instrument_changed_callbacks(true);
+
+void addCurrentInstrumentChangedCallback(func_t* callback){
+  if (g_current_instrument_changed_callbacks.push_back(callback)==false)
+    handleError("addCurrentInstrumentChangedCallback: Callback %p already added\n", callback);
+
+  //printf("\n\n\n=====================================      INSTRUMENT CHANGE callbacks: %d\n\n\n\n", g_current_instrument_changed_callbacks.size());
+}
+
+static bool removeCurrentInstrumentChangedCallback2(func_t *callback){
+  int num_removed = g_current_instrument_changed_callbacks.removeAll(callback);
+  R_ASSERT_NON_RELEASE(num_removed==0 || num_removed==1);
+  
+  return num_removed > 0;
+}
+
+void removeCurrentInstrumentChangedCallback(func_t* callback){
+  if (!removeCurrentInstrumentChangedCallback2(callback))
+    handleError("removeCurrentInstrumentChangedCallback: Could not find deleted callback %p\n", callback);
+}
+
+void API_call_me_when_current_instrument_has_been_changed(void){
+  
+  // schedule to run later. May have been called from places that are complicated, for instance when deleting an instrument.
+
+  QTimer::singleShot(1,[]
+                     {
+  
+                       QVector<func_t*> to_remove;
+                       
+                       g_current_instrument_changed_callbacks.safe_for_all(true, [&to_remove](func_t *callback){
+                           
+                           if (S7CALL(bool_void, callback)==false)
+                             to_remove.push_back(callback);
+                           
+                           return true;
+                           
+                         });
+                       
+                       for(auto *callback : to_remove){
+                         //printf("   API_call_me_when_current_instrument_has_been_changed: Calling currentInstrumentChangedCallback for %p\n", callback);
+                         removeCurrentInstrumentChangedCallback2(callback);
+                       }
+                       
+                     });
+}
+
 
 void showInstrumentInfo(dyn_t instrument_id_or_description, int64_t parentgui){
   struct Patch *patch = NULL;
@@ -3335,7 +3390,7 @@ int64_t addEffectMonitor(const char *effect_name, instrument_t instrument_id, bo
 
   g_effect_monitors.push_back(effect_monitor);
 
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
   printf("   addEffectMonitor: Size: %d\n", g_effect_monitors.size());
 #endif
   

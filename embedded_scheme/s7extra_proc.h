@@ -450,6 +450,10 @@ namespace radium{
       return _elements.end();
     }
     */
+
+    int size(void) const {
+      return _elements.size();
+    }
     
     // Very safe function to iterate all elements. The callback is allowed to both add and remove elements.
     // If allow_changes==false, assertion will be thrown if the 'for_all_callback' tries to change the vector.

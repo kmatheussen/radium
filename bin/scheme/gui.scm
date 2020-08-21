@@ -1311,13 +1311,14 @@
               (<gui> :add parent part)
               (<gui> :show part)
               
-              (<gui> :add-callback part
-                     part
+              (<gui> :add-paint-callback part
+                     ;;part
                      (lambda (width height)
+                       (c-display "PAINT-CALLBACK-CALLED")
                        (if (is-enabled-func)
                            (<gui> :filled-box part color 0 0 width height)))))
             (list top right bottom left))
-
+  
   (lambda (x1 y1 x2 y2)
     (set! x1 (floor x1))
     (set! y1 (floor y1))

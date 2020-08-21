@@ -856,7 +856,7 @@ static void GFX_PP_Update_internal(struct Patch *patch, bool is_loading, bool op
       root->song->tracker_windows->must_redraw = true;
 
     PATCH_set_current(patch);
-    redrawMixerStrips(false);
+    //redrawMixerStrips(false);
 
     if(old_current!=patch && patch->widget_height_type==SIZETYPE_NORMAL && GFX_InstrumentWindowIsVisible() && !instrumentWidgetIsInMixer())
       S7CALL2(void_void,"FROM_C-minimize-lowertab");
