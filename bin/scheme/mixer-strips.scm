@@ -758,11 +758,7 @@
                                                     (remake-mixer-strips instrument-id))
                                                    ((<ra> :control-pressed)
                                                     (<ra> :switch-instrument-is-selected instrument-id))
-                                                   ((equal? instrument-id (<ra> :get-current-instrument))
-                                                    ;;(<ra> :set-wide-instrument-strip instrument-id is-minimized)
-                                                    #t
-                                                    )
-                                                   (else
+                                                   ((not (equal? instrument-id (<ra> :get-current-instrument)))
                                                     ;;(c-display "         SETTING CURRENT")
                                                     (<ra> :set-current-instrument instrument-id #f #t)
                                                     ;;(remake-mixer-strips instrument-id)

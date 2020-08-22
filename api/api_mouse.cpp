@@ -3913,9 +3913,11 @@ bool controlPressed(void){
   return ControlPressed(); //AnyCtrl(tevent.keyswitch);
 }
 
+/*
 bool control2Pressed(void){
   return Control2Pressed();
 }
+*/
 
 bool horizontalModifierPressed(void){
   return HorizontalModifierPressed();
@@ -3945,6 +3947,7 @@ bool altPressed(void){
   return AltPressed();
 }
 
+/*
 bool alt2Pressed(void){
 #if FOR_MACOSX
   return MetaPressed(); // osx: ctrl.
@@ -3952,7 +3955,7 @@ bool alt2Pressed(void){
   return AltPressed();
 #endif
 }
-
+*/
 
 
 // mouse pointer

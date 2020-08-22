@@ -2382,6 +2382,7 @@ bool ShiftPressed(void){
     return ShiftPressed(QApplication::keyboardModifiers());
 }
 
+/*
 bool Control2Pressed(Qt::KeyboardModifiers modifiers){
 #if FOR_MACOSX
   return modifiers & Qt::AltModifier;
@@ -2389,13 +2390,16 @@ bool Control2Pressed(Qt::KeyboardModifiers modifiers){
   return modifiers & Qt::MetaModifier;
 #endif
 }
+*/
 
+/*
 bool Control2Pressed(void){
   return Control2Pressed(QApplication::keyboardModifiers());
 }
+*/
 
 bool HorizontalModifierPressed(Qt::KeyboardModifiers modifiers){
-  return Control2Pressed(modifiers);
+  return modifiers & Qt::MetaModifier;
 }
 
 bool HorizontalModifierPressed(void){

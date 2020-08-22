@@ -701,6 +701,7 @@ public:
     SCHEME_mousemove(_currentButton, point.x(), point.y());
     //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
   }
+  
   void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{    
     event.accept();
     
