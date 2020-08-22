@@ -366,8 +366,6 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     header->setMinimumHeight(header_height);
     header->setMaximumHeight(header_height);
 
-    locked_instrument->hide();
-    
     locked_instrument->setMinimumWidth(header_height);
     locked_instrument->setMaximumWidth(header_height);
     
