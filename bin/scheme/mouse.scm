@@ -1274,7 +1274,7 @@
   (let ((old *current-seqblock-info*)
         (new (or (maybe-get-seqblock-info-from-current-seqautomation)
                  (get-seqblock-info X Y))))
-    ;;(c-display "old/new seqblock-info" old new)
+    ;;(c-display "old/new seqblock-info" old new "*current-seqtrack-num*" *current-seqtrack-num*)
     ;;(c-display "seqtrack-under-mouse:" new)
     (cond ((and old (not new))
            (if *current-seqtrack-num*
@@ -1308,7 +1308,7 @@
 
 (add-mouse-move-handler
  :move (lambda ($button X Y)
-         ;;(c-display "x/y/sequencer:" X Y (box-to-string (<ra> :get-box sequencer)))
+         ;;(c-display "x/y/sequencer:" X Y (box-to-string (<ra> :get-box sequencer)) ". INSIDE:" (inside-box? (<ra> :get-box sequencer) X Y))
 
          ;;(c-display X Y (box-to-string (get-seqnav-move-box)))
          (cond ((and (inside-box? (<ra> :get-box sequencer) X Y)
@@ -7811,7 +7811,8 @@
 (set! set-and-highlight-current-seqautomation
       (lambda (Button X Y)
         ;;(c-display "|||||||||||||||||||||||||||||||||           set-and-highlight-current-seqautomation called")
-        (let ((curr-dist (get-closest-seqautomation X Y)))
+        (let ((curr-dist (and (inside-box? (<ra> :get-box sequencer) X Y)
+                              (get-closest-seqautomation X Y))))
           ;;(c-display "curr-dist/curr-seqblock:" *current-seqtrack-num* curr-dist)
           (set! *current-seqautomation/distance* (and curr-dist
                                                       (< (curr-dist :distance) *seqnode-min-distance*)
@@ -8421,7 +8422,10 @@
 
 ;; highlight current seqblock autmation node
 (add-mouse-move-handler
- :move (lambda ($button $x $y)
+ :move (lambda ($button $x $y)         
+         ;;(c-display *current-seqautomation/distance*
+         ;;           (and *current-seqautomation/distance* (*current-seqautomation/distance* :seqblock))
+         ;;           "INSIDE:" (inside-box? (<ra> :get-box sequencer) $x $y))
          (and *current-seqautomation/distance*
               (*current-seqautomation/distance* :seqblock)
               (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
