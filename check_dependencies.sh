@@ -228,7 +228,7 @@ fi
 
 if [[ ! -f ~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/aeffect.h && ! -f ~/SDKs/"VST3 SDK"/pluginterfaces/vst2.x/aeffect.h && ! -f ~/SDKs/VST_SDK/VST2_SDK/pluginterfaces/vst2.x/aeffect.h ]] ; then
     echo 'Steinberg VST headers not found. (Missing "~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/aeffect.h or "~/SDKs/VST3 SDK/pluginterfaces/vst2.x/aeffect.h" or "~/SDKs/VST_SDK/VST2_SDK/pluginterfaces/vst2.x/aeffect.h")'
-    echo 'You should find these files in the "VST Audio Plug-Ins SDK" from http://www.steinberg.net/en/company/developers.html . Unless Steinberg have changed the directory structure again, it should enough to unzip the file into your ~/SDKs directory.'
+    echo 'You should find these files in the "VST Audio Plug-Ins SDK" from http://www.steinberg.net/en/company/developers.html . Unless Steinberg has changed the directory structure again, it should enough to unzip the file into your ~/SDKs directory.'
     exit 5
 fi
 

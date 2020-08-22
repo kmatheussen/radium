@@ -10,6 +10,13 @@
 #include "find_jack_library_proc.h"
 
 
+# ifdef __x86_64__
+   #define LIBJACKNAME "libjack64.dll"
+# else
+   #define LIBJACKNAME "libjack.dll"
+# endif
+
+
 static wchar_t *get_wchar_t(const QString s){
   int size = (int)sizeof(wchar_t)*(s.length()+1);
   wchar_t *array = (wchar_t*)malloc(size);
@@ -19,7 +26,7 @@ static wchar_t *get_wchar_t(const QString s){
 }
 
 static QString find_libjack_dir2(void){
-  return QCoreApplication::applicationDirPath() + QDir::separator() + "jack_local"; // "bin" + QDir::separator() + 
+  return QCoreApplication::applicationDirPath() + QDir::separator() + "jack_local";
 }
 
 wchar_t *find_libjack_dir(void){
@@ -31,11 +38,7 @@ bool jack_is_installed_globally(void){
   static bool is_installed_globally = false;
 
   if (has_found_value == false) {
-# ifdef __x86_64__
-    HMODULE lib = LoadLibraryA("libjack64.dll");
-# else
-    HMODULE lib = LoadLibraryA("libjack.dll");
-# endif
+    HMODULE lib = LoadLibraryA(LIBJACKNAME);
     
     if (lib != NULL){
       FreeLibrary(lib);
@@ -51,19 +54,20 @@ bool jack_is_installed_globally(void){
 }
 
 wchar_t *find_libjack_library(bool jack_is_installed_globally){
+  if (jack_is_installed_globally) {
+    
+    return get_wchar_t(LIBJACKNAME);
+    
+  } else {
+    
 #ifdef _WIN64
-  if (jack_is_installed_globally) {
-    return get_wchar_t("libjack64.dll");
-  } else {
     return get_wchar_t(find_libjack_dir2() + QDir::separator() + "libjack64.dll");
-  }
 #else
-  if (jack_is_installed_globally) {
-    return get_wchar_t("libjack.dll");
-  } else {
     return get_wchar_t(find_libjack_dir2() + QDir::separator() + "win32libs" + QDir::separator() + "libjack.dll");
-  }
 #endif
+    
+  }
+  
 }
 
 #endif // _WIN32
