@@ -556,7 +556,7 @@ static void set_widget_height(int height){
 
 bool GFX_InstrumentWindowIsVisible(void){
   if (instrumentWidgetIsInMixer())
-    return g_instruments_widget->isVisible();
+    return g_instruments_widget_frame->isVisible();
   else
     return API_instrumentGuiIsVisibleInLowerTab();
 }
@@ -566,10 +566,13 @@ void GFX_SetMinimalInstrumentWindow(void){
   set_widget_height(30);
 
   g_instruments_widget->adjustSize();
+  g_instruments_widget_frame->adjustSize();
+  g_instruments_widget->adjustSize();
 }
 
 void GFX_InstrumentWindowToFront(void){
   g_instruments_widget->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum); // might not be needed
+  g_instruments_widget_frame->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum); // might not be needed
   set_widget_height(120);
 
   if (!instrumentWidgetIsInMixer()){
@@ -585,7 +588,7 @@ void GFX_InstrumentWindowToFront(void){
   } else {
 
     GL_lock(); {
-      g_instruments_widget->show();
+      g_instruments_widget_frame->show();
     }GL_unlock();
     
     GFX_update_current_instrument_widget();
@@ -606,18 +609,20 @@ void GFX_InstrumentWindowToBack(void){
     
   } else {
     
-    g_instruments_widget->hide();
+    g_instruments_widget_frame->hide();
     g_instruments_widget->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored); // might not be needed.
+    g_instruments_widget_frame->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored); // might not be needed.
 
     set_widget_height(0);
     g_instruments_widget->adjustSize();
+    g_instruments_widget_frame->adjustSize();
     set_editor_focus();
   }
 }
 
 
 void GFX_showHideInstrumentWidget(struct Tracker_Windows *window){
-  if(g_instruments_widget->height() < 10)
+  if(g_instruments_widget_frame->height() < 10)
     GFX_InstrumentWindowToFront();
   else
     GFX_InstrumentWindowToBack();
