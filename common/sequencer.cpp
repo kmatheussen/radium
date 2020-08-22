@@ -1739,7 +1739,7 @@ void SEQTRACK_set_editor_seqtrack_muted(struct SeqTrack *seqtrack, bool muteit){
     seqtrack->note_gain_has_changed_this_block = true;
   }
   
-  SEQUENCER_update(SEQUPDATE_HEADERS);
+  SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_RIGHT_PART);
 }
 
 void SEQTRACK_set_muted(struct SeqTrack *seqtrack, bool muteit){
