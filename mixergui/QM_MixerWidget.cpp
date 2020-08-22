@@ -852,11 +852,11 @@ static bool mousepress_start_connection(MyScene *scene, QGraphicsSceneMouseEvent
 
   if(chip!=NULL){
 
-    //struct Instruments *instrument = get_audio_instrument();
+    struct Instruments *instrument = get_audio_instrument();
     SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
     volatile struct Patch *patch = plugin->patch;
     R_ASSERT_RETURN_IF_FALSE2(patch!=NULL,false);
-    //instrument->PP_Update(instrument,(struct Patch*)patch,false);
+    instrument->PP_Update(instrument,(struct Patch*)patch,false);
     MW_set_selected_chip(chip);
 
     // connection
@@ -960,9 +960,9 @@ static bool mousepress_select_chip(MyScene *scene, QGraphicsSceneMouseEvent * ev
     volatile struct Patch *patch = plugin->patch;
     R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
     
-    //struct Instruments *instrument = get_audio_instrument();
+    struct Instruments *instrument = get_audio_instrument();
     //printf("Calling pp_update\n");
-    //instrument->PP_Update(instrument,(struct Patch*)patch,false);
+    instrument->PP_Update(instrument,(struct Patch*)patch,false);
 
     //printf("                                                         ^^^^^^^^   mousepress_select_chip\n");
     EVENTLOG_add_event("start_moving_chips called from mousepress_select_chip");
@@ -1796,7 +1796,6 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
       
     if(chip!=NULL){
 
-      /*
       {
         struct Instruments *instrument = get_audio_instrument();
         SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
@@ -1806,8 +1805,7 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
         else
           instrument->PP_Update(instrument,(struct Patch*)patch,false);
       }
-      */
-      
+
       //printf("                                                    ^^^^^^^^^^^^ 222 mousepress_select_chip\n");
       EVENTLOG_add_event("start_moving_chips called from MyScene::mousePressEvent");
       start_moving_chips(this,event,chip,mouse_x,mouse_y);
