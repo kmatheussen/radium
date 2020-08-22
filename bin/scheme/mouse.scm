@@ -226,20 +226,20 @@
 
 (define (create-new-seqblock?)
   (if #t
-      (<ra> :alt2-pressed)
+      (<ra> :alt-pressed)
       (<ra> :control-pressed)))
   
 (define (move-all-nodes?)
   '(c-display "move-all:"
               *check-mouse-horizontal-modifier*
               (<ra> :shift-pressed)
-              (<ra> :control2-pressed)
+              (<ra> :control-pressed)
               "left:" (<ra> :is-left-mouse-pressed)
               "right:" (<ra> :is-right-mouse-pressed)
               "middle:" (<ra> :is-middle-mouse-pressed))
   (if (or #t
           (<ra> :release-mode))
-      (<ra> :alt2-pressed)
+      (<ra> :alt-pressed)
       (<ra> :control-pressed)))
       
 
@@ -1959,7 +1959,7 @@
                 (and (= $button *right-button*)
                      (<ra> :reltempo-track-visible)
                      (inside-box? (<ra> :get-box temponode-area) $x $y)
-                     (if (<ra> :alt2-pressed)
+                     (if (<ra> :alt-pressed)
                          (undo-block
                           (lambda ()
                             (<ra> :undo-temponodes)
@@ -2260,7 +2260,7 @@
                      (inside-box? (<ra> :get-box track-notes *current-track-num*) $x $y)
                      (match (list (find-node $x $y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*)))
                             (existing-box Num Box) :> (let ((notenum (<ra> :get-notenum-for-pitchnum Num *current-track-num*)))
-                                                        (if (<ra> :alt2-pressed)
+                                                        (if (<ra> :alt-pressed)
                                                             (undo-block
                                                              (lambda ()
                                                                ;;(c-display "NUM pianonotes:" (<ra> :get-num-pianonotes notenum *current-track-num*))
@@ -3045,7 +3045,7 @@
                             (let ((noteid (pianonote-info :noteid))
                                   (tracknum (pianonote-info :tracknum)))
                               (<ra> :undo-notes tracknum)
-                              (if (<ra> :alt2-pressed)
+                              (if (<ra> :alt-pressed)
                                   (while (> (<ra> :get-num-pianonotes noteid *current-track-num*) 1)
                                     (<ra> :delete-pianonote 1 noteid tracknum))
                                   (<ra> :delete-pianonote
@@ -3658,7 +3658,7 @@
                             (let ((notenum (velocity-info :notenum))
                                   (tracknum (velocity-info :tracknum)))
                               (<ra> :undo-notes tracknum)
-                              (if (<ra> :alt2-pressed)
+                              (if (<ra> :alt-pressed)
                                   (begin
                                     (while (> (<ra> :get-num-velocities notenum tracknum) 2)
                                       (<ra> :delete-velocity 1 notenum tracknum))
@@ -4164,7 +4164,7 @@
                        (and fxnode-info
                             (let ((fxnum (fxnode-info :fxnum))
                                   (tracknum (fxnode-info :tracknum)))
-                              (if (<ra> :alt2-pressed)
+                              (if (<ra> :alt-pressed)
                                   (undo-block
                                    (lambda ()
                                      (delete-all-fxnodes fxnum tracknum)))
@@ -4232,7 +4232,7 @@
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      *current-track-num*
-                     (<ra> :alt2-pressed)
+                     (<ra> :alt-pressed)
                      (<ra> :shift-pressed)
                      (inside-box? (<ra> :get-box track-fx *current-track-num*) X Y)                     
                      (let ((fxnum (<ra> :get-mouse-fx *current-track-num*)))
@@ -5398,7 +5398,7 @@
                      (<ra> :seqtempo-visible)                     
                      (inside-box? (<ra> :get-box seqtempo-area) $x $y)
                      (if (and (<ra> :shift-pressed)
-                              (<ra> :alt2-pressed))
+                              (<ra> :alt-pressed))
                          (begin
                            (<ra> :undo-seqtempo)
                            (while (> (<ra> :get-num-seqtemponodes) 2)
@@ -8051,7 +8051,7 @@
                                           A                      :> #f))
                        (if (<ra> :shift-pressed)
                            (cond ((or (not Num)
-                                      (<ra> :alt2-pressed))
+                                      (<ra> :alt-pressed))
                                   (undo-block
                                    (lambda ()
                                      (remove-seqtrack-automation seqtracknum automationnum))))
@@ -8373,7 +8373,7 @@
                                           (existing-box Num Box) :> Num
                                           A                      :> #f))
                        (if (<ra> :shift-pressed)
-                           (cond ((<ra> :alt2-pressed)
+                           (cond ((<ra> :alt-pressed)
                                   (undo-block
                                    (lambda ()
                                      (remove-seqblock-automation seqtracknum seqblocknum automationnum))))
