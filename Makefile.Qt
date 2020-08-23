@@ -2456,8 +2456,11 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.c
 	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
-ifeq (,$(findstring clang,$(CC)))
-      VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
+ifeq ($(GCC_MAJOR),9)
+	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
+endif
+ifeq ($(GCC_MAJOR),10)
+	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
 endif
 
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
