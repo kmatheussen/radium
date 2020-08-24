@@ -379,6 +379,23 @@
          :shortcut ra:switch-visible-mixer-bus-connections
          (lambda (doit)
            (<ra> :set-visible-mixer-bus-connections doit)))
+   "----------Zoom"
+   (list "Zoom in"
+         :shortcut (list ra:zoom 1)
+         (lambda ()
+           (<ra> :zoom 1)))
+   (list "Zoom in++"
+         :shortcut (list ra:zoom 4)
+         (lambda ()
+           (<ra> :zoom 4)))
+   (list "Zoom out"
+         :shortcut (list ra:zoom -1)
+         (lambda ()
+           (<ra> :zoom -1)))
+   (list "Zoom out++"
+         :shortcut (list ra:zoom -4)
+         (lambda ()
+           (<ra> :zoom 4)))
    (list "Reset zoom (~Zoom)"
          ra:unzoom)
    "---------------Windows"
