@@ -913,7 +913,7 @@ namespace{
     }
 
   public slots:
-    
+
     void hovered(QAction *action){
       MyQAction *myaction = dynamic_cast<MyQAction*>(action);
       
@@ -927,16 +927,23 @@ namespace{
         g_last_hovered_menu_entry_guinum = myaction->_guinum;
 
         if (/*isVisible() && hasFocus() && */ !_is_permanent && _is_root && _set_active_action_counter==0 && action!=activeAction()){
-          
-          IsAlive is_alive1(this);
-          IsAlive is_alive2(action);
-          
-          QTimer::singleShot(20, [is_alive1, is_alive2, this, action]{
-              if (is_alive1 && is_alive2 && /*isVisible() && hasFocus() &&*/ !_is_permanent && _is_root && action!=activeAction()) {
-                setActiveAction(action);
-                _set_active_action_counter++;
-              }
-            });
+
+          //printf("   Hovered. Action: %s. activeAction: %s\n", action->metaObject()->className(), activeAction()==NULL ? "(null)" : activeAction()->metaObject()->className());
+
+          if (activeAction()==NULL || strcmp(activeAction()->metaObject()->className(), "QAction")){ // Don't do this if activeAction() is a sub menu.
+            
+            // We do this to fix keyboard up/down keys selecting correct prev/next entry right after opening a popup menu.
+            
+            IsAlive is_alive1(this);
+            IsAlive is_alive2(action);
+            
+            QTimer::singleShot(20, [is_alive1, is_alive2, this, action]{
+                                     if (is_alive1 && is_alive2 && /*isVisible() && hasFocus() &&*/ !_is_permanent && _is_root && action!=activeAction()) {
+                                       setActiveAction(action);
+                                       _set_active_action_counter++;
+                                     }
+                                   });
+          }
         }
         
         _my_last_hovered_menu_entry_guinum = -1;
@@ -964,7 +971,7 @@ namespace{
 
       //if (myaction!=NULL) printf("  QMENU::HOVERED action: %p. myaction: \"%s\" (%p). Is separator: %d\n", action, myaction->_text.toUtf8().constData(), myaction, action->isSeparator());
     }
-      
+
 
   };
 
