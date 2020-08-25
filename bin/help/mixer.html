@@ -3,9 +3,56 @@
 
     <p>
       
+<a href="#mixer">Mixer</a><br>
 <a href="#modularmixer">Modular Mixer</a><br>
 <a href="#mixerstrips">Mixer Strips</a><br>
-<a href="#tips">Tips</a><br>
+
+<br>
+<br>
+<br>
+<br>
+
+<a name="modularmixer"></a><h1>Mixer</h1>
+
+<h3>General</h3>
+
+<OL>
+    
+  <LI> Most functionality is accessed by using the popup menus. If you want to assign a keybinding to an entry in a popup menu, right-click the entry.
+    
+  <LI> To <b>prevent</b> radium from <b>automatically changing current instrument</b> when dragging a slider, muting an object, and so fort, enable the padlock-checkbox in the upper left corner of the instrument widget:<br>
+    <IMG SRC="force_current_instrument.png" ALT="Sequencer" style="border:10px solid transparent">.<br>
+    The same checkbox can also be found as "Forced as current instrument" in the popup menu of a sound object or a mixer strip:<br>
+
+</OL>
+
+
+<h3>Header buttons</h3>
+
+<IMG SRC="mixer_header.png" ALT="Mixer header" style="border:10px solid transparent">
+<br>
+
+
+<table>
+  <tr>
+    <td>&#8669</td> <td>Reset A/B (actual: A/B/C/D/E/F/G/H).</td>
+  </tr>
+  <tr>
+    <td><b>A - H</b></td><td> Select A/B.</td>
+  </tr>
+  <tr>
+    <td><b>W</b> </td><td> Move mixer into it's own window. Tip: To make the mixer window independent of the main window, unset <nobr><i>"Mixer:&nbsp;Let&nbsp;Mixer&nbsp;window&nbsp;..."</i></nobr> under <i>Edit -> Preferences -> GUI</i>.</td>
+  </tr>
+  <tr>
+    <td><b>M</b> </td><td> Switch between modular mixer and mixer strips.</td>
+  </tr>
+  <tr>
+    <td><b>I</b> </td><td> Display the instrument widget in the bottom of the mixer.</td>
+  </tr>
+  <tr>
+</table>
+
+Note that you can assign keybinding to all buttons by right-clicking.
 
 <br>
 <br>
@@ -27,6 +74,35 @@
     top of another object.
   <LI>Zoom in and out by pressing CTRL and using the scroll wheel.    
 </UL>
+
+
+<h3>Header buttons</h3>
+
+<IMG SRC="modularmixer_header_buttons.png" ALT="Mixer header" style="border:10px solid transparent"><br>
+
+<table>
+  <tr>
+    <td><b>CPU</b></td> <td> Display CPU usage instead of instrument name. The meaning of the three numbers:
+      <OL>
+        <LI>Minimum amount of CPU spent during the last second (percentage)
+        <LI>Average amount of CPU spent during the last second (percentage).
+        <LI>Maximum amount of CPU spent during the last second (percentage).
+      </OL>
+    </td>
+  </tr>
+  <tr>
+    <td><b>C1</b></td> <td> If enabled, show normal connections.</td>
+  </tr>
+  <tr>
+    <td><b>C2</b></td> <td> If enabled, show bus connections.</td>
+  </tr>
+  <tr>
+    <td><b>&#8669Zoom</b></td> <td> Reset Zoom</td>
+  </tr>
+  <tr>
+  <td><b>=&gt;</b></td> <td> Rotate mixer view.</td>
+</table>
+
 
 <h3>Mixer objects</h3>
 <UL>
@@ -87,6 +163,36 @@ The order of the strips is not random or chronological. The sorting logic has fo
 
 <p>
 
+
+  <h3>Header buttons</h3>
+  
+  <IMG SRC="mixerstrips_header_buttons.png" ALT="Mixer header" style="border:10px solid transparent"><br>
+
+  <table>
+    <tr>
+      <td><b>1:3<b></td> <td>Upper part of the mixer strips are shorter than the lower parts.</td>
+    </tr>
+    <tr>
+      <td><b>1:1<b></td> <td>Upper parts and lower parts of the mixer strips have the same height.</td>
+    </tr>
+    <tr>
+      <td><b>3:1<b></td> <td>Upper parts of the mixer strips are taller than the lower parts.</td>
+    </tr>
+    <tr>
+      <td><b>1R</b></td> <td>Display 1 row of mixer strips.</td>
+    </tr>
+    <tr>
+      <td><b>2R</b></td> <td>Display 2 rows of mixer strips.</td>
+    </tr>
+    <tr>
+      <td><b>3R</b></td> <td>Display 3 rows of mixer strips.</td>
+    </tr>
+    <tr>
+      <td><b>4R</b></td> <td>Display 4 rows of mixer strips.</td>
+    </tr>
+  </table>
+<p>
+  
 <h3>How to...</h3>
 Q: Set accurate volum by writing a number?<br>
 A: Click the number box right above the volume slider
@@ -122,26 +228,6 @@ A: Right-click a mixer strip, and select "Delete". Or shift-right-click the name
 <br>
 <br>
 
-
-    <p>
-      <a name="tips"></a><h1>Tips</h1>
-      <UL>
-        <LI> To <b>prevent</b> radium from <b>automatically changing current instrument</b> when dragging a slider, muting an object, and so fort, enable the "lock" checkbox in the upper left corner of the instrument widget:<br>
-          <IMG SRC="force_current_instrument.png" ALT="Sequencer" style="border:10px solid transparent">.<br>
-          The same checkbox can also be found as "Forced as current instrument" in the popup menu of a sound object or a mixer strip:<br>
-      </UL>
-
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
 
 </body>
 </html>
