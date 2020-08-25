@@ -185,9 +185,7 @@ blockquote {
 <h3>General</h3>
 <UL>
 <LI>Move objects with right mouse button.
-  <LI>Double-click the name of an object to open GUI.
-  <LI>Delete objects or connections by pressing SHIFT and click left (or right).
-  <LI>Select more than one object by holding CTRL when clicking. (Use Cmd key instead of CTRL if using Mac)
+  <LI>Delete objects or connections by shift-right-clicking.
   <LI>Move and connect object in one operation: Place one object on 
     top of another object.
   <LI>Zoom in and out by pressing CTRL and using the scroll wheel.    
@@ -195,11 +193,36 @@ blockquote {
 
 <h3>Mixer objects</h3>
 <UL>
-  <LI> "M": Mute
-  <LI> "S": Solo
-  <LI> "B": Bypass
+  <LI>Buttons:
+    <UL>
+      <LI> <font color="green">"M"</font>: Mute
+      <LI> <font color="#aaaa00">"S"</font>: Solo
+      <LI> <font color="orange">"B"</font>: Bypass
+    </UL>
+  <LI>Colors:
+    <UL>
+      <LI> <font color="blue">Blue border</font>: Current mixer object
+      <LI> <font color="red">Red border</font>: Selected mixer object
+      <LI> <font color="purple">Purple border</font>: Current mixer object, and selected.
+      <LI> White text of instrument name: Current instrument
+    </UL>
+  <LI>Double-click the name of an object to open GUI.
 </UL>
 
+<h3>Selection</h3>
+<UL>
+  <LI>Ctrl-click to select/deselect an object.
+  <LI>Create rectangle to select all objects inside the rectangle.
+  <LI>Click outside an object to deselect all objects.
+</UL>
+
+<h3>Connections</h3>
+
+<UL>
+  <LI> Create an <b>audio connection</b> by dragging a line between the right side and left side of two objects.
+  <LI> Create an <b>event connection</b> by dragging a line between the name of two instruments.
+  <LI> Delete a connection by shift-right-clicking.
+</UL>
 <br>
 <br>
 <br>
@@ -234,17 +257,20 @@ A: Click the number box right above the volume slider
 Q: Reset highest peak value in the box above the audio meter?<br>
 A: Just click the box.
 <p>
-Q: Create a new instrument?<br>
+Q: Create a new mixer strip?<br>
 A: You can't do that directly in a mixer strips window. You either have to create a new instrument in the modular mixer, add a new instrument to a track in the editor, or add a new audio seqtrack.
 <p>
+Q: Create a plugin or send?<br>
+A: Use the popup menu
+<p>
 Q: Delete a plugin or send?<br>
-A: Shift+right-click.
+A: Shift-right-click.
 
 
 
 <p>
 Q: Delete a mixer strip?<br>
-A: Right-click a mixer strip, and select "Delete". Or shift+right click the name.
+A: Right-click a mixer strip, and select "Delete". Or shift-right-click the name.
 
 
 <br>
@@ -263,11 +289,22 @@ A: Right-click a mixer strip, and select "Delete". Or shift+right click the name
     <p>
       <a name="tips"></a><h1>Tips</h1>
       <UL>
-        <LI> To <b>prevent</b> radium from <b>automatically changing the current instrument</b> when the mouse pointer is above an instrument or a plugin/send slider, enable the "lock" checkbox in the upper left corner of the instrument widget:<br>
+        <LI> To <b>prevent</b> radium from <b>automatically changing current instrument</b> when dragging a slider, muting an object, and so fort, enable the "lock" checkbox in the upper left corner of the instrument widget:<br>
           <IMG SRC="force_current_instrument.png" ALT="Sequencer" style="border:10px solid transparent">.<br>
           The same checkbox can also be found as "Forced as current instrument" in the popup menu of a sound object or a mixer strip:<br>
       </UL>
-      
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
   
 
