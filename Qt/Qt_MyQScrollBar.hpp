@@ -65,13 +65,13 @@ struct Qt_MyQScrollBar : public QScrollBar, public radium::MouseCycleFix {
   const float b = 2;
 
   
-  void fix_mousePressEvent(QMouseEvent *event) override{
-    event->accept();
+  void fix_mousePressEvent(radium::MouseCycleEvent &event) override{
+    event.accept();
     
     if (orientation()==Qt::Vertical)
-      _start_pos = event->pos().y();
+      _start_pos = event.pos().y();
     else
-      _start_pos = event->pos().x();
+      _start_pos = event.pos().x();
 
     _start_val = value();
 
@@ -80,14 +80,14 @@ struct Qt_MyQScrollBar : public QScrollBar, public radium::MouseCycleFix {
     _is_moving = true;
     update();
   }
-  void fix_mouseMoveEvent(QMouseEvent *event) override{
-    event->accept();
+  void fix_mouseMoveEvent(radium::MouseCycleEvent &event) override{
+    event.accept();
     if (_is_moving){
       int dx;
       if (orientation()==Qt::Vertical)
-        dx = event->pos().y() - _start_pos;
+        dx = event.pos().y() - _start_pos;
       else
-        dx = event->pos().x() - _start_pos;
+        dx = event.pos().x() - _start_pos;
 
       const int page_step = pageStep();
 

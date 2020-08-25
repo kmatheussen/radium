@@ -56,6 +56,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMimeData>
 #include <QDrag>
 #include <QSvgRenderer>
+#include <QMouseEvent>
 
 #include <QDesktopServices>
 #include <QtWebKitWidgets/QWebView>
@@ -130,8 +131,8 @@ static bool safe_to_close_widget(void){
 static QPointer<QWidget> g_last_pressed_widget = NULL;
 static QPointer<QWidget> g_last_released_widget = NULL;
 
-#define CALL1_PARENT_MOUSEPRESS(classname) classname::mousePressEvent(event)
-#define CALL1_PARENT_MOUSEMOVE(classname) classname::mouseMoveEvent(event)
+#define CALL1_PARENT_MOUSEPRESS(classname) {if(event.is_real_event()) classname::mousePressEvent(event.get_qtevent());}
+#define CALL1_PARENT_MOUSEMOVE(classname) {if(event.is_real_event()) classname::mouseMoveEvent(event.get_qtevent());}
 #define CALL1_PARENT_MOUSERELEASE(classname) {if(event.is_real_event()) classname::mouseReleaseEvent(event.get_qtevent());}
 
 #define CALL2_PARENT_MOUSEPRESS(classname) classname::fix_mousePressEvent(event)
@@ -144,7 +145,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 
 #define MOUSE_OVERRIDERS(classname)                                     \
-  void fix_mousePressEvent(QMouseEvent *event) override{                \
+  void fix_mousePressEvent(radium::MouseCycleEvent &event) override{                \
     ScopedEventHandlerTracker event_handler_tracker;                    \
     g_last_pressed_widget = this;                                       \
     mousePressEvent_handle_double_click();                              \
@@ -158,7 +159,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
     }                                                                   \
   }                                                                     \
                                                                         \
-  void fix_mouseMoveEvent(QMouseEvent *event) override{                 \
+  void fix_mouseMoveEvent(radium::MouseCycleEvent &event) override{     \
     ScopedEventHandlerTracker event_handler_tracker;                    \
     if (_mouse_callback.v==NULL){                                         \
       CALL_PARENT_MOUSEMOVE(classname);                                 \
@@ -323,6 +324,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   OVERRIDERS_WITHOUT_KEY_AND_MOUSE_WHEEL(classname)                     \
   MOUSE_WHEEL_OVERRIDER(classname)                                      \
   KEY_OVERRIDERS(classname)
+  
   
 
 //CHANGE_OVERRIDER(classname)                                             
@@ -1686,24 +1688,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     bool _is_double_clicking = false;
     double _last_press_time = -1;
     
-    int getMouseButtonEventID(QMouseEvent *qmouseevent) const {
-      if(qmouseevent->button()==Qt::LeftButton)
-        return TR_LEFTMOUSEDOWN;
-      else if(qmouseevent->button()==Qt::RightButton)
-        return TR_RIGHTMOUSEDOWN;
-      else if(qmouseevent->button()==Qt::MiddleButton)
-        return TR_MIDDLEMOUSEDOWN;
-      else
-        return 0;
-    }
-
     void mousePressEvent_handle_double_click(void){
       double time = TIME_get_ms();
       _is_double_clicking = (time - _last_press_time) < getDoubleClickInterval();
       _last_press_time = time;
     }
     
-    bool mousePressEvent(QMouseEvent *event){
+    bool mousePressEvent(radium::MouseCycleEvent &event){
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback.v!=NULL, false);
 
       double time = TIME_get_ms();
@@ -1713,10 +1704,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return false;
       }
 
-      event->accept();
+      event.accept();
 
       _currentButton = getMouseButtonEventID(event);
-      _last_mouse_pos = event->pos();
+      _last_mouse_pos = event.pos();
 
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
             
@@ -1752,7 +1743,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       return ret;
     }
 
-    bool mouseMoveEvent(QMouseEvent *event){
+    bool mouseMoveEvent(radium::MouseCycleEvent &event){
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback.v!=NULL, false);
 
       if ((_mouse_event_failed - TIME_get_ms()) > 0){
@@ -1760,9 +1751,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return false;
       }
       
-      event->accept();
+      event.accept();
 
-      _last_mouse_pos = event->pos();
+      _last_mouse_pos = event.pos();
       
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
@@ -4114,7 +4105,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
 
 
-  struct Splitter : radium::Splitter, Gui, public radium::MouseCycleFix {
+  struct Splitter : radium::Splitter, Gui { //, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -4133,7 +4124,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       return currentWidget()->sizeHint();
     }
     */
-    OVERRIDERS(radium::Splitter);
+    
+    //OVERRIDERS(radium::Splitter); // Commented out since it screwed up mixer (qgraphicsscene) mouse cycle handling. Both the mixer and this one got mouse press events.
   };
 
   // QRubberBand doesn't work. I've also searched the internet, and no one seems to have made it work.
@@ -4590,7 +4582,7 @@ bool API_run_custom_gui_paint_function(QWidget *widget, QPainter *p, const QRegi
 }
 
 
-bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, QMouseEvent *ev){
+bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, radium::MouseCycleEvent &ev){
   ScopedEventHandlerTracker event_handler_tracker;
 
   Gui *gui = g_gui_from_widgets.value(widget);
@@ -4606,7 +4598,7 @@ bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, QMouseEvent *e
     return false;
 }
 
-bool API_run_mouse_move_event_for_custom_widget(QWidget *widget, QMouseEvent *ev){
+bool API_run_mouse_move_event_for_custom_widget(QWidget *widget, radium::MouseCycleEvent &ev){
   ScopedEventHandlerTracker event_handler_tracker;
 
   Gui *gui = g_gui_from_widgets.value(widget);

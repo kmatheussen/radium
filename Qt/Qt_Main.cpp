@@ -644,7 +644,7 @@ static void schedule_set_editor_focus(int ms){
 
 namespace{
   struct MouseCycle{    
-    QPointer<QWidget> widget;
+    QPointer<QObject> widget;
     int64_t id;
     QPointF start_pos;
     QPointF local_pos;
@@ -668,27 +668,27 @@ Qt::MouseButtons MOUSE_CYCLE_get_mouse_buttons(void){
   
 static void MOUSE_CYCLE_unregister_all(int64_t id);
 
-static void set_curr_mouse_cycle(QMouseEvent *event, bool is_pressing){
-  g_curr_mouse_cycle.local_pos = event->localPos();
+static void set_curr_mouse_cycle(QEvent *event, bool is_pressing){
+  g_curr_mouse_cycle.local_pos = get_localpos_from_qevent(event);
   
   if (is_pressing)
-    g_curr_mouse_cycle.start_pos = g_curr_mouse_cycle.local_pos = event->localPos();
+    g_curr_mouse_cycle.start_pos = g_curr_mouse_cycle.local_pos;
 
-  g_curr_mouse_cycle.button = event->button();
-  g_curr_mouse_cycle.buttons = event->buttons();
-  g_curr_mouse_cycle.modifiers = event->modifiers();
+  g_curr_mouse_cycle.button = get_button_from_qevent(event);
+  g_curr_mouse_cycle.buttons = get_buttons_from_qevent(event);
+  g_curr_mouse_cycle.modifiers = get_modifiers_from_qevent(event);
 
   g_curr_mouse_cycle.has_moved = is_pressing ? false : true;
 }
 
-bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event){
+bool MOUSE_CYCLE_register(QObject *widget, QEvent *event){
   
   R_ASSERT(widget!=NULL);
   
   R_ASSERT_NON_RELEASE2(dynamic_cast<radium::MouseCycleFix*>(widget) != NULL, true);
 
-  if (event->buttons()==Qt::NoButton){
-    R_ASSERT_NON_RELEASE(false);
+  if (get_buttons_from_qevent(event)==Qt::NoButton){
+    //R_ASSERT_NON_RELEASE(false);
     return true;
   }
 
@@ -698,7 +698,7 @@ bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event){
 
   bool same_widget = widget == g_curr_mouse_cycle.widget.data();
 
-  bool same_widget_and_buttons = same_widget && g_curr_mouse_cycle.buttons==event->buttons();
+  bool same_widget_and_buttons = same_widget && g_curr_mouse_cycle.buttons==get_buttons_from_qevent(event);
 
   if(same_widget_and_buttons){
     //R_ASSERT_NON_RELEASE(false); // Out of curiousity, want to know if this can happen. Yes, happens when double-right-clicking in a help window.
@@ -719,7 +719,10 @@ bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event){
 }
 
 
-bool MOUSE_CYCLE_move(QWidget *widget, QMouseEvent *event){
+bool MOUSE_CYCLE_move(QObject *widget, QEvent *event){
+
+#if 0  // If widget changes in the middle of the cycle (and it does happen on mac of course), the correct solution is to continue the original cycle since mouse button has not been released, not to cancel it.
+  
   if (g_curr_mouse_cycle.widget.data() != widget){
 
     /*
@@ -734,8 +737,11 @@ bool MOUSE_CYCLE_move(QWidget *widget, QMouseEvent *event){
     
     return g_curr_mouse_cycle.widget.data() == NULL;    
   }
+  
+#endif
 
-  if(event->buttons() == Qt::NoButton){
+  
+  if(get_buttons_from_qevent(event) == Qt::NoButton){
     MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id);
   }
     
@@ -750,20 +756,23 @@ bool MOUSE_CYCLE_has_moved(void){
   return g_curr_mouse_cycle.has_moved;
 }
 
-bool MOUSE_CYCLE_unregister(QWidget *widget){
+bool MOUSE_CYCLE_unregister(QObject *widget){
 #if !defined(RELEASE)
-  printf("CYCLE: unregistering %p. Type: %s\n", widget, widget->metaObject()->className());
+  printf("CYCLE: unregistering %p (Valid: %d). Type: %s\n", widget, (bool)(g_curr_mouse_cycle.widget.data()!=NULL), widget==NULL ? "NULL" : widget->metaObject()->className());
 #endif
   
+  if (g_curr_mouse_cycle.widget.data()==NULL)
+    return false;
+
   if(g_curr_mouse_cycle.widget.data() != widget)
     MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id);
-  
+
   g_curr_mouse_cycle.widget.clear();
   return true;
 }
 
 static void MOUSE_CYCLE_unregister_all(int64_t id){
-  QWidget *w = g_curr_mouse_cycle.widget.data();
+  QObject *w = g_curr_mouse_cycle.widget.data();
   if(w==NULL)
     return;
 
@@ -795,7 +804,7 @@ static void MOUSE_CYCLE_unregister_all(int64_t id){
 
 
 void MOUSE_CYCLE_schedule_unregister_all(void){
-  QWidget *w = g_curr_mouse_cycle.widget.data();
+  QObject *w = g_curr_mouse_cycle.widget.data();
   if(w==NULL)
     return;
     
@@ -1319,12 +1328,38 @@ protected:
 
   bool eventFilter(QObject *obj, QEvent *event) override {
 
-  /*
-  if(event->type()==QEvent::MouseMove || event->type()==QEvent::Move || event->type()==QEvent::MouseTrackingChange){
-      printf("          MOVING. %d\n", event->type());
+#if 1 // Only needed on macOS, but we do it on all platforms so that it is tested.
+
+    // We do this stuff to make ctrl-click work on mac.
+      
+    QMouseEvent *mouseevent = dynamic_cast<QMouseEvent*>(event);
+    
+    if (mouseevent!=NULL) {
+    
+      QObject *curr_widget = g_curr_mouse_cycle.widget.data();
+      
+      radium::MouseCycleFix *cycle = dynamic_cast<radium::MouseCycleFix*>(curr_widget);
+
+      if (cycle != NULL && cycle->_is_ctrl_clicking) { // Qt doesn't like what we are doing here (qt buttons stop working and so forth), so we only enable it when pressing ctrl.
+        
+        if (event->type()==QEvent::MouseMove){
+        
+          //printf("          MOVING. %d (%d). cycle: %p. mouseevent: %p. obj: %p. obj classname: %s\n", event->type(), (bool)(event->type()==QEvent::MouseMove), cycle, mouseevent, obj, obj->metaObject()->className());
+          
+          cycle->cycle_mouse_move_event(obj, mouseevent, false); // mark the qevent as not real. We're not calling the event handlers at the right place here, so they don't always work properly.
+        }
+      
+        if(event->type()==QEvent::MouseButtonRelease) {
+          
+          //printf("          RELEASING. %d (%d). cycle: %p. mouseevent: %p\n", event->type(), (bool)(event->type()==QEvent::MouseMove), cycle, mouseevent);
+        
+          cycle->cycle_mouse_release_event(obj, mouseevent, false); // mark the qevent as not real. We're not calling the event handlers at the right place here, so they don't always work properly.
+        }
       }
-  */
-  
+    }
+
+#endif
+    
     bool activation_changed = event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate;
 
 #if FOR_LINUX

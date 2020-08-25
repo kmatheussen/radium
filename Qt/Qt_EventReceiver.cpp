@@ -450,27 +450,12 @@ void EditorWidget::keyReleaseEvent(QKeyEvent *qkeyevent){
 
 static int g_currentButton = 0;
 
-static int getMouseButtonEventID(Qt::MouseButton button){
-  if(button==Qt::LeftButton)
-    return TR_LEFTMOUSEDOWN;
-  else if(button==Qt::RightButton)
-    return TR_RIGHTMOUSEDOWN;
-  else if(button==Qt::MiddleButton)
-    return TR_MIDDLEMOUSEDOWN;
-  else
-    return 0;
-}
 
-/*
-static int getMouseButtonEventID( QMouseEvent *qmouseevent){
-  return getMouseButtonEventID(qmouseevent->button());
-}
-*/
 
 static bool g_is_mousing_editor = false;
 
 #if 1
-void EditorWidget::handle_mouse_press(Qt::MouseButton button, float x, float y) const{
+void EditorWidget::handle_mouse_press(radium::MouseCycleEvent &event, float x, float y) const {
   g_is_mousing_editor = true;
   
   if(g_is_starting_up==true)
@@ -478,7 +463,7 @@ void EditorWidget::handle_mouse_press(Qt::MouseButton button, float x, float y) 
 
   //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, true);
   
-  tevent.ID = getMouseButtonEventID(button);
+  tevent.ID = getMouseButtonEventID(event);
   tevent.x = x;
   tevent.y = y;
   

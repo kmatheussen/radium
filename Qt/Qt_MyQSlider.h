@@ -223,7 +223,8 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 
     event_.accept();
   }
-
+  
+  /*
   void handle_mouse_event ( QMouseEvent * event_ ){
     if (event_==NULL)
       return;
@@ -231,7 +232,8 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
     radium::MouseCycleEvent event2(event_);
     handle_mouse_event(event2);
   }
-
+  */
+  
   void show_midi_slider_popup_menu(void){
     int remove_modulator=-10;
     int replace_modulator=-10;
@@ -297,13 +299,13 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 
   
   // mousePressEvent 
-  void fix_mousePressEvent ( QMouseEvent * event_ ) override
+  void fix_mousePressEvent (radium::MouseCycleEvent &event_ ) override
   {
     if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
       return;
     
     //printf("Got mouse pres event_ %d / %d\n",(int)event_->x(),(int)event_->y());
-    if (event_->button() == Qt::LeftButton){
+    if (event_.button() == Qt::LeftButton){
 
 #ifdef COMPILING_RADIUM
       if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument()){
@@ -314,9 +316,9 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 
       last_value = value();
       if (orientation() == Qt::Vertical)
-        last_pos = event_->y();
+        last_pos = event_.y();
       else
-        last_pos = event_->x();
+        last_pos = event_.x();
       //handle_mouse_event_(event_);
       _has_mouse = true;
 
@@ -356,16 +358,19 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 #endif // COMPILING_RADIUM
       }
       
-      event_->accept();
+      event_.accept();
     }
   }
 
-  void fix_mouseMoveEvent ( QMouseEvent * event_ ) override
+  void fix_mouseMoveEvent (radium::MouseCycleEvent &event_ ) override
   {
     if (_has_mouse){
       handle_mouse_event(event_);
-    }else
-      QSlider::mouseMoveEvent(event_);
+    }else {
+      auto *event = event_.get_qtevent();
+      if (event)
+        QSlider::mouseMoveEvent(event);
+    }
   }
 
   void fix_mouseReleaseEvent (radium::MouseCycleEvent &event_ ) override
@@ -381,8 +386,10 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
       _has_mouse=false;
     }else {
 
-      if (event_.is_real_event()){
-        QSlider::mouseReleaseEvent(event_.get_qtevent());
+      auto *qevent = event_.get_qtevent();
+      
+      if (qevent != NULL){        
+        QSlider::mouseReleaseEvent(qevent);
       } else {
         //R_ASSERT_NON_RELEASE(false);
       }

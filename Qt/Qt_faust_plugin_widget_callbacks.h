@@ -123,32 +123,36 @@ struct FaustResultWebView
       setCursor(Qt::OpenHandCursor);
   }
   
-  void fix_mouseMoveEvent(QMouseEvent * event) override {
+  void fix_mouseMoveEvent(radium::MouseCycleEvent &event) override {
     if (is_dragging){
 #if !USE_QWEBENGINE
-      QPoint pos = event->pos();
+      QPoint pos = event.pos();
 
       QPoint delta = start - pos;
       page()->mainFrame()->setScrollPosition(start_scrollPos + delta);
 #endif
       was_dragging = true;
 
-      event->accept();
+      event.accept();
 
     } else {
 
+      auto *qevent = event.get_qtevent();
+      if (qevent){
+
 #if USE_QWEBENGINE
-      QWebEngineView::mouseMoveEvent(event);
+      QWebEngineView::mouseMoveEvent(qevent);
 #else
-      QWebView::mouseMoveEvent(event);
+      QWebView::mouseMoveEvent(qevent);
 #endif
+      }
       
       if (cursor().shape() == Qt::ArrowCursor)
-        setPointer(event->pos());
+        setPointer(event.pos());
     }
   }
   
-  void fix_mousePressEvent(QMouseEvent * event) override {
+  void fix_mousePressEvent(radium::MouseCycleEvent &event) override {
 #if !USE_QWEBENGINE
     QWebFrame *frame = page()->mainFrame();
 
@@ -158,16 +162,16 @@ struct FaustResultWebView
            frame->scrollBarGeometry(Qt::Vertical).width(), frame->scrollBarGeometry(Qt::Vertical).height()
            );
 
-    bool is_in_scrollbar = frame->scrollBarGeometry(Qt::Vertical).contains(event->pos());
+    bool is_in_scrollbar = frame->scrollBarGeometry(Qt::Vertical).contains(event.pos());
     
-    is_in_scrollbar = is_in_scrollbar || frame->scrollBarGeometry(Qt::Horizontal).contains(event->pos());
+    is_in_scrollbar = is_in_scrollbar || frame->scrollBarGeometry(Qt::Horizontal).contains(event.pos());
 #else
     bool is_in_scrollbar = false;
 #endif
     
     if (!is_in_scrollbar){
       
-      start = event->pos();
+      start = event.pos();
 #if !USE_QWEBENGINE
       start_scrollPos = frame->scrollPosition();
 #endif
@@ -176,18 +180,21 @@ struct FaustResultWebView
 
       setCursor(Qt::ClosedHandCursor);
               
-      event->accept();
+      event.accept();
 
     } else {
       is_dragging = false;
       was_dragging = false;
     }
 
+    auto *qevent = event.get_qtevent();
+    if (qevent){
 #if USE_QWEBENGINE
-    QWebEngineView::mousePressEvent(event);
+      QWebEngineView::mousePressEvent(qevent);
 #else
-    QWebView::mousePressEvent(event);
+      QWebView::mousePressEvent(qevent);
 #endif
+    }
   }
 
   void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override {
@@ -196,12 +203,13 @@ struct FaustResultWebView
     if (was_dragging) {
       event.accept();
     } else {
+      auto *qevent = event.get_qtevent();
 #if USE_QWEBENGINE
-      if(event.is_real_event())
-        QWebEngineView::mouseReleaseEvent(event.get_qtevent());
+      if(qevent)
+        QWebEngineView::mouseReleaseEvent(qevent);
 #else
-      if(event.is_real_event())
-        QWebView::mouseReleaseEvent(event.get_qtevent());
+      if(qevent)
+        QWebView::mouseReleaseEvent(qevent);
 #endif
     }
 
