@@ -15,6 +15,7 @@
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <QPainter>
+#include <QGraphicsSceneMouseEvent>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
@@ -600,56 +601,170 @@ static inline void set_widget_takes_care_of_painting_everything(QWidget *widget)
 
 
 // Call these these three functions in the top of mousePressEvent/mouseMoveEvent/mouseReleaseEvent to ensure mouseReleaseEvent is always called. (workaround for qt design flaw)
-bool MOUSE_CYCLE_register(QWidget *widget, QMouseEvent *event);
-bool MOUSE_CYCLE_move(QWidget *widget, QMouseEvent *event);
-bool MOUSE_CYCLE_unregister(QWidget *widget);
+bool MOUSE_CYCLE_register(QObject *widget, QEvent *event);
+bool MOUSE_CYCLE_move(QObject *widget, QEvent *event);
+bool MOUSE_CYCLE_unregister(QObject *widget);
 void MOUSE_CYCLE_schedule_unregister_all(void); // Can safely be called at any moment when we know that the current mouse cycle should not run (schedules a call to mouseReleaseEvent if there is a mouse event).
 Qt::MouseButtons MOUSE_CYCLE_get_mouse_buttons(void); // Use this one instead of QApplication::mouseButtons() to avoid getting false positives. (It will always return Qt::NoButton for non-mousecycle widgets though)
 bool MOUSE_CYCLE_has_moved(void); // returns true if MOUSE_CYCLE_move has been called after MOUSE_CYCLE_register
+
+static inline QPointF get_localpos_from_qevent(QEvent *event){
+  auto *mouse_event = dynamic_cast<QMouseEvent*>(event);
+  //auto scene_mouse_event = dynamic_cast<QGraphicsSceneMouseEvent*>(event);
+  
+  if (mouse_event!=NULL)
+    return mouse_event->localPos();
+  /*
+  else if (scene_mouse_event!=NULL)
+    return scene_mouse_event->scenePos();
+  */
+  else
+    return QPoint();
+}
+
+static inline QPoint get_pos_from_qevent(QEvent *event){
+  auto *mouse_event = dynamic_cast<QMouseEvent*>(event);
+  auto scene_mouse_event = dynamic_cast<QGraphicsSceneMouseEvent*>(event);
+  
+  if (mouse_event!=NULL)
+    return mouse_event->pos();
+  else if (scene_mouse_event!=NULL)
+    return scene_mouse_event->scenePos().toPoint();
+  else
+    return QPoint();
+}
+
+static inline QPoint get_globalpos_from_qevent(QEvent *event){
+  auto *mouse_event = dynamic_cast<QMouseEvent*>(event);
+  auto scene_mouse_event = dynamic_cast<QGraphicsSceneMouseEvent*>(event);
+  
+  if (mouse_event!=NULL)
+    return mouse_event->globalPos();
+  else if (scene_mouse_event!=NULL)
+    return scene_mouse_event->screenPos(); // good enough. globalpos is only used to avoid double moveevents here.
+  else
+    return QPoint();
+}
+
+static inline Qt::MouseButton get_button_from_qevent(QEvent *event){
+  auto *mouse_event = dynamic_cast<QMouseEvent*>(event);
+  auto scene_mouse_event = dynamic_cast<QGraphicsSceneMouseEvent*>(event);
+  
+  if (mouse_event!=NULL)
+    return mouse_event->button();
+  else if (scene_mouse_event!=NULL)
+    return scene_mouse_event->button();
+  else
+    return Qt::NoButton;
+}
+
+static inline Qt::MouseButtons get_buttons_from_qevent(QEvent *event){
+  auto *mouse_event = dynamic_cast<QMouseEvent*>(event);
+  auto scene_mouse_event = dynamic_cast<QGraphicsSceneMouseEvent*>(event);
+  
+  if (mouse_event!=NULL)
+    return mouse_event->buttons();
+  else if (scene_mouse_event!=NULL)
+    return scene_mouse_event->buttons();
+  else
+    return Qt::NoButton;
+}
+
+static inline Qt::KeyboardModifiers get_modifiers_from_qevent(QEvent *event){
+  auto *mouse_event = dynamic_cast<QMouseEvent*>(event);
+  auto scene_mouse_event = dynamic_cast<QGraphicsSceneMouseEvent*>(event);
+  
+  if (mouse_event!=NULL)
+    return mouse_event->modifiers();
+  else if (scene_mouse_event!=NULL)
+    return scene_mouse_event->modifiers();
+  else
+    return Qt::NoModifier;
+}
 
 namespace radium{
 
 struct MouseCycleEvent{
 private:
-  
-  QMouseEvent *_event;
+
+  friend struct MouseCycleFix;
+
+  QEvent *_event;
+  QMouseEvent *_mouse_event;
+  QGraphicsSceneMouseEvent *_scene_mouse_event;
   bool _is_real_event;
+
+  bool _is_ctrl_clicking;
+
+  QPoint _pos;
   
 public:
 
-  MouseCycleEvent(QMouseEvent *event, bool is_real_event = true)
+  MouseCycleEvent(QEvent *event, bool is_real_event, bool is_ctrl_clicking = false)
   : _event(event)
   , _is_real_event(is_real_event)
   {
+    _mouse_event = dynamic_cast<QMouseEvent*>(event);
+    _scene_mouse_event = dynamic_cast<QGraphicsSceneMouseEvent*>(event);
+
+    if(_mouse_event)
+      R_ASSERT(_scene_mouse_event==NULL);
+    else
+      R_ASSERT(_scene_mouse_event!=NULL);
+
+    _is_ctrl_clicking = is_ctrl_clicking || (get_button_from_qevent(event)==Qt::RightButton && (get_modifiers_from_qevent(event) & Qt::ControlModifier));
+    
+    _pos = get_pos_from_qevent(event);
   }
 
   QPoint pos(void) const {
-    return _event->pos();
+    R_ASSERT(_mouse_event!=NULL);
+    return _pos;
+  }
+
+  QPointF scenePos(void) const {
+    if(_scene_mouse_event!=NULL)
+      return _scene_mouse_event->scenePos();
+    else
+      return QPointF(0,0);
   }
 
   QPointF localPos(void) const {
-    return _event->localPos();
+    return get_localpos_from_qevent(_event);
   }
 
-  int 	x(void) const {
-    return _event->x();
+  int x(void) const {
+    if(_mouse_event)
+      return _mouse_event->x();
+    else
+      return 0.0;
   }
   
-  int 	y(void) const {
-    return _event->y();
+  int y(void) const {
+    if(_mouse_event)
+      return _mouse_event->y();
+    else
+      return 0.0;
   }
 
-  Qt::MouseButton button() const {
-    return _event->button();
+  Qt::MouseButton button(void) const {
+    if (_is_ctrl_clicking)
+      return Qt::LeftButton;
+
+    return get_button_from_qevent(_event);
   }
 
-  Qt::KeyboardModifiers 	modifiers() const {
-    return _event->modifiers();
+  Qt::KeyboardModifiers modifiers(void) const {
+    return get_modifiers_from_qevent(_event);
   }
   
   void accept(void){
-    if(_is_real_event)
-      _event->accept();
+    if(_is_real_event){
+      if(_mouse_event)
+        return _mouse_event->accept();
+      else
+        return _scene_mouse_event->accept();
+    }
   }
 
   bool is_real_event(void) const {
@@ -658,35 +773,105 @@ public:
   
   QMouseEvent *get_qtevent(void) const{
     if (_is_real_event)
-      return _event;
+      return _mouse_event;
     else
       return NULL;
   }
   
+  QGraphicsSceneMouseEvent *get_qtscene_event(void) const{
+    if (_is_real_event)
+      return _scene_mouse_event;
+    else
+      return NULL;
+  }
 };
-  
+
+#ifdef TRACKER_EVENTS_DEFINE
+static inline int getMouseButtonEventID(radium::MouseCycleEvent &qmouseevent){
+  return getMouseButtonEventID2((Qt::MouseButton)qmouseevent.button(), (Qt::KeyboardModifiers)qmouseevent.modifiers());
+}
+#endif
+
 struct MouseCycleFix{
-  virtual void fix_mousePressEvent(QMouseEvent *event) = 0;
-  virtual void fix_mouseMoveEvent(QMouseEvent *event) = 0;
+  int _last_mouse_cycle_x = -10000;
+  int _last_mouse_cycle_y = -10000;
+
+  QPointer<QObject> _widget;
+  bool _is_ctrl_clicking = false;
+  
+  virtual void fix_mousePressEvent(radium::MouseCycleEvent &event) = 0;
+  virtual void fix_mouseMoveEvent(radium::MouseCycleEvent &event) = 0;
   virtual void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) = 0;
+
+  void cycle_mouse_press_event(QObject *w, QEvent *event, bool is_real_qevent){
+    _widget = w;
+    
+    _last_mouse_cycle_x = -10000;
+    _last_mouse_cycle_y = -10000;
+    _is_ctrl_clicking = false;
+    
+    if(MOUSE_CYCLE_register(w, event)){
+      radium::MouseCycleEvent event2(event, is_real_qevent);
+      
+      _is_ctrl_clicking = event2._is_ctrl_clicking;
+      
+      fix_mousePressEvent(event2);
+    }
+  }
+
+  void cycle_mouse_move_event(QObject *w, QEvent *event, bool is_real_qevent){
+    if(MOUSE_CYCLE_move(w, event)){
+
+      QPoint pos;
+
+      QWidget *widget = dynamic_cast<QWidget*>(_widget.data());
+      
+      if (widget != NULL)
+        pos = widget->mapFromGlobal(get_globalpos_from_qevent(event));
+      else
+        pos = get_pos_from_qevent(event);
+        
+      int x = pos.x();
+      int y = pos.y();
+      
+      if (_last_mouse_cycle_x != x || _last_mouse_cycle_y != y) {
+        _last_mouse_cycle_x = x;
+        _last_mouse_cycle_y = y;
+        
+        radium::MouseCycleEvent event2(event, is_real_qevent, _is_ctrl_clicking);
+        event2._pos = pos;
+                
+        fix_mouseMoveEvent(event2);
+      }else{
+#if !defined(RELEASE)
+        printf("Note: mouse-move called with same x and y values. Ignored.\n");
+#endif
+      }
+    }
+  }
+  void cycle_mouse_release_event(QObject *w, QEvent *event, bool is_real_qevent){
+    _last_mouse_cycle_x = -10000;
+    _last_mouse_cycle_y = -10000;
+    
+    if(MOUSE_CYCLE_unregister(w)){
+      radium::MouseCycleEvent event2(event, is_real_qevent, _is_ctrl_clicking);
+
+      QWidget *widget = dynamic_cast<QWidget*>(_widget.data());
+      if (widget)
+        event2._pos = widget->mapFromGlobal(get_globalpos_from_qevent(event));
+      
+      fix_mouseReleaseEvent(event2);
+    }
+
+    _is_ctrl_clicking = false;
+  }
 };
 }
 
-#define MOUSE_CYCLE_CALLBACKS_FOR_QT                            \
-  void	mousePressEvent(QMouseEvent *event) override{           \
-    if(MOUSE_CYCLE_register(this, event))                       \
-      fix_mousePressEvent(event);                               \
-  }                                                             \
-  void	mouseMoveEvent(QMouseEvent *event) override{            \
-    if(MOUSE_CYCLE_move(this, event))                           \
-      fix_mouseMoveEvent(event);                                \
-  }                                                             \
-  void	mouseReleaseEvent(QMouseEvent *event) override{         \
-    if(MOUSE_CYCLE_unregister(this)){                           \
-      radium::MouseCycleEvent event2(event);                    \
-      fix_mouseReleaseEvent(event2);                            \
-    }                                                           \
-  }
+#define MOUSE_CYCLE_CALLBACKS_FOR_QT                                    \
+  void	mousePressEvent(QMouseEvent *event) override{cycle_mouse_press_event(this, event, true);} \
+  void	mouseMoveEvent(QMouseEvent *event) override{cycle_mouse_move_event(this, event, true);} \
+  void	mouseReleaseEvent(QMouseEvent *event) override{cycle_mouse_release_event(this, event, true);}
 
 
 

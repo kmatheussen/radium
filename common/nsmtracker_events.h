@@ -122,6 +122,31 @@ struct WrapFuncList{
 };
 
 
+#if defined(QEVENT_H) || defined(USE_QT4)
+
+#include <QMouseEvent>
+
+static inline int getMouseButtonEventID2(Qt::MouseButton button, Qt::KeyboardModifiers modifiers){
+  if(button==Qt::LeftButton)
+    return TR_LEFTMOUSEDOWN;
+  else if(button==Qt::RightButton){
+    if (false && (modifiers & Qt::ControlModifier))
+      return TR_LEFTMOUSEDOWN;
+    else
+      return TR_RIGHTMOUSEDOWN;
+  }else if(button==Qt::MiddleButton)
+    return TR_MIDDLEMOUSEDOWN;
+  else
+    return 0;
+}
+
+static inline int getMouseButtonEventID(QMouseEvent *qmouseevent){
+  return getMouseButtonEventID2(qmouseevent->button(), qmouseevent->modifiers());
+}
+
+
+#endif
+
 #endif
 
 

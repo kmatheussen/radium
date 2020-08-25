@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QStringList>
 #include <QTime>
 #include <QThread>
-
+#include <QMouseEvent>
 
 #include "../common/nsmtracker.h"
 #include "../Qt/helpers.h"

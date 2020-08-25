@@ -582,7 +582,9 @@
                           )))
 
 
-(define (radium-mouse-press $button $x $y)  
+(define (radium-mouse-press $button $x $y)
+  ;;(c-display "      radium-mouse-PRESS" $button $x $y)
+  
   (<ra> :ensure-clean-state-outside-mouse-cycle)
   
   (radium-mouse-move $button $x $y) ;; Workaround for radium-mouse-move not being called while a popup menu is open. (without this line, try to left click + right click another seqblock while showing a popup menu)
@@ -599,6 +601,7 @@
      (get-bool *current-mouse-cycle*))))
 
 (define (radium-mouse-move $button $x $y)
+  ;;(c-display "      radium-mouse-move" $button $x $y)
   ;;(c-display "--Cancel")
   ;;(<ra> :cancel-seq-indicator)  
   ;;(c-display "X:" $x ". seq_x1/x2:" (<ra> :get-sequencer-x1) (<ra> :get-sequencer-x2))
@@ -619,7 +622,7 @@
            #f)))))
 
 (define (radium-mouse-release $button $x $y)
-  ;;(c-display "   MOUSE RELEASE 1")
+  ;;(c-display "      radium-mouse-release" $button $x $y)
   (let ((ret (handling-nodes
               *is-releasing*
               (lambda()
@@ -2900,7 +2903,9 @@
   (for-each (lambda (noteid)
               (if (not ((info :org-selected-notes) :contains noteid))
                   (if (note-in-selection-rectangle? pitch1 place1 pitch2 place2 noteid tracknum)
-                      (<ra> :select-note noteid tracknum)
+                      (begin
+                        ;;(c-display "                  SELECTING NOTE " noteid tracknum)
+                        (<ra> :select-note noteid tracknum))
                       (<ra> :unselect-note noteid tracknum))))
             (<ra> :get-all-notes *current-track-num*)))
   
@@ -2912,6 +2917,7 @@
                         :Get-min-value (lambda (_) -127)
                         :Get-max-value (lambda (_) 127)
                         :Create-new-node (lambda (X Place callback)
+                                           ;;(c-display "            \n\n\nRectangle Start" X Place)
                                            (set! mouse-control-slow-down-enabled #f)
                                            (define pitch (get-pianoroll-key X))
                                            (callback (hash-table :pitch1 pitch
@@ -2940,6 +2946,8 @@
                                      (set! info (copy-hash info
                                                 :place2 Place
                                                 :pitch2 Pitch))
+
+                                     ;;(c-display "      Rectangle MOVE: " info)
                                      
                                      (select-notes-in-rectangle info)
 
@@ -2948,6 +2956,7 @@
 
                         :Release-node (lambda (info)
                                         (set! mouse-control-slow-down-enabled #t)
+                                        ;;(c-display "            \n\n\nRectangle RELEASE" info)
                                         (<ra> :hide-pianoroll-selection-rectangle))
                         
                         :Publicize (lambda (info)

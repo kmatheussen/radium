@@ -251,16 +251,16 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting, public radium::Mouse
     }
   }
 
-  void fix_mousePressEvent( QMouseEvent *event) override {
+  void fix_mousePressEvent(radium::MouseCycleEvent &event) override {
 
     _is_hovered = true;
     
-    _last_pressed_button = event->button();
+    _last_pressed_button = event.button();
 
     if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
       return;
 
-    if (event->button() == Qt::LeftButton){
+    if (event.button() == Qt::LeftButton){
 
       //setSliderDown(true);    
 #ifdef COMPILING_RADIUM
@@ -287,7 +287,7 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting, public radium::Mouse
         return;
       }
       
-      event->accept();
+      event.accept();
 
       if (shiftPressed()){
         
@@ -320,8 +320,10 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting, public radium::Mouse
     }
   }
 
-  void fix_mouseMoveEvent( QMouseEvent *qmouseevent) override {
-    MyQCheckBox_OnlyCustomPainting::mouseMoveEvent(qmouseevent);
+  void fix_mouseMoveEvent(radium::MouseCycleEvent &qmouseevent) override {
+    auto *event = qmouseevent.get_qtevent();
+    if (event)
+      MyQCheckBox_OnlyCustomPainting::mouseMoveEvent(event);
   }
 
   void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{

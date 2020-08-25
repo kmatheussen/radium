@@ -7,6 +7,7 @@
 #include <QProcess>
 #include <QDir>
 #include <qfontdatabase.h>
+#include <QMouseEvent>
 
 #include "../common/nsmtracker.h"
 

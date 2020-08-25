@@ -645,20 +645,16 @@ public:
   
   int _currentButton = 0;
 
-  int getMouseButtonEventID( QMouseEvent *qmouseevent){
-    if(qmouseevent->button()==Qt::LeftButton)
-      return TR_LEFTMOUSEDOWN;
-    else if(qmouseevent->button()==Qt::RightButton)
-      return TR_RIGHTMOUSEDOWN;
-    else if(qmouseevent->button()==Qt::MiddleButton)
-      return TR_MIDDLEMOUSEDOWN;
-    else
-      return 0;
-  }
+  void	fix_mousePressEvent(radium::MouseCycleEvent &event) override{
+    event.accept();
 
-  void	fix_mousePressEvent(QMouseEvent *event) override{
-    event->accept();
-
+    /*
+    printf("MOUSEPRESS. Button: %s. Control: %d / %d.\n",
+           event.button()==Qt::RightButton ? "RIGHT" : event.button()==Qt::LeftButton ? "LEFT" : "OTHER",
+           ControlPressed(), (bool)(event.modifiers() & Qt::ControlModifier)
+           );
+    */
+    
     //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
       
     if (_is_sequencer_widget)
@@ -666,10 +662,10 @@ public:
         return;
     
     _currentButton = getMouseButtonEventID(event);
-    QPoint point = mapToEditor(this, event->pos());
+    QPoint point = mapToEditor(this, event.pos());
 
     if (_is_standalone_navigator){
-      double pos = scale_double(event->x(), 0, width(), 0, get_visible_song_length()*MIXER_get_sample_rate());
+      double pos = scale_double(event.x(), 0, width(), 0, get_visible_song_length()*MIXER_get_sample_rate());
       if (false && is_playing_song()){
         PlayStop();
         setSongPos(pos);
@@ -682,12 +678,12 @@ public:
     SCHEME_mousepress(_currentButton, point.x(), point.y());
     //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
   }
-  void	fix_mouseMoveEvent(QMouseEvent *event) override{
-    //printf("sequencer. mouseMove: %d,%d\n", event->x(), event->y());
+  void	fix_mouseMoveEvent(radium::MouseCycleEvent &event) override{
+    //printf("sequencer. mouseMove: %d,%d\n", event.x(), event.y());
 
     FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
     
-    event->accept();
+    event.accept();
     
     if (_is_sequencer_widget)
       if (API_run_mouse_move_event_for_custom_widget(SEQUENCER_getWidget(), event))
@@ -697,7 +693,7 @@ public:
       return;
     }
 
-    QPoint point = mapToEditor(this, event->pos());
+    QPoint point = mapToEditor(this, event.pos());
     SCHEME_mousemove(_currentButton, point.x(), point.y());
     //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
   }

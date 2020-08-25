@@ -972,14 +972,14 @@ private:
 public:
 
   // Main thread
-  void fix_mousePressEvent( QMouseEvent *qmouseevent) override {
-    get_editorwidget()->handle_mouse_press(qmouseevent->button(), qmouseevent->x(), qmouseevent->y() + root->song->tracker_windows->wblock->t.y1);
+  void fix_mousePressEvent(radium::MouseCycleEvent &qmouseevent) override {
+    get_editorwidget()->handle_mouse_press(qmouseevent, qmouseevent.x(), qmouseevent.y() + root->song->tracker_windows->wblock->t.y1);
   }
 
   // Main thread
-  void fix_mouseMoveEvent( QMouseEvent *qmouseevent) override {
-    //printf("fix_mouseMoveEvent %d %d\n", (int)qmouseevent->x(), (int)qmouseevent->y());
-    get_editorwidget()->handle_mouse_move(qmouseevent->button(), qmouseevent->x(), qmouseevent->y() + root->song->tracker_windows->wblock->t.y1);
+  void fix_mouseMoveEvent(radium::MouseCycleEvent &qmouseevent) override {
+    //printf("fix_mouseMoveEvent %d %d\n", (int)qmouseevent.x(), (int)qmouseevent.y());
+    get_editorwidget()->handle_mouse_move(qmouseevent.button(), qmouseevent.x(), qmouseevent.y() + root->song->tracker_windows->wblock->t.y1);
   }
 
   // Main thread
