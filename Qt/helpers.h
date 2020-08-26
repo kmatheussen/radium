@@ -30,14 +30,18 @@
 
 extern bool g_radium_runs_custom_exec;
 extern bool g_and_its_not_safe_to_paint;
+extern bool g_qtgui_has_stopped;
+
 static inline bool can_internal_data_be_accessed_questionmark(void){
   if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return false;
   if(g_is_loading) return false;
+  if (g_qtgui_has_stopped) return false;
   return true;
 }
 static inline bool can_internal_data_be_accessed_questionmark_safer(void){
   if(g_radium_runs_custom_exec) return false;
   if(g_is_loading) return false;
+  if (g_qtgui_has_stopped) return false;
   return true;
 }
 #define RETURN_IF_DATA_IS_INACCESSIBLE(...) if(can_internal_data_be_accessed_questionmark()==false) return __VA_ARGS__;
@@ -60,7 +64,6 @@ extern int g_num_running_resize_events;
 extern bool g_qt_is_painting;
 extern bool g_qtgui_has_started,g_qtgui_has_stopped;
 extern DEFINE_ATOMIC(bool, g_qtgui_has_started_step2);
-extern bool g_qtgui_has_stopped;
 
 typedef QPointer<QObject> IsAlive;
 
