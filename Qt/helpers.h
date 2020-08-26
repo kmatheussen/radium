@@ -62,7 +62,7 @@ extern QPointer<QMenu> g_curr_popup_qmenu;
 
 extern int g_num_running_resize_events;
 extern bool g_qt_is_painting;
-extern bool g_qtgui_has_started,g_qtgui_has_stopped;
+extern bool g_qtgui_has_started;
 extern DEFINE_ATOMIC(bool, g_qtgui_has_started_step2);
 
 typedef QPointer<QObject> IsAlive;
