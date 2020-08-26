@@ -131,7 +131,9 @@ static const ColorConfig g_colorconfig[] = {
 
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text", false},
   {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM,                  "portamento_end_note_text", "Portamento end note text", false},
-  {VELOCITY_TEXT_COLOR_NUM,     "velocity_text", "Velocity text", false},
+  {VELOCITY_TEXT_COLOR_NUM,     "velocity_text", "Velocity text, first", false},
+  {MIDDLE_VELOCITY_TEXT_COLOR_NUM,     "velocity_text_middle", "Velocity text, middle", false},
+  {LAST_VELOCITY_TEXT_COLOR_NUM,     "velocity_text_last", "Velocity text, last", false},
    
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM,                  "high_editor", "High Editor background", false},
   {SCROLLBAR_COLOR_NUM,                  "scroll_bar_v2", "Scroll bar", false},
@@ -314,6 +316,8 @@ static ReplacementColor g_replacement_color[] = {
   {VELOCITY1_COLOR_NUM, QColor("#ff1e211e")},
   {VELOCITY2_COLOR_NUM, QColor("#ffab8d5c")},
   {VELOCITY_TEXT_COLOR_NUM, QColor("#ffffcf82")},
+  {MIDDLE_VELOCITY_TEXT_COLOR_NUM, QColor("#dbffb8")},
+  {LAST_VELOCITY_TEXT_COLOR_NUM, QColor("#f57676")},
 
   {SLIDER1_COLOR_NUM, QColor("#ff3d0001")},
   {SLIDER2_COLOR_NUM, QColor("#ff00551f")},

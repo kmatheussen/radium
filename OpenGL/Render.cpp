@@ -2564,14 +2564,20 @@ static void create_track_is_disabled_in_seqblock(const struct Tracker_Windows *w
 }
 
 
-static void create_track_veltext2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline, char v1, char v2, char v3){
+static void create_track_veltext2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline, char v1, char v2, char v3, bool is_first, bool is_last){
 
   char text[]={v1, v2, v3, '\0'};
 
   float x = wtrack->veltextarea.x;
   int y1 = get_realline_y1(window, realline);
 
-  GE_Context *c = GE_textcolor(VELOCITY_TEXT_COLOR_NUM, y1);
+  GE_Context *c;
+  if (is_first)
+    c = GE_textcolor(VELOCITY_TEXT_COLOR_NUM, y1);
+  else if (is_last)
+    c = GE_textcolor(LAST_VELOCITY_TEXT_COLOR_NUM, y1);
+  else
+    c = GE_textcolor(MIDDLE_VELOCITY_TEXT_COLOR_NUM, y1);
   
   GE_text(c, text, x, y1);
 }
@@ -2583,7 +2589,20 @@ static void create_track_veltext(const struct Tracker_Windows *window, const str
     return;
 
   if (num_elements > 1){
-    create_track_veltext2(window, wblock, wtrack, realline, 'x', 'x', 'x');
+    bool is_first = false;
+    bool is_last = false;
+    
+    for(auto tr : trs){
+      if (tr.is_first_velocity){
+        is_first=true;
+        break;
+      }
+      if (tr.is_last_velocity){
+        is_last=true;
+      }
+    }
+
+    create_track_veltext2(window, wblock, wtrack, realline, 'x', 'x', 'x', is_first, is_last);
     return;
   }
 
@@ -2603,7 +2622,7 @@ static void create_track_veltext(const struct Tracker_Windows *window, const str
   else
     v3 = ' ';
 
-  create_track_veltext2(window, wblock, wtrack, realline, v1, v2, v3);
+  create_track_veltext2(window, wblock, wtrack, realline, v1, v2, v3, vt.is_first_velocity, vt.is_last_velocity);
 }
 
 
