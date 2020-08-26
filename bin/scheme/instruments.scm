@@ -1654,7 +1654,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                     :post-undo-block-callback (lambda () #f)
                                     )
   (list
-   (<-> "------------Effect: \"" effect-name "\"")
+   (<-> "------------Effect: \"" effect-name "\" (hex value: " (format #f "~x" (between 0 (round (* 255 (<ra> :get-instrument-effect instrument-id effect-name))) 255)) ")")
 
    (and (string=? "Pd" (<ra> :get-instrument-type-name instrument-id))
         (list "Delete"
