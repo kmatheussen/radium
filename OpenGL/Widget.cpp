@@ -2574,8 +2574,10 @@ bool GL_check_compatibility(void){
   }
 
 
-  g_compatibility_ok = true;  
-
+  g_compatibility_ok = true;
+  
+  CRASHREPORTER_do_report();
+    
   return true;
 }
 
