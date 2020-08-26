@@ -3924,7 +3924,10 @@ int main(int argc, char **argv){
   
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);
-  qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
+  
+  if (!swapCtrlAndCmd())
+    qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
+  
   qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt. https://bugreports.qt.io/browse/QTBUG-33479
 
   QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, false);
