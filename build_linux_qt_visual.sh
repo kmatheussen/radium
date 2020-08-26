@@ -23,6 +23,9 @@ runtime=$((end-start))
 
 printf "          ${LIGHT_CYAN}Radium ${GREEN} compiled.${YELLOW} (${runtime}s)${NC}\n"
 
+if [ -x "$(command -v kdialog)" ]; then
+    kdialog --title "Radium compiled" --passivepopup "Finished compiling radium" 2 &
+fi
 
 #echo "Building finished."
 #echo
