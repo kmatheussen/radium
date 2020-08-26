@@ -62,15 +62,20 @@ bool CHECKOPENGL_checkit(void){
   process.wait_for_finished(msecs);
 
   if (process.error_has_occured()){
+
+    CRASHREPORTER_dont_report();
+      
     bool may_try = true;
 
     if (process.get_status()==radium::Process::Status::CRASHED)
       may_try = false;
 
-    QString message = "OpenGL process " + process.get_status_string() + ". There is something wrong with your computer. Radium can not start. It might help to update the GFX driver.";
+    QString message = "OpenGL process " + process.get_status_string() + ".";
     
     if (!may_try)
-      message = "OpenGL crashed. There is something wrong with your computer. Radium can not start. It might help to update the GFX driver.";
+      message = "OpenGL crashed.";
+
+    message += " Radium can not start. This is not a bug in Radium. It might help to update the GFX driver.";
     
     vector_t v = {};
     
