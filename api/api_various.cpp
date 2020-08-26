@@ -352,6 +352,40 @@ void setMixerWindowIsChildOfMainWindow(bool val){
 }
 
 
+//
+
+#if defined(FOR_MACOSX)
+static bool g_swap_ctrl_and_cmd = false;
+#endif
+
+bool swapCtrlAndCmd(void){
+#if defined(FOR_MACOSX)  
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_swap_ctrl_and_cmd = SETTINGS_read_bool("swap_ctrl_and_cmd", g_swap_ctrl_and_cmd);
+    has_inited = true;
+  }
+  return g_swap_ctrl_and_cmd;
+#else
+  return false;
+#endif  
+}
+
+void setSwapCtrlAndCmd(bool val){
+#if defined(FOR_MACOSX)  
+  if (val != swapCtrlAndCmd()) {
+    qApp->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, !val);
+    g_swap_ctrl_and_cmd = val;
+    SETTINGS_write_bool("swap_ctrl_and_cmd", val);
+    GFX_clear_menu_cache(); // keybindings in menus.
+  }
+#endif
+}
+
+
+//
+
 void toggleCurrWindowFullScreen(void){
   GFX_toggleCurrWindowFullScreen();
 }
@@ -3606,37 +3640,52 @@ const_char* getQualifierName(const_char *qualifier){
 
 #define C(a,b) if (!strcmp(a,qualifier)) return b;
 
+  if (swapCtrlAndCmd()){
+    C("CTRL_L",g_left_meta);
+  }else{
     C("CTRL_L","Left Ctrl");
-    C("CTRL_R","Right Ctrl");
+  }
+  
+  C("CTRL_R","Right Ctrl");
+
+  if (swapCtrlAndCmd()){
+    C("CTRL","Cmd");
+  } else {
     C("CTRL","Ctrl");
-    
-    C("CAPS","Caps Lock");
-    
-    C("SHIFT_L","Left Shift");
-    C("SHIFT_R","Right Shift");
-    C("SHIFT","Shift");
-    
-    C("ALT_L","Left Alt");
+  }
+  
+  C("CAPS","Caps Lock");
+  
+  C("SHIFT_L","Left Shift");
+  C("SHIFT_R","Right Shift");
+  C("SHIFT","Shift");
+  
+  C("ALT_L","Left Alt");
 #if FOR_MACOSX
-    C("ALT_R","Right Alt");
+  C("ALT_R","Right Alt");
 #else
-    C("ALT_R","AltGr");
+  C("ALT_R","AltGr");
 #endif
-    C("ALT", "Alt");
-    
+  C("ALT", "Alt");
+
+  if (swapCtrlAndCmd()){
+    C("EXTRA_L", "Left Ctrl");
+  }else{
     C("EXTRA_L", g_left_meta);
-    C("EXTRA_R", g_right_meta);
-
-    C("MOUSE_MIXERSTRIPS", "Mouse in mixer strips");
-    C("MOUSE_SEQUENCER", "Mouse in sequencer");
-    C("MOUSE_MIXER", "Mouse in mixer");
-    C("MOUSE_EDITOR", "Mouse in editor");
-
-    C("FOCUS_MIXERSTRIPS", "Mixer strips has keyboard focus");
-    C("FOCUS_SEQUENCER", "Sequencer has keyboard focus");
-    C("FOCUS_MIXER", "Mixer has keyboard focus");
-    C("FOCUS_EDITOR", "Editor has keyboard focus");
-
+  }
+  
+  C("EXTRA_R", g_right_meta);
+  
+  C("MOUSE_MIXERSTRIPS", "Mouse in mixer strips");
+  C("MOUSE_SEQUENCER", "Mouse in sequencer");
+  C("MOUSE_MIXER", "Mouse in mixer");
+  C("MOUSE_EDITOR", "Mouse in editor");
+  
+  C("FOCUS_MIXERSTRIPS", "Mixer strips has keyboard focus");
+  C("FOCUS_SEQUENCER", "Sequencer has keyboard focus");
+  C("FOCUS_MIXER", "Mixer has keyboard focus");
+  C("FOCUS_EDITOR", "Editor has keyboard focus");
+  
 #undef C
 #ifdef _RADIUM_OLD_C
 #  define C _RADIUM_OLD_C

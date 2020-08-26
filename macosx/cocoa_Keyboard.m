@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/eventreciever_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "../common/OS_system_proc.h"
 
 void OS_OSX_show_icon_in_dock(void){
@@ -164,8 +166,13 @@ int OS_SYSTEM_get_modifier(void *void_event){
   switch ([event keyCode]) {
     //case 54: // Right Command (we don't use this one anymore, it's usually not available, and the "menu" key is a bit work to turn into a modifier key)
     //return EVENT_EXTRA_R;
+  case 54: // Right Command (we don't use this one anymore, it's usually not available, and the "menu" key is a bit work to turn into a modifier key)
+    return EVENT_CTRL_R; // We always map left Cmd into left Ctrl since left Ctrl is not always available on mac.
   case 55: // Left Command
-    return EVENT_EXTRA_L;
+    if (swapCtrlAndCmd())
+      return EVENT_CTRL_L;
+    else
+      return EVENT_EXTRA_L;
   case 57: // Capslock
     return EVENT_CAPS;
   case 56: // Left Shift
@@ -177,7 +184,10 @@ int OS_SYSTEM_get_modifier(void *void_event){
   case 61: // Right Alt
     return EVENT_ALT_R;
   case 59: // Left Ctrl
-    return EVENT_CTRL_L;
+    if (swapCtrlAndCmd())
+      return EVENT_EXTRA_L;
+    else
+      return EVENT_CTRL_L;
   case 62: // Right Ctrl
     return EVENT_CTRL_R;
     //case 63: // Function

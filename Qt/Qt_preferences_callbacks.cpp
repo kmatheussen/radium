@@ -645,7 +645,14 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
       sequencer_window_is_child_of_main_window->setChecked(sequencerWindowIsChildOfMainWindow());
       mixer_window_is_child_of_main_window->setChecked(mixerWindowIsChildOfMainWindow());
-      
+
+#if FOR_MACOSX
+      swap_ctrl_and_cmd->setChecked(swapCtrlAndCmd());
+#else      
+      line_swap_ctrl_and_cmd->hide();      
+      swap_ctrl_and_cmd->hide();      
+#endif
+        
       max_num_menu_elements->setValue(getMaxSubmenuEntries());
       tab_bar_height->setValue(getTabBarHeight());
       
@@ -869,6 +876,11 @@ public slots:
   void on_mixer_window_is_child_of_main_window_toggled(bool val){
     if (_initing==false)
       setMixerWindowIsChildOfMainWindow(val);
+  }
+  
+  void on_swap_ctrl_and_cmd_toggled(bool val){
+    if (_initing==false)
+      setSwapCtrlAndCmd(val);
   }
   
   void on_gcOnOff_toggled(bool val){

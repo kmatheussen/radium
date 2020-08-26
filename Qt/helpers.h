@@ -67,6 +67,12 @@ typedef QPointer<QObject> IsAlive;
 extern QPoint mapFromEditor(QWidget *widget, QPoint point); // Defined in Qt_sequencer.cpp
 extern QPoint mapToEditor(QWidget *widget, QPoint point); // Defined in Qt_sequencer.cpp
 
+static inline Qt::KeyboardModifier get_modifier_may_causing_rightclick(void){
+  if (swapCtrlAndCmd())
+    return Qt::MetaModifier;
+  else
+    return Qt::ControlModifier;
+}
 
 static inline void send_key_up(QObject *where, int how_many){
   if (where==NULL)
@@ -712,8 +718,10 @@ public:
     else
       R_ASSERT(_scene_mouse_event!=NULL);
 
-    _is_ctrl_clicking = is_ctrl_clicking || (get_button_from_qevent(event)==Qt::RightButton && (get_modifiers_from_qevent(event) & Qt::ControlModifier));
-    
+    _is_ctrl_clicking = is_ctrl_clicking || (get_button_from_qevent(event)==Qt::RightButton && (get_modifiers_from_qevent(event) & get_modifier_may_causing_rightclick()));
+
+    //printf("...._is_ctrl_clicking: %d. modifiers: %x. modifier may causing: %x\n", _is_ctrl_clicking, (unsigned int)get_modifiers_from_qevent(event), (unsigned int)get_modifier_may_causing_rightclick());
+
     _pos = get_pos_from_qevent(event);
   }
 
