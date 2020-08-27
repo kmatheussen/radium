@@ -8,7 +8,11 @@ cat frame_template1.html >$1_framed.html
 
 cat $1.html | while IFS= read line; do
     if [[ $line != \<html* ]] && [[ $line != \<\/html* ]] && [[ $line != \<body* ]] && [[ $line != \<\/body* ]]; then
-        echo "$line" >>$1_framed.html
+        if [ "${line:0:9}" = "#include " ]; then
+            cat "${line:9}" >>$1_framed.html
+        else
+            echo "$line" >>$1_framed.html
+        fi
     fi
 done
 
