@@ -2433,8 +2433,16 @@ bool Control2Pressed(void){
 }
 */
 
+bool MetaPressed(void){
+#if defined(FOR_WINDOWS)
+  return AnyExtra(tevent.keyswitch); // The other way doesn't work on Windows.
+#else
+  return QApplication::keyboardModifiers() & Qt::MetaModifier;
+#endif
+}
+
 bool HorizontalModifierPressed(Qt::KeyboardModifiers modifiers){
-  return modifiers & Qt::MetaModifier;
+  return MetaPressed();
 }
 
 bool HorizontalModifierPressed(void){
@@ -2451,10 +2459,6 @@ bool VerticalModifierPressed(void){
                                
 bool AltPressed(void){
   return QApplication::keyboardModifiers() & Qt::AltModifier;
-}
-
-bool MetaPressed(void){
-  return QApplication::keyboardModifiers() & Qt::MetaModifier;
 }
 
 static void setCursor(int64_t guinum, const QCursor &cursor){
