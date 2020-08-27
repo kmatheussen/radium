@@ -250,13 +250,13 @@ F12          : ra.showMixerHelpWindow
       <p>
       <LI><b>UP</b> is true when releasing the key instead of pressing it.
       <p>
-      <LI><b>ALT_L</b> is mapped to the Left Alt key. On a Mac, this key is sometimes called the "option" key.
+      <LI><b>ALT_L</b> is mapped to the Left Alt key. On a Mac, this key is sometimes called the "Option" key.
       <p>
-      <LI><b>ALT_R</b> is mapped to "Alt Gr" on a PC. On a Mac, this key is either marked "Alt" or "option", and is placed on the right side of the space bar.
+      <LI><b>ALT_R</b> is mapped to "Alt Gr" on a PC. On a Mac, this key is either marked "Alt" or "Option", and is placed on the right side of the space bar.
       <p>
       <LI><b>EXTRA_L</b> is mapped to the left "windows" key on a PC. On a Mac, the key is mapped to the left "command" or "cmd" key.
       <p>
-      <LI><b>EXTRA_R</b> is mapped to the "menu" key on a PC. On a Mac, it is mapped to the right "command" key. However, in Radium, EXTRA_R is a normal key and can not be used as a qualifier. (MS Windows limitation.)
+      <LI><b>EXTRA_R</b> is mapped to the "menu" key on a PC. On a Mac, it is mapped to the right "command" key. On a PC (Linux/Windows), EXTRA_R is a normal key and can not be used as a qualifier. On a Mac, EXTRA_R is the same as pressing CTRL_R, since apple keyboards often lack a right ctrl key.
     </UL>
   </UL>
 
@@ -333,7 +333,7 @@ F12          : ra.showMixerHelpWindow
       <p>
         <LI> Special keys (not always available): <b>CALCULATOR</b>, <b>MAIL</b>, <b>HOMEPAGE</b>.
       <p>
-        <LI><b>MENU</b> key: Placed between SPACE and CTRL_R on a PC (the "Windows Menu" key). Mapped to the right "command" key on an Apple keyboard, but not always available.
+        <LI><b>MENU</b> key: Placed between SPACE and CTRL_R on a PC (the "Windows Menu" key). Not available on Mac.
      <p>
   <LI> xLx and xRx Keys (<A  onclick="showHide('qwerty4')" href="#!">QWERTY</A>):
       <div id="qwerty4" style="display: none">
@@ -419,7 +419,16 @@ ra.evalScheme('(load "C:&bsol;Users&bsol;Username&bsol;.radium&bsol;mystuff.scm"
 
   <p>
     
-  
+    <h3>MacOS notes</h3>
+    <UL>
+      <LI><b>Alt</b> is often called <b>Option</b> on an Apple keyboard.
+      <LI>Pressing <b>Right Cmd</b> is the same as pressing <b>Right Ctrl</b>.
+      <LI>If you want to swap <b>Cmd</b> and <b>Ctrl</b>, select <i>Swap Ctrl and Cmd</i> under <i>Edit -> Preferences -> Gui</i>. This will swap <b>Cmd</b> and <b>Ctrl</b> for both mouse operations and keybindings.
+    </UL>
+    
+        
+        
+    
   
 
 				

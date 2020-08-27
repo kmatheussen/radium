@@ -68,19 +68,7 @@
     </UL>
 </UL>
 
-    
-<h2>Selection vs. range</h2>
-
-There are two ways to select notes:
-<OL>
-  <LI> <b>Selection in the pianoroll</b>.
-  <LI> <b>Ranged notes in the note-text subtrack</b> (see below).
-</OL>
-
-<UL>
-  <LI>These two ways don't share the same clipboard buffer, and while a <b>selection</b> operates on a track, a <b>range</b> operates on a block.
-  <LI>If there is <b>no range</b> in the current block, all <b>functions</b> operating on a range, e.g. transpose and quantitize, <b>will operate on the selected notes in the current track instead</b>.
-</UL>
+#include selection_vs_range_include.html
 
 
 <h2>Range</h2>
@@ -88,18 +76,16 @@ There are two ways to select notes:
 <UL>
   <LI>To <b>create range</b>:
     <OL>
-      <LI>Press <b>Left Win + Z</b> to cancel current range, if necessary.
+      <LI>Press <b>Left Win/Cmd + Z</b> to cancel current range, if necessary.
       <LI><b>Move cursor</b> to the upper left corner of the range you want to create.
-      <LI>Press <b>Left Win + B</b>
+      <LI>Press <b>Left Win/Cmd + B</b>
       <LI><b>Move cursor</b> to the lower right corner of the range you want to create.
-      <LI>Press <b>Left Win + B</b> again.
+      <LI>Press <b>Left Win/Cmd + B</b> again.
     </OL>
-  <LI>To <b>copy range</b>: Press <b>Left Win + C</b>
-  <LI>To <b>cut range</b>: Press <b>Left Win + X</b>
-  <LI>To <b>paste range</b>: Press <b>Left Win + V</b>
+  <LI>To <b>copy range</b>: Press <b>Left Win/Cmd + C</b>
+  <LI>To <b>cut range</b>: Press <b>Left Win/Cmd + X</b>
+  <LI>To <b>paste range</b>: Press <b>Left Win/Cmd + V</b>
 </UL>
-
-(Mac users: the "<b>Left Win</b>" key corresponds to the "<b>Left Cmd</b>" key on a Mac.)
 
 
     
