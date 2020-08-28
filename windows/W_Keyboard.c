@@ -181,6 +181,9 @@ void OS_WINDOWS_set_on_top_of_everything(void *child_handle){
 }
 #endif
 
+bool W_windows_key_down(void){
+  return ATOMIC_GET(left_windows_down) || ATOMIC_GET(right_windows_down);
+}
 
 static uint32_t get_keyswitch(void){
   uint32_t keyswitch=0;
@@ -836,6 +839,7 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   if (type==TR_KEYBOARD || type==TR_KEYBOARDUP){
     g_last_keyswitch = tevent.keyswitch;
     tevent.keyswitch = get_keyswitch();
+    //printf("   OS_SYSTEM_EventPreHandler: tevent.keyswitch set to %x. META: %x. Left: %d. Right: %d\n", tevent.keyswitch, AnyExtra(tevent.keyswitch), ATOMIC_GET(left_windows_down), ATOMIC_GET(right_windows_down));;
   }
 }
 
@@ -944,11 +948,14 @@ static LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM l
       
       if(p->vkCode==VK_LWIN || p->vkCode==VK_RWIN){// || p->vkCode==VK_RMENU){
 
-        if(p->vkCode==VK_LWIN)
+        if(p->vkCode==VK_LWIN){
           ATOMIC_SET(left_windows_down, wParam==WM_KEYDOWN);
-        else
+          //printf("    LowLevelKeyboardProc: LEFT DOWN: %d\n", wParam==WM_KEYDOWN);
+        }else{
           ATOMIC_SET(right_windows_down, wParam==WM_KEYDOWN);
-
+          //printf("    LowLevelKeyboardProc: RIGHT DOWN: %d\n", wParam==WM_KEYDOWN);
+        }
+        
 #if 0
         if(p->vkCode==VK_LWIN && wParam==WM_KEYDOWN)
           printf("   1. Left down\n");
@@ -961,7 +968,7 @@ static LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM l
 #endif
         
         #if 0
-        // Don't think this is any point.
+        // Don't think this is any point. (It's not pointless, but we are in a different thread (I think) so we have to do it a different way.)
         if (left_windows_down)
           tevent.keyswitch |= EVENT_LEFTEXTRA1;
         else

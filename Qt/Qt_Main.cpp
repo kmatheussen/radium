@@ -2435,7 +2435,7 @@ bool Control2Pressed(void){
 
 bool MetaPressed(void){
 #if defined(FOR_WINDOWS)
-  return AnyExtra(tevent.keyswitch); // The other way doesn't work on Windows.
+  return W_windows_key_down(); // We have to go pretty low-level (WH_KEYBOARD_LL hook) to check if a win key is pressed.
 #else
   return QApplication::keyboardModifiers() & Qt::MetaModifier;
 #endif
