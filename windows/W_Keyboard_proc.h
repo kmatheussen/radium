@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
+extern LANGSPEC bool W_windows_key_down(void);
 extern LANGSPEC void W_KeyboardHandlerShutDown(void);
 extern LANGSPEC void W_RegisterRawInputHandler(void *hwnd); // hwnd is g_main_window->effectiveWinId(). Call this function during initialization after g_main_window has started.
 extern LANGSPEC bool W_HasDeltaMouse(void);
