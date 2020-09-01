@@ -1,3 +1,97 @@
+Changes 5.9.99 -> 6.0.99:
+* Windows: Fix the left windows qualifier key not
+  working when doing mouse operations.
+* Editor: Paint velocity text for velocities that
+  are not the first or the last of a note in a
+  separate color.
+* Editor: Paint last velocity text for a note in a
+  separate color.
+* GUI: Add hex value information to the instrument
+  effect popup menu.
+* Shutdown: Fix semi-rare crash during shutdown when
+  painting the sequencer.
+* Linux: Show popup info box when finished
+  compiling.
+* MacOS: Add option in Preferences to swap Ctrl and
+  Cmd.
+* MacOS: Let Left Cmd key always behave as Left Ctrl
+  since not all macs have a left ctrl key, and
+  left cmd key is not used for anything in radium.
+* OpenGL: Ensure crashreporter is not shown when
+  OpenGL can not start.
+* Audio: Update recursive graph error message.
+* Manual: Update mixer documentation.
+* MacOS: Fix so that Ctrl-left-clicking does not
+  behave as right-clicking.
+* Mixer: Fix object positions being screwed up when
+  moving several objects while pressing ctrl.
+* Mixer: Add more zoom options to the popup menus.
+* GUI: Fix quirkiness when opening sub menus with
+  keyboard.
+* Build: Fix building on gcc8.
+* Mac: Change mouse-qualifier keys to be similar to
+  Linux and Windows.
+* Sequencer: Fix "M" checkbox not updating in the
+  "Tracks" right-side tab when mute state is changed
+  for an editor seqtrack.
+* S7: Roll back to V8.16 / 2020-3-2.
+* Sequencer: Fix seqblock automation sometimes
+  lightning up when mouse is inside the right-side
+  tabs.
+* Mixer strips: Fix displaying whether instrument
+  strip is selected or not.
+* Mixer strips: Ctrl-click a strip to
+  select/deselect instrument.
+* GUI: Let the instrument widget share keyboard
+  focus with the mixer.
+* Mixer strips: Speed up redrawing changing current
+  mixer strip.
+* Build: Fix build for gcc 9.
+* Audio: Fix various race conditions when changing
+  current instrument.
+* Mixer: Paint name of current mixer object and
+  current mixer strip in white color.
+* Mixer: Paint border around current mixer
+  instrument, not around current instrument.
+* Mixer: Introduce concept of current mixer
+  instrument.
+* Mxier: Change various functions that by default
+  operated on the current instrument to work on the
+  current mixer instrument instead.
+* Audio: Change default send/receive name from empty
+  to "default" in the Send/Receive instruments.
+* Editor: Fix "Copy" and "Cut" not working from the
+  pianoroll popup menu when note is not selected.
+* Edit: Improve pitch shrink/expand requester text.
+* Sequencer: Generate unique editor block name when
+  selecting "clone block".
+* Build: Fix FAUST HTTPDServer compile. (Teteros)
+* Build: Fix Fluidsynth linking. (Teteros)
+* Editor: When changing second-last veltext value of
+  a note, change end velocity end as well if it was
+  equal to the second-last value.
+* API:
+  * New: getCurrentInstrumentUnderMouse,
+    setCurrentInstrumentUnderMouse,
+    mousePointerCurrentlyPointsAtInstrument,
+    getCurrMixerInstruments,
+    addCurrentInstrumentChangedCallback,
+    removeCurrentInstrumentChangedCallback,
+    addCurrentInstrumentUnderMouseChangedCallback,
+    removeCurrentInstrumentUnderMouseChangedCallback,
+    setInstrumentIsSelected,
+    switchInstrumentIsSelected, swapCtrlAndCmd,
+    setSwapCtrlAndCmd.
+  * Removed: getExtendedSelectedInstruments,
+    control2Pressed, alt2Pressed.
+  * Make current block the default argument for
+    addUndoBlock.
+  * Changed various default values from
+    getCurrentInstrument() to
+    getCurrentInstrumentUnderMouse().
+
+
+
 Changes 5.9.98 -> 5.9.99:
 * GUI: Make it possible to edit keybinding for most popup menu entries.
 * GUI: Make it possible to edit keybinding for most main menu entries.
