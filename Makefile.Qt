@@ -460,9 +460,14 @@ QTLINKFLAGS = $(QT_LDFLAGS)
 VL_CFLAGS ?=
 VL_LIBS ?=
 
-
 VL_LDFLAGS=$(VL_LIBS)
 
+ifeq ($(GCC_MAJOR),9)
+	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
+endif
+ifeq ($(GCC_MAJOR),10)
+	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
+endif
 
 
 #-------------------OBJECT DEFINITIONS-------------------------------
@@ -2455,13 +2460,6 @@ $(T)crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/bac
 $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.c
 	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
-
-ifeq ($(GCC_MAJOR),9)
-	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
-endif
-ifeq ($(GCC_MAJOR),10)
-	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
-endif
 
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
 	$(CCC2) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER) #-Wno-error=unused-variable
