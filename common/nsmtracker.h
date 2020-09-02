@@ -273,8 +273,10 @@ static inline bool sane_isnormal_DOUBLE(double x) {
 #ifdef __cplusplus
 static inline bool equal_floats(float x, float y) {
 #if !defined(RELEASE)
-  if(!sane_isnormal(x) || !sane_isnormal(y))
+  if(!sane_isnormal(x) || !sane_isnormal(y)){
+    fprintf(stderr, "equal_floats(): Calling abort(). x: %f. y: %f. sane x: %d. sane y: %d\n", x, y, sane_isnormal(x), sane_isnormal(y));
     abort();
+  }
 #endif
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -484,9 +486,12 @@ static inline float scale(const float x, const float x1, const float x2, const f
   float diff = x2-x1;
   
 #if !defined(RELEASE)
-  R_ASSERT(!equal_floats(diff,0.0));
-  if(!sane_isnormal(x) || !sane_isnormal(x2) || !sane_isnormal(x2) || !sane_isnormal(y1) || !sane_isnormal(y2))
+  if(!sane_isnormal(x) || !sane_isnormal(x2) || !sane_isnormal(x2) || !sane_isnormal(y1) || !sane_isnormal(y2) || !sane_isnormal(diff)){
+    fprintf(stderr, "scale(): Calling abort(). x/x1/x2/y1/y2: %f %f %f %f %f\n", x,x1,x2,y1,y2);
     abort();
+  }
+  
+  R_ASSERT(!equal_floats(diff,0.0));
   
   if (equal_floats(diff, 0.0))
     return (y1+y2)/2.0f;
