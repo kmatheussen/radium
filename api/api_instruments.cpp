@@ -227,33 +227,28 @@ void saveInstrumentPreset(dynvec_t instrument_ids, int64_t parentgui){
 
   vector_t patches = {};
 
-  if (instrument_ids.num_elements==0) {
+  if (instrument_ids.num_elements==0){
+    instrument_t i = getCurrentInstrumentUnderMouse();
+    if (!isLegalInstrument(i))
+      return;
     
-    struct Patch *patch = PATCH_get_current();
+    DYNVEC_push_back(&instrument_ids, DYN_create_instrument(i));
+  }
 
-    if(patch==NULL){
-      R_ASSERT_NON_RELEASE(false);
+  int i = 0;
+  for(dyn_t dyn : instrument_ids){
+    
+    if (dyn.type != INSTRUMENT_TYPE){
+      handleError("saveInstrumentPreset: Element #%d is not an instrument id. Found: %s", i, DYN_type_name(dyn.type));
       return;
     }
+    
+    struct Patch *patch = getPatchFromNum(dyn.instrument);
+    if(patch==NULL)
+      return;
     
     VECTOR_push_back(&patches, patch);
-    
-  } else {
-    
-    for(int i=0;i<instrument_ids.num_elements;i++){
-      
-      if (instrument_ids.elements[i].type != INSTRUMENT_TYPE){
-        handleError("saveInstrumentPreset: Element #%d is not an instrument id. Found: %s", i, DYN_type_name(instrument_ids.elements[i].type));
-        return;
-      }
-      
-      struct Patch *patch = getPatchFromNum(instrument_ids.elements[i].instrument);
-      if(patch==NULL)
-      return;
-      
-      VECTOR_push_back(&patches, patch);
-    }
-
+    i++;
   }
 
   PRESET_save(&patches, false, parentgui);
@@ -3031,8 +3026,13 @@ static instrument_t g_curr_instrument_under_mouse = createIllegalInstrument();
 instrument_t getCurrentInstrumentUnderMouse(void){
   instrument_t ret = g_curr_instrument_under_mouse;
   
-  if (!isLegalInstrument(ret) || !instrumentIsOpen(ret) || !instrumentIsAudio(ret))
-    return getCurrentInstrument();
+  if (!isLegalInstrument(ret) || !instrumentIsOpen(ret) || !instrumentIsAudio(ret)){
+    struct Patch *patch = PATCH_get_current_audio();
+    if (patch==NULL)
+      return createIllegalInstrument();
+    else
+      return patch->id;
+  }
 
   return ret;
 }
@@ -3050,7 +3050,7 @@ void setCurrentInstrumentUnderMouse(instrument_t instrument){
     //remakeMixerStrips(getCurrentInstrumentUnderMouse());
     
     struct Patch *old_patch = PATCH_get_from_id(getCurrentInstrumentUnderMouse());
-    
+
     g_curr_instrument_under_mouse = instrument;
 
     {
@@ -3062,6 +3062,9 @@ void setCurrentInstrumentUnderMouse(instrument_t instrument){
     }
     
     if(old_patch!=NULL){
+      
+      R_ASSERT_RETURN_IF_FALSE(old_patch->instrument==get_audio_instrument());
+      
       struct SoundPlugin *plugin = (struct SoundPlugin*)old_patch->patchdata;
       R_ASSERT(plugin!=NULL);
       if (plugin!=NULL)
@@ -3294,7 +3297,7 @@ void showInstrumentInfo(dyn_t instrument_id_or_description, int64_t parentgui){
   
   if (instrument_id_or_description.type==UNINITIALIZED_TYPE){
     
-    patch = PATCH_get_current();
+    patch = PATCH_get_current_audio();
     
   } else if (instrument_id_or_description.type==INSTRUMENT_TYPE){
     
@@ -3513,6 +3516,8 @@ void API_instruments_call_regularly(void){
         continue;
       }
     }
+
+    R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
     
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     

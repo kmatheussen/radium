@@ -254,62 +254,69 @@ void PATCH_set_current(struct Patch *patch){
   low_level_set_g_curr_patch(patch);
 }
 
-struct Patch *PATCH_get_current(void){
+struct Patch *PATCH_get_current_audio(void){
   struct Patch *ret = g_curr_patch;
-  struct Patch *org_curr_patch = g_curr_patch;
+
+  if (ret==NULL || ret->instrument != get_audio_instrument())
+    ret = g_main_pipe_patch;
+
+  if (g_is_starting_up==false && g_is_loading==false){
+    R_ASSERT_NON_RELEASE(ret!=NULL);
+    R_ASSERT_NON_RELEASE(ret!=NULL && PATCH_get_from_id(ret->id)!=NULL);
+  }
   
   if (ret==NULL){
     
-    ret = g_main_pipe_patch;
-
-    if (g_is_starting_up==false && g_is_loading==false){
+    if (get_audio_instrument()->patches.num_elements > 0){
+      ret = (struct Patch*)get_audio_instrument()->patches.elements[0];
       R_ASSERT_NON_RELEASE(ret!=NULL);
-      R_ASSERT_NON_RELEASE(ret!=NULL && PATCH_get_from_id(ret->id)!=NULL);
     }
     
-    if (ret==NULL){
+    if(ret==NULL){
       
-      if (get_audio_instrument()->patches.num_elements > 0){
-        ret = (struct Patch*)get_audio_instrument()->patches.elements[0];
+      if (get_MIDI_instrument()->patches.num_elements > 0){
+        ret = (struct Patch*)get_MIDI_instrument()->patches.elements[0];
         R_ASSERT_NON_RELEASE(ret!=NULL);
       }
       
       if(ret==NULL){
         
-        if (get_MIDI_instrument()->patches.num_elements > 0){
-          ret = (struct Patch*)get_MIDI_instrument()->patches.elements[0];
-          R_ASSERT_NON_RELEASE(ret!=NULL);
-        }
+        if (g_is_loading==false)
+          R_ASSERT(false);
         
-        if(ret==NULL){
-
-          if (g_is_loading==false)
+        ret = (struct Patch*)get_audio_instrument()->patches.elements[0];
+        
+        if (ret==NULL)
+          ret = (struct Patch*)get_MIDI_instrument()->patches.elements[0];
+        
+        if (ret==NULL)
+          ret = g_last_resort_curr_patch;
+        
+        if (ret==NULL){
+          
+          if (g_is_loading==false)              
             R_ASSERT(false);
+          else
+            R_ASSERT_NON_RELEASE(false);
           
-          ret = (struct Patch*)get_audio_instrument()->patches.elements[0];
-          
-          if (ret==NULL)
-            ret = (struct Patch*)get_MIDI_instrument()->patches.elements[0];
-          
-          if (ret==NULL)
-            ret = g_last_resort_curr_patch;
-          
-          if (ret==NULL){
-
-            if (g_is_loading==false)              
-              R_ASSERT(false);
-            else
-              R_ASSERT_NON_RELEASE(false);
-              
-            //ret = (struct Patch*)talloc(sizeof(struct Patch*)); // The real last resort.
-            ret = NULL; // Seems better to return NULL.
-          }
-
+          //ret = (struct Patch*)talloc(sizeof(struct Patch*)); // The real last resort.
+          ret = NULL; // Seems better to return NULL.
         }
         
       }
+      
     }
   }
+
+  return ret;
+}
+
+struct Patch *PATCH_get_current(void){
+  struct Patch *ret = g_curr_patch;
+  struct Patch *org_curr_patch = g_curr_patch;
+  
+  if (ret==NULL)
+    ret = PATCH_get_current_audio();
 
   if (org_curr_patch != ret)
     low_level_set_g_curr_patch(ret);
