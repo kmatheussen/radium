@@ -416,13 +416,28 @@ static LADSPA_PortRangeHintDescriptor get_hintdescriptor(const LADSPA_Descriptor
 }
 
 static float frequency_2_slider(float freq, const float min_freq, const float max_freq){
+#if 0
+  fprintf(stderr, "frequency_2_slider(): %f %f %f - %f %f %f - %f %f %f\n",
+          freq, min_freq, max_freq,
+          logf(min_freq), logf(max_freq), min_output,
+          logf(freq), logf(max_freq), logf(freq)/logf(max_freq)
+          );
+#endif
+  
+  if (freq <= 0.01 || min_freq <= 0.01 || max_freq <= 0.01)
+    return scale(freq, min_freq, max_freq, 0, 1);
+  
   const float min_output = logf(min_freq)/logf(max_freq);
+  
   return scale( logf(freq)/logf(max_freq),
                 min_output, 1.0,
                 0.0, 1.0);
 }
 
 static float slider_2_frequency(float slider, const float min_freq, const float max_freq){
+  if (min_freq <= 0.01 || max_freq <= 0.01)
+    return scale(slider, 0, 1, min_freq, max_freq);
+  
   const float min_output = logf(min_freq)/logf(max_freq);
   return powf(max_freq, scale(slider,
                               0,1,
@@ -480,14 +495,20 @@ static float get_effect_value(SoundPlugin *plugin, int effect_num, enum ValueFor
   if(value_format==EFFECT_FORMAT_SCALED){
     const LADSPA_PortRangeHintDescriptor hints = type_data->hint_descriptors[effect_num];
 
+#if 0
+    fprintf(stderr, "A/B/C: %f %f %f\n",
+            data->control_values[effect_num], 
+            type_data->min_values[effect_num],
+            type_data->max_values[effect_num]);
+#endif
+    
     if(LADSPA_IS_HINT_LOGARITHMIC(hints)){
-
       return frequency_2_slider(data->control_values[effect_num], 
                                 type_data->min_values[effect_num],
                                 type_data->max_values[effect_num]);
 
     } else {
-
+      
       return scale(data->control_values[effect_num],
                    type_data->min_values[effect_num], type_data->max_values[effect_num],
                    0.0f,1.0f);
