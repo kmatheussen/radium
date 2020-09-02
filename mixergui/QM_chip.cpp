@@ -463,6 +463,7 @@ void CHIP_update(Chip *chip, SoundPlugin *plugin){
 
 void CHIP_update(SoundPlugin *plugin){
   Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), plugin);
+  R_ASSERT_RETURN_IF_FALSE(chip!=NULL);
   CHIP_update(chip, plugin);
 }
 
