@@ -1,4 +1,6 @@
 Changes 5.9.99 -> 6.0.99:
+* Audio: Fix illegal parameters for some LADSPA
+  plugins in some situations. (Caused by "log 0".)
 * Windows: Fix the left windows qualifier key not
   working when doing mouse operations.
 * Editor: Paint velocity text for velocities that
