@@ -1,3 +1,8 @@
+Changes 6.0.99 -> 6.1.99:
+* Editor: Fix crash in quantization function
+
+
+
 Changes 5.9.99 -> 6.0.99:
 * Audio: Fix illegal parameters for some LADSPA
   plugins in some situations. (Caused by "log 0".)
