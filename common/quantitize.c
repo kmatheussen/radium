@@ -149,7 +149,7 @@ static bool Quantitize_track(
 
                 } else {
 
-                  ListAddElement3_a(notes,&note->l);
+                  ListAddElement3_a(&notes,&note->l);
                   
                 }
                 
