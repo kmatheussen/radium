@@ -4041,9 +4041,12 @@ int main(int argc, char **argv){
 
 #if !defined(FOR_WINDOWS)
   if(argc>1){
+#if 0
+    // Doesn't work anymore.
     if (!strcmp(argv[1],"--dont-load-new-song"))
       g_load_new_song=false;
     else
+#endif
       g_songfile_from_commandline = strdup(argv[1]);
   }
 #endif
