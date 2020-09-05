@@ -51,7 +51,7 @@ BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j `nproc`
 ./install.sh /opt
 TARGET=/usr/bin/radium
 echo "#!/bin/env bash" > $TARGET
-echo "QT_QPA_PLATFORM_PLUGIN_PATH=\"$($(RADIUM_QT_VERSION=5 ./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS)\" /opt/radium/radium \$@" >> $TARGET
+echo "QT_QPA_PLATFORM_PLUGIN_PATH=\"$($(RADIUM_QT_VERSION=5 ./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS)\" /opt/radium/radium \"\$@\"" >> $TARGET
 chmod a+rx $TARGET
 
 And if "make packages" or "./build_linux.sh" fail, at least send me a bug report before complaining publicly about the build system of Radium.
