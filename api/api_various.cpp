@@ -2026,8 +2026,13 @@ void requestImportMod(void){
   //import_importmod_file();
   //PyRun_SimpleString("import_mod.import_mod()");
   //SCHEME_eval("(let () (load \"import_mod.scm\" (curlet)) (load-protracker-module))");
+  
+  SCHEME_eval("(ra:schedule 100 (lambda () (my-require 'import_mod.scm) (async-load-protracker-module) #f))");
+
+  /*
   SCHEME_eval("(my-require 'import_mod.scm)");
   SCHEME_eval("(async-load-protracker-module)");
+  */
 }
 
 void importXM(void){

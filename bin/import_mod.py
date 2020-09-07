@@ -911,7 +911,7 @@ class Xi:
         if self.filename != "": # and self.num_samples>0:
             self.instrument_num = radium.createAudioInstrument("Sample Player","Sample Player", self.name, 0, 0, False)
             radium.connectAudioInstrumentToMainPipe(self.instrument_num)
-            radium.setInstrumentSample(self.instrument_num, unicode(self.filename))
+            radium.setInstrumentSample(self.instrument_num, unicode(self.filename)) # FIX: filepath_t is not unicode anymore, but base64.
 
     def save(self, file, pos):
 
