@@ -1,3 +1,18 @@
+Changes 6.1.99 -> 6.2.91:
+* Macos: Fix editing keybindings by right-clicking a
+  GUI element.
+* MacOS: Necessary to kill qjackctl as well when
+  killing jack.
+* Windows: Fix right-clicking a menu entry in the
+  main menus.
+* Manual: Update information about Quantitizing
+  FX in the editor.
+* Linux: Fix loading song with spaces from the
+  command line.
+* rightclickPopupMenuEntry
+
+
+
 Changes 6.0.99 -> 6.1.99:
 * Editor: Fix crash in quantization function
 
