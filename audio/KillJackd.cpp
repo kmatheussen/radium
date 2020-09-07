@@ -293,6 +293,11 @@ static void kill_jackd(void){
     GFX_ShowProgressMessage(talloc_format("Killing jack %d/%d: \"%s\"", i+1, 20, command4), true);
     system(command4);
     msleep(80);
+
+    const char *command5 = "killall -9 qjackctl"; // On OSX, jack pilot needs to be restarted after jackd has been killed. (if not, it shows a message about needing to restart the system)
+    GFX_ShowProgressMessage(talloc_format("Killing jack %d/%d: \"%s\"", i+1, 20, command5), true);
+    system(command5);
+    msleep(80);
 #endif
     
   }
