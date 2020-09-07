@@ -82,7 +82,7 @@ const_char* getPathString(filepath_t filepath){
   return STRING_get_chars(filepath.id);
 }
 
-filepath_t appendFilePaths(filepath_t path1, filepath_t path2){
+filepath_t appendFilePaths(filepath_t path1, filepath_t path2){  
   if (isIllegalFilepath(path1)){
     handleError("Illegal filepath argument 1");
     return path1;
@@ -494,7 +494,7 @@ file_t openFileForWriting(filepath_t w_path){
     handleError("Illegal filepath argument 1");
     return createIllegalFile();
   }
-  
+
   disk_t *disk = DISK_open_for_writing(w_path);
   if (disk==NULL){
     handleError("Unable to open file for writing (couldn't create temporary file, check your file system)");

@@ -69,7 +69,8 @@ def get_lines():
 
 
 def write_lines(lines):
-    disk = ra.openFileForWriting(get_filename())
+    filename = get_filename()
+    disk = ra.openFileForWriting(filename)
 
     for line in lines:
         print "line:",line
@@ -201,7 +202,10 @@ def insert_new_keybinding_into_conf_file(keybinding, command):
 def FROM_C_insert_new_keybinding_into_conf_file(keybinding, command):            
     old_stdout = sys.stdout
     old_stderr = sys.stderr
-    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+
+    changestdout = platform.system() != "Linux" and platform.system() != "Darwin"  # and os.isatty(sys.stdout.fileno()):
+    
+    if changestdout:
         sys.stdout = NullWriter()
         sys.stderr = NullWriter()
 
@@ -216,7 +220,7 @@ def FROM_C_insert_new_keybinding_into_conf_file(keybinding, command):
         ra.addMessage(message2)
         return
 
-    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+    if changestdout:
         sys.stdout = old_stdout
         sys.stderr = old_stderr
 
@@ -227,7 +231,6 @@ def remove_keybinding_from_conf_file(keybinding, command):
     line_to_remove = keybinding + " : " + command
     
     lines = get_lines()
-    print "lines:",lines
     
     #if has_line(line_to_remove, lines)==False:
     #    message2 = "Could not remove keybinding \"%s\".<br>It might be a default keybinding, and those can't be removed. They can be overridden to be used for something else though." % line_to_remove

@@ -399,12 +399,16 @@ class Proto:
                     oh.write("double ")
                 elif qualifier=="Place":
                     oh.write("const char* ")
+                elif qualifier=="filepath_t":
+                    oh.write("const char* ")
                 else:
                     oh.write(qualifier+" ")
                 oh.write("arg%d" % lokke)
             if arg.default!="":
                 if qualifier=="Place":
                     oh.write("=p_ToString("+arg.default+")")
+                elif qualifier=="filepath_t":
+                    oh.write("=getBase64FromFilepath("+arg.default+")")
                 else:
                     oh.write("="+arg.default)
             oh.write(";\n")
@@ -441,7 +445,7 @@ class Proto:
             elif qualifier=="file_t":
                 t="L"
             elif qualifier=="filepath_t":
-                t="u"
+                t="s"
             elif qualifier=="float":
                 t="f"
             elif qualifier=="double":
@@ -469,7 +473,7 @@ class Proto:
             arg=self.args[lokke]
             qualifier=arg.qualifiers[len(arg.qualifiers)-1]
             if qualifier=="instrument_t" or qualifier=="file_t" or qualifier=="filepath_t":
-                oh.write(",&arg%d.id" % lokke)
+                oh.write(",&arg%d" % lokke)
             else:
                 oh.write(",&arg%d" % lokke)
                 
@@ -486,7 +490,7 @@ class Proto:
             arg=self.args[lokke]
             qualifier=arg.qualifiers[len(arg.qualifiers)-1]
             if qualifier=="filepath_t":
-                oh.write("make_filepath(talloc_wcsdup(arg%d.id))" % lokke)
+                oh.write("getFilepathFromBase64(arg%d)" % lokke)
             elif qualifier=="Place":
                 oh.write("p_FromString(arg%d)" % lokke)
             else:
@@ -517,7 +521,7 @@ class Proto:
                 elif return_type=="file_t":
                     t="PyInt_FromLong((long)" # doesn't seem to be a PyInt_FromLongLong function.
                 elif return_type=="filepath_t":
-                    t="PyUnicode_FromWideChar("
+                    t="PyString_FromString("
                 elif return_type=="float":
                     t="PyFloat_FromDouble("
                 elif return_type=="double":
@@ -532,7 +536,7 @@ class Proto:
                 if return_type=="instrument_t" or return_type=="file_t":
                     oh.write(t+"result.id);\n")
                 elif return_type=="filepath_t":
-                    oh.write(t+"result.id, wcslen(result.id));\n")
+                    oh.write(t+"getBase64FromFilepath(result));\n")
                 elif return_type=="Place":
                     oh.write(t+"p_ToString(result));\n")
                 else:
