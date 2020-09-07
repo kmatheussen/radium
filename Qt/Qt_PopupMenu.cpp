@@ -169,11 +169,11 @@ namespace{
     bool run_have_run = false;
 
     std::shared_ptr<Callbacker> _extra_destroyed_slot_argument; // Temporarily store it in the object since you can't post custom data to signals handlers in a less inelegant way, I think. The use of smart pointers here is a mess BTW, as it always is when using smart pointers, for everyone, in all possible situations, without exception.
-    
+
     void run_and_delete(bool checked, std::shared_ptr<Callbacker> &callbacker){
-#if !defined(RELEASE)
-      R_ASSERT_RETURN_IF_FALSE(run_have_run==false);
-#endif
+      if (run_have_run)
+        return; // Can happen on macos and windows if called from GFX_RightclickMenuEntry (i.e. triggered twice).
+      
       run_have_run = true;
 
       R_ASSERT_NON_RELEASE(qmenu.data() != NULL); // Not sure if anything is wrong, just curious whether it happens.
@@ -440,13 +440,21 @@ namespace{
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
     }
 
+    /*
+    void contextMenuEvent(QContextMenuEvent *event) override {
+      printf("CONTEXT_MENU_EVENT\n");
+    }
+    */
+    
     bool my_clicked(void) override{
+      //printf("MY_CLICKED\n");
       triggered();
       return true; // eat mouse press event
     }
 
   public slots:
     void triggered(){
+      //printf("TRIGGERED\n");
       if(_callbacker.get()==NULL){
         //R_ASSERT_NON_RELEASE(false); // Happens very often. Don't know if it's a problem. Better not to crash the system in non-release mode, because then we will never test what happens in release mode.
         printf("ERROR! QT_POPUPMENU/triggered: _callbacker.get()==NULL\n");
@@ -604,7 +612,12 @@ namespace{
         release_clickable_action(a);
       }
     }
-
+#if 0
+    void contextMenuEvent(QContextMenuEvent *event) override {
+      printf("QMENU CONTEXT_MENU_EVENT\n");
+      event->ignore();
+    }
+#endif
   private:
     
     void setclosed(void){
@@ -1451,6 +1464,29 @@ void GFX_HoverMenuEntry(int entryid){
 
     g_last_hovered_menu_entry_guinum = -1;
     
+  }
+}
+
+// This function is only needed on Windows, for some reason, but we do it on all platforms to faster discover bugs caused by this function.
+void GFX_RightclickMenuEntry(int entryid){
+  if (g_curr_visible_actions.contains(entryid)){
+    
+    MyQAction *action = g_curr_visible_actions[entryid].data();
+    if(action==NULL){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+
+    auto *callbacker = action->_callbacker.get();
+    if (callbacker != NULL){
+      auto *qmenu = callbacker->qmenu.data();
+      if (qmenu != NULL){
+        qmenu->hide(); // It looks very good not closing the previous menu entry when right-clicking, but it also screws up keyboard focus.
+        //printf("HIDING\n");
+      }
+    }
+    
+    action->my_clicked();
   }
 }
 

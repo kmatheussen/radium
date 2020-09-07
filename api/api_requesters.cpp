@@ -366,6 +366,10 @@ void hoverPopupMenuEntry(int entryid){
   GFX_HoverMenuEntry(entryid);
 }
 
+void rightclickPopupMenuEntry(int entryid){
+  GFX_RightclickMenuEntry(entryid);
+}
+
 void colorDialog(const char *initial_color, int64_t parentguinum, func_t* callback){
   GFX_color_dialog(initial_color, parentguinum, callback);
 }

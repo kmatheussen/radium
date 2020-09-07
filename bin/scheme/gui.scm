@@ -1633,6 +1633,11 @@
                       );(<gui> :is-enabled widget))
              ;;(c-display "Entering" name)
              (<ra> :hover-popup-menu-entry entry-id))
+
+           (if (and (= button *right-button*)
+                    (= state *is-pressing*))
+               (<ra> :rightclick-popup-menu-entry entry-id))
+           
            #f))
   
   widget)
