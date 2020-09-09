@@ -9,7 +9,7 @@ Changes 6.1.99 -> 6.2.91:
   FX in the editor.
 * Linux: Fix loading song with spaces from the
   command line.
-* rightclickPopupMenuEntry
+* API: rightclickPopupMenuEntry
 
 
 
