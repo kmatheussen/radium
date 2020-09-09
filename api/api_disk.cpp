@@ -451,11 +451,12 @@ bool isIllegalFilepath(filepath_t file){
 }
 
 const_char* getBase64FromFilepath(filepath_t filepath){
+  /*
   if (isIllegalFilepath(filepath)){
-    handleError("getBase64FromFilepath: illegal filepath argument 1");
+    handleError("getBase64FromFilepath: illegal filepath argument");
     return "";
   }
-
+  */
   return STRING_get_chars(STRING_toBase64(filepath.id));
 }
 
