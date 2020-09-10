@@ -3072,6 +3072,9 @@
                 (<ra> :cancel-current-pianonote))
             #t)))
 
+(define (show-pianoroll-help-window)
+  (FROM-C-show-help-window "help/pianoroll_editor_framed.html"))
+
 (define (get-pianoroll-popup-menu-common-entries)
   (list
    "----------"
@@ -3079,7 +3082,10 @@
          :check (<ra> :pianoroll-visible *current-track-num*)
          :shortcut ra:show-hide-pianoroll
          (lambda (onoff)
-           (<ra> :show-pianoroll onoff *current-track-num*)))))
+           (<ra> :show-pianoroll onoff *current-track-num*)))
+   "----------"
+   (list "Help Pianoroll" show-pianoroll-help-window)))
+
 
 #!!
    "-----------"
