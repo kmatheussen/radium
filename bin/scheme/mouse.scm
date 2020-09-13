@@ -7281,9 +7281,10 @@
                         :Get-existing-node-info (lambda (X Y callback)
                                                   ;;(c-display "         MOVE SINGLE SEQBLOCK start")
                                                   (let ((seqtracknum *current-seqtrack-num*))
-                                                    ;;(c-display "seqtracknum" seqtracknum)
+                                                    ;;(c-display "seqtracknum" seqtracknum ". boxnum:" (<ra> :get-seqblock-selected-box))
                                                     (and (not *current-seqautomation/distance*)
                                                          seqtracknum
+                                                         (= (<ra> :get-seqblock-selected-box) 0) ;; Don't move seqblock if mouse is on one of the seqblock boxes.
                                                          (begin
                                                            ;;(<ra> :set-curr-seqtrack seqtracknum)
                                                            (let ((seqblock-info *current-seqblock-info*))
@@ -7397,6 +7398,7 @@
                                                   (let ((seqtracknum *current-seqtrack-num*))
                                                     (and (not *current-seqautomation/distance*)
                                                          seqtracknum
+                                                         (= (<ra> :get-seqblock-selected-box) 0) ;; Don't move seqblock if mouse is on one of the seqblock boxes.
                                                          (begin
                                                            ;;(<ra> :set-curr-seqtrack seqtracknum)
                                                            (let ((seqblock-info *current-seqblock-info*))
