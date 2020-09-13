@@ -703,24 +703,29 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   }
                               
   if (tr2.note != NULL) {
-    EVENTLOG_add_event("RemoveNoteCurrPos 2");
-    {
-      SCOPED_PLAYER_LOCK_IF_PLAYING();
-      ListRemoveElement3(&track->notes,&tr2.note->l);
-      LengthenNotesTo(wblock->block,track,&realline->l.p);
+
+    if (track->notes!=NULL && isInList3(&track->notes->l, &tr2.note->l)) {
+      EVENTLOG_add_event("RemoveNoteCurrPos 2");
+      {
+        SCOPED_PLAYER_LOCK_IF_PLAYING();
+        ListRemoveElement3(&track->notes,&tr2.note->l);
+        LengthenNotesTo(wblock->block,track,&realline->l.p);
+      }
+      SetNotePolyphonyAttributes(wtrack->track);
+      ValidateCursorPos(window);
+      window->must_redraw=true;
+      if (trs.size()==1)
+        maybe_scroll_down(window, NULL);
     }
-    SetNotePolyphonyAttributes(wtrack->track);
-    ValidateCursorPos(window);
-    window->must_redraw=true;
-    if (trs.size()==1)
-      maybe_scroll_down(window, NULL);
+    
     return;
   }
 
   const struct Stops *stop = tr2.stop;
   EVENTLOG_add_event("RemoveNoteCurrPos 3");
   R_ASSERT_RETURN_IF_FALSE(stop!=NULL);
-  {
+  
+  if (track->stops!=NULL && isInList3(&track->stops->l, &stop->l)) {
     SCOPED_PLAYER_LOCK_IF_PLAYING();
     ListRemoveElement3(&track->stops, &stop->l);
     LengthenNotesTo(wblock->block,track,&realline->l.p);

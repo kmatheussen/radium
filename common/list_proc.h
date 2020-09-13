@@ -127,8 +127,8 @@ extern LANGSPEC void *ListFindElement3_num_r0(
 #define ListFindElement1_num(a,b) ListFindElement3_num((struct ListHeader3 *)(a),b)
 
 extern LANGSPEC bool isInList3(
-	struct ListHeader3 *liststart,
-	struct ListHeader3 *element
+	const struct ListHeader3 *liststart,
+	const struct ListHeader3 *element
 );
 
 extern LANGSPEC bool isInList1(
