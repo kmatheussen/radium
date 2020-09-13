@@ -1,7 +1,18 @@
+Changes 6.3.83 -> 6.3.84:
+* Editor: Fix assertion window popping up if trying
+  to delete a MIDI-added note while recording MIDI.
+* Windows: Fix rare crash in portaudio when probing
+  WDMKS audio drivers. Fix for both Jack and
+  QJackCtl.
+
+
+
 Changes 6.3.82 -> 6.3.83:
 * Sequencer: Fix popup menus for fade/speed/stretch
-* Sequencer: Add "Help" entry to the main sequencer popup menu
-* Editor: Add "Help Pianoroll" entry to the bottom of the pianoroll popup menus
+* Sequencer: Add "Help" entry to the main sequencer
+  popup menu
+* Editor: Add "Help Pianoroll" entry to the bottom of
+  the pianoroll popup menus
 
 
 
