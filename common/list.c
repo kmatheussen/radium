@@ -629,8 +629,8 @@ void *ListFindElement3_num_r0(
     Returns true if the element is in a list.
 **********************************************************************/
 bool isInList3(
-	struct ListHeader3 *liststart,
-	struct ListHeader3 *element
+	const struct ListHeader3 *liststart,
+	const struct ListHeader3 *element
 ){
 	while(liststart!=NULL){
 		if(liststart==element) return true;
