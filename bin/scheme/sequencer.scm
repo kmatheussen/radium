@@ -14,6 +14,10 @@
 (define *sequencer-left-part-area* #f)
 (define *sequencer-right-part-area* #f)
 
+(define (show-sequencer-help-window)
+  (FROM-C-show-help-window "help/sequencer_framed.html"))
+
+
 (define *sequencer-window-gui* (if (defined? '*sequencer-window-gui*)
                                    (begin
                                      (<declare-variable> *sequencer-window-gui*)
@@ -1288,6 +1292,7 @@
                 (if doit
                     (<ra> :show-sequencer)
                     (<ra> :hide-sequencer))))
+        (list "Help" show-sequencer-help-window)
         (list "Preferences" ra:open-sequencer-preferences-dialog)))
 
 

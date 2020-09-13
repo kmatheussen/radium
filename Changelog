@@ -1,3 +1,15 @@
+Changes 6.3.82 -> 6.3.83:
+* Sequencer: Fix popup menus for fade/speed/stretch
+* Sequencer: Add "Help" entry to the main sequencer popup menu
+* Editor: Add "Help Pianoroll" entry to the bottom of the pianoroll popup menus
+
+
+
+Changes 6.2.91 -> 6.3.82:
+* Disk: Fix load song (bug introduced in 5.2.91)
+
+
+
 Changes 6.1.99 -> 6.2.91:
 * Macos: Fix editing keybindings by right-clicking a
   GUI element.
