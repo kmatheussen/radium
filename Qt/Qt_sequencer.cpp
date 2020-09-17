@@ -523,16 +523,18 @@ QPoint mapFromEditor(QWidget *widget, QPoint point){
     ? g_editor->editor_layout_widget->mapToGlobal(point)
     : QPoint(point.x()-10000, point.y()-10000);
 
-  //printf("    G: %d / %d. Mapped: %d / %d\n", global.x(), global.y(), widget->mapFromGlobal(global).x(), widget->mapFromGlobal(global).y());
+  //printf("    G: %d / %d. Mapped: %d / %d. In editor window: %d\n", global.x(), global.y(), widget->mapFromGlobal(global).x(), widget->mapFromGlobal(global).y(), in_editor_window(widget));
   return widget->mapFromGlobal(global);
 }
 
 QPoint mapToEditor(QWidget *widget, QPoint point){
+  
   if (!in_editor_window(widget))
     return skewedPoint(widget, point, 10000, 10000);
   
   //return widget->mapTo(g_editor, point); (g_editor must be a parent, for some reason)
   QPoint global = widget->mapToGlobal(point);
+
   return g_editor->editor_layout_widget->mapFromGlobal(global);
 }
 
@@ -695,7 +697,7 @@ public:
 
     QPoint point = mapToEditor(this, event.pos());
     SCHEME_mousemove(_currentButton, point.x(), point.y());
-    //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+    //printf("    move. x: %d, y: %d. in_editor_window: %d\n", point.x(), point.y(), in_editor_window(this));
   }
   
   void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{    
@@ -4098,14 +4100,21 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     if (num_seqtracks==0)
       return;
 
+    
     // Hack to workaround screwed up layout, probably caused by a Qt bug. For some reason resizeEvent() is called twice when shown, first with minimumHeight, and then with last height.
     {
-      printf("    RESIZEEvent. Height: %d. Min height: %d. has_just_shown: %d\n", height(), minimumHeight(), _has_just_shown);
-      
-      if (_has_just_shown){
-        _has_just_shown = false;
+#if !defined(RELEASE)
+      printf("    RESIZEEvent. Height: %d. Min height: %d. was_hidden: %d. is visible: %d\n", height(), minimumHeight(), _was_hidden, isVisible());
+#endif
+      if (_was_hidden){
+
+        _was_hidden = false;
+        
         if (height() <= minimumHeight())
-        return;
+          return;
+
+        if (isVisible()==false) // Qt is weird.
+          return;
       }
     }
     
@@ -4327,17 +4336,24 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   bool _sequencer_was_full_before_hidden = false;
 
   void hideEvent(QHideEvent * event) override {
+    //printf("      HIDE 1\n");
     _sequencer_was_full_before_hidden = !upperPartOfMainWindowIsVisible();
     showUpperPartOfMainWindow();
+
+    _was_hidden = true;
+
+    //printf("      HIDE 2\n");
   }
   
-  bool _has_just_shown = false;
+  bool _was_hidden = false;
   
   void showEvent(QShowEvent * event) override {
-    _has_just_shown = true;
+    //printf("      SHOW 1\n");
     
     if (_sequencer_was_full_before_hidden)
       hideUpperPartOfMainWindow();
+    
+    //printf("      SHOW 2\n");
   }
   
 #if 0
