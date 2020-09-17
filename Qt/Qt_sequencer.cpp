@@ -3877,7 +3877,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     set_widget_takes_care_of_painting_everything(this);
 
-    int minimum_height = (double)root->song->tracker_windows->systemfontheight*1.3 * 2;
+    int minimum_height = (double)root->song->tracker_windows->systemfontheight*1.3 * 8;
     setMinimumHeight(minimum_height);
     //setMaximumHeight(height);
   }
@@ -4098,11 +4098,16 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     if (num_seqtracks==0)
       return;
 
-    //printf("    RESIZEEvent. Height: %d\n", height());
-
     // Hack to workaround screwed up layout, probably caused by a Qt bug. For some reason resizeEvent() is called twice when shown, first with minimumHeight, and then with last height.
-    if (height() <= minimumHeight())
-      return;
+    {
+      printf("    RESIZEEvent. Height: %d. Min height: %d. has_just_shown: %d\n", height(), minimumHeight(), _has_just_shown);
+      
+      if (_has_just_shown){
+        _has_just_shown = false;
+        if (height() <= minimumHeight())
+        return;
+      }
+    }
     
     bool last_seqtrack_was_visible1 = SEQUENCER_last_seqtrack_is_visible();
     
@@ -4320,13 +4325,17 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
 
   bool _sequencer_was_full_before_hidden = false;
-  
+
   void hideEvent(QHideEvent * event) override {
     _sequencer_was_full_before_hidden = !upperPartOfMainWindowIsVisible();
     showUpperPartOfMainWindow();
   }
   
+  bool _has_just_shown = false;
+  
   void showEvent(QShowEvent * event) override {
+    _has_just_shown = true;
+    
     if (_sequencer_was_full_before_hidden)
       hideUpperPartOfMainWindow();
   }
@@ -5685,7 +5694,7 @@ void SEQUENCER_update(uint32_t what){
          what&SEQUPDATE_TIME, what&SEQUPDATE_HEADERS, what&SEQUPDATE_TRACKORDER, what&SEQUPDATE_PLAYLIST, what&SEQUPDATE_NAVIGATOR,
          (ATOMIC_GET(root->editonoff) || !(what&SEQUPDATE_TIME) )? "" : JUCE_get_backtrace()
          );
-});
+    });
 
   if (THREADING_is_main_thread()==false || g_sequencer_widget==NULL || PLAYER_current_thread_has_lock() || g_qt_is_painting || g_is_loading){
     if (!g_is_loading){
