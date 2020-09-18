@@ -555,7 +555,7 @@ static void set_widget_height(int height){
 
 
 bool GFX_InstrumentWindowIsVisible(void){
-  if (instrumentWidgetIsInMixer())
+  if (instrumentInMixer())
     return g_instruments_widget_frame->isVisible();
   else
     return API_instrumentGuiIsVisibleInLowerTab();
@@ -575,7 +575,7 @@ void GFX_InstrumentWindowToFront(void){
   g_instruments_widget_frame->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum); // might not be needed
   set_widget_height(120);
 
-  if (!instrumentWidgetIsInMixer()){
+  if (!instrumentInMixer()){
     //EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
     //safe_set_parent(g_instruments_widget, editor->ysplitter);
     //editor->ysplitter->handle(2)->setEnabled(false);
@@ -593,7 +593,7 @@ void GFX_InstrumentWindowToFront(void){
     
     GFX_update_current_instrument_widget();
     
-    if(instrumentWidgetIsInMixer() && GFX_MixerIsVisible()==false){
+    if(instrumentInMixer() && GFX_MixerIsVisible()==false){
       GFX_ShowMixer();
     }
     
@@ -603,7 +603,7 @@ void GFX_InstrumentWindowToFront(void){
 }
 
 void GFX_InstrumentWindowToBack(void){
-  if (!instrumentWidgetIsInMixer()) {
+  if (!instrumentInMixer()) {
     
     API_hideInstrumentGui();
     
@@ -866,7 +866,7 @@ static void GFX_PP_Update_internal(struct Patch *patch, bool is_loading, bool op
     PATCH_set_current(patch);
     //redrawMixerStrips(false);
 
-    if(old_current!=patch && patch->widget_height_type==SIZETYPE_NORMAL && GFX_InstrumentWindowIsVisible() && !instrumentWidgetIsInMixer())
+    if(old_current!=patch && patch->widget_height_type==SIZETYPE_NORMAL && GFX_InstrumentWindowIsVisible() && !instrumentInMixer())
       S7CALL2(void_void,"FROM_C-minimize-lowertab");
   }
   //exit:

@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
 
-#include "Qt_bottom_bar_widget_proc.h"
 #include "Qt_MyQScrollBar.hpp"
 #include "Timer.hpp"
 
@@ -237,13 +236,11 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
   int _num_rows = 2;
   Ratio _vert_ratio = make_ratio(1,1);
 
-  QWidget *_bottom_bar;
-
- Mixer_widget(QWidget *parent=NULL)
-   : QWidget(parent)
-   , radium::Timer(1000, true)
-   , _mixer_direction_menu(this)
-   , _mytimer(this)
+  Mixer_widget(QWidget *parent=NULL)
+    : QWidget(parent)
+    , radium::Timer(1000, true)
+    , _mixer_direction_menu(this)
+    , _mytimer(this)
   {
     radium::ScopedIniting initing(_initing);
     
@@ -260,20 +257,21 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     connections_visibility->setChecked(MW_get_connections_visibility());
     bus_connections_visibility->setChecked(MW_get_bus_connections_visibility());
 
-    if (instrumentWidgetIsInMixer()){
+    if (instrumentInMixer()){
       verticalLayout->addWidget(getInstrumentsWidget(), 0);
-      include_instrument_widget->setChecked(instrumentWidgetIsInMixer());
+      include_instrument_widget->setChecked(instrumentInMixer());
+      //getInstrumentsWidget()->show();
+    }
+      
+    if (sequencerInMixer()){
+      verticalLayout->addWidget(SEQUENCER_getFrameWidget(), 0);
+      include_sequencer_widget->setChecked(sequencerInMixer());
       //getInstrumentsWidget()->show();
     }
       
     //connect(ab_a, SIGNAL(rightClicked()), this, SLOT(on_ab_a_rightClicked()));
       
     g_mixer_widget2 = this;
-
-    _bottom_bar = BottomBar_create(this, false, true);
-      
-    verticalLayout->insertWidget(-1, _bottom_bar, 0);
-    _bottom_bar->hide();
 
     ab_reset->_show_popup_menu = [](){
       S7CALL2(void_int,"FROM_C-show-mixer-config-reset-popup-menu", -1);
@@ -482,7 +480,7 @@ public:
   void set_include_instrument_widget(bool include_instrument_widget){
     if(include_instrument_widget){
       API_setLowertabIncludesInstrument(false);
-      verticalLayout->insertWidget(verticalLayout->count()-1, getInstrumentsWidget(), 0);
+      verticalLayout->insertWidget(verticalLayout->count(), getInstrumentsWidget(), 0);
     }
       
     GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
@@ -498,6 +496,38 @@ public:
       this->include_instrument_widget->setChecked(include_instrument_widget);
     }
 
+  }
+
+  /*
+  void set_include_sequencer_widget(bool include_sequencer_widget){
+    printf("    SET_INCLUDE_SEQUENCER: %d. Now-check: %d\n", include_sequencer_widget, this->include_sequencer_widget->isChecked());
+    
+    if(include_sequencer_widget){
+      API_setLowertabIncludesSequencer(false);
+      verticalLayout->insertWidget(verticalLayout->count()-1, SEQUENCER_getFrameWidget(), 0);
+      SEQUENCER_getFrameWidget()->setMinimumHeight(500);
+      SEQUENCER_getFrameWidget()->show();
+    }
+
+    if (!include_sequencer_widget){
+      printf("call A\n");
+      API_setLowertabIncludesSequencer(true);
+    }
+    
+    if (this->include_sequencer_widget->isChecked() != include_sequencer_widget){
+      radium::ScopedIniting initing(_initing);
+      this->include_sequencer_widget->setChecked(include_sequencer_widget);
+    }
+
+  }
+  */
+
+  void update_sequencer_in_mixer_checkbox(void){
+    if (include_sequencer_widget->isChecked()==sequencerInMixer())
+      return;
+    
+    radium::ScopedIniting initing(_initing);
+    this->include_sequencer_widget->setChecked(sequencerInMixer());
   }
     
   void change_num_mixerstrips_rows(int num_rows){
@@ -689,7 +719,7 @@ public:
       pauseUpdates(g_main_window, 15); // Prevent some flickering.
             
       w->hide();
-      _bottom_bar->show();
+      get_mixer_bottom_bar(g_mixer_widget)->show();
 
       convert_widget_to_window(w, mixerWindowIsChildOfMainWindow() ? g_main_window : NULL, radium::NOT_MODAL, ShowAssertionOrThrowAPIException::SHOW_ASSERTION);
 
@@ -721,7 +751,7 @@ public:
       
       xsplitter->insertWidget(pos, w);
 
-      _bottom_bar->hide();
+      get_mixer_bottom_bar(g_mixer_widget)->hide();
 
       //printf("  NUM: %d / %d. MIN: %d %d %d %d %d %d\n", pos, xsplitter->count(), g_editor->minimumHeight(), w->minimumHeight(), xsplitter->minimumHeight(), g_main_window->minimumHeight(), API_get_main_ysplitter()->minimumHeight(), this->minimumHeight());
       
@@ -831,12 +861,25 @@ public slots:
     if (!_initing.can_access())
       return;
 
-    setInstrumentWidgetInMixer(include_instrument_widget);
+    setInstrumentInMixer(include_instrument_widget);
   }
 
   void on_include_instrument_widget_clicked(){
     if (include_instrument_widget->_last_pressed_button==Qt::RightButton){
       S7CALL2(void_void,"FROM_C-show-instrument-in-mixer-popup-menu");
+    }
+  }
+  
+  void on_include_sequencer_widget_toggled(bool include_sequencer_widget){
+    if (!_initing.can_access())
+      return;
+
+    setSequencerInMixer(include_sequencer_widget);
+  }
+
+  void on_include_sequencer_widget_clicked(){
+    if (include_sequencer_widget->_last_pressed_button==Qt::RightButton){
+      S7CALL2(void_void,"FROM_C-show-sequencer-in-mixer-popup-menu");
     }
   }
   
@@ -979,7 +1022,7 @@ void MW_enable_include_instrument_checkbox(void){
 }
 
 void MW_instrument_widget_set_size(QWidget *audio_widget, SizeType old_size_type, SizeType new_size_type){
-  R_ASSERT_RETURN_IF_FALSE(instrumentWidgetIsInMixer());
+  R_ASSERT_RETURN_IF_FALSE(instrumentInMixer());
 
   if (new_size_type==SIZETYPE_HALF){
     g_mixer_widget2->verticalLayout->setStretchFactor(getInstrumentsWidget(),1);
@@ -1049,13 +1092,23 @@ void MW_set_window_mode(bool show_window){
   g_mixer_widget2->set_window_mode(show_window);
 }
 
-bool MW_is_in_window_mode(void){
+bool MW_in_window_mode(void){
   return g_mixer_widget2->_is_showing_window;
 }
 
 void MW_set_instrument_in_mixer(bool include_instrument_widget){
   g_mixer_widget2->set_include_instrument_widget(include_instrument_widget);
 }
+
+void MW_update_sequencer_in_mixer_checkbox(void){
+  g_mixer_widget2->update_sequencer_in_mixer_checkbox();
+}
+
+/*
+void MW_set_sequencer_in_mixer(bool include_sequencer_widget){
+  g_mixer_widget2->set_include_sequencer_widget(include_sequencer_widget);
+}
+*/
 
 void MW_update_checkboxes(void){
   {

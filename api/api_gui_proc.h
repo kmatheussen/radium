@@ -52,6 +52,7 @@ void API_run_resize_event_for_custom_widget(QWidget *widget, QResizeEvent *ev);
 QWidget *API_get_main_ysplitter(void);
 QWidget *API_get_lowertabs(void);
 void API_setLowertabIncludesInstrument(bool includeit);
+void API_setLowertabIncludesSequencer(bool includeit);
 bool API_instrumentGuiIsVisibleInLowerTab(void);
 void API_showInstrumentGui(void);
 void API_hideInstrumentGui(void);

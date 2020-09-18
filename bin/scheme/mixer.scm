@@ -54,7 +54,7 @@
 
 (define (FROM_C-window-mode-popup-menu) 
   (popup-menu
-   (get-keybinding-configuration-popup-menu-entries "ra:switch-mixer-is-in-window"
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-main-mixer-is-in-window"
                                                     '()
                                                     "FOCUS_MIXER")
    "-------------"
@@ -72,9 +72,18 @@
  
 (define (FROM_C-show-instrument-in-mixer-popup-menu) 
   (popup-menu
-   (get-keybinding-configuration-popup-menu-entries "ra:switch-instrument-widget-in-mixer"
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-instrument-in-mixer"
                                                     '()
                                                     "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+ 
+(define (FROM_C-show-sequencer-in-mixer-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:switch-sequencer-in-mixer"
+                                                    '()
+                                                    "FOCUS_MIXER FOCUS_SEQUENCER")
    "-------------"
    "Help keybindings" show-keybinding-help-window
    ))
@@ -400,8 +409,8 @@
          ra:unzoom)
    "---------------Windows"
    (list "Mixer in it's own window (W)"
-         :check (<ra> :main-mixer-is-in-window)
-         :shortcut ra:switch-mixer-is-in-window
+         :check (<ra> :main-mixer-in-window)
+         :shortcut ra:switch-main-mixer-in-window
          (lambda (doit)
            (<ra> :set-main-mixer-in-window doit)))
    (list "Show mixer-strips (M)"
@@ -409,11 +418,16 @@
          :shortcut ra:switch-main-mixer-is-modular
          (lambda (doit)
            (<ra> :set-main-mixer-is-modular (not doit))))
-   (list "Instrument widget in mixer (I)"
-         :check (<ra> :instrument-widget-is-in-mixer)
-         :shortcut ra:switch-instrument-widget-in-mixer
+   (list "Instrument in mixer (I)"
+         :check (<ra> :instrument-in-mixer)
+         :shortcut ra:switch-instrument-in-mixer
          (lambda (showit)
-           (<ra> :set-instrument-widget-in-mixer showit)))
+           (<ra> :set-instrument-in-mixer showit)))
+   (list "Sequencer in mixer (S)"
+         :check (<ra> :sequencer-in-mixer)
+         :shortcut ra:switch-sequencer-in-mixer
+         (lambda (showit)
+           (<ra> :set-sequencer-in-mixer showit)))
    "---------------------"
    (list "Mixer Visible"
          :check #t

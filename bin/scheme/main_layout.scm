@@ -104,7 +104,7 @@
   
   (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-frame-gui)
   
-  (if (not (<ra> :instrument-widget-is-in-mixer))
+  (if (not (<ra> :instrument-in-mixer))
       (<gui> :add-tab *lowertab-gui* *instrument-gui-tab-name* instrument-gui))
   
   (<gui> :add-tab *lowertab-gui* *edit-gui-tab-name* *notem-gui*)
@@ -142,8 +142,30 @@
          (<gui> :remove-tab *lowertab-gui* pos))
         ((and includeit
               (not is-included))
-         (<gui> :add-tab *lowertab-gui* *instrument-gui-tab-name* instr 1)
-         (<gui> :set-current-tab *lowertab-gui* 1))))
+         (let* ((sequencer-actually-in-main-tabs (>= (<gui> :get-tab-pos *lowertab-gui* (<gui> :get-sequencer-frame-gui)) 0))
+                (tabnum (if sequencer-actually-in-main-tabs
+                            1
+                            0)))
+           (<gui> :add-tab *lowertab-gui* *instrument-gui-tab-name* instr tabnum)
+           (<gui> :set-current-tab *lowertab-gui* tabnum)))))
+      
+
+(define (FROM-C-set-lowertab-includes-sequencer includeit)
+  (define sequencer (<gui> :get-sequencer-frame-gui))
+  (define pos (<gui> :get-tab-pos *lowertab-gui* sequencer))
+  (define is-included (>= pos 0))
+
+  ;;(c-display "includeit/pos/is-included" includeit pos is-included)
+  
+  (cond ((and (not includeit)
+              is-included)
+         (if (= 1 (<gui> :current-tab *lowertab-gui*))
+             (<gui> :set-current-tab *lowertab-gui* 0))
+         (<gui> :remove-tab *lowertab-gui* pos))
+        ((and includeit
+              (not is-included))
+         (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer 0)
+         (<gui> :set-current-tab *lowertab-gui* 0))))
       
 
 (define (show-lowertab-gui gui)
@@ -170,7 +192,7 @@
 
 (define (FROM-C-instrument-gui-is-visible)
   (define instr (<gui> :get-instrument-gui))
-  (if (<ra> :instrument-widget-is-in-mixer)
+  (if (<ra> :instrument-in-mixer)
       (<gui> :is-visible instr)
       (lowertab-gui-is-visible instr)))
                   
@@ -233,30 +255,62 @@
     ))
 
 
-;; Remove from sequencer window, add to main tabs, hide sequencer window gui.
-(define (move-sequencer-to-main-tabs)
-  (assert *sequencer-window-gui-active*)    
+;; Move to main tabs or mixer. Hides sequencer window gui if in window before.
+(define (move-sequencer-to-main-tabs-or-mixer move-to-main-tabs)
+  ;;(assert *sequencer-window-gui-active*)
+  (define is-in-window *sequencer-window-gui-active*)
   (set! *sequencer-window-gui-active* #f)
-    
+
   (let ((sequencer-gui (<gui> :get-sequencer-frame-gui))
         (window *sequencer-window-gui*))
     (<gui> :remove-parent sequencer-gui)
-    (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-gui 0)
-    (<gui> :set-current-tab *lowertab-gui* 0)
-    (<gui> :hide window)))
+    (if (not move-to-main-tabs)
+        (begin
+          (let ((ysplitter (<gui> :get-mixer-y-splitter)))
+            (define mixer-height (<gui> :height ysplitter))
+            (define sequencer-height (<gui> :height sequencer-gui))
+            (<gui> :add ysplitter sequencer-gui)
+            (<gui> :show sequencer-gui)
+            ;;(c-display "H1/2:" (list (- mixer-height sequencer-height)
+            ;;                         sequencer-height))
+            (<gui> :set-splitter-sizes ysplitter (list (max 10 (- mixer-height sequencer-height))
+                                                       sequencer-height))
+            )
+          #t)
+        (begin
+          (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-gui 0)
+          (<gui> :set-current-tab *lowertab-gui* 0)))
+    (if is-in-window
+        (<gui> :hide window))))
 
 
 #!!
 (<ra> :show-upper-part-of-main-window)
 (<ra> :hide-upper-part-of-main-window)
+
+(let ((ysplitter (<gui> :get-mixer-y-splitter))
+      (sequencer-gui (<gui> :get-sequencer-frame-gui)))
+  ;;(<gui> :add ysplitter sequencer-gui)
+  (<gui> :show sequencer-gui)
+  (<gui> :set-splitter-sizes ysplitter (list 500 500))
+  )
+
+(let ((ysplitter (<gui> :get-mixer-y-splitter)))
+  (<gui> :height ysplitter))
+
 !!#
 
 (define *lower-tabs-height-before-full-or-active* 10)
 
+(define (set-lower-tabs-height! in-main-tabs)
+  (if in-main-tabs
+      (set! *lower-tabs-height-before-full-or-active* (<gui> :height *lowertab-gui*))
+      (set! *lower-tabs-height-before-full-or-active* (<gui> :height (<gui> :get-sequencer-frame-gui)))))
+  
 (define (remember-lower-tabs-height)
   ;;(c-display "|||||||||||||| ========REMEMBER lower tabs height:" (<gui> :height *lowertab-gui*))
-  (set! *lower-tabs-height-before-full-or-active* (<gui> :height *lowertab-gui*)))
-
+  (set-lower-tabs-height! #t))
+  
 (define (recall-lower-tabs-height)
   ;;(c-display "|||||||||||||| ========recall lower tabs height:" *lower-tabs-height-before-full-or-active*)
   (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) *lower-tabs-height-before-full-or-active*))
@@ -273,43 +327,67 @@
           (recall-lower-tabs-height)
           (<ra> :show-upper-part-of-main-window)))))
 
-(define (FROM-C-sequencer-set-gui-in-window! doit)
-  (when (not (eq? doit (FROM-C-sequencer-gui-in-window)))
-    (if doit
-        (if (not (<ra> :upper-part-of-main-window-is-visible))
-            (<ra> :show-upper-part-of-main-window)
-            (remember-lower-tabs-height)))
+(define (FROM-C-configure-sequencer-widget! in-window in-main-tabs)
+  (define currently-in-window (FROM-C-sequencer-gui-in-window))
+  (define currently-in-main-tabs (not (<ra> :sequencer-in-mixer)))
+
+  (define change-window (not (eq? in-window currently-in-window)))
+  (define change-position (not (eq? in-main-tabs currently-in-main-tabs)))
+
+  (when (or change-window
+            change-position)
+    (if in-window
+        (if currently-in-main-tabs
+            (if (not (<ra> :upper-part-of-main-window-is-visible))
+                (<ra> :show-upper-part-of-main-window)
+                (remember-lower-tabs-height))
+            (set-lower-tabs-height! #f)))
     
-    (cond ((and doit
+    (cond ((and in-window
                 (not *sequencer-window-gui-active*))
            (move-sequencer-to-window))
-          ((and (not doit)
-                *sequencer-window-gui-active*)
-           (move-sequencer-to-main-tabs)))
-    
-    (if (not doit)
-        (recall-lower-tabs-height))))
-      
+          (else ;;(and (not in-window)
+           (set-lower-tabs-height! #f)
+           (move-sequencer-to-main-tabs-or-mixer in-main-tabs)))
+
+    (if (not in-window)
+        (if in-main-tabs
+            (recall-lower-tabs-height)
+            (FROM_C-minimize-lowertab)))))
+
 (define (FROM-C-sequencer-gui-in-window)
   *sequencer-window-gui-active*)
 
 (define (FROM-C-sequencer-gui-is-visible)
-  (let ((ret (or (and *sequencer-window-gui-active*
-                      (<gui> :is-visible *sequencer-window-gui*))
-                 (lowertab-gui-is-visible (<gui> :get-sequencer-frame-gui)))))
-    (c-display "sequencer visible:" ret)
-    ret))
+  (define ret (cond (*sequencer-window-gui-active*
+                     (<gui> :is-visible *sequencer-window-gui*))
+                    ((ra:sequencer-in-mixer)
+                     (<gui> :is-visible (<gui> :get-sequencer-frame-gui)))
+                    (else
+                     (lowertab-gui-is-visible (<gui> :get-sequencer-frame-gui)))))
+                      
+  ;;(c-display "sequencer visible:" ret)
+  ret)
+#!!
+(FROM-C-sequencer-gui-is-visible)
+!!#
 
 (define (FROM-C-show-sequencer-gui)
   (<ra> :set-sequencer-keyboard-focus)
-  (if *sequencer-window-gui-active*
-      (<gui> :show *sequencer-window-gui*)
-      (show-lowertab-gui (<gui> :get-sequencer-frame-gui))))
+  (cond (*sequencer-window-gui-active*
+         (<gui> :show *sequencer-window-gui*))
+        ((<ra> :sequencer-in-mixer)
+         (<gui> :show (<gui> :get-sequencer-frame-gui)))
+        (else
+         (show-lowertab-gui (<gui> :get-sequencer-frame-gui)))))
 
 (define (FROM-C-hide-sequencer-gui)
-  (if *sequencer-window-gui-active*
-      (<gui> :hide *sequencer-window-gui*)
-      (hide-lowertab-gui (<gui> :get-sequencer-frame-gui))))
+  (cond (*sequencer-window-gui-active*
+         (<gui> :hide *sequencer-window-gui*))
+        ((<ra> :sequencer-in-mixer)
+         (<gui> :hide (<gui> :get-sequencer-frame-gui)))
+        (else
+         (hide-lowertab-gui (<gui> :get-sequencer-frame-gui)))))
 
 
 #!!

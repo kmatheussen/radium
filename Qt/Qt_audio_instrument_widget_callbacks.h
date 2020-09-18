@@ -881,12 +881,12 @@ private:
       }
     }
 
-    if (instrumentWidgetIsInMixer())
+    if (instrumentInMixer())
       MW_instrument_widget_set_size(this, _size_type, new_size_type);
 
     if (new_size_type==SIZETYPE_HALF) {
 
-      if (!instrumentWidgetIsInMixer()) {
+      if (!instrumentInMixer()) {
         int size = g_main_window->height() / 2;
         setMinimumHeight(size);
         setMaximumHeight(size);
@@ -905,7 +905,7 @@ private:
 
     R_ASSERT_RETURN_IF_FALSE(_size_type!=SIZETYPE_NORMAL);
 
-    if (instrumentWidgetIsInMixer())
+    if (instrumentInMixer())
       MW_instrument_widget_set_size(this, _size_type, SIZETYPE_NORMAL);
     
     _size_type = SIZETYPE_NORMAL;
@@ -926,7 +926,7 @@ private:
     GFX_HideMixer();
     GFX_PlayListWindowToBack();
     */
-    if (instrumentWidgetIsInMixer()){
+    if (instrumentInMixer()){
       MW_hide_non_instrument_widgets();
     } else {
       hideUpperPartOfMainWindow();
@@ -937,7 +937,7 @@ private:
 
   void show_non_instrument_widgets(void){
 
-    if (instrumentWidgetIsInMixer()){
+    if (instrumentInMixer()){
       MW_show_non_instrument_widgets();
     } else {
       showUpperPartOfMainWindow();
@@ -971,7 +971,7 @@ public:
     if (new_size_type==SIZETYPE_NORMAL)
       SEQUENCER_show_because_instrument_widget_is_large();
     else {
-      if (!instrumentWidgetIsInMixer())
+      if (!instrumentInMixer())
         SEQUENCER_hide_because_instrument_widget_is_large();
     }
     
@@ -985,7 +985,7 @@ public:
       _plugin_widget->_faust_plugin_widget->change_height(new_size_type);
 #endif
 
-    if (new_size_type==SIZETYPE_NORMAL && !instrumentWidgetIsInMixer())
+    if (new_size_type==SIZETYPE_NORMAL && !instrumentInMixer())
       S7CALL2(void_void,"FROM_C-minimize-lowertab");
   }
 
@@ -1009,7 +1009,7 @@ public:
     
     if (_size_type_before_hidden != SIZETYPE_NORMAL)
       change_height(_size_type_before_hidden);
-    else if (!instrumentWidgetIsInMixer())
+    else if (!instrumentInMixer())
       S7CALL2(void_void,"FROM_C-minimize-lowertab");
 
     //      show_large();

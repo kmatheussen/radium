@@ -5747,6 +5747,9 @@ void SEQUENCER_update(uint32_t what){
     
   } else {
 
+    if (what & SEQUPDATE_REMAKE_LEFT_PART)
+      S7CALL2(void_void, "FROM_C-reconfigure-sequencer-left-part");
+    
     if (what & SEQUPDATE_REMAKE_RIGHT_PART)
       S7CALL2(void_void, "FROM_C-reconfigure-sequencer-right-part");
     

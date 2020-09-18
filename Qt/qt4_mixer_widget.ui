@@ -220,6 +220,16 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="include_sequencer_widget">
+        <property name="toolTip">
+         <string>Show instrument widget inside the mixer</string>
+        </property>
+        <property name="text">
+         <string>S</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -462,8 +472,8 @@
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_4"/>
   <buttongroup name="buttonGroup_5"/>
-  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>
