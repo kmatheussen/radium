@@ -4100,6 +4100,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     if (num_seqtracks==0)
       return;
 
+
+    
+#if 0 // Several unnecessary resize events are still sent, even in Qt 5.15 (latest when this was written), but it seems like the flickering caused by this, that we saw in earlier, is gone. It also seems almost impossible to get this hack right. So therefore we try to disable it.
     
     // Hack to workaround screwed up layout, probably caused by a Qt bug. For some reason resizeEvent() is called twice when shown, first with minimumHeight, and then with last height.
     {
@@ -4113,10 +4116,11 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         if (height() <= minimumHeight())
           return;
 
-        if (isVisible()==false) // Qt is weird.
-          return;
+        //if (isVisible()==false) // Qt is weird.
+        //  return;
       }
     }
+#endif
     
     bool last_seqtrack_was_visible1 = SEQUENCER_last_seqtrack_is_visible();
     
