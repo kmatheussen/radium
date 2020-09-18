@@ -151,6 +151,7 @@ mixer-strips-set-configuration!
 FROM-C-get-main-y-splitter
 FROM-C-get-lowertab-gui
 FROM-C-set-lowertab-includes-instrument
+FROM-C-set-lowertab-includes-sequencer
 FROM-C-show-instrument-gui
 FROM-C-hide-instrument-gui
 FROM-C-instrument-gui-is-visible
@@ -184,7 +185,7 @@ FROM_C-copy-seqblock-track-on/off-to-editor
 ;;FROM_C-jump-to-mark
 ;;FROM_C-jump-prev-mark
 ;;FROM_C-jump-next-mark
-FROM-C-sequencer-set-gui-in-window!
+FROM-C-configure-sequencer-widget!
 FROM-C-sequencer-gui-in-window
 FROM-C-assert-that-function-can-be-called-from-C
 FROM_C-create-modulator-gui
@@ -236,6 +237,7 @@ FROM_C-show-mixer-config-reset-popup-menu
 FROM_C-window-mode-popup-menu
 FROM_C-show-modular-popup-menu
 FROM_C-show-instrument-in-mixer-popup-menu
+FROM_C-show-sequencer-in-mixer-popup-menu
 FROM_C-show-cpu-usage-in-mixer-popup-menu
 FROM_C-show-mixer-connections-popup-menu
 FROM_C-show-mixer-bus-connections-popup-menu

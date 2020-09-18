@@ -118,6 +118,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_common_proc.h"
 
 #include "api_various_proc.h"
+#include "api_gui_proc.h"
 #include "radium_proc.h"
 
 
@@ -152,12 +153,12 @@ void setMainMixerInWindow(bool show_window){
   MW_set_window_mode(show_window);
 }
   
-bool mainMixerIsInWindow(void){
-  return MW_is_in_window_mode();
+bool mainMixerInWindow(void){
+  return MW_in_window_mode();
 }
   
-bool switchMixerIsInWindow(void){
-  bool ret = !MW_is_in_window_mode();
+bool switchMainMixerInWindow(void){
+  bool ret = !MW_in_window_mode();
   setMainMixerInWindow(ret);
   return ret;
 }
@@ -267,29 +268,69 @@ void setShowMixerStripDuringStartup(bool val){
 }
 
 
-static bool g_instrumentWidgetIsInMixer = false;
+static bool g_instrumentInMixer = false;
 
-bool instrumentWidgetIsInMixer(void){
+bool instrumentInMixer(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_instrumentWidgetIsInMixer = SETTINGS_read_bool("position_instrument_widget_in_mixer", false);
+    g_instrumentInMixer = SETTINGS_read_bool("position_instrument_widget_in_mixer", false);
     has_inited = true;
   }
 
-  return g_instrumentWidgetIsInMixer;
+  return g_instrumentInMixer;
 }
 
-void setInstrumentWidgetInMixer(bool val){
-  g_instrumentWidgetIsInMixer = val;
+void setInstrumentInMixer(bool val){
+  g_instrumentInMixer = val;
   SETTINGS_write_bool("position_instrument_widget_in_mixer", val);
 
   MW_set_instrument_in_mixer(val);
 }
 
-bool switchInstrumentWidgetInMixer(void){
-  bool ret = !instrumentWidgetIsInMixer();
-  setInstrumentWidgetInMixer(ret);
+bool switchInstrumentInMixer(void){
+  bool ret = !instrumentInMixer();
+  setInstrumentInMixer(ret);
+  return ret;
+}
+
+
+
+static bool g_sequencerInMixer = false;
+
+bool sequencerInMixer(void){
+  return g_sequencerInMixer;
+}
+
+bool sequencerInMainTabs(void){
+  return !sequencerInMixer();
+}
+
+void API_initialize_sequencer_in_mixer(void){
+#if !defined(RELEASE)
+  static bool has_inited = false;
+  R_ASSERT(has_inited==false);
+  has_inited = true;
+#endif
+      
+  bool in_mixer = SETTINGS_read_bool("position_sequencer_widget_in_mixer", false);
+  if (in_mixer)
+    configureSequencerWidget(false, false);
+}
+
+void setSequencerInMixer(bool include_sequencer_widget){
+
+  if (include_sequencer_widget)
+    configureSequencerWidget(false, false);
+  else
+    configureSequencerWidget(sequencerInWindow(), true);
+
+  //MW_set_sequencer_in_mixer(val);
+}
+
+bool switchSequencerInMixer(void){
+  bool ret = !sequencerInMixer();
+  setSequencerInMixer(ret);
   return ret;
 }
 
@@ -490,16 +531,45 @@ void showHideFocusSequencer(void){
 }
 
 
-void setSequencerInWindow(bool doit){
-  S7CALL2(void_bool, "FROM-C-sequencer-set-gui-in-window!", doit);
+void configureSequencerWidget(bool in_window, bool in_main_tabs){
+  bool change_window = in_window != sequencerInWindow();
+  bool change_position = in_main_tabs == g_sequencerInMixer;
+
+  if(change_window || change_position) {
+
+    {
+      if(change_position && !in_main_tabs){
+        API_setLowertabIncludesSequencer(false);
+      }
+      
+      S7CALL2(void_bool_bool, "FROM-C-configure-sequencer-widget!", in_window, in_main_tabs);
+      
+      if(change_position && in_main_tabs){
+        API_setLowertabIncludesSequencer(true);
+      }
+    }
+    
+    if (change_position) {
+      g_sequencerInMixer = !in_main_tabs;
+      SETTINGS_write_bool("position_sequencer_widget_in_mixer", g_sequencerInMixer);
+      MW_update_sequencer_in_mixer_checkbox();
+      SEQUENCER_update(SEQUPDATE_REMAKE_LEFT_PART); // Make sure F button is correctly shown/hidden.
+    }
+    
+  }
+  
 }
 
 bool sequencerInWindow(void){
   return S7CALL2(bool_void, "FROM-C-sequencer-gui-in-window");
 }
 
+void setSequencerInWindow(bool doit){
+  configureSequencerWidget(doit, sequencerInMainTabs());
+}
+
 void showHideSequencerInWindow(void){
-  setSequencerInWindow(!sequencerInWindow());    
+  configureSequencerWidget(!sequencerInWindow(), sequencerInMainTabs());
 }
 
 void setSequencerInFullMode(bool doit){

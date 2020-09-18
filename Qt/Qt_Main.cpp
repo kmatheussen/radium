@@ -2033,78 +2033,91 @@ protected:
       ATOMIC_SET(rt_message_status, RT_MESSAGE_READY);
     }
 
-    static int num_calls_at_this_point = 0;
-    num_calls_at_this_point++;
-
     struct Tracker_Windows *window=root->song->tracker_windows;
 
-    // No, we still need to do this. At least in qt 5.5.1. Seems like it's not necessary in 5.7 or 5.8 though, but that could be coincidental.
-    if(num_calls_at_this_point<150/_interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
-      updateWidgetRecursively(g_main_window);
-    }
-
-    if(num_calls_at_this_point==160/_interval){
-      show_nag_window("");
-    }
-
-
-    // Force full keyboard focus to the main window after startup. This seems to be the only reliable way. (if you think this is unnecessary, see if left alt works to start navigating menues after startup while using the fvwm window manager)
+    static int num_calls_at_this_point = 0;
+    num_calls_at_this_point++;
+    
     {
-      static QPointer<MyQMessageBox> gakkbox = NULL; // gakkbox could, perhaps, be deleted by itself if radium finds a strange parent. (got a crash once where gakkbox was deleted before explicitly calling delete below.)
-
-      if(num_calls_at_this_point==50/_interval){
-        gakkbox = MyQMessageBox::create(false, NULL);
-        gakkbox->setText("Forcing focus");
-        safeShow(gakkbox);
-        if (gakkbox != NULL)
-          gakkbox->lower(); // doesn't work, at least on linux. Normally I struggle to keep window on top, now it's the opposite. Should probably change Radium to use QMdiArea. It should solve all of the window manager problems.
+      
+      if(num_calls_at_this_point<200/_interval){
+        
+        if(num_calls_at_this_point==160/_interval){
+          show_nag_window("");
+        }
+        
+        
+        if (num_calls_at_this_point==1)
+          API_initialize_sequencer_in_mixer();
+        
+        // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
+        // No, we still need to do this. At least in qt 5.5.1. Seems like it's not necessary in 5.7 or 5.8 though, but that could be coincidental.
+        if(num_calls_at_this_point<150/_interval)
+          updateWidgetRecursively(g_main_window);
+        
+        // Force full keyboard focus to the main window after startup. This seems to be the only reliable way. (if you think this is unnecessary, see if left alt works to start navigating menues after startup while using the fvwm window manager)
+        {
+          static QPointer<MyQMessageBox> gakkbox = NULL; // gakkbox could, perhaps, be deleted by itself if radium finds a strange parent. (got a crash once where gakkbox was deleted before explicitly calling delete below.)
+          
+          if(num_calls_at_this_point==50/_interval){
+            gakkbox = MyQMessageBox::create(false, NULL);
+            gakkbox->setText("Forcing focus");
+            safeShow(gakkbox);
+            if (gakkbox != NULL)
+              gakkbox->lower(); // doesn't work, at least on linux. Normally I struggle to keep window on top, now it's the opposite. Should probably change Radium to use QMdiArea. It should solve all of the window manager problems.
+          }
+          if(num_calls_at_this_point==60/_interval){
+            if (gakkbox != NULL){
+              gakkbox->hide();
+              g_main_window->raise();
+              //g_main_window->activateWindow();
+            }
+          }
+          
+          if(num_calls_at_this_point==70/_interval){
+            delete gakkbox;
+            GFX_SetMenuFontsAgain();
+            GFX_CloseProgress();
+            ATOMIC_SET(g_qtgui_has_started_step2, true);
+          }
+        }
+        
       }
-      if(num_calls_at_this_point==60/_interval){
-        if (gakkbox != NULL){
-          gakkbox->hide();
+      
+      
+#if 0
+      // Does not work.
+      {
+        static bool has_raised = false;
+        if (has_raised==false && gnum_calls_at_this_point > 300/_interval){
           g_main_window->raise();
-          //g_main_window->activateWindow();
+          g_main_window->activateWindow();
+          //BringWindowToTop((HWND)g_main_window->winId());
+          //SetWindowPos((HWND)g_main_window->winId(), HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+          
+          has_raised = true;
         }
       }
-
-      if(num_calls_at_this_point==70/_interval){
-        delete gakkbox;
-        GFX_SetMenuFontsAgain();
-        GFX_CloseProgress();
-        ATOMIC_SET(g_qtgui_has_started_step2, true);
-      }
-    }
-    
-#if 0
-    // Does not work.
-    {
-      static bool has_raised = false;
-      if (has_raised==false && gnum_calls_at_this_point > 300/_interval){
-        g_main_window->raise();
-        g_main_window->activateWindow();
-        //BringWindowToTop((HWND)g_main_window->winId());
-        //SetWindowPos((HWND)g_main_window->winId(), HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
-
-        has_raised = true;
-      }
-    }
 #endif
       
 #if 0 //defined(FOR_WINDOWS)
-    
-    // Does not work.
-    
-    static bool has_focused = false;
-    if(has_focused==false && num_calls_at_this_point>400/_interval){ // Set focus constantly between 0.4 and 1.0 seconds after startup.
       
-      // We started to lose keyboard focus at startup between 4.8.8 and 4.9.0 (but only if no message windows showed up, and only in RELEASE mode). Clicking the window did not help. I don't know wny.
-      OS_WINDOWS_set_key_window((void*)g_main_window->winId());
-
-      if (num_calls_at_this_point>5000/_interval){
-        has_focused=true;
+      // Does not work.
+      
+      static bool has_focused = false;
+      if(has_focused==false && num_calls_at_this_point>400/_interval){ // Set focus constantly between 0.4 and 1.0 seconds after startup.
+        
+        // We started to lose keyboard focus at startup between 4.8.8 and 4.9.0 (but only if no message windows showed up, and only in RELEASE mode). Clicking the window did not help. I don't know wny.
+        OS_WINDOWS_set_key_window((void*)g_main_window->winId());
+        
+        if (num_calls_at_this_point>5000/_interval){
+          has_focused=true;
+        }
       }
-    }
 #endif
+      
+    }
+
     
     MIDI_HandleInputMessage();
 
@@ -2518,11 +2531,13 @@ void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
   
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPoint pos;
-  if (!g_editor->editor_layout_widget->isVisible())
-    pos = QPoint(x - 10000, y - 10000);
-  else
-    pos = editor->editor_layout_widget->mapToGlobal(QPoint(x,y));
 
+  if (!g_editor->editor_layout_widget->isVisible()){
+    pos = QPoint(x - 10000, y - 10000);
+  }else{
+    pos = editor->editor_layout_widget->mapToGlobal(QPoint(x,y));
+  }
+  
   QPoint minpos = g_main_window->mapToGlobal(QPoint(0,0));
   QPoint maxpos = g_main_window->mapToGlobal(QPoint(g_main_window->width(),g_main_window->height()));
 

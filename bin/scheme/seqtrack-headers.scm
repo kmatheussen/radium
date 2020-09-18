@@ -819,6 +819,11 @@
    )
   )
 
+#!!
+(list (<gui> :height (<gui> :get-sequencer-gui))
+      ((<ra> :get-box sequencer) :height))
+!!#
+
 (def-area-subclass (<seqtrack-header> :gui :x1 :y1 :x2 :y2
                                       :use-two-rows
                                       :show-panner
@@ -1060,21 +1065,31 @@
                      #f))
    :drag-func
    (lambda (button x* y* dx dy)
+
+     (define ysplitter (if (<ra> :sequencer-in-mixer)
+                           (<gui> :get-mixer-y-splitter)
+                           *ysplitter*))
      
-     (define size0 ((<gui> :get-splitter-sizes *ysplitter*) 0))
-     (define size1 ((<gui> :get-splitter-sizes *ysplitter*) 1))
+     (define size0 ((<gui> :get-splitter-sizes ysplitter) 0))
+     (define size1 ((<gui> :get-splitter-sizes ysplitter) 1))
+     (define size (+ size0 size1))
      
-     (define new-size0 (+ size0 dy))
-     (when (< new-size0 0)
-       (set! new-size0 0)
-       (set! dy (- size0)))
+     (define new-size0 (max 10 (+ size0 dy)))     
+     (define new-size1 (max 10 (- size1 dy)))
+     (define new-size (+ new-size0 new-size1))
      
-     (define new-size1 (- size1 dy))
-     (when (< new-size1 0)
-       (set! new-size1 0))
-     
+     ;(define size-diff (- new-size
+     ;                     size))
+    ; 
+    ; (when (not (= size-diff 0))
+    ;   (set! new-size0 (max 10 (+ new-size0 (round (/ size-diff 2)))))
+    ;   (set! new-size1 (max 10 (- size new-size0))))
+
+                          
      ;;(c-display "Y:" y ", start-y:" start-y ". DY:" (- y start-y))
-     (<gui> :set-splitter-sizes *ysplitter* (list new-size0 new-size1)))
+     (<gui> :set-splitter-sizes ysplitter (list new-size0 new-size1))
+     ;;(FROM_C-reconfigure-sequencer-left-part)
+     )
 
    :release-func
    (lambda (button x* y* dx dy)
@@ -1322,10 +1337,11 @@
   (add-sub-area-plain! grid-checkbox)
   (grid-checkbox :add-statusbar-text-handler "Grid. Right-click to change type")
 
-  
+
   (horizontally-layout-areas
    buttons-x1 y1 x2 y2
-   (if in-window
+   (if (or in-window
+           (<ra> :sequencer-in-mixer))
        '(window)
        '(window full))
    :spacing spacing
@@ -1343,7 +1359,7 @@
               (lambda (new-value)
                 ;;(c-display type "new-value:" new-value)
                 (cond ((eq? type 'window)
-                       (<ra> :set-sequencer-in-window new-value))
+                       (<ra> :configure-sequencer-widget new-value))
                       ((eq? type 'full)
                        (<ra> :set-sequencer-in-full-mode new-value))
                       (else
@@ -1584,6 +1600,11 @@
 
 (define (get-sequencer-left-part-position kont)
   (define header-box (<ra> :get-box sequencer-left-part))
+
+  (when (not (<ra> :release-mode))
+    (assert (= (<gui> :height (<gui> :get-sequencer-gui))
+               ((<ra> :get-box sequencer) :height))))
+
   (kont (header-box :x1) (header-box :y1)
         (header-box :x2) (header-box :y2)))
 
@@ -1667,7 +1688,7 @@
   *sequencer-left-part-area*)
 
 (define (FROM_C-reconfigure-sequencer-left-part)
-  ;;(c-display "   Scheme: Reconfiguring left part")
+  ;;(c-display "---------------------   Scheme: Reconfiguring left part")
 
   (get-sequencer-left-part-area)
 
@@ -1689,6 +1710,10 @@
         (define height ((<ra> :get-box sequencer) :height))
         ;;(define height (- (<gui> :height *testgui*) 60))
 
+        (if (not (<ra> :release-mode))
+            (assert (= (<gui> :height (<gui> :get-sequencer-gui))
+                       ((<ra> :get-box sequencer) :height))))
+        
         ;;(define *testarea* (<new> :horizontal-instrument-slider *testgui* 20 30 110 120 (car (get-all-audio-instruments))))
         ;;(define *testarea* (<new> :mute-solo-buttons *testgui* 20 30 110 120 (car (get-all-audio-instruments)) #t #t))
         (*sequencer-left-part-area* :reset! 20 30 210 (+ 30 height))
@@ -1699,7 +1724,12 @@
                                                                 10
                                                                 )))
       (get-sequencer-left-part-position
-       (lambda (x1 y1 x2 y2)         
+       (lambda (x1 y1 x2 y2)
+         (when (not (<ra> :release-mode))
+           (assert (= (<gui> :height (<gui> :get-sequencer-gui))
+                      ((<ra> :get-box sequencer) :height)))
+           (assert (= (- y2 y1)
+                      (<gui> :height (<gui> :get-sequencer-gui)))))
          (*sequencer-left-part-area* :reset! 0 y1 x2 y2)        
          (*sequencer-left-part-area* :add-sub-area-plain! (<new> :sequencer-left-part gui
                                                                  0 y1 x2 y2

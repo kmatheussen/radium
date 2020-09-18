@@ -83,6 +83,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_MyQSlider.h"
 #include "../Qt/mQt_mixer_widget_callbacks.h"
 #include "../Qt/KeyboardFocusFrame.hpp"
+#include "../Qt/Qt_bottom_bar_widget_proc.h"
 
 #include "../common/vector_proc.h"
 #include "../common/Vector.hpp"
@@ -122,6 +123,8 @@ extern EditorWidget *g_editor;
   void	mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override{cycle_mouse_release_event(this, event, true);}
 
 
+namespace{
+  
 class MyScene : public QGraphicsScene ,public radium::MouseCycleFix {
   Q_OBJECT
  public:
@@ -191,11 +194,11 @@ class MyScene : public QGraphicsScene ,public radium::MouseCycleFix {
 };
 
 
-class MixerWidget : public radium::KeyboardFocusFrame // ,public radium::MouseCycleFix
+class MixerWidget_OnlyMixer : public radium::KeyboardFocusFrame // ,public radium::MouseCycleFix
 {
     Q_OBJECT
 public:
-    MixerWidget(QWidget *parent = 0);
+    MixerWidget_OnlyMixer(QWidget *parent = 0);
 
     void setupMatrix();
     void populateScene();
@@ -255,21 +258,83 @@ public:
   */
 };
 
-QGraphicsScene *get_scene(MixerWidget *mixer_widget){
-  return &mixer_widget->scene;
 }
 
-QWidget *get_qwidget(MixerWidget *mixer_widget){
+static MixerWidget_OnlyMixer *g_mixer;
+
+namespace radium{
+  
+class MixerWidget : public QWidget { 
+
+public:
+  
+  radium::Splitter *_splitter;
+  
+  MixerWidget_OnlyMixer *_only_mixer;
+
+  QWidget *_bottom_bar;
+
+  MixerWidget(QWidget *parent)
+  {
+
+    if(g_mixer_widget!=NULL){
+      fprintf(stderr,"Error. More than one MixerWidget created.\n");
+      abort();
+    }
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->setSpacing(0);
+    layout->setContentsMargins(0,0,0,0);
+    
+    setLayout(layout);
+
+    _splitter = new radium::Splitter(Qt::Vertical, parent);
+    _splitter->setChildrenCollapsible(false);
+ 
+    _only_mixer = new MixerWidget_OnlyMixer(_splitter);
+
+    _bottom_bar = BottomBar_create(this, false, true);
+
+    /*
+    layout->insertWidget(-1, _splitt, 0);
+    layout->insertWidget(-1, _bottom_bar, 0);
+    */
+    layout->addWidget(_splitter);
+    layout->addWidget(_bottom_bar);
+    
+    _bottom_bar->hide();
+
+    g_mixer_widget = this;
+    g_static_toplevel_widgets.push_back(this);
+  }
+  
+};
+
+}
+
+QGraphicsScene *get_scene(radium::MixerWidget *mixer_widget){
+  return &mixer_widget->_only_mixer->scene;
+}
+
+QWidget *get_mixer_bottom_bar(radium::MixerWidget *mixer_widget){
+  return mixer_widget->_bottom_bar;
+}
+
+QSplitter *get_mixer_ysplitter(radium::MixerWidget *mixer_widget){
+  return mixer_widget->_splitter;
+}
+
+QWidget *get_qwidget(radium::MixerWidget *mixer_widget){
   return mixer_widget;
 }
 
-MixerWidget *create_mixer_widget(QWidget *parent){
-  return new MixerWidget(parent);
+radium::MixerWidget *create_mixer_widget(QWidget *parent){
+  return new radium::MixerWidget(parent);
 }
 
 
 static bool modular_mixer_visible(void){
-  return g_mixer_widget->view->isVisible();
+  return g_mixer->view->isVisible();
 }
 
 
@@ -440,7 +505,7 @@ static void draw_slot(MyScene *myscene, float x, float y){
   }
 #endif
 
-  QGraphicsView *view = g_mixer_widget->view;
+  QGraphicsView *view = g_mixer->view;
   const QRectF visibleRect = view->visibleRect();
 
   //printf("slot x1: %d (visible x1: %d). slot y1: %d (visible y1: %d)\n",(int)x1,(int)visibleRect.left(),(int)y1,(int)visibleRect.top());
@@ -503,18 +568,18 @@ static void move_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 
       if(mouse_x < chip->pos().x()+(chip_width/2)){
 
-        g_mixer_widget->view->viewport()->setCursor(QCursor(Qt::SizeBDiagCursor));
+        g_mixer->view->viewport()->setCursor(QCursor(Qt::SizeBDiagCursor));
 
       }else{
 
-        g_mixer_widget->view->viewport()->setCursor(QCursor(Qt::SizeFDiagCursor));
+        g_mixer->view->viewport()->setCursor(QCursor(Qt::SizeFDiagCursor));
 
       }
 
     }else{
 
       //printf("got no chip\n");      
-      g_mixer_widget->view->viewport()->setCursor(QCursor(Qt::SizeHorCursor));
+      g_mixer->view->viewport()->setCursor(QCursor(Qt::SizeHorCursor));
 
     }
   }
@@ -522,7 +587,7 @@ static void move_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 
 void MW_set_selected_chip(Chip *chip){
   printf("MW_set_selected_chip called\n");
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip2 = dynamic_cast<Chip*>(das_items.at(i));
     if(chip2!=NULL && chip2!=chip)
@@ -532,7 +597,7 @@ void MW_set_selected_chip(Chip *chip){
 }
 
 void MW_update_all_chips(void){
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip2 = dynamic_cast<Chip*>(das_items.at(i));
     if(chip2!=NULL){
@@ -561,7 +626,7 @@ static void start_moving_chips(MyScene *myscene, radium::MouseCycleEvent &event,
 
   handle_chip_selection(myscene, event, main_chip);
 
-  const QList<QGraphicsItem *> &das_items = g_mixer_widget->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -603,8 +668,8 @@ void MW_get_slotted_x_y(float from_x, float from_y, float *x, float *y){
 }
 
 void MW_get_curr_mixer_slot(float &x, float &y){
-    QPoint viewPoint = g_mixer_widget->view->mapFromGlobal(QCursor::pos());
-    QPointF scenePoint = g_mixer_widget->view->mapToScene(viewPoint);
+    QPoint viewPoint = g_mixer->view->mapFromGlobal(QCursor::pos());
+    QPointF scenePoint = g_mixer->view->mapToScene(viewPoint);
 
     get_slotted_x_y(scenePoint.x(), scenePoint.y(), x, y);
   
@@ -628,7 +693,7 @@ bool MW_move_chip_to_slot(Chip *chip, float x, float y){
 }
   
 bool MW_move_chip_to_slot(struct Patch *patch, float x, float y){  
-  return move_chip_to_slot(CHIP_get(&g_mixer_widget->scene, patch),
+  return move_chip_to_slot(CHIP_get(&g_mixer->scene, patch),
                            x, y);
 }
   
@@ -681,11 +746,11 @@ static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
 }
 
 bool MW_autoconnect(struct Patch *patch, float x, float y){
-  return autoconnect_chip(&g_mixer_widget->scene, CHIP_get(&g_mixer_widget->scene, patch), x, y);
+  return autoconnect_chip(&g_mixer->scene, CHIP_get(&g_mixer->scene, patch), x, y);
 }
   
 static bool cleanup_a_chip_position(MyScene *myscene){
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -707,7 +772,7 @@ static void cleanup_chip_positions(MyScene *myscene){
 }
 
 void MW_cleanup_chip_positions(void){
-  cleanup_chip_positions(&g_mixer_widget->scene);
+  cleanup_chip_positions(&g_mixer->scene);
 }
 
 static bool stop_moving_chips(MyScene *myscene, bool is_ctrl_clicking, const QPointF &mouse_pos){
@@ -716,7 +781,7 @@ static bool stop_moving_chips(MyScene *myscene, bool is_ctrl_clicking, const QPo
   float mouse_y = mouse_pos.y();
 
   //myscene->removeItem(_slot_indicator);
-  g_mixer_widget->view->viewport()->setCursor(QCursor(Qt::ArrowCursor));
+  g_mixer->view->viewport()->setCursor(QCursor(Qt::ArrowCursor));
 
   Chip *main_chip = myscene->_moving_chips.at(0);
   float main_chip_x = main_chip->pos().x();
@@ -767,7 +832,7 @@ Chip *MW_get_chip_at(float x, float y, Chip *except){
   int slot_x = get_slot_x(x);
   int slot_y = get_slot_y(y);
 
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -786,7 +851,7 @@ static AudioConnection *find_clean_connection_at(MyScene *scene, float x, float 
   int slot_x = get_slot_x(x);
   int slot_y = get_slot_y(y);
 
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     AudioConnection *connection = dynamic_cast<AudioConnection*>(das_items.at(i));
@@ -954,7 +1019,7 @@ static bool mousepress_delete_connection(MyScene *scene, radium::MouseCycleEvent
   SuperConnection *connection = dynamic_cast<SuperConnection*>(item);
 
   if(connection==NULL){
-    QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+    QList<QGraphicsItem *> das_items = g_mixer->scene.items();
     for (int i = 0; i < das_items.size(); ++i) {
       connection = dynamic_cast<SuperConnection*>(das_items.at(i));
       if(connection!=NULL && connection->isVisible() && connection->isUnderMouse()==true)
@@ -1005,7 +1070,7 @@ static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mous
       Patch *patch = (struct Patch*)plugin->patch;
       R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
 
-      requestReplaceInstrument(patch->id, "", API_get_gui_from_existing_widget(g_mixer_widget->window()));
+      requestReplaceInstrument(patch->id, "", API_get_gui_from_existing_widget(g_mixer->window()));
         
       return true;
     }
@@ -1016,7 +1081,7 @@ static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mous
 
 static QVector<Chip*> get_selected_chips(void){
   QVector<Chip*> ret;
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -1060,7 +1125,7 @@ static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_
   createInstrumentDescriptionPopupMenu(createNewInstrumentConf(x, y, false, true,
                                                                true,
                                                                false, false,
-                                                               API_get_gui_from_existing_widget(g_mixer_widget->window())
+                                                               API_get_gui_from_existing_widget(g_mixer->window())
                                                                )
                                        );
   */
@@ -1185,7 +1250,7 @@ bool MW_has_mouse_pointer(void){
     return false;
 
   QPoint p = g_mixer_widget->mapFromGlobal(QCursor::pos());
-  //printf("x: %d, y: %d. width: %d, height: %d\n", (int)p.x(), (int)p.y(), g_mixer_widget->width(), g_mixer_widget->height());
+  //printf("x: %d, y: %d. width: %d, height: %d\n", (int)p.x(), (int)p.y(), g_mixer->width(), g_mixer->height());
   if (true
       && p.x() >= 0
       && p.x() <  g_mixer_widget->width()
@@ -1201,7 +1266,7 @@ static bool g_connections_are_visible = true;
 static bool g_bus_connections_are_visible = false;
 
 static void update_connections_visibility(void){  
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
   for(auto *item : das_items){
     SuperConnection *connection = dynamic_cast<SuperConnection*>(item);
     if (connection != NULL){
@@ -1229,11 +1294,11 @@ void MW_set_bus_connections_visibility(bool show){
 }
 
 void MW_zoom(int inc){
-  g_mixer_widget->view->zoom(inc);
+  g_mixer->view->zoom(inc);
 }
 
 void MW_reset_zoom(void){
-  g_mixer_widget->view->reset_zoom();
+  g_mixer->view->reset_zoom();
 }
 
 /*
@@ -1304,7 +1369,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, radium::MouseCycleEvent 
   int receive_external_midi = -1;
   int showhide_mixer = -1;
   
-  int64_t parentguinum = API_get_gui_from_existing_widget(g_mixer_widget->window());
+  int64_t parentguinum = API_get_gui_from_existing_widget(g_mixer->window());
   
   bool has_sampler_instrument = false;
   VECTOR_FOR_EACH(struct Patch *,patch,&patches){
@@ -1493,7 +1558,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, radium::MouseCycleEvent 
         VECTOR_push_back(&patches, patch);
       }
 
-      R_ASSERT(parentguinum == API_get_gui_from_existing_widget(g_mixer_widget->window()));
+      R_ASSERT(parentguinum == API_get_gui_from_existing_widget(g_mixer->window()));
 
       if (sel==-1) {
     
@@ -1769,12 +1834,12 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
   if(event.button()==Qt::MidButton) {
     
     g_is_dragging_everything = true;
-    g_startpos_scrollbar_x = g_mixer_widget->view->horizontalScrollBar()==NULL ? 0 : g_mixer_widget->view->horizontalScrollBar()->value();
-    g_startpos_scrollbar_y = g_mixer_widget->view->verticalScrollBar()==NULL ? 0 : g_mixer_widget->view->verticalScrollBar()->value();
+    g_startpos_scrollbar_x = g_mixer->view->horizontalScrollBar()==NULL ? 0 : g_mixer->view->horizontalScrollBar()->value();
+    g_startpos_scrollbar_y = g_mixer->view->verticalScrollBar()==NULL ? 0 : g_mixer->view->verticalScrollBar()->value();
 
     event.accept();
 
-    g_mixer_widget->view->viewport()->setCursor(Qt::OpenHandCursor);
+    g_mixer->view->viewport()->setCursor(Qt::OpenHandCursor);
     return;
     
   }
@@ -1826,8 +1891,8 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
       g_is_moving_rubberband = true;
       g_start_rubberband = pos;
       
-      _rubber_band = new QRubberBand(QRubberBand::Rectangle, g_mixer_widget->view->viewport());
-      QPoint p(g_mixer_widget->view->mapFromScene(pos));
+      _rubber_band = new QRubberBand(QRubberBand::Rectangle, g_mixer->view->viewport());
+      QPoint p(g_mixer->view->mapFromScene(pos));
       _rubber_band->setGeometry(QRect(p, p));
       _rubber_band->show();
       
@@ -1942,7 +2007,7 @@ void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
     
     setSelectionArea(path, QTransform());
 
-    QRectF rect(g_mixer_widget->view->mapFromScene(g_start_rubberband), g_mixer_widget->view->mapFromScene(pos));
+    QRectF rect(g_mixer->view->mapFromScene(g_start_rubberband), g_mixer->view->mapFromScene(pos));
     
     _rubber_band->setGeometry(rect.toRect().normalized());
     
@@ -1950,13 +2015,13 @@ void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
 
   } else if (g_is_dragging_everything) {
 
-    g_mixer_widget->view->viewport()->setCursor(Qt::ClosedHandCursor);
+    g_mixer->view->viewport()->setCursor(Qt::ClosedHandCursor);
     
     QPointF end_mouse_pos = QCursor::pos();
     qreal dx = _start_mouse_pos.x() - end_mouse_pos.x();
     qreal dy = _start_mouse_pos.y() - end_mouse_pos.y();
 
-    g_mixer_widget->view->gakk(g_startpos_scrollbar_x, g_startpos_scrollbar_y, dx, dy);
+    g_mixer->view->gakk(g_startpos_scrollbar_x, g_startpos_scrollbar_y, dx, dy);
     
   }else{
 
@@ -2090,7 +2155,7 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
     
   } else if (g_is_dragging_everything) {
 
-    g_mixer_widget->view->viewport()->setCursor(Qt::ArrowCursor);
+    g_mixer->view->viewport()->setCursor(Qt::ArrowCursor);
     g_is_dragging_everything = false;
     must_accept = true;
     
@@ -2144,7 +2209,7 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
 
 DEFINE_ATOMIC(bool, g_show_cpu_usage_in_mixer) = false;
 
-MixerWidget *g_mixer_widget = NULL;
+radium::MixerWidget *g_mixer_widget = NULL;
 
 namespace{
   struct MixerWidgetTimer {
@@ -2199,7 +2264,7 @@ namespace{
         
         bool show_cpu_update = less_frequently_updated && ATOMIC_GET_RELAXED(g_show_cpu_usage_in_mixer);
               
-        for (QGraphicsItem *das_item : g_mixer_widget->scene.items()){
+        for (QGraphicsItem *das_item : g_mixer->scene.items()){
           
           Chip *chip = dynamic_cast<Chip*>(das_item);
           
@@ -2298,8 +2363,8 @@ namespace{
                   for(auto *connection : chip->_output_audio_connections)
                     maybe_schedule_update_audio_connection(connection, db);
 
-                  if (g_mixer_widget->scene._current_connection != NULL && g_mixer_widget->scene._current_connection->from==chip)
-                    maybe_schedule_update_audio_connection(g_mixer_widget->scene._current_connection, db);
+                  if (g_mixer->scene._current_connection != NULL && g_mixer->scene._current_connection->from==chip)
+                    maybe_schedule_update_audio_connection(g_mixer->scene._current_connection, db);
                 }
                 
                 {
@@ -2317,19 +2382,19 @@ namespace{
                     for(auto *connection : chip->_output_audio_connections)
                       connection->schedule_update_shape(true, false);
                     
-                    if (g_mixer_widget->scene._current_econnection != NULL && g_mixer_widget->scene._current_econnection->from==chip)
-                      g_mixer_widget->scene._current_econnection->schedule_update_shape(true, true);
+                    if (g_mixer->scene._current_econnection != NULL && g_mixer->scene._current_econnection->from==chip)
+                      g_mixer->scene._current_econnection->schedule_update_shape(true, true);
                     
-                    if (g_mixer_widget->scene._current_connection != NULL && g_mixer_widget->scene._current_connection->from==chip)
-                      g_mixer_widget->scene._current_connection->schedule_update_shape(true, false);                  
+                    if (g_mixer->scene._current_connection != NULL && g_mixer->scene._current_connection->from==chip)
+                      g_mixer->scene._current_connection->schedule_update_shape(true, false);                  
                   }
                 }
 
-                if (g_mixer_widget->scene._current_econnection != NULL)
-                  g_mixer_widget->scene._current_econnection->apply_update_shapes();
+                if (g_mixer->scene._current_econnection != NULL)
+                  g_mixer->scene._current_econnection->apply_update_shapes();
                 
-                if (g_mixer_widget->scene._current_connection != NULL)
-                  g_mixer_widget->scene._current_connection->apply_update_shapes();
+                if (g_mixer->scene._current_connection != NULL)
+                  g_mixer->scene._current_connection->apply_update_shapes();
 
                 for(auto *connection : chip->_output_event_connections)
                   connection->apply_update_shapes();
@@ -2357,18 +2422,18 @@ void MW_call_each_16ms(double ms){
   g_mixer_widget_timer.call_each_16ms(ms);
 }
 
-MixerWidget::MixerWidget(QWidget *parent)
+MixerWidget_OnlyMixer::MixerWidget_OnlyMixer(QWidget *parent)
   : radium::KeyboardFocusFrame(parent, radium::KeyboardFocusFrameType::MIXER, true)
   , scene(this)
 {
 
-  if(g_mixer_widget!=NULL){
-    fprintf(stderr,"Error. More than one MixerWidget created.\n");
+  if(g_mixer!=NULL){
+    fprintf(stderr,"Error. More than one MixerWidget_OnlyMixer created.\n");
     abort();
   }
 
-  g_mixer_widget = this;
-  g_static_toplevel_widgets.push_back(this);
+  g_mixer = this;
+  //g_static_toplevel_widgets.push_back(this);
 
   Mixer_widget *mixer_widget = new Mixer_widget(this);
   mixer_widget->view->setScene(&scene);
@@ -2405,10 +2470,12 @@ void GFX_HideMixer(void){
 
 void GFX_showHideMixerWidget(void){
   bool must_show = false;
-  
-  if (sequencerInFullMode() && !sequencerInWindow()){
-    setSequencerInFullMode(false);
-    must_show = true;
+
+  if (sequencerInMainTabs()){
+    if (sequencerInFullMode() && !sequencerInWindow()){
+      setSequencerInFullMode(false);
+      must_show = true;
+    }
   }
 
   GL_lock();{
@@ -2445,7 +2512,7 @@ SoundPlugin *get_main_pipe(void){
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   return plugin;
   /*
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
   for (int i = 0; i < das_items.size(); ++i){
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL){
@@ -2465,7 +2532,7 @@ void MW_connect_plugin_to_main_pipe(SoundPlugin *plugin){
   R_ASSERT_RETURN_IF_FALSE(main_pipe!=NULL);
   
   if(plugin->type->num_outputs>0)
-    CHIP_connect_chips(&g_mixer_widget->scene, plugin, main_pipe, ConnectionType::IS_SEND);
+    CHIP_connect_chips(&g_mixer->scene, plugin, main_pipe, ConnectionType::IS_SEND);
 }
 
 
@@ -2480,7 +2547,7 @@ static float find_next_autopos_y(Chip *system_chip){
 void MW_set_autopos(double *x, double *y){
   SoundPlugin *main_pipe    = get_main_pipe();
   if (main_pipe != NULL){
-    Chip        *system_chip  = find_chip_for_plugin(&g_mixer_widget->scene, main_pipe);
+    Chip        *system_chip  = find_chip_for_plugin(&g_mixer->scene, main_pipe);
     *x                         = system_chip->x()-(grid_width*3/2);
     *y                         = find_next_autopos_y(system_chip);
     printf("Adding at pos %f %f\n",*x,*y);
@@ -2679,18 +2746,18 @@ SoundPluginType *MW_popup_plugin_type_selector(bool must_have_inputs, bool must_
 */
 
 void MW_connect(Patch *source, Patch *dest, ConnectionType connection_type){
-  Chip *chip_source = CHIP_get(&g_mixer_widget->scene, source);
+  Chip *chip_source = CHIP_get(&g_mixer->scene, source);
   R_ASSERT_RETURN_IF_FALSE(chip_source!=NULL);
   
-  Chip *chip_dest = CHIP_get(&g_mixer_widget->scene, dest);
+  Chip *chip_dest = CHIP_get(&g_mixer->scene, dest);
   R_ASSERT_RETURN_IF_FALSE(chip_dest!=NULL);
 
-  CHIP_connect_chips(&g_mixer_widget->scene, chip_source, chip_dest, connection_type);
+  CHIP_connect_chips(&g_mixer->scene, chip_source, chip_dest, connection_type);
 }
 
 bool MW_disconnect(Patch *source, Patch *dest){
 
-  QGraphicsScene *scene = &g_mixer_widget->scene;
+  QGraphicsScene *scene = &g_mixer->scene;
     
   Chip *chip_from = CHIP_get(scene, source);
   Chip *chip_to = CHIP_get(scene, dest);
@@ -2699,17 +2766,17 @@ bool MW_disconnect(Patch *source, Patch *dest){
 }
 
 void MW_econnect(Patch *source, Patch *dest){
-  Chip *chip_source = CHIP_get(&g_mixer_widget->scene, source);
+  Chip *chip_source = CHIP_get(&g_mixer->scene, source);
   R_ASSERT_RETURN_IF_FALSE(chip_source!=NULL);
   
-  Chip *chip_dest = CHIP_get(&g_mixer_widget->scene, dest);
+  Chip *chip_dest = CHIP_get(&g_mixer->scene, dest);
   R_ASSERT_RETURN_IF_FALSE(chip_dest!=NULL);
 
-  CHIP_econnect_chips(&g_mixer_widget->scene, chip_source, chip_dest);
+  CHIP_econnect_chips(&g_mixer->scene, chip_source, chip_dest);
 }
 
 bool MW_edisconnect(Patch *source, Patch *dest){
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
   for (int i = 0; i < das_items.size(); ++i) {
     EventConnection *connection = dynamic_cast<EventConnection*>(das_items.at(i));
     if(connection!=NULL){
@@ -2726,15 +2793,15 @@ bool MW_edisconnect(Patch *source, Patch *dest){
 }
 
 bool MW_are_connected(Patch *source, Patch *dest){
-  Chip *a = CHIP_get(&g_mixer_widget->scene, source);
-  Chip *b = CHIP_get(&g_mixer_widget->scene, dest);
+  Chip *a = CHIP_get(&g_mixer->scene, source);
+  Chip *b = CHIP_get(&g_mixer->scene, dest);
 
   return CHIPS_are_connected(a, b);
 }
 
 bool MW_are_econnected(Patch *source, Patch *dest){
-  Chip *a = CHIP_get(&g_mixer_widget->scene, source);
-  Chip *b = CHIP_get(&g_mixer_widget->scene, dest);
+  Chip *a = CHIP_get(&g_mixer->scene, source);
+  Chip *b = CHIP_get(&g_mixer->scene, dest);
 
   return CHIPS_are_econnected(a, b);
 }
@@ -2742,7 +2809,7 @@ bool MW_are_econnected(Patch *source, Patch *dest){
 
 #if 0
 static bool delete_a_connection(){
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Connection *connection = dynamic_cast<Connection*>(das_items.at(i));
@@ -2759,7 +2826,7 @@ static void MW_cleanup_connections(bool is_loading){
   if (is_loading)
     GFX_ShowProgressMessage("Deleting all connection between instruments", true);
 
-  CONNECTIONS_remove_all(&g_mixer_widget->scene);
+  CONNECTIONS_remove_all(&g_mixer->scene);
 }
 
 
@@ -2767,7 +2834,7 @@ static void MW_cleanup_connections(bool is_loading){
 static bool delete_a_chip(bool is_loading){
   bool ret = false;
   
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
 
   UNDO_OPEN_REC();{
     
@@ -2806,7 +2873,7 @@ void MW_cleanup(bool is_loading){
 }
 
 static void get_patches_min_x_y(const vector_t *patches, float &min_x, float &min_y){
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
   
   min_x = 0;
   min_y = 0;
@@ -2857,7 +2924,7 @@ static char *get_patch_key(struct Patch *patch){
 
 static hash_t *MW_get_audio_patches_state(const vector_t *patches, bool put_in_array){
 
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
 
   hash_t *chips = HASH_create(das_items.size()/2);
 
@@ -2937,7 +3004,7 @@ static bool connection_is_in_patches(SuperConnection *connection, const vector_t
 static QVector<SuperConnection*> get_connections(void){ 
   QVector<SuperConnection*> ret;
   
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
   
   for (int i = 0; i < das_items.size(); ++i) {
     SuperConnection *connection = dynamic_cast<SuperConnection*>(das_items.at(i));
@@ -2950,7 +3017,7 @@ static QVector<SuperConnection*> get_connections(void){
 }
 
 hash_t *MW_get_connections_state(const vector_t *patches){  
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
 
   hash_t *connections = HASH_create(das_items.size());
 
@@ -3029,7 +3096,7 @@ static void MW_create_chips_from_full_state(hash_t *chips, Buses buses, bool is_
 
 // Only used when loading old songs
 static void MW_create_bus_connections_for_all_chips(Buses &buses){
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -3058,11 +3125,11 @@ static void MW_position_chips_from_state(const hash_t *chips, const vector_t *pa
 
 // Called from undo_mixer_connections.c
 void MW_create_connections_from_state(const hash_t *connections){
-  CONNECTIONS_replace_all_with_state(&g_mixer_widget->scene, connections, true);
+  CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections, true);
 }
 
 static void add_undo_for_all_chip_positions(void){
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
+  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -3083,10 +3150,10 @@ void MW_create_from_state(const hash_t *state, const vector_t *patches, float x,
 
   hash_t *connections = HASH_get_hash(state, "connections");
 
-  CONNECTIONS_create_from_presets_state(&g_mixer_widget->scene, connections, patches);
+  CONNECTIONS_create_from_presets_state(&g_mixer->scene, connections, patches);
   
   if (patches->num_elements > 1)
-    cleanup_chip_positions(&g_mixer_widget->scene);
+    cleanup_chip_positions(&g_mixer->scene);
 }
 
 
@@ -3150,7 +3217,7 @@ static void autoposition_missing_bus_chips(hash_t *bus_chips_state){
       busnum==3 ? buses.bus4 :
       buses.bus5;
       
-    Chip *chip = CHIP_get(&g_mixer_widget->scene, (struct Patch*)SP_get_plugin(sp)->patch);
+    Chip *chip = CHIP_get(&g_mixer->scene, (struct Patch*)SP_get_plugin(sp)->patch);
     CHIP_autopos(chip);
   }
 }
@@ -3209,7 +3276,7 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   if (is_loading)
     GFX_ShowProgressMessage("Creating connections between sound objects", true);
 
-  CONNECTIONS_create_from_state(&g_mixer_widget->scene, HASH_get_hash(state, "connections"),
+  CONNECTIONS_create_from_state(&g_mixer->scene, HASH_get_hash(state, "connections"),
                                 make_instrument(-1), make_instrument(-1), make_instrument(-1), make_instrument(-1)
                                 );
 
@@ -3381,7 +3448,7 @@ static bool in_patches(const vector_t *patches, int64_t id){
 static void apply_ab_connections_state(hash_t *connections){
 
   // All the stuff that was done below should now be handled in QM_chip.cpp / SoundProducer.cpp instead when applying graph changes, and in much better ways.
-  CONNECTIONS_replace_all_with_state(&g_mixer_widget->scene, connections, false);
+  CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections, false);
 
   
 #if 0
@@ -3405,7 +3472,7 @@ static void apply_ab_connections_state(hash_t *connections){
         VECTOR_push_back(&connections_to_create, connection_state);
         
         /*
-        CONNECTION_create_from_state(&g_mixer_widget->scene,
+        CONNECTION_create_from_state(&g_mixer->scene,
                                      connection_state,
                                      -1, -1,
                                      false);
@@ -3446,7 +3513,7 @@ static void apply_ab_connections_state(hash_t *connections){
     int64_t id_from = HASH_get_instrument(connection_state, "from_patch");
     int64_t id_to = HASH_get_instrument(connection_state, "to_patch");
     bool is_event_connection = HASH_get_bool(connection_state, "is_event_connection");
-    CONNECTION_create_from_state(&g_mixer_widget->scene,
+    CONNECTION_create_from_state(&g_mixer->scene,
                                  connection_state,
                                  -1, -1,
                                  false);

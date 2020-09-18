@@ -320,6 +320,8 @@
           ;; dirty tricks to avoid the screen edges
           ;;
           (when (and (not (<ra> :sequencer-in-window))
+                     (or (not (<ra> :sequencer-in-mixer))
+                         (not (<ra> :main-mixer-in-window)))
                      (<ra> :can-move-pointer))
 
             (define (set-mouse x y)
@@ -7272,6 +7274,7 @@
 
 #!!
 (pretty-print (<ra> :get-gfx-seqblocks-state 0))
+(<ra> :configure-sequencer-widget #f #t)
 !!#
 
 

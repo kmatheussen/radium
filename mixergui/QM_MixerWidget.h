@@ -89,14 +89,20 @@ static const int port_height = 2;//chip_height/8;
 
 
 
-class MyQGraphicsView;
+namespace radium{
+  //  class MyQGraphicsView;
+  class MixerWidget;
+}
 
-class MixerWidget;
-extern MixerWidget *g_mixer_widget;
+extern radium::MixerWidget *g_mixer_widget;
 
-QGraphicsScene *get_scene(MixerWidget *mixer_widget);
-QWidget *get_qwidget(MixerWidget *mixer_widget);
-MixerWidget *create_mixer_widget(QWidget *parent);
+class QSplitter;
+
+QGraphicsScene *get_scene(radium::MixerWidget *mixer_widget);
+QWidget *get_mixer_bottom_bar(radium::MixerWidget *mixer_widget);
+QSplitter *get_mixer_ysplitter(radium::MixerWidget *mixer_widget);
+QWidget *get_qwidget(radium::MixerWidget *mixer_widget);
+radium::MixerWidget *create_mixer_widget(QWidget *parent);
 
 void MW_call_each_16ms(double ms);
 
@@ -132,11 +138,13 @@ extern LANGSPEC bool MW_modular_mixer_is_visible(void);
 extern LANGSPEC void MW_set_modular_mixer_type(bool show_modular);
 
 extern LANGSPEC void MW_set_window_mode(bool show_window);
-extern LANGSPEC bool MW_is_in_window_mode(void);
+extern LANGSPEC bool MW_in_window_mode(void);
 extern LANGSPEC void MW_update_checkboxes(void);
 
 extern LANGSPEC void MW_set_instrument_in_mixer(bool include_instrument_widget);
-  
+//extern LANGSPEC void MW_set_sequencer_in_mixer(bool include_instrument_widget);
+extern LANGSPEC void MW_update_sequencer_in_mixer_checkbox(void);
+
 extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
 extern LANGSPEC const char *MW_popup_plugin_selector2(bool must_have_inputs, bool must_have_outputs);
 extern LANGSPEC SoundPluginType *MW_popup_plugin_type_selector(bool must_have_inputs, bool must_have_outputs);

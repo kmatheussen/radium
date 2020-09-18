@@ -1114,4 +1114,3 @@ Examples:
   (add-keybinding-configuration-to-gui gui ra-funcname arguments)
   
   gui)
-

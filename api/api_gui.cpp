@@ -1472,8 +1472,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       g_valid_guis[new_pos] = this;
     }
 
+    bool _has_adjusted_size = false;
+    
     bool size_is_valid(void){
-      if (_have_set_size==false && _has_been_opened_before==false)
+      if (_have_set_size==false && _has_been_opened_before==false && _has_adjusted_size==false)
         return false;
       else
         return true;
@@ -4104,7 +4106,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QTabWidget);
   };
 
-
+  
   struct Splitter : radium::Splitter, Gui { //, public radium::MouseCycleFix {
     Q_OBJECT;
     
@@ -4231,6 +4233,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       uiloader = new MyUiLoader;
     return uiloader;
   }
+
 }
 
 
@@ -4530,7 +4533,17 @@ int64_t API_get_gui_from_existing_widget(QWidget *widget){
     R_ASSERT(gui->_created_from_existing_widget);
 #endif
 
-  return API_get_gui_from_widget(widget);
+  
+  int64_t guinum = API_get_gui_from_widget(widget);
+
+  {
+    Gui *gui = get_gui(guinum);
+    if (gui != NULL){
+      gui->_has_adjusted_size = true;
+    }
+  }
+
+  return guinum;
 }
 
 void API_run_paint_event_for_custom_widget(QWidget *widget, QPaintEvent *ev, const QRegion &already_painted_areas){
@@ -4679,6 +4692,10 @@ void API_run_resize_event_for_custom_widget(QWidget *widget, QResizeEvent *ev){
 int64_t gui_getMainXSplitter(void){
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   return API_get_gui_from_existing_widget(editor->xsplitter);
+}
+
+int64_t gui_getMixerYSplitter(void){
+  return API_get_gui_from_existing_widget(get_mixer_ysplitter(g_mixer_widget));
 }
 
 /*
@@ -6205,6 +6222,7 @@ void gui_show(int64_t guinum){
     //printf("ADJUSTING SIZE AND GEOMETRY\n");
     w->adjustSize();
     w->updateGeometry();
+    gui->_has_adjusted_size = true;
   }
   
   gui->_has_been_opened_before = true;
@@ -6446,9 +6464,11 @@ int gui_width(int64_t guinum){
   if (gui==NULL)
     return 0;
 
-  if (!gui->size_is_valid())
+  if (!gui->size_is_valid()){
     gui->_widget->adjustSize();
-
+    gui->_has_adjusted_size = true;
+  }
+    
   return gui->_widget->width();
 }
 
@@ -6457,9 +6477,12 @@ int gui_height(int64_t guinum){
   if (gui==NULL)
     return 0;
 
-  if (!gui->size_is_valid())
+  if (!gui->size_is_valid()){
     gui->_widget->adjustSize();
+    gui->_has_adjusted_size = true;
+  }
 
+  
   QScrollArea *area = dynamic_cast<QScrollArea*>(gui->_widget.data());
   if (area!=NULL){
     QScrollBar *scrollbar = area->horizontalScrollBar();
@@ -7875,6 +7898,10 @@ QWidget *API_get_lowertabs(void){
 
 void API_setLowertabIncludesInstrument(bool includeit){
   S7CALL2(void_bool, "FROM-C-set-lowertab-includes-instrument", includeit);
+}
+
+void API_setLowertabIncludesSequencer(bool includeit){
+  S7CALL2(void_bool, "FROM-C-set-lowertab-includes-sequencer", includeit);
 }
 
 void API_showInstrumentGui(void){
