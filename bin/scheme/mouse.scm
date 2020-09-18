@@ -7283,7 +7283,9 @@
                                                   (let ((seqtracknum *current-seqtrack-num*))
                                                     ;;(c-display "seqtracknum" seqtracknum ". boxnum:" (<ra> :get-seqblock-selected-box))
                                                     (and (not *current-seqautomation/distance*)
-                                                         (not (<ra> :shift-pressed))
+                                                         (if (not (<ra> :is-right-mouse-pressed))
+                                                             #t
+                                                             (not (<ra> :shift-pressed)))
                                                          seqtracknum
                                                          (= (<ra> :get-seqblock-selected-box) 0) ;; Don't move seqblock if mouse is on one of the seqblock boxes.
                                                          (begin
@@ -7400,6 +7402,9 @@
                                                     (and (not *current-seqautomation/distance*)
                                                          seqtracknum
                                                          (= (<ra> :get-seqblock-selected-box) 0) ;; Don't move seqblock if mouse is on one of the seqblock boxes.
+                                                         (if (not (<ra> :is-right-mouse-pressed))
+                                                             #t
+                                                             (not (<ra> :shift-pressed)))
                                                          (begin
                                                            ;;(<ra> :set-curr-seqtrack seqtracknum)
                                                            (let ((seqblock-info *current-seqblock-info*))
