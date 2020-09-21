@@ -1652,6 +1652,7 @@ void SEQBLOCK_replace_seqblock(hash_t *hash, bool must_replace_same_id, enum Sho
   }
 
   const struct SeqBlock *old_seqblock = (const struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
+  SEQBLOCK_update_with_borders(seqtrack, old_seqblock);
   
   struct SeqBlock *new_seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, QSet<int64_t>(), error_type, Seqblock_Type::REGULAR);
   if (new_seqblock==NULL)
