@@ -442,11 +442,39 @@ const char *JACK_get_name(SoundPlugin *plugin, int portnum){
   Data *data = static_cast<Data*>(plugin->data);
 
   if(plugin->type->num_outputs>0){
-    if (data->input_ports[portnum]!=NULL)
+    if (data->input_ports[portnum]!=NULL){
+#if defined(DEBUG)
+      jack_latency_range_t range1,range2;
+      jack_port_get_latency_range(data->input_ports[portnum], JackCaptureLatency, &range1);
+      jack_port_get_latency_range(data->input_ports[portnum], JackPlaybackLatency, &range2);
+
+      return strdup(talloc_format("%s. latency: %d->%d / %d->%d total: %d\n",
+                                  jack_port_short_name(data->input_ports[portnum]),
+                                  range1.min, range1.max,
+                                  range2.min, range2.max,
+                                  jack_port_get_total_latency(data->client, data->input_ports[portnum])
+                                  ));
+#else
       return jack_port_short_name(data->input_ports[portnum]);
+#endif      
+    }
   } else {
-    if (data->output_ports[portnum] != NULL)
+    if (data->output_ports[portnum] != NULL){
+#if defined(DEBUG)
+      jack_latency_range_t range1,range2;
+      jack_port_get_latency_range(data->output_ports[portnum], JackCaptureLatency, &range1);
+      jack_port_get_latency_range(data->output_ports[portnum], JackPlaybackLatency, &range2);
+      
+      return strdup(talloc_format("%s. latency: %d->%d / %d->%d total: %d\n",
+                                  jack_port_short_name(data->output_ports[portnum]),
+                                  range1.min, range1.max,
+                                  range2.min, range2.max,
+                                  jack_port_get_total_latency(data->client, data->output_ports[portnum])
+                                  ));
+#else
       return jack_port_short_name(data->output_ports[portnum]);
+#endif
+    }
   }
 
   return "jack port could not be registered";
