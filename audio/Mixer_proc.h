@@ -79,6 +79,8 @@ extern LANGSPEC struct Patch **RT_MIXER_get_all_click_patches(int *num_click_pat
 
 extern LANGSPEC float MIXER_get_sample_rate(void);
 
+extern LANGSPEC int64_t MIXER_get_recording_latency_compensation_from_system_in(void);
+
 #ifdef USE_QT4
 #include <QString>
 namespace radium{
@@ -93,6 +95,8 @@ static inline int MIXER_get_buffer_size(void){
 }
 
 extern int g_jackblock_size; // Should only be accessed from player thread
+extern int g_jack_system_input_latency;
+extern int g_jack_system_output_latency;
 
 extern LANGSPEC int MIXER_get_remaining_num_jackblock_frames(void);
 

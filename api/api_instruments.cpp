@@ -160,6 +160,45 @@ void setLatencyCompensationEnabled(bool doit){
 }
 
 
+static bool g_RecordingLatencyFromSystemInputIsAutomaticallyDetermined = true;
+
+bool getRecordingLatencyFromSystemInputIsAutomaticallyDetermined(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_RecordingLatencyFromSystemInputIsAutomaticallyDetermined = SETTINGS_read_bool("recording_latency_from_system_input_is_automatically_determined", g_RecordingLatencyFromSystemInputIsAutomaticallyDetermined);
+    has_inited = true;
+  }
+
+  return g_RecordingLatencyFromSystemInputIsAutomaticallyDetermined;
+}
+
+void setRecordingLatencyFromSystemInputIsAutomaticallyDetermined(bool new_value){
+  g_RecordingLatencyFromSystemInputIsAutomaticallyDetermined = new_value;
+  SETTINGS_write_bool("recording_latency_from_system_input_is_automatically_determined", new_value);
+}
+
+
+
+static double g_CustomRecordingLatencyFromSystemInput = 69.65986394557823;
+
+double getCustomRecordingLatencyFromSystemInput(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_CustomRecordingLatencyFromSystemInput = SETTINGS_read_double("custom_recording_latency_from_system_input", g_CustomRecordingLatencyFromSystemInput);
+    has_inited = true;
+  }
+
+  return g_CustomRecordingLatencyFromSystemInput;
+}
+
+void setCustomRecordingLatencyFromSystemInput(double ms){
+  g_CustomRecordingLatencyFromSystemInput = ms;
+  SETTINGS_write_double("custom_recording_latency_from_system_input", ms);
+}
+
+
 static bool g_undo_solo = false;
 
 bool doUndoSolo(void){

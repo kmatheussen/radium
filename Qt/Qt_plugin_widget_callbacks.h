@@ -982,8 +982,8 @@ public slots:
 
     vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
-    int mono_main   = VECTOR_push_back(&v, "Mono from main input");
-    int stereo_main = VECTOR_push_back(&v, "Stereo from main inputs");
+    int mono_main   = VECTOR_push_back(&v, "Mono from system input");
+    int stereo_main = VECTOR_push_back(&v, "Stereo from system input");
 
     VECTOR_push_back(&v, "--------------");
     

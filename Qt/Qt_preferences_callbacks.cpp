@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
 #include "../audio/MultiCore_proc.h"
+#include "../audio/Mixer_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "../midi/midi_instrument_proc.h"
 #include "../midi/midi_menues_proc.h"
@@ -544,8 +545,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       undo_solo->setChecked(doUndoSolo());
       undo_bypass->setChecked(doUndoBypass());
 
-      enable_latency_compensation->setChecked(latencyCompensationEnabled());
-      
       switch(RADIUM_BLOCKSIZE){
       case 64: b64->setChecked(true); break;
       case 128: b128->setChecked(true); break;
@@ -557,13 +556,30 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       case 8192: b8192->setChecked(true); break;
       }
 
+      enable_latency_compensation->setChecked(latencyCompensationEnabled());
+
+      if (getRecordingLatencyFromSystemInputIsAutomaticallyDetermined())
+        auto_recording_latency->setChecked(true);
+      else
+        custom_recording_latency->setChecked(true);
+      
+      auto_recording_latency->setText("Automatically determined (" + QString::number(frames_to_ms(g_jack_system_input_latency + g_jack_system_output_latency), 'f', 2) + "ms)");
+
+      custom_recording_latency_value->setValue(getCustomRecordingLatencyFromSystemInput());
+        
+      custom_recording_latency_layout->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+      custom_recording_latency_label->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+      custom_recording_latency_value->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+
     }
 
+    /*
     {
       embedded_audio_files->setText(STRING_get_qstring(getEmbeddedAudioFilesPath().id));
       embedded_audio_group->hide(); // not used yet.
     }
-
+    */
+    
     // Disk
     {
       stop_playing_when_saving->setChecked(doStopPlayingWhenSavingSong());
@@ -996,6 +1012,36 @@ public slots:
       setLatencyCompensationEnabled(val);
   }
   
+  void on_auto_recording_latency_toggled(bool val){
+    if (_initing==false && val){
+      setRecordingLatencyFromSystemInputIsAutomaticallyDetermined(true);
+      custom_recording_latency_layout->setEnabled(false);
+      custom_recording_latency_label->setEnabled(false);
+      custom_recording_latency_value->setEnabled(false);
+    }
+  }
+  
+  void on_custom_recording_latency_toggled(bool val){
+    if (_initing==false && val){
+      setRecordingLatencyFromSystemInputIsAutomaticallyDetermined(false);
+      custom_recording_latency_layout->setEnabled(true);
+      custom_recording_latency_label->setEnabled(true);
+      custom_recording_latency_value->setEnabled(true);
+    }
+  }
+
+  void on_custom_recording_latency_value_valueChanged(double val){
+    if (_initing==false)
+      setCustomRecordingLatencyFromSystemInput(val);
+  }
+
+  void on_custom_recording_latency_value_editingFinished(){
+    set_editor_focus();
+    GL_lock();{
+      custom_recording_latency_value->clearFocus();
+    }GL_unlock();
+  }
+
   void on_undo_solo_toggled(bool val){
     if (_initing==false)
       setUndoSolo(val);
@@ -1021,7 +1067,8 @@ public slots:
   void on_b2048_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 2048);  }
   void on_b4096_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 4096);  }
   void on_b8192_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 8192);  }
-  
+
+  /*
   // embedded audio file paths
   void on_embedded_audio_files_editingFinished(){
     setEmbeddedAudioFilesPath(make_filepath(embedded_audio_files->text()));
@@ -1031,7 +1078,7 @@ public slots:
       embedded_audio_files->clearFocus();
     }GL_unlock();
   }
-
+  */
   
   // Disk
   //

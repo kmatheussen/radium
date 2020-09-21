@@ -1227,7 +1227,7 @@ struct Recorder : public radium::SampleRecorderInstance{
   int _seqtrack_recording_generation;
   
   Recorder(struct SeqTrack *seqtrack, filepath_t recording_path, const SeqtrackRecordingConfig *config)
-    : SampleRecorderInstance(recording_path, get_num_recording_soundfile_channels(config), 48) // 60 is standard value, I think, but the sample recorder adds 12 to the middle note, for some reason.
+    : SampleRecorderInstance(recording_path, get_num_recording_soundfile_channels(config), 48, config->record_from_system_input ? MIXER_get_recording_latency_compensation_from_system_in() : 0) // 60 is standard value, I think, but the sample recorder adds 12 to the middle note, for some reason.
     , _peaks(num_ch)
       //, _data(data)
     , _seqtrack(seqtrack)
@@ -1302,12 +1302,14 @@ struct Recorder : public radium::SampleRecorderInstance{
       SEQTRACK_set_recording(seqtrack, false);
     }
 
-    if (_has_started==false)
+    if (_has_started==false){
       R_ASSERT(_seqblock.data()==NULL);
-    
+      R_ASSERT_NON_RELEASE(success==false);
+    }
+
     printf("-------------------------        recorder IS_FINISHED end   %d / %d  (%p). Success: %d. Filename: %S\n", (int)seqtrack->recording_generation, (int)_seqtrack_recording_generation, this, success, filename.id);
 
-    if (success) {
+    if (success && _has_started) {
 
       QFileInfo info(STRING_get_qstring(filename.id));
       _seqblock->sample_filename_without_path = make_filepath(info.fileName());
@@ -1467,10 +1469,10 @@ public:
   
 #else
   
-  void assert_samples(const struct SeqTrack *seqtrack = NULL) {
+  void assert_samples(const struct SeqTrack *seqtrack = NULL) const {
   }
 
-  void temporarily_suspend_sample_assertions_from_other_threads(void){
+  void temporarily_suspend_sample_assertions_from_other_threads(void) const {
   }
   
 #endif
@@ -1502,20 +1504,25 @@ public:
     SMOOTH_release(&_piping_volume);
   }
 
+
 private:
 
-  void start_recording(int64_t start_time){
+  void RT_start_recording(int64_t start_time){
     ATOMIC_SET(_recording_status, IS_RECORDING);
     RT_SampleRecorder_start_recording(_recorder, start_time);
   }
   
-  void stop_recording(void){
-    RT_SampleRecorder_stop_recording(_recorder); // Fix: Make sure deleting plugin doesn't crash anything.
+  void RT_request_stop_recording(void){
+    RT_SampleRecorder_request_stop_recording(_recorder);
+  }
+  
+
+public:
+
+  void RT_recording_has_stopped(void){
     _recorder = NULL; // It deletes itself when finished.
     ATOMIC_SET(_recording_status, NOT_RECORDING); // This line must be placed after "_recorder = NULL".
   }
-  
-public:
   
   bool RT_called_per_block(struct SeqTrack *seqtrack){
     R_ASSERT(PLAYER_current_thread_has_lock());
@@ -1540,7 +1547,7 @@ public:
               const int64_t punching_end = is_punching ? ATOMIC_GET(root->song->punching.end) : 0;
               
               if (is_punching==false || start_time < punching_end){
-                start_recording(start_time);
+                RT_start_recording(start_time);
                 more_to_play = true;
               }
             }
@@ -1557,15 +1564,15 @@ public:
           const int64_t punching_end = is_punching ? ATOMIC_GET(root->song->punching.end) : 0;
 
           if (is_playing_song()==false || (is_punching && start_time >= punching_end))
-            stop_recording();
-          else
-            more_to_play = true;
+            RT_request_stop_recording();
           
+          more_to_play = true;          
           break;
         }
         
       case STOP_RECORDING:
-        stop_recording();
+        RT_request_stop_recording();
+        more_to_play = true;
         break;
     }
     
@@ -1770,7 +1777,7 @@ bool SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, SoundPlugin *pl
 
   if (status==NOT_RECORDING)
     return false;
-  
+
   if (status == READY_TO_RECORD) {
     
     Recorder *recorder = NULL;
@@ -2410,10 +2417,13 @@ static void RT_record(Data *data, int num_frames, const float **instrument_input
 
   // Record
   //
-  RT_SampleRecorder_add_audio(data->_recorder,
-                              const_cast<const float**>(outputs),
-                              RADIUM_BLOCKSIZE
-                              );
+  if (false==RT_SampleRecorder_add_audio(data->_recorder,
+                                         const_cast<const float**>(outputs),
+                                         RADIUM_BLOCKSIZE
+                                         ))
+    {
+      data->RT_recording_has_stopped();
+    }
 }
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **__restrict__ inputs, float **__restrict__ outputs){
