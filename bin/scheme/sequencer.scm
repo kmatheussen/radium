@@ -928,7 +928,7 @@
                                          )))
 
                     (<gui> :group "Latency"
-                           (<gui> :checkbox "Compensate latency when recording"
+                           (<gui> :checkbox "Compensate latency when recording. (See Edit->Preferences->Audio for more options)"
                                   (<ra> :get-seqtrack-record-compensate-latency seqtracknum)
                                   (lambda (ison)
                                     (<ra> :set-seqtrack-record-compensate-latency seqtracknum ison))))
