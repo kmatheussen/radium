@@ -917,10 +917,13 @@ struct Mixer{
             } else {
               
               if (!strcmp(jack_port_type(physical_port), jack_port_type(_main_inputs[ch]))) {
-                jack_connect(_rjack_client,
-                             outportnames[portnum],
-                             radium_port_name
-                             );
+                if (0 != jack_connect(_rjack_client,
+                                      outportnames[portnum],
+                                      radium_port_name
+                                      ))
+                  {
+                    GFX_addMessage("Warning. Could not connect to jack capture port %d: \"%s\".\n",ch,outportnames[portnum]);
+                  }
                 ch++;
               }
             }
@@ -928,8 +931,7 @@ struct Mixer{
           }
               
         }
-      
-        
+
         jack_free(outportnames);
       }
     }

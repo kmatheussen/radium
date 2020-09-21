@@ -65,8 +65,59 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
   }
 
   if(!strcmp(plugin_type->name,"System In")){
-    int ch;
+    
     const char **outportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
+
+    if (outportnames != NULL) {
+
+      for(int portnum=0, ch=0 ; ch < num_outputs && outportnames[portnum] != NULL ; portnum++){
+        
+        jack_port_t *physical_port = jack_port_by_name(client, outportnames[portnum]);
+        
+        if (physical_port==NULL){
+          
+          R_ASSERT(false);
+          
+        } else {
+
+          if (data->input_ports[ch] == NULL) {
+            
+            ch++;
+            
+          } else {
+            
+            const char *radium_port_name = jack_port_name(data->input_ports[ch]);
+            
+            if (radium_port_name==NULL){
+              
+              R_ASSERT(false);
+              
+            } else {
+              
+              if (!strcmp(jack_port_type(physical_port), jack_port_type(data->input_ports[ch]))){
+                if (0 != jack_connect(client,
+                                      outportnames[portnum],
+                                      radium_port_name
+                                      ))
+                  {
+                    GFX_Message(NULL, "Warning. Could not connect to jack capture port %d: \"%s\".\n",ch,outportnames[portnum]);
+                  }
+                ch++;
+              }
+              
+            }
+            
+          }
+
+        }
+        
+      }
+
+      jack_free(outportnames);
+
+    }
+
+#if 0          
     for (ch=0;outportnames && outportnames[ch]!=NULL && ch<num_outputs;ch++){
       if (
           data->input_ports[ch]!= NULL &&
@@ -78,7 +129,10 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
 	  )
         GFX_Message(NULL, "Warning. Cannot connect to jack capture port %d: \"%s\".\n",ch,outportnames[ch]);
     }
+    
     jack_free(outportnames);
+#endif
+    
   }
 
   for(i=0;i<num_inputs;i++){
@@ -102,6 +156,59 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
   }
 
   if(!strcmp(plugin_type->name,"System Out") || !strcmp(plugin_type->name,"System Out 8")){
+
+    const char **inportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsInput);
+
+    if (inportnames != NULL) {
+
+      for(int portnum=0, ch=0 ; ch < num_inputs && inportnames[portnum] != NULL ; portnum++){
+        
+        jack_port_t *physical_port = jack_port_by_name(client, inportnames[portnum]);
+        
+        if (physical_port==NULL){
+          
+          R_ASSERT(false);
+          
+        } else {
+
+          if (data->output_ports[ch] == NULL) {
+            
+            ch++;
+            
+          } else {
+            
+            const char *radium_port_name = jack_port_name(data->output_ports[ch]);
+            
+            if (radium_port_name==NULL){
+              
+              R_ASSERT(false);
+              
+            } else {
+              
+              if (!strcmp(jack_port_type(physical_port), jack_port_type(data->output_ports[ch]))){
+                if (0 != jack_connect(client,
+                                      radium_port_name,
+                                      inportnames[portnum]
+                                      ))
+                  {
+                    GFX_Message(NULL, "Warning. Could not connect to jack playback port %d: \"%s\".\n",ch,inportnames[portnum]);
+                  }
+                ch++;
+              }
+              
+            }
+            
+          }
+
+        }
+        
+      }
+
+      jack_free(inportnames);
+
+    }
+    
+#if 0
     int ch;
     const char **inportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsInput);
     for (ch=0;inportnames && inportnames[ch]!=NULL && ch<num_inputs;ch++){
@@ -116,6 +223,8 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
         GFX_addMessage("Warning. Cannot connect to jack playback port %d: \"%s\".\n",ch,inportnames[ch]);
     }
     jack_free(inportnames);
+#endif
+    
   }
 
 
