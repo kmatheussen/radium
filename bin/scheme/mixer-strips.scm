@@ -201,9 +201,8 @@
 
    (get-forced-as-current-instrument-menu-entry instrument-id)
 
-   (and (<ra> :is-current-instrument-locked)
-        (list "Set current instrument"
-              show-set-current-instrument-popup-menu))
+   (list "Set current instrument"
+         show-set-current-instrument-popup-menu)
       
    "----------"
    
