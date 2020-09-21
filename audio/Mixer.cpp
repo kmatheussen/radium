@@ -575,7 +575,11 @@ static radium::SetSeveralAtomicVariables jackblock_variables_protector;
 static QTime pause_time;
 static bool g_process_plugins = true;
 static DEFINE_ATOMIC(bool, g_request_to_pause_plugins) = false;
-  
+
+int g_jack_system_input_latency = 0;
+int g_jack_system_output_latency = 0;
+
+
 void RT_pause_plugins(void){
   ATOMIC_SET(g_request_to_pause_plugins, true);
 }
@@ -752,7 +756,33 @@ struct Mixer{
     }PLAYER_unlock();
   }
 
-  bool start_jack(){
+  void set_output_latency(void) const {
+    const char **inportnames=jack_get_ports(_rjack_client,NULL,NULL,JackPortIsPhysical|JackPortIsInput);
+
+    if (inportnames != NULL) {
+      
+      for(int portnum=0 ; inportnames[portnum] != NULL ; portnum++){
+        
+        jack_port_t *physical_port = jack_port_by_name(_rjack_client, inportnames[portnum]);
+        
+        if (physical_port!=NULL){
+
+          jack_latency_range_t range;
+          jack_port_get_latency_range(physical_port, JackPlaybackLatency, &range);
+          g_jack_system_output_latency = R_MAX(0, (int)range.max);
+
+          if (g_jack_system_output_latency > 0)
+            break;
+
+        }
+      }
+
+      jack_free(inportnames);
+
+    }
+  }
+  
+  bool start_jack(void){
     jack_status_t status;
 
     const char *client_name;
@@ -884,6 +914,7 @@ struct Mixer{
           
           return false;          
         }
+
       }
       
       const char **outportnames = jack_get_ports(_rjack_client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
@@ -899,6 +930,12 @@ struct Mixer{
             R_ASSERT_NON_RELEASE(false);
             
           } else {
+
+            if (g_jack_system_input_latency == 0){
+              jack_latency_range_t range;
+              jack_port_get_latency_range(physical_port, JackCaptureLatency, &range);
+              g_jack_system_input_latency = R_MAX(0, (int)range.max);
+            }
 
             const char *radium_port_name = jack_port_name(_main_inputs[ch]);
 
@@ -934,6 +971,8 @@ struct Mixer{
 
         jack_free(outportnames);
       }
+
+      set_output_latency();
     }
 
     //create_jack_plugins(_rjack_client);
@@ -2002,6 +2041,13 @@ struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches){
 // Can be called from any thread.
 float MIXER_get_sample_rate(void){
   return g_mixer->_sample_rate;
+}
+
+int64_t MIXER_get_recording_latency_compensation_from_system_in(void){
+  if (getRecordingLatencyFromSystemInputIsAutomaticallyDetermined())
+    return g_jack_system_input_latency + g_jack_system_output_latency;
+  else
+    return ms_to_frames(getCustomRecordingLatencyFromSystemInput());
 }
 
 int MIXER_get_remaining_num_jackblock_frames(void){

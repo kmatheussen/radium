@@ -171,6 +171,12 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
           
         } else {
 
+          if (g_jack_system_output_latency == 0){
+            jack_latency_range_t range;
+            jack_port_get_latency_range(physical_port, JackPlaybackLatency, &range);
+            g_jack_system_output_latency = R_MAX(0, (int)range.max);
+          }
+
           if (data->output_ports[ch] == NULL) {
             
             ch++;
@@ -184,7 +190,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
               R_ASSERT(false);
               
             } else {
-              
+
               if (!strcmp(jack_port_type(physical_port), jack_port_type(data->output_ports[ch]))){
                 if (0 != jack_connect(client,
                                       radium_port_name,

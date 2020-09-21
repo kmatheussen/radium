@@ -529,8 +529,8 @@ struct MySampleRecorderInstance : radium::SampleRecorderInstance{
 
   struct Patch *_patch;
 
-  MySampleRecorderInstance(struct Patch *patch, filepath_t recording_path, int num_ch)
-    : SampleRecorderInstance(recording_path, num_ch, 48)
+  MySampleRecorderInstance(struct Patch *patch, filepath_t recording_path, int num_ch, bool from_system_input)
+    : SampleRecorderInstance(recording_path, num_ch, 48, from_system_input ? MIXER_get_recording_latency_compensation_from_system_in() : 0)
     , _patch(patch)
   {
   }
@@ -1162,6 +1162,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   memset(outputs[0],0,num_frames*sizeof(float));
   memset(outputs[1],0,num_frames*sizeof(float));
 
+  //printf("Recording status: %d\n", ATOMIC_GET(data->recording_status));
+      
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
     float *audio_[data->recorder_instance->num_ch];
     float **audio = audio_;
@@ -1188,13 +1190,22 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
       audio[ch] = empty_block;
     */
     
-    RT_SampleRecorder_add_audio(data->recorder_instance,
-                                const_cast<const float**>(audio),
-                                RADIUM_BLOCKSIZE - data->recording_start_frame
-                                );
+    if (false==RT_SampleRecorder_add_audio(data->recorder_instance,
+                                           const_cast<const float**>(audio),
+                                           RADIUM_BLOCKSIZE - data->recording_start_frame
+                                           ))
+      {
+        struct Patch *patch = (struct Patch*)plugin->patch;
+        
+        ATOMIC_SET(data->recording_status, NOT_RECORDING);
+        ATOMIC_SET(patch->is_recording, false);
+        //printf("            ...and STOPPED --------------------\n\n\n");
+      }
     
     data->recording_start_frame = 0;
 
+    RT_PLUGIN_touch(plugin); // Make sure RT_process is called next frame as well.
+    
     return;
   }
 
@@ -1450,13 +1461,9 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
     if (is_note(note, data->recording_note_id, data->recording_seqblock)){
-      
-      struct Patch *patch = (struct Patch*)plugin->patch;
-      
-      RT_SampleRecorder_stop_recording(data->recorder_instance);
-      
-      ATOMIC_SET(data->recording_status, NOT_RECORDING);
-      ATOMIC_SET(patch->is_recording, false);
+
+      //printf("            STOP --------------------\n\n\n");
+      RT_SampleRecorder_request_stop_recording(data->recorder_instance);
       
       return;
     }
@@ -3212,7 +3219,7 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, filepath_t pathdir, int
   ATOMIC_SET(data->recording_status, BEFORE_RECORDING);
 
   auto *old = data->recorder_instance;
-  data->recorder_instance = new MySampleRecorderInstance(const_cast<struct Patch*>(plugin->patch), recording_path, num_channels);
+  data->recorder_instance = new MySampleRecorderInstance(const_cast<struct Patch*>(plugin->patch), recording_path, num_channels, recording_from_main_input);
   delete old; // Wait before deleting this one since data from it is being used here and there (although it shouldn't really be used after finished recording);
 }
 
