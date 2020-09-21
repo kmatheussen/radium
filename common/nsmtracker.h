@@ -3376,6 +3376,7 @@ static inline double get_note_reltempo(note_t note){
 
 struct SeqtrackRecordingConfig{
   bool record_from_system_input;
+  bool compensate_latency;
   bool matrix[NUM_CHANNELS_RECORDING_MATRIX][NUM_CHANNELS_RECORDING_MATRIX];
 };
 

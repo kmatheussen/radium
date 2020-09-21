@@ -2486,6 +2486,7 @@ static hash_t *get_state_from_recording_config(const struct SeqtrackRecordingCon
   hash_t *state = HASH_create(2);
   
   HASH_put_bool(state, "record_from_system_input", config.record_from_system_input);
+  HASH_put_bool(state, "compensate_latency", config.compensate_latency);
 
   dynvec_t matrix = {};
   
@@ -2510,6 +2511,8 @@ static struct SeqtrackRecordingConfig get_recording_config_from_state(const hash
   reset_recording_config(&config);
   
   config.record_from_system_input = HASH_get_bool(state, "record_from_system_input");
+  if (HASH_has_key(state, "compensate_latency"))
+    config.compensate_latency = HASH_get_bool(state, "compensate_latency");
 
   const dynvec_t *matrix = HASH_get_dyn(state, "matrix").array;
     

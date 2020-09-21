@@ -1068,6 +1068,27 @@ bool getSeqtrackRecordFromSystemInput(int seqtracknum){
 }
 
 
+// seqtrack recording compensate latency
+
+void setSeqtrackRecordCompensateLatency(int seqtracknum, bool compensate_latency){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  get_seqtrack_recording_config(seqtrack)->compensate_latency = compensate_latency;
+
+  maybe_restart_recording(seqtrack);
+}
+
+bool getSeqtrackRecordCompensateLatency(int seqtracknum){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  return get_seqtrack_recording_config(seqtrack)->compensate_latency;
+}
+
+
 // seqtrack recording matrix
 
 void setSeqtrackRecordingMatrix(int seqtracknum, int input_channel, int soundfile_channel, bool enabled){

@@ -915,19 +915,24 @@
              (<gui> :vertical-layout
                     
                     (<gui> :group "Source"
-                           (<gui> :horizontal-layout
-                                  (<gui> :radiobutton "System input"
-                                         (<ra> :get-seqtrack-record-from-system-input seqtracknum)
-                                         (lambda (ison)
-                                           (<ra> :set-seqtrack-record-from-system-input seqtracknum ison)))
-                                  (<gui> :radiobutton "Input connections to the instrument"
-                                         (not (<ra> :get-seqtrack-record-from-system-input seqtracknum))
-                                         (lambda (ison)
-                                           (<ra> :set-seqtrack-record-from-system-input seqtracknum (not ison))))
-                                  
-                                  ))
-                                         ;;;(<gui> :radiobutton "Output of instrument main pipe #f")))
-                    
+                           (<gui> :vertical-layout
+                                  (<gui> :horizontal-layout
+                                         (<gui> :radiobutton "System input"
+                                                (<ra> :get-seqtrack-record-from-system-input seqtracknum)
+                                                (lambda (ison)
+                                                  (<ra> :set-seqtrack-record-from-system-input seqtracknum ison)))
+                                         (<gui> :radiobutton "Input connections to the instrument"
+                                                (not (<ra> :get-seqtrack-record-from-system-input seqtracknum))
+                                                (lambda (ison)
+                                                  (<ra> :set-seqtrack-record-from-system-input seqtracknum (not ison))))
+                                         )))
+
+                    (<gui> :group "Latency"
+                           (<gui> :checkbox "Compensate latency when recording"
+                                  (<ra> :get-seqtrack-record-compensate-latency seqtracknum)
+                                  (lambda (ison)
+                                    (<ra> :set-seqtrack-record-compensate-latency seqtracknum ison))))
+
                     (<gui> :group "Source channel -> Soundfile channel"
                            (let ((matrix (<gui> :horizontal-layout
                                                 (map (lambda (input-channel)
