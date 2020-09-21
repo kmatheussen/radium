@@ -674,6 +674,7 @@ static inline void reset_recording_config(struct SeqtrackRecordingConfig *config
   memset(config, 0, sizeof(struct SeqtrackRecordingConfig));
   
   config->record_from_system_input = true;
+  config->compensate_latency = true;
   config->matrix[0][0] = true;
   config->matrix[1][1] = true;
 }

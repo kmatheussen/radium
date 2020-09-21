@@ -1226,8 +1226,8 @@ struct Recorder : public radium::SampleRecorderInstance{
   
   int _seqtrack_recording_generation;
   
-  Recorder(struct SeqTrack *seqtrack, filepath_t recording_path, const SeqtrackRecordingConfig *config)
-    : SampleRecorderInstance(recording_path, get_num_recording_soundfile_channels(config), 48, config->record_from_system_input ? MIXER_get_recording_latency_compensation_from_system_in() : 0) // 60 is standard value, I think, but the sample recorder adds 12 to the middle note, for some reason.
+  Recorder(struct SeqTrack *seqtrack, filepath_t recording_path, const SeqtrackRecordingConfig *config, int64_t latency)
+    : SampleRecorderInstance(recording_path, get_num_recording_soundfile_channels(config), 48, latency) // 60 is standard value, I think, but the sample recorder adds 12 to the middle note, for some reason.
     , _peaks(num_ch)
       //, _data(data)
     , _seqtrack(seqtrack)
@@ -1734,8 +1734,24 @@ void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plu
   if (status == NOT_RECORDING) {
 
     R_ASSERT_RETURN_IF_FALSE(data->_recorder == NULL);
+
+    auto *config = get_seqtrack_recording_config(seqtrack);
     
-    data->_recorder = new Recorder(seqtrack, path, get_seqtrack_recording_config(seqtrack));
+    int64_t latency = 0;
+
+    if (config->compensate_latency){
+      if (config->record_from_system_input)
+        latency = MIXER_get_recording_latency_compensation_from_system_in();
+      else{
+        auto *soundproducer = SP_get_sound_producer(plugin);
+        if (soundproducer==NULL){
+          R_ASSERT_NON_RELEASE(false);
+        }else
+          latency = RT_SP_get_input_latency(soundproducer);
+      }
+    }
+    
+    data->_recorder = new Recorder(seqtrack, path, config, latency);
     
     ATOMIC_SET(data->_recording_status, READY_TO_RECORD);
   }
