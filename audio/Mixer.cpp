@@ -853,7 +853,7 @@ struct Mixer{
 
       ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
       msgBox->setIcon(QMessageBox::Critical);
-      msgBox->setText("Unable to activate Jack client.");
+      msgBox->setText("Failed to activate Jack client.");
       msgBox->setInformativeText("This is very unusual. You might want to run \"Kill Jack\", and then start jack again.");
 
       msgBox->setStandardButtons(QMessageBox::Ok);
@@ -869,16 +869,66 @@ struct Mixer{
 #endif
 
     {
-      for(int ch = 0 ; ch < NUM_SYSTEM_INPUT_JACK_PORTS ; ch++)
+      for(int ch = 0 ; ch < NUM_SYSTEM_INPUT_JACK_PORTS ; ch++){
         _main_inputs[ch] = jack_port_register(_rjack_client, talloc_format("main_input_%d", ch+1), JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+        
+        if (_main_inputs[ch]==NULL){
+          
+          ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
+          msgBox->setIcon(QMessageBox::Critical);
+          msgBox->setText("Failed to create main input jack port.");
+          msgBox->setInformativeText("This is very unusual. You might want to run \"Kill Jack\", and then start jack again.");
+          
+          msgBox->setStandardButtons(QMessageBox::Ok);
+          safeExec(msgBox, false);
+          
+          return false;          
+        }
+      }
       
       const char **outportnames = jack_get_ports(_rjack_client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
 
       if (outportnames != NULL) {
-        for(int ch = 0 ; ch < NUM_SYSTEM_INPUT_JACK_PORTS && outportnames[ch] != NULL ; ch++)
-          jack_connect(_rjack_client, outportnames[ch],
-                       jack_port_name(_main_inputs[ch])
-                       );
+
+        for(int portnum=0, ch=0 ; ch < NUM_SYSTEM_INPUT_JACK_PORTS && outportnames[portnum] != NULL ; portnum++){
+
+          jack_port_t *physical_port = jack_port_by_name(_rjack_client, outportnames[portnum]);
+          
+          if (physical_port==NULL){
+            
+            R_ASSERT_NON_RELEASE(false);
+            
+          } else {
+
+            const char *radium_port_name = jack_port_name(_main_inputs[ch]);
+
+            if (radium_port_name==NULL){
+
+              ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
+              msgBox->setIcon(QMessageBox::Critical);
+              msgBox->setText("Unable to lookup name of input jack port.");
+              msgBox->setInformativeText("This is very unusual. You might want to run \"Kill Jack\", and then start jack again.");
+              
+              msgBox->setStandardButtons(QMessageBox::Ok);
+              safeExec(msgBox, false);
+          
+              return false;          
+              
+            } else {
+              
+              if (!strcmp(jack_port_type(physical_port), jack_port_type(_main_inputs[ch]))) {
+                jack_connect(_rjack_client,
+                             outportnames[portnum],
+                             radium_port_name
+                             );
+                ch++;
+              }
+            }
+            
+          }
+              
+        }
+      
         
         jack_free(outportnames);
       }
