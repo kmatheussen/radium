@@ -569,7 +569,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       else
         custom_recording_latency->setChecked(true);
       
-      auto_recording_latency->setText("Automatically determined (" + QString::number(frames_to_ms(g_jack_system_input_latency + g_jack_system_output_latency), 'f', 2) + "ms)");
+      auto_recording_latency->setText("Automatically determine soundcard input+output latency (" + QString::number(frames_to_ms(g_jack_system_input_latency + g_jack_system_output_latency), 'f', 2) + "ms)");
 
       custom_recording_latency_value->setValue(getCustomRecordingLatencyFromSystemInput());
         
