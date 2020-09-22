@@ -80,6 +80,7 @@ extern LANGSPEC struct Patch **RT_MIXER_get_all_click_patches(int *num_click_pat
 extern LANGSPEC float MIXER_get_sample_rate(void);
 
 extern LANGSPEC int64_t MIXER_get_recording_latency_compensation_from_system_in(void);
+extern LANGSPEC int64_t MIXER_get_latency_for_main_system_out(void);
 
 #ifdef USE_QT4
 #include <QString>
