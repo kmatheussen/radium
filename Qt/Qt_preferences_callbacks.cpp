@@ -502,6 +502,12 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       safeModeOnoff->setEnabled(false);
     }
 
+
+    // Instruments
+    {
+      enable_sample_seek_by_default->setChecked(enableSampleSeekByDefault());
+    }
+
     
     // Various
     {
@@ -799,6 +805,11 @@ public slots:
       GL_set_safe_mode(val);
   }
 
+  void on_enable_sample_seek_by_default_toggled(bool val){
+    if (_initing==false)
+      setEnableSampleSeekByDefault(val);
+  }
+  
   void on_pauseRenderingOnoff_toggled(bool val){
     if (_initing==false)
       GL_set_pause_rendering_on_off(val);

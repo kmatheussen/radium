@@ -439,8 +439,10 @@ SoundPlugin *PLUGIN_create(struct Patch *patch, SoundPluginType *plugin_type, ha
     
   ATOMIC_SET(plugin->effect_num_to_show_because_it_was_used_externally, -1);
 
+  ATOMIC_SET(plugin->enable_sample_seek, enableSampleSeekByDefault());
+  
   plugin->is_dpi_aware = true;
-    
+
   int buffer_size = MIXER_get_buffer_size();
 
   plugin->midi_learns = new radium::Vector<radium::SoundPluginEffectMidiLearn*>;
@@ -2823,7 +2825,7 @@ SoundPlugin *PLUGIN_create_from_state(struct Patch *patch, hash_t *state, bool i
   
   if (HASH_has_key(state, "enable_sample_seek"))
     ATOMIC_SET(plugin->enable_sample_seek, HASH_get_bool(state, "enable_sample_seek"));
-
+  
   if (HASH_has_key(state, "is_dpi_aware"))
     plugin->is_dpi_aware = HASH_get_bool(state, "is_dpi_aware");
   

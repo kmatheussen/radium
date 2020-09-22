@@ -2165,7 +2165,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
     (- (length (get-all-audio-instruments))
        (length instruments-before)))
   
-  (define-macro (load . code)
+  (define-macro (LOAD . code)
     `(undo-block
       (lambda ()
         (define id-instrument (begin ,@code))
@@ -2186,7 +2186,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                 (<ra> :instrument-has-been-used instrument-id))
                             (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
                                   (lambda ()
-                                    (load instrument-id)))))
+                                    (LOAD instrument-id)))))
                      (iota (length midi-instruments))
                      midi-instruments)))
      "----------Audio instruments currently used"
@@ -2195,30 +2195,30 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                      (<ra> :instrument-has-been-used instrument-id))
                  (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
                        (lambda ()
-                         (load instrument-id)))))
+                         (LOAD instrument-id)))))
           (iota (length instruments-before))
           instruments-before)))
 
   (define instr-conf (make-instrument-conf :connect-to-main-pipe #t
                                            :parentgui -1))
   (define (callback descr)
-    (load (<ra> :create-audio-instrument-from-description descr)))
+    (LOAD (<ra> :create-audio-instrument-from-description descr)))
   
   (list
    "----------Create a new instrument"
    "New Sample Player" (lambda ()
-                         (load (<ra> :create-audio-instrument "Sample Player" "Sample Player")))
+                         (LOAD (<ra> :create-audio-instrument "Sample Player" "Sample Player")))
   ;;"<New FluidSynth>" (lambda ()
-   ;;                     (load (<ra> :create-audio-instrument "FluidSynth" "FluidSynth")))
+   ;;                     (LOAD (<ra> :create-audio-instrument "FluidSynth" "FluidSynth")))
    ;;(if (<ra> :has-pure-data)
    ;;    (list "<New Pd Instrument>" (lambda ()
-   ;;                                  (load (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
+   ;;                                  (LOAD (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
    ;;    #f)
    "----------------"
    "New Audio Instrument" (lambda ()
                             (start-instrument-popup-menu instr-conf callback))
    "New MIDI Instrument" (lambda ()
-                             (load (<ra> :create-midi-instrument "Unnamed")))
+                             (LOAD (<ra> :create-midi-instrument "Unnamed")))
    "----------------"
    "Load Preset" (lambda ()
                    (request-select-instrument-preset -1 callback))
@@ -2234,7 +2234,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                     #f
                     (list (<-> num ". " (<ra> :get-instrument-name instrument-id))
                           (lambda ()
-                            (load (<ra> :clone-audio-instrument instrument-id))))))
+                            (LOAD (<ra> :clone-audio-instrument instrument-id))))))
               (iota (length instruments-before))
               instruments-before)
    (get-instrument-entries #t)
