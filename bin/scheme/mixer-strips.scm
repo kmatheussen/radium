@@ -913,7 +913,8 @@
               (and effect-name
                    (list (<-> "Delete plugin \"" (<ra> :get-instrument-name instrument-id) "\"")
                          (lambda ()
-                           #t)))
+                           (delete-func))))
+                   ;;(delete-instrument-plugin parent-instrument-id instrument-id))))
               
               (and effect-name
                    (list "Dry/Wet"
@@ -1218,33 +1219,35 @@
   widget)
 
 
+(define (delete-instrument-plugin parent-instrument-id instrument-id)
+  (<ra> :schedule 10 ;; Wait for slider to be removed, and (for some reason) scheduling also prevents some flickering.
+        (lambda ()
+          
+          
+          (undo-block
+           (lambda ()
+             
+             (<ra> :undo-mixer-connections)
+             
+             (FROM_C-remove-instrument-from-connection-path parent-instrument-id instrument-id)
+             
+             (if (= 0 (<ra> :get-num-in-audio-connections instrument-id))
+                 (<ra> :delete-instrument instrument-id))
+             
+             ;;(remake-mixer-strips) ;; (makes very little difference in snappiness, and it also causes mixer strips to be remade twice)
+             ))
+          
+          #f)))
+  
 (define (create-mixer-strip-plugin gui first-instrument-id parent-instrument-id instrument-id strips-config)
   (define (get-drywet)
     (<ra> :get-stored-instrument-effect instrument-id "System Dry/Wet"))
   
   (define (delete-instrument)
-
     (c-display "HIDING" slider)
     (<gui> :hide slider) ;; Not necessary, but it looks much better if the slider disappears immediately.
 
-    (<ra> :schedule 10 ;; Wait for slider to be removed, and (for some reason) scheduling also prevents some flickering.
-          (lambda ()
-            
-
-            (undo-block
-             (lambda ()
-               
-               (<ra> :undo-mixer-connections)
-               
-               (FROM_C-remove-instrument-from-connection-path parent-instrument-id instrument-id)
-               
-               (if (= 0 (<ra> :get-num-in-audio-connections instrument-id))
-                   (<ra> :delete-instrument instrument-id))
-               
-               ;;(remake-mixer-strips) ;; (makes very little difference in snappiness, and it also causes mixer strips to be remade twice)
-               ))
-            
-            #f)))
+    (delete-instrument-plugin parent-instrument-id instrument-id))
 
   (define (das-replace-instrument)
     (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs #t :must-have-outputs #t :parentgui gui)))
