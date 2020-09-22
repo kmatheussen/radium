@@ -1199,7 +1199,7 @@ enum{
  NOT_RECORDING = 0,
  READY_TO_RECORD,
  IS_RECORDING,
- STOP_RECORDING
+ REQUEST_STOP_RECORDING
 };
 
 #define HIGHEST_RECORDER_ID -2
@@ -1570,7 +1570,7 @@ public:
           break;
         }
         
-      case STOP_RECORDING:
+      case REQUEST_STOP_RECORDING:
         RT_request_stop_recording();
         more_to_play = true;
         break;
@@ -1757,9 +1757,10 @@ void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plu
   }
 }
 
-static bool disable_running_recorder(Data *data){
-  if (ATOMIC_COMPARE_AND_SET_INT(data->_recording_status, IS_RECORDING, STOP_RECORDING)){
+static bool request_stop_running_recorder(Data *data){
+  if (ATOMIC_COMPARE_AND_SET_INT(data->_recording_status, IS_RECORDING, REQUEST_STOP_RECORDING)){
 
+#if 0
     const int ms_to_wait = 5000; // 5 seconds
     const int ms_to_wait_per_call = 10;
     int ms = 0;
@@ -1770,21 +1771,22 @@ static bool disable_running_recorder(Data *data){
     }
     
     R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_recording_status)==NOT_RECORDING);
-
+#endif
+    
   } else {
     
     R_ASSERT_NON_RELEASE(false);
     
   }
 
-  return false; // to avoid deadlock.
+  return false;
 }
 
 
 
 // Called when user disables the "R" checkbox.
 // If it returns true, it means that we have to wait for SEQTRACK_call_me_when_recorder_is_finished.
-bool SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin){
+bool SEQTRACKPLUGIN_request_stop_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin){
   R_ASSERT(THREADING_is_main_thread());
 
   Data *data = (Data*)plugin->data;
@@ -1810,15 +1812,16 @@ bool SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, SoundPlugin *pl
     if (recorder != NULL)
       delete recorder;
     else{
-      R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_recording_status)==IS_RECORDING);
-      return disable_running_recorder(data); // Between the first and the second test whether data->_recording_status==READY_TO_RECORD, it switched status to IS_RECORDING.
+      int status = ATOMIC_GET(data->_recording_status);
+      R_ASSERT_NON_RELEASE(status==IS_RECORDING);
+      return request_stop_running_recorder(data); // Between the first and the second test whether data->_recording_status==READY_TO_RECORD, it switched status to IS_RECORDING.
     }
 
     return false;
     
   } else {
 
-    return disable_running_recorder(data);
+    return request_stop_running_recorder(data);
 
   }
 }
@@ -2342,6 +2345,7 @@ void SEQTRACKPLUGIN_called_very_often(SoundPlugin *plugin){
 static void RT_record(Data *data, int num_frames, const float **instrument_inputs){
   R_ASSERT_RETURN_IF_FALSE(num_frames==RADIUM_BLOCKSIZE);
 
+  //printf("RT_record called\n");
   
   Recorder *recorder = data->_recorder;
   const SeqtrackRecordingConfig &config = recorder->_config;
@@ -2447,8 +2451,9 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   Data *data = (Data*)plugin->data;
 
   SMOOTH_called_per_block(&data->_piping_volume);
-  
-  if (ATOMIC_GET(data->_recording_status)==IS_RECORDING)
+
+  int status = ATOMIC_GET(data->_recording_status);
+  if (status==IS_RECORDING || status==REQUEST_STOP_RECORDING)
     RT_record(data, num_frames, const_cast<const float**>(inputs));
   
   for(int ch = 0 ; ch < NUM_OUTPUTS ; ch++)
