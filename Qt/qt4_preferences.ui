@@ -964,7 +964,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 <item>
                  <widget class="QRadioButton" name="custom_recording_latency">
                   <property name="text">
-                   <string>Custom soundcard input+output latency (Tip: Record the metronome to measure)</string>
+                   <string>Custom soundcard input+output latency. (Tip: Record the metronome to measure)</string>
                   </property>
                  </widget>
                 </item>
