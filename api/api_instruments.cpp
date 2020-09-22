@@ -91,7 +91,7 @@ bool doAudioBuzyLoop(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_audio_buzy_loop = SETTINGS_read_bool("audio_buzy_loop", false);
+    g_audio_buzy_loop = SETTINGS_read_bool("audio_buzy_loop", g_audio_buzy_loop);
     has_inited = true;
   }
 
@@ -3662,3 +3662,22 @@ void setIncludePanAndDryInWetSignal(bool val){
 bool includePanAndDryInWetSignal(void){
   return root->song->include_pan_and_dry_in_wet_signal;
 }
+
+static bool g_enable_sample_seek_by_default = false;
+
+bool enableSampleSeekByDefault(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_enable_sample_seek_by_default = SETTINGS_read_bool("enable_sample_seek_by_default", g_enable_sample_seek_by_default);
+    has_inited = true;
+  }
+
+  return g_enable_sample_seek_by_default;
+}
+
+void setEnableSampleSeekByDefault(bool doit){
+  g_enable_sample_seek_by_default = doit;
+  SETTINGS_write_bool("enable_sample_seek_by_default", doit);
+}
+
