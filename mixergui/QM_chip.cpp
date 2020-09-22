@@ -104,6 +104,8 @@ extern EditorWidget *g_editor;
 //
 
 
+
+
 static int get_text_width(const QFont &font, const QString &text){
   const QFontMetrics fn = QFontMetrics(font);
   return fn.boundingRect(text).width();
@@ -1362,7 +1364,19 @@ struct Patch* CHIP_get_edest(const struct Patch *patch, int connectionnum){
 
   return CHIP_get_patch(chip->_output_event_connections.at(connectionnum)->to);
 }
-  
+
+
+static SuperConnection *g_current_connection = NULL;
+
+SuperConnection *SuperConnection::get_current_connection(void){
+  return g_current_connection;
+}
+
+void SuperConnection::set_current_connection(SuperConnection *connection){
+  g_current_connection = connection;
+}
+
+
 void CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(AudioConnection *connection){
   Chip *from = connection->from;
   Chip *to = connection->to;

@@ -214,9 +214,12 @@ extern LANGSPEC bool MW_get_bus_connections_visibility(void);
 
 typedef Chip* ChipPointer;
 
-class SuperConnection  : public QGraphicsLineItem {
-
+class SuperConnection : public QGraphicsLineItem {
+  
 public:
+
+  static SuperConnection *get_current_connection(void);
+  static void set_current_connection(SuperConnection *connection);
 
   bool _is_selected; // for some reason isSelected() doesn't work.
   bool _is_event_connection;
@@ -469,6 +472,11 @@ public:
   */
   
   ~SuperConnection(){
+
+    // Workaround. Can't use a QPointer<SuperConnection> variable without some hackery.
+    if (SuperConnection::get_current_connection()==this)
+      SuperConnection::set_current_connection(NULL);
+    
     printf("       Remake: ~SuperConnectin\n");
     //remakeMixerStrips(-1);
   }
@@ -542,6 +550,9 @@ public:
 #endif
     //setVisible(true);
     _is_hovered_visible = true;
+
+    SuperConnection::set_current_connection(this);
+    
     update();
   }
 
@@ -572,8 +583,13 @@ public:
       setPen(pen);
     }
 #endif
+
+    if (SuperConnection::get_current_connection()==this)
+      SuperConnection::set_current_connection(NULL);
+    
     //setVisible(false);
     _is_hovered_visible = false;
+
     update();
   }
 
@@ -587,6 +603,8 @@ public:
   }
 
 };
+
+
 
 enum class ConnectionType{
   IS_SEND,

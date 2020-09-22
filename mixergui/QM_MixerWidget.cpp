@@ -1105,21 +1105,43 @@ vector_t MW_get_selected_chips(void){
   return ret;
 }
 
-static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_y){
-  printf("mouserelease_create_chip called\n");
+
+static void mouserelease_show_connection_popup(SuperConnection *connection){
+
+  if (connection->from==NULL)
+    return;
   
-  draw_slot(scene,mouse_x,mouse_y);
-
-  float x, y;
-  get_slotted_x_y(mouse_x, mouse_y, x, y);
-
-  S7EXTRA_GET_FUNC(func, "FROM_C-show-mixer-popup-menu");
-
+  if (connection->to==NULL)
+    return;  
+  
+  S7EXTRA_GET_FUNC(func, "FROM_C-show-mixer-connection-popup-menu");
+    
   s7extra_applyFunc_void_varargs(func,
-                                 DYN_create_instrument(createIllegalInstrument()),
-                                 DYN_create_float(x),
-                                 DYN_create_float(y),
-                                 g_uninitialized_dyn);
+                                 DYN_create_instrument(CHIP_get_patch(connection->_from)->id),
+                                 DYN_create_instrument(CHIP_get_patch(connection->_to)->id),
+                                 DYN_create_bool(connection->_is_event_connection),
+                                 g_uninitialized_dyn
+                                 );
+}
+
+static bool mouserelease_create_chip(MyScene *scene, float mouse_x, float mouse_y){
+  
+  {
+    printf("mouserelease_create_chip called\n");
+    
+    draw_slot(scene,mouse_x,mouse_y);
+    
+    float x, y;
+    get_slotted_x_y(mouse_x, mouse_y, x, y);
+
+    S7EXTRA_GET_FUNC(func, "FROM_C-show-mixer-popup-menu");
+    
+    s7extra_applyFunc_void_varargs(func,
+                                   DYN_create_instrument(createIllegalInstrument()),
+                                   DYN_create_float(x),
+                                   DYN_create_float(y),
+                                   g_uninitialized_dyn);
+  }
   
   /*
   createInstrumentDescriptionPopupMenu(createNewInstrumentConf(x, y, false, true,
@@ -2184,7 +2206,13 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
     }
     
     if(chip_is_under==false && !MOUSE_CYCLE_has_moved()){
-      mouserelease_create_chip(this,mouse_x,mouse_y);
+
+      if (SuperConnection::get_current_connection() != NULL) {
+        mouserelease_show_connection_popup(SuperConnection::get_current_connection());
+      } else {
+        mouserelease_create_chip(this,mouse_x,mouse_y);
+      }
+      
       event.accept();
       return;
     }

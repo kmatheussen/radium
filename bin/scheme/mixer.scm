@@ -370,7 +370,7 @@
                       (any? ra:get-instrument-bypass-from-storage all-audio-instruments))
          unbypass-all-instruments)))
 
-(define (get-mixer-popup-menu-entries x y)
+(define (get-mixer-popup-menu-entries)
   (list
    "---------------Display"
    (list "Show CPU usage (CPU)"
@@ -455,8 +455,18 @@
             (<ra> :paste-mixer-objects x y)))
     (get-mixer-popup-menu-selected-objects-entries selected-instruments)
     (get-mixer-all-objects-popup-menu-entries x y)
-    (get-mixer-popup-menu-entries x y))))
+    (get-mixer-popup-menu-entries))))
 
+(define (FROM_C-show-mixer-connection-popup-menu from-instrument to-instrument is-event-connection)
+  (popup-menu "Delete connection"
+              (lambda ()
+                (<ra> :undo-mixer-connections)
+                (if is-event-connection
+                    (<ra> :delete-event-connection from-instrument to-instrument)
+                    (<ra> :delete-audio-connection from-instrument to-instrument)))
+              ;;(get-mixer-popup-menu-entries)
+              ))
+  
 (define (get-current-instrument-mixer-popup-menu-entries instrument-id)
   (get-instrument-popup-entries instrument-id (<gui> :get-main-mixer-gui)))
   
@@ -467,7 +477,7 @@
                (get-mixer-all-objects-popup-menu-entries x y)
                "------------Mixer"
                (list "Mixer"
-                     (get-mixer-popup-menu-entries x y))
+                     (get-mixer-popup-menu-entries))
                )))
 
 (define (show-mixer-popup-menu-one-instrument instrument-id x y)
@@ -475,7 +485,7 @@
               ;;"------------Mixer"
               ;;(list "Mixer"
               (get-mixer-all-objects-popup-menu-entries x y)
-              (get-mixer-popup-menu-entries x y)
+              (get-mixer-popup-menu-entries)
               ))
 
 (define (FROM_C-show-mixer-popup-menu curr-instrument-id x y)
