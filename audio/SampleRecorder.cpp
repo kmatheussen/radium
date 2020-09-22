@@ -69,7 +69,7 @@ struct RecordingSlice{
   struct Slice{
     int ch;
     int num_frames;
-    float *samples;
+    float *samples; // Can't include the array itself here since RADIUM_BLOCKSIZE is not a constant. (well, we can, but it's probably more messy to do that)
   };
 
   Slice slice;
@@ -580,6 +580,21 @@ static void stop_recording(radium::SampleRecorderInstance *instance){
   put_slice(slice);
 }
 
+static bool handle_finished_add_audio(radium::SampleRecorderInstance *instance, int num_frames){
+  if (instance->_requested_to_stop){
+    
+    instance->_end_delay -= num_frames;
+    
+    if (instance->_end_delay <= 0){
+      R_ASSERT_NON_RELEASE(instance->_end_delay==0);
+      stop_recording(instance);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 // Returns false when finished.
 bool RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const float **audio, int num_frames){
   R_ASSERT_NON_RELEASE(num_frames <= RADIUM_BLOCKSIZE);
@@ -598,8 +613,8 @@ bool RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const
     } else {
 
       instance->_start_delay -= num_frames;
-      return true;
 
+      return handle_finished_add_audio(instance, num_frames);
     }
         
   }
@@ -619,8 +634,8 @@ bool RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const
     if (slices[ch]==NULL){
       for(int c=0;c<ch;c++)
         g_free_slices->bounded_push(slices[c]);
-      
-      return true;
+
+      return handle_finished_add_audio(instance, num_frames);
     }
     
   }
@@ -674,19 +689,8 @@ bool RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const
     }
     
   }
-  
-  if (instance->_requested_to_stop){
-    
-    instance->_end_delay -= num_frames;
-    
-    if (instance->_end_delay <= 0){
-      R_ASSERT_NON_RELEASE(instance->_end_delay==0);
-      stop_recording(instance);
-      return false;
-    }
-  }
-  
-  return true;
+
+  return handle_finished_add_audio(instance, num_frames);
 }
 
 int SampleRecorder_Get_Num_Instances(void){
@@ -699,8 +703,10 @@ void SampleRecorder_Init(void){
 
   RecordingSlice *slices = (RecordingSlice*)V_calloc(MAX_QUEUE_SIZE, sizeof(RecordingSlice));
 
-  for(int i=0;i<MAX_QUEUE_SIZE;i++){
-    slices[i].slice.samples = (float*)V_calloc(sizeof(float), RADIUM_BLOCKSIZE);
+  float *all_samples = (float*)V_calloc(sizeof(float), MAX_QUEUE_SIZE * RADIUM_BLOCKSIZE);
+  
+  for(int i=MAX_QUEUE_SIZE-1 ; i>=0 ; i--){
+    slices[i].slice.samples = &all_samples[i*RADIUM_BLOCKSIZE]; //(float*)V_calloc(sizeof(float), RADIUM_BLOCKSIZE);
     g_free_slices->push(&slices[i]);
   }
   
