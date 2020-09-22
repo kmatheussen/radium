@@ -580,10 +580,8 @@ static void stop_recording(radium::SampleRecorderInstance *instance){
   put_slice(slice);
 }
 
-static bool handle_finished_add_audio(radium::SampleRecorderInstance *instance, int num_frames){
+static bool handle_finished_adding_audio(radium::SampleRecorderInstance *instance, int num_frames){
   if (instance->_requested_to_stop){
-    
-    instance->_end_delay -= num_frames;
     
     if (instance->_end_delay <= 0){
       R_ASSERT_NON_RELEASE(instance->_end_delay==0);
@@ -599,9 +597,23 @@ static bool handle_finished_add_audio(radium::SampleRecorderInstance *instance, 
 bool RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const float **audio, int num_frames){
   R_ASSERT_NON_RELEASE(num_frames <= RADIUM_BLOCKSIZE);
 
+  if (instance->_requested_to_stop){
+    
+    if (num_frames >= instance->_end_delay) {
+      
+      num_frames = instance->_end_delay;
+      instance->_end_delay = 0;
+      
+    } else {
+      
+      instance->_end_delay -= num_frames;
+      
+    }
+  }
+  
   if (instance->_start_delay > 0){
 
-    if (instance->_start_delay < num_frames) {
+    if (num_frames > instance->_start_delay) {
       
       num_frames -= instance->_start_delay;
       
@@ -614,30 +626,9 @@ bool RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const
 
       instance->_start_delay -= num_frames;
 
-      return handle_finished_add_audio(instance, num_frames);
+      return handle_finished_adding_audio(instance, num_frames);
     }
         
-  }
-
-  if (instance->_requested_to_stop){
-    if (num_frames > instance->_end_delay)
-      num_frames = instance->_end_delay;
-  }
-  
-  instance->end += num_frames;
-    
-  RecordingSlice *slices[instance->num_ch];
-
-  for(int ch=0;ch<instance->num_ch;ch++){
-    slices[ch] = RT_get_free_slice();
-    
-    if (slices[ch]==NULL){
-      for(int c=0;c<ch;c++)
-        g_free_slices->bounded_push(slices[c]);
-
-      return handle_finished_add_audio(instance, num_frames);
-    }
-    
   }
 
   if (num_frames <= 0){
@@ -645,52 +636,70 @@ bool RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const
     R_ASSERT_NON_RELEASE(num_frames==0);
     R_ASSERT_NON_RELEASE(instance->_requested_to_stop);
     R_ASSERT_NON_RELEASE(instance->_end_delay==0);
-    R_ASSERT_NON_RELEASE(instance->_latency_compensation==0);
+
+    return handle_finished_adding_audio(instance, num_frames);
+  }
+
+  
+  instance->end += num_frames;
     
-  } else {
+  RecordingSlice *slices[instance->num_ch];
+  
+  for(int ch=0;ch<instance->num_ch;ch++){
+    slices[ch] = RT_get_free_slice();
     
-    for(int ch=0;ch<instance->num_ch;ch++){
-      {
-        RecordingSlice *slice = slices[ch];
-        
-        slice->instance = instance;
-        slice->command = RecordingSlice::Sample_Data;
-        slice->slice.ch = ch;
-        slice->slice.num_frames = num_frames;
-        memcpy(slice->slice.samples, audio[ch], sizeof(float)*num_frames);
-        
-        put_slice(slice);
-      }
+    if (slices[ch]==NULL){
+      for(int c=0;c<ch;c++)
+        g_free_slices->bounded_push(slices[c]);
       
-      {
-        float min_peak,max_peak;
-        JUCE_get_min_max_val(audio[ch], num_frames, &min_peak, &max_peak);
-        
-        PeakSlice peak_slice;
-        peak_slice.instance_id = instance->id;
-        peak_slice.ch = ch;
-        peak_slice.min = min_peak;
-        peak_slice.max = max_peak;
-        
-        R_ASSERT_NON_RELEASE(sane_isnormal((float)min_peak));
-        R_ASSERT_NON_RELEASE(sane_isnormal((float)max_peak));
-        R_ASSERT_NON_RELEASE(max_peak >= min_peak);
-        
-#if !defined(RELEASE)
-        qfloat16 min2 = min_peak;
-        qfloat16 max2 = max_peak;
-        R_ASSERT_NON_RELEASE(sane_isnormal((float)min2));
-        R_ASSERT_NON_RELEASE(sane_isnormal((float)max2));
-        R_ASSERT_NON_RELEASE(max2 >= min2);
-#endif
-        
-        g_peak_slice_queue->bounded_push(peak_slice);
-      }
+      return handle_finished_adding_audio(instance, num_frames);
     }
     
   }
-
-  return handle_finished_add_audio(instance, num_frames);
+  
+  for(int ch=0;ch<instance->num_ch;ch++){
+    
+    // queue audio
+    {
+      RecordingSlice *slice = slices[ch];
+      
+      slice->instance = instance;
+      slice->command = RecordingSlice::Sample_Data;
+      slice->slice.ch = ch;
+      slice->slice.num_frames = num_frames;
+      memcpy(slice->slice.samples, audio[ch], sizeof(float)*num_frames);
+      
+      put_slice(slice);
+    }
+    
+    // queue peak
+    {
+      float min_peak,max_peak;
+      JUCE_get_min_max_val(audio[ch], num_frames, &min_peak, &max_peak);
+      
+      PeakSlice peak_slice;
+      peak_slice.instance_id = instance->id;
+      peak_slice.ch = ch;
+      peak_slice.min = min_peak;
+      peak_slice.max = max_peak;
+      
+      R_ASSERT_NON_RELEASE(sane_isnormal((float)min_peak));
+      R_ASSERT_NON_RELEASE(sane_isnormal((float)max_peak));
+      R_ASSERT_NON_RELEASE(max_peak >= min_peak);
+      
+#if !defined(RELEASE)
+      qfloat16 min2 = min_peak;
+      qfloat16 max2 = max_peak;
+      R_ASSERT_NON_RELEASE(sane_isnormal((float)min2));
+      R_ASSERT_NON_RELEASE(sane_isnormal((float)max2));
+      R_ASSERT_NON_RELEASE(max2 >= min2);
+#endif
+        
+      g_peak_slice_queue->bounded_push(peak_slice);
+    }
+  }
+  
+  return handle_finished_adding_audio(instance, num_frames);
 }
 
 int SampleRecorder_Get_Num_Instances(void){
