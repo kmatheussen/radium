@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1119</width>
-    <height>580</height>
+    <height>622</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>8</number>
+      <number>1</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideNone</enum>
@@ -919,13 +919,19 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_14">
            <item>
-            <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,0">
+            <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,3">
              <item>
               <widget class="QGroupBox" name="groupBox_8">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="title">
                 <string>Latency compensation</string>
                </property>
-               <layout class="QVBoxLayout" name="verticalLayout_17">
+               <layout class="QVBoxLayout" name="verticalLayout_17" stretch="1">
                 <item>
                  <widget class="QCheckBox" name="enable_latency_compensation">
                   <property name="text">
@@ -938,6 +944,12 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </item>
              <item>
               <widget class="QGroupBox" name="groupBox_9">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="title">
                 <string>Latency compensation when recording from System Input</string>
                </property>
@@ -945,14 +957,14 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 <item>
                  <widget class="QRadioButton" name="auto_recording_latency">
                   <property name="text">
-                   <string>Automatically determined</string>
+                   <string>Automatically determine (text overridden in program)</string>
                   </property>
                  </widget>
                 </item>
                 <item>
                  <widget class="QRadioButton" name="custom_recording_latency">
                   <property name="text">
-                   <string>Custom</string>
+                   <string>Custom soundcard input+output latency (Tip: Record the metronome to measure)</string>
                   </property>
                  </widget>
                 </item>
@@ -961,7 +973,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   <item>
                    <widget class="QLabel" name="custom_recording_latency_label">
                     <property name="text">
-                     <string>Custom recording latency: </string>
+                     <string>Custom soundcard input+output latency:</string>
                     </property>
                    </widget>
                   </item>
@@ -9779,7 +9791,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <x>0</x>
               <y>0</y>
               <width>598</width>
-              <height>323</height>
+              <height>365</height>
              </rect>
             </property>
             <property name="sizePolicy">
@@ -12222,7 +12234,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
                <x>0</x>
                <y>0</y>
                <width>969</width>
-               <height>253</height>
+               <height>295</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">

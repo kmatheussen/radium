@@ -5517,8 +5517,9 @@
                                         (<ra> :get-seq-gridded-time (floor Time))))
                (if (>= PositionTime 0)
                    (begin
-                     ;;(c-display "TIME:" PositionTime (/ PositionTime 44100.0))
+                     ;;(c-display "TIME:" PositionTime (/ PositionTime 44100.0) Y (<ra> :get-sequencer-y1))
                      (<ra> :set-seq-indicator PositionTime)
+                     (set-editor-statusbar (<-> (three-decimal-string (/ PositionTime (<ra> :get-sample-rate))) "s"))
                      #t)
                    #f))
              (let ()

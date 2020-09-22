@@ -149,6 +149,9 @@
 (define (two-decimal-string number)
   (format #f "~,2F" (* 1.0 number)))
 
+(define (three-decimal-string number)
+  (format #f "~,3F" (* 1.0 number)))
+
 (define (one-decimal-percentage-string number)
   (format #f "~,1F" (* 100.0 number)))
 
