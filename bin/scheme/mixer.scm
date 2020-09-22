@@ -459,6 +459,7 @@
 
 (define (FROM_C-show-mixer-connection-popup-menu from-instrument to-instrument is-event-connection)
   (popup-menu "Delete connection"
+              :shortcut *shift-right-mouse*
               (lambda ()
                 (<ra> :undo-mixer-connections)
                 (if is-event-connection
