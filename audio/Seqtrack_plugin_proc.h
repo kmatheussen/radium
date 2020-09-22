@@ -49,7 +49,7 @@ extern int64_t SEQTRACKPLUGIN_add_sample(const struct SeqTrack *seqtrack, struct
 #endif
 
 extern LANGSPEC void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, filepath_t path); // Called when user enables the "R" checkbox.
-extern LANGSPEC bool SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin); // Called when user disables the "R" checkbox.
+extern LANGSPEC bool SEQTRACKPLUGIN_request_stop_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin); // Called when user disables the "R" checkbox.
 
 extern LANGSPEC void SEQTRACKPLUGIN_apply_gfx_samples(struct SoundPlugin *plugin);
 extern LANGSPEC void SEQTRACKPLUGIN_assert_samples(const struct SoundPlugin *plugin);

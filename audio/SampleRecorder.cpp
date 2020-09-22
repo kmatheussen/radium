@@ -586,10 +586,12 @@ static bool handle_finished_adding_audio(radium::SampleRecorderInstance *instanc
     if (instance->_end_delay <= 0){
       R_ASSERT_NON_RELEASE(instance->_end_delay==0);
       stop_recording(instance);
+      //printf("Recording return false\n");
       return false;
     }
   }
 
+  //printf("Recording returned true. requested stop: %d. end_delay: %d\n", instance->_requested_to_stop, (int)instance->_end_delay);
   return true;
 }
 

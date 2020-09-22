@@ -2591,7 +2591,7 @@ void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
   
   if (is_recording==false) {
     
-    SEQTRACKPLUGIN_disable_recording(seqtrack, plugin);
+    SEQTRACKPLUGIN_request_stop_recording(seqtrack, plugin);
     
   } else {
 
