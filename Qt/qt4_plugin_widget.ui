@@ -1357,22 +1357,7 @@ Example:
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Enable poor man's sample-seek.
-
-When starting to play in the middle of a block, after a note has
-started, the player will ask the instrument to seek forward and
-play from the correct position.
-
-Note that the sampler instrument is the only instrument that will
-try to seek forward. All the other instruments will play the
-from the beginning.
-
-Also note that looping, reversed sample, pitch glides, portamento,
-etc. will cause the seeking to fail in more or less audible ways.
-There is no plan to support any of these things.
-
-In addition, there is no guarantee that the sample player will
-seek sample-accurately forward.</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:296;&quot;&gt;Enable &lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Sample-Seek&lt;/span&gt;&lt;span style=&quot; font-weight:296;&quot;&gt; or &lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;MIDI chase&lt;/span&gt;&lt;span style=&quot; font-weight:296;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:296;&quot;&gt;When starting to play in the middle of a block, after a note has started, the player will ask the instrument to seek forward and play from the correct position.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;The sampler instrument&lt;/span&gt;&lt;span style=&quot; font-weight:296;&quot;&gt; is the only instrument that&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt; will try to seek forward&lt;/span&gt;&lt;span style=&quot; font-weight:296;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;All the other instruments&lt;/span&gt;&lt;span style=&quot; font-weight:296;&quot;&gt; will play from the the beginning (also known as &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;MIDI chase&lt;/span&gt;&lt;span style=&quot; font-weight:296;&quot;&gt;&amp;quot;).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:296;&quot;&gt;&lt;br/&gt;Note that there is no guarantee that the sample player will seek sample-accurately forward. In addition, looping, reversed sample, pitch glides, portamento, etc. will cause the seeking to fail in more or less audible ways.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>S</string>
