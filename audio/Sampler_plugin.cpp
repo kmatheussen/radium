@@ -529,8 +529,8 @@ struct MySampleRecorderInstance : radium::SampleRecorderInstance{
 
   struct Patch *_patch;
 
-  MySampleRecorderInstance(struct Patch *patch, filepath_t recording_path, int num_ch, bool from_system_input)
-    : SampleRecorderInstance(recording_path, num_ch, 48, from_system_input ? MIXER_get_recording_latency_compensation_from_system_in() : 0)
+  MySampleRecorderInstance(struct Patch *patch, filepath_t recording_path, int num_ch, int64_t latency)
+    : SampleRecorderInstance(recording_path, num_ch, 48, latency)
     , _patch(patch)
   {
   }
@@ -3218,8 +3218,34 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, filepath_t pathdir, int
   data->recording_from_main_input = recording_from_main_input;
   ATOMIC_SET(data->recording_status, BEFORE_RECORDING);
 
+  int64_t my_latency = 0;
+  
+  auto *soundproducer = SP_get_sound_producer(plugin);
+  if (soundproducer==NULL){
+    R_ASSERT_NON_RELEASE(false);
+  }else{
+    my_latency = RT_SP_get_input_latency(soundproducer);
+  }
+
+  int64_t latency = 0;
+  
+  if(recording_from_main_input){
+    
+    latency = MIXER_get_recording_latency_compensation_from_system_in(); // Recording latency from the sound card + Playback latency from the sound card.
+    latency += MIXER_get_latency_for_main_system_out(); // In case there are parallel running plugins introducing latency in the chain.
+    latency -= my_latency; // subtract latency at this point from the total latency.
+    
+  } else {
+
+    latency = my_latency;
+    
+  }
+  
+    
   auto *old = data->recorder_instance;
-  data->recorder_instance = new MySampleRecorderInstance(const_cast<struct Patch*>(plugin->patch), recording_path, num_channels, recording_from_main_input);
+  
+  data->recorder_instance = new MySampleRecorderInstance(const_cast<struct Patch*>(plugin->patch), recording_path, num_channels, latency);
+  
   delete old; // Wait before deleting this one since data from it is being used here and there (although it shouldn't really be used after finished recording);
 }
 
