@@ -145,8 +145,10 @@ typedef void (*UndoUnavailableCallback)(void*);
 
 extern LANGSPEC void UNDO_add_callback_when_curr_entry_becomes_unavailable(UndoUnavailableCallback callback, void *data, int delay); // if delay is 0, callback will be called immediately. if delay is 1, callback will be called one undo addition later.
 
-
 extern int64_t g_curr_undo_generation;
+
+extern LANGSPEC void ADD_UNDO_FUNC(Dummy(void));
+  
 
 
 #ifdef __cplusplus

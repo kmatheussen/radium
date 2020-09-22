@@ -734,6 +734,8 @@ struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name,
 
 struct Patch *PATCH_create_midi(const char *name){
   struct Patch *patch = create_new_patch(name, false);
+
+  ADD_UNDO(Dummy());
   
   MIDI_InitPatch(patch);
 

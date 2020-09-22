@@ -998,3 +998,33 @@ void UNDO_functions(const char *name, std::function<void(void)> redo, std::funct
     redo();
     functions->must_undo = true;
 }
+
+
+// An undo function doing nothing (used by create midi instrument to make sure correct current instrument is selected when pressing undo/redo.)
+
+static void *Undo_Do_Dummy(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+){
+  return pointer;
+}
+
+void ADD_UNDO_FUNC(Dummy(void)){
+  if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->wtrack==NULL)
+    return;
+  
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             wblock->l.num,
+                             wblock->wtrack->l.num,
+                             wblock->curr_realline,
+                             NULL,
+                             Undo_Do_Dummy,
+                             "Dummy"
+                             );
+}
