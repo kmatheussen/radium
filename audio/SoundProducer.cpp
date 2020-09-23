@@ -2450,6 +2450,7 @@ bool SP_is_plugin_running(const SoundPlugin *plugin){
 }
 
 int RT_SP_get_input_latency(const SoundProducer *sp){
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
   return sp->_highest_input_link_latency;
 }
 

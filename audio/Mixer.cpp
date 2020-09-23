@@ -2071,8 +2071,10 @@ int64_t MIXER_get_latency_for_main_system_out(void){
   if (soundproducer==NULL){
     R_ASSERT_NON_RELEASE(false);
     return 0;
-  }else
+  }else{
+    radium::PlayerLock lock;
     return RT_SP_get_input_latency(soundproducer);
+  }
 }
 
 bool MIXER_is_connected_to_system_out(const SoundProducer *sp){
