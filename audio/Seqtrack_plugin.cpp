@@ -2545,11 +2545,16 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
   bool new_val = value >= 0.5;
 
   if (new_val != data->_enable_piping){
+    
     if (g_is_loading)
       SMOOTH_force_target_value(&data->_piping_volume, new_val ? 1.0 : 0.0);
     else
       SMOOTH_set_target_value(&data->_piping_volume, new_val ? 1.0 : 0.0);
+    
     data->_enable_piping = new_val;
+
+    plugin->RT_input_latency_manifests_into_output_latency = data->_enable_piping;
+
   }
 }
 
@@ -2580,6 +2585,10 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   delete data;
 }
 
+static void called_after_plugin_has_been_created(const SoundPluginType *plugin_type, struct SoundPlugin *plugin){
+  plugin->RT_input_latency_manifests_into_output_latency = false;
+}
+
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
   return "Enable piping";
 }
@@ -2603,6 +2612,7 @@ void create_seqtrack_plugin(void){
   plugin_type->effect_is_RT             = NULL;
   plugin_type->create_plugin_data       = create_plugin_data;
   plugin_type->cleanup_plugin_data      = cleanup_plugin_data;
+  plugin_type->called_after_plugin_has_been_created = called_after_plugin_has_been_created;
   
   plugin_type->RT_process       = RT_process;
   plugin_type->RT_player_is_stopped = RT_player_is_stopped;
