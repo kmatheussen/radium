@@ -90,8 +90,8 @@ MakeFocusSnifferClass(QLineEdit);
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
-#include "../bin/packages/QScintilla-2.11.5/Qt4Qt5/Qsci/qscilexer.h"
-#include "../bin/packages/QScintilla-2.11.5/Qt4Qt5/Qsci/qsciscintilla.h"  // <--- Much trouble. Any qt4 alternatives?
+#include "../bin/packages/QScintilla_gpl-2.10.8/Qt4Qt5/Qsci/qscilexer.h"
+#include "../bin/packages/QScintilla_gpl-2.10.8/Qt4Qt5/Qsci/qsciscintilla.h"  // <--- Much trouble. Any qt4 alternatives?
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif
