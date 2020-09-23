@@ -185,6 +185,7 @@ extern LANGSPEC int SP_get_max_visible_input_channels_from_audio_input_links(con
 
 extern LANGSPEC bool SP_has_input_links(const struct SoundProducer *sp);
 extern LANGSPEC bool SP_has_audio_input_link(const struct SoundProducer *sp);
+extern LANGSPEC bool SP_is_audio_connected(const SoundProducer *start_producer, const SoundProducer *end_producer);
 
 extern LANGSPEC void SP_called_regularly_by_main_thread(struct SoundProducer *sp);
   

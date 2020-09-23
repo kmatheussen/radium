@@ -3223,27 +3223,22 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, filepath_t pathdir, int
   data->recording_from_main_input = recording_from_main_input;
   ATOMIC_SET(data->recording_status, BEFORE_RECORDING);
 
-  int64_t my_latency = 0;
-  
-  auto *soundproducer = SP_get_sound_producer(plugin);
-  if (soundproducer==NULL){
-    R_ASSERT_NON_RELEASE(false);
-  }else{
-    my_latency = RT_SP_get_input_latency(soundproducer);
-  }
-
   int64_t latency = 0;
   
   if(recording_from_main_input){
     
     latency = MIXER_get_recording_latency_compensation_from_system_in(); // Recording latency from the sound card + Playback latency from the sound card.
     latency += MIXER_get_latency_for_main_system_out(); // In case there are parallel running plugins introducing latency in the chain.
-    latency -= my_latency; // subtract latency at this point from the total latency.
     
   } else {
 
-    latency = my_latency;
-    
+    auto *soundproducer = SP_get_sound_producer(plugin);
+    if (soundproducer==NULL){
+      R_ASSERT_NON_RELEASE(false);
+    }else{
+      latency = RT_SP_get_input_latency(soundproducer);
+    }
+
   }
   
     

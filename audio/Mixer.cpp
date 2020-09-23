@@ -2050,26 +2050,39 @@ int64_t MIXER_get_recording_latency_compensation_from_system_in(void){
     return ms_to_frames(getCustomRecordingLatencyFromSystemInput());
 }
 
-int64_t MIXER_get_latency_for_main_system_out(void){
+static SoundProducer *get_main_system_out_soundproducer(void){
   struct Patch *patch = GFX_OS_get_system_out();
   if (patch==NULL)
-    return 0;
+    return NULL;
 
   if (patch->instrument != get_audio_instrument()){
     R_ASSERT(false);
-    return 0;
+    return NULL;
   }
 
   struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
 
-  auto *soundproducer = SP_get_sound_producer(plugin);
+  return SP_get_sound_producer(plugin);
+}
+
+int64_t MIXER_get_latency_for_main_system_out(void){
+  auto *soundproducer = get_main_system_out_soundproducer();
+  
   if (soundproducer==NULL){
     R_ASSERT_NON_RELEASE(false);
     return 0;
   }else
     return RT_SP_get_input_latency(soundproducer);
 }
-  
+
+bool MIXER_is_connected_to_system_out(const SoundProducer *sp){
+  auto *main_system_out = get_main_system_out_soundproducer();  
+  if (main_system_out==NULL)
+    return false;
+
+  return SP_is_audio_connected(sp, main_system_out);
+}
+
 int MIXER_get_remaining_num_jackblock_frames(void){
   return g_jackblock_size - g_jackblock_delta_time;
 }
