@@ -1743,10 +1743,14 @@ void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plu
 
       int64_t my_latency = 0;
       
+      bool manifests = false;
+
       auto *soundproducer = SP_get_sound_producer(plugin);
       if (soundproducer==NULL){
         R_ASSERT_NON_RELEASE(false);
       }else{
+        radium::PlayerLock lock;
+        manifests = plugin->RT_input_latency_manifests_into_output_latency;
         my_latency = RT_SP_get_input_latency(soundproducer);
       }
       
@@ -1755,21 +1759,11 @@ void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plu
         latency = MIXER_get_recording_latency_compensation_from_system_in(); // Recording latency from the sound card + Playback latency from the sound card.
         latency += MIXER_get_latency_for_main_system_out(); // In case there are parallel running plugins introducing latency in the chain.
 
-        if (soundproducer!=NULL && MIXER_is_connected_to_system_out(soundproducer)){
-
-          bool manifests = false;
-          {
-            radium::PlayerLock lock;
-            manifests = plugin->RT_input_latency_manifests_into_output_latency;
-          }
-
-          if (manifests){
-              
-            latency -= my_latency; // If piping, subtract latency at this point from the total latency.
-            if (latency < 0){
-              R_ASSERT_NON_RELEASE(false);
-              latency = 0;
-            }
+        if (manifests && MIXER_is_connected_to_system_out(soundproducer)){
+          latency -= my_latency; // If piping, subtract latency at this point from the total latency.
+          if (latency < 0){
+            R_ASSERT_NON_RELEASE(false);
+            latency = 0;
           }
         }
         
