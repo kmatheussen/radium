@@ -1509,6 +1509,11 @@ static int RT_get_audio_tail_length(const struct SoundPlugin *plugin){
   return (data->p.a+data->p.d+data->p.r) * (double)MIXER_get_sample_rate() / 1000.0;
 }
 
+static void called_after_plugin_has_been_created(const SoundPluginType *plugin_type, struct SoundPlugin *plugin){
+  plugin->RT_input_latency_manifests_into_output_latency = false;
+}
+
+
 static bool note_has_sample(const Note *note){
   return note->samples.size() > 0;
 }
@@ -3522,6 +3527,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   }
 }
 
+
 filepath_t SAMPLER_get_filename(struct SoundPlugin *plugin, bool *is_default_sound){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), createIllegalFilepath());
 
@@ -3568,7 +3574,8 @@ static void init_plugin_type(void){
  plugin_type.player_is_stopped = player_is_stopped;
 
  plugin_type.RT_get_audio_tail_length = RT_get_audio_tail_length;
-   
+ plugin_type.called_after_plugin_has_been_created = called_after_plugin_has_been_created;
+  
  plugin_type.get_peaks        = get_peaks;
  plugin_type.set_effect_value = set_effect_value;
  plugin_type.get_effect_value = get_effect_value;

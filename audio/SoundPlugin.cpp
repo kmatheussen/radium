@@ -442,6 +442,8 @@ SoundPlugin *PLUGIN_create(struct Patch *patch, SoundPluginType *plugin_type, ha
   ATOMIC_SET(plugin->enable_sample_seek, enableSampleSeekByDefault());
   
   plugin->is_dpi_aware = true;
+  
+  plugin->RT_input_latency_manifests_into_output_latency = true;
 
   int buffer_size = MIXER_get_buffer_size();
 

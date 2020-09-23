@@ -1658,7 +1658,11 @@ public:
     }
     
     {    
-      int new_latency = _highest_input_link_latency + plugin_latency;
+      int new_latency = plugin_latency;
+
+      if (_plugin->RT_input_latency_manifests_into_output_latency)
+        new_latency +=_highest_input_link_latency;
+      
       if (new_latency != _latency){
         _latency = new_latency;
         //  printf("    Set latency to %d. (%s). Highest: %d. My: %d, Prev: %d\n", _latency, _plugin->patch->name, _highest_input_link_latency, plugin_latency,prev);
