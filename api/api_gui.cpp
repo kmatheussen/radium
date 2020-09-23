@@ -82,6 +82,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_MyQScrollBar.hpp"
 #include "../Qt/FileRequester.hpp"
 #include "../Qt/HashVector.hpp"
+#include "../Qt/Editor.hpp"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -4013,7 +4014,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       printf("    GUI File Requester deleted\n");
     }
     
-    OVERRIDERS(QFileDialog);
+    OVERRIDERS(radium::FileRequester);
   };
 
   
@@ -4050,6 +4051,22 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QFontDialog);
   };
 
+  
+  struct Editor : radium::Editor, Gui, public radium::MouseCycleFix {
+    Q_OBJECT;
+
+  public:
+
+    Editor()
+      : radium::Editor(NULL)
+      , Gui(this)
+    {
+    }
+
+    OVERRIDERS(radium::Editor);
+  };
+
+  
   struct TabBar : QTabBar, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
 
@@ -5197,6 +5214,82 @@ int64_t gui_fontRequester(const_char* fontdescr){
   font.fromString(fontdescr);
   return (new FontRequester(font))->get_gui_num();
 }
+
+
+static QColor g_org_base;
+static QColor g_org_text;
+
+void pre_create_editor(void){
+  QPalette app_pal = QApplication::palette();
+  g_org_base = app_pal.base().color();
+  g_org_text = app_pal.text().color();
+  app_pal.setColor(QPalette::Base, Qt::white);
+  app_pal.setColor(QPalette::Text, Qt::black);    
+  QApplication::setPalette(app_pal);
+
+  /*
+  QFont font;
+  font.fromString("Cousine,11,-1,5,75,0,0,0,0,0");
+  font.setStyleName("Regular");
+  
+  QApplication::setFont(font);
+  */
+}
+
+void post_create_editor(void){
+  QPalette app_pal = QApplication::palette();
+  app_pal.setColor(QPalette::Base, g_org_base);
+  app_pal.setColor(QPalette::Text, g_org_text);
+  QApplication::setPalette(app_pal);
+}
+
+
+int64_t gui_editor(void){
+  pre_create_editor();
+  auto ret = (new Editor())->get_gui_num();
+  post_create_editor();
+  return ret;
+}
+
+void gui_editorLoadFile(int64_t guinum, filepath_t filename){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+  
+  Editor *editor = gui->mycast<Editor>(__FUNCTION__);
+  
+  if (editor != NULL){
+    editor->load(filename);
+  }
+  
+}
+
+void gui_editorSetFile(int64_t guinum, filepath_t filename, bool load_if_exists){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+  
+  Editor *editor = gui->mycast<Editor>(__FUNCTION__);
+  
+  if (editor != NULL){
+    editor->setFile(filename, load_if_exists);
+  }
+  
+}
+
+void gui_editorSave(int64_t guinum, filepath_t filename){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+  
+  Editor *editor = gui->mycast<Editor>(__FUNCTION__);
+
+  if (editor != NULL)
+    editor->save(filename);
+}
+
+
+
 
 int64_t gui_bottomBar(bool include_editor_elements, bool include_navigator){
   QWidget *bottom_bar = BottomBar_create(NULL, include_editor_elements, include_navigator);

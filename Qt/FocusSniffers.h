@@ -90,8 +90,8 @@ MakeFocusSnifferClass(QLineEdit);
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
-#include "../bin/packages/QScintilla_gpl-2.10.8/Qt4Qt5/Qsci/qscilexer.h"
-#include "../bin/packages/QScintilla_gpl-2.10.8/Qt4Qt5/Qsci/qsciscintilla.h"  // <--- Much trouble. Any qt4 alternatives?
+#include "../bin/packages/QScintilla-2.11.5/Qt4Qt5/Qsci/qscilexer.h"
+#include "../bin/packages/QScintilla-2.11.5/Qt4Qt5/Qsci/qsciscintilla.h"  // <--- Much trouble. Any qt4 alternatives?
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif
@@ -104,12 +104,13 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
   FocusSnifferQsciScintilla(QWidget *parent_, const char *name = "gakk")  
     : QsciScintilla(parent_),dontsniff(false)
     , zoomguess(0)
-    {                                                                   
+    {
     }
 
   // Why doesn't qscintilla do this automatically? And why can't qscintilla give me a method to find margin font (or even the editor font) so that I can do this manually without guesssing font width?
   void calculateMarginWidth(){
-    QFont font = lexer()->defaultFont();
+    QFont font = (lexer()==NULL) ? this->font() : lexer()->defaultFont();
+
     int points = font.pointSize()+zoomguess;
     if (points < 1)
       points = 1;
@@ -453,6 +454,51 @@ class FocusSnifferQComboBox : public GL_PauseCaller, public QComboBox{
   }                                                                     
 };
 
+#if 0
+class FocusSnifferQFileDialog : public GL_PauseCaller, public QFileDialog{
+ public:                                                               
+  bool dontsniff;                                                       
+ FocusSnifferQComboBox(QWidget *parent_, const char *name = "gakk")  
+   : QFuile(parent_),dontsniff(true)                                     
+    {                                                                   
+    }                                                                   
+  void focusInEvent ( QFocusEvent *e ) override {                                 
+    printf("combo Got focusInEvent\n");
+    if(dontsniff==false)
+      obtain_keyboard_focus();
+    GL_lock();
+    QComboBox::focusInEvent(e);                                             
+    GL_unlock();
+  }                                                                     
+  void focusOutEvent ( QFocusEvent *e ) override {                                
+    printf("combo Got focusOutEvent\n");
+    if(dontsniff==false) {
+      release_keyboard_focus();
+    }                                                                   
+    GL_lock();
+    QComboBox::focusOutEvent(e);                                            
+    GL_unlock();
+    set_editor_focus();
+  }                                                                     
+  void hideEvent ( QHideEvent *e ) override {                                
+    //printf("Got hideEvent\n");
+    if(dontsniff==false) {
+      release_keyboard_focus();
+    }                                                                   
+    QComboBox::hideEvent(e);
+    set_editor_focus();
+  }                                                                     
+  void keyPressEvent ( QKeyEvent * event_ ) override {                             
+    if(event_->key()==Qt::Key_Escape){                                   
+      GL_lock();                                                        
+      clearFocus();
+      set_editor_focus();
+      GL_unlock();                                                      
+    }                                                                   
+    QComboBox::keyPressEvent(event_);                                        
+  }                                                                     
+};
+#endif
 
 #if 0
 class FocusSnifferQTableWidget : public QTableWidget{

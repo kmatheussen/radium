@@ -1496,7 +1496,7 @@ $(T)Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp  Qt/Qt_MyQScrollBar.h
 	$(CCC2) $(P)Qt_Bs_edit.cpp $(QTOPT) -Wno-null-dereference #-fno-sanitize=undefined
 
 
-INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_sendreceive_plugins_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQLabel.h common/Vector.hpp 
+INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_sendreceive_plugins_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQLabel.h common/Vector.hpp Qt/Editor.hpp
 
 
 
@@ -1838,7 +1838,7 @@ $(T)api_sequencer.o:  $(BUILD_DEPENDENCIES)  $(API)api_sequencer.cpp $(API)api_s
 $(T)api_osc.o:  $(BUILD_DEPENDENCIES)  $(API)api_osc.cpp embedded_scheme/s7extra_proc.h
 	$(CCC2) $(LIBLOOPT) $(API)api_osc.cpp $(QTOPT) -fno-sanitize=undefined # -O0 # Adding -fno-sanitize=undefined since liblo sends misaligned data to calbacks.
 
-$(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h
+$(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC2)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER)
 

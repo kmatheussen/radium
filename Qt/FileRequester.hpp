@@ -4,6 +4,8 @@
 #include <QFileSystemModel>
 #include <QComboBox>
 
+#include "FocusSniffers.h"
+
 
 extern QByteArray g_filedialog_geometry;
   
