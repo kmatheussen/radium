@@ -1754,7 +1754,14 @@ void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plu
         
         latency = MIXER_get_recording_latency_compensation_from_system_in(); // Recording latency from the sound card + Playback latency from the sound card.
         latency += MIXER_get_latency_for_main_system_out(); // In case there are parallel running plugins introducing latency in the chain.
-        latency -= my_latency; // subtract latency at this point from the total latency.
+
+        if (plugin->RT_input_latency_manifests_into_output_latency && soundproducer!=NULL && MIXER_is_connected_to_system_out(soundproducer)){
+          latency -= my_latency; // If piping, subtract latency at this point from the total latency.
+          if (latency < 0){
+            R_ASSERT_NON_RELEASE(false);
+            latency = 0;
+          }
+        }
         
       } else {
         

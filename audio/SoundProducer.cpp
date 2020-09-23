@@ -1017,6 +1017,25 @@ public:
     */
   }
 
+  static bool is_audio_connected(const SoundProducer *start_producer, const SoundProducer *end_producer, int &safety) {
+    safety++;
+    
+    if (safety > 10000){
+      R_ASSERT(false);
+      return false;
+    }
+    
+    for (SoundProducerLink *link : end_producer->_input_links){
+      if (link->source == start_producer)
+        return true;
+      else
+        if (is_audio_connected(start_producer, link->source, safety))
+          return true;
+    }
+
+    return false;
+  }
+  
   // Traverse graph backwards and see if we end up in the same position as we started.
   bool is_recursive(const SoundProducer *start_producer) const {
     if(start_producer==this)
@@ -2482,6 +2501,11 @@ bool SP_has_audio_input_link(const SoundProducer *sp){
   }
 
   return false;
+}
+
+bool SP_is_audio_connected(const SoundProducer *start_producer, const SoundProducer *end_producer){
+  int safety = 0;
+  return SoundProducer::is_audio_connected(start_producer, end_producer, safety);
 }
 
 void SP_called_regularly_by_main_thread(SoundProducer *sp){

@@ -82,6 +82,10 @@ extern LANGSPEC float MIXER_get_sample_rate(void);
 extern LANGSPEC int64_t MIXER_get_recording_latency_compensation_from_system_in(void);
 extern LANGSPEC int64_t MIXER_get_latency_for_main_system_out(void);
 
+#ifdef __cplusplus
+bool MIXER_is_connected_to_system_out(const SoundProducer *sp);
+#endif
+
 #ifdef USE_QT4
 #include <QString>
 namespace radium{
