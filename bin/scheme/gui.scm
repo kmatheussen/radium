@@ -1393,7 +1393,85 @@
         (<gui> :set-modal gui #t))
     
     (<gui> :set-parent gui parent)
-    (<gui> :show gui)))
+    (<gui> :show gui)
+    gui))
+
+
+
+;; Text editor
+(delafina (create-text-editor :filename #f
+                              :load-file-if-exists #t)
+  (define gui (<gui> :ui (<ra> :get-path "text_editor.ui")))
+  
+  (define editor-parent (<gui> :child gui "editor_parent"))
+  ;;(<gui> :set-layout-spacing editor-parent 0 0 0 0 0)
+  
+  (define editor (<gui> :editor))
+  
+  (if filename
+      (<gui> :editor-set-file editor filename load-file-if-exists))
+
+  '(<gui> :add-key-callback gui
+         (lambda (presstype key)
+           (c-display "press/key:" presstype key)
+           (if (and (= presstype 1)
+                    (string=? key "s"))
+               #f
+               #t)))
+
+  (define vertical-widget (<gui> :child gui "verticalWidget"))
+  (<gui> :add vertical-widget (<gui> :button "hello" (lambda ()
+                                                       (c-display "hello")))
+         2)
+  
+  (define load-button (<gui> :child gui "load_button"))
+  (define save-button (<gui> :child gui "save_button"))
+  (define save-as-button (<gui> :child gui "save_as_button"))
+  (define find-button (<gui> :child gui "find_button"))
+  (define find-next-button (<gui> :child gui "find_next_button"))
+  (define close-button (<gui> :child gui "close_button"))
+
+  (<gui> :add-callback load-button
+         (lambda ()
+           (define req (create-file-requester "Choose text file" (<ra> :create-illegal-filepath) "Text files" "*.*" #t #t gui
+                                              (lambda (filename)
+                                                (<gui> :editor-load-file editor filename))))
+           (<ra> :obtain-keyboard-focus req)))
+ 
+  (<gui> :add-callback save-button
+         (lambda ()
+           (<gui> :editor-save editor)))
+  
+  '(<gui> :add-callback save-as-button
+         (lambda ()
+           (create-file-requester "Choose text file" (<ra> :create-illegal-filepath) "Text files" "*.*" #f #t gui
+                                  (lambda (filename)
+                                    (<gui> :editor-save-file editor filename)))))
+  
+  (<gui> :add-callback close-button
+         (lambda ()
+           (<gui> :close gui)))
+  
+  (<gui> :add editor-parent editor)
+
+  (<gui> :set-parent gui -1)
+  
+  (<gui> :show gui)
+  
+  gui)
+
+
+#!!
+(create-text-editor :filename (<ra> :append-file-paths
+                                    (<ra> :get-home-path)
+                                    (<ra> :append-file-paths
+                                          (<ra> :get-path ".radium")
+                                          (<ra> :get-path "keybindings.conf"))))
+
+
+!!#
+
+  
 
 
 ;; Table

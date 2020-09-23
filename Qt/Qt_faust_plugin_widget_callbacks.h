@@ -54,6 +54,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_plugin_widget_callbacks_proc.h"
 #include "Qt_MyQScrollBar.hpp"
+#include "Editor.hpp"
+
 
 static void ADD_UNDO_FUNC(FaustDev_CurrPos(struct Patch *patch, const QString &code, int cursor_line, int cursor_index));
 
@@ -265,148 +267,16 @@ struct FaustResultWebView
 }
 
 
-namespace radium{
+static radium::Editor *create_faust_editor(QWidget *parent){
+  pre_create_editor();
 
+  auto *ret = new radium::Editor(parent, new QsciLexerCPP(parent));
   
-class Editor : public FocusSnifferQsciScintilla{
-  public:
-
-  QString last_search;
-
-  Editor(QWidget *parent)  
-    : FocusSnifferQsciScintilla(parent)
-  {
-    minimizeMargins(this);
-    /*
-    static QStyle *style = QStyleFactory::create("fusion"); // parent is platique
-    if (style!=NULL)
-      setStyle(style);
-    */
-  }
-
-
-  void minimizeMargins(QWidget *widget){
-#if 0 // Didn't work. I guess qscnintinittlilla doesn't set parent object for all widget children. Changed the source code of qacnintil instead.
-    const QList<QObject*> list = widget->children();
-
-    for(auto *element : list){
-      widget->children();
-      QWidget *widget = dynamic_cast<QWidget*>(element);
-      if(widget!=NULL){
-        QLayout *layout = widget->layout();
-        if (layout!=NULL){
-          layout->setSpacing(0);
-          layout->setContentsMargins(0,0,0,0);
-          for (int i = 0; i < layout->count(); ++i){
-            QSpacerItem *item = layout->itemAt(i)->spacerItem();
-            if (item!=NULL)
-              item->changeSize(0,0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-            QWidget *w = layout->itemAt(i)->widget();
-            if (w!=NULL)
-              minimizeMargins(w);
-          }
-        }
-        
-        QFrame *frame = dynamic_cast<QFrame*>(widget);
-        if (frame!=NULL){
-          frame->setLineWidth(0);
-          frame->setMidLineWidth(0);
-          frame->setFrameShape(QFrame::NoFrame);
-        }
-        
-        minimizeMargins(widget);
-      }
-    }
-#endif
-  }
+  post_create_editor();
   
-  void search(QString s){
-    findFirst(s,
-              false,
-              false,
-              false,
-              true
-              );
-    last_search = s;
-  }
-  
-  void keyPressEvent ( QKeyEvent * event ) override {
-    if (event->key()==Qt::Key_F3 && last_search != "")
-      search(last_search);
-    
-    else if (event->key()==Qt::Key_F3 || (event->key()==Qt::Key_F && (event->modifiers() & Qt::ControlModifier))) {
-      printf("Ctrl+F\n");
-      const char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ", true);
-      if (s!=NULL && strlen(s)>0)
-        search(s);
-      setFocus(Qt::OtherFocusReason);
-      
-    }else if(event->key()==Qt::Key_Play) {
-      playBlockFromStart(-1);
-
-    }else if(event->key()==Qt::Key_Stop) {
-      playStop();
-
-    }else if(event->key()==Qt::Key_MediaPlay) {
-      if (isPlaying())
-        playStop();
-      else
-        playBlockFromCurrent(-1);
-
-    }else if(event->key()==Qt::Key_MediaStop) {
-      playStop();
-
-    }else if(event->key()==Qt::Key_MediaPause) {
-      if (isPlaying())
-        playStop();
-      else
-        playBlockFromCurrent(-1);
-
-    }else if(event->key()==Qt::Key_MediaTogglePlayPause) {
-      if (isPlaying())
-        playStop();
-      else
-        playBlockFromCurrent(-1);
-      
-    }else if(event->key()==Qt::Key_VolumeDown) {
-      volumeDown();
-
-    }else if(event->key()==Qt::Key_VolumeUp) {
-      volumeUp();
-
-    }else if(event->key()==Qt::Key_VolumeMute) {
-      mute();
-
-    }else
-      FocusSnifferQsciScintilla::keyPressEvent(event);
-  }
-};
+  return ret;
 }
 
-static radium::Editor *create_editor(QWidget *parent){
-  QPalette app_pal = QApplication::palette();
-  QColor org_base = app_pal.base().color();
-  QColor org_text = app_pal.text().color();
-  app_pal.setColor(QPalette::Base, Qt::white);
-  app_pal.setColor(QPalette::Text, Qt::black);    
-  QApplication::setPalette(app_pal);
-    
-
-  auto *faust_code = new radium::Editor(parent);
-  faust_code->setMarginLineNumbers(1, true);
-  faust_code->setMarginType(1, QsciScintilla::NumberMargin);
-  
-  faust_code->setLexer(new QsciLexerCPP(parent));
-  
-  app_pal.setColor(QPalette::Base, org_base);
-  app_pal.setColor(QPalette::Text, org_text);
-  QApplication::setPalette(app_pal);
-  
-  // set margin width
-  faust_code->calculateMarginWidth();
-
-  return faust_code;
-}
 
 namespace{
   
@@ -484,7 +354,7 @@ public:
         setStyle(style);
     }
     
-    _faust_editor = create_editor(this);
+    _faust_editor = create_faust_editor(this);
     
     develop_layout->insertWidget(0, _faust_editor);
 
@@ -761,44 +631,11 @@ public:
   }
 
   void load_source(QString filename){
-    disk_t *disk = DISK_open_for_reading(filename);
-
-    if (disk==NULL){
-      GFX_Message2(NULL, true, "File not found (%s)", filename.toUtf8().constData());
-      return;
-    }
-
-    QString new_code = DISK_read_qstring_file(disk);
-      
-    if (DISK_close_and_delete(disk)==false) {
-      GFX_Message2(NULL, true, "Unable to read from %s", filename.toUtf8().constData());
-      return;
-    }
-    
-    set_text_in__faust_editor_widget(new_code);
+    _faust_editor->load(filename);
   }
   
   void save_source(QString filename){
-    disk_t *disk = DISK_open_for_writing(filename);
-
-    //GFX_Message(NULL, "   fff filename: -%s-, %p",filename.toUtf8().constData(), disk);
-    if (disk==NULL){
-      GFX_Message2(NULL, true, "Unable to open %s for writing", filename.toUtf8().constData());
-      return;
-    }
-
-    QString code = _faust_editor->text();
-    int n = DISK_write_qstring(disk, code);
-    
-    bool show_warning = false;
-    if (n != code.size())
-      show_warning = true;
-
-    if (DISK_close_and_delete(disk)==false)
-      return;
-
-    if (show_warning)
-      GFX_Message2(NULL, true, "Warning: Wrote %d bytes. Expected %d", n, code.size());
+    _faust_editor->save(filename);
   }
 
   void show_cpp_source(void){
@@ -810,7 +647,7 @@ public:
       
         _cpp_dialog->setLayout(mainLayout);
         
-        _cpp_editor = create_editor(_cpp_dialog);
+        _cpp_editor = create_faust_editor(_cpp_dialog);
 
         mainLayout->addWidget(_cpp_editor);
         
@@ -833,7 +670,7 @@ public:
       
         _options_dialog->setLayout(mainLayout);
         
-        _options_editor = create_editor(_options_dialog);
+        _options_editor = create_faust_editor(_options_dialog);
 
         mainLayout->addWidget(_options_editor);
         
