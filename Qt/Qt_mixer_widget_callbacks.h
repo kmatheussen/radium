@@ -245,7 +245,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     radium::ScopedIniting initing(_initing);
     
     setupUi(this);
-    
+
     // don't need the zoom buttons.
     zoomin_button->hide();
     zoomout_button->hide();

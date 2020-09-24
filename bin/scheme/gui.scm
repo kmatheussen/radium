@@ -442,6 +442,9 @@
         
         ((eq? command :requester-operations)
          `(ra:gui_requester-operations ,(car args) ,(cadr args)))
+
+        ((eq? command :editor-add-text-changed-callback)
+         `(ra:gui_editor-add-text-changed-callback ,(car args) ,(cadr args)))
         
         ((eq? command :do-alpha)
          `(ra:gui_do-alpha ,@args))
@@ -1399,8 +1402,12 @@
 
 
 ;; Text editor
-(delafina (create-text-editor :filename #f
-                              :load-file-if-exists #t)
+(define-class (<text-editor> :filename #f
+                             :load-file-if-exists #t
+                             :include-load-button #t
+                             :include-save-button #t
+                             :include-save-as-button #t)
+  
   (define gui (<gui> :ui (<ra> :get-path "text_editor.ui")))
   
   (define editor-parent (<gui> :child gui "editor_parent"))
@@ -1411,18 +1418,7 @@
   (if filename
       (<gui> :editor-set-file editor filename load-file-if-exists))
 
-  '(<gui> :add-key-callback gui
-         (lambda (presstype key)
-           (c-display "press/key:" presstype key)
-           (if (and (= presstype 1)
-                    (string=? key "s"))
-               #f
-               #t)))
-
   (define vertical-widget (<gui> :child gui "verticalWidget"))
-  (<gui> :add vertical-widget (<gui> :button "hello" (lambda ()
-                                                       (c-display "hello")))
-         2)
   
   (define load-button (<gui> :child gui "load_button"))
   (define save-button (<gui> :child gui "save_button"))
@@ -1431,22 +1427,41 @@
   (define find-next-button (<gui> :child gui "find_next_button"))
   (define close-button (<gui> :child gui "close_button"))
 
-  (<gui> :add-callback load-button
+  (<gui> :add-callback find-button
          (lambda ()
-           (define req (create-file-requester "Choose text file" (<ra> :create-illegal-filepath) "Text files" "*.*" #t #t gui
-                                              (lambda (filename)
-                                                (<gui> :editor-load-file editor filename))))
-           (<ra> :obtain-keyboard-focus req)))
- 
-  (<gui> :add-callback save-button
+           (<gui> :editor-find editor)))
+
+  (<gui> :add-callback find-next-button
          (lambda ()
-           (<gui> :editor-save editor)))
-  
-  '(<gui> :add-callback save-as-button
-         (lambda ()
-           (create-file-requester "Choose text file" (<ra> :create-illegal-filepath) "Text files" "*.*" #f #t gui
-                                  (lambda (filename)
-                                    (<gui> :editor-save-file editor filename)))))
+           (<gui> :editor-find-next editor)))
+
+  (if include-load-button
+      (<gui> :add-callback load-button
+             (lambda ()
+               (define req (create-file-requester "Choose text file" (<ra> :create-illegal-filepath) "Text files" "*.*" #t #t gui
+                                                  (lambda (filename)
+                                                    (<gui> :editor-load-file editor filename))))
+               (<ra> :obtain-keyboard-focus req)))
+      (<gui> :hide load-button))
+
+  (if include-save-button
+      (<gui> :add-callback save-button
+             (lambda ()
+               (<gui> :editor-save editor)))
+      (<gui> :hide save-button))
+
+  (if include-save-as-button      
+      '(<gui> :add-callback save-as-button
+             (lambda ()
+               (create-file-requester "Choose text file" (<ra> :create-illegal-filepath) "Text files" "*.*" #f #t gui
+                                      (lambda (filename)
+                                        (<gui> :editor-save-file editor filename)))))
+      (<gui> :hide save-as-button))
+
+  (if (and (not include-load-button)
+           (not include-save-button)
+           (not include-save-as-button))
+      (<gui> :hide (<gui> :child vertical-widget "leftmostspacer")))
   
   (<gui> :add-callback close-button
          (lambda ()
@@ -1454,19 +1469,63 @@
   
   (<gui> :add editor-parent editor)
 
-  (<gui> :set-parent gui -1)
+  :gui () gui
+  :editor () editor
+  :show-window () (let ()
+                    (<gui> :set-parent gui -1)
+                    (<gui> :show gui))
   
-  (<gui> :show gui)
-  
-  gui)
+  :vertical-widget () vertical-widget
+  )
 
 
 #!!
-(create-text-editor :filename (<ra> :append-file-paths
-                                    (<ra> :get-home-path)
-                                    (<ra> :append-file-paths
-                                          (<ra> :get-path ".radium")
-                                          (<ra> :get-path "keybindings.conf"))))
+(let ((text-editor (<new> :text-editor :filename (<ra> :append-file-paths
+                                                       (<ra> :get-home-path)
+                                                       (<ra> :append-file-paths
+                                                             (<ra> :get-path ".radium")
+                                                             (<ra> :get-path "keybindings.conf")))
+                          :include-load-button #f
+                          :include-save-button #f
+                          :include-save-as-button #f)))
+
+  (define save+reload-button-text "Save + Reload keybindings (F5)")
+  
+  (define save+reload-button #f)
+  
+  (define (save+reload)
+    (<gui> :set-text save+reload-button "Please wait...")
+    (<ra> :schedule 30
+          (lambda ()
+            (<gui> :editor-save (text-editor :editor))
+            (<ra> :reload-keybindings)
+            (<gui> :set-text save+reload-button save+reload-button-text)
+            #f)))
+
+  (set! save+reload-button (<gui> :button save+reload-button-text save+reload))
+  
+  (<gui> :add (text-editor :vertical-widget) save+reload-button
+         2)
+  
+  (<gui> :add-key-callback (text-editor :editor)
+         (lambda (presstype key)
+           (c-display "press:" presstype "key: " key)
+           (if (string=? key "F5")
+               (begin
+                 (if (= presstype 0)
+                     (save+reload))
+                 #t)
+               #f)))
+
+  (<gui> :editor-add-text-changed-callback
+         (text-editor :editor)
+         (lambda ()
+           (c-display "HEPP")
+           (<gui> :set-text save+reload-button (<-> "*" save+reload-button-text))))
+  
+  (<gui> :set-size (text-editor :gui) (round (/ (<gui> :width -1) 1.3)) (round (/ (<gui> :height -1) 1.3)))
+  
+  (text-editor :show-window))
 
 
 !!#
@@ -1531,16 +1590,17 @@
                   #f)
                  ;;((= 1 presstype) ;; Qt eats a lot of key down events, so we can't ignore key up. TODO: Let :add-key-callback sniff native keyboard events from Qt_Main.cpp instead.
                  ;; #f)
-                 ((string=? key "HOME")
+                 ((string=? key "Home")
                   (<gui> :set-value table 0)
                   #t)
-                 ((string=? key "END")
+                 ((string=? key "End")
                   (<gui> :set-value table (1- (<gui> :get-num-table-rows table)))
                   #t)
-                 ((string=? key "\n")
+                 ((or (string=? key "Enter")
+                      (string=? key "Return"))
                   (maybe-call-selected-row-callback)
                   #t)
-                 ((string=? key "ESC")
+                 ((string=? key "Esc")
                   (if hide-callback
                       (hide-callback table))
                   #t)

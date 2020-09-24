@@ -90,6 +90,17 @@ class Editor : public FocusSnifferQsciScintilla{
               );
     last_search = s;
   }
+
+  void my_find(void){
+    const char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ", true);
+    if (s!=NULL && strlen(s)>0)
+      search(s);
+    setFocus(Qt::OtherFocusReason);
+  }
+
+  void my_findNext(void){
+    search(last_search);
+  }
   
   void keyPressEvent ( QKeyEvent * event ) override {
 
@@ -97,14 +108,11 @@ class Editor : public FocusSnifferQsciScintilla{
       set_editor_focus();
 
     else if (event->key()==Qt::Key_F3 && last_search != "")
-      search(last_search);
+      my_findNext();
     
     else if (event->key()==Qt::Key_F3 || (event->key()==Qt::Key_F && (event->modifiers() & Qt::ControlModifier))) {
-      printf("Ctrl+F\n");
-      const char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ", true);
-      if (s!=NULL && strlen(s)>0)
-        search(s);
-      setFocus(Qt::OtherFocusReason);
+      printf("Ctrl+F\n");      
+      my_find();
       
     } else if (event->key()==Qt::Key_S && (event->modifiers() & Qt::ControlModifier)) {
       printf("Ctrl+S\n");

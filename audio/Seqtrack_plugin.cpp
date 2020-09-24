@@ -1836,8 +1836,10 @@ bool SEQTRACKPLUGIN_request_stop_recording(struct SeqTrack *seqtrack, SoundPlugi
     if (recorder != NULL)
       delete recorder;
     else{
+#if !defined(RELEASE)
       int status = ATOMIC_GET(data->_recording_status);
       R_ASSERT_NON_RELEASE(status==IS_RECORDING);
+#endif
       return request_stop_running_recorder(data); // Between the first and the second test whether data->_recording_status==READY_TO_RECORD, it switched status to IS_RECORDING.
     }
 
