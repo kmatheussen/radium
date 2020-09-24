@@ -8,7 +8,6 @@
 
 namespace radium{
 
-  
 class Editor : public FocusSnifferQsciScintilla{
 
   public:
@@ -38,8 +37,12 @@ class Editor : public FocusSnifferQsciScintilla{
     
     setLexer(lexer);
 
-    // set margin width
-    calculateMarginWidth();
+    updateMarginWidth();
+
+    connect(
+            this, &QsciScintilla::linesChanged,
+            this, &radium::Editor::updateMarginWidth
+            );
   }
 
 
@@ -89,7 +92,11 @@ class Editor : public FocusSnifferQsciScintilla{
   }
   
   void keyPressEvent ( QKeyEvent * event ) override {
-    if (event->key()==Qt::Key_F3 && last_search != "")
+
+    if(event->key()==Qt::Key_Escape)
+      set_editor_focus();
+
+    else if (event->key()==Qt::Key_F3 && last_search != "")
       search(last_search);
     
     else if (event->key()==Qt::Key_F3 || (event->key()==Qt::Key_F && (event->modifiers() & Qt::ControlModifier))) {
@@ -208,7 +215,40 @@ class Editor : public FocusSnifferQsciScintilla{
     else
       save(QString(""));
   }
-  
+
+
+  void updateMarginWidth(void){
+    int num_lines_log10 = ceil(log10(lines()));
+
+    QString test = " ";
+    
+    for(int i = 0 ; i < R_MAX(3, num_lines_log10) ; i++)
+      test += "9";
+    
+    setMarginWidth(1, test);
+  }
+
+  void wheelEvent(QWheelEvent *event_) override {
+    if (event_->modifiers() & Qt::ControlModifier){                
+      if (event_->delta() > 0){                                     
+        zoomIn(1);
+        zoomguess++;
+      }else{
+        zoomOut(1);
+        zoomguess--;
+      }
+      if (zoomguess < -10)
+        zoomguess = -10;
+      if (zoomguess > 30)
+        zoomguess = 30;
+      
+      updateMarginWidth();
+    } else {
+      QsciScintilla::wheelEvent(event_);
+      //set_editor_focus();
+    }
+  }
+
 };
   
 }

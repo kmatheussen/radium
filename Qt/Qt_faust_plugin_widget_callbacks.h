@@ -359,7 +359,7 @@ public:
     develop_layout->insertWidget(0, _faust_editor);
 
     connect(_faust_editor, SIGNAL(textChanged()), this, SLOT(a_on__faust_editor_textChanged()));
-    connect(_faust_editor, SIGNAL(linesChanged()), this, SLOT(a_on__faust_editor_linesChanged()));
+    //connect(_faust_editor, SIGNAL(linesChanged()), this, SLOT(a_on__faust_editor_linesChanged()));
     connect(_faust_editor, SIGNAL(cursorPositionChanged(int,int)), this, SLOT(a_on__faust_editor_cursorPositionChanged(int,int)));
 
     web = new FaustResultWebView(this);
@@ -726,9 +726,11 @@ public slots:
     //printf("Cursor pos changed to %d\n", _cursor_line);
   }
 
+  /*
   void a_on__faust_editor_linesChanged(){
-    _faust_editor->calculateMarginWidth();
+    _faust_editor->updateMarginWidth();
   }
+  */
   
   void a_on__faust_editor_textChanged(){
     //printf("Text changed. pos: %d\n",0);//_faust_editor->textCursor().position());
