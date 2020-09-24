@@ -322,6 +322,7 @@
           (when (and (not (<ra> :sequencer-in-window))
                      (or (not (<ra> :sequencer-in-mixer))
                          (not (<ra> :main-mixer-in-window)))
+                     (not (string=? "macosx" (<ra> :get-os-name))) ;; ra:move-mouse-pointer can fail horribly on mac.
                      (<ra> :can-move-pointer))
 
             (define (set-mouse x y)
