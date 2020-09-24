@@ -1,5 +1,6 @@
 (provide 'keybindings.scm)
 
+(my-require 'area.scm)
 
 (<declare-variable> FROM-C-get-edit-gui) ;; in main_layout.scm
 (<declare-variable> show-keybinding-help-window) ;; in various.scm
@@ -188,6 +189,32 @@
                      ))
 !!#
 
+#!!
+(define (merge-mouse-and-focus-keybindings keybindings)
+  (for-each (lambda (to-remove)
+              (define new (remove-duplicates (remove to-remove keybindings)))
+              (when (not (= (length new) (length keybindings)))
+                (set! keybindings ...)))
+            (list "FOCUS_EDITOR" "FOCUS_MIXER" "MOUSE_" ...))
+  #t)
+!!#
+
+#!!
+(merge-mouse-and-focus-keybindings
+ '(("Q" "EXTRA_L" "FOCUS_EDITOR" "MOUSE_EDITOR")
+   ("Q" "EXTRA_L" "FOCUS_EDITOR" "MOUSE_MIXER")
+   ("Q" "EXTRA_L" "FOCUS_EDITOR" "MOUSE_MIXERSTRIPS")
+   ("Q" "EXTRA_L" "FOCUS_EDITOR" "MOUSE_SEQUENCER")
+   ("Q" "EXTRA_L" "FOCUS_MIXER" "MOUSE_SEQUENCER")
+   ))
+->
+'(("Q" "EXTRAL_L" "FOCUS_EDITOR")
+  ("Q" "EXTRA_L" "FOCUS_MIXER" "MOUSE_SEQUENCER"))
+!!#
+
+
+
+
 (define (get-keybindings-from-command-without-focus-and-mouse command)
   (remove-duplicates-in-sorted-list equal?
                                     (map (lambda (keybindings)
@@ -221,6 +248,7 @@
 (get-displayable-keybindings1 "ra.evalScheme \"(replace-with-random-velocities-in-track)\"")
 (for-each c-display (<ra> :get-keybindings-from-command "ra.setEditorKeyboardFocus"))
 (<ra> :get-keybindings-from-command "ra.undo")
+(get-displayable-keybindings1 "ra.undo")
 !!#
 
 (define *key-display*
@@ -713,8 +741,8 @@ Examples:
 (length (group-keybindings-by-command (get-existing-keybindings-from-keys "2")))
 !!#
 
-(define (get-existing-keybindings-from-keys keybinding)
-  (define keys (string-split keybinding #\space))
+(define (get-existing-keybindings-from-keys keys-string)
+  (define keys (string-split keys-string #\space))
   
   (define focus-keys (let ((ret (keep (lambda (key) (string-starts-with? key "FOCUS_")) keys)))
                        (if (null? ret)
@@ -740,16 +768,16 @@ Examples:
       (let loop2 ((mouse-keys mouse-keys))
         (if (null? mouse-keys)
             (loop1 (cdr focus-keys))
-            (let ((keybinding (string-join (cons key
-                                                 (sort (cons (car focus-keys)
-                                                             (cons (car mouse-keys)
-                                                                   qualifiers))
-                                                       string<=?))
-                                           " ")))
-              (define command (<ra> :get-keybinding-from-keys keybinding))
+            (let ((keys-string (string-join (cons key
+                                                  (sort (cons (car focus-keys)
+                                                              (cons (car mouse-keys)
+                                                                    qualifiers))
+                                                        string<=?))
+                                            " ")))
+              (define command (<ra> :get-keybinding-from-keys keys-string))
               ;;(c-display "command:" command ". keybinding: " keybinding)
               (if (not (string=? "" command))
-                  (push-back! ret (cons keybinding command)))
+                  (push-back! ret (cons keys-string command)))
               (loop2 (cdr mouse-keys)))))))
 
   ret
@@ -1114,3 +1142,270 @@ Examples:
   (add-keybinding-configuration-to-gui gui ra-funcname arguments)
   
   gui)
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Keybindings preferences GUI
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (create-keybindings-editor)
+  (let ((text-editor (<new> :text-editor :filename (<ra> :append-file-paths
+                                                         (<ra> :get-home-path)
+                                                         (<ra> :append-file-paths
+                                                               (<ra> :get-path ".radium")
+                                                               (<ra> :get-path "keybindings.conf")))
+                            :include-load-button #f
+                            :include-save-button #f
+                            :include-save-as-button #f)))
+    
+    (define save+reload-button-text "Save + Reload keybindings (F5)")
+    
+    (define save+reload-button #f)
+    
+    (define (save+reload)
+      (<gui> :set-text save+reload-button "Please wait...")
+      (<ra> :schedule 30
+            (lambda ()
+              (<gui> :editor-save (text-editor :editor))
+              (<ra> :reload-keybindings)
+              (<gui> :set-text save+reload-button save+reload-button-text)
+              #f)))
+    
+    (set! save+reload-button (<gui> :button save+reload-button-text save+reload))
+    
+    (<gui> :add (text-editor :vertical-widget) save+reload-button
+           2)
+    
+    (<gui> :add-key-callback (text-editor :editor)
+           (lambda (presstype key)
+             ;;(c-display "press:" presstype "key: " key)
+             (if (string=? key "F5")
+                 (begin
+                   (if (= presstype 0)
+                       (save+reload))
+                   #t)
+                 #f)))
+
+    (<gui> :editor-add-text-changed-callback
+           (text-editor :editor)
+           (lambda ()
+             ;;(c-display "HEPP")
+             (<gui> :set-text save+reload-button (<-> "*" save+reload-button-text))))
+    
+    (<gui> :set-size (text-editor :gui) (round (/ (<gui> :width -1) 1.3)) (round (/ (<gui> :height -1) 1.3)))
+    
+    (text-editor :show-window)
+
+    text-editor))
+
+(define *keybindings-editor* #f)
+
+(define (FROM_C-show-keybindings-editor)
+  (if (or (not *keybindings-editor*)
+          (not (<gui> :is-open (*keybindings-editor* :gui))))
+      (set! *keybindings-editor* (create-keybindings-editor))
+      (<gui> :show (*keybindings-editor* :gui))))
+
+
+
+;; stuff below not finished.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def-area-subclass (<keybinding-config-entry> :gui :x1 :y1 :x2 :y2
+                                              :keys
+                                              :function
+                                              :args)
+;  (define border 2)
+;  (define key-x2 (* 1.5 (<gui> :text-width "Keybinding" "CTRL + EDITOR + MIXER + HOME")))
+;  (define command-x1 (+ key-x2 border))
+;  (define command-x2 (+ command-x1 (* 1.5 (<gui> :text-width "ra.DosomethingEvil!"))))
+;  (define args-x1 (+ command-x2 border))
+;  (define args-x2 (+ args-x1 (* 1.5 (<gui> :text-width "True"))))
+
+  (define-override (paint)
+    (<gui> :draw-text gui "black" (<-> keys function args)
+           x1
+           y1
+           x2
+          y2
+           #f ;;wrap-lines
+           #f ;;align-top
+           #t ;;align-left
+           0  ;;rotate
+           #t ;;cut-text-to-fit
+           #f ;;scale-font-size
+           #f ;;text-is-base64
+           ))
+
+  )
+
+
+(define (create-keybindings-table-gui)
+
+  (define gui (<gui> :ui (<ra> :append-file-paths
+                               (<ra> :get-program-path)
+                              (<ra> :get-path "keybindings.ui"))))
+  (<gui> :set-window-title gui "Keybindings")
+
+  (define doit #f)
+
+ (define search-string "")
+
+  (define search-text (<gui> :child gui "search_text"))
+  (<gui> :hide (<gui> :child gui "search_button"))
+
+ (<gui> :add-realtime-callback search-text
+         (lambda (new-text)
+           (when doit
+             (set! search-string new-text)
+             ;;(c-display "SETTING search to" new-text)
+             (update-rows!))))
+
+ (<gui> :set-layout-spacing (<gui> :child gui "searchWidget") 0 0 0 0 2)
+  
+  (define width (floor (* 3 (<gui> :text-width "CTRL + EDITOR + MIXER + HOME ra.DosomethingEvil! True Delete"))))
+  ;;(define height 
+  (<gui> :set-size gui width (floor (* width 0.7)))
+
+  (define curr-data (vector))
+
+  (define fontheight (get-fontheight))
+  (define entry-height (round (* 1.2 fontheight)))
+  
+  (define (recreate-table-gui gui width height state)
+    (c-display "RECREATING TABLE-GUI " gui width height curr-data entry-height)
+    (<new> :vertical-list-area2 gui 0 0 width height
+           :num-sub-areas (vector-length curr-data)
+           :get-sub-area-height entry-height
+           :create-sub-area
+           (lambda (num x1 x2)
+             (c-display "RECREATING NUM" num)
+             (define binding (vector-ref curr-data num))
+             (<new> :keybinding-config-entry gui x1 0 x2 (- entry-height 1)
+                    (binding :keys)
+                    (binding :function)
+                    (binding :args)))))
+  
+  (define table (make-qtarea :width width :height (floor (* width 0.6))
+                             :sub-area-creation-callback recreate-table-gui))
+  
+ (define table-gui (table :get-gui))
+
+
+  '(define table (create-table-gui (list (make-table-row "Keybinding" "CTRL + EDITOR + MIXER + HOME" #f)
+                                        (make-table-row "Function" "ra.DosomethingEvil!" #f)
+                                        (make-table-row "Argument" "True" #t)
+                                        (make-table-row "Delete" #f #f))
+                                  :hide-callback (lambda (table)
+                                                   (<gui> :close table))
+                                  :curr-selected-row-changed-callback (lambda (table row-num row-content)
+                                                                        (when doit
+                                                                          (c-display "Keybinding GUI: Selected row changed:" row-content row-num)
+                                                                          ))))
+                                                                        
+  
+  (let ((table-parent (<gui> :child gui "tableParent")))
+    (<gui> :set-layout-spacing table-parent 0 0 0 0 2)
+    (<gui> :set-layout-spacing gui 0 2 2 2 2)
+    (<gui> :add table-parent table-gui)
+    ;;(<gui> :show table-gui)
+    )
+
+  (define (create-keybinding-entry keybinding rownum)
+    (<gui> :button keybinding
+           (lambda ()
+             (c-display "Change keybinding. Fix")
+             (update-rows!))))
+  
+  (define (get-data search-string)
+    ;;(set! search-string "zoom")
+    (list->vector
+     (keep identity
+           (map (lambda (keybinding)
+                  (define keys (to-string (car keybinding)))
+                  ;;(c-display "KEYBINDING:" keys (string? keys))
+                  ;;(c-display "KEYBINDING2:" (cdr keybinding) (string? (cdr keybinding)))
+                  (define func-and-arg (string-split (cdr keybinding) #\space))
+                  (define func (car func-and-arg))
+                  (define arg (string-join (cdr func-and-arg) " "))
+                  
+                  (and (or (string=? search-string "")
+                           (string-case-insensitive-contains? keys search-string)
+                           (string-case-insensitive-contains? func search-string)
+                           (string-case-insensitive-contains? arg search-string))
+                       (hash-table :keys keys
+                                   :function func
+                                   :argument arg)))
+                (map identity (<ra> :get-keybindings-from-keys))))))
+    
+  (define (update-rows!)
+    (define data (get-data search-string))
+    (when (or #t (not (morally-equal? data curr-data)))
+      (set! curr-data data)))
+
+  (update-rows!)
+
+  '(<ra> :schedule 1100
+        (lambda ()
+          (cond ((not (<gui> :is-open gui))
+                 #f)
+                (else
+                 (update-rows!)
+                 200))))
+
+  (define close-button (<gui> :child gui "close_button"))
+  (<gui> :add-callback close-button (lambda ()
+                                      (<gui> :close gui)))
+
+  (<gui> :set-takes-keyboard-focus gui #f)
+
+  (<gui> :set-parent gui -1) ;; Set parent to the main window.
+
+  (<gui> :show gui)
+
+  gui)
+
+
+(if (not *is-initializing*)
+    (create-keybindings-table-gui))
+
+
+(define *keybindings-table-gui* #f)  
+
+(define (FROM_C-create-keybindings-table-gui)
+  (if (or (not *keybindings-table-gui*)
+          (not (<gui> :is-open *keybindings-table-gui*)))
+      (set! *keybindings-table-gui* (create-keybindings-table-gui))
+      (<gui> :raise *keybindings-table-gui*)))
+
+  
+#!!
+(FROM_C-create-keybindings-table-gui)
+(car (map identity (<ra> :get-keybindings-from-keys)))
+(<ra> :get-keybindings-from-keys)
+
+;;(map identity (<ra> :get-keybindings-from-commands))
+
+(define (get-data search-string)
+  (map (lambda (keybinding)
+         (define keys (to-string (car keybinding)))
+         ;;(c-display "KEYBINDING:" keys (string? keys))
+         ;;(c-display "KEYBINDING2:" (cdr keybinding) (string? (cdr keybinding)))
+         (define func-and-arg (string-split (cdr keybinding) #\space))
+        (define func (car func-and-arg))
+         (define arg (string-join (cdr func-and-arg) " "))
+         
+         (and (or (string=? search-string "")
+                  (string-case-insensitive-contains? keybinding search-string)
+                  (string-case-insensitive-contains? func-and-arg search-string))
+              (hash-table :keys keys
+                          :function func
+                          :argument arg)))
+       (map identity (<ra> :get-keybindings-from-keys))))
+
+(car (get-data ""))
+
+!!#

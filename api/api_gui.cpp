@@ -1893,15 +1893,44 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       if (_key_callback.v==NULL)
         return false;
 
+#if 0
       QString s = false ? ""
         : event->key()==Qt::Key_Enter ? "\n"
         : event->key()==Qt::Key_Return ? "\n"
         : event->key()==Qt::Key_Escape ? "ESC"
         : event->key()==Qt::Key_Home ? "HOME"
-        : event->key()==Qt::Key_End ? "END"
+        : event->key()==Qt::Key_F1 ? "F1"
+        : event->key()==Qt::Key_F2 ? "F2"
+        : event->key()==Qt::Key_F3 ? "F3"
+        : event->key()==Qt::Key_F4 ? "F4"
+        : event->key()==Qt::Key_F5 ? "F5"
+        : event->key()==Qt::Key_F6 ? "F6"
+        : event->key()==Qt::Key_F7 ? "F7"
+        : event->key()==Qt::Key_F8 ? "F8"
+        : event->key()==Qt::Key_F9 ? "F9"
+        : event->key()==Qt::Key_F10 ? "F10"
+        : event->key()==Qt::Key_F11 ? "F11"
+        : event->key()==Qt::Key_F12 ? "F12"
+        : event->key()==Qt::Key_F13 ? "F13"
+        : event->key()==Qt::Key_F14 ? "F14"
+        : event->key()==Qt::Key_F15 ? "F15"
+        : event->key()==Qt::Key_F16 ? "F16"
+        : event->key()==Qt::Key_F17 ? "F17"
+        : event->key()==Qt::Key_F18 ? "F18"
+        : event->key()==Qt::Key_F19 ? "F19"
+        : event->key()==Qt::Key_F20 ? "F20"
+        : event->key()==Qt::Key_F21 ? "F21"
+        : event->key()==Qt::Key_F22 ? "F22"
+        : event->key()==Qt::Key_F23 ? "F23"
+        : event->key()==Qt::Key_F24 ? "F24"
         : event->text();
-
-      //printf("  GOt key: %d. Auto: %d\n", event->key(), event->isAutoRepeat());
+#else
+      QString s = event->text();
+      if (s=="")
+        s = QKeySequence(event->key()).toString();
+#endif
+      
+      //printf("  GOt key: %d. Auto: %d. Text: %s\n", event->key(), event->isAutoRepeat(), QKeySequence(event->key()).toString().toUtf8().constData());
       
       event->accept();
       
@@ -4055,6 +4084,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   struct Editor : radium::Editor, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
 
+    radium::ProtectedS7Extra<func_t*> _text_changed_callback = radium::ProtectedS7Extra<func_t*>("text_changed_callback");
+    
   public:
 
     Editor()
@@ -4064,6 +4095,23 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     OVERRIDERS(radium::Editor);
+
+    void addTextChangedCallback(func_t *func){
+      if (_text_changed_callback.v != NULL){
+        handleError("Editor #%d already have a text-changed callback", (int)_gui_num);
+        return;
+      }
+
+      _text_changed_callback.set(func);
+
+      connect(
+              this, &QsciScintilla::textChanged,
+              [=](){
+                S7CALL(void_void,_text_changed_callback.v);
+              }
+              );
+    }
+
   };
 
   
@@ -5286,6 +5334,39 @@ void gui_editorSave(int64_t guinum, filepath_t filename){
 
   if (editor != NULL)
     editor->save(filename);
+}
+
+void gui_editorFind(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+  
+  Editor *editor = gui->mycast<Editor>(__FUNCTION__);
+
+  if (editor != NULL)
+    editor->my_find();
+}
+
+void gui_editorFindNext(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+  
+  Editor *editor = gui->mycast<Editor>(__FUNCTION__);
+
+  if (editor != NULL)
+    editor->my_findNext();
+}
+
+void gui_editorAddTextChangedCallback(int64_t guinum, func_t *callback){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+  
+  Editor *editor = gui->mycast<Editor>(__FUNCTION__);
+
+  if (editor != NULL)
+    editor->addTextChangedCallback(callback);
 }
 
 
