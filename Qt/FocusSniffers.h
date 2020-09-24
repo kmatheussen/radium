@@ -107,55 +107,6 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
     {
     }
 
-  // Why doesn't qscintilla do this automatically? And why can't qscintilla give me a method to find margin font (or even the editor font) so that I can do this manually without guesssing font width?
-  void calculateMarginWidth(){
-    QFont font = (lexer()==NULL) ? this->font() : lexer()->defaultFont();
-
-    int points = font.pointSize()+zoomguess;
-    if (points < 1)
-      points = 1;
-    if (points > 40)
-      points = 40;
-    font.setPointSize(points);
-    QFontMetrics fm(font);
-    QString test = "";
-    int num_lines_log10 = ceil(log10(lines()));
-    
-    for(int i = 0 ; i < R_MAX(3, num_lines_log10) ; i++)
-      test += "9";
-    
-    double width = fm.boundingRect(test+" ").width();
-    //printf(" width: %f %d %d\n", width, font.pixelSize(), font.pointSize());
-    setMarginWidth(1, ceil(width));
-  }
-
-  void wheelEvent(QWheelEvent *event_) override {
-    if (event_->modifiers() & Qt::ControlModifier){                
-      if (event_->delta() > 0){                                     
-        zoomIn(1);
-        zoomguess++;
-      }else{
-        zoomOut(1);
-        zoomguess--;
-      }
-      if (zoomguess < -10)
-        zoomguess = -10;
-      if (zoomguess > 30)
-        zoomguess = 30;
-      
-      calculateMarginWidth();
-    } else {
-      QsciScintilla::wheelEvent(event_);
-      //set_editor_focus();
-    }
-  }
-
-  void keyPressEvent ( QKeyEvent * event_ ) override {
-    if(event_->key()==Qt::Key_Escape)
-      set_editor_focus();
-    else
-      QsciScintilla::keyPressEvent(event_);
-  }
   void focusInEvent ( QFocusEvent *e ) override {                                 
     printf("Got focusInEvent\n");
     if(dontsniff==false)
