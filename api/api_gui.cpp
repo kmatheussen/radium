@@ -5613,10 +5613,10 @@ void gui_setSplitterSizes(int64_t splitter_guinum, dynvec_t splitter_sizes){
 
   splitter->setSizes(sizes);
 
-  // Removed. This was probably caused by the hack to fix screwed up layout after resizing, which was a little bit buggy. (resizeevent called twice after widget is shown)
+  // Moved to resizeEvent. Seems like a general problem when resizing, not just when calling QSplitter::setSizes.
 #if 0 //defined(FOR_MACOSX)
-  // Workaround for sequencer not being updated when moving dragger. (fixed in Qt_sequencer.cpp)
-  QTimer::singleShot(30,[]{
+  // Workaround for sequencer not being updated when moving dragger.
+  QTimer::singleShot(300,[]{
       SEQUENCER_update(SEQUPDATE_EVERYTHING);
     });
 #endif
