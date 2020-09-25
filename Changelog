@@ -1,3 +1,98 @@
+Changes 6.3.84 -> 6.4.76:
+* MacOS: More fixes for the sequencer graphics not
+  always being updated after resizing.
+* Windows: Fix incorrect error message sometimes
+  popping up about wrong number of bytes written to
+  disk.
+* Keybindings: Add GUI to edit keybindings. Select
+  "Edit keybindings" in the Help menu to open.
+* Mac/Editor: Fix mouse pointer sometimes behaving
+  weirdly if moving outside the edges while editing.
+  (Just turned off window edge-handling for mac.)
+* FaustDev: Improve line number margin width in the
+  text editor.
+* Demo songs: Clean up mixer object positions in the
+  Romance song.
+* FaustDev: Use fixed-width (mono-sized) font in the
+  code editor.
+* Audio: Fix inaccurate latency values when the
+  sampler player or seqtrack plugin has audio inputs.
+  Since audio is not normally sent through these two
+  instruments (the input connectors are mainly used
+  for recording audio only), we don't usually want
+  input latency added to the output latency.
+* Sequencer: Show time under mouse cursor in
+  statusbar when mouse is in the time area and
+  nothing else is currently shown in the statusbar.
+* Mixer: Add popup menu for connections.
+* Mixer strips: Fix the "Delete plugin ..." option in
+  the popup menu.
+* Instruments: Add preferences-option to enable
+  Sample Seek / MIDI Chase by default when creating a
+  new instrument.
+* Manual: Update documentation about sample seek and
+  MIDI chase. (Tooltip for the "S" button updated
+  as well.)
+* Instruments: Fix showing current instrument when
+  undoing/redoing creating MIDI instrument.
+* Mixer strips: Always show the "Set current
+  instrument" entry below the "Force as current
+  instrument" checkbox in the popup menu.
+* Sequencer: Fix graphics not updating immediately
+  after undoing stretching seqblock.
+* Audio: Add latency compensation when recording from
+  input connections in the sequencer and in the
+  sampler instrument. Automatically determined by
+  default, but it's also possible to set a custom
+  value.
+* Audio: Compensate for soundcard input/output
+  latency when recording from system input.
+  Implemented both for recording in the sequencer,
+  and for recording in the sampler instrument.
+* Jack: Fix connecting audio input and output for
+  "System in" and "System out" instruments when there
+  are both physical MIDI ports and physical audio
+  ports.
+* Jack: Show message during startup if connecting
+  system input ports failed.
+* Jack: Fix auto-connecting Jack ports when there
+  both physical MIDI ports and physical audio ports.
+* Jack: Fix not always working to set name of Jack
+  input ports.
+* GUI: Add option to put the sequencer in the bottom
+  of the mixer instead of in the lower tabs in
+  main window.
+* Sequencer: Fix shift-right-clicking multiple
+  seqblocks.
+* Sequencer: Fix Shift + rightclick to delete
+  seqblock. Bug probably introduced in 5.9.99.
+* Sequencer: Fix various situations where the
+  graphics was not updated.
+* API:
+  * Renamed: mainMixerIsInWindow->mainMixerInWindow,
+    switchMixerIsInWindow->switchMainMixerInWindow,
+    instrumentWidgetIsInMixer->instrumentInMixer,
+    setInstrumentWidgetInMixer->setInstrumentInMixer,
+    switchInstrumentWidgetInMixer->switchInstrumentInMixer.
+  * New: sequencerInMixer, setSequencerInMixer,
+    switchSequencerInMixer, sequencerInMainTabs,
+    configureSequencerWidget, gui_getMixerYSplitter,
+    getRecordingLatencyFromSystemInputIsAutomaticallyDetermined,
+    setRecordingLatencyFromSystemInputIsAutomaticallyDetermined,
+    getCustomRecordingLatencyFromSystemInput,
+    setCustomRecordingLatencyFromSystemInput,
+    setSeqtrackRecordCompensateLatency,
+    getSeqtrackRecordCompensateLatency,
+    enableSampleSeekByDefault,
+    setEnableSampleSeekByDefault, gui_editor,
+    gui_editorLoadFile, gui_editorSetFile,
+    gui_editorSave, gui_editorFind,
+    gui_editorFindNext,
+    gui_editorAddTextChangedCallback
+  * writeToFile: Change return type from int to bool.
+    (Returns false if writing failed.)
+ 
+
 Changes 6.3.83 -> 6.3.84:
 * Editor: Fix assertion window popping up if trying
   to delete a MIDI-added note while recording MIDI.
