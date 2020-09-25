@@ -50,37 +50,45 @@ static bool string_only_contains_spaces(const char *string){
 void DC_SaveCleanString(const char *string){
   if(strlen(string)==0){
     
-    if(DISK_printf(dc.file,"%s",emptystringstring)<0) dc.success=false;
+    if(!DISK_printf(dc.file,"%s",emptystringstring))
+      dc.success=false;
     
   } else if (strcmp(string, "\n") && string_only_contains_spaces(string)) {
 
-    if(DISK_printf(dc.file,"%s",onlyspacestringstring)<0) dc.success=false;
+    if(!DISK_printf(dc.file,"%s",onlyspacestringstring))
+      dc.success=false;
     
   }else{
     
-    if(DISK_printf(dc.file,"%s",string)<0) dc.success=false;
+    if(!DISK_printf(dc.file,"%s",string))
+      dc.success=false;
     
   }
 }
 
 void DC_SaveST(const char *string){
-	if(DISK_printf(dc.file,"\n\\\n%s\n",string)<0) dc.success=false;
+  if(!DISK_printf(dc.file,"\n\\\n%s\n",string))
+    dc.success=false;
 }
 
 void DC_SaveS(const char *string){
-	if(DISK_printf(dc.file,"\n?%s\n",string)<0) dc.success=false;
+  if(!DISK_printf(dc.file,"\n?%s\n",string))
+    dc.success=false;
 }
 
 void DC_SaveI(int integer){
-	if(DISK_printf(dc.file,"%d\n",integer)<0) dc.success=false;
+  if(!DISK_printf(dc.file,"%d\n",integer))
+    dc.success=false;
 }
 
 void DC_SaveUI(unsigned int integer){
-	if(DISK_printf(dc.file,"%u\n",integer)<0) dc.success=false;
+  if(!DISK_printf(dc.file,"%u\n",integer))
+    dc.success=false;
 }
 
 void DC_SaveL(int64_t integer){
-       if(DISK_printf(dc.file,"%" PRId64 "\n",integer)<0) dc.success=false;
+  if(!DISK_printf(dc.file,"%" PRId64 "\n",integer))
+    dc.success=false;
 }
 
 void DC_SaveN(int64_t integer){
@@ -88,7 +96,8 @@ void DC_SaveN(int64_t integer){
 }
 
 void DC_SaveUL(uint64_t integer){
-  if(DISK_printf(dc.file,"%" PRIu64 "\n",integer)<0) dc.success=false;
+  if(!DISK_printf(dc.file,"%" PRIu64 "\n",integer))
+    dc.success=false;
 }
 
 
@@ -98,7 +107,8 @@ void DC_SaveP(uint64_t integer){
 }
 
 void DC_SaveF(float integer){
-  if(DISK_printf(dc.file,"%s\n",OS_get_string_from_double(integer))<0) dc.success=false;
+  if(!DISK_printf(dc.file,"%s\n",OS_get_string_from_double(integer)))
+    dc.success=false;
 }
 
 void DC_SaveB(bool integer){

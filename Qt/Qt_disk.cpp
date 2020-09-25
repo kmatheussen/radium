@@ -634,19 +634,27 @@ filepath_t DISK_get_filename(disk_t *disk){
   return make_filepath(disk->filename);
 }
 
-int DISK_write_qstring(disk_t *disk, QString s){
+bool DISK_write_qstring(disk_t *disk, QString s){
   ASSERT_NON_RT_NON_RELEASE();
+  
+  R_ASSERT_RETURN_IF_FALSE2(disk!=NULL, false);
   
   R_ASSERT(disk->is_binary==false);
   R_ASSERT(disk->type==disk_t::WRITE);
 
+#if 0
   int64_t pos = disk->stream->pos();
   *disk->stream << s;
   disk->stream->flush();
   return int(disk->stream->pos() - pos);
+#else
+  *disk->stream << s;
+  disk->stream->flush();
+  return disk->stream->status() == QTextStream::Ok;
+#endif
 }
 
-int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
+bool DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
   ASSERT_NON_RT_NON_RELEASE();
   
   if(wdata==NULL){
@@ -657,7 +665,7 @@ int DISK_write_wchar(disk_t *disk, const wchar_t *wdata){
   return DISK_write_qstring(disk, data);
 }
 
-int DISK_write(disk_t *disk, const char *cdata){
+bool DISK_write(disk_t *disk, const char *cdata){
   ASSERT_NON_RT_NON_RELEASE();
   
   if(cdata==NULL){
@@ -777,23 +785,27 @@ int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes){
   return ret;
 }
 
-int64_t DISK_write_binary(disk_t *disk, const void *source, int64_t num_bytes){
+bool DISK_write_binary(disk_t *disk, const void *source, int64_t num_bytes){
   ASSERT_NON_RT_NON_RELEASE();
+
+  R_ASSERT_RETURN_IF_FALSE2(disk!=NULL, false);
   
   R_ASSERT_RETURN_IF_FALSE2(disk->is_binary==true, -1);
   R_ASSERT_RETURN_IF_FALSE2(disk->type==disk_t::WRITE, -1);
 
   int64_t ret = disk->file()->write((const char*)source, num_bytes);
   
-  if (ret!=num_bytes)
+  if (ret!=num_bytes){
     GFX_addMessage("Failed writing to %s. Number of bytes written: %d, excpected %d. Error code: %d.\n(The error codes are listed at http://doc.qt.io/qt-5/qfiledevice.html#error)",
                    disk->filename.toUtf8().constData(),
                    (int)ret,
                    (int)num_bytes,
                    (int)disk->file()->error()
                    );
-  
-  return ret;
+    return false;
+  }
+
+  return true;
 }
 
 bool DISK_close_and_delete(disk_t *disk){

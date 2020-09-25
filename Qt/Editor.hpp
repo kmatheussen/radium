@@ -202,17 +202,13 @@ class Editor : public FocusSnifferQsciScintilla{
     }
 
     QString code = text();
-    int n = DISK_write_qstring(disk, code);
+    bool success = DISK_write_qstring(disk, code);
     
-    bool show_warning = false;
-    if (n != code.size())
-      show_warning = true;
-
     if (DISK_close_and_delete(disk)==false)
       return;
 
-    if (show_warning)
-      GFX_Message2(NULL, true, "Warning: Wrote %d bytes. Expected %d", n, code.size());
+    if (!success)
+      GFX_Message2(NULL, true, "Error. Writing to %S failed: \"%s\"", STRING_create(filename), DISK_get_error(disk));
 
     _filename = filename;
   }

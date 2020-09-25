@@ -519,20 +519,20 @@ bool closeFile(file_t disknum){
   return DISK_close_and_delete(disk);
 }
 
-int writeToFile(file_t disknum, const_char* string){
+bool writeToFile(file_t disknum, const_char* string){
   disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
     handleError("writeToFile: No file #%d", (int)disknum.id);
     return -1;
   }
 
-  int bytes_written = DISK_write(disk, string);
-  int string_len = (int)strlen(string);
-  if (bytes_written < string_len){
-    handleError("writeToFile: Unable to write all bytes to file. Written: %d. Expected: %d.", bytes_written, string_len);
+  bool success = DISK_write(disk, string);
+
+  if (!success){
+    handleError("writeToFile failed: \"%s\"", DISK_get_error(disk));
   }
 
-  return bytes_written;
+  return success;
 }
 
 bool fileAtEnd(file_t disknum){

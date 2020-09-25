@@ -139,7 +139,7 @@ extern LANGSPEC hash_t *HASH_get_hash_at(const hash_t *hash, const char *key, in
 
 // Loading and saving (serializing and deserializing to string. (Tip: The 'file' argument can be stdout or stdout (useful for debugging))
 
-extern LANGSPEC void HASH_save(const hash_t *hash, disk_t *file);
+extern LANGSPEC bool HASH_save(const hash_t *hash, disk_t *file);
 extern LANGSPEC hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_versions);
 extern LANGSPEC hash_t *HASH_load(disk_t *file); // same as calling HASH_load2(file, false)
 

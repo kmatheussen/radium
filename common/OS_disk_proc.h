@@ -41,9 +41,8 @@ extern LANGSPEC const char* DISK_get_error(disk_t *disk);
 extern LANGSPEC filepath_t DISK_get_filename(disk_t *disk);
   
 
-// WRITE TEXT
-extern LANGSPEC int DISK_write_wchar(disk_t *disk, const wchar_t *data);
-extern LANGSPEC int DISK_write(disk_t *disk, const char *data);
+extern LANGSPEC bool DISK_write_wchar(disk_t *disk, const wchar_t *data); // returns false if writing failed. Call DISK_error() to get error message.
+extern LANGSPEC bool DISK_write(disk_t *disk, const char *data); // returns false if writing failed. Call DISK_error() to get error message.
 
 #define DISK_printf(disk, ...) DISK_write(disk, talloc_format(__VA_ARGS__))
 
@@ -64,7 +63,7 @@ extern LANGSPEC bool DISK_is_binary(disk_t *disk);
 extern LANGSPEC int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes); // return actual number of bytes read. File must have been opened with 'DISK_open_binary_for_reading'.
 
 // WRITE BINARY
-extern LANGSPEC int64_t DISK_write_binary(disk_t *disk, const void *source, int64_t num_bytes);
+extern LANGSPEC bool DISK_write_binary(disk_t *disk, const void *source, int64_t num_bytes); // returns false if writing failed. Call DISK_error() to get error message.
 
 // CLOSE
 extern LANGSPEC bool DISK_close_and_delete(disk_t *disk);
@@ -89,7 +88,7 @@ extern disk_t *DISK_open_binary_for_writing(QString filename);
 
 extern QString g_file_at_end;
 QString DISK_read_qstring_line(disk_t *disk); // returns g_file_at_end if end of file
-int DISK_write_qstring(disk_t *disk, QString s);
+bool DISK_write_qstring(disk_t *disk, QString s); // returns false if writing failed. Call DISK_error() to get error message.
 
 static inline QString DISK_read_qstring_file(disk_t *disk){
   QString res;
