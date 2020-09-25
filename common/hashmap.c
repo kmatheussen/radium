@@ -1308,7 +1308,7 @@ wchar_t *HASH_to_string(const hash_t *hash){
 }
 #endif
 
-void HASH_save(const hash_t *hash, disk_t *file){  
+bool HASH_save(const hash_t *hash, disk_t *file){  
   DISK_write(file, talloc_format(">> HASH MAP V%d BEGIN\n", hash->version));
 
   R_ASSERT(hash != NULL);
@@ -1329,6 +1329,8 @@ void HASH_save(const hash_t *hash, disk_t *file){
   }
   
   DISK_write(file,talloc_format("<< HASH MAP V%d END\n", hash->version));
+
+  return DISK_get_error(file)==NULL;
 }
 
 static wchar_t *read_line(disk_t *file){

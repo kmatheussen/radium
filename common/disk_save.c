@@ -48,23 +48,27 @@ bool Save_Initialize(const filepath_t filename, const char *type){
 	}
 
         OS_set_saving_path(filename);
-        
-	int length1=DISK_write(dc.file,type);
-        int length2=DISK_write(dc.file,"\n");
-	int length3=DISK_printf(dc.file,"%s\n\n", OS_get_string_from_double(DISKVERSION));
-        
-	if(length1<0 || length2<0 || length3<0){
-          const char *error = DISK_get_error(dc.file);
-          GFX_Message2(NULL, true, "Unable to write to file \"%S\".\n\nMessage from the system: \"%s\".", filename.id, error!=NULL ? error : "(no info)");
-          DISK_close_and_delete(dc.file);
-          return false;
-	}
 
-        hash_t *configuration = HASH_create(3);
-        HASH_put_int(configuration, "version_major", radiumMajorVersion());
-        HASH_put_int(configuration, "version_minor", radiumMinorVersion());
-        HASH_put_int(configuration, "version_revision", radiumRevisionVersion());
-        HASH_save(configuration, dc.file);
+        {
+          bool success1=DISK_write(dc.file,type);
+          bool success2=DISK_write(dc.file,"\n");
+          bool success3=DISK_printf(dc.file,"%s\n\n", OS_get_string_from_double(DISKVERSION));
+          
+          if(!success1 || !success2 || !success3){
+            const char *error = DISK_get_error(dc.file);
+            GFX_Message2(NULL, true, "Unable to write to file \"%S\".\n\nMessage from the system: \"%s\".", filename.id, error!=NULL ? error : "(no info)");
+            DISK_close_and_delete(dc.file);
+            return false;
+          }
+        }
+
+        {
+          hash_t *configuration = HASH_create(3);
+          HASH_put_int(configuration, "version_major", radiumMajorVersion());
+          HASH_put_int(configuration, "version_minor", radiumMinorVersion());
+          HASH_put_int(configuration, "version_revision", radiumRevisionVersion());
+          HASH_save(configuration, dc.file);
+        }
         
         const char *error = DISK_get_error(dc.file);
         if (error != NULL){
