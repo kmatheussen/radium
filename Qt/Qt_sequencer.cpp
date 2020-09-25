@@ -4092,6 +4092,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   void resizeEvent( QResizeEvent *qresizeevent) override {
     radium::ScopedResizeEventTracker resize_event_tracker;
+
+    //printf("1. Resizeevent %d / %d. old: %d\n", height(), qresizeevent->size().height(), qresizeevent->oldSize().height());
     
     RETURN_IF_DATA_IS_INACCESSIBLE();
     
@@ -4101,6 +4103,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       return;
 
 
+    //printf("2. Resizeevent %d / %d. old: %d\n", height(), qresizeevent->size().height(), qresizeevent->oldSize().height());
     
 #if 0 // Several unnecessary resize events are still sent, even in Qt 5.15 (latest when this was written), but it seems like the flickering caused by this, that we saw in earlier, is gone. It also seems almost impossible to get this hack right. So therefore we try to disable it.
     
@@ -4140,6 +4143,32 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     }
 
     autoscrollSeqtracks(ATOMIC_GET(root->song->curr_seqtracknum), false);
+
+#if defined(FOR_MACOSX) // Workaround for sequencer not always being updated after resizing.
+
+    // Usually enough
+    QTimer::singleShot(30,[]{
+                             SEQUENCER_update(SEQUPDATE_EVERYTHING);
+                           });
+
+    // If not, this one should cover it.
+    QTimer::singleShot(300,[]{
+                             SEQUENCER_update(SEQUPDATE_EVERYTHING);
+                           });
+
+    
+    // But sometimes, it can take even more time. We give up after 3 seconds though.
+    QTimer::singleShot(1000,[]{
+                             SEQUENCER_update(SEQUPDATE_EVERYTHING);
+                           });
+    QTimer::singleShot(2000,[]{
+                             SEQUENCER_update(SEQUPDATE_EVERYTHING);
+                           });
+    QTimer::singleShot(3000,[]{
+                             SEQUENCER_update(SEQUPDATE_EVERYTHING);
+                           });
+#endif
+    
   }
 
   int get_sequencer_left_part_width(void) const {
