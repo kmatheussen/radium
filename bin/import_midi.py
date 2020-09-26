@@ -688,7 +688,7 @@ def get_tracks(filename):
     if not filename or filename=="" or radium.isIllegalFilepath(filename):
         return False
     try:
-        filename = radium.fromBase64(filename)
+        filename = radium.getPathString(filename)
         tracks = midi.read_midifile(filename)
     except:
         message = traceback.format_exc()
