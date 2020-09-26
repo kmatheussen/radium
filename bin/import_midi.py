@@ -685,7 +685,7 @@ def import_midi_do(tracks, lpb=4, midi_port="", polyphonic=True):
 def get_tracks(filename):
     if filename=="":
         filename = radium.getLoadFilename("Choose midi file", "*.mid *.MID *.midi *.MIDI")
-    if not filename or filename=="":
+    if not filename or filename=="" or radium.isIllegalFilepath(filename):
         return False
     try:
         filename = radium.fromBase64(filename)
