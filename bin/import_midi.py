@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 import sys,os
 import platform
+import traceback
 
 #sys.setrecursionlimit(1500)
 
@@ -70,6 +71,8 @@ class RadiumMock:
     def getNumVelocities(self, *args):
         return 2
 
+    def fromBase64(self, filename):
+        return filename
 
 def get_radium_mock():
     radium = RadiumMock()
@@ -564,7 +567,7 @@ def send_notes_to_radium_track(notes, tracknum, resolution, lpb):
     for note in notes:
         startplace = tick_to_place(note.start_tick, resolution, lpb)
 
-        if not note_has_end_tick():
+        if not note.has_end_tick():
             endplace = [radium.getNumLines(), 0, 1]
         elif note.has_legal_end_tick():
             endplace = tick_to_place(note.end_tick, resolution, lpb)
@@ -685,9 +688,11 @@ def get_tracks(filename):
     if not filename or filename=="":
         return False
     try:
+        filename = radium.fromBase64(filename)
         tracks = midi.read_midifile(filename)
     except:
-        radium.addMessage("Could not read "+filename+". Either file doesn't exist, or it could not be read as a standard midi file.");
+        message = traceback.format_exc()
+        radium.addMessage("Gakk. Could not read "+filename+". Either file doesn't exist, or it could not be read as a standard midi file.\n\n" + message)
         return False
     
     return tracks
