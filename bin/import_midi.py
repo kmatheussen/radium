@@ -74,6 +74,12 @@ class RadiumMock:
     def fromBase64(self, filename):
         return filename
 
+    def isIllegalFilepath(self, filename):
+        return filename==""
+
+    def getPathString(self, filename):
+        return filename
+
 def get_radium_mock():
     radium = RadiumMock()
     radium.addNote3 = radium.addNote3
