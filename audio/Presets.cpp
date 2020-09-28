@@ -222,7 +222,8 @@ static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, boo
       
       if (inc_usage_number){
         SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-        PR_inc_plugin_usage_number(plugin->type);
+        if(plugin != NULL)
+          PR_inc_plugin_usage_number(plugin->type);
       }
     }
   }
@@ -246,7 +247,8 @@ static instrument_t PRESET_load_singlepreset(hash_t *state, const_char *name, bo
 
   if (inc_usage_number){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-    PR_inc_plugin_usage_number(plugin->type);
+    if (plugin != NULL)
+      PR_inc_plugin_usage_number(plugin->type);
   }
 
   return patch->id;
@@ -332,19 +334,23 @@ static hash_t *get_preset_state(const vector_t *patches){
 static bool valid_patches(const vector_t *patches){
   VECTOR_FOR_EACH(struct Patch*, patch, patches){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-    if (!strcmp(plugin->type->type_name,"Bus")){
-      GFX_addMessage("Can not cut, copy, delete, or save a Bus preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
-      return false;
-    }
-    
-    if (!strcmp(plugin->type->type_name,SEQTRACKPLUGIN_NAME)){
-      GFX_addMessage("Can not cut, copy, delete, or save a Seqtrack preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
-      return false;
-    }
-    
-    if (AUDIO_is_permanent_patch(patch)){
-      GFX_addMessage("Can not cut, copy, delete, or save the Main Pipe preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
-      return false;
+    if (plugin!=NULL){
+      if (!strcmp(plugin->type->type_name,"Bus")){
+        GFX_addMessage("Can not cut, copy, delete, or save a Bus preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
+        return false;
+      }
+      
+      if (!strcmp(plugin->type->type_name,SEQTRACKPLUGIN_NAME)){
+        GFX_addMessage("Can not cut, copy, delete, or save a Seqtrack preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
+        return false;
+      }
+      
+      if (AUDIO_is_permanent_patch(patch)){
+        GFX_addMessage("Can not cut, copy, delete, or save the Main Pipe preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
+        return false;
+      }
+    }else{
+      R_ASSERT_NON_RELEASE(false);
     }
   }END_VECTOR_FOR_EACH;
 

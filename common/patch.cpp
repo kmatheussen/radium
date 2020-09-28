@@ -759,6 +759,8 @@ void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch, bool keep_
     return;
 
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  
   QList<QString> effect_names = get_plugin_effect_names(plugin);
 
   struct Tracker_Windows *window = root->song->tracker_windows;
@@ -1237,9 +1239,10 @@ void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patc
   int i;
 
   if (patch->instrument==get_audio_instrument())
-    RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
+    if(patch->patchdata!=NULL)
+      RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
              
-  for(i = 0; i<patch->num_event_receivers; i++) {
+  for(i = 0; i < patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
     R_ASSERT_RETURN_IF_FALSE(receiver!=patch); // unnecessary. We detect recursions when creating connections. (Not just once (which should have been enough) but both here and in SoundProducer.cpp)
     RT_PATCH_play_note(seqtrack, receiver, note, NULL, time);
@@ -1388,8 +1391,12 @@ void RT_PATCH_send_stop_note_to_receivers(struct SeqTrack *seqtrack, struct Patc
   int i;
 
   if (patch->instrument==get_audio_instrument())
-    RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
-    
+    if (patch->patchdata!=NULL){
+      RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
+    }else{
+      R_ASSERT_NON_RELEASE(false);
+    }
+  
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
     RT_PATCH_stop_note(seqtrack, receiver, note, time);
@@ -1540,12 +1547,15 @@ void RT_play_click_note(struct SeqTrack *seqtrack, int64_t time, int note_num){
 void RT_PATCH_send_change_velocity_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   //printf("\n\nRT_PATCH_VELOCITY. ___velocity for note %f, time: %d, id: %d (vel: %f)\n\n",notenum,(int)time,(int)note_id,velocity);
 
-  if (patch->instrument==get_audio_instrument())
-    RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
-    
-  int i;
-
-  for(i = 0; i<patch->num_event_receivers; i++) {
+  if (patch->instrument==get_audio_instrument()){
+    if (patch->patchdata!=NULL){
+      RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
+    }else{
+      R_ASSERT_NON_RELEASE(false);
+    }
+  }
+  
+  for(int i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
     RT_PATCH_change_velocity(seqtrack, receiver, note, time);
   }

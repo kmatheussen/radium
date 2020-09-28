@@ -51,6 +51,7 @@ static void Undo_PdControllers(
 {
   struct Undo_PdControllers *undo_ae=talloc(sizeof(struct Undo_PdControllers));
   SoundPlugin *plugin = patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
   
   undo_ae->patch = patch;
   undo_ae->state = HASH_create(plugin->type->num_effects);
@@ -86,7 +87,8 @@ static void *Undo_Do_PdControllers(
 
   struct Undo_PdControllers *undo_ae=pointer;
   SoundPlugin *plugin = undo_ae->patch->patchdata;
-
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, pointer);
+  
   hash_t *new_state = HASH_create(plugin->type->num_effects);
   PD_create_controllers_from_state(plugin, new_state);
 

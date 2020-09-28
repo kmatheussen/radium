@@ -68,12 +68,16 @@ static void set_resamplers(bool set_min_type, enum ResamplerType min_type){
   
   VECTOR_FOR_EACH(struct Patch *patch, &patches){
     SoundPlugin *plugin=(SoundPlugin*)patch->patchdata;
-    if(!strcmp("Sample Player", plugin->type->type_name)){
-      if (set_min_type){
-        enum ResamplerType type  = SAMPLER_get_resampler_type(plugin);
-        SAMPLER_set_temp_resampler_type(plugin, R_MAX(min_type, type));
-      } else {
-        SAMPLER_set_org_resampler_type(plugin);
+    if (plugin!=NULL){
+      if(!strcmp("Sample Player", plugin->type->type_name)){
+        if (set_min_type){
+          enum ResamplerType type  = SAMPLER_get_resampler_type(plugin);
+          SAMPLER_set_temp_resampler_type(plugin, R_MAX(min_type, type));
+        } else {
+          SAMPLER_set_org_resampler_type(plugin);
+        }
+      }else{
+        R_ASSERT_NON_RELEASE(false);
       }
     }
   }END_VECTOR_FOR_EACH;

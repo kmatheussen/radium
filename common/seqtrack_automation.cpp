@@ -121,10 +121,14 @@ struct Automation{
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
 
     hash_t *state = HASH_create(3);
-    HASH_put_instrument(state, "patch", patch->id);
-    HASH_put_chars(state, "effect_name", effect_num==-1 ? "<effect not found>" : PLUGIN_get_effect_name(plugin, effect_num));
-    HASH_put_bool(state, "is_enabled", _is_enabled);
-    HASH_put_array(state, "automation", automation.get_state(get_node_state, NULL));
+    if (plugin==NULL){
+      R_ASSERT(false);
+    } else {
+      HASH_put_instrument(state, "patch", patch->id);
+      HASH_put_chars(state, "effect_name", effect_num==-1 ? "<effect not found>" : PLUGIN_get_effect_name(plugin, effect_num));
+      HASH_put_bool(state, "is_enabled", _is_enabled);
+      HASH_put_array(state, "automation", automation.get_state(get_node_state, NULL));
+    }
     return state;
   }
 

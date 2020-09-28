@@ -326,6 +326,7 @@ static void updateMidiPortsWidget(MIDI_instrument_widget *instrument){
 
   for(int i = 0; i<num_ports ; i++){
     instrument->port->addItem(portnames[i]);
+    if (instrument->patchdata==NULL) return;
     if(!strcmp(portnames[i],instrument->patchdata->midi_port->name))
       item_num = i;
   }

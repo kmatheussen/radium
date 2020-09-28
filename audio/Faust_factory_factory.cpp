@@ -490,7 +490,8 @@ namespace{
           if (patch!=NULL)
             plugin = (struct SoundPlugin*)patch->patchdata;
 
-          FAUST_handle_new_svg_dir(plugin, svg_dir, error_message);
+          if (plugin != NULL)
+            FAUST_handle_new_svg_dir(plugin, svg_dir, error_message);
         },
         is_initializing
         );
@@ -531,7 +532,11 @@ namespace{
             return; // Instrument has been deleted.          
 
           plugin = (struct SoundPlugin*)patch->patchdata;
-
+          if (plugin==NULL){
+            R_ASSERT_NON_RELEASE(false);
+            return;
+          }
+          
         } else {
           
           R_ASSERT(is_initializing==true);

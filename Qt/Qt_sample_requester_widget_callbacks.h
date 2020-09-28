@@ -408,7 +408,8 @@ class Sample_requester_widget : public QWidget
   
   void updateWidgets(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
+    if (plugin==NULL) return;
+    
     if(_is_sample_player){
       update_sample_name_label(STRING_get_qstring(SAMPLER_get_filename_display(plugin)));
     }else if (_is_fluid_synth){
@@ -717,7 +718,8 @@ class Sample_requester_widget : public QWidget
     QString filename = g_filenames_hash[item_text];//_dir.absolutePath() + QString(QDir::separator()) + item_text;
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
+    if (plugin==NULL) return;
+    
     ADD_UNDO(PluginState(_patch.data(), NULL));
 
     if(SAMPLER_set_new_sample(plugin,make_filepath(filename),file_list->currentRow()-1)==true){
@@ -826,6 +828,7 @@ public slots:
 
   void on_random_button_clicked(bool){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
     
     if(_is_sample_player) {
       
@@ -898,7 +901,10 @@ public slots:
 
       if (tab_name_has_changed(_instrument_widget,name)) {
         _instrument_name_widget->update(); //setText(name);
-        CHIP_update((SoundPlugin*)_patch->patchdata);
+        
+        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+        if (plugin!=NULL)
+          CHIP_update(plugin);
       }
 
       set_editor_focus();
