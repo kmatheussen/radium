@@ -38,6 +38,10 @@ static int64_t get_backup_interval_ms(void){
   //return 5000;
 }
 
+static bool is_demo_song(void){
+  return STRING_starts_with2(DISK_get_absolute_file_path(dc.filename).id, OS_get_program_path2().id);
+}
+
 static void make_backup(void){
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
   
@@ -47,9 +51,12 @@ static void make_backup(void){
   if (isIllegalFilepath(dc.filename))
     return;
 
+  if (is_demo_song())
+    return;
+  
   if (g_undo_generation_for_last_backup == g_curr_undo_generation)
     return;
-
+  
   // Set this immediately so we don't start several BackupTimers.
   g_undo_generation_for_last_backup = g_curr_undo_generation;
 
@@ -131,7 +138,7 @@ void BACKUP_call_very_often(void){
 
   if (SampleRecorder_Get_Num_Instances() > 0)
     return;
-  
+
   if (get_unbackuped_duration()  > get_backup_interval_ms()){
     make_backup();
     RT_BACKUP_reset_timer();
