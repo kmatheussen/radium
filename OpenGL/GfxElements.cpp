@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define USE_FREETYPE 0
 #define RADIUM_DRAW_FONTS_DIRECTLY 0
+#define INCLUDE_SHADERS 1
 
 extern double g_opengl_scale_ratio;
 
@@ -112,6 +113,7 @@ GE_Rgb GE_get_custom_rgb(int custom_colornum){
   return ret;
 }
 
+#if INCLUDE_SHADERS
 static vl::GLSLFragmentShader *get_gradient_fragment_shader(GradientType::Type type){
   static vl::ref<vl::GLSLFragmentShader> gradient_velocity_shader = NULL;
   static vl::ref<vl::GLSLFragmentShader> gradient_horizontal_shader = NULL;
@@ -139,6 +141,7 @@ static vl::GLSLFragmentShader *get_gradient_fragment_shader(GradientType::Type t
    
   return NULL;
 }
+#endif
 
 #if 0
 static vl::GLSLVertexShader *get_gradient_vertex_shader(void){
@@ -174,9 +177,11 @@ struct GradientTriangles : public vl::Effect {
   vl::fvec4 color1;
   vl::fvec4 color2;
    
+private:
+  
   vl::ref<vl::GLSLProgram> glsl; // seems like reference must be stored here to avoid memory problems.
   bool glsl_is_valid = true;
-  
+
   vl::Uniform *uniform_y;
   vl::Uniform *uniform_height;
   vl::Uniform *uniform_color1;
@@ -184,6 +189,8 @@ struct GradientTriangles : public vl::Effect {
   vl::Uniform *uniform_x;
   vl::Uniform *uniform_width;
 
+public:
+  
   MyIMutex ref_mutex;
   
   GradientTriangles(GradientType::Type type)
@@ -203,6 +210,9 @@ struct GradientTriangles : public vl::Effect {
 private:
 
   void init_shader(void){
+#if !INCLUDE_SHADERS
+    glsl_is_valid = false;
+#else
     vl::Shader* shader = this->shader();
     shader->enable(vl::EN_BLEND);
     
@@ -233,6 +243,7 @@ private:
     
     uniform_x = glsl->gocUniform("x");
     uniform_width = glsl->gocUniform("width");
+#endif
   }
   
 public:
@@ -241,10 +252,10 @@ public:
       
     vl::Actor *actor = vg->fillTriangles(triangles);
 
-    actor->setEffect(this);
-
     if (glsl_is_valid==true) {
     
+      actor->setEffect(this);
+
       uniform_color1->setUniform(color1);
       uniform_color2->setUniform(color2);
       if (type==GradientType::VELOCITY)
