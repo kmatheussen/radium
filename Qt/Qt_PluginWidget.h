@@ -258,7 +258,8 @@ class ParamWidget : public QWidget {
 
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-      PLUGIN_set_effect_value(plugin, -1, _effect_num, value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+      if (plugin != NULL)
+        PLUGIN_set_effect_value(plugin, -1, _effect_num, value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     }
   }
 
@@ -266,7 +267,9 @@ class ParamWidget : public QWidget {
     //printf("Update GUI called. _slider: %p. _Check_button: %p\n",_slider,_check_button);
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
+    if (plugin==NULL)
+      return;
+    
     float value;
 
     value = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
@@ -290,6 +293,9 @@ class ParamWidget : public QWidget {
 
   void reload_name(void){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if(plugin==NULL)
+      return;
+    
     QString name = _type->get_effect_name(plugin, _effect_num);
     if(name.size()>25)
       name = name.left(25);
@@ -301,6 +307,9 @@ class ParamWidget : public QWidget {
 
   QString get_slider_string(void){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL)
+      return "";
+    
     char buf[66]={0};
     PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
 

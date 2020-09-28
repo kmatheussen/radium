@@ -761,12 +761,22 @@ static void init_fx(struct FX *fx, int effect_num, const char *name, struct Soun
 
 static int AUDIO_getNumFxs(const struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+  if (plugin==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return 0;
+  }
+  
   const SoundPluginType *plugin_type = plugin->type;
   return plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
 }
 
 static const char *AUDIO_getFxName(const struct Patch *patch, int fxnum){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+  if (plugin==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return "";
+  }
+  
   const SoundPluginType *plugin_type = plugin->type;
 
   //PLUGIN_touch(plugin);
@@ -783,13 +793,17 @@ static struct FX *AUDIO_createFX(const struct Tracks *track, struct Patch *patch
   R_ASSERT(track->patch != NULL);
 #endif
   
-  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
-
-  PLUGIN_touch(plugin);
-  
   struct FX *fx=(struct FX *)talloc(sizeof(struct FX));
   fx->patch = patch;
 
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+  if (plugin==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return fx;
+  }
+
+  PLUGIN_touch(plugin);
+  
   const char *name = PLUGIN_get_effect_name(plugin, effect_num);
 
   init_fx(fx,effect_num,name,plugin);
@@ -820,6 +834,8 @@ static void add_patch_effects_to_menu2(vector_t *menu, QVector<PatchEffect> &pat
 
 static void add_patch_effects_to_menu(vector_t *menu, QVector<PatchEffect> &patch_effects, struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+  if (plugin==NULL) return;
+  
   const SoundPluginType *plugin_type = plugin->type;
   //int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
     
@@ -933,7 +949,7 @@ static void AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *trac
 
       R_ASSERT(pe.patch != NULL);
 
-      if (pe.patch != NULL){
+      if (pe.patch != NULL && pe.patch->patchdata != NULL){
         struct FX *fx = (struct FX*)talloc(sizeof(struct FX));
         
         fx->patch = pe.patch;
@@ -1169,7 +1185,8 @@ static void AUDIO_PlaySongHook(struct Instruments *instrument, int64_t abstime){
   VECTOR_FOR_EACH(struct Patch *, patch,&instrument->patches){
 
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
-    PLUGIN_call_me_before_starting_to_play_song_END(plugin);
+    if (plugin!=NULL)
+      PLUGIN_call_me_before_starting_to_play_song_END(plugin);
     
   }END_VECTOR_FOR_EACH;
 
@@ -1243,6 +1260,11 @@ static void AUDIO_handle_fx_when_a_patch_has_been_replaced(const struct Patch *o
   int num_old_effects = old_type->num_effects;
 
   const SoundPlugin *new_plugin = new_patch==NULL ? NULL : (const SoundPlugin*) new_patch->patchdata;
+  if (new_patch != NULL && new_plugin==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+  
   const SoundPluginType *new_type = new_patch==NULL ? NULL : new_plugin->type;
   int num_new_effects = new_patch==NULL ? -1 : new_type->num_effects;
 
@@ -1278,7 +1300,7 @@ hash_t *AUDIO_get_audio_patch_state(struct Patch *patch){
   R_ASSERT_RETURN_IF_FALSE2(patch->patchdata != NULL, NULL);
   
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-
+  
   /**
    *
    * READ THIS!
@@ -1294,6 +1316,8 @@ hash_t *AUDIO_get_audio_patch_state(struct Patch *patch){
   HASH_put_instrument(state, "patch", patch->id);
   HASH_put_float(state, "x", CHIP_get_pos_x(patch));
   HASH_put_float(state, "y", CHIP_get_pos_y(patch));
+
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, state);
 
   HASH_put_hash(state, "plugin", PLUGIN_get_state(plugin));
 
@@ -1338,6 +1362,9 @@ bool AUDIO_is_permanent_patch(struct Patch *patch){
   R_ASSERT_RETURN_IF_FALSE2(patch->patchdata!=NULL, true);
   
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+  if (plugin==NULL)
+    return false;
+  
   if(plugin==get_main_pipe())
     return true;
 

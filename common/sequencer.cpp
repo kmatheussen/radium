@@ -2979,18 +2979,20 @@ void SEQUENCER_remove_sample_from_song(filepath_t filename){
     if (seqtrack->for_audiofiles){
 
       SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-      
-      VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-        
-        if (STRING_equals2(filename.id, SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, true).id)) {
-          prepare_remove_sample_from_seqblock(seqtrack, seqblock, Seqblock_Type::REGULAR);
-
-          ToRemove to_remove = {seqtrack, iterator666};
-          to_removes.push_back(to_remove);
-        }
-        
-      }END_VECTOR_FOR_EACH;
-      
+      if (plugin==NULL){
+        R_ASSERT(false);
+      } else {
+        VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+          
+          if (STRING_equals2(filename.id, SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, true).id)) {
+            prepare_remove_sample_from_seqblock(seqtrack, seqblock, Seqblock_Type::REGULAR);
+            
+            ToRemove to_remove = {seqtrack, iterator666};
+            to_removes.push_back(to_remove);
+          }
+          
+        }END_VECTOR_FOR_EACH;
+      }
     }
     
   }END_VECTOR_FOR_EACH;

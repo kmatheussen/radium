@@ -390,6 +390,8 @@ public:
       return;
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + system_effect;
 
@@ -420,6 +422,8 @@ public:
 
   void updateSlider(int system_effect){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + system_effect;
 
@@ -433,6 +437,8 @@ public:
 
   void updateChecked(QAbstractButton* checkwidget, int system_effect){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
 
     int effect_num = type->num_effects + system_effect;
@@ -569,6 +575,8 @@ public:
 
   void setupPeakAndAutomationStuff(void){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
 
     // peaks
@@ -719,6 +727,8 @@ public:
     updateChecked(rightdelay_onoff, EFFNUM_DELAY_ONOFF);
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
 
     for(int system_effect=EFFNUM_INPUT_VOLUME;system_effect<NUM_SYSTEM_EFFECTS;system_effect++){
@@ -827,6 +837,8 @@ public:
 
   void set_plugin_value(int sliderval, int system_effect){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + system_effect;
 
@@ -1041,7 +1053,8 @@ public:
     radium::ScopedGeneration scoped_update(_is_updating);
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
+    if (plugin==NULL) return;
+    
     checkbox->_show_enabled_marker = false;
     
     QString c = QString("ABCDEFGH"[num]);
@@ -1090,7 +1103,8 @@ public:
       if (val==true){
 
         SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
+        if (plugin==NULL) return;
+        
         PLUGIN_change_ab(plugin, num);
 
         if (_plugin_widget != NULL){
@@ -1146,6 +1160,8 @@ public slots:
       return;
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     PLUGIN_reset_ab(plugin,-1);
     update_all_ab_buttons();
   }
@@ -1181,6 +1197,8 @@ public slots:
       return;
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_BROWSER_SHOW_GUI;
     PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
@@ -1193,6 +1211,8 @@ public slots:
       return;
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_CONTROLS_SHOW_GUI;
     PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
@@ -1205,6 +1225,8 @@ public slots:
       return;
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_EQ_SHOW_GUI;
     PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
@@ -1216,6 +1238,8 @@ public slots:
       return;
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_COMP_SHOW_GUI;
     PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
@@ -1228,9 +1252,12 @@ public slots:
   }
 
   void on_mute_button_toggled(bool val){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+
     set_plugin_value(val==false ? 10000 : 0, EFFNUM_VOLUME_ONOFF);
     //volume_slider->setEnabled(!val);
-    CHIP_update((SoundPlugin*)_patch->patchdata);
+    CHIP_update(plugin);
   }
 
   void on_output_volume_onoff_toggled(bool val){
@@ -1310,9 +1337,12 @@ public slots:
   void on_volume_slider_valueChanged(int val){
     if (_is_updating > 0)
       return;
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
     
     set_plugin_value(val, EFFNUM_VOLUME);
-    CHIP_update((SoundPlugin*)_patch->patchdata);
+    CHIP_update(plugin);
   }
 
   void on_output_volume_slider_valueChanged(int val){

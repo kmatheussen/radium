@@ -2061,7 +2061,8 @@ static SoundProducer *get_main_system_out_soundproducer(void){
   }
 
   struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, NULL);
+  
   return SP_get_sound_producer(plugin);
 }
 

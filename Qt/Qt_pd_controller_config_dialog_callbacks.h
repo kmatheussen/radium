@@ -259,7 +259,8 @@ public slots:
     }
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
+    if (plugin==NULL) return;
+    
     if(_is_updating_gui==false) {
       printf("name: -%s-\n",name_widget->text().toUtf8().constData());
       QString name = name_widget->text();
@@ -295,7 +296,8 @@ public slots:
     }
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
+    if (plugin==NULL) return;
+    
     PD_delete_controller(plugin, controller->num);
   }
 };

@@ -3420,7 +3420,11 @@ static hash_t *create_ab_state(void){
   for(int i=0;i<patches->num_elements;i++){
     struct Patch *patch = (struct Patch*)patches->elements[i];
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-    HASH_put_hash(plugin_ab_states, get_patch_key(patch), PLUGIN_get_ab_state(plugin));
+    if (plugin==NULL){
+      R_ASSERT(false);
+    } else {
+      HASH_put_hash(plugin_ab_states, get_patch_key(patch), PLUGIN_get_ab_state(plugin));
+    }
   }
 
   HASH_put_hash(state, "plugin_ab_states", plugin_ab_states);
@@ -3449,10 +3453,13 @@ static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plug
       if (!HASH_equal(ab_state, curr_ab_state)){
         
         SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-        PLUGIN_apply_ab_state(plugin, ab_state);
-
-        CHIP_update(plugin);
-        updated = true;
+        if (plugin==NULL){
+          R_ASSERT(false);
+        }else{
+          PLUGIN_apply_ab_state(plugin, ab_state);
+          CHIP_update(plugin);
+          updated = true;
+        }
       }
     }
   }

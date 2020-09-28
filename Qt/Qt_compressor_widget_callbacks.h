@@ -173,6 +173,8 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
     release_slider->setValue(get_exp_inverted_value(get_compressor_parameter(_patch.data(), COMP_EFF_RELEASE),1000,0,max_attack_release));
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+
     enable_checkbox->setChecked(ATOMIC_GET(plugin->comp.is_on));
 
     //paint_all=true;
@@ -213,6 +215,8 @@ public slots:
 void on_enable_checkbox_toggled(bool val){
 #ifdef COMPILING_RADIUM
   SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+  if (plugin==NULL) return;
+  
   PLUGIN_set_effect_value(plugin, 0, plugin->type->num_effects+EFFNUM_COMP_ONOFF, val==true?1.0:0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 
   attack_slider->setEnabled(val);

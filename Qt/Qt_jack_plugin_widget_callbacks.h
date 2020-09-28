@@ -70,6 +70,7 @@ public:
   
   void update_gui(void){    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
     
     int num_ports = plugin->type->num_inputs;
     if (num_ports==0)
@@ -93,9 +94,13 @@ public:
 
   void editing_finished(int portnum){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    QLineEdit *line_edit = get_line_edit(portnum);
-    JACK_set_name(plugin, portnum, line_edit->text().toUtf8().constData());
-    update_gui();
+    if (plugin!=NULL){
+    
+      QLineEdit *line_edit = get_line_edit(portnum);
+      JACK_set_name(plugin, portnum, line_edit->text().toUtf8().constData());
+      update_gui();
+    }
+    
     set_editor_focus();
   }
   

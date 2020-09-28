@@ -53,6 +53,8 @@ static void Undo_PluginState(
 {
   
   SoundPlugin *plugin = patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  
   if (plugin->type->create_state == NULL || plugin->type->recreate_from_state==NULL)
     return;
 
@@ -120,7 +122,8 @@ static void *Undo_Do_PluginState(
 
   struct Undo_PluginState *undo_ae=pointer;
   SoundPlugin *plugin = undo_ae->patch->patchdata;
-
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, pointer);
+  
   hash_t *new_state = HASH_create(3);
   plugin->type->create_state(plugin, new_state);
 

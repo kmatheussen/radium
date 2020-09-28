@@ -510,6 +510,8 @@ public:
 
   void update_preset_widgets(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
 
     if (type->get_num_presets != NULL && preset_selector->isVisible()){
@@ -528,7 +530,8 @@ private:
   
   void SaveFXBP(bool is_fxb){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
+    if (plugin==NULL) return;
+    
     R_ASSERT(g_radium_runs_custom_exec==false);
 
     QString filename;
@@ -564,6 +567,7 @@ private:
 
   void LoadFXBP(void){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
     
     R_ASSERT(g_radium_runs_custom_exec==false);
 
@@ -616,6 +620,8 @@ public:
   
   void update_ab_buttons(void){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     int curr=plugin->curr_ab_num;
 
     if (_ab_checkbox_width==-1){
@@ -644,6 +650,8 @@ public:
 
   void ab_rightclicked(int num){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     int curr=plugin->curr_ab_num;
 
     IsAlive is_alive(this);
@@ -679,6 +687,8 @@ public slots:
       return;
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     PLUGIN_reset_ab(plugin,-1);
     update_ab_buttons();
     AUDIOWIDGET_redraw_ab(_patch.data());
@@ -719,6 +729,8 @@ public slots:
       return;
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     ATOMIC_SET(plugin->enable_sample_seek, val);
   }
   
@@ -917,6 +929,8 @@ public slots:
     
     if (_ignore_checkbox_stateChanged==false) {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      if (plugin==NULL) return;
+      
       if (val){
         PLUGIN_open_gui(plugin, API_get_gui_from_widget(this));
       }else{
@@ -930,6 +944,8 @@ public slots:
         return;
     
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      if (plugin==NULL) return;
+      
       int effect_num = PLUGIN_get_effect_num(plugin, "Limiter Bypass", NULL);
       R_ASSERT_RETURN_IF_FALSE(effect_num != -1);
       
@@ -943,6 +959,8 @@ public slots:
         return;
 
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      if (plugin==NULL) return;
+      
       printf("Setting resampler type to %d\n",val);
       SAMPLER_set_resampler_type(plugin, (enum ResamplerType)val);
     }
@@ -979,7 +997,8 @@ public slots:
       return;
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
+    if (plugin==NULL) return;
+    
     vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
     int mono_main   = VECTOR_push_back(&v, "Mono from system input");
@@ -1049,6 +1068,7 @@ public slots:
       return;
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
     
     bool can_embed = QString("Sample Player")==plugin->type->type_name || QString("FluidSynth")==plugin->type->type_name;
     
@@ -1106,6 +1126,8 @@ public slots:
       return;
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     PLUGIN_reset(plugin);
     GFX_update_instrument_widget(_patch.data());
   }
@@ -1115,6 +1137,8 @@ public slots:
       return;
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     PLUGIN_random(plugin);
     
     GFX_update_instrument_widget(_patch.data());
@@ -1134,6 +1158,8 @@ public slots:
       return;
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
     int num_presets = type->get_num_presets(plugin);
       
@@ -1180,6 +1206,8 @@ public slots:
     printf("num: %d\n",num);
       
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+    
     const SoundPluginType *type = plugin->type;
 
     type->set_current_preset(plugin, num);

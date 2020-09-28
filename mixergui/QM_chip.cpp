@@ -477,6 +477,7 @@ void CHIP_init_because_it_has_new_plugin(SoundPlugin *plugin){
 */
 
 float CHIP_get_pos_x(const struct Patch *patch){
+  R_ASSERT_RETURN_IF_FALSE2(patch->patchdata!=NULL, 0);
   Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), (SoundPlugin*)patch->patchdata);
   if (chip==NULL)
     return 0;
@@ -484,6 +485,7 @@ float CHIP_get_pos_x(const struct Patch *patch){
 }
 
 float CHIP_get_pos_y(const struct Patch *patch){
+  R_ASSERT_RETURN_IF_FALSE2(patch->patchdata!=NULL, 0);
   Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), (SoundPlugin*)patch->patchdata);
   if (chip==NULL)
     return 0;
@@ -497,6 +499,7 @@ static void CHIP_set_pos(Chip *chip, float x, float y){
 }
 
 void CHIP_set_pos(const struct Patch *patch,float x,float y){
+  R_ASSERT_RETURN_IF_FALSE(patch->patchdata!=NULL);
   Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), (SoundPlugin*)patch->patchdata);
   if (chip!=NULL)
     CHIP_set_pos(chip, x, y);
@@ -641,10 +644,16 @@ static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
 }
 
 bool CHIPS_are_connected(const Chip *from, const Chip *to){
+  R_ASSERT_RETURN_IF_FALSE2(from!=NULL, false);
+  R_ASSERT_RETURN_IF_FALSE2(to!=NULL, false);
+  
   return CONNECTION_find_audio_connection(from, to) != NULL;
 }
 
 bool CHIPS_are_econnected(const Chip *from, const Chip *to){
+  R_ASSERT_RETURN_IF_FALSE2(from!=NULL, false);
+  R_ASSERT_RETURN_IF_FALSE2(to!=NULL, false);
+  
   for(EventConnection *connection : from->_output_event_connections)
     if(connection->to==to)
       return true;
@@ -2711,24 +2720,29 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
       
       struct Patch *patch = CHIP_get_patch(chip);
 
-      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-      
-      float value = chip->_slider_start_value + ::scale(delta,0,x2-x1,0,1.0);
-      if(value>1.0)
-        value=1.0;
-      if(value<0.0)
-        value=0.0;
-      
-      chip->_slider_start_value = value;
-
-      int effect_num = chip->get_volume_effect_num();
-      
-      if (_has_made_volume_effect_undo==false)
-        ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
-      
-      PLUGIN_set_effect_value(plugin, -1, effect_num, value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
-      
-      CHIP_update(plugin);
+      if (patch != NULL){
+        
+        SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+        
+        if (plugin != NULL){
+          float value = chip->_slider_start_value + ::scale(delta,0,x2-x1,0,1.0);
+          if(value>1.0)
+            value=1.0;
+          if(value<0.0)
+            value=0.0;
+          
+          chip->_slider_start_value = value;
+          
+          int effect_num = chip->get_volume_effect_num();
+          
+          if (_has_made_volume_effect_undo==false)
+            ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
+          
+          PLUGIN_set_effect_value(plugin, -1, effect_num, value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+          
+          CHIP_update(plugin);
+        }
+      }
       
     }END_VECTOR_FOR_EACH;
 
@@ -2807,7 +2821,11 @@ Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch){
   R_ASSERT_RETURN_IF_FALSE2(patch != NULL, NULL);
 
   const SoundPlugin *plugin = (const SoundPlugin*)patch->patchdata;
-
+  if(plugin==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return NULL;
+  }
+  
   const QList<QGraphicsItem *> &das_items = scene==NULL ? get_scene(g_mixer_widget)->items() : scene->items();
   for (int i = 0; i < das_items.size(); ++i){
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -2821,6 +2839,9 @@ Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch){
 }
 
 AudioConnection *CONNECTION_find_audio_connection(const Chip *from, const Chip *to){
+  R_ASSERT_RETURN_IF_FALSE2(from!=NULL, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(to!=NULL, NULL);
+
   for(AudioConnection *connection : from->_output_audio_connections)
     if(connection->to==to)
       return connection;

@@ -69,7 +69,8 @@ static void Undo_AudioEffect(
 
   struct Undo_AudioEffect *undo_ae=talloc(sizeof(struct Undo_AudioEffect));
   SoundPlugin *plugin = patch->patchdata;
-
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  
   if (flags != AE_ALWAYS_CREATE_SOLO_AND_BYPASS_UNDO) {
     int system_effect_num = effect_num - plugin->type->num_effects;
     
@@ -141,7 +142,8 @@ static void *Undo_Do_AudioEffect(
 
   struct Undo_AudioEffect *undo_ae=pointer;
   SoundPlugin *plugin = undo_ae->patch->patchdata;
-
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, pointer);
+  
   int num_effects = plugin->type->num_effects+NUM_SYSTEM_EFFECTS;
 
   if (undo_ae->effect_num >= 0 && undo_ae->effect_num < num_effects) {

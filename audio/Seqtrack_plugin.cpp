@@ -1413,10 +1413,13 @@ public:
   struct SeqTrack *get_seqtrack(void) const {
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
       if (seqtrack->patch != NULL){
-        SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;        
-        R_ASSERT(plugin!=NULL);
-        if(plugin->data==this)
-          return seqtrack;
+        SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+        if (plugin==NULL){
+          R_ASSERT(false);
+        } else {
+          if(plugin->data==this)
+            return seqtrack;
+        }
       }
     }END_VECTOR_FOR_EACH;
     return NULL;

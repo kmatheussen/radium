@@ -592,6 +592,11 @@ struct Patch *getPatchFromNum(instrument_t instrument_id){
   if(patch==NULL)
     handleError("instrument %d not found", (int)instrument_id.id);
   
+  if (patch->patchdata==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return NULL;
+  }
+  
   return patch;
 }
 
@@ -607,6 +612,11 @@ struct Patch *getAudioPatchFromNum(instrument_t instrument_id){ // TODO: Rename 
     return NULL;
   }
 
+  if (patch->patchdata==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return NULL;
+  }
+  
   return patch;
 }
 

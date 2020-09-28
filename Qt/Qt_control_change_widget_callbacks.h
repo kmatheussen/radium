@@ -72,11 +72,13 @@ public slots:
       value_slider->setEnabled(true);
       value_spin->setEnabled(true);
       cctype->setEnabled(true);
+      if (this->patchdata==NULL) return;
       this->patchdata->ccsonoff[this->ccnum] = true;
     }else if(val==false){
       value_slider->setEnabled(false);
       value_spin->setEnabled(false);
       cctype->setEnabled(false);
+      if (this->patchdata==NULL) return;
       this->patchdata->ccsonoff[this->ccnum] = false;
     }
   }
