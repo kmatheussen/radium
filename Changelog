@@ -1,3 +1,15 @@
+Changes 6.4.76 -> 6.4.77:
+* Autobackup: Don't create autobackup for demo songs.
+* Instruments: Fix rare crash (only seen on osx) when
+  deleting a Sampler instrument that has a GUI open.
+* Internal: Various general checks and assertions to
+  avoid crashes when deleting audio instrument.
+* MIDI: Fix import MIDI file. Note that some MIDI
+  files are still not loaded when using Windows. This
+  will hopefully be fixed in the next release.
+
+
+
 Changes 6.3.84 -> 6.4.76:
 * MacOS: More fixes for the sequencer graphics not
   always being updated after resizing.
