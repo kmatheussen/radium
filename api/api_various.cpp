@@ -1825,7 +1825,7 @@ void openAboutWindow(void){
               "C/C++ compiler version: " __VERSION__ "<br>"
               "S7 version: " S7_VERSION " / " S7_DATE
               "<p>"
-              "<A href=\"http://users.notam02.no/~kjetism/radium/development.php\">Credits</A>"
+              "<A href=\"https://users.notam02.no/~kjetism/radium/documentation.php#acknowledgment\">Credits</A>"
               "<p>"
               "Jack samplerate: %d<br>"
               "Monitor refresh rate: %s<br>"
