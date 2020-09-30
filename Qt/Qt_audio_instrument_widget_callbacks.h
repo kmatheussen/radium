@@ -125,6 +125,8 @@ public:
     }
     */
 
+    ab_reset_button->setText("reset.svg");
+    
     /*
     right_part_layout->setStretch(0,2);
     right_part_layout->setStretch(1,9);
