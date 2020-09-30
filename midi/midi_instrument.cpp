@@ -342,9 +342,24 @@ static void MIDIchangeTrackPan(int newpan,const struct Tracks *track){
 0 - 127
 */
 
+static struct PatchData *createPatchData(void);
+  
 static struct PatchData *getPatchData(struct Patch *patch){
-  R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, NULL);
-  return (struct PatchData *)patch->patchdata;
+  struct PatchData *ret = NULL;
+  
+  if (patch==NULL){
+    R_ASSERT(false);
+  } else if (patch->instrument != get_MIDI_instrument()) {
+    R_ASSERT(false);
+  } else {
+    ret = (struct PatchData *)patch->patchdata;
+    R_ASSERT(ret!=NULL);
+  }
+
+  if (ret==NULL)
+    ret = createPatchData();
+  
+  return ret;
 }
 
 void MIDISetPatchData(struct Patch *patch, const char *key, const char *value, bool program_state_is_valid){
