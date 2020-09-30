@@ -3436,9 +3436,12 @@ struct SeqTrack{
   bool is_bus;
   
   vector_t seqblocks; // Player must be stopped when modifying this variable. Also used for displaying if gfx_seqblocks != NULL.
-  vector_t *gfx_seqblocks; // Used for displaying. Might have the same content as this->seqblocks (pointing to &this->seqblocks).
-  vector_t gfx_gfx_seqblocks; // When moving several seqblocks. Just for graphics. Player does not have to be stopped when modifying this variable
+  vector_t *gfx_seqblocks; // Used for displaying. Might have the same content as this->seqblocks (pointing to &this->seqblocks). Changing the content should happen inside a Scoped_Update_RT_GFX_variables instance.
+  vector_t gfx_gfx_seqblocks; // When moving several seqblocks. Just for graphics. Player does not have to be stopped when modifying this variable. Changing the content should happen inside a Scoped_Update_RT_GFX_variables instance.
   vector_t recording_seqblocks;
+
+  bool RT_has_gfx_seqblocks; // Automatically updated in a Scoped_Update_RT_GFX_variables instance.
+  bool RT_has_gfx_gfx_seqblocks; // Automatically updated in a Scoped_Update_RT_GFX_variables instance.
 
   dynvec_t seqblocks_z_order; // Used when painting seqblocks. Contains an array of indexes to gfx_seqblocks. Might not be constantly updated, so must check validity when using.
   
@@ -3487,6 +3490,7 @@ struct SeqTrack{
   struct SeqtrackRecordingConfig custom_recording_config;
   int recording_generation; // Used in audio/Seqtrack_plugin.cpp
 };
+
 
 static inline double get_seqtrack_reltempo(struct SeqTrack *seqtrack){
   if (seqtrack==NULL)

@@ -69,6 +69,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "sequencer_proc.h"
 
 
+namespace radium{
+  
+  class Scoped_Update_RT_GFX_variables{
+    struct SeqTrack *_seqtrack;
+    
+    bool _had_gfx_seqblocks_before;
+    bool _had_gfx_gfx_seqblocks_before;
+
+  public:
+
+    Scoped_Update_RT_GFX_variables(struct SeqTrack *seqtrack)
+      : _seqtrack(seqtrack)
+      , _had_gfx_seqblocks_before(seqtrack->gfx_seqblocks!=NULL && seqtrack->gfx_seqblocks->num_elements > 0)
+      , _had_gfx_gfx_seqblocks_before(seqtrack->gfx_gfx_seqblocks.num_elements > 0)
+    {}
+
+    ~Scoped_Update_RT_GFX_variables(){
+      if (get_seqtracknum(_seqtrack) >= 0){
+        bool has_gfx_seqblocks_now = _seqtrack->gfx_seqblocks!=NULL && _seqtrack->gfx_seqblocks->num_elements > 0;
+        bool has_gfx_gfx_seqblocks_now = _seqtrack->gfx_gfx_seqblocks.num_elements > 0;
+        if ( (has_gfx_seqblocks_now != _had_gfx_seqblocks_before) || (has_gfx_gfx_seqblocks_now != _had_gfx_gfx_seqblocks_before) ){
+          radium::PlayerLock lock;
+          _seqtrack->RT_has_gfx_seqblocks = has_gfx_seqblocks_now;
+          _seqtrack->RT_has_gfx_gfx_seqblocks = has_gfx_gfx_seqblocks_now;
+        }
+      }
+    }
+  };
+}
+
+
 static int seqblocks_comp(const void *a, const void *b){
   const struct SeqBlock *s1 = (const struct SeqBlock *)a;
   const struct SeqBlock *s2 = (const struct SeqBlock *)b;
@@ -1853,16 +1884,18 @@ static void remove_all_gfx_samples(struct SeqTrack *seqtrack){
 
 void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struct SeqTrack *seqtrack, const int seqtracknum, enum ShowAssertionOrThrowAPIException error_type){
   R_ASSERT_RETURN_IF_FALSE(seqblocks_state.type==ARRAY_TYPE);
-
+  
+  radium::Scoped_Update_RT_GFX_variables scoped_gfx_variables(seqtrack);
+    
   if (seqtrack->gfx_seqblocks != NULL){
     
     remove_all_gfx_samples(seqtrack);
-    
     VECTOR_clean(seqtrack->gfx_seqblocks);
     
   } else {
-    
-    seqtrack->gfx_seqblocks = (vector_t*)talloc(sizeof(vector_t));
+
+    vector_t *dasnew = (vector_t*)talloc(sizeof(vector_t));
+    seqtrack->gfx_seqblocks = dasnew;
     
   }
 
@@ -1909,11 +1942,11 @@ void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struc
   printf("\n\n");
 #endif
 
+
   //SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
   SEQTRACK_update_with_borders(seqtrack);
   SEQUENCER_update(SEQUPDATE_NAVIGATOR | SEQUPDATE_PLAYLIST);
   return;
-
   
  failed:
 
@@ -1923,6 +1956,7 @@ void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struc
     seqtrack->gfx_seqblocks = NULL;
   }
 }
+
 
 dyn_t SEQTRACK_get_seqblocks_state(const struct SeqTrack *seqtrack){
   dynvec_t vec = {};
@@ -1945,10 +1979,13 @@ dyn_t SEQTRACK_get_gfx_seqblocks_state(const struct SeqTrack *seqtrack){
 }
 
 void SEQTRACK_cancel_gfx_seqblocks(struct SeqTrack *seqtrack){
+  radium::Scoped_Update_RT_GFX_variables scoped_gfx_variables(seqtrack);
+
   remove_all_gfx_samples(seqtrack);
   SEQTRACKPLUGIN_assert_samples2(seqtrack);
 
   seqtrack->gfx_seqblocks = NULL;
+  
   SEQTRACKPLUGIN_assert_samples2(seqtrack);
 
   SEQTRACK_update(seqtrack);
@@ -1958,7 +1995,9 @@ void SEQTRACK_cancel_gfx_seqblocks(struct SeqTrack *seqtrack){
 void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtracknum, const bool seqtrack_is_live){
 
   R_ASSERT_RETURN_IF_FALSE(seqtrack->gfx_seqblocks != NULL);
-  
+
+  radium::Scoped_Update_RT_GFX_variables scoped_gfx_variables(seqtrack);
+    
   int len1 = seqtrack->gfx_seqblocks->num_elements;
 
   //printf("Apply len gfx: %d. Len: %d\n", len1, seqtrack->seqblocks.num_elements);
@@ -1984,8 +2023,8 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
       
       seqtrack->seqblocks = *seqtrack->gfx_seqblocks;
 
-      seqtrack->gfx_seqblocks = NULL;
-
+      seqtrack->gfx_seqblocks = NULL;      
+      
       int aft=seqtrack->seqblocks.num_elements;
       R_ASSERT(bef_gfx==aft);
 
@@ -2263,6 +2302,8 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
 }
 
 void SEQTRACK_delete_gfx_gfx_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  radium::Scoped_Update_RT_GFX_variables scoped_gfx_variables(seqtrack);
+
   VECTOR_remove(&seqtrack->gfx_gfx_seqblocks, seqblock);
 }
 
@@ -2695,10 +2736,10 @@ bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
     else if (SEQUENCER_is_punching() && SEQUENCER_get_punch_end() > seqtrack->end_time)
       more_things_to_do = true;
 
-    else if (seqtrack->gfx_seqblocks != NULL && seqtrack->gfx_seqblocks->num_elements > 0)
+    else if (seqtrack->RT_has_gfx_seqblocks)
       more_things_to_do = true;
 
-    else if (seqtrack->gfx_gfx_seqblocks.num_elements > 0)
+    else if (seqtrack->RT_has_gfx_gfx_seqblocks)
       more_things_to_do = true;
 
     else if (ATOMIC_GET(g_has_seqblock_marked_as_available))
@@ -2803,7 +2844,7 @@ static int get_seqblock_pos(vector_t *seqblocks, int64_t seqtime){
 // Is static since there is no reason to call this from the outside since seqblocks should only be created in this file.
 static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime, int64_t end_seqtime){
   R_ASSERT_RETURN_IF_FALSE2(seqblock!=NULL, -1);
-  
+      
   if (end_seqtime != -1)
     R_ASSERT_RETURN_IF_FALSE2(end_seqtime >= seqtime, -1);
 
@@ -2876,6 +2917,8 @@ int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64
 }
 
 static int insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
+  radium::Scoped_Update_RT_GFX_variables scoped_gfx_variables(seqtrack);
+  
   seqblock->is_selected = true;
 
   vector_t *seqblocks = &seqtrack->gfx_gfx_seqblocks;
