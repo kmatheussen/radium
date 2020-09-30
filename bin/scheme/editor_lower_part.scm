@@ -198,28 +198,47 @@
 
   )
 
+;; Note: used as shortcut
+(define (set-current-block)
+  (popup-menu
+   (map (lambda (blocknum)
+          (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                (lambda ()
+                  (<ra> :select-block blocknum))))
+        (iota (<ra> :get-num-blocks)))))
 
 (define (create-editor-lock-checkbox gui x1 y1 x2 y2)
   (define enabled #t)
-  (define area (<new> :checkbox gui x1 y1 x2 y2
-                      (lambda ()
-                        (not (<ra> :allow-automatically-changing-current-block)))
-                      (lambda (val)
-                        (<ra> :set-allow-automatically-changing-current-block (not val)))
-                      ;;:paint-func
-                      ;;(lambda (gui x1 y1 x2 y2 is-selected is-hovering)
-                      :text (lambda ()
-                              (if (<ra> :allow-automatically-changing-current-block)
-                                  "unlocked.svg"
-                                  "locked.svg"))
-                      ;;"🔓" "🔒"
-                      :selected-color "#225522"
-                      :prepend-checked-marker #f
-                      ))
+  (define area #f)
+  
+  (set! area (<new> :checkbox gui x1 y1 x2 y2
+                    (lambda ()
+                      (not (<ra> :allow-automatically-changing-current-block)))
+                    (lambda (val)
+                      (<ra> :set-allow-automatically-changing-current-block (not val)))
+                    ;;:paint-func
+                    ;;(lambda (gui x1 y1 x2 y2 is-selected is-hovering)
+                    :text (lambda ()
+                            (if (<ra> :allow-automatically-changing-current-block)
+                                "unlocked.svg"
+                                "locked.svg"))
+                    ;;"🔓" "🔒"
+                    :selected-color "#225522"
+                    :prepend-checked-marker #f
+                    :right-mouse-clicked-callback
+                    (lambda ()
+                      (popup-menu
+                       (list
+                        (list "Set current block" set-current-block)
+                        "--------------Keybindings"
+                        (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-allow-automatically-changing-current-block"
+                                                                         :args '()
+                                                                         :focus-keybinding "FOCUS_EDITOR"
+                                                                         :gui-or-area area)
+                        "Help keybindings" show-keybinding-help-window)))))
+  
   (area :add-statusbar-text-handler "Prevent program from automatically changing block")
-  (add-keybinding-configuration-to-gui area
-                                       "ra:switch-allow-automatically-changing-current-block"
-                                       '())
+  
   area)
 
 
