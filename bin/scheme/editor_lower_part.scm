@@ -209,7 +209,7 @@
 
 (define (create-editor-lock-checkbox gui x1 y1 x2 y2)
   (define enabled #t)
-  (define area #f)
+  (define-optional-func area (key . args))
   
   (set! area (<new> :checkbox gui x1 y1 x2 y2
                     (lambda ()
