@@ -1995,6 +1995,7 @@
 (mylint-file "/home/kjetil/radium/bin/scheme/mixer-strips.scm")
 (mylint-file "/home/kjetil/radium/bin/scheme/editor_track_headers.scm")
 (mylint-file "/home/kjetil/radium/bin/scheme/instruments.scm")
+(mylint-file "/home/kjetil/radium/bin/scheme/mouse.scm")
 
 (begin
   (mylint-file "/home/kjetil/radium/bin/scheme/mylint.scm")
