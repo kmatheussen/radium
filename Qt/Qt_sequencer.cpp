@@ -5055,7 +5055,7 @@ float SEQUENCER_get_left_part_x1(void){
 }
 
 float SEQUENCER_get_left_part_x2(void){
-  return g_sequencer_widget->_seqtracks_widget.t_x1 - 1;
+  return g_sequencer_widget->_seqtracks_widget.t_x1;
 }
 
 float SEQUENCER_get_left_part_y1(void){
