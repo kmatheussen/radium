@@ -277,6 +277,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
       S7CALL2(void_int,"FROM_C-show-mixer-config-reset-popup-menu", -1);
     };
 
+    ab_reset->setText("reset.svg");
+      
     zoomreset_button->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-show-mixer-zoom-reset-popup-menu");
     };
