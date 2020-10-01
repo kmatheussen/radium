@@ -3021,6 +3021,7 @@ void PLUGIN_set_all_effects_to_not_recording(SoundPlugin *plugin){
 
 void PLUGIN_set_autosuspend_behavior(SoundPlugin *plugin, enum AutoSuspendBehavior new_behavior){
   ATOMIC_SET(plugin->auto_suspend_behavior, new_behavior);
+  update_instrument_gui(plugin);
 }
 
 enum AutoSuspendBehavior PLUGIN_get_autosuspend_behavior(const SoundPlugin *plugin){
