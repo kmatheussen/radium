@@ -622,6 +622,39 @@ static inline int get_gfxgfxseqblocknum(const struct SeqTrack *seqtrack, const s
   return VECTOR_find_pos(&seqtrack->gfx_gfx_seqblocks, seqblock);
 }
 
+#if defined(__cplusplus)
+namespace radium{
+  
+  class Scoped_Update_RT_GFX_variables{
+    struct SeqTrack *_seqtrack;
+    
+    bool _had_gfx_seqblocks_before;
+    bool _had_gfx_gfx_seqblocks_before;
+
+  public:
+
+    Scoped_Update_RT_GFX_variables(struct SeqTrack *seqtrack)
+      : _seqtrack(seqtrack)
+      , _had_gfx_seqblocks_before(seqtrack->gfx_seqblocks!=NULL && seqtrack->gfx_seqblocks->num_elements > 0)
+      , _had_gfx_gfx_seqblocks_before(seqtrack->gfx_gfx_seqblocks.num_elements > 0)
+    {}
+
+    ~Scoped_Update_RT_GFX_variables(){
+      if (get_seqtracknum(_seqtrack) >= 0){
+        bool has_gfx_seqblocks_now = _seqtrack->gfx_seqblocks!=NULL && _seqtrack->gfx_seqblocks->num_elements > 0;
+        bool has_gfx_gfx_seqblocks_now = _seqtrack->gfx_gfx_seqblocks.num_elements > 0;
+        if ( (has_gfx_seqblocks_now != _had_gfx_seqblocks_before) || (has_gfx_gfx_seqblocks_now != _had_gfx_gfx_seqblocks_before) ){
+          radium::PlayerLock lock;
+          _seqtrack->RT_has_gfx_seqblocks = has_gfx_seqblocks_now;
+          _seqtrack->RT_has_gfx_gfx_seqblocks = has_gfx_gfx_seqblocks_now;
+        }
+      }
+    }
+  };
+}
+
+#endif
+
 #if defined(USE_QT4) && defined(QSTRING_H)
 
 struct SoundPlugin;

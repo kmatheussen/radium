@@ -150,6 +150,9 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 }
 
 static void play_note(struct SoundPlugin *plugin, int time, note_t note){
+  if (!RT_do_send_MIDI_to_receivers(plugin))
+    return;
+    
   Data *data = (Data*)plugin->data;
 
   note.midi_channel = data->values[CHANNEL];
@@ -158,6 +161,9 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note){
 }
 
 static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
+  if (!RT_do_send_MIDI_to_receivers(plugin))
+    return;
+      
   Data *data = (Data*)plugin->data;
 
   note.midi_channel = data->values[CHANNEL];
@@ -166,6 +172,9 @@ static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
 }
 
 static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
+  if (!RT_do_send_MIDI_to_receivers(plugin))
+    return;
+      
   Data *data = (Data*)plugin->data;
 
   note.midi_channel = data->values[CHANNEL];
@@ -175,6 +184,9 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
 
 
 static void send_msg(struct SoundPlugin *plugin, int64_t block_delta_time, unsigned int byte1, unsigned int byte2, int byte3){
+  if (!RT_do_send_MIDI_to_receivers(plugin))
+    return;
+      
   Data *data = (Data*)plugin->data;
   volatile struct Patch *patch = plugin->patch;
 

@@ -70,7 +70,10 @@ DC_start("SONG");
         DC_SSB("include_pan_and_dry_in_wet_signal", song->include_pan_and_dry_in_wet_signal);
         DC_SSB("mute_editor_automation_when_track_is_muted", song->mute_editor_automation_when_track_is_muted);
         //DC_SSB("use_sequencer_timing", song->use_sequencer_tempos_and_signatures); // saved in sequencer state instead.
-                
+
+        DC_SSB("mute_plugin_MIDI_when_muted", song->RT_mute_plugin_MIDI_when_muted);
+        DC_SSB("send_plugin_MIDI_through_when_bypassed", song->RT_send_plugin_MIDI_through_when_bypassed);
+                          
         DC_start("COMMENT");{
           HASH_save(COMMENT_get_state(), dc.file);
         }DC_end();
@@ -106,7 +109,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	const char *vars[13]={
+	const char *vars[15]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -119,7 +122,9 @@ struct Song *LoadSong(void){
                 "editor_should_swing_along",
                 "mixer_comments_visible",
                 "mute_editor_automation_when_track_is_muted",
-                "include_pan_and_dry_in_wet_signal"
+                "include_pan_and_dry_in_wet_signal",
+                "mute_plugin_MIDI_when_muted",
+                "send_plugin_MIDI_through_when_bypassed"
                 //"use_sequencer_timing"
 	};
 	struct Song *song=SONG_create();
@@ -128,6 +133,9 @@ struct Song *LoadSong(void){
         song->include_pan_and_dry_in_wet_signal = false; // Compatibility with older songs.
         song->use_swinging_beats_in_sequencer = true;
         song->display_swinging_beats_in_seqblocks_in_sequencer = true;
+
+        song->RT_mute_plugin_MIDI_when_muted = false; // compatibility with older songs
+        song->RT_send_plugin_MIDI_through_when_bypassed = false; // compatibility with older songs
         
         MIDI_SetThroughPatch(NULL);
           
@@ -152,7 +160,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
 
-        GENERAL_LOAD(7,13)
+        GENERAL_LOAD(7,15)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -241,7 +249,13 @@ var12:
         goto start;
 
 var13:
+        song->RT_mute_plugin_MIDI_when_muted = DC_LoadB();
+        goto start;
+
 var14:
+        song->RT_send_plugin_MIDI_through_when_bypassed = DC_LoadB();
+        goto start;
+        
 var15:
 var16:
 var17:

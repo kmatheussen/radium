@@ -1249,6 +1249,39 @@ void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patc
   }
 }
 
+static bool RT_do_forward_events(const struct Patch *patch){
+  const bool mute_when_muted = root->song->RT_mute_plugin_MIDI_when_muted;
+  const bool forward_when_bypassed = root->song->RT_send_plugin_MIDI_through_when_bypassed;
+
+  struct SoundPlugin *plugin = NULL;
+            
+  if (mute_when_muted || forward_when_bypassed){
+    
+    if (patch->instrument==get_audio_instrument())
+      if(patch->patchdata!=NULL)
+        plugin = (struct SoundPlugin*)patch->patchdata;
+    
+  }
+  
+  if (mute_when_muted && plugin && is_muted_relaxed(plugin)) {
+    
+    return false;
+    
+  } else if (patch->forward_events) {
+    
+    return true;
+    
+  } else if (forward_when_bypassed && plugin && is_bypassed_relaxed(plugin)) {
+    
+    return true;
+    
+  } else {
+
+    return false;
+    
+  }
+}
+
 static void RT_play_voice(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
 
   if(note.pitch < 1.0 || note.pitch > 127)
@@ -1262,7 +1295,7 @@ static void RT_play_voice(struct SeqTrack *seqtrack, struct Patch *patch, const 
   ATOMIC_SET_RELAXED(patch->visual_note_intencity, MAX_NOTE_INTENCITY);
   //ATOMIC_SET_RELAXED(patch->visual_note_pitch, (int)note.pitch*1000);
 
-  if(patch->forward_events)
+  if (RT_do_forward_events(patch))
     RT_PATCH_send_play_note_to_receivers(seqtrack, patch, note, time);
 }
 
@@ -1422,8 +1455,8 @@ static void RT_stop_voice(struct SeqTrack *seqtrack, struct Patch *patch, const 
 
     patch->stopnote(seqtrack, patch, note, time);
   }
-  
-  if(patch->forward_events)
+
+  if (RT_do_forward_events(patch))
     RT_PATCH_send_stop_note_to_receivers(seqtrack, patch, note, time);
 }
 
@@ -1581,7 +1614,7 @@ static void RT_change_voice_velocity(struct SeqTrack *seqtrack, struct Patch *pa
     patch->changevelocity(seqtrack,patch,note,time);
   }
 
-  if(patch->forward_events)
+  if (RT_do_forward_events(patch))
     RT_PATCH_send_change_velocity_to_receivers(seqtrack, patch, note, time);
 }
 
@@ -1675,7 +1708,7 @@ static void RT_change_voice_pitch(struct SeqTrack *seqtrack, struct Patch *patch
   if (Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock))
     patch->changepitch(seqtrack, patch,note,time);
 
-  if(patch->forward_events)
+  if (RT_do_forward_events(patch))
     RT_PATCH_send_change_pitch_to_receivers(seqtrack, patch, note, time);
 }
 
@@ -1756,7 +1789,7 @@ static void RT_change_voice_pan(struct SeqTrack *seqtrack, struct Patch *patch, 
   if (Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock))
     patch->changepan(seqtrack, patch,note,time);
 
-  if(patch->forward_events)
+  if (RT_do_forward_events(patch))
     RT_PATCH_send_change_pan_to_receivers(seqtrack, patch, note, time);
 }
 
@@ -1826,10 +1859,8 @@ void RT_PATCH_send_raw_midi_message_to_receivers(struct SeqTrack *seqtrack, stru
 
   if (patch->instrument==get_audio_instrument())
     RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
-  
-  int i;
 
-  for(i = 0; i<patch->num_event_receivers; i++) {
+  for(int i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];    
     radium::MidiLearn::RT_maybe_use_forall(receiver->id, patch->midi_learn_port_name, msg);
     RT_PATCH_send_raw_midi_message(seqtrack, receiver, msg, time);
@@ -1839,7 +1870,7 @@ void RT_PATCH_send_raw_midi_message_to_receivers(struct SeqTrack *seqtrack, stru
 static void RT_send_raw_midi_message(struct SeqTrack *seqtrack, struct Patch *patch, uint32_t msg, STime time, double block_reltempo){
   patch->sendrawmidimessage(seqtrack,patch,msg,time, block_reltempo);
 
-  if(patch->forward_events)
+  if (RT_do_forward_events(patch))
     RT_PATCH_send_raw_midi_message_to_receivers(seqtrack, patch, msg, time);
 }
 

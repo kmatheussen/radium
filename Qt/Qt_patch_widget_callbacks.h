@@ -715,7 +715,10 @@ public slots:
     
     if(val != _patch->forward_events) {
       ADD_UNDO(PatchName_CurrPos(_patch.data()));
-      _patch->forward_events = val;
+      {
+        radium::PlayerLock lock;
+        _patch->forward_events = val;
+      }
     }
   }
 };

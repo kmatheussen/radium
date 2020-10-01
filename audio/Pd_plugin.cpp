@@ -764,6 +764,8 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
 
   } else if( !strcmp(recv, "radium_send_note_on")) {
     if(argc==6 &&
+       patch!=NULL &&
+       RT_do_send_MIDI_to_receivers(plugin) &&
        (libpd_is_float(argv[0]) || is_bang(argv[0])) &&
        libpd_is_float(argv[1]) &&
        libpd_is_float(argv[2]) &&
@@ -779,18 +781,18 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         int     frames   = libpd_get_float(argv[5]);
         int64_t time     = seconds*sample_rate + frames;
         
-        if (patch!=NULL) {
-          RT_PLAYER_runner_lock();{
-            struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
-            RT_PATCH_send_play_note_to_receivers(seqtrack, patch, create_note_t(NULL, note_id, pitch, velocity, pan, 0, 0, 0), time);
-          }RT_PLAYER_runner_unlock();
-        }
+        RT_PLAYER_runner_lock();{
+          struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+          RT_PATCH_send_play_note_to_receivers(seqtrack, patch, create_note_t(NULL, note_id, pitch, velocity, pan, 0, 0, 0), time);
+        }RT_PLAYER_runner_unlock();
       }
     else
       printf("Wrong args for radium_send_note_on\n");
 
   } else if( !strcmp(recv, "radium_send_note_off")) {
     if(argc==4 &&
+       patch!=NULL &&
+       RT_do_send_MIDI_to_receivers(plugin) &&
        (libpd_is_float(argv[0]) || (is_bang(argv[0]))) &&
        libpd_is_float(argv[1]) &&
        libpd_is_float(argv[2]) &&
@@ -801,18 +803,18 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         float   seconds = libpd_get_float(argv[2]);
         int     frames  = libpd_get_float(argv[3]);
         int64_t time    = seconds*sample_rate + frames;
-        if (patch!=NULL) {
-          RT_PLAYER_runner_lock();{
-            struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
-            RT_PATCH_send_stop_note_to_receivers(seqtrack, patch, create_note_t2(NULL, note_id, pitch), time);
-          }RT_PLAYER_runner_unlock();
-        }
+        RT_PLAYER_runner_lock();{
+          struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+          RT_PATCH_send_stop_note_to_receivers(seqtrack, patch, create_note_t2(NULL, note_id, pitch), time);
+        }RT_PLAYER_runner_unlock();
       }
     else
       printf("Wrong args for radium_send_note_off\n");
 
   } else if( !strcmp(recv, "radium_send_velocity")) {
     if(argc==5 &&
+       patch!=NULL &&
+       RT_do_send_MIDI_to_receivers(plugin) &&
        (libpd_is_float(argv[0]) || (is_bang(argv[0]))) &&
        libpd_is_float(argv[1]) &&
        libpd_is_float(argv[2]) &&
@@ -826,18 +828,18 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         int     frames   = libpd_get_float(argv[4]);
         int64_t time     = seconds*sample_rate + frames;
         //printf("send_velocity. id: %d, argv[0]: %f, notenum: %f, velocity: %f, seconds: %f, frames: %d\n",(int)note_id,libpd_get_float(argv[0]),notenum,velocity,seconds,frames);
-        if (patch!=NULL) {
-          RT_PLAYER_runner_lock();{
-            struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
-            RT_PATCH_send_change_velocity_to_receivers(seqtrack, patch, create_note_t(NULL, note_id, notenum, velocity, 0, 0, 0, 0), time);
-          }RT_PLAYER_runner_unlock();
-        }
+        RT_PLAYER_runner_lock();{
+          struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+          RT_PATCH_send_change_velocity_to_receivers(seqtrack, patch, create_note_t(NULL, note_id, notenum, velocity, 0, 0, 0, 0), time);
+        }RT_PLAYER_runner_unlock();
       }
     else
       printf("Wrong args for radium_send_velocity\n");
 
   } else if( !strcmp(recv, "radium_send_pitch")) {
     if(argc==5 &&
+       patch!=NULL &&
+       RT_do_send_MIDI_to_receivers(plugin) &&
        (libpd_is_float(argv[0]) || (is_bang(argv[0]))) &&
        libpd_is_float(argv[1]) &&
        libpd_is_float(argv[2]) &&
@@ -850,12 +852,10 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
         float   seconds = libpd_get_float(argv[3]);
         int     frames  = libpd_get_float(argv[4]);
         int64_t time    = seconds*sample_rate + frames;
-        if (patch!=NULL) {
-          RT_PLAYER_runner_lock();{
-            struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
-            RT_PATCH_send_change_pitch_to_receivers(seqtrack, patch, create_note_t(NULL, note_id, notenum, 0, pitch, 0, 0, 0), time);
-          }RT_PLAYER_runner_unlock();
-        }
+        RT_PLAYER_runner_lock();{
+          struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+          RT_PATCH_send_change_pitch_to_receivers(seqtrack, patch, create_note_t(NULL, note_id, notenum, 0, pitch, 0, 0, 0), time);
+        }RT_PLAYER_runner_unlock();
       }
     else
       printf("Wrong args for radium_send_pitch\n");
@@ -898,7 +898,10 @@ static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
   
   if(patch==NULL)
     return;
-  
+
+  if (!RT_do_send_MIDI_to_receivers(plugin))
+    return;
+    
   RT_PLAYER_runner_lock();{
     struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
     if(velocity>0)
@@ -906,7 +909,7 @@ static void RT_noteonhook(void *d, int channel, int pitch, int velocity){
     else
       RT_PATCH_send_stop_note_to_receivers(seqtrack, (struct Patch*)patch, create_note_t(NULL, -1, pitch, 0, 0, channel, 0, 0), -1);
   }RT_PLAYER_runner_unlock();
-
+    
   //  printf("Got note on %d %d %d (%p) %f\n",channel,pitch,velocity,d,(float)velocity / 127.0f);
 }
 
@@ -918,6 +921,9 @@ static void RT_polyaftertouchhook(void *d, int channel, int pitch, int velocity)
   if(patch==NULL)
     return;
 
+  if (!RT_do_send_MIDI_to_receivers(plugin))
+    return;
+    
   RT_PLAYER_runner_lock();{
     struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
     RT_PATCH_send_change_velocity_to_receivers(seqtrack, (struct Patch*)patch, create_note_t(NULL, -1, pitch, (float)velocity / 127.0f, 0, channel, 0, 0), -1);
@@ -938,7 +944,7 @@ static void RT_controlchangehook(void *d, int channel, int cc, int value){
 
   if (patch->patchdata==NULL) // Happens when loading song.
     return;
-  
+
   bool is_player_or_runner_thread = THREADING_is_player_or_runner_thread();
   
   if (is_player_or_runner_thread)
@@ -946,15 +952,14 @@ static void RT_controlchangehook(void *d, int channel, int cc, int value){
   else{
     R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
   }
-    
-  {
+
+  if (RT_do_send_MIDI_to_receivers(plugin)){
     struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
     RT_PATCH_send_raw_midi_message_to_receivers(seqtrack, patch, MIDI_msg_pack3(0xb0 | channel, cc, value), -1);
   }
-
+    
   if (is_player_or_runner_thread)
     RT_PLAYER_runner_unlock();
-  
 }
 
 static QTemporaryFile *create_temp_pdfile(){

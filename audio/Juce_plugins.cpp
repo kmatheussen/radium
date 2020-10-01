@@ -1477,52 +1477,56 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   // 2. Send out midi
   if (!data->midi_buffer.isEmpty()){
 
-    struct Patch *patch = plugin->patch;
-
-    juce::MidiBuffer::Iterator iterator(data->midi_buffer);
+    if (RT_do_send_MIDI_to_receivers(plugin)){
     
-    RT_PLAYER_runner_lock();{ // Why do we obtain this lock? event-connected instruments are not running simultaneously...
-      juce::MidiMessage message;
-      int samplePosition;
-
-      while(iterator.getNextEvent(message, samplePosition)){
-
-#ifndef RELEASE
-        if (samplePosition >= num_frames || samplePosition < 0)
-          RT_message("The instrument named \"%s\" of type %s/%s\n"
-                     "returned illegal sample position: %d",
-                     patch==NULL?"<no name>":patch->name,
-                     plugin->type->type_name, plugin->type->name,
-                     samplePosition
-                     );
-#endif
-        // Make sure samplePosition has a legal value
-        if (samplePosition >= num_frames)
-          samplePosition = num_frames-1;
-        if (samplePosition < 0)
-          samplePosition = 0;
-
-        int len = message.getRawDataSize();
+      struct Patch *patch = plugin->patch;
+      
+      juce::MidiBuffer::Iterator iterator(data->midi_buffer);
+      
+      RT_PLAYER_runner_lock();{ // We obtain this lock since RT_PATCH_send_play_note_to_receivers and so forth are not thread safe.
+        juce::MidiMessage message;
+        int samplePosition;
         
+        while(iterator.getNextEvent(message, samplePosition)){
+          
 #ifndef RELEASE
-        R_ASSERT(len > 0);
+          if (samplePosition >= num_frames || samplePosition < 0)
+            RT_message("The instrument named \"%s\" of type %s/%s\n"
+                       "returned illegal sample position: %d",
+                       patch==NULL?"<no name>":patch->name,
+                       plugin->type->type_name, plugin->type->name,
+                       samplePosition
+                       );
 #endif
-        
-        if (len>=1 && len<=3) { // Filter out sysex messages.
-          if (patch != NULL) {
-            struct SeqTrack *seqtrack = RT_get_aux_seqtrack();
-            
-            int64_t delta_time = PLAYER_get_block_delta_time(seqtrack, seqtrack->start_time+samplePosition);
-            
-            int64_t radium_time = seqtrack->start_time + delta_time;
-            
-            RT_MIDI_send_msg_to_patch_receivers2(seqtrack, (struct Patch*)patch, message, radium_time);            
+          // Make sure samplePosition has a legal value
+          if (samplePosition >= num_frames)
+            samplePosition = num_frames-1;
+          if (samplePosition < 0)
+            samplePosition = 0;
+          
+          int len = message.getRawDataSize();
+          
+#ifndef RELEASE
+          R_ASSERT(len > 0);
+#endif
+          
+          if (len>=1 && len<=3) { // Filter out sysex messages.
+            if (patch != NULL) {
+              struct SeqTrack *seqtrack = RT_get_aux_seqtrack();
+              
+              int64_t delta_time = PLAYER_get_block_delta_time(seqtrack, seqtrack->start_time+samplePosition);
+              
+              int64_t radium_time = seqtrack->start_time + delta_time;
+              
+              RT_MIDI_send_msg_to_patch_receivers2(seqtrack, (struct Patch*)patch, message, radium_time);            
+            }
           }
         }
-      }
-
-    }RT_PLAYER_runner_unlock();
-
+        
+      }RT_PLAYER_runner_unlock();
+      
+    }
+    
     data->midi_buffer.clear();
   }
 

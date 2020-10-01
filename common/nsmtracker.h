@@ -3572,6 +3572,9 @@ struct Song{
 
         struct SeqtrackRecordingConfig default_recording_config;
 
+        bool RT_mute_plugin_MIDI_when_muted;
+        bool RT_send_plugin_MIDI_through_when_bypassed;
+  
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.
 };
