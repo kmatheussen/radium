@@ -69,36 +69,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "sequencer_proc.h"
 
 
-namespace radium{
-  
-  class Scoped_Update_RT_GFX_variables{
-    struct SeqTrack *_seqtrack;
-    
-    bool _had_gfx_seqblocks_before;
-    bool _had_gfx_gfx_seqblocks_before;
-
-  public:
-
-    Scoped_Update_RT_GFX_variables(struct SeqTrack *seqtrack)
-      : _seqtrack(seqtrack)
-      , _had_gfx_seqblocks_before(seqtrack->gfx_seqblocks!=NULL && seqtrack->gfx_seqblocks->num_elements > 0)
-      , _had_gfx_gfx_seqblocks_before(seqtrack->gfx_gfx_seqblocks.num_elements > 0)
-    {}
-
-    ~Scoped_Update_RT_GFX_variables(){
-      if (get_seqtracknum(_seqtrack) >= 0){
-        bool has_gfx_seqblocks_now = _seqtrack->gfx_seqblocks!=NULL && _seqtrack->gfx_seqblocks->num_elements > 0;
-        bool has_gfx_gfx_seqblocks_now = _seqtrack->gfx_gfx_seqblocks.num_elements > 0;
-        if ( (has_gfx_seqblocks_now != _had_gfx_seqblocks_before) || (has_gfx_gfx_seqblocks_now != _had_gfx_gfx_seqblocks_before) ){
-          radium::PlayerLock lock;
-          _seqtrack->RT_has_gfx_seqblocks = has_gfx_seqblocks_now;
-          _seqtrack->RT_has_gfx_gfx_seqblocks = has_gfx_gfx_seqblocks_now;
-        }
-      }
-    }
-  };
-}
-
 
 static int seqblocks_comp(const void *a, const void *b){
   const struct SeqBlock *s1 = (const struct SeqBlock *)a;

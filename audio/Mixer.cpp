@@ -496,14 +496,14 @@ void PLAYER_unlock(void){
 }
 
 void RT_PLAYER_runner_lock(void){
-  R_ASSERT_NON_RELEASE(THREADING_is_player_or_runner_thread());
+  R_ASSERT_NON_RELEASE(THREADING_is_player_or_runner_thread() || g_current_thread_has_player_lock);
   
   LOCK_LOCK(player_runner_lock);
   g_current_thread_has_player_runner_lock = true;
 }
 
 void RT_PLAYER_runner_unlock(void){
-  R_ASSERT_NON_RELEASE(THREADING_is_player_or_runner_thread());
+  R_ASSERT_NON_RELEASE(THREADING_is_player_or_runner_thread() || g_current_thread_has_player_lock);
   
   g_current_thread_has_player_runner_lock = false;
   LOCK_UNLOCK(player_runner_lock);

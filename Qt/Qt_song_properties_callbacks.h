@@ -75,6 +75,9 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     mixer_comments_visible->setChecked(mixerStripCommentsVisible());
     two_channels_in_main_pipe->setChecked(song->num_channels_in_main_pipe==2);
     include_pan_and_dry_in_wet->setChecked(includePanAndDryInWetSignal());
+
+    mute_plugin_MIDI->setChecked(song->RT_mute_plugin_MIDI_when_muted);
+    send_plugin_MIDI_through->setChecked(song->RT_send_plugin_MIDI_through_when_bypassed);
     
     embed_samples->setChecked(g_curr_song_contains_embedded_samples);
   }
@@ -204,7 +207,21 @@ public slots:
   void on_buttonBox_clicked(QAbstractButton * button){
     this->hide();
   }
-
+  
+  void on_mute_plugin_MIDI_toggled(bool val){
+    if (_initing==true)
+      return;
+    
+    root->song->RT_mute_plugin_MIDI_when_muted = val;
+  }
+  
+  void on_send_plugin_MIDI_through_toggled(bool val){
+    if (_initing==true)
+      return;
+    
+    root->song->RT_send_plugin_MIDI_through_when_bypassed = val;
+  }
+  
   void on_embed_samples_toggled(bool val){
     g_curr_song_contains_embedded_samples = val;
   }

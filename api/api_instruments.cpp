@@ -1507,7 +1507,7 @@ static bool get_instrument_bypass(instrument_t instrument_id, bool from_storage)
   }
 
   if (!from_storage)
-    return PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_PLUGIN) < 0.5;
+    return is_bypassed(plugin);
   else
     return PLUGIN_get_effect_value(plugin, plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF, VALUE_FROM_STORAGE) < 0.5;
 }

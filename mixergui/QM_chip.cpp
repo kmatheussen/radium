@@ -2572,7 +2572,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
           for(int i=0;i<patches->num_elements;i++){
             struct Patch *thispatch = (struct Patch*)patches->elements[i];
             SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
-            if (thispatch != patch && plugin!=NULL && !ATOMIC_GET(plugin->effects_are_on)) {
+            if (thispatch != patch && plugin!=NULL && is_bypassed(plugin)) {
               int num_effects = plugin->type->num_effects;
               ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_EFFECTS_ONOFF, AE_NO_FLAGS));
               PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);

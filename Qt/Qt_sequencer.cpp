@@ -5746,10 +5746,12 @@ void SEQUENCER_update(uint32_t what){
     });
 
   if (THREADING_is_main_thread()==false || g_sequencer_widget==NULL || PLAYER_current_thread_has_lock() || g_qt_is_painting || g_is_loading){
-    if (!g_is_loading){
+#if !defined(RELEASE)
+    if (!g_is_loading){ // Non-important tsan hit here
       R_ASSERT_NON_RELEASE( (what & SEQUPDATE_HEADERS)==false);
       R_ASSERT_NON_RELEASE( (what & SEQUPDATE_TRACKORDER)==false);
     }
+#endif
     ATOMIC_OR_RETURN_OLD_RELAXED(g_needs_update, what);
     return;
   }
