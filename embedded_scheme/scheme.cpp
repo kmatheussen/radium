@@ -1863,6 +1863,23 @@ int64_t s7extra_callFunc2_int_instrument(const char *funcname, instrument_t arg1
   return s7extra_callFunc_int_instrument((const func_t*)find_scheme_value(s7, funcname), arg1);
 }
 
+void s7extra_callFunc_void_instrument(const func_t *func, instrument_t arg1){
+  ScopedEvalTracker eval_tracker;
+  
+  catch_call(s7,
+             s7_list_nl(s7,
+                        2,
+                        (s7_pointer)func,
+                        Protect(s7extra_make_instrument(s7, arg1)).v,
+                        NULL
+                        )
+             );
+}
+
+void s7extra_callFunc2_void_instrument(const char *funcname, instrument_t arg1){
+  s7extra_callFunc_void_instrument((const func_t*)find_scheme_value(s7, funcname), arg1);
+}
+
 int64_t s7extra_callFunc_int_int_int_int(const func_t *func, int64_t arg1, int64_t arg2, int64_t arg3){
   ScopedEvalTracker eval_tracker;
   

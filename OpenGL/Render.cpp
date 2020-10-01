@@ -3007,7 +3007,7 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
   
   //static int n=0; printf("GL_create called %d\n",n++);
 
-  bool block_is_visible = wblock != NULL;
+  const bool block_is_visible = wblock != NULL;
   
   int y2 = wblock==NULL ? -1 : get_realline_y2(window, wblock->num_reallines-1);
 

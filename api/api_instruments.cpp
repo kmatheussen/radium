@@ -1823,6 +1823,100 @@ const_char* getInstrumentPluginName(instrument_t instrument_id){
   return plugin->type->name;
 }
 
+
+// programs
+int getNumInstrumentPrograms(instrument_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  if (plugin->type->get_num_programs==NULL)
+    return 0;
+
+  return plugin->type->get_num_programs(plugin);
+}
+
+int getCurrInstrumentProgram(instrument_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return -1;
+
+  struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  if (plugin->type->get_current_program==NULL)
+    return -1;
+  
+  return plugin->type->get_current_program(plugin);
+}
+
+void setCurrInstrumentProgram(instrument_t instrument_id, int program){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  if (plugin->type->set_current_program==NULL)
+    return;
+
+  if (program < 0){
+    handleError("setCurrInstrumentProgram: Illegal program #%d", program);
+    return;
+  }
+
+  if (program >= getNumInstrumentPrograms(instrument_id)){
+    handleError("setCurrInstrumentProgram: Illegal program #%d", program);
+    return;
+  }
+    
+  plugin->type->set_current_program(plugin, program);
+}
+
+void setInstrumentProgramName(instrument_t instrument_id, int program, const_char* new_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  if (plugin->type->set_current_program==NULL)
+    return;
+
+  if (program < 0){
+    handleError("setCurrInstrumentProgram: Illegal program #%d", program);
+    return;
+  }
+
+  if (program >= getNumInstrumentPrograms(instrument_id)){
+    handleError("setCurrInstrumentProgram: Illegal program #%d", program);
+    return;
+  }
+    
+  plugin->type->set_current_program(plugin, program);
+}
+
+const_char* getInstrumentProgramName(instrument_t instrument_id, int program){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return "";
+
+  struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  if (plugin->type->set_current_program==NULL)
+    return "";
+
+  if (program < 0){
+    handleError("setCurrInstrumentProgram: Illegal program #%d", program);
+    return "";
+  }
+
+  if (program >= getNumInstrumentPrograms(instrument_id)){
+    handleError("setCurrInstrumentProgram: Illegal program #%d", program);
+    return "";
+  }
+
+  return talloc_strdup(plugin->type->get_program_name(plugin, program));
+}
+
+
+
 const_char* getInstrumentInfo(instrument_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)

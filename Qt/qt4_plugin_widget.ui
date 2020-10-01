@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1807</width>
+    <width>1848</width>
     <height>42</height>
    </rect>
   </property>
@@ -1497,43 +1497,41 @@ Example:
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="preset_selector">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+       <widget class="QToolButton" name="prev_program_button">
+        <property name="toolTip">
+         <string>Previous program</string>
         </property>
-        <property name="minimumSize">
-         <size>
-          <width>40</width>
-          <height>0</height>
-         </size>
+        <property name="text">
+         <string>&lt;</string>
         </property>
-        <property name="maximumSize">
-         <size>
-          <width>40</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-        <property name="buttonSymbols">
-         <enum>QAbstractSpinBox::NoButtons</enum>
-        </property>
-        <property name="specialValueText">
-         <string/>
+        <property name="arrowType">
+         <enum>Qt::LeftArrow</enum>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QToolButton" name="preset_button">
+       <widget class="QToolButton" name="next_program_button">
+        <property name="toolTip">
+         <string>Next program</string>
+        </property>
+        <property name="text">
+         <string>&gt;</string>
+        </property>
+        <property name="arrowType">
+         <enum>Qt::RightArrow</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="program_button">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Set instrument program</string>
         </property>
         <property name="text">
          <string>Trumpet</string>

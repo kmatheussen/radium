@@ -261,17 +261,29 @@ public:
     if(plugin->type->show_gui!=NULL && plugin->type->hide_gui!=NULL)
       show_gui_button->hide();
 
-    if (type->get_num_presets==NULL || type->get_num_presets(plugin)==0){
-      preset_selector->hide();
-      preset_button->hide();
+    if (type->get_num_programs==NULL || type->get_num_programs(plugin)==0){
+      program_button->hide();
+      prev_program_button->hide();
+      next_program_button->hide();
     } else {
-      preset_selector->setMinimum(1);
-      preset_selector->setMaximum(type->get_num_presets(plugin));
+      int num_programs = type->get_num_programs(plugin);
+      if (num_programs == 1){
+        prev_program_button->hide();
+        next_program_button->hide();
+      }
     }
 
     //_plugin_widget->set_automation_value_pointers(plugin);
 
     update_widget();
+
+    prev_program_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-select-prev-instrument-popup-menu");
+    };
+
+    next_program_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-select-next-instrument-popup-menu");
+    };
 
     _is_initing = false;
   }
@@ -374,7 +386,7 @@ public:
         }_ignore_checkbox_stateChanged=false;
       }
       
-      update_preset_widgets();
+      update_program_widgets();
 
       callSliderpainterUpdateCallbacks();
 
@@ -463,7 +475,7 @@ public:
     header->setMinimumHeight(header_height);
     header->setMaximumHeight(header_height);
     
-    update_preset_widgets();
+    update_program_widgets();
 
     {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -508,21 +520,20 @@ public:
     
   }
 
-  void update_preset_widgets(){
+  void update_program_widgets(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin==NULL) return;
     
     const SoundPluginType *type = plugin->type;
 
-    if (type->get_num_presets != NULL && preset_selector->isVisible()){
+    if (type->get_num_programs != NULL && program_button->isVisible()){
 
-      int preset_num = type->get_current_preset(plugin);
-      if (preset_num != preset_selector->value())
-        preset_selector->setValue(preset_num+1);
+      int program_num = type->get_current_program(plugin);
 
-      const char *preset_name = type->get_preset_name(plugin, preset_num);
-      if (strcmp(preset_name, preset_button->text().toUtf8().constData()))
-        preset_button->setText(preset_name);
+      QString text = QString::number(program_num) + ": " + type->get_program_name(plugin, program_num);
+      
+      if (text != program_button->text())
+        program_button->setText(text);
     }
   }
   
@@ -1153,7 +1164,7 @@ public slots:
       PLUGIN_show_info_window(plugin->type, plugin, API_get_gui_from_existing_widget(this->window()));
   }
 
-  void on_preset_button_clicked(){
+  void on_program_button_clicked(){
     if (_is_initing)
       return;
     
@@ -1161,12 +1172,12 @@ public slots:
     if (plugin==NULL) return;
     
     const SoundPluginType *type = plugin->type;
-    int num_presets = type->get_num_presets(plugin);
+    int num_programs = type->get_num_programs(plugin);
       
     vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
-    for(int i=0;i<num_presets;i++){
-      VECTOR_push_back(&v, talloc_format("%d: %s", i+1, type->get_preset_name(plugin, i)));
+    for(int i=0;i<num_programs;i++){
+      VECTOR_push_back(&v, talloc_format("%d: %s", i+1, type->get_program_name(plugin, i)));
     }
 
     VECTOR_push_back(&v, "--------------");
@@ -1176,7 +1187,7 @@ public slots:
 
     GFX_Menu3(v,
 
-              [is_alive,num_presets,type,plugin,this](int num, bool onoff){
+              [is_alive,num_programs,type,plugin,this](int num, bool onoff){
                 
                 if (!is_alive || _patch->patchdata==NULL)
                   return;
@@ -1185,37 +1196,29 @@ public slots:
 
                 printf("I'm here, actually\n");
                 
-                if (num == num_presets+1) {
+                if (num == num_programs+1) {
                   const char *new_name = GFX_GetString(NULL, NULL, "new name: ", true);
                   if (new_name != NULL){
-                    type->set_preset_name(plugin, type->get_current_preset(plugin), new_name);
+                    type->set_program_name(plugin, type->get_current_program(plugin), new_name);
                     update_widget();
                   }
-                } else if (num >= 0 && num<num_presets) {
-                  type->set_current_preset(plugin, num);
+                } else if (num >= 0 && num<num_programs) {
+                  type->set_current_program(plugin, num);
                   update_widget();
                 }
               });
   }
-    
-  void on_preset_selector_editingFinished(){
-    if (_is_initing)
-      return;
-    
-    int num = preset_selector->value() - 1;
-    printf("num: %d\n",num);
-      
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    if (plugin==NULL) return;
-    
-    const SoundPluginType *type = plugin->type;
 
-    type->set_current_preset(plugin, num);
-    update_widget();
-      
-    set_editor_focus();
+  void on_prev_program_button_clicked(void){
+    printf("PREV\n");
+    S7CALL2(void_instrument,"FROM_C-select-prev-instrument", _patch->id);
   }
-
+  
+  void on_next_program_button_clicked(void){
+    printf("NEXT\n");
+    S7CALL2(void_instrument,"FROM_C-select-next-instrument", _patch->id);
+  }
+  
 #if SHOW_SOLO_BUTTON
   void on_solo_checkbox_toggled(bool val){
     if (_is_initing)
