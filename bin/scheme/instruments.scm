@@ -2397,4 +2397,36 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                            :text-x1 text-x1
                            :border-color (get-instrument-border-color instrument-id)
                            ))
+
+(define (FROM_C-select-prev-instrument-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "FROM_C-select-prev-instrument"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-select-next-instrument-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "FROM_C-select-next-instrument"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+
+(delafina (FROM_C-select-prev-instrument :instrument-id (<ra> :get-current-instrument-under-mouse))
+  (define num-programs (<ra> :get-num-instrument-programs instrument-id))
+  (define curr-program (<ra> :get-curr-instrument-program instrument-id))
+  (if (> curr-program 0)
+      (<ra> :set-curr-instrument-program instrument-id (- curr-program 1))))
+
+(delafina (FROM_C-select-next-instrument :instrument-id (<ra> :get-current-instrument-under-mouse))
+  (define num-programs (<ra> :get-num-instrument-programs instrument-id))
+  (define curr-program (<ra> :get-curr-instrument-program instrument-id))
+  (if (< curr-program (- num-programs 1))
+      (<ra> :set-curr-instrument-program instrument-id (+ 1 curr-program))))
+
   

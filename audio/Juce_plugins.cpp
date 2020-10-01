@@ -1438,7 +1438,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   // Add events to the midi buffer created by the virtual keyboard.
   data->keyboardState.processNextMidiBuffer(data->midi_buffer, 0, num_frames, true);
- 
 
   // 1. Process audio
 
@@ -2203,7 +2202,7 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
 }
 */
 
-static int get_num_presets(struct SoundPlugin *plugin){
+static int get_num_programs(struct SoundPlugin *plugin){
   //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
@@ -2224,7 +2223,7 @@ static int get_num_presets(struct SoundPlugin *plugin){
   return ret;
 }
 
-static int get_current_preset(struct SoundPlugin *plugin){
+static int get_current_program(struct SoundPlugin *plugin){
   //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
@@ -2237,7 +2236,7 @@ static int get_current_preset(struct SoundPlugin *plugin){
   return ret;
 }
 
-static void set_current_preset(struct SoundPlugin *plugin, int num){
+static void set_current_program(struct SoundPlugin *plugin, int num){
   //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
@@ -2248,7 +2247,7 @@ static void set_current_preset(struct SoundPlugin *plugin, int num){
     });
 }
 
-static const char *get_preset_name(struct SoundPlugin *plugin, int num){
+static const char *get_program_name(struct SoundPlugin *plugin, int num){
   //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
@@ -2263,7 +2262,7 @@ static const char *get_preset_name(struct SoundPlugin *plugin, int num){
   return ret2;
 }
 
-static void set_preset_name(struct SoundPlugin *plugin, int num, const char* new_name){
+static void set_program_name(struct SoundPlugin *plugin, int num, const char* new_name){
   //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
@@ -2369,11 +2368,11 @@ static SoundPluginType *create_plugin_type(const juce::PluginDescription &descri
   plugin_type->create_state = create_state;
   plugin_type->recreate_from_state = recreate_from_state;
 
-  plugin_type->get_num_presets = get_num_presets;
-  plugin_type->get_current_preset = get_current_preset;
-  plugin_type->set_current_preset = set_current_preset;
-  plugin_type->get_preset_name = get_preset_name;
-  plugin_type->set_preset_name = set_preset_name;
+  plugin_type->get_num_programs = get_num_programs;
+  plugin_type->get_current_program = get_current_program;
+  plugin_type->set_current_program = set_current_program;
+  plugin_type->get_program_name = get_program_name;
+  plugin_type->set_program_name = set_program_name;
 
   plugin_type->set_non_realtime = set_non_realtime;
   

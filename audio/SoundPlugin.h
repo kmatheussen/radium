@@ -384,11 +384,11 @@ typedef struct SoundPluginType{
   void (*create_state)(struct SoundPlugin *plugin, hash_t *state);
 
   // Presets (optional)
-  int (*get_num_presets)(struct SoundPlugin *plugin);
-  int (*get_current_preset)(struct SoundPlugin *plugin);
-  void (*set_current_preset)(struct SoundPlugin *plugin, int num);
-  const char *(*get_preset_name)(struct SoundPlugin *plugin, int num);
-  void (*set_preset_name)(struct SoundPlugin *plugin, int num, const char* new_name);
+  int (*get_num_programs)(struct SoundPlugin *plugin);
+  int (*get_current_program)(struct SoundPlugin *plugin);
+  void (*set_current_program)(struct SoundPlugin *plugin, int num);
+  const char *(*get_program_name)(struct SoundPlugin *plugin, int num);
+  void (*set_program_name)(struct SoundPlugin *plugin, int num, const char* new_name);
 
   void (*set_non_realtime)(struct SoundPlugin *plugin, bool is_non_realtime);
 
