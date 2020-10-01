@@ -84,6 +84,8 @@ extern volatile float g_scroll_pos;
 
 void ensureCleanStateOutsideMouseCycle(void){
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    radium::Scoped_Update_RT_GFX_variables scoped_gfx_variables(seqtrack);
+    
     if(seqtrack->gfx_seqblocks != NULL){
       printf("\n\n\n  seqtrack->gfx_seqblocks != NULL. seqtracknum: %d\n\n\n", iterator666);
 #if 0 //!defined(RELEASE)
