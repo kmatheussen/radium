@@ -36,20 +36,21 @@ IF YOU GOT THE SOURCE FROM GIT
 
 
 IF YOU ARE DEVELOPING RADIUM
-     Run these lines:
-     
-        # Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.
-        export RADIUM_QT_VERSION=5
-        export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
-        ./make_and_run_linux.sh
-
-     If you want to use clang instead of gcc, first run this line before running "make packages" and ./make_and_run_linux.sh:
+     If you want to use clang instead of gcc, first run this line before running "make packages" and "build_linux.sh":
      
         export RADIUM_USE_CLANG=1
 
      If you don't want to include the llvm backend for the faustdev instrument (for instance if you don't have llvm), run this line first:
      
         export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
+        
+     Then run these lines:
+     
+        # Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.
+        export RADIUM_QT_VERSION=5
+        export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
+        BUILD_TYPE=DEBUG_FAST ./build_linux.sh -j`nproc` && ./run_gdb
+
 
 
 
@@ -173,24 +174,6 @@ BUILD DEPENDENCIES, ubuntu/debian/etc.:
       * On debian stable, it has been reported that you also need libfftw3-dev.
 
       * Ubuntu 14: Replace glib-2.0-dev with libglib2.0-dev. Add libiberty-dev
-
-
-
-TO ENABLE ALL KEYBOARD SHORTCUTS ON MAC OS X
-
-      Then go to
-
-          System Preferences -> Accessibility
-
-     or
-
-          System Preferences -> Universal Access
-
-      ... and make sure the button "Enable access for assistive devices" is ON.    
-      This button is placed at the bottom of the Accessibility page.
-      (I don't know where the button is placed in the "Universal Access" page)
-
-      This is necessary for Radium to be allowed to (temporarily) turn off OSX system shortcuts.
 
 
 
