@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1848</width>
+    <width>1858</width>
     <height>42</height>
    </rect>
   </property>
@@ -1435,6 +1435,32 @@ Example:
         </property>
         <property name="text">
          <string>Load</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="prev_preset_button">
+        <property name="toolTip">
+         <string>Load previous preset in directory</string>
+        </property>
+        <property name="text">
+         <string>&lt;</string>
+        </property>
+        <property name="arrowType">
+         <enum>Qt::LeftArrow</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="next_preset_button">
+        <property name="toolTip">
+         <string>Load next preset in directory</string>
+        </property>
+        <property name="text">
+         <string>&gt;</string>
+        </property>
+        <property name="arrowType">
+         <enum>Qt::RightArrow</enum>
         </property>
        </widget>
       </item>

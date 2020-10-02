@@ -1129,7 +1129,13 @@ static QMenu *create_qmenu(
       for(int i = 3 ; i < text.size() ; i++)
         if (text[i] != '-'){
           QString text2 = text.mid(i);
-          separator->setText(text.mid(i));
+
+          if (text2.startsWith("BASE64:")){
+            text2 = text2.mid(7);
+            text2 = QByteArray::fromBase64(text2.toUtf8());
+          }
+                
+          separator->setText(text2);
           int minwidth = 1.6 * GFX_get_text_width(root->song->tracker_windows, text2.toUtf8().constData());
           if (menu->minimumWidth() < minwidth)
             menu->setMinimumWidth(minwidth); // qt doesn't do this by itself.

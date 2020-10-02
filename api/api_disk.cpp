@@ -107,6 +107,24 @@ filepath_t getParentPath(filepath_t path){
   return make_filepath(dir.absolutePath());
 }
 
+filepath_t getDirPath(filepath_t path){
+  if (isIllegalFilepath(path)){
+    handleError("Illegal filepath argument 1");
+    return path;
+  }
+
+  return DISK_get_absolute_dir_path(path);
+}
+
+filepath_t getPathWithoutDir(filepath_t path){
+  if (isIllegalFilepath(path)){
+    handleError("Illegal filepath argument 1");
+    return path;
+  }
+
+  return DISK_get_pathless_file_path(path);
+}
+
 bool fileExists(filepath_t path){
   if (isIllegalFilepath(path)){
     handleError("Illegal filepath argument 1");

@@ -661,7 +661,6 @@
 ;; Called from the outside. 'instrument-description' can be false or empty string.
 ;; Async. Returns immediately.
 (define (async-replace-instrument id-old-instrument description instrconf)
-
   (assert (instrument? id-old-instrument))
   
   (define (replace description)
@@ -715,21 +714,25 @@
 (define (create-load-instrument-preset-description filename)
   (<-> "2" (<ra> :get-base64-from-filepath filename)))
 
-(define (request-select-instrument-preset parentgui callback)
+(define (request-select-instrument-preset parentgui instrument-id callback)
+  ;;(c-display "           \n\n\n         INSTRUMENT:" (<ra> :get-instrument-name instrument-id) "---------------------------")
   (define (use-file-requester)
     (<ra> :request-load-preset-instrument-description parentgui callback))
-  (define single-presets (to-list (<ra> :get-all-single-presets-in-path)))
-  (define multi-presets (to-list (<ra> :get-all-multi-presets-in-path)))
-  ;;(c-display "all-presets" all-presets)
+  (define path (<ra> :get-instrument-preset-path instrument-id))
+  ;;(c-display "            PATH:" (<ra> :get-path-string path))
+  (define single-presets (to-list (<ra> :get-all-single-presets-in-path path)))
+  (define multi-presets (to-list (<ra> :get-all-multi-presets-in-path path)))
+  ;;(c-display "num-presets:" (length single-presets) (length multi-presets))
   (if (and (null? single-presets)
            (null? multi-presets))
       (use-file-requester)
       (popup-menu (list "Select preset from a different directory"
                         use-file-requester)
-                  "------------"
+                  (<-> "------------BASE64:" (<ra> :get-base64-from-filepath path))
                   (let* ((create-entries (lambda (presets)
                                            (map (lambda (filename)
-                                                  (list (<ra> :get-path-string filename)
+                                                  (list (<ra> :get-base64-from-filepath (<ra> :get-path-without-dir filename))
+                                                        :base64 #t
                                                         (lambda ()
                                                           (callback (create-load-instrument-preset-description filename)))))
                                                 presets)))
@@ -747,6 +750,7 @@
                                       :y (<ra> :get-curr-mixer-slot-y))
   (request-select-instrument-preset
    parentgui
+   (<ra> :create-illegal-instrument)
    (lambda (descr)
      (<ra> :create-audio-instrument-from-description descr "" x y))))
 
@@ -762,46 +766,64 @@
                          (async-replace-instrument id-instrument instrument-description (make-instrument-conf :must-have-inputs #f :must-have-outputs #f :parentgui parentgui))))))
         (if (or (not instrument-description)
                 (string=? instrument-description ""))
-            (request-select-instrument-preset parentgui gotit)
+            (request-select-instrument-preset parentgui id-instrument gotit)
             (gotit instrument-description)))))
 
 
+(define (load-prev/next-instrument-preset is-prev instrument-id parentgui)
 
+  (define (use-file-requester)
+    (<ra> :request-load-preset-instrument-description parentgui callback))
+  
+  (define instrument-preset (<ra> :get-instrument-preset instrument-id))
+  (define path (<ra> :get-instrument-preset-path instrument-id))
+  (define single-presets (to-list (<ra> :get-all-single-presets-in-path path)))
+  (define multi-presets (to-list (<ra> :get-all-multi-presets-in-path path)))
+  (define org-presets (append single-presets multi-presets))
+
+  (if is-prev
+      (set! org-presets (reverse! org-presets)))
+  
+  (define (loadit preset)
+    (define descr (create-load-instrument-preset-description preset))
+    (define conf (make-instrument-conf :must-have-inputs #f :must-have-outputs #f :parentgui parentgui))
+    (async-replace-instrument instrument-id descr conf))
+
+  ;;(c-display "org-presets:" org-presets)
+  ;;(c-display "instrument-preset:" instrument-preset)
+  
+  (cond ((null? org-presets)
+         (use-file-requester))
+        ((<ra> :is-illegal-filepath instrument-preset)
+         (c-display "ILLEGAL FILEPATH for " (<ra> :get-instrument-name instrument-id))
+         (loadit (car org-presets)))
+        (else
+         (let loop ((presets org-presets))
+           (if (null? presets)
+               (loadit (car org-presets))
+               (let ((preset (car presets)))
+                 ;;(c-display "PRESET:" (<ra> :get-path-string preset))
+                 ;;(c-display ". instrument-preset1:" instrument-preset)
+                 ;;(c-display ". instrument-preset2:" (<ra> :get-path-string instrument-preset))
+                 ;;(c-display ". Equal:" (equal? preset instrument-preset))
+                 (if (equal? preset instrument-preset)
+                     (let ((next (cdr presets)))
+                       (if (null? next)
+                           (loadit (car org-prests))
+                           (loadit (car next))))
+                     (loop (cdr presets)))))))))
+
+(delafina (FROM_C-load-prev-instrument-preset :instrument-id (<ra> :get-current-instrument-under-mouse)
+                                              :parentgui -2)
+  (load-prev/next-instrument-preset #t instrument-id parentgui))
+  
+(delafina (FROM_C-load-next-instrument-preset :instrument-id (<ra> :get-current-instrument-under-mouse)
+                                              :parentgui -2)
+  (load-prev/next-instrument-preset #f instrument-id parentgui))
+
+  
 #!!
-(define id (<ra> :get-audio-instrument-id 7))
-(<ra> :get-instrument-x 17)
-(<ra> :get-instrument-y 17)
- 
-(<ra> :set-instrument-position -80 106 17)
-(<ra> :connect-audio-instrument-to-main-pipe 17)
-(<ra> :delete-instrument 22)
-
-(let ((descr (<ra> :instrument-description-popup-menu)))
-  (define id (<ra> :create-audio-instrument-from-description descr))
-  ;;(<ra> :delete-instrument id)
-  id
-  )
-
-(<ra> :delete-instrument 27)
-
-(<ra> :get-instrument-for-track)
-
-;; delete instrument in track 0:
-(begin
-  (<ra> :delete-instrument (<ra> :get-instrument-for-track)))
-
-(<ra> :set-instrument-name "heprqereqp3" 25)
-
-(let ((id-old-instrument (<ra> :get-instrument-for-track))
-      (descr (<ra> :instrument-description-popup-menu)))
-  (async-replace-instrument id-old-instrument descr)
-  ;;(define id-new-instrument (<ra> :create-audio-instrument-from-description descr))
-  ;;(<ra> :set-instrument-for-track id-new-instrument)
-  id-old-instrument)
-
-(<ra> :get-undo-history)
-
-
+(<ra> :get-path-string (<ra> :create-illegal-filepath))
 !!#
 
 ;; instrument-id2 can also be list of instrument-ids.
@@ -1134,7 +1156,7 @@
         ((string=? type "LOAD_PRESET")
          (let ((filename (entry :preset-filename)))
            (if (<ra> :is-illegal-filepath filename)
-               (request-select-instrument-preset (instrconf :parentgui) callback)
+               (request-select-instrument-preset (instrconf :parentgui) (<ra> :create-illegal-instrument) callback)
                (callback (create-load-instrument-preset-description filename)))))
         ((string=? type "PASTE_PRESET")
          (callback "3"))
@@ -2221,7 +2243,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                              (LOAD (<ra> :create-midi-instrument "Unnamed")))
    "----------------"
    "Load Preset" (lambda ()
-                   (request-select-instrument-preset -1 callback))
+                   (request-select-instrument-preset -1 (<ra> :create-illegal-instrument) callback))
    "----------------"
    "Show plugin manager" (lambda ()
                            (pmg-start instr-conf callback))

@@ -49,6 +49,12 @@ void PRESET_set_last_used_filename(filepath_t wfilename){
   PRESET_set_last_used_filename(filename);
 }
 
+filepath_t PRESET_get_current_preset_dir(void){
+  if (g_last_preset_path=="")
+    return make_filepath(QCoreApplication::applicationDirPath());
+  else
+    return make_filepath(g_last_preset_path);  
+}
 
 
 /****************************************/
@@ -66,9 +72,11 @@ static dynvec_t get_all_files_in_path(filepath_t wpath, QString ends_with){
   QDir dir(path);
   dir.setSorting(QDir::Name);
   QFileInfoList list = dir.entryInfoList();
+  //printf("         LIST size: %d. Path: \"%s\"\n", list.size(), path.toUtf8().constData());
   for (int i = 0; i < list.size(); ++i) {
     QFileInfo file_info = list.at(i);
-    QString filename = file_info.fileName();
+    QString filename = file_info.absoluteFilePath();
+    //printf("              filename: -%s-\n", filename.toUtf8().constData());
     if (filename.endsWith(ends_with))
       DYNVEC_push_back(&ret, DYN_create_filepath(make_filepath(filename)));
   }
@@ -200,7 +208,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
   return state;
 }
 
-static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, bool inc_usage_number, bool set_as_current, float x, float y){
+static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, filepath_t filename, bool inc_usage_number, bool set_as_current, float x, float y){
 
   struct Patch *first_patch = NULL;
   vector_t patches = {};
@@ -219,11 +227,19 @@ static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, boo
 
       if (first_patch == NULL)
         first_patch = patch;
+
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      if(plugin != NULL) {
+
+          plugin->preset_filename = filename;
       
-      if (inc_usage_number){
-        SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-        if(plugin != NULL)
-          PR_inc_plugin_usage_number(plugin->type);
+          if (inc_usage_number)
+            PR_inc_plugin_usage_number(plugin->type);
+          
+      } else {
+        
+        R_ASSERT_NON_RELEASE(false);
+        
       }
     }
   }
@@ -240,27 +256,36 @@ static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, boo
     return first_patch->id;
 }
 
-static instrument_t PRESET_load_singlepreset(hash_t *state, const_char *name, bool inc_usage_number, bool set_as_current, float x, float y){
+static instrument_t PRESET_load_singlepreset(hash_t *state, const_char *name, filepath_t filename, bool inc_usage_number, bool set_as_current, float x, float y){
   struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state, set_as_current, x, y);
   if (patch==NULL)
     return createIllegalInstrument();
 
-  if (inc_usage_number){
-    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-    if (plugin != NULL)
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  
+  if (plugin != NULL){
+
+    plugin->preset_filename = filename;
+    
+    if (inc_usage_number)
       PR_inc_plugin_usage_number(plugin->type);
+    
+  } else {
+    
+    R_ASSERT_NON_RELEASE(false);
+    
   }
 
   return patch->id;
 }
 
-static instrument_t insert_preset_into_program(hash_t *state, const_char *name, bool inc_usage_number, bool set_as_current, float x, float y){
+static instrument_t insert_preset_into_program(hash_t *state, const_char *name, filepath_t filename, bool inc_usage_number, bool set_as_current, float x, float y){
   bool is_multipreset = HASH_has_key(state, "multipreset_presets") && HASH_get_bool(state, "multipreset_presets");
   
   if (is_multipreset)
-    return PRESET_load_multipreset(state, name, inc_usage_number, set_as_current, x, y);
+    return PRESET_load_multipreset(state, name, filename, inc_usage_number, set_as_current, x, y);
   else
-    return PRESET_load_singlepreset(state, name, inc_usage_number, set_as_current, x, y);
+    return PRESET_load_singlepreset(state, name, filename, inc_usage_number, set_as_current, x, y);
 }
 
 // Note that this is the general preset loading function, and not the one that is directly called when pressing the "Load" button. (there we also have to delete the old instrument and reconnect connections)
@@ -283,12 +308,12 @@ instrument_t PRESET_load(filepath_t wfilename, const_char *patchname, bool inc_u
   
   PRESET_set_last_used_filename(filename);
 
-  return insert_preset_into_program(state, patchname, inc_usage_number, set_as_current, x, y);
+  return insert_preset_into_program(state, patchname, make_filepath(filename), inc_usage_number, set_as_current, x, y);
 }
 
 instrument_t PRESET_paste(float x, float y){
   if (g_preset_clipboard != NULL)
-    return insert_preset_into_program(g_preset_clipboard, NULL, true, true, x, y);
+    return insert_preset_into_program(g_preset_clipboard, NULL, HASH_get_filepath(g_preset_clipboard, "filename"), true, true, x, y);
   else
     return make_instrument(-1);
 }
@@ -363,7 +388,22 @@ bool PRESET_copy(const vector_t *patches){
   if (!valid_patches(patches))
     return false;
 
+  filepath_t filepath = createIllegalFilepath();
+
+  VECTOR_FOR_EACH(const struct Patch *, patch, patches){
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    if (plugin!=NULL){
+      if (isLegalFilepath(plugin->preset_filename)){
+        filepath = plugin->preset_filename;
+        break;
+      }
+    }
+  }END_VECTOR_FOR_EACH;
+  
   g_preset_clipboard = get_preset_state(patches);
+  
+  HASH_put_filepath(g_preset_clipboard, "filename", filepath);
+  
   return true;
 }
   

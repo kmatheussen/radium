@@ -277,6 +277,13 @@ public:
 
     update_widget();
 
+    prev_program_button->setText("Triangle-left-01.svg");
+    next_program_button->setText("Triangle-right-01.svg");
+
+    prev_preset_button->setText("Triangle-left-01.svg");
+    next_preset_button->setText("Triangle-right-01.svg");
+    //next_program_button->setArrowType(Qt::RightArrow);
+                 
     prev_program_button->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-select-prev-instrument-popup-menu");
     };
@@ -1118,20 +1125,30 @@ public slots:
     
   }
 
-  void on_load_button_clicked(){      
+  void on_load_button_clicked(void){
     if (_is_initing)
       return;
     
     requestLoadInstrumentPreset(_patch->id, "", API_get_gui_from_existing_widget(this->window()));
   }
 
-  void on_replace_button_clicked(){
+  void on_replace_button_clicked(void){
     if (_is_initing)
       return;
     
     requestReplaceInstrument(_patch->id, "", API_get_gui_from_existing_widget(this->window()));
   }
-    
+
+  void on_prev_preset_button_clicked(void){
+    printf("PREV preset\n");
+    S7CALL2(void_instrument_int,"FROM_C-load-prev-instrument-preset", _patch->id, gui_getInstrumentGui());
+  }
+  
+  void on_next_preset_button_clicked(void){
+    printf("NEXT preset\n");
+    S7CALL2(void_instrument_int,"FROM_C-load-next-instrument-preset", _patch->id, gui_getInstrumentGui());
+  }
+  
   void on_reset_button_clicked(){
     if (_is_initing)
       return;

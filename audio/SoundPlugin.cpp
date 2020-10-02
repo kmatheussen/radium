@@ -502,7 +502,8 @@ SoundPlugin *PLUGIN_create(struct Patch *patch, SoundPluginType *plugin_type, ha
   //plugin->volume = 1.0f;
   ATOMIC_SET(plugin->volume_is_on, true);
 
-
+  plugin->preset_filename = createIllegalFilepath();
+  
   {
     int num_outputs=plugin_type->num_outputs;
 
@@ -2513,6 +2514,9 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
 
   HASH_put_bool(state, "is_dpi_aware", plugin->is_dpi_aware);
 
+  if (isLegalFilepath(plugin->preset_filename))
+    HASH_put_filepath(state, "preset_filename", plugin->preset_filename);
+  
   HASH_put_int(state, "___radium_plugin_state_v3", 1);
       
   return state;
@@ -2830,6 +2834,10 @@ SoundPlugin *PLUGIN_create_from_state(struct Patch *patch, hash_t *state, bool i
   
   if (HASH_has_key(state, "is_dpi_aware"))
     plugin->is_dpi_aware = HASH_get_bool(state, "is_dpi_aware");
+
+  if (HASH_has_key(state, "preset_filename"))
+    plugin->preset_filename = HASH_get_filepath(state, "preset_filename");
+
   
   return plugin;
 }
@@ -3307,6 +3315,9 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
 
     double time_since_last_activity = MIXER_get_last_used_time() - ATOMIC_GET_RELAXED(plugin->_RT_time_of_last_activity);
     info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago\n";
+
+    if (isLegalFilepath(plugin->preset_filename))
+      info += "Preset file: \"" + STRING_get_qstring(plugin->preset_filename.id) + "\".\n";
   }
   
   MyQMessageBox *infoBox = MyQMessageBox::create(false, API_gui_get_parentwidget(NULL, parentgui));
