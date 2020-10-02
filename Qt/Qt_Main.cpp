@@ -179,7 +179,7 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
 {
   R_ASSERT(!PLAYER_current_thread_has_lock());
   void *mem = malloc(size);
-  if (size > 1048576) // If changing 1048576, also change 1048576 in make_and_run_linux.sh
+  if (size > 1048576) // If changing 1048576, also change 1048576 in run_gdb.sh
     memset(mem, rand(), size);
   return mem;
 }
