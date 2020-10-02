@@ -639,6 +639,8 @@ typedef struct SoundPlugin{
   bool is_implicitly_soloed;
 
   bool RT_input_latency_manifests_into_output_latency; // true by default. Can be set if holding player lock.
+
+  filepath_t preset_filename;
   
 } SoundPlugin;
 

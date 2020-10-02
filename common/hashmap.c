@@ -772,8 +772,10 @@ static void put_instrument(hash_t *hash, const char *key, int i, instrument_t va
 static void put_filepath(hash_t *hash, const char *key, int i, filepath_t val){
   if(hash->version < 5)
     put_dyn(hash, key, i, DYN_create_string(val.id));
-  else
+  else{
+    R_ASSERT_NON_RELEASE(isLegalFilepath(val)); // we don't want this in case the illegal file path string is changed.
     put_dyn(hash, key, i, DYN_create_filepath(val));
+  }
 }
 
 static void put_bool(hash_t *hash, const char *key, int i, bool val){

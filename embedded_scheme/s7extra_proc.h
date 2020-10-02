@@ -239,6 +239,9 @@ extern "C" {
   void s7extra_callFunc_void_instrument(const func_t *func, instrument_t arg1);
   void s7extra_callFunc2_void_instrument(const char *funcname, instrument_t arg1);
 
+  void s7extra_callFunc_void_instrument_int(const func_t *func, instrument_t arg1, int64_t arg2);
+  void s7extra_callFunc2_void_instrument_int(const char *funcname, instrument_t arg1, int64_t arg2);
+
   int64_t s7extra_callFunc_int_instrument(const func_t *func, instrument_t arg1);
   int64_t s7extra_callFunc2_int_instrument(const char *funcname, instrument_t arg1);
 

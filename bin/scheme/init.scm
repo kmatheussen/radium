@@ -293,6 +293,8 @@ FROM_C-select-prev-instrument
 FROM_C-select-next-instrument
 FROM_C-select-prev-instrument-popup-menu 
 FROM_C-select-next-instrument-popup-menu
+FROM_C-load-next-instrument-preset
+FROM_C-load-prev-instrument-preset
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

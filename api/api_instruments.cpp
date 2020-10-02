@@ -293,6 +293,42 @@ void saveInstrumentPreset(dynvec_t instrument_ids, int64_t parentgui){
   PRESET_save(&patches, false, parentgui);
 }
 
+filepath_t getInstrumentPresetPath(instrument_t instrument_id){
+  if (!isLegalInstrument(instrument_id)){
+    instrument_id = getCurrentInstrumentUnderMouse();
+
+    if (!isLegalInstrument(instrument_id))
+      instrument_id = getCurrentInstrument();
+
+    if (!isLegalInstrument(instrument_id))
+      return PRESET_get_current_preset_dir();
+  }
+  
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL){
+    return PRESET_get_current_preset_dir();
+  }
+  
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  if(plugin != NULL && isLegalFilepath(plugin->preset_filename)){
+    return getDirPath(plugin->preset_filename);
+  }else{
+    return PRESET_get_current_preset_dir();
+  }
+}
+
+filepath_t getInstrumentPreset(instrument_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return createIllegalFilepath();
+  
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  if(plugin != NULL && isLegalFilepath(plugin->preset_filename))
+    return plugin->preset_filename;
+  else
+    return createIllegalFilepath();
+}
+
 instrument_t getInstrumentForTrack(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
