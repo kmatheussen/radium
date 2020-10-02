@@ -56,8 +56,9 @@ IF YOU ARE DEVELOPING RADIUM
      
         RELEASE    - Compiled with -O2/-O3 and without various assertions.
         DEBUG_FAST - Same as DEBUG + -O2/-O3. Quite slow, but usually acceptable.
-        DEBUG      - Compiled with -O0/-ggdb + fsan/etc + various assertions. Very slow, it's usually better to use DEBUG_FAST and temporarily add -O0 to
-                     the Makefile for those files where you need better debug info, and recompile.
+        DEBUG      - Compiled with -O0/-ggdb + fsan/etc + various assertions. Very slow, it's usually
+                     better to use DEBUG_FAST and temporarily add -O0 to the Makefile for those files
+                     where you need better debug info, and recompile those files.
 
 
 
