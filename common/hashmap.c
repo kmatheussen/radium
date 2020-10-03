@@ -1354,8 +1354,11 @@ static wchar_t *read_line(disk_t *file){
 hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_versions){
 
   wchar_t *line = L"";
-  while(STRING_starts_with(line, "#") || STRING_equals2(STRING_trim(line), L""))
+  while(STRING_starts_with(line, "#") || STRING_equals2(STRING_trim(line), L"")){
     line = READ_LINE(file);
+    if (line==NULL)
+      return NULL;
+  }
   
   int version;
   if(STRING_equals(line,">> HASH MAP BEGIN")){
