@@ -436,7 +436,7 @@ bool iterateDirectory(filepath_t daspath, bool async, func_t* callback){
   return true;
 }
 
-const wchar_t *g_illegal_filepath_string = L"_______________RADIUM. illegal file path________________";
+const wchar_t *g_illegal_filepath_string = L"_______________RADIUM. illegal file path________________"; // Don't change. May be saved to disk.
 
 filepath_t g_illegal_filepath = {.id = g_illegal_filepath_string};
 
