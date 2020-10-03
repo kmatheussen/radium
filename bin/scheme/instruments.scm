@@ -772,9 +772,6 @@
 
 (define (load-prev/next-instrument-preset is-prev instrument-id parentgui)
 
-  (define (use-file-requester)
-    (<ra> :request-load-preset-instrument-description parentgui callback))
-  
   (define instrument-preset (<ra> :get-instrument-preset instrument-id))
   (define path (<ra> :get-instrument-preset-path instrument-id))
   (define single-presets (to-list (<ra> :get-all-single-presets-in-path path)))
@@ -783,12 +780,17 @@
 
   (if is-prev
       (set! org-presets (reverse! org-presets)))
-  
-  (define (loadit preset)
-    (define descr (create-load-instrument-preset-description preset))
+
+  (define (replaceit descr)
     (define conf (make-instrument-conf :must-have-inputs #f :must-have-outputs #f :parentgui parentgui))
     (async-replace-instrument instrument-id descr conf))
+    
+  (define (loadit preset)
+    (replaceit (create-load-instrument-preset-description preset)))
 
+  (define (use-file-requester)
+    (<ra> :request-load-preset-instrument-description parentgui replaceit))
+  
   ;;(c-display "org-presets:" org-presets)
   ;;(c-display "instrument-preset:" instrument-preset)
   
@@ -809,7 +811,7 @@
                  (if (equal? preset instrument-preset)
                      (let ((next (cdr presets)))
                        (if (null? next)
-                           (loadit (car org-prests))
+                           (loadit (car org-presets))
                            (loadit (car next))))
                      (loop (cdr presets)))))))))
 
