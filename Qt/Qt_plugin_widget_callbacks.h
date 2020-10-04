@@ -284,12 +284,20 @@ public:
     next_preset_button->setText("Triangle-right-01.svg");
     //next_program_button->setArrowType(Qt::RightArrow);
                  
+    prev_preset_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-load-prev-instrument-preset-popup-menu");
+    };
+
+    next_preset_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-load-next-instrument-preset-popup-menu");
+    };
+
     prev_program_button->_show_popup_menu = [](){
-      S7CALL2(void_void,"FROM_C-select-prev-instrument-popup-menu");
+      S7CALL2(void_void,"FROM_C-select-prev-instrument-program-popup-menu");
     };
 
     next_program_button->_show_popup_menu = [](){
-      S7CALL2(void_void,"FROM_C-select-next-instrument-popup-menu");
+      S7CALL2(void_void,"FROM_C-select-next-instrument-program-menu");
     };
 
     _is_initing = false;
@@ -1228,12 +1236,12 @@ public slots:
 
   void on_prev_program_button_clicked(void){
     printf("PREV\n");
-    S7CALL2(void_instrument,"FROM_C-select-prev-instrument", _patch->id);
+    S7CALL2(void_instrument,"FROM_C-select-prev-instrument-program", _patch->id);
   }
   
   void on_next_program_button_clicked(void){
     printf("NEXT\n");
-    S7CALL2(void_instrument,"FROM_C-select-next-instrument", _patch->id);
+    S7CALL2(void_instrument,"FROM_C-select-next-instrument-program", _patch->id);
   }
   
 #if SHOW_SOLO_BUTTON
