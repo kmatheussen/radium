@@ -3280,20 +3280,28 @@ void PLUGIN_random(SoundPlugin *plugin){
 // plugin can be NULL here.
 void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, int64_t parentgui){
   QString info;
-      
-  if(type->info!=NULL)
+
+  bool uses_html = false;
+  
+  if(type->info!=NULL) {
     info = type->info;
-  else {
+    if (info.startsWith("HTML: ")){
+      uses_html = true;
+      info = info.mid(5);
+    }
+  } else {
     if(!strcmp(type->type_name,type->name))
       info = type->type_name;
     else
       info = QString(type->type_name) + ": " + type->name;
   }
+
+  QString ls = uses_html ? "<br>" : "\n";
+  
+  info += ls + ls;
       
-  info += "\n\n";
-      
-  info += "Inputs: " + QString::number(type->num_inputs) + "\n";
-  info += "Outputs: " + QString::number(type->num_outputs) + "\n";
+  info += "Inputs: " + QString::number(type->num_inputs) + ls;
+  info += "Outputs: " + QString::number(type->num_outputs) + ls;
 
   if (plugin != NULL){
 
@@ -3310,16 +3318,16 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
       }PLAYER_unlock();
     }
 
-    info += "Latency: " + QString::number(latency*1000/MIXER_get_sample_rate()) + "ms\n";
-    info += "Audio tail: " + (tail < 0 ? "undefined" : QString::number(tail*1000.0/MIXER_get_sample_rate()) + "ms") + "\n";
+    info += "Latency: " + QString::number(latency*1000/MIXER_get_sample_rate()) + ls;
+    info += "Audio tail: " + (tail < 0 ? "undefined" : QString::number(tail*1000.0/MIXER_get_sample_rate()) + "ms") + ls;
 
     double time_since_last_activity = MIXER_get_last_used_time() - ATOMIC_GET_RELAXED(plugin->_RT_time_of_last_activity);
-    info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago\n";
+    info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago" + ls;
 
     if (isLegalFilepath(plugin->preset_filename))
-      info += "Preset file: \"" + STRING_get_qstring(plugin->preset_filename.id) + "\".\n";
+      info += "Preset file: \"" + STRING_get_qstring(plugin->preset_filename.id) + "\"." + ls;
   }
-  
+
   MyQMessageBox *infoBox = MyQMessageBox::create(false, API_gui_get_parentwidget(NULL, parentgui));
   infoBox->setWindowTitle("Instrument info");
                           
