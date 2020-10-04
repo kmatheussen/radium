@@ -3020,7 +3020,8 @@ void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *
                                            )
 {
   R_ASSERT(patches != NULL);
-  R_ASSERT(Undo_Is_Open());
+  R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Ignoring());
+  //R_ASSERT_NON_RELEASE(Undo_Is_Open()); // not sure if Undo_Is_Currently_Ignoring() is legal as an alternative here. (commented out. seems to be legal)
   
   changes::AudioGraph changes;
     

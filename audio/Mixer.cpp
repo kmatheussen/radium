@@ -470,6 +470,8 @@ void PLAYER_lock(void){
 
   R_ASSERT(!THREADING_is_player_or_runner_thread());
 
+  //static int num=0; printf("  %d: ========================================= PLAYER_LOCK  \n", num++);
+  
 #if 0 //!defined(RELEASE)
   printf("  PLAYER_LOCK  \n");
   if (ATOMIC_GET(root->editonoff)==false){

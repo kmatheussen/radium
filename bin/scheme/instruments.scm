@@ -660,9 +660,18 @@
 
 ;; Called from the outside. 'instrument-description' can be false or empty string.
 ;; Async. Returns immediately.
-(define (async-replace-instrument id-old-instrument description instrconf)
+(delafina (async-replace-instrument :id-old-instrument
+                                    :description
+                                    :instrconf)
   (assert (instrument? id-old-instrument))
-  
+
+  ;; Assert valid instrument here. Can not assert after scheduling since it might have disappeared in the meantime.
+  (if (not (<ra> :instrument-is-open-and-audio id-old-instrument))
+      (error (<-> "Note: Instrument " id-old-instrument " is either not open or not audio")))
+
+  (define is-current (equal? id-old-instrument (<ra> :get-current-instrument)))
+  (define is-current-under-mouse (equal? id-old-instrument (<ra> :get-current-instrument-under-mouse)))
+
   (define (replace description)
     (if (not (string=? "" description))
         (undo-block
@@ -681,6 +690,13 @@
              (move-connections-to-new-instrument id-old-instrument id-new-instrument)
              ;;(replace-instrument-in-all-tracks! id-old-instrument id-new-instrument)
              (replace-instrument-in-mixer id-old-instrument id-new-instrument)
+             
+             (if is-current
+                 (<ra> :set-current-instrument id-new-instrument))
+             
+             (if is-current-under-mouse
+                 (<ra> :set-current-instrument-under-mouse id-new-instrument))
+             
              )))))
 
   (cond ((equal? (<ra> :get-main-pipe-instrument) id-old-instrument)
@@ -698,8 +714,11 @@
         (else
          (<ra> :schedule 0 ;; We do this since the function is specified to return immediately. I.e. the caller expects the instrument configuration to be the same when we return.
                (lambda ()
-                 (replace description)
+                 (if (<ra> :instrument-is-open-and-audio id-old-instrument)
+                     (replace description)
+                     (c-display "async-replace-instrument: Note: Instrument " id-old-instrument " is either not open or not audio. It dissapeared"));; Can happen if changing instrument rapidly.
                  #f)))))
+               
 
 ;; Note: Used for shortcut
 (delafina (replace-instrument :instrument-id (<ra> :get-current-instrument-under-mouse)
@@ -714,14 +733,16 @@
 (define (create-load-instrument-preset-description filename)
   (<-> "2" (<ra> :get-base64-from-filepath filename)))
 
-(define (request-select-instrument-preset parentgui instrument-id callback)
+(define (request-select-instrument-preset parentgui instrument-id include-multi-preset callback)
   ;;(c-display "           \n\n\n         INSTRUMENT:" (<ra> :get-instrument-name instrument-id) "---------------------------")
   (define (use-file-requester)
     (<ra> :request-load-preset-instrument-description parentgui callback))
   (define path (<ra> :get-instrument-preset-path instrument-id))
   ;;(c-display "            PATH:" (<ra> :get-path-string path))
   (define single-presets (to-list (<ra> :get-all-single-presets-in-path path)))
-  (define multi-presets (to-list (<ra> :get-all-multi-presets-in-path path)))
+  (define multi-presets (if include-multi-preset
+                            (to-list (<ra> :get-all-multi-presets-in-path path))
+                            '()))
   ;;(c-display "num-presets:" (length single-presets) (length multi-presets))
   (if (and (null? single-presets)
            (null? multi-presets))
@@ -751,6 +772,7 @@
   (request-select-instrument-preset
    parentgui
    (<ra> :create-illegal-instrument)
+   #t
    (lambda (descr)
      (<ra> :create-audio-instrument-from-description descr "" x y))))
 
@@ -766,7 +788,7 @@
                          (async-replace-instrument id-instrument instrument-description (make-instrument-conf :must-have-inputs #f :must-have-outputs #f :parentgui parentgui))))))
         (if (or (not instrument-description)
                 (string=? instrument-description ""))
-            (request-select-instrument-preset parentgui id-instrument gotit)
+            (request-select-instrument-preset parentgui id-instrument #f gotit)
             (gotit instrument-description)))))
 
 
@@ -775,34 +797,37 @@
   (define instrument-preset (<ra> :get-instrument-preset instrument-id))
   (define path (<ra> :get-instrument-preset-path instrument-id))
   (define single-presets (to-list (<ra> :get-all-single-presets-in-path path)))
-  (define multi-presets (to-list (<ra> :get-all-multi-presets-in-path path)))
-  (define org-presets (append single-presets multi-presets))
+  ;;(define multi-presets (to-list (<ra> :get-all-multi-presets-in-path path)))
+  ;;(define org-presets (append single-presets multi-presets))
+  (define org-presets single-presets)
 
   (if is-prev
       (set! org-presets (reverse! org-presets)))
 
-  (define (replaceit descr)
+  (define (replace-description descr)
     (define conf (make-instrument-conf :must-have-inputs #f :must-have-outputs #f :parentgui parentgui))
     (async-replace-instrument instrument-id descr conf))
     
-  (define (loadit preset)
-    (replaceit (create-load-instrument-preset-description preset)))
+  (define (replace-preset preset)
+    (replace-description (create-load-instrument-preset-description preset)))
 
   (define (use-file-requester)
-    (<ra> :request-load-preset-instrument-description parentgui replaceit))
+    (<ra> :request-load-preset-instrument-description parentgui replace-description))
   
   ;;(c-display "org-presets:" org-presets)
   ;;(c-display "instrument-preset:" instrument-preset)
   
-  (cond ((null? org-presets)
+  (cond ((<ra> :instrument-is-permanent instrument-id)
+         (show-async-message parentgui "Can not be replaced"))
+        ((null? org-presets)
          (use-file-requester))
         ((<ra> :is-illegal-filepath instrument-preset)
          (c-display "ILLEGAL FILEPATH for " (<ra> :get-instrument-name instrument-id))
-         (loadit (car org-presets)))
+         (replace-preset (car org-presets)))
         (else
          (let loop ((presets org-presets))
            (if (null? presets)
-               (loadit (car org-presets))
+               (replace-preset (car org-presets))
                (let ((preset (car presets)))
                  ;;(c-display "PRESET:" (<ra> :get-path-string preset))
                  ;;(c-display ". instrument-preset1:" instrument-preset)
@@ -811,8 +836,8 @@
                  (if (equal? preset instrument-preset)
                      (let ((next (cdr presets)))
                        (if (null? next)
-                           (loadit (car org-presets))
-                           (loadit (car next))))
+                           (replace-preset (car org-presets))
+                           (replace-preset (car next))))
                      (loop (cdr presets)))))))))
 
 (delafina (FROM_C-load-prev-instrument-preset :instrument-id (<ra> :get-current-instrument-under-mouse)
@@ -823,7 +848,26 @@
                                               :parentgui -2)
   (load-prev/next-instrument-preset #f instrument-id parentgui))
 
-  
+
+(define (FROM_C-load-prev-instrument-preset-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "FROM_C-load-prev-instrument-preset"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-load-next-instrument-preset-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "FROM_C-load-next-instrument-preset"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+
 #!!
 (<ra> :get-path-string (<ra> :create-illegal-filepath))
 !!#
@@ -1158,7 +1202,7 @@
         ((string=? type "LOAD_PRESET")
          (let ((filename (entry :preset-filename)))
            (if (<ra> :is-illegal-filepath filename)
-               (request-select-instrument-preset (instrconf :parentgui) (<ra> :create-illegal-instrument) callback)
+               (request-select-instrument-preset (instrconf :parentgui) (<ra> :create-illegal-instrument) #t callback)
                (callback (create-load-instrument-preset-description filename)))))
         ((string=? type "PASTE_PRESET")
          (callback "3"))
@@ -2245,7 +2289,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                              (LOAD (<ra> :create-midi-instrument "Unnamed")))
    "----------------"
    "Load Preset" (lambda ()
-                   (request-select-instrument-preset -1 (<ra> :create-illegal-instrument) callback))
+                   (request-select-instrument-preset -1 (<ra> :create-illegal-instrument) #t callback))
    "----------------"
    "Show plugin manager" (lambda ()
                            (pmg-start instr-conf callback))
@@ -2422,18 +2466,18 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                            :border-color (get-instrument-border-color instrument-id)
                            ))
 
-(define (FROM_C-select-prev-instrument-popup-menu) 
+(define (FROM_C-select-prev-instrument-program-popup-menu) 
   (popup-menu
-   (get-keybinding-configuration-popup-menu-entries "FROM_C-select-prev-instrument"
+   (get-keybinding-configuration-popup-menu-entries "FROM_C-select-prev-instrument-program"
                                                     '()
                                                     "FOCUS_MIXER")
    "-------------"
    "Help keybindings" show-keybinding-help-window
    ))
 
-(define (FROM_C-select-next-instrument-popup-menu) 
+(define (FROM_C-select-next-instrument-program-popup-menu) 
   (popup-menu
-   (get-keybinding-configuration-popup-menu-entries "FROM_C-select-next-instrument"
+   (get-keybinding-configuration-popup-menu-entries "FROM_C-select-next-instrument-program"
                                                     '()
                                                     "FOCUS_MIXER")
    "-------------"
@@ -2441,13 +2485,13 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    ))
 
 
-(delafina (FROM_C-select-prev-instrument :instrument-id (<ra> :get-current-instrument-under-mouse))
+(delafina (FROM_C-select-prev-instrument-program :instrument-id (<ra> :get-current-instrument-under-mouse))
   (define num-programs (<ra> :get-num-instrument-programs instrument-id))
   (define curr-program (<ra> :get-curr-instrument-program instrument-id))
   (if (> curr-program 0)
       (<ra> :set-curr-instrument-program instrument-id (- curr-program 1))))
 
-(delafina (FROM_C-select-next-instrument :instrument-id (<ra> :get-current-instrument-under-mouse))
+(delafina (FROM_C-select-next-instrument-program :instrument-id (<ra> :get-current-instrument-under-mouse))
   (define num-programs (<ra> :get-num-instrument-programs instrument-id))
   (define curr-program (<ra> :get-curr-instrument-program instrument-id))
   (if (< curr-program (- num-programs 1))

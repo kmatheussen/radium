@@ -3169,7 +3169,7 @@ static void add_undo_for_all_chip_positions(void){
 // Called from audio/Presest.cpp. (Not used when loading song.)
 void MW_create_from_state(const hash_t *state, const vector_t *patches, float x, float y){
   R_ASSERT(patches != NULL);
-  R_ASSERT(Undo_Is_Open());
+  R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Ignoring());
  
   ADD_UNDO(MixerConnections_CurrPos());
   add_undo_for_all_chip_positions(); // We might kick any chip, so we need to add undo points for all chips

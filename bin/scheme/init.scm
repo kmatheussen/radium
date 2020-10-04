@@ -289,12 +289,14 @@ FROM_C-show-mixer-connection-popup-menu
 FROM_C-delete-editor-beat
 FROM_C-delete-editor-bar
 FROM_C-show-keybindings-editor
-FROM_C-select-prev-instrument
-FROM_C-select-next-instrument
-FROM_C-select-prev-instrument-popup-menu 
-FROM_C-select-next-instrument-popup-menu
+FROM_C-select-prev-instrument-program
+FROM_C-select-next-instrument-program
+FROM_C-select-prev-instrument-program-popup-menu 
+FROM_C-select-next-instrument-program-popup-menu
 FROM_C-load-next-instrument-preset
 FROM_C-load-prev-instrument-preset
+FROM_C-load-prev-instrument-preset-popup-menu 
+FROM_C-load-next-instrument-preset-popup-menu
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

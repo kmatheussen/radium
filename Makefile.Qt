@@ -850,7 +850,7 @@ $(T)vector.o:  $(BUILD_DEPENDENCIES) $(CD)vector.c
 	$(CC2) $(CD)vector.c $(OPT)
 
 $(T)hashmap.o:  $(BUILD_DEPENDENCIES) $(CD)hashmap.c 
-	$(CC2) $(CD)hashmap.c $(OPT) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) #-fno-sanitize=undefined
+	$(CC2) $(CD)hashmap.c $(OPT) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW)  #-fno-sanitize=undefined
 
 $(T)Dynvec.o:  $(BUILD_DEPENDENCIES) $(CD)Dynvec.c $(CD)dyn_type.h $(CD)nsmtracker.h
 	$(CC2) $(CD)Dynvec.c $(OPT)
