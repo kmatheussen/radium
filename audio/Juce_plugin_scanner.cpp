@@ -61,8 +61,9 @@ static void show_alert(juce::String message){
 static void add_descriptions_from_plugin_file(juce::OwnedArray<juce::PluginDescription> &descriptions, juce::String description_filename){
   //  CRASHREPORTER_dont_report();{ // If findAllTypesForFile crashes, it's the plugin that crashes and not Radium (and we don't want to show a message about "Radium crashing" when it actually didn't). If we crash here, the plugin is blacklisted, and that's the important thing.
 
-    juce::VSTPluginFormat vst2_format;
-    vst2_format.findAllTypesForFile(descriptions, description_filename);
+  
+  juce::VSTPluginFormat vst2_format;
+  vst2_format.findAllTypesForFile(descriptions, description_filename);
     
 #if !defined(FOR_LINUX)
     juce::VST3PluginFormat vst3_format;

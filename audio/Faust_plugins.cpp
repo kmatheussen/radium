@@ -528,7 +528,7 @@ void create_faust_plugin(void){
   //plugin_type->plugin_takes_care_of_savable_values = true;
     
   plugin_type->info =
-    "FAUST (Functional Audio Stream) is a functional programming language specifically designed for real-time signal processing and synthesis. FAUST targets high-performance signal processing applications and audio plug-ins for a variety of platforms and standards. More info <A href=\"http://faust.grame.fr\">here</a>."
+    "HTML: FAUST (Functional Audio Stream) is a functional programming language specifically designed for real-time signal processing and synthesis. FAUST targets high-performance signal processing applications and audio plug-ins for a variety of platforms and standards. More info <A href=\"http://faust.grame.fr\">here</a>."
     "<p>"
     "Hints:\n"
     "<UL>"
