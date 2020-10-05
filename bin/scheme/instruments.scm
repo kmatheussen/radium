@@ -867,6 +867,24 @@
    "Help keybindings" show-keybinding-help-window
    ))
 
+(define (FROM_C-load-instrument-preset-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:request-load-instrument-preset"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-replace-instrument-preset-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:request-replace-instrument"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
 
 #!!
 (<ra> :get-path-string (<ra> :create-illegal-filepath))

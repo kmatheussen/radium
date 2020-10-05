@@ -283,7 +283,19 @@ public:
     prev_preset_button->setText("Triangle-left-01.svg");
     next_preset_button->setText("Triangle-right-01.svg");
     //next_program_button->setArrowType(Qt::RightArrow);
-                 
+
+    load_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-load-instrument-preset-popup-menu");
+    };
+
+    replace_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-replace-instrument-preset-popup-menu");
+    };
+
+    prev_preset_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-load-prev-instrument-preset-popup-menu");
+    };
+
     prev_preset_button->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-load-prev-instrument-preset-popup-menu");
     };
