@@ -565,9 +565,9 @@ struct Sample{
   float _pitch = 1.0;
 
   bool _grain_strict_no_jitter = false;
-  double _grain_overlap = 2;
-  double _grain_length = 50; // in ms
-  double _grain_jitter = 0.0;
+  double _grain_overlap = 3.6;
+  double _grain_length = 300; // in ms
+  double _grain_jitter = 1.0;
   double _grain_ramp = 0.33;
   
   DEFINE_ATOMIC(bool, _has_updates) = true;
