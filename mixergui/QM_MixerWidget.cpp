@@ -3431,6 +3431,8 @@ static hash_t *create_ab_state(void){
 
   HASH_put_dyn(state, "mixer_strips_configuration", MW_get_mixer_strips_state());
 
+  HASH_put_instrument(state, "current_instrument", getCurrentInstrument());
+
   return state;
 }
 
@@ -3571,6 +3573,9 @@ static void apply_ab_state(hash_t *state, hash_t *curr_state){
 
   if (HASH_has_key(state, "mixer_strips_configuration"))
     MW_apply_mixer_strips_state(HASH_get_dyn(state, "mixer_strips_configuration"));
+
+  if (HASH_has_key(state, "current_instrument"))
+    setCurrentInstrument(HASH_get_instrument(state, "current_instrument"), false, false);
 }
 
 void MW_change_ab(int ab_num, bool update_current_button){
