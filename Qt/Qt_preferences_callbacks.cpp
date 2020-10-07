@@ -319,7 +319,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     {    
       vst_widget->buttonBox->hide();
       
-      tabWidget->insertTab(tabWidget->count()-2, vst_widget, "Plugins");
+      tabWidget->insertTab(tabWidget->count()-4, vst_widget, "Plugins");
     }
 
     // Colors
