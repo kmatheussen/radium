@@ -886,6 +886,41 @@
    ))
 
 
+(define (FROM_C-show-hide-instrument-gui-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:show-hide-instrument-gui"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+
+(define (FROM_C-reset-instrument-a/b-popup-menu abnum)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:reset-instrument-config-num"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-select-instrument-a/b-popup-menu abnum)
+  (popup-menu
+   (list "Reset"
+         :enabled (and (not (= abnum (<ra> :get-curr-instrument-config-num)))
+                       (<ra> :instrument-config-num-is-used abnum))
+         (lambda ()
+           (<ra> :reset-instrument-config-num abnum)))
+   "-------Keybindings"
+   (get-keybinding-configuration-popup-menu-entries "ra:select-instrument-config-num"
+                                                    (list abnum)
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+
 #!!
 (<ra> :get-path-string (<ra> :create-illegal-filepath))
 !!#

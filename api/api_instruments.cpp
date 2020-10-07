@@ -3189,6 +3189,66 @@ bool showHideInstrumentGui(instrument_t instrument_id, int64_t parentgui, bool s
     return showInstrumentGui(instrument_id, parentgui, show_instrument_window_if_not_visible);
 }
 
+void selectInstrumentConfigNum(int confignum, instrument_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  if (confignum < 0 || confignum > 7){
+    handleError("selectInstrumentConfigNum: Illegal confignum %d", confignum);
+    return;
+  }
+
+  if (instrument_id.id==getCurrentInstrument().id){
+    AUDIOWIDGET_set_ab(patch, confignum);
+    //update_ab_buttons(); //fix
+    AUDIOWIDGET_redraw_ab(patch);
+  }
+}
+
+void resetInstrumentConfigNum(int confignum, instrument_t instrument_id){
+  if (confignum < -1 || confignum > 7){
+    handleError("resetInstrumentConfigNum: Illegal confignum %d", confignum);
+    return;
+  }
+
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin *)patch->patchdata;
+
+  PLUGIN_reset_ab(plugin, confignum);
+
+  if (instrument_id.id==getCurrentInstrument().id){
+    AUDIOWIDGET_redraw_ab(patch);
+  }
+}
+
+int getCurrInstrumentConfigNum(instrument_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return -2;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin *)patch->patchdata;
+
+  return plugin->curr_ab_num;
+}
+  
+bool instrumentConfigNumIsUsed(int confignum, instrument_t instrument_id){
+  if (confignum < 0 || confignum > 7){
+    handleError("instrumentConfigNumIsUsed: Illegal confignum %d", confignum);
+    return false;
+  }
+  
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin *)patch->patchdata;
+
+  return plugin->ab_is_valid[confignum]==true;
+}
 
 static instrument_t g_curr_instrument_under_mouse = createIllegalInstrument();
 

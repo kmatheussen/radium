@@ -312,6 +312,19 @@ public:
       S7CALL2(void_void,"FROM_C-select-next-instrument-program-menu");
     };
 
+    show_gui_checkbox->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-hide-instrument-gui-popup-menu");
+    };
+
+    ab_a->_show_popup_menu = [](){
+      S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 0);
+    };
+
+    ab_b->_show_popup_menu = [](){
+      S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 1);
+    };
+
+      
     _is_initing = false;
   }
 
@@ -686,31 +699,8 @@ public:
       ab_b->setText("B");
   }
 
-  void ab_rightclicked(int num){
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    if (plugin==NULL) return;
-    
-    int curr=plugin->curr_ab_num;
-
-    IsAlive is_alive(this);
-    
-    GFX_SimpleMenu(talloc_format("%sReset",curr==num?"[disabled]":""), [is_alive, this, plugin, num](int command, bool onoff){
-
-        if (!is_alive || _patch->patchdata==NULL)
-          return;
-
-        PLUGIN_reset_ab(plugin, num);
-        update_ab_buttons();
-        AUDIOWIDGET_redraw_ab(_patch.data());
-      });
-  }
-
-
 public slots:
 
-  // ab-testing
-  void on_ab_a_clicked(){if(ab_a->_last_pressed_button==Qt::RightButton) ab_rightclicked(0);}
-  void on_ab_b_clicked(){if(ab_b->_last_pressed_button==Qt::RightButton) ab_rightclicked(1);}
   /*
   void on_ab_c_clicked(){ab_rightclicked(2);}
   void on_ab_d_clicked(){ab_rightclicked(3);}
@@ -738,6 +728,7 @@ public slots:
     
     if (val && _ignore_checkbox_stateChanged==false)
       AUDIOWIDGET_set_ab(_patch.data(), 0);
+    
     update_ab_buttons();
   }
 
@@ -747,6 +738,7 @@ public slots:
     
     if (val && _ignore_checkbox_stateChanged==false)
       AUDIOWIDGET_set_ab(_patch.data(), 1);
+    
     update_ab_buttons();
   }
 
