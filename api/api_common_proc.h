@@ -36,6 +36,9 @@ extern void clearErrorMessage(void); // Should be called before running code tha
 
 extern const char *g_last_api_entry_func_name;
 
+extern bool g_ignore_s_is_calling;
+
+  
 #ifdef RADIUM_COMMON_NSMTRACKER_H
 
 #include "../common/placement_proc.h"

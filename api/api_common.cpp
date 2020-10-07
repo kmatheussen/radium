@@ -48,6 +48,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 const char *g_last_api_entry_func_name = NULL;
 
+bool g_ignore_s_is_calling = false; // debugging (radium_s7_wrap.c)
+
 
 /* Hmm, well, okey, I put the init_radium function here. */
 
