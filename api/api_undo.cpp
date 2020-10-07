@@ -99,10 +99,12 @@ bool askAreYouSureSongHasChanged(void){
 }
 
 void openUndo(void){
+  //printf("............. >>> openUndo called\n");
   UNDO_OPEN_REC();
 }
 
 void closeUndo(void){
+  //printf("............. <<< closeUndo called\n");
   UNDO_CLOSE();
 }
 

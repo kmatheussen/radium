@@ -271,6 +271,36 @@ public:
     
     updateWidgets();
     setupPeakAndAutomationStuff();
+
+    ab_reset_button->_show_popup_menu = [](){
+      S7CALL2(void_int,"FROM_C-reset-instrument-a/b-popup-menu", 0);
+    };
+    
+    ab0->_show_popup_menu = [](){
+      S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 0);
+    };
+    ab1->_show_popup_menu = [](){
+      S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 1);
+    };
+    ab2->_show_popup_menu = [](){
+      S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 2);
+    };
+    ab3->_show_popup_menu = [](){
+      S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 3);
+    };
+    ab4->_show_popup_menu = [](){
+      S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 4);
+    };
+    ab5->_show_popup_menu = [](){
+      S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 5);
+    };
+    ab6->_show_popup_menu = [](){
+      S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 6);
+    };
+    ab7->_show_popup_menu = [](){
+      S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 7);
+    };
+
   }
 
   void enterEvent(QEvent *event) override{
@@ -1136,26 +1166,7 @@ public:
     
   }
 
-  void ab_rightclicked(int num){
-    if (_is_updating > 0)
-      return;
-    
-    if (get_ab_checkbox(num)->_last_pressed_button==Qt::RightButton){
-      _plugin_widget->ab_rightclicked(num);
-      update_all_ab_buttons();
-    }
-  }
-
 public slots:
-
-  void on_ab0_clicked(){ab_rightclicked(0);}
-  void on_ab1_clicked(){ab_rightclicked(1);}
-  void on_ab2_clicked(){ab_rightclicked(2);}
-  void on_ab3_clicked(){ab_rightclicked(3);}
-  void on_ab4_clicked(){ab_rightclicked(4);}
-  void on_ab5_clicked(){ab_rightclicked(5);}
-  void on_ab6_clicked(){ab_rightclicked(5);}
-  void on_ab7_clicked(){ab_rightclicked(6);}
 
   void on_ab_reset_button_clicked(){
     if (_is_updating > 0)
