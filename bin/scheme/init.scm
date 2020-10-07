@@ -297,6 +297,10 @@ FROM_C-load-next-instrument-preset
 FROM_C-load-prev-instrument-preset
 FROM_C-load-prev-instrument-preset-popup-menu 
 FROM_C-load-next-instrument-preset-popup-menu
+FROM_C-load-instrument-preset-popup-menu
+FROM_C-replace-instrument-preset-popup-menu
+FROM_C-show-hide-instrument-gui-popup-menu
+FROM_C-select-instrument-a/b-popup-menu
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*
