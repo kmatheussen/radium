@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1119</width>
+    <width>1125</width>
     <height>622</height>
    </rect>
   </property>
@@ -670,149 +670,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_7">
-         <item>
-          <widget class="QGroupBox" name="groupBox_17">
-           <property name="title">
-            <string>Undo solo / bypass</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_8">
-            <property name="leftMargin">
-             <number>9</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>9</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QCheckBox" name="undo_solo">
-              <property name="text">
-               <string>Make undo when changing Solo for an instrument</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="undo_bypass">
-              <property name="text">
-               <string>Make undo when changing Bypass for an instrument</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="groupBox_3">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="title">
-            <string>Auto-suspend</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_20">
-            <item>
-             <widget class="QLabel" name="label_22">
-              <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Auto-suspend automatically disables audio processsing when an instrument has been inactive for a while.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;
-</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_12">
-              <item>
-               <widget class="QCheckBox" name="enable_autobypass">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="layoutDirection">
-                 <enum>Qt::LeftToRight</enum>
-                </property>
-                <property name="text">
-                 <string>Enable by default</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer_19">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>17</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QLabel" name="autobypass_delay_label_3">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Default duration of inactivity to trigger auto-suspend (ms):&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QSpinBox" name="autobypass_delay">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The value should be higher than the longest delay line you have in the mixer.&lt;/p&gt;&lt;p&gt;It might make sense to disable auto-suspend for all delay, reverb, echo, etc. instruments, and rather set this value low.&lt;/p&gt;&lt;p&gt;Note that many instruments are able to provide accurate auto-suspend values (Sampler, Pipe, some VST plugins, etc.). For those instruments, this value will not be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-                <property name="maximum">
-                 <number>20000</number>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer_9">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_11">
          <item>
           <widget class="QGroupBox" name="groupBox_5">
@@ -919,7 +776,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_14">
            <item>
-            <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,3">
+            <layout class="QVBoxLayout" name="verticalLayout_13" stretch="1,2">
              <item>
               <widget class="QGroupBox" name="groupBox_8">
                <property name="sizePolicy">
@@ -931,7 +788,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                <property name="title">
                 <string>Latency compensation</string>
                </property>
-               <layout class="QVBoxLayout" name="verticalLayout_17" stretch="1">
+               <layout class="QVBoxLayout" name="verticalLayout_24" stretch="1">
                 <item>
                  <widget class="QCheckBox" name="enable_latency_compensation">
                   <property name="text">
@@ -943,7 +800,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </widget>
              </item>
              <item>
-              <widget class="QGroupBox" name="groupBox_9">
+              <widget class="QGroupBox" name="groupBox_18">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
                  <horstretch>0</horstretch>
@@ -953,7 +810,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                <property name="title">
                 <string>Latency compensation when recording from System Input</string>
                </property>
-               <layout class="QVBoxLayout" name="verticalLayout_13">
+               <layout class="QVBoxLayout" name="verticalLayout_22">
                 <item>
                  <widget class="QRadioButton" name="auto_recording_latency">
                   <property name="text">
@@ -1253,6 +1110,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -1408,6 +1274,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -1560,6 +1435,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -2032,6 +1916,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -2187,6 +2080,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -2339,6 +2241,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -2632,6 +2543,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -2787,6 +2707,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -2939,6 +2868,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -3192,6 +3130,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -3347,6 +3294,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -3499,6 +3455,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -4137,6 +4102,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -4292,6 +4266,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -4444,6 +4427,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -4649,6 +4641,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -4804,6 +4805,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -4956,6 +4966,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -5134,6 +5153,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -5289,6 +5317,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -5441,6 +5478,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -5619,6 +5665,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -5774,6 +5829,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -5926,6 +5990,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -6117,6 +6190,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -6272,6 +6354,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -6424,6 +6515,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -6628,6 +6728,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </active>
              <inactive>
               <colorrole role="WindowText">
@@ -6783,6 +6892,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
              </inactive>
              <disabled>
               <colorrole role="WindowText">
@@ -6935,6 +7053,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>92</red>
                  <green>92</green>
                  <blue>92</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="PlaceholderText">
+               <brush brushstyle="NoBrush">
+                <color alpha="128">
+                 <red>84</red>
+                 <green>84</green>
+                 <blue>84</blue>
                 </color>
                </brush>
               </colorrole>
@@ -7202,6 +7329,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </active>
                <inactive>
                 <colorrole role="WindowText">
@@ -7357,6 +7493,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </inactive>
                <disabled>
                 <colorrole role="WindowText">
@@ -7509,6 +7654,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                    <red>92</red>
                    <green>92</green>
                    <blue>92</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -7703,6 +7857,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </active>
                <inactive>
                 <colorrole role="WindowText">
@@ -7858,6 +8021,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </inactive>
                <disabled>
                 <colorrole role="WindowText">
@@ -8010,6 +8182,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                    <red>92</red>
                    <green>92</green>
                    <blue>92</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -8361,6 +8542,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </active>
                <inactive>
                 <colorrole role="WindowText">
@@ -8516,6 +8706,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </inactive>
                <disabled>
                 <colorrole role="WindowText">
@@ -8668,6 +8867,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                    <red>92</red>
                    <green>92</green>
                    <blue>92</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -8860,6 +9068,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </active>
                <inactive>
                 <colorrole role="WindowText">
@@ -9015,6 +9232,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </inactive>
                <disabled>
                 <colorrole role="WindowText">
@@ -9167,6 +9393,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                    <red>92</red>
                    <green>92</green>
                    <blue>92</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -9345,6 +9580,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </active>
                <inactive>
                 <colorrole role="WindowText">
@@ -9497,6 +9741,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                    <red>92</red>
                    <green>92</green>
                    <blue>92</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -9655,6 +9908,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="PlaceholderText">
+                 <brush brushstyle="NoBrush">
+                  <color alpha="128">
+                   <red>84</red>
+                   <green>84</green>
+                   <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </disabled>
               </palette>
              </property>
@@ -9790,7 +10052,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>598</width>
+              <width>604</width>
               <height>365</height>
              </rect>
             </property>
@@ -10144,19 +10406,6 @@ This option should be considered as a lightweight version of  &quot;Only show mo
        <string>Instruments</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_4">
-       <item row="1" column="0">
-        <spacer name="verticalSpacer_31">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBox_13">
          <property name="title">
@@ -10185,6 +10434,249 @@ This option should be considered as a lightweight version of  &quot;Only show mo
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="3" column="0">
+        <spacer name="verticalSpacer_31">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="1" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout_7">
+         <item>
+          <widget class="QGroupBox" name="groupBox_17">
+           <property name="title">
+            <string>Undo solo / bypass</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_8">
+            <property name="leftMargin">
+             <number>9</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>9</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QCheckBox" name="undo_solo">
+              <property name="text">
+               <string>Make undo when changing Solo for an instrument</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="undo_bypass">
+              <property name="text">
+               <string>Make undo when changing Bypass for an instrument</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string>Auto-suspend</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_20">
+            <item>
+             <widget class="QLabel" name="label_22">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Auto-suspend automatically disables audio processsing when an instrument has been inactive for a while.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;
+</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_12">
+              <item>
+               <widget class="QCheckBox" name="enable_autobypass">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="layoutDirection">
+                 <enum>Qt::LeftToRight</enum>
+                </property>
+                <property name="text">
+                 <string>Enable by default</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_19">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Fixed</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>17</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="autobypass_delay_label_3">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Default duration of inactivity to trigger auto-suspend (ms):&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="autobypass_delay">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The value should be higher than the longest delay line you have in the mixer.&lt;/p&gt;&lt;p&gt;It might make sense to disable auto-suspend for all delay, reverb, echo, etc. instruments, and rather set this value low.&lt;/p&gt;&lt;p&gt;Note that many instruments are able to provide accurate auto-suspend values (Sampler, Pipe, some VST plugins, etc.). For those instruments, this value will not be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="maximum">
+                 <number>20000</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_9">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="2" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout_16">
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_17" stretch="0">
+           <item>
+            <widget class="QGroupBox" name="groupBox_19">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="title">
+              <string>Latency compensation for MIDI instruments</string>
+             </property>
+             <property name="flat">
+              <bool>false</bool>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_26">
+              <item>
+               <widget class="QRadioButton" name="no_midi_instrument_latency_compensation_3">
+                <property name="text">
+                 <string>No latency compensation</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="auto_midi_instrument_latency_3">
+                <property name="text">
+                 <string>Automatically determined (text overridden in program)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="custom_midi_instrument_latency_3">
+                <property name="text">
+                 <string>Custom latency</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="custom_recording_latency_layout_4">
+                <item>
+                 <widget class="QLabel" name="custom_recording_latency_label_4">
+                  <property name="text">
+                   <string>Custom latency:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QDoubleSpinBox" name="custom_recording_latency_value_4">
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                  <property name="suffix">
+                   <string>ms</string>
+                  </property>
+                  <property name="maximum">
+                   <double>480000.000000000000000</double>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_23">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -10376,6 +10868,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -10531,6 +11032,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -10683,6 +11193,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -10881,6 +11400,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -11036,6 +11564,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -11188,6 +11725,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -11373,6 +11919,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -11528,6 +12083,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </inactive>
            <disabled>
             <colorrole role="WindowText">
@@ -11680,6 +12244,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -11878,6 +12451,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </active>
            <inactive>
             <colorrole role="WindowText">
@@ -12030,6 +12612,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
                <red>92</red>
                <green>92</green>
                <blue>92</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
               </color>
              </brush>
             </colorrole>
@@ -12188,6 +12779,15 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               </color>
              </brush>
             </colorrole>
+            <colorrole role="PlaceholderText">
+             <brush brushstyle="NoBrush">
+              <color alpha="128">
+               <red>84</red>
+               <green>84</green>
+               <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
@@ -12233,7 +12833,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>969</width>
+               <width>975</width>
                <height>295</height>
               </rect>
              </property>
