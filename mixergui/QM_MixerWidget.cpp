@@ -3574,8 +3574,11 @@ static void apply_ab_state(hash_t *state, hash_t *curr_state){
   if (HASH_has_key(state, "mixer_strips_configuration"))
     MW_apply_mixer_strips_state(HASH_get_dyn(state, "mixer_strips_configuration"));
 
-  if (HASH_has_key(state, "current_instrument"))
-    setCurrentInstrument(HASH_get_instrument(state, "current_instrument"), false, false);
+  if (HASH_has_key(state, "current_instrument")){
+    instrument_t instrument = HASH_get_instrument(state, "current_instrument");
+    if (isLegalInstrument(instrument) && instrumentIsOpen(instrument))
+      setCurrentInstrument(instrument, false, false);
+  }
 }
 
 void MW_change_ab(int ab_num, bool update_current_button){

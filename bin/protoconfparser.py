@@ -736,7 +736,7 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
 
         oh.write("#if !defined(RELEASE)\n");
         oh.write("  static bool s_is_calling = false;\n");
-        oh.write("  if(s_is_calling)abort();\n");
+        oh.write("  if(s_is_calling){if(g_ignore_s_is_calling){g_ignore_s_is_calling=false;}else{abort();}}\n");
         oh.write("#endif\n");
         
         oh.write("  g_last_api_entry_func_name = \""+self.proc.varname+"\";\n")

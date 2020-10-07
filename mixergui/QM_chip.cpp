@@ -1026,9 +1026,12 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
       remakeMixerStrips(patch->id);
   }
 
-  if (creating_or_deleting_connections_and_have_solo)
+  if (creating_or_deleting_connections_and_have_solo){
+    g_ignore_s_is_calling=true; // Prevent call to abort() in debug-mode because of recursive call in API call. (recursive call is usually an error)
     S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
-
+    g_ignore_s_is_calling=false;
+  }
+  
   return true;
 }
 
