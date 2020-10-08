@@ -1776,8 +1776,6 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       SET_ATOMIC_ON_OFF(plugin->lowshelf.is_on, value);
       break;
 
-
-      
     case EFFNUM_HIGHSHELF_FREQ:
       set_freq_store_value(store_value_native, store_value_scaled, value_format);
       plugin->highshelf_freq = store_value_native;
@@ -1796,7 +1794,6 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       SET_ATOMIC_ON_OFF(plugin->highshelf.is_on, value);
       break;
 
-      
     case EFFNUM_EQ_SHOW_GUI:
       if ( (value >= 0.5f) != plugin->show_equalizer_gui){
         plugin->show_equalizer_gui = value >= 0.5f;

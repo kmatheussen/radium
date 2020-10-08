@@ -1074,7 +1074,13 @@ void PATCH_reset(void){
 void PATCH_init(void){
   //g_raw_midi_message_port_name = get_symbol("Radium: Event connection");
   //MUTEX_INITIALIZE();
-
+  
+  // prevent calls to SETTINGS_read in RT.
+  {
+    getMidiInstrumentLatencyType();
+    getCustomMidiInstrumentLatency();
+  }
+  
   PATCH_reset();
 }
 
@@ -1338,6 +1344,18 @@ static float apply_pan_to_pan(const float old_pan, const float new_pan){
                       );
 }
 
+static int64_t get_midi_latency(struct Patch *patch){
+  if (patch->instrument==get_MIDI_instrument())
+    switch(getMidiInstrumentLatencyType()){
+      case 0: return 0;
+      case 1: return g_RT_system_out_input_latency;
+      case 2: return g_RT_system_out_input_latency + g_jack_system_input_latency + g_jack_system_output_latency;
+      case 3: return g_RT_system_out_input_latency + ms_to_frames(getCustomMidiInstrumentLatency());
+      default: R_ASSERT_NON_RELEASE(false) ; return 0;
+    }
+  else
+    return 0;
+}
 
 // DOES add envelope volume
 int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, struct Notes *editor_note, STime time){
@@ -1365,9 +1383,10 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
   union SuperType args[8];
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
-    
-  int i;
-  for(i=0;i<NUM_PATCH_VOICES;i++){
+
+  int64_t midi_latency = get_midi_latency(patch);
+  
+  for(int i=0;i<NUM_PATCH_VOICES;i++){
     const struct PatchVoice &voice = patch->voices[i];
 
     if(voice.is_on==true && (equal_floats(voice.chance, MAX_PATCHVOICE_CHANCE) || voice.chance > rnd(MAX_PATCHVOICE_CHANCE))){
@@ -1385,16 +1404,18 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
         // voicenum
         args[5].int_num &= ~(0xff);
         args[5].int_num |= i;
+
+        int64_t new_start_time = time + voice.start*sample_rate/1000 + midi_latency;
         
         // voice ON
         //printf("___RT_PATCH_play_note. time: %d (%d)\n", (int)time, (int)(time + voice.start*sample_rate/1000));
         
         //printf("  add %d at %d\n", (int)voice_id, (int)((int64_t)time + voice.start*sample_rate/1000));
-        SCHEDULER_add_event(seqtrack, time + voice.start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 8, SCHEDULER_NOTE_ON_PRIORITY);
+        SCHEDULER_add_event(seqtrack, new_start_time, RT_scheduled_play_voice, &args[0], 8, SCHEDULER_NOTE_ON_PRIORITY);
         
         // voice OFF
         if(voice.length>0.001) // The voice decides when to stop by itself.
-          SCHEDULER_add_event(seqtrack, time + (voice.start+voice.length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
+          SCHEDULER_add_event(seqtrack, new_start_time + (voice.length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
       }
     }
   }
@@ -1485,6 +1506,8 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
 
+  int64_t midi_latency = get_midi_latency(patch);
+
   int i;
   for(i=0;i<NUM_PATCH_VOICES;i++){
     const struct PatchVoice &voice = patch->voices[i];
@@ -1509,7 +1532,7 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
           
           
           //printf("    remove %d at %d\n", (int)voice_id, (int)((int64_t)time + voice.start*sample_rate/1000));
-          SCHEDULER_add_event(seqtrack, time + voice.start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
+          SCHEDULER_add_event(seqtrack, time + voice.start*sample_rate/1000 + midi_latency, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
         }
       }
     }
@@ -1648,6 +1671,8 @@ static void RT_PATCH_change_velocity2(struct SeqTrack *seqtrack, struct Patch *p
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
 
+  int64_t midi_latency = get_midi_latency(patch);
+  
   int i;
   for(i=0;i<NUM_PATCH_VOICES;i++){
     const struct PatchVoice &voice = patch->voices[i];
@@ -1667,7 +1692,7 @@ static void RT_PATCH_change_velocity2(struct SeqTrack *seqtrack, struct Patch *p
         args[5].int_num |= i;
       
         
-        SCHEDULER_add_event(seqtrack, time + voice.start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 8, SCHEDULER_VELOCITY_PRIORITY);
+        SCHEDULER_add_event(seqtrack, time + voice.start*sample_rate/1000 + midi_latency, RT_scheduled_change_voice_velocity, &args[0], 8, SCHEDULER_VELOCITY_PRIORITY);
       }
     }
   }

@@ -194,8 +194,76 @@ double getCustomRecordingLatencyFromSystemInput(void){
 }
 
 void setCustomRecordingLatencyFromSystemInput(double ms){
+  if (ms < 0){
+    handleError("setCustomRecordingLatencyFromSystemInput: latency can not be negative: %f", ms);
+    return;
+  }
+  
   g_CustomRecordingLatencyFromSystemInput = ms;
   SETTINGS_write_double("custom_recording_latency_from_system_input", ms);
+
+  PREFERENCES_update();
+}
+
+
+
+
+static int g_MidiInstrumentLatencyType = 1;
+
+// Note: Called from RT.
+int getMidiInstrumentLatencyType(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_MidiInstrumentLatencyType = SETTINGS_read_int("midi_instrument_latency_type", g_MidiInstrumentLatencyType);
+    has_inited = true;
+  }
+
+  return g_MidiInstrumentLatencyType;
+}
+
+void setMidiInstrumentLatencyType(int type){
+  if (type < 0 || type > 3){
+    handleError("getMidiInstrumentLatencyType: type must be 0, 1, 2, or 3. Not %d", type);
+    return;
+  }
+
+  {
+    radium::PlayerLock lock;
+    g_MidiInstrumentLatencyType = type;
+  }
+  
+  SETTINGS_write_int("midi_instrument_latency_type", g_MidiInstrumentLatencyType);
+}
+
+
+
+static double g_CustomMidiInstrumentLatency = 20;
+
+double getCustomMidiInstrumentLatency(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_CustomMidiInstrumentLatency = SETTINGS_read_double("custom_midi_instrument_latency", g_CustomMidiInstrumentLatency);
+    has_inited = true;
+  }
+
+  return g_CustomMidiInstrumentLatency;
+}
+
+void setCustomMidiInstrumentLatency(double ms){
+  if (ms < 0){
+    handleError("gsetCustomMidiInstrumentLatency: latency can not be negative: %f", ms);
+    return;
+  }
+  
+  {
+    radium::PlayerLock lock;
+    g_CustomMidiInstrumentLatency = ms;
+  }
+  
+  SETTINGS_write_double("custom_midi_instrument_latency", g_CustomMidiInstrumentLatency);
+  PREFERENCES_update();
 }
 
 

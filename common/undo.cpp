@@ -520,7 +520,7 @@ bool Das_Undo_Close(void){
   }
   
   undo_is_open--;
-
+  
   if (undo_is_open > 0)
     return false;
 
@@ -568,6 +568,8 @@ void Das_Undo_ReopenLast(void){
   CurrUndo->next=NULL;
 
   undo_is_open++;
+  //printf("        UNDO REOPEN %d\n", undo_is_open);
+  
   num_undos--;
   //printf("        UNDO Reopenlast. num_undos--: %d\n", num_undos);
 }

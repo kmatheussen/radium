@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>985</width>
-    <height>519</height>
+    <width>1061</width>
+    <height>651</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -95,8 +95,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>985</width>
-        <height>519</height>
+        <width>1061</width>
+        <height>651</height>
        </rect>
       </property>
       <property name="sizePolicy">
@@ -1574,6 +1574,7 @@
                    </property>
                    <property name="font">
                     <font>
+                     <family>Serif</family>
                      <pointsize>8</pointsize>
                     </font>
                    </property>
@@ -1635,6 +1636,7 @@
                    </property>
                    <property name="font">
                     <font>
+                     <family>Serif</family>
                      <pointsize>8</pointsize>
                     </font>
                    </property>
@@ -1696,6 +1698,7 @@
                    </property>
                    <property name="font">
                     <font>
+                     <family>Serif</family>
                      <pointsize>8</pointsize>
                      <weight>75</weight>
                      <bold>true</bold>
@@ -1759,6 +1762,7 @@
                    </property>
                    <property name="font">
                     <font>
+                     <family>Serif</family>
                      <pointsize>8</pointsize>
                      <weight>75</weight>
                      <bold>true</bold>
@@ -1822,6 +1826,7 @@
                    </property>
                    <property name="font">
                     <font>
+                     <family>Serif</family>
                      <pointsize>8</pointsize>
                      <weight>75</weight>
                      <bold>true</bold>
@@ -1885,6 +1890,7 @@
                    </property>
                    <property name="font">
                     <font>
+                     <family>Serif</family>
                      <pointsize>8</pointsize>
                      <weight>75</weight>
                      <bold>true</bold>
@@ -1993,7 +1999,7 @@
                 </spacer>
                </item>
                <item row="0" column="1">
-                <layout class="QVBoxLayout" name="verticalLayout_9">
+                <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0,0,0,0,0,0">
                  <property name="spacing">
                   <number>0</number>
                  </property>
@@ -2102,6 +2108,51 @@
                    </item>
                    <item>
                     <widget class="QSlider" name="rightdelay_slider">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="minimum">
+                      <number>0</number>
+                     </property>
+                     <property name="maximum">
+                      <number>10000</number>
+                     </property>
+                     <property name="value">
+                      <number>5000</number>
+                     </property>
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_gakk">
+                   <property name="spacing">
+                    <number>0</number>
+                   </property>
+                   <item>
+                    <widget class="QToolButton" name="pitch_type_button">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="text">
+                      <string>0</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QSlider" name="pitch_slider">
                      <property name="enabled">
                       <bool>false</bool>
                      </property>

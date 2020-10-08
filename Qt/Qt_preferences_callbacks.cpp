@@ -562,20 +562,47 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       case 8192: b8192->setChecked(true); break;
       }
 
-      enable_latency_compensation->setChecked(latencyCompensationEnabled());
-
-      if (getRecordingLatencyFromSystemInputIsAutomaticallyDetermined())
-        auto_recording_latency->setChecked(true);
-      else
-        custom_recording_latency->setChecked(true);
-      
-      auto_recording_latency->setText("Input+output latency set by the soundcard driver. (" + QString::number(frames_to_ms(g_jack_system_input_latency + g_jack_system_output_latency), 'f', 2) + "ms)");
-
-      custom_recording_latency_value->setValue(getCustomRecordingLatencyFromSystemInput());
+      {
+        enable_latency_compensation->setChecked(latencyCompensationEnabled());
         
-      custom_recording_latency_layout->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
-      custom_recording_latency_label->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
-      custom_recording_latency_value->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+        if (getRecordingLatencyFromSystemInputIsAutomaticallyDetermined())
+          auto_recording_latency->setChecked(true);
+        else
+          custom_recording_latency->setChecked(true);
+        
+        auto_recording_latency->setText(QString("System Out input-latency + Soundcard Input+output latency. (")
+                                        + QString::number(frames_to_ms(MIXER_get_latency_for_main_system_out()), 'f', 2) + "ms"
+                                        + " + "
+                                        + QString::number(frames_to_ms(g_jack_system_input_latency + g_jack_system_output_latency), 'f', 2)
+                                        + "ms)");
+        
+        custom_recording_latency->setText(QString("System Out input-latency + Custom recording latency. (")
+                                          + QString::number(frames_to_ms(MIXER_get_latency_for_main_system_out()), 'f', 2) + "ms"
+                                          + " + "
+                                          + QString::number(getCustomRecordingLatencyFromSystemInput(), 'f', 2)
+                                          + "ms)");
+        
+        custom_recording_latency_value->setValue(getCustomRecordingLatencyFromSystemInput());
+        
+        //custom_recording_latency_layout->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+        //custom_recording_latency_label->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+        //custom_recording_latency_value->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+      }
+
+      {
+        switch(getMidiInstrumentLatencyType()){
+          case 0: no_midi_instrument_latency_compensation->setChecked(true); break;
+          case 1: only_system_out_input_latency->setChecked(true); break;
+          case 2: auto_midi_instrument_latency->setChecked(true); break;
+          case 3: custom_midi_instrument_latency->setChecked(true); break;
+          default: break;
+        }
+
+        //auto_midi_instrument_latency->setText("System Out input latency + Soundcard output latency. (" + QString::number(frames_to_ms(g_jack_system_output_latency), 'f', 2) + "ms)");
+        
+        custom_midi_instrument_latency_value->setValue(getCustomMidiInstrumentLatency());
+        
+      }
 
     }
 
@@ -1026,18 +1053,22 @@ public slots:
   void on_auto_recording_latency_toggled(bool val){
     if (_initing==false && val){
       setRecordingLatencyFromSystemInputIsAutomaticallyDetermined(true);
+      /*
       custom_recording_latency_layout->setEnabled(false);
       custom_recording_latency_label->setEnabled(false);
       custom_recording_latency_value->setEnabled(false);
+      */
     }
   }
   
   void on_custom_recording_latency_toggled(bool val){
     if (_initing==false && val){
       setRecordingLatencyFromSystemInputIsAutomaticallyDetermined(false);
+      /*
       custom_recording_latency_layout->setEnabled(true);
       custom_recording_latency_label->setEnabled(true);
       custom_recording_latency_value->setEnabled(true);
+      */
     }
   }
 
@@ -1053,6 +1084,44 @@ public slots:
     }GL_unlock();
   }
 
+  void on_tabWidget_currentChanged(int tabnum){
+    PREFERENCES_update();
+  }
+  
+
+  void on_no_midi_instrument_latency_compensation_toggled(bool val){
+    if (_initing==false && val)
+      setMidiInstrumentLatencyType(0);
+  }
+  
+  void on_only_system_out_input_latency_toggled(bool val){
+    if (_initing==false && val)
+      setMidiInstrumentLatencyType(1);
+  }
+  
+  void on_auto_midi_instrument_latency_toggled(bool val){
+    if (_initing==false && val)
+      setMidiInstrumentLatencyType(2);
+  }
+  
+  void on_custom_midi_instrument_latency_toggled(bool val){
+    if (_initing==false && val)
+      setMidiInstrumentLatencyType(3);
+  }
+  
+  void on_custom_midi_instrument_latency_value_valueChanged(double val){
+    if (_initing==false)
+      setCustomMidiInstrumentLatency(val);
+  }
+  
+  void on_custom_midi_instrument_latency_value_editingFinished(void){
+    set_editor_focus();
+    GL_lock();{
+      custom_recording_latency_value->clearFocus();
+    }GL_unlock();
+  }
+  
+  
   void on_undo_solo_toggled(bool val){
     if (_initing==false)
       setUndoSolo(val);

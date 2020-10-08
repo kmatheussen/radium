@@ -82,6 +82,8 @@ extern LANGSPEC float MIXER_get_sample_rate(void);
 extern LANGSPEC int64_t MIXER_get_recording_latency_compensation_from_system_in(void);
 extern LANGSPEC int64_t MIXER_get_latency_for_main_system_out(void);
 
+struct SoundPlugin *RT_get_system_out_plugin(void); // implemented in qt_bottom_bar_widget_callbacs.h. Fast, but might return NULL or pointer to a deleted SoundPlugin.
+  
 #ifdef __cplusplus
 bool MIXER_is_connected_to_system_out(const SoundProducer *sp);
 #endif
