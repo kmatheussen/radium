@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern bool g_RT_enable_latency_compensation; // Must/should hold player lock when writing.
+extern int64_t g_RT_system_out_input_latency; // Must/should hold player lock when writing.
 
 
 struct SoundProducer;

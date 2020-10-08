@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
+#include "../audio/SoundProducer_proc.h"
 #include "../audio/CpuUsage.hpp"
 
 #include "../Qt/Qt_MyQButton.h"
@@ -393,16 +394,18 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   }
 
   void set_volume_slider_string(void){
-    const SoundPluginType *type = g_system_out_plugin->type;
-    
-    int effect_num = type->num_effects+EFFNUM_INPUT_VOLUME;
-    
-    char buf[64]={0};
-    PLUGIN_get_display_value_string(g_system_out_plugin, effect_num, buf, 64);
-    
-    QString p = PLUGIN_has_midi_learn(g_system_out_plugin, effect_num) ? "*" : "";
-    
-    SLIDERPAINTER_set_string(system_volume_slider->_painter, p + buf);
+    if (g_system_out_plugin != NULL){
+      const SoundPluginType *type = g_system_out_plugin->type;
+      
+      int effect_num = type->num_effects+EFFNUM_INPUT_VOLUME;
+      
+      char buf[64]={0};
+      PLUGIN_get_display_value_string(g_system_out_plugin, effect_num, buf, 64);
+      
+      QString p = PLUGIN_has_midi_learn(g_system_out_plugin, effect_num) ? "*" : "";
+      
+      SLIDERPAINTER_set_string(system_volume_slider->_painter, p + buf);
+    }
   }
 
 public slots:
@@ -462,8 +465,7 @@ public slots:
     if (_triggered_by_user == true && g_system_audio_instrument_widget != NULL)
       g_system_audio_instrument_widget->input_volume_slider->setValue(val);
     
-    if (g_system_out_plugin != NULL)
-      set_volume_slider_string();
+    set_volume_slider_string();
   }
 
   void on_octave_up_button_clicked(){
@@ -548,12 +550,18 @@ extern "C"{
     SLIDERPAINTER_set_peak_value_pointers(g_bottom_bar_widget->system_volume_slider->_painter, num_channels, pointers);
   }
   */
-  
+
+  // Note: plugin might be NULL.
   void GFX_OS_set_system_volume_plugin(struct SoundPlugin *plugin){
-    g_system_out_plugin = plugin;
+    {
+      radium::PlayerLock lock;
+      g_system_out_plugin = plugin;
+      g_RT_system_out_input_latency = 0;
+    }
+    
     g_system_out_patch = NULL;
     g_system_audio_instrument_widget = NULL;
-
+        
     for(auto *bottom_bar_widget : g_bottom_bars){
       
       auto *system_volume_slider = bottom_bar_widget->system_volume_slider;
@@ -634,6 +642,10 @@ struct Patch *GFX_OS_get_system_out(void){
   }
 
   return g_system_out_patch;
+}
+
+struct SoundPlugin *RT_get_system_out_plugin(void){
+  return g_system_out_plugin;
 }
 
 bool EDITOR_switch_drunk_velocity(void){

@@ -319,7 +319,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
       GFX_OS_set_system_volume_plugin(other_system_out);
     } else {
       struct SoundPlugin *other_system_out = MIXER_get_soundplugin("Jack", "System Out 8");
-      GFX_OS_set_system_volume_plugin(other_system_out);
+      GFX_OS_set_system_volume_plugin(other_system_out); // "other_system_out" might be NULL.
     }
   }
 

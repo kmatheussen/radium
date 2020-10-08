@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>9</number>
+      <number>5</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideNone</enum>
@@ -821,7 +821,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 <item>
                  <widget class="QRadioButton" name="custom_recording_latency">
                   <property name="text">
-                   <string>Custom soundcard input+output latency. (Tip: Record the metronome to measure)</string>
+                   <string>System Out input-latency + Custom soundcard input+output latency.</string>
                   </property>
                  </widget>
                 </item>
@@ -830,7 +830,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   <item>
                    <widget class="QLabel" name="custom_recording_latency_label">
                     <property name="text">
-                     <string>Custom soundcard input+output latency:</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;Custom recording latency:&lt;br&gt;(Tip: Record the metronome to measure)&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                    </widget>
                   </item>
@@ -3987,7 +3987,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
            <item>
             <widget class="QGroupBox" name="groupBox_19">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
@@ -4003,23 +4003,40 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_26">
               <item>
-               <widget class="QRadioButton" name="no_midi_instrument_latency_compensation_3">
+               <widget class="QLabel" name="label_14">
+                <property name="text">
+                 <string>Note: Latency compensation is currently only applied to notes.</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="no_midi_instrument_latency_compensation">
                 <property name="text">
                  <string>No latency compensation</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="auto_midi_instrument_latency_3">
+               <widget class="QRadioButton" name="only_system_out_input_latency">
                 <property name="text">
-                 <string>Automatically determined (text overridden in program)</string>
+                 <string>System Out input-latency</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="custom_midi_instrument_latency_3">
+               <widget class="QRadioButton" name="auto_midi_instrument_latency">
                 <property name="text">
-                 <string>Custom latency</string>
+                 <string>System Out input-latency + Soundcard output-latency</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="custom_midi_instrument_latency">
+                <property name="text">
+                 <string>System Out input-latency + custom latency</string>
                 </property>
                </widget>
               </item>
@@ -4033,7 +4050,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QDoubleSpinBox" name="custom_recording_latency_value_4">
+                 <widget class="QDoubleSpinBox" name="custom_midi_instrument_latency_value">
                   <property name="alignment">
                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                   </property>

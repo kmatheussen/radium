@@ -142,6 +142,7 @@ static float iec_scale(float db) {
 
 
 bool g_RT_enable_latency_compensation = true;
+int64_t g_RT_system_out_input_latency = 0;
 
 
 namespace{
@@ -1674,6 +1675,9 @@ public:
       
       if (highest_input_link_latency != _highest_input_link_latency)
         _highest_input_link_latency = highest_input_link_latency;
+
+      if (_plugin==RT_get_system_out_plugin())
+        g_RT_system_out_input_latency = _highest_input_link_latency;
     }
     
     {    
