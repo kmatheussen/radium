@@ -67,7 +67,8 @@ struct Song *SONG_create(void){
 
   song->RT_mute_plugin_MIDI_when_muted = true;
   song->RT_send_plugin_MIDI_through_when_bypassed = true;
-
+  song->RT_implicitly_mute_plugin_MIDI = true;
+    
   reset_recording_config(&song->default_recording_config);
 
   VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL, 0, -1, false, false));

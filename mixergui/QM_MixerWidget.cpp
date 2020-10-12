@@ -2326,7 +2326,8 @@ namespace{
                 if (less_frequently_updated) {
                   float volume = chip->get_slider_volume();
                   bool is_muted = is_muted_relaxed(plugin);
-                  //bool is_implicitly_muted = SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
+                  bool is_implicitly_muted = plugin->is_implicitly_muted; //SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
+                  bool is_implicitly_soloed = plugin->is_implicitly_soloed; //SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
                   bool is_solo = ATOMIC_GET_RELAXED(plugin->solo_is_on);
                   bool is_bypass = !ATOMIC_GET_RELAXED(plugin->effects_are_on);
                   bool is_recording = ATOMIC_GET_RELAXED(patch->is_recording);
@@ -2334,42 +2335,44 @@ namespace{
                   
                   //printf("last: %f. vol: %f. Equal? %d\n", chip->_last_updated_volume, volume, chip->_last_updated_volume == volume);
                   if (!equal_floats(chip->_last_updated_volume, volume)){
-                    CHIP_update(chip, plugin);
                     chip->_last_updated_volume = volume;
+                    CHIP_update(chip, plugin);
                   }
                   
                   if (chip->_last_updated_mute != is_muted){
-                    chip->update();
                     chip->_last_updated_mute = is_muted;
+                    chip->update();
                   }
 
-                  /*
-                  // CHIP_update() should be called manually when implicit mute changes.
-                  if (chip->_last_updated_implicitly_mute != is_implicitly_muted){
+                  if (chip->_last_updated_implicitly_muted != is_implicitly_muted){
+                    chip->_last_updated_implicitly_muted = is_implicitly_muted;
                     chip->update();
-                    chip->_last_updated_implicitly_mute = is_implicitly_muted;
                   }
-                  */
+                  
+                  if (chip->_last_updated_implicitly_soloed != is_implicitly_soloed){
+                    chip->_last_updated_implicitly_soloed = is_implicitly_soloed;
+                    chip->update();
+                  }
                 
                   if (chip->_last_updated_solo != is_solo){
-                    chip->update();
                     chip->_last_updated_solo = is_solo;
+                    chip->update();
                   }
                   
                   if (chip->_last_updated_bypass != is_bypass){
-                    chip->update();
                     chip->_last_updated_bypass = is_bypass;
+                    chip->update();
                   }
                   
                   if (chip->_last_updated_recording != is_recording){
-                    chip->update();
                     chip->_last_updated_recording = is_recording;
+                    chip->update();
                   }
                   
                   // turn on is_autosuspending (only gfx)
                   if (chip->_last_updated_autosuspending==true &&  is_autosuspending==false){
-                    chip->_last_updated_autosuspending = false;
                     chip->update();
+                    chip->_last_updated_autosuspending = false;
                     //printf("Turned off autosuspending for %s\n", patch->name);
                   }
 

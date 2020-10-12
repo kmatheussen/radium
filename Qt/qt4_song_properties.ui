@@ -175,9 +175,9 @@
    <item row="3" column="2">
     <widget class="QGroupBox" name="groupBox_7">
      <property name="title">
-      <string>Plugins</string>
+      <string>Plugin MIDI behavior</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
+     <layout class="QVBoxLayout" name="gak">
       <item>
        <widget class="QCheckBox" name="mute_plugin_MIDI">
         <property name="text">
@@ -189,6 +189,16 @@
        <widget class="QCheckBox" name="send_plugin_MIDI_through">
         <property name="text">
          <string>Send MIDI through when plugin is bypassed</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="implicitly_mute_MIDI">
+        <property name="toolTip">
+         <string>A plugin is implicitly muted when a parallel plugin is soloed</string>
+        </property>
+        <property name="text">
+         <string>Implicitly mute MIDI the same way as Audio. </string>
         </property>
        </widget>
       </item>
