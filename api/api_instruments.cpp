@@ -961,25 +961,6 @@ bool instrumentIsImplicitlyMuted(instrument_t instrument_id){
   return plugin->is_implicitly_muted;
 }
 
-void setInstrumentIsImplicitlyMuted(bool doit, instrument_t instrument_id){
-  struct Patch *patch = getAudioPatchFromNum(instrument_id);
-  if(patch==NULL)
-    return;
-
-  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
-  if (plugin==NULL){
-    handleError("setInstrumentIsImplicitlyMuted: Instrument #%d has been closed", (int)instrument_id.id);
-    return;
-  }
-
-  if (plugin->is_implicitly_muted == doit)
-    return;
-  
-  plugin->is_implicitly_muted = doit;
-  CHIP_update(plugin);
-  SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_RIGHT_PART);
-}
-
 bool instrumentIsImplicitlySoloed(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -993,27 +974,6 @@ bool instrumentIsImplicitlySoloed(instrument_t instrument_id){
 
   return plugin->is_implicitly_soloed;
 }
-
-void setInstrumentIsImplicitlySoloed(bool doit, instrument_t instrument_id){
-  struct Patch *patch = getAudioPatchFromNum(instrument_id);
-  if(patch==NULL)
-    return;
-
-  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
-  if (plugin==NULL){
-    handleError("setInstrumentIsImplicitlySoloed: Instrument #%d has been closed", (int)instrument_id.id);
-    return;
-  }
-
-
-  if (plugin->is_implicitly_soloed == doit)
-    return;
-  
-  plugin->is_implicitly_soloed = doit;
-  CHIP_update(plugin);
-  SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_RIGHT_PART);
-}
-
 
 float getInstrumentEffect(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
@@ -1538,7 +1498,7 @@ void setInstrumentSolo(bool do_solo, instrument_t instrument_id){
   if (!equal_in_storage)
     ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
 
-  PLUGIN_set_soloed(plugin, do_solo);
+  PLUGIN_set_soloed(plugin, do_solo, true);
 }
 
 bool switchInstrumentSolo(instrument_t instrument_id){

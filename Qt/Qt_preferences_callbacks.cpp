@@ -570,7 +570,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         else
           custom_recording_latency->setChecked(true);
         
-        auto_recording_latency->setText(QString("System Out input-latency + Soundcard Input+output latency. (")
+        auto_recording_latency->setText(QString("System Out input-latency + Soundcard input+output latency. (")
                                         + QString::number(frames_to_ms(MIXER_get_latency_for_main_system_out()), 'f', 2) + "ms"
                                         + " + "
                                         + QString::number(frames_to_ms(g_jack_system_input_latency + g_jack_system_output_latency), 'f', 2)

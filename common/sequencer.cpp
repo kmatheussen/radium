@@ -1768,7 +1768,7 @@ void SEQTRACK_set_soloed(struct SeqTrack *seqtrack, bool soloit){
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
 
-  PLUGIN_set_soloed(plugin, soloit);
+  PLUGIN_set_soloed(plugin, soloit, true);
 }
 
 

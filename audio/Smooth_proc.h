@@ -38,7 +38,8 @@ typedef struct{
 
 
 static inline void SMOOTH_print(const char *s, const Smooth *smooth){
-  printf("%s[0]: %f -> [%d]: %f. pos: %d. num_values: %d. smooth_length: %d\n",
+  printf("%p: %s[0]: %f -> [%d]: %f. pos: %d. num_values: %d. smooth_length: %d\n",
+         smooth,
          s,
          smooth->values[0], RADIUM_BLOCKSIZE-1, smooth->values[RADIUM_BLOCKSIZE-1],
          smooth->pos,

@@ -135,7 +135,7 @@ extern LANGSPEC void PLUGIN_set_random_behavior(SoundPlugin *plugin, const int e
 extern LANGSPEC bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num);
 
 extern LANGSPEC void PLUGIN_set_muted(SoundPlugin *plugin, bool muteit);
-extern LANGSPEC void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit);
+extern LANGSPEC void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit, bool apply_now);
 
 #if 0
 // These ones are too easy to use the wrong way. Use PLUGIN_get_effect_value instead, or plugin->solo_is_on/etc. for graphics.

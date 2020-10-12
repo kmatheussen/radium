@@ -21,21 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include <math.h>
 
-static inline int myisnormal(float val){
-  return isnormal(val);
-}
-
-static inline int myfpclassify(float val){
-  return fpclassify(val);
-}
-
-static inline int myisnan(float val){
-  return isnan(val);
-}
-
-static inline int myisinf(float val){
-  return isinf(val);
-}
 
 
 #include "../weakjack/weak_libjack.h"
@@ -143,6 +128,8 @@ static float iec_scale(float db) {
 
 bool g_RT_enable_latency_compensation = true;
 int64_t g_RT_system_out_input_latency = 0;
+
+static bool g_has_solo = false;
 
 
 namespace{
@@ -253,7 +240,7 @@ struct SoundProducerLink {
   // used both by audio links and event links
   SoundProducer *source;
   SoundProducer *target;
-
+  
   const bool is_event_link;
   int _bus_num;
   bool _is_bus_link;
@@ -262,9 +249,14 @@ struct SoundProducerLink {
   int source_ch;
   int target_ch;
 
-  bool link_enabled; // Set by the user.  Only accessed by the main thread when applying changes and in SP_set_link_enabled. ("is_active" (below) is an internal variable set by the sound engine, which is not the same)
+  bool is_enabled = true; // Only accessed by the main thread when applying changes, and in SP_set_link_enabled.
 
-  bool RT_link_enabled;  // Contains the same value as "link_enabled", but can only be accessed if holding the player lock.
+  bool RT_is_enabled = true;  // Contains the same value as "is_enabled", but can only be accessed if holding the player lock.
+
+  bool is_explicitly_enabled = true; // Set by the user.
+  
+  bool is_implicitly_muted = false; // is muted because of Solo configuration in the audio graph.
+  bool is_implicitly_soloed = false; // is soloed either because source or target is solo, or a soundproducer that is in direct line from source or target is solo.
 
   Smooth volume; // volume.target_value = link_volume * source->output_volume * source->volume
 
@@ -275,9 +267,14 @@ private:
   
 public:
   
-  bool is_active; // this is an internal variable used for whether the link should run or not. It's not the same as "link_enabled" above (naturally).
+  bool is_active; // this is an internal variable used for whether the link should run or not. It's not the same as "is_enabled" above (naturally).
 
-  bool should_be_turned_off = false;
+  bool RT_should_be_turned_off = false;
+
+  // Can be called when both is_explicitly_enabled and is_implicitly_muted is updated.
+  bool should_be_enabled(void) const {
+    return is_explicitly_enabled && !is_implicitly_muted;      
+  }
 
   bool equals(const SoundProducerLink *b) const {
     if (source!=b->source)
@@ -391,25 +388,21 @@ public:
     return !equal_floats(get_link_volume(), new_volume);
   }
   
-  void request_turn_off(void){
-    R_ASSERT_NON_RELEASE(should_be_turned_off==false);
-    should_be_turned_off = true;
+  void RT_request_turn_off(void){
+    R_ASSERT_NON_RELEASE(RT_should_be_turned_off==false);
+    RT_should_be_turned_off = true;
   }
 
   float RT_get_total_link_volume(void) const {
-    const SoundPlugin *source_plugin = SP_get_plugin(source);
-
-    //bool do_bypass      = !ATOMIC_GET(source_plugin->effects_are_on);
-
-    //float plugin_volume = do_bypass ? 1.0 : source_plugin->volume;  // (Note that plugin->volume==0 when plugin->volume_onoff==false, so we don't need to test for that)
-
-    if (should_be_turned_off)
+    if (RT_should_be_turned_off)
       return 0.0f;
 
-    else if (!RT_link_enabled)
+    else if (!RT_is_enabled)
       return 0.0f;
     
-    else if (_is_bus_link){
+    const SoundPlugin *source_plugin = SP_get_plugin(source);
+
+    if (_is_bus_link){
       
       return source_plugin->bus_volume[_bus_num];
       
@@ -467,8 +460,6 @@ public:
     , _is_bus_link(_bus_num >= 0)
     , source_ch(0)
     , target_ch(0)
-    , link_enabled(true)
-    , RT_link_enabled(true)
     , RT_link_volume(1.0)
     , link_volume(1.0)
     , is_active(is_event_link)
@@ -703,8 +694,8 @@ static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_f
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-  if(sum!=0.0f && !myisnormal(sum) )
-    return myisnan(sum)?"nan":myisinf(sum)?"inf":myfpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
+  if(sum!=0.0f && !isnormal(sum) )
+    return isnan(sum)?"nan":isinf(sum)?"inf":fpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
   else
     return NULL;
 #pragma GCC diagnostic pop
@@ -858,7 +849,12 @@ namespace{
     }
   };
   
-  const LinkEnabledChanges g_empty_link_enabled_changes;
+  struct LinkExplicitlyEnabledChanges : public radium::Vector<LinkEnabledChange> {
+    LinkExplicitlyEnabledChanges(){
+    }
+  };
+  
+  const LinkExplicitlyEnabledChanges g_empty_link_explicitly_enabled_changes;
 }
 
 //struct Owner *owner;
@@ -970,8 +966,6 @@ public:
     else
       _num_dry_sounds = _num_outputs;
 
-    allocate_sound_buffers(num_frames);
-
     _dry_sound_latencycompensator_delays = new LatencyCompensatorDelay[_num_dry_sounds];
     
     MIXER_add_SoundProducer(this);
@@ -996,28 +990,8 @@ public:
     _plugin->sp = NULL;
 
     delete[] _dry_sound_latencycompensator_delays;
-    
-    free_sound_buffers();
   }
   
-  void free_sound_buffers(){
-  }
-
-  void allocate_sound_buffers(int num_frames){
-    R_ASSERT(num_frames==RADIUM_BLOCKSIZE);
-
-
-    
-    //_output_buffer = (radium::AudioBuffer**)(V_calloc(sizeof(radium::AudioBuffer*),_num_outputs));
-    
-    /*    
-    _output_buffer = (float**)(V_calloc(sizeof(float*),_num_outputs));
-    for(int ch=0;ch<_num_outputs;ch++){
-      _output_buffer[ch] = (float*)V_calloc(sizeof(float),num_frames);
-    }
-    */
-  }
-
   static bool is_audio_connected(const SoundProducer *start_producer, const SoundProducer *end_producer, int &safety) {
     safety++;
     
@@ -1027,11 +1001,12 @@ public:
     }
     
     for (SoundProducerLink *link : end_producer->_input_links){
-      if (link->source == start_producer)
+      if (link->is_event_link)
+        continue;
+      else if (link->source == start_producer)
         return true;
-      else
-        if (is_audio_connected(start_producer, link->source, safety))
-          return true;
+      else if (is_audio_connected(start_producer, link->source, safety))
+        return true;
     }
 
     return false;
@@ -1148,16 +1123,164 @@ public:
   
 #undef P
 #undef D
-  
 
-  // Note 1: Will delete all links in to_add if it succeeded.
+
+  struct UpdateImplicitSolo{
+    const radium::Vector<SoundProducerLink*> &_to_add;
+    mutable QSet<SoundProducer*> _updated_sps[2]; // to avoid updating the same soundproducer more than once
+    LinkEnabledChanges &_link_enabled_changes;
+
+    UpdateImplicitSolo(const radium::Vector<SoundProducerLink*> &to_add,
+                       LinkEnabledChanges &link_enabled_changes)
+      : _to_add(to_add)
+      , _link_enabled_changes(link_enabled_changes)
+    {
+      process();
+#if !defined(RELEASE)
+      static int num=0;
+      printf("---------------UpdateImplicitSolo #%d. Size: %d\n", num++, _link_enabled_changes.size());
+#endif
+    }
+    
+    void maybe_add_link_enabled_change(SoundProducerLink *link){
+      R_ASSERT_NON_RELEASE(!link->is_event_link);
+      
+      bool should_be_enabled = link->should_be_enabled();
+      if (link->is_enabled != should_be_enabled){
+        _link_enabled_changes.push_back(LinkEnabledChange(link, should_be_enabled));
+#if !defined(RELEASE)
+        printf("  ------LINK ENABLE CHANGE %d: %s -> %s\n", should_be_enabled, link->source->_plugin->patch->name, link->target->_plugin->patch->name);
+#endif
+      }
+    }
+
+    void update_is_implicitly_soloed_link(SoundProducerLink* link, bool link_forward) const {
+      if (link->is_event_link)
+        return;
+      
+      link->is_implicitly_soloed = true;
+      update_is_implicitly_soloed_sp(link_forward ? link->target : link->source, link_forward);
+    }
+    
+    void update_is_implicitly_soloed_sp(SoundProducer *sp, bool link_forward) const {
+      R_ASSERT_RETURN_IF_FALSE(sp!=NULL);
+      
+      if (!_updated_sps[link_forward?0:1].contains(sp)) {
+        
+        _updated_sps[link_forward?0:1].insert(sp);
+        
+        sp->_plugin->is_implicitly_soloed = true;
+        
+        for(auto *link : link_forward ? sp->_output_links : sp->_input_links)
+          update_is_implicitly_soloed_link(link, link_forward);
+        
+        for(SoundProducerLink *link : _to_add)
+          if (link_forward ? (sp==link->source) : (sp==link->target))
+            update_is_implicitly_soloed_link(link, link_forward);        
+      }
+    }
+  
+    void process(void){
+      
+      const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
+      
+      bool has_solo = false;
+      
+      // 0. Check if we can do a quick exit.
+      if (!g_has_solo){
+        for(SoundProducer *sp : sp_all)
+          if (ATOMIC_GET_RELAXED(sp->_plugin->solo_is_on))
+            goto we_have_or_had_solo;
+
+        return; // We usually exits here.
+      }
+      
+    
+    we_have_or_had_solo:
+      
+      // 1. Set "is_implicitly_soloed" to false for all links
+      //
+      for(SoundProducer *sp : sp_all){
+
+        // update plugin->is_implicitly* stuff here as well. (only used by the UI)
+        sp->_plugin->is_implicitly_soloed = false;
+        
+        for(SoundProducerLink *link : sp->_output_links)
+          if (!link->is_event_link)
+            link->is_implicitly_soloed = false;
+        
+#if !defined(RELEASE)
+        for(SoundProducerLink *link : _to_add)
+          if (!link->is_event_link)
+            if (link->is_implicitly_soloed==true)
+              abort();
+#endif
+      }
+      
+      
+      // 2. Set "is_implicitly_soloed" to correct value for all links and plugins
+      //
+      for(SoundProducer *sp : sp_all)
+        if (ATOMIC_GET_RELAXED(sp->_plugin->solo_is_on)){            
+          has_solo = true;
+          update_is_implicitly_soloed_sp(sp, true);
+          update_is_implicitly_soloed_sp(sp, false);
+        }
+    
+    
+      // 3. Set "is_implicilty_muted" to correct value for all links and plugins, and add LinkEnabledChanges to link_enabled_changes.
+      //
+      for(SoundProducer *sp : sp_all){
+        
+        bool is_implicitly_muted = has_solo && !sp->_plugin->is_implicitly_soloed;
+        
+        // update plugin->is_implicitly* stuff here as well. (only used by the UI)
+        if (sp->_plugin->is_implicitly_muted != is_implicitly_muted)
+          sp->_plugin->is_implicitly_muted = is_implicitly_muted;
+        
+        for(SoundProducerLink *link : sp->_output_links)
+          if (!link->is_event_link)
+            if (is_implicitly_muted != link->is_implicitly_muted){
+              link->is_implicitly_muted = is_implicitly_muted;
+              maybe_add_link_enabled_change(link);
+            }
+      }
+      
+      g_has_solo = has_solo;
+    }
+
+  };
+
+
+  static bool call_me_after_solo_has_changed(void){
+    LinkEnabledChanges link_enabled_changes;
+
+    const radium::Vector<SoundProducerLink*> empty;
+    UpdateImplicitSolo implicit(empty, link_enabled_changes);
+
+    if (link_enabled_changes.size()==0)
+      return false;
+    
+    for(const auto &link_enabled_change : link_enabled_changes)
+      link_enabled_change.link->is_enabled = link_enabled_change.link_enabled;
+      
+    {
+      radium::PlayerLock lock;
+      for(const auto &link_enabled_change : link_enabled_changes)
+        link_enabled_change.link->RT_is_enabled = link_enabled_change.link_enabled;
+    }
+
+    return true;
+  }
+
+  // Note 1: Will delete all links in "to_add" if it succeeded.
   // Note 2: Might modify to_remove.
   //
   static bool add_and_remove_links(const radium::Vector<SoundProducerLink*> &to_add,
                                    radium::Vector<SoundProducerLink*> &to_remove,
                                    bool *isrecursive_feedback = NULL,
                                    const VolumeChanges &volume_changes = g_empty_volume_changes,
-                                   const LinkEnabledChanges &link_enabled_changes = g_empty_link_enabled_changes
+                                   const LinkExplicitlyEnabledChanges &link_explicitly_enabled_changes = g_empty_link_explicitly_enabled_changes
                                    )
   {
     
@@ -1179,7 +1302,7 @@ public:
     if (isrecursive_feedback != NULL)
       *isrecursive_feedback = isrecursive;
 
-    if (to_add.size()==0 && to_remove.size()==0 && volume_changes.size()==0 && link_enabled_changes.size()==0){
+    if (to_add.size()==0 && to_remove.size()==0 && volume_changes.size()==0 && link_explicitly_enabled_changes.size()==0){
       R_ASSERT(links_that_must_be_removed_first.size()==0);
       return false;
     }
@@ -1198,6 +1321,7 @@ public:
       return false;      
     }
 
+    
     // 2. REMOVING: Remove links that must be removed first to avoid recursive graph. (these are found in the is_recursive function)
     //
     {
@@ -1205,6 +1329,23 @@ public:
       SoundProducer::add_and_remove_links(empty, links_that_must_be_removed_first);
     }
 
+    
+    // 2.5 Create link_enabled_changes from explicitly_link_enabled_changes and Solo settings.
+    //
+    LinkEnabledChanges link_enabled_changes;
+    {
+      // First update all "is_explicitly_enabled" variables.
+      for(const auto &link_enabled_change : link_enabled_changes)
+        link_enabled_change.link->is_explicitly_enabled = link_enabled_change.link_enabled;
+      
+      // Then create the link_enabled_changes.
+      UpdateImplicitSolo implicit(to_add, link_enabled_changes);
+
+      for(const auto &link_enabled_change : link_enabled_changes)
+        link_enabled_change.link->is_enabled = link_enabled_change.link_enabled;
+    }
+
+    
     // 3. ADDING: Allocate memory for new links in the radium::Vector vectors.
     //
     {
@@ -1231,14 +1372,14 @@ public:
       }
     }
 
+    
     // 4. REMOVING/ADDING: Request links to be removed to turn off, and add new links.
     //
     {
-      radium::PlayerLock lock;
-      
+      radium::PlayerLock lock;  // Do all of this inside the player lock to ensure removed links and links that are disabled are faded out at the same time as added links and links that are enabled are faded in.
       // REMOVE
       for(auto *link : to_remove)
-        link->request_turn_off(); // Do this inside the player lock so that we are sure they all fade out at the same time as the to_add links fades in.
+        link->RT_request_turn_off();
 
       // ADD
       for(auto *link : to_add){
@@ -1247,20 +1388,16 @@ public:
       }
 
       // Enable/disable
-      for(const auto &link_enabled_change : link_enabled_changes){
-        link_enabled_change.link->link_enabled = link_enabled_change.link_enabled;
-        link_enabled_change.link->RT_link_enabled = link_enabled_change.link_enabled;
-      }
+      for(const auto &link_enabled_change : link_enabled_changes)
+        link_enabled_change.link->RT_is_enabled = link_enabled_change.link_enabled;
 
       // Change volume
-      for(const auto &volume_change : volume_changes){
+      for(const auto &volume_change : volume_changes)
         volume_change.link->set_link_volume(volume_change.new_volume);
-      }
-      
     }
 
 
-    // 5. ADDING: Do some post-add stuff in the radium::Vector vectors.
+    // 5. ADDING: Do some post-add stuff in the radium::Vector vectors. (free previously used memory, if any.)
     //
     for(auto *link : to_add){
       link->source->_output_links.post_add();
@@ -1324,6 +1461,7 @@ public:
     }
     */
 
+    
     // 7. REMOVING: Remove the 'to_remove' links from the graph.
     //
     if (to_remove.size() > 0){
@@ -1337,6 +1475,7 @@ public:
       }
     }
 
+    
     // 8. REMOVING: Deallocate the 'to_remove' links.
     //
     for(auto *link : to_remove)
@@ -2117,7 +2256,7 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
   
   radium::Vector<SoundProducerLink*> to_add;
   radium::Vector<SoundProducerLink*> to_remove;
-  LinkEnabledChanges link_enable_changes;
+  LinkExplicitlyEnabledChanges link_explicitly_enable_changes;
   VolumeChanges volume_changes;
 
   for(auto &parm : parm_to_add){
@@ -2127,9 +2266,9 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
     if (existing_link != NULL) {
       
       if (parm.enable_type != radium::EnableType::DONT_CHANGE) {
-        bool link_is_enabled = parm.enable_type==radium::EnableType::DISABLE ? false : true;
-        if (existing_link->link_enabled != link_is_enabled)
-          link_enable_changes.push_back(LinkEnabledChange(existing_link, link_is_enabled));
+        bool link_is_explicitly_enabled = parm.enable_type==radium::EnableType::DISABLE ? false : true;
+        if (existing_link->is_explicitly_enabled != link_is_explicitly_enabled)
+          link_explicitly_enable_changes.push_back(LinkEnabledChange(existing_link, link_is_explicitly_enabled));
       }
       
       if (parm.must_set_volume && existing_link->need_to_create_volume_change(parm.volume)) {
@@ -2147,9 +2286,8 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
         link->set_link_volume(parm.volume);
 
       if (parm.enable_type != radium::EnableType::DONT_CHANGE) {
-        bool link_is_enabled = parm.enable_type==radium::EnableType::DISABLE ? false : true;
-        link->link_enabled = link_is_enabled;
-        link->RT_link_enabled = link_is_enabled;
+        bool link_is_explicitly_enabled = parm.enable_type==radium::EnableType::DISABLE ? false : true;
+        link->is_explicitly_enabled = link_is_explicitly_enabled;
       }
       
       to_add.push_back(link);
@@ -2164,7 +2302,7 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
   }
 
   bool isrecursive;
-  return SoundProducer::add_and_remove_links(to_add, to_remove, &isrecursive, volume_changes, link_enable_changes);
+  return SoundProducer::add_and_remove_links(to_add, to_remove, &isrecursive, volume_changes, link_explicitly_enable_changes);
 }
 
 /*
@@ -2219,7 +2357,27 @@ float SP_get_link_gain(const SoundProducer *target, const SoundProducer *source,
     if(link->is_event_link==false && link->source==source)
       return link->get_link_volume();
 
-  *error = talloc_strdup("Could not find link");
+  if (error != NULL)
+    *error = talloc_strdup("Could not find link");
+  
+  return 0.0;
+}
+
+float SP_get_actual_link_gain_and_enabled(const SoundProducer *target, const SoundProducer *source, const char **error, bool &is_enabled){
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
+  
+  for (SoundProducerLink *link : target->_input_links)
+    if(link->is_event_link==false && link->source==source){
+      is_enabled = link->is_enabled;
+      if (is_enabled)
+        return link->get_link_volume();
+      else
+        return 0.0f;
+    }
+  
+  if (error != NULL)
+    *error = talloc_strdup("Could not find link");
+  
   return 0.0;
 }
 
@@ -2243,47 +2401,77 @@ bool SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume
   return ret;
 }
 
-/*
-// Link enabled/disabled is kept track of in the AudioConnection class.
-bool SP_get_link_enabled(const SoundProducer *target, const SoundProducer *source, const char **error){
-  for (SoundProducerLink *link : target->_input_links) {
-    if(link->source==source){
-      //printf("   Found %d (%p)\n", safe_bool_read(&link->link_enabled), link);
-      return link->link_enabled;
-    }
-  }
-  *error = talloc_strdup("Could not find link");
-  return false;
+bool SP_call_me_after_solo_has_changed(void){
+  return SoundProducer::call_me_after_solo_has_changed();
 }
-*/
 
 // Only called from AudioConnection->set_enabled().
 // 'is_enabled' will only be true if AudioConnection::_is_enabled==true && AudioConnection::_is_implicitly_enabled==true.
-bool SP_set_link_enabled(SoundProducer *target, SoundProducer *source, bool is_enabled, const char **error){
+bool SP_set_link_explicitly_enabled(SoundProducer *target, SoundProducer *source, bool is_explicitly_enabled, const char **error){
+  R_ASSERT_RETURN_IF_FALSE2(target!=NULL && source!=NULL, false);
+  
   bool ret = false;
   bool found = false;
 
   for (SoundProducerLink *link : target->_input_links) {
-    if(link->is_event_link==false && link->source==source){ // link->is_bus_link==false && 
+    if(link->is_event_link==false && link->source==source){ // link->is_bus_link==false &&
+      
       found=true;
-      if (link->link_enabled != is_enabled){
-        link->link_enabled = is_enabled;
-        {
-          radium::PlayerLock lock;
-          link->RT_link_enabled = is_enabled;
+      
+      if (link->is_explicitly_enabled != is_explicitly_enabled){
+        
+        link->is_explicitly_enabled = is_explicitly_enabled;
+
+        bool new_link_enabled = link->should_be_enabled();
+        
+        if (link->is_enabled != new_link_enabled){
+          link->is_enabled = new_link_enabled;
+          {
+            radium::PlayerLock lock;
+            link->RT_is_enabled = new_link_enabled;
+          }
         }
-        CONNECTION_update((struct Patch*)link->source->_plugin->patch, (struct Patch*)link->target->_plugin->patch);
+        
+        //CONNECTION_update((struct Patch*)link->source->_plugin->patch, (struct Patch*)link->target->_plugin->patch);
         ret = true;
       }
     }
   }
 
-  if (!found)
+  if (!found && error)
     *error = talloc_strdup("Could not find link");
 
   return ret;
 }
 
+bool SP_get_link_explicitly_enabled(SoundProducer *target, SoundProducer *source, const char **error){
+  if (target==NULL || source==NULL)
+    return false;
+  
+  for (SoundProducerLink *link : target->_input_links)
+    if(link->is_event_link==false && link->source==source)
+      return link->is_explicitly_enabled;
+
+  if (error != NULL)
+    *error = talloc_strdup("Could not find link");
+
+  return false;
+}
+  
+bool SP_get_link_enabled(SoundProducer *target, SoundProducer *source, const char **error){
+  if (target==NULL || source==NULL)
+    return false;
+  
+  for (SoundProducerLink *link : target->_input_links)
+    if(link->is_event_link==false && link->source==source)
+      return link->is_enabled;
+
+  if (error != NULL)
+    *error = talloc_strdup("Could not find link");
+  
+  return false;
+}
+  
 // Called by main mixer thread before starting multicore.
 void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer, int64_t time){
   producer->RT_called_for_each_soundcard_block1(time);
@@ -2457,16 +2645,6 @@ int RT_SP_get_input_latency(const SoundProducer *sp){
   R_ASSERT_NON_RELEASE(THREADING_is_runner_thread() || PLAYER_current_thread_has_lock());
   return sp->_highest_input_link_latency;
 }
-
-#if 0
-void SP_set_buffer_size(SoundProducer *producer,int buffer_size){
-  if(producer->_plugin->type->buffer_size_is_changed != NULL)
-    producer->_plugin->type->buffer_size_is_changed(producer->_plugin,buffer_size);
-
-  producer->free_sound_buffers();
-  producer->allocate_sound_buffers(buffer_size);
-}
-#endif
 
 double SP_get_running_time(const SoundProducer *sp){
   return sp->running_time;

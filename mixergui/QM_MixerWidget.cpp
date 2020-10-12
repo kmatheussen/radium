@@ -972,7 +972,7 @@ static bool mousepress_start_connection(MyScene *scene, radium::MouseCycleEvent 
           return false;
         }
         
-        scene->_current_connection = new AudioConnection(scene, scene->_current_from_chip, scene->_current_to_chip, ConnectionType::IS_SEND, true, true);
+        scene->_current_connection = new AudioConnection(scene, scene->_current_from_chip, scene->_current_to_chip, ConnectionType::IS_SEND, true/*, true*/);
         scene->addItem(scene->_current_connection);
         
         scene->_current_connection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
@@ -2249,8 +2249,9 @@ namespace{
       
       if (connection->to != NULL) {
         
+        bool link_is_enabled;
         const char *error = NULL;
-        float link_gain = SP_get_link_gain(connection->to->_sound_producer, connection->from->_sound_producer, &error);
+        float link_gain = SP_get_actual_link_gain_and_enabled(connection->to->_sound_producer, connection->from->_sound_producer, &error, link_is_enabled);
         if (error != NULL)
           printf("\n\n\n\n=======================ERROR: %s\n\n\n\n\n", error);
         /*
@@ -2258,8 +2259,12 @@ namespace{
           printf("      LINK_GAIN %s ->%s: %f.  db: %f\n", CHIP_get_patch(connection->from)->name, CHIP_get_patch(connection->to)->name, link_gain, gain2db(link_gain));
           }
         */
-        if (error==NULL)
-          connection_db = R_BOUNDARIES(MIN_DB, connection_db + gain2db(link_gain), MAX_DB);
+        if (error==NULL){
+          if (!link_is_enabled)
+            connection_db = MIN_DB;
+          else
+            connection_db = R_BOUNDARIES(MIN_DB, connection_db + gain2db(link_gain), MAX_DB);
+        }
       }
       
       constexpr double gakk = 0.05;
@@ -3321,8 +3326,6 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   autoposition_missing_bus_chips(bus_chips_state);
 
   remakeMixerStrips(make_instrument(-1));
-
-  S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
 
   if (HASH_has_key(state, "mixer_strips_configuration"))
     MW_apply_mixer_strips_state(HASH_get_dyn(state, "mixer_strips_configuration"));

@@ -83,6 +83,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define DELAY_MIN 0.0f
 #define DELAY_MAX 50.0f
 
+#define PITCH_MIN -12
+#define PITCH_MAX 12
+
+static bool g_apply_solo_immediately = false;
+
 
 namespace radium{
   
@@ -1367,7 +1372,7 @@ static void add_eud_undo(QVector<EffectUndoData> &s_euds, QHash<instrument_t, QS
 static DEFINE_ATOMIC(bool, g_atomic_must_update_solo_gui_stuff);
 
 static void update_solo_gui_stuff(void){
-  S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
+  SP_call_me_after_solo_has_changed();
 }
 
 void PLUGIN_call_me_very_often_from_main_thread(void){
@@ -1606,10 +1611,11 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       
     case EFFNUM_SOLO_ONOFF:
       SET_ATOMIC_ON_OFF(plugin->solo_is_on, value);
-      if (THREADING_is_main_thread() && PLAYER_current_thread_has_lock()==false && !g_is_starting_up && !g_is_loading)
+
+      if (THREADING_is_main_thread() && g_apply_solo_immediately && PLAYER_current_thread_has_lock()==false && !g_is_starting_up && !g_is_loading)
         update_solo_gui_stuff();
       else
-        ATOMIC_SET(g_atomic_must_update_solo_gui_stuff, true);
+        ATOMIC_SET(g_atomic_must_update_solo_gui_stuff, true); // If we update solo immediately, solo changes will appear before other mixer changes such as add/remove connections, when changing a/b in mixer.
       break;
 
 
@@ -3042,11 +3048,17 @@ bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num){
 }
 
 
-void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit){
+void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit, bool apply_now){
+  R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+  
   float new_value = soloit ? 1.0 : 0.0;
   int effect_num = plugin->type->num_effects + EFFNUM_SOLO_ONOFF;
 
-  PLUGIN_set_effect_value(plugin, -1, effect_num, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+  g_apply_solo_immediately = apply_now;
+  {
+    PLUGIN_set_effect_value(plugin, -1, effect_num, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+  }
+  g_apply_solo_immediately = false;
 }
 
 void PLUGIN_set_muted(SoundPlugin *plugin, bool muteit){

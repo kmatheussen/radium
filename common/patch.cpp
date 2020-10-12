@@ -716,8 +716,6 @@ static struct Patch *create_audio_patch(const char *type_name, const char *plugi
 
     remakeMixerStrips(patch->id);
 
-    S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
-
   }
   
   return patch;
@@ -931,8 +929,6 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   PATCH_remove_from_instrument(patch);
 
   API_remove_effect_monitors_for_instrument(patch);
-
-  S7CALL2(void_void,"FROM_C-update-implicit-solo-connections!");
 
   printf("       PATCH make inactive\n");
 }
