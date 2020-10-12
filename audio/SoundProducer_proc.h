@@ -164,8 +164,16 @@ struct SoundPlugin;
 extern LANGSPEC float SP_get_link_gain(const struct SoundProducer *target, const struct SoundProducer *source, const char **error); // Don't use this one. Use getAudioConnectionGain instead.
 extern LANGSPEC bool SP_set_link_gain(struct SoundProducer *target, struct SoundProducer *source, float volume, const char **error); // Don't use this one. Use setAudioConnectionGain instead. Returns true if gain was changed.
 
+extern LANGSPEC bool SP_call_me_after_solo_has_changed(void);
+
 //extern LANGSPEC bool SP_get_link_enabled(const struct SoundProducer *target, const struct SoundProducer *source, const char **error); // Link enabled/disabled is kept track of in the AudioConnection class.
-extern LANGSPEC bool SP_set_link_enabled(struct SoundProducer *target, struct SoundProducer *source, bool is_enabled, const char **error); // Only called from AudioConnection->set_enabled().
+extern LANGSPEC bool SP_set_link_explicitly_enabled(struct SoundProducer *target, struct SoundProducer *source, bool is_enabled, const char **error); // Only called from AudioConnection->set_enabled().
+extern LANGSPEC bool SP_get_link_explicitly_enabled(SoundProducer *target, SoundProducer *source, const char **error);
+extern LANGSPEC bool SP_get_link_enabled(SoundProducer *target, SoundProducer *source, const char **error); // get actualy enabled status, which might be different than explitly enabled status if using solo.
+
+#ifdef __cplusplus
+float SP_get_actual_link_gain_and_enabled(const SoundProducer *target, const SoundProducer *source, const char **error, bool &is_enabled);
+#endif
 
 extern LANGSPEC struct SoundPlugin *SP_get_plugin(const struct SoundProducer *producer);
 extern LANGSPEC struct SoundProducer *SP_get_sound_producer(const struct SoundPlugin *plugin);

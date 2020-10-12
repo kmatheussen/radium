@@ -190,8 +190,6 @@ FROM-C-sequencer-gui-in-window
 FROM-C-assert-that-function-can-be-called-from-C
 FROM_C-create-modulator-gui
 FROM_C-create-granular-vizualization-gui-for-sample-player
-FROM_C-update-implicit-solo-connections!
-FROM_C-update-implicit-solo-connections!
 radium-mouse-press
 radium-mouse-move
 radium-mouse-release
@@ -202,7 +200,6 @@ eval-string
 FROM_C-remove-instrument-from-connection-path
 FROM_C-get-displayable-keybinding
 FROM_C-request-rename-instrument
-FROM_C-update-implicit-solo-connections!
 FROM_C-display-solo-status-in-statusbar
 FROM_C-display-mute-status-in-statusbar
 FROM_C-display-bypass-status-in-statusbar

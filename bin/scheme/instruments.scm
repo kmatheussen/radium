@@ -178,23 +178,6 @@
 
 !!#
 
-(delafina (create-audio-connection-implicitly-enabled-change :source
-                                                             :target
-                                                             :implicitly-enabled)
-  (assert (instrument? source))
-  (assert (instrument? target))
-  (hash-table :type "connect" :source source :target target :implicitly-enabled (if implicitly-enabled 1 0)))
-
-(c-define-macro (*push-audio-connection-implicitly-enabled-change!* changes rest)
-  `(push-back! ,changes (create-audio-connection-implicitly-enabled-change ,@(cdr rest))))
-
-#!!
-(macroexpand (push-audio-connection-implicitly-enabled-change! changes (list :source from-instrument
-                                                                             :target id-new-instrument
-                                                                             :implicitly-enabled #t)))
-
-!!#
-               
                
 (define (for-all-tracks func)
   (for-each (lambda (blocknum)

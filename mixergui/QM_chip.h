@@ -140,7 +140,6 @@ public:
 
   float _last_updated_volume = -1;
   bool _last_updated_mute = false;
-  //bool _last_updated_implicitly_mute = false;
   bool _last_updated_solo = false;
   bool _last_updated_bypass = false;
   bool _last_updated_recording = false;
@@ -231,7 +230,6 @@ public:
   Chip *_to;
 
   bool _is_enabled;
-  bool _is_implicitly_enabled; // Set to false if solo has caused this connection to be implicitly disabled.
 
 private:
 
@@ -241,17 +239,21 @@ public:
 
   bool set_enabled(bool is_enabled, const char **error){
     //printf("set enabled1 %d -> %d: is_enabled: %d. _is_enabled: %d, is_implicitly_enabled: %d\n", (int)CHIP_get_patch(_from)->id, (int)CHIP_get_patch(_to)->id, is_enabled, _is_enabled, _is_implicitly_enabled);
+
+    R_ASSERT_RETURN_IF_FALSE2(from!=NULL, false);
+    R_ASSERT_RETURN_IF_FALSE2(to!=NULL, false);
     
-    if (_is_enabled==is_enabled)
+    if (_is_enabled==is_enabled){
+      R_ASSERT_NON_RELEASE(_is_enabled == SP_get_link_explicitly_enabled(to->_sound_producer, from->_sound_producer, NULL));
       return false;
+    }
 
     _is_enabled = is_enabled;
     
-    if (_is_implicitly_enabled)
-      SP_set_link_enabled(to->_sound_producer, from->_sound_producer, is_enabled, error);
-
+    SP_set_link_explicitly_enabled(to->_sound_producer, from->_sound_producer, is_enabled, error);
+    
     //printf("set enabled2 %d -> %d: is_enabled: %d. _is_enabled: %d, is_implicitly_enabled: %d\n", (int)CHIP_get_patch(_from)->id, (int)CHIP_get_patch(_to)->id, is_enabled, _is_enabled, _is_implicitly_enabled);
-
+    
     update_shape(true, true);
     
     return true;
@@ -261,31 +263,11 @@ public:
     return _is_enabled;
   }
 
-  bool set_implicitly_enabled(bool is_implicitly_enabled, const char **error){
-    if (_is_implicitly_enabled==is_implicitly_enabled)
-      return false;
-
-    _is_implicitly_enabled = is_implicitly_enabled;
-    
-    if (_is_enabled)
-      SP_set_link_enabled(to->_sound_producer, from->_sound_producer, is_implicitly_enabled, error);
-
-    return true;
-  }
-    
-  bool get_implicitly_enabled(void) const {
-    return _is_implicitly_enabled;
-  }
-
-  void set_enabled_only_dont_update_link(bool is_enabled, bool is_implicitly_enabled){
+  void set_enabled_only_dont_update_link(bool is_enabled /*, bool is_implicitly_enabled */){
     //printf(".............Setting %s -> %s to %d/%d (%d / %d)\n", CHIP_get_patch(_from)->name, CHIP_get_patch(_to)->name, is_enabled, is_implicitly_enabled, _is_enabled, _is_implicitly_enabled);
            
     if(_is_enabled != is_enabled){
       _is_enabled = is_enabled;
-      update();
-    }
-    if (_is_implicitly_enabled != is_implicitly_enabled){
-      _is_implicitly_enabled = is_implicitly_enabled;
       update();
     }
   }    
@@ -314,7 +296,7 @@ public:
   //bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
 
   QColor getColor(void) const {
-    QColor col = get_qcolor(_color_num); // !_is_implicitly_enabled ? Qt::green :
+    QColor col = get_qcolor(_color_num);
 
     if (_from==NULL)
       return col;
@@ -369,7 +351,7 @@ public:
   QPen getPen() const {
     QColor c = getColor();
 
-    if (!_is_enabled || !_is_implicitly_enabled)
+    if (to!=NULL && from!=NULL && SP_get_link_enabled(to->_sound_producer, from->_sound_producer, NULL))
       c.setAlpha(30);
     else if(_is_selected)
       c.setAlpha(250);
@@ -419,7 +401,7 @@ public:
     return pen;
   }
 
-  SuperConnection(QGraphicsScene *parent, Chip *from, Chip *to, bool is_event_connection, enum ColorNums color_num, bool is_enabled, bool is_implicitly_enabled)
+ SuperConnection(QGraphicsScene *parent, Chip *from, Chip *to, bool is_event_connection, enum ColorNums color_num, bool is_enabled)
     : QGraphicsLineItem()
     , _is_selected(false)
     , _is_event_connection(is_event_connection)
@@ -427,7 +409,6 @@ public:
     , _from(from)
     , _to(to)
     , _is_enabled(is_enabled)
-    , _is_implicitly_enabled(is_implicitly_enabled)
     , from(_from)
     , to(_to)
     , _visible_line(this)
@@ -645,8 +626,8 @@ class AudioConnection : public SuperConnection {
 
 public:
   
-  AudioConnection(QGraphicsScene *parent, Chip *from, Chip *to, ConnectionType connection_type, bool is_enabled, bool is_implicitly_enabled)
-    : SuperConnection(parent, from, to, false, MIXER_AUDIO_CONNECTION_COLOR_NUM, is_enabled, is_implicitly_enabled)
+  AudioConnection(QGraphicsScene *parent, Chip *from, Chip *to, ConnectionType connection_type, bool is_enabled)
+    : SuperConnection(parent, from, to, false, MIXER_AUDIO_CONNECTION_COLOR_NUM, is_enabled)
     , _connection_type(ConnectionType::NOT_SET)
   {
     if (from!=NULL && to!=NULL){
@@ -714,7 +695,7 @@ class EventConnection : public SuperConnection {
 public:
 
   EventConnection(QGraphicsScene *parent, Chip *from, Chip *to)
-    : SuperConnection(parent, from, to, true, MIXER_EVENT_CONNECTION_COLOR_NUM, true, true)
+    : SuperConnection(parent, from, to, true, MIXER_EVENT_CONNECTION_COLOR_NUM, true /*, true */)
   {
 
     if (from!=NULL && to!=NULL){
@@ -846,10 +827,6 @@ extern LANGSPEC void CHIP_autopos(struct Patch *patch);
 extern Chip* CHIP_create(struct SoundProducer *sound_producer, float x, float y);
 extern void CHIP_delete(struct Patch *patch);
 extern void CHIP_create_bus_connections(Chip *chip, Buses &dasbuses); // Used when loading older songs.
-/*
-extern bool CHIP_is_implicitly_muted(Chip *chip);
-extern bool CHIP_is_implicitly_muted(Patch *patch);
-*/
 #endif
 
 //extern LANGSPEC void CHIP_init_because_it_has_new_plugin(struct SoundPlugin *plugin);

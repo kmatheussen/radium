@@ -718,6 +718,8 @@ struct Mixer{
       V_free(old_g_click_patches);
     }
 
+    SP_call_me_after_solo_has_changed();
+    
     SEND_RECEIVE_update_send_receivers();
   }
 
@@ -756,6 +758,8 @@ struct Mixer{
           _bus[busnum]=NULL;
       
     }PLAYER_unlock();
+
+    SP_call_me_after_solo_has_changed();
   }
 
   void set_output_latency(void) const {

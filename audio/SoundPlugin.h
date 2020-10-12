@@ -499,8 +499,8 @@ typedef struct SoundPlugin{
   // bool editor_is_on;
   int64_t gui_parentgui; // Only one GUI can be opened at the same time. If trying to open on a different parentgui, the old gui will first be closed before the new one is opened.
   
-  DEFINE_ATOMIC(bool, solo_is_on);
-
+  DEFINE_ATOMIC(bool, solo_is_on); // Atomic since it is written to by PLUGIN_set_effect, but otherwice only used by the main thread. TODO: We use RELAXED in SoundProducer.cpp, which can theoretically fail if set from the player thread. (auotomating solo doesn't work very well anyway though)
+  
   struct SoundProducer *sp; // SoundProducer is a helper object for the mixer. It's actually the soundproducer that holds the plugin, and not the other way, but the sp variable is referenced here since we need to access the soundproducer outside of the mixer to get input latency for a plugin and other things. This value is NULL if the plugin is not currently running in the mixer (but use the SP_is_plugin_running function to check for that).
   
   // Data used by SoundProducer
@@ -635,8 +635,8 @@ typedef struct SoundPlugin{
 
   bool is_dpi_aware; // If false, we call SetThreadDPIAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE) before opening GUI.
 
-  bool is_implicitly_muted;
-  bool is_implicitly_soloed;
+  bool is_implicitly_muted; // Set in SoundProducer.cpp
+  bool is_implicitly_soloed; // Set in SoundProducer.cpp
 
   bool RT_input_latency_manifests_into_output_latency; // true by default. Can be set if holding player lock.
 
