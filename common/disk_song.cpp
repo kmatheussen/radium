@@ -73,6 +73,7 @@ DC_start("SONG");
 
         DC_SSB("mute_plugin_MIDI_when_muted", song->RT_mute_plugin_MIDI_when_muted);
         DC_SSB("send_plugin_MIDI_through_when_bypassed", song->RT_send_plugin_MIDI_through_when_bypassed);
+        DC_SSB("implicitly_mute_plugin_MIDI", song->RT_implicitly_mute_plugin_MIDI);
                           
         DC_start("COMMENT");{
           HASH_save(COMMENT_get_state(), dc.file);
@@ -109,7 +110,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	const char *vars[15]={
+	const char *vars[16]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -124,7 +125,8 @@ struct Song *LoadSong(void){
                 "mute_editor_automation_when_track_is_muted",
                 "include_pan_and_dry_in_wet_signal",
                 "mute_plugin_MIDI_when_muted",
-                "send_plugin_MIDI_through_when_bypassed"
+                "send_plugin_MIDI_through_when_bypassed",
+                "implicitly_mute_plugin_MIDI"
                 //"use_sequencer_timing"
 	};
 	struct Song *song=SONG_create();
@@ -136,6 +138,7 @@ struct Song *LoadSong(void){
 
         song->RT_mute_plugin_MIDI_when_muted = false; // compatibility with older songs
         song->RT_send_plugin_MIDI_through_when_bypassed = false; // compatibility with older songs
+        song->RT_implicitly_mute_plugin_MIDI = false; // compatibility with older songs
         
         MIDI_SetThroughPatch(NULL);
           
@@ -160,7 +163,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
 
-        GENERAL_LOAD(7,15)
+        GENERAL_LOAD(7,16)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -255,8 +258,11 @@ var13:
 var14:
         song->RT_send_plugin_MIDI_through_when_bypassed = DC_LoadB();
         goto start;
-        
+
 var15:
+        song->RT_implicitly_mute_plugin_MIDI = DC_LoadB();
+        goto start;        
+        
 var16:
 var17:
 var18:

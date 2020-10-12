@@ -637,7 +637,8 @@ typedef struct SoundPlugin{
 
   bool is_implicitly_muted; // Set in SoundProducer.cpp
   bool is_implicitly_soloed; // Set in SoundProducer.cpp
-
+  bool RT_is_implicitly_muted;  // Set in SoundProducer.cpp (only used to determine whether to send MIDI)
+  
   bool RT_input_latency_manifests_into_output_latency; // true by default. Can be set if holding player lock.
 
   filepath_t preset_filename;
@@ -692,6 +693,10 @@ static inline bool RT_do_send_MIDI_to_receivers(SoundPlugin *plugin){
     return false;
     
   } else if (root->song->RT_send_plugin_MIDI_through_when_bypassed && is_bypassed_relaxed(plugin)) {
+    
+    return false;
+    
+  } else if (root->song->RT_implicitly_mute_plugin_MIDI && plugin->RT_is_implicitly_muted) {
     
     return false;
     

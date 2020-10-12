@@ -855,6 +855,21 @@ namespace{
   };
   
   const LinkExplicitlyEnabledChanges g_empty_link_explicitly_enabled_changes;
+
+  struct PluginImplicitlyMutedChange{
+    SoundPlugin *_plugin;
+    bool _is_implicitly_muted;
+    PluginImplicitlyMutedChange(SoundPlugin *plugin, bool is_implicitly_muted)
+      : _plugin(plugin)
+      , _is_implicitly_muted(is_implicitly_muted)
+    {}
+  };
+  
+  struct PluginImplicitlyMutedChanges : public radium::Vector<PluginImplicitlyMutedChange> {
+    PluginImplicitlyMutedChanges(){
+    }
+  };
+  
 }
 
 //struct Owner *owner;
@@ -1127,13 +1142,20 @@ public:
 
   struct UpdateImplicitSolo{
     const radium::Vector<SoundProducerLink*> &_to_add;
+    const radium::Vector<SoundProducerLink*> &_to_remove;
     mutable QSet<SoundProducer*> _updated_sps[2]; // to avoid updating the same soundproducer more than once
+    const bool _implicitly_mute_event_links = root->song->RT_implicitly_mute_plugin_MIDI;
     LinkEnabledChanges &_link_enabled_changes;
-
+    PluginImplicitlyMutedChanges &_plugin_implicitly_muted_changes;
+    
     UpdateImplicitSolo(const radium::Vector<SoundProducerLink*> &to_add,
-                       LinkEnabledChanges &link_enabled_changes)
+                       const radium::Vector<SoundProducerLink*> &to_remove,
+                       LinkEnabledChanges &link_enabled_changes,
+                       PluginImplicitlyMutedChanges &plugin_implicitly_muted_changes)
       : _to_add(to_add)
+      , _to_remove(to_remove)
       , _link_enabled_changes(link_enabled_changes)
+      , _plugin_implicitly_muted_changes(plugin_implicitly_muted_changes)
     {
       process();
 #if !defined(RELEASE)
@@ -1143,7 +1165,10 @@ public:
     }
     
     void maybe_add_link_enabled_change(SoundProducerLink *link){
-      R_ASSERT_NON_RELEASE(!link->is_event_link);
+      R_ASSERT_NON_RELEASE(_implicitly_mute_event_links || !link->is_event_link);
+
+      if (link->is_event_link)
+        return; // is_enabled is not used for event links.
       
       bool should_be_enabled = link->should_be_enabled();
       if (link->is_enabled != should_be_enabled){
@@ -1155,7 +1180,7 @@ public:
     }
 
     void update_is_implicitly_soloed_link(SoundProducerLink* link, bool link_forward) const {
-      if (link->is_event_link)
+      if (!_implicitly_mute_event_links && link->is_event_link)
         return;
       
       link->is_implicitly_soloed = true;
@@ -1172,7 +1197,8 @@ public:
         sp->_plugin->is_implicitly_soloed = true;
         
         for(auto *link : link_forward ? sp->_output_links : sp->_input_links)
-          update_is_implicitly_soloed_link(link, link_forward);
+          if (!_to_remove.contains(link))
+            update_is_implicitly_soloed_link(link, link_forward);
         
         for(SoundProducerLink *link : _to_add)
           if (link_forward ? (sp==link->source) : (sp==link->target))
@@ -1206,14 +1232,12 @@ public:
         sp->_plugin->is_implicitly_soloed = false;
         
         for(SoundProducerLink *link : sp->_output_links)
-          if (!link->is_event_link)
-            link->is_implicitly_soloed = false;
+          link->is_implicitly_soloed = false;
         
 #if !defined(RELEASE)
         for(SoundProducerLink *link : _to_add)
-          if (!link->is_event_link)
-            if (link->is_implicitly_soloed==true)
-              abort();
+          if (link->is_implicitly_soloed==true)
+            abort();
 #endif
       }
       
@@ -1235,11 +1259,13 @@ public:
         bool is_implicitly_muted = has_solo && !sp->_plugin->is_implicitly_soloed;
         
         // update plugin->is_implicitly* stuff here as well. (only used by the UI)
-        if (sp->_plugin->is_implicitly_muted != is_implicitly_muted)
+        if (sp->_plugin->is_implicitly_muted != is_implicitly_muted){
           sp->_plugin->is_implicitly_muted = is_implicitly_muted;
+          _plugin_implicitly_muted_changes.push_back(PluginImplicitlyMutedChange(sp->_plugin, is_implicitly_muted));
+        }
         
         for(SoundProducerLink *link : sp->_output_links)
-          if (!link->is_event_link)
+          if (_implicitly_mute_event_links || !link->is_event_link)
             if (is_implicitly_muted != link->is_implicitly_muted){
               link->is_implicitly_muted = is_implicitly_muted;
               maybe_add_link_enabled_change(link);
@@ -1254,11 +1280,12 @@ public:
 
   static bool call_me_after_solo_has_changed(void){
     LinkEnabledChanges link_enabled_changes;
+    PluginImplicitlyMutedChanges plugin_implicitly_muted_changes;
 
     const radium::Vector<SoundProducerLink*> empty;
-    UpdateImplicitSolo implicit(empty, link_enabled_changes);
-
-    if (link_enabled_changes.size()==0)
+    UpdateImplicitSolo implicit(empty, empty, link_enabled_changes, plugin_implicitly_muted_changes);
+    
+    if (link_enabled_changes.size()==0 && plugin_implicitly_muted_changes.size()==0)
       return false;
     
     for(const auto &link_enabled_change : link_enabled_changes)
@@ -1268,8 +1295,12 @@ public:
       radium::PlayerLock lock;
       for(const auto &link_enabled_change : link_enabled_changes)
         link_enabled_change.link->RT_is_enabled = link_enabled_change.link_enabled;
+      for(const auto change : plugin_implicitly_muted_changes)
+        change._plugin->RT_is_implicitly_muted = change._is_implicitly_muted;
     }
 
+    //MW_update_all_chips();
+    
     return true;
   }
 
@@ -1333,13 +1364,14 @@ public:
     // 2.5 Create link_enabled_changes from explicitly_link_enabled_changes and Solo settings.
     //
     LinkEnabledChanges link_enabled_changes;
+    PluginImplicitlyMutedChanges plugin_implicitly_muted_changes;
     {
       // First update all "is_explicitly_enabled" variables.
       for(const auto &link_enabled_change : link_enabled_changes)
         link_enabled_change.link->is_explicitly_enabled = link_enabled_change.link_enabled;
       
       // Then create the link_enabled_changes.
-      UpdateImplicitSolo implicit(to_add, link_enabled_changes);
+      UpdateImplicitSolo implicit(to_add, to_remove, link_enabled_changes, plugin_implicitly_muted_changes);
 
       for(const auto &link_enabled_change : link_enabled_changes)
         link_enabled_change.link->is_enabled = link_enabled_change.link_enabled;
@@ -1390,6 +1422,10 @@ public:
       // Enable/disable
       for(const auto &link_enabled_change : link_enabled_changes)
         link_enabled_change.link->RT_is_enabled = link_enabled_change.link_enabled;
+
+      // Change implicitly muted
+      for(const auto change : plugin_implicitly_muted_changes)
+        change._plugin->RT_is_implicitly_muted = change._is_implicitly_muted;
 
       // Change volume
       for(const auto &volume_change : volume_changes)
@@ -1566,8 +1602,10 @@ public:
       return;
 
     SoundProducerLink *link = find_input_event_link(source);
-    if (link!=NULL)
+    if (link!=NULL){
       SoundProducer::remove_link(link);
+      //call_me_after_solo_has_changed();
+    }
   }
 
   SoundProducerLink *find_input_link(const SoundProducer *source, bool may_return_null = false){
@@ -2471,6 +2509,7 @@ bool SP_get_link_enabled(SoundProducer *target, SoundProducer *source, const cha
   
   return false;
 }
+
   
 // Called by main mixer thread before starting multicore.
 void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer, int64_t time){

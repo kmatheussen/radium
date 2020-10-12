@@ -78,6 +78,7 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
 
     mute_plugin_MIDI->setChecked(song->RT_mute_plugin_MIDI_when_muted);
     send_plugin_MIDI_through->setChecked(song->RT_send_plugin_MIDI_through_when_bypassed);
+    implicitly_mute_MIDI->setChecked(song->RT_implicitly_mute_plugin_MIDI);
     
     embed_samples->setChecked(g_curr_song_contains_embedded_samples);
   }
@@ -211,15 +212,35 @@ public slots:
   void on_mute_plugin_MIDI_toggled(bool val){
     if (_initing==true)
       return;
-    
-    root->song->RT_mute_plugin_MIDI_when_muted = val;
+
+    {
+      radium::PlayerLock lock;
+      root->song->RT_mute_plugin_MIDI_when_muted = val;
+    }
   }
   
   void on_send_plugin_MIDI_through_toggled(bool val){
     if (_initing==true)
       return;
     
-    root->song->RT_send_plugin_MIDI_through_when_bypassed = val;
+    {
+      radium::PlayerLock lock;
+      root->song->RT_send_plugin_MIDI_through_when_bypassed = val;
+    }
+
+    SP_call_me_after_solo_has_changed();
+  }
+  
+  void on_implicitly_mute_MIDI_toggled(bool val){
+    if (_initing==true)
+      return;
+    
+    {
+      radium::PlayerLock lock;
+      root->song->RT_implicitly_mute_plugin_MIDI = val;      
+    }
+    
+    SP_call_me_after_solo_has_changed();
   }
   
   void on_embed_samples_toggled(bool val){
