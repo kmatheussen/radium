@@ -1168,7 +1168,7 @@ public:
       R_ASSERT_NON_RELEASE(_implicitly_mute_event_links || !link->is_event_link);
 
       if (link->is_event_link)
-        return; // is_enabled is not used for event links.
+        return; // RT_is_enabled is not used for event links. (it's just used to set volume)
       
       bool should_be_enabled = link->should_be_enabled();
       if (link->is_enabled != should_be_enabled){
