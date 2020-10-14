@@ -1252,12 +1252,14 @@ void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patc
 }
 
 static bool RT_do_forward_events(const struct Patch *patch){
+  
   const bool mute_when_muted = root->song->RT_mute_plugin_MIDI_when_muted;
   const bool forward_when_bypassed = root->song->RT_send_plugin_MIDI_through_when_bypassed;
+  const bool implicitly_mute_plugin_MIDI = root->song->RT_implicitly_mute_plugin_MIDI;
 
   struct SoundPlugin *plugin = NULL;
             
-  if (mute_when_muted || forward_when_bypassed){
+  if (mute_when_muted || forward_when_bypassed || implicitly_mute_plugin_MIDI){
     
     if (patch->instrument==get_audio_instrument())
       if(patch->patchdata!=NULL)
@@ -1266,6 +1268,14 @@ static bool RT_do_forward_events(const struct Patch *patch){
   }
   
   if (mute_when_muted && plugin && is_muted_relaxed(plugin)) {
+    
+    return false;
+    
+  } else if (mute_when_muted && plugin && is_muted_relaxed(plugin)) {
+    
+    return false;
+    
+  } else if (implicitly_mute_plugin_MIDI && plugin && plugin->RT_is_implicitly_muted) {
     
     return false;
     
