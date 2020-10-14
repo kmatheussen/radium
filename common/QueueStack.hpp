@@ -183,7 +183,7 @@ template <typename T, int SIZE> class Queue : public BaseQueueStack<T>{
   }
 
   bool push(T &t) override{
-    return queue.push(t);
+    return queue.bounded_push(t);
   }
 
 };
