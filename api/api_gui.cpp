@@ -1930,11 +1930,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         s = QKeySequence(event->key()).toString();
 #endif
       
-      //printf("  GOt key: %d. Auto: %d. Text: %s\n", event->key(), event->isAutoRepeat(), QKeySequence(event->key()).toString().toUtf8().constData());
+      //printf("  GOt key: %d. Auto: %d. Text: %s - \"%s\"\n", event->key(), event->isAutoRepeat(), QKeySequence(event->key()).toString().toUtf8().constData(), s.toUtf8().constData());
       
       event->accept();
       
-      return S7CALL(bool_int_charpointer,_key_callback.v, keytype, talloc_strdup(s.toUtf8().constData()));
+      return S7CALL(bool_int_charpointer,_key_callback.v, keytype, talloc_strdup(QKeySequence(event->key()).toString().toUtf8().constData()));
     }
     
     bool keyPressEvent(QKeyEvent *event){
