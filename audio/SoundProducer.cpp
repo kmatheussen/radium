@@ -998,6 +998,9 @@ public:
     if (PLAYER_is_running()) {
       R_ASSERT(_input_links.size()==0);
       R_ASSERT(_output_links.size()==0);
+    }else{
+      R_ASSERT_NON_RELEASE(_input_links.size()==0);
+      R_ASSERT_NON_RELEASE(_output_links.size()==0);
     }
 
     MIXER_remove_SoundProducer(this);
