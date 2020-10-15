@@ -1965,9 +1965,21 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     
     if (HASH_has_key(state, "audio_instance_current_program")) {
       int current_program = HASH_get_int(state, "audio_instance_current_program");
-      run_on_message_thread([&](){
-          audio_instance->setCurrentProgram(current_program);
-        });
+      if (current_program >= 0) {
+        int num_programs;
+        run_on_message_thread([&](){
+            num_programs = audio_instance->getNumPrograms();
+            if (current_program < num_programs)
+              audio_instance->setCurrentProgram(current_program);
+          });
+        if (num_programs > 0 && current_program >= num_programs){
+          GFX_addMessage("Warning: Program number for \"%s\" / \"%s\" on disk is %d, while the plugin only have %d program%s.",
+                         plugin->type->type_name, plugin->type->name,
+                         current_program, num_programs,
+                         num_programs==1 ? "" : "s"
+                         );
+        }
+      }
     }
     
     if (HASH_has_key(state, "audio_instance_program_state")){
