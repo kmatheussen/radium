@@ -700,11 +700,13 @@ namespace{
     radium::EnableType get_enable_type(void) const {
       return _enable_type;
     }
-    
+
+    /*
     bool is_enabled(void) const {
       return _enable_type==radium::EnableType::ENABLE;
     }
-
+    */
+    
     ConnectionType _connection_type;
 
   public:
@@ -896,7 +898,8 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
 
       if (parm.are_connected()) {
 
-        parm.get_connection()->set_enabled_only_dont_update_link(parm.is_enabled());
+        if (parm.get_enable_type()!=radium::EnableType::DONT_CHANGE)
+          parm.get_connection()->set_enabled_only_dont_update_link(parm.get_enable_type()==radium::EnableType::ENABLE);
         
         // We have only set link gain and enabled/disabled.
         mixerstrips_to_redraw.insert(CHIP_get_patch(parm._from));
@@ -906,8 +909,7 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
         mixerstrips_to_remake.insert(CHIP_get_patch(parm._from));
         mixerstrips_to_remake.insert(CHIP_get_patch(parm._to));
         
-        AudioConnection *connection = new AudioConnection(scene, parm._from, parm._to, parm._connection_type, parm.is_enabled());
-        
+        AudioConnection *connection = new AudioConnection(scene, parm._from, parm._to, parm._connection_type, parm.get_enable_type()!=radium::EnableType::DISABLE);
         scene->addItem(connection);
 
         {
