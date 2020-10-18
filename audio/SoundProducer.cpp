@@ -1312,6 +1312,7 @@ public:
   //
   static bool add_and_remove_links(const radium::Vector<SoundProducerLink*> &to_add,
                                    radium::Vector<SoundProducerLink*> &to_remove,
+                                   radium::Scheduled_RT_functions &rt_functions,
                                    bool *isrecursive_feedback = NULL,
                                    const VolumeChanges &volume_changes = g_empty_volume_changes,
                                    const LinkExplicitlyEnabledChanges &link_explicitly_enabled_changes = g_empty_link_explicitly_enabled_changes
@@ -1345,7 +1346,7 @@ public:
         
     if (isrecursive) {
 
-      R_ASSERT(isrecursive_feedback != NULL);
+      R_ASSERT_NON_RELEASE(isrecursive_feedback != NULL);
       
       GFX_Message(NULL, "Recursive graphs are not automatically supported. Use the Send and Receive objects to create a recursive connection.\n");
 
@@ -1360,7 +1361,8 @@ public:
     //
     {
       radium::Vector<SoundProducerLink*> empty;
-      SoundProducer::add_and_remove_links(empty, links_that_must_be_removed_first);
+      radium::Scheduled_RT_functions rt_functions;
+      SoundProducer::add_and_remove_links(empty, links_that_must_be_removed_first, rt_functions);
     }
 
     
@@ -1370,8 +1372,8 @@ public:
     PluginImplicitlyMutedChanges plugin_implicitly_muted_changes;
     {
       // First update all "is_explicitly_enabled" variables.
-      for(const auto &link_enabled_change : link_enabled_changes)
-        link_enabled_change.link->is_explicitly_enabled = link_enabled_change.link_enabled;
+      for(const auto &link_explicitly_enabled_change : link_explicitly_enabled_changes)
+        link_explicitly_enabled_change.link->is_explicitly_enabled = link_explicitly_enabled_change.link_enabled;
       
       // Then create the link_enabled_changes.
       UpdateImplicitSolo implicit(to_add, to_remove, link_enabled_changes, plugin_implicitly_muted_changes);
@@ -1402,16 +1404,16 @@ public:
       }
 
       for(auto *linkvector : howmanys.keys()){
-        //printf("...Asking %p to ensure room for %d new\n", linkvector, howmanys.value(linkvector));
+        //printf("...Asking %p to ensure room for %d new. (now: %d)\n", linkvector, howmanys.value(linkvector), linkvector->size());
         linkvector->ensure_there_is_room_for_more_without_having_to_allocate_memory(howmanys.value(linkvector));
       }
     }
 
-    
     // 4. REMOVING/ADDING: Request links to be removed to turn off, and add new links.
     //
+    rt_functions.add([&to_remove, &to_add, &link_enabled_changes, &plugin_implicitly_muted_changes, &volume_changes]()
     {
-      radium::PlayerLock lock;  // Do all of this inside the player lock to ensure removed links and links that are disabled are faded out at the same time as added links and links that are enabled are faded in.
+      
       // REMOVE
       for(auto *link : to_remove)
         link->RT_request_turn_off();
@@ -1433,9 +1435,13 @@ public:
       // Change volume
       for(const auto &volume_change : volume_changes)
         volume_change.link->set_link_volume(volume_change.new_volume);
-    }
+    });
 
 
+    // Run it.
+    rt_functions.schedule_to_run_on_player_thread_and_wait();
+
+    
     // 5. ADDING: Do some post-add stuff in the radium::Vector vectors. (free previously used memory, if any.)
     //
     for(auto *link : to_add){
@@ -1531,7 +1537,8 @@ public:
 
     to_add.push_back(link);
 
-    return add_and_remove_links(to_add, to_remove, was_recursive);
+    radium::Scheduled_RT_functions rt_functions;
+    return add_and_remove_links(to_add, to_remove, rt_functions, was_recursive);
   }
 
   bool add_eventSoundProducerInput(SoundProducer *source){
@@ -1587,17 +1594,19 @@ public:
 
   static void remove_links(radium::Vector<SoundProducerLink*> &links){
     radium::Vector<SoundProducerLink*> to_add; // empty
-    
-    add_and_remove_links(to_add, links);
+
+    radium::Scheduled_RT_functions rt_functions;
+    add_and_remove_links(to_add, links, rt_functions);
   }
   
   static void remove_link(SoundProducerLink *link){
     radium::Vector<SoundProducerLink*> to_add;
     radium::Vector<SoundProducerLink*> to_remove;
-
+    radium::Scheduled_RT_functions rt_functions;
+    
     to_remove.push_back(link);
 
-    add_and_remove_links(to_add, to_remove);
+    add_and_remove_links(to_add, to_remove, rt_functions);
   }
   
   void remove_eventSoundProducerInput(const SoundProducer *source){
@@ -2284,7 +2293,7 @@ const radium::LinkParameters g_empty_linkparameters;
 
 // Should simultaneously fade out the old and fade in the new.
 // Only audio links.
-bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove){
+bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove, radium::Scheduled_RT_functions &rt_functions){
   ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
 
   //printf("     SP_add_and-remove. Num to add: %d. Num to remove: %d.\n", parm_to_add.size(), parm_to_remove.size());
@@ -2343,14 +2352,8 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
   }
 
   bool isrecursive;
-  return SoundProducer::add_and_remove_links(to_add, to_remove, &isrecursive, volume_changes, link_explicitly_enable_changes);
+  return SoundProducer::add_and_remove_links(to_add, to_remove, rt_functions, &isrecursive, volume_changes, link_explicitly_enable_changes);
 }
-
-/*
-bool SP_add_and_remove_links(const dyn_t changes){
-  return CONNECTIONS_apply_changes(changes);
-}
-*/
 
 bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch){
   return target->add_SoundProducerInput(source,source_ch,target_ch);

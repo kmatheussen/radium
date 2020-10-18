@@ -5,6 +5,13 @@
 
 #include <functional>
 
+#include <boost/version.hpp>
+#if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 58)
+  #error "Boost too old. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.bz2 ; tar xvjf boost_1_63_0.tar.bz2 (that's it!)"
+#endif
+#include <boost/lockfree/queue.hpp>
+
+
 #include <QHash>
 
 #if defined(FOR_MACOSX)
@@ -18,6 +25,8 @@
 
 #include "threading.h"
 #include "threading_lowlevel.h"
+
+#include "../audio/Mixer_proc.h"
 
 #include "OS_Player_proc.h"
 
@@ -97,6 +106,13 @@ bool THREADING_is_player_or_runner_thread(void){
 bool THREADING_is_juce_thread(void){
   return thread_type==JUCE_THREAD;
 }
+
+
+
+/******************************************/
+/***** Run functions on main thread   ****/
+/****************************************/
+
 
 static radium::Mutex g_on_main_thread_lock;
 
@@ -250,7 +266,150 @@ void THREADING_run_on_main_thread_and_wait(std::function<void(void)> callback){
   int64_t id = THREADING_run_on_main_thread_async(callback);
   THREADING_wait_for_async_function(id);
 }
+
+
+
+
+/******************************************/
+/***** Run functions on player thread ****/
+/****************************************/
+
+namespace radium{
+  class Ready_To_Run_Scheduled_RT_functions{
+
+    DEFINE_ATOMIC(bool, _finished_running) = false;
+
+    int _i = 0;
+    int _num_functions;
+    std::function<void(void)> **_functions;
+
+    bool has_spent_too_much_time(void) const {
+      //return true;
+      return MIXER_get_curr_audio_block_cycle_fraction() >= 0.9;
+    }
     
+  public:
+    
+    Ready_To_Run_Scheduled_RT_functions(Scheduled_RT_functions *rt_functions)
+      : _num_functions(rt_functions->_functions.size())
+      , _functions((std::function<void(void)> **)V_malloc(sizeof(std::function<void(void)>*) * _num_functions))
+    {      
+      int i=0;
+      for(auto func : rt_functions->_functions)
+        _functions[i++] = new std::function<void(void)>(func);
+      
+      rt_functions->_functions.clear();
+    }
+
+    ~Ready_To_Run_Scheduled_RT_functions(){
+      for(int i=0;i<_num_functions;i++)
+        delete _functions[i];
+      
+      V_free(_functions);
+    }
+    
+    bool finished_running(void) const {
+      return ATOMIC_GET(_finished_running);
+    }
+    
+    bool RT_run(void){
+      R_ASSERT_NON_RELEASE(finished_running()==false);
+
+      bool has_run_a_func = false;
+      
+      for(; _i < _num_functions ; _i++){
+        if (has_run_a_func && has_spent_too_much_time()) // always run at least one func.
+          return false;
+        
+        auto *func = _functions[_i];
+        (*func)();
+        
+        has_run_a_func = true;        
+      }
+      
+      ATOMIC_SET(_finished_running, true);
+
+      return true;
+    }
+
+  };
+}
+
+static QVector<radium::Ready_To_Run_Scheduled_RT_functions*> g_alive_functions_to_run_on_player_thread;
+
+static boost::lockfree::queue< radium::Ready_To_Run_Scheduled_RT_functions* , boost::lockfree::capacity<256> > g_functions_to_run_on_player_thread_queue;
+
+
+void RT_call_functions_scheduled_to_run_on_player_thread(void){
+
+  static radium::Ready_To_Run_Scheduled_RT_functions *curr_rt_functions = NULL;
+    
+  while(true){
+
+    if (curr_rt_functions==NULL)
+      if (!g_functions_to_run_on_player_thread_queue.pop(curr_rt_functions))
+        break;
+    
+    if (curr_rt_functions->RT_run())
+      curr_rt_functions = NULL;
+    else
+      break;
+  }
+}
+
+radium::Ready_To_Run_Scheduled_RT_functions *radium::Scheduled_RT_functions::schedule_it(void){
+  R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
+
+  if (_functions.size()==0)
+    return NULL;
+  
+  int safety = 0;
+
+  radium::Ready_To_Run_Scheduled_RT_functions *ready_to_run = new radium::Ready_To_Run_Scheduled_RT_functions(this);
+  g_alive_functions_to_run_on_player_thread.push_back(ready_to_run);
+  
+  while(!g_functions_to_run_on_player_thread_queue.bounded_push(ready_to_run)){
+    printf("THREADING_schedule_on_player_thread: Thread full. Waiting...\n");
+    msleep(100);
+    safety++;
+    if (safety = 100){
+      printf("THREADING_schedule_on_player_thread: Giving up.\n");
+      break;
+    }
+  }
+
+  return ready_to_run;
+}
+
+void radium::Scheduled_RT_functions::wait_until_ready_to_run_is_finished(radium::Ready_To_Run_Scheduled_RT_functions *ready_to_run){
+  if (ready_to_run==NULL)
+    return;
+  
+  while(true){
+    if (ready_to_run->finished_running())
+      break;
+    msleep(15);
+  }
+}
+
+void THREADING_schedule_on_player_thread_call_very_often(void){
+  QVector<radium::Ready_To_Run_Scheduled_RT_functions*> finished;
+
+  for(auto *func : g_alive_functions_to_run_on_player_thread)
+    if (func->finished_running())
+      finished.push_back(func);
+
+  for(auto *func : finished){
+    R_ASSERT(g_alive_functions_to_run_on_player_thread.removeAll(func)==1);
+    delete func;
+  }
+}
+  
+
+/******************************************/
+/***** Priority                       ****/
+/****************************************/
+
 priority_t THREADING_get_priority(void){
   priority_t priority;
 
@@ -276,6 +435,8 @@ priority_t THREADING_get_priority(void){
 
   return priority;
 }
+
+
 
 void THREADING_set_priority(priority_t priority){
 #if defined(FOR_WINDOWS)

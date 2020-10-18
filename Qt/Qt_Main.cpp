@@ -2315,7 +2315,8 @@ protected:
     API_call_very_often();
 
     THREADING_call_very_often();
-      
+    THREADING_schedule_on_player_thread_call_very_often();
+  
     SEQTRACK_call_me_very_often();
     if (is_called_every_ms(1000))
       DISKPEAKS_call_very_often();

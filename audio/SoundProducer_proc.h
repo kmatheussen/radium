@@ -127,7 +127,7 @@ struct LinkParameters : public QVector<LinkParameter> {
 extern const radium::LinkParameters g_empty_linkparameters;
 
 // Either does everything or nothing. Returns false if it did nothing.
-bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove); // Shows message before returning false and something was wrong.
+bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove, radium::Scheduled_RT_functions &rt_functions); // Shows message before returning false and something was wrong.
 
 #endif
 

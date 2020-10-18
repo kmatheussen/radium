@@ -40,6 +40,7 @@ extern LANGSPEC bool THREADING_is_juce_thread(void);
 
 #ifdef __cplusplus
 #include <functional>
+#include <vector>
 void THREADING_call_very_often(void);
 
 /*
@@ -54,6 +55,79 @@ int64_t THREADING_run_on_main_thread_async(std::function<void(void)> callback, b
 bool THREADING_async_function_has_run(int64_t id);
 void THREADING_wait_for_async_function(int64_t id);
 void THREADING_run_on_main_thread_and_wait(std::function<void(void)> callback); // (callbacks are run in order)
+
+namespace radium{
+  class Scheduled_RT_functions;
+}
+
+namespace radium{
+
+  class Ready_To_Run_Scheduled_RT_functions;
+  
+  class Scheduled_RT_functions{
+
+    friend class radium::Ready_To_Run_Scheduled_RT_functions;
+    
+    std::vector<std::function<void(void)>> _functions;
+
+    void wait_until_ready_to_run_is_finished(radium::Ready_To_Run_Scheduled_RT_functions *ready_to_run);
+    
+    radium::Ready_To_Run_Scheduled_RT_functions *schedule_it(void);
+      
+  public:
+
+    bool force_next_scheduling_to_wait = false;
+
+    // Prevent heap allocation
+    void *operator new (size_t) = delete;
+    void *operator new[] (size_t) = delete;
+    void  operator delete (void *) = delete;
+    void  operator delete[] (void*) = delete;
+
+    Scheduled_RT_functions(const Scheduled_RT_functions&) = delete;
+    Scheduled_RT_functions& operator=(const Scheduled_RT_functions&) = delete;
+    
+    Scheduled_RT_functions(){
+    }
+    
+    ~Scheduled_RT_functions(){
+      schedule_to_run_on_player_thread();
+    }
+
+    // returns immediately
+    void schedule_to_run_on_player_thread(void){
+      if (force_next_scheduling_to_wait)
+        schedule_to_run_on_player_thread_and_wait();
+      else
+        schedule_it();
+    }
+
+    // returns when all funcs in rt_functions has run.
+    void schedule_to_run_on_player_thread_and_wait(void){
+      radium::Ready_To_Run_Scheduled_RT_functions *ready_to_run = schedule_it();
+
+      //printf("==========================================   ...Scheduled and wating for %p\n", ready_to_run);
+
+      force_next_scheduling_to_wait = false;
+      wait_until_ready_to_run_is_finished(ready_to_run);
+    }
+
+    
+    void add(std::function<void(void)> func){
+      _functions.push_back(func);
+    }
+  };
+}
+
+#if 0
+static inline radium::Scheduled_RT_functions create_scheduled_rt_functions(void){
+  radium::Scheduled_RT_functions ret;
+  return ret;
+}
+#endif
+
+void RT_call_functions_scheduled_to_run_on_player_thread(void);
+void THREADING_schedule_on_player_thread_call_very_often(void);
 #endif
 
 extern LANGSPEC void THREADING_acquire_player_thread_priority(void); // Implemented in audio/Mixer.cpp

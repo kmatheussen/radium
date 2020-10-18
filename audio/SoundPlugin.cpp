@@ -1534,8 +1534,9 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
     if (g_calling_set_effect_value_from_pd==false && false==THREADING_is_main_thread()) {
       R_ASSERT(THREADING_is_player_thread() || THREADING_is_juce_thread()); // Called from midi learn or juce.
 
-      if (THREADING_is_player_thread())
-        R_ASSERT(sent_from_midi_learn);
+      // We can also end up here if called from an RT_scheduled function.      
+      //      if (THREADING_is_player_thread())
+      // R_ASSERT(sent_from_midi_learn);
     }
     
   }
@@ -2347,27 +2348,75 @@ void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *state, bool is_load
   }
 }
 
+static const bool g_apply_plugin_state = false; // TODO: Make it configurable.
+
 // Called from the mixer gui. (the a/b/c/d/e/f/g/h buttons in the mixer)
-void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state){
+bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_state, radium::Scheduled_RT_functions &rt_functions){
   SoundPluginType *type = plugin->type;
 
   struct Patch *patch = (struct Patch*)plugin->patch;
   
   int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
   
-  hash_t *values_state = HASH_get_hash(state, "values");
+  hash_t *old_values_state = HASH_get_hash(old_state, "values");
+  hash_t *new_values_state = HASH_get_hash(new_state, "values");
 
-  if (HASH_get_array_size(values_state, "value") != num_effects){
-    addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply new ab state for \"%s\"\n", HASH_get_array_size(values_state, "value"), num_effects, patch->name));
-    return;
+  if (HASH_get_array_size(new_values_state, "value") != num_effects){
+    addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply new ab state for \"%s\"\n", HASH_get_array_size(new_values_state, "value"), num_effects, patch->name));
+    return false;
   }
-  
-  ADD_UNDO(PluginState(patch, NULL));
 
+  bool apply_plugin_state = g_apply_plugin_state;
+
+  if (apply_plugin_state)
+    if (type->recreate_from_state==NULL)
+      apply_plugin_state = false;
+  
+  bool has_made_full_undo = false;
+
+  bool ret = false;
+  
+  for(int i=0;i<num_effects;i++){
+    float old_value = HASH_get_float_at(old_values_state,"value",i);
+    float new_value = HASH_get_float_at(new_values_state,"value",i);
+    if (!equal_floats(old_value, new_value)){
+      if (apply_plugin_state) {
+        if (!has_made_full_undo){
+          has_made_full_undo = true;
+          ADD_UNDO(PluginState(patch, NULL));
+        }
+      } else {
+        ADD_UNDO(AudioEffect_CurrPos2(patch, i, old_value, AE_NO_FLAGS));
+      }
+
+#if !defined(RELEASE)
+      printf("Setting %s::%s from %f to %f\n", plugin->patch->name, PLUGIN_get_effect_name(plugin, i), old_value, new_value);
+#endif
+
+      ret = true;
+      
+      rt_functions.add([plugin,i,new_value](){
+          PLUGIN_set_effect_value(plugin, 0, i, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+        });
+
+      // To ensure plugin has not been deleted when running the callback.
+      // (a little bit hacky way to solve this, but PLUGIN_apply_ab_state
+      // is not very likely to be called at the same time as a plugin is deleted.)
+      rt_functions.force_next_scheduling_to_wait = true;
+    }
+  }
+
+#if 0
   // system effects
   for(int i=type->num_effects;i<num_effects;i++){
     float value = HASH_get_float_at(values_state,"value",i);
-    PLUGIN_set_effect_value(plugin, 0, i, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+    if (true)
+      rt_functions.add([plugin,i,value](){
+          printf("Setting %s::%s to %f\n", plugin->patch->name, PLUGIN_get_effect_name(plugin, i), value);
+          PLUGIN_set_effect_value(plugin, 0, i, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+        });
+    else
+      PLUGIN_set_effect_value(plugin, 0, i, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
   }
 
   // plugin effects
@@ -2394,9 +2443,21 @@ void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state){
     R_ASSERT_NON_RELEASE(type->recreate_from_state!=NULL);
     
   }
+#endif
   
-  if(type->recreate_from_state!=NULL)
-    PLUGIN_recreate_from_state(plugin, HASH_get_hash(state, "plugin_state"), false);
+  if (apply_plugin_state){
+    if (HASH_has_key(new_state, "plugin_state")) {
+      R_ASSERT_RETURN_IF_FALSE2(type->recreate_from_state!=NULL, ret);
+      if (!has_made_full_undo){
+        has_made_full_undo = true;
+        ADD_UNDO(PluginState(patch, NULL));
+      }
+      PLUGIN_recreate_from_state(plugin, HASH_get_hash(new_state, "plugin_state"), false);
+      ret = true;
+    }
+  }
+
+  return ret;
 }
 
 // Called from the mixer gui. (the a/b/c/d/e/f/g/h buttons in the mixer)
@@ -2417,13 +2478,15 @@ hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin){
     HASH_put_float_at(values_state, "value", n, plugin->stored_effect_values_native[n]);
     
   HASH_put_hash(state, "values", values_state);
-    
-  if(type->create_state!=NULL && type->recreate_from_state!=NULL){
-    hash_t *plugin_state = HASH_create(5);
-    type->create_state(plugin, plugin_state);
-    HASH_put_hash(state, "plugin_state", plugin_state);
-  }
 
+  if (g_apply_plugin_state){
+    if(type->create_state!=NULL && type->recreate_from_state!=NULL){
+      hash_t *plugin_state = HASH_create(5);
+      type->create_state(plugin, plugin_state);
+      HASH_put_hash(state, "plugin_state", plugin_state);
+    }
+  }
+  
   return state;
 }
 

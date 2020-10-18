@@ -1039,12 +1039,14 @@ struct Mixer{
       // Schedule new notes, etc.
       //PlayerTask(_buffer_size); // The editor player.
 
+      RT_call_functions_scheduled_to_run_on_player_thread(); // Call this one right before releasing lock and waiting for cycle. This function is allowed to run almost to the end of the jack cycle.
+      
       RT_unlock_player();
 
 #ifdef MEMORY_DEBUG
       debug_wait.wait(&debug_mutex, 1000*10); // Speed up valgrind
 #endif
-      
+
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
     
@@ -1241,17 +1243,17 @@ struct Mixer{
       jack_time_t end_time = jack_get_time();
 
 
-               
-
       // Tell jack we are finished.
 
       jack_cycle_signal(_rjack_client, 0);
 
-
+      
+      //printf("        FRAMES: %d (duration: %f). How much: %f\n", jack_time_to_frames(g_jack_client, process_duration), (double)process_duration/1000.0, MIXER_get_curr_audio_block_cycle_fraction());
+      
       // CPU usage
-
-      float new_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
-
+      jack_time_t process_duration = end_time-start_time;
+      float new_cpu_usage = (double)(process_duration) * 0.0001 *_sample_rate / num_frames;
+      
       g_cpu_usage.addUsage(new_cpu_usage);
 
       // Uncomment these two lines to continually test realtime message.
