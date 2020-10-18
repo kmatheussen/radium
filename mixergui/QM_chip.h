@@ -812,7 +812,7 @@ void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connecti
                                    instrument_t patch_id_old2, instrument_t patch_id_new2
                                    );
 
-void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections, bool all_patches_are_always_supposed_to_be_here);
+void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections, bool all_patches_are_always_supposed_to_be_here, radium::Scheduled_RT_functions &rt_functions);
 
 void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *connections,
                                            const vector_t *patches

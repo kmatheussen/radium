@@ -3161,7 +3161,8 @@ static void MW_position_chips_from_state(const hash_t *chips, const vector_t *pa
 
 // Called from undo_mixer_connections.c
 void MW_create_connections_from_state(const hash_t *connections){
-  CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections, true);
+  radium::Scheduled_RT_functions rt_functions;
+  CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections, true, rt_functions);
 }
 
 static void add_undo_for_all_chip_positions(void){
@@ -3418,6 +3419,9 @@ static hash_t *apply_ab_patch_state(hash_t *patches_state, hash_t *chips, hash_t
 
 static hash_t *create_ab_state(void){
   hash_t *state = HASH_create(5);
+
+  HASH_put_int(state, "version", 1);
+  
   HASH_put_hash(state, "connections", MW_get_connections_state(NULL));
 
   vector_t *patches = &get_audio_instrument()->patches;
@@ -3442,7 +3446,7 @@ static hash_t *create_ab_state(void){
   return state;
 }
 
-static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plugin_ab_state){
+static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plugin_ab_state, radium::Scheduled_RT_functions &rt_functions){
   
   const vector_t &patches = get_audio_instrument()->patches;
 
@@ -3458,13 +3462,11 @@ static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plug
       hash_t *ab_state = HASH_get_hash(plugin_ab_state, key);
       hash_t *curr_ab_state = HASH_get_hash(curr_plugin_ab_state, key);
       
-      if (!HASH_equal(ab_state, curr_ab_state)){
-        
-        SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-        if (plugin==NULL){
-          R_ASSERT(false);
-        }else{
-          PLUGIN_apply_ab_state(plugin, ab_state);
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      if (plugin==NULL){
+        R_ASSERT(false);
+      }else{
+        if (PLUGIN_apply_ab_state(plugin, ab_state, curr_ab_state, rt_functions)){
           CHIP_update(plugin);
           updated = true;
         }
@@ -3488,10 +3490,10 @@ static bool in_patches(const vector_t *patches, int64_t id){
 }
 */
 
-static void apply_ab_connections_state(hash_t *connections){
+static void apply_ab_connections_state(hash_t *connections, radium::Scheduled_RT_functions &rt_functions){
 
   // All the stuff that was done below should now be handled in QM_chip.cpp / SoundProducer.cpp instead when applying graph changes, and in much better ways.
-  CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections, false);
+  CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections, false, rt_functions);
 
   
 #if 0
@@ -3568,12 +3570,24 @@ static void apply_ab_connections_state(hash_t *connections){
 // 'curr_state' is used to compare states. We skip applying the new state if it isn't different.
 static void apply_ab_state(hash_t *state, hash_t *curr_state){
 
+  int version = 1;
+  if (HASH_has_key(state, "version"))
+    version = HASH_get_int32(state, "version");
+
+  if (version > 1){
+    GFX_addMessage("Can not load this ab state. It was saved in a newer version of radium that uses a different format");
+    return;
+  }
+  
+  radium::Scheduled_RT_functions rt_functions;
+  
   UNDO_OPEN();{
     apply_ab_plugin_ab_states(HASH_get_hash(state, "plugin_ab_states"),
-                              HASH_get_hash(curr_state, "plugin_ab_states")
+                              HASH_get_hash(curr_state, "plugin_ab_states"),
+                              rt_functions
                               );
     
-    apply_ab_connections_state(HASH_get_hash(state, "connections"));
+    apply_ab_connections_state(HASH_get_hash(state, "connections"), rt_functions);
 
   }UNDO_CLOSE();
 

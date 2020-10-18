@@ -440,14 +440,14 @@ bool Undo_Is_Open(void){
 }
 
 void Das_Undo_Open_rec(void){
-  //printf("        UNDO OPEN\n");
+  //printf("        UNDO OPEN %d. Currently undoing: %d. Ignore: %d\n", undo_is_open, currently_undoing, ignore());
 
   R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
 
   if (ignore()) return;
 
   if(currently_undoing){
-    //RError("Can not call Undo_Open from Undo()\n");
+    //RError("Can not call Undo_Open from Undo()\n");    
     return;
   }
 
@@ -503,7 +503,7 @@ bool Das_Undo_Close(void){
 
   //EVENTLOG_add_event(talloc_format("Undo_Close. currently_undoing: %d. undo_is_open: %d", currently_undoing, Undo_Is_Open()));
   
-  //printf("        UNDO CLOSE\n");
+  //printf("        UNDO CLOSE %d\n", undo_is_open);
 
 
   if(currently_undoing){

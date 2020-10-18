@@ -1355,7 +1355,7 @@ $(T)undo_reltemposlider.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reltemposlider.c
 $(T)error.o:  $(BUILD_DEPENDENCIES) $(CD)error.c
 	$(CC2) $(CD)error.c $(OPT) -Wno-null-dereference
 
-$(T)threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp
+$(T)threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp common/threading.h
 	$(CCC2)  $(CD)threading.cpp $(JACKOPT) $(QTOPT)
 
 $(T)Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Semaphores.hpp common/OS_Semaphores.h
@@ -2348,7 +2348,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 #audio/faust-examples/faust-stk/flute.cpp: audio/faust-examples/faust-stk/flute.dsp
 #	cd audio/faust-examples/faust-stk && $(FAUST) -cn my_dsp flute.dsp -o flute.cpp
 
-$(T)SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/QueueStack.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp audio/AudioMeterPeaks_proc.h
+$(T)SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/QueueStack.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp audio/AudioMeterPeaks_proc.h common/threading.h
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
 	$(CCC2) audio/SoundProducer.cpp $(JACKOPT) $(QTOPT) $(OPTIMIZE_O3) $(CPUOPT) $(NO_ANALYZER_MALLOC_LEAK) # -O3 # 
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2

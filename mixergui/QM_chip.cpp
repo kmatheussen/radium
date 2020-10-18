@@ -750,12 +750,32 @@ namespace{
     QVector<Parm> to_add;
     QVector<Parm> to_remove;
 
+    radium::Scheduled_RT_functions &rt_functions;
+      
+  private:
+    radium::Scheduled_RT_functions ___INTERNAL_rt_functions2;
+
+  public:
+    
+    // Prevent heap allocation
+    void *operator new (size_t) = delete;
+    void *operator new[] (size_t) = delete;
+    void  operator delete (void *) = delete;
+    void  operator delete[] (void*) = delete;
+
     AudioGraph(const AudioGraph&) = delete;
     AudioGraph& operator=(const AudioGraph&) = delete;
 
-    AudioGraph(){
+    AudioGraph(radium::Scheduled_RT_functions &rt_functions)
+      : rt_functions(rt_functions)
+    {
     }
-    
+
+    AudioGraph()
+      : rt_functions(___INTERNAL_rt_functions2)
+    {
+    }
+
     int find_pos(const QVector<Parm> &parms, const Chip *from, const Chip *to) const {
       for(int i = 0 ; i < parms.size() ; i++)
         if (parms.at(i)._from==from && parms.at(i)._to==to)
@@ -876,7 +896,7 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
   if (PLAYER_is_running()==true){ // Player is always running except when starting up, shutting down, and jack has stopped. (and possible sometimes when rendering, not sure).
     
     // Create/remove mixer connections
-    if (SP_add_and_remove_links(add_linkparameters, remove_linkparameters)==false)
+    if (SP_add_and_remove_links(add_linkparameters, remove_linkparameters, changes.rt_functions)==false)
       return false;
         
   } else {
@@ -2890,9 +2910,9 @@ static void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, i
 }
 */
 
-void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections, bool all_patches_are_always_supposed_to_be_here)
+void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections, bool all_patches_are_always_supposed_to_be_here, radium::Scheduled_RT_functions &rt_functions)
 {
-  changes::AudioGraph changes;
+  changes::AudioGraph changes(rt_functions);
 
   CONNECTIONS_remove_all2(scene, changes);
   
