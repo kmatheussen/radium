@@ -2502,6 +2502,20 @@ bool SP_get_link_explicitly_enabled(SoundProducer *target, SoundProducer *source
   return false;
 }
   
+bool SP_get_link_implicitly_muted(SoundProducer *target, SoundProducer *source, const char **error){
+  if (target==NULL || source==NULL)
+    return false;
+  
+  for (SoundProducerLink *link : target->_input_links)
+    if(link->is_event_link==false && link->source==source)
+      return link->is_implicitly_muted;
+
+  if (error != NULL)
+    *error = talloc_strdup("Could not find link");
+
+  return false;
+}
+  
 bool SP_get_link_enabled(SoundProducer *target, SoundProducer *source, const char **error){
   if (target==NULL || source==NULL)
     return false;

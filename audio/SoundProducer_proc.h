@@ -169,6 +169,7 @@ extern LANGSPEC bool SP_call_me_after_solo_has_changed(void);
 //extern LANGSPEC bool SP_get_link_enabled(const struct SoundProducer *target, const struct SoundProducer *source, const char **error); // Link enabled/disabled is kept track of in the AudioConnection class.
 extern LANGSPEC bool SP_set_link_explicitly_enabled(struct SoundProducer *target, struct SoundProducer *source, bool is_enabled, const char **error); // Only called from AudioConnection->set_enabled().
 extern LANGSPEC bool SP_get_link_explicitly_enabled(SoundProducer *target, SoundProducer *source, const char **error);
+extern LANGSPEC bool SP_get_link_implicitly_muted(SoundProducer *target, SoundProducer *source, const char **error);
 extern LANGSPEC bool SP_get_link_enabled(SoundProducer *target, SoundProducer *source, const char **error); // get actualy enabled status, which might be different than explitly enabled status if using solo.
 
 #ifdef __cplusplus
