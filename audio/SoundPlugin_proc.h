@@ -106,7 +106,7 @@ extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin,
 extern LANGSPEC void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *state, bool is_loading);
 
 #ifdef __cplusplus
-extern void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_state, radium::Scheduled_RT_functions &rt_functions);
+extern bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_state, radium::Scheduled_RT_functions &rt_functions);
 #endif
 
 extern LANGSPEC hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin);

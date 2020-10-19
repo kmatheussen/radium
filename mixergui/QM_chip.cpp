@@ -1600,8 +1600,15 @@ static QPen get_connection_pen(const SuperConnection *connection, const QColor &
   return pen;
 }
 
+static bool connection_is_implicitly_muted(SuperConnection *connection){
+  if (connection->to==NULL || connection->from==NULL)
+    return false;
+
+  return SP_get_link_implicitly_muted(connection->to->_sound_producer, connection->from->_sound_producer, NULL);
+}
+
 static float get_connection_color_alpha(SuperConnection *connection){
-  if (connection->to && connection->from && SP_get_link_enabled(connection->to->_sound_producer, connection->from->_sound_producer, NULL))
+  if (!connection->get_enabled() || connection_is_implicitly_muted(connection))
     return 30;
   else if(connection->_is_selected)
     return 250;
