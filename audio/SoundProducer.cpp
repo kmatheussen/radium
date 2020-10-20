@@ -1275,6 +1275,24 @@ public:
               maybe_add_link_enabled_change(link);
             }
       }
+
+      // 4. Set "RT_is_enabled", "is_enabled", and "is_implicitly_muted" for new links.
+      // At this point, only "is_implicitly_soloed" is known to have the correct value.
+      // ("RT_is_enabled"/"is_enabled" is true by default, and "is_implicitly_muted" is false by default.)
+      //
+      for(SoundProducerLink *link : _to_add){
+        if (!link->is_event_link) {
+
+          if (has_solo && !link->is_implicitly_soloed)
+            link->is_implicitly_muted = true;
+          
+          if (!link->should_be_enabled()){
+            link->is_enabled = false;
+            link->RT_is_enabled = false; // We can write directly since the link is not alive yet.
+          }
+
+        }
+      }
       
       g_has_solo = has_solo;
     }
