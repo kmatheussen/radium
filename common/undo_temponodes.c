@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "temponodes_proc.h"
 #include "list_proc.h"
 #include "time_proc.h"
+#include "undo_sequencer_proc.h"
 
 #include "undo_temponodes_proc.h"
 
@@ -46,15 +47,18 @@ void ADD_UNDO_FUNC(TempoNodes(
 	int realline
                               ))
 {
-	Undo_Add(
-                 window->l.num,
-                 block->l.num,
-                 tracknum,
-                 realline,
-                 CB_CopyTempoNodes(block->temponodes),
-                 Undo_Do_TempoNodes,
-                 "Block tempo nodes"
-	);
+  UNDO_OPEN_REC();{
+    CALL_ADD_UNDO_FUNC(Seqblock_block_timing_state(block));
+    Undo_Add(
+             window->l.num,
+             block->l.num,
+             tracknum,
+             realline,
+             CB_CopyTempoNodes(block->temponodes),
+             Undo_Do_TempoNodes,
+             "Block tempo nodes"
+             );
+  }UNDO_CLOSE();
 }
 
 void ADD_UNDO_FUNC(TempoNodes_CurrPos(

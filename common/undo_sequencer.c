@@ -151,7 +151,7 @@ static void *Undo_Do_Seqblock(
   if (ret==NULL) // not supposed to happen.
     return state;
   
-  SEQBLOCK_replace_seqblock(state, true, SHOW_ASSERTION);
+  SEQBLOCK_replace_seqblock(state, true, false, SHOW_ASSERTION);
     
   return ret;
 }
@@ -159,6 +159,77 @@ static void *Undo_Do_Seqblock(
 
 
 
+///////////////////////////////////////////////////////////////////////////////////
+// 1.6. All seqblocks in seqtracks that contains a block (used for timing undo) //
+/////////////////////////////////////////////////////////////////////////////////
+
+static bool seqtrack_contains_block(const struct SeqTrack *seqtrack, const struct Blocks *block){
+  if (seqtrack->for_audiofiles)
+    return false;
+
+  VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+    if (seqblock->block==block)
+      return true;
+  }END_VECTOR_FOR_EACH;
+
+  return false;
+}
+
+static vector_t *get_seqblock_block_timing_state(struct Blocks *block){
+  vector_t *states = talloc(sizeof(vector_t));
+
+  VECTOR_FOR_EACH(const struct SeqTrack *seqtrack, &root->song->seqtracks){
+    if (seqtrack_contains_block(seqtrack, block)){
+      for(int i=0;i<seqtrack->seqblocks.num_elements;i++)
+        VECTOR_push_back(states, get_seqblock_state(iterator666, i));
+    }
+  }END_VECTOR_FOR_EACH;
+
+  return states;
+}
+
+static void *Undo_Do_Seqblock_block_timing_state(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer);
+
+void ADD_UNDO_FUNC(Seqblock_block_timing_state(struct Blocks *block)){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  
+  vector_t *states = get_seqblock_block_timing_state(block);
+  if (states->num_elements==0)
+    return;
+  
+  Undo_Add(window->l.num,
+           window->wblock->l.num,
+           window->curr_track,
+           window->wblock->curr_realline,
+           states,
+           Undo_Do_Seqblock_block_timing_state,
+           "Seqblock block timing state"
+           );
+}
+
+
+static void *Undo_Do_Seqblock_block_timing_state(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+){
+  vector_t *ret = get_seqblock_block_timing_state(wblock->block);
+  vector_t *states = pointer;
+
+  if (states->num_elements > 0)
+    SEQBLOCK_replace_seqblocks(*states, true, false, SHOW_ASSERTION);
+  
+  return ret;
+}
+
+  
 /////////////////////////////////////////////////////////////////////////
 // 2. Just automation. (doesn't require player to pause when modified) //
 /////////////////////////////////////////////////////////////////////////

@@ -1204,8 +1204,9 @@ public:
             update_is_implicitly_soloed_link(link, link_forward);
         
         for(SoundProducerLink *link : _to_add)
-          if (link_forward ? (sp==link->source) : (sp==link->target))
-            update_is_implicitly_soloed_link(link, link_forward);        
+          if (link_forward ? (sp==link->source) : (sp==link->target)){
+            update_is_implicitly_soloed_link(link, link_forward);
+          }
       }
     }
   
@@ -1255,10 +1256,10 @@ public:
         }
     
     
-      // 3. Set "is_implicilty_muted" to correct value for all links and plugins, and add LinkEnabledChanges to link_enabled_changes.
+      // 3. Set "is_implicilty_muted" to correct value for all existing links and plugins, and add LinkEnabledChanges to link_enabled_changes.
       //
       for(SoundProducer *sp : sp_all){
-        
+                
         bool is_implicitly_muted = has_solo && !sp->_plugin->is_implicitly_soloed;
         
         // update plugin->is_implicitly* stuff here as well. (only used by the UI)

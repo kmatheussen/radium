@@ -489,8 +489,9 @@ extern LANGSPEC int64_t SEQUENCER_find_closest_line_start(int64_t pos_seqtime);
 
 
 extern LANGSPEC hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool always_get_real_end_time);
-extern LANGSPEC int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowAPIException error_type);
-extern LANGSPEC void SEQBLOCK_replace_seqblock(hash_t *hash, bool must_replace_same_id, enum ShowAssertionOrThrowAPIException error_type);
+extern LANGSPEC int SEQBLOCK_insert_seqblock_from_state(const hash_t *hash, enum ShowAssertionOrThrowAPIException error_type);
+extern LANGSPEC void SEQBLOCK_replace_seqblocks(const vector_t seqblocks, bool must_replace_same_id, bool use_old_seqblock_pos, enum ShowAssertionOrThrowAPIException error_type); // must use this one if replacing several seqblocks at the same time.
+extern LANGSPEC void SEQBLOCK_replace_seqblock(const hash_t *hash, bool must_replace_same_id, bool use_old_seqblock_pos, enum ShowAssertionOrThrowAPIException error_type);
 
 extern LANGSPEC struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, int seqtracknum, double state_samplerate, bool for_audiofiles, bool is_bus);
 extern LANGSPEC struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len);
